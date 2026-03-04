@@ -37,23 +37,23 @@ export default function SegmentationPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    Promise.all([
-      getSegmentationQuestions(),
-      getSegmentationProfile(),
-    ]).then(([qData, pData]) => {
-      setQuestions(qData.questions || []);
-      setProfile(pData);
-      if (pData.answers && Object.keys(pData.answers).length > 0) {
-        setAnswers(pData.answers);
-      }
-    }).catch(() => {
-      toast('Erreur lors du chargement de la segmentation', 'error');
-    }).finally(() => setLoading(false));
+    Promise.all([getSegmentationQuestions(), getSegmentationProfile()])
+      .then(([qData, pData]) => {
+        setQuestions(qData.questions || []);
+        setProfile(pData);
+        if (pData.answers && Object.keys(pData.answers).length > 0) {
+          setAnswers(pData.answers);
+        }
+      })
+      .catch(() => {
+        toast('Erreur lors du chargement de la segmentation', 'error');
+      })
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAnswer = (questionId, value) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
     setSubmitted(false);
   };
 
@@ -61,7 +61,7 @@ export default function SegmentationPage() {
     setSubmitting(true);
     try {
       const result = await submitSegmentationAnswers(answers);
-      setProfile(prev => ({
+      setProfile((prev) => ({
         ...prev,
         has_profile: true,
         typologie: result.typologie,
@@ -77,8 +77,9 @@ export default function SegmentationPage() {
     }
   };
 
-  const answeredCount = Object.values(answers).filter(v => v).length;
-  const progressPct = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const answeredCount = Object.values(answers).filter((v) => v).length;
+  const progressPct =
+    questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   if (loading) {
     return (
@@ -113,24 +114,41 @@ export default function SegmentationPage() {
             </p>
             {profile.derived_from && (
               <p className="text-xs text-gray-500 mb-3">
-                Source : {profile.derived_from === 'naf' ? 'Code NAF' : profile.derived_from === 'questionnaire' ? 'Questionnaire' : profile.derived_from === 'patrimoine' ? 'Patrimoine' : 'Detection mixte'}
+                Source :{' '}
+                {profile.derived_from === 'naf'
+                  ? 'Code NAF'
+                  : profile.derived_from === 'questionnaire'
+                    ? 'Questionnaire'
+                    : profile.derived_from === 'patrimoine'
+                      ? 'Patrimoine'
+                      : 'Detection mixte'}
               </p>
             )}
             <div className="mb-2">
               <div className="flex items-center justify-between text-sm mb-1">
                 <span className="text-gray-600">Confiance</span>
-                <span className="font-bold text-gray-700">{Math.round(profile.confidence_score)}%</span>
+                <span className="font-bold text-gray-700">
+                  {Math.round(profile.confidence_score)}%
+                </span>
               </div>
               <Progress
                 value={profile.confidence_score}
                 max={100}
-                color={profile.confidence_score >= 70 ? 'green' : profile.confidence_score >= 40 ? 'amber' : 'red'}
+                color={
+                  profile.confidence_score >= 70
+                    ? 'green'
+                    : profile.confidence_score >= 40
+                      ? 'amber'
+                      : 'red'
+                }
               />
             </div>
             {profile.reasons && profile.reasons.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {profile.reasons.map((r, i) => (
-                  <Badge key={i} status="neutral">{r}</Badge>
+                  <Badge key={i} status="neutral">
+                    {r}
+                  </Badge>
                 ))}
               </div>
             )}
@@ -142,10 +160,10 @@ export default function SegmentationPage() {
       <Card>
         <CardBody>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-semibold text-gray-800">
-              Questionnaire
-            </h2>
-            <span className="text-sm text-gray-500">{answeredCount}/{questions.length} reponses</span>
+            <h2 className="text-base font-semibold text-gray-800">Questionnaire</h2>
+            <span className="text-sm text-gray-500">
+              {answeredCount}/{questions.length} reponses
+            </span>
           </div>
           <Progress value={progressPct} max={100} />
         </CardBody>
@@ -161,24 +179,22 @@ export default function SegmentationPage() {
       ) : (
         <div className="space-y-4">
           {questions.map((q, idx) => (
-            <Card
-              key={q.id}
-              className={answers[q.id] ? 'border-blue-200 bg-blue-50/30' : ''}
-            >
+            <Card key={q.id} className={answers[q.id] ? 'border-blue-200 bg-blue-50/30' : ''}>
               <CardBody>
                 <p className="text-sm font-medium text-gray-800 mb-3">
                   <span className="text-blue-600 font-bold mr-2">{idx + 1}.</span>
                   {q.text}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {q.options.map(opt => (
+                  {q.options.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => handleAnswer(q.id, opt.value)}
                       className={`px-3 py-1.5 rounded-lg text-sm border transition
-                        ${answers[q.id] === opt.value
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                        ${
+                          answers[q.id] === opt.value
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
                         }`}
                     >
                       {opt.label}
@@ -198,10 +214,7 @@ export default function SegmentationPage() {
             ? 'Repondez aux questions pour affiner votre profil.'
             : `${answeredCount} reponse${answeredCount > 1 ? 's' : ''} sur ${questions.length}`}
         </p>
-        <Button
-          onClick={handleSubmit}
-          disabled={answeredCount === 0 || submitting}
-        >
+        <Button onClick={handleSubmit} disabled={answeredCount === 0 || submitting}>
           <Send size={14} className="mr-1.5" />
           {submitting ? 'Envoi...' : 'Mettre a jour le profil'}
         </Button>

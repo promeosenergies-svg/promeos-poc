@@ -13,8 +13,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ShieldCheck, AlertCircle, Info,
-  ArrowRight, RefreshCw, Euro,
+  AlertTriangle,
+  ShieldCheck,
+  AlertCircle,
+  Info,
+  ArrowRight,
+  RefreshCw,
+  Euro,
 } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
 
@@ -57,9 +62,9 @@ const SEVERITY_CONFIG = {
 
 const FRAMEWORK_CHIP = {
   DECRET_TERTIAIRE: { label: 'Décret Tertiaire', color: 'bg-purple-100 text-purple-700' },
-  FACTURATION:      { label: 'Facturation',       color: 'bg-blue-100 text-blue-700'   },
-  BACS:             { label: 'BACS',               color: 'bg-teal-100 text-teal-700'   },
-  NONE:             null,
+  FACTURATION: { label: 'Facturation', color: 'bg-blue-100 text-blue-700' },
+  BACS: { label: 'BACS', color: 'bg-teal-100 text-teal-700' },
+  NONE: null,
 };
 
 function scoreColor(score) {
@@ -109,7 +114,9 @@ function FrameworkChip({ framework }) {
   const cfg = FRAMEWORK_CHIP[framework];
   if (!cfg) return null;
   return (
-    <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.color}`}>
+    <span
+      className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.color}`}
+    >
       {cfg.label}
     </span>
   );
@@ -161,9 +168,7 @@ function AnomalyRow({ anomaly, onCtaClick }) {
           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
             <RiskBadge businessImpact={anomaly.business_impact} />
             {anomaly.priority_score != null && (
-              <span className="text-[9px] text-gray-400">
-                score {anomaly.priority_score}
-              </span>
+              <span className="text-[9px] text-gray-400">score {anomaly.priority_score}</span>
             )}
           </div>
 

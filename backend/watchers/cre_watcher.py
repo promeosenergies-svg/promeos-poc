@@ -1,6 +1,7 @@
 """
 PROMEOS Watchers - CRE (Commission de Regulation de l'Energie)
 """
+
 from .rss_watcher import RSSWatcher
 
 

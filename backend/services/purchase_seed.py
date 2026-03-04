@@ -2,13 +2,19 @@
 PROMEOS — Achat Energie Seed Demo
 2 sites x 3 scenarios (fixe/indexe/spot) + preferences.
 """
+
 from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, EnergyContract,
-    PurchaseAssumptionSet, PurchasePreference, PurchaseScenarioResult,
-    PurchaseStrategy, PurchaseRecoStatus, BillingEnergyType,
+    Site,
+    EnergyContract,
+    PurchaseAssumptionSet,
+    PurchasePreference,
+    PurchaseScenarioResult,
+    PurchaseStrategy,
+    PurchaseRecoStatus,
+    BillingEnergyType,
 )
 
 
@@ -63,55 +69,59 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
     # ── Site A scenarios (elec @ 0.18 ref) ──
     ref_a = 0.18
     for strategy, price_mult, risk, p10_mult, p90_mult, is_reco in [
-        (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  False),
-        (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, True),   # Recommended
-        (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, False),
+        (PurchaseStrategy.FIXE, 1.05, 15, 1.0, 1.0, False),
+        (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, True),  # Recommended
+        (PurchaseStrategy.SPOT, 0.88, 75, 0.70, 1.45, False),
         (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
         price = round(ref_a * price_mult, 4)
         total = round(price * 600_000, 2)
         current_total = round(ref_a * 600_000, 2)
         savings = round((1 - total / current_total) * 100, 1)
-        db.add(PurchaseScenarioResult(
-            assumption_set_id=assumptions_a.id,
-            strategy=strategy,
-            price_eur_per_kwh=price,
-            total_annual_eur=total,
-            risk_score=risk,
-            savings_vs_current_pct=savings,
-            p10_eur=round(total * p10_mult, 2),
-            p90_eur=round(total * p90_mult, 2),
-            is_recommended=is_reco,
-            reco_status=PurchaseRecoStatus.DRAFT,
-            computed_at=datetime.now(timezone.utc),
-        ))
+        db.add(
+            PurchaseScenarioResult(
+                assumption_set_id=assumptions_a.id,
+                strategy=strategy,
+                price_eur_per_kwh=price,
+                total_annual_eur=total,
+                risk_score=risk,
+                savings_vs_current_pct=savings,
+                p10_eur=round(total * p10_mult, 2),
+                p90_eur=round(total * p90_mult, 2),
+                is_recommended=is_reco,
+                reco_status=PurchaseRecoStatus.DRAFT,
+                computed_at=datetime.now(timezone.utc),
+            )
+        )
         scenarios_created += 1
 
     # ── Site B scenarios (elec @ 0.15 ref — smaller site, lower tariff) ──
     ref_b = 0.15
     for strategy, price_mult, risk, p10_mult, p90_mult, is_reco in [
-        (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  True),   # Recommended (low risk)
+        (PurchaseStrategy.FIXE, 1.05, 15, 1.0, 1.0, True),  # Recommended (low risk)
         (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, False),
-        (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, False),
+        (PurchaseStrategy.SPOT, 0.88, 75, 0.70, 1.45, False),
         (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
         price = round(ref_b * price_mult, 4)
         total = round(price * 300_000, 2)
         current_total = round(ref_b * 300_000, 2)
         savings = round((1 - total / current_total) * 100, 1)
-        db.add(PurchaseScenarioResult(
-            assumption_set_id=assumptions_b.id,
-            strategy=strategy,
-            price_eur_per_kwh=price,
-            total_annual_eur=total,
-            risk_score=risk,
-            savings_vs_current_pct=savings,
-            p10_eur=round(total * p10_mult, 2),
-            p90_eur=round(total * p90_mult, 2),
-            is_recommended=is_reco,
-            reco_status=PurchaseRecoStatus.DRAFT,
-            computed_at=datetime.now(timezone.utc),
-        ))
+        db.add(
+            PurchaseScenarioResult(
+                assumption_set_id=assumptions_b.id,
+                strategy=strategy,
+                price_eur_per_kwh=price,
+                total_annual_eur=total,
+                risk_score=risk,
+                savings_vs_current_pct=savings,
+                p10_eur=round(total * p10_mult, 2),
+                p90_eur=round(total * p90_mult, 2),
+                is_recommended=is_reco,
+                reco_status=PurchaseRecoStatus.DRAFT,
+                computed_at=datetime.now(timezone.utc),
+            )
+        )
         scenarios_created += 1
 
     db.commit()

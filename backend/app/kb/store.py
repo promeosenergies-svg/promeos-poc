@@ -2,6 +2,7 @@
 PROMEOS KB - Store (CRUD operations)
 Database operations for KB items, docs, chunks
 """
+
 import json
 import sqlite3
 from typing import List, Dict, Any, Optional
@@ -31,7 +32,8 @@ class KBStore:
             # Status: default to 'validated' for backward compat
             status = item.get("status", "validated")
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO kb_items (
                     id, type, domain, title, summary, content_md,
                     tags_json, scope_json, logic_json, sources_json,
@@ -51,22 +53,24 @@ class KBStore:
                     confidence=excluded.confidence,
                     status=excluded.status,
                     priority=excluded.priority
-            """, (
-                item["id"],
-                item["type"],
-                item["domain"],
-                item["title"],
-                item["summary"],
-                item.get("content_md", ""),
-                tags_json,
-                scope_json,
-                logic_json,
-                sources_json,
-                item["updated_at"],
-                item["confidence"],
-                status,
-                item.get("priority", 3)
-            ))
+            """,
+                (
+                    item["id"],
+                    item["type"],
+                    item["domain"],
+                    item["title"],
+                    item["summary"],
+                    item.get("content_md", ""),
+                    tags_json,
+                    scope_json,
+                    logic_json,
+                    sources_json,
+                    item["updated_at"],
+                    item["confidence"],
+                    status,
+                    item.get("priority", 3),
+                ),
+            )
 
             self.db.conn.commit()
             return True
@@ -91,7 +95,7 @@ class KBStore:
         type_filter: Optional[str] = None,
         status: Optional[str] = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> List[Dict[str, Any]]:
         """Get KB items with optional filters"""
         cursor = self.db.conn.cursor()
@@ -126,12 +130,11 @@ class KBStore:
             if confidence:
                 cursor.execute(
                     "UPDATE kb_items SET status = ?, confidence = ?, updated_at = datetime('now') WHERE id = ?",
-                    (status, confidence, item_id)
+                    (status, confidence, item_id),
                 )
             else:
                 cursor.execute(
-                    "UPDATE kb_items SET status = ?, updated_at = datetime('now') WHERE id = ?",
-                    (status, item_id)
+                    "UPDATE kb_items SET status = ?, updated_at = datetime('now') WHERE id = ?", (status, item_id)
                 )
             self.db.conn.commit()
             return cursor.rowcount > 0
@@ -175,7 +178,8 @@ class KBStore:
 
             display_name = doc.get("display_name") or doc.get("title")
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO kb_docs (
                     doc_id, title, source_type, source_path, content_hash,
                     nb_sections, nb_chunks, updated_at, meta_json, status,
@@ -192,19 +196,21 @@ class KBStore:
                     meta_json=excluded.meta_json,
                     status=excluded.status,
                     display_name=excluded.display_name
-            """, (
-                doc["doc_id"],
-                doc["title"],
-                doc["source_type"],
-                doc["source_path"],
-                doc["content_hash"],
-                doc.get("nb_sections", 0),
-                doc.get("nb_chunks", 0),
-                doc["updated_at"],
-                meta_json,
-                status,
-                display_name,
-            ))
+            """,
+                (
+                    doc["doc_id"],
+                    doc["title"],
+                    doc["source_type"],
+                    doc["source_path"],
+                    doc["content_hash"],
+                    doc.get("nb_sections", 0),
+                    doc.get("nb_chunks", 0),
+                    doc["updated_at"],
+                    meta_json,
+                    status,
+                    display_name,
+                ),
+            )
 
             self.db.conn.commit()
             return True
@@ -274,7 +280,8 @@ class KBStore:
         try:
             cursor = self.db.conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO kb_chunks (
                     chunk_id, doc_id, section_path, anchor, text, word_count, chunk_index
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -285,15 +292,17 @@ class KBStore:
                     text=excluded.text,
                     word_count=excluded.word_count,
                     chunk_index=excluded.chunk_index
-            """, (
-                chunk["chunk_id"],
-                chunk["doc_id"],
-                chunk.get("section_path"),
-                chunk.get("anchor"),
-                chunk["text"],
-                chunk.get("word_count", 0),
-                chunk.get("chunk_index", 0)
-            ))
+            """,
+                (
+                    chunk["chunk_id"],
+                    chunk["doc_id"],
+                    chunk.get("section_path"),
+                    chunk.get("anchor"),
+                    chunk["text"],
+                    chunk.get("word_count", 0),
+                    chunk.get("chunk_index", 0),
+                ),
+            )
 
             self.db.conn.commit()
             return True
@@ -305,10 +314,7 @@ class KBStore:
     def get_chunks_by_doc(self, doc_id: str) -> List[Dict[str, Any]]:
         """Get all chunks for a doc"""
         cursor = self.db.conn.cursor()
-        cursor.execute(
-            "SELECT * FROM kb_chunks WHERE doc_id = ? ORDER BY chunk_index",
-            (doc_id,)
-        )
+        cursor.execute("SELECT * FROM kb_chunks WHERE doc_id = ? ORDER BY chunk_index", (doc_id,))
         rows = cursor.fetchall()
         return [self._row_to_dict(row) for row in rows]
 
@@ -364,14 +370,17 @@ class KBStore:
         Returns: { docs: [...], summary: { total, draft, review, validated, ... } }
         """
         cursor = self.db.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT apl.id, apl.action_id, apl.kb_doc_id, apl.proof_type, apl.created_at,
                    d.title, d.status, d.domain, d.source_type, d.display_name
             FROM action_proof_link apl
             LEFT JOIN kb_docs d ON apl.kb_doc_id = d.doc_id
             WHERE apl.action_id = ?
             ORDER BY apl.created_at DESC
-        """, (action_id,))
+        """,
+            (action_id,),
+        )
         rows = cursor.fetchall()
 
         docs = []
@@ -438,5 +447,5 @@ class KBStore:
             "by_confidence": by_confidence,
             "by_status": by_status,
             "total_docs": total_docs,
-            "total_chunks": total_chunks
+            "total_chunks": total_chunks,
         }

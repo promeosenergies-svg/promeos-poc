@@ -2,9 +2,17 @@
 PROMEOS - Smart Intake Models (DIAMANT)
 IntakeSession, IntakeAnswer, IntakeFieldOverride.
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, DateTime, ForeignKey,
-    Enum as SAEnum, UniqueConstraint,
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    Enum as SAEnum,
+    UniqueConstraint,
 )
 from datetime import datetime
 
@@ -14,6 +22,7 @@ from .enums import IntakeSessionStatus, IntakeMode, IntakeSource
 
 class IntakeSession(Base, TimestampMixin):
     """Session d'intake: collecte de donnees reglementaires pour un site."""
+
     __tablename__ = "intake_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -37,6 +46,7 @@ class IntakeSession(Base, TimestampMixin):
 
 class IntakeAnswer(Base, TimestampMixin):
     """Reponse a une question d'intake: field_path + value + source."""
+
     __tablename__ = "intake_answers"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -54,10 +64,9 @@ class IntakeAnswer(Base, TimestampMixin):
 
 class IntakeFieldOverride(Base, TimestampMixin):
     """Override multi-scope: ORG > ENTITY > SITE pour heritage de valeurs."""
+
     __tablename__ = "intake_field_overrides"
-    __table_args__ = (
-        UniqueConstraint("scope_type", "scope_id", "field_path", name="uq_intake_override"),
-    )
+    __table_args__ = (UniqueConstraint("scope_type", "scope_id", "field_path", name="uq_intake_override"),)
 
     id = Column(Integer, primary_key=True, index=True)
     scope_type = Column(String(10), nullable=False, comment="org, entity, site")

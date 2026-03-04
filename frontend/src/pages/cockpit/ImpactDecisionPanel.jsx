@@ -11,7 +11,13 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert, Receipt, TrendingUp, ArrowRight, Loader2, Zap, ShoppingCart,
+  ShieldAlert,
+  Receipt,
+  TrendingUp,
+  ArrowRight,
+  Loader2,
+  Zap,
+  ShoppingCart,
 } from 'lucide-react';
 import { Card, CardBody, Badge, InfoTip, Button } from '../../ui';
 import { TOOLTIPS } from '../../ui/tooltips';
@@ -27,7 +33,18 @@ import useActivationData from '../../hooks/useActivationData';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
-function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, onClick, ariaLabel, dominant, subLabel }) {
+function ImpactKpiTile({
+  icon: Icon,
+  label,
+  value,
+  available,
+  tooltip,
+  accent,
+  onClick,
+  ariaLabel,
+  dominant,
+  subLabel,
+}) {
   const a = KPI_ACCENTS[accent] || KPI_ACCENTS.neutral;
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -47,20 +64,20 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, o
         <div className="flex items-center gap-1.5">
           <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{label}</p>
           {dominant && (
-            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${a.iconBg} ${a.tintText}`}>
+            <span
+              className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${a.iconBg} ${a.tintText}`}
+            >
               Prioritaire
             </span>
           )}
           <InfoTip content={tooltip} />
         </div>
-        <p className="text-lg font-bold text-gray-900 mt-0.5">
-          {available ? fmtEur(value) : '—'}
-        </p>
-        {available && subLabel && (
-          <p className="text-[11px] text-gray-400 mt-0.5">{subLabel}</p>
-        )}
+        <p className="text-lg font-bold text-gray-900 mt-0.5">{available ? fmtEur(value) : '—'}</p>
+        {available && subLabel && <p className="text-[11px] text-gray-400 mt-0.5">{subLabel}</p>}
         {!available && (
-          <Badge variant="neutral" size="xs">Données manquantes</Badge>
+          <Badge variant="neutral" size="xs">
+            Données manquantes
+          </Badge>
         )}
       </div>
     </Tag>
@@ -75,23 +92,20 @@ export default function ImpactDecisionPanel({ kpis }) {
 
   const impact = useMemo(
     () => computeImpactKpis(kpis, billingSummary || {}),
-    [kpis, billingSummary],
+    [kpis, billingSummary]
   );
 
-  const reco = useMemo(
-    () => computeRecommendation(impact, kpis),
-    [impact, kpis],
-  );
+  const reco = useMemo(() => computeRecommendation(impact, kpis), [impact, kpis]);
 
   // V33 — Levier Engine (V36: + purchaseSignals)
   const levers = useMemo(
     () => computeActionableLevers({ kpis, billingSummary: billingSummary || {}, purchaseSignals }),
-    [kpis, billingSummary, purchaseSignals],
+    [kpis, billingSummary, purchaseSignals]
   );
 
   const handleDrillDown = (type) => {
     if (type === 'risque') navigate('/patrimoine?filter=risque');
-    if (type === 'surcout') navigate('/factures?filter=anomalies');
+    if (type === 'surcout') navigate('/bill-intel?filter=anomalies');
     if (type === 'optimisation') navigate('/consommations?filter=energivores');
   };
 
@@ -111,7 +125,10 @@ export default function ImpactDecisionPanel({ kpis }) {
     const ac = billingSummary?.invoices_with_anomalies ?? billingSummary?.total_insights ?? null;
     return {
       risque: rs > 0 ? `${rs} site${rs > 1 ? 's' : ''} concerné${rs > 1 ? 's' : ''}` : null,
-      surcout: ac != null && ac > 0 ? `${ac} facture${ac > 1 ? 's' : ''} impactée${ac > 1 ? 's' : ''}` : null,
+      surcout:
+        ac != null && ac > 0
+          ? `${ac} facture${ac > 1 ? 's' : ''} impactée${ac > 1 ? 's' : ''}`
+          : null,
       optimisation: null,
     };
   }, [kpis, billingSummary]);
@@ -184,7 +201,10 @@ export default function ImpactDecisionPanel({ kpis }) {
       </div>
 
       {/* ── Achats d'energie V36 ── */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4" data-testid="purchase-section">
+      <div
+        className="rounded-lg border border-gray-200 bg-white p-4"
+        data-testid="purchase-section"
+      >
         <div className="flex items-center gap-2 mb-3">
           <ShoppingCart size={16} className="text-blue-500 shrink-0" />
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -203,7 +223,10 @@ export default function ImpactDecisionPanel({ kpis }) {
               <p className="text-[10px] text-gray-500">Contrats {'\u2264'} 90j</p>
             </button>
             <div className="p-2">
-              <p className="text-lg font-bold text-gray-900">{purchaseSignals.coverageContractsPct}{'\u202f'}%</p>
+              <p className="text-lg font-bold text-gray-900">
+                {purchaseSignals.coverageContractsPct}
+                {'\u202f'}%
+              </p>
               <p className="text-[10px] text-gray-500">Couverture contrats</p>
             </div>
             <button
@@ -211,7 +234,9 @@ export default function ImpactDecisionPanel({ kpis }) {
               className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
               aria-label="Voir les sites sans contrat"
             >
-              <p className="text-lg font-bold text-gray-900">{purchaseSignals.missingContractsCount}</p>
+              <p className="text-lg font-bold text-gray-900">
+                {purchaseSignals.missingContractsCount}
+              </p>
               <p className="text-[10px] text-gray-500">Sites sans contrat</p>
             </button>
           </div>
@@ -229,23 +254,32 @@ export default function ImpactDecisionPanel({ kpis }) {
       </div>
 
       {/* ── Leviers activables V33 + CTA V34 ── */}
-      <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4" data-testid="levers-section">
+      <div
+        className="rounded-lg border border-gray-200 bg-gray-50/50 p-4"
+        data-testid="levers-section"
+      >
         {levers.totalLevers > 0 ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap size={16} className="text-amber-500 shrink-0" />
                 <p className="text-sm font-semibold text-gray-900">
-                  {levers.totalLevers} levier{levers.totalLevers > 1 ? 's' : ''} activable{levers.totalLevers > 1 ? 's' : ''}
+                  {levers.totalLevers} levier{levers.totalLevers > 1 ? 's' : ''} activable
+                  {levers.totalLevers > 1 ? 's' : ''}
                 </p>
               </div>
               <span className="text-xs text-gray-400">
                 {[
-                  levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformité`,
-                  levers.leversByType.facturation > 0 && `${levers.leversByType.facturation} facturation`,
-                  levers.leversByType.optimisation > 0 && `${levers.leversByType.optimisation} optimisation`,
+                  levers.leversByType.conformite > 0 &&
+                    `${levers.leversByType.conformite} conformité`,
+                  levers.leversByType.facturation > 0 &&
+                    `${levers.leversByType.facturation} facturation`,
+                  levers.leversByType.optimisation > 0 &&
+                    `${levers.leversByType.optimisation} optimisation`,
                   levers.leversByType.achat > 0 && `${levers.leversByType.achat} achat`,
-                ].filter(Boolean).join(' \u2022 ')}
+                ]
+                  .filter(Boolean)
+                  .join(' \u2022 ')}
               </span>
             </div>
             <div className="space-y-2" data-testid="levers-list">
@@ -263,9 +297,15 @@ export default function ImpactDecisionPanel({ kpis }) {
                     )}
                     {/* V43: Rationale bullets from site signals */}
                     {lever.reasons_fr && lever.reasons_fr.length > 0 && (
-                      <ul className="mt-1 space-y-0.5" data-testid={`lever-reasons-${lever.actionKey}`}>
+                      <ul
+                        className="mt-1 space-y-0.5"
+                        data-testid={`lever-reasons-${lever.actionKey}`}
+                      >
                         {lever.reasons_fr.map((r, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-[10px] text-gray-500">
+                          <li
+                            key={i}
+                            className="flex items-start gap-1.5 text-[10px] text-gray-500"
+                          >
                             <span className="mt-1 w-1 h-1 rounded-full bg-gray-300 shrink-0" />
                             {r}
                           </li>
@@ -276,11 +316,15 @@ export default function ImpactDecisionPanel({ kpis }) {
                     {hasProofData(lever) && (
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-amber-600 font-medium truncate">
-                          {'Preuve\u00a0: '}{getProofLabel(lever)}
+                          {'Preuve\u00a0: '}
+                          {getProofLabel(lever)}
                         </span>
                         <button
                           className="text-[10px] text-amber-600 underline shrink-0"
-                          onClick={(e) => { e.stopPropagation(); navigate(buildProofLink(lever)); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(buildProofLink(lever));
+                          }}
                           aria-label={`Déposer preuve pour : ${lever.label}`}
                         >
                           Déposer
@@ -320,11 +364,7 @@ export default function ImpactDecisionPanel({ kpis }) {
               ))}
             </ul>
           </div>
-          <Button
-            size="sm"
-            className="shrink-0 mt-1"
-            onClick={() => navigate(reco.ctaPath)}
-          >
+          <Button size="sm" className="shrink-0 mt-1" onClick={() => navigate(reco.ctaPath)}>
             {reco.cta} <ArrowRight size={14} />
           </Button>
         </div>

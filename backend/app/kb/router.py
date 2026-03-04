@@ -3,6 +3,7 @@ PROMEOS KB - FastAPI Router
 API endpoints for KB management, search, and apply.
 Hardened with input validation, payload limits, and proper error handling.
 """
+
 import hashlib
 from pathlib import Path
 
@@ -109,7 +110,7 @@ def list_items(
     status: Optional[str] = Query(None, description="Filter by status: draft|validated|deprecated"),
     include_drafts: bool = Query(False, description="Include draft items (default: False, only validated)"),
     limit: int = Query(100, ge=1, le=MAX_LIST_LIMIT),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
 ):
     """
     List KB items with optional filters.
@@ -132,21 +133,10 @@ def list_items(
         if not status_filter and not include_drafts:
             status_filter = "validated"
 
-        items = store.get_items(
-            domain=domain,
-            type_filter=type,
-            status=status_filter,
-            limit=limit,
-            offset=offset
-        )
+        items = store.get_items(domain=domain, type_filter=type, status=status_filter, limit=limit, offset=offset)
         total = store.count_items(domain=domain, status=status_filter)
 
-        return {
-            "items": items,
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        }
+        return {"items": items, "total": total, "limit": limit, "offset": offset}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)[:200]}")
 
@@ -173,15 +163,10 @@ def search_items(request: SearchRequest):
             type_filter=request.type,
             tags=request.tags,
             include_drafts=request.include_drafts,
-            limit=request.limit
+            limit=request.limit,
         )
 
-        return {
-            "query": request.q,
-            "results": results,
-            "count": len(results),
-            "include_drafts": request.include_drafts
-        }
+        return {"query": request.q, "results": results, "count": len(results), "include_drafts": request.include_drafts}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search error: {str(e)[:200]}")
 
@@ -194,15 +179,13 @@ def apply_kb(request: ApplyRequest):
     """
     try:
         result = service.apply(
-            site_context=request.site_context,
-            domain=request.domain,
-            allow_drafts=request.allow_drafts
+            site_context=request.site_context, domain=request.domain, allow_drafts=request.allow_drafts
         )
 
         # Add guard metadata to response
         result["guards"] = {
             "allow_drafts": request.allow_drafts,
-            "mode": "exploration" if request.allow_drafts else "decisional"
+            "mode": "exploration" if request.allow_drafts else "decisional",
         }
 
         return result
@@ -217,10 +200,7 @@ def get_stats():
         kb_stats = store.get_stats()
         index_stats = indexer.get_index_stats()
 
-        return {
-            "kb": kb_stats,
-            "index": index_stats
-        }
+        return {"kb": kb_stats, "index": index_stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stats error: {str(e)[:200]}")
 
@@ -240,6 +220,7 @@ def list_docs(
 
 
 # V38: Memobox upload + lifecycle endpoints
+
 
 class DocStatusRequest(BaseModel):
     status: str
@@ -383,16 +364,13 @@ def get_doc(doc_id: str):
 
     chunks = store.get_chunks_by_doc(doc_id)
 
-    return {
-        "doc": doc,
-        "chunks": chunks,
-        "nb_chunks": len(chunks)
-    }
+    return {"doc": doc, "chunks": chunks, "nb_chunks": len(chunks)}
 
 
 # ========================================
 # Bill Intelligence KB endpoints (T3-KB → T5-KB)
 # ========================================
+
 
 class IngestRequest(BaseModel):
     doc_id: str
@@ -436,6 +414,7 @@ def ingest_doc(request: IngestRequest):
     """
     try:
         from .doc_ingest import ingest_document
+
         result = ingest_document(
             doc_id=request.doc_id,
             title=request.title,
@@ -465,6 +444,7 @@ def ingest_referential():
     """
     try:
         from .doc_ingest import ingest_referential_snapshots
+
         return ingest_referential_snapshots()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ingest error: {str(e)[:200]}")
@@ -488,6 +468,7 @@ def search_docs(request: DocSearchRequest):
     """
     try:
         from .doc_ingest import search_doc_chunks
+
         results = search_doc_chunks(
             query=request.q,
             doc_id=request.doc_id,
@@ -510,6 +491,7 @@ def extract_rule(request: ExtractRuleRequest):
     """
     try:
         from .citations import create_rule_card
+
         card = create_rule_card(
             rule_card_id=request.rule_card_id,
             name=request.name,
@@ -543,6 +525,7 @@ def list_rule_cards(
     """List RuleCards with optional filters."""
     try:
         from .citations import get_rule_cards
+
         cards = get_rule_cards(scope=scope, category=category, status=status, limit=limit)
         return {"rule_cards": cards, "count": len(cards)}
     except Exception as e:
@@ -553,6 +536,7 @@ def list_rule_cards(
 def get_rule_card_endpoint(rule_card_id: str):
     """Get a RuleCard by ID with its citations."""
     from .citations import get_rule_card
+
     card = get_rule_card(rule_card_id)
     if not card:
         raise HTTPException(status_code=404, detail=f"RuleCard {rule_card_id} not found")
@@ -563,6 +547,7 @@ def get_rule_card_endpoint(rule_card_id: str):
 def list_citations_for_doc(doc_id: str):
     """List all citations for a document."""
     from .citations import get_citations_by_doc
+
     citations = get_citations_by_doc(doc_id)
     return {"doc_id": doc_id, "citations": citations, "count": len(citations)}
 
@@ -571,6 +556,7 @@ def list_citations_for_doc(doc_id: str):
 def rule_card_stats_endpoint():
     """Get rule card + citation statistics including P5 compliance."""
     from .citations import get_rule_card_stats
+
     return get_rule_card_stats()
 
 

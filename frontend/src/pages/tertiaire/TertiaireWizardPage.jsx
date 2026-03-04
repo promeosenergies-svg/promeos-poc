@@ -6,22 +6,56 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Building2, MapPin, Users, Calendar, CheckCircle2,
-  ArrowRight, ArrowLeft, Loader2, AlertTriangle,
+  Building2,
+  MapPin,
+  Users,
+  Calendar,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Input } from '../../ui';
 import {
-  createTertiaireEfa, addTertiaireResponsibility, getTertiaireCatalog,
+  createTertiaireEfa,
+  addTertiaireResponsibility,
+  getTertiaireCatalog,
 } from '../../services/api';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
 export const STEPS = [
   { key: 'nom', label: 'Identification', icon: Building2, description: "Nom et type de l'EFA" },
-  { key: 'role', label: 'Rôle assujetti', icon: Users, description: 'Propriétaire, locataire ou mandataire' },
-  { key: 'batiments', label: 'Bâtiments', icon: MapPin, description: 'Sélectionner les bâtiments du patrimoine' },
-  { key: 'responsable', label: 'Responsable', icon: Users, description: 'Contact du responsable EFA' },
-  { key: 'reporting', label: 'Reporting', icon: Calendar, description: 'Période et année de référence' },
-  { key: 'confirmation', label: 'Confirmation', icon: CheckCircle2, description: 'Vérification et création' },
+  {
+    key: 'role',
+    label: 'Rôle assujetti',
+    icon: Users,
+    description: 'Propriétaire, locataire ou mandataire',
+  },
+  {
+    key: 'batiments',
+    label: 'Bâtiments',
+    icon: MapPin,
+    description: 'Sélectionner les bâtiments du patrimoine',
+  },
+  {
+    key: 'responsable',
+    label: 'Responsable',
+    icon: Users,
+    description: 'Contact du responsable EFA',
+  },
+  {
+    key: 'reporting',
+    label: 'Reporting',
+    icon: Calendar,
+    description: 'Période et année de référence',
+  },
+  {
+    key: 'confirmation',
+    label: 'Confirmation',
+    icon: CheckCircle2,
+    description: 'Vérification et création',
+  },
 ];
 
 const ROLES = [
@@ -73,9 +107,7 @@ export default function TertiaireWizardPage() {
         // V42: Auto-select buildings from prefill site_id
         // V42+V44: Auto-select buildings + prefill EFA name from site
         if (prefillSiteId && data?.sites) {
-          const targetSite = data.sites.find(
-            (s) => String(s.site_id) === prefillSiteId
-          );
+          const targetSite = data.sites.find((s) => String(s.site_id) === prefillSiteId);
           if (targetSite) {
             // V44: Prefill EFA name from site name
             updateField('nom', `EFA — ${targetSite.site_nom}`);
@@ -102,14 +134,22 @@ export default function TertiaireWizardPage() {
 
   const canNext = () => {
     switch (step) {
-      case 0: return form.nom.trim().length > 0;
-      case 1: return !!form.role_assujetti;
-      case 2: return form.selectedBuildings.length > 0
-               && form.selectedBuildings.every((b) => !!b.usage_label);
-      case 3: return true;
-      case 4: return true;
-      case 5: return true;
-      default: return false;
+      case 0:
+        return form.nom.trim().length > 0;
+      case 1:
+        return !!form.role_assujetti;
+      case 2:
+        return (
+          form.selectedBuildings.length > 0 && form.selectedBuildings.every((b) => !!b.usage_label)
+        );
+      case 3:
+        return true;
+      case 4:
+        return true;
+      case 5:
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -150,8 +190,10 @@ export default function TertiaireWizardPage() {
   const toggleBuilding = (bat, siteName) => {
     const exists = form.selectedBuildings.find((b) => b.building_id === bat.id);
     if (exists) {
-      updateField('selectedBuildings',
-        form.selectedBuildings.filter((b) => b.building_id !== bat.id));
+      updateField(
+        'selectedBuildings',
+        form.selectedBuildings.filter((b) => b.building_id !== bat.id)
+      );
     } else {
       updateField('selectedBuildings', [
         ...form.selectedBuildings,
@@ -167,10 +209,12 @@ export default function TertiaireWizardPage() {
   };
 
   const setUsageForBuilding = (buildingId, usageLabel) => {
-    updateField('selectedBuildings',
+    updateField(
+      'selectedBuildings',
       form.selectedBuildings.map((b) =>
         b.building_id === buildingId ? { ...b, usage_label: usageLabel } : b
-      ));
+      )
+    );
   };
 
   const totalSurface = form.selectedBuildings.reduce((s, b) => s + (b.surface_m2 || 0), 0);
@@ -266,13 +310,10 @@ export default function TertiaireWizardPage() {
                     Aucun bâtiment dans le patrimoine
                   </p>
                   <p className="text-xs text-amber-600 mt-1 mb-3">
-                    Pour créer une EFA, vous devez d'abord enregistrer vos bâtiments dans le module Patrimoine.
+                    Pour créer une EFA, vous devez d'abord enregistrer vos bâtiments dans le module
+                    Patrimoine.
                   </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate('/patrimoine')}
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => navigate('/patrimoine')}>
                     Compléter le patrimoine
                   </Button>
                 </div>
@@ -281,59 +322,68 @@ export default function TertiaireWizardPage() {
               {catalog && catalog.total_buildings > 0 && (
                 <>
                   <p className="text-sm text-gray-600">
-                    Sélectionnez un ou plusieurs bâtiments, puis choisissez l'usage OPERAT pour chacun :
+                    Sélectionnez un ou plusieurs bâtiments, puis choisissez l'usage OPERAT pour
+                    chacun :
                   </p>
-                  {catalog.sites.map((site) => (
-                    site.batiments.length > 0 && (
-                      <div key={site.site_id} className="border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                          {site.site_nom}{site.ville ? ` — ${site.ville}` : ''}
-                        </p>
-                        {site.batiments.map((bat) => {
-                          const selected = form.selectedBuildings.find(
-                            (b) => b.building_id === bat.id
-                          );
-                          return (
-                            <div key={bat.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                              <input
-                                type="checkbox"
-                                checked={!!selected}
-                                onChange={() => toggleBuilding(bat, site.site_nom)}
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">{bat.nom}</p>
-                                <p className="text-xs text-gray-400">
-                                  {bat.surface_m2} m²
-                                  {bat.annee_construction ? ` · ${bat.annee_construction}` : ''}
-                                </p>
+                  {catalog.sites.map(
+                    (site) =>
+                      site.batiments.length > 0 && (
+                        <div key={site.site_id} className="border border-gray-200 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                            {site.site_nom}
+                            {site.ville ? ` — ${site.ville}` : ''}
+                          </p>
+                          {site.batiments.map((bat) => {
+                            const selected = form.selectedBuildings.find(
+                              (b) => b.building_id === bat.id
+                            );
+                            return (
+                              <div
+                                key={bat.id}
+                                className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!selected}
+                                  onChange={() => toggleBuilding(bat, site.site_nom)}
+                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">{bat.nom}</p>
+                                  <p className="text-xs text-gray-400">
+                                    {bat.surface_m2} m²
+                                    {bat.annee_construction ? ` · ${bat.annee_construction}` : ''}
+                                  </p>
+                                </div>
+                                {selected && (
+                                  <select
+                                    value={selected.usage_label}
+                                    onChange={(e) => setUsageForBuilding(bat.id, e.target.value)}
+                                    className="w-48 text-sm border border-gray-300 rounded-md px-2 py-1"
+                                    data-testid={`usage-select-${bat.id}`}
+                                  >
+                                    <option value="">Usage OPERAT…</option>
+                                    {USAGES.map((u) => (
+                                      <option key={u} value={u}>
+                                        {u}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
                               </div>
-                              {selected && (
-                                <select
-                                  value={selected.usage_label}
-                                  onChange={(e) => setUsageForBuilding(bat.id, e.target.value)}
-                                  className="w-48 text-sm border border-gray-300 rounded-md px-2 py-1"
-                                  data-testid={`usage-select-${bat.id}`}
-                                >
-                                  <option value="">Usage OPERAT…</option>
-                                  {USAGES.map((u) => (
-                                    <option key={u} value={u}>{u}</option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )
-                  ))}
+                            );
+                          })}
+                        </div>
+                      )
+                  )}
 
                   {/* Surface totale (lecture seule) */}
                   {form.selectedBuildings.length > 0 && (
                     <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-3">
                       <p className="text-xs text-indigo-600 font-medium">
-                        Surface totale : {totalSurface.toLocaleString('fr-FR')} m²
-                        ({form.selectedBuildings.length} bâtiment{form.selectedBuildings.length > 1 ? 's' : ''})
+                        Surface totale : {totalSurface.toLocaleString('fr-FR')} m² (
+                        {form.selectedBuildings.length} bâtiment
+                        {form.selectedBuildings.length > 1 ? 's' : ''})
                       </p>
                     </div>
                   )}
@@ -386,32 +436,44 @@ export default function TertiaireWizardPage() {
               <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
                 {[
                   ['Nom', form.nom],
-                  ['Rôle', ROLES.find((r) => r.value === form.role_assujetti)?.label || form.role_assujetti],
-                  ['Bâtiments', form.selectedBuildings.length > 0
-                    ? form.selectedBuildings.map((b) => `${b.nom} (${b.surface_m2} m² — ${b.usage_label})`).join(', ')
-                    : 'Aucun'],
-                  ['Surface totale', form.selectedBuildings.length > 0
-                    ? `${totalSurface.toLocaleString('fr-FR')} m²`
-                    : 'Non renseignée'],
+                  [
+                    'Rôle',
+                    ROLES.find((r) => r.value === form.role_assujetti)?.label ||
+                      form.role_assujetti,
+                  ],
+                  [
+                    'Bâtiments',
+                    form.selectedBuildings.length > 0
+                      ? form.selectedBuildings
+                          .map((b) => `${b.nom} (${b.surface_m2} m² — ${b.usage_label})`)
+                          .join(', ')
+                      : 'Aucun',
+                  ],
+                  [
+                    'Surface totale',
+                    form.selectedBuildings.length > 0
+                      ? `${totalSurface.toLocaleString('fr-FR')} m²`
+                      : 'Non renseignée',
+                  ],
                   ['Responsable', form.resp_entity || 'Non renseigné'],
                   ['Email', form.resp_email || 'Non renseigné'],
                   ['Début reporting', form.reporting_start || 'Non renseigné'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between px-4 py-2.5">
                     <span className="text-xs text-gray-500">{label}</span>
-                    <span className="text-xs font-medium text-gray-900 max-w-[60%] text-right">{value}</span>
+                    <span className="text-xs font-medium text-gray-900 max-w-[60%] text-right">
+                      {value}
+                    </span>
                   </div>
                 ))}
               </div>
 
               {/* Preuves (optionnel) — ne bloque pas la création */}
               <div className="mt-4 p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50/50">
-                <p className="text-xs text-amber-700 font-medium mb-2">
-                  Preuves (optionnel)
-                </p>
+                <p className="text-xs text-amber-700 font-medium mb-2">Preuves (optionnel)</p>
                 <p className="text-[11px] text-amber-600 mb-2">
-                  Vous pouvez déposer des justificatifs OPERAT (attestation, dossier de modulation…) dans la Mémobox.
-                  Cette étape est facultative et peut être réalisée ultérieurement.
+                  Vous pouvez déposer des justificatifs OPERAT (attestation, dossier de modulation…)
+                  dans la Mémobox. Cette étape est facultative et peut être réalisée ultérieurement.
                 </p>
                 <ProofDepositCTA
                   hint={[
@@ -431,7 +493,10 @@ export default function TertiaireWizardPage() {
 
           {/* Erreur de soumission */}
           {submitError && (
-            <div data-testid="wizard-submit-error" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 flex items-start gap-2">
+            <div
+              data-testid="wizard-submit-error"
+              className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 flex items-start gap-2"
+            >
               <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{submitError}</p>
             </div>
@@ -442,7 +507,7 @@ export default function TertiaireWizardPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => step > 0 ? setStep(step - 1) : navigate('/conformite/tertiaire')}
+              onClick={() => (step > 0 ? setStep(step - 1) : navigate('/conformite/tertiaire'))}
             >
               <ArrowLeft size={14} /> {step > 0 ? 'Précédent' : 'Annuler'}
             </Button>
@@ -453,7 +518,13 @@ export default function TertiaireWizardPage() {
               </Button>
             ) : (
               <Button size="sm" onClick={handleSubmit} disabled={saving}>
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Création…</> : 'Créer l\'EFA'}
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Création…
+                  </>
+                ) : (
+                  "Créer l'EFA"
+                )}
               </Button>
             )}
           </div>

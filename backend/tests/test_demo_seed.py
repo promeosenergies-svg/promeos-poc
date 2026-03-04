@@ -4,8 +4,10 @@ PROMEOS — Tests Demo Seed (regression guards)
 2. Seed is idempotent (reset + re-seed does not crash)
 3. Reset hard actually deletes all rows
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import random
@@ -49,12 +51,20 @@ def seeded_db(db):
     db.flush()
 
     meter1 = Meter(
-        id=1, site_id=1, meter_id="M001", name="Compteur A",
-        energy_vector=EnergyVector.ELECTRICITY, subscribed_power_kva=100,
+        id=1,
+        site_id=1,
+        meter_id="M001",
+        name="Compteur A",
+        energy_vector=EnergyVector.ELECTRICITY,
+        subscribed_power_kva=100,
     )
     meter2 = Meter(
-        id=2, site_id=2, meter_id="M002", name="Compteur B",
-        energy_vector=EnergyVector.ELECTRICITY, subscribed_power_kva=60,
+        id=2,
+        site_id=2,
+        meter_id="M002",
+        name="Compteur B",
+        energy_vector=EnergyVector.ELECTRICITY,
+        subscribed_power_kva=60,
     )
     db.add_all([meter1, meter2])
     db.commit()
@@ -64,8 +74,8 @@ def seeded_db(db):
 
 # ── Timestamp uniqueness ────────────────────────────────────────
 
-class TestMonthlyReadingsUniqueness:
 
+class TestMonthlyReadingsUniqueness:
     def test_no_duplicate_timestamps_36_months(self, seeded_db):
         """36 months of readings must produce unique (meter_id, timestamp) pairs."""
         from services.demo_seed.gen_readings import generate_monthly_readings
@@ -73,7 +83,11 @@ class TestMonthlyReadingsUniqueness:
         db, meters = seeded_db
         rng = random.Random(42)
         count = generate_monthly_readings(
-            db, meters, {1: "office", 2: "hotel"}, months=36, rng=rng,
+            db,
+            meters,
+            {1: "office", 2: "hotel"},
+            months=36,
+            rng=rng,
         )
         db.commit()
 
@@ -82,11 +96,8 @@ class TestMonthlyReadingsUniqueness:
         # Check uniqueness: count distinct vs total
         total = db.query(MeterReading).count()
         from sqlalchemy import func
-        distinct = db.query(
-            func.count(func.distinct(
-                MeterReading.meter_id.op("||")(MeterReading.timestamp)
-            ))
-        ).scalar()
+
+        distinct = db.query(func.count(func.distinct(MeterReading.meter_id.op("||")(MeterReading.timestamp)))).scalar()
         assert total == distinct, f"Duplicate readings detected: {total} total vs {distinct} distinct"
 
     def test_no_duplicate_timestamps_48_months(self, seeded_db):
@@ -96,7 +107,11 @@ class TestMonthlyReadingsUniqueness:
         db, meters = seeded_db
         rng = random.Random(99)
         count = generate_monthly_readings(
-            db, meters, {1: "warehouse", 2: "school"}, months=48, rng=rng,
+            db,
+            meters,
+            {1: "warehouse", 2: "school"},
+            months=48,
+            rng=rng,
         )
         db.commit()
 
@@ -128,7 +143,11 @@ class TestMonthlyReadingsUniqueness:
         db, meters = seeded_db
         rng = random.Random(42)
         count = generate_monthly_readings(
-            db, meters, {1: "office", 2: "office"}, months=12, rng=rng,
+            db,
+            meters,
+            {1: "office", 2: "office"},
+            months=12,
+            rng=rng,
         )
         db.commit()
 
@@ -143,8 +162,8 @@ class TestMonthlyReadingsUniqueness:
 
 # ── Seed idempotency (reset + re-seed) ─────────────────────────
 
-class TestSeedIdempotency:
 
+class TestSeedIdempotency:
     def test_double_seed_no_crash(self, seeded_db):
         """Seeding twice (with reset) must not crash on UNIQUE constraint."""
         from services.demo_seed.gen_readings import generate_monthly_readings
@@ -189,15 +208,13 @@ class TestSeedIdempotency:
         count_after = db.query(MeterReading).count()
 
         # Count should not increase (duplicates ignored)
-        assert count_after == count_before, (
-            f"Duplicates inserted: {count_after} vs {count_before}"
-        )
+        assert count_after == count_before, f"Duplicates inserted: {count_after} vs {count_before}"
 
 
 # ── Reset hard ─────────────────────────────────────────────────
 
-class TestResetHard:
 
+class TestResetHard:
     def test_reset_hard_deletes_readings(self, seeded_db):
         """reset(mode='hard') must delete all MeterReading rows."""
         from services.demo_seed.gen_readings import generate_monthly_readings

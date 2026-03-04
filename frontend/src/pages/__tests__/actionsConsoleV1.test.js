@@ -116,7 +116,9 @@ describe('B · Zero hardcoded /actions URL in navigate()', () => {
 
     it(`${fileName}: imports toActionsList from route registry`, () => {
       const code = readSrc(...pathParts);
-      expect(code).toMatch(/import\s*\{[^}]*toActionsList[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/);
+      expect(code).toMatch(
+        /import\s*\{[^}]*toActionsList[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/
+      );
     });
   });
 });

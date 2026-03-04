@@ -6,8 +6,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
 } from 'recharts';
 import {
   getConsumptionInsights,
@@ -18,7 +23,17 @@ import {
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { normalizeId } from './consumption/helpers';
-import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs, SkeletonCard } from '../ui';
+import {
+  Card,
+  CardBody,
+  Badge,
+  Button,
+  PageShell,
+  Drawer,
+  Tooltip,
+  Tabs,
+  SkeletonCard,
+} from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -27,15 +42,15 @@ import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer } from '../services/routes';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
-import {
-  Zap, Info,
-  ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
-} from 'lucide-react';
+import { Zap, Info, ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 
 // ---- Constants ----
 
 const SEVERITY_BADGE = {
-  critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
+  critical: 'crit',
+  high: 'warn',
+  medium: 'info',
+  low: 'neutral',
 };
 
 const TYPE_LABELS = {
@@ -73,10 +88,17 @@ export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
 }
 
 export function computeSummaryFromInsights(insights) {
-  if (!insights?.length) return { total_insights: 0, sites_with_insights: 0, total_loss_kwh: 0, total_loss_eur: 0, by_type: {} };
+  if (!insights?.length)
+    return {
+      total_insights: 0,
+      sites_with_insights: 0,
+      total_loss_kwh: 0,
+      total_loss_eur: 0,
+      by_type: {},
+    };
   return {
     total_insights: insights.length,
-    sites_with_insights: new Set(insights.map(i => i.site_id).filter(Boolean)).size,
+    sites_with_insights: new Set(insights.map((i) => i.site_id).filter(Boolean)).size,
     total_loss_kwh: insights.reduce((s, i) => s + (i.estimated_loss_kwh || 0), 0),
     total_loss_eur: insights.reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
     by_type: insights.reduce((acc, i) => ({ ...acc, [i.type]: (acc[i.type] || 0) + 1 }), {}),
@@ -91,16 +113,16 @@ export function generateComparisonChart(insight) {
 
   for (let h = 0; h < 24; h++) {
     const isOffice = h >= 8 && h <= 19;
-    const baseline = isOffice ? 40 + Math.sin((h - 8) / 11 * Math.PI) * 30 : 8;
+    const baseline = isOffice ? 40 + Math.sin(((h - 8) / 11) * Math.PI) * 30 : 8;
 
     let actual = baseline;
     // Deterministic pseudo-random based on seed + hour
-    const noise = ((seed * 31 + h * 17) % 100) / 100 * 3;
+    const noise = (((seed * 31 + h * 17) % 100) / 100) * 3;
 
     if (type === 'hors_horaires' && !isOffice) {
       actual = baseline + (excessKwh / 14) * 0.8 + noise;
     } else if (type === 'base_load') {
-      actual = baseline + excessKwh / 24 * 0.3 + noise * 0.5;
+      actual = baseline + (excessKwh / 24) * 0.3 + noise * 0.5;
     } else if (type === 'pointe' && h >= 10 && h <= 14) {
       actual = baseline + excessKwh / 4 + noise * 2;
     } else if (type === 'derive') {
@@ -130,7 +152,7 @@ function SeverityBadge({ severity }) {
 }
 
 function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
-  const periods = insights.filter(i => i.period_start && i.period_end);
+  const periods = insights.filter((i) => i.period_start && i.period_end);
   const from = periods.length
     ? periods.reduce((m, i) => (i.period_start < m ? i.period_start : m), periods[0].period_start)
     : null;
@@ -139,7 +161,8 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
     : null;
   const nbJours = from && to ? Math.round((new Date(to) - new Date(from)) / 86400000) : null;
 
-  const defaultPrice = insights.find(i => i.metrics?.price_ref_eur_kwh)?.metrics.price_ref_eur_kwh || 0.15;
+  const defaultPrice =
+    insights.find((i) => i.metrics?.price_ref_eur_kwh)?.metrics.price_ref_eur_kwh || 0.15;
   const price = customPrice ?? defaultPrice;
   const totalKwh = summary?.total_loss_kwh || 0;
   const recalcEur = recalcLosses(totalKwh, customPrice, defaultPrice);
@@ -182,7 +205,9 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-400">CO₂e évitable</p>
-              <p className="text-lg font-bold text-emerald-600">{Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg</p>
+              <p className="text-lg font-bold text-emerald-600">
+                {Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg
+              </p>
             </div>
           </div>
         </div>
@@ -194,17 +219,38 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
 function SummaryCards({ summary, customPrice }) {
   if (!summary) return null;
   const defaultPrice = 0.15;
-  const lossEur = customPrice != null
-    ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
-    : Math.round(summary.total_loss_eur || 0);
+  const lossEur =
+    customPrice != null
+      ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
+      : Math.round(summary.total_loss_eur || 0);
 
   const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH);
   const cards = [
-    { label: 'Insights détectés', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
-    { label: 'Sites analysés', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+    {
+      label: 'Insights détectés',
+      value: summary.total_insights,
+      color: 'text-blue-700',
+      bg: 'bg-blue-50',
+    },
+    {
+      label: 'Sites analysés',
+      value: summary.sites_with_insights,
+      color: 'text-indigo-700',
+      bg: 'bg-indigo-50',
+    },
     { label: 'Pertes estimées', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
-    { label: 'Pertes kWh', value: fmtKwh(Math.round(summary.total_loss_kwh || 0)), color: 'text-orange-700', bg: 'bg-orange-50' },
-    { label: 'CO₂e évitable', value: `${totalCo2eKg.toLocaleString('fr-FR')} kg`, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+    {
+      label: 'Pertes kWh',
+      value: fmtKwh(Math.round(summary.total_loss_kwh || 0)),
+      color: 'text-orange-700',
+      bg: 'bg-orange-50',
+    },
+    {
+      label: 'CO₂e évitable',
+      value: `${totalCo2eKg.toLocaleString('fr-FR')} kg`,
+      color: 'text-emerald-700',
+      bg: 'bg-emerald-50',
+    },
   ];
 
   return (
@@ -254,7 +300,9 @@ function RecommendedAction({ action }) {
             </span>
           )}
           {action.effort && (
-            <span className={`text-xs px-2 py-0.5 rounded ${EFFORT_COLOR[action.priority] || EFFORT_COLOR.medium}`}>
+            <span
+              className={`text-xs px-2 py-0.5 rounded ${EFFORT_COLOR[action.priority] || EFFORT_COLOR.medium}`}
+            >
               Effort: {action.effort}
             </span>
           )}
@@ -272,13 +320,17 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
       className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
       onClick={() => onRowClick(insight)}
     >
-      <td className="py-3 px-4 text-sm text-gray-800 font-medium">{insight.site_nom || `Site #${insight.site_id}`}</td>
+      <td className="py-3 px-4 text-sm text-gray-800 font-medium">
+        {insight.site_nom || `Site #${insight.site_id}`}
+      </td>
       <td className="py-3 px-4 text-sm">
         <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
           {TYPE_LABELS[insight.type] || insight.type}
         </span>
       </td>
-      <td className="py-3 px-4 text-sm"><SeverityBadge severity={insight.severity} /></td>
+      <td className="py-3 px-4 text-sm">
+        <SeverityBadge severity={insight.severity} />
+      </td>
       <td className="py-3 px-4 text-sm text-gray-600 max-w-md truncate">{insight.message}</td>
       <td className="py-3 px-4 text-sm text-right text-red-600 font-medium">
         {insight.estimated_loss_eur ? fmtEur(Math.round(insight.estimated_loss_eur)) : '—'}
@@ -287,14 +339,21 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
         {insight.estimated_loss_kwh ? fmtKwh(Math.round(insight.estimated_loss_kwh)) : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-right text-emerald-600">
-        {insight.estimated_loss_kwh ? `${Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')}` : '—'}
+        {insight.estimated_loss_kwh
+          ? `${Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')}`
+          : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-center">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>
+          {statusCfg.label}
+        </span>
       </td>
       <td className="py-3 px-1 text-center">
         <button
-          onClick={(e) => { e.stopPropagation(); onCreateAction(insight); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateAction(insight);
+          }}
           className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"
           title="Creer une action"
         >
@@ -343,11 +402,20 @@ function FlexScoreRing({ score }) {
     <svg width="72" height="72" className="shrink-0">
       <circle cx="36" cy="36" r={r} fill="none" stroke="#f1f5f9" strokeWidth="6" />
       <circle
-        cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="6"
-        strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)}
-        strokeLinecap="round" transform="rotate(-90 36 36)"
+        cx="36"
+        cy="36"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="6"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - pct / 100)}
+        strokeLinecap="round"
+        transform="rotate(-90 36 36)"
       />
-      <text x="36" y="40" textAnchor="middle" className="text-base font-bold" fill={color}>{pct}</text>
+      <text x="36" y="40" textAnchor="middle" className="text-base font-bold" fill={color}>
+        {pct}
+      </text>
     </svg>
   );
 }
@@ -365,8 +433,10 @@ function FlexTab({ siteId }) {
       .finally(() => setLoading(false));
   }, [siteId]);
 
-  if (loading) return <p className="text-sm text-gray-400 text-center py-6">Calcul du potentiel flex...</p>;
-  if (!flex || flex.error) return <p className="text-sm text-gray-400 text-center py-6">Potentiel flex non disponible.</p>;
+  if (loading)
+    return <p className="text-sm text-gray-400 text-center py-6">Calcul du potentiel flex...</p>;
+  if (!flex || flex.error)
+    return <p className="text-sm text-gray-400 text-center py-6">Potentiel flex non disponible.</p>;
 
   return (
     <div className="space-y-4">
@@ -377,7 +447,8 @@ function FlexTab({ siteId }) {
           <p className="text-sm font-semibold text-gray-800">Potentiel flexibilite</p>
           <p className="text-xs text-gray-500">
             Score {flex.flex_potential_score}/100
-            {flex.inputs_used?.insights_count > 0 && ` · ${flex.inputs_used.insights_count} insight(s) analyses`}
+            {flex.inputs_used?.insights_count > 0 &&
+              ` · ${flex.inputs_used.insights_count} insight(s) analyses`}
             {flex.inputs_used?.archetype && ` · ${flex.inputs_used.archetype}`}
           </p>
         </div>
@@ -392,9 +463,15 @@ function FlexTab({ siteId }) {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">{LEVER_ICONS[lever.id] || '⚡'}</span>
             <span className="text-sm font-semibold text-gray-800">{lever.label}</span>
-            <span className={`ml-auto text-xs font-bold ${
-              lever.score >= 50 ? 'text-green-700' : lever.score >= 20 ? 'text-amber-700' : 'text-gray-400'
-            }`}>
+            <span
+              className={`ml-auto text-xs font-bold ${
+                lever.score >= 50
+                  ? 'text-green-700'
+                  : lever.score >= 20
+                    ? 'text-amber-700'
+                    : 'text-gray-400'
+              }`}
+            >
               {lever.score}/100
             </span>
           </div>
@@ -416,8 +493,10 @@ function FlexTab({ siteId }) {
         </div>
       ))}
 
-      {flex.levers.every(l => l.score === 0) && (
-        <p className="text-xs text-gray-400 text-center">Aucun levier flex identifié pour ce site.</p>
+      {flex.levers.every((l) => l.score === 0) && (
+        <p className="text-xs text-gray-400 text-center">
+          Aucun levier flex identifié pour ce site.
+        </p>
       )}
     </div>
   );
@@ -425,7 +504,15 @@ function FlexTab({ siteId }) {
 
 // ---- Evidence Drawer ----
 
-function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction, onOpenExplorer, onViewInvoice }) {
+function EvidenceDrawer({
+  insight,
+  open,
+  onClose,
+  onStatusChange,
+  onCreateAction,
+  onOpenExplorer,
+  onViewInvoice,
+}) {
   const [tab, setTab] = useState('evidence');
   if (!insight) return null;
 
@@ -434,20 +521,32 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
   const statusCfg = WORKFLOW_CONFIG[insight.insight_status] || WORKFLOW_CONFIG.open;
 
   return (
-    <Drawer open={open} onClose={onClose} title={`${insight.site_nom} — ${TYPE_LABELS[insight.type] || insight.type}`} wide>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={`${insight.site_nom} — ${TYPE_LABELS[insight.type] || insight.type}`}
+      wide
+    >
       <div className="space-y-4">
         {/* Consolidated summary banner */}
         <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
           <div className="flex items-center gap-2">
             <SeverityBadge severity={insight.severity} />
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>
+              {statusCfg.label}
+            </span>
           </div>
           {(insight.estimated_loss_kwh > 0 || insight.estimated_loss_eur > 0) && (
             <span className="text-xs text-gray-600">
-              {insight.estimated_loss_kwh > 0 && `${Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh`}
+              {insight.estimated_loss_kwh > 0 &&
+                `${Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh`}
               {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
               {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
-              {' · '}{Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kgCO₂e
+              {' · '}
+              {Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString(
+                'fr-FR'
+              )}{' '}
+              kgCO₂e
             </span>
           )}
         </div>
@@ -465,16 +564,29 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
         {tab === 'methode' && (
           <div className="space-y-3">
             <DrawerSection title="Methode de detection">
-              <DrawerRow label="Fenetre">{metrics.window || metrics.schedule_open || '30 jours glissants'}</DrawerRow>
-              <DrawerRow label="Formule">{metrics.formula || `Ecart vs ${insight.type === 'base_load' ? 'talon median' : 'profil horaire'}`}</DrawerRow>
+              <DrawerRow label="Fenetre">
+                {metrics.window || metrics.schedule_open || '30 jours glissants'}
+              </DrawerRow>
+              <DrawerRow label="Formule">
+                {metrics.formula ||
+                  `Ecart vs ${insight.type === 'base_load' ? 'talon median' : 'profil horaire'}`}
+              </DrawerRow>
               <DrawerRow label="Seuil">{metrics.threshold || '> 2 ecarts-type'}</DrawerRow>
               <DrawerRow label="Confiance">{metrics.confidence || 'Moyenne'}</DrawerRow>
             </DrawerSection>
             <DrawerSection title="Hypothèses">
-              <DrawerRow label="Prix ref">{metrics.price_ref_eur_kwh ? `${metrics.price_ref_eur_kwh} EUR/kWh` : '0.15 EUR/kWh (défaut)'}</DrawerRow>
+              <DrawerRow label="Prix ref">
+                {metrics.price_ref_eur_kwh
+                  ? `${metrics.price_ref_eur_kwh} EUR/kWh`
+                  : '0.15 EUR/kWh (défaut)'}
+              </DrawerRow>
               <DrawerRow label="Pas de temps">{metrics.granularity || '30 min'}</DrawerRow>
-              <DrawerRow label="Couverture data">{metrics.coverage ? `${metrics.coverage}%` : '—'}</DrawerRow>
-              {metrics.schedule_source && <DrawerRow label="Source horaires">{metrics.schedule_source}</DrawerRow>}
+              <DrawerRow label="Couverture data">
+                {metrics.coverage ? `${metrics.coverage}%` : '—'}
+              </DrawerRow>
+              {metrics.schedule_source && (
+                <DrawerRow label="Source horaires">{metrics.schedule_source}</DrawerRow>
+              )}
             </DrawerSection>
           </div>
         )}
@@ -573,15 +685,33 @@ function EvidenceTab({ insight }) {
             <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 10 }} unit=" kW" />
             <RTooltip />
-            <Area type="monotone" dataKey="baseline" stroke="#94a3b8" fill="#e2e8f0" name="Référence" />
-            <Area type="monotone" dataKey="actual" stroke="#ef4444" fill="#fee2e2" fillOpacity={0.5} name="Observée" />
+            <Area
+              type="monotone"
+              dataKey="baseline"
+              stroke="#94a3b8"
+              fill="#e2e8f0"
+              name="Référence"
+            />
+            <Area
+              type="monotone"
+              dataKey="actual"
+              stroke="#ef4444"
+              fill="#fee2e2"
+              fillOpacity={0.5}
+              name="Observée"
+            />
           </AreaChart>
         </ResponsiveContainer>
         {insight.estimated_loss_kwh > 0 && (
           <p className="text-xs text-gray-500 mt-1">
             Écart : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
-            {insight.estimated_loss_eur > 0 && ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
-            {' · '}{Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kgCO₂e
+            {insight.estimated_loss_eur > 0 &&
+              ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
+            {' · '}
+            {Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString(
+              'fr-FR'
+            )}{' '}
+            kgCO₂e
           </p>
         )}
       </div>
@@ -626,7 +756,9 @@ export default function ConsumptionDiagPage() {
     }
   }, [org?.id, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleSeedDemo = async () => {
     setSeeding(true);
@@ -647,7 +779,9 @@ export default function ConsumptionDiagPage() {
     setMessage(null);
     try {
       const r = await runConsumptionDiagnose();
-      setMessage(`Diagnostic termine: ${r.total_insights || 0} insight(s) sur ${r.sites_analyzed || 0} site(s)`);
+      setMessage(
+        `Diagnostic termine: ${r.total_insights || 0} insight(s) sur ${r.sites_analyzed || 0} site(s)`
+      );
       track('diagnostic_run', { insights: r.total_insights });
       await load();
     } catch (e) {
@@ -668,13 +802,13 @@ export default function ConsumptionDiagPage() {
     try {
       await patchConsumptionInsight(insightId, { insight_status: newStatus });
       track('insight_workflow', { id: insightId, status: newStatus });
-      setSummary(prev => ({
+      setSummary((prev) => ({
         ...prev,
-        insights: prev.insights.map(i =>
+        insights: prev.insights.map((i) =>
           i.id === insightId ? { ...i, insight_status: newStatus } : i
         ),
       }));
-      setDrawerInsight(prev =>
+      setDrawerInsight((prev) =>
         prev?.id === insightId ? { ...prev, insight_status: newStatus } : prev
       );
       toast(`Insight mis a jour: ${WORKFLOW_CONFIG[newStatus]?.label || newStatus}`, 'success');
@@ -684,43 +818,71 @@ export default function ConsumptionDiagPage() {
   };
 
   // Create action
-  const handleCreateAction = useCallback((insight) => {
-    openActionDrawer({
-      prefill: {
-        titre: `${TYPE_LABELS[insight.type] || insight.type} — ${insight.site_nom}`,
-        type: 'conso',
-        site: insight.site_nom,
-        impact_eur: Math.round(insight.estimated_loss_eur || 0),
-        priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
-        description: insight.message + (insight.recommended_actions?.length
-          ? '\n\nActions recommandees :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
-          : ''),
-      },
-      siteId: insight.site_id || null,
-      sourceType: 'consumption',
-      sourceId: `insight-${insight.id}`,
-      idempotencyKey: `diag-insight-${insight.id}`,
-    }, { onSave: (action) => {
-      track('action_create_from_diagnostic', { titre: action?.titre });
-    }});
-    track('insight_create_action', { type: insight.type, id: insight.id });
-  }, [openActionDrawer]);
+  const handleCreateAction = useCallback(
+    (insight) => {
+      openActionDrawer(
+        {
+          prefill: {
+            titre: `${TYPE_LABELS[insight.type] || insight.type} — ${insight.site_nom}`,
+            type: 'conso',
+            site: insight.site_nom,
+            impact_eur: Math.round(insight.estimated_loss_eur || 0),
+            priorite:
+              insight.severity === 'critical'
+                ? 'critical'
+                : insight.severity === 'high'
+                  ? 'high'
+                  : 'medium',
+            description:
+              insight.message +
+              (insight.recommended_actions?.length
+                ? '\n\nActions recommandees :\n' +
+                  insight.recommended_actions.map((a) => `- ${a.title}`).join('\n')
+                : ''),
+          },
+          siteId: insight.site_id || null,
+          sourceType: 'consumption',
+          sourceId: `insight-${insight.id}`,
+          idempotencyKey: `diag-insight-${insight.id}`,
+        },
+        {
+          onSave: (action) => {
+            track('action_create_from_diagnostic', { titre: action?.titre });
+          },
+        }
+      );
+      track('insight_create_action', { type: insight.type, id: insight.id });
+    },
+    [openActionDrawer]
+  );
 
   // Open in Explorer
-  const handleOpenExplorer = useCallback((insight) => {
-    navigate(toConsoExplorer({
-      site_id: insight.site_id,
-      date_from: insight.period_start ? insight.period_start.slice(0, 10) : undefined,
-      date_to: insight.period_end ? insight.period_end.slice(0, 10) : undefined,
-    }));
-  }, [navigate]);
+  const handleOpenExplorer = useCallback(
+    (insight) => {
+      navigate(
+        toConsoExplorer({
+          site_id: insight.site_id,
+          date_from: insight.period_start ? insight.period_start.slice(0, 10) : undefined,
+          date_to: insight.period_end ? insight.period_end.slice(0, 10) : undefined,
+        })
+      );
+    },
+    [navigate]
+  );
 
   // View invoice (deep-link)
-  const handleViewInvoice = useCallback((insight) => {
-    const month = insight.period_start ? insight.period_start.slice(0, 7) : null;
-    navigate(deepLinkWithContext(insight.site_id, month));
-    track('insight_view_invoice', { type: insight.type, id: insight.id, site_id: insight.site_id });
-  }, [navigate]);
+  const handleViewInvoice = useCallback(
+    (insight) => {
+      const month = insight.period_start ? insight.period_start.slice(0, 7) : null;
+      navigate(deepLinkWithContext(insight.site_id, month));
+      track('insight_view_invoice', {
+        type: insight.type,
+        id: insight.id,
+        site_id: insight.site_id,
+      });
+    },
+    [navigate]
+  );
 
   const insights = useMemo(() => summary?.insights || [], [summary]);
 
@@ -728,20 +890,23 @@ export default function ConsumptionDiagPage() {
   const filteredInsights = useMemo(() => {
     if (!insights.length) return [];
     // V16-D: normalizeId prevents type mismatch (API number vs store number/string)
-    if (selectedSiteId) return insights.filter(i => normalizeId(i.site_id) === normalizeId(selectedSiteId));
+    if (selectedSiteId)
+      return insights.filter((i) => normalizeId(i.site_id) === normalizeId(selectedSiteId));
     return insights;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insights, selectedSiteId]);
 
   const displayedSummary = useMemo(
     () => computeSummaryFromInsights(filteredInsights),
-    [filteredInsights],
+    [filteredInsights]
   );
 
   const isSiteScoped = Boolean(selectedSiteId);
-  const hasMismatch = isSiteScoped && new Set(insights.map(i => i.site_id)).size > 1;
+  const hasMismatch = isSiteScoped && new Set(insights.map((i) => i.site_id)).size > 1;
 
-  const filtered = filterType ? filteredInsights.filter((i) => i.type === filterType) : filteredInsights;
+  const filtered = filterType
+    ? filteredInsights.filter((i) => i.type === filterType)
+    : filteredInsights;
 
   return (
     <PageShell
@@ -760,13 +925,14 @@ export default function ConsumptionDiagPage() {
         </>
       }
     >
-
       {/* V15-B: Scope badge */}
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>Périmètre :</span>
         <span className="font-medium text-gray-700">{scopeLabel}</span>
         {isSiteScoped && (
-          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">Vue filtrée</span>
+          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+            Vue filtrée
+          </span>
         )}
       </div>
 
@@ -775,19 +941,23 @@ export default function ConsumptionDiagPage() {
         <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 mb-2">
           <Info size={14} className="shrink-0 mt-0.5" />
           <span className="flex-1">
-            Diagnostic lancé sur <strong>{sitesCount} site{sitesCount !== 1 ? 's' : ''}</strong>.
-            Vue filtrée sur <strong>{scopeLabel}</strong> ({filteredInsights.length} insight{filteredInsights.length !== 1 ? 's' : ''}).
+            Diagnostic lancé sur{' '}
+            <strong>
+              {sitesCount} site{sitesCount !== 1 ? 's' : ''}
+            </strong>
+            . Vue filtrée sur <strong>{scopeLabel}</strong> ({filteredInsights.length} insight
+            {filteredInsights.length !== 1 ? 's' : ''}).
           </span>
         </div>
       )}
 
-      {message && (
-        <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>
-      )}
+      {message && <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>}
 
       {loading ? (
         <div className="grid grid-cols-5 gap-4 mb-6">
-          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : !summary || filteredInsights.length === 0 ? (
         <Card>
@@ -815,17 +985,31 @@ export default function ConsumptionDiagPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className="text-xs text-gray-500">Insights</div>
-                <div className="text-lg font-bold text-blue-700">{displayedSummary.total_insights || 0}</div>
-                <div className="text-[11px] text-gray-400">{displayedSummary.sites_with_insights || 0} site{(displayedSummary.sites_with_insights || 0) > 1 ? 's' : ''}</div>
+                <div className="text-lg font-bold text-blue-700">
+                  {displayedSummary.total_insights || 0}
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  {displayedSummary.sites_with_insights || 0} site
+                  {(displayedSummary.sites_with_insights || 0) > 1 ? 's' : ''}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className="text-xs text-gray-500">Pertes estimées</div>
-                <div className="text-lg font-bold text-red-600">{fmtEur(Math.round(displayedSummary.total_loss_eur || 0))}</div>
-                <div className="text-[11px] text-gray-400">{fmtKwh(Math.round(displayedSummary.total_loss_kwh || 0))}</div>
+                <div className="text-lg font-bold text-red-600">
+                  {fmtEur(Math.round(displayedSummary.total_loss_eur || 0))}
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  {fmtKwh(Math.round(displayedSummary.total_loss_kwh || 0))}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className="text-xs text-gray-500">CO₂e évitable</div>
-                <div className="text-lg font-bold text-emerald-600">{Math.round((displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg</div>
+                <div className="text-lg font-bold text-emerald-600">
+                  {Math.round(
+                    (displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH
+                  ).toLocaleString('fr-FR')}{' '}
+                  kg
+                </div>
                 <div className="text-[11px] text-gray-400">Impact carbone</div>
               </div>
             </div>
@@ -841,7 +1025,8 @@ export default function ConsumptionDiagPage() {
           {/* Full KPI breakdown — collapsible */}
           <details className="group mb-4">
             <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2 select-none">
-              <span className="transition-transform group-open:rotate-90">▸</span> Détails par indicateur
+              <span className="transition-transform group-open:rotate-90">▸</span> Détails par
+              indicateur
             </summary>
             <SummaryCards summary={displayedSummary} customPrice={customPrice} />
             <ByTypeBreakdown byType={displayedSummary.by_type} />
@@ -857,7 +1042,9 @@ export default function ConsumptionDiagPage() {
             >
               <option value="">Tous</option>
               {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+                <option key={k} value={k}>
+                  {v}
+                </option>
               ))}
             </select>
             <span className="text-xs text-gray-400 ml-2">{filtered.length} insight(s)</span>
@@ -869,20 +1056,41 @@ export default function ConsumptionDiagPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Site</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Severite</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Message</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (EUR)</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (kWh)</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">CO₂e (kg)</th>
-                    <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Site
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Type
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Severite
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Message
+                    </th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Perte (EUR)
+                    </th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Perte (kWh)
+                    </th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      CO₂e (kg)
+                    </th>
+                    <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                      Statut
+                    </th>
                     <th className="text-center py-3 px-1 text-xs font-medium text-gray-500 uppercase w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((ins, i) => (
-                    <InsightRow key={ins.id || i} insight={ins} onRowClick={openDrawer} onCreateAction={handleCreateAction} />
+                    <InsightRow
+                      key={ins.id || i}
+                      insight={ins}
+                      onRowClick={openDrawer}
+                      onCreateAction={handleCreateAction}
+                    />
                   ))}
                 </tbody>
               </table>

@@ -65,7 +65,7 @@ describe('resolveBreadcrumbLabel — aliases', () => {
     expect(resolveBreadcrumbLabel('factures', null)).toBe('Facturation');
   });
 
-  it('plan-actions → Plan d\'actions', () => {
+  it("plan-actions → Plan d'actions", () => {
     expect(resolveBreadcrumbLabel('plan-actions', null)).toBe("Plan d'actions");
   });
 });
@@ -73,9 +73,22 @@ describe('resolveBreadcrumbLabel — aliases', () => {
 /* ── FR-only: no raw English in output ── */
 describe('resolveBreadcrumbLabel — FR-only guarantees', () => {
   it('never returns raw segment for known paths', () => {
-    const known = ['conformite', 'actions', 'patrimoine', 'consommations',
-      'monitoring', 'notifications', 'sites', 'wizard', 'tertiaire',
-      'efa', 'explorer', 'portfolio', 'login', 'status'];
+    const known = [
+      'conformite',
+      'actions',
+      'patrimoine',
+      'consommations',
+      'monitoring',
+      'notifications',
+      'sites',
+      'wizard',
+      'tertiaire',
+      'efa',
+      'explorer',
+      'portfolio',
+      'login',
+      'status',
+    ];
     for (const seg of known) {
       const label = resolveBreadcrumbLabel(seg, null);
       // Should not be the raw segment (except if it's already a proper FR word)

@@ -3,8 +3,10 @@ PROMEOS - Tests Sprint 11: IAM ULTIMATE (Users / Roles / Scopes)
 ~32 tests covering: user CRUD, login, JWT, role permissions, scope hierarchy,
 scope filtering, last-owner protection, prestataire expiry, switch org, admin endpoints.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -16,25 +18,44 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    User, UserOrgRole, UserScope, AuditLog,
-    UserRole, ScopeLevel, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    User,
+    UserOrgRole,
+    UserScope,
+    AuditLog,
+    UserRole,
+    ScopeLevel,
+    TypeSite,
 )
 from database import get_db
 from main import app
 from services.iam_service import (
-    hash_password, verify_password,
-    create_access_token, decode_token,
-    check_permission, get_permissions_for_role,
-    get_scoped_site_ids, get_accessible_entity_ids,
-    can, log_audit,
-    create_user, assign_role, assign_scope, remove_role, soft_delete_user,
+    hash_password,
+    verify_password,
+    create_access_token,
+    decode_token,
+    check_permission,
+    get_permissions_for_role,
+    get_scoped_site_ids,
+    get_accessible_entity_ids,
+    can,
+    log_audit,
+    create_user,
+    assign_role,
+    assign_scope,
+    remove_role,
+    soft_delete_user,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -57,6 +78,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -79,13 +101,20 @@ def _create_org_hierarchy(db_session):
     db_session.flush()
 
     sites = []
-    for i, (pf, name) in enumerate([
-        (pf1, "Site IDF-A"), (pf1, "Site IDF-B"),
-        (pf2, "Site Sud-A"), (pf2, "Site Sud-B"),
-    ]):
+    for i, (pf, name) in enumerate(
+        [
+            (pf1, "Site IDF-A"),
+            (pf1, "Site IDF-B"),
+            (pf2, "Site Sud-A"),
+            (pf2, "Site Sud-B"),
+        ]
+    ):
         site = Site(
-            portefeuille_id=pf.id, nom=name,
-            type=TypeSite.BUREAU, surface_m2=1000, actif=True,
+            portefeuille_id=pf.id,
+            nom=name,
+            type=TypeSite.BUREAU,
+            surface_m2=1000,
+            actif=True,
         )
         db_session.add(site)
         sites.append(site)
@@ -117,6 +146,7 @@ def _auth_header(token):
 # TestUserCRUD
 # ========================================
 
+
 class TestUserCRUD:
     def test_create_user(self, db_session):
         user = create_user(db_session, "alice@test.com", "secret", "Alice", "Dupont")
@@ -147,6 +177,7 @@ class TestUserCRUD:
 # TestLogin
 # ========================================
 
+
 class TestLogin:
     def test_login_ok(self, client, db_session):
         org, *_, sites = _create_org_hierarchy(db_session)
@@ -171,7 +202,9 @@ class TestLogin:
 
     def test_inactive_user_401(self, client, db_session):
         org, *_, sites = _create_org_hierarchy(db_session)
-        user, _ = _create_user_with_role(db_session, org, "inactive@test.com", UserRole.AUDITEUR, ScopeLevel.ORG, org.id)
+        user, _ = _create_user_with_role(
+            db_session, org, "inactive@test.com", UserRole.AUDITEUR, ScopeLevel.ORG, org.id
+        )
         user.actif = False
         db_session.commit()
 
@@ -187,6 +220,7 @@ class TestLogin:
 # TestJWT
 # ========================================
 
+
 class TestJWT:
     def test_token_valid(self, client, db_session):
         org, *_, sites = _create_org_hierarchy(db_session)
@@ -201,8 +235,7 @@ class TestJWT:
         assert me.json()["user"]["email"] == "jwt@test.com"
 
     def test_token_expired_401(self, client, db_session):
-        token = create_access_token(user_id=999, org_id=1, role="dg_owner",
-                                     expires_delta=timedelta(seconds=-10))
+        token = create_access_token(user_id=999, org_id=1, role="dg_owner", expires_delta=timedelta(seconds=-10))
         me = client.get("/api/auth/me", headers=_auth_header(token))
         assert me.status_code == 401
 
@@ -214,6 +247,7 @@ class TestJWT:
 # ========================================
 # TestRolePermissions
 # ========================================
+
 
 class TestRolePermissions:
     def test_dg_sees_all(self):
@@ -244,6 +278,7 @@ class TestRolePermissions:
 # TestScopeHierarchy
 # ========================================
 
+
 class TestScopeHierarchy:
     def test_org_scope_all_sites(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
@@ -255,7 +290,9 @@ class TestScopeHierarchy:
 
     def test_entite_scope_entite_sites(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "entite@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id)
+        user, uor = _create_user_with_role(
+            db_session, org, "entite@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id
+        )
         db_session.commit()
 
         site_ids = get_scoped_site_ids(db_session, uor)
@@ -267,7 +304,9 @@ class TestScopeHierarchy:
 
     def test_site_scope_one_site(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "site@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id)
+        user, uor = _create_user_with_role(
+            db_session, org, "site@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id
+        )
         db_session.commit()
 
         site_ids = get_scoped_site_ids(db_session, uor)
@@ -288,13 +327,18 @@ class TestScopeHierarchy:
 # TestScopeFiltering (API level)
 # ========================================
 
+
 class TestScopeFiltering:
     def test_sites_filtered_by_scope(self, client, db_session):
         """User with SITE scope should only see that site via GET /api/sites."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "filter@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "filter@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 
@@ -320,8 +364,12 @@ class TestScopeFiltering:
         """User with ORG scope should get dashboard for their org."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "dash@test.com",
-            UserRole.DG_OWNER, ScopeLevel.ORG, org.id,
+            db_session,
+            org,
+            "dash@test.com",
+            UserRole.DG_OWNER,
+            ScopeLevel.ORG,
+            org.id,
         )
         db_session.commit()
 
@@ -337,10 +385,13 @@ class TestScopeFiltering:
 # TestLastOwnerProtection
 # ========================================
 
+
 class TestLastOwnerProtection:
     def test_cannot_remove_last_dg(self, db_session):
         org, *_ = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "lastdg@test.com", UserRole.DG_OWNER, ScopeLevel.ORG, org.id)
+        user, uor = _create_user_with_role(
+            db_session, org, "lastdg@test.com", UserRole.DG_OWNER, ScopeLevel.ORG, org.id
+        )
         db_session.commit()
 
         result = remove_role(db_session, user.id, org.id)
@@ -360,13 +411,19 @@ class TestLastOwnerProtection:
 # TestPrestataire
 # ========================================
 
+
 class TestPrestataire:
     def test_access_before_expiry(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         expires = datetime.now(timezone.utc) + timedelta(days=30)
         user, uor = _create_user_with_role(
-            db_session, org, "presta@test.com",
-            UserRole.PRESTATAIRE, ScopeLevel.SITE, sites[0].id, expires_at=expires,
+            db_session,
+            org,
+            "presta@test.com",
+            UserRole.PRESTATAIRE,
+            ScopeLevel.SITE,
+            sites[0].id,
+            expires_at=expires,
         )
         db_session.commit()
 
@@ -377,8 +434,13 @@ class TestPrestataire:
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         expired = datetime.now(timezone.utc) - timedelta(days=1)
         user, uor = _create_user_with_role(
-            db_session, org, "expired@test.com",
-            UserRole.PRESTATAIRE, ScopeLevel.SITE, sites[0].id, expires_at=expired,
+            db_session,
+            org,
+            "expired@test.com",
+            UserRole.PRESTATAIRE,
+            ScopeLevel.SITE,
+            sites[0].id,
+            expires_at=expired,
         )
         db_session.commit()
 
@@ -389,6 +451,7 @@ class TestPrestataire:
 # ========================================
 # TestSwitchOrg
 # ========================================
+
 
 class TestSwitchOrg:
     def test_switch_org_ok(self, client, db_session):
@@ -423,7 +486,9 @@ class TestSwitchOrg:
         db_session.add(org2)
         db_session.flush()
 
-        user, uor = _create_user_with_role(db_session, org1, "single@test.com", UserRole.DG_OWNER, ScopeLevel.ORG, org1.id)
+        user, uor = _create_user_with_role(
+            db_session, org1, "single@test.com", UserRole.DG_OWNER, ScopeLevel.ORG, org1.id
+        )
         db_session.commit()
 
         res = _login(client, "single@test.com")
@@ -440,6 +505,7 @@ class TestSwitchOrg:
 # ========================================
 # TestAdminEndpoints
 # ========================================
+
 
 class TestAdminEndpoints:
     def _admin_login(self, client, db_session):
@@ -528,6 +594,7 @@ class TestAdminEndpoints:
 # TestPasswordChange
 # ========================================
 
+
 class TestPasswordChange:
     def test_change_password_ok(self, client, db_session):
         org, *_, sites = _create_org_hierarchy(db_session)
@@ -568,6 +635,7 @@ class TestPasswordChange:
 # TestPermissionsMatrix
 # ========================================
 
+
 class TestPermissionsMatrix:
     def test_get_permissions_for_role(self):
         perms = get_permissions_for_role(UserRole.DAF)
@@ -595,6 +663,7 @@ class TestPermissionsMatrix:
 # TestRefreshToken
 # ========================================
 
+
 class TestRefreshToken:
     def test_refresh_ok(self, client, db_session):
         org, *_, sites = _create_org_hierarchy(db_session)
@@ -612,6 +681,7 @@ class TestRefreshToken:
 # ========================================
 # TestCan — can() authorization engine
 # ========================================
+
 
 class TestCan:
     def test_can_dg_view_org(self, db_session):
@@ -637,7 +707,9 @@ class TestCan:
     def test_can_resp_site_deny_other_site(self, db_session):
         """RESP_SITE with SITE scope on site[0] cannot view site[2]."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "can3@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id)
+        user, uor = _create_user_with_role(
+            db_session, org, "can3@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id
+        )
         db_session.commit()
 
         result = can(db_session, user.id, "view", scope_type="site", scope_id=sites[2].id)
@@ -647,7 +719,9 @@ class TestCan:
     def test_can_entite_scope_covers_child_sites(self, db_session):
         """RESP_IMMOBILIER with ENTITE scope sees sites in that entite."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "can4@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id)
+        user, uor = _create_user_with_role(
+            db_session, org, "can4@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id
+        )
         db_session.commit()
 
         # Site in ej1 → allowed
@@ -698,6 +772,7 @@ class TestCan:
 # TestGetAccessibleEntityIds
 # ========================================
 
+
 class TestGetAccessibleEntityIds:
     def test_org_scope_all_entities(self, db_session):
         """ORG scope → all entites of the org."""
@@ -711,7 +786,9 @@ class TestGetAccessibleEntityIds:
     def test_entite_scope_one_entity(self, db_session):
         """ENTITE scope → just that entite."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "eid2@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id)
+        user, uor = _create_user_with_role(
+            db_session, org, "eid2@test.com", UserRole.RESP_IMMOBILIER, ScopeLevel.ENTITE, ej1.id
+        )
         db_session.commit()
 
         ids = get_accessible_entity_ids(db_session, uor)
@@ -720,7 +797,9 @@ class TestGetAccessibleEntityIds:
     def test_site_scope_resolves_entity(self, db_session):
         """SITE scope → resolves to parent entite."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        user, uor = _create_user_with_role(db_session, org, "eid3@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id)
+        user, uor = _create_user_with_role(
+            db_session, org, "eid3@test.com", UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id
+        )
         db_session.commit()
 
         ids = get_accessible_entity_ids(db_session, uor)
@@ -730,6 +809,7 @@ class TestGetAccessibleEntityIds:
 # ========================================
 # TestAuditLog
 # ========================================
+
 
 class TestAuditLog:
     def test_audit_log_created_on_login(self, client, db_session):
@@ -755,8 +835,11 @@ class TestAuditLog:
         client.post(
             "/api/admin/users",
             json={
-                "email": "newaudit@test.com", "password": "pass",
-                "nom": "Audit", "prenom": "Test", "role": "auditeur",
+                "email": "newaudit@test.com",
+                "password": "pass",
+                "nom": "Audit",
+                "prenom": "Test",
+                "role": "auditeur",
             },
             headers=_auth_header(token),
         )
@@ -766,7 +849,14 @@ class TestAuditLog:
 
     def test_log_audit_function(self, db_session):
         """log_audit() creates an entry in the database."""
-        log_audit(db_session, user_id=None, action="test_action", resource_type="test", resource_id="42", detail={"key": "val"})
+        log_audit(
+            db_session,
+            user_id=None,
+            action="test_action",
+            resource_type="test",
+            resource_id="42",
+            detail={"key": "val"},
+        )
         db_session.commit()
 
         entry = db_session.query(AuditLog).filter(AuditLog.action == "test_action").first()
@@ -799,13 +889,18 @@ class TestAuditLog:
 # TestScopeFiltering403
 # ========================================
 
+
 class TestScopeFiltering403:
     def test_prestataire_no_edit_403(self, client, db_session):
         """Prestataire cannot edit — role check blocks edit permission."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "presta403@test.com",
-            UserRole.PRESTATAIRE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "presta403@test.com",
+            UserRole.PRESTATAIRE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 
@@ -816,8 +911,12 @@ class TestScopeFiltering403:
         """Resp_site logged in should only see their assigned site via /api/sites."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "scope403@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "scope403@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 
@@ -847,6 +946,7 @@ class TestScopeFiltering403:
 # TestAntiLeak — scope hardening Sprint 12
 # ========================================
 
+
 class TestAntiLeak:
     """Verify detail/export endpoints respect scope filtering (Sprint 12)."""
 
@@ -855,8 +955,12 @@ class TestAntiLeak:
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         # User with SITE scope on site[0]
         user, uor = _create_user_with_role(
-            db_session, org, "leak1@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "leak1@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 
@@ -875,8 +979,12 @@ class TestAntiLeak:
         """GET /api/sites/{id}/stats returns 403 for out-of-scope site."""
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "leak2@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "leak2@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 
@@ -889,19 +997,27 @@ class TestAntiLeak:
     def test_actions_export_scoped(self, client, db_session):
         """GET /api/actions/export.csv should only include scoped actions."""
         from models import ActionItem, ActionStatus, ActionSourceType
+
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "leak3@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "leak3@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         # Create actions on different sites
         for i, site in enumerate(sites):
             a = ActionItem(
-                org_id=org.id, site_id=site.id,
+                org_id=org.id,
+                site_id=site.id,
                 source_type=ActionSourceType.COMPLIANCE,
-                source_id=f"test-{i}", source_key=f"leak-{i}",
+                source_id=f"test-{i}",
+                source_key=f"leak-{i}",
                 title=f"Action-{site.nom}",
-                status=ActionStatus.OPEN, priority=3,
+                status=ActionStatus.OPEN,
+                priority=3,
             )
             db_session.add(a)
         db_session.commit()
@@ -919,18 +1035,26 @@ class TestAntiLeak:
     def test_notifications_scoped(self, client, db_session):
         """GET /api/notifications/list should filter by user's site scope."""
         from models import (
-            NotificationEvent, NotificationSeverity,
-            NotificationStatus, NotificationSourceType,
+            NotificationEvent,
+            NotificationSeverity,
+            NotificationStatus,
+            NotificationSourceType,
         )
+
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         user, uor = _create_user_with_role(
-            db_session, org, "leak4@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "leak4@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         # Create notifications on different sites
         for site in sites:
             n = NotificationEvent(
-                org_id=org.id, site_id=site.id,
+                org_id=org.id,
+                site_id=site.id,
                 source_type=NotificationSourceType.COMPLIANCE,
                 severity=NotificationSeverity.WARN,
                 status=NotificationStatus.NEW,
@@ -965,13 +1089,21 @@ class TestAntiLeak:
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
         # Admin user
         admin_user, _ = _create_user_with_role(
-            db_session, org, "effadm@test.com",
-            UserRole.DSI_ADMIN, ScopeLevel.ORG, org.id,
+            db_session,
+            org,
+            "effadm@test.com",
+            UserRole.DSI_ADMIN,
+            ScopeLevel.ORG,
+            org.id,
         )
         # Target user with SITE scope
         target_user, _ = _create_user_with_role(
-            db_session, org, "efftarget@test.com",
-            UserRole.RESP_SITE, ScopeLevel.SITE, sites[0].id,
+            db_session,
+            org,
+            "efftarget@test.com",
+            UserRole.RESP_SITE,
+            ScopeLevel.SITE,
+            sites[0].id,
         )
         db_session.commit()
 

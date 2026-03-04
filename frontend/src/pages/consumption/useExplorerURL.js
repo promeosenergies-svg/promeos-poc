@@ -53,25 +53,31 @@ export default function useExplorerURL() {
    * Update one or more URL params without losing the rest.
    * @param {Record<string, string|number|number[]|null>} updates
    */
-  const setUrlParams = useCallback((updates) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      for (const [key, value] of Object.entries(updates)) {
-        if (value === null || value === undefined) {
-          next.delete(key);
-        } else if (Array.isArray(value)) {
-          if (value.length === 0) {
-            next.delete(key);
-          } else {
-            next.set(key, value.join(','));
+  const setUrlParams = useCallback(
+    (updates) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(updates)) {
+            if (value === null || value === undefined) {
+              next.delete(key);
+            } else if (Array.isArray(value)) {
+              if (value.length === 0) {
+                next.delete(key);
+              } else {
+                next.set(key, value.join(','));
+              }
+            } else {
+              next.set(key, String(value));
+            }
           }
-        } else {
-          next.set(key, String(value));
-        }
-      }
-      return next;
-    }, { replace: true }); // replace to avoid polluting browser history on every filter change
-  }, [setSearchParams]);
+          return next;
+        },
+        { replace: true }
+      ); // replace to avoid polluting browser history on every filter change
+    },
+    [setSearchParams]
+  );
 
   return { urlState, setUrlParams };
 }

@@ -7,6 +7,7 @@ BACS statut is refined using Evidences (attestation_bacs, derogation_bacs).
 V68: Data Readiness Gate — compute_readiness, compute_applicability,
 compute_scores, compute_deadlines, compute_data_trust, site/portfolio summaries.
 """
+
 from collections import defaultdict
 from datetime import date, timedelta
 from typing import List, Optional
@@ -14,9 +15,19 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Obligation, Site, Portefeuille, EntiteJuridique, Organisation,
-    Evidence, Batiment, ComplianceFinding, BillingInsight,
-    StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
+    Obligation,
+    Site,
+    Portefeuille,
+    EntiteJuridique,
+    Organisation,
+    Evidence,
+    Batiment,
+    ComplianceFinding,
+    BillingInsight,
+    StatutConformite,
+    TypeObligation,
+    TypeEvidence,
+    StatutEvidence,
 )
 
 # Status severity ranking for "worst status" logic
@@ -28,8 +39,8 @@ _STATUS_SEVERITY = {
 }
 
 # BACS thresholds (kW CVC nominal)
-BACS_SEUIL_HAUT = 290.0   # deadline 2025-01-01
-BACS_SEUIL_BAS = 70.0     # deadline 2030-01-01
+BACS_SEUIL_HAUT = 290.0  # deadline 2025-01-01
+BACS_SEUIL_BAS = 70.0  # deadline 2030-01-01
 BACS_DEADLINE_290 = date(2025, 1, 1)
 BACS_DEADLINE_70 = date(2030, 1, 1)
 
@@ -38,20 +49,17 @@ BASE_PENALTY_EURO = 7500.0
 
 # Action text templates ordered by priority (highest first)
 _ACTION_TEMPLATES = [
-    (TypeObligation.BACS, StatutConformite.NON_CONFORME,
-     "Installer GTB/GTC conforme (BACS obligatoire)"),
-    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.NON_CONFORME,
-     "Audit decret tertiaire - trajectoire 2030 KO"),
-    (TypeObligation.BACS, StatutConformite.A_RISQUE,
-     "Planifier mise en conformite BACS avant echeance"),
-    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.A_RISQUE,
-     "Verifier trajectoire decret tertiaire"),
+    (TypeObligation.BACS, StatutConformite.NON_CONFORME, "Installer GTB/GTC conforme (BACS obligatoire)"),
+    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.NON_CONFORME, "Audit decret tertiaire - trajectoire 2030 KO"),
+    (TypeObligation.BACS, StatutConformite.A_RISQUE, "Planifier mise en conformite BACS avant echeance"),
+    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.A_RISQUE, "Verifier trajectoire decret tertiaire"),
 ]
 
 
 # ========================================
 # Layer A: Pure calculation functions
 # ========================================
+
 
 def worst_status(obligations: List[Obligation]) -> Optional[StatutConformite]:
     """Return the worst (most severe) status from a list of obligations."""
@@ -76,10 +84,7 @@ def average_avancement(obligations: List[Obligation]) -> float:
 
 def compute_risque_financier(obligations: List[Obligation]) -> float:
     """Calculate financial risk: BASE_PENALTY_EURO * count(non_conforme)."""
-    non_conforme_count = sum(
-        1 for o in obligations
-        if o.statut == StatutConformite.NON_CONFORME
-    )
+    non_conforme_count = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
     return round(BASE_PENALTY_EURO * non_conforme_count, 2)
 
 
@@ -123,21 +128,16 @@ def compute_bacs_statut(
     if today is None:
         today = date.today()
 
-    bacs_evidences = [
-        e for e in evidences
-        if e.type in (TypeEvidence.ATTESTATION_BACS, TypeEvidence.DEROGATION_BACS)
-    ]
+    bacs_evidences = [e for e in evidences if e.type in (TypeEvidence.ATTESTATION_BACS, TypeEvidence.DEROGATION_BACS)]
 
     has_valid_derogation = any(
-        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in bacs_evidences
+        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in bacs_evidences
     )
     if has_valid_derogation:
         return StatutConformite.DEROGATION
 
     has_valid_attestation = any(
-        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in bacs_evidences
+        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in bacs_evidences
     )
     if has_valid_attestation:
         return StatutConformite.CONFORME
@@ -175,9 +175,7 @@ def compute_site_snapshot(
     worst_bacs = _worst_from_statuts(bacs_resolved)
 
     # Count non-conforme across both dimensions
-    non_conforme_count = sum(
-        1 for o in decret if o.statut == StatutConformite.NON_CONFORME
-    ) + sum(
+    non_conforme_count = sum(1 for o in decret if o.statut == StatutConformite.NON_CONFORME) + sum(
         1 for s in bacs_resolved if s == StatutConformite.NON_CONFORME
     )
 
@@ -250,15 +248,9 @@ def _resolve_field(site: Site, batiments: List, evidences: List, field_name: str
                 return b.cvc_power_kw
         return None
     if field_name == "has_bacs_attestation":
-        return any(
-            e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
     if field_name == "has_bacs_derogation":
-        return any(
-            e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
     return None
 
 
@@ -273,7 +265,9 @@ def _is_filled(value) -> bool:
 
 
 def compute_readiness(
-    site: Site, batiments: List, evidences: List,
+    site: Site,
+    batiments: List,
+    evidences: List,
 ) -> dict:
     """
     Compute data readiness gate for a site.
@@ -296,13 +290,15 @@ def compute_readiness(
                     filled += 1
                 else:
                     cta = _FIELD_CTA.get(field_name, {})
-                    missing.append({
-                        "field": field_name,
-                        "level": level,
-                        "regulation": reg,
-                        "cta_target": cta.get("target", "patrimoine"),
-                        "cta_label": cta.get("label", f"Renseigner {field_name}"),
-                    })
+                    missing.append(
+                        {
+                            "field": field_name,
+                            "level": level,
+                            "regulation": reg,
+                            "cta_target": cta.get("target", "patrimoine"),
+                            "cta_label": cta.get("label", f"Renseigner {field_name}"),
+                        }
+                    )
 
     completeness = round((filled / max(1, total)) * 100, 1)
     has_blocking = any(m["level"] == "blocking" for m in missing)
@@ -323,7 +319,8 @@ def compute_readiness(
 
 
 def compute_applicability(
-    site: Site, batiments: List,
+    site: Site,
+    batiments: List,
 ) -> dict:
     """
     Compute which regulations apply to a site.
@@ -332,7 +329,7 @@ def compute_applicability(
     """
     cvc_kw = 0.0
     for b in batiments:
-        cvc_kw += (b.cvc_power_kw or 0)
+        cvc_kw += b.cvc_power_kw or 0
     if hasattr(site, "_cvc_kw") and site._cvc_kw is not None:
         cvc_kw = site._cvc_kw
     has_cvc_data = cvc_kw > 0 or any(b.cvc_power_kw is not None for b in batiments)
@@ -457,24 +454,28 @@ def compute_deadlines(
     items = []
     for o in obligations:
         if o.echeance and o.statut != StatutConformite.CONFORME:
-            items.append({
-                "type": "obligation",
-                "regulation": o.type.value if o.type else "?",
-                "description": o.description or "",
-                "deadline": o.echeance.isoformat(),
-                "statut": o.statut.value if o.statut else "?",
-                "days_remaining": (o.echeance - today).days,
-            })
+            items.append(
+                {
+                    "type": "obligation",
+                    "regulation": o.type.value if o.type else "?",
+                    "description": o.description or "",
+                    "deadline": o.echeance.isoformat(),
+                    "statut": o.statut.value if o.statut else "?",
+                    "days_remaining": (o.echeance - today).days,
+                }
+            )
     for f in findings:
         if f.deadline and f.status in ("NOK", "UNKNOWN"):
-            items.append({
-                "type": "finding",
-                "regulation": f.regulation or "?",
-                "description": f.evidence or "",
-                "deadline": f.deadline.isoformat(),
-                "statut": f.status,
-                "days_remaining": (f.deadline - today).days,
-            })
+            items.append(
+                {
+                    "type": "finding",
+                    "regulation": f.regulation or "?",
+                    "description": f.evidence or "",
+                    "deadline": f.deadline.isoformat(),
+                    "statut": f.status,
+                    "days_remaining": (f.deadline - today).days,
+                }
+            )
 
     # Deduplicate by regulation+deadline
     seen = set()
@@ -510,10 +511,14 @@ def compute_data_trust(
     Returns: trust_score (0-100), anomaly_count, reasons
     """
     try:
-        anomalies = db.query(BillingInsight).filter(
-            BillingInsight.site_id == site.id,
-            BillingInsight.insight_status.in_(["open", "ack"]),
-        ).all()
+        anomalies = (
+            db.query(BillingInsight)
+            .filter(
+                BillingInsight.site_id == site.id,
+                BillingInsight.insight_status.in_(["open", "ack"]),
+            )
+            .all()
+        )
     except Exception:
         # BillingInsight table may not exist yet — graceful stub
         return {"trust_score": 100, "anomaly_count": 0, "reasons": ["billing_not_available"]}
@@ -538,7 +543,9 @@ def compute_data_trust(
 
 
 def compute_site_compliance_summary(
-    db: Session, site_id: int, today: Optional[date] = None,
+    db: Session,
+    site_id: int,
+    today: Optional[date] = None,
 ) -> dict:
     """
     V68: Full compliance summary for a single site.
@@ -551,9 +558,7 @@ def compute_site_compliance_summary(
     batiments = db.query(Batiment).filter(Batiment.site_id == site_id).all()
     evidences = db.query(Evidence).filter(Evidence.site_id == site_id).all()
     obligations = db.query(Obligation).filter(Obligation.site_id == site_id).all()
-    findings = db.query(ComplianceFinding).filter(
-        ComplianceFinding.site_id == site_id
-    ).all()
+    findings = db.query(ComplianceFinding).filter(ComplianceFinding.site_id == site_id).all()
 
     readiness = compute_readiness(site, batiments, evidences)
     applicability = compute_applicability(site, batiments)
@@ -584,15 +589,17 @@ def compute_site_compliance_summary(
 
 
 def compute_portfolio_compliance_summary(
-    db: Session, org_id: int, today: Optional[date] = None,
+    db: Session,
+    org_id: int,
+    today: Optional[date] = None,
 ) -> dict:
     """
     V68: Portfolio-level compliance summary.
     Aggregates all sites for an organisation.
     """
     site_ids = [
-        row[0] for row in
-        db.query(Site.id)
+        row[0]
+        for row in db.query(Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -614,9 +621,7 @@ def compute_portfolio_compliance_summary(
     all_batiments = db.query(Batiment).filter(Batiment.site_id.in_(site_ids)).all()
     all_evidences = db.query(Evidence).filter(Evidence.site_id.in_(site_ids)).all()
     all_obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
-    all_findings = db.query(ComplianceFinding).filter(
-        ComplianceFinding.site_id.in_(site_ids)
-    ).all()
+    all_findings = db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
     all_sites = db.query(Site).filter(Site.id.in_(site_ids)).all()
 
     # Index by site
@@ -662,30 +667,36 @@ def compute_portfolio_compliance_summary(
         # Merge deadlines
         for bucket in ("d30", "d90", "d180", "beyond"):
             for item in deadlines[bucket]:
-                all_deadlines_items[bucket].append({
-                    **item, "site_id": site.id, "site_nom": site.nom,
-                })
+                all_deadlines_items[bucket].append(
+                    {
+                        **item,
+                        "site_id": site.id,
+                        "site_nom": site.nom,
+                    }
+                )
 
         if trust["trust_score"] < 70:
-            untrusted.append({
+            untrusted.append(
+                {
+                    "site_id": site.id,
+                    "site_nom": site.nom,
+                    "trust_score": trust["trust_score"],
+                    "anomaly_count": trust["anomaly_count"],
+                    "reasons": trust["reasons"],
+                }
+            )
+
+        sites_out.append(
+            {
                 "site_id": site.id,
                 "site_nom": site.nom,
-                "trust_score": trust["trust_score"],
-                "anomaly_count": trust["anomaly_count"],
-                "reasons": trust["reasons"],
-            })
-
-        sites_out.append({
-            "site_id": site.id,
-            "site_nom": site.nom,
-            "gate_status": gate,
-            "completeness_pct": readiness["completeness_pct"],
-            "reg_risk": scores["reg_risk"],
-            "financial_opportunity_eur": scores["financial_opportunity_eur"],
-            "applicability": {
-                k: v["applicable"] for k, v in applicability.items()
-            },
-        })
+                "gate_status": gate,
+                "completeness_pct": readiness["completeness_pct"],
+                "reg_risk": scores["reg_risk"],
+                "financial_opportunity_eur": scores["financial_opportunity_eur"],
+                "applicability": {k: v["applicable"] for k, v in applicability.items()},
+            }
+        )
 
     # Top blockers: aggregate by field
     blocker_counts = defaultdict(lambda: {"count": 0, "sites": [], "cta_target": "", "cta_label": ""})
@@ -722,8 +733,12 @@ def compute_portfolio_compliance_summary(
 
 from models.cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
 from models.enums import (
-    WorkPackageSize, CeeDossierStep, CeeStatus,
-    StatutEvidence, MVAlertType, ActionSourceType, ActionStatus,
+    WorkPackageSize,
+    CeeDossierStep,
+    CeeStatus,
+    MVAlertType,
+    ActionSourceType,
+    ActionStatus,
 )
 
 
@@ -740,7 +755,9 @@ _CEE_EVIDENCE_TEMPLATE = [
 
 
 def create_cee_dossier(
-    db: Session, site_id: int, work_package_id: int,
+    db: Session,
+    site_id: int,
+    work_package_id: int,
 ) -> dict:
     """
     V69: Create a CEE dossier from a work package.
@@ -762,9 +779,7 @@ def create_cee_dossier(
         raise ValueError(f"Site {site_id} not found")
 
     # Check no existing dossier
-    existing = db.query(CeeDossier).filter(
-        CeeDossier.work_package_id == work_package_id
-    ).first()
+    existing = db.query(CeeDossier).filter(CeeDossier.work_package_id == work_package_id).first()
     if existing:
         raise ValueError(f"Dossier CEE already exists for WorkPackage {work_package_id}")
 
@@ -834,6 +849,7 @@ def create_cee_dossier(
         action_ids.append(action.id)
 
     import json
+
     dossier.action_ids_json = json.dumps(action_ids)
 
     # Update work package CEE status
@@ -852,7 +868,9 @@ def create_cee_dossier(
 
 
 def advance_cee_step(
-    db: Session, dossier_id: int, new_step: str,
+    db: Session,
+    dossier_id: int,
+    new_step: str,
 ) -> dict:
     """
     V69: Advance a CEE dossier to the next kanban step.
@@ -911,7 +929,8 @@ def advance_cee_step(
 
 
 def compute_mv_summary(
-    db: Session, site_id: int,
+    db: Session,
+    site_id: int,
 ) -> dict:
     """
     V69: Compute M&V (Mesure & Vérification) summary for a site.
@@ -930,11 +949,13 @@ def compute_mv_summary(
 
     # Try to get recent consumption (last 12 months)
     try:
-        recent = db.query(Consommation).filter(
-            Consommation.compteur_id.in_(
-                db.query(Compteur.id).filter(Compteur.site_id == site_id)
-            )
-        ).order_by(Consommation.date_debut.desc()).limit(12).all()
+        recent = (
+            db.query(Consommation)
+            .filter(Consommation.compteur_id.in_(db.query(Compteur.id).filter(Compteur.site_id == site_id)))
+            .order_by(Consommation.date_debut.desc())
+            .limit(12)
+            .all()
+        )
         current_kwh = sum(c.valeur or 0 for c in recent) if recent else 0
     except Exception:
         recent = []
@@ -952,34 +973,44 @@ def compute_mv_summary(
 
     # Alert 1: drift vs baseline (>10% increase)
     if delta_pct > 10:
-        alerts.append({
-            "type": MVAlertType.BASELINE_DRIFT.value,
-            "message": f"Dérive +{delta_pct}% vs baseline ({current_monthly:.0f} vs {baseline_monthly:.0f} kWh/mois)",
-            "severity": "high" if delta_pct > 20 else "medium",
-        })
+        alerts.append(
+            {
+                "type": MVAlertType.BASELINE_DRIFT.value,
+                "message": f"Dérive +{delta_pct}% vs baseline ({current_monthly:.0f} vs {baseline_monthly:.0f} kWh/mois)",
+                "severity": "high" if delta_pct > 20 else "medium",
+            }
+        )
 
     # Alert 2: data missing (no recent consumption)
     if not recent or len(recent) < 3:
-        alerts.append({
-            "type": MVAlertType.DATA_MISSING.value,
-            "message": f"Données manquantes: seulement {len(recent)} relevé(s) récent(s)",
-            "severity": "high",
-        })
+        alerts.append(
+            {
+                "type": MVAlertType.DATA_MISSING.value,
+                "message": f"Données manquantes: seulement {len(recent)} relevé(s) récent(s)",
+                "severity": "high",
+            }
+        )
 
     # Alert 3: upcoming obligation deadlines
-    obligations = db.query(Obligation).filter(
-        Obligation.site_id == site_id,
-        Obligation.echeance != None,
-        Obligation.statut != StatutConformite.CONFORME,
-    ).all()
+    obligations = (
+        db.query(Obligation)
+        .filter(
+            Obligation.site_id == site_id,
+            Obligation.echeance != None,
+            Obligation.statut != StatutConformite.CONFORME,
+        )
+        .all()
+    )
     today = date.today()
     for o in obligations:
         if o.echeance and (o.echeance - today).days <= 90:
-            alerts.append({
-                "type": MVAlertType.DEADLINE_APPROACHING.value,
-                "message": f"Échéance {o.type.value} dans {(o.echeance - today).days}j ({o.echeance.isoformat()})",
-                "severity": "high" if (o.echeance - today).days <= 30 else "medium",
-            })
+            alerts.append(
+                {
+                    "type": MVAlertType.DEADLINE_APPROACHING.value,
+                    "message": f"Échéance {o.type.value} dans {(o.echeance - today).days}j ({o.echeance.isoformat()})",
+                    "severity": "high" if (o.echeance - today).days <= 30 else "medium",
+                }
+            )
 
     return {
         "site_id": site_id,
@@ -994,20 +1025,24 @@ def compute_mv_summary(
 
 
 def get_site_work_packages(
-    db: Session, site_id: int,
+    db: Session,
+    site_id: int,
 ) -> list:
     """V69: Get all work packages for a site with CEE dossier status."""
     import json
 
-    packages = db.query(WorkPackage).filter(
-        WorkPackage.site_id == site_id,
-    ).order_by(WorkPackage.created_at.desc()).all()
+    packages = (
+        db.query(WorkPackage)
+        .filter(
+            WorkPackage.site_id == site_id,
+        )
+        .order_by(WorkPackage.created_at.desc())
+        .all()
+    )
 
     result = []
     for wp in packages:
-        dossier = db.query(CeeDossier).filter(
-            CeeDossier.work_package_id == wp.id
-        ).first()
+        dossier = db.query(CeeDossier).filter(CeeDossier.work_package_id == wp.id).first()
 
         item = {
             "id": wp.id,
@@ -1023,9 +1058,7 @@ def get_site_work_packages(
         }
 
         if dossier:
-            evidence_items = db.query(CeeDossierEvidence).filter(
-                CeeDossierEvidence.dossier_id == dossier.id
-            ).all()
+            evidence_items = db.query(CeeDossierEvidence).filter(CeeDossierEvidence.dossier_id == dossier.id).all()
             action_ids = json.loads(dossier.action_ids_json or "[]")
 
             item["dossier"] = {
@@ -1058,6 +1091,7 @@ def get_site_work_packages(
 def _resolve_site_org(db: Session, site_id: int) -> int:
     """Resolve org_id from site_id."""
     from models import Portefeuille, EntiteJuridique
+
     row = (
         db.query(EntiteJuridique.organisation_id)
         .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
@@ -1075,6 +1109,7 @@ from models import Compteur
 # ========================================
 # Layer B: Database persistence
 # ========================================
+
 
 def _apply_snapshot(site: Site, snapshot: dict):
     """Apply a computed snapshot dict to a Site ORM object."""
@@ -1103,12 +1138,8 @@ def _bulk_recompute(db: Session, sites: List[Site]):
 
     site_ids = [s.id for s in sites]
 
-    all_obligations = db.query(Obligation).filter(
-        Obligation.site_id.in_(site_ids)
-    ).all()
-    all_evidences = db.query(Evidence).filter(
-        Evidence.site_id.in_(site_ids)
-    ).all()
+    all_obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
+    all_evidences = db.query(Evidence).filter(Evidence.site_id.in_(site_ids)).all()
 
     obs_by_site = defaultdict(list)
     for ob in all_obligations:
@@ -1119,23 +1150,17 @@ def _bulk_recompute(db: Session, sites: List[Site]):
         evs_by_site[ev.site_id].append(ev)
 
     for site in sites:
-        snapshot = compute_site_snapshot(
-            obs_by_site[site.id], evs_by_site[site.id]
-        )
+        snapshot = compute_site_snapshot(obs_by_site[site.id], evs_by_site[site.id])
         _apply_snapshot(site, snapshot)
 
 
 def recompute_portfolio(db: Session, portefeuille_id: int) -> dict:
     """Recompute compliance for all sites in a portfolio."""
-    portefeuille = db.query(Portefeuille).filter(
-        Portefeuille.id == portefeuille_id
-    ).first()
+    portefeuille = db.query(Portefeuille).filter(Portefeuille.id == portefeuille_id).first()
     if not portefeuille:
         raise ValueError(f"Portefeuille {portefeuille_id} not found")
 
-    sites = db.query(Site).filter(
-        Site.portefeuille_id == portefeuille_id
-    ).all()
+    sites = db.query(Site).filter(Site.portefeuille_id == portefeuille_id).all()
 
     _bulk_recompute(db, sites)
     db.commit()
@@ -1148,23 +1173,19 @@ def recompute_portfolio(db: Session, portefeuille_id: int) -> dict:
 
 def recompute_organisation(db: Session, organisation_id: int) -> dict:
     """Recompute compliance for ALL sites in an organisation."""
-    org = db.query(Organisation).filter(
-        Organisation.id == organisation_id
-    ).first()
+    org = db.query(Organisation).filter(Organisation.id == organisation_id).first()
     if not org:
         raise ValueError(f"Organisation {organisation_id} not found")
 
     portefeuille_ids = [
-        row[0] for row in
-        db.query(Portefeuille.id)
+        row[0]
+        for row in db.query(Portefeuille.id)
         .join(EntiteJuridique)
         .filter(EntiteJuridique.organisation_id == organisation_id)
         .all()
     ]
 
-    sites = db.query(Site).filter(
-        Site.portefeuille_id.in_(portefeuille_ids)
-    ).all()
+    sites = db.query(Site).filter(Site.portefeuille_id.in_(portefeuille_ids)).all()
 
     _bulk_recompute(db, sites)
     db.commit()

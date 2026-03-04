@@ -4,9 +4,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Database, CheckCircle2, Circle, ArrowRight, Search,
-} from 'lucide-react';
+import { Database, CheckCircle2, Circle, ArrowRight, Search } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { PageShell, Card, CardBody, Button, Progress, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -18,9 +16,11 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 // ── Status icon inline ──────────────────────────────────────────────────────
 function DimStatus({ ok }) {
-  return ok
-    ? <CheckCircle2 size={14} className="text-emerald-500" />
-    : <Circle size={14} className="text-gray-300" />;
+  return ok ? (
+    <CheckCircle2 size={14} className="text-emerald-500" />
+  ) : (
+    <Circle size={14} className="text-gray-300" />
+  );
 }
 
 // ── Dimension filter tabs ───────────────────────────────────────────────────
@@ -48,13 +48,14 @@ export default function ActivationPage() {
     const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
     const nonConformes = sites.filter((s) => s.statut_conformite === 'non_conforme').length;
     const aRisque = sites.filter((s) => s.statut_conformite === 'a_risque').length;
-    const couvertureDonnees = total > 0
-      ? Math.round(sites.filter((s) => s.conso_kwh_an > 0).length / total * 100)
-      : 0;
+    const couvertureDonnees =
+      total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
   }, [scopedSites]);
 
-  const { billingSummary, purchaseSignals, contractSiteIds, loading } = useActivationData(kpis.total);
+  const { billingSummary, purchaseSignals, contractSiteIds, loading } = useActivationData(
+    kpis.total
+  );
   const { readinessState } = useDataReadiness(kpis);
   const { openActionDrawer } = useActionDrawer();
 
@@ -73,12 +74,13 @@ export default function ActivationPage() {
   }
 
   const activation = useMemo(
-    () => buildActivationChecklist({
-      kpis,
-      billingSummary: billingSummary || {},
-      purchaseSignals,
-    }),
-    [kpis, billingSummary, purchaseSignals],
+    () =>
+      buildActivationChecklist({
+        kpis,
+        billingSummary: billingSummary || {},
+        purchaseSignals,
+      }),
+    [kpis, billingSummary, purchaseSignals]
   );
 
   // Per-site activation status
@@ -109,9 +111,8 @@ export default function ActivationPage() {
     // Search
     if (siteSearch.trim()) {
       const q = siteSearch.toLowerCase();
-      list = list.filter((s) =>
-        s.nom.toLowerCase().includes(q) ||
-        (s.ville || '').toLowerCase().includes(q),
+      list = list.filter(
+        (s) => s.nom.toLowerCase().includes(q) || (s.ville || '').toLowerCase().includes(q)
       );
     }
 
@@ -131,10 +132,19 @@ export default function ActivationPage() {
   }
 
   return (
-    <PageShell icon={Database} title="Activation des données" subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}>
+    <PageShell
+      icon={Database}
+      title="Activation des données"
+      subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}
+    >
       {/* ── Readiness banner ── */}
       {readinessState && (
-        <HealthSummary healthState={readinessState} onNavigate={navigate} onCreateAction={handleCreateFromReadiness} compact />
+        <HealthSummary
+          healthState={readinessState}
+          onNavigate={navigate}
+          onCreateAction={handleCreateFromReadiness}
+          compact
+        />
       )}
 
       {/* ── Resume par dimension ── */}
@@ -236,17 +246,31 @@ export default function ActivationPage() {
             </Thead>
             <Tbody>
               {filteredSites.map((site) => (
-                <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} className="group cursor-pointer hover:bg-blue-50/40">
+                <Tr
+                  key={site.id}
+                  onClick={() => navigate(`/sites/${site.id}`)}
+                  className="group cursor-pointer hover:bg-blue-50/40"
+                >
                   <Td>
                     <div className="font-medium text-gray-900">{site.nom}</div>
                     <div className="text-xs text-gray-400">{site.usage}</div>
                   </Td>
                   <Td>{site.ville}</Td>
-                  <Td className="text-center"><DimStatus ok={site._activation.patrimoine} /></Td>
-                  <Td className="text-center"><DimStatus ok={site._activation.conformite} /></Td>
-                  <Td className="text-center"><DimStatus ok={site._activation.consommation} /></Td>
-                  <Td className="text-center"><DimStatus ok={site._activation.facturation} /></Td>
-                  <Td className="text-center"><DimStatus ok={site._activation.achat} /></Td>
+                  <Td className="text-center">
+                    <DimStatus ok={site._activation.patrimoine} />
+                  </Td>
+                  <Td className="text-center">
+                    <DimStatus ok={site._activation.conformite} />
+                  </Td>
+                  <Td className="text-center">
+                    <DimStatus ok={site._activation.consommation} />
+                  </Td>
+                  <Td className="text-center">
+                    <DimStatus ok={site._activation.facturation} />
+                  </Td>
+                  <Td className="text-center">
+                    <DimStatus ok={site._activation.achat} />
+                  </Td>
                 </Tr>
               ))}
             </Tbody>

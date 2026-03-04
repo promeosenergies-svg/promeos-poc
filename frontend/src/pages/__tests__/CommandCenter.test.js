@@ -8,8 +8,14 @@ import { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS } from '../../ui/c
 
 describe('normalizeDashboardModel', () => {
   const baseKpis = {
-    total: 10, conformes: 10, nonConformes: 0, aRisque: 0,
-    risque: 0, pctConf: 100, compStatus: 'ok', risqueStatus: 'ok',
+    total: 10,
+    conformes: 10,
+    nonConformes: 0,
+    aRisque: 0,
+    risque: 0,
+    pctConf: 100,
+    compStatus: 'ok',
+    risqueStatus: 'ok',
   };
 
   it('isAllClear when 100% + 0 risk + 0 alerts', () => {

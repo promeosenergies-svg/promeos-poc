@@ -2,8 +2,10 @@
 PROMEOS - Tests for Compliance scope filtering
 Tests _resolve_site_ids, get_summary, get_sites_findings with entity/site scope.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,11 +14,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    TypeSite,
 )
 from services.compliance_rules import (
-    _resolve_site_ids, get_summary, get_sites_findings,
+    _resolve_site_ids,
+    get_summary,
+    get_sites_findings,
 )
 
 
@@ -52,17 +61,29 @@ def _seed_org(db):
 
     # Findings: site1 NOK, site2 OK, site3 UNKNOWN
     f1 = ComplianceFinding(
-        site_id=1, regulation="bacs", rule_id="BACS_SCOPE",
-        status="NOK", severity="high", evidence="Non conforme",
+        site_id=1,
+        regulation="bacs",
+        rule_id="BACS_SCOPE",
+        status="NOK",
+        severity="high",
+        evidence="Non conforme",
         deadline=date(2025, 12, 31),
     )
     f2 = ComplianceFinding(
-        site_id=2, regulation="bacs", rule_id="BACS_SCOPE",
-        status="OK", severity="low", evidence="Conforme",
+        site_id=2,
+        regulation="bacs",
+        rule_id="BACS_SCOPE",
+        status="OK",
+        severity="low",
+        evidence="Conforme",
     )
     f3 = ComplianceFinding(
-        site_id=3, regulation="decret_tertiaire_operat", rule_id="DT_SCOPE",
-        status="UNKNOWN", severity="medium", evidence="Donnees manquantes",
+        site_id=3,
+        regulation="decret_tertiaire_operat",
+        rule_id="DT_SCOPE",
+        status="UNKNOWN",
+        severity="medium",
+        evidence="Donnees manquantes",
     )
     db.add_all([f1, f2, f3])
     db.commit()

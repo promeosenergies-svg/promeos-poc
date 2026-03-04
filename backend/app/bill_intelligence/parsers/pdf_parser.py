@@ -10,6 +10,7 @@ Architecture:
 V0 POC: 2 templates (EDF elec, Engie gaz).
 Uses raw text extraction — real PDF extraction via pdfplumber is optional.
 """
+
 import re
 import os
 import hashlib
@@ -18,14 +19,18 @@ from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass, field
 
 from ..domain import (
-    Invoice, InvoiceComponent, InvoiceStatus,
-    EnergyType, ComponentType,
+    Invoice,
+    InvoiceComponent,
+    InvoiceStatus,
+    EnergyType,
+    ComponentType,
 )
 
 
 @dataclass
 class PDFTemplate:
     """Template for parsing a specific supplier's PDF layout."""
+
     template_id: str
     supplier_pattern: str  # Regex to match supplier name in text
     energy_type: EnergyType
@@ -40,9 +45,11 @@ class PDFTemplate:
 # Text extraction
 # ========================================
 
+
 def extract_text_with_fitz(content: bytes) -> str:
     """Extract text from PDF bytes via pymupdf (fitz) — in requirements.txt."""
     import fitz  # pymupdf
+
     doc = fitz.open(stream=content, filetype="pdf")
     text = "\n".join(page.get_text() for page in doc)
     doc.close()
@@ -71,6 +78,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 # ========================================
 # Common regex helpers
 # ========================================
+
 
 def _find_float(text: str, pattern: str) -> Optional[float]:
     """Extract a float value from text using regex pattern."""
@@ -106,6 +114,7 @@ def _find_str(text: str, pattern: str) -> Optional[str]:
 # ========================================
 # EDF Electricity Template
 # ========================================
+
 
 def parse_edf_elec(text: str, source_file: Optional[str] = None) -> Invoice:
     """
@@ -176,42 +185,48 @@ def _extract_elec_components(text: str) -> List[InvoiceComponent]:
     # Abonnement
     abo = _find_float(text, r"Abonnement[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if abo:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.ABONNEMENT,
-            label="Abonnement",
-            amount_ht=abo,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.ABONNEMENT,
+                label="Abonnement",
+                amount_ht=abo,
+                tva_rate=5.5,
+            )
+        )
 
     # HP
     hp_qty = _find_float(text, r"[Hh]eures?\s*[Pp]leines?\s*[\s:]*?([\d\s,.]+)\s*kWh")
     hp_price = _find_float(text, r"[Hh]eures?\s*[Pp]leines?[^€\n]*?([\d,.]+)\s*(?:EUR|€)/kWh")
     hp_amount = _find_float(text, r"[Hh]eures?\s*[Pp]leines?[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)\s*$")
     if hp_amount or (hp_qty and hp_price):
-        components.append(InvoiceComponent(
-            component_type=ComponentType.CONSO_HP,
-            label="Energie heures pleines",
-            quantity=hp_qty,
-            unit="kWh",
-            unit_price=hp_price,
-            amount_ht=hp_amount or (round(hp_qty * hp_price, 2) if hp_qty and hp_price else None),
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.CONSO_HP,
+                label="Energie heures pleines",
+                quantity=hp_qty,
+                unit="kWh",
+                unit_price=hp_price,
+                amount_ht=hp_amount or (round(hp_qty * hp_price, 2) if hp_qty and hp_price else None),
+                tva_rate=20.0,
+            )
+        )
 
     # HC
     hc_qty = _find_float(text, r"[Hh]eures?\s*[Cc]reuses?\s*[\s:]*?([\d\s,.]+)\s*kWh")
     hc_price = _find_float(text, r"[Hh]eures?\s*[Cc]reuses?[^€\n]*?([\d,.]+)\s*(?:EUR|€)/kWh")
     hc_amount = _find_float(text, r"[Hh]eures?\s*[Cc]reuses?[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)\s*$")
     if hc_amount or (hc_qty and hc_price):
-        components.append(InvoiceComponent(
-            component_type=ComponentType.CONSO_HC,
-            label="Energie heures creuses",
-            quantity=hc_qty,
-            unit="kWh",
-            unit_price=hc_price,
-            amount_ht=hc_amount or (round(hc_qty * hc_price, 2) if hc_qty and hc_price else None),
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.CONSO_HC,
+                label="Energie heures creuses",
+                quantity=hc_qty,
+                unit="kWh",
+                unit_price=hc_price,
+                amount_ht=hc_amount or (round(hc_qty * hc_price, 2) if hc_qty and hc_price else None),
+                tva_rate=20.0,
+            )
+        )
 
     # Base (if not HP/HC)
     if not hp_amount and not hc_amount:
@@ -219,54 +234,64 @@ def _extract_elec_components(text: str) -> List[InvoiceComponent]:
         base_price = _find_float(text, r"(?:Energie|Consommation)[^€\n]*?([\d,.]+)\s*(?:EUR|€)/kWh")
         base_amount = _find_float(text, r"(?:Energie|Consommation)\s*(?:base)?[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
         if base_amount:
-            components.append(InvoiceComponent(
-                component_type=ComponentType.CONSO_BASE,
-                label="Energie base",
-                quantity=base_qty,
-                unit="kWh",
-                unit_price=base_price,
-                amount_ht=base_amount,
-                tva_rate=20.0,
-            ))
+            components.append(
+                InvoiceComponent(
+                    component_type=ComponentType.CONSO_BASE,
+                    label="Energie base",
+                    quantity=base_qty,
+                    unit="kWh",
+                    unit_price=base_price,
+                    amount_ht=base_amount,
+                    tva_rate=20.0,
+                )
+            )
 
     # TURPE
     turpe_gestion = _find_float(text, r"(?:TURPE|Acheminement).*?[Gg]estion[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if turpe_gestion:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.TURPE_FIXE,
-            label="TURPE - Composante de gestion",
-            amount_ht=turpe_gestion,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.TURPE_FIXE,
+                label="TURPE - Composante de gestion",
+                amount_ht=turpe_gestion,
+                tva_rate=5.5,
+            )
+        )
 
     turpe_soutirage = _find_float(text, r"(?:TURPE|Acheminement).*?[Ss]outirage[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if turpe_soutirage:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.TURPE_PUISSANCE,
-            label="TURPE - Composante de soutirage",
-            amount_ht=turpe_soutirage,
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.TURPE_PUISSANCE,
+                label="TURPE - Composante de soutirage",
+                amount_ht=turpe_soutirage,
+                tva_rate=20.0,
+            )
+        )
 
     # CTA
     cta = _find_float(text, r"CTA[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if cta:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.CTA,
-            label="CTA",
-            amount_ht=cta,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.CTA,
+                label="CTA",
+                amount_ht=cta,
+                tva_rate=5.5,
+            )
+        )
 
     # Accise / CSPE / TICFE
     accise = _find_float(text, r"(?:Accise|CSPE|TICFE)[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if accise:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.ACCISE,
-            label="Accise sur l'electricite",
-            amount_ht=accise,
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.ACCISE,
+                label="Accise sur l'electricite",
+                amount_ht=accise,
+                tva_rate=20.0,
+            )
+        )
 
     return components
 
@@ -274,6 +299,7 @@ def _extract_elec_components(text: str) -> List[InvoiceComponent]:
 # ========================================
 # Engie Gas Template
 # ========================================
+
 
 def parse_engie_gaz(text: str, source_file: Optional[str] = None) -> Invoice:
     """
@@ -330,67 +356,79 @@ def _extract_gaz_components(text: str) -> List[InvoiceComponent]:
     # Abonnement
     abo = _find_float(text, r"Abonnement[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if abo:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.ABONNEMENT,
-            label="Abonnement distribution gaz",
-            amount_ht=abo,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.ABONNEMENT,
+                label="Abonnement distribution gaz",
+                amount_ht=abo,
+                tva_rate=5.5,
+            )
+        )
 
     # Molecule
     mol_qty = _find_float(text, r"[Mm]ol[eé]cule[^€\n]*?([\d\s,.]+)\s*kWh")
     mol_price = _find_float(text, r"[Mm]ol[eé]cule[^€\n]*?([\d,.]+)\s*(?:EUR|€)/kWh")
     mol_amount = _find_float(text, r"[Mm]ol[eé]cule[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if mol_amount:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.TERME_VARIABLE,
-            label="Molecule gaz naturel",
-            quantity=mol_qty,
-            unit="kWh",
-            unit_price=mol_price,
-            amount_ht=mol_amount,
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.TERME_VARIABLE,
+                label="Molecule gaz naturel",
+                quantity=mol_qty,
+                unit="kWh",
+                unit_price=mol_price,
+                amount_ht=mol_amount,
+                tva_rate=20.0,
+            )
+        )
 
     # ATRD / distribution fixe
     atrd_fixe = _find_float(text, r"(?:ATRD|Distribution).*?(?:[Ff]ixe|[Pp]art\s+fixe)[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if atrd_fixe:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.TERME_FIXE,
-            label="ATRD - Part fixe distribution",
-            amount_ht=atrd_fixe,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.TERME_FIXE,
+                label="ATRD - Part fixe distribution",
+                amount_ht=atrd_fixe,
+                tva_rate=5.5,
+            )
+        )
 
     # ATRD proportionnelle
     atrd_prop = _find_float(text, r"(?:ATRD|Distribution).*?[Pp]roportionnelle[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if atrd_prop:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.TURPE_ENERGIE,
-            label="ATRD - Part proportionnelle",
-            amount_ht=atrd_prop,
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.TURPE_ENERGIE,
+                label="ATRD - Part proportionnelle",
+                amount_ht=atrd_prop,
+                tva_rate=20.0,
+            )
+        )
 
     # CTA
     cta = _find_float(text, r"CTA[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if cta:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.CTA,
-            label="CTA",
-            amount_ht=cta,
-            tva_rate=5.5,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.CTA,
+                label="CTA",
+                amount_ht=cta,
+                tva_rate=5.5,
+            )
+        )
 
     # Accise / TICGN
     accise = _find_float(text, r"(?:Accise|TICGN)[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if accise:
-        components.append(InvoiceComponent(
-            component_type=ComponentType.ACCISE,
-            label="Accise sur le gaz naturel",
-            amount_ht=accise,
-            tva_rate=20.0,
-        ))
+        components.append(
+            InvoiceComponent(
+                component_type=ComponentType.ACCISE,
+                label="Accise sur le gaz naturel",
+                amount_ht=accise,
+                tva_rate=20.0,
+            )
+        )
 
     return components
 
@@ -399,9 +437,10 @@ def _extract_gaz_components(text: str) -> List[InvoiceComponent]:
 # Confidence scoring
 # ========================================
 
-def _compute_confidence(total_ht: Optional[float],
-                        total_ttc: Optional[float],
-                        components: List[InvoiceComponent]) -> float:
+
+def _compute_confidence(
+    total_ht: Optional[float], total_ttc: Optional[float], components: List[InvoiceComponent]
+) -> float:
     """Compute parsing confidence score (0.0 to 1.0)."""
     score = 0.0
     checks = 0

@@ -2,6 +2,7 @@
 PROMEOS - Tous les enums du domaine
 Fichier unique pour eviter les imports circulaires.
 """
+
 import enum
 
 
@@ -9,8 +10,10 @@ import enum
 # Enums sites & assets
 # ========================================
 
+
 class TypeSite(str, enum.Enum):
     """Types de sites gérés par PROMEOS — segments B2B France"""
+
     # Existants
     MAGASIN = "magasin"
     USINE = "usine"
@@ -28,6 +31,7 @@ class TypeSite(str, enum.Enum):
 
 class TypeCompteur(str, enum.Enum):
     """Types de compteurs d'énergie"""
+
     ELECTRICITE = "electricite"
     GAZ = "gaz"
     EAU = "eau"
@@ -35,6 +39,7 @@ class TypeCompteur(str, enum.Enum):
 
 class SeveriteAlerte(str, enum.Enum):
     """Niveaux de sévérité des alertes énergétiques"""
+
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -42,6 +47,7 @@ class SeveriteAlerte(str, enum.Enum):
 
 class TypeUsage(str, enum.Enum):
     """Types d'usage énergétique"""
+
     BUREAUX = "bureaux"
     PROCESS = "process"
     FROID = "froid"
@@ -55,8 +61,10 @@ class TypeUsage(str, enum.Enum):
 # Enums conformité
 # ========================================
 
+
 class StatutConformite(str, enum.Enum):
     """Statut de conformité"""
+
     CONFORME = "conforme"
     DEROGATION = "derogation"
     A_RISQUE = "a_risque"
@@ -65,6 +73,7 @@ class StatutConformite(str, enum.Enum):
 
 class TypeObligation(str, enum.Enum):
     """Types d'obligations réglementaires"""
+
     DECRET_TERTIAIRE = "decret_tertiaire"
     BACS = "bacs"
     APER = "aper"
@@ -72,6 +81,7 @@ class TypeObligation(str, enum.Enum):
 
 class TypeEvidence(str, enum.Enum):
     """Types de preuves de conformité"""
+
     AUDIT = "audit"
     FACTURE = "facture"
     CERTIFICAT = "certificat"
@@ -84,6 +94,7 @@ class TypeEvidence(str, enum.Enum):
 
 class StatutEvidence(str, enum.Enum):
     """Statut de la preuve"""
+
     VALIDE = "valide"
     EN_ATTENTE = "en_attente"
     MANQUANT = "manquant"
@@ -93,6 +104,7 @@ class StatutEvidence(str, enum.Enum):
 # ========================================
 # Enums RegOps / Lifecycle / Connectors
 # ========================================
+
 
 class ParkingType(str, enum.Enum):
     OUTDOOR = "outdoor"
@@ -177,6 +189,7 @@ class RegulationType(str, enum.Enum):
 
 class Typologie(str, enum.Enum):
     """Segment client detecte par la segmentation."""
+
     TERTIAIRE_PRIVE = "tertiaire_prive"
     TERTIAIRE_PUBLIC = "tertiaire_public"
     INDUSTRIE = "industrie"
@@ -194,14 +207,17 @@ class Typologie(str, enum.Enum):
 # Enums Bill Intelligence
 # ========================================
 
+
 class BillingEnergyType(str, enum.Enum):
     """Type d'energie pour les contrats et factures."""
+
     ELEC = "elec"
     GAZ = "gaz"
 
 
 class InvoiceLineType(str, enum.Enum):
     """Types de lignes d'une facture energie."""
+
     ENERGY = "energy"
     NETWORK = "network"
     TAX = "tax"
@@ -210,6 +226,7 @@ class InvoiceLineType(str, enum.Enum):
 
 class BillingInvoiceStatus(str, enum.Enum):
     """Statut d'une facture energie persistee."""
+
     IMPORTED = "imported"
     VALIDATED = "validated"
     AUDITED = "audited"
@@ -219,6 +236,7 @@ class BillingInvoiceStatus(str, enum.Enum):
 
 class InsightStatus(str, enum.Enum):
     """Statut workflow d'un insight de facturation (ops)."""
+
     OPEN = "open"
     ACK = "ack"
     RESOLVED = "resolved"
@@ -229,8 +247,10 @@ class InsightStatus(str, enum.Enum):
 # Enums Achat Energie
 # ========================================
 
+
 class PurchaseStrategy(str, enum.Enum):
     """Strategie d'achat energie."""
+
     FIXE = "fixe"
     INDEXE = "indexe"
     SPOT = "spot"
@@ -239,6 +259,7 @@ class PurchaseStrategy(str, enum.Enum):
 
 class PurchaseRecoStatus(str, enum.Enum):
     """Statut de la recommandation d'achat."""
+
     DRAFT = "draft"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -248,19 +269,23 @@ class PurchaseRecoStatus(str, enum.Enum):
 # Enums Action Hub (Sprint 10)
 # ========================================
 
+
 class ActionSourceType(str, enum.Enum):
     """Source brique generatrice de l'action."""
+
     COMPLIANCE = "compliance"
     CONSUMPTION = "consumption"
     BILLING = "billing"
     PURCHASE = "purchase"
-    INSIGHT = "insight"       # from monitoring insight/alert
-    MANUAL = "manual"         # manually created by user
+    INSIGHT = "insight"  # from monitoring insight/alert
+    MANUAL = "manual"  # manually created by user
     SEGMENTATION = "segmentation"  # V101: from segmentation recommendations
+    COPILOT = "copilot"  # V113: from Energy Copilot rule engine
 
 
 class ActionStatus(str, enum.Enum):
     """Statut workflow d'une action du hub."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     DONE = "done"
@@ -272,8 +297,10 @@ class ActionStatus(str, enum.Enum):
 # Enums Notifications (Sprint 10.2)
 # ========================================
 
+
 class NotificationSeverity(str, enum.Enum):
     """Severite d'un evenement notification."""
+
     INFO = "info"
     WARN = "warn"
     CRITICAL = "critical"
@@ -281,6 +308,7 @@ class NotificationSeverity(str, enum.Enum):
 
 class NotificationStatus(str, enum.Enum):
     """Statut lifecycle d'une notification."""
+
     NEW = "new"
     READ = "read"
     DISMISSED = "dismissed"
@@ -288,6 +316,7 @@ class NotificationStatus(str, enum.Enum):
 
 class NotificationSourceType(str, enum.Enum):
     """Source brique generatrice de la notification."""
+
     COMPLIANCE = "compliance"
     BILLING = "billing"
     PURCHASE = "purchase"
@@ -299,8 +328,10 @@ class NotificationSourceType(str, enum.Enum):
 # Enums IAM (Users / Roles / Scopes)
 # ========================================
 
+
 class UserRole(str, enum.Enum):
     """11 roles metier PROMEOS."""
+
     DG_OWNER = "dg_owner"
     DSI_ADMIN = "dsi_admin"
     DAF = "daf"
@@ -316,6 +347,7 @@ class UserRole(str, enum.Enum):
 
 class ScopeLevel(str, enum.Enum):
     """Niveau de scope hierarchique."""
+
     ORG = "org"
     ENTITE = "entite"
     SITE = "site"
@@ -323,6 +355,7 @@ class ScopeLevel(str, enum.Enum):
 
 class PermissionAction(str, enum.Enum):
     """Actions granulaires."""
+
     VIEW = "view"
     EDIT = "edit"
     ADMIN = "admin"
@@ -335,8 +368,10 @@ class PermissionAction(str, enum.Enum):
 # Enums Patrimoine / Staging (DIAMANT)
 # ========================================
 
+
 class StagingStatus(str, enum.Enum):
     """Statut d'un batch d'import staging."""
+
     DRAFT = "draft"
     VALIDATED = "validated"
     APPLIED = "applied"
@@ -345,6 +380,7 @@ class StagingStatus(str, enum.Enum):
 
 class ImportSourceType(str, enum.Enum):
     """Source d'un import patrimoine."""
+
     EXCEL = "excel"
     CSV = "csv"
     INVOICE = "invoice"
@@ -355,6 +391,7 @@ class ImportSourceType(str, enum.Enum):
 
 class QualityRuleSeverity(str, enum.Enum):
     """Severite d'un finding de qualite."""
+
     CRITICAL = "critical"
     BLOCKING = "blocking"
     WARNING = "warning"
@@ -363,6 +400,7 @@ class QualityRuleSeverity(str, enum.Enum):
 
 class ActivationLogStatus(str, enum.Enum):
     """Statut d'une tentative d'activation batch."""
+
     STARTED = "started"
     SUCCESS = "success"
     FAILED = "failed"
@@ -371,12 +409,14 @@ class ActivationLogStatus(str, enum.Enum):
 
 class DeliveryPointStatus(str, enum.Enum):
     """Statut d'un point de livraison (PRM/PCE)."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
 
 
 class DeliveryPointEnergyType(str, enum.Enum):
     """Type d'energie du point de livraison."""
+
     ELEC = "elec"
     GAZ = "gaz"
 
@@ -385,8 +425,10 @@ class DeliveryPointEnergyType(str, enum.Enum):
 # Enums Smart Intake (DIAMANT)
 # ========================================
 
+
 class IntakeSessionStatus(str, enum.Enum):
     """Statut lifecycle d'une session d'intake."""
+
     DRAFT = "draft"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -395,6 +437,7 @@ class IntakeSessionStatus(str, enum.Enum):
 
 class IntakeMode(str, enum.Enum):
     """Mode d'une session d'intake."""
+
     WIZARD = "wizard"
     CHAT = "chat"
     BULK = "bulk"
@@ -403,6 +446,7 @@ class IntakeMode(str, enum.Enum):
 
 class IntakeSource(str, enum.Enum):
     """Source d'une reponse intake."""
+
     USER = "user"
     IMPORT = "import"
     SYSTEM = "system"
@@ -412,6 +456,7 @@ class IntakeSource(str, enum.Enum):
 
 class WatcherEventStatus(str, enum.Enum):
     """Pipeline status for watcher events."""
+
     NEW = "new"
     REVIEWED = "reviewed"
     APPLIED = "applied"
@@ -422,8 +467,10 @@ class WatcherEventStatus(str, enum.Enum):
 # Enums BACS Expert (Decret n°2020-887)
 # ========================================
 
+
 class CvcSystemType(str, enum.Enum):
     """Type de systeme CVC pour inventaire BACS."""
+
     HEATING = "heating"
     COOLING = "cooling"
     VENTILATION = "ventilation"
@@ -431,6 +478,7 @@ class CvcSystemType(str, enum.Enum):
 
 class CvcArchitecture(str, enum.Enum):
     """Architecture d'installation CVC (impacte le calcul Putile)."""
+
     CASCADE = "cascade"
     NETWORK = "network"
     INDEPENDENT = "independent"
@@ -438,6 +486,7 @@ class CvcArchitecture(str, enum.Enum):
 
 class BacsTriggerReason(str, enum.Enum):
     """Raison declenchante de l'obligation BACS."""
+
     THRESHOLD_290 = "threshold_290"
     THRESHOLD_70 = "threshold_70"
     RENEWAL = "renewal"
@@ -446,6 +495,7 @@ class BacsTriggerReason(str, enum.Enum):
 
 class InspectionStatus(str, enum.Enum):
     """Statut d'une inspection quinquennale BACS."""
+
     SCHEDULED = "scheduled"
     COMPLETED = "completed"
     OVERDUE = "overdue"
@@ -455,8 +505,10 @@ class InspectionStatus(str, enum.Enum):
 # Enums Tertiaire / OPERAT (V39)
 # ========================================
 
+
 class EfaStatut(str, enum.Enum):
     """Statut d'une EFA (Entite Fonctionnelle Assujettie)."""
+
     ACTIVE = "active"
     CLOSED = "closed"
     DRAFT = "draft"
@@ -464,6 +516,7 @@ class EfaStatut(str, enum.Enum):
 
 class EfaRole(str, enum.Enum):
     """Role de l'assujetti dans l'EFA."""
+
     PROPRIETAIRE = "proprietaire"
     LOCATAIRE = "locataire"
     MANDATAIRE = "mandataire"
@@ -471,6 +524,7 @@ class EfaRole(str, enum.Enum):
 
 class DeclarationStatus(str, enum.Enum):
     """Statut d'une declaration annuelle OPERAT."""
+
     DRAFT = "draft"
     PRECHECKED = "prechecked"
     EXPORTED = "exported"
@@ -479,6 +533,7 @@ class DeclarationStatus(str, enum.Enum):
 
 class PerimeterEventType(str, enum.Enum):
     """Type d'evenement de perimetre EFA."""
+
     CHANGEMENT_OCCUPANT = "changement_occupant"
     VACANCE = "vacance"
     RENOVATION_MAJEURE = "renovation_majeure"
@@ -490,6 +545,7 @@ class PerimeterEventType(str, enum.Enum):
 
 class DataQualityIssueSeverity(str, enum.Enum):
     """Severite d'une issue qualite tertiaire."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -498,6 +554,7 @@ class DataQualityIssueSeverity(str, enum.Enum):
 
 class DataQualityIssueStatus(str, enum.Enum):
     """Statut workflow d'une issue qualite tertiaire."""
+
     OPEN = "open"
     ACK = "ack"
     RESOLVED = "resolved"
@@ -508,8 +565,10 @@ class DataQualityIssueStatus(str, enum.Enum):
 # Enums V69: CEE Pipeline + M&V
 # ========================================
 
+
 class WorkPackageSize(str, enum.Enum):
     """Taille du package de travaux."""
+
     S = "S"
     M = "M"
     L = "L"
@@ -517,6 +576,7 @@ class WorkPackageSize(str, enum.Enum):
 
 class CeeDossierStep(str, enum.Enum):
     """Étapes kanban du dossier CEE."""
+
     DEVIS = "devis"
     ENGAGEMENT = "engagement"
     TRAVAUX = "travaux"
@@ -527,6 +587,7 @@ class CeeDossierStep(str, enum.Enum):
 
 class CeeStatus(str, enum.Enum):
     """Statut CEE d'un work package."""
+
     A_QUALIFIER = "a_qualifier"
     OK = "ok"
     NON = "non"
@@ -534,6 +595,7 @@ class CeeStatus(str, enum.Enum):
 
 class MVAlertType(str, enum.Enum):
     """Types d'alertes M&V."""
+
     BASELINE_DRIFT = "baseline_drift"
     DEADLINE_APPROACHING = "deadline_approaching"
     DATA_MISSING = "data_missing"
@@ -541,8 +603,10 @@ class MVAlertType(str, enum.Enum):
 
 # ── V96: Patrimoine Unique Monde ──────────────────────────────────────────
 
+
 class PaymentRuleLevel(str, enum.Enum):
     """Niveau d'application d'une regle de paiement."""
+
     PORTEFEUILLE = "portefeuille"
     SITE = "site"
     CONTRAT = "contrat"
@@ -550,6 +614,7 @@ class PaymentRuleLevel(str, enum.Enum):
 
 class ContractIndexation(str, enum.Enum):
     """Type d'indexation d'un contrat energie."""
+
     FIXE = "fixe"
     INDEXE = "indexe"
     SPOT = "spot"
@@ -558,6 +623,7 @@ class ContractIndexation(str, enum.Enum):
 
 class ContractStatus(str, enum.Enum):
     """Statut lifecycle d'un contrat energie."""
+
     ACTIVE = "active"
     EXPIRING = "expiring"
     EXPIRED = "expired"
@@ -565,6 +631,7 @@ class ContractStatus(str, enum.Enum):
 
 class ReconciliationStatus(str, enum.Enum):
     """Statut de reconciliation 3 voies."""
+
     OK = "ok"
     WARN = "warn"
     FAIL = "fail"

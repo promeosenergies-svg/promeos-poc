@@ -2,8 +2,10 @@
 PROMEOS — Tests Consumption Context V0
 ~20 tests: behavior_score, weekend_active, profile, activity, API endpoints.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -14,8 +16,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    Meter, MeterReading, TypeSite, ConsumptionInsight,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Meter,
+    MeterReading,
+    TypeSite,
+    ConsumptionInsight,
 )
 from models.energy_models import FrequencyType, EnergyVector
 from models.site_operating_schedule import SiteOperatingSchedule
@@ -31,6 +40,7 @@ from services.consumption_context_service import (
 # ═══════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════
+
 
 @pytest.fixture
 def db():
@@ -53,6 +63,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -69,19 +80,23 @@ def _create_org_site(db, surface=2000):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site Context Test", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=surface, portefeuille_id=pf.id,
+        nom="Site Context Test",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=surface,
+        portefeuille_id=pf.id,
     )
     db.add(site)
     db.flush()
     return org, site
 
 
-def _create_meter_with_readings(db, site, days=30, hourly_kwh=10.0,
-                                weekend_factor=0.2):
+def _create_meter_with_readings(db, site, days=30, hourly_kwh=10.0, weekend_factor=0.2):
     """Create a meter + hourly readings for `days` days."""
     import uuid
+
     meter = Meter(
         site_id=site.id,
         meter_id=f"PRM-{uuid.uuid4().hex[:8]}",
@@ -98,12 +113,14 @@ def _create_meter_with_readings(db, site, days=30, hourly_kwh=10.0,
     while t < now:
         wd = t.weekday()
         val = hourly_kwh * weekend_factor if wd >= 5 else hourly_kwh
-        db.add(MeterReading(
-            meter_id=meter.id,
-            timestamp=t,
-            value_kwh=val,
-            frequency=FrequencyType.HOURLY,
-        ))
+        db.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=t,
+                value_kwh=val,
+                frequency=FrequencyType.HOURLY,
+            )
+        )
         t += timedelta(hours=1)
     db.flush()
     return meter
@@ -112,6 +129,7 @@ def _create_meter_with_readings(db, site, days=30, hourly_kwh=10.0,
 # ═══════════════════════════════════════════════
 # A. behavior_score — pure computation
 # ═══════════════════════════════════════════════
+
 
 class TestBehaviorScore:
     """Pure function: compute_behavior_score."""
@@ -152,6 +170,7 @@ class TestBehaviorScore:
 # ═══════════════════════════════════════════════
 # B. weekend_active — pure computation
 # ═══════════════════════════════════════════════
+
 
 class TestWeekendActive:
     """detect_weekend_active: dict-based readings."""
@@ -213,12 +232,14 @@ class TestWeekendActive:
 # C. profile — via DB
 # ═══════════════════════════════════════════════
 
+
 class TestConsumptionProfile:
     """get_consumption_profile: requires DB with meter + readings."""
 
     def test_daily_profile_24_points(self, db):
         """daily_profile always has 24 entries."""
         from services.consumption_context_service import get_consumption_profile
+
         _, site = _create_org_site(db)
         _create_meter_with_readings(db, site, days=7)
         db.commit()
@@ -228,6 +249,7 @@ class TestConsumptionProfile:
     def test_baseload_positive(self, db):
         """baseload_kw >= 0 when readings exist."""
         from services.consumption_context_service import get_consumption_profile
+
         _, site = _create_org_site(db)
         _create_meter_with_readings(db, site, days=7, hourly_kwh=5.0)
         db.commit()
@@ -238,6 +260,7 @@ class TestConsumptionProfile:
     def test_empty_readings(self, db):
         """No readings → baseload=0, daily_profile all zeros, heatmap empty."""
         from services.consumption_context_service import get_consumption_profile
+
         _, site = _create_org_site(db)
         db.commit()
         result = get_consumption_profile(db, site.id, days=30)
@@ -252,12 +275,14 @@ class TestConsumptionProfile:
 # D. activity context
 # ═══════════════════════════════════════════════
 
+
 class TestActivityContext:
     """get_activity_context: schedule, archetype, TOU."""
 
     def test_default_schedule(self, db):
         """No SiteOperatingSchedule → default Mon-Fri 08-19."""
         from services.consumption_context_service import get_activity_context
+
         _, site = _create_org_site(db)
         db.commit()
         result = get_activity_context(db, site.id)
@@ -269,6 +294,7 @@ class TestActivityContext:
     def test_with_schedule(self, db):
         """Explicit SiteOperatingSchedule → source=database."""
         from services.consumption_context_service import get_activity_context
+
         _, site = _create_org_site(db)
         sched = SiteOperatingSchedule(
             site_id=site.id,
@@ -290,6 +316,7 @@ class TestActivityContext:
 # ═══════════════════════════════════════════════
 # E. API endpoints
 # ═══════════════════════════════════════════════
+
 
 class TestAPIEndpoints:
     """HTTP endpoint smoke tests."""

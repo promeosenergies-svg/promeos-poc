@@ -3,8 +3,10 @@ PROMEOS - Consumption / Performance / Diagnostic — Smoke Tests
 Verify core conso endpoints respond 200, granularity works,
 empty states don't crash, and at least 1 diagnostic returns a result.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest

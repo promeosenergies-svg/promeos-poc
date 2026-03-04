@@ -5,7 +5,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 
-export default function Drawer({ open, onClose, title, children, side = 'right', wide, className = '' }) {
+export default function Drawer({
+  open,
+  onClose,
+  title,
+  children,
+  side = 'right',
+  wide,
+  className = '',
+}) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -13,12 +21,16 @@ export default function Drawer({ open, onClose, title, children, side = 'right',
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       requestAnimationFrame(() => ref.current?.focus());
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [open]);
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape' && open) onClose(); }
+    function onKey(e) {
+      if (e.key === 'Escape' && open) onClose();
+    }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
@@ -47,7 +59,10 @@ export default function Drawer({ open, onClose, title, children, side = 'right',
 
   return (
     <div className="fixed inset-0 z-[200] flex" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]"
+        onClick={onClose}
+      />
       <div
         ref={ref}
         tabIndex={-1}
@@ -66,9 +81,7 @@ export default function Drawer({ open, onClose, title, children, side = 'right',
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
       </div>
     </div>
   );

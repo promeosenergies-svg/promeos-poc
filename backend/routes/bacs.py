@@ -2,24 +2,35 @@
 PROMEOS Routes - BACS Expert endpoints
 Full BACS assessment, CVC system management, data quality, seed demo.
 """
+
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 
 from models import (
-    Site, BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection,
-    CvcSystemType, CvcArchitecture, InspectionStatus,
+    Site,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    InspectionStatus,
 )
 from services.bacs_engine import (
-    compute_putile, evaluate_bacs, compute_tri,
-    compute_inspection_schedule, ENGINE_VERSION,
+    compute_putile,
+    evaluate_bacs,
+    compute_tri,
+    compute_inspection_schedule,
+    ENGINE_VERSION,
 )
 
 router = APIRouter(prefix="/api/regops/bacs", tags=["BACS Expert"])
 
 
 # ── Full assessment ──
+
 
 @router.get("/site/{site_id}")
 def get_bacs_assessment(site_id: int, db: Session = Depends(get_db)):
@@ -75,6 +86,7 @@ def recompute_bacs(site_id: int, db: Session = Depends(get_db)):
 
 # ── Score explain ──
 
+
 @router.get("/score_explain/{site_id}")
 def get_score_explain(site_id: int, db: Session = Depends(get_db)):
     """Putile steps + threshold + TRI + penalties breakdown."""
@@ -110,6 +122,7 @@ def get_score_explain(site_id: int, db: Session = Depends(get_db)):
 
 # ── Data quality ──
 
+
 @router.get("/data_quality/{site_id}")
 def get_bacs_data_quality(site_id: int, db: Session = Depends(get_db)):
     """BACS-specific DQ gate: BLOCKED / WARNING / OK."""
@@ -128,6 +141,7 @@ def get_bacs_data_quality(site_id: int, db: Session = Depends(get_db)):
 
 # ── Asset CRUD ──
 
+
 @router.post("/asset")
 def create_bacs_asset(
     site_id: int,
@@ -145,6 +159,7 @@ def create_bacs_asset(
         raise HTTPException(status_code=409, detail="BacsAsset already exists for this site")
 
     from datetime import date as date_cls
+
     asset = BacsAsset(
         site_id=site_id,
         is_tertiary_non_residential=is_tertiary,
@@ -218,6 +233,7 @@ def delete_cvc_system(system_id: int, db: Session = Depends(get_db)):
 
 # ── Ops monitoring ──
 
+
 @router.get("/site/{site_id}/ops")
 def get_bacs_ops(site_id: int, db: Session = Depends(get_db)):
     """BACS operational monitoring panel: KPIs, consumption links, heatmap."""
@@ -226,21 +242,25 @@ def get_bacs_ops(site_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Site not found")
 
     from services.bacs_ops_monitor import get_bacs_ops_panel
+
     return get_bacs_ops_panel(db, site_id)
 
 
 # ── Seed demo ──
 
+
 @router.post("/seed_demo")
 def seed_bacs_demo(db: Session = Depends(get_db)):
     """Seed 10 demo BACS assets with diverse CVC configurations."""
     from services.bacs_seed import seed_bacs_demo as do_seed
+
     result = do_seed(db)
     db.commit()
     return result
 
 
 # ── Serialization helpers ──
+
 
 def _serialize_asset(asset: BacsAsset) -> dict:
     return {

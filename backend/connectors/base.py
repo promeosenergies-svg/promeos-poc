@@ -1,6 +1,7 @@
 """
 PROMEOS Connectors - Base class ABC
 """
+
 from abc import ABC, abstractmethod
 from typing import List
 from sqlalchemy.orm import Session

@@ -2,6 +2,7 @@
 PROMEOS - Targets Service (Objectifs & Budgets)
 CRUD + progression tracking + forecast for consumption targets.
 """
+
 from datetime import datetime, date, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -45,12 +46,16 @@ def create_target(
 ) -> Dict[str, Any]:
     """Create a consumption target."""
     # Check for duplicate
-    existing = db.query(ConsumptionTarget).filter(
-        ConsumptionTarget.site_id == site_id,
-        ConsumptionTarget.energy_type == energy_type,
-        ConsumptionTarget.year == year,
-        ConsumptionTarget.month == month if month else ConsumptionTarget.month.is_(None),
-    ).first()
+    existing = (
+        db.query(ConsumptionTarget)
+        .filter(
+            ConsumptionTarget.site_id == site_id,
+            ConsumptionTarget.energy_type == energy_type,
+            ConsumptionTarget.year == year,
+            ConsumptionTarget.month == month if month else ConsumptionTarget.month.is_(None),
+        )
+        .first()
+    )
 
     if existing:
         # Update existing
@@ -95,7 +100,16 @@ def update_target(
     if not target:
         return None
 
-    allowed = {"target_kwh", "target_eur", "target_co2e_kg", "actual_kwh", "actual_eur", "actual_co2e_kg", "notes", "source"}
+    allowed = {
+        "target_kwh",
+        "target_eur",
+        "target_co2e_kg",
+        "actual_kwh",
+        "actual_eur",
+        "actual_co2e_kg",
+        "notes",
+        "source",
+    }
     for k, v in kwargs.items():
         if k in allowed and v is not None:
             setattr(target, k, v)
@@ -190,12 +204,14 @@ def get_progression(
             if a_kwh is not None:
                 ytd_actual += a_kwh
 
-        months.append({
-            "month": m,
-            "target_kwh": round(t_kwh, 1),
-            "actual_kwh": round(a_kwh, 1) if a_kwh is not None else None,
-            "delta_pct": round((a_kwh - t_kwh) / max(t_kwh, 1) * 100, 1) if a_kwh is not None and t_kwh else None,
-        })
+        months.append(
+            {
+                "month": m,
+                "target_kwh": round(t_kwh, 1),
+                "actual_kwh": round(a_kwh, 1) if a_kwh is not None else None,
+                "delta_pct": round((a_kwh - t_kwh) / max(t_kwh, 1) * 100, 1) if a_kwh is not None and t_kwh else None,
+            }
+        )
 
     # Forecast: linear extrapolation of YTD actual
     if current_month > 0 and ytd_actual > 0:
@@ -203,9 +219,9 @@ def get_progression(
     else:
         forecast_year_kwh = 0
 
-    forecast_vs_target_pct = round(
-        (forecast_year_kwh - yearly_target_kwh) / max(yearly_target_kwh, 1) * 100, 1
-    ) if yearly_target_kwh else 0
+    forecast_vs_target_pct = (
+        round((forecast_year_kwh - yearly_target_kwh) / max(yearly_target_kwh, 1) * 100, 1) if yearly_target_kwh else 0
+    )
 
     progress_pct = round(ytd_actual / max(ytd_target, 1) * 100, 1) if ytd_target else 0
 
@@ -260,21 +276,29 @@ def get_progression_v2(
     variance_decomposition = []
     try:
         from services.consumption_diagnostic import (
-            _detect_hors_horaires, _detect_base_load, _detect_pointe, _detect_derive,
+            _detect_hors_horaires,
+            _detect_base_load,
+            _detect_pointe,
+            _detect_derive,
         )
         from services.tou_service import get_active_schedule
 
         ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
         target_ev = ev_map.get(energy_type, EnergyVector.ELECTRICITY)
 
-        meters = db.query(Meter).filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == target_ev,
-        ).all()
+        meters = (
+            db.query(Meter)
+            .filter(
+                Meter.site_id == site_id,
+                Meter.is_active == True,
+                Meter.energy_vector == target_ev,
+            )
+            .all()
+        )
 
         if meters:
             from datetime import timedelta
+
             meter_ids = [m.id for m in meters]
             start_date = datetime(year, 1, 1)
             end_date = datetime(year, current_month, 28)
@@ -305,12 +329,14 @@ def get_progression_v2(
                 causes = []
                 for d in detections:
                     if d and d.get("estimated_loss_kwh", 0) > 0:
-                        causes.append({
-                            "type": d.get("type", "unknown"),
-                            "label": d.get("message", "")[:120],
-                            "estimated_loss_kwh": d.get("estimated_loss_kwh", 0),
-                            "severity": d.get("severity", "medium"),
-                        })
+                        causes.append(
+                            {
+                                "type": d.get("type", "unknown"),
+                                "label": d.get("message", "")[:120],
+                                "estimated_loss_kwh": d.get("estimated_loss_kwh", 0),
+                                "severity": d.get("severity", "medium"),
+                            }
+                        )
 
                 # Sort by impact, take top 3
                 causes.sort(key=lambda c: c["estimated_loss_kwh"], reverse=True)

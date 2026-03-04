@@ -2,6 +2,7 @@
 PROMEOS - EMS Timeseries Service
 SQL-level bucket aggregation for consumption timeseries.
 """
+
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple, Dict, Any
 
@@ -37,13 +38,17 @@ _STRFTIME_FORMATS = {
 # When aggregating at granularity G, only include readings whose frequency is
 # G or finer — prevents monthly aggregate values from polluting daily/hourly charts.
 _COMPATIBLE_FREQS = {
-    "15min":   [FrequencyType.MIN_15],
-    "30min":   [FrequencyType.MIN_15, FrequencyType.MIN_30],
-    "hourly":  [FrequencyType.MIN_15, FrequencyType.MIN_30, FrequencyType.HOURLY],
-    "daily":   [FrequencyType.MIN_15, FrequencyType.MIN_30,
-                FrequencyType.HOURLY, FrequencyType.DAILY],
-    "monthly": [FrequencyType.MIN_15, FrequencyType.MIN_30,
-                FrequencyType.HOURLY, FrequencyType.DAILY, FrequencyType.MONTHLY],
+    "15min": [FrequencyType.MIN_15],
+    "30min": [FrequencyType.MIN_15, FrequencyType.MIN_30],
+    "hourly": [FrequencyType.MIN_15, FrequencyType.MIN_30, FrequencyType.HOURLY],
+    "daily": [FrequencyType.MIN_15, FrequencyType.MIN_30, FrequencyType.HOURLY, FrequencyType.DAILY],
+    "monthly": [
+        FrequencyType.MIN_15,
+        FrequencyType.MIN_30,
+        FrequencyType.HOURLY,
+        FrequencyType.DAILY,
+        FrequencyType.MONTHLY,
+    ],
 }
 
 
@@ -162,35 +167,52 @@ def query_timeseries(
         for sid in main_sites:
             m_ids = [m.id for m in site_meter_map[sid]]
             label = site_names.get(sid, f"Site {sid}")
-            series.append(_query_aggregate(db, m_ids, bucket_expr, date_from, date_to, granularity, metric,
-                                           key=f"site_{sid}", label=label))
+            series.append(
+                _query_aggregate(
+                    db, m_ids, bucket_expr, date_from, date_to, granularity, metric, key=f"site_{sid}", label=label
+                )
+            )
         if other_sites:
             other_ids = []
             for sid in other_sites:
                 other_ids.extend([m.id for m in site_meter_map[sid]])
-            series.append(_query_aggregate(db, other_ids, bucket_expr, date_from, date_to, granularity, metric,
-                                           key="others", label=f"Autres ({len(other_sites)} sites)"))
+            series.append(
+                _query_aggregate(
+                    db,
+                    other_ids,
+                    bucket_expr,
+                    date_from,
+                    date_to,
+                    granularity,
+                    metric,
+                    key="others",
+                    label=f"Autres ({len(other_sites)} sites)",
+                )
+            )
     elif mode == "stack":
-        series = [
-            _query_single(db, m, bucket_expr, date_from, date_to, granularity, metric)
-            for m in meters
-        ]
+        series = [_query_single(db, m, bucket_expr, date_from, date_to, granularity, metric) for m in meters]
     else:  # split
         MAX_SPLIT = 8
         sorted_meters = sorted(meters, key=lambda m: m.id)
         main_meters = sorted_meters[:MAX_SPLIT]
         other_meters = sorted_meters[MAX_SPLIT:]
 
-        series = [
-            _query_single(db, m, bucket_expr, date_from, date_to, granularity, metric)
-            for m in main_meters
-        ]
+        series = [_query_single(db, m, bucket_expr, date_from, date_to, granularity, metric) for m in main_meters]
         if other_meters:
             other_ids = [m.id for m in other_meters]
-            series.append(_query_aggregate(
-                db, other_ids, bucket_expr, date_from, date_to, granularity, metric,
-                key="others", label="Autres",
-            ))
+            series.append(
+                _query_aggregate(
+                    db,
+                    other_ids,
+                    bucket_expr,
+                    date_from,
+                    date_to,
+                    granularity,
+                    metric,
+                    key="others",
+                    label="Autres",
+                )
+            )
 
     n_points = max((len(s["data"]) for s in series), default=0)
     expected = estimate_points(date_from, date_to, granularity)
@@ -300,20 +322,23 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
         return compatible
 
     meter_filter = (
-        MeterReading.meter_id.in_(meter_ids)
-        if isinstance(meter_ids, list)
-        else MeterReading.meter_id == meter_ids
+        MeterReading.meter_id.in_(meter_ids) if isinstance(meter_ids, list) else MeterReading.meter_id == meter_ids
     )
-    for freq in compatible:          # ordered finest → coarsest
-        cnt = db.query(func.count(MeterReading.id)).filter(
-            meter_filter,
-            MeterReading.frequency == freq,
-            MeterReading.timestamp >= date_from,
-            MeterReading.timestamp < date_to,
-        ).scalar() or 0
+    for freq in compatible:  # ordered finest → coarsest
+        cnt = (
+            db.query(func.count(MeterReading.id))
+            .filter(
+                meter_filter,
+                MeterReading.frequency == freq,
+                MeterReading.timestamp >= date_from,
+                MeterReading.timestamp < date_to,
+            )
+            .scalar()
+            or 0
+        )
         if cnt >= 48:
             return [freq]
-    return compatible                 # fallback: no single freq has enough data
+    return compatible  # fallback: no single freq has enough data
 
 
 def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str = "daily"):
@@ -325,9 +350,7 @@ def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str
     """
     best = _resolve_best_freq(db, meter_ids, date_from, date_to, granularity)
     meter_filter = (
-        MeterReading.meter_id.in_(meter_ids)
-        if isinstance(meter_ids, list)
-        else MeterReading.meter_id == meter_ids
+        MeterReading.meter_id.in_(meter_ids) if isinstance(meter_ids, list) else MeterReading.meter_id == meter_ids
     )
     return (
         db.query(
@@ -354,17 +377,18 @@ def _rows_to_series(key: str, label: str, rows, granularity: str, metric: str) -
         value = row.total_kwh or 0.0
         if metric == "kw":
             value = value / hours if hours > 0 else 0.0
-        data.append({
-            "t": row.bucket,
-            "v": round(value, 2),
-            "quality": round(row.avg_quality, 2) if row.avg_quality is not None else None,
-            "estimated_pct": round(row.est_pct, 2) if row.est_pct is not None else 0.0,
-        })
+        data.append(
+            {
+                "t": row.bucket,
+                "v": round(value, 2),
+                "quality": round(row.avg_quality, 2) if row.avg_quality is not None else None,
+                "estimated_pct": round(row.est_pct, 2) if row.est_pct is not None else 0.0,
+            }
+        )
     return {"key": key, "label": label, "data": data}
 
 
-def _query_aggregate(db, meter_ids, bucket_expr, date_from, date_to, granularity, metric,
-                     key="total", label="Total"):
+def _query_aggregate(db, meter_ids, bucket_expr, date_from, date_to, granularity, metric, key="total", label="Total"):
     rows = _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity).all()
     return _rows_to_series(key, label, rows, granularity, metric)
 
@@ -398,18 +422,22 @@ def _compute_availability(series: list, expected_points: int, granularity: str) 
                 t_curr = datetime.fromisoformat(timestamps[i])
                 gap_size = (t_curr - t_prev) / delta if delta.total_seconds() > 0 else 0
                 if gap_size > 1.5:  # More than 1.5x expected interval = gap
-                    gaps.append({
-                        "from": timestamps[i - 1],
-                        "to": timestamps[i],
-                        "missing_buckets": int(gap_size) - 1,
-                    })
+                    gaps.append(
+                        {
+                            "from": timestamps[i - 1],
+                            "to": timestamps[i],
+                            "missing_buckets": int(gap_size) - 1,
+                        }
+                    )
             except (ValueError, TypeError):
                 pass
-        result.append({
-            "key": s["key"],
-            "expected_points": expected_points,
-            "actual_points": actual,
-            "coverage_pct": round(coverage * 100, 1),
-            "gaps": gaps[:20],  # Cap at 20 gaps to avoid huge payloads
-        })
+        result.append(
+            {
+                "key": s["key"],
+                "expected_points": expected_points,
+                "actual_points": actual,
+                "coverage_pct": round(coverage * 100, 1),
+                "gaps": gaps[:20],  # Cap at 20 gaps to avoid huge payloads
+            }
+        )
     return result

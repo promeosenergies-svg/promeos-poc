@@ -2,20 +2,34 @@
 PROMEOS V39 - Modeles Tertiaire / OPERAT (Decret tertiaire)
 EFA = Entite Fonctionnelle Assujettie
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Float, Date, DateTime, Text, ForeignKey, Enum,
+    Column,
+    Integer,
+    String,
+    Float,
+    Date,
+    DateTime,
+    Text,
+    ForeignKey,
+    Enum,
     func,
 )
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
-    EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
-    DataQualityIssueSeverity, DataQualityIssueStatus,
+    EfaStatut,
+    EfaRole,
+    DeclarationStatus,
+    PerimeterEventType,
+    DataQualityIssueSeverity,
+    DataQualityIssueStatus,
 )
 
 
 class TertiaireEfa(Base, TimestampMixin, SoftDeleteMixin):
     """Entite Fonctionnelle Assujettie au Decret tertiaire."""
+
     __tablename__ = "tertiaire_efa"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -40,6 +54,7 @@ class TertiaireEfa(Base, TimestampMixin, SoftDeleteMixin):
 
 class TertiaireEfaLink(Base, TimestampMixin):
     """Lien entre EFA (turnover, scission, fusion)."""
+
     __tablename__ = "tertiaire_efa_link"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -50,6 +65,7 @@ class TertiaireEfaLink(Base, TimestampMixin):
 
 class TertiaireEfaBuilding(Base, TimestampMixin):
     """Association EFA <-> Batiment avec usage et surface."""
+
     __tablename__ = "tertiaire_efa_building"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -63,6 +79,7 @@ class TertiaireEfaBuilding(Base, TimestampMixin):
 
 class TertiaireResponsibility(Base, TimestampMixin):
     """Responsabilite d'un acteur sur une EFA."""
+
     __tablename__ = "tertiaire_responsibility"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -78,6 +95,7 @@ class TertiaireResponsibility(Base, TimestampMixin):
 
 class TertiairePerimeterEvent(Base, TimestampMixin):
     """Evenement de perimetre EFA (changement occupant, vacance, renovation, etc.)."""
+
     __tablename__ = "tertiaire_perimeter_event"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -93,6 +111,7 @@ class TertiairePerimeterEvent(Base, TimestampMixin):
 
 class TertiaireDeclaration(Base, TimestampMixin):
     """Declaration annuelle OPERAT pour une EFA."""
+
     __tablename__ = "tertiaire_declaration"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -107,6 +126,7 @@ class TertiaireDeclaration(Base, TimestampMixin):
 
 class TertiaireProofArtifact(Base, TimestampMixin):
     """Preuve documentaire liee a une EFA (pont vers Memobox via kb_doc_id)."""
+
     __tablename__ = "tertiaire_proof_artifact"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -124,6 +144,7 @@ class TertiaireProofArtifact(Base, TimestampMixin):
 
 class TertiaireDataQualityIssue(Base, TimestampMixin):
     """Issue de qualite de donnees pour une EFA / annee."""
+
     __tablename__ = "tertiaire_data_quality_issue"
 
     id = Column(Integer, primary_key=True, index=True)

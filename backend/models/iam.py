@@ -2,9 +2,17 @@
 PROMEOS - IAM Models (Users / Roles / Scopes / Audit)
 Sprint 11: IAM ULTIMATE
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, Text,
-    ForeignKey, UniqueConstraint, Enum as SAEnum,
+    Column,
+    Integer,
+    String,
+    Boolean,
+    DateTime,
+    Text,
+    ForeignKey,
+    UniqueConstraint,
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -33,9 +41,7 @@ class User(TimestampMixin, Base):
 
 class UserOrgRole(TimestampMixin, Base):
     __tablename__ = "user_org_roles"
-    __table_args__ = (
-        UniqueConstraint("user_id", "org_id", name="uq_user_org"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "org_id", name="uq_user_org"),)
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

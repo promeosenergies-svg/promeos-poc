@@ -3,6 +3,7 @@ PROMEOS KB - Build Index CLI
 Rebuild FTS5 full-text search index
 Usage: python backend/scripts/kb_build_index.py
 """
+
 import sys
 from pathlib import Path
 
@@ -27,9 +28,9 @@ def main():
     index_stats = indexer.get_index_stats()
 
     # Report
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("INDEX BUILD COMPLETE")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Items indexed: {result['indexed']}")
     print(f"Errors:        {len(result['errors'])}")
     print(f"Total items:   {result['total_items']}")
@@ -41,11 +42,11 @@ def main():
     print(f"  Indexed:   {index_stats['indexed_items']}")
     print(f"  Total:     {index_stats['total_items']}")
     print(f"  Complete:  {index_stats['is_complete']}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
-    if result['errors']:
+    if result["errors"]:
         print("\n⚠️  Errors encountered:")
-        for err in result['errors']:
+        for err in result["errors"]:
             print(f"  - {err['id']}: {err['error']}")
         sys.exit(1)
     else:

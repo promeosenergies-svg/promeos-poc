@@ -7,10 +7,17 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import {
-  buildHeatmapGrid, kpiStatus, computeConfidence,
-  kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
-  groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR,
-  USAGE_DAYS_FR, formatSchedule, computeOffHoursEstimate,
+  buildHeatmapGrid,
+  kpiStatus,
+  computeConfidence,
+  kpiStatusWithConfidence,
+  LF_THRESHOLDS_BY_ARCHETYPE,
+  groupInsights,
+  CLIMATE_REASONS,
+  CLIMATE_LABEL_FR,
+  USAGE_DAYS_FR,
+  formatSchedule,
+  computeOffHoursEstimate,
 } from '../MonitoringPage';
 
 describe('buildHeatmapGrid', () => {
@@ -168,7 +175,15 @@ describe('kpiStatusWithConfidence', () => {
 describe('LF_THRESHOLDS_BY_ARCHETYPE', () => {
   it('has entries for 6 profiles + default', () => {
     expect(Object.keys(LF_THRESHOLDS_BY_ARCHETYPE)).toEqual(
-      expect.arrayContaining(['office', 'hotel', 'retail', 'warehouse', 'school', 'hospital', 'default'])
+      expect.arrayContaining([
+        'office',
+        'hotel',
+        'retail',
+        'warehouse',
+        'school',
+        'hospital',
+        'default',
+      ])
     );
   });
 
@@ -197,9 +212,15 @@ describe('LF_THRESHOLDS_BY_ARCHETYPE', () => {
 
 describe('groupInsights', () => {
   const mkAlert = (id, type, eur, severity = 'high', meterId = 1, siteId = 10) => ({
-    id, alert_type: type, meter_id: meterId, site_id: siteId,
-    estimated_impact_eur: eur, estimated_impact_kwh: eur * 5,
-    severity, status: 'open', explanation: `Alert ${id}`,
+    id,
+    alert_type: type,
+    meter_id: meterId,
+    site_id: siteId,
+    estimated_impact_eur: eur,
+    estimated_impact_kwh: eur * 5,
+    severity,
+    status: 'open',
+    explanation: `Alert ${id}`,
   });
 
   it('groups duplicates by alert_type + site_id', () => {
@@ -226,10 +247,7 @@ describe('groupInsights', () => {
   });
 
   it('sorted by total impact desc', () => {
-    const alerts = [
-      mkAlert(1, 'A', 100),
-      mkAlert(2, 'B', 500),
-    ];
+    const alerts = [mkAlert(1, 'A', 100), mkAlert(2, 'B', 500)];
     const grouped = groupInsights(alerts);
     expect(grouped[0].alert_type).toBe('B');
     expect(grouped[1].alert_type).toBe('A');
@@ -240,10 +258,7 @@ describe('groupInsights', () => {
   });
 
   it('same type + different meters + same site = merged (site-level)', () => {
-    const alerts = [
-      mkAlert(1, 'X', 100, 'high', 1, 10),
-      mkAlert(2, 'X', 200, 'critical', 2, 10),
-    ];
+    const alerts = [mkAlert(1, 'X', 100, 'high', 1, 10), mkAlert(2, 'X', 200, 'critical', 2, 10)];
     const grouped = groupInsights(alerts);
     expect(grouped).toHaveLength(1);
     expect(grouped[0]._count).toBe(2);
@@ -253,10 +268,7 @@ describe('groupInsights', () => {
   });
 
   it('same type + different sites = separate groups', () => {
-    const alerts = [
-      mkAlert(1, 'X', 100, 'high', 1, 10),
-      mkAlert(2, 'X', 200, 'high', 2, 20),
-    ];
+    const alerts = [mkAlert(1, 'X', 100, 'high', 1, 10), mkAlert(2, 'X', 200, 'high', 2, 20)];
     const grouped = groupInsights(alerts);
     expect(grouped).toHaveLength(2);
   });
@@ -280,7 +292,13 @@ describe('CLIMATE_REASONS', () => {
   });
 
   it('covers all backend reason codes', () => {
-    const expected = ['no_meter', 'no_weather', 'meter_not_found', 'insufficient_readings', 'computation_error'];
+    const expected = [
+      'no_meter',
+      'no_weather',
+      'meter_not_found',
+      'insufficient_readings',
+      'computation_error',
+    ];
     for (const key of expected) {
       expect(CLIMATE_REASONS).toHaveProperty(key);
       expect(typeof CLIMATE_REASONS[key]).toBe('string');
@@ -345,11 +363,23 @@ describe('USAGE_DAYS_FR', () => {
 
 describe('formatSchedule', () => {
   it('returns 24/7 for is_24_7 schedule', () => {
-    expect(formatSchedule({ open_days: '0,1,2,3,4,5,6', open_time: '00:00', close_time: '23:59', is_24_7: true })).toBe('24/7');
+    expect(
+      formatSchedule({
+        open_days: '0,1,2,3,4,5,6',
+        open_time: '00:00',
+        close_time: '23:59',
+        is_24_7: true,
+      })
+    ).toBe('24/7');
   });
 
   it('returns Lun-Ven for weekday-only schedule', () => {
-    const result = formatSchedule({ open_days: '0,1,2,3,4', open_time: '08:00', close_time: '19:00', is_24_7: false });
+    const result = formatSchedule({
+      open_days: '0,1,2,3,4',
+      open_time: '08:00',
+      close_time: '19:00',
+      is_24_7: false,
+    });
     expect(result).toBe('Lun-Ven 08:00-19:00');
   });
 
@@ -358,7 +388,12 @@ describe('formatSchedule', () => {
   });
 
   it('handles custom day subsets', () => {
-    const result = formatSchedule({ open_days: '0,1,2,3,4,5', open_time: '09:00', close_time: '20:00', is_24_7: false });
+    const result = formatSchedule({
+      open_days: '0,1,2,3,4,5',
+      open_time: '09:00',
+      close_time: '20:00',
+      is_24_7: false,
+    });
     expect(result).toBe('Lun, Mar, Mer, Jeu, Ven, Sam 09:00-20:00');
   });
 });
@@ -413,7 +448,7 @@ describe('computeConfidence with climate reason codes', () => {
   });
 
   it('few data points cap confidence at medium', () => {
-    const conf = computeConfidence({ r2: 0.90, nPoints: 20 });
+    const conf = computeConfidence({ r2: 0.9, nPoints: 20 });
     expect(conf.level).toBe('medium');
     expect(conf.reason).toContain('20 jours');
   });
@@ -507,8 +542,8 @@ describe('QW1 guard — MonitoringPage accents FR', () => {
   });
 
   it('défaut avec accent dans archetype fallback', () => {
-    expect(src).toContain("(défaut)");
-    expect(src).not.toContain("(defaut)");
+    expect(src).toContain('(défaut)');
+    expect(src).not.toContain('(defaut)');
   });
 
   it('useMemo inutile sur mockSites supprimé', () => {

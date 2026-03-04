@@ -9,19 +9,37 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
-  Search, FileText, Plus, BarChart3, TrendingDown,
-  CheckSquare, DollarSign, Info, RotateCcw, Upload, HelpCircle,
+  Zap,
+  Euro,
+  Leaf,
+  ShieldCheck,
+  AlertTriangle,
+  Moon,
+  Activity,
+  Search,
+  FileText,
+  Plus,
+  BarChart3,
+  TrendingDown,
+  CheckSquare,
+  DollarSign,
+  Info,
+  RotateCcw,
+  Upload,
+  HelpCircle,
   Eye,
 } from 'lucide-react';
-import {
-  Card, CardBody, SkeletonCard, KpiCard,
-} from '../ui';
+import { Card, CardBody, SkeletonCard, KpiCard } from '../ui';
 import { useToast } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
 import {
-  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toActionsList, toConsoImport,
+  toConsoExplorer,
+  toConsoDiag,
+  toBillIntel,
+  toActionNew,
+  toActionsList,
+  toConsoImport,
 } from '../services/routes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -50,20 +68,29 @@ function fmtDate(iso) {
 function DataStatusBadge({ status, coveragePct }) {
   if (status === 'ok') {
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700" title={`Couverture ${coveragePct}% — Donnees completes`}>
+      <span
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700"
+        title={`Couverture ${coveragePct}% — Donnees completes`}
+      >
         {coveragePct}%
       </span>
     );
   }
   if (status === 'partial') {
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700" title={`Couverture ${coveragePct}% — Donnees partielles`}>
+      <span
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700"
+        title={`Couverture ${coveragePct}% — Donnees partielles`}
+      >
         {coveragePct}%
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400" title="Aucune donnee sur cette periode">
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400"
+      title="Aucune donnee sur cette periode"
+    >
       —
     </span>
   );
@@ -74,28 +101,46 @@ function TopListActions({ siteId, dates, navigate }) {
   return (
     <span className="inline-flex items-center gap-0.5 ml-2 shrink-0">
       <button
-        onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: siteId, date_from: dates.from, date_to: dates.to })); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(toConsoExplorer({ site_id: siteId, date_from: dates.from, date_to: dates.to }));
+        }}
         className="p-0.5 rounded hover:bg-blue-50 text-blue-500"
         title="Explorer ce site"
       >
         <BarChart3 size={11} />
       </button>
       <button
-        onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: siteId })); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(toConsoDiag({ site_id: siteId }));
+        }}
         className="p-0.5 rounded hover:bg-amber-50 text-amber-500"
         title="Diagnostic"
       >
         <TrendingDown size={11} />
       </button>
       <button
-        onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: siteId })); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(toBillIntel({ site_id: siteId }));
+        }}
         className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
         title="Voir factures"
       >
         <FileText size={11} />
       </button>
       <button
-        onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: siteId, source: 'portfolio_toplist' })); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(
+            toActionNew({
+              source_type: 'consommation',
+              site_id: siteId,
+              source: 'portfolio_toplist',
+            })
+          );
+        }}
         className="p-0.5 rounded hover:bg-green-50 text-green-500"
         title="Creer une action"
       >
@@ -129,7 +174,8 @@ export default function ConsumptionPortfolioPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
-  const _hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
+  const _hasActiveFilters =
+    !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
 
   function handleResetFilters() {
     setSearch('');
@@ -173,10 +219,24 @@ export default function ConsumptionPortfolioPage() {
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement sites portfolio' }))
       .finally(() => setSitesLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter, search, page]);
+  }, [
+    dates.from,
+    dates.to,
+    sort,
+    confidenceFilter,
+    anomalyFilter,
+    actionsFilter,
+    noDataFilter,
+    search,
+    page,
+  ]);
 
-  useEffect(() => { fetchSites(); }, [fetchSites]);
-  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter]);
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
+  useEffect(() => {
+    setPage(0);
+  }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter]);
 
   // ─── Computed ─────────────────────────────────────────────────────────
   const totalPages = Math.ceil(sitesTotal / PAGE_SIZE);
@@ -207,14 +267,16 @@ export default function ConsumptionPortfolioPage() {
   // ─── Grouped action handler ──────────────────────────────────────────
   function handleGroupedAction() {
     if (top5ForAction.length === 0) return;
-    const siteIds = top5ForAction.map(r => r.site_id);
-    navigate(toActionNew({
-      source_type: 'consommation',
-      source: 'portfolio_campagne',
-      title: `Campagne portfolio — ${siteIds.length} sites prioritaires`,
-      site_id: siteIds[0],
-      site_ids: siteIds,
-    }));
+    const siteIds = top5ForAction.map((r) => r.site_id);
+    navigate(
+      toActionNew({
+        source_type: 'consommation',
+        source: 'portfolio_campagne',
+        title: `Campagne portfolio — ${siteIds.length} sites prioritaires`,
+        site_id: siteIds[0],
+        site_ids: siteIds,
+      })
+    );
   }
 
   // ─── Row click → Explorer (with date context) ─────────────────────────
@@ -235,7 +297,8 @@ export default function ConsumptionPortfolioPage() {
           <Info size={16} className="text-blue-500 shrink-0" />
           <p className="text-sm text-blue-700 flex-1">
             <strong>Portefeuille = vue multi-sites.</strong> Le bandeau indique « {scopeLabel} »,
-            mais cette page affiche tous vos sites. Pour explorer un site seul, cliquez sur sa ligne.
+            mais cette page affiche tous vos sites. Pour explorer un site seul, cliquez sur sa
+            ligne.
           </p>
           <button
             onClick={() => resetScope()}
@@ -251,16 +314,21 @@ export default function ConsumptionPortfolioPage() {
         <div>
           <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
           <p className="text-sm text-gray-500">
-            Vous pilotez {cov?.sites_total ?? '—'} sites sur la periode
-            du {fmtDate(dates.from)} au {fmtDate(dates.to)}
+            Vous pilotez {cov?.sites_total ?? '—'} sites sur la periode du {fmtDate(dates.from)} au{' '}
+            {fmtDate(dates.to)}
             {cov?.sites_without_data > 0 && (
               <span className="text-amber-600"> — {cov.sites_without_data} sans donnees</span>
             )}
           </p>
         </div>
         {cov && (
-          <div className="flex items-center gap-1.5 shrink-0" title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est elevee, plus les KPIs sont fiables.">
-            <span className={`text-sm font-semibold ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+          <div
+            className="flex items-center gap-1.5 shrink-0"
+            title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est elevee, plus les KPIs sont fiables."
+          >
+            <span
+              className={`text-sm font-semibold ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}
+            >
               Couverture {coveragePct}%
             </span>
             <HelpCircle size={13} className="text-gray-400 cursor-help" />
@@ -271,7 +339,9 @@ export default function ConsumptionPortfolioPage() {
       {/* ═══ KPI CARDS ═══ */}
       {summaryLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : summary ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -282,12 +352,21 @@ export default function ConsumptionPortfolioPage() {
             value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
             sub={tot?.eur_source === 'estime' ? 'Estimation a 0,18 EUR/kWh' : 'Facture'}
           />
-          <KpiCard icon={Leaf} label="Emissions CO2" value={fmtNum(Math.round(tot?.co2_total), 'kg')} sub="Facteur ADEME 2024" />
+          <KpiCard
+            icon={Leaf}
+            label="Emissions CO2"
+            value={fmtNum(Math.round(tot?.co2_total), 'kg')}
+            sub="Facteur ADEME 2024"
+          />
           <KpiCard
             icon={ShieldCheck}
             label="Couverture donnees"
             value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0} sites`}
-            sub={confLevel ? `Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}` : undefined}
+            sub={
+              confLevel
+                ? `Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}`
+                : undefined
+            }
           />
         </div>
       ) : null}
@@ -320,7 +399,9 @@ export default function ConsumptionPortfolioPage() {
                     {summary.top_impact.map((r) => (
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-rose-600 font-medium ml-2 shrink-0">{fmtNum(r.impact_eur_estimated, 'EUR')}</span>
+                        <span className="text-rose-600 font-medium ml-2 shrink-0">
+                          {fmtNum(r.impact_eur_estimated, 'EUR')}
+                        </span>
                         <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
@@ -343,7 +424,9 @@ export default function ConsumptionPortfolioPage() {
                     {summary.top_drift.map((r) => (
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-amber-600 font-medium ml-2 shrink-0">{r.diagnostics_count} alertes</span>
+                        <span className="text-amber-600 font-medium ml-2 shrink-0">
+                          {r.diagnostics_count} alertes
+                        </span>
                         <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
@@ -366,7 +449,9 @@ export default function ConsumptionPortfolioPage() {
                     {summary.top_base_night.map((r) => (
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-indigo-600 font-medium ml-2 shrink-0">{r.base_night_pct}%</span>
+                        <span className="text-indigo-600 font-medium ml-2 shrink-0">
+                          {r.base_night_pct}%
+                        </span>
                         <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
@@ -389,7 +474,9 @@ export default function ConsumptionPortfolioPage() {
                     {summary.top_peaks.map((r) => (
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-red-600 font-medium ml-2 shrink-0">{r.peak_kw} kW</span>
+                        <span className="text-red-600 font-medium ml-2 shrink-0">
+                          {r.peak_kw} kW
+                        </span>
                         <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
@@ -410,7 +497,10 @@ export default function ConsumptionPortfolioPage() {
         {/* Filters bar */}
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               placeholder="Rechercher un site..."
@@ -437,7 +527,9 @@ export default function ConsumptionPortfolioPage() {
           <button
             onClick={() => setAnomalyFilter(!anomalyFilter)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              anomalyFilter ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              anomalyFilter
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Anomalies
@@ -446,7 +538,9 @@ export default function ConsumptionPortfolioPage() {
           <button
             onClick={() => setActionsFilter(actionsFilter === 'with' ? null : 'with')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              actionsFilter === 'with' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              actionsFilter === 'with'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Avec actions
@@ -454,7 +548,9 @@ export default function ConsumptionPortfolioPage() {
           <button
             onClick={() => setActionsFilter(actionsFilter === 'without' ? null : 'without')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              actionsFilter === 'without' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              actionsFilter === 'without'
+                ? 'bg-gray-200 text-gray-800'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Sans action
@@ -463,7 +559,9 @@ export default function ConsumptionPortfolioPage() {
           <button
             onClick={() => setNoDataFilter(!noDataFilter)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              noDataFilter ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              noDataFilter
+                ? 'bg-red-100 text-red-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Sans donnees
@@ -496,9 +594,14 @@ export default function ConsumptionPortfolioPage() {
           /* Empty state: Cas A (aucune donnee) vs Cas B (filtres trop restrictifs) */
           (cov?.sites_total || 0) === 0 ? (
             /* Cas A: aucune donnee du tout */
-            <div className="flex flex-col items-center justify-center py-12 text-center" data-empty="no-data">
+            <div
+              className="flex flex-col items-center justify-center py-12 text-center"
+              data-empty="no-data"
+            >
               <BarChart3 size={40} className="text-gray-300 mb-4" />
-              <p className="text-sm text-gray-500 mb-1">Aucune donnee de consommation disponible sur la periode selectionnee.</p>
+              <p className="text-sm text-gray-500 mb-1">
+                Aucune donnee de consommation disponible sur la periode selectionnee.
+              </p>
               <p className="text-xs text-gray-400 mb-4">
                 Importez vos releves ou changez la periode pour voir vos sites.
               </p>
@@ -514,7 +617,10 @@ export default function ConsumptionPortfolioPage() {
             </div>
           ) : (
             /* Cas B: filtres trop restrictifs */
-            <div className="flex flex-col items-center justify-center py-12 text-center" data-empty="filters">
+            <div
+              className="flex flex-col items-center justify-center py-12 text-center"
+              data-empty="filters"
+            >
               <Search size={40} className="text-gray-300 mb-4" />
               <p className="text-sm text-gray-500 mb-1">Aucun site ne correspond aux filtres.</p>
               <p className="text-xs text-gray-400 mb-2">
@@ -529,7 +635,12 @@ export default function ConsumptionPortfolioPage() {
                 )}
                 {confidenceFilter && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-600">
-                    Confiance : {confidenceFilter === 'high' ? 'Haute' : confidenceFilter === 'medium' ? 'Moyenne' : 'Basse'}
+                    Confiance :{' '}
+                    {confidenceFilter === 'high'
+                      ? 'Haute'
+                      : confidenceFilter === 'medium'
+                        ? 'Moyenne'
+                        : 'Basse'}
                   </span>
                 )}
                 {anomalyFilter && (
@@ -573,14 +684,33 @@ export default function ConsumptionPortfolioPage() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center" title="Couverture = % de releves horaires disponibles sur la periode">Couverture</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Impact EUR</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">kWh</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">EUR</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Pic kW</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Base nuit</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Diag.</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Actions</th>
+                    <th
+                      className="py-2 px-3 text-xs font-semibold text-gray-500 text-center"
+                      title="Couverture = % de releves horaires disponibles sur la periode"
+                    >
+                      Couverture
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
+                      Impact EUR
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
+                      kWh
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
+                      EUR
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
+                      Pic kW
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
+                      Base nuit
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
+                      Diag.
+                    </th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
+                      Actions
+                    </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right"></th>
                   </tr>
                 </thead>
@@ -590,12 +720,18 @@ export default function ConsumptionPortfolioPage() {
                       key={row.site_id}
                       className={`border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${row.data_status === 'none' ? 'bg-gray-50/50' : ''}`}
                       onClick={() => handleRowClick(row)}
-                      title={row.data_status === 'none' ? 'Aucune donnee — cliquez pour importer' : 'Cliquez pour explorer ce site'}
+                      title={
+                        row.data_status === 'none'
+                          ? 'Aucune donnee — cliquez pour importer'
+                          : 'Cliquez pour explorer ce site'
+                      }
                     >
                       <td className="py-2 px-3">
                         <span className="font-medium text-gray-800">{row.site_name}</span>
                         {row.last_reading_date && (
-                          <span className="block text-[10px] text-gray-400">Dernier releve : {fmtDate(row.last_reading_date)}</span>
+                          <span className="block text-[10px] text-gray-400">
+                            Dernier releve : {fmtDate(row.last_reading_date)}
+                          </span>
                         )}
                       </td>
                       <td className="py-2 px-3 text-center">
@@ -603,19 +739,32 @@ export default function ConsumptionPortfolioPage() {
                       </td>
                       <td className="py-2 px-3 text-right">
                         {row.impact_eur_estimated > 0 ? (
-                          <span className="text-rose-600 font-medium">{fmtNum(row.impact_eur_estimated, 'EUR')}</span>
+                          <span className="text-rose-600 font-medium">
+                            {fmtNum(row.impact_eur_estimated, 'EUR')}
+                          </span>
                         ) : (
                           <span className="text-gray-300">—</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-right text-gray-700">{row.data_status !== 'none' ? fmtNum(row.kwh) : '—'}</td>
-                      <td className="py-2 px-3 text-right text-gray-700">{row.data_status !== 'none' ? fmtNum(row.eur) : '—'}</td>
-                      <td className="py-2 px-3 text-right text-gray-700">{row.peak_kw != null ? `${row.peak_kw} kW` : '—'}</td>
-                      <td className="py-2 px-3 text-right text-gray-700">{row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">
+                        {row.data_status !== 'none' ? fmtNum(row.kwh) : '—'}
+                      </td>
+                      <td className="py-2 px-3 text-right text-gray-700">
+                        {row.data_status !== 'none' ? fmtNum(row.eur) : '—'}
+                      </td>
+                      <td className="py-2 px-3 text-right text-gray-700">
+                        {row.peak_kw != null ? `${row.peak_kw} kW` : '—'}
+                      </td>
+                      <td className="py-2 px-3 text-right text-gray-700">
+                        {row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}
+                      </td>
                       <td className="py-2 px-3 text-center">
                         {row.diagnostics_count > 0 ? (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(toConsoDiag({ site_id: row.site_id }));
+                            }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition"
                             title="Voir les diagnostics"
                           >
@@ -628,7 +777,10 @@ export default function ConsumptionPortfolioPage() {
                       <td className="py-2 px-3 text-center">
                         {row.open_actions_count > 0 ? (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toActionsList({ site_id: row.site_id })); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(toActionsList({ site_id: row.site_id }));
+                            }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 hover:bg-green-200 transition"
                             title="Voir les actions en cours"
                           >
@@ -637,7 +789,16 @@ export default function ConsumptionPortfolioPage() {
                           </button>
                         ) : (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(
+                                toActionNew({
+                                  source_type: 'consommation',
+                                  site_id: row.site_id,
+                                  source: 'portfolio',
+                                })
+                              );
+                            }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
                             title="Creer une action"
                           >
@@ -649,28 +810,52 @@ export default function ConsumptionPortfolioPage() {
                         {row.data_status !== 'none' ? (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: row.site_id, date_from: dates.from, date_to: dates.to })); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(
+                                  toConsoExplorer({
+                                    site_id: row.site_id,
+                                    date_from: dates.from,
+                                    date_to: dates.to,
+                                  })
+                                );
+                              }}
                               className="p-1 rounded hover:bg-blue-50 text-blue-500"
                               title="Explorer"
                             >
                               <BarChart3 size={14} />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(toConsoDiag({ site_id: row.site_id }));
+                              }}
                               className="p-1 rounded hover:bg-amber-50 text-amber-500"
                               title="Diagnostic"
                             >
                               <TrendingDown size={14} />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: row.site_id })); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(toBillIntel({ site_id: row.site_id }));
+                              }}
                               className="p-1 rounded hover:bg-gray-100 text-gray-500"
                               title="Voir factures"
                             >
                               <FileText size={14} />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(
+                                  toActionNew({
+                                    source_type: 'consommation',
+                                    site_id: row.site_id,
+                                    source: 'portfolio',
+                                  })
+                                );
+                              }}
                               className="p-1 rounded hover:bg-green-50 text-green-500"
                               title="Creer une action"
                             >
@@ -679,7 +864,10 @@ export default function ConsumptionPortfolioPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toConsoImport()); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(toConsoImport());
+                            }}
                             className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
                             title="Importer des donnees pour ce site"
                           >
@@ -706,7 +894,9 @@ export default function ConsumptionPortfolioPage() {
                   >
                     Precedent
                   </button>
-                  <span className="text-xs text-gray-500">{page + 1} / {totalPages}</span>
+                  <span className="text-xs text-gray-500">
+                    {page + 1} / {totalPages}
+                  </span>
                   <button
                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                     disabled={page >= totalPages - 1}

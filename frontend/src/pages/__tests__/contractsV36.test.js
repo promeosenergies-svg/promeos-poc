@@ -23,17 +23,25 @@ import { LEVER_ACTION_TEMPLATES, buildActionPayload } from '../../models/leverAc
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const readSrc = (relPath) =>
-  readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
+const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
 const makeKpis = (ov = {}) => ({
-  total: 10, conformes: 7, nonConformes: 2, aRisque: 1, risqueTotal: 30000, ...ov,
+  total: 10,
+  conformes: 7,
+  nonConformes: 2,
+  aRisque: 1,
+  risqueTotal: 30000,
+  ...ov,
 });
 
 const makeBilling = (ov = {}) => ({
-  total_invoices: 50, total_eur: 500000, total_loss_eur: 8000, invoices_with_anomalies: 5, ...ov,
+  total_invoices: 50,
+  total_eur: 500000,
+  total_loss_eur: 8000,
+  invoices_with_anomalies: 5,
+  ...ov,
 });
 
 const makeRenewalsResponse = (count = 3) => ({
@@ -224,7 +232,7 @@ describe('Lever Engine V36 — achat levers', () => {
     achatLevers.forEach((l) => expect(l.impactEur).toBeNull());
   });
 
-  it('pas de levers achat quand tout couvert et pas d\'echeances', () => {
+  it("pas de levers achat quand tout couvert et pas d'echeances", () => {
     const ps = normalizePurchaseSignals({
       renewals: { total: 0, renewals: [] },
       contracts: makeContractsResponse(10),
@@ -325,7 +333,7 @@ describe('LeverActionModel V36 — achat templates', () => {
     const lever = {
       type: 'achat',
       actionKey: 'lev-achat-renew',
-      label: 'Renouveler 2 contrats d\'energie (2 sites)',
+      label: "Renouveler 2 contrats d'energie (2 sites)",
       impactEur: null,
       ctaPath: '/achat-energie?filter=renewal',
     };
@@ -356,7 +364,7 @@ describe('LeverActionModel V36 — achat templates', () => {
 // 5) ImpactDecisionPanel — V36 guards
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
+describe("V36: ImpactDecisionPanel — achats d'energie", () => {
   const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
 
   it('importe ShoppingCart depuis lucide-react', () => {
@@ -374,7 +382,7 @@ describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
   });
 
   it('affiche la section "Achats d\'energie"', () => {
-    expect(panelSrc).toContain("Achats d&apos;energie");
+    expect(panelSrc).toContain('Achats d&apos;energie');
   });
 
   it('a un data-testid purchase-section', () => {
@@ -423,14 +431,14 @@ describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
 describe('GUARD: V36 purchaseSignalsContract est un module pur', () => {
   const purchaseSrc = readFileSync(
     resolve(__dirname, '..', '..', 'models', 'purchaseSignalsContract.js'),
-    'utf8',
+    'utf8'
   );
 
-  it('n\'importe pas React', () => {
+  it("n'importe pas React", () => {
     expect(purchaseSrc).not.toContain("from 'react'");
   });
 
-  it('n\'importe pas d\'API', () => {
+  it("n'importe pas d'API", () => {
     expect(purchaseSrc).not.toContain('services/api');
   });
 

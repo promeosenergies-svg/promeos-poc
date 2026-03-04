@@ -2,8 +2,10 @@
 PROMEOS - Script de génération de données (seed)
 Architecture complète : Organisation → Portefeuille → Sites → Bâtiments → Compteurs
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import random
@@ -12,21 +14,47 @@ from sqlalchemy.orm import Session
 
 from models import (
     Base,
-    Organisation, EntiteJuridique, Portefeuille,
-    Site, Batiment, Usage, TypeUsage,
-    Compteur, Consommation,
-    Obligation, StatutConformite, TypeObligation,
-    Alerte, SeveriteAlerte,
-    TypeSite, TypeCompteur,
-    Evidence, TypeEvidence, StatutEvidence,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    TypeUsage,
+    Compteur,
+    Consommation,
+    Obligation,
+    StatutConformite,
+    TypeObligation,
+    Alerte,
+    SeveriteAlerte,
+    TypeSite,
+    TypeCompteur,
+    Evidence,
+    TypeEvidence,
+    StatutEvidence,
     # RegOps models
-    DataPoint, RegAssessment, JobOutbox, RegSourceEvent,
-    ParkingType, OperatStatus, EnergyVector, SourceType, JobType, JobStatus,
+    DataPoint,
+    RegAssessment,
+    JobOutbox,
+    RegSourceEvent,
+    ParkingType,
+    OperatStatus,
+    EnergyVector,
+    SourceType,
+    JobType,
+    JobStatus,
     # Sprint 9: Compliance workflow
-    ComplianceFinding, ComplianceRunBatch, InsightStatus,
+    ComplianceFinding,
+    ComplianceRunBatch,
+    InsightStatus,
     # IAM
-    User, UserOrgRole, UserScope, AuditLog,
-    UserRole, ScopeLevel,
+    User,
+    UserOrgRole,
+    UserScope,
+    AuditLog,
+    UserRole,
+    ScopeLevel,
 )
 from database import engine, SessionLocal
 
@@ -75,22 +103,13 @@ def create_organisation_hierarchy(db: Session):
     print("  Création de l'organisation...")
 
     # Organisation principale
-    org = Organisation(
-        nom="Groupe Casino",
-        type_client="retail",
-        actif=True
-    )
+    org = Organisation(nom="Groupe Casino", type_client="retail", actif=True)
     db.add(org)
     db.commit()
     db.refresh(org)
 
     # Entité juridique
-    entite = EntiteJuridique(
-        organisation_id=org.id,
-        nom="Casino France SAS",
-        siren="554008671",
-        siret="55400867100013"
-    )
+    entite = EntiteJuridique(organisation_id=org.id, nom="Casino France SAS", siren="554008671", siret="55400867100013")
     db.add(entite)
     db.commit()
     db.refresh(entite)
@@ -100,13 +119,9 @@ def create_organisation_hierarchy(db: Session):
     for nom_region, desc in [
         ("Retail IDF", "Magasins Île-de-France"),
         ("Retail Sud", "Magasins Sud de la France"),
-        ("Bureaux & Logistique", "Sites administratifs et entrepôts")
+        ("Bureaux & Logistique", "Sites administratifs et entrepôts"),
     ]:
-        p = Portefeuille(
-            entite_juridique_id=entite.id,
-            nom=nom_region,
-            description=desc
-        )
+        p = Portefeuille(entite_juridique_id=entite.id, nom=nom_region, description=desc)
         db.add(p)
         portefeuilles.append(p)
 
@@ -156,8 +171,9 @@ def create_sites(db: Session, portefeuilles: list):
         # Parking area (60% have outdoor parking)
         if random.random() < 0.60:
             parking_area_m2 = random.uniform(500, 15000)
-            parking_type = random.choice([ParkingType.OUTDOOR, ParkingType.INDOOR,
-                                         ParkingType.UNDERGROUND, ParkingType.SILO])
+            parking_type = random.choice(
+                [ParkingType.OUTDOOR, ParkingType.INDOOR, ParkingType.UNDERGROUND, ParkingType.SILO]
+            )
         else:
             parking_area_m2 = None
             parking_type = ParkingType.UNKNOWN
@@ -171,11 +187,13 @@ def create_sites(db: Session, portefeuilles: list):
         # OPERAT status distribution
         operat_status = random.choices(
             [OperatStatus.NOT_STARTED, OperatStatus.IN_PROGRESS, OperatStatus.SUBMITTED, OperatStatus.VERIFIED],
-            weights=[20, 40, 30, 10]
+            weights=[20, 40, 30, 10],
         )[0]
 
         # Last submission year
-        operat_last_submission_year = random.choice([2023, 2024]) if operat_status in [OperatStatus.SUBMITTED, OperatStatus.VERIFIED] else None
+        operat_last_submission_year = (
+            random.choice([2023, 2024]) if operat_status in [OperatStatus.SUBMITTED, OperatStatus.VERIFIED] else None
+        )
 
         # Annual kWh estimate (150-250 kWh/m2 for retail, 100-180 for office)
         if type_site == TypeSite.MAGASIN:
@@ -233,9 +251,9 @@ def _estimate_cvc_power(type_site, surface_m2):
     - Entrepôt       : 20-40 W/m²
     """
     ratios = {
-        TypeSite.MAGASIN:  (80, 120),
-        TypeSite.BUREAU:   (40, 70),
-        TypeSite.USINE:    (30, 60),
+        TypeSite.MAGASIN: (80, 120),
+        TypeSite.BUREAU: (40, 70),
+        TypeSite.USINE: (30, 60),
         TypeSite.ENTREPOT: (20, 40),
     }
     lo, hi = ratios.get(type_site, (40, 70))
@@ -274,11 +292,7 @@ def create_batiments_usages(db: Session, sites: list):
         usages_types = random.sample(list(TypeUsage), nb_usages)
 
         for usage_type in usages_types:
-            usage = Usage(
-                batiment_id=b.id,
-                type=usage_type,
-                description=f"Usage {usage_type.value}"
-            )
+            usage = Usage(batiment_id=b.id, type=usage_type, description=f"Usage {usage_type.value}")
             db.add(usage)
 
     db.commit()
@@ -298,8 +312,7 @@ def create_obligations(db: Session, sites: list, batiments: list):
     for site in sites:
         # Obligation Décret Tertiaire (tous les sites tertiaires)
         statut_tertiaire = random.choices(
-            [StatutConformite.CONFORME, StatutConformite.A_RISQUE, StatutConformite.NON_CONFORME],
-            weights=[30, 50, 20]
+            [StatutConformite.CONFORME, StatutConformite.A_RISQUE, StatutConformite.NON_CONFORME], weights=[30, 50, 20]
         )[0]
 
         obl_tertiaire = Obligation(
@@ -308,7 +321,7 @@ def create_obligations(db: Session, sites: list, batiments: list):
             description="Réduction -40% en 2030 vs 2010",
             echeance=datetime(2030, 12, 31).date(),
             statut=statut_tertiaire,
-            avancement_pct=random.uniform(20, 85)
+            avancement_pct=random.uniform(20, 85),
         )
         db.add(obl_tertiaire)
 
@@ -324,7 +337,7 @@ def create_obligations(db: Session, sites: list, batiments: list):
                     description=f"GTB/GTC obligatoire {seuil_label} (CVC {bat.cvc_power_kw} kW)",
                     echeance=deadline,
                     statut=StatutConformite.A_RISQUE,  # placeholder, engine recomputes
-                    avancement_pct=random.uniform(30, 100)
+                    avancement_pct=random.uniform(30, 100),
                 )
                 db.add(obl_bacs)
                 nb_bacs += 1
@@ -358,10 +371,12 @@ def create_compteurs_consommations(db: Session, sites: list):
                 site_id=site.id,
                 numero_serie=f"PRM{random.randint(100000000000, 999999999999)}",
                 type=type_compteur,
-                puissance_souscrite_kw=random.choice([36, 60, 90, 120, 150]) if type_compteur == TypeCompteur.ELECTRICITE else None,
+                puissance_souscrite_kw=random.choice([36, 60, 90, 120, 150])
+                if type_compteur == TypeCompteur.ELECTRICITE
+                else None,
                 actif=True,
                 meter_id=meter_id,
-                energy_vector=energy_vector
+                energy_vector=energy_vector,
             )
             db.add(compteur)
             compteurs.append(compteur)
@@ -387,14 +402,11 @@ def create_compteurs_consommations(db: Session, sites: list):
                     valeur = random.uniform(50, 150)  # kWh jour
                     cout = valeur * 0.15
                 else:
-                    valeur = random.uniform(10, 30)   # kWh nuit
+                    valeur = random.uniform(10, 30)  # kWh nuit
                     cout = valeur * 0.12
 
                 conso = Consommation(
-                    compteur_id=compteur.id,
-                    timestamp=timestamp,
-                    valeur=round(valeur, 2),
-                    cout_euro=round(cout, 2)
+                    compteur_id=compteur.id, timestamp=timestamp, valeur=round(valeur, 2), cout_euro=round(cout, 2)
                 )
                 db.add(conso)
 
@@ -431,8 +443,7 @@ def create_evidences(db: Session, sites: list, batiments: list):
                 note = f"{note_base} - Document non fourni"
             else:
                 status = random.choices(
-                    [StatutEvidence.VALIDE, StatutEvidence.EN_ATTENTE, StatutEvidence.EXPIRE],
-                    weights=[60, 25, 15]
+                    [StatutEvidence.VALIDE, StatutEvidence.EN_ATTENTE, StatutEvidence.EXPIRE], weights=[60, 25, 15]
                 )[0]
                 note = note_base
 
@@ -444,26 +455,29 @@ def create_evidences(db: Session, sites: list, batiments: list):
         if bat and bat.cvc_power_kw and bacs_deadline_for_power(bat.cvc_power_kw):
             # Attestation BACS : 40% valide, 30% en_attente, 20% manquant, 10% expiré
             att_status = random.choices(
-                [StatutEvidence.VALIDE, StatutEvidence.EN_ATTENTE,
-                 StatutEvidence.MANQUANT, StatutEvidence.EXPIRE],
-                weights=[40, 30, 20, 10]
+                [StatutEvidence.VALIDE, StatutEvidence.EN_ATTENTE, StatutEvidence.MANQUANT, StatutEvidence.EXPIRE],
+                weights=[40, 30, 20, 10],
             )[0]
-            db.add(Evidence(
-                site_id=site.id,
-                type=TypeEvidence.ATTESTATION_BACS,
-                statut=att_status,
-                note=f"Attestation conformité GTB/GTC ({bat.cvc_power_kw} kW)",
-            ))
+            db.add(
+                Evidence(
+                    site_id=site.id,
+                    type=TypeEvidence.ATTESTATION_BACS,
+                    statut=att_status,
+                    note=f"Attestation conformité GTB/GTC ({bat.cvc_power_kw} kW)",
+                )
+            )
             nb_evidences += 1
 
             # Dérogation BACS : 10% des sites concernés ont une dérogation valide
             if random.random() < 0.10:
-                db.add(Evidence(
-                    site_id=site.id,
-                    type=TypeEvidence.DEROGATION_BACS,
-                    statut=StatutEvidence.VALIDE,
-                    note="Dérogation BACS accordée (bâtiment classé / démolition prévue)",
-                ))
+                db.add(
+                    Evidence(
+                        site_id=site.id,
+                        type=TypeEvidence.DEROGATION_BACS,
+                        statut=StatutEvidence.VALIDE,
+                        note="Dérogation BACS accordée (bâtiment classé / démolition prévue)",
+                    )
+                )
                 nb_evidences += 1
 
     db.commit()
@@ -474,10 +488,13 @@ def create_alertes(db: Session, sites: list):
     """Créer 20 alertes actives"""
     print("  Création de 20 alertes...")
 
-    sites_avec_problemes = [s for s in sites if
-                            s.statut_decret_tertiaire == StatutConformite.NON_CONFORME or
-                            s.statut_bacs == StatutConformite.NON_CONFORME or
-                            s.anomalie_facture]
+    sites_avec_problemes = [
+        s
+        for s in sites
+        if s.statut_decret_tertiaire == StatutConformite.NON_CONFORME
+        or s.statut_bacs == StatutConformite.NON_CONFORME
+        or s.anomalie_facture
+    ]
 
     now = datetime.now()
 
@@ -501,7 +518,7 @@ def create_alertes(db: Session, sites: list):
             description=description,
             severite=severite,
             timestamp=now - timedelta(days=random.randint(0, 14)),
-            resolue=False
+            resolue=False,
         )
         db.add(alerte)
 
@@ -538,7 +555,7 @@ def create_datapoints(db: Session, sites: list):
                 quality_score=0.95,
                 coverage_ratio=1.0,
                 retrieved_at=now,
-                source_ref="https://odre.opendatasoft.com/api/records/1.0/search/?dataset=eco2mix-national-tr"
+                source_ref="https://odre.opendatasoft.com/api/records/1.0/search/?dataset=eco2mix-national-tr",
             )
             db.add(dp)
             datapoints.append(dp)
@@ -558,7 +575,7 @@ def create_datapoints(db: Session, sites: list):
                 quality_score=0.85,
                 coverage_ratio=1.0,
                 retrieved_at=now,
-                source_ref=f"https://re.jrc.ec.europa.eu/api/seriescalc?lat={site.latitude}&lon={site.longitude}"
+                source_ref=f"https://re.jrc.ec.europa.eu/api/seriescalc?lat={site.latitude}&lon={site.longitude}",
             )
             db.add(dp)
             datapoints.append(dp)
@@ -580,7 +597,7 @@ def create_reg_source_events(db: Session):
             "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000024123456",
             "snippet": "Le décret du 23 juillet 2019 relatif aux obligations d'actions de réduction de la consommation d'énergie finale dans les bâtiments à usage tertiaire est modifié comme suit : Article 1 - Les seuils d'application sont précisés pour tenir compte des surfaces de stationnement couvertes...",
             "tags": ["energie", "tertiaire", "decret"],
-            "published_at": datetime(2024, 1, 15).date()
+            "published_at": datetime(2024, 1, 15).date(),
         },
         {
             "source_name": "cre_watcher",
@@ -588,7 +605,7 @@ def create_reg_source_events(db: Session):
             "url": "https://www.cre.fr/Documents/Deliberations/Decision/turpe-6-2024",
             "snippet": "La Commission de régulation de l'énergie décide d'une évolution tarifaire de 9,8% au 1er février 2024. Cette hausse reflète l'augmentation des coûts d'exploitation des gestionnaires de réseaux et les investissements nécessaires à la transition énergétique...",
             "tags": ["tarif", "electricite", "turpe"],
-            "published_at": datetime(2024, 1, 20).date()
+            "published_at": datetime(2024, 1, 20).date(),
         },
         {
             "source_name": "rte_watcher",
@@ -596,7 +613,7 @@ def create_reg_source_events(db: Session):
             "url": "https://www.rte-france.com/actualites/bilan-electrique-2023",
             "snippet": "RTE publie son bilan électrique annuel. La consommation d'électricité en France a baissé de 3,2% en 2023 par rapport à 2022. Les énergies renouvelables représentent désormais 27% de la production d'électricité, en hausse de 2 points...",
             "tags": ["bilan", "production", "renouvelables"],
-            "published_at": datetime(2024, 1, 25).date()
+            "published_at": datetime(2024, 1, 25).date(),
         },
         {
             "source_name": "legifrance_rss",
@@ -604,8 +621,8 @@ def create_reg_source_events(db: Session):
             "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000024987654",
             "snippet": "Les parkings de plus de 20 places doivent être équipés d'au moins un point de recharge pour véhicules électriques pour 20 emplacements. Cette obligation s'applique aux bâtiments neufs et aux rénovations lourdes...",
             "tags": ["parking", "irve", "mobilite"],
-            "published_at": datetime(2024, 2, 1).date()
-        }
+            "published_at": datetime(2024, 2, 1).date(),
+        },
     ]
 
     for event_data in events_data:
@@ -624,7 +641,7 @@ def create_reg_source_events(db: Session):
             published_at=event_data["published_at"],
             retrieved_at=datetime.now(),
             reviewed=random.choice([True, False]),
-            review_note="Pertinent pour OPERAT" if random.random() < 0.5 else None
+            review_note="Pertinent pour OPERAT" if random.random() < 0.5 else None,
         )
         db.add(event)
 
@@ -665,7 +682,7 @@ def create_sample_jobs(db: Session):
             "created_at": datetime.now() - timedelta(hours=2),
             "started_at": datetime.now() - timedelta(hours=2, minutes=-1),
             "finished_at": datetime.now() - timedelta(hours=2, minutes=-2),
-            "error": None
+            "error": None,
         },
         {
             "job_type": JobType.SYNC_CONNECTOR,
@@ -675,7 +692,7 @@ def create_sample_jobs(db: Session):
             "created_at": datetime.now() - timedelta(hours=1),
             "started_at": datetime.now() - timedelta(hours=1, minutes=-1),
             "finished_at": datetime.now() - timedelta(hours=1, minutes=-3),
-            "error": None
+            "error": None,
         },
         {
             "job_type": JobType.RUN_WATCHER,
@@ -685,7 +702,7 @@ def create_sample_jobs(db: Session):
             "created_at": datetime.now() - timedelta(minutes=30),
             "started_at": datetime.now() - timedelta(minutes=29),
             "finished_at": datetime.now() - timedelta(minutes=28),
-            "error": "Connection timeout"
+            "error": "Connection timeout",
         },
         {
             "job_type": JobType.RECOMPUTE_ASSESSMENT,
@@ -695,8 +712,8 @@ def create_sample_jobs(db: Session):
             "created_at": datetime.now() - timedelta(minutes=5),
             "started_at": None,
             "finished_at": None,
-            "error": None
-        }
+            "error": None,
+        },
     ]
 
     for job_data in jobs_data:
@@ -714,8 +731,10 @@ def run_compliance_rules(db: Session, org: Organisation):
     from services.compliance_rules import evaluate_organisation
 
     result = evaluate_organisation(db, org.id)
-    print(f"  Batch #{result['batch_id']}: {result['total_findings']} findings "
-          f"({result['nok_count']} NOK, {result['unknown_count']} UNKNOWN)")
+    print(
+        f"  Batch #{result['batch_id']}: {result['total_findings']} findings "
+        f"({result['nok_count']} NOK, {result['unknown_count']} UNKNOWN)"
+    )
 
     # Set workflow status on some findings for demo variety
     findings = db.query(ComplianceFinding).all()
@@ -758,9 +777,11 @@ def sync_action_hub(db: Session, org: Organisation):
     from models import ActionItem, ActionStatus
 
     result = sync_actions(db, org.id, triggered_by="seed")
-    print(f"  Action Hub batch #{result['batch_id']}: "
-          f"{result['created']} created, {result['updated']} updated, "
-          f"{result['skipped']} skipped, {result['closed']} closed")
+    print(
+        f"  Action Hub batch #{result['batch_id']}: "
+        f"{result['created']} created, {result['updated']} updated, "
+        f"{result['skipped']} skipped, {result['closed']} closed"
+    )
 
     # Set demo variety on actions
     items = db.query(ActionItem).filter(ActionItem.org_id == org.id).all()
@@ -800,9 +821,11 @@ def sync_notifications_demo(db: Session, org: Organisation):
     from models import NotificationEvent, NotificationStatus
 
     result = sync_notifications(db, org.id, triggered_by="seed")
-    print(f"  Notifications batch #{result['batch_id']}: "
-          f"{result['created']} created, {result['updated']} updated, "
-          f"{result['skipped']} skipped")
+    print(
+        f"  Notifications batch #{result['batch_id']}: "
+        f"{result['created']} created, {result['updated']} updated, "
+        f"{result['skipped']} skipped"
+    )
 
     # Set demo variety
     events = db.query(NotificationEvent).filter(NotificationEvent.org_id == org.id).all()
@@ -828,22 +851,24 @@ def seed_iam_demo(db: Session, org: Organisation):
     print("  Creation des utilisateurs IAM demo...")
 
     from services.iam_service import (
-        create_user, assign_role, assign_scope, hash_password, log_audit,
+        create_user,
+        assign_role,
+        assign_scope,
+        hash_password,
+        log_audit,
     )
 
     # Resolve entity and site IDs for scoped users
-    entites = db.query(EntiteJuridique).filter(
-        EntiteJuridique.organisation_id == org.id
-    ).all()
+    entites = db.query(EntiteJuridique).filter(EntiteJuridique.organisation_id == org.id).all()
     entite_idf = entites[0] if entites else None
 
-    sites = db.query(Site).join(
-        Portefeuille, Site.portefeuille_id == Portefeuille.id
-    ).join(
-        EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id
-    ).filter(
-        EntiteJuridique.organisation_id == org.id
-    ).all()
+    sites = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org.id)
+        .all()
+    )
     first_site = sites[0] if sites else None
     # Pick a second site for prestataire dual-scope
     second_site = sites[2] if len(sites) > 2 else first_site
@@ -884,8 +909,14 @@ def seed_iam_demo(db: Session, org: Organisation):
     # Create some audit log entries
     log_audit(db, users_created[0].id, "login", detail={"method": "password"})
     log_audit(db, users_created[1].id, "login", detail={"method": "password"})
-    log_audit(db, users_created[1].id, "edit", "user", str(users_created[7].id),
-              detail={"action": "assign_scope", "site_id": first_site.id if first_site else 0})
+    log_audit(
+        db,
+        users_created[1].id,
+        "edit",
+        "user",
+        str(users_created[7].id),
+        detail={"action": "assign_scope", "site_id": first_site.id if first_site else 0},
+    )
 
     db.commit()
     print(f"  {len(users_created)} utilisateurs IAM crees avec roles et scopes")
@@ -900,19 +931,24 @@ def seed_patrimoine_demo(db: Session) -> dict:
     Can be called from route POST /api/patrimoine/demo/load or from main().
     """
     from models import (
-        OrgEntiteLink, PortfolioEntiteLink,
-        Compteur, TypeCompteur, EnergyVector,
+        OrgEntiteLink,
+        PortfolioEntiteLink,
+        Compteur,
+        TypeCompteur,
+        EnergyVector,
     )
     from services.onboarding_service import create_site_from_data, provision_site
 
     # Idempotence check
     existing = db.query(Organisation).filter(Organisation.nom == "Collectivite Azur").first()
     if existing:
-        sites_count = db.query(Site).join(
-            Portefeuille, Site.portefeuille_id == Portefeuille.id
-        ).join(
-            EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id
-        ).filter(EntiteJuridique.organisation_id == existing.id).count()
+        sites_count = (
+            db.query(Site)
+            .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(EntiteJuridique.organisation_id == existing.id)
+            .count()
+        )
         return {"status": "already_exists", "org_id": existing.id, "sites": sites_count}
 
     print("  Creation Collectivite Azur (patrimoine demo)...")
@@ -924,44 +960,65 @@ def seed_patrimoine_demo(db: Session) -> dict:
 
     # --- Entites juridiques ---
     mairie = EntiteJuridique(
-        organisation_id=org.id, nom="Mairie de Nice", siren="200054781", siret="20005478100015",
-        naf_code="84.11Z", region_code="93", insee_code="06088",
+        organisation_id=org.id,
+        nom="Mairie de Nice",
+        siren="200054781",
+        siret="20005478100015",
+        naf_code="84.11Z",
+        region_code="93",
+        insee_code="06088",
     )
     ccas = EntiteJuridique(
-        organisation_id=org.id, nom="CCAS Nice", siren="200054799", siret="20005479900012",
-        naf_code="88.99B", region_code="93", insee_code="06088",
+        organisation_id=org.id,
+        nom="CCAS Nice",
+        siren="200054799",
+        siret="20005479900012",
+        naf_code="88.99B",
+        region_code="93",
+        insee_code="06088",
     )
     db.add_all([mairie, ccas])
     db.flush()
 
     # --- N-N links (OrgEntiteLink) ---
     link_org_mairie = OrgEntiteLink(
-        organisation_id=org.id, entite_juridique_id=mairie.id,
-        role="proprietaire", confidence=1.0,
+        organisation_id=org.id,
+        entite_juridique_id=mairie.id,
+        role="proprietaire",
+        confidence=1.0,
     )
     link_org_ccas = OrgEntiteLink(
-        organisation_id=org.id, entite_juridique_id=ccas.id,
-        role="proprietaire", confidence=1.0,
+        organisation_id=org.id,
+        entite_juridique_id=ccas.id,
+        role="proprietaire",
+        confidence=1.0,
     )
     db.add_all([link_org_mairie, link_org_ccas])
     db.flush()
 
     # --- Portefeuilles ---
-    pf_equip = Portefeuille(entite_juridique_id=mairie.id, nom="Equipements publics",
-                            description="Mairie, ecoles, gymnases, creches")
-    pf_voirie = Portefeuille(entite_juridique_id=mairie.id, nom="Voirie & Eclairage",
-                             description="Parkings et eclairage public")
-    pf_medico = Portefeuille(entite_juridique_id=ccas.id, nom="Medico-social",
-                             description="EHPAD, foyers, centres sociaux")
+    pf_equip = Portefeuille(
+        entite_juridique_id=mairie.id, nom="Equipements publics", description="Mairie, ecoles, gymnases, creches"
+    )
+    pf_voirie = Portefeuille(
+        entite_juridique_id=mairie.id, nom="Voirie & Eclairage", description="Parkings et eclairage public"
+    )
+    pf_medico = Portefeuille(
+        entite_juridique_id=ccas.id, nom="Medico-social", description="EHPAD, foyers, centres sociaux"
+    )
     db.add_all([pf_equip, pf_voirie, pf_medico])
     db.flush()
 
     # --- N-N links (PortfolioEntiteLink) ---
     link_pf_ccas = PortfolioEntiteLink(
-        portefeuille_id=pf_medico.id, entite_juridique_id=ccas.id, role="gestionnaire",
+        portefeuille_id=pf_medico.id,
+        entite_juridique_id=ccas.id,
+        role="gestionnaire",
     )
     link_pf_mairie_medico = PortfolioEntiteLink(
-        portefeuille_id=pf_medico.id, entite_juridique_id=mairie.id, role="tutelle",
+        portefeuille_id=pf_medico.id,
+        entite_juridique_id=mairie.id,
+        role="tutelle",
     )
     db.add_all([link_pf_ccas, link_pf_mairie_medico])
     db.flush()
@@ -969,36 +1026,106 @@ def seed_patrimoine_demo(db: Session) -> dict:
     # --- Sites data ---
     SITES_DATA = [
         # (portefeuille, nom, type_site, surface, adresse, cp, ville, compteurs)
-        (pf_equip, "Mairie Centre Nice", "collectivite", 2500,
-         "5 rue de la Prefecture", "06300", "Nice",
-         [("electricite", "MR-E01", 120), ("gaz", "MR-G01", None)]),
-        (pf_equip, "Ecole Victor Hugo", "enseignement", 1800,
-         "12 avenue Victor Hugo", "06000", "Nice",
-         [("electricite", "VH-E01", 60), ("gaz", "VH-G01", None)]),
-        (pf_equip, "Gymnase Municipal Magnan", "collectivite", 900,
-         "45 boulevard de Magnan", "06200", "Nice",
-         [("electricite", "GY-E01", 36)]),
-        (pf_equip, "Bibliotheque Raimbaldi", "collectivite", 600,
-         "1 place Pierre Gautier", "06300", "Nice",
-         [("electricite", "BR-E01", 36)]),
-        (pf_equip, "Creche Les Oliviers", "sante", 400,
-         "8 rue des Oliviers", "06100", "Nice",
-         [("electricite", "CR-E01", 24)]),
-        (pf_voirie, "Parking Massena", "entrepot", 5000,
-         "Place Massena", "06000", "Nice",
-         [("electricite", "PM-E01", 150)]),
-        (pf_voirie, "Eclairage Promenade des Anglais", "collectivite", 0,
-         "Promenade des Anglais", "06200", "Nice",
-         [("electricite", "PA-E01", 200)]),
-        (pf_medico, "EHPAD Les Mimosas", "sante", 3000,
-         "22 chemin des Mimosas", "06100", "Nice",
-         [("electricite", "EH-E01", 90), ("gaz", "EH-G01", None)]),
-        (pf_medico, "Foyer Jeunes Travailleurs", "logement_social", 1200,
-         "15 rue Barla", "06300", "Nice",
-         [("electricite", "FJ-E01", 60)]),
-        (pf_medico, "Centre Social Ariane", "collectivite", 800,
-         "3 boulevard de l'Ariane", "06300", "Nice",
-         [("electricite", "CS-E01", 36)]),
+        (
+            pf_equip,
+            "Mairie Centre Nice",
+            "collectivite",
+            2500,
+            "5 rue de la Prefecture",
+            "06300",
+            "Nice",
+            [("electricite", "MR-E01", 120), ("gaz", "MR-G01", None)],
+        ),
+        (
+            pf_equip,
+            "Ecole Victor Hugo",
+            "enseignement",
+            1800,
+            "12 avenue Victor Hugo",
+            "06000",
+            "Nice",
+            [("electricite", "VH-E01", 60), ("gaz", "VH-G01", None)],
+        ),
+        (
+            pf_equip,
+            "Gymnase Municipal Magnan",
+            "collectivite",
+            900,
+            "45 boulevard de Magnan",
+            "06200",
+            "Nice",
+            [("electricite", "GY-E01", 36)],
+        ),
+        (
+            pf_equip,
+            "Bibliotheque Raimbaldi",
+            "collectivite",
+            600,
+            "1 place Pierre Gautier",
+            "06300",
+            "Nice",
+            [("electricite", "BR-E01", 36)],
+        ),
+        (
+            pf_equip,
+            "Creche Les Oliviers",
+            "sante",
+            400,
+            "8 rue des Oliviers",
+            "06100",
+            "Nice",
+            [("electricite", "CR-E01", 24)],
+        ),
+        (
+            pf_voirie,
+            "Parking Massena",
+            "entrepot",
+            5000,
+            "Place Massena",
+            "06000",
+            "Nice",
+            [("electricite", "PM-E01", 150)],
+        ),
+        (
+            pf_voirie,
+            "Eclairage Promenade des Anglais",
+            "collectivite",
+            0,
+            "Promenade des Anglais",
+            "06200",
+            "Nice",
+            [("electricite", "PA-E01", 200)],
+        ),
+        (
+            pf_medico,
+            "EHPAD Les Mimosas",
+            "sante",
+            3000,
+            "22 chemin des Mimosas",
+            "06100",
+            "Nice",
+            [("electricite", "EH-E01", 90), ("gaz", "EH-G01", None)],
+        ),
+        (
+            pf_medico,
+            "Foyer Jeunes Travailleurs",
+            "logement_social",
+            1200,
+            "15 rue Barla",
+            "06300",
+            "Nice",
+            [("electricite", "FJ-E01", 60)],
+        ),
+        (
+            pf_medico,
+            "Centre Social Ariane",
+            "collectivite",
+            800,
+            "3 boulevard de l'Ariane",
+            "06300",
+            "Nice",
+            [("electricite", "CS-E01", 36)],
+        ),
     ]
 
     sites_created = 0
@@ -1014,8 +1141,13 @@ def seed_patrimoine_demo(db: Session) -> dict:
 
     for pf, nom, type_site, surface, adresse, cp, ville, compteurs_data in SITES_DATA:
         site = create_site_from_data(
-            db=db, portefeuille_id=pf.id, nom=nom, type_site=type_site,
-            adresse=adresse, code_postal=cp, ville=ville,
+            db=db,
+            portefeuille_id=pf.id,
+            nom=nom,
+            type_site=type_site,
+            adresse=adresse,
+            code_postal=cp,
+            ville=ville,
             surface_m2=float(surface) if surface else None,
         )
         site.data_source = "demo"
@@ -1059,8 +1191,10 @@ def seed_patrimoine_demo(db: Session) -> dict:
         "obligations": obligations_count,
         "nn_links": 4,
     }
-    print(f"  Collectivite Azur: {sites_created} sites, {compteurs_created} compteurs, "
-          f"{batiments_count} batiments, {obligations_count} obligations")
+    print(
+        f"  Collectivite Azur: {sites_created} sites, {compteurs_created} compteurs, "
+        f"{batiments_count} batiments, {obligations_count} obligations"
+    )
     return result
 
 
@@ -1089,6 +1223,7 @@ def main():
 
         # Compute compliance snapshots from obligations + evidences (engine)
         from services.compliance_engine import recompute_site
+
         print("  Calcul des snapshots conformite...")
         for site in sites:
             recompute_site(db, site.id)
@@ -1121,6 +1256,7 @@ def main():
 
         # V68: Billing demo 36 mois
         from services.billing_seed import seed_billing_demo
+
         billing_result = seed_billing_demo(db)
         if "error" in billing_result:
             print(f"  ⚠ Billing seed skipped: {billing_result['error']}")
@@ -1158,6 +1294,7 @@ def main():
     except Exception as e:
         print(f"Erreur : {e}")
         import traceback
+
         traceback.print_exc()
         db.rollback()
         raise

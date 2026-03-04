@@ -6,8 +6,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Flame, AlertTriangle } from 'lucide-react';
 import {
-  ComposedChart, Bar, Line, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ComposedChart,
+  Bar,
+  Line,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { Card, CardBody, Badge, Button, TrustBadge } from '../../ui';
 import { SkeletonCard } from '../../ui';
@@ -21,7 +30,14 @@ const SEVERITY_STYLE = {
   low: 'bg-gray-50 border-gray-200 text-gray-700',
 };
 
-export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialGas, initialWeather }) {
+export default function GasPanel({
+  siteId,
+  days,
+  onGenerateDemo,
+  toast,
+  initialGas,
+  initialWeather,
+}) {
   const [gas, setGas] = useState(initialGas || null);
   const [weather, setWeather] = useState(initialWeather || null);
   const [loading, setLoading] = useState(false);
@@ -87,13 +103,17 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Total</p>
-            <p className="text-xl font-bold text-gray-800">{gas.total_kwh.toLocaleString()} kWh PCS</p>
+            <p className="text-xl font-bold text-gray-800">
+              {gas.total_kwh.toLocaleString()} kWh PCS
+            </p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Moy. journaliere</p>
-            <p className="text-xl font-bold text-gray-800">{gas.avg_daily_kwh.toLocaleString()} kWh PCS</p>
+            <p className="text-xl font-bold text-gray-800">
+              {gas.avg_daily_kwh.toLocaleString()} kWh PCS
+            </p>
           </CardBody>
         </Card>
         {model && (
@@ -107,7 +127,9 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Sensibilite R²</p>
-                <p className={`text-xl font-bold ${model.r_squared > 0.7 ? 'text-green-600' : model.r_squared > 0.4 ? 'text-amber-600' : 'text-gray-600'}`}>
+                <p
+                  className={`text-xl font-bold ${model.r_squared > 0.7 ? 'text-green-600' : model.r_squared > 0.4 ? 'text-amber-600' : 'text-gray-600'}`}
+                >
                   {model.r_squared}
                 </p>
               </CardBody>
@@ -120,13 +142,25 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
       {weather?.decomposition && (
         <Card>
           <CardBody className="py-3">
-            <p className="text-xs font-semibold text-gray-600 mb-2">Decomposition base / chauffage</p>
+            <p className="text-xs font-semibold text-gray-600 mb-2">
+              Decomposition base / chauffage
+            </p>
             <div className="w-full h-6 rounded-full overflow-hidden flex">
-              <div className="bg-amber-400 flex items-center justify-center" style={{ width: `${weather.decomposition.base_pct}%` }}>
-                <span className="text-[10px] font-bold text-white">{weather.decomposition.base_pct}% Base</span>
+              <div
+                className="bg-amber-400 flex items-center justify-center"
+                style={{ width: `${weather.decomposition.base_pct}%` }}
+              >
+                <span className="text-[10px] font-bold text-white">
+                  {weather.decomposition.base_pct}% Base
+                </span>
               </div>
-              <div className="bg-orange-500 flex items-center justify-center" style={{ width: `${weather.decomposition.heating_pct}%` }}>
-                <span className="text-[10px] font-bold text-white">{weather.decomposition.heating_pct}% Chauffage</span>
+              <div
+                className="bg-orange-500 flex items-center justify-center"
+                style={{ width: `${weather.decomposition.heating_pct}%` }}
+              >
+                <span className="text-[10px] font-bold text-white">
+                  {weather.decomposition.heating_pct}% Chauffage
+                </span>
               </div>
             </div>
           </CardBody>
@@ -137,12 +171,34 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
       {weather?.dju_data?.length > 0 && (
         <Card>
           <CardBody>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Sensibilite climatique (DJU vs Conso)</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              Sensibilite climatique (DJU vs Conso)
+            </h4>
             <ResponsiveContainer width="100%" height={250}>
               <ScatterChart>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="dju" name="DJU" tick={{ fontSize: 11 }} label={{ value: 'DJU', position: 'insideBottom', offset: -5, style: { fontSize: 11 } }} />
-                <YAxis dataKey="kwh" name="kWh" tick={{ fontSize: 11 }} label={{ value: 'kWh/j', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                <XAxis
+                  dataKey="dju"
+                  name="DJU"
+                  tick={{ fontSize: 11 }}
+                  label={{
+                    value: 'DJU',
+                    position: 'insideBottom',
+                    offset: -5,
+                    style: { fontSize: 11 },
+                  }}
+                />
+                <YAxis
+                  dataKey="kwh"
+                  name="kWh"
+                  tick={{ fontSize: 11 }}
+                  label={{
+                    value: 'kWh/j',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 11 },
+                  }}
+                />
                 <Tooltip formatter={(v, name) => [`${v}`, name === 'dju' ? 'DJU' : 'kWh/j']} />
                 <Scatter data={weather.dju_data} fill="#f59e0b" name="Conso journaliere" />
               </ScatterChart>
@@ -160,15 +216,37 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
       {weather?.dju_data?.length > 0 && (
         <Card>
           <CardBody>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Conso brute vs corrigee meteo</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+              Conso brute vs corrigee meteo
+            </h4>
             <ResponsiveContainer width="100%" height={250}>
               <ComposedChart data={weather.dju_data.slice(-60)}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-45} textAnchor="end" height={50} />
-                <YAxis tick={{ fontSize: 11 }} label={{ value: 'kWh', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 9 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  label={{
+                    value: 'kWh',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 11 },
+                  }}
+                />
                 <Tooltip />
                 <Bar dataKey="kwh" fill="#f59e0b" name="Brut (kWh)" opacity={0.7} />
-                <Line dataKey="normalized_kwh" stroke="#3b82f6" name="Corrige meteo" dot={false} strokeWidth={2} />
+                <Line
+                  dataKey="normalized_kwh"
+                  stroke="#3b82f6"
+                  name="Corrige meteo"
+                  dot={false}
+                  strokeWidth={2}
+                />
                 <Legend />
               </ComposedChart>
             </ResponsiveContainer>
@@ -181,7 +259,10 @@ export default function GasPanel({ siteId, days, onGenerateDemo, toast, initialG
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-gray-700">Alertes gaz</h4>
           {weather.alerts.map((alert, i) => (
-            <Card key={i} className={`border ${SEVERITY_STYLE[alert.severity] || SEVERITY_STYLE.low}`}>
+            <Card
+              key={i}
+              className={`border ${SEVERITY_STYLE[alert.severity] || SEVERITY_STYLE.low}`}
+            >
               <CardBody className="py-2.5 flex items-center gap-3">
                 <AlertTriangle size={16} className="shrink-0" />
                 <div className="flex-1">

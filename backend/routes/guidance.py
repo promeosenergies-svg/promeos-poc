@@ -3,6 +3,7 @@ PROMEOS - Guidance / Action Plan API
 GET /api/guidance/action-plan
 GET /api/guidance/readiness
 """
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional

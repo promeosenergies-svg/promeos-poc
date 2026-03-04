@@ -2,6 +2,7 @@
 PROMEOS — JSON Log Formatter + setup_logging()
 Structured JSON logs for backend (request_id, method, path, status, duration_ms).
 """
+
 import json
 import logging
 import datetime

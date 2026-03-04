@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint V5.0: ROI Summary + Realized Gain
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,8 +14,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ActionItem, ActionSourceType, ActionStatus,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ActionItem,
+    ActionSourceType,
+    ActionStatus,
     ActionEvent,
     TypeSite,
 )
@@ -42,6 +50,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -64,8 +73,17 @@ def _create_org_site(db):
     return org, site
 
 
-def _add_action(db, org, site, estimated=0, realized=0, source_type=ActionSourceType.MANUAL,
-                status=ActionStatus.OPEN, category=None, idx=0):
+def _add_action(
+    db,
+    org,
+    site,
+    estimated=0,
+    realized=0,
+    source_type=ActionSourceType.MANUAL,
+    status=ActionStatus.OPEN,
+    category=None,
+    idx=0,
+):
     item = ActionItem(
         org_id=org.id,
         site_id=site.id,
@@ -129,8 +147,7 @@ class TestROISummary:
         """false_positive actions are excluded from ROI totals."""
         org, site = _create_org_site(db)
         _add_action(db, org, site, estimated=10000, realized=5000, idx=0)
-        _add_action(db, org, site, estimated=8000, realized=4000,
-                    status=ActionStatus.FALSE_POSITIVE, idx=1)
+        _add_action(db, org, site, estimated=8000, realized=4000, status=ActionStatus.FALSE_POSITIVE, idx=1)
         db.commit()
 
         resp = client.get("/api/actions/roi_summary")
@@ -158,10 +175,13 @@ class TestROISummary:
         item = _add_action(db, org, site, estimated=10000, idx=0)
         db.commit()
 
-        resp = client.patch(f"/api/actions/{item.id}", json={
-            "realized_gain_eur": 7500.0,
-            "realized_at": "2026-06-15",
-        })
+        resp = client.patch(
+            f"/api/actions/{item.id}",
+            json={
+                "realized_gain_eur": 7500.0,
+                "realized_at": "2026-06-15",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["realized_gain_eur"] == 7500.0
         assert resp.json()["realized_at"] == "2026-06-15"

@@ -3,6 +3,7 @@ PROMEOS Integration Test - Full Pipeline
 Base Doc -> KB Build -> Load -> Import Data -> Analytics -> Results
 Tests the complete KB-driven pipeline end-to-end.
 """
+
 import pytest
 import sys
 import os
@@ -22,10 +23,20 @@ from sqlalchemy.orm import sessionmaker
 
 from models.base import Base
 from models import (
-    Site, KBVersion, KBArchetype, KBMappingCode, KBAnomalyRule,
-    KBRecommendation, KBConfidence, KBStatus,
-    Meter, MeterReading, UsageProfile, Anomaly, Recommendation,
-    FrequencyType
+    Site,
+    KBVersion,
+    KBArchetype,
+    KBMappingCode,
+    KBAnomalyRule,
+    KBRecommendation,
+    KBConfidence,
+    KBStatus,
+    Meter,
+    MeterReading,
+    UsageProfile,
+    Anomaly,
+    Recommendation,
+    FrequencyType,
 )
 from models.enums import TypeSite
 
@@ -49,14 +60,14 @@ class TestFullPipeline:
         manifest_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b/manifest.json"
         assert manifest_path.exists()
 
-        with open(manifest_path, 'r', encoding='utf-8') as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b" / manifest['source_path']
-        with open(html_path, 'rb') as f:
+        html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b" / manifest["source_path"]
+        with open(html_path, "rb") as f:
             computed = hashlib.sha256(f.read()).hexdigest()
 
-        assert computed == manifest['sha256'], "Source integrity check FAILED"
+        assert computed == manifest["sha256"], "Source integrity check FAILED"
 
     def test_step2_load_kb_version(self, integration_db):
         """Step 2: Load KB version from manifest"""
@@ -125,17 +136,14 @@ class TestFullPipeline:
             ville="Paris",
             surface_m2=1200.0,
             naf_code="70.10",
-            actif=True
+            actif=True,
         )
         integration_db.add(site)
         integration_db.commit()
         integration_db.refresh(site)
 
         meter = Meter(
-            meter_id="PRM-INTEGRATION-001",
-            name="Compteur Principal",
-            site_id=site.id,
-            subscribed_power_kva=120.0
+            meter_id="PRM-INTEGRATION-001", name="Compteur Principal", site_id=site.id, subscribed_power_kva=120.0
         )
         integration_db.add(meter)
         integration_db.commit()
@@ -171,19 +179,21 @@ class TestFullPipeline:
                     factor = 0.30  # Slightly high night base for anomaly
 
                 value = 7.0 * factor * seasonal * random.uniform(0.9, 1.1)
-                readings.append(MeterReading(
-                    meter_id=meter.id,
-                    timestamp=ts,
-                    frequency=FrequencyType.HOURLY,
-                    value_kwh=round(value, 2),
-                    is_estimated=False
-                ))
+                readings.append(
+                    MeterReading(
+                        meter_id=meter.id,
+                        timestamp=ts,
+                        frequency=FrequencyType.HOURLY,
+                        value_kwh=round(value, 2),
+                        is_estimated=False,
+                    )
+                )
 
         integration_db.bulk_save_objects(readings)
         integration_db.commit()
 
         count = integration_db.query(MeterReading).filter_by(meter_id=meter.id).count()
-        assert count == 180 * 24, f"Expected {180*24} readings, got {count}"
+        assert count == 180 * 24, f"Expected {180 * 24} readings, got {count}"
 
     def test_step8_run_analytics(self, integration_db):
         """Step 8: Run KB-driven analytics pipeline"""
@@ -193,9 +203,9 @@ class TestFullPipeline:
         engine = AnalyticsEngine(integration_db)
         result = engine.analyze(meter.id)
 
-        assert result['status'] == 'ok'
-        assert result['features'] is not None
-        assert result['features']['readings_count'] == 180 * 24
+        assert result["status"] == "ok"
+        assert result["features"] is not None
+        assert result["features"]["readings_count"] == 180 * 24
 
     def test_step9_verify_archetype_detection(self, integration_db):
         """Step 9: Verify usage profile was created"""

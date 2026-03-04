@@ -13,7 +13,8 @@ export function fmtEur(v) {
   if (v == null || v === 0) return '—';
   const n = Number(v);
   if (Number.isNaN(n)) return '—';
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} M€`;
+  if (Math.abs(n) >= 1_000_000)
+    return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} M€`;
   if (Math.abs(n) >= 1_000) return `${Math.round(n / 1_000).toLocaleString(FR)} k€`;
   return `${n.toLocaleString(FR)} €`;
 }
@@ -42,7 +43,8 @@ export function fmtAreaCompact(v) {
 export function fmtKwh(v) {
   if (v == null || v === 0) return '—';
   const n = Number(v);
-  if (n >= 1_000_000) return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} GWh`;
+  if (n >= 1_000_000)
+    return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} GWh`;
   if (n >= 1_000) return `${Math.round(n / 1_000).toLocaleString(FR)}k kWh`;
   return `${n.toLocaleString(FR)} kWh`;
 }
@@ -66,5 +68,7 @@ export function fmtDateFR(v) {
  */
 export function formatPercentFR(value) {
   if (value == null || Number.isNaN(Number(value))) return '—';
-  return new Intl.NumberFormat(FR, { style: 'percent', maximumFractionDigits: 0 }).format(Number(value) / 100);
+  return new Intl.NumberFormat(FR, { style: 'percent', maximumFractionDigits: 0 }).format(
+    Number(value) / 100
+  );
 }

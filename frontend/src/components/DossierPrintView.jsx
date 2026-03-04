@@ -4,7 +4,7 @@
  * Renders inside a Drawer; uses window.print() for export.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Printer, FileText, AlertTriangle, CheckCircle, Clock, Paperclip, X, ExternalLink } from 'lucide-react';
+import { Printer, FileText, AlertTriangle, Paperclip, X } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Button } from '../ui';
 import { buildDossier, STATUS_LABELS_FR, PRIORITY_LABELS_FR } from '../models/dossierModel';
@@ -22,7 +22,16 @@ const STATUS_DOT = {
 /**
  * @param {{ open, onClose, sourceType, sourceId, sourceLabel?, siteLabel?, orgLabel?, period? }} props
  */
-export default function DossierPrintView({ open, onClose, sourceType, sourceId, sourceLabel, siteLabel, orgLabel, period }) {
+export default function DossierPrintView({
+  open,
+  onClose,
+  sourceType,
+  sourceId,
+  sourceLabel,
+  siteLabel,
+  orgLabel,
+  period,
+}) {
   const [actions, setActions] = useState([]);
   const [evidenceMap, setEvidenceMap] = useState(new Map());
   const [loading, setLoading] = useState(false);
@@ -38,7 +47,7 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
       // Fetch evidence for each linked action
       const evMap = new Map();
       const results = await Promise.allSettled(
-        linked.map((a) => getActionEvidence(a.id).then((ev) => [a.id, ev])),
+        linked.map((a) => getActionEvidence(a.id).then((ev) => [a.id, ev]))
       );
       for (const r of results) {
         if (r.status === 'fulfilled') {
@@ -63,9 +72,9 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
       buildDossier(
         { sourceType, sourceId, label: sourceLabel, siteLabel, orgLabel, period },
         actions,
-        evidenceMap,
+        evidenceMap
       ),
-    [sourceType, sourceId, sourceLabel, siteLabel, orgLabel, period, actions, evidenceMap],
+    [sourceType, sourceId, sourceLabel, siteLabel, orgLabel, period, actions, evidenceMap]
   );
 
   function handlePrint() {
@@ -75,7 +84,13 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
   if (!open) return null;
 
   return (
-    <Drawer open={open} onClose={onClose} wide title="Dossier source" data-testid="dossier-print-view">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      wide
+      title="Dossier source"
+      data-testid="dossier-print-view"
+    >
       {/* Print-only styles */}
       <style>{`
         @media print {
@@ -113,7 +128,10 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
         ) : (
           <>
             {/* ── Header ──────────────────────────────────────── */}
-            <div className="border border-gray-200 rounded-xl p-5 bg-white" data-testid="dossier-header">
+            <div
+              className="border border-gray-200 rounded-xl p-5 bg-white"
+              data-testid="dossier-header"
+            >
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold text-gray-900">
                   Dossier — {dossier.header.sourceLabel}
@@ -122,19 +140,31 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
                 {dossier.header.orgLabel && (
-                  <div><span className="text-gray-400">Organisation :</span> {dossier.header.orgLabel}</div>
+                  <div>
+                    <span className="text-gray-400">Organisation :</span> {dossier.header.orgLabel}
+                  </div>
                 )}
                 {dossier.header.siteLabel && (
-                  <div><span className="text-gray-400">Site :</span> {dossier.header.siteLabel}</div>
+                  <div>
+                    <span className="text-gray-400">Site :</span> {dossier.header.siteLabel}
+                  </div>
                 )}
                 {dossier.header.period && (
-                  <div><span className="text-gray-400">Période :</span> {dossier.header.period}</div>
+                  <div>
+                    <span className="text-gray-400">Période :</span> {dossier.header.period}
+                  </div>
                 )}
-                <div><span className="text-gray-400">Source ID :</span> {dossier.header.sourceId}</div>
+                <div>
+                  <span className="text-gray-400">Source ID :</span> {dossier.header.sourceId}
+                </div>
                 <div>
                   <span className="text-gray-400">Généré le :</span>{' '}
                   {new Date(dossier.header.generatedAt).toLocaleDateString('fr-FR', {
-                    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
                 </div>
               </div>
@@ -147,7 +177,11 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
                 { label: 'Ouvertes', value: dossier.stats.open, color: 'text-amber-700' },
                 { label: 'Terminées', value: dossier.stats.done, color: 'text-green-700' },
                 { label: 'Pièces', value: dossier.stats.evidenceCount, color: 'text-blue-700' },
-                { label: 'À compléter', value: dossier.stats.missingCount, color: dossier.stats.missingCount > 0 ? 'text-red-700' : 'text-gray-400' },
+                {
+                  label: 'À compléter',
+                  value: dossier.stats.missingCount,
+                  color: dossier.stats.missingCount > 0 ? 'text-red-700' : 'text-gray-400',
+                },
               ].map((s) => (
                 <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
                   <p className="text-xs text-gray-500">{s.label}</p>
@@ -167,46 +201,62 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
                 <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Action</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Statut</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Priorité</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Responsable</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Échéance</th>
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500">Preuves</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
+                        Action
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
+                        Statut
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
+                        Priorité
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
+                        Responsable
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
+                        Échéance
+                      </th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500">
+                        Preuves
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {dossier.actions.map((a) => (
                       <tr key={a.id} className="border-t border-gray-100">
-                        <td className="px-3 py-2 font-medium text-gray-900 max-w-xs truncate">{a.title}</td>
+                        <td className="px-3 py-2 font-medium text-gray-900 max-w-xs truncate">
+                          {a.title}
+                        </td>
                         <td className="px-3 py-2">
                           <span className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${STATUS_DOT[a.status] || 'bg-gray-300'}`} />
+                            <span
+                              className={`w-2 h-2 rounded-full ${STATUS_DOT[a.status] || 'bg-gray-300'}`}
+                            />
                             {STATUS_LABELS_FR[a.status] || a.status}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-xs">
                           {PRIORITY_LABELS_FR[a.priority] || `P${a.priority}`}
                         </td>
-                        <td className="px-3 py-2">{a.owner || <span className="text-gray-400 italic">Non assigné</span>}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          {a.dueDate || '—'}
+                        <td className="px-3 py-2">
+                          {a.owner || <span className="text-gray-400 italic">Non assigné</span>}
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{a.dueDate || '—'}</td>
                         <td className="px-3 py-2 text-center">
                           {a.evidenceRequired ? (
                             a.evidenceCount > 0 ? (
-                              <span className="text-green-600 font-medium">{a.evidenceCount} ✓</span>
+                              <span className="text-green-600 font-medium">
+                                {a.evidenceCount} ✓
+                              </span>
                             ) : (
                               <span className="text-red-600 font-medium flex items-center justify-center gap-1">
                                 <AlertTriangle size={12} /> Manquante
                               </span>
                             )
+                          ) : a.evidenceCount > 0 ? (
+                            <span className="text-gray-600">{a.evidenceCount}</span>
                           ) : (
-                            a.evidenceCount > 0 ? (
-                              <span className="text-gray-600">{a.evidenceCount}</span>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )
+                            <span className="text-gray-400">—</span>
                           )}
                         </td>
                       </tr>
@@ -224,10 +274,17 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
                 </h3>
                 <div className="space-y-1">
                   {dossier.evidence.map((e, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg text-sm">
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                    >
                       <Paperclip size={12} className="text-gray-400 shrink-0" />
-                      <span className="font-medium text-gray-800 truncate">{e.label || e.file_url || 'Pièce'}</span>
-                      <span className="text-xs text-gray-400 ml-auto shrink-0">Action : {e.actionTitle}</span>
+                      <span className="font-medium text-gray-800 truncate">
+                        {e.label || e.file_url || 'Pièce'}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-auto shrink-0">
+                        Action : {e.actionTitle}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -242,7 +299,10 @@ export default function DossierPrintView({ open, onClose, sourceType, sourceId, 
                 </h3>
                 <div className="space-y-1">
                   {dossier.missing.map((m, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-sm">
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-sm"
+                    >
                       <AlertTriangle size={12} className="text-red-500 shrink-0" />
                       <div>
                         <span className="font-medium text-red-800">{m.labelFR}</span>

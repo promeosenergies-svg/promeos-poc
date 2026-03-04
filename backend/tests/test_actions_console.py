@@ -2,8 +2,10 @@
 PROMEOS — Tests Console Actions (V1)
 CRUD, campaign_sites, timestamps, filtres, 404/422 propres.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -48,8 +50,8 @@ def client():
 
 # ── CREATE ──────────────────────────────────────────────────────
 
-class TestActionCreate:
 
+class TestActionCreate:
     def test_create_minimal(self, client):
         r = client.post("/api/actions", json={"title": "Corriger anomalie conso"})
         assert r.status_code == 200
@@ -61,17 +63,20 @@ class TestActionCreate:
         assert data["id"] is not None
 
     def test_create_with_all_fields(self, client):
-        r = client.post("/api/actions", json={
-            "title": "Vérifier facture EDF",
-            "source_type": "manual",
-            "severity": "high",
-            "priority": 2,
-            "estimated_gain_eur": 5000.0,
-            "due_date": "2026-06-30",
-            "owner": "DAF",
-            "notes": "Facture suspecte",
-            "co2e_savings_est_kg": 120.5,
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "title": "Vérifier facture EDF",
+                "source_type": "manual",
+                "severity": "high",
+                "priority": 2,
+                "estimated_gain_eur": 5000.0,
+                "due_date": "2026-06-30",
+                "owner": "DAF",
+                "notes": "Facture suspecte",
+                "co2e_savings_est_kg": 120.5,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["estimated_gain_eur"] == 5000.0
@@ -89,10 +94,13 @@ class TestActionCreate:
         assert data["updated_at"] is not None
 
     def test_create_with_campaign_sites(self, client):
-        r = client.post("/api/actions", json={
-            "title": "Campagne multi-sites",
-            "campaign_sites": [1, 2, 3],
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "title": "Campagne multi-sites",
+                "campaign_sites": [1, 2, 3],
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["campaign_sites"] == [1, 2, 3]
@@ -115,8 +123,8 @@ class TestActionCreate:
 
 # ── VALIDATION ──────────────────────────────────────────────────
 
-class TestActionValidation:
 
+class TestActionValidation:
     def test_create_empty_title_422(self, client):
         r = client.post("/api/actions", json={"title": ""})
         assert r.status_code == 422
@@ -126,28 +134,40 @@ class TestActionValidation:
         assert r.status_code == 422
 
     def test_create_invalid_source_type_400(self, client):
-        r = client.post("/api/actions", json={
-            "title": "Test", "source_type": "invalid_source",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "title": "Test",
+                "source_type": "invalid_source",
+            },
+        )
         assert r.status_code == 400
 
     def test_create_invalid_priority_422(self, client):
-        r = client.post("/api/actions", json={
-            "title": "Test", "priority": 99,
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "title": "Test",
+                "priority": 99,
+            },
+        )
         assert r.status_code == 422  # Pydantic Field(ge=1, le=5) constraint
 
     def test_create_invalid_date_400(self, client):
-        r = client.post("/api/actions", json={
-            "title": "Test", "due_date": "not-a-date",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "title": "Test",
+                "due_date": "not-a-date",
+            },
+        )
         assert r.status_code == 400
 
 
 # ── LIST + FILTERS ──────────────────────────────────────────────
 
-class TestActionList:
 
+class TestActionList:
     def test_list_empty(self, client):
         r = client.get("/api/actions/list")
         assert r.status_code == 200
@@ -172,8 +192,8 @@ class TestActionList:
 
 # ── DETAIL ──────────────────────────────────────────────────────
 
-class TestActionDetail:
 
+class TestActionDetail:
     def test_detail_existing(self, client):
         r = client.post("/api/actions", json={"title": "Detail test"})
         aid = r.json()["id"]
@@ -193,8 +213,8 @@ class TestActionDetail:
 
 # ── PATCH ───────────────────────────────────────────────────────
 
-class TestActionPatch:
 
+class TestActionPatch:
     def test_patch_status(self, client):
         r = client.post("/api/actions", json={"title": "Patch me"})
         aid = r.json()["id"]
@@ -222,8 +242,8 @@ class TestActionPatch:
 
 # ── SUMMARY ─────────────────────────────────────────────────────
 
-class TestActionSummary:
 
+class TestActionSummary:
     def test_summary_empty(self, client):
         r = client.get("/api/actions/summary")
         assert r.status_code == 200
@@ -243,16 +263,20 @@ class TestActionSummary:
 
 # ── COMMENTS ────────────────────────────────────────────────────
 
-class TestActionComments:
 
+class TestActionComments:
     def test_add_and_list_comments(self, client):
         r = client.post("/api/actions", json={"title": "Commentable"})
         aid = r.json()["id"]
 
         # Add
-        r2 = client.post(f"/api/actions/{aid}/comments", json={
-            "author": "Amine", "body": "Premier commentaire",
-        })
+        r2 = client.post(
+            f"/api/actions/{aid}/comments",
+            json={
+                "author": "Amine",
+                "body": "Premier commentaire",
+            },
+        )
         assert r2.status_code == 200
         assert r2.json()["body"] == "Premier commentaire"
 
@@ -264,16 +288,20 @@ class TestActionComments:
     def test_comment_empty_body_422(self, client):
         r = client.post("/api/actions", json={"title": "No comment"})
         aid = r.json()["id"]
-        r2 = client.post(f"/api/actions/{aid}/comments", json={
-            "author": "X", "body": "",
-        })
+        r2 = client.post(
+            f"/api/actions/{aid}/comments",
+            json={
+                "author": "X",
+                "body": "",
+            },
+        )
         assert r2.status_code == 422
 
 
 # ── EVENTS ──────────────────────────────────────────────────────
 
-class TestActionEvents:
 
+class TestActionEvents:
     def test_events_created_on_create(self, client):
         r = client.post("/api/actions", json={"title": "Evented"})
         aid = r.json()["id"]
@@ -294,8 +322,8 @@ class TestActionEvents:
 
 # ── EXPORT ──────────────────────────────────────────────────────
 
-class TestActionExport:
 
+class TestActionExport:
     def test_export_csv_empty(self, client):
         r = client.get("/api/actions/export.csv")
         assert r.status_code == 200

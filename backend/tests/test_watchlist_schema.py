@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Tests for watchlist YAML validation.
 Checks: YAML loads, ids unique, HTTPS only, whitelisted domains, enums, tags.
 """
+
 import sys
 import os
 import re
@@ -13,8 +14,7 @@ import pytest
 import yaml
 
 WATCHLIST_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "app", "referential", "sources_watchlist_24m.yaml"
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app", "referential", "sources_watchlist_24m.yaml"
 )
 
 
@@ -28,6 +28,7 @@ def watchlist():
 # ========================================
 # Tests
 # ========================================
+
 
 def test_yaml_loads(watchlist):
     """YAML file loads without errors."""
@@ -99,22 +100,21 @@ def test_required_fields(watchlist):
 def test_category_enum(watchlist):
     """Category is tarif_reseau or taxe."""
     for src in watchlist["sources"]:
-        assert src["category"] in ("tarif_reseau", "taxe"), \
-            f"{src['id']}: invalid category '{src['category']}'"
+        assert src["category"] in ("tarif_reseau", "taxe"), f"{src['id']}: invalid category '{src['category']}'"
 
 
 def test_energy_enum(watchlist):
     """Energy is electricite, gaz, or multi."""
     for src in watchlist["sources"]:
-        assert src["energy"] in ("electricite", "gaz", "multi"), \
-            f"{src['id']}: invalid energy '{src['energy']}'"
+        assert src["energy"] in ("electricite", "gaz", "multi"), f"{src['id']}: invalid energy '{src['energy']}'"
 
 
 def test_authority_enum(watchlist):
     """Authority is CRE, Legifrance, BOFiP, or impots.gouv."""
     for src in watchlist["sources"]:
-        assert src["authority"] in ("CRE", "Legifrance", "BOFiP", "impots.gouv"), \
+        assert src["authority"] in ("CRE", "Legifrance", "BOFiP", "impots.gouv"), (
             f"{src['id']}: invalid authority '{src['authority']}'"
+        )
 
 
 def test_tags_non_empty(watchlist):
@@ -128,8 +128,7 @@ def test_date_hint_format(watchlist):
     for src in watchlist["sources"]:
         dh = src.get("date_hint")
         if dh:
-            assert re.match(r"^\d{4}-\d{2}-\d{2}$", dh), \
-                f"{src['id']}: bad date_hint '{dh}'"
+            assert re.match(r"^\d{4}-\d{2}-\d{2}$", dh), f"{src['id']}: bad date_hint '{dh}'"
 
 
 def test_coverage_tarifs(watchlist):

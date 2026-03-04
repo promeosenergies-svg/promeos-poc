@@ -16,6 +16,7 @@ Scénarios de régression :
   - L'endpoint /portfolio-summary retourne toujours 200, jamais 401 ou 403.
   - Les champs V61 (sites_health) et V62 (trend) sont présents même en réponse vide.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -30,6 +31,7 @@ from main import app
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def reset_demo_state():
     """Nettoie DemoState avant chaque test pour éviter la pollution entre suites.
@@ -37,6 +39,7 @@ def reset_demo_state():
     ce qui altère resolve_org_id (fallback DEMO_MODE=true → demo org).
     """
     from services.demo_state import DemoState
+
     DemoState.clear_demo_org()
     yield
     DemoState.clear_demo_org()
@@ -59,6 +62,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -66,6 +70,7 @@ def client(db):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_org_with_site(db, nom="OrgGraceful"):
     """Crée une org complète (EJ → Portefeuille → Site) pour les tests data."""
@@ -80,8 +85,11 @@ def _make_org_with_site(db, nom="OrgGraceful"):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site " + nom, type=TypeSite.BUREAU,
-        surface_m2=1000.0, portefeuille_id=pf.id, actif=True,
+        nom="Site " + nom,
+        type=TypeSite.BUREAU,
+        surface_m2=1000.0,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.commit()
@@ -89,12 +97,20 @@ def _make_org_with_site(db, nom="OrgGraceful"):
 
 
 EXPECTED_FIELDS = (
-    "scope", "total_estimated_risk_eur", "sites_count", "sites_at_risk",
-    "sites_health", "framework_breakdown", "top_sites", "trend", "computed_at",
+    "scope",
+    "total_estimated_risk_eur",
+    "sites_count",
+    "sites_at_risk",
+    "sites_health",
+    "framework_breakdown",
+    "top_sites",
+    "trend",
+    "computed_at",
 )
 
 
 # ── Groupe 1 : DB vide — 200 empty ───────────────────────────────────────────
+
 
 class TestPortfolioGracefulEmptyDB:
     """DB complètement vide (aucune org) → 200 vide, jamais 401/403."""
@@ -102,9 +118,7 @@ class TestPortfolioGracefulEmptyDB:
     def test_empty_db_no_header_status_200(self, client, db):
         """DB vide + aucun header → HTTP 200 (pas 403)."""
         resp = client.get("/api/patrimoine/portfolio-summary")
-        assert resp.status_code == 200, (
-            f"Attendu 200 gracieux, obtenu {resp.status_code}: {resp.text}"
-        )
+        assert resp.status_code == 200, f"Attendu 200 gracieux, obtenu {resp.status_code}: {resp.text}"
 
     def test_empty_db_sites_count_zero(self, client, db):
         """DB vide → sites_count = 0."""
@@ -166,6 +180,7 @@ class TestPortfolioGracefulEmptyDB:
 
 # ── Groupe 2 : DEMO_MODE=false (scénario production) ─────────────────────────
 
+
 class TestPortfolioGracefulDemoModeFalse:
     """
     Simule la production (DEMO_MODE=false).
@@ -181,16 +196,17 @@ class TestPortfolioGracefulDemoModeFalse:
     def test_demo_false_no_token_returns_200(self, client, db, monkeypatch):
         """DEMO_MODE=false + aucun token → 200 (pas 401)."""
         import services.scope_utils as _su
+
         monkeypatch.setattr(_su, "DEMO_MODE", False)
         resp = client.get("/api/patrimoine/portfolio-summary")
         assert resp.status_code == 200, (
-            f"DEMO_MODE=false sans token devrait retourner 200 gracieux, "
-            f"obtenu {resp.status_code}: {resp.text}"
+            f"DEMO_MODE=false sans token devrait retourner 200 gracieux, obtenu {resp.status_code}: {resp.text}"
         )
 
     def test_demo_false_no_token_sites_count_zero(self, client, db, monkeypatch):
         """DEMO_MODE=false + aucun token → sites_count = 0."""
         import services.scope_utils as _su
+
         monkeypatch.setattr(_su, "DEMO_MODE", False)
         data = client.get("/api/patrimoine/portfolio-summary").json()
         assert data["sites_count"] == 0
@@ -198,6 +214,7 @@ class TestPortfolioGracefulDemoModeFalse:
     def test_demo_false_no_token_all_fields_present(self, client, db, monkeypatch):
         """DEMO_MODE=false + aucun token → tous les champs structurels présents."""
         import services.scope_utils as _su
+
         monkeypatch.setattr(_su, "DEMO_MODE", False)
         data = client.get("/api/patrimoine/portfolio-summary").json()
         for field in EXPECTED_FIELDS:
@@ -206,6 +223,7 @@ class TestPortfolioGracefulDemoModeFalse:
     def test_demo_false_with_valid_xorgid_returns_data(self, client, db, monkeypatch):
         """DEMO_MODE=false + X-Org-Id valide → 200 avec données réelles."""
         import services.scope_utils as _su
+
         monkeypatch.setattr(_su, "DEMO_MODE", False)
         org, _, _ = _make_org_with_site(db, "OrgDemoFalseData")
         resp = client.get(
@@ -218,6 +236,7 @@ class TestPortfolioGracefulDemoModeFalse:
     def test_demo_false_invalid_xorgid_returns_200(self, client, db, monkeypatch):
         """DEMO_MODE=false + X-Org-Id non-entier → 200 empty (pas 422)."""
         import services.scope_utils as _su
+
         monkeypatch.setattr(_su, "DEMO_MODE", False)
         resp = client.get(
             "/api/patrimoine/portfolio-summary",
@@ -228,6 +247,7 @@ class TestPortfolioGracefulDemoModeFalse:
 
 
 # ── Groupe 3 : Header X-Org-Id valide ────────────────────────────────────────
+
 
 class TestPortfolioGracefulWithOrgHeader:
     """Header X-Org-Id fourni → réponse avec données réelles."""
@@ -272,6 +292,7 @@ class TestPortfolioGracefulWithOrgHeader:
 
 # ── Groupe 4 : Test unitaire get_portfolio_optional_auth ─────────────────────
 
+
 class TestGetPortfolioOptionalAuthUnit:
     """
     Appel direct de get_portfolio_optional_auth — vérifie qu'elle ne lève JAMAIS.
@@ -280,37 +301,39 @@ class TestGetPortfolioOptionalAuthUnit:
     def test_no_token_returns_none(self, db):
         """token=None → retourne None (JAMAIS HTTPException)."""
         from middleware.auth import get_portfolio_optional_auth
+
         result = get_portfolio_optional_auth(token=None, db=db)
         assert result is None
 
     def test_bad_token_returns_none(self, db):
         """Token invalide → retourne None (JAMAIS HTTPException)."""
         from middleware.auth import get_portfolio_optional_auth
+
         result = get_portfolio_optional_auth(token="garbage.token.value", db=db)
         assert result is None
 
     def test_no_raise_on_any_input(self, db):
         """Aucune exception ne doit remonter, quelle que soit l'entrée."""
         from middleware.auth import get_portfolio_optional_auth
+
         for bad_token in (None, "", "bad", "a.b.c", "Bearer xyz"):
             try:
                 result = get_portfolio_optional_auth(token=bad_token, db=db)
                 # Doit retourner None, pas lever
                 assert result is None, f"Attendu None pour token={bad_token!r}"
             except Exception as exc:
-                pytest.fail(
-                    f"get_portfolio_optional_auth a levé une exception pour "
-                    f"token={bad_token!r} : {exc!r}"
-                )
+                pytest.fail(f"get_portfolio_optional_auth a levé une exception pour token={bad_token!r} : {exc!r}")
 
     def test_function_exists_in_auth_module(self):
         """get_portfolio_optional_auth est bien exporté depuis middleware.auth."""
         import middleware.auth as _auth
+
         assert hasattr(_auth, "get_portfolio_optional_auth")
         assert callable(_auth.get_portfolio_optional_auth)
 
 
 # ── Groupe 5 : Régression V61/V62 ─────────────────────────────────────────────
+
 
 class TestPortfolioGracefulRegressionV61V62:
     """Vérifie que les champs V61/V62 sont présents même en réponse vide."""
@@ -337,14 +360,10 @@ class TestPortfolioGracefulRegressionV61V62:
         """L'endpoint ne doit JAMAIS retourner 401 (régression fix V63)."""
         for _ in range(3):
             resp = client.get("/api/patrimoine/portfolio-summary")
-            assert resp.status_code != 401, (
-                "Régression V63 : l'endpoint a retourné 401"
-            )
+            assert resp.status_code != 401, "Régression V63 : l'endpoint a retourné 401"
 
     def test_no_403_regression(self, client, db):
         """L'endpoint ne doit JAMAIS retourner 403 (régression fix V63)."""
         for _ in range(3):
             resp = client.get("/api/patrimoine/portfolio-summary")
-            assert resp.status_code != 403, (
-                "Régression V63 : l'endpoint a retourné 403"
-            )
+            assert resp.status_code != 403, "Régression V63 : l'endpoint a retourné 403"

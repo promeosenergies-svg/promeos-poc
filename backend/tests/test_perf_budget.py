@@ -5,8 +5,10 @@ Uses demo seed data for realistic load. In-memory SQLite.
 
 Thresholds are configurable via env vars (see perf_config.py).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
@@ -39,6 +41,7 @@ def db_session():
 @pytest.fixture(scope="module")
 def seeded_client(db_session):
     """Client with demo data seeded once for all perf tests."""
+
     def _override():
         try:
             yield db_session
@@ -76,22 +79,16 @@ class TestPerfBudget:
         """GET /api/cockpit must respond within budget."""
         ms = _timed_get(seeded_client, "/api/cockpit")
         threshold = PERF_THRESHOLDS["test_cockpit_ms"]
-        assert ms < threshold, (
-            f"GET /api/cockpit took {ms:.1f}ms, budget is {threshold}ms"
-        )
+        assert ms < threshold, f"GET /api/cockpit took {ms:.1f}ms, budget is {threshold}ms"
 
     def test_dashboard_2min_under_budget(self, seeded_client):
         """GET /api/dashboard/2min must respond within budget."""
         ms = _timed_get(seeded_client, "/api/dashboard/2min")
         threshold = PERF_THRESHOLDS["test_dashboard_2min_ms"]
-        assert ms < threshold, (
-            f"GET /api/dashboard/2min took {ms:.1f}ms, budget is {threshold}ms"
-        )
+        assert ms < threshold, f"GET /api/dashboard/2min took {ms:.1f}ms, budget is {threshold}ms"
 
     def test_sites_list_under_budget(self, seeded_client):
         """GET /api/sites must respond within budget."""
         ms = _timed_get(seeded_client, "/api/sites")
         threshold = PERF_THRESHOLDS["test_sites_list_ms"]
-        assert ms < threshold, (
-            f"GET /api/sites took {ms:.1f}ms, budget is {threshold}ms"
-        )
+        assert ms < threshold, f"GET /api/sites took {ms:.1f}ms, budget is {threshold}ms"

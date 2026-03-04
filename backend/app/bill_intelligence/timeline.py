@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Timeline 24 mois
 Analyse temporelle : gaps, overlaps, coverage L0-L3, dashboard KPIs.
 """
+
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -13,6 +14,7 @@ from .domain import Invoice, ShadowLevel, EnergyType
 @dataclass
 class TimelineSlot:
     """One month slot in the timeline."""
+
     year: int
     month: int
     period_start: Optional[date] = None
@@ -44,6 +46,7 @@ class TimelineSlot:
 @dataclass
 class TimelineGap:
     """A gap (missing invoice) in the timeline."""
+
     site_id: Optional[int]
     energy_type: str
     pdl_pce: Optional[str]
@@ -65,6 +68,7 @@ class TimelineGap:
 @dataclass
 class TimelineOverlap:
     """An overlap (two invoices covering the same period) in the timeline."""
+
     site_id: Optional[int]
     energy_type: str
     pdl_pce: Optional[str]
@@ -88,6 +92,7 @@ class TimelineOverlap:
 @dataclass
 class SiteTimeline:
     """Complete timeline for one site+energy combination."""
+
     site_id: Optional[int]
     energy_type: str
     pdl_pce: Optional[str]
@@ -114,10 +119,13 @@ class SiteTimeline:
         }
 
 
-def build_timeline(invoices: List[Invoice],
-                   start_year: int = 2023, start_month: int = 1,
-                   end_year: int = 2024, end_month: int = 12,
-                   ) -> List[SiteTimeline]:
+def build_timeline(
+    invoices: List[Invoice],
+    start_year: int = 2023,
+    start_month: int = 1,
+    end_year: int = 2024,
+    end_month: int = 12,
+) -> List[SiteTimeline]:
     """
     Build a 24-month timeline from a list of invoices.
     Groups by (site_id or pdl_pce, energy_type).
@@ -187,16 +195,19 @@ def build_timeline(invoices: List[Invoice],
                 if gap_start is not None and gap_months_count > 0:
                     prev_slot = slots[slots.index(slot) - 1]
                     from calendar import monthrange
+
                     _, last_day = monthrange(prev_slot.year, prev_slot.month)
                     gap_end = date(prev_slot.year, prev_slot.month, last_day)
-                    gaps.append(TimelineGap(
-                        site_id=site_id,
-                        energy_type=energy,
-                        pdl_pce=pdl_pce,
-                        gap_start=gap_start,
-                        gap_end=gap_end,
-                        gap_months=gap_months_count,
-                    ))
+                    gaps.append(
+                        TimelineGap(
+                            site_id=site_id,
+                            energy_type=energy,
+                            pdl_pce=pdl_pce,
+                            gap_start=gap_start,
+                            gap_end=gap_end,
+                            gap_months=gap_months_count,
+                        )
+                    )
                 gap_start = None
                 gap_months_count = 0
 
@@ -204,15 +215,18 @@ def build_timeline(invoices: List[Invoice],
         if gap_start is not None and gap_months_count > 0:
             last_slot = slots[-1]
             from calendar import monthrange
+
             _, last_day = monthrange(last_slot.year, last_slot.month)
-            gaps.append(TimelineGap(
-                site_id=site_id,
-                energy_type=energy,
-                pdl_pce=pdl_pce,
-                gap_start=gap_start,
-                gap_end=date(last_slot.year, last_slot.month, last_day),
-                gap_months=gap_months_count,
-            ))
+            gaps.append(
+                TimelineGap(
+                    site_id=site_id,
+                    energy_type=energy,
+                    pdl_pce=pdl_pce,
+                    gap_start=gap_start,
+                    gap_end=date(last_slot.year, last_slot.month, last_day),
+                    gap_months=gap_months_count,
+                )
+            )
 
         # Detect overlaps
         overlaps = []
@@ -220,39 +234,44 @@ def build_timeline(invoices: List[Invoice],
             a = sorted_invoices[i]
             b = sorted_invoices[i + 1]
             if a.period_end and b.period_start and a.period_end >= b.period_start:
-                overlaps.append(TimelineOverlap(
-                    site_id=site_id,
-                    energy_type=energy,
-                    pdl_pce=pdl_pce,
-                    invoice_a=a.invoice_id,
-                    invoice_b=b.invoice_id,
-                    overlap_start=b.period_start,
-                    overlap_end=a.period_end,
-                ))
+                overlaps.append(
+                    TimelineOverlap(
+                        site_id=site_id,
+                        energy_type=energy,
+                        pdl_pce=pdl_pce,
+                        invoice_a=a.invoice_id,
+                        invoice_b=b.invoice_id,
+                        overlap_start=b.period_start,
+                        overlap_end=a.period_end,
+                    )
+                )
 
         total_months = len(slots)
         covered_months = sum(1 for s in slots if s.has_invoice)
         coverage_pct = round(covered_months / max(total_months, 1) * 100, 1)
 
-        timelines.append(SiteTimeline(
-            site_id=site_id,
-            energy_type=energy,
-            pdl_pce=pdl_pce,
-            supplier=supplier,
-            slots=slots,
-            gaps=gaps,
-            overlaps=overlaps,
-            total_months=total_months,
-            covered_months=covered_months,
-            coverage_percent=coverage_pct,
-        ))
+        timelines.append(
+            SiteTimeline(
+                site_id=site_id,
+                energy_type=energy,
+                pdl_pce=pdl_pce,
+                supplier=supplier,
+                slots=slots,
+                gaps=gaps,
+                overlaps=overlaps,
+                total_months=total_months,
+                covered_months=covered_months,
+                coverage_percent=coverage_pct,
+            )
+        )
 
     return timelines
 
 
-def build_coverage_dashboard(invoices: List[Invoice],
-                             audit_results: Optional[List] = None,
-                             ) -> Dict[str, Any]:
+def build_coverage_dashboard(
+    invoices: List[Invoice],
+    audit_results: Optional[List] = None,
+) -> Dict[str, Any]:
     """
     Build a coverage dashboard with KPIs:
     - Total invoices by energy type
@@ -306,13 +325,15 @@ def build_coverage_dashboard(invoices: List[Invoice],
         "anomalies_by_severity": dict(anomalies_by_severity),
         "anomalies_by_type": dict(anomalies_by_type),
         "unique_suppliers": sorted(suppliers),
-        "sites_coverage": {k: {
-            "invoices": v["invoices"],
-            "anomalies": v["anomalies"],
-            "total_ht": round(v["total_ht"], 2),
-        } for k, v in sites_coverage.items()},
+        "sites_coverage": {
+            k: {
+                "invoices": v["invoices"],
+                "anomalies": v["anomalies"],
+                "total_ht": round(v["total_ht"], 2),
+            }
+            for k, v in sites_coverage.items()
+        },
         "coverage_percent": {
-            level: round(count / max(total_invoices, 1) * 100, 1)
-            for level, count in total_by_level.items()
+            level: round(count / max(total_invoices, 1) * 100, 1) for level, count in total_by_level.items()
         },
     }

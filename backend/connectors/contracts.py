@@ -2,6 +2,7 @@
 PROMEOS Connectors - Contract definitions and mapping validator.
 Defines required fields, sanity ranges, and validation logic.
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -30,12 +31,12 @@ REQUIRED_FIELDS = {
 
 # Sanity ranges for known metrics
 SANITY_RANGES = {
-    "grid_co2_intensity": (0, 2000),       # gCO2/kWh
-    "pv_prod_estimate_kwh": (0, 100000),   # kWh/month
-    "temperature": (-50, 60),              # Celsius
-    "wind_speed": (0, 200),                # km/h
-    "consumption_kwh": (0, 10000000),      # kWh
-    "solar_irradiance": (0, 1500),         # W/m2
+    "grid_co2_intensity": (0, 2000),  # gCO2/kWh
+    "pv_prod_estimate_kwh": (0, 100000),  # kWh/month
+    "temperature": (-50, 60),  # Celsius
+    "wind_speed": (0, 200),  # km/h
+    "consumption_kwh": (0, 10000000),  # kWh
+    "solar_irradiance": (0, 1500),  # W/m2
 }
 
 
@@ -85,9 +86,7 @@ def validate_mapping(object_type: str, records: list[dict], connector_name: str 
         if metric in SANITY_RANGES and value is not None and isinstance(value, (int, float)):
             lo, hi = SANITY_RANGES[metric]
             if value < lo or value > hi:
-                report.warnings.append(
-                    f"Record {i}: {metric}={value} out of range [{lo}, {hi}]"
-                )
+                report.warnings.append(f"Record {i}: {metric}={value} out of range [{lo}, {hi}]")
 
     report.mapped_fields = sorted(all_fields_seen)
     return report

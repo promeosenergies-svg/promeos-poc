@@ -13,26 +13,31 @@
  * impossible à passer silencieusement.
  */
 import { describe, it, expect } from 'vitest';
-import { NAV_SECTIONS, ROUTE_MODULE_MAP, resolveModule, ALL_NAV_ITEMS } from '../../layout/NavRegistry';
+import {
+  NAV_SECTIONS,
+  ROUTE_MODULE_MAP,
+  resolveModule,
+  ALL_NAV_ITEMS,
+} from '../../layout/NavRegistry';
 import { normalizeDashboardModel } from '../CommandCenter';
 
 // ── NavRegistry: routes canoniques ───────────────────────────────────────────
 
 describe('NavRegistry — routes canoniques', () => {
   it('"Tableau de bord" pointe vers "/"', () => {
-    const item = ALL_NAV_ITEMS.find(i => i.label === 'Tableau de bord');
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Tableau de bord');
     expect(item).toBeDefined();
     expect(item.to).toBe('/');
   });
 
   it('"Vue exécutive" (avec accent) pointe vers "/cockpit"', () => {
-    const item = ALL_NAV_ITEMS.find(i => i.label === 'Vue exécutive');
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Vue exécutive');
     expect(item).toBeDefined();
     expect(item.to).toBe('/cockpit');
   });
 
-  it('/cockpit-2min n\'est pas une destination de menu (canonique = /cockpit)', () => {
-    const item = ALL_NAV_ITEMS.find(i => i.to === '/cockpit-2min');
+  it("/cockpit-2min n'est pas une destination de menu (canonique = /cockpit)", () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit-2min');
     expect(item).toBeUndefined();
   });
 
@@ -57,18 +62,18 @@ describe('NavRegistry — routes canoniques', () => {
 
 describe('NavRegistry — labels FR avec accents', () => {
   it('label "Vue exécutive" contient l\'accent sur le "e"', () => {
-    const item = ALL_NAV_ITEMS.find(i => i.to === '/cockpit');
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit');
     expect(item?.label).toBe('Vue exécutive');
     expect(item?.label).not.toBe('Vue executive');
   });
 
   it('section Marché a l\'accent sur le "e"', () => {
-    const section = NAV_SECTIONS.find(s => s.key === 'marche');
+    const section = NAV_SECTIONS.find((s) => s.key === 'marche');
     expect(section?.label).toBe('Marché & Factures');
   });
 
   it('"Achats énergie" a l\'accent sur le "e"', () => {
-    const item = ALL_NAV_ITEMS.find(i => i.to === '/achat-energie');
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie');
     expect(item?.label).toBe('Achats énergie');
   });
 });
@@ -96,8 +101,8 @@ describe('CommandCenter — exports fonctionnels', () => {
 // ── Unicité des routes primaires dans le menu ─────────────────────────────────
 
 describe('NavRegistry — pas de doublons de routes primaires', () => {
-  it('chaque route n\'apparaît qu\'une fois dans ALL_NAV_ITEMS', () => {
-    const routes = ALL_NAV_ITEMS.map(i => i.to);
+  it("chaque route n'apparaît qu'une fois dans ALL_NAV_ITEMS", () => {
+    const routes = ALL_NAV_ITEMS.map((i) => i.to);
     const unique = new Set(routes);
     expect(routes.length).toBe(unique.size);
   });
@@ -106,8 +111,15 @@ describe('NavRegistry — pas de doublons de routes primaires', () => {
 // ── Audit guard: zéro label anglais résiduel ──────────────────────────────────
 
 const ENGLISH_BLACKLIST = [
-  'Dashboard', 'Assignments', 'Roles & Permissions', 'Settings',
-  'Loading', 'Submit', 'Save', 'Delete', 'Cancel',
+  'Dashboard',
+  'Assignments',
+  'Roles & Permissions',
+  'Settings',
+  'Loading',
+  'Submit',
+  'Save',
+  'Delete',
+  'Cancel',
 ];
 
 describe('Audit guard — zéro anglais dans le menu', () => {
@@ -146,7 +158,7 @@ describe('Audit guard — routes valides', () => {
   it('ROUTE_MODULE_MAP couvre toutes les routes du menu', () => {
     const mapRoutes = Object.keys(ROUTE_MODULE_MAP);
     for (const item of ALL_NAV_ITEMS) {
-      const found = mapRoutes.some(r => item.to === r || item.to.startsWith(r + '/'));
+      const found = mapRoutes.some((r) => item.to === r || item.to.startsWith(r + '/'));
       expect(found).toBe(true);
     }
   });

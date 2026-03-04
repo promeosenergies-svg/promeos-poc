@@ -1,7 +1,9 @@
 """
 PROMEOS - Tests for multi-site weather + ensure_weather pipeline.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest

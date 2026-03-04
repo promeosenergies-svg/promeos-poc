@@ -10,14 +10,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 const backendSrc = (rel) =>
-  fs.readFileSync(
-    path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel),
-    'utf-8',
-  );
+  fs.readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. GUARD: Backend — generate_operat_pack registers KB doc
@@ -84,7 +80,7 @@ describe('GUARD generate_operat_pack KB doc creation', () => {
   });
 
   it('KB creation is non-blocking (wrapped in try/except)', () => {
-    expect(code).toContain("V40: KB doc creation failed");
+    expect(code).toContain('V40: KB doc creation failed');
   });
 
   it('kb_open_url includes context=proof', () => {

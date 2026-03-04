@@ -5,12 +5,26 @@
  */
 import { tint } from './colorTokens';
 
-export default function PageShell({ icon: Icon, title, subtitle, actions, children, className = '', tintColor = 'text-blue-600', moduleKey }) {
+export default function PageShell({
+  icon: Icon,
+  title,
+  subtitle,
+  actions,
+  children,
+  className = '',
+  tintColor = 'text-blue-600',
+  moduleKey,
+}) {
   return (
     <div className={`px-6 py-6 space-y-6 animate-[slideInUp_0.3s_ease-out] ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          {Icon && <Icon size={26} className={`${moduleKey ? tint.module(moduleKey).icon() : tintColor} shrink-0`} />}
+          {Icon && (
+            <Icon
+              size={26}
+              className={`${moduleKey ? tint.module(moduleKey).icon() : tintColor} shrink-0`}
+            />
+          )}
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-gray-900 truncate">{title}</h1>
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}

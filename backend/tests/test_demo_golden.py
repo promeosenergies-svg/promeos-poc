@@ -3,8 +3,10 @@ PROMEOS Bill Intelligence — Golden Tests (Non-Regression)
 Compare demo corpus audit results against expected baseline.
 Any change to rules or parsing that alters anomaly output will fail here.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -51,6 +53,7 @@ def all_reports():
 # Golden Tests
 # ========================================
 
+
 class TestGoldenCorpus:
     """Verify demo corpus produces expected anomalies."""
 
@@ -62,9 +65,7 @@ class TestGoldenCorpus:
         """Total anomalies across corpus matches baseline."""
         expected_total = sum(r["total_anomalies"] for r in golden_data["results"])
         actual_total = sum(r["report"].total_anomalies for r in all_reports.values())
-        assert actual_total == expected_total, (
-            f"Total anomalies changed: expected {expected_total}, got {actual_total}"
-        )
+        assert actual_total == expected_total, f"Total anomalies changed: expected {expected_total}, got {actual_total}"
 
     def test_per_invoice_anomaly_count(self, golden_data, all_reports):
         """Each invoice has the expected number of anomalies."""
@@ -73,8 +74,7 @@ class TestGoldenCorpus:
             assert inv_id in all_reports, f"Invoice {inv_id} missing from results"
             actual = all_reports[inv_id]["report"]
             assert actual.total_anomalies == expected["total_anomalies"], (
-                f"Invoice {inv_id}: expected {expected['total_anomalies']} anomalies, "
-                f"got {actual.total_anomalies}"
+                f"Invoice {inv_id}: expected {expected['total_anomalies']} anomalies, got {actual.total_anomalies}"
             )
 
     def test_coverage_level_stable(self, golden_data, all_reports):
@@ -83,8 +83,7 @@ class TestGoldenCorpus:
             inv_id = expected["invoice_id"]
             actual = all_reports[inv_id]["report"]
             assert actual.coverage_level == expected["coverage_level"], (
-                f"Invoice {inv_id}: coverage changed from {expected['coverage_level']} "
-                f"to {actual.coverage_level}"
+                f"Invoice {inv_id}: coverage changed from {expected['coverage_level']} to {actual.coverage_level}"
             )
 
     def test_anomaly_types_match(self, golden_data, all_reports):
@@ -97,8 +96,7 @@ class TestGoldenCorpus:
             expected_rules = sorted(a["rule_card_id"] for a in expected["anomalies"])
             actual_rules = sorted(a.get("rule_card_id", "") for a in actual_anomalies)
             assert actual_rules == expected_rules, (
-                f"Invoice {inv_id}: rule_card_ids changed.\n"
-                f"Expected: {expected_rules}\nActual: {actual_rules}"
+                f"Invoice {inv_id}: rule_card_ids changed.\nExpected: {expected_rules}\nActual: {actual_rules}"
             )
 
 
@@ -140,8 +138,7 @@ class TestGoldenConceptAllocation:
             for concept, exp_total in expected.get("concept_allocations", {}).items():
                 act_total = actual.concept_allocations.get(concept, 0.0)
                 assert abs(act_total - exp_total) < 0.01, (
-                    f"Invoice {inv_id}, concept {concept}: "
-                    f"expected {exp_total}, got {act_total}"
+                    f"Invoice {inv_id}, concept {concept}: expected {exp_total}, got {act_total}"
                 )
 
 
@@ -167,21 +164,15 @@ class TestGoldenTrapInvoices:
         if inv_id not in all_reports:
             pytest.skip("Clean invoice not in corpus")
         report = all_reports[inv_id]["report"]
-        assert report.total_anomalies == 0, (
-            f"Clean invoice should have 0 anomalies, got {report.total_anomalies}"
-        )
+        assert report.total_anomalies == 0, f"Clean invoice should have 0 anomalies, got {report.total_anomalies}"
 
     def test_gaz_invoice_components(self, all_reports):
         """Gas invoice must have correct energy type."""
-        gaz_invoices = [
-            data for data in all_reports.values()
-            if data["invoice"].energy_type.value == "gaz"
-        ]
+        gaz_invoices = [data for data in all_reports.values() if data["invoice"].energy_type.value == "gaz"]
         assert len(gaz_invoices) > 0, "No gas invoices in corpus"
         for data in gaz_invoices:
             assert data["report"].coverage_level in ("L0", "L1"), (
-                f"Gas invoice {data['report'].invoice_id}: unexpected coverage "
-                f"{data['report'].coverage_level}"
+                f"Gas invoice {data['report'].invoice_id}: unexpected coverage {data['report'].coverage_level}"
             )
 
     def test_opaque_component_flagged(self, all_reports):

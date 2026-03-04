@@ -3,6 +3,7 @@ PROMEOS Analytics Engine - KB-Driven Analysis
 Pipeline: Features -> Retrieve archetypes -> Apply anomaly rules -> Generate recommendations -> ICE scoring
 Every result has full KB provenance (kb_rule_id, source_section, explanation)
 """
+
 import math
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
@@ -10,10 +11,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import (
-    Meter, MeterReading, Site, UsageProfile,
-    Anomaly as AnomalyModel, Recommendation as RecommendationModel,
-    KBArchetype, KBMappingCode, KBAnomalyRule, KBRecommendation,
-    KBVersion, KBStatus, AnomalySeverity, RecommendationStatus
+    Meter,
+    MeterReading,
+    Site,
+    UsageProfile,
+    Anomaly as AnomalyModel,
+    Recommendation as RecommendationModel,
+    KBArchetype,
+    KBMappingCode,
+    KBAnomalyRule,
+    KBRecommendation,
+    KBVersion,
+    KBStatus,
+    AnomalySeverity,
+    RecommendationStatus,
 )
 
 
@@ -68,34 +79,38 @@ class AnalyticsEngine:
                 "match_score": match_score,
                 "kwh_m2_range": f"{archetype.kwh_m2_min}-{archetype.kwh_m2_max}" if archetype else None,
             },
-            "anomalies": [{
-                "code": a["code"],
-                "title": a["title"],
-                "severity": a["severity"],
-                "confidence": a["confidence"],
-                "measured": a["measured_value"],
-                "threshold": a["threshold_value"],
-                "deviation_pct": a["deviation_pct"],
-                "kb_rule_id": a["kb_rule_id"],
-                "explanation": a["explanation"],
-            } for a in anomalies],
-            "recommendations": [{
-                "code": r["code"],
-                "title": r["title"],
-                "ice_score": r["ice_score"],
-                "savings_pct": r["estimated_savings_pct"],
-                "kb_recommendation_id": r["kb_recommendation_id"],
-                "triggered_by": r["triggered_by"],
-            } for r in recommendations],
+            "anomalies": [
+                {
+                    "code": a["code"],
+                    "title": a["title"],
+                    "severity": a["severity"],
+                    "confidence": a["confidence"],
+                    "measured": a["measured_value"],
+                    "threshold": a["threshold_value"],
+                    "deviation_pct": a["deviation_pct"],
+                    "kb_rule_id": a["kb_rule_id"],
+                    "explanation": a["explanation"],
+                }
+                for a in anomalies
+            ],
+            "recommendations": [
+                {
+                    "code": r["code"],
+                    "title": r["title"],
+                    "ice_score": r["ice_score"],
+                    "savings_pct": r["estimated_savings_pct"],
+                    "kb_recommendation_id": r["kb_recommendation_id"],
+                    "triggered_by": r["triggered_by"],
+                }
+                for r in recommendations
+            ],
             "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     def _extract_features(self, meter: Meter) -> Optional[Dict[str, Any]]:
         """Step 1: Extract features from meter readings"""
         # Get all readings
-        readings = self.db.query(MeterReading).filter_by(
-            meter_id=meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = self.db.query(MeterReading).filter_by(meter_id=meter.id).order_by(MeterReading.timestamp).all()
 
         if len(readings) < 48:  # Minimum 2 days of hourly data
             return None
@@ -179,30 +194,22 @@ class AnalyticsEngine:
         # Method 1: NAF code match
         if site and site.naf_code:
             naf_code = site.naf_code.strip()
-            naf_no_dot = naf_code.replace('.', '')
+            naf_no_dot = naf_code.replace(".", "")
 
             # Try exact match (with dot)
-            mapping = self.db.query(KBMappingCode).filter(
-                KBMappingCode.naf_code == naf_code
-            ).first()
+            mapping = self.db.query(KBMappingCode).filter(KBMappingCode.naf_code == naf_code).first()
 
             # Try exact match (without dot)
             if not mapping:
-                mapping = self.db.query(KBMappingCode).filter(
-                    KBMappingCode.naf_code == naf_no_dot
-                ).first()
+                mapping = self.db.query(KBMappingCode).filter(KBMappingCode.naf_code == naf_no_dot).first()
 
             # Try LIKE match (contains)
             if not mapping:
-                mapping = self.db.query(KBMappingCode).filter(
-                    KBMappingCode.naf_code.like(f"%{naf_no_dot}%")
-                ).first()
+                mapping = self.db.query(KBMappingCode).filter(KBMappingCode.naf_code.like(f"%{naf_no_dot}%")).first()
 
             # Try prefix match (first 2 digits)
             if not mapping and len(naf_no_dot) >= 2:
-                mapping = self.db.query(KBMappingCode).filter(
-                    KBMappingCode.naf_code.like(f"{naf_no_dot[:2]}%")
-                ).first()
+                mapping = self.db.query(KBMappingCode).filter(KBMappingCode.naf_code.like(f"{naf_no_dot[:2]}%")).first()
 
             if mapping:
                 archetype = mapping.archetype
@@ -212,9 +219,7 @@ class AnalyticsEngine:
         if features.get("kwh_m2_year"):
             kwh_m2 = features["kwh_m2_year"]
 
-            archetypes = self.db.query(KBArchetype).filter_by(
-                status=KBStatus.VALIDATED
-            ).all()
+            archetypes = self.db.query(KBArchetype).filter_by(status=KBStatus.VALIDATED).all()
 
             best_match = None
             best_score = 0.0
@@ -236,9 +241,7 @@ class AnalyticsEngine:
                 return best_match, round(best_score, 2)
 
         # Method 3: Default
-        default = self.db.query(KBArchetype).filter_by(
-            code="BUREAU_STANDARD"
-        ).first()
+        default = self.db.query(KBArchetype).filter_by(code="BUREAU_STANDARD").first()
 
         return default, 0.3  # Low confidence default
 
@@ -251,18 +254,20 @@ class AnalyticsEngine:
         for rule in rules:
             result = self._evaluate_rule(rule, features, archetype)
             if result["triggered"]:
-                anomalies.append({
-                    "code": rule.code,
-                    "title": rule.title,
-                    "severity": result["severity"],
-                    "confidence": result["confidence"],
-                    "measured_value": result["measured"],
-                    "threshold_value": result["threshold"],
-                    "deviation_pct": result["deviation_pct"],
-                    "kb_rule_id": rule.id,
-                    "kb_version_id": rule.kb_version_id,
-                    "explanation": result["explanation"],
-                })
+                anomalies.append(
+                    {
+                        "code": rule.code,
+                        "title": rule.title,
+                        "severity": result["severity"],
+                        "confidence": result["confidence"],
+                        "measured_value": result["measured"],
+                        "threshold_value": result["threshold"],
+                        "deviation_pct": result["deviation_pct"],
+                        "kb_rule_id": rule.id,
+                        "kb_version_id": rule.kb_version_id,
+                        "explanation": result["explanation"],
+                    }
+                )
 
         return anomalies
 
@@ -288,7 +293,9 @@ class AnalyticsEngine:
                 "measured": round(measured, 3),
                 "threshold": threshold,
                 "deviation_pct": round(deviation, 1),
-                "explanation": f"Base nuit ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})" if triggered else "",
+                "explanation": f"Base nuit ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})"
+                if triggered
+                else "",
             }
 
         elif rule.rule_type == "weekend":
@@ -307,7 +314,9 @@ class AnalyticsEngine:
                 "measured": round(measured, 3),
                 "threshold": threshold,
                 "deviation_pct": round(deviation, 1),
-                "explanation": f"Weekend ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})" if triggered else "",
+                "explanation": f"Weekend ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})"
+                if triggered
+                else "",
             }
 
         elif rule.rule_type == "puissance":
@@ -323,7 +332,9 @@ class AnalyticsEngine:
                 "measured": round(measured, 3),
                 "threshold": threshold_low if measured < threshold_low else threshold_high,
                 "deviation_pct": 0,
-                "explanation": f"Load factor ({measured:.1%}) hors plage optimale ({threshold_low:.0%}-{threshold_high:.0%})" if triggered else "",
+                "explanation": f"Load factor ({measured:.1%}) hors plage optimale ({threshold_low:.0%}-{threshold_high:.0%})"
+                if triggered
+                else "",
             }
 
         elif rule.rule_type == "saisonnalite":
@@ -338,13 +349,23 @@ class AnalyticsEngine:
                 "measured": round(measured, 3),
                 "threshold": threshold,
                 "deviation_pct": 0,
-                "explanation": f"CV saisonnalite ({measured:.3f}) trop faible - pas de variation saisonniere" if triggered else "",
+                "explanation": f"CV saisonnalite ({measured:.3f}) trop faible - pas de variation saisonniere"
+                if triggered
+                else "",
             }
 
         elif rule.rule_type == "ratio_m2":
             measured = features.get("kwh_m2_year")
             if not measured or not archetype:
-                return {"triggered": False, "severity": "low", "confidence": 0, "measured": 0, "threshold": 0, "deviation_pct": 0, "explanation": ""}
+                return {
+                    "triggered": False,
+                    "severity": "low",
+                    "confidence": 0,
+                    "measured": 0,
+                    "threshold": 0,
+                    "deviation_pct": 0,
+                    "explanation": "",
+                }
 
             threshold_low = archetype.kwh_m2_min * 0.5 if archetype.kwh_m2_min else 50
             threshold_high = archetype.kwh_m2_max * 1.5 if archetype.kwh_m2_max else 500
@@ -358,7 +379,9 @@ class AnalyticsEngine:
                 "measured": round(measured, 1),
                 "threshold": closest,
                 "deviation_pct": round(abs(measured - closest) / closest * 100, 1) if closest else 0,
-                "explanation": f"kWh/m2/an ({measured:.0f}) hors range archetype ({threshold_low:.0f}-{threshold_high:.0f})" if triggered else "",
+                "explanation": f"kWh/m2/an ({measured:.0f}) hors range archetype ({threshold_low:.0f}-{threshold_high:.0f})"
+                if triggered
+                else "",
             }
 
         elif rule.rule_type == "gaz_ete":
@@ -372,7 +395,9 @@ class AnalyticsEngine:
                 "confidence": 0.70,
                 "measured": round(measured, 3),
                 "threshold": threshold,
-                "deviation_pct": round((measured - threshold) / threshold * 100, 1) if threshold > 0 and triggered else 0,
+                "deviation_pct": round((measured - threshold) / threshold * 100, 1)
+                if threshold > 0 and triggered
+                else 0,
                 "explanation": f"Consommation ete ({measured:.1%} du total) trop elevee" if triggered else "",
             }
 
@@ -386,8 +411,9 @@ class AnalyticsEngine:
             "explanation": "",
         }
 
-    def _generate_recommendations(self, meter: Meter, anomalies: List[Dict],
-                                   archetype: Optional[KBArchetype], features: Dict) -> List[Dict]:
+    def _generate_recommendations(
+        self, meter: Meter, anomalies: List[Dict], archetype: Optional[KBArchetype], features: Dict
+    ) -> List[Dict]:
         """Step 4: Generate KB-driven recommendations"""
         recommendations = []
 
@@ -422,30 +448,33 @@ class AnalyticsEngine:
                     if savings_pct and features.get("kwh_annual_estimate"):
                         savings_kwh = features["kwh_annual_estimate"] * savings_pct / 100
 
-                    recommendations.append({
-                        "code": kb_reco.code,
-                        "title": kb_reco.title,
-                        "description": kb_reco.description,
-                        "action_type": kb_reco.action_type,
-                        "target_asset": kb_reco.target_asset,
-                        "impact_score": impact,
-                        "confidence_score": confidence,
-                        "ease_score": ease,
-                        "ice_score": round(ice, 3),
-                        "estimated_savings_pct": savings_pct,
-                        "estimated_savings_kwh": round(savings_kwh, 0) if savings_kwh else None,
-                        "kb_recommendation_id": kb_reco.id,
-                        "kb_version_id": kb_reco.kb_version_id,
-                        "triggered_by": anomaly["code"],
-                    })
+                    recommendations.append(
+                        {
+                            "code": kb_reco.code,
+                            "title": kb_reco.title,
+                            "description": kb_reco.description,
+                            "action_type": kb_reco.action_type,
+                            "target_asset": kb_reco.target_asset,
+                            "impact_score": impact,
+                            "confidence_score": confidence,
+                            "ease_score": ease,
+                            "ice_score": round(ice, 3),
+                            "estimated_savings_pct": savings_pct,
+                            "estimated_savings_kwh": round(savings_kwh, 0) if savings_kwh else None,
+                            "kb_recommendation_id": kb_reco.id,
+                            "kb_version_id": kb_reco.kb_version_id,
+                            "triggered_by": anomaly["code"],
+                        }
+                    )
 
         # Sort by ICE score descending
         recommendations.sort(key=lambda x: x["ice_score"], reverse=True)
 
         return recommendations
 
-    def _save_profile(self, meter: Meter, features: Dict,
-                      archetype: Optional[KBArchetype], match_score: float) -> UsageProfile:
+    def _save_profile(
+        self, meter: Meter, features: Dict, archetype: Optional[KBArchetype], match_score: float
+    ) -> UsageProfile:
         """Save usage profile"""
         # Delete old profiles for this meter
         self.db.query(UsageProfile).filter_by(meter_id=meter.id).delete()
@@ -465,7 +494,7 @@ class AnalyticsEngine:
                 "monthly_averages": features.get("monthly_averages", {}),
             },
             kb_version_id=archetype.kb_version_id if archetype else None,
-            analysis_version="1.0"
+            analysis_version="1.0",
         )
 
         self.db.add(profile)
@@ -501,7 +530,7 @@ class AnalyticsEngine:
                 kb_rule_id=a["kb_rule_id"],
                 kb_version_id=a.get("kb_version_id"),
                 explanation_json={"rule_code": a["code"], "explanation": a["explanation"]},
-                is_active=True
+                is_active=True,
             )
             self.db.add(anomaly)
             saved.append(anomaly)
@@ -531,7 +560,7 @@ class AnalyticsEngine:
                 priority_rank=i + 1,
                 kb_recommendation_id=r["kb_recommendation_id"],
                 kb_version_id=r.get("kb_version_id"),
-                status=RecommendationStatus.PENDING
+                status=RecommendationStatus.PENDING,
             )
             self.db.add(reco)
             saved.append(reco)

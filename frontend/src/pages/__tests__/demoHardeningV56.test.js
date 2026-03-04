@@ -7,7 +7,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const readPage = (name) => readFileSync(resolve(__dirname, '..', name), 'utf8');
-const readComponent = (name) => readFileSync(resolve(__dirname, '..', '..', 'components', name), 'utf8');
+const readComponent = (name) =>
+  readFileSync(resolve(__dirname, '..', '..', 'components', name), 'utf8');
 
 // ── 1. ConformitePage null-safety ──────────────────────────
 
@@ -31,7 +32,9 @@ describe('ConformitePage null-safety (V56)', () => {
   });
 
   it('uses org?.id in DevScopeBadge', () => {
-    expect(src).toContain('orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId');
+    expect(src).toContain(
+      'orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId'
+    );
   });
 
   it('has null-safe computeScopeLabel', () => {
@@ -53,7 +56,7 @@ describe('Cockpit null-safety (V56)', () => {
   it('does NOT have bare org.nom in scopeLabel', () => {
     // Ensure no unguarded org.nom in the scopeLabel computation
     const lines = src.split('\n');
-    const scopeLabelLines = lines.filter(l => l.includes('scopeLabel') && l.includes('org.nom'));
+    const scopeLabelLines = lines.filter((l) => l.includes('scopeLabel') && l.includes('org.nom'));
     expect(scopeLabelLines.length).toBe(0);
   });
 });

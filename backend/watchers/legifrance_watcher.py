@@ -1,6 +1,7 @@
 """
 PROMEOS Watchers - Legifrance JORF feed
 """
+
 from .rss_watcher import RSSWatcher
 
 

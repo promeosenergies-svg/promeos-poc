@@ -2,8 +2,10 @@
 PROMEOS - Tests Unique PRM/PCE (delivery point)
 Covers: quality rule dup_delivery_point_global, activation blocking, soft-delete reuse.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -13,13 +15,27 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille, Compteur,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
-    TypeSite, TypeCompteur, EnergyVector,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Compteur,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
 )
 from services.patrimoine_service import (
-    create_staging_batch, run_quality_gate, activate_batch,
+    create_staging_batch,
+    run_quality_gate,
+    activate_batch,
 )
 from services.quality_rules import check_duplicate_delivery_point
 
@@ -27,6 +43,7 @@ from services.quality_rules import check_duplicate_delivery_point
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -61,30 +78,43 @@ def _create_org(db_session):
 def _create_batch_with_meter(db_session, org_id, meter_id, meter_id_2=None):
     """Create staging batch with 1 site + 1 or 2 compteurs."""
     batch = create_staging_batch(
-        db_session, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db_session,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
 
     ss = StagingSite(
-        batch_id=batch.id, row_number=2, nom="Site Test",
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
+        batch_id=batch.id,
+        row_number=2,
+        nom="Site Test",
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
         surface_m2=500,
     )
     db_session.add(ss)
     db_session.flush()
 
     sc1 = StagingCompteur(
-        batch_id=batch.id, staging_site_id=ss.id,
-        row_number=2, numero_serie="SERIE-001",
-        meter_id=meter_id, type_compteur="electricite",
+        batch_id=batch.id,
+        staging_site_id=ss.id,
+        row_number=2,
+        numero_serie="SERIE-001",
+        meter_id=meter_id,
+        type_compteur="electricite",
     )
     db_session.add(sc1)
 
     if meter_id_2:
         sc2 = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=3, numero_serie="SERIE-002",
-            meter_id=meter_id_2, type_compteur="electricite",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=3,
+            numero_serie="SERIE-002",
+            meter_id=meter_id_2,
+            type_compteur="electricite",
         )
         db_session.add(sc2)
 
@@ -96,6 +126,7 @@ def _create_batch_with_meter(db_session, org_id, meter_id, meter_id_2=None):
 # Tests
 # ========================================
 
+
 class TestDuplicatePrmInStagingBlocked:
     """Two staging rows with the same meter_id in the same batch → CRITICAL finding."""
 
@@ -103,27 +134,40 @@ class TestDuplicatePrmInStagingBlocked:
         org, ej, pf = _create_org(db_session)
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site A",
-            adresse="1 rue A", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site A",
+            adresse="1 rue A",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
 
         # Two compteurs with same meter_id
         sc1 = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="S-001",
-            meter_id="12345678901234", type_compteur="electricite",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="S-001",
+            meter_id="12345678901234",
+            type_compteur="electricite",
         )
         sc2 = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=3, numero_serie="S-002",
-            meter_id="12345678901234", type_compteur="electricite",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=3,
+            numero_serie="S-002",
+            meter_id="12345678901234",
+            type_compteur="electricite",
         )
         db_session.add_all([sc1, sc2])
         db_session.flush()
@@ -142,7 +186,8 @@ class TestDuplicatePrmInStagingBlocked:
         """Full quality gate run detects intra-staging duplicate."""
         org, ej, pf = _create_org(db_session)
         batch, ss = _create_batch_with_meter(
-            db_session, org.id,
+            db_session,
+            org.id,
             meter_id="PRM-DUPLICATE",
             meter_id_2="PRM-DUPLICATE",
         )
@@ -161,15 +206,19 @@ class TestDuplicatePrmExistingDbBlocked:
 
         # Pre-existing active compteur with meter_id
         existing_site = Site(
-            nom="Existing Site", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Existing Site",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(existing_site)
         db_session.flush()
 
         existing_cpt = Compteur(
-            site_id=existing_site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="EXIST-001", meter_id="PRM-EXISTING-001",
+            site_id=existing_site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="EXIST-001",
+            meter_id="PRM-EXISTING-001",
             actif=True,
         )
         db_session.add(existing_cpt)
@@ -197,15 +246,19 @@ class TestSoftDeletedPrmAllowsReuse:
 
         # Pre-existing compteur with meter_id — then soft-delete it
         existing_site = Site(
-            nom="Old Site", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Old Site",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(existing_site)
         db_session.flush()
 
         old_cpt = Compteur(
-            site_id=existing_site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="OLD-001", meter_id="PRM-REUSE-001",
+            site_id=existing_site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="OLD-001",
+            meter_id="PRM-REUSE-001",
             actif=True,
         )
         db_session.add(old_cpt)
@@ -232,15 +285,19 @@ class TestActivationRollbackOnDuplicate:
 
         # Pre-existing active compteur
         existing_site = Site(
-            nom="Existing Site", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Existing Site",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(existing_site)
         db_session.flush()
 
         existing_cpt = Compteur(
-            site_id=existing_site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="EXIST-ACT-001", meter_id="PRM-BLOCK-001",
+            site_id=existing_site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="EXIST-ACT-001",
+            meter_id="PRM-BLOCK-001",
             actif=True,
         )
         db_session.add(existing_cpt)
@@ -268,15 +325,19 @@ class TestActivationRollbackOnDuplicate:
 
         # Pre-existing active compteur
         existing_site = Site(
-            nom="Existing Site 2", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Existing Site 2",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(existing_site)
         db_session.flush()
 
         existing_cpt = Compteur(
-            site_id=existing_site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="EXIST-PRE-001", meter_id="PRM-PRECHECK-001",
+            site_id=existing_site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="EXIST-PRE-001",
+            meter_id="PRM-PRECHECK-001",
             actif=True,
         )
         db_session.add(existing_cpt)
@@ -289,9 +350,13 @@ class TestActivationRollbackOnDuplicate:
         run_quality_gate(db_session, batch.id)
 
         # Forcefully resolve all findings (simulating a bug or manual override)
-        findings = db_session.query(QualityFinding).filter(
-            QualityFinding.batch_id == batch.id,
-        ).all()
+        findings = (
+            db_session.query(QualityFinding)
+            .filter(
+                QualityFinding.batch_id == batch.id,
+            )
+            .all()
+        )
         for f in findings:
             f.resolved = True
         db_session.flush()

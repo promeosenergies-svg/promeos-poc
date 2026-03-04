@@ -2,8 +2,10 @@
 PROMEOS - Tests for AI Agents
 Tests the AI agent registry, stub mode, and status immutability rule
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,6 +23,7 @@ from ai_layer.client import AIClient
 # Fixtures
 # ========================================
 
+
 @pytest.fixture
 def db_session():
     """In-memory SQLite database for testing"""
@@ -34,13 +37,7 @@ def db_session():
     session.add(org)
     session.flush()
 
-    site = Site(
-        id=1,
-        nom="Test Site",
-        type=TypeSite.BUREAU,
-        surface_m2=1500,
-        actif=True
-    )
+    site = Site(id=1, nom="Test Site", type=TypeSite.BUREAU, surface_m2=1500, actif=True)
     session.add(site)
     session.commit()
 
@@ -52,12 +49,13 @@ def db_session():
 # Tests
 # ========================================
 
+
 def test_ai_client_stub_mode():
     """Test AI client defaults to stub mode without API key"""
     # Clear environment variable if it exists
-    old_key = os.environ.get('AI_API_KEY')
-    if 'AI_API_KEY' in os.environ:
-        del os.environ['AI_API_KEY']
+    old_key = os.environ.get("AI_API_KEY")
+    if "AI_API_KEY" in os.environ:
+        del os.environ["AI_API_KEY"]
 
     client = AIClient()
 
@@ -65,15 +63,15 @@ def test_ai_client_stub_mode():
 
     # Restore old key if it existed
     if old_key:
-        os.environ['AI_API_KEY'] = old_key
+        os.environ["AI_API_KEY"] = old_key
 
 
 def test_ai_client_stub_response():
     """Test stub mode returns expected response format"""
     # Ensure stub mode
-    old_key = os.environ.get('AI_API_KEY')
-    if 'AI_API_KEY' in os.environ:
-        del os.environ['AI_API_KEY']
+    old_key = os.environ.get("AI_API_KEY")
+    if "AI_API_KEY" in os.environ:
+        del os.environ["AI_API_KEY"]
 
     client = AIClient()
     response = client.complete("system prompt", "user prompt")
@@ -83,7 +81,7 @@ def test_ai_client_stub_response():
 
     # Restore
     if old_key:
-        os.environ['AI_API_KEY'] = old_key
+        os.environ["AI_API_KEY"] = old_key
 
 
 def test_agent_creates_ai_insight(db_session):
@@ -111,9 +109,9 @@ def test_ai_insight_structure(db_session):
     content = json.loads(insight.content_json)
 
     # Should have these fields per hard rule
-    assert 'brief' in content or 'analysis' in content
-    assert 'sources_used' in content
-    assert 'needs_human_review' in content
+    assert "brief" in content or "analysis" in content
+    assert "sources_used" in content
+    assert "needs_human_review" in content
 
     # AI version should be set
     assert insight.ai_version is not None
@@ -125,7 +123,7 @@ def test_ai_never_modifies_status(db_session):
 
     # Get site before agent runs
     site_before = db_session.query(Site).filter(Site.id == 1).first()
-    status_before = getattr(site_before, 'statut_decret_tertiaire', None)
+    status_before = getattr(site_before, "statut_decret_tertiaire", None)
 
     # Run AI agent
     run(db_session, site_id=1)
@@ -133,7 +131,7 @@ def test_ai_never_modifies_status(db_session):
 
     # Get site after agent runs
     site_after = db_session.query(Site).filter(Site.id == 1).first()
-    status_after = getattr(site_after, 'statut_decret_tertiaire', None)
+    status_after = getattr(site_after, "statut_decret_tertiaire", None)
 
     # Status should be unchanged
     assert status_before == status_after
@@ -178,5 +176,5 @@ def test_multiple_agents_coexist(db_session):
 # Run Tests
 # ========================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

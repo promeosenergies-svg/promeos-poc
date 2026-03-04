@@ -67,7 +67,15 @@ export default function PurchaseDebugDrawer({
         <DebugSection title="Preferences" data={preferences} />
         <DebugSection title={`Scenarios (${scenarios?.length || 0})`} data={scenarios} />
         <DebugSection title="Portfolio" data={portfolioData?.portfolio || null} />
-        <DebugSection title={`Portfolio Sites (${portfolioData?.sites?.length || 0})`} data={portfolioData?.sites?.map(s => ({ site_id: s.site_id, reco: s.scenarios?.find(sc => sc.is_recommended)?.strategy })) || null} />
+        <DebugSection
+          title={`Portfolio Sites (${portfolioData?.sites?.length || 0})`}
+          data={
+            portfolioData?.sites?.map((s) => ({
+              site_id: s.site_id,
+              reco: s.scenarios?.find((sc) => sc.is_recommended)?.strategy,
+            })) || null
+          }
+        />
         {seedResult && <DebugSection title="Last Seed Result" data={seedResult} />}
       </div>
     </div>

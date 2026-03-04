@@ -5,7 +5,16 @@
  * Table + ScenarioDrawer + ScenarioSummaryModal.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { CalendarRange, ChevronRight, Printer, AlertTriangle, CheckCircle, Clock, ShieldCheck, XCircle, UserCheck, HelpCircle } from 'lucide-react';
+import {
+  CalendarRange,
+  ChevronRight,
+  Printer,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  UserCheck,
+  HelpCircle,
+} from 'lucide-react';
 import { PageShell, Badge, Button, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
@@ -24,29 +33,29 @@ import SegmentationQuestionnaireModal from '../components/SegmentationQuestionna
 
 /* ── Urgency mapping ── */
 const URGENCY_CFG = {
-  red:    { badge: 'crit',    label: 'Critique' },
-  orange: { badge: 'warn',    label: 'Urgent' },
-  yellow: { badge: 'info',    label: 'Attention' },
-  green:  { badge: 'ok',      label: 'OK' },
-  gray:   { badge: 'neutral', label: 'Serein' },
+  red: { badge: 'crit', label: 'Critique' },
+  orange: { badge: 'warn', label: 'Urgent' },
+  yellow: { badge: 'info', label: 'Attention' },
+  green: { badge: 'ok', label: 'OK' },
+  gray: { badge: 'neutral', label: 'Serein' },
 };
 
 const STATUS_CFG = {
-  expired:  { icon: XCircle,       color: 'text-red-500',    label: 'Expiré' },
-  expiring: { icon: AlertTriangle, color: 'text-amber-500',  label: 'Bientôt' },
-  active:   { icon: CheckCircle,   color: 'text-green-500',  label: 'Actif' },
+  expired: { icon: XCircle, color: 'text-red-500', label: 'Expiré' },
+  expiring: { icon: AlertTriangle, color: 'text-amber-500', label: 'Bientôt' },
+  active: { icon: CheckCircle, color: 'text-green-500', label: 'Actif' },
 };
 
 const RISK_CFG = {
-  faible: { badge: 'ok',   label: 'Faible' },
-  'modéré': { badge: 'warn', label: 'Modéré' },
-  'élevé': { badge: 'crit', label: 'Élevé' },
+  faible: { badge: 'ok', label: 'Faible' },
+  modéré: { badge: 'warn', label: 'Modéré' },
+  élevé: { badge: 'crit', label: 'Élevé' },
 };
 
 const HORIZON_OPTIONS = [
-  { value: 30,  label: '30 j' },
-  { value: 60,  label: '60 j' },
-  { value: 90,  label: '90 j' },
+  { value: 30, label: '30 j' },
+  { value: 60, label: '60 j' },
+  { value: 90, label: '90 j' },
   { value: 180, label: '180 j' },
   { value: 365, label: '1 an' },
 ];
@@ -71,12 +80,18 @@ function RadarFilterBar({ horizon, onHorizonChange, stats, total }) {
         ))}
       </div>
       <div className="flex items-center gap-3 ml-auto text-xs font-medium">
-        <span className="text-gray-500">{total} contrat{total > 1 ? 's' : ''}</span>
+        <span className="text-gray-500">
+          {total} contrat{total > 1 ? 's' : ''}
+        </span>
         {stats && (
           <>
-            <span className="text-red-600">{stats.expired} expiré{stats.expired > 1 ? 's' : ''}</span>
+            <span className="text-red-600">
+              {stats.expired} expiré{stats.expired > 1 ? 's' : ''}
+            </span>
             <span className="text-amber-600">{stats.expiring} bientôt</span>
-            <span className="text-green-600">{stats.active} actif{stats.active > 1 ? 's' : ''}</span>
+            <span className="text-green-600">
+              {stats.active} actif{stats.active > 1 ? 's' : ''}
+            </span>
           </>
         )}
       </div>
@@ -88,17 +103,17 @@ function RadarFilterBar({ horizon, onHorizonChange, stats, total }) {
 function ScenarioCard({ scenario, onCreateActions, creating }) {
   const risk = RISK_CFG[scenario.risk_level] || RISK_CFG.faible;
   return (
-    <div className={`p-4 rounded-xl border ${
-      scenario.is_current ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200 bg-white'
-    }`}>
+    <div
+      className={`p-4 rounded-xl border ${
+        scenario.is_current ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200 bg-white'
+      }`}
+    >
       <div className="flex items-start justify-between mb-2">
         <div>
           <div className="flex items-center gap-2">
             <h4 className="font-semibold text-sm text-gray-900">{scenario.label}</h4>
             <Badge status={risk.badge}>{risk.label}</Badge>
-            {scenario.is_current && (
-              <Badge status="info">Contrat actuel</Badge>
-            )}
+            {scenario.is_current && <Badge status="info">Contrat actuel</Badge>}
           </div>
           <p className="text-xs text-gray-500 mt-1">{scenario.description}</p>
         </div>
@@ -113,13 +128,17 @@ function ScenarioCard({ scenario, onCreateActions, creating }) {
         <div>
           <p className="font-medium text-green-700 mb-1">Avantages</p>
           <ul className="space-y-0.5 text-gray-600">
-            {scenario.avantages?.map((a, i) => <li key={i}>+ {a}</li>)}
+            {scenario.avantages?.map((a, i) => (
+              <li key={i}>+ {a}</li>
+            ))}
           </ul>
         </div>
         <div>
           <p className="font-medium text-red-700 mb-1">Inconvénients</p>
           <ul className="space-y-0.5 text-gray-600">
-            {scenario.inconvenients?.map((a, i) => <li key={i}>- {a}</li>)}
+            {scenario.inconvenients?.map((a, i) => (
+              <li key={i}>- {a}</li>
+            ))}
           </ul>
         </div>
       </div>
@@ -131,11 +150,7 @@ function ScenarioCard({ scenario, onCreateActions, creating }) {
       )}
 
       <div className="mt-3 flex justify-end">
-        <Button
-          size="sm"
-          onClick={() => onCreateActions(scenario.id)}
-          disabled={creating}
-        >
+        <Button size="sm" onClick={() => onCreateActions(scenario.id)} disabled={creating}>
           {creating ? 'Création...' : "Créer plan d'actions"}
         </Button>
       </div>
@@ -162,21 +177,29 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
     }
   }, [open, contract?.contract_id]);
 
-  const handleCreateActions = useCallback(async (scenarioId) => {
-    if (!contract?.contract_id) return;
-    setCreating(scenarioId);
-    try {
-      const result = await createActionsFromScenario(contract.contract_id, scenarioId);
-      track('v99_actions_from_scenario', { contract_id: contract.contract_id, scenario: scenarioId });
-      setToast(`${result.actions_created} action${result.actions_created > 1 ? 's' : ''} créée${result.actions_created > 1 ? 's' : ''}${result.actions_existing ? ` (${result.actions_existing} existante${result.actions_existing > 1 ? 's' : ''})` : ''}`);
-      setTimeout(() => setToast(null), 4000);
-    } catch {
-      setToast('Erreur lors de la création');
-      setTimeout(() => setToast(null), 3000);
-    } finally {
-      setCreating(null);
-    }
-  }, [contract?.contract_id]);
+  const handleCreateActions = useCallback(
+    async (scenarioId) => {
+      if (!contract?.contract_id) return;
+      setCreating(scenarioId);
+      try {
+        const result = await createActionsFromScenario(contract.contract_id, scenarioId);
+        track('v99_actions_from_scenario', {
+          contract_id: contract.contract_id,
+          scenario: scenarioId,
+        });
+        setToast(
+          `${result.actions_created} action${result.actions_created > 1 ? 's' : ''} créée${result.actions_created > 1 ? 's' : ''}${result.actions_existing ? ` (${result.actions_existing} existante${result.actions_existing > 1 ? 's' : ''})` : ''}`
+        );
+        setTimeout(() => setToast(null), 4000);
+      } catch {
+        setToast('Erreur lors de la création');
+        setTimeout(() => setToast(null), 3000);
+      } finally {
+        setCreating(null);
+      }
+    },
+    [contract?.contract_id]
+  );
 
   return (
     <>
@@ -188,7 +211,8 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
               <div>
                 <p className="text-sm font-semibold text-gray-900">{contract.supplier_name}</p>
                 <p className="text-xs text-gray-500">
-                  {contract.site_nom} · {contract.energy_type || 'N/A'} · Fin : {contract.end_date || 'N/A'}
+                  {contract.site_nom} · {contract.energy_type || 'N/A'} · Fin :{' '}
+                  {contract.end_date || 'N/A'}
                 </p>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setShowSummary(true)}>
@@ -203,7 +227,8 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
           <div className="mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
             <UserCheck size={14} className="text-blue-600 flex-shrink-0" />
             <span className="text-xs text-blue-700">
-              Profil <strong>{segProfile.segment_label || segProfile.typologie}</strong> — les scenarios ci-dessous sont adaptes a votre activite.
+              Profil <strong>{segProfile.segment_label || segProfile.typologie}</strong> — les
+              scenarios ci-dessous sont adaptes a votre activite.
             </span>
           </div>
         )}
@@ -215,7 +240,9 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
           </div>
         )}
 
-        {loading && <div className="py-12 text-center text-sm text-gray-400">Chargement des scénarios...</div>}
+        {loading && (
+          <div className="py-12 text-center text-sm text-gray-400">Chargement des scénarios...</div>
+        )}
 
         {!loading && scenarios?.scenarios && (
           <div className="space-y-4">
@@ -283,22 +310,34 @@ function ScenarioSummaryModal({ contractId, siteName, onClose }) {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <p className="font-medium text-green-700">Avantages</p>
-                      {sc.avantages?.map((a, i) => <p key={i} className="text-gray-600">+ {a}</p>)}
+                      {sc.avantages?.map((a, i) => (
+                        <p key={i} className="text-gray-600">
+                          + {a}
+                        </p>
+                      ))}
                     </div>
                     <div>
                       <p className="font-medium text-red-700">Inconvénients</p>
-                      {sc.inconvenients?.map((a, i) => <p key={i} className="text-gray-600">- {a}</p>)}
+                      {sc.inconvenients?.map((a, i) => (
+                        <p key={i} className="text-gray-600">
+                          - {a}
+                        </p>
+                      ))}
                     </div>
                   </div>
                   {sc.estimate_eur != null && (
-                    <p className="mt-1 text-xs font-medium text-gray-700">Estimation : ~{Math.round(sc.estimate_eur).toLocaleString('fr-FR')} EUR/an</p>
+                    <p className="mt-1 text-xs font-medium text-gray-700">
+                      Estimation : ~{Math.round(sc.estimate_eur).toLocaleString('fr-FR')} EUR/an
+                    </p>
                   )}
                 </div>
               );
             })}
 
             <div className="flex justify-end gap-2 pt-2 print:hidden">
-              <Button variant="secondary" onClick={onClose}>Fermer</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Fermer
+              </Button>
               <Button onClick={() => window.print()}>
                 <Printer size={14} className="mr-1" /> Imprimer
               </Button>
@@ -307,7 +346,9 @@ function ScenarioSummaryModal({ contractId, siteName, onClose }) {
         )}
 
         {!loading && !data && (
-          <div className="py-8 text-center text-sm text-gray-400">Impossible de charger le résumé</div>
+          <div className="py-8 text-center text-sm text-gray-400">
+            Impossible de charger le résumé
+          </div>
         )}
       </div>
     </Modal>
@@ -351,13 +392,19 @@ export default function ContractRadarPage() {
 
   // V100: load segmentation profile once
   useEffect(() => {
-    getSegmentationProfile().then(setSegProfile).catch(() => {});
+    getSegmentationProfile()
+      .then(setSegProfile)
+      .catch(() => {});
   }, []);
 
   const contracts = useMemo(() => data?.contracts || [], [data]);
 
   return (
-    <PageShell icon={CalendarRange} title="Renouvellements contrats" subtitle="Radar des échéances et scénarios d'achat">
+    <PageShell
+      icon={CalendarRange}
+      title="Renouvellements contrats"
+      subtitle="Radar des échéances et scénarios d'achat"
+    >
       <div className="flex items-center gap-3 mb-1">
         <RadarFilterBar
           horizon={horizon}
@@ -373,7 +420,8 @@ export default function ContractRadarPage() {
         <div className="mb-3 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
           <HelpCircle size={16} className="text-amber-500 flex-shrink-0" />
           <span className="text-sm text-amber-800 flex-1">
-            Profil a {Math.round(segProfile.confidence_score)}% — repondez a 2 questions pour affiner vos scenarios
+            Profil a {Math.round(segProfile.confidence_score)}% — repondez a 2 questions pour
+            affiner vos scenarios
           </span>
           <button
             onClick={() => setShowSegModal(true)}
@@ -414,11 +462,17 @@ export default function ContractRadarPage() {
               const st = STATUS_CFG[ct.contract_status] || STATUS_CFG.active;
               const StIcon = st.icon;
               return (
-                <Tr key={ct.contract_id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedContract(ct)}>
+                <Tr
+                  key={ct.contract_id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setSelectedContract(ct)}
+                >
                   <Td>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{ct.site_nom}</p>
-                      {ct.portfolio_nom && <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>}
+                      {ct.portfolio_nom && (
+                        <p className="text-[11px] text-gray-400">{ct.portfolio_nom}</p>
+                      )}
                     </div>
                   </Td>
                   <Td className="text-sm text-gray-700">{ct.supplier_name || '—'}</Td>
@@ -437,10 +491,15 @@ export default function ContractRadarPage() {
                   <Td>
                     {ct.readiness_score != null ? (
                       <div className="flex items-center gap-1.5">
-                        <div className={`h-1.5 w-8 rounded-full ${
-                          ct.readiness_score >= 80 ? 'bg-green-400' :
-                          ct.readiness_score >= 50 ? 'bg-amber-400' : 'bg-red-400'
-                        }`}>
+                        <div
+                          className={`h-1.5 w-8 rounded-full ${
+                            ct.readiness_score >= 80
+                              ? 'bg-green-400'
+                              : ct.readiness_score >= 50
+                                ? 'bg-amber-400'
+                                : 'bg-red-400'
+                          }`}
+                        >
                           <div
                             className="h-full bg-current rounded-full"
                             style={{ width: `${ct.readiness_score}%` }}
@@ -448,7 +507,9 @@ export default function ContractRadarPage() {
                         </div>
                         <span className="text-[11px] text-gray-500">{ct.readiness_score}%</span>
                       </div>
-                    ) : '—'}
+                    ) : (
+                      '—'
+                    )}
                   </Td>
                   <Td className="text-xs text-gray-600">{ct.payer_entity || '—'}</Td>
                   <Td>
@@ -475,7 +536,9 @@ export default function ContractRadarPage() {
         <SegmentationQuestionnaireModal
           onClose={() => setShowSegModal(false)}
           onComplete={() => {
-            getSegmentationProfile().then(setSegProfile).catch(() => {});
+            getSegmentationProfile()
+              .then(setSegProfile)
+              .catch(() => {});
           }}
         />
       )}

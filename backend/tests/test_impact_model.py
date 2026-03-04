@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint V4.9: ImpactModel (resolve_price, compute_off_hours_eur, compute_power_overrun_eur)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import math
@@ -18,8 +20,12 @@ from models.billing_models import EnergyContract
 from models.enums import BillingEnergyType
 from models.site_tariff_profile import SiteTariffProfile
 from services.impact_model import (
-    resolve_price, compute_off_hours_eur, compute_power_overrun_eur,
-    PriceInfo, DEFAULT_PRICE_EUR_KWH, TURPE_PENALTY_EUR_KVA_MONTH,
+    resolve_price,
+    compute_off_hours_eur,
+    compute_power_overrun_eur,
+    PriceInfo,
+    DEFAULT_PRICE_EUR_KWH,
+    TURPE_PENALTY_EUR_KVA_MONTH,
 )
 
 
@@ -56,6 +62,7 @@ def _create_site(db):
 # ========================================
 # resolve_price
 # ========================================
+
 
 class TestResolvePrice:
     def test_default_demo_mode(self, db):
@@ -126,6 +133,7 @@ class TestResolvePrice:
 # compute_off_hours_eur
 # ========================================
 
+
 class TestOffHoursEur:
     def test_zero_kwh(self):
         """Zero off-hours -> 0 EUR."""
@@ -161,6 +169,7 @@ class TestOffHoursEur:
 # ========================================
 # compute_power_overrun_eur
 # ========================================
+
 
 class TestPowerOverrunEur:
     def test_no_overrun(self):

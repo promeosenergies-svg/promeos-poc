@@ -2,6 +2,7 @@
 PROMEOS - Modele SiteTariffProfile
 Prix de reference kWh par site (pour estimation pertes EUR).
 """
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -13,6 +14,7 @@ class SiteTariffProfile(Base, TimestampMixin):
     Profil tarifaire d'un site.
     Utilise pour convertir les pertes kWh en EUR.
     """
+
     __tablename__ = "site_tariff_profiles"
 
     id = Column(Integer, primary_key=True, index=True)

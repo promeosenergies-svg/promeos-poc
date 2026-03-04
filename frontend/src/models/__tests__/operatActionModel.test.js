@@ -15,7 +15,11 @@ import {
 
 describe('buildOperatActionKey', () => {
   it('produces stable key from efa_id, year, issue_code', () => {
-    const key = buildOperatActionKey({ efa_id: 42, year: 2026, issue_code: 'TERTIAIRE_NO_BUILDING' });
+    const key = buildOperatActionKey({
+      efa_id: 42,
+      year: 2026,
+      issue_code: 'TERTIAIRE_NO_BUILDING',
+    });
     expect(key).toBe('operat:42:2026:TERTIAIRE_NO_BUILDING');
   });
 
@@ -44,7 +48,7 @@ describe('buildOperatActionPayload', () => {
   const baseIssue = {
     code: 'TERTIAIRE_NO_BUILDING',
     title_fr: 'Aucun bâtiment associé',
-    message_fr: 'L\'EFA n\'a aucun bâtiment',
+    message_fr: "L'EFA n'a aucun bâtiment",
     severity: 'critical',
     impact_fr: 'Blocage déclaration OPERAT',
     action_fr: 'Ajouter un bâtiment dans le patrimoine',
@@ -89,13 +93,18 @@ describe('buildOperatActionPayload', () => {
 
   it('includes kb_open_url in rationale when provided', () => {
     const payload = buildOperatActionPayload({
-      efa: baseEfa, issue: baseIssue, kb_open_url: '/kb?proof=test',
+      efa: baseEfa,
+      issue: baseIssue,
+      kb_open_url: '/kb?proof=test',
     });
     expect(payload.rationale).toContain('/kb?proof=test');
   });
 
   it('due_date is deterministic based on severity', () => {
-    const p1 = buildOperatActionPayload({ efa: baseEfa, issue: { ...baseIssue, severity: 'critical' } });
+    const p1 = buildOperatActionPayload({
+      efa: baseEfa,
+      issue: { ...baseIssue, severity: 'critical' },
+    });
     const p2 = buildOperatActionPayload({ efa: baseEfa, issue: { ...baseIssue, severity: 'low' } });
 
     const d1 = new Date(p1.due_date);

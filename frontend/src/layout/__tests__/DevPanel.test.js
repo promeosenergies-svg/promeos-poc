@@ -19,7 +19,7 @@ describe('DevPanel source guards', () => {
 
   it('returns null when ?debug is absent', () => {
     // The source must check for ?debug and return null
-    expect(src).toContain("if (!isDebug) return null");
+    expect(src).toContain('if (!isDebug) return null');
   });
 
   it('has Scope tab content with scope fields', () => {
@@ -39,7 +39,7 @@ describe('DevPanel source guards', () => {
   });
 
   it('has Cache tab reading localStorage promeos_* keys', () => {
-    expect(src).toContain("promeos_");
+    expect(src).toContain('promeos_');
     expect(src).toContain('localStorage');
   });
 

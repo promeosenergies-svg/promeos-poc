@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Integration Test
 Tests the full orchestrator pipeline (standalone mode, no DB).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -20,6 +22,7 @@ def _make_office_readings(days=30):
     start = datetime(2025, 1, 6, 0, 0)
     readings = []
     import random
+
     random.seed(42)
     for day in range(days):
         dt = start + timedelta(days=day)
@@ -43,6 +46,7 @@ def _make_anomalous_readings(days=30):
     start = datetime(2025, 1, 6, 0, 0)
     readings = []
     import random
+
     random.seed(99)
     for day in range(days):
         dt = start + timedelta(days=day)
@@ -206,6 +210,7 @@ class TestDemoProfilePlausibility:
         """Simulate demo readings using USAGE_PROFILES config."""
         import random, math
         from routes.monitoring import USAGE_PROFILES
+
         profile = USAGE_PROFILES[profile_name]
         start = datetime(2025, 6, 1, 0, 0)
         readings = []
@@ -252,6 +257,7 @@ class TestDemoProfilePlausibility:
 
     def test_profiles_have_labels(self):
         from routes.monitoring import USAGE_PROFILES
+
         for name, p in USAGE_PROFILES.items():
             assert "label" in p, f"Missing label for profile {name}"
             assert "psub_kva" in p, f"Missing psub_kva for profile {name}"

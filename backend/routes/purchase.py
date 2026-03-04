@@ -3,6 +3,7 @@ PROMEOS — Achat Energie Endpoints V1.1
 V1: Estimation, hypotheses, preferences, scenarios, recommandation.
 V1.1: Portfolio roll-up, renewals, history, actions.
 """
+
 import logging
 import os
 import uuid
@@ -63,6 +64,7 @@ def _resolve_org_id(db: Session, site: "Site") -> int | None:
     if not site or not site.portefeuille_id:
         return None
     from models import Portefeuille, EntiteJuridique
+
     pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
     if not pf:
         return None
@@ -498,7 +500,12 @@ def compute_portfolio(
         raise
 
     portfolio = aggregate_portfolio_results(results_by_site)
-    logger.info("Portfolio compute done: batch_id=%s, %d sites computed, %d skipped", batch_id, len(results_by_site), len(skipped_sites))
+    logger.info(
+        "Portfolio compute done: batch_id=%s, %d sites computed, %d skipped",
+        batch_id,
+        len(results_by_site),
+        len(skipped_sites),
+    )
 
     return {
         "batch_id": batch_id,
@@ -564,11 +571,7 @@ def compute(
         # Get preferences for recommendation (scoped by org)
         site_obj = db.query(Site).filter(Site.id == site_id).first()
         org_id = _resolve_org_id(db, site_obj) if site_obj else None
-        pref = (
-            db.query(PurchasePreference)
-            .filter(PurchasePreference.org_id == org_id)
-            .first()
-        ) if org_id else None
+        pref = (db.query(PurchasePreference).filter(PurchasePreference.org_id == org_id).first()) if org_id else None
         risk_tol = pref.risk_tolerance if pref else "medium"
         budget_pri = pref.budget_priority if pref else 0.5
         green_pref = pref.green_preference if pref else False
@@ -850,9 +853,7 @@ def accept_result(
     if not result:
         raise HTTPException(status_code=404, detail="Result not found")
     # IDOR guard: verify the result belongs to a site the user can access
-    assumption = db.query(PurchaseAssumptionSet).filter(
-        PurchaseAssumptionSet.id == result.assumption_set_id
-    ).first()
+    assumption = db.query(PurchaseAssumptionSet).filter(PurchaseAssumptionSet.id == result.assumption_set_id).first()
     if assumption:
         check_site_access(auth, assumption.site_id)
     result.reco_status = PurchaseRecoStatus.ACCEPTED
@@ -1039,6 +1040,7 @@ def seed_wow_dirty_endpoint(
 # ══════════════════════════════════════
 # V2 Endpoints — Offer Pricing & Reconciliation (Sprint V2)
 # ══════════════════════════════════════
+
 
 class QuoteOfferRequest(BaseModel):
     strategy: str = "fixe"

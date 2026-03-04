@@ -1,7 +1,9 @@
 """
 PROMEOS - Tests V10.1: Availability endpoint + energy_type normalization
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,8 +14,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Meter, MeterReading,
-    Organisation, EntiteJuridique, Portefeuille, TypeSite,
+    Base,
+    Site,
+    Meter,
+    MeterReading,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
 )
 from models.energy_models import EnergyVector, FrequencyType
 from database import get_db
@@ -22,8 +30,9 @@ from main import app
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite:///:memory:", echo=False,
-                           connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
@@ -33,8 +42,11 @@ def db():
 @pytest.fixture
 def client(db):
     def _override():
-        try: yield db
-        finally: pass
+        try:
+            yield db
+        finally:
+            pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -42,21 +54,35 @@ def client(db):
 
 def _create_org_site(db):
     org = Organisation(nom="Test Corp", type_client="bureau", actif=True)
-    db.add(org); db.flush()
+    db.add(org)
+    db.flush()
     ej = EntiteJuridique(organisation_id=org.id, nom="Test Corp", siren="123456789")
-    db.add(ej); db.flush()
+    db.add(ej)
+    db.flush()
     pf = Portefeuille(entite_juridique_id=ej.id, nom="Default", description="Default")
-    db.add(pf); db.flush()
-    site = Site(nom="Bureau Lyon", portefeuille_id=pf.id, type=TypeSite.BUREAU,
-                adresse="10 rue", code_postal="69003", ville="Lyon", surface_m2=2000, actif=True)
-    db.add(site); db.commit()
+    db.add(pf)
+    db.flush()
+    site = Site(
+        nom="Bureau Lyon",
+        portefeuille_id=pf.id,
+        type=TypeSite.BUREAU,
+        adresse="10 rue",
+        code_postal="69003",
+        ville="Lyon",
+        surface_m2=2000,
+        actif=True,
+    )
+    db.add(site)
+    db.commit()
     return org, site
 
 
 def _create_meter(db, site, ev=EnergyVector.ELECTRICITY, mid="PRM-001"):
-    m = Meter(meter_id=mid, name=f"Compteur {mid}", energy_vector=ev,
-              site_id=site.id, subscribed_power_kva=60, is_active=True)
-    db.add(m); db.commit()
+    m = Meter(
+        meter_id=mid, name=f"Compteur {mid}", energy_vector=ev, site_id=site.id, subscribed_power_kva=60, is_active=True
+    )
+    db.add(m)
+    db.commit()
     return m
 
 
@@ -65,14 +91,15 @@ def _seed_readings(db, meter, count=100):
     readings = []
     for i in range(count):
         ts = now - timedelta(hours=count - i)
-        readings.append(MeterReading(meter_id=meter.id, timestamp=ts,
-                                     frequency=FrequencyType.HOURLY, value_kwh=10.0))
-    db.add_all(readings); db.commit()
+        readings.append(MeterReading(meter_id=meter.id, timestamp=ts, frequency=FrequencyType.HOURLY, value_kwh=10.0))
+    db.add_all(readings)
+    db.commit()
 
 
 # =============================================
 # TestAvailability
 # =============================================
+
 
 class TestAvailability:
     def test_has_data(self, client, db):
@@ -132,6 +159,7 @@ class TestAvailability:
 # =============================================
 # TestEnergyTypeNormalization
 # =============================================
+
 
 class TestEnergyTypeNormalization:
     def test_tunnel_accepts_elec(self, client, db):

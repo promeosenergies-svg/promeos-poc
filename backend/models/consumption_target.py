@@ -2,6 +2,7 @@
 PROMEOS - Consumption Target (Objectifs & Budgets)
 Monthly/yearly energy targets per site with kWh, EUR, and CO2e tracking.
 """
+
 from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -11,6 +12,7 @@ from .base import Base, TimestampMixin
 
 class ConsumptionTarget(Base, TimestampMixin):
     """Energy consumption target for a site and period."""
+
     __tablename__ = "consumption_targets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

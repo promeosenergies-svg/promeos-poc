@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Tests for timeline and dashboard.
 AC: timeline 24 mois, gaps/overlaps detection, coverage dashboard.
 """
+
 import sys
 import os
 from datetime import date
@@ -12,17 +13,25 @@ import pytest
 from app.bill_intelligence.parsers.json_parser import load_all_demo_invoices
 from app.bill_intelligence.engine import audit_invoice
 from app.bill_intelligence.timeline import (
-    build_timeline, build_coverage_dashboard,
-    TimelineSlot, TimelineGap, SiteTimeline,
+    build_timeline,
+    build_coverage_dashboard,
+    TimelineSlot,
+    TimelineGap,
+    SiteTimeline,
 )
 from app.bill_intelligence.domain import (
-    Invoice, InvoiceComponent, EnergyType, ShadowLevel, ComponentType,
+    Invoice,
+    InvoiceComponent,
+    EnergyType,
+    ShadowLevel,
+    ComponentType,
 )
 
 
 # ========================================
 # Timeline tests
 # ========================================
+
 
 def test_build_timeline_from_demo():
     """Timeline built from demo corpus contains multiple site/energy groups."""
@@ -95,8 +104,7 @@ def test_timeline_slot_has_invoice_data():
 def test_timeline_custom_range():
     """Timeline with custom date range."""
     invoices = load_all_demo_invoices()
-    timelines = build_timeline(invoices, start_year=2024, start_month=1,
-                               end_year=2024, end_month=6)
+    timelines = build_timeline(invoices, start_year=2024, start_month=1, end_year=2024, end_month=6)
     for t in timelines:
         assert t.total_months == 6
 
@@ -105,16 +113,22 @@ def test_timeline_overlap_detection():
     """Detect overlapping invoices."""
     # Create two invoices with overlapping periods
     inv_a = Invoice(
-        invoice_id="OVL-A", energy_type=EnergyType.ELEC, supplier="Test",
-        site_id=99, period_start=date(2024, 1, 1), period_end=date(2024, 1, 31),
+        invoice_id="OVL-A",
+        energy_type=EnergyType.ELEC,
+        supplier="Test",
+        site_id=99,
+        period_start=date(2024, 1, 1),
+        period_end=date(2024, 1, 31),
     )
     inv_b = Invoice(
-        invoice_id="OVL-B", energy_type=EnergyType.ELEC, supplier="Test",
-        site_id=99, period_start=date(2024, 1, 15), period_end=date(2024, 2, 28),
+        invoice_id="OVL-B",
+        energy_type=EnergyType.ELEC,
+        supplier="Test",
+        site_id=99,
+        period_start=date(2024, 1, 15),
+        period_end=date(2024, 2, 28),
     )
-    timelines = build_timeline([inv_a, inv_b],
-                               start_year=2024, start_month=1,
-                               end_year=2024, end_month=3)
+    timelines = build_timeline([inv_a, inv_b], start_year=2024, start_month=1, end_year=2024, end_month=3)
     assert len(timelines) == 1
     t = timelines[0]
     assert len(t.overlaps) == 1
@@ -139,6 +153,7 @@ def test_timeline_to_dict():
 # ========================================
 # Dashboard tests
 # ========================================
+
 
 def test_coverage_dashboard():
     """Dashboard returns all expected KPIs."""

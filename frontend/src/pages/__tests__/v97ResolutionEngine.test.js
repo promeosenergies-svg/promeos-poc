@@ -16,8 +16,10 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
-const backend = (rel) => readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
-const backendExists = (rel) => existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
+const backend = (rel) =>
+  readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
+const backendExists = (rel) =>
+  existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
 
 const SITE360 = src('pages/Site360.jsx');
 const PORTFOLIO_RECON = src('pages/PortfolioReconciliationPage.jsx');
@@ -116,11 +118,21 @@ describe('B. PortfolioReconciliationPage', () => {
 // ── C. api.js V97 functions ──────────────────────────────────────────
 
 describe('C. api.js V97', () => {
-  test('applyReconciliationFix', () => { expect(API_JS).toMatch(/applyReconciliationFix/); });
-  test('getReconciliationHistory', () => { expect(API_JS).toMatch(/getReconciliationHistory/); });
-  test('getReconciliationEvidence', () => { expect(API_JS).toMatch(/getReconciliationEvidence/); });
-  test('getReconciliationEvidenceCsv', () => { expect(API_JS).toMatch(/getReconciliationEvidenceCsv/); });
-  test('getPortfolioReconciliationCsv', () => { expect(API_JS).toMatch(/getPortfolioReconciliationCsv/); });
+  test('applyReconciliationFix', () => {
+    expect(API_JS).toMatch(/applyReconciliationFix/);
+  });
+  test('getReconciliationHistory', () => {
+    expect(API_JS).toMatch(/getReconciliationHistory/);
+  });
+  test('getReconciliationEvidence', () => {
+    expect(API_JS).toMatch(/getReconciliationEvidence/);
+  });
+  test('getReconciliationEvidenceCsv', () => {
+    expect(API_JS).toMatch(/getReconciliationEvidenceCsv/);
+  });
+  test('getPortfolioReconciliationCsv', () => {
+    expect(API_JS).toMatch(/getPortfolioReconciliationCsv/);
+  });
 });
 
 // ── D. NavRegistry + App.jsx wiring ──────────────────────────────────

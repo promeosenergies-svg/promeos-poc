@@ -1,6 +1,8 @@
 """Initialize KB citations + rule_cards schema in production KB."""
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.kb.models import get_kb_db

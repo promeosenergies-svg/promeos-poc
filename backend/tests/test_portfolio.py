@@ -2,7 +2,9 @@
 PROMEOS — Portfolio Consumption V1 Tests
 Tests for /api/portfolio/consumption/summary and /sites endpoints.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -44,8 +46,7 @@ def env():
         session.flush()
         sites.append(s)
 
-        m = Meter(meter_id=f"PRM-PF-{i}", name=f"Meter {i}", site_id=s.id,
-                  energy_vector=EnergyVector.ELECTRICITY)
+        m = Meter(meter_id=f"PRM-PF-{i}", name=f"Meter {i}", site_id=s.id, energy_vector=EnergyVector.ELECTRICITY)
         session.add(m)
         session.flush()
 
@@ -54,12 +55,14 @@ def env():
         for d in range(days_of_data):
             dt = datetime(2025, 3, 1) + timedelta(days=d)
             for h in range(24):
-                session.add(MeterReading(
-                    meter_id=m.id,
-                    timestamp=dt.replace(hour=h),
-                    frequency=FrequencyType.HOURLY,
-                    value_kwh=10 + h * 0.5 + i * 5,
-                ))
+                session.add(
+                    MeterReading(
+                        meter_id=m.id,
+                        timestamp=dt.replace(hour=h),
+                        frequency=FrequencyType.HOURLY,
+                        value_kwh=10 + h * 0.5 + i * 5,
+                    )
+                )
         session.flush()
 
     # Add a consumption insight for Site Alpha
@@ -86,16 +89,24 @@ class TestPortfolioSummary:
 
     def test_returns_200(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         assert r.status_code == 200
 
     def test_schema_keys(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert "period" in data
         assert "totals" in data
@@ -107,9 +118,13 @@ class TestPortfolioSummary:
 
     def test_totals_kwh_positive(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert data["totals"]["kwh_total"] > 0
         assert data["totals"]["eur_total"] > 0
@@ -117,9 +132,13 @@ class TestPortfolioSummary:
 
     def test_coverage_counts(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         cov = data["coverage"]
         assert cov["sites_total"] == 3
@@ -128,27 +147,39 @@ class TestPortfolioSummary:
     def test_top_drift_non_empty(self, env):
         """Site Alpha has 1 insight → should appear in top_drift."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert len(data["top_drift"]) >= 1
         assert data["top_drift"][0]["diagnostics_count"] >= 1
 
     def test_filter_by_site_ids(self, env):
         client, _, sites = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "site_ids": str(sites[0].id),
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "site_ids": str(sites[0].id),
+            },
+        )
         data = r.json()
         assert data["coverage"]["sites_total"] == 1
 
     def test_period_dates(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-15",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-15",
+            },
+        )
         data = r.json()
         assert data["period"]["from"] == "2025-03-01"
         assert data["period"]["to"] == "2025-03-15"
@@ -160,16 +191,24 @@ class TestPortfolioSites:
 
     def test_returns_200(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         assert r.status_code == 200
 
     def test_pagination_schema(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert "total" in data
         assert "offset" in data
@@ -179,22 +218,40 @@ class TestPortfolioSites:
 
     def test_row_fields(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         row = data["rows"][0]
-        for key in ["site_id", "site_name", "kwh", "eur", "co2", "confidence",
-                     "peak_kw", "base_night_pct", "diagnostics_count",
-                     "impact_eur_estimated", "open_actions_count"]:
+        for key in [
+            "site_id",
+            "site_name",
+            "kwh",
+            "eur",
+            "co2",
+            "confidence",
+            "peak_kw",
+            "base_night_pct",
+            "diagnostics_count",
+            "impact_eur_estimated",
+            "open_actions_count",
+        ]:
             assert key in row, f"Missing key: {key}"
 
     def test_sort_kwh_desc(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "sort": "kwh_desc",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "sort": "kwh_desc",
+            },
+        )
         data = r.json()
         rows = data["rows"]
         kwhs = [r["kwh"] for r in rows]
@@ -202,48 +259,70 @@ class TestPortfolioSites:
 
     def test_filter_confidence(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "confidence": "low",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "confidence": "low",
+            },
+        )
         data = r.json()
         for row in data["rows"]:
             assert row["confidence"] == "low"
 
     def test_filter_with_anomalies(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "with_anomalies": True,
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "with_anomalies": True,
+            },
+        )
         data = r.json()
         for row in data["rows"]:
             assert row["diagnostics_count"] > 0
 
     def test_search_by_name(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "search": "Alpha",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "search": "Alpha",
+            },
+        )
         data = r.json()
         assert data["total"] == 1
         assert data["rows"][0]["site_name"] == "Site Alpha"
 
     def test_pagination_limit_offset(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "limit": 2, "offset": 0,
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "limit": 2,
+                "offset": 0,
+            },
+        )
         data = r.json()
         assert len(data["rows"]) == 2
         assert data["total"] == 3
 
-        r2 = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "limit": 2, "offset": 2,
-        })
+        r2 = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "limit": 2,
+                "offset": 2,
+            },
+        )
         data2 = r2.json()
         assert len(data2["rows"]) == 1
 
@@ -253,9 +332,13 @@ class TestPortfolioV11:
 
     def test_impact_eur_in_summary_totals(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert "impact_eur_total" in data["totals"]
         # Site Alpha has insight with estimated_loss_eur=90
@@ -263,29 +346,41 @@ class TestPortfolioV11:
 
     def test_top_impact_list(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         assert len(data["top_impact"]) >= 1
         assert data["top_impact"][0]["impact_eur_estimated"] >= 90
 
     def test_impact_eur_in_site_row(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "search": "Alpha",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "search": "Alpha",
+            },
+        )
         data = r.json()
         row = data["rows"][0]
         assert row["impact_eur_estimated"] >= 90
 
     def test_sort_impact_desc(self, env):
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "sort": "impact_desc",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "sort": "impact_desc",
+            },
+        )
         data = r.json()
         impacts = [r["impact_eur_estimated"] for r in data["rows"]]
         assert impacts == sorted(impacts, reverse=True)
@@ -293,10 +388,14 @@ class TestPortfolioV11:
     def test_filter_with_actions_without(self, env):
         """No actions seeded → with_actions='without' should return all sites."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "with_actions": "without",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "with_actions": "without",
+            },
+        )
         data = r.json()
         assert data["total"] == 3  # All sites have 0 open actions
         for row in data["rows"]:
@@ -305,10 +404,14 @@ class TestPortfolioV11:
     def test_filter_with_actions_with(self, env):
         """No actions seeded → with_actions='with' should return 0 sites."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "with_actions": "with",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "with_actions": "with",
+            },
+        )
         data = r.json()
         assert data["total"] == 0
 
@@ -329,9 +432,13 @@ class TestPortfolioV13:
     def test_site_row_fields_non_null(self, env):
         """All required fields are present and non-null (may be 0 or empty string)."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         for row in data["rows"]:
             assert row["site_id"] is not None
@@ -347,9 +454,13 @@ class TestPortfolioV13:
     def test_summary_with_empty_date_range(self, env):
         """Date range before any data → totals should be 0, no crash."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2020-01-01", "to": "2020-01-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2020-01-01",
+                "to": "2020-01-31",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["totals"]["kwh_total"] == 0
@@ -396,9 +507,13 @@ class TestPortfolioV2Patrimoine:
     def test_site_rows_include_data_status(self, env):
         """Every site row must have data_status field (ok/partial/none)."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         for row in data["rows"]:
             assert row["data_status"] in ("ok", "partial", "none"), f"Bad data_status: {row['data_status']}"
@@ -406,9 +521,13 @@ class TestPortfolioV2Patrimoine:
     def test_site_rows_include_coverage_pct(self, env):
         """Every site row must have coverage_pct (0-100)."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         for row in data["rows"]:
             assert "coverage_pct" in row
@@ -417,9 +536,13 @@ class TestPortfolioV2Patrimoine:
     def test_sites_without_data_visible(self, env):
         """Site Gamma has 0 readings → should appear with data_status='none'."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         gamma = [row for row in data["rows"] if row["site_name"] == "Site Gamma"]
         assert len(gamma) == 1
@@ -430,10 +553,14 @@ class TestPortfolioV2Patrimoine:
     def test_without_data_filter(self, env):
         """without_data=true → only sites with no readings."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "without_data": True,
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "without_data": True,
+            },
+        )
         data = r.json()
         assert data["total"] == 1  # Only Site Gamma
         assert data["rows"][0]["data_status"] == "none"
@@ -441,10 +568,14 @@ class TestPortfolioV2Patrimoine:
     def test_coverage_sort(self, env):
         """sort=coverage → highest coverage first."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/sites", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-            "sort": "coverage",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/sites",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+                "sort": "coverage",
+            },
+        )
         data = r.json()
         pcts = [row["coverage_pct"] for row in data["rows"]]
         assert pcts == sorted(pcts, reverse=True)
@@ -452,9 +583,13 @@ class TestPortfolioV2Patrimoine:
     def test_summary_includes_sites_without_data(self, env):
         """Summary coverage must include sites_without_data count."""
         client, _, _ = env
-        r = client.get("/api/portfolio/consumption/summary", params={
-            "from": "2025-03-01", "to": "2025-03-31",
-        })
+        r = client.get(
+            "/api/portfolio/consumption/summary",
+            params={
+                "from": "2025-03-01",
+                "to": "2025-03-31",
+            },
+        )
         data = r.json()
         cov = data["coverage"]
         assert "sites_without_data" in cov

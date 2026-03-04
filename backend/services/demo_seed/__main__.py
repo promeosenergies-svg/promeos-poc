@@ -2,6 +2,7 @@
 PROMEOS - Demo Seed CLI
 Usage: python -m services.demo_seed --pack helios --size S [--reset] [--seed 42]
 """
+
 import argparse
 import json
 import sys
@@ -16,20 +17,15 @@ from .packs import list_packs
 
 def main():
     parser = argparse.ArgumentParser(description="PROMEOS Demo Seed CLI")
-    parser.add_argument("--pack", default="helios", choices=["helios", "tertiaire"],
-                        help="Pack to seed (default: helios)")
-    parser.add_argument("--size", default="S", choices=["S", "M"],
-                        help="Size: S (small) or M (medium)")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="RNG seed for deterministic output")
-    parser.add_argument("--days", type=int, default=90,
-                        help="Lookback days for readings")
-    parser.add_argument("--reset", action="store_true",
-                        help="Reset all data before seeding")
-    parser.add_argument("--list", action="store_true",
-                        help="List available packs")
-    parser.add_argument("--status", action="store_true",
-                        help="Show current data status")
+    parser.add_argument(
+        "--pack", default="helios", choices=["helios", "tertiaire"], help="Pack to seed (default: helios)"
+    )
+    parser.add_argument("--size", default="S", choices=["S", "M"], help="Size: S (small) or M (medium)")
+    parser.add_argument("--seed", type=int, default=42, help="RNG seed for deterministic output")
+    parser.add_argument("--days", type=int, default=90, help="Lookback days for readings")
+    parser.add_argument("--reset", action="store_true", help="Reset all data before seeding")
+    parser.add_argument("--list", action="store_true", help="List available packs")
+    parser.add_argument("--status", action="store_true", help="Show current data status")
 
     args = parser.parse_args()
 
@@ -70,8 +66,10 @@ def main():
     print(f"  Readings:     {result.get('readings_count')}")
     print(f"  Weather:      {result.get('weather_days')} days")
     print(f"  Compliance:   {result.get('compliance', {}).get('findings_count', 0)} findings")
-    print(f"  Monitoring:   {result.get('monitoring', {}).get('snapshots_count', 0)} snapshots, "
-          f"{result.get('monitoring', {}).get('alerts_count', 0)} alerts")
+    print(
+        f"  Monitoring:   {result.get('monitoring', {}).get('snapshots_count', 0)} snapshots, "
+        f"{result.get('monitoring', {}).get('alerts_count', 0)} alerts"
+    )
     print(f"  Billing:      {result.get('billing', {}).get('invoices_count', 0)} invoices")
     print(f"  Actions:      {result.get('actions', {}).get('actions_count', 0)}")
     print(f"  Purchase:     {result.get('purchase', {}).get('scenarios', 0)} scenarios")

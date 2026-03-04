@@ -5,8 +5,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert, CheckCircle2, Loader2, Filter,
-  Building2, ArrowRight, FileText, Plus,
+  ShieldAlert,
+  CheckCircle2,
+  Loader2,
+  Filter,
+  Building2,
+  ArrowRight,
+  FileText,
+  Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import { getTertiaireIssues, updateTertiaireIssue, createAction } from '../../services/api';
@@ -62,7 +68,9 @@ export default function TertiaireAnomaliesPage() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchIssues(); }, [filterSeverity, filterStatus]);
+  useEffect(() => {
+    fetchIssues();
+  }, [filterSeverity, filterStatus]);
 
   const handleStatusChange = async (issueId, newStatus) => {
     await updateTertiaireIssue(issueId, { status: newStatus });
@@ -74,9 +82,15 @@ export default function TertiaireAnomaliesPage() {
     setActionFeedback(null);
     try {
       const year = issue.year || new Date().getFullYear();
-      const efa = { id: issue.efa_id, nom: issue.efa_nom || `EFA #${issue.efa_id}`, site_id: issue.site_id };
+      const efa = {
+        id: issue.efa_id,
+        nom: issue.efa_nom || `EFA #${issue.efa_id}`,
+        site_id: issue.site_id,
+      };
       const payload = buildOperatActionPayload({
-        efa, issue, year,
+        efa,
+        issue,
+        year,
         kb_open_url: issue.proof_links?.[0] || null,
         proof_type: issue.proof_required?.type || null,
       });
@@ -145,13 +159,23 @@ export default function TertiaireAnomaliesPage() {
 
       {/* V46: Feedback toast */}
       {actionFeedback && (
-        <div className={`mt-3 rounded-lg px-4 py-2 text-xs flex items-center justify-between ${
-          actionFeedback.type === 'ok' ? 'bg-emerald-50 text-emerald-700' :
-          actionFeedback.type === 'info' ? 'bg-blue-50 text-blue-700' :
-          'bg-red-50 text-red-700'
-        }`} data-testid="action-feedback">
+        <div
+          className={`mt-3 rounded-lg px-4 py-2 text-xs flex items-center justify-between ${
+            actionFeedback.type === 'ok'
+              ? 'bg-emerald-50 text-emerald-700'
+              : actionFeedback.type === 'info'
+                ? 'bg-blue-50 text-blue-700'
+                : 'bg-red-50 text-red-700'
+          }`}
+          data-testid="action-feedback"
+        >
           <span>{actionFeedback.text}</span>
-          <button onClick={() => setActionFeedback(null)} className="text-gray-400 hover:text-gray-600 ml-2">&times;</button>
+          <button
+            onClick={() => setActionFeedback(null)}
+            className="text-gray-400 hover:text-gray-600 ml-2"
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -212,7 +236,9 @@ export default function TertiaireAnomaliesPage() {
                       )}
 
                       {/* Message */}
-                      <p className={`text-sm text-gray-${issue.title_fr ? '700' : '900'} mt-1 ${issue.title_fr ? '' : 'font-medium'}`}>
+                      <p
+                        className={`text-sm text-gray-${issue.title_fr ? '700' : '900'} mt-1 ${issue.title_fr ? '' : 'font-medium'}`}
+                      >
                         {issue.message_fr}
                       </p>
 
@@ -234,13 +260,18 @@ export default function TertiaireAnomaliesPage() {
 
                       {/* V45: Preuve attendue */}
                       {issue.proof_required && (
-                        <div className="mt-2 p-2 rounded bg-indigo-50 border border-indigo-100" data-testid="issue-proof-required">
+                        <div
+                          className="mt-2 p-2 rounded bg-indigo-50 border border-indigo-100"
+                          data-testid="issue-proof-required"
+                        >
                           <p className="text-xs font-medium text-indigo-700">
                             Preuve attendue : {issue.proof_required.label_fr}
                           </p>
                           <p className="text-xs text-indigo-500 mt-0.5">
                             Responsable : {issue.proof_required.owner_role}
-                            {issue.proof_required.deadline_hint ? ` · ${issue.proof_required.deadline_hint}` : ''}
+                            {issue.proof_required.deadline_hint
+                              ? ` · ${issue.proof_required.deadline_hint}`
+                              : ''}
                           </p>
                         </div>
                       )}
@@ -303,9 +334,11 @@ export default function TertiaireAnomaliesPage() {
                         disabled={creatingActionFor === issue.id}
                         data-testid="btn-create-action"
                       >
-                        {creatingActionFor === issue.id
-                          ? <Loader2 size={12} className="animate-spin" />
-                          : <Plus size={12} />}
+                        {creatingActionFor === issue.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Plus size={12} />
+                        )}
                         Créer une action
                       </Button>
                     </div>

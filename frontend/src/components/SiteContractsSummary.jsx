@@ -33,10 +33,18 @@ export default function SiteContractsSummary({ siteId }) {
   useEffect(() => {
     let stale = false;
     getPatrimoineContracts({ site_id: siteId })
-      .then((data) => { if (!stale) setContracts(data.contracts || []); })
-      .catch(() => { if (!stale) setContracts([]); })
-      .finally(() => { if (!stale) setLoading(false); });
-    return () => { stale = true; };
+      .then((data) => {
+        if (!stale) setContracts(data.contracts || []);
+      })
+      .catch(() => {
+        if (!stale) setContracts([]);
+      })
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
   }, [siteId]);
 
   if (loading) return <SkeletonCard />;
@@ -56,7 +64,11 @@ export default function SiteContractsSummary({ siteId }) {
       <h4 className="text-sm font-semibold text-gray-700">Contrats énergie</h4>
       {contracts.map((ct) => {
         const daysLeft = daysUntil(ct.end_date);
-        const alertRenewal = ct.renewal_alert_days && daysLeft !== null && daysLeft > 0 && daysLeft <= ct.renewal_alert_days;
+        const alertRenewal =
+          ct.renewal_alert_days &&
+          daysLeft !== null &&
+          daysLeft > 0 &&
+          daysLeft <= ct.renewal_alert_days;
         return (
           <Card key={ct.id} className={alertRenewal ? 'border-l-4 border-l-amber-400' : ''}>
             <CardBody>
@@ -68,19 +80,29 @@ export default function SiteContractsSummary({ siteId }) {
                 </div>
                 <div className="flex items-center gap-2">
                   {ct.offer_indexation && (
-                    <Badge status={IDX_BADGE[ct.offer_indexation] || 'info'}>{ct.offer_indexation}</Badge>
+                    <Badge status={IDX_BADGE[ct.offer_indexation] || 'info'}>
+                      {ct.offer_indexation}
+                    </Badge>
                   )}
                   {ct.contract_status && (
-                    <Badge status={STATUS_BADGE[ct.contract_status] || 'info'}>{ct.contract_status}</Badge>
+                    <Badge status={STATUS_BADGE[ct.contract_status] || 'info'}>
+                      {ct.contract_status}
+                    </Badge>
                   )}
                 </div>
               </div>
               <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
                 {ct.price_ref_eur_per_kwh != null && (
-                  <span>Prix ref: <strong>{ct.price_ref_eur_per_kwh} €/kWh</strong></span>
+                  <span>
+                    Prix ref: <strong>{ct.price_ref_eur_per_kwh} €/kWh</strong>
+                  </span>
                 )}
                 {ct.price_granularity && <span>Granularité: {ct.price_granularity}</span>}
-                {ct.start_date && <span>{ct.start_date} → {ct.end_date || '...'}</span>}
+                {ct.start_date && (
+                  <span>
+                    {ct.start_date} → {ct.end_date || '...'}
+                  </span>
+                )}
                 {daysLeft !== null && daysLeft > 0 && (
                   <span className={daysLeft <= 90 ? 'text-amber-600 font-medium' : ''}>
                     {daysLeft}j restants
@@ -90,7 +112,10 @@ export default function SiteContractsSummary({ siteId }) {
               {alertRenewal && (
                 <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
                   <AlertTriangle size={12} />
-                  <span>Alerte renouvellement — {daysLeft}j avant échéance (seuil: {ct.renewal_alert_days}j)</span>
+                  <span>
+                    Alerte renouvellement — {daysLeft}j avant échéance (seuil:{' '}
+                    {ct.renewal_alert_days}j)
+                  </span>
                 </div>
               )}
             </CardBody>

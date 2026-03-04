@@ -11,6 +11,7 @@ Score de complétude (D7) :
 Chaque Anomaly expose :
     code, severity, title_fr, detail_fr, evidence, cta:{label,to}, fix_hint_fr
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -18,7 +19,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Batiment, Usage, Compteur, DeliveryPoint, EnergyContract,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
 )
 from services.patrimoine_snapshot import SURFACE_MISMATCH_TOLERANCE
 
@@ -71,9 +77,7 @@ def _rule_surface_missing(
             code="SURFACE_MISSING",
             severity="HIGH",
             title_fr="Surface bâtiments inconnue",
-            detail_fr=(
-                f"{len(batiments)} bâtiment(s) présent(s) mais aucune surface renseignée."
-            ),
+            detail_fr=(f"{len(batiments)} bâtiment(s) présent(s) mais aucune surface renseignée."),
             evidence={"nb_batiments": len(batiments), "surface_sot_m2": 0},
             cta_label="Éditer les bâtiments",
             cta_to="/patrimoine",
@@ -124,9 +128,7 @@ def _rule_surface_mismatch(
         },
         cta_label="Voir les bâtiments",
         cta_to="/patrimoine",
-        fix_hint_fr=(
-            "Mettez à jour la surface du site ou des bâtiments pour réduire l'écart."
-        ),
+        fix_hint_fr=("Mettez à jour la surface du site ou des bâtiments pour réduire l'écart."),
     )
 
 
@@ -230,9 +232,11 @@ def _rule_contract_overlap(contracts: List[EnergyContract]) -> List[Dict[str, An
     reported_pairs: set = set()
     for energy_type, group in by_type.items():
         # Seulement les contrats avec les deux dates valides
-        dated = [(c, c.start_date, c.end_date) for c in group if c.start_date and c.end_date and c.start_date < c.end_date]
+        dated = [
+            (c, c.start_date, c.end_date) for c in group if c.start_date and c.end_date and c.start_date < c.end_date
+        ]
         for i, (c1, s1, e1) in enumerate(dated):
-            for c2, s2, e2 in dated[i + 1:]:
+            for c2, s2, e2 in dated[i + 1 :]:
                 # Chevauchement : s1 < e2 AND s2 < e1
                 if s1 < e2 and s2 < e1:
                     pair_key = (min(c1.id, c2.id), max(c1.id, c2.id))
@@ -286,10 +290,7 @@ def _rule_orphans_detected(
         code="ORPHANS_DETECTED",
         severity="CRITICAL",
         title_fr="Données orphelines détectées",
-        detail_fr=(
-            f"Le site est archivé (inactif) mais contient encore : "
-            f"{', '.join(orphan_details)}."
-        ),
+        detail_fr=(f"Le site est archivé (inactif) mais contient encore : {', '.join(orphan_details)}."),
         evidence={
             "site_id": site.id,
             "site_actif": site.actif,
@@ -300,8 +301,7 @@ def _rule_orphans_detected(
         cta_label="Audit / nettoyage",
         cta_to="/patrimoine",
         fix_hint_fr=(
-            "Archivez ou supprimez les enregistrements liés, "
-            "ou restaurez le site si l'archivage était une erreur."
+            "Archivez ou supprimez les enregistrements liés, ou restaurez le site si l'archivage était une erreur."
         ),
     )
 
@@ -335,9 +335,7 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
 
     # Batch queries — zéro N+1
     batiments: List[Batiment] = (
-        db.query(Batiment)
-        .filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None))
-        .all()
+        db.query(Batiment).filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None)).all()
     )
     bat_ids = [b.id for b in batiments]
     usages_by_bat: Dict[int, List] = {}
@@ -356,13 +354,9 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
         .all()
     )
     delivery_points: List[DeliveryPoint] = (
-        db.query(DeliveryPoint)
-        .filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None))
-        .all()
+        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
     )
-    contracts: List[EnergyContract] = (
-        db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
-    )
+    contracts: List[EnergyContract] = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
 
     # ── Appliquer les règles ──────────────────────────────────────────────────
     anomalies: List[Dict[str, Any]] = []
@@ -397,6 +391,7 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
     anomalies.sort(key=lambda a: _order.get(a["severity"], 99))
 
     from datetime import datetime, timezone
+
     return {
         "site_id": site_id,
         "anomalies": anomalies,

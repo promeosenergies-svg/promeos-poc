@@ -7,6 +7,7 @@ Provides reusable scope-enforcement for all routers:
 - apply_scope_filter(query, auth, model, site_col) → scoped query
 - get_accessible_site_ids(auth) → list[int]
 """
+
 from typing import Optional
 
 from fastapi import HTTPException, status

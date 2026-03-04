@@ -74,8 +74,8 @@ describe('B · Actions CTAs', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('imports toActionNew from routes', () => {
-    expect(code).toContain("toActionNew");
-    expect(code).toContain("toActionsList");
+    expect(code).toContain('toActionNew');
+    expect(code).toContain('toActionsList');
     expect(code).toContain("from '../services/routes'");
   });
 

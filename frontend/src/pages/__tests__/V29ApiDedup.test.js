@@ -146,7 +146,7 @@ describe('V29: Promise dedup identity', () => {
         return Promise.resolve(entry.data);
       }
 
-      const promise = fetchFn().then(data => {
+      const promise = fetchFn().then((data) => {
         cache.set(key, { data, ts: Date.now(), inflight: false });
         return data;
       });
@@ -155,10 +155,11 @@ describe('V29: Promise dedup identity', () => {
     }
 
     let fetchCount = 0;
-    const mockFetch = () => new Promise(resolve => {
-      fetchCount++;
-      setTimeout(() => resolve({ series: [] }), 50);
-    });
+    const mockFetch = () =>
+      new Promise((resolve) => {
+        fetchCount++;
+        setTimeout(() => resolve({ series: [] }), 50);
+      });
 
     const p1 = simulatedCachedGet('/ems/timeseries|{"site_ids":"1"}', mockFetch);
     const p2 = simulatedCachedGet('/ems/timeseries|{"site_ids":"1"}', mockFetch);

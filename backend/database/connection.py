@@ -3,6 +3,7 @@ PROMEOS - Configuration de la base de données
 Supports SQLite (default, dev) and PostgreSQL (production).
 Reads DATABASE_URL from environment (.env or system env var).
 """
+
 import logging
 import os
 from dotenv import load_dotenv

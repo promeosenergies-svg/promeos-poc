@@ -1,6 +1,7 @@
 """
 PROMEOS - Routes API pour les Consommations
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
@@ -11,6 +12,7 @@ from datetime import datetime
 from middleware.auth import get_optional_auth, AuthContext
 
 router = APIRouter(prefix="/api/consommations", tags=["Consommations"])
+
 
 @router.get("", response_model=List[ConsommationResponse])
 def get_consommations(
@@ -30,8 +32,8 @@ def get_consommations(
         )
     if compteur_id:
         query = query.filter(Consommation.compteur_id == compteur_id)
-    
+
     # Trier par date décroissante
     consommations = query.order_by(Consommation.timestamp.desc()).limit(limit).all()
-    
+
     return consommations

@@ -9,12 +9,12 @@ import { ScenarioPreset, EnergyType, Persona, SEASONALITY_ELEC, SEASONALITY_GAZ 
 // @deprecated V100 — These market assumptions are used by Monte Carlo (experimental mode only).
 // V1 authoritative pricing uses backend offer_pricing_v1 with catalog-backed rates.
 export const DEFAULT_MARKET = {
-  baseSpotEurPerMwh: 85,       // Base spot price (€/MWh)
-  fixedPremiumPct: 0.12,       // Fixed = spot + 12%
-  indexedSpreadEurPerMwh: 4,   // Indexed = index + spread
-  volatilityAnnual: 0.25,      // 25% annual vol
-  riskFreeRate: 0.03,          // 3%
-  inflationRate: 0.02,         // 2%
+  baseSpotEurPerMwh: 85, // Base spot price (€/MWh)
+  fixedPremiumPct: 0.12, // Fixed = spot + 12%
+  indexedSpreadEurPerMwh: 4, // Indexed = index + spread
+  volatilityAnnual: 0.25, // 25% annual vol
+  riskFreeRate: 0.03, // 3%
+  inflationRate: 0.02, // 2%
 };
 
 // ── Scenario Presets ───────────────────────────────────────────────
@@ -34,7 +34,7 @@ export const SCENARIO_PRESETS = {
     driftAnnual: 0.05,
     volMultiplier: 1.5,
     shockProb: 0.08,
-    shockMagnitude: 0.40,
+    shockMagnitude: 0.4,
   },
   [ScenarioPreset.DEFENSIVE]: {
     label: 'Defensif',
@@ -52,28 +52,28 @@ export const PERSONA_PROFILES = {
   [Persona.DG]: {
     label: 'DG / Direction Generale',
     description: 'Priorite: visibilite budgetaire, simplicite, faible risque contrat',
-    weights: { budgetRisk: 0.40, transparency: 0.15, contractRisk: 0.35, dataReadiness: 0.10 },
+    weights: { budgetRisk: 0.4, transparency: 0.15, contractRisk: 0.35, dataReadiness: 0.1 },
     preferSimple: true,
     maxAcceptableRisk: 40,
   },
   [Persona.DAF]: {
     label: 'DAF / Direction Financiere',
     description: 'Priorite: transparence, SLA billing, faibles anomalies/ecarts',
-    weights: { budgetRisk: 0.25, transparency: 0.40, contractRisk: 0.20, dataReadiness: 0.15 },
+    weights: { budgetRisk: 0.25, transparency: 0.4, contractRisk: 0.2, dataReadiness: 0.15 },
     preferSimple: false,
     maxAcceptableRisk: 55,
   },
   [Persona.ACHETEUR]: {
     label: 'Acheteur / Procurement',
     description: 'Priorite: comparabilite, clauses, pack RFP, meilleur prix',
-    weights: { budgetRisk: 0.30, transparency: 0.25, contractRisk: 0.30, dataReadiness: 0.15 },
+    weights: { budgetRisk: 0.3, transparency: 0.25, contractRisk: 0.3, dataReadiness: 0.15 },
     preferSimple: false,
     maxAcceptableRisk: 65,
   },
   [Persona.RESP_ENERGIE]: {
     label: 'Responsable Energie',
     description: 'Priorite: hybride si data OK, sinon prudence, optimisation technique',
-    weights: { budgetRisk: 0.20, transparency: 0.20, contractRisk: 0.20, dataReadiness: 0.40 },
+    weights: { budgetRisk: 0.2, transparency: 0.2, contractRisk: 0.2, dataReadiness: 0.4 },
     preferSimple: false,
     maxAcceptableRisk: 70,
   },
@@ -132,5 +132,5 @@ export function getSeasonality(energyType) {
 export function distributeMonthly(annualKwh, energyType) {
   const seasonality = getSeasonality(energyType);
   const sum = seasonality.reduce((a, b) => a + b, 0);
-  return seasonality.map(coeff => (annualKwh * coeff) / sum);
+  return seasonality.map((coeff) => (annualKwh * coeff) / sum);
 }

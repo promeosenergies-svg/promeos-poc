@@ -12,10 +12,10 @@ import { CheckCircle2, XCircle, AlertTriangle, Lightbulb } from 'lucide-react';
 // ── Bullet type config ────────────────────────────────────────────────────────
 
 const TYPE_CFG = {
-  positive:    { Icon: CheckCircle2, iconClass: 'text-emerald-500', rowBg: '' },
-  negative:    { Icon: XCircle,      iconClass: 'text-red-500',     rowBg: '' },
-  warn:        { Icon: AlertTriangle,iconClass: 'text-amber-500',   rowBg: '' },
-  opportunity: { Icon: Lightbulb,    iconClass: 'text-blue-500',    rowBg: '' },
+  positive: { Icon: CheckCircle2, iconClass: 'text-emerald-500', rowBg: '' },
+  negative: { Icon: XCircle, iconClass: 'text-red-500', rowBg: '' },
+  warn: { Icon: AlertTriangle, iconClass: 'text-amber-500', rowBg: '' },
+  opportunity: { Icon: Lightbulb, iconClass: 'text-blue-500', rowBg: '' },
 };
 
 // ── Bullet row ────────────────────────────────────────────────────────────────
@@ -34,9 +34,7 @@ function ExecBulletRow({ bullet, onNavigate }) {
       <Icon size={15} className={`shrink-0 mt-0.5 ${cfg.iconClass}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-800 leading-snug">{bullet.label}</p>
-        {bullet.sub && (
-          <p className="text-xs text-gray-500 mt-0.5">{bullet.sub}</p>
-        )}
+        {bullet.sub && <p className="text-xs text-gray-500 mt-0.5">{bullet.sub}</p>}
       </div>
     </El>
   );

@@ -2,6 +2,7 @@
 PROMEOS - Modele DataPoint
 Donnee metrique avec lineage (source, qualite, couverture).
 """
+
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
 from .base import Base, TimestampMixin
 from .enums import SourceType

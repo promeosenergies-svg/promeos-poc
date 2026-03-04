@@ -2,6 +2,7 @@
 PROMEOS - BACS Engine v2 (Decret n°2020-887)
 Moteur complet: Putile, calendrier reglementaire, TRI exemption, inspections.
 """
+
 import json
 import os
 from datetime import date, datetime, timedelta, timezone
@@ -11,18 +12,26 @@ import yaml
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Batiment, Evidence, TypeEvidence, StatutEvidence,
-    BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection,
-    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
+    Site,
+    Batiment,
+    Evidence,
+    TypeEvidence,
+    StatutEvidence,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    BacsTriggerReason,
+    InspectionStatus,
 )
 from regops.schemas import Finding
 
 ENGINE_VERSION = "bacs_v2.0"
 
 # ── Load reference config from YAML (Decret n°2020-887) ──
-_BACS_CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "regulations", "bacs", "v2.yaml"
-)
+_BACS_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "regulations", "bacs", "v2.yaml")
 _BACS_CONFIG = None
 
 
@@ -56,6 +65,7 @@ RENEWAL_CUTOFF = date(2023, 4, 9)
 # ────────────────────────────────────────────
 # Putile calculation
 # ────────────────────────────────────────────
+
 
 def compute_putile(systems: list[BacsCvcSystem]) -> dict:
     """
@@ -94,8 +104,7 @@ def compute_putile(systems: list[BacsCvcSystem]) -> dict:
             method = "max"
 
         trace_steps.append(
-            f"System id={sys.id} ({channel}/{sys.architecture.value}): "
-            f"{method}({kw_values}) = {channel_kw} kW"
+            f"System id={sys.id} ({channel}/{sys.architecture.value}): {method}({kw_values}) = {channel_kw} kW"
         )
         per_channel.setdefault(channel, []).append(channel_kw)
 
@@ -129,6 +138,7 @@ def _parse_units(units_json: Optional[str]) -> list[dict]:
 # ────────────────────────────────────────────
 # Obligation determination
 # ────────────────────────────────────────────
+
 
 def determine_obligation(
     putile_kw: float,
@@ -206,6 +216,7 @@ def determine_obligation(
 # TRI exemption
 # ────────────────────────────────────────────
 
+
 def compute_tri(context: dict) -> dict:
     """
     Compute TRI (Temps de Retour sur Investissement) for BACS exemption.
@@ -270,6 +281,7 @@ def compute_tri(context: dict) -> dict:
 
 INSPECTION_PERIOD_YEARS = 5
 
+
 def compute_inspection_schedule(
     deadline_date: Optional[date],
     inspections: list[BacsInspection],
@@ -296,8 +308,7 @@ def compute_inspection_schedule(
         key=lambda i: i.inspection_date,
     )
     history = [
-        {"date": i.inspection_date.isoformat(), "report": i.report_ref, "status": i.status.value}
-        for i in completed
+        {"date": i.inspection_date.isoformat(), "report": i.report_ref, "status": i.status.value} for i in completed
     ]
 
     if completed:
@@ -318,6 +329,7 @@ def compute_inspection_schedule(
 # ────────────────────────────────────────────
 # Main orchestrator
 # ────────────────────────────────────────────
+
 
 def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None) -> Optional[BacsAssessment]:
     """
@@ -391,19 +403,23 @@ def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None)
         compliance_score=compliance_score,
         findings_json=json.dumps([_finding_to_dict(f) for f in findings]),
         rule_id="BACS_V2_FULL",
-        inputs_json=json.dumps({
-            "putile": putile_result,
-            "obligation": {k: str(v) if isinstance(v, (date, BacsTriggerReason)) else v
-                           for k, v in obligation.items()},
-            "tri": {k: str(v) if isinstance(v, date) else v
-                    for k, v in tri_result.items() if k != "trace"},
-        }),
+        inputs_json=json.dumps(
+            {
+                "putile": putile_result,
+                "obligation": {
+                    k: str(v) if isinstance(v, (date, BacsTriggerReason)) else v for k, v in obligation.items()
+                },
+                "tri": {k: str(v) if isinstance(v, date) else v for k, v in tri_result.items() if k != "trace"},
+            }
+        ),
         params_json=json.dumps(config),
-        evidence_json=json.dumps({
-            "putile_trace": putile_result["trace"],
-            "tri_trace": tri_result.get("trace", []),
-            "inspection_history": inspection_sched.get("history", []),
-        }),
+        evidence_json=json.dumps(
+            {
+                "putile_trace": putile_result["trace"],
+                "tri_trace": tri_result.get("trace", []),
+                "inspection_history": inspection_sched.get("history", []),
+            }
+        ),
         engine_version=ENGINE_VERSION,
     )
     db.add(assessment)
@@ -418,19 +434,21 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
     putile_kw = putile_result["putile_kw"]
 
     if not obligation["is_obligated"]:
-        findings.append(Finding(
-            regulation="BACS",
-            rule_id="BACS_V2_OUT_OF_SCOPE",
-            status="OUT_OF_SCOPE",
-            severity="LOW",
-            confidence="HIGH",
-            legal_deadline=None,
-            trigger_condition=f"Putile {putile_kw} kW <= seuil {obligation['threshold']} kW",
-            config_params_used={"threshold": obligation["threshold"]},
-            inputs_used=["cvc_inventory", "putile_kw"],
-            missing_inputs=[],
-            explanation=f"Puissance utile {putile_kw:.0f} kW: site non assujetti au decret BACS.",
-        ))
+        findings.append(
+            Finding(
+                regulation="BACS",
+                rule_id="BACS_V2_OUT_OF_SCOPE",
+                status="OUT_OF_SCOPE",
+                severity="LOW",
+                confidence="HIGH",
+                legal_deadline=None,
+                trigger_condition=f"Putile {putile_kw} kW <= seuil {obligation['threshold']} kW",
+                config_params_used={"threshold": obligation["threshold"]},
+                inputs_used=["cvc_inventory", "putile_kw"],
+                missing_inputs=[],
+                explanation=f"Puissance utile {putile_kw:.0f} kW: site non assujetti au decret BACS.",
+            )
+        )
         return findings
 
     # Obligated
@@ -451,78 +469,81 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
             status = "AT_RISK"
             severity = "MEDIUM"
 
-    findings.append(Finding(
-        regulation="BACS",
-        rule_id="BACS_V2_OBLIGATION",
-        status=status,
-        severity=severity,
-        confidence="HIGH",
-        legal_deadline=deadline,
-        trigger_condition=f"Putile {putile_kw:.0f} kW, trigger={trigger_label}",
-        config_params_used={"threshold": obligation["threshold"]},
-        inputs_used=["cvc_inventory", "putile_kw", "pc_date", "renewal_events"],
-        missing_inputs=[],
-        explanation=(
-            f"GTB/GTC obligatoire: Putile {putile_kw:.0f} kW "
-            f"(seuil {obligation['threshold']} kW, declencheur: {trigger_label}). "
-            f"Echeance: {deadline.isoformat()}."
-        ),
-    ))
+    findings.append(
+        Finding(
+            regulation="BACS",
+            rule_id="BACS_V2_OBLIGATION",
+            status=status,
+            severity=severity,
+            confidence="HIGH",
+            legal_deadline=deadline,
+            trigger_condition=f"Putile {putile_kw:.0f} kW, trigger={trigger_label}",
+            config_params_used={"threshold": obligation["threshold"]},
+            inputs_used=["cvc_inventory", "putile_kw", "pc_date", "renewal_events"],
+            missing_inputs=[],
+            explanation=(
+                f"GTB/GTC obligatoire: Putile {putile_kw:.0f} kW "
+                f"(seuil {obligation['threshold']} kW, declencheur: {trigger_label}). "
+                f"Echeance: {deadline.isoformat()}."
+            ),
+        )
+    )
 
     # TRI exemption finding
     if tri_result.get("exemption_possible") is True:
-        findings.append(Finding(
-            regulation="BACS",
-            rule_id="BACS_V2_TRI_EXEMPTION",
-            status="EXEMPTION_POSSIBLE",
-            severity="LOW",
-            confidence="MEDIUM",
-            legal_deadline=deadline,
-            trigger_condition=f"TRI = {tri_result['tri_years']} ans > 10 ans",
-            config_params_used={"tri_threshold_years": 10},
-            inputs_used=["cout_bacs_eur", "aides_pct", "conso_kwh", "gain_pct", "prix_kwh"],
-            missing_inputs=[],
-            explanation=(
-                f"TRI de {tri_result['tri_years']} ans > 10 ans: "
-                f"exemption possible (article R. 175-7 du CCH)."
-            ),
-        ))
+        findings.append(
+            Finding(
+                regulation="BACS",
+                rule_id="BACS_V2_TRI_EXEMPTION",
+                status="EXEMPTION_POSSIBLE",
+                severity="LOW",
+                confidence="MEDIUM",
+                legal_deadline=deadline,
+                trigger_condition=f"TRI = {tri_result['tri_years']} ans > 10 ans",
+                config_params_used={"tri_threshold_years": 10},
+                inputs_used=["cout_bacs_eur", "aides_pct", "conso_kwh", "gain_pct", "prix_kwh"],
+                missing_inputs=[],
+                explanation=(
+                    f"TRI de {tri_result['tri_years']} ans > 10 ans: exemption possible (article R. 175-7 du CCH)."
+                ),
+            )
+        )
     elif tri_result.get("tri_years") is not None:
-        findings.append(Finding(
-            regulation="BACS",
-            rule_id="BACS_V2_TRI_NO_EXEMPTION",
-            status=status,
-            severity=severity,
-            confidence="MEDIUM",
-            legal_deadline=deadline,
-            trigger_condition=f"TRI = {tri_result['tri_years']} ans <= 10 ans",
-            config_params_used={"tri_threshold_years": 10},
-            inputs_used=["cout_bacs_eur", "aides_pct", "conso_kwh", "gain_pct", "prix_kwh"],
-            missing_inputs=[],
-            explanation=(
-                f"TRI de {tri_result['tri_years']} ans <= 10 ans: "
-                f"pas d'exemption, GTB/GTC requise."
-            ),
-        ))
+        findings.append(
+            Finding(
+                regulation="BACS",
+                rule_id="BACS_V2_TRI_NO_EXEMPTION",
+                status=status,
+                severity=severity,
+                confidence="MEDIUM",
+                legal_deadline=deadline,
+                trigger_condition=f"TRI = {tri_result['tri_years']} ans <= 10 ans",
+                config_params_used={"tri_threshold_years": 10},
+                inputs_used=["cout_bacs_eur", "aides_pct", "conso_kwh", "gain_pct", "prix_kwh"],
+                missing_inputs=[],
+                explanation=(f"TRI de {tri_result['tri_years']} ans <= 10 ans: pas d'exemption, GTB/GTC requise."),
+            )
+        )
 
     # Inspection finding
     if inspection_sched.get("is_overdue"):
-        findings.append(Finding(
-            regulation="BACS",
-            rule_id="BACS_V2_INSPECTION_OVERDUE",
-            status="NON_COMPLIANT",
-            severity="HIGH",
-            confidence="HIGH",
-            legal_deadline=inspection_sched["next_due"],
-            trigger_condition=f"Inspection overdue since {inspection_sched['next_due'].isoformat()}",
-            config_params_used={"period_years": INSPECTION_PERIOD_YEARS},
-            inputs_used=["inspection_history"],
-            missing_inputs=[],
-            explanation=(
-                f"Inspection quinquennale BACS en retard. "
-                f"Echeance: {inspection_sched['next_due'].isoformat()}."
-            ),
-        ))
+        findings.append(
+            Finding(
+                regulation="BACS",
+                rule_id="BACS_V2_INSPECTION_OVERDUE",
+                status="NON_COMPLIANT",
+                severity="HIGH",
+                confidence="HIGH",
+                legal_deadline=inspection_sched["next_due"],
+                trigger_condition=f"Inspection overdue since {inspection_sched['next_due'].isoformat()}",
+                config_params_used={"period_years": INSPECTION_PERIOD_YEARS},
+                inputs_used=["inspection_history"],
+                missing_inputs=[],
+                explanation=(
+                    f"Inspection quinquennale BACS en retard. Echeance: {inspection_sched['next_due'].isoformat()}."
+                ),
+            )
+        )
 
     return findings
 
@@ -600,6 +621,7 @@ def _parse_json(text: Optional[str]):
 # Legacy wrapper for regops/rules/bacs.py
 # ────────────────────────────────────────────
 
+
 def evaluate_legacy(site, batiments: list, evidences: list, config: dict) -> list[Finding]:
     """
     Legacy wrapper: called by regops/rules/bacs.py evaluate().
@@ -608,6 +630,7 @@ def evaluate_legacy(site, batiments: list, evidences: list, config: dict) -> lis
     """
     # Build virtual systems from batiments for putile calc
     from models import CvcArchitecture, CvcSystemType
+
     virtual_systems = []
     for b in batiments:
         if b.cvc_power_kw and b.cvc_power_kw > 0:
@@ -632,32 +655,36 @@ def evaluate_legacy(site, batiments: list, evidences: list, config: dict) -> lis
 
     if not obligation["is_obligated"]:
         if putile_kw == 0:
-            return [Finding(
+            return [
+                Finding(
+                    regulation="BACS",
+                    rule_id="CVC_POWER_UNKNOWN",
+                    status="UNKNOWN",
+                    severity="HIGH",
+                    confidence="HIGH",
+                    legal_deadline=None,
+                    trigger_condition="No cvc_power_kw data in batiments",
+                    config_params_used={},
+                    inputs_used=[],
+                    missing_inputs=["cvc_power_kw"],
+                    explanation="Puissance CVC inconnue - impossible de determiner l'assujettissement BACS.",
+                )
+            ]
+        return [
+            Finding(
                 regulation="BACS",
-                rule_id="CVC_POWER_UNKNOWN",
-                status="UNKNOWN",
-                severity="HIGH",
+                rule_id="OUT_OF_SCOPE",
+                status="OUT_OF_SCOPE",
+                severity="LOW",
                 confidence="HIGH",
                 legal_deadline=None,
-                trigger_condition="No cvc_power_kw data in batiments",
-                config_params_used={},
-                inputs_used=[],
-                missing_inputs=["cvc_power_kw"],
-                explanation="Puissance CVC inconnue - impossible de determiner l'assujettissement BACS.",
-            )]
-        return [Finding(
-            regulation="BACS",
-            rule_id="OUT_OF_SCOPE",
-            status="OUT_OF_SCOPE",
-            severity="LOW",
-            confidence="HIGH",
-            legal_deadline=None,
-            trigger_condition=f"cvc_power {putile_kw}kW <= {obligation['threshold']}kW",
-            config_params_used=thresholds,
-            inputs_used=["cvc_power_kw"],
-            missing_inputs=[],
-            explanation=f"Puissance CVC {int(putile_kw)}kW: site non assujetti BACS.",
-        )]
+                trigger_condition=f"cvc_power {putile_kw}kW <= {obligation['threshold']}kW",
+                config_params_used=thresholds,
+                inputs_used=["cvc_power_kw"],
+                missing_inputs=[],
+                explanation=f"Puissance CVC {int(putile_kw)}kW: site non assujetti BACS.",
+            )
+        ]
 
     # Obligated — check attestation
     deadline = obligation["deadline"]
@@ -672,16 +699,18 @@ def evaluate_legacy(site, batiments: list, evidences: list, config: dict) -> lis
     today = date.today()
     status = "NON_COMPLIANT" if today > deadline else "AT_RISK"
 
-    return [Finding(
-        regulation="BACS",
-        rule_id="BACS_NOT_INSTALLED",
-        status=status,
-        severity=severity,
-        confidence="HIGH",
-        legal_deadline=deadline,
-        trigger_condition=f"cvc_power {putile_kw}kW, no valid BACS attestation",
-        config_params_used={"threshold": obligation["threshold"]},
-        inputs_used=["cvc_power_kw", "attestation_bacs"],
-        missing_inputs=[],
-        explanation=f"GTB/GTC obligatoire pour {int(putile_kw)}kW. Echeance: {deadline.isoformat()}.",
-    )]
+    return [
+        Finding(
+            regulation="BACS",
+            rule_id="BACS_NOT_INSTALLED",
+            status=status,
+            severity=severity,
+            confidence="HIGH",
+            legal_deadline=deadline,
+            trigger_condition=f"cvc_power {putile_kw}kW, no valid BACS attestation",
+            config_params_used={"threshold": obligation["threshold"]},
+            inputs_used=["cvc_power_kw", "attestation_bacs"],
+            missing_inputs=[],
+            explanation=f"GTB/GTC obligatoire pour {int(putile_kw)}kW. Echeance: {deadline.isoformat()}.",
+        )
+    ]

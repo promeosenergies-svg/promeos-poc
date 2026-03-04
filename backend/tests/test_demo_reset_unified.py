@@ -2,7 +2,9 @@
 PROMEOS - Unified demo reset tests
 Covers: reset-pack canonical endpoint, auth/reset-demo legacy alias, IAM cleanup.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -19,7 +21,8 @@ from main import app
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -36,6 +39,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -43,6 +47,7 @@ def client(db_session):
 
 def _seed(db, pack="tertiaire", size="S"):
     from services.demo_seed import SeedOrchestrator
+
     orch = SeedOrchestrator(db)
     return orch.seed(pack=pack, size=size, rng_seed=42, days=30)
 

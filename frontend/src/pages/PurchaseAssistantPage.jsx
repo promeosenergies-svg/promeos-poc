@@ -252,7 +252,10 @@ export default function PurchaseAssistantPage() {
 
   // Current offers
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const offers = useMemo(() => wizard.offers.length > 0 ? wizard.offers : isDemo ? DEMO_OFFERS : [], [wizard.offers, isDemo]);
+  const offers = useMemo(
+    () => (wizard.offers.length > 0 ? wizard.offers : isDemo ? DEMO_OFFERS : []),
+    [wizard.offers, isDemo]
+  );
 
   // ── Navigation ───────────────────────────────────────────────────
 
@@ -389,7 +392,14 @@ export default function PurchaseAssistantPage() {
       case 3:
         return <StepHorizon wizard={wizard} setWizard={setWizard} isExpert={isExpert} />;
       case 4:
-        return <StepOffers wizard={wizard} setWizard={setWizard} isDemo={isDemo} highlightOffer={deepLinkOffer} />;
+        return (
+          <StepOffers
+            wizard={wizard}
+            setWizard={setWizard}
+            isDemo={isDemo}
+            highlightOffer={deepLinkOffer}
+          />
+        );
       case 5:
         return (
           <StepResults
@@ -1010,7 +1020,10 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
   const [expanded, setExpanded] = useState(!!highlighted);
 
   return (
-    <div data-testid={highlighted ? 'offer-highlighted' : undefined} className={`bg-white rounded-lg border overflow-hidden ${highlighted ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`}>
+    <div
+      data-testid={highlighted ? 'offer-highlighted' : undefined}
+      className={`bg-white rounded-lg border overflow-hidden ${highlighted ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`}
+    >
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <span
@@ -1197,26 +1210,43 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
             </div>
           )}
           {offer.solarSlots && (
-            <div data-testid="offer-solar-slots" className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-1">
+            <div
+              data-testid="offer-solar-slots"
+              className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-1"
+            >
               <h5 className="text-xs font-semibold text-amber-800 flex items-center gap-1.5 mb-2">
                 <Sun size={12} /> Créneaux Heures Solaires
               </h5>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <span className="font-medium text-amber-700">Été :</span>{' '}
-                  <span className="text-gray-700">{offer.solarSlots.summer.start}–{offer.solarSlots.summer.end} ({offer.solarSlots.summer.days})</span>
+                  <span className="text-gray-700">
+                    {offer.solarSlots.summer.start}–{offer.solarSlots.summer.end} (
+                    {offer.solarSlots.summer.days})
+                  </span>
                   <br />
-                  <span className="text-gray-500">WE : {offer.solarSlots.summer.weekendStart}–{offer.solarSlots.summer.weekendEnd}</span>
+                  <span className="text-gray-500">
+                    WE : {offer.solarSlots.summer.weekendStart}–{offer.solarSlots.summer.weekendEnd}
+                  </span>
                 </div>
                 <div>
                   <span className="font-medium text-amber-700">Hiver :</span>{' '}
-                  <span className="text-gray-700">{offer.solarSlots.winter.start}–{offer.solarSlots.winter.end} ({offer.solarSlots.winter.days})</span>
+                  <span className="text-gray-700">
+                    {offer.solarSlots.winter.start}–{offer.solarSlots.winter.end} (
+                    {offer.solarSlots.winter.days})
+                  </span>
                   <br />
-                  <span className="text-gray-500">WE : {offer.solarSlots.winter.weekendStart}–{offer.solarSlots.winter.weekendEnd}</span>
+                  <span className="text-gray-500">
+                    WE : {offer.solarSlots.winter.weekendStart}–{offer.solarSlots.winter.weekendEnd}
+                  </span>
                 </div>
               </div>
-              <p data-testid="offer-no-penalty" className="text-green-700 mt-2 flex items-center gap-1">
-                <CheckCircle2 size={10} /> Pas de pénalité si vous ne décalez pas votre consommation.
+              <p
+                data-testid="offer-no-penalty"
+                className="text-green-700 mt-2 flex items-center gap-1"
+              >
+                <CheckCircle2 size={10} /> Pas de pénalité si vous ne décalez pas votre
+                consommation.
               </p>
             </div>
           )}
@@ -1272,7 +1302,11 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
         />
         <KpiCard
           label="Meilleur P50"
-          value={scoredOffers.length > 0 ? `${Math.min(...scoredOffers.map((s) => s.corridor?.p50 ?? Infinity)).toFixed(1)} EUR/MWh` : '—'}
+          value={
+            scoredOffers.length > 0
+              ? `${Math.min(...scoredOffers.map((s) => s.corridor?.p50 ?? Infinity)).toFixed(1)} EUR/MWh`
+              : '—'
+          }
           icon={<TrendingUp size={18} />}
         />
         <KpiCard
@@ -1321,13 +1355,19 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                       {STRUCTURE_LABELS[s.structure]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor?.p10?.toFixed(1) ?? '—'}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {s.corridor?.p10?.toFixed(1) ?? '—'}
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold">
                     {s.corridor?.p50?.toFixed(1) ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor?.p90?.toFixed(1) ?? '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.corridor?.tcoP50 != null ? Math.round(s.corridor.tcoP50).toLocaleString() : '—'}
+                    {s.corridor?.p90?.toFixed(1) ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {s.corridor?.tcoP50 != null
+                      ? Math.round(s.corridor.tcoP50).toLocaleString()
+                      : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.annualCostP50 != null ? Math.round(s.annualCostP50).toLocaleString() : '—'}

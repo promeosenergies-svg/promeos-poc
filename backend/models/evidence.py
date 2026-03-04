@@ -1,6 +1,7 @@
 """
 PROMEOS - Modèle Evidence (preuves de conformité)
 """
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
@@ -9,6 +10,7 @@ from .enums import TypeEvidence, StatutEvidence
 
 class Evidence(Base, TimestampMixin):
     """Preuve de conformité attachée à un site"""
+
     __tablename__ = "evidences"
 
     id = Column(Integer, primary_key=True, index=True)

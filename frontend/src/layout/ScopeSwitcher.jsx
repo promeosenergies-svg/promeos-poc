@@ -13,12 +13,22 @@ import useFloatingPortalPosition from '../hooks/useFloatingPortalPosition';
 
 export default function ScopeSwitcher() {
   const {
-    scope, org, portefeuille, portefeuilles, orgs, orgSites, scopeLabel, sitesLoading,
-    setOrg, setPortefeuille, setSite, resetScope,
+    scope,
+    org,
+    portefeuille,
+    portefeuilles,
+    orgs,
+    orgSites,
+    scopeLabel,
+    sitesLoading,
+    setOrg,
+    setPortefeuille,
+    setSite,
+    resetScope,
   } = useScope();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
-  const dropRef    = useRef(null);
+  const dropRef = useRef(null);
 
   // Premium positioning: scroll/resize/zoom auto-reposition
   const { style: dropStyle } = useFloatingPortalPosition({
@@ -69,7 +79,9 @@ export default function ScopeSwitcher() {
             <span>{portefeuille.nom}</span>
           </>
         )}
-        <span className="text-blue-400 text-xs">{sitesLoading ? 'Chargement\u2026' : scopeLabel}</span>
+        <span className="text-blue-400 text-xs">
+          {sitesLoading ? 'Chargement\u2026' : scopeLabel}
+        </span>
         <ChevronDown size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -85,89 +97,104 @@ export default function ScopeSwitcher() {
       )}
 
       {/* Dropdown — portal to document.body, position:fixed, z-[120], auto-repositions on scroll/resize */}
-      {open && createPortal(
-        <div
-          ref={dropRef}
-          role="listbox"
-          data-testid="scope-switcher-panel"
-          className="fixed w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-[80vh] overflow-y-auto z-[120]"
-          style={dropStyle}
-        >
-          {/* Org selector */}
-          <div className="px-3 py-1.5">
-            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Organisation</p>
-            {orgs.map((o) => (
-              <button
-                key={o.id}
-                onClick={() => { setOrg(o.id); }}
-                className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
+      {open &&
+        createPortal(
+          <div
+            ref={dropRef}
+            role="listbox"
+            data-testid="scope-switcher-panel"
+            className="fixed w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-[80vh] overflow-y-auto z-[120]"
+            style={dropStyle}
+          >
+            {/* Org selector */}
+            <div className="px-3 py-1.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Organisation</p>
+              {orgs.map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => {
+                    setOrg(o.id);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
                   ${o.id === scope.orgId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
-              >
-                <Building2 size={14} />
-                {o.nom}
-              </button>
-            ))}
-          </div>
+                >
+                  <Building2 size={14} />
+                  {o.nom}
+                </button>
+              ))}
+            </div>
 
-          <div className="border-t border-gray-100 my-1" />
+            <div className="border-t border-gray-100 my-1" />
 
-          {/* Portefeuille selector */}
-          <div className="px-3 py-1.5">
-            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Portefeuille</p>
-            <button
-              onClick={() => { setPortefeuille(null); setOpen(false); }}
-              className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
-                ${!scope.portefeuilleId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
-            >
-              <Briefcase size={14} />
-              Tous les portefeuilles
-            </button>
-            {portefeuilles.map((pf) => (
+            {/* Portefeuille selector */}
+            <div className="px-3 py-1.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Portefeuille</p>
               <button
-                key={pf.id}
-                onClick={() => { setPortefeuille(pf.id); setOpen(false); }}
+                onClick={() => {
+                  setPortefeuille(null);
+                  setOpen(false);
+                }}
                 className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
-                  ${pf.id === scope.portefeuilleId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                ${!scope.portefeuilleId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
               >
                 <Briefcase size={14} />
-                {pf.nom}
+                Tous les portefeuilles
               </button>
-            ))}
-          </div>
-
-          {/* Site selector — only shown when sites are available */}
-          {hasSites && (
-            <>
-              <div className="border-t border-gray-100 my-1" />
-              <div className="px-3 py-1.5">
-                <p className="text-xs font-semibold text-gray-400 uppercase mb-1">
-                  Site ({orgSites.length})
-                </p>
+              {portefeuilles.map((pf) => (
                 <button
-                  onClick={() => { setSite(null); setOpen(false); }}
+                  key={pf.id}
+                  onClick={() => {
+                    setPortefeuille(pf.id);
+                    setOpen(false);
+                  }}
                   className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
-                    ${!scope.siteId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                  ${pf.id === scope.portefeuilleId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
                 >
-                  <MapPin size={14} />
-                  Tous les sites
+                  <Briefcase size={14} />
+                  {pf.nom}
                 </button>
-                {orgSites.map((site) => (
+              ))}
+            </div>
+
+            {/* Site selector — only shown when sites are available */}
+            {hasSites && (
+              <>
+                <div className="border-t border-gray-100 my-1" />
+                <div className="px-3 py-1.5">
+                  <p className="text-xs font-semibold text-gray-400 uppercase mb-1">
+                    Site ({orgSites.length})
+                  </p>
                   <button
-                    key={site.id}
-                    onClick={() => { setSite(site.id); setOpen(false); }}
+                    onClick={() => {
+                      setSite(null);
+                      setOpen(false);
+                    }}
                     className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
-                      ${site.id === scope.siteId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                    ${!scope.siteId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
                   >
                     <MapPin size={14} />
-                    <span className="truncate">{site.nom}</span>
+                    Tous les sites
                   </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>,
-        document.body,
-      )}
+                  {orgSites.map((site) => (
+                    <button
+                      key={site.id}
+                      onClick={() => {
+                        setSite(site.id);
+                        setOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
+                      ${site.id === scope.siteId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                    >
+                      <MapPin size={14} />
+                      <span className="truncate">{site.nom}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

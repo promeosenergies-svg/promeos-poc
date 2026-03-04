@@ -23,10 +23,10 @@ export const EVIDENCE_RULES = {
     { sourceType: 'compliance', severity: 'critical', labelFR: 'Requis (conformité critique)' },
   ],
   recommend: [
-    { sourceType: 'compliance', severity: 'high',     labelFR: 'Recommandé (conformité élevée)' },
-    { sourceType: 'billing',   severity: 'critical',  labelFR: 'Recommandé (anomalie critique)' },
-    { sourceType: 'billing',   severity: 'high',      labelFR: 'Recommandé (anomalie élevée)' },
-    { sourceType: 'insight',   severity: 'critical',  labelFR: 'Recommandé (diagnostic critique)' },
+    { sourceType: 'compliance', severity: 'high', labelFR: 'Recommandé (conformité élevée)' },
+    { sourceType: 'billing', severity: 'critical', labelFR: 'Recommandé (anomalie critique)' },
+    { sourceType: 'billing', severity: 'high', labelFR: 'Recommandé (anomalie élevée)' },
+    { sourceType: 'insight', severity: 'critical', labelFR: 'Recommandé (diagnostic critique)' },
   ],
 };
 
@@ -44,7 +44,7 @@ export const EVIDENCE_RULES = {
 export function computeEvidenceRequirement({ sourceType, severity } = {}) {
   // 1. Check FORCE rules
   const forceMatch = EVIDENCE_RULES.force.find(
-    (r) => r.sourceType === sourceType && (r.severity === null || r.severity === severity),
+    (r) => r.sourceType === sourceType && (r.severity === null || r.severity === severity)
   );
   if (forceMatch) {
     return { required: true, lock: true, labelFR: forceMatch.labelFR };
@@ -52,7 +52,7 @@ export function computeEvidenceRequirement({ sourceType, severity } = {}) {
 
   // 2. Check RECOMMEND rules
   const recMatch = EVIDENCE_RULES.recommend.find(
-    (r) => r.sourceType === sourceType && (r.severity === null || r.severity === severity),
+    (r) => r.sourceType === sourceType && (r.severity === null || r.severity === severity)
   );
   if (recMatch) {
     return { required: true, lock: false, labelFR: recMatch.labelFR };
@@ -72,12 +72,12 @@ export function computeEvidenceRequirement({ sourceType, severity } = {}) {
 // ── Source Labels (FR) ──────────────────────────────────────────────────────
 
 export const SOURCE_LABELS_FR = {
-  compliance:  'Conformité',
+  compliance: 'Conformité',
   consumption: 'Consommation',
-  billing:     'Facturation',
-  purchase:    'Achats',
-  manual:      'Manuelle',
-  insight:     'Diagnostic',
+  billing: 'Facturation',
+  purchase: 'Achats',
+  manual: 'Manuelle',
+  insight: 'Diagnostic',
   lever_engine: 'Levier',
 };
 

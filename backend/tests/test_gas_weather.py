@@ -1,7 +1,9 @@
 """
 PROMEOS — Tests V11 C6: Gas Weather-Normalized DJU Model + Alerts
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,8 +23,9 @@ from services.gas_weather_service import _mock_dju, _linear_regression, compute_
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite:///:memory:", echo=False,
-                           connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
@@ -36,8 +39,11 @@ def seeded_gas_db(db):
     db.add(site)
     db.flush()
     meter = Meter(
-        site_id=site.id, meter_id="GAZ-DJU-001", name="Compteur Gaz",
-        energy_vector=EnergyVector.GAS, is_active=True,
+        site_id=site.id,
+        meter_id="GAZ-DJU-001",
+        name="Compteur Gaz",
+        energy_vector=EnergyVector.GAS,
+        is_active=True,
     )
     db.add(meter)
     db.flush()
@@ -52,11 +58,13 @@ def seeded_gas_db(db):
         daily_kwh = 20 + 5 * dju
         hourly_kwh = daily_kwh / 24
         for h in range(24):
-            db.add(MeterReading(
-                meter_id=meter.id,
-                timestamp=dt_base.replace(hour=h, minute=0, second=0),
-                value_kwh=round(hourly_kwh, 2),
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=dt_base.replace(hour=h, minute=0, second=0),
+                    value_kwh=round(hourly_kwh, 2),
+                )
+            )
     db.commit()
     return db, site.id
 
@@ -64,9 +72,13 @@ def seeded_gas_db(db):
 @pytest.fixture
 def client(seeded_gas_db):
     db, _ = seeded_gas_db
+
     def _override():
-        try: yield db
-        finally: pass
+        try:
+            yield db
+        finally:
+            pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -144,19 +156,24 @@ class TestGasWeatherService:
         db.add(site)
         db.flush()
         meter = Meter(
-            site_id=site.id, meter_id="GAZ-FEW", name="Compteur Peu",
-            energy_vector=EnergyVector.GAS, is_active=True,
+            site_id=site.id,
+            meter_id="GAZ-FEW",
+            name="Compteur Peu",
+            energy_vector=EnergyVector.GAS,
+            is_active=True,
         )
         db.add(meter)
         db.flush()
         # Only 10 readings (< 48 threshold)
         now = datetime.now(timezone.utc)
         for i in range(10):
-            db.add(MeterReading(
-                meter_id=meter.id,
-                timestamp=now - timedelta(hours=i),
-                value_kwh=5.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=now - timedelta(hours=i),
+                    value_kwh=5.0,
+                )
+            )
         db.commit()
         result = compute_weather_normalized(db, site.id, days=90)
         assert result["reason"] == "insufficient_data"

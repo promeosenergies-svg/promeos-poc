@@ -3,6 +3,7 @@ PROMEOS - Import de sites via CSV
 POST /api/import/sites  - Import massif (standalone, fonctionne si org existe)
 GET  /api/import/template - Retourne la structure CSV attendue
 """
+
 import io
 import csv
 from typing import Optional
@@ -19,8 +20,11 @@ from services.onboarding_service import create_site_from_data, provision_site
 router = APIRouter(prefix="/api/import", tags=["Import"])
 
 _ALLOWED_CONTENT_TYPES = {
-    "text/csv", "text/plain", "application/csv",
-    "application/vnd.ms-excel", "application/octet-stream",
+    "text/csv",
+    "text/plain",
+    "application/csv",
+    "application/vnd.ms-excel",
+    "application/octet-stream",
 }
 
 _CSV_COLUMNS = ["nom", "adresse", "code_postal", "ville", "surface_m2", "type", "naf_code"]
@@ -47,10 +51,24 @@ def get_csv_template():
         "delimiter": ",",
         "encoding": "utf-8",
         "example_rows": [
-            {"nom": "Bureau Paris", "adresse": "10 rue de la Paix", "code_postal": "75002",
-             "ville": "Paris", "surface_m2": "1200", "type": "bureau", "naf_code": ""},
-            {"nom": "Hotel Nice", "adresse": "Promenade des Anglais", "code_postal": "06000",
-             "ville": "Nice", "surface_m2": "800", "type": "", "naf_code": "55.10Z"},
+            {
+                "nom": "Bureau Paris",
+                "adresse": "10 rue de la Paix",
+                "code_postal": "75002",
+                "ville": "Paris",
+                "surface_m2": "1200",
+                "type": "bureau",
+                "naf_code": "",
+            },
+            {
+                "nom": "Hotel Nice",
+                "adresse": "Promenade des Anglais",
+                "code_postal": "06000",
+                "ville": "Nice",
+                "surface_m2": "800",
+                "type": "",
+                "naf_code": "55.10Z",
+            },
         ],
         "notes": [
             "Separateur: , ou ; (auto-detecte)",
@@ -138,12 +156,14 @@ async def import_sites_csv(
                 surface_m2=surface,
             )
             prov = provision_site(db, site)
-            imported.append({
-                "id": site.id,
-                "nom": site.nom,
-                "type": site.type.value,
-                **prov,
-            })
+            imported.append(
+                {
+                    "id": site.id,
+                    "nom": site.nom,
+                    "type": site.type.value,
+                    **prov,
+                }
+            )
 
         except Exception as e:
             errors.append({"row": row_num, "error": str(e)})

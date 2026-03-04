@@ -52,7 +52,13 @@ describe('DemoState: org tracking', () => {
 
   it('set_demo_org stores correct org_id and pack info', () => {
     const ds = makeDemoState();
-    ds.set_demo_org({ org_id: 42, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', sites_count: 10 });
+    ds.set_demo_org({
+      org_id: 42,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      sites_count: 10,
+    });
     expect(ds.get_demo_org_id()).toBe(42);
     const ctx = ds.get_demo_context();
     expect(ctx.org_nom).toBe('SCI Les Terrasses');
@@ -63,7 +69,13 @@ describe('DemoState: org tracking', () => {
 
   it('clear_demo_org resets all fields to null', () => {
     const ds = makeDemoState();
-    ds.set_demo_org({ org_id: 42, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', sites_count: 10 });
+    ds.set_demo_org({
+      org_id: 42,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      sites_count: 10,
+    });
     ds.clear_demo_org();
     expect(ds.get_demo_org_id()).toBeNull();
     expect(ds.get_demo_context().org_id).toBeNull();
@@ -72,8 +84,20 @@ describe('DemoState: org tracking', () => {
 
   it('re-seeding with different org updates correctly (no stale data)', () => {
     const ds = makeDemoState();
-    ds.set_demo_org({ org_id: 1, org_nom: 'Groupe HELIOS', pack: 'helios', size: 'S', sites_count: 5 });
-    ds.set_demo_org({ org_id: 42, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', sites_count: 10 });
+    ds.set_demo_org({
+      org_id: 1,
+      org_nom: 'Groupe HELIOS',
+      pack: 'helios',
+      size: 'S',
+      sites_count: 5,
+    });
+    ds.set_demo_org({
+      org_id: 42,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      sites_count: 10,
+    });
     expect(ds.get_demo_org_id()).toBe(42);
     expect(ds.get_demo_context().sites_count).toBe(10);
     expect(ds.get_demo_context().org_nom).toBe('SCI Les Terrasses');
@@ -92,12 +116,18 @@ describe('status-pack: scoped response', () => {
       pack: demoCtx.pack ?? orgFromDb.pack ?? null,
       size: demoCtx.size ?? null,
       sites_count: siteCount,
-      total_rows: siteCount * 365 * 48,  // indicative
+      total_rows: siteCount * 365 * 48, // indicative
     };
   }
 
   it('returns 10 for Tertiaire S pack', () => {
-    const ctx = { org_id: 42, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', sites_count: 10 };
+    const ctx = {
+      org_id: 42,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      sites_count: 10,
+    };
     const org = { id: 42, nom: 'SCI Les Terrasses' };
     const resp = buildStatusPackResponse(ctx, org, 10);
     expect(resp.sites_count).toBe(10);
@@ -141,37 +171,73 @@ describe('ScopeSummary: label logic', () => {
   }
 
   it('shows "Org — Tous les sites (10)" when siteId null and sitesCount=10', () => {
-    const label = buildScopeLabel({ orgNom: 'SCI Les Terrasses', scopeLabel: 'Tous les sites', sitesCount: 10, selectedSiteId: null });
+    const label = buildScopeLabel({
+      orgNom: 'SCI Les Terrasses',
+      scopeLabel: 'Tous les sites',
+      sitesCount: 10,
+      selectedSiteId: null,
+    });
     expect(label).toBe('SCI Les Terrasses — Tous les sites (10)');
   });
 
   it('shows "Org — Site : Hotel Ibis" when siteId set', () => {
-    const label = buildScopeLabel({ orgNom: 'SCI Les Terrasses', scopeLabel: 'Site\u00a0: Hotel Ibis', sitesCount: 10, selectedSiteId: 7 });
+    const label = buildScopeLabel({
+      orgNom: 'SCI Les Terrasses',
+      scopeLabel: 'Site\u00a0: Hotel Ibis',
+      sitesCount: 10,
+      selectedSiteId: 7,
+    });
     expect(label).toBe('SCI Les Terrasses — Site\u00a0: Hotel Ibis');
   });
 
   it('omits count when showCount=false', () => {
-    const label = buildScopeLabel({ orgNom: 'SCI Les Terrasses', scopeLabel: 'Tous les sites', sitesCount: 10, selectedSiteId: null, showCount: false });
+    const label = buildScopeLabel({
+      orgNom: 'SCI Les Terrasses',
+      scopeLabel: 'Tous les sites',
+      sitesCount: 10,
+      selectedSiteId: null,
+      showCount: false,
+    });
     expect(label).toBe('SCI Les Terrasses — Tous les sites');
   });
 
   it('omits count when sitesCount=0', () => {
-    const label = buildScopeLabel({ orgNom: 'SCI Les Terrasses', scopeLabel: 'Tous les sites', sitesCount: 0, selectedSiteId: null });
+    const label = buildScopeLabel({
+      orgNom: 'SCI Les Terrasses',
+      scopeLabel: 'Tous les sites',
+      sitesCount: 0,
+      selectedSiteId: null,
+    });
     expect(label).toBe('SCI Les Terrasses — Tous les sites');
   });
 
   it('returns null when org is missing', () => {
-    const label = buildScopeLabel({ orgNom: null, scopeLabel: 'Tous les sites', sitesCount: 10, selectedSiteId: null });
+    const label = buildScopeLabel({
+      orgNom: null,
+      scopeLabel: 'Tous les sites',
+      sitesCount: 10,
+      selectedSiteId: null,
+    });
     expect(label).toBeNull();
   });
 
   it('shows (20) for Tertiaire M pack', () => {
-    const label = buildScopeLabel({ orgNom: 'SCI Les Terrasses', scopeLabel: 'Tous les sites', sitesCount: 20, selectedSiteId: null });
+    const label = buildScopeLabel({
+      orgNom: 'SCI Les Terrasses',
+      scopeLabel: 'Tous les sites',
+      sitesCount: 20,
+      selectedSiteId: null,
+    });
     expect(label).toContain('(20)');
   });
 
   it('shows (5) for Helios S pack', () => {
-    const label = buildScopeLabel({ orgNom: 'Groupe HELIOS', scopeLabel: 'Tous les sites', sitesCount: 5, selectedSiteId: null });
+    const label = buildScopeLabel({
+      orgNom: 'Groupe HELIOS',
+      scopeLabel: 'Tous les sites',
+      sitesCount: 5,
+      selectedSiteId: null,
+    });
     expect(label).toContain('(5)');
   });
 });
@@ -211,8 +277,8 @@ describe('Page subtitles: use sitesCount (orgSites.length) not scopedSites.lengt
 
   it('sitesCount (orgSites.length=10) != scopedSites.length (1) when site selected → subtitle stays 10', () => {
     // Demonstrates why we use sitesCount not scopedSites.length for org-level subtitle
-    const sitesCount = 10;        // orgSites.length (org total)
-    const scopedCount = 1;        // scopedSites.length (filtered by siteId)
+    const sitesCount = 10; // orgSites.length (org total)
+    const scopedCount = 1; // scopedSites.length (filtered by siteId)
     const subtitleWithSitesCount = buildSubtitle('SCI Les Terrasses', sitesCount);
     const subtitleWithScopedCount = buildSubtitle('SCI Les Terrasses', scopedCount);
     // sitesCount gives the right org total (10)
@@ -228,16 +294,24 @@ describe('Scope coherence: apiSites vs mockSites precedence', () => {
   // Simulates the ScopeContext orgSites/scopedSites logic
   function computeOrgSites(apiSites, mockSites, effectiveOrgId) {
     if (apiSites.length > 0) return apiSites;
-    return mockSites.filter(s => s.org_id === effectiveOrgId);
+    return mockSites.filter((s) => s.org_id === effectiveOrgId);
   }
 
   function computeScopedSites(orgSites, siteId) {
-    if (siteId) return orgSites.filter(s => s.id === siteId);
+    if (siteId) return orgSites.filter((s) => s.id === siteId);
     return orgSites;
   }
 
-  const tertiaire10 = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, org_id: 42, nom: `Site ${i + 1}` }));
-  const heliosMock5 = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, org_id: 1, nom: `Site HELIOS ${i + 1}` }));
+  const tertiaire10 = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    org_id: 42,
+    nom: `Site ${i + 1}`,
+  }));
+  const heliosMock5 = Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    org_id: 1,
+    nom: `Site HELIOS ${i + 1}`,
+  }));
 
   it('apiSites loaded → orgSites = apiSites (10 for S pack)', () => {
     const orgSites = computeOrgSites(tertiaire10, heliosMock5, 42);
@@ -254,7 +328,7 @@ describe('Scope coherence: apiSites vs mockSites precedence', () => {
     const orgSites = computeOrgSites(tertiaire10, heliosMock5, 42);
     // Even though heliosMock5 has 5 entries, apiSites wins
     expect(orgSites).toHaveLength(10);
-    expect(orgSites.every(s => s.org_id === 42)).toBe(true);
+    expect(orgSites.every((s) => s.org_id === 42)).toBe(true);
   });
 
   it('siteId set → scopedSites = 1 site', () => {
@@ -272,13 +346,13 @@ describe('Scope coherence: apiSites vs mockSites precedence', () => {
 
   it('sitesCount = orgSites.length regardless of site selection', () => {
     const orgSites = computeOrgSites(tertiaire10, [], 42);
-    const sitesCount = orgSites.length;  // always org total
+    const sitesCount = orgSites.length; // always org total
     const scoped1 = computeScopedSites(orgSites, 3);
     const scoped2 = computeScopedSites(orgSites, null);
     // sitesCount stays 10 regardless
     expect(sitesCount).toBe(10);
-    expect(scoped1.length).toBe(1);   // filtered
-    expect(scoped2.length).toBe(10);  // unfiltered
+    expect(scoped1.length).toBe(1); // filtered
+    expect(scoped2.length).toBe(10); // unfiltered
   });
 });
 
@@ -332,8 +406,8 @@ describe('setApiScope: header injection logic', () => {
 
   it('after reset + re-seed: new org_id replaces old', () => {
     const api = makeApiScope();
-    api.setApiScope({ orgId: 1, siteId: null });   // Helios
-    api.setApiScope({ orgId: 42, siteId: null });   // Tertiaire
+    api.setApiScope({ orgId: 1, siteId: null }); // Helios
+    api.setApiScope({ orgId: 42, siteId: null }); // Tertiaire
     const headers = api.getHeaders('/api/dashboard');
     expect(headers['X-Org-Id']).toBe('42');
   });

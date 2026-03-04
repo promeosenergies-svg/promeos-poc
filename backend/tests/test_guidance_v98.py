@@ -2,13 +2,18 @@
 test_guidance_v98.py — V98 Grand Public Guidance Layer tests
 Tests: translation dicts, NBA determinism, evidence summary, endpoint.
 """
+
 import pytest
 import inspect
 from services.reconciliation_service import (
-    reconcile_site, reconcile_portfolio,
-    get_evidence_pack, get_evidence_summary,
-    CHECK_TRANSLATION, ACTION_TRANSLATION,
-    _CHECK_PRIORITY, _SCORE_GAIN_PER_CHECK,
+    reconcile_site,
+    reconcile_portfolio,
+    get_evidence_pack,
+    get_evidence_summary,
+    CHECK_TRANSLATION,
+    ACTION_TRANSLATION,
+    _CHECK_PRIORITY,
+    _SCORE_GAIN_PER_CHECK,
     _compute_next_best_action,
 )
 
@@ -17,8 +22,12 @@ class TestCheckTranslation:
     """V98 A: CHECK_TRANSLATION covers all 6 checks."""
 
     EXPECTED_CHECKS = [
-        "has_delivery_points", "has_active_contract", "has_recent_invoices",
-        "period_coherence", "energy_type_match", "has_payment_rule",
+        "has_delivery_points",
+        "has_active_contract",
+        "has_recent_invoices",
+        "period_coherence",
+        "energy_type_match",
+        "has_payment_rule",
     ]
 
     def test_all_checks_translated(self):
@@ -45,8 +54,12 @@ class TestActionTranslation:
     """V98 A: ACTION_TRANSLATION covers all fix actions."""
 
     EXPECTED_ACTIONS = [
-        "create_delivery_point", "extend_contract", "create_contract",
-        "adjust_contract_dates", "align_energy_type", "create_payment_rule",
+        "create_delivery_point",
+        "extend_contract",
+        "create_contract",
+        "adjust_contract_dates",
+        "align_energy_type",
+        "create_payment_rule",
         "navigate_import",
     ]
 
@@ -102,9 +115,13 @@ class TestComputeNextBestAction:
 
     def test_single_fail_selected(self):
         checks = [
-            self._make_check("has_active_contract", "fail", [
-                {"action": "create_contract", "label_fr": "Créer", "label_simple": "Créer un contrat"},
-            ]),
+            self._make_check(
+                "has_active_contract",
+                "fail",
+                [
+                    {"action": "create_contract", "label_fr": "Créer", "label_simple": "Créer un contrat"},
+                ],
+            ),
             self._make_check("has_delivery_points", "ok"),
         ]
         nba = _compute_next_best_action(checks, 50)
@@ -115,12 +132,20 @@ class TestComputeNextBestAction:
 
     def test_fail_beats_warn(self):
         checks = [
-            self._make_check("has_payment_rule", "warn", [
-                {"action": "create_payment_rule", "label_fr": "Créer règle"},
-            ]),
-            self._make_check("has_delivery_points", "fail", [
-                {"action": "create_delivery_point", "label_fr": "Créer PdL"},
-            ]),
+            self._make_check(
+                "has_payment_rule",
+                "warn",
+                [
+                    {"action": "create_payment_rule", "label_fr": "Créer règle"},
+                ],
+            ),
+            self._make_check(
+                "has_delivery_points",
+                "fail",
+                [
+                    {"action": "create_delivery_point", "label_fr": "Créer PdL"},
+                ],
+            ),
         ]
         nba = _compute_next_best_action(checks, 33)
         assert nba["check_id"] == "has_delivery_points"
@@ -128,12 +153,20 @@ class TestComputeNextBestAction:
     def test_priority_order_within_same_severity(self):
         """Two fails: has_active_contract (priority 0) beats has_recent_invoices (priority 2)."""
         checks = [
-            self._make_check("has_recent_invoices", "fail", [
-                {"action": "navigate_import", "label_fr": "Importer"},
-            ]),
-            self._make_check("has_active_contract", "fail", [
-                {"action": "create_contract", "label_fr": "Créer contrat"},
-            ]),
+            self._make_check(
+                "has_recent_invoices",
+                "fail",
+                [
+                    {"action": "navigate_import", "label_fr": "Importer"},
+                ],
+            ),
+            self._make_check(
+                "has_active_contract",
+                "fail",
+                [
+                    {"action": "create_contract", "label_fr": "Créer contrat"},
+                ],
+            ),
         ]
         nba = _compute_next_best_action(checks, 0)
         assert nba["check_id"] == "has_active_contract"
@@ -142,34 +175,62 @@ class TestComputeNextBestAction:
         """Check with no fix_actions should be skipped."""
         checks = [
             self._make_check("has_active_contract", "fail", []),  # no fix
-            self._make_check("has_delivery_points", "fail", [
-                {"action": "create_delivery_point", "label_fr": "Créer PdL"},
-            ]),
+            self._make_check(
+                "has_delivery_points",
+                "fail",
+                [
+                    {"action": "create_delivery_point", "label_fr": "Créer PdL"},
+                ],
+            ),
         ]
         nba = _compute_next_best_action(checks, 0)
         assert nba["check_id"] == "has_delivery_points"
 
     def test_nba_has_required_keys(self):
         checks = [
-            self._make_check("has_active_contract", "fail", [
-                {"action": "create_contract", "label_fr": "Créer", "label_simple": "Créer un contrat",
-                 "confirmation": "Un contrat sera créé."},
-            ]),
+            self._make_check(
+                "has_active_contract",
+                "fail",
+                [
+                    {
+                        "action": "create_contract",
+                        "label_fr": "Créer",
+                        "label_simple": "Créer un contrat",
+                        "confirmation": "Un contrat sera créé.",
+                    },
+                ],
+            ),
         ]
         nba = _compute_next_best_action(checks, 0)
-        required_keys = {"check_id", "label", "reason", "action", "action_label",
-                         "expected_score_gain", "endpoint", "payload"}
+        required_keys = {
+            "check_id",
+            "label",
+            "reason",
+            "action",
+            "action_label",
+            "expected_score_gain",
+            "endpoint",
+            "payload",
+        }
         assert required_keys.issubset(nba.keys())
 
     def test_nba_deterministic_same_input(self):
         """Same input must yield same output every time."""
         checks = [
-            self._make_check("has_recent_invoices", "warn", [
-                {"action": "navigate_import", "label_fr": "Importer"},
-            ]),
-            self._make_check("has_payment_rule", "warn", [
-                {"action": "create_payment_rule", "label_fr": "Créer règle"},
-            ]),
+            self._make_check(
+                "has_recent_invoices",
+                "warn",
+                [
+                    {"action": "navigate_import", "label_fr": "Importer"},
+                ],
+            ),
+            self._make_check(
+                "has_payment_rule",
+                "warn",
+                [
+                    {"action": "create_payment_rule", "label_fr": "Créer règle"},
+                ],
+            ),
         ]
         results = [_compute_next_best_action(checks, 66) for _ in range(10)]
         assert all(r["check_id"] == results[0]["check_id"] for r in results)
@@ -239,16 +300,13 @@ class TestEvidenceSummaryEndpoint:
 
     def test_endpoint_exists(self):
         from routes.patrimoine import get_reconciliation_evidence_summary
+
         assert callable(get_reconciliation_evidence_summary)
 
     def test_routes_import_get_evidence_summary(self):
-        source = open(
-            inspect.getfile(__import__('routes.patrimoine', fromlist=['patrimoine']))
-        ).read()
+        source = open(inspect.getfile(__import__("routes.patrimoine", fromlist=["patrimoine"]))).read()
         assert "get_evidence_summary" in source
 
     def test_routes_has_evidence_summary_path(self):
-        source = open(
-            inspect.getfile(__import__('routes.patrimoine', fromlist=['patrimoine']))
-        ).read()
+        source = open(inspect.getfile(__import__("routes.patrimoine", fromlist=["patrimoine"]))).read()
         assert "evidence/summary" in source

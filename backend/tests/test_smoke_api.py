@@ -2,8 +2,10 @@
 PROMEOS - Smoke Tests: OpenAPI schema + router mount verification.
 Fast (<2s), no running server needed (uses TestClient).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -31,8 +33,7 @@ class TestOpenAPISmoke:
         paths = list(schema["paths"].keys())
         tertiaire_paths = [p for p in paths if p.startswith("/api/tertiaire")]
         assert len(tertiaire_paths) > 0, (
-            "Router tertiaire not mounted — no paths starting with /api/tertiaire "
-            f"(total paths: {len(paths)})"
+            f"Router tertiaire not mounted — no paths starting with /api/tertiaire (total paths: {len(paths)})"
         )
 
     def test_billing_router_mounted(self, client):

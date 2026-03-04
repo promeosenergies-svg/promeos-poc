@@ -22,6 +22,7 @@ Notes techniques :
   - On simule "deux appels successifs" via deux appels HTTP via TestClient dans
     le même test, sans modifier la DB entre les deux.
 """
+
 import pytest
 from datetime import date
 from fastapi.testclient import TestClient
@@ -31,10 +32,21 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, TypeUsage,
-    DeliveryPointStatus, DeliveryPointEnergyType, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    TypeUsage,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
@@ -42,6 +54,7 @@ import services.patrimoine_portfolio_cache as _cache_mod
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(autouse=True)
 def reset_cache():
@@ -68,6 +81,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -75,6 +89,7 @@ def client(db):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_org(db, nom):
     org = Organisation(nom=nom, actif=True)
@@ -92,8 +107,11 @@ def _make_org(db, nom):
 
 def _make_site_with_mismatch(db, pf, nom="Site Mismatch"):
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        surface_m2=5000.0, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        surface_m2=5000.0,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -102,28 +120,42 @@ def _make_site_with_mismatch(db, pf, nom="Site Mismatch"):
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="12345678901234", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
 
 def _make_clean_site(db, pf, nom="Site Clean"):
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        surface_m2=1000.0, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        surface_m2=1000.0,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -132,25 +164,37 @@ def _make_clean_site(db, pf, nom="Site Clean"):
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="99999999999999", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="99999999999999",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-C{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="Engie",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-C{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="Engie",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
 
 # ── Tests cache unitaires ─────────────────────────────────────────────────────
+
 
 class TestPortfolioCacheUnit:
     def test_get_none_when_empty(self):
@@ -203,6 +247,7 @@ class TestPortfolioCacheUnit:
 
 # ── Tests trend endpoint (intégration) ───────────────────────────────────────
 
+
 class TestPortfolioTrendV62:
     def test_trend_none_on_first_call(self, client, db):
         """Premier appel → pas de snapshot → trend est null."""
@@ -216,7 +261,7 @@ class TestPortfolioTrendV62:
         """Deuxième appel → snapshot disponible → trend non-null."""
         _, pf = _make_org(db, "OrgTrendSecond")
         _make_site_with_mismatch(db, pf)
-        client.get("/api/patrimoine/portfolio-summary")   # 1er : peuple cache
+        client.get("/api/patrimoine/portfolio-summary")  # 1er : peuple cache
         data = client.get("/api/patrimoine/portfolio-summary").json()  # 2ème
         assert data["trend"] is not None
 
@@ -254,11 +299,14 @@ class TestPortfolioTrendV62:
         current_risk = first["total_estimated_risk_eur"]
         org_id = first["scope"]["org_id"]
         # Forcer un snapshot précédent avec un risque inférieur (→ delta > EPS → "up")
-        _cache_mod.set_snapshot(org_id, {
-            "computed_at": "2026-01-01T00:00:00Z",
-            "total_estimated_risk_eur": max(0.0, current_risk - 5000.0),
-            "sites_count": 1,
-        })
+        _cache_mod.set_snapshot(
+            org_id,
+            {
+                "computed_at": "2026-01-01T00:00:00Z",
+                "total_estimated_risk_eur": max(0.0, current_risk - 5000.0),
+                "sites_count": 1,
+            },
+        )
         data = client.get("/api/patrimoine/portfolio-summary").json()
         assert data["trend"] is not None
         assert data["trend"]["direction"] == "up"
@@ -272,11 +320,14 @@ class TestPortfolioTrendV62:
         current_risk = first["total_estimated_risk_eur"]
         org_id = first["scope"]["org_id"]
         # Forcer snapshot avec risque plus élevé (→ delta < -EPS → "down")
-        _cache_mod.set_snapshot(org_id, {
-            "computed_at": "2026-01-01T00:00:00Z",
-            "total_estimated_risk_eur": current_risk + 5000.0,
-            "sites_count": 1,
-        })
+        _cache_mod.set_snapshot(
+            org_id,
+            {
+                "computed_at": "2026-01-01T00:00:00Z",
+                "total_estimated_risk_eur": current_risk + 5000.0,
+                "sites_count": 1,
+            },
+        )
         data = client.get("/api/patrimoine/portfolio-summary").json()
         assert data["trend"] is not None
         assert data["trend"]["direction"] == "down"
@@ -309,8 +360,8 @@ class TestPortfolioTrendV62:
         _, pf = _make_org(db, "OrgSiteFilter")
         site = _make_site_with_mismatch(db, pf)
         url = f"/api/patrimoine/portfolio-summary?site_id={site.id}"
-        client.get(url)           # 1er appel avec filtre
-        data = client.get(url).json()   # 2ème
+        client.get(url)  # 1er appel avec filtre
+        data = client.get(url).json()  # 2ème
         assert data["trend"] is None
 
     def test_trend_none_with_portefeuille_filter(self, client, db):
@@ -328,11 +379,14 @@ class TestPortfolioTrendV62:
         # avec StaticPool partagé. On teste l'isolation au niveau du module cache :
         org_a_id = 100
         org_b_id = 200
-        _cache_mod.set_snapshot(org_a_id, {
-            "computed_at": "2026-01-01T00:00:00Z",
-            "total_estimated_risk_eur": 1000.0,
-            "sites_count": 2,
-        })
+        _cache_mod.set_snapshot(
+            org_a_id,
+            {
+                "computed_at": "2026-01-01T00:00:00Z",
+                "total_estimated_risk_eur": 1000.0,
+                "sites_count": 2,
+            },
+        )
         assert _cache_mod.get_prev_snapshot(org_b_id) is None
         _cache_mod.clear_snapshot(org_a_id)
         # B non affecté (déjà None, stable)

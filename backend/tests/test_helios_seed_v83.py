@@ -3,8 +3,10 @@ PROMEOS — V83 HELIOS Seed Tests
 Validates: TOUSchedule, NotificationEvent, hourly readings, monitoring.
 All generated purely via SeedOrchestrator in a fresh SQLite in-memory DB.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -20,6 +22,7 @@ from models import Base
 # Fixtures
 # ═══════════════════════════════════════════════
 
+
 @pytest.fixture(scope="module")
 def seeded_db():
     """Create a fresh in-memory DB and run the helios pack seed once."""
@@ -33,6 +36,7 @@ def seeded_db():
     session = sessionmaker(bind=engine)()
 
     from services.demo_seed.orchestrator import SeedOrchestrator
+
     orch = SeedOrchestrator(session)
     result = orch.seed(pack="helios", size="S", rng_seed=42)
 
@@ -45,6 +49,7 @@ def seeded_db():
 # A. TOUSchedule
 # ═══════════════════════════════════════════════
 
+
 class TestTOUSchedule:
     """V83: 1 active TOUSchedule per HELIOS site."""
 
@@ -52,6 +57,7 @@ class TestTOUSchedule:
         """1 TOUSchedule per site."""
         db, result = seeded_db
         from models.tou_schedule import TOUSchedule
+
         sites_count = result["sites_count"]
         tou_count = db.query(TOUSchedule).count()
         assert tou_count == sites_count, f"Expected {sites_count} TOU schedules, got {tou_count}"
@@ -60,6 +66,7 @@ class TestTOUSchedule:
         """All seeded TOUSchedules are is_active=True."""
         db, _ = seeded_db
         from models.tou_schedule import TOUSchedule
+
         inactive = db.query(TOUSchedule).filter(TOUSchedule.is_active == False).count()
         assert inactive == 0
 
@@ -67,6 +74,7 @@ class TestTOUSchedule:
         """windows_json contains both HP and HC periods."""
         db, _ = seeded_db
         from models.tou_schedule import TOUSchedule
+
         first = db.query(TOUSchedule).first()
         assert first is not None
         windows = json.loads(first.windows_json)
@@ -78,6 +86,7 @@ class TestTOUSchedule:
         """price_hp_eur_kwh and price_hc_eur_kwh are set and HP > HC."""
         db, _ = seeded_db
         from models.tou_schedule import TOUSchedule
+
         for tou in db.query(TOUSchedule).all():
             assert tou.price_hp_eur_kwh is not None
             assert tou.price_hc_eur_kwh is not None
@@ -94,6 +103,7 @@ class TestTOUSchedule:
 # B. Notifications
 # ═══════════════════════════════════════════════
 
+
 class TestNotifications:
     """V83: 8 NotificationEvent entries with varied types and statuses."""
 
@@ -101,6 +111,7 @@ class TestNotifications:
         """Exactly 8 NotificationEvent created."""
         db, _ = seeded_db
         from models.notification import NotificationEvent
+
         count = db.query(NotificationEvent).count()
         assert count == 8, f"Expected 8 notifications, got {count}"
 
@@ -109,9 +120,8 @@ class TestNotifications:
         db, _ = seeded_db
         from models.notification import NotificationEvent
         from models.enums import NotificationStatus
-        new_count = db.query(NotificationEvent).filter(
-            NotificationEvent.status == NotificationStatus.NEW
-        ).count()
+
+        new_count = db.query(NotificationEvent).filter(NotificationEvent.status == NotificationStatus.NEW).count()
         assert new_count >= 4, f"Expected >= 4 unread, got {new_count}"
 
     def test_notifications_have_read_status(self, seeded_db):
@@ -119,18 +129,16 @@ class TestNotifications:
         db, _ = seeded_db
         from models.notification import NotificationEvent
         from models.enums import NotificationStatus
-        read_count = db.query(NotificationEvent).filter(
-            NotificationEvent.status == NotificationStatus.READ
-        ).count()
+
+        read_count = db.query(NotificationEvent).filter(NotificationEvent.status == NotificationStatus.READ).count()
         assert read_count >= 1
 
     def test_notifications_have_site_id(self, seeded_db):
         """Most notifications are linked to a site."""
         db, _ = seeded_db
         from models.notification import NotificationEvent
-        with_site = db.query(NotificationEvent).filter(
-            NotificationEvent.site_id.isnot(None)
-        ).count()
+
+        with_site = db.query(NotificationEvent).filter(NotificationEvent.site_id.isnot(None)).count()
         assert with_site >= 6, f"Expected >= 6 with site_id, got {with_site}"
 
     def test_notifications_severities_vary(self, seeded_db):
@@ -138,26 +146,23 @@ class TestNotifications:
         db, _ = seeded_db
         from models.notification import NotificationEvent
         from models.enums import NotificationSeverity
-        sevs = {
-            r[0] for r in
-            db.query(NotificationEvent.severity).distinct().all()
-        }
+
+        sevs = {r[0] for r in db.query(NotificationEvent.severity).distinct().all()}
         assert len(sevs) >= 2, f"Expected >= 2 severity levels, got {sevs}"
 
     def test_notifications_source_types_vary(self, seeded_db):
         """Multiple source types present (billing, compliance, consumption, action_hub)."""
         db, _ = seeded_db
         from models.notification import NotificationEvent
-        types = {
-            r[0] for r in
-            db.query(NotificationEvent.source_type).distinct().all()
-        }
+
+        types = {r[0] for r in db.query(NotificationEvent.source_type).distinct().all()}
         assert len(types) >= 3, f"Expected >= 3 source types, got {types}"
 
     def test_notification_batch_created(self, seeded_db):
         """A NotificationBatch record exists for the seed run."""
         db, _ = seeded_db
         from models.notification import NotificationBatch
+
         batch = db.query(NotificationBatch).first()
         assert batch is not None
         assert batch.triggered_by == "demo_seed"
@@ -173,6 +178,7 @@ class TestNotifications:
 # C. Hourly readings for HELIOS
 # ═══════════════════════════════════════════════
 
+
 class TestHourlyReadingsHelios:
     """V83: HELIOS now has both monthly and hourly MeterReadings."""
 
@@ -181,9 +187,8 @@ class TestHourlyReadingsHelios:
         db, _ = seeded_db
         from models import MeterReading
         from models.energy_models import FrequencyType
-        hourly_count = db.query(MeterReading).filter(
-            MeterReading.frequency == FrequencyType.HOURLY
-        ).count()
+
+        hourly_count = db.query(MeterReading).filter(MeterReading.frequency == FrequencyType.HOURLY).count()
         assert hourly_count > 0, "No HOURLY readings found for HELIOS"
 
     def test_monthly_readings_still_exist(self, seeded_db):
@@ -191,9 +196,8 @@ class TestHourlyReadingsHelios:
         db, _ = seeded_db
         from models import MeterReading
         from models.energy_models import FrequencyType
-        monthly_count = db.query(MeterReading).filter(
-            MeterReading.frequency == FrequencyType.MONTHLY
-        ).count()
+
+        monthly_count = db.query(MeterReading).filter(MeterReading.frequency == FrequencyType.MONTHLY).count()
         assert monthly_count > 0, "MONTHLY readings were lost"
 
     def test_hourly_count_sufficient_for_monitoring(self, seeded_db):
@@ -201,14 +205,11 @@ class TestHourlyReadingsHelios:
         db, result = seeded_db
         from models import Meter, MeterReading
         from models.energy_models import FrequencyType
+
         sites_count = result["sites_count"]
-        total_hourly = db.query(MeterReading).filter(
-            MeterReading.frequency == FrequencyType.HOURLY
-        ).count()
+        total_hourly = db.query(MeterReading).filter(MeterReading.frequency == FrequencyType.HOURLY).count()
         # At least 720 readings per site (30 days × 24h)
-        assert total_hourly >= sites_count * 720, (
-            f"Expected >= {sites_count * 720} hourly readings, got {total_hourly}"
-        )
+        assert total_hourly >= sites_count * 720, f"Expected >= {sites_count * 720} hourly readings, got {total_hourly}"
 
     def test_seed_result_has_hourly_count(self, seeded_db):
         """Seed result includes hourly_readings_count for HELIOS."""
@@ -221,6 +222,7 @@ class TestHourlyReadingsHelios:
 # D. Monitoring now active for HELIOS
 # ═══════════════════════════════════════════════
 
+
 class TestMonitoringHelios:
     """V83: MonitoringSnapshot + alerts now generated for HELIOS."""
 
@@ -228,6 +230,7 @@ class TestMonitoringHelios:
         """At least 1 MonitoringSnapshot generated for HELIOS sites."""
         db, _ = seeded_db
         from models import MonitoringSnapshot
+
         count = db.query(MonitoringSnapshot).count()
         assert count >= 1, f"Expected >= 1 snapshot, got {count}"
 
@@ -235,6 +238,7 @@ class TestMonitoringHelios:
         """At least 1 MonitoringAlert generated."""
         db, _ = seeded_db
         from models import MonitoringAlert
+
         count = db.query(MonitoringAlert).count()
         assert count >= 1, f"Expected >= 1 alert, got {count}"
 
@@ -242,6 +246,7 @@ class TestMonitoringHelios:
         """At least 1 ConsumptionInsight generated."""
         db, _ = seeded_db
         from models import ConsumptionInsight
+
         count = db.query(ConsumptionInsight).count()
         assert count >= 1, f"Expected >= 1 insight, got {count}"
 

@@ -1,6 +1,7 @@
 """
 PROMEOS Routes - Connectors endpoints
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
@@ -26,12 +27,7 @@ def test_connector(name: str):
 
 
 @router.post("/{name}/sync")
-def sync_connector(
-    name: str,
-    object_type: str,
-    object_id: int,
-    db: Session = Depends(get_db)
-):
+def sync_connector(name: str, object_type: str, object_id: int, db: Session = Depends(get_db)):
     """Declenche la synchro d'un connecteur."""
     connector = get_connector(name)
     if not connector:
@@ -43,7 +39,7 @@ def sync_connector(
             "connector": name,
             "object_type": object_type,
             "object_id": object_id,
-            "datapoints_created": len(datapoints)
+            "datapoints_created": len(datapoints),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -70,12 +66,14 @@ def validate_connector_mapping(
             if isinstance(r, dict):
                 sample.append(r)
             elif hasattr(r, "__dict__"):
-                sample.append({
-                    "metric": getattr(r, "metric", None),
-                    "value": getattr(r, "value", None),
-                    "unit": getattr(r, "unit", None),
-                    "ts_start": str(getattr(r, "ts_start", "")),
-                })
+                sample.append(
+                    {
+                        "metric": getattr(r, "metric", None),
+                        "value": getattr(r, "value", None),
+                        "unit": getattr(r, "unit", None),
+                        "ts_start": str(getattr(r, "ts_start", "")),
+                    }
+                )
             else:
                 sample.append({"raw": str(r)})
     except Exception:

@@ -5,14 +5,23 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, ChevronRight, AlertCircle, Lightbulb, Plus, Loader2, Sparkles, Check } from 'lucide-react';
+import {
+  UserCheck,
+  ChevronRight,
+  AlertCircle,
+  Lightbulb,
+  Plus,
+  Loader2,
+  Sparkles,
+  Check,
+} from 'lucide-react';
 import { getSegmentationNextStep, createActionFromRecommendation } from '../services/api';
 import { Badge } from '../ui';
 
 const CONFIDENCE_CFG = {
-  high:   { color: 'bg-green-500', label: 'Eleve',  badge: 'ok' },
-  medium: { color: 'bg-amber-500', label: 'Moyen',  badge: 'warn' },
-  low:    { color: 'bg-red-400',   label: 'Faible', badge: 'crit' },
+  high: { color: 'bg-green-500', label: 'Eleve', badge: 'ok' },
+  medium: { color: 'bg-amber-500', label: 'Moyen', badge: 'warn' },
+  low: { color: 'bg-red-400', label: 'Faible', badge: 'crit' },
 };
 
 function getConfidenceLevel(score) {
@@ -59,7 +68,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
           <span className="text-sm">Profil non detecte</span>
         </div>
         <button
-          onClick={() => onSegmentationClick ? onSegmentationClick() : navigate('/segmentation')}
+          onClick={() => (onSegmentationClick ? onSegmentationClick() : navigate('/segmentation'))}
           className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
         >
           Configurer <ChevronRight size={14} />
@@ -114,7 +123,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
           <h3 className="text-sm font-semibold text-gray-700">Profil energie</h3>
         </div>
         <button
-          onClick={() => onSegmentationClick ? onSegmentationClick() : navigate('/segmentation')}
+          onClick={() => (onSegmentationClick ? onSegmentationClick() : navigate('/segmentation'))}
           className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition"
         >
           Affiner <ChevronRight size={14} />
@@ -179,9 +188,11 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
                   className="p-1 rounded hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition disabled:opacity-50"
                   title="Creer une action"
                 >
-                  {creatingAction === r.key
-                    ? <Loader2 size={12} className="animate-spin" />
-                    : <Plus size={12} />}
+                  {creatingAction === r.key ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Plus size={12} />
+                  )}
                 </button>
               </li>
             ))}

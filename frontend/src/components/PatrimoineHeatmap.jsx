@@ -19,59 +19,57 @@
  */
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  AlertTriangle, Search, Upload, ChevronDown, X, LayoutGrid,
-} from 'lucide-react';
+import { AlertTriangle, Search, Upload, ChevronDown, X, LayoutGrid } from 'lucide-react';
 
 /* ── Constantes ─────────────────────────────────────────────────────────── */
 
 const FRAMEWORK_LABEL = {
   DECRET_TERTIAIRE: 'Décret Tertiaire',
-  FACTURATION:      'Facturation',
-  BACS:             'BACS',
+  FACTURATION: 'Facturation',
+  BACS: 'BACS',
 };
 
 const FRAMEWORK_CHIP = {
   DECRET_TERTIAIRE: 'bg-purple-50 text-purple-700 border-purple-200',
-  FACTURATION:      'bg-blue-50 text-blue-700 border-blue-200',
-  BACS:             'bg-teal-50 text-teal-700 border-teal-200',
+  FACTURATION: 'bg-blue-50 text-blue-700 border-blue-200',
+  BACS: 'bg-teal-50 text-teal-700 border-teal-200',
 };
 
 const SEV_BADGE = {
   CRITICAL: 'bg-red-100 text-red-700',
-  HIGH:     'bg-orange-100 text-orange-700',
-  MEDIUM:   'bg-amber-100 text-amber-700',
-  LOW:      'bg-yellow-100 text-yellow-700',
+  HIGH: 'bg-orange-100 text-orange-700',
+  MEDIUM: 'bg-amber-100 text-amber-700',
+  LOW: 'bg-yellow-100 text-yellow-700',
 };
 
 // Couleur tile selon niveau de risque/sévérité
 const COLOR_CLASSES = {
-  critical: { card: 'bg-red-50 border-red-200',     bar: 'bg-red-500',    risk: 'text-red-600'    },
-  high:     { card: 'bg-orange-50 border-orange-200', bar: 'bg-orange-400', risk: 'text-orange-600' },
-  medium:   { card: 'bg-amber-50 border-amber-200',  bar: 'bg-amber-400',  risk: 'text-amber-600'  },
-  low:      { card: 'bg-yellow-50 border-yellow-200', bar: 'bg-yellow-300', risk: 'text-yellow-700' },
-  none:     { card: 'bg-gray-50 border-gray-200',    bar: 'bg-green-300',  risk: 'text-gray-500'   },
+  critical: { card: 'bg-red-50 border-red-200', bar: 'bg-red-500', risk: 'text-red-600' },
+  high: { card: 'bg-orange-50 border-orange-200', bar: 'bg-orange-400', risk: 'text-orange-600' },
+  medium: { card: 'bg-amber-50 border-amber-200', bar: 'bg-amber-400', risk: 'text-amber-600' },
+  low: { card: 'bg-yellow-50 border-yellow-200', bar: 'bg-yellow-300', risk: 'text-yellow-700' },
+  none: { card: 'bg-gray-50 border-gray-200', bar: 'bg-green-300', risk: 'text-gray-500' },
 };
 
 const FW_OPTIONS = [
-  { value: '',                label: 'Tous frameworks'  },
+  { value: '', label: 'Tous frameworks' },
   { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
-  { value: 'FACTURATION',      label: 'Facturation'      },
-  { value: 'BACS',             label: 'BACS'             },
+  { value: 'FACTURATION', label: 'Facturation' },
+  { value: 'BACS', label: 'BACS' },
 ];
 
 const SEV_OPTIONS = [
-  { value: '',         label: 'Toute sévérité' },
-  { value: 'CRITICAL', label: 'Critique'       },
-  { value: 'HIGH',     label: 'Élevée'         },
-  { value: 'MEDIUM',   label: 'Moyenne'        },
-  { value: 'LOW',      label: 'Faible'         },
+  { value: '', label: 'Toute sévérité' },
+  { value: 'CRITICAL', label: 'Critique' },
+  { value: 'HIGH', label: 'Élevée' },
+  { value: 'MEDIUM', label: 'Moyenne' },
+  { value: 'LOW', label: 'Faible' },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'risk',      label: 'Risque ↓'         },
-  { value: 'anomalies', label: 'Anomalies ↓'      },
-  { value: 'score',     label: 'Score qualité ↑'  },
+  { value: 'risk', label: 'Risque ↓' },
+  { value: 'anomalies', label: 'Anomalies ↓' },
+  { value: 'score', label: 'Score qualité ↑' },
 ];
 
 /* ── Utilitaires ─────────────────────────────────────────────────────────── */
@@ -79,7 +77,7 @@ const SORT_OPTIONS = [
 function fmtRisk(eur) {
   if (!eur || eur <= 0) return '0 €';
   if (eur >= 1_000_000) return `~${(eur / 1_000_000).toFixed(1)} M€`;
-  if (eur >= 1_000)     return `~${(eur / 1_000).toFixed(0)} k€`;
+  if (eur >= 1_000) return `~${(eur / 1_000).toFixed(0)} k€`;
   return `~${Math.round(eur)} €`;
 }
 
@@ -89,10 +87,10 @@ function fmtRisk(eur) {
  *  - Sinon → fallback sur max_severity
  */
 function getTileColorKey(tile, allTiles) {
-  const riskyTiles = allTiles.filter(t => (t.total_risk_eur || 0) > 0);
+  const riskyTiles = allTiles.filter((t) => (t.total_risk_eur || 0) > 0);
   if (riskyTiles.length > 0 && (tile.total_risk_eur || 0) > 0) {
     const sorted = [...riskyTiles].sort((a, b) => b.total_risk_eur - a.total_risk_eur);
-    const rank = sorted.findIndex(t => t.site_id === tile.site_id);
+    const rank = sorted.findIndex((t) => t.site_id === tile.site_id);
     if (rank === -1) return 'none';
     const pct = sorted.length > 1 ? rank / (sorted.length - 1) : 0;
     if (pct < 0.34) return 'critical';
@@ -102,9 +100,9 @@ function getTileColorKey(tile, allTiles) {
   // Fallback sévérité
   const sev = tile.max_severity;
   if (sev === 'CRITICAL') return 'critical';
-  if (sev === 'HIGH')     return 'high';
-  if (sev === 'MEDIUM')   return 'medium';
-  if (sev === 'LOW')      return 'low';
+  if (sev === 'HIGH') return 'high';
+  if (sev === 'MEDIUM') return 'medium';
+  if (sev === 'LOW') return 'low';
   return 'none';
 }
 
@@ -116,21 +114,29 @@ function FilterSelect({ options, value, onChange, label }) {
       <select
         aria-label={label}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         className="appearance-none pl-2.5 pr-6 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
       >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
       </select>
-      <ChevronDown size={11} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <ChevronDown
+        size={11}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+      />
     </div>
   );
 }
 
 function SiteTile({ tile, allTiles, onOpenSite }) {
   const colorKey = getTileColorKey(tile, allTiles);
-  const cls      = COLOR_CLASSES[colorKey] ?? COLOR_CLASSES.none;
-  const fwLabel  = FRAMEWORK_LABEL[tile.dominant_framework] ?? tile.dominant_framework;
-  const fwCls    = FRAMEWORK_CHIP[tile.dominant_framework] ?? 'bg-gray-50 text-gray-600 border-gray-200';
+  const cls = COLOR_CLASSES[colorKey] ?? COLOR_CLASSES.none;
+  const fwLabel = FRAMEWORK_LABEL[tile.dominant_framework] ?? tile.dominant_framework;
+  const fwCls =
+    FRAMEWORK_CHIP[tile.dominant_framework] ?? 'bg-gray-50 text-gray-600 border-gray-200';
 
   return (
     <button
@@ -146,14 +152,14 @@ function SiteTile({ tile, allTiles, onOpenSite }) {
       </span>
 
       {/* Risque */}
-      <span className={`text-sm font-bold mt-1 ${cls.risk}`}>
-        {fmtRisk(tile.total_risk_eur)}
-      </span>
+      <span className={`text-sm font-bold mt-1 ${cls.risk}`}>{fmtRisk(tile.total_risk_eur)}</span>
 
       {/* Anomalies + sévérité */}
       <div className="flex items-center gap-1 mt-1.5 flex-wrap">
         {tile.anomalies_count > 0 ? (
-          <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ${SEV_BADGE[tile.max_severity] ?? 'bg-gray-100 text-gray-600'}`}>
+          <span
+            className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ${SEV_BADGE[tile.max_severity] ?? 'bg-gray-100 text-gray-600'}`}
+          >
             {tile.anomalies_count} anom.
           </span>
         ) : (
@@ -162,22 +168,25 @@ function SiteTile({ tile, allTiles, onOpenSite }) {
 
         {/* Score qualité */}
         {tile.completude_score != null && (
-          <span className="text-[10px] text-gray-400 font-medium">
-            {tile.completude_score}%
-          </span>
+          <span className="text-[10px] text-gray-400 font-medium">{tile.completude_score}%</span>
         )}
       </div>
 
       {/* Framework dominant */}
       {tile.dominant_framework && (
-        <span className={`mt-1.5 inline-flex items-center text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border shrink-0 ${fwCls}`}>
+        <span
+          className={`mt-1.5 inline-flex items-center text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border shrink-0 ${fwCls}`}
+        >
           {fwLabel}
         </span>
       )}
 
       {/* Preview top anomalie */}
       {tile.top_anomalies?.[0] && (
-        <span className="mt-1.5 text-[10px] text-gray-400 truncate block w-full" title={tile.top_anomalies[0].title_fr}>
+        <span
+          className="mt-1.5 text-[10px] text-gray-400 truncate block w-full"
+          title={tile.top_anomalies[0].title_fr}
+        >
           {tile.top_anomalies[0].title_fr}
         </span>
       )}
@@ -187,26 +196,32 @@ function SiteTile({ tile, allTiles, onOpenSite }) {
 
 /* ── Composant principal ─────────────────────────────────────────────────── */
 
-export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = false, error = null, topSlot = null }) {
+export default function PatrimoineHeatmap({
+  tiles = [],
+  onOpenSite,
+  loading = false,
+  error = null,
+  topSlot = null,
+}) {
   const navigate = useNavigate();
 
   // Filtres locaux
-  const [fwFilter, setFwFilter]   = useState('');
+  const [fwFilter, setFwFilter] = useState('');
   const [sevFilter, setSevFilter] = useState('');
-  const [search, setSearch]       = useState('');
-  const [sort, setSort]           = useState('risk');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('risk');
 
   const filtered = useMemo(() => {
     let r = [...tiles];
     if (search) {
       const q = search.toLowerCase();
-      r = r.filter(t => t.site_nom.toLowerCase().includes(q));
+      r = r.filter((t) => t.site_nom.toLowerCase().includes(q));
     }
-    if (fwFilter)  r = r.filter(t => t.dominant_framework === fwFilter);
-    if (sevFilter) r = r.filter(t => t.max_severity === sevFilter);
-    if (sort === 'risk')      r.sort((a, b) => (b.total_risk_eur   ?? 0) - (a.total_risk_eur   ?? 0));
-    if (sort === 'anomalies') r.sort((a, b) => (b.anomalies_count  ?? 0) - (a.anomalies_count  ?? 0));
-    if (sort === 'score')     r.sort((a, b) => (a.completude_score ?? 0) - (b.completude_score ?? 0));
+    if (fwFilter) r = r.filter((t) => t.dominant_framework === fwFilter);
+    if (sevFilter) r = r.filter((t) => t.max_severity === sevFilter);
+    if (sort === 'risk') r.sort((a, b) => (b.total_risk_eur ?? 0) - (a.total_risk_eur ?? 0));
+    if (sort === 'anomalies') r.sort((a, b) => (b.anomalies_count ?? 0) - (a.anomalies_count ?? 0));
+    if (sort === 'score') r.sort((a, b) => (a.completude_score ?? 0) - (b.completude_score ?? 0));
     return r;
   }, [tiles, search, fwFilter, sevFilter, sort]);
 
@@ -215,7 +230,7 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
   // V63-scale — Top 15 : sélectionner les sites les plus risqués après filtres
   const MAX_TILES = 15;
   const showTopBanner = filtered.length > MAX_TILES;
-  const visibleTiles  = showTopBanner
+  const visibleTiles = showTopBanner
     ? [...filtered]
         .sort((a, b) => (b.total_risk_eur ?? 0) - (a.total_risk_eur ?? 0))
         .slice(0, MAX_TILES)
@@ -269,7 +284,6 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
   /* ── Vue nominale ── */
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-
       {/* ── En-tête + Toolbar ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <LayoutGrid size={14} className="text-gray-500 shrink-0" />
@@ -286,18 +300,32 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
               type="text"
               placeholder="Chercher…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-6 pr-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
             />
           </div>
 
-          <FilterSelect options={FW_OPTIONS}   value={fwFilter}  onChange={setFwFilter}  label="Filtre framework" />
-          <FilterSelect options={SEV_OPTIONS}  value={sevFilter} onChange={setSevFilter} label="Filtre sévérité"  />
-          <FilterSelect options={SORT_OPTIONS} value={sort}      onChange={setSort}      label="Tri"             />
+          <FilterSelect
+            options={FW_OPTIONS}
+            value={fwFilter}
+            onChange={setFwFilter}
+            label="Filtre framework"
+          />
+          <FilterSelect
+            options={SEV_OPTIONS}
+            value={sevFilter}
+            onChange={setSevFilter}
+            label="Filtre sévérité"
+          />
+          <FilterSelect options={SORT_OPTIONS} value={sort} onChange={setSort} label="Tri" />
 
           {hasActiveFilters && (
             <button
-              onClick={() => { setFwFilter(''); setSevFilter(''); setSearch(''); }}
+              onClick={() => {
+                setFwFilter('');
+                setSevFilter('');
+                setSearch('');
+              }}
               className="flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-gray-600 transition"
             >
               <X size={10} /> Réinitialiser
@@ -313,10 +341,15 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
       {showTopBanner && (
         <div className="flex items-center justify-between px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
           <span>
-            Affichage&nbsp;: <strong>{visibleTiles.length}</strong> / {filtered.length} (Top risques)
+            Affichage&nbsp;: <strong>{visibleTiles.length}</strong> / {filtered.length} (Top
+            risques)
           </span>
           <button
-            onClick={() => document.getElementById('sites-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onClick={() =>
+              document
+                .getElementById('sites-table')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
             className="font-semibold underline underline-offset-2 hover:text-blue-900 transition shrink-0"
           >
             Voir tous les sites
@@ -326,16 +359,13 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
 
       {/* ── Grille de tiles ── */}
       {filtered.length === 0 ? (
-        <p className="text-xs text-gray-400 text-center py-3">Aucun site ne correspond aux filtres.</p>
+        <p className="text-xs text-gray-400 text-center py-3">
+          Aucun site ne correspond aux filtres.
+        </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-          {visibleTiles.map(tile => (
-            <SiteTile
-              key={tile.site_id}
-              tile={tile}
-              allTiles={tiles}
-              onOpenSite={onOpenSite}
-            />
+          {visibleTiles.map((tile) => (
+            <SiteTile key={tile.site_id} tile={tile} allTiles={tiles} onOpenSite={onOpenSite} />
           ))}
         </div>
       )}

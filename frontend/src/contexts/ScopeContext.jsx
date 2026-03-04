@@ -7,7 +7,15 @@
  * When not authenticated (demo mode): falls back to mock data.
  * After seed-pack: applyDemoScope() auto-switches to the seeded org/site.
  */
-import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from 'react';
 import { mockSites } from '../mocks/sites';
 import { useAuth } from './AuthContext';
 import { getSites, setApiScope, getDemoPackStatus, clearApiCache } from '../services/api';
@@ -15,9 +23,7 @@ import { getSites, setApiScope, getDemoPackStatus, clearApiCache } from '../serv
 const STORAGE_KEY = 'promeos_scope';
 const DEMO_ORGS_KEY = 'promeos_demo_orgs';
 
-const MOCK_ORGS = [
-  { id: 1, nom: 'Groupe HELIOS' },
-];
+const MOCK_ORGS = [{ id: 1, nom: 'Groupe HELIOS' }];
 
 const MOCK_PORTEFEUILLES = [
   { id: 1, org_id: 1, nom: 'Siège & Bureaux' },
@@ -34,7 +40,9 @@ function loadScope() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   // Default to null — auto-sync from backend will resolve the correct org
   return { orgId: null, portefeuilleId: null, siteId: null };
 }
@@ -47,7 +55,9 @@ function loadDemoOrgs() {
   try {
     const raw = localStorage.getItem(DEMO_ORGS_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
@@ -89,7 +99,7 @@ export function ScopeProvider({ children }) {
   // V19: refreshSites — bump trigger to re-run the fetch effect
   const [fetchTrigger, setFetchTrigger] = useState(0);
   const refreshSites = useCallback(() => {
-    setFetchTrigger(t => t + 1);
+    setFetchTrigger((t) => t + 1);
   }, []);
 
   useEffect(() => {
@@ -105,11 +115,11 @@ export function ScopeProvider({ children }) {
     setSitesError(null);
     const myId = ++_fetchId.current;
     getSites({ org_id: effectiveOrgId, limit: 2000 })
-      .then(data => {
+      .then((data) => {
         if (myId !== _fetchId.current) return; // stale response — ignore
-        const raw = Array.isArray(data) ? data : (data.sites || data.items || []);
+        const raw = Array.isArray(data) ? data : data.sites || data.items || [];
         // Normalize: /api/sites returns statut_decret_tertiaire but frontend uses statut_conformite
-        const list = raw.map(s => ({
+        const list = raw.map((s) => ({
           ...s,
           statut_conformite: s.statut_conformite ?? s.statut_decret_tertiaire ?? null,
           risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
@@ -120,9 +130,12 @@ export function ScopeProvider({ children }) {
       .catch((err) => {
         if (myId !== _fetchId.current) return;
         const status = err?.response?.status;
-        const msg = status === 401 ? 'Session expirée — reconnectez-vous'
-          : status === 403 ? 'Accès refusé à cette organisation'
-          : 'Impossible de charger les sites';
+        const msg =
+          status === 401
+            ? 'Session expirée — reconnectez-vous'
+            : status === 403
+              ? 'Accès refusé à cette organisation'
+              : 'Impossible de charger les sites';
         setSitesError(msg);
         // V19: keep previous apiSites during transient errors (don't blank the UI)
         setSitesLoading(false);
@@ -173,24 +186,30 @@ export function ScopeProvider({ children }) {
    * Always sets siteId=null ("Tous les sites") for a clean multi-site demo context.
    * Registers the org in demoOrgs (persisted) and switches scope atomically.
    */
-  const applyDemoScope = useCallback(({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
-    if (!orgId) return;
-    // Invalidate stale GET cache from previous org BEFORE switching scope
-    clearApiCache();
-    // Register the org dynamically
-    setDemoOrgs((prev) => {
-      const exists = prev.some((o) => o.id === orgId);
-      const next = exists ? prev : [...prev, { id: orgId, nom: orgNom || `Organisation #${orgId}` }];
-      saveDemoOrgs(next);
-      return next;
-    });
-    // Switch scope: always siteId=null => "Tous les sites" in demo mode
-    const next = { orgId, portefeuilleId: null, siteId: null };
-    setScope(next);
-    saveScope(next);
-    // eslint-disable-next-line no-unused-expressions
-    void defaultSiteId; void defaultSiteName; // reserved for future use
-  }, []);
+  const applyDemoScope = useCallback(
+    ({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
+      if (!orgId) return;
+      // Invalidate stale GET cache from previous org BEFORE switching scope
+      clearApiCache();
+      // Register the org dynamically
+      setDemoOrgs((prev) => {
+        const exists = prev.some((o) => o.id === orgId);
+        const next = exists
+          ? prev
+          : [...prev, { id: orgId, nom: orgNom || `Organisation #${orgId}` }];
+        saveDemoOrgs(next);
+        return next;
+      });
+      // Switch scope: always siteId=null => "Tous les sites" in demo mode
+      const next = { orgId, portefeuilleId: null, siteId: null };
+      setScope(next);
+      saveScope(next);
+      // eslint-disable-next-line no-unused-expressions
+      void defaultSiteId;
+      void defaultSiteName; // reserved for future use
+    },
+    []
+  );
 
   // Auto-sync: if no org is selected, check backend for a seeded demo
   const _autoSynced = useRef(false);
@@ -199,7 +218,7 @@ export function ScopeProvider({ children }) {
     if (_autoSynced.current) return;
     _autoSynced.current = true;
     getDemoPackStatus()
-      .then(status => {
+      .then((status) => {
         if (status?.org_id) {
           applyDemoScope({ orgId: status.org_id, orgNom: status.org_nom });
         }
@@ -217,7 +236,7 @@ export function ScopeProvider({ children }) {
   // When authenticated, use auth orgs; otherwise mock + dynamically registered demo orgs
   const orgsData = useMemo(() => {
     if (isAuth && auth.orgs && auth.orgs.length > 0) {
-      return auth.orgs.map(o => ({ id: o.id, nom: o.nom }));
+      return auth.orgs.map((o) => ({ id: o.id, nom: o.nom }));
     }
     // Merge MOCK_ORGS + demoOrgs (dedup by id)
     const all = [...MOCK_ORGS];
@@ -228,7 +247,7 @@ export function ScopeProvider({ children }) {
   }, [isAuth, auth, demoOrgs]);
 
   const org = effectiveOrgId
-    ? (orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0] || null)
+    ? orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0] || null
     : null;
   const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId);
   const portefeuille = scope.portefeuilleId
@@ -269,7 +288,7 @@ export function ScopeProvider({ children }) {
    */
   const scopeLabel = useMemo(() => {
     if (!scope.siteId) return 'Tous les sites';
-    const site = scopedSites.find(s => s.id === scope.siteId);
+    const site = scopedSites.find((s) => s.id === scope.siteId);
     return site ? `Site\u00a0: ${site.nom}` : 'Tous les sites';
   }, [scope.siteId, scopedSites]);
 
@@ -293,15 +312,24 @@ export function ScopeProvider({ children }) {
 
   const value = {
     scope: { ...scope, orgId: effectiveOrgId },
-    org, portefeuille, portefeuilles, scopedSites, orgSites,
+    org,
+    portefeuille,
+    portefeuilles,
+    scopedSites,
+    orgSites,
     orgs: orgsData,
     sitesCount,
     sitesLoading, // V18: exposed for pages to show skeleton during fetch
-    sitesError,   // V19: error message when getSites fails
+    sitesError, // V19: error message when getSites fails
     refreshSites, // V19: trigger re-fetch without full page reload
     selectedSiteId,
     scopeLabel,
-    setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,
+    setOrg,
+    setPortefeuille,
+    setSite,
+    resetScope,
+    clearScope,
+    applyDemoScope,
   };
 
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;

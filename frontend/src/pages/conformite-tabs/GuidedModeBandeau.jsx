@@ -7,10 +7,15 @@ import { Card, CardBody, Button } from '../../ui';
 import { GUIDED_MODE_LABELS } from '../../domain/compliance/complianceLabels.fr';
 
 const STATUS_STYLE = {
-  complete:    { dot: 'bg-green-500', text: 'text-green-700', ring: 'ring-green-200', Icon: CheckCircle2 },
+  complete: {
+    dot: 'bg-green-500',
+    text: 'text-green-700',
+    ring: 'ring-green-200',
+    Icon: CheckCircle2,
+  },
   in_progress: { dot: 'bg-blue-500', text: 'text-blue-700', ring: 'ring-blue-200', Icon: Circle },
-  blocked:     { dot: 'bg-red-400', text: 'text-red-600', ring: 'ring-red-200', Icon: Lock },
-  pending:     { dot: 'bg-gray-300', text: 'text-gray-400', ring: 'ring-gray-200', Icon: Circle },
+  blocked: { dot: 'bg-red-400', text: 'text-red-600', ring: 'ring-red-200', Icon: Lock },
+  pending: { dot: 'bg-gray-300', text: 'text-gray-400', ring: 'ring-gray-200', Icon: Circle },
 };
 
 const STATUS_LABEL = {
@@ -24,8 +29,9 @@ export default function GuidedModeBandeau({ steps, onStepClick }) {
   if (!steps || steps.length === 0) return null;
 
   // Active step = first in_progress (or first non-complete if none in_progress)
-  const activeStep = steps.find(s => s.status === 'in_progress')
-    || steps.find(s => s.status !== 'complete' && s.status !== 'blocked');
+  const activeStep =
+    steps.find((s) => s.status === 'in_progress') ||
+    steps.find((s) => s.status !== 'complete' && s.status !== 'blocked');
 
   return (
     <div data-testid="guided-mode-bandeau" className="mb-4">
@@ -43,7 +49,11 @@ export default function GuidedModeBandeau({ steps, onStepClick }) {
               const StepIcon = cfg.Icon;
 
               return (
-                <div key={step.id} className="flex items-center" data-testid={`guided-step-${step.id}`}>
+                <div
+                  key={step.id}
+                  className="flex items-center"
+                  data-testid={`guided-step-${step.id}`}
+                >
                   <button
                     onClick={() => step.status !== 'blocked' && onStepClick(step)}
                     disabled={step.status === 'blocked'}
@@ -79,7 +89,7 @@ export default function GuidedModeBandeau({ steps, onStepClick }) {
           {/* Progress summary */}
           <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400">
             {Object.entries(STATUS_LABEL).map(([status, label]) => {
-              const count = steps.filter(s => s.status === status).length;
+              const count = steps.filter((s) => s.status === status).length;
               if (count === 0) return null;
               const cfg = STATUS_STYLE[status];
               return (

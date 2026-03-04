@@ -4,6 +4,7 @@ POST /api/onboarding         - Creer organisation + entite + portefeuilles + sit
 POST /api/onboarding/import-csv  - Import massif de sites via CSV
 GET  /api/onboarding/status  - Etat de l'onboarding
 """
+
 import io
 import csv
 from typing import List, Optional
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/api/onboarding", tags=["Onboarding"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class OrgInput(BaseModel):
     nom: str
@@ -60,6 +62,7 @@ class OnboardingRequest(BaseModel):
 # Endpoints
 # ========================================
 
+
 @router.post("")
 def create_onboarding(
     payload: OnboardingRequest,
@@ -77,8 +80,7 @@ def create_onboarding(
         existing = db.query(Organisation).filter(Organisation.id == existing_org_id).first()
         if existing:
             raise HTTPException(
-                status_code=409,
-                detail=f"Organisation '{existing.nom}' existe deja. Supprimez d'abord l'existante."
+                status_code=409, detail=f"Organisation '{existing.nom}' existe deja. Supprimez d'abord l'existante."
             )
     except HTTPException as e:
         if e.status_code not in (401, 403):
@@ -111,12 +113,14 @@ def create_onboarding(
                 surface_m2=s_input.surface_m2,
             )
             prov = provision_site(db, site)
-            sites_created.append({
-                "id": site.id,
-                "nom": site.nom,
-                "type": site.type.value,
-                **prov,
-            })
+            sites_created.append(
+                {
+                    "id": site.id,
+                    "nom": site.nom,
+                    "type": site.type.value,
+                    **prov,
+                }
+            )
 
     db.commit()
 
@@ -191,12 +195,14 @@ async def import_csv(
                 surface_m2=surface,
             )
             prov = provision_site(db, site)
-            imported.append({
-                "id": site.id,
-                "nom": site.nom,
-                "type": site.type.value,
-                **prov,
-            })
+            imported.append(
+                {
+                    "id": site.id,
+                    "nom": site.nom,
+                    "type": site.type.value,
+                    **prov,
+                }
+            )
 
         except Exception as e:
             errors.append({"row": row_num, "error": str(e)})

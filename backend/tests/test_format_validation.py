@@ -2,8 +2,10 @@
 PROMEOS - Tests Validation Format Industrielle
 Covers: SIREN/SIRET Luhn, meter_id 14 digits, postal code, helper utils.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -13,17 +15,29 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    StagingBatch, StagingSite, StagingCompteur,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
 )
 from services.validation_helpers import (
-    is_valid_siren, is_valid_siret, is_valid_meter_id,
-    is_valid_postal_code, is_valid_date_str,
+    is_valid_siren,
+    is_valid_siret,
+    is_valid_meter_id,
+    is_valid_postal_code,
+    is_valid_date_str,
 )
 from services.quality_rules import (
-    check_valid_siren, check_valid_siret,
-    check_valid_meter_format, check_valid_postal_code,
+    check_valid_siren,
+    check_valid_siret,
+    check_valid_meter_format,
+    check_valid_postal_code,
     check_valid_dates,
 )
 from services.patrimoine_service import create_staging_batch, run_quality_gate
@@ -32,6 +46,7 @@ from services.patrimoine_service import create_staging_batch, run_quality_gate
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -65,14 +80,18 @@ def _create_org(db_session):
 
 def _create_batch(db_session, org_id):
     return create_staging_batch(
-        db_session, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db_session,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
 
 
 # ========================================
 # Helper unit tests
 # ========================================
+
 
 class TestHelperSiren:
     def test_valid_siren(self):
@@ -159,6 +178,7 @@ class TestHelperDate:
 # Quality rule integration tests
 # ========================================
 
+
 class TestInvalidSirenBlocked:
     """Invalid SIREN in staging SIRET field produces BLOCKING finding."""
 
@@ -167,8 +187,12 @@ class TestInvalidSirenBlocked:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Bad SIREN",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Bad SIREN",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
             siret="12345678901234",  # SIREN part = 123456789 → invalid Luhn
         )
         db_session.add(ss)
@@ -188,8 +212,12 @@ class TestInvalidSirenBlocked:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Good SIREN",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Good SIREN",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
             siret="44306184100005",  # SIREN part = 443061841 → valid Luhn
         )
         db_session.add(ss)
@@ -207,8 +235,12 @@ class TestInvalidSiretBlocked:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Bad SIRET",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Bad SIRET",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
             siret="12345678901234",  # Invalid Luhn on 14 digits
         )
         db_session.add(ss)
@@ -230,15 +262,21 @@ class TestInvalidMeterBlocked:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Test",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Test",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="S-001",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="S-001",
             meter_id="SHORT123",  # Not 14 digits
             type_compteur="electricite",
         )
@@ -260,15 +298,21 @@ class TestInvalidMeterBlocked:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Test",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Test",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="S-001",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="S-001",
             meter_id="12345678901234",  # Exactly 14 digits
             type_compteur="electricite",
         )
@@ -287,8 +331,12 @@ class TestInvalidPostalWarning:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Bad CP",
-            adresse="1 rue Test", code_postal="99001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Bad CP",
+            adresse="1 rue Test",
+            code_postal="99001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
@@ -307,8 +355,12 @@ class TestInvalidPostalWarning:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Good CP",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Good CP",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
@@ -335,17 +387,22 @@ class TestValidDataPasses:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Parfait",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Parfait",
             adresse="10 avenue des Champs-Elysees",
-            code_postal="75008", ville="Paris",
+            code_postal="75008",
+            ville="Paris",
             siret="44306184100005",
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="SERIE-VALID-001",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="SERIE-VALID-001",
             meter_id="12345678901234",
             type_compteur="electricite",
         )
@@ -365,16 +422,22 @@ class TestValidDataPasses:
         batch = _create_batch(db_session, org.id)
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Mixed",
-            adresse="1 rue Test", code_postal="99999",  # invalid
-            ville="Paris", siret="ABCDEFGHIJKLMN",  # invalid
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Mixed",
+            adresse="1 rue Test",
+            code_postal="99999",  # invalid
+            ville="Paris",
+            siret="ABCDEFGHIJKLMN",  # invalid
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="S-MIX-001",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="S-MIX-001",
             meter_id="SHORT",  # invalid
             type_compteur="electricite",
         )

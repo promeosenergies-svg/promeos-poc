@@ -14,11 +14,13 @@ import { computeDataReadinessState } from '../models/dataReadinessModel';
  * @returns {{ readinessState: ReadinessState|null, activation: ActivationResult, loading: boolean }}
  */
 export default function useDataReadiness(kpis, { operatModuleActive = false } = {}) {
-  const { billingSummary, purchaseSignals, efaDashboard, connectors, loading } = useActivationData(kpis?.total);
+  const { billingSummary, purchaseSignals, efaDashboard, connectors, loading } = useActivationData(
+    kpis?.total
+  );
 
   const activation = useMemo(
     () => buildActivationChecklist({ kpis, billingSummary: billingSummary || {}, purchaseSignals }),
-    [kpis, billingSummary, purchaseSignals],
+    [kpis, billingSummary, purchaseSignals]
   );
 
   const readinessState = useMemo(() => {

@@ -74,8 +74,8 @@ describe('aggregateToHeatmap', () => {
       {
         key: 'agg',
         data: [
-          { t: '2025-01-06T10:00:00', v: 40.0 },  // Monday 10h
-          { t: '2025-01-13T10:00:00', v: 60.0 },  // Monday 10h next week
+          { t: '2025-01-06T10:00:00', v: 40.0 }, // Monday 10h
+          { t: '2025-01-13T10:00:00', v: 60.0 }, // Monday 10h next week
         ],
       },
     ];
@@ -155,9 +155,7 @@ describe('Gas demo CTA logic (hasGasData)', () => {
   // Helper mirrors the logic in TimeseriesPanel/GasPanel: show CTA when no data
   function hasGasData(seriesData) {
     if (!seriesData?.length) return false;
-    return seriesData.some(
-      (s) => s.data && s.data.length > 0 && s.data.some((p) => p.v != null)
-    );
+    return seriesData.some((s) => s.data && s.data.length > 0 && s.data.some((p) => p.v != null));
   }
 
   function generateDemoEndpoint(siteId, energyVector) {

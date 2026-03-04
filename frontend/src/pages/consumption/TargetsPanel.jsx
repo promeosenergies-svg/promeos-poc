@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Plus, Trash2, Save, X, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Bar } from 'recharts';
-import { Card, CardBody, Badge, Button } from '../../ui';
+import { Card, CardBody, Button } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
 import {
@@ -19,9 +19,29 @@ import LayerToggle from './LayerToggle';
 import ObjectivesLayer from './layers/ObjectivesLayer';
 import { ALERT_COLOR } from './constants';
 
-const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Avr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Aou',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
-export default function TargetsPanel({ siteId, energyType, toast, initialTargets, initialProgression, onRefreshMotor }) {
+export default function TargetsPanel({
+  siteId,
+  energyType,
+  toast,
+  initialTargets,
+  initialProgression,
+  onRefreshMotor,
+}) {
   const [targets, setTargets] = useState(initialTargets || []);
   const [progression, setProgression] = useState(initialProgression || null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +107,7 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
   const alert = progression?.alert;
   const alertConf = ALERT_COLOR[alert] || ALERT_COLOR.on_track;
 
-  const chartData = (progression?.months || []).map(m => ({
+  const chartData = (progression?.months || []).map((m) => ({
     name: MONTH_NAMES[m.month - 1],
     objectif: m.target_kwh,
     reel: m.actual_kwh,
@@ -99,8 +119,16 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800">Objectifs & Budgets</h3>
         <div className="flex items-center gap-2">
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="text-sm border rounded px-2 py-1">
-            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="text-sm border rounded px-2 py-1"
+          >
+            {[2024, 2025, 2026].map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
           </select>
           <Button size="sm" variant="ghost" onClick={() => setShowAdd(!showAdd)}>
             <Plus size={14} className="mr-1" /> Objectif
@@ -113,7 +141,11 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
         <div className={`${alertConf.bg} ${alertConf.border} border rounded-lg p-3`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {alert === 'on_track' ? <CheckCircle size={16} className="text-green-600" /> : <AlertTriangle size={16} className={alertConf.text} />}
+              {alert === 'on_track' ? (
+                <CheckCircle size={16} className="text-green-600" />
+              ) : (
+                <AlertTriangle size={16} className={alertConf.text} />
+              )}
               <span className={`text-sm font-medium ${alertConf.text}`}>{alertConf.label}</span>
             </div>
             <div className="text-right">
@@ -124,22 +156,31 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
           <div className="grid grid-cols-4 gap-4 mt-3 text-center">
             <div>
               <p className="text-xs text-gray-500">Objectif annuel</p>
-              <p className="text-sm font-semibold">{(progression.yearly_target_kwh || 0).toLocaleString()} kWh</p>
+              <p className="text-sm font-semibold">
+                {(progression.yearly_target_kwh || 0).toLocaleString()} kWh
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Reel YTD</p>
-              <p className="text-sm font-semibold">{(progression.ytd_actual_kwh || 0).toLocaleString()} kWh</p>
+              <p className="text-sm font-semibold">
+                {(progression.ytd_actual_kwh || 0).toLocaleString()} kWh
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Run-rate annuel</p>
-              <p className={`text-sm font-semibold ${(progression.run_rate_kwh || 0) > (progression.yearly_target_kwh || 0) ? 'text-red-600' : 'text-green-600'}`}>
+              <p
+                className={`text-sm font-semibold ${(progression.run_rate_kwh || 0) > (progression.yearly_target_kwh || 0) ? 'text-red-600' : 'text-green-600'}`}
+              >
                 {(progression.run_rate_kwh || 0).toLocaleString()} kWh
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Prevision</p>
-              <p className={`text-sm font-semibold ${progression.forecast_vs_target_pct > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {progression.forecast_vs_target_pct > 0 ? '+' : ''}{progression.forecast_vs_target_pct}%
+              <p
+                className={`text-sm font-semibold ${progression.forecast_vs_target_pct > 0 ? 'text-red-600' : 'text-green-600'}`}
+              >
+                {progression.forecast_vs_target_pct > 0 ? '+' : ''}
+                {progression.forecast_vs_target_pct}%
               </p>
             </div>
           </div>
@@ -147,15 +188,25 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
           {/* Variance decomposition (top 3 causes) */}
           {progression.variance_decomposition?.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-xs font-semibold text-gray-600 mb-2">Causes principales de l'ecart :</p>
+              <p className="text-xs font-semibold text-gray-600 mb-2">
+                Causes principales de l'ecart :
+              </p>
               <div className="space-y-1.5">
                 {progression.variance_decomposition.map((cause, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${
-                      cause.severity === 'critical' ? 'bg-red-500' : cause.severity === 'high' ? 'bg-orange-500' : 'bg-amber-500'
-                    }`} />
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        cause.severity === 'critical'
+                          ? 'bg-red-500'
+                          : cause.severity === 'high'
+                            ? 'bg-orange-500'
+                            : 'bg-amber-500'
+                      }`}
+                    />
                     <span className="text-gray-700 flex-1">{cause.label}</span>
-                    <span className="font-semibold text-gray-800">{(cause.estimated_loss_kwh || 0).toLocaleString()} kWh/an</span>
+                    <span className="font-semibold text-gray-800">
+                      {(cause.estimated_loss_kwh || 0).toLocaleString()} kWh/an
+                    </span>
                   </div>
                 ))}
               </div>
@@ -170,20 +221,44 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
           <CardBody className="flex items-end gap-3">
             <div>
               <label className="text-xs text-gray-500 block">Mois</label>
-              <select value={newTarget.month} onChange={(e) => setNewTarget({ ...newTarget, month: Number(e.target.value) })} className="text-sm border rounded px-2 py-1">
-                {MONTH_NAMES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              <select
+                value={newTarget.month}
+                onChange={(e) => setNewTarget({ ...newTarget, month: Number(e.target.value) })}
+                className="text-sm border rounded px-2 py-1"
+              >
+                {MONTH_NAMES.map((m, i) => (
+                  <option key={i} value={i + 1}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className="text-xs text-gray-500 block">Objectif kWh</label>
-              <input type="number" value={newTarget.target_kwh} onChange={(e) => setNewTarget({ ...newTarget, target_kwh: e.target.value })} className="text-sm border rounded px-2 py-1 w-28" placeholder="5000" />
+              <input
+                type="number"
+                value={newTarget.target_kwh}
+                onChange={(e) => setNewTarget({ ...newTarget, target_kwh: e.target.value })}
+                className="text-sm border rounded px-2 py-1 w-28"
+                placeholder="5000"
+              />
             </div>
             <div>
               <label className="text-xs text-gray-500 block">Budget EUR</label>
-              <input type="number" value={newTarget.target_eur} onChange={(e) => setNewTarget({ ...newTarget, target_eur: e.target.value })} className="text-sm border rounded px-2 py-1 w-28" placeholder="900" />
+              <input
+                type="number"
+                value={newTarget.target_eur}
+                onChange={(e) => setNewTarget({ ...newTarget, target_eur: e.target.value })}
+                className="text-sm border rounded px-2 py-1 w-28"
+                placeholder="900"
+              />
             </div>
-            <Button size="sm" onClick={handleAdd}><Save size={14} className="mr-1" /> Enregistrer</Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}><X size={14} /></Button>
+            <Button size="sm" onClick={handleAdd}>
+              <Save size={14} className="mr-1" /> Enregistrer
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>
+              <X size={14} />
+            </Button>
           </CardBody>
         </Card>
       )}
@@ -211,10 +286,7 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
                   <ObjectivesLayer targets={targets} visible unit="kwh" />
                 </ExplorerChart>
               </div>
-              <LayerToggle
-                layers={{ objectifs: true }}
-                onToggle={() => {}}
-              />
+              <LayerToggle layers={{ objectifs: true }} onToggle={() => {}} />
             </div>
           </CardBody>
         </Card>
@@ -236,17 +308,32 @@ export default function TargetsPanel({ siteId, energyType, toast, initialTargets
               </thead>
               <tbody>
                 {targets.map((t) => {
-                  const delta = t.actual_kwh != null && t.target_kwh ? ((t.actual_kwh - t.target_kwh) / t.target_kwh * 100).toFixed(1) : null;
+                  const delta =
+                    t.actual_kwh != null && t.target_kwh
+                      ? (((t.actual_kwh - t.target_kwh) / t.target_kwh) * 100).toFixed(1)
+                      : null;
                   return (
                     <tr key={t.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2">{t.month ? MONTH_NAMES[t.month - 1] : 'Annuel'} {t.year}</td>
-                      <td className="px-4 py-2 text-right">{t.target_kwh?.toLocaleString() || '—'}</td>
-                      <td className="px-4 py-2 text-right">{t.actual_kwh?.toLocaleString() || '—'}</td>
-                      <td className={`px-4 py-2 text-right font-medium ${delta && parseFloat(delta) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <td className="px-4 py-2">
+                        {t.month ? MONTH_NAMES[t.month - 1] : 'Annuel'} {t.year}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {t.target_kwh?.toLocaleString() || '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {t.actual_kwh?.toLocaleString() || '—'}
+                      </td>
+                      <td
+                        className={`px-4 py-2 text-right font-medium ${delta && parseFloat(delta) > 0 ? 'text-red-600' : 'text-green-600'}`}
+                      >
                         {delta ? `${delta > 0 ? '+' : ''}${delta}%` : '—'}
                       </td>
                       <td className="px-4 py-2 text-center">
-                        <button onClick={() => handleDelete(t.id)} className="text-gray-400 hover:text-red-500 transition" aria-label={`Supprimer objectif ${MONTH_NAMES[t.month - 1] || ''} ${t.year}`}>
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          className="text-gray-400 hover:text-red-500 transition"
+                          aria-label={`Supprimer objectif ${MONTH_NAMES[t.month - 1] || ''} ${t.year}`}
+                        >
                           <Trash2 size={14} />
                         </button>
                       </td>

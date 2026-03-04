@@ -16,8 +16,10 @@ export const mockObligations = [
     regulation: 'Decret Tertiaire',
     code: 'DT',
     description: 'Reduire la consommation energetique des batiments tertiaires > 1000 m2',
-    pourquoi: 'Vos sites tertiaires depassent 1000 m2 de surface — vous etes soumis au Decret Tertiaire (loi ELAN).',
-    quoi_faire: 'Declarer vos consommations sur la plateforme OPERAT et definir une trajectoire de reduction (-40% en 2030, -50% en 2040, -60% en 2050).',
+    pourquoi:
+      'Vos sites tertiaires depassent 1000 m2 de surface — vous etes soumis au Decret Tertiaire (loi ELAN).',
+    quoi_faire:
+      'Declarer vos consommations sur la plateforme OPERAT et definir une trajectoire de reduction (-40% en 2030, -50% en 2040, -60% en 2050).',
     echeance: '2026-09-30',
     preuve: 'Declaration OPERAT validee + attestation annuelle',
     proof_status: 'missing',
@@ -34,11 +36,13 @@ export const mockObligations = [
     id: 2,
     regulation: 'BACS',
     code: 'BACS',
-    description: 'Systemes d\'automatisation et de controle des batiments (GTB/GTC)',
-    pourquoi: 'Vos batiments possedent une puissance CVC > 70 kW — le decret BACS vous impose un systeme de GTB.',
-    quoi_faire: 'Installer un systeme GTB conforme a la norme EN 15232 classe B minimum, ou obtenir une attestation de derogation.',
+    description: "Systemes d'automatisation et de controle des batiments (GTB/GTC)",
+    pourquoi:
+      'Vos batiments possedent une puissance CVC > 70 kW — le decret BACS vous impose un systeme de GTB.',
+    quoi_faire:
+      'Installer un systeme GTB conforme a la norme EN 15232 classe B minimum, ou obtenir une attestation de derogation.',
     echeance: '2025-01-01',
-    preuve: 'Attestation GTB conforme + rapport d\'inspection',
+    preuve: "Attestation GTB conforme + rapport d'inspection",
     proof_status: 'in_progress',
     sites_concernes: 3,
     sites_conformes: 1,
@@ -53,11 +57,13 @@ export const mockObligations = [
     id: 3,
     regulation: 'Loi APER',
     code: 'APER',
-    description: 'Installation d\'energies renouvelables sur parkings > 1500 m2',
-    pourquoi: 'Vos parkings exterieurs depassent 1500 m2 — la loi APER impose l\'installation d\'ombrières photovoltaiques.',
-    quoi_faire: 'Etudier la faisabilite d\'ombrières solaires et planifier l\'installation avant l\'echeance.',
+    description: "Installation d'energies renouvelables sur parkings > 1500 m2",
+    pourquoi:
+      "Vos parkings exterieurs depassent 1500 m2 — la loi APER impose l'installation d'ombrières photovoltaiques.",
+    quoi_faire:
+      "Etudier la faisabilite d'ombrières solaires et planifier l'installation avant l'echeance.",
     echeance: '2028-07-01',
-    preuve: 'Permis de construire + contrat d\'installation',
+    preuve: "Permis de construire + contrat d'installation",
     proof_status: 'missing',
     sites_concernes: 2,
     sites_conformes: 0,
@@ -73,8 +79,9 @@ export const mockObligations = [
     regulation: 'DPE Tertiaire',
     code: 'DPE',
     description: 'Diagnostic de Performance Energetique obligatoire',
-    pourquoi: 'Le DPE est obligatoire pour tout batiment tertiaire lors de la vente ou la mise en location.',
-    quoi_faire: 'Commander un DPE aupres d\'un diagnostiqueur certifie pour chaque site concerne.',
+    pourquoi:
+      'Le DPE est obligatoire pour tout batiment tertiaire lors de la vente ou la mise en location.',
+    quoi_faire: "Commander un DPE aupres d'un diagnostiqueur certifie pour chaque site concerne.",
     echeance: '2026-12-31',
     preuve: 'DPE valide (< 10 ans)',
     proof_status: 'in_progress',
@@ -92,10 +99,12 @@ export const mockObligations = [
     regulation: 'Audit Energetique',
     code: 'AUDIT',
     description: 'Audit energetique reglementaire pour les grandes entreprises (> 250 salaries)',
-    pourquoi: 'Votre organisation depasse 250 salaries ou 50M EUR de CA — un audit energetique est obligatoire tous les 4 ans.',
-    quoi_faire: 'Mandater un bureau d\'etudes certifie pour realiser l\'audit. Couvrir au moins 80% de la facture energetique.',
+    pourquoi:
+      'Votre organisation depasse 250 salaries ou 50M EUR de CA — un audit energetique est obligatoire tous les 4 ans.',
+    quoi_faire:
+      "Mandater un bureau d'etudes certifie pour realiser l'audit. Couvrir au moins 80% de la facture energetique.",
     echeance: '2026-12-05',
-    preuve: 'Rapport d\'audit conforme NF EN 16247 + preuve de depot ADEME',
+    preuve: "Rapport d'audit conforme NF EN 16247 + preuve de depot ADEME",
     proof_status: 'ok',
     sites_concernes: 5,
     sites_conformes: 5,
@@ -110,16 +119,16 @@ export const mockObligations = [
 
 export function getObligationScore() {
   const total = mockObligations.length;
-  const conformes = mockObligations.filter(o => o.statut === 'conforme').length;
-  const nonConformes = mockObligations.filter(o => o.statut === 'non_conforme').length;
-  const aRisque = mockObligations.filter(o => o.statut === 'a_risque').length;
+  const conformes = mockObligations.filter((o) => o.statut === 'conforme').length;
+  const nonConformes = mockObligations.filter((o) => o.statut === 'non_conforme').length;
+  const aRisque = mockObligations.filter((o) => o.statut === 'a_risque').length;
   const totalImpact = mockObligations.reduce((s, o) => s + o.impact_eur, 0);
   return {
     total,
     conformes,
     non_conformes: nonConformes,
     a_risque: aRisque,
-    pct: Math.round(conformes / total * 100),
+    pct: Math.round((conformes / total) * 100),
     total_impact_eur: totalImpact,
     label: nonConformes > 0 ? 'Non conforme' : aRisque > 0 ? 'A risque' : 'Conforme',
   };

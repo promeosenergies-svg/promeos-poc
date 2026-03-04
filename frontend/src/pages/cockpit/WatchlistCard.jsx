@@ -24,9 +24,13 @@ function SevDot({ severity }) {
 function HeaderBadge({ count, hasCritical }) {
   if (!count) return null;
   return (
-    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-      hasCritical ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-    }`}>
+    <span
+      className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+        hasCritical
+          ? 'bg-red-50 text-red-700 border border-red-200'
+          : 'bg-amber-50 text-amber-700 border border-amber-200'
+      }`}
+    >
       {count}
     </span>
   );
@@ -34,8 +38,12 @@ function HeaderBadge({ count, hasCritical }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function WatchlistCard({ watchlist = [], consistency = { ok: true, issues: [] }, onNavigate }) {
-  const hasCritical = watchlist.some(i => i.severity === 'critical');
+export default function WatchlistCard({
+  watchlist = [],
+  consistency = { ok: true, issues: [] },
+  onNavigate,
+}) {
+  const hasCritical = watchlist.some((i) => i.severity === 'critical');
 
   return (
     <Card>
@@ -90,9 +98,7 @@ export default function WatchlistCard({ watchlist = [], consistency = { ok: true
               <CheckCircle size={20} className="text-emerald-500" />
             </div>
             <p className="text-sm font-semibold text-gray-700 mb-1">Tout va bien</p>
-            <p className="text-xs text-gray-400 mb-3">
-              Aucun signal à traiter pour le moment.
-            </p>
+            <p className="text-xs text-gray-400 mb-3">Aucun signal à traiter pour le moment.</p>
             <Button
               size="sm"
               variant="ghost"

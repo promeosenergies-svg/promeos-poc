@@ -2,6 +2,7 @@
 PROMEOS - Modèle Site
 Coeur du domaine : site de consommation énergétique
 """
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
@@ -13,6 +14,7 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     Site de consommation énergétique
     Exemples : Carrefour Paris 15e, Usine Renault Lyon, Bureau EDF Marseille
     """
+
     __tablename__ = "sites"
 
     # Identifiant
@@ -66,6 +68,7 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     def conso_kwh_an(self):
         """Alias for annual_kwh_total — used by frontend dashboards."""
         return self.annual_kwh_total
+
     is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
     # Data lineage
@@ -75,18 +78,8 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     imported_by = Column(Integer, nullable=True, comment="User ID de l'importateur")
 
     # Relations avec les autres tables
-    compteurs = relationship(
-        "Compteur",
-        back_populates="site",
-        cascade="all, delete-orphan",
-        lazy="dynamic"
-    )
-    alertes = relationship(
-        "Alerte",
-        back_populates="site",
-        cascade="all, delete-orphan",
-        lazy="dynamic"
-    )
+    compteurs = relationship("Compteur", back_populates="site", cascade="all, delete-orphan", lazy="dynamic")
+    alertes = relationship("Alerte", back_populates="site", cascade="all, delete-orphan", lazy="dynamic")
     portefeuille = relationship("Portefeuille", back_populates="sites")
     batiments = relationship(
         "Batiment",
@@ -107,11 +100,7 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     # Energy analytics
-    meters = relationship(
-        "Meter",
-        back_populates="site",
-        cascade="all, delete-orphan"
-    )
+    meters = relationship("Meter", back_populates="site", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Site {self.id}: {self.nom} ({self.type.value})>"

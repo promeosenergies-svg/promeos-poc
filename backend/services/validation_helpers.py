@@ -2,6 +2,7 @@
 PROMEOS - Format Validation Helpers
 Industrial-grade validators for French business identifiers.
 """
+
 import re
 
 

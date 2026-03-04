@@ -19,23 +19,26 @@ function getModuleConfig(moduleKey, kpis) {
     case 'cockpit':
       return {
         route: '/cockpit',
-        metric: kpis.total > 0 ? `${kpis.total} site${kpis.total > 1 ? 's' : ''} actifs` : 'Aucun site',
+        metric:
+          kpis.total > 0 ? `${kpis.total} site${kpis.total > 1 ? 's' : ''} actifs` : 'Aucun site',
         cta: 'Vue executive',
       };
     case 'operations':
       return {
         route: '/conformite',
-        metric: kpis.total > 0
-          ? `${formatPercentFR(Math.round(kpis.conformes / kpis.total * 100))} conformes`
-          : 'Conformité',
+        metric:
+          kpis.total > 0
+            ? `${formatPercentFR(Math.round((kpis.conformes / kpis.total) * 100))} conformes`
+            : 'Conformité',
         cta: 'Conformité',
       };
     case 'analyse':
       return {
         route: '/consommations/explorer',
-        metric: kpis.couvertureDonnees != null
-          ? `${formatPercentFR(kpis.couvertureDonnees)} données couvertes`
-          : 'Consommations',
+        metric:
+          kpis.couvertureDonnees != null
+            ? `${formatPercentFR(kpis.couvertureDonnees)} données couvertes`
+            : 'Consommations',
         cta: 'Consommations',
       };
     case 'marche':
@@ -74,9 +77,7 @@ function ModuleTile({ mod, kpis, onNavigate }) {
         <p className="text-xs font-semibold text-gray-800 truncate">{mod.label}</p>
         <p className="text-[11px] text-gray-500 leading-snug mt-0.5 truncate">{cfg.metric}</p>
       </div>
-      <span className="text-[11px] font-medium text-gray-600">
-        {cfg.cta} →
-      </span>
+      <span className="text-[11px] font-medium text-gray-600">{cfg.cta} →</span>
     </button>
   );
 }
@@ -84,13 +85,15 @@ function ModuleTile({ mod, kpis, onNavigate }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ModuleLaunchers({ kpis = {}, isExpert = false, onNavigate }) {
-  const visibleModules = NAV_MODULES.filter(m => !m.expertOnly || isExpert);
+  const visibleModules = NAV_MODULES.filter((m) => !m.expertOnly || isExpert);
 
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">Explorer</p>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
+        Explorer
+      </p>
       <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-        {visibleModules.map(mod => (
+        {visibleModules.map((mod) => (
           <ModuleTile key={mod.key} mod={mod} kpis={kpis} onNavigate={onNavigate} />
         ))}
       </div>

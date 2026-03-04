@@ -6,6 +6,7 @@ Provides FastAPI dependencies for authentication:
 - get_current_user: strict (raises 401)
 - get_optional_auth: lenient (returns None in demo mode)
 """
+
 import os
 from dataclasses import dataclass
 from typing import Optional
@@ -28,6 +29,7 @@ DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
 @dataclass
 class AuthContext:
     """Injected into endpoints via Depends(get_optional_auth)."""
+
     user: User
     user_org_role: UserOrgRole
     org_id: int
@@ -76,10 +78,14 @@ def get_current_user_role(
     if not user or not user.actif:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive or not found")
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id,
-        UserOrgRole.org_id == org_id,
-    ).first()
+    uor = (
+        db.query(UserOrgRole)
+        .filter(
+            UserOrgRole.user_id == user_id,
+            UserOrgRole.org_id == org_id,
+        )
+        .first()
+    )
     if not uor:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No role for this org")
 
@@ -119,10 +125,14 @@ def get_optional_auth(
     if not user:
         return None
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id,
-        UserOrgRole.org_id == org_id,
-    ).first()
+    uor = (
+        db.query(UserOrgRole)
+        .filter(
+            UserOrgRole.user_id == user_id,
+            UserOrgRole.org_id == org_id,
+        )
+        .first()
+    )
     if not uor:
         return None
 
@@ -160,10 +170,14 @@ def get_portfolio_optional_auth(
         user = db.query(User).filter(User.id == user_id, User.actif == True).first()
         if not user:
             return None
-        uor = db.query(UserOrgRole).filter(
-            UserOrgRole.user_id == user_id,
-            UserOrgRole.org_id == org_id,
-        ).first()
+        uor = (
+            db.query(UserOrgRole)
+            .filter(
+                UserOrgRole.user_id == user_id,
+                UserOrgRole.org_id == org_id,
+            )
+            .first()
+        )
         if not uor:
             return None
         site_ids = get_scoped_site_ids(db, uor)
@@ -180,6 +194,7 @@ def get_portfolio_optional_auth(
 
 def require_permission(action: str, module: Optional[str] = None):
     """Dependency factory: raise 403 if role lacks permission."""
+
     def _check(
         token: Optional[str] = Depends(oauth2_scheme),
         db: Session = Depends(get_db),

@@ -15,14 +15,14 @@ import { computeSummaryFromInsights } from '../ConsumptionDiagPage';
 describe('filteredInsights: site scope filtering', () => {
   const insights = [
     { id: 1, site_id: 1, type: 'base_load', estimated_loss_kwh: 100, estimated_loss_eur: 15 },
-    { id: 2, site_id: 2, type: 'pointe',    estimated_loss_kwh: 200, estimated_loss_eur: 30 },
-    { id: 3, site_id: 3, type: 'derive',    estimated_loss_kwh: 50,  estimated_loss_eur: 7.5 },
+    { id: 2, site_id: 2, type: 'pointe', estimated_loss_kwh: 200, estimated_loss_eur: 30 },
+    { id: 3, site_id: 3, type: 'derive', estimated_loss_kwh: 50, estimated_loss_eur: 7.5 },
     { id: 4, site_id: 1, type: 'hors_horaires', estimated_loss_kwh: 80, estimated_loss_eur: 12 },
   ];
 
   function filterInsights(allInsights, selectedSiteId) {
     if (!allInsights.length) return [];
-    if (selectedSiteId) return allInsights.filter(i => i.site_id === selectedSiteId);
+    if (selectedSiteId) return allInsights.filter((i) => i.site_id === selectedSiteId);
     return allInsights;
   }
 
@@ -34,7 +34,7 @@ describe('filteredInsights: site scope filtering', () => {
   it('selectedSiteId=1 → only site 1 insights (2 items)', () => {
     const result = filterInsights(insights, 1);
     expect(result).toHaveLength(2);
-    expect(result.every(i => i.site_id === 1)).toBe(true);
+    expect(result.every((i) => i.site_id === 1)).toBe(true);
   });
 
   it('selectedSiteId=3 → only site 3 insights (1 item)', () => {
@@ -52,13 +52,11 @@ describe('filteredInsights: site scope filtering', () => {
 // ── hasMismatch ────────────────────────────────────────────────────────────────
 
 describe('hasMismatch: scope mismatch detection', () => {
-  const insights = [
-    { site_id: 1 }, { site_id: 2 }, { site_id: 3 },
-  ];
+  const insights = [{ site_id: 1 }, { site_id: 2 }, { site_id: 3 }];
 
   function computeHasMismatch(selectedSiteId, allInsights) {
     const isSiteScoped = Boolean(selectedSiteId);
-    return isSiteScoped && new Set(allInsights.map(i => i.site_id)).size > 1;
+    return isSiteScoped && new Set(allInsights.map((i) => i.site_id)).size > 1;
   }
 
   it('hasMismatch: true when siteId set + insights from 3 different sites', () => {
@@ -83,10 +81,10 @@ describe('hasMismatch: scope mismatch detection', () => {
 
 describe('computeSummaryFromInsights: totals and by_type', () => {
   const insights = [
-    { id: 1, site_id: 1, type: 'base_load',     estimated_loss_kwh: 100, estimated_loss_eur: 15 },
-    { id: 2, site_id: 2, type: 'pointe',         estimated_loss_kwh: 200, estimated_loss_eur: 30 },
-    { id: 3, site_id: 1, type: 'base_load',      estimated_loss_kwh: 50,  estimated_loss_eur: 7.5 },
-    { id: 4, site_id: 3, type: 'hors_horaires',  estimated_loss_kwh: 80,  estimated_loss_eur: 12 },
+    { id: 1, site_id: 1, type: 'base_load', estimated_loss_kwh: 100, estimated_loss_eur: 15 },
+    { id: 2, site_id: 2, type: 'pointe', estimated_loss_kwh: 200, estimated_loss_eur: 30 },
+    { id: 3, site_id: 1, type: 'base_load', estimated_loss_kwh: 50, estimated_loss_eur: 7.5 },
+    { id: 4, site_id: 3, type: 'hors_horaires', estimated_loss_kwh: 80, estimated_loss_eur: 12 },
   ];
 
   it('computes correct totals for 4 insights', () => {
@@ -176,8 +174,11 @@ describe('GRAN_LABELS: granularity label mapping', () => {
 
 describe('DataCoverageBadge: parts generation logic', () => {
   const GRAN_LABELS = {
-    daily: 'Journalière', monthly: 'Mensuelle', hourly: 'Horaire',
-    '15min': '15 min', '30min': '30 min',
+    daily: 'Journalière',
+    monthly: 'Mensuelle',
+    hourly: 'Horaire',
+    '15min': '15 min',
+    '30min': '30 min',
   };
 
   function buildParts(meta, siteCount, qualityPct) {
@@ -185,7 +186,9 @@ describe('DataCoverageBadge: parts generation logic', () => {
       siteCount > 1 ? `${siteCount} sites` : null,
       meta?.n_meters ? `${meta.n_meters}\u00a0compteur${meta.n_meters > 1 ? 's' : ''}` : null,
       meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0points` : null,
-      meta?.granularity ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}` : null,
+      meta?.granularity
+        ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}`
+        : null,
       qualityPct != null ? `Qualité\u00a0: ${qualityPct}\u00a0%` : null,
       'Source\u00a0: EMS',
     ].filter(Boolean);
@@ -193,7 +196,7 @@ describe('DataCoverageBadge: parts generation logic', () => {
 
   it('single site: no "N sites" part', () => {
     const parts = buildParts({ n_meters: 1, n_points: 31, granularity: 'daily' }, 1, null);
-    expect(parts.some(p => p.includes('sites'))).toBe(false);
+    expect(parts.some((p) => p.includes('sites'))).toBe(false);
   });
 
   it('2 sites: includes "2 sites" part', () => {
@@ -208,16 +211,16 @@ describe('DataCoverageBadge: parts generation logic', () => {
 
   it('n_meters=1 → singular "compteur"', () => {
     const parts = buildParts({ n_meters: 1, n_points: 10, granularity: 'daily' }, 1, null);
-    expect(parts.some(p => p.includes('compteur') && !p.includes('compteurs'))).toBe(true);
+    expect(parts.some((p) => p.includes('compteur') && !p.includes('compteurs'))).toBe(true);
   });
 
   it('n_meters=3 → plural "compteurs"', () => {
     const parts = buildParts({ n_meters: 3, n_points: 93, granularity: 'monthly' }, 1, null);
-    expect(parts.some(p => p.includes('compteurs'))).toBe(true);
+    expect(parts.some((p) => p.includes('compteurs'))).toBe(true);
   });
 
   it('qualityPct included when provided', () => {
     const parts = buildParts({ n_meters: 1, n_points: 30, granularity: 'daily' }, 1, 87);
-    expect(parts.some(p => p.includes('87'))).toBe(true);
+    expect(parts.some((p) => p.includes('87'))).toBe(true);
   });
 });

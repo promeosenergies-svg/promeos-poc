@@ -2,8 +2,10 @@
 PROMEOS - Tests for Watchers
 Tests the watcher registry, RSS parsing, and hash deduplication
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,6 +23,7 @@ from watchers.rss_watcher import RSSWatcher
 # Fixtures
 # ========================================
 
+
 @pytest.fixture
 def db_session():
     """In-memory SQLite database for testing"""
@@ -36,21 +39,23 @@ def db_session():
 # Tests
 # ========================================
 
+
 def test_watcher_registry():
     """Test watcher auto-discovery"""
     watchers = list_watchers()
 
     assert len(watchers) >= 3  # We have at least 3 watchers
-    watcher_names = [w['name'] for w in watchers]
+    watcher_names = [w["name"] for w in watchers]
 
     # Check for expected watchers (names match class definitions)
-    assert 'legifrance' in watcher_names
-    assert 'cre' in watcher_names
-    assert 'rte' in watcher_names
+    assert "legifrance" in watcher_names
+    assert "cre" in watcher_names
+    assert "rte" in watcher_names
 
 
 def test_rss_watcher_base_class():
     """Test RSSWatcher base class"""
+
     # Create a test watcher
     class TestRSSWatcher(RSSWatcher):
         name = "test_rss"
@@ -60,7 +65,7 @@ def test_rss_watcher_base_class():
     watcher = TestRSSWatcher()
 
     assert watcher.name == "test_rss"
-    assert hasattr(watcher, 'check')
+    assert hasattr(watcher, "check")
     assert callable(watcher.check)
 
 
@@ -78,7 +83,7 @@ def test_hash_deduplication(db_session):
         content_hash=content_hash,
         snippet="This is a test snippet",
         tags="test,regulatory",
-        retrieved_at=datetime.now()
+        retrieved_at=datetime.now(),
     )
     db_session.add(event1)
     db_session.commit()
@@ -91,7 +96,7 @@ def test_hash_deduplication(db_session):
         content_hash=content_hash,
         snippet="This is a test snippet",
         tags="test,regulatory",
-        retrieved_at=datetime.now()
+        retrieved_at=datetime.now(),
     )
     db_session.add(event2)
 
@@ -117,8 +122,8 @@ def test_watcher_interface():
 
     # Just verify all watchers have required metadata
     for watcher_data in watchers_data:
-        assert 'name' in watcher_data
-        assert 'description' in watcher_data
+        assert "name" in watcher_data
+        assert "description" in watcher_data
 
 
 def test_reg_source_event_model(db_session):
@@ -132,7 +137,7 @@ def test_reg_source_event_model(db_session):
         tags="test,event",
         published_at=datetime(2024, 1, 15),
         retrieved_at=datetime.now(),
-        reviewed=False
+        reviewed=False,
     )
     db_session.add(event)
     db_session.commit()
@@ -148,5 +153,5 @@ def test_reg_source_event_model(db_session):
 # Run Tests
 # ========================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

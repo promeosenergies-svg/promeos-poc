@@ -17,9 +17,7 @@ export function getRecents() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     // Backward compat: migrate old string[] to object[]
-    return raw.map((entry) =>
-      typeof entry === 'string' ? { path: entry } : entry
-    );
+    return raw.map((entry) => (typeof entry === 'string' ? { path: entry } : entry));
   } catch {
     return [];
   }

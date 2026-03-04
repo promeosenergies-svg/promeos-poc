@@ -4,7 +4,14 @@
  * Props: { covered, partial, missing, total, minMonth, maxMonth }
  */
 
-export default function CoverageBar({ covered = 0, partial = 0, missing = 0, total = 0, minMonth, maxMonth }) {
+export default function CoverageBar({
+  covered = 0,
+  partial = 0,
+  missing = 0,
+  total = 0,
+  minMonth,
+  maxMonth,
+}) {
   if (total === 0) return null;
 
   const pctCovered = Math.round((covered / total) * 100);

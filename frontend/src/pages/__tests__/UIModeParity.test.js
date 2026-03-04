@@ -87,7 +87,7 @@ describe('ResumeContexte: Row 4 content logic', () => {
     const meters = availability?.meters_count ?? null;
     const source = availability?.source ?? null;
     const quality = availability?.readings_count
-      ? Math.min(100, Math.round(availability.readings_count / 500 * 100))
+      ? Math.min(100, Math.round((availability.readings_count / 500) * 100))
       : null;
 
     return [
@@ -121,12 +121,22 @@ describe('ResumeContexte: Row 4 content logic', () => {
   });
 
   it('shows "1 compteur" when meters_count=1', () => {
-    const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: { meters_count: 1 } });
+    const parts = buildContexteParts({
+      days: 30,
+      gran: 'jour',
+      nSites: 1,
+      availability: { meters_count: 1 },
+    });
     expect(parts).toContain('1 compteur');
   });
 
   it('shows "3 compteurs" when meters_count=3', () => {
-    const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: { meters_count: 3 } });
+    const parts = buildContexteParts({
+      days: 30,
+      gran: 'jour',
+      nSites: 1,
+      availability: { meters_count: 3 },
+    });
     expect(parts).toContain('3 compteurs');
   });
 
@@ -136,31 +146,36 @@ describe('ResumeContexte: Row 4 content logic', () => {
   });
 
   it('shows Source when source is present', () => {
-    const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: { source: 'Enedis' } });
-    expect(parts.some(p => p.includes('Enedis'))).toBe(true);
+    const parts = buildContexteParts({
+      days: 30,
+      gran: 'jour',
+      nSites: 1,
+      availability: { source: 'Enedis' },
+    });
+    expect(parts.some((p) => p.includes('Enedis'))).toBe(true);
   });
 
   it('omits Source when source is null', () => {
     const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: {} });
-    expect(parts.some(p => p.includes('Source'))).toBe(false);
+    expect(parts.some((p) => p.includes('Source'))).toBe(false);
   });
 
   it('computes quality as min(100, readings_count/500*100)', () => {
     const avail = { readings_count: 500 };
     const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: avail });
-    expect(parts.some(p => p.includes('100'))).toBe(true);
+    expect(parts.some((p) => p.includes('100'))).toBe(true);
   });
 
   it('caps quality at 100%', () => {
     const avail = { readings_count: 99999 };
     const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: avail });
-    const qualityPart = parts.find(p => p.includes('Qualité'));
+    const qualityPart = parts.find((p) => p.includes('Qualité'));
     expect(qualityPart).toContain('100');
   });
 
   it('omits quality when readings_count is absent', () => {
     const parts = buildContexteParts({ days: 30, gran: 'jour', nSites: 1, availability: {} });
-    expect(parts.some(p => p.includes('Qualité'))).toBe(false);
+    expect(parts.some((p) => p.includes('Qualité'))).toBe(false);
   });
 
   it('handles null availability gracefully', () => {
@@ -194,7 +209,13 @@ describe('URL state: uiMode never appears in URL', () => {
   }
 
   it('uiMode is absent from URL params', () => {
-    const params = simulateUrlParams({ sites: [1], energy: 'electricity', days: 30, mode: 'agrege', unit: 'kwh' });
+    const params = simulateUrlParams({
+      sites: [1],
+      energy: 'electricity',
+      days: 30,
+      mode: 'agrege',
+      unit: 'kwh',
+    });
     expect(params.uiMode).toBeUndefined();
     expect(params.ui_mode).toBeUndefined();
     expect(params.mode_ui).toBeUndefined();
@@ -238,37 +259,57 @@ describe('Classic mode: parity checklist', () => {
       siteAddButton: isMultiMode && effectiveSiteIds.length < 5,
       portfolioToggle: isMultiMode,
       energyToggle: true, // always
-      periodPills: true,  // always
-      granularity: true,  // always
+      periodPills: true, // always
+      granularity: true, // always
       modePills: showModePills,
-      unitPills: true,    // always (setUnit prop present)
-      actionsRow: true,   // always (when callbacks present)
+      unitPills: true, // always (setUnit prop present)
+      actionsRow: true, // always (when callbacks present)
       resumeContexte: isClassic,
     };
   }
 
   it('Classic: modePills shown even with 1 site', () => {
-    const ctrl = getVisibleControls('classic', { isMultiMode: true, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('classic', {
+      isMultiMode: true,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.modePills).toBe(true);
   });
 
   it('Expert: modePills hidden for single-site, non-portfolio', () => {
-    const ctrl = getVisibleControls('expert', { isMultiMode: true, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('expert', {
+      isMultiMode: true,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.modePills).toBe(false);
   });
 
   it('Classic: résumé contexte (Row 4) shown', () => {
-    const ctrl = getVisibleControls('classic', { isMultiMode: true, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('classic', {
+      isMultiMode: true,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.resumeContexte).toBe(true);
   });
 
   it('Expert: résumé contexte hidden', () => {
-    const ctrl = getVisibleControls('expert', { isMultiMode: true, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('expert', {
+      isMultiMode: true,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.resumeContexte).toBe(false);
   });
 
   it('Classic: all core controls visible (energy, period, granularity, unit)', () => {
-    const ctrl = getVisibleControls('classic', { isMultiMode: false, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('classic', {
+      isMultiMode: false,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.energyToggle).toBe(true);
     expect(ctrl.periodPills).toBe(true);
     expect(ctrl.granularity).toBe(true);
@@ -276,7 +317,11 @@ describe('Classic mode: parity checklist', () => {
   });
 
   it('Expert: all core controls also visible (no regression)', () => {
-    const ctrl = getVisibleControls('expert', { isMultiMode: false, isPortfolioMode: false, effectiveSiteIds: [1] });
+    const ctrl = getVisibleControls('expert', {
+      isMultiMode: false,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1],
+    });
     expect(ctrl.energyToggle).toBe(true);
     expect(ctrl.periodPills).toBe(true);
     expect(ctrl.granularity).toBe(true);
@@ -284,12 +329,20 @@ describe('Classic mode: parity checklist', () => {
   });
 
   it('Expert: modePills shown when multi-site (no regression)', () => {
-    const ctrl = getVisibleControls('expert', { isMultiMode: true, isPortfolioMode: false, effectiveSiteIds: [1, 2] });
+    const ctrl = getVisibleControls('expert', {
+      isMultiMode: true,
+      isPortfolioMode: false,
+      effectiveSiteIds: [1, 2],
+    });
     expect(ctrl.modePills).toBe(true);
   });
 
   it('Expert: modePills shown in portfolio mode (no regression)', () => {
-    const ctrl = getVisibleControls('expert', { isMultiMode: true, isPortfolioMode: true, effectiveSiteIds: [1, 2, 3] });
+    const ctrl = getVisibleControls('expert', {
+      isMultiMode: true,
+      isPortfolioMode: true,
+      effectiveSiteIds: [1, 2, 3],
+    });
     expect(ctrl.modePills).toBe(true);
   });
 });
@@ -309,7 +362,9 @@ describe('Portfolio banner: show/dismiss logic', () => {
   it('banner resets on each portfolio entry', () => {
     // Simulates handleTogglePortfolio resetting dismissed state
     let dismissed = true;
-    function enterPortfolio() { dismissed = false; }
+    function enterPortfolio() {
+      dismissed = false;
+    }
     enterPortfolio();
     expect(dismissed).toBe(false);
   });

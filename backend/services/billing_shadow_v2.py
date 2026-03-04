@@ -6,6 +6,7 @@ TVA per-composante : 20 % énergie/réseau/taxes, 5.5 % abonnement.
 Prorata jours : days_in_period / 30.
 Comparaison vs lignes réelles → deltas pour R13/R14.
 """
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def _safe_rate(code: str, at_date=None) -> float:
     """Get rate from tax catalog with hardcoded fallback."""
     try:
         from app.referential.tax_catalog_service import get_rate
+
         return get_rate(code, at_date)
     except Exception:
         return _FALLBACK.get(code, 0.0)
@@ -46,6 +48,7 @@ def _safe_trace(code: str, at_date=None) -> dict:
     """Get audit trace from catalog (returns {} on failure)."""
     try:
         from app.referential.tax_catalog_service import trace
+
         return trace(code, at_date)
     except Exception:
         return {}
@@ -122,15 +125,9 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     exp_ttc = exp_ht + exp_tva
 
     # ── Actual (from invoice lines) ──────────────────────────────────
-    act_fourniture = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "energy"
-    )
-    act_reseau = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "network"
-    )
-    act_taxes = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "tax"
-    )
+    act_fourniture = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "energy")
+    act_reseau = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "network")
+    act_taxes = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "tax")
     act_ttc = invoice.total_eur or 0.0
 
     # ── Deltas ───────────────────────────────────────────────────────

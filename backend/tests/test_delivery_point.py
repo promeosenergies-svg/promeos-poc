@@ -2,8 +2,10 @@
 PROMEOS - Tests DeliveryPoint (PRM/PCE as autonomous entity)
 Covers: migration backfill, dedup, unique constraint, activation linking, API endpoint.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,24 +14,42 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Compteur, Organisation, EntiteJuridique, Portefeuille,
-    StagingBatch, StagingSite, StagingCompteur,
-    DeliveryPoint, DeliveryPointStatus, DeliveryPointEnergyType,
-    StagingStatus, ImportSourceType, TypeSite, TypeCompteur, EnergyVector,
+    Base,
+    Site,
+    Compteur,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    DeliveryPoint,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    StagingStatus,
+    ImportSourceType,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
     not_deleted,
 )
 from services.patrimoine_service import (
-    create_staging_batch, run_quality_gate, activate_batch,
+    create_staging_batch,
+    run_quality_gate,
+    activate_batch,
 )
 from database.migrations import (
-    _create_delivery_points_table, _add_compteur_delivery_point_fk,
-    _backfill_delivery_points, _add_unique_delivery_point_code_index,
+    _create_delivery_points_table,
+    _add_compteur_delivery_point_fk,
+    _backfill_delivery_points,
+    _add_unique_delivery_point_code_index,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -56,7 +76,8 @@ def raw_engine():
     )
     # Create tables via raw SQL to simulate pre-migration state
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE sites (
                 id INTEGER PRIMARY KEY,
                 nom VARCHAR(200) NOT NULL,
@@ -69,8 +90,10 @@ def raw_engine():
                 deleted_by VARCHAR(200),
                 delete_reason VARCHAR(500)
             )
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TABLE compteurs (
                 id INTEGER PRIMARY KEY,
                 site_id INTEGER NOT NULL REFERENCES sites(id),
@@ -86,7 +109,8 @@ def raw_engine():
                 deleted_by VARCHAR(200),
                 delete_reason VARCHAR(500)
             )
-        """))
+        """)
+        )
     yield engine
     engine.dispose()
 
@@ -111,19 +135,20 @@ def _create_org(db_session):
 # Test 1: Migration backfill
 # ========================================
 
+
 class TestMigrationBackfillDeliveryPoints:
     """Migration: compteur.meter_id → DeliveryPoint created + FK set."""
 
     def test_migration_backfills_delivery_points(self, raw_engine):
         """Active compteur with meter_id → DeliveryPoint created and linked."""
         with raw_engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"
-            ))
-            conn.execute(text(
-                "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
-                "VALUES (1, 1, 'electricite', 'S-001', '12345678901234', 1)"
-            ))
+            conn.execute(text("INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"))
+            conn.execute(
+                text(
+                    "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
+                    "VALUES (1, 1, 'electricite', 'S-001', '12345678901234', 1)"
+                )
+            )
 
         # Run migrations
         _create_delivery_points_table(raw_engine)
@@ -138,21 +163,19 @@ class TestMigrationBackfillDeliveryPoints:
             assert dp[3] == 1  # site_id
 
             # Compteur linked
-            cpt = conn.execute(text(
-                "SELECT delivery_point_id FROM compteurs WHERE id = 1"
-            )).fetchone()
+            cpt = conn.execute(text("SELECT delivery_point_id FROM compteurs WHERE id = 1")).fetchone()
             assert cpt[0] == dp[0]  # delivery_point_id = dp.id
 
     def test_migration_skips_soft_deleted_compteurs(self, raw_engine):
         """Soft-deleted compteurs are NOT backfilled."""
         with raw_engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"
-            ))
-            conn.execute(text(
-                "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif, deleted_at) "
-                "VALUES (1, 1, 'electricite', 'S-DEL', '99999999999999', 1, '2025-01-01')"
-            ))
+            conn.execute(text("INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"))
+            conn.execute(
+                text(
+                    "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif, deleted_at) "
+                    "VALUES (1, 1, 'electricite', 'S-DEL', '99999999999999', 1, '2025-01-01')"
+                )
+            )
 
         _create_delivery_points_table(raw_engine)
         _add_compteur_delivery_point_fk(raw_engine)
@@ -165,13 +188,13 @@ class TestMigrationBackfillDeliveryPoints:
     def test_migration_idempotent(self, raw_engine):
         """Running backfill twice creates no duplicates."""
         with raw_engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"
-            ))
-            conn.execute(text(
-                "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
-                "VALUES (1, 1, 'electricite', 'S-001', '12345678901234', 1)"
-            ))
+            conn.execute(text("INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"))
+            conn.execute(
+                text(
+                    "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
+                    "VALUES (1, 1, 'electricite', 'S-001', '12345678901234', 1)"
+                )
+            )
 
         _create_delivery_points_table(raw_engine)
         _add_compteur_delivery_point_fk(raw_engine)
@@ -187,22 +210,25 @@ class TestMigrationBackfillDeliveryPoints:
 # Test 2: Migration dedup
 # ========================================
 
+
 class TestMigrationDeduplicatesSharedMeterId:
     """2 compteurs with same meter_id on same site → 1 DeliveryPoint."""
 
     def test_migration_deduplicates_shared_meter_id(self, raw_engine):
         with raw_engine.begin() as conn:
-            conn.execute(text(
-                "INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"
-            ))
-            conn.execute(text(
-                "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
-                "VALUES (1, 1, 'electricite', 'S-001', '11111111111111', 1)"
-            ))
-            conn.execute(text(
-                "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
-                "VALUES (2, 1, 'electricite', 'S-002', '11111111111111', 1)"
-            ))
+            conn.execute(text("INSERT INTO sites (id, nom, type) VALUES (1, 'Site A', 'bureau')"))
+            conn.execute(
+                text(
+                    "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
+                    "VALUES (1, 1, 'electricite', 'S-001', '11111111111111', 1)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO compteurs (id, site_id, type, numero_serie, meter_id, actif) "
+                    "VALUES (2, 1, 'electricite', 'S-002', '11111111111111', 1)"
+                )
+            )
 
         _create_delivery_points_table(raw_engine)
         _add_compteur_delivery_point_fk(raw_engine)
@@ -213,9 +239,7 @@ class TestMigrationDeduplicatesSharedMeterId:
             assert dp_count == 1  # deduplicated
 
             # Both compteurs point to the same DP
-            rows = conn.execute(text(
-                "SELECT delivery_point_id FROM compteurs ORDER BY id"
-            )).fetchall()
+            rows = conn.execute(text("SELECT delivery_point_id FROM compteurs ORDER BY id")).fetchall()
             assert rows[0][0] == rows[1][0]
             assert rows[0][0] is not None
 
@@ -223,6 +247,7 @@ class TestMigrationDeduplicatesSharedMeterId:
 # ========================================
 # Test 3: Unique constraint (soft delete allows reuse)
 # ========================================
+
 
 class TestUniqueDeliveryPointCodeActiveEnforced:
     """Unique partial index on delivery_points.code WHERE deleted_at IS NULL."""
@@ -239,9 +264,13 @@ class TestUniqueDeliveryPointCodeActiveEnforced:
         db_session.flush()
 
         # ORM-level: we can check via query before insert
-        existing = not_deleted(db_session.query(DeliveryPoint), DeliveryPoint).filter(
-            DeliveryPoint.code == "22222222222222",
-        ).count()
+        existing = (
+            not_deleted(db_session.query(DeliveryPoint), DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "22222222222222",
+            )
+            .count()
+        )
         assert existing == 1
 
     def test_soft_deleted_code_allows_reuse(self, db_session):
@@ -265,9 +294,13 @@ class TestUniqueDeliveryPointCodeActiveEnforced:
         db_session.flush()
 
         # Only 1 active
-        active_count = not_deleted(db_session.query(DeliveryPoint), DeliveryPoint).filter(
-            DeliveryPoint.code == "33333333333333",
-        ).count()
+        active_count = (
+            not_deleted(db_session.query(DeliveryPoint), DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "33333333333333",
+            )
+            .count()
+        )
         assert active_count == 1
         assert dp2.id != dp1.id
 
@@ -276,6 +309,7 @@ class TestUniqueDeliveryPointCodeActiveEnforced:
 # Test 4: Activation creates DeliveryPoint and links
 # ========================================
 
+
 class TestActivationCreatesDeliveryPointAndLinksMeters:
     """Activation: DeliveryPoint created for each meter_id, linked to Compteur."""
 
@@ -283,22 +317,32 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         org, ej, pf = _create_org(db_session)
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site DP Test",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site DP Test",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
             surface_m2=500,
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="SERIE-DP-001",
-            meter_id="44444444444444", type_compteur="electricite",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="SERIE-DP-001",
+            meter_id="44444444444444",
+            type_compteur="electricite",
         )
         db_session.add(sc)
         db_session.flush()
@@ -310,16 +354,24 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         assert result["delivery_points_created"] >= 1
 
         # Verify DeliveryPoint exists
-        dp = db_session.query(DeliveryPoint).filter(
-            DeliveryPoint.code == "44444444444444",
-        ).first()
+        dp = (
+            db_session.query(DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "44444444444444",
+            )
+            .first()
+        )
         assert dp is not None
         assert dp.energy_type == DeliveryPointEnergyType.ELEC
 
         # Verify Compteur is linked
-        cpt = db_session.query(Compteur).filter(
-            Compteur.meter_id == "44444444444444",
-        ).first()
+        cpt = (
+            db_session.query(Compteur)
+            .filter(
+                Compteur.meter_id == "44444444444444",
+            )
+            .first()
+        )
         assert cpt is not None
         assert cpt.delivery_point_id == dp.id
         assert cpt.delivery_code == "44444444444444"
@@ -329,20 +381,29 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         org, ej, pf = _create_org(db_session)
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site No DP",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site No DP",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
 
         sc = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="SERIE-NODP-001",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="SERIE-NODP-001",
             type_compteur="electricite",
         )
         db_session.add(sc)
@@ -354,9 +415,13 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         assert result["compteurs_created"] >= 1
         assert result["delivery_points_created"] == 0
 
-        cpt = db_session.query(Compteur).filter(
-            Compteur.numero_serie == "SERIE-NODP-001",
-        ).first()
+        cpt = (
+            db_session.query(Compteur)
+            .filter(
+                Compteur.numero_serie == "SERIE-NODP-001",
+            )
+            .first()
+        )
         assert cpt is not None
         assert cpt.delivery_point_id is None
 
@@ -365,13 +430,20 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         org, ej, pf = _create_org(db_session)
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
 
         ss = StagingSite(
-            batch_id=batch.id, row_number=2, nom="Site Dedup",
-            adresse="1 rue Test", code_postal="75001", ville="Paris",
+            batch_id=batch.id,
+            row_number=2,
+            nom="Site Dedup",
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
         )
         db_session.add(ss)
         db_session.flush()
@@ -379,14 +451,20 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         # Same meter_id for two compteurs — quality gate will flag this as CRITICAL
         # So we use different meter_ids here but same site
         sc1 = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=2, numero_serie="SERIE-DEDUP-001",
-            meter_id="55555555555555", type_compteur="electricite",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=2,
+            numero_serie="SERIE-DEDUP-001",
+            meter_id="55555555555555",
+            type_compteur="electricite",
         )
         sc2 = StagingCompteur(
-            batch_id=batch.id, staging_site_id=ss.id,
-            row_number=3, numero_serie="SERIE-DEDUP-002",
-            meter_id="66666666666666", type_compteur="gaz",
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            row_number=3,
+            numero_serie="SERIE-DEDUP-002",
+            meter_id="66666666666666",
+            type_compteur="gaz",
         )
         db_session.add_all([sc1, sc2])
         db_session.flush()
@@ -398,20 +476,29 @@ class TestActivationCreatesDeliveryPointAndLinksMeters:
         assert result["delivery_points_created"] == 2
 
         # Check energy types
-        dp_elec = db_session.query(DeliveryPoint).filter(
-            DeliveryPoint.code == "55555555555555",
-        ).first()
+        dp_elec = (
+            db_session.query(DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "55555555555555",
+            )
+            .first()
+        )
         assert dp_elec.energy_type == DeliveryPointEnergyType.ELEC
 
-        dp_gaz = db_session.query(DeliveryPoint).filter(
-            DeliveryPoint.code == "66666666666666",
-        ).first()
+        dp_gaz = (
+            db_session.query(DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "66666666666666",
+            )
+            .first()
+        )
         assert dp_gaz.energy_type == DeliveryPointEnergyType.GAZ
 
 
 # ========================================
 # Test 5: API endpoint
 # ========================================
+
 
 class TestDeliveryPointEndpoint:
     """GET /patrimoine/sites/{id}/delivery-points returns delivery points."""
@@ -433,9 +520,13 @@ class TestDeliveryPointEndpoint:
         db_session.flush()
 
         # Query directly (simulating what the endpoint does)
-        dps = not_deleted(db_session.query(DeliveryPoint), DeliveryPoint).filter(
-            DeliveryPoint.site_id == site.id,
-        ).all()
+        dps = (
+            not_deleted(db_session.query(DeliveryPoint), DeliveryPoint)
+            .filter(
+                DeliveryPoint.site_id == site.id,
+            )
+            .all()
+        )
 
         assert len(dps) == 1
         assert dps[0].code == "77777777777777"
@@ -459,9 +550,13 @@ class TestDeliveryPointEndpoint:
         dp.soft_delete(by="admin", reason="decommissioned")
         db_session.flush()
 
-        dps = not_deleted(db_session.query(DeliveryPoint), DeliveryPoint).filter(
-            DeliveryPoint.site_id == site.id,
-        ).all()
+        dps = (
+            not_deleted(db_session.query(DeliveryPoint), DeliveryPoint)
+            .filter(
+                DeliveryPoint.site_id == site.id,
+            )
+            .all()
+        )
 
         assert len(dps) == 0
 
@@ -469,6 +564,7 @@ class TestDeliveryPointEndpoint:
 # ========================================
 # Test 6: Compteur.delivery_code property
 # ========================================
+
 
 class TestDeliveryCodeProperty:
     """Compteur.delivery_code returns DP code if available, else meter_id."""
@@ -485,9 +581,12 @@ class TestDeliveryCodeProperty:
         db_session.flush()
 
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="PROP-001", meter_id="99999999999998",
-            delivery_point_id=dp.id, actif=True,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="PROP-001",
+            meter_id="99999999999998",
+            delivery_point_id=dp.id,
+            actif=True,
         )
         db_session.add(cpt)
         db_session.flush()
@@ -502,8 +601,10 @@ class TestDeliveryCodeProperty:
         db_session.flush()
 
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="FALL-001", meter_id="11112222333344",
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="FALL-001",
+            meter_id="11112222333344",
             actif=True,
         )
         db_session.add(cpt)
@@ -519,8 +620,10 @@ class TestDeliveryCodeProperty:
         db_session.flush()
 
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="NONE-001", actif=True,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="NONE-001",
+            actif=True,
         )
         db_session.add(cpt)
         db_session.flush()

@@ -3,8 +3,10 @@ PROMEOS - Tests DIAMANT: Smart Intake
 ~20 tests covering: question generation, prefill, apply answers, demo autofill,
 inheritance (override resolution), before/after diff, PDF extraction, API endpoints.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -15,21 +17,45 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille, Batiment, Evidence,
-    IntakeSession, IntakeAnswer, IntakeFieldOverride,
-    IntakeSessionStatus, IntakeMode, IntakeSource,
-    TypeSite, TypeEvidence, StatutEvidence, OperatStatus, ParkingType,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Batiment,
+    Evidence,
+    IntakeSession,
+    IntakeAnswer,
+    IntakeFieldOverride,
+    IntakeSessionStatus,
+    IntakeMode,
+    IntakeSource,
+    TypeSite,
+    TypeEvidence,
+    StatutEvidence,
+    OperatStatus,
+    ParkingType,
 )
 from database import get_db
 from main import app
 from services.intake_engine import (
-    generate_questions, prefill_from_existing, resolve_overrides,
-    compute_before_after, extract_from_pdf_text,
-    QUESTION_BANK, DEMO_DEFAULTS, MAX_QUESTIONS,
+    generate_questions,
+    prefill_from_existing,
+    resolve_overrides,
+    compute_before_after,
+    extract_from_pdf_text,
+    QUESTION_BANK,
+    DEMO_DEFAULTS,
+    MAX_QUESTIONS,
 )
 from services.intake_service import (
-    create_session, submit_answer, compute_diff, apply_answers,
-    demo_autofill, complete_session, get_session_detail,
+    create_session,
+    submit_answer,
+    compute_diff,
+    apply_answers,
+    demo_autofill,
+    complete_session,
+    get_session_detail,
     purge_demo_sessions,
 )
 
@@ -37,6 +63,7 @@ from services.intake_service import (
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -59,6 +86,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -124,18 +152,22 @@ def _create_full_site(db_session):
     db_session.add(bat)
 
     # Add BACS evidences
-    db_session.add(Evidence(
-        site_id=site.id,
-        type=TypeEvidence.ATTESTATION_BACS,
-        statut=StatutEvidence.VALIDE,
-        note="Test attestation",
-    ))
-    db_session.add(Evidence(
-        site_id=site.id,
-        type=TypeEvidence.DEROGATION_BACS,
-        statut=StatutEvidence.VALIDE,
-        note="Test derogation",
-    ))
+    db_session.add(
+        Evidence(
+            site_id=site.id,
+            type=TypeEvidence.ATTESTATION_BACS,
+            statut=StatutEvidence.VALIDE,
+            note="Test attestation",
+        )
+    )
+    db_session.add(
+        Evidence(
+            site_id=site.id,
+            type=TypeEvidence.DEROGATION_BACS,
+            statut=StatutEvidence.VALIDE,
+            note="Test derogation",
+        )
+    )
     db_session.flush()
     return site
 
@@ -160,6 +192,7 @@ def _create_org_hierarchy(db_session):
 # ========================================
 # TestQuestionGeneration (4 tests)
 # ========================================
+
 
 class TestQuestionGeneration:
     def test_full_null_site_gets_max_questions(self, db_session):
@@ -209,6 +242,7 @@ class TestQuestionGeneration:
 # TestPrefill (3 tests)
 # ========================================
 
+
 class TestPrefill:
     def test_prefill_surface_to_tertiaire(self, db_session):
         """surface_m2 suggests tertiaire_area_m2 for tertiaire site."""
@@ -235,6 +269,7 @@ class TestPrefill:
 # ========================================
 # TestApplyAnswers (4 tests)
 # ========================================
+
 
 class TestApplyAnswers:
     def test_apply_site_field(self, db_session):
@@ -283,6 +318,7 @@ class TestApplyAnswers:
 # TestDemoAutofill (3 tests)
 # ========================================
 
+
 class TestDemoAutofill:
     def test_autofill_creates_answers(self, db_session):
         """demo_autofill creates IntakeAnswer records with source=SYSTEM_DEMO."""
@@ -290,9 +326,7 @@ class TestDemoAutofill:
         session = create_session(db_session, site.id, mode=IntakeMode.DEMO)
         result = demo_autofill(db_session, session.id)
         assert result["answers_created"] > 0
-        answers = db_session.query(IntakeAnswer).filter(
-            IntakeAnswer.session_id == session.id
-        ).all()
+        answers = db_session.query(IntakeAnswer).filter(IntakeAnswer.session_id == session.id).all()
         assert len(answers) > 0
         assert all(a.source == IntakeSource.SYSTEM_DEMO for a in answers)
 
@@ -314,15 +348,14 @@ class TestDemoAutofill:
         count = purge_demo_sessions(db_session)
         db_session.commit()
         assert count >= 1
-        remaining = db_session.query(IntakeSession).filter(
-            IntakeSession.mode == IntakeMode.DEMO
-        ).count()
+        remaining = db_session.query(IntakeSession).filter(IntakeSession.mode == IntakeMode.DEMO).count()
         assert remaining == 0
 
 
 # ========================================
 # TestInheritance (3 tests)
 # ========================================
+
 
 class TestInheritance:
     def test_org_override_provides_default(self, db_session):
@@ -332,13 +365,15 @@ class TestInheritance:
         site.portefeuille_id = pf.id
         db_session.flush()
 
-        db_session.add(IntakeFieldOverride(
-            scope_type="org",
-            scope_id=org.id,
-            field_path="site.tertiaire_area_m2",
-            value_json=json.dumps(5000.0),
-            source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="org",
+                scope_id=org.id,
+                field_path="site.tertiaire_area_m2",
+                value_json=json.dumps(5000.0),
+                source="bulk",
+            )
+        )
         db_session.flush()
 
         overrides = resolve_overrides(db_session, site.id)
@@ -354,21 +389,25 @@ class TestInheritance:
         db_session.flush()
 
         # ORG override
-        db_session.add(IntakeFieldOverride(
-            scope_type="org",
-            scope_id=org.id,
-            field_path="site.parking_area_m2",
-            value_json=json.dumps(3000.0),
-            source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="org",
+                scope_id=org.id,
+                field_path="site.parking_area_m2",
+                value_json=json.dumps(3000.0),
+                source="bulk",
+            )
+        )
         # ENTITY override (should win)
-        db_session.add(IntakeFieldOverride(
-            scope_type="entity",
-            scope_id=ej.id,
-            field_path="site.parking_area_m2",
-            value_json=json.dumps(2000.0),
-            source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="entity",
+                scope_id=ej.id,
+                field_path="site.parking_area_m2",
+                value_json=json.dumps(2000.0),
+                source="bulk",
+            )
+        )
         db_session.flush()
 
         overrides = resolve_overrides(db_session, site.id)
@@ -383,20 +422,35 @@ class TestInheritance:
         db_session.flush()
 
         # ORG
-        db_session.add(IntakeFieldOverride(
-            scope_type="org", scope_id=org.id,
-            field_path="site.roof_area_m2", value_json=json.dumps(1000.0), source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="org",
+                scope_id=org.id,
+                field_path="site.roof_area_m2",
+                value_json=json.dumps(1000.0),
+                source="bulk",
+            )
+        )
         # ENTITY
-        db_session.add(IntakeFieldOverride(
-            scope_type="entity", scope_id=ej.id,
-            field_path="site.roof_area_m2", value_json=json.dumps(800.0), source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="entity",
+                scope_id=ej.id,
+                field_path="site.roof_area_m2",
+                value_json=json.dumps(800.0),
+                source="bulk",
+            )
+        )
         # SITE (should win)
-        db_session.add(IntakeFieldOverride(
-            scope_type="site", scope_id=site.id,
-            field_path="site.roof_area_m2", value_json=json.dumps(600.0), source="bulk",
-        ))
+        db_session.add(
+            IntakeFieldOverride(
+                scope_type="site",
+                scope_id=site.id,
+                field_path="site.roof_area_m2",
+                value_json=json.dumps(600.0),
+                source="bulk",
+            )
+        )
         db_session.flush()
 
         overrides = resolve_overrides(db_session, site.id)
@@ -407,6 +461,7 @@ class TestInheritance:
 # ========================================
 # TestBeforeAfter (2 tests)
 # ========================================
+
 
 class TestBeforeAfter:
     def test_compute_before_after_empty_site(self, db_session):
@@ -433,6 +488,7 @@ class TestBeforeAfter:
 # TestPDFExtraction (1 test)
 # ========================================
 
+
 class TestPDFExtraction:
     def test_extract_from_pdf_text(self):
         """Regex patterns extract fields from PDF text."""
@@ -454,6 +510,7 @@ class TestPDFExtraction:
 # ========================================
 # TestSessionLifecycle (2 tests)
 # ========================================
+
 
 class TestSessionLifecycle:
     def test_create_and_complete_session(self, db_session):
@@ -487,6 +544,7 @@ class TestSessionLifecycle:
 # TestIntakeAPI (3 tests)
 # ========================================
 
+
 class TestIntakeAPI:
     def test_get_questions_endpoint(self, client, db_session):
         """GET /api/intake/{site_id}/questions returns question list."""
@@ -506,11 +564,14 @@ class TestIntakeAPI:
         # First get questions to create a session
         client.get(f"/api/intake/{site.id}/questions")
         # Then post an answer
-        resp = client.post(f"/api/intake/{site.id}/answers", json={
-            "field_path": "site.tertiaire_area_m2",
-            "value": 2000.0,
-            "source": "user",
-        })
+        resp = client.post(
+            f"/api/intake/{site.id}/answers",
+            json={
+                "field_path": "site.tertiaire_area_m2",
+                "value": 2000.0,
+                "source": "user",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["field_path"] == "site.tertiaire_area_m2"
@@ -524,10 +585,13 @@ class TestIntakeAPI:
         q_resp = client.get(f"/api/intake/{site.id}/questions")
         assert q_resp.status_code == 200
         # Submit answer
-        a_resp = client.post(f"/api/intake/{site.id}/answers", json={
-            "field_path": "site.tertiaire_area_m2",
-            "value": 2500.0,
-        })
+        a_resp = client.post(
+            f"/api/intake/{site.id}/answers",
+            json={
+                "field_path": "site.tertiaire_area_m2",
+                "value": 2500.0,
+            },
+        )
         assert a_resp.status_code == 200
         # Complete
         c_resp = client.post(f"/api/intake/{site.id}/complete")

@@ -2,6 +2,7 @@
 test_contract_radar_v99.py — V99 Contract Renewal Radar tests
 Tests: radar service, purchase scenarios service, endpoints.
 """
+
 import pytest
 import inspect
 from datetime import date, timedelta
@@ -21,6 +22,7 @@ from services.purchase_scenarios_service import (
 
 
 # ── A. Urgency mapping ────────────────────────────────────────────────
+
 
 class TestComputeUrgency:
     """V99: urgency color logic."""
@@ -49,8 +51,10 @@ class TestComputeUrgency:
 
 # ── B. Contract status logic ──────────────────────────────────────────
 
+
 class TestComputeStatus:
     """V99: status from end_date."""
+
     today = date.today()
 
     def test_none_end_date_is_active(self):
@@ -67,6 +71,7 @@ class TestComputeStatus:
 
 
 # ── C. Sort key logic ────────────────────────────────────────────────
+
 
 class TestSortKey:
     """V99: expired → expiring → active ordering."""
@@ -89,6 +94,7 @@ class TestSortKey:
 
 # ── D. Indexation labels ──────────────────────────────────────────────
 
+
 class TestIndexationLabels:
     """V99: indexation label lookup."""
 
@@ -107,6 +113,7 @@ class TestIndexationLabels:
 
 # ── E. Scenario templates ────────────────────────────────────────────
 
+
 class TestScenarioTemplates:
     """V99: scenario template constants."""
 
@@ -114,7 +121,15 @@ class TestScenarioTemplates:
         assert set(SCENARIO_TEMPLATES.keys()) == {"A", "B", "C"}
 
     def test_each_has_required_fields(self):
-        required = {"label", "description", "risk_level", "avantages", "inconvenients", "action_templates", "price_factor"}
+        required = {
+            "label",
+            "description",
+            "risk_level",
+            "avantages",
+            "inconvenients",
+            "action_templates",
+            "price_factor",
+        }
         for sid, tpl in SCENARIO_TEMPLATES.items():
             for field in required:
                 assert field in tpl, f"Scenario {sid} missing {field}"
@@ -137,6 +152,7 @@ class TestScenarioTemplates:
 
 # ── F. compute_contract_radar signature ───────────────────────────────
 
+
 class TestRadarServiceSignature:
     """V99: radar service interface."""
 
@@ -154,6 +170,7 @@ class TestRadarServiceSignature:
 
 
 # ── G. compute_purchase_scenarios signature ───────────────────────────
+
 
 class TestScenariosServiceSignature:
     """V99: scenarios service interface."""
@@ -173,12 +190,14 @@ class TestScenariosServiceSignature:
 
 # ── H. Routes source guards ──────────────────────────────────────────
 
+
 class TestContractRadarRoutes:
     """V99: route file has expected endpoints."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
         import pathlib
+
         self.src = (pathlib.Path(__file__).parent.parent / "routes" / "contracts_radar.py").read_text(encoding="utf-8")
 
     def test_has_radar_endpoint(self):

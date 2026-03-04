@@ -6,6 +6,7 @@ V1.1: get_reference_price (contract > site_tariff > fallback),
       cross-link R9 -> diagnostic-conso,
       insight workflow defaults.
 """
+
 import inspect
 import json
 import logging
@@ -18,10 +19,19 @@ from sqlalchemy import func
 logger = logging.getLogger(__name__)
 
 from models import (
-    Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
-    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
-    SiteTariffProfile, InsightStatus,
-    ActionItem, Portefeuille, EntiteJuridique,
+    Site,
+    EnergyContract,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    BillingInsight,
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
+    SiteTariffProfile,
+    InsightStatus,
+    ActionItem,
+    Portefeuille,
+    EntiteJuridique,
 )
 from models.enums import ActionSourceType, ActionStatus
 
@@ -71,9 +81,7 @@ def get_reference_price(
             return (c.price_ref_eur_per_kwh, f"contract:{c.id}")
 
     # Priority 2: SiteTariffProfile
-    tariff = db.query(SiteTariffProfile).filter(
-        SiteTariffProfile.site_id == site_id
-    ).first()
+    tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()
     if tariff and tariff.price_ref_eur_per_kwh:
         return (tariff.price_ref_eur_per_kwh, "site_tariff_profile")
 
@@ -86,6 +94,7 @@ def get_reference_price(
 # ========================================
 # Shadow billing simplifie
 # ========================================
+
 
 def shadow_billing_simple(
     invoice: EnergyInvoice,
@@ -112,8 +121,11 @@ def shadow_billing_simple(
     if db:
         energy_type_str = _energy_type(invoice, contract)
         price_ref, ref_source = get_reference_price(
-            db, invoice.site_id, energy_type_str,
-            invoice.period_start, invoice.period_end,
+            db,
+            invoice.site_id,
+            energy_type_str,
+            invoice.period_start,
+            invoice.period_end,
         )
     elif contract and contract.price_ref_eur_per_kwh:
         price_ref = contract.price_ref_eur_per_kwh
@@ -144,6 +156,7 @@ def shadow_billing_simple(
 # Proof helper (V1.1)
 # ========================================
 
+
 def _build_inputs(invoice: EnergyInvoice, ref_price: Optional[float] = None) -> Dict:
     """Build standardized inputs dict for proof/explainability."""
     implied = None
@@ -163,7 +176,10 @@ def _build_inputs(invoice: EnergyInvoice, ref_price: Optional[float] = None) -> 
 # Anomaly engine (10 rules)
 # ========================================
 
-def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+
+def _rule_shadow_gap(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R1: Ecart shadow billing > 10%."""
     shadow = shadow_billing_simple(invoice, contract)
     if shadow["delta_pct"] is not None and abs(shadow["delta_pct"]) > 10:
@@ -182,10 +198,12 @@ def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract],
         if lines:
             try:
                 from services.billing_shadow_v2 import shadow_billing_v2
+
                 v2 = shadow_billing_v2(invoice, lines, contract)
                 metrics.update(v2)
             except Exception as exc:
                 import logging
+
                 logging.getLogger("promeos.billing").debug(f"shadow_billing_v2 failed: {exc}")
         return {
             "type": "shadow_gap",
@@ -197,7 +215,9 @@ def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract],
     return None
 
 
-def _rule_unit_price_high(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_unit_price_high(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R2: Prix unitaire anormalement eleve (> 0.30 EUR/kWh elec, > 0.15 EUR/kWh gaz)."""
     if not invoice.energy_kwh or invoice.energy_kwh <= 0 or not invoice.total_eur:
         return None
@@ -221,17 +241,23 @@ def _rule_unit_price_high(invoice: EnergyInvoice, contract: Optional[EnergyContr
     return None
 
 
-def _rule_duplicate_invoice(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None) -> Optional[Dict]:
+def _rule_duplicate_invoice(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None
+) -> Optional[Dict]:
     """R3: Doublon de facture (meme site, meme periode, meme montant)."""
     if db is None or not invoice.period_start or not invoice.period_end:
         return None
-    dupes = db.query(EnergyInvoice).filter(
-        EnergyInvoice.site_id == invoice.site_id,
-        EnergyInvoice.period_start == invoice.period_start,
-        EnergyInvoice.period_end == invoice.period_end,
-        EnergyInvoice.total_eur == invoice.total_eur,
-        EnergyInvoice.id != invoice.id,
-    ).count()
+    dupes = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id == invoice.site_id,
+            EnergyInvoice.period_start == invoice.period_start,
+            EnergyInvoice.period_end == invoice.period_end,
+            EnergyInvoice.total_eur == invoice.total_eur,
+            EnergyInvoice.id != invoice.id,
+        )
+        .count()
+    )
     if dupes > 0:
         return {
             "type": "duplicate_invoice",
@@ -248,7 +274,9 @@ def _rule_duplicate_invoice(invoice: EnergyInvoice, contract: Optional[EnergyCon
     return None
 
 
-def _rule_missing_period(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_missing_period(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R4: Periode manquante sur la facture."""
     if not invoice.period_start or not invoice.period_end:
         return {
@@ -267,7 +295,9 @@ def _rule_missing_period(invoice: EnergyInvoice, contract: Optional[EnergyContra
     return None
 
 
-def _rule_period_too_long(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_period_too_long(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R5: Periode de facturation > 62 jours (suspect)."""
     if not invoice.period_start or not invoice.period_end:
         return None
@@ -290,7 +320,9 @@ def _rule_period_too_long(invoice: EnergyInvoice, contract: Optional[EnergyContr
     return None
 
 
-def _rule_negative_kwh(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_negative_kwh(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R6: Consommation negative."""
     if invoice.energy_kwh is not None and invoice.energy_kwh < 0:
         return {
@@ -308,10 +340,16 @@ def _rule_negative_kwh(invoice: EnergyInvoice, contract: Optional[EnergyContract
     return None
 
 
-def _rule_zero_amount(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_zero_amount(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R7: Montant total = 0 mais consommation > 0."""
-    if (invoice.total_eur is not None and invoice.total_eur == 0
-            and invoice.energy_kwh is not None and invoice.energy_kwh > 0):
+    if (
+        invoice.total_eur is not None
+        and invoice.total_eur == 0
+        and invoice.energy_kwh is not None
+        and invoice.energy_kwh > 0
+    ):
         return {
             "type": "zero_amount",
             "severity": "high",
@@ -328,7 +366,9 @@ def _rule_zero_amount(invoice: EnergyInvoice, contract: Optional[EnergyContract]
     return None
 
 
-def _rule_lines_sum_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+def _rule_lines_sum_mismatch(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R8: Somme des lignes != total facture (tolerance 2%)."""
     if not lines or not invoice.total_eur:
         return None
@@ -358,15 +398,21 @@ def _rule_lines_sum_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyCo
     return None
 
 
-def _rule_consumption_spike(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None) -> Optional[Dict]:
+def _rule_consumption_spike(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None
+) -> Optional[Dict]:
     """R9: Pic de consommation (> 2x la moyenne des 6 derniers mois)."""
     if db is None or not invoice.energy_kwh or not invoice.site_id:
         return None
-    avg_result = db.query(func.avg(EnergyInvoice.energy_kwh)).filter(
-        EnergyInvoice.site_id == invoice.site_id,
-        EnergyInvoice.id != invoice.id,
-        EnergyInvoice.energy_kwh > 0,
-    ).scalar()
+    avg_result = (
+        db.query(func.avg(EnergyInvoice.energy_kwh))
+        .filter(
+            EnergyInvoice.site_id == invoice.site_id,
+            EnergyInvoice.id != invoice.id,
+            EnergyInvoice.energy_kwh > 0,
+        )
+        .scalar()
+    )
     if avg_result and avg_result > 0 and invoice.energy_kwh > 2 * avg_result:
         ratio = round(invoice.energy_kwh / avg_result, 1)
         return {
@@ -403,7 +449,9 @@ def _rule_consumption_spike(invoice: EnergyInvoice, contract: Optional[EnergyCon
     return None
 
 
-def _rule_price_drift(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None) -> Optional[Dict]:
+def _rule_price_drift(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None
+) -> Optional[Dict]:
     """R10: Derive de prix unitaire par rapport au contrat (> 15%)."""
     if not contract or not contract.price_ref_eur_per_kwh:
         return None
@@ -445,7 +493,10 @@ def _energy_type(invoice: EnergyInvoice, contract: Optional[EnergyContract]) -> 
 # R11 — TTC Coherence (V66)
 # ========================================
 
-def _rule_ttc_coherence(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+
+def _rule_ttc_coherence(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R11: TTC facturé incohérent avec HT+TVA (tolérance 2%)."""
     if not invoice.total_eur or not lines:
         return None
@@ -477,7 +528,10 @@ def _rule_ttc_coherence(invoice: EnergyInvoice, contract: Optional[EnergyContrac
 # R12 — Contract Expiry (V66)
 # ========================================
 
-def _rule_contract_expiry(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+
+def _rule_contract_expiry(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R12: Contrat expiré ou expire bientôt (< 90 jours)."""
     if not contract or not contract.end_date:
         return None
@@ -517,11 +571,15 @@ def _rule_contract_expiry(invoice: EnergyInvoice, contract: Optional[EnergyContr
 # R13 — Réseau / TURPE mismatch (V68)
 # ========================================
 
-def _rule_reseau_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+
+def _rule_reseau_mismatch(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R13: Coût réseau/TURPE facturé ≠ attendu > 10%."""
     if not lines:
         return None
     from services.billing_shadow_v2 import shadow_billing_v2
+
     res = shadow_billing_v2(invoice, lines, contract)
     if res["expected_reseau_ht"] == 0:
         return None
@@ -532,8 +590,7 @@ def _rule_reseau_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContr
             "type": "reseau_mismatch",
             "severity": sev,
             "message": (
-                f"Coût réseau {res['actual_reseau_ht']:.2f}€ vs attendu "
-                f"{res['expected_reseau_ht']:.2f}€ (Δ {pct:.0f}%)"
+                f"Coût réseau {res['actual_reseau_ht']:.2f}€ vs attendu {res['expected_reseau_ht']:.2f}€ (Δ {pct:.0f}%)"
             ),
             "metrics": {
                 **res,
@@ -550,11 +607,15 @@ def _rule_reseau_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContr
 # R14 — Taxes / CSPE mismatch (V68)
 # ========================================
 
-def _rule_taxes_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+
+def _rule_taxes_mismatch(
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+) -> Optional[Dict]:
     """R14: Taxes (CSPE/TICGN) facturées ≠ attendu > 5%."""
     if not lines:
         return None
     from services.billing_shadow_v2 import shadow_billing_v2
+
     res = shadow_billing_v2(invoice, lines, contract)
     if res["expected_taxes_ht"] == 0:
         return None
@@ -564,8 +625,7 @@ def _rule_taxes_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContra
             "type": "taxes_mismatch",
             "severity": "medium",
             "message": (
-                f"Taxes {res['actual_taxes_ht']:.2f}€ vs attendu "
-                f"{res['expected_taxes_ht']:.2f}€ (Δ {pct:.0f}%)"
+                f"Taxes {res['actual_taxes_ht']:.2f}€ vs attendu {res['expected_taxes_ht']:.2f}€ (Δ {pct:.0f}%)"
             ),
             "metrics": {
                 **res,
@@ -580,26 +640,25 @@ def _rule_taxes_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContra
 
 # All rules
 BILLING_RULES = [
-    ("R1",  "Shadow gap",         _rule_shadow_gap),
-    ("R2",  "Unit price high",    _rule_unit_price_high),
-    ("R3",  "Duplicate invoice",  _rule_duplicate_invoice),
-    ("R4",  "Missing period",     _rule_missing_period),
-    ("R5",  "Period too long",    _rule_period_too_long),
-    ("R6",  "Negative kWh",       _rule_negative_kwh),
-    ("R7",  "Zero amount",        _rule_zero_amount),
-    ("R8",  "Lines sum mismatch", _rule_lines_sum_mismatch),
-    ("R9",  "Consumption spike",  _rule_consumption_spike),
-    ("R10", "Price drift",        _rule_price_drift),
-    ("R11", "TTC coherence",      _rule_ttc_coherence),
-    ("R12", "Contract expiry",    _rule_contract_expiry),
+    ("R1", "Shadow gap", _rule_shadow_gap),
+    ("R2", "Unit price high", _rule_unit_price_high),
+    ("R3", "Duplicate invoice", _rule_duplicate_invoice),
+    ("R4", "Missing period", _rule_missing_period),
+    ("R5", "Period too long", _rule_period_too_long),
+    ("R6", "Negative kWh", _rule_negative_kwh),
+    ("R7", "Zero amount", _rule_zero_amount),
+    ("R8", "Lines sum mismatch", _rule_lines_sum_mismatch),
+    ("R9", "Consumption spike", _rule_consumption_spike),
+    ("R10", "Price drift", _rule_price_drift),
+    ("R11", "TTC coherence", _rule_ttc_coherence),
+    ("R12", "Contract expiry", _rule_contract_expiry),
     ("R13", "Réseau / TURPE mismatch", _rule_reseau_mismatch),
-    ("R14", "Taxes / CSPE mismatch",   _rule_taxes_mismatch),
+    ("R14", "Taxes / CSPE mismatch", _rule_taxes_mismatch),
 ]
 
 # Pre-compute which rules accept a `db` parameter (avoids inspect per invocation)
 _RULES_ACCEPT_DB = frozenset(
-    rule_id for rule_id, _, rule_fn in BILLING_RULES
-    if "db" in inspect.signature(rule_fn).parameters
+    rule_id for rule_id, _, rule_fn in BILLING_RULES if "db" in inspect.signature(rule_fn).parameters
 )
 
 
@@ -625,7 +684,7 @@ def run_anomaly_engine(
                     result["metrics"]["rule_name"] = rule_name
                 anomalies.append(result)
         except Exception as e:
-            logger.warning("Billing rule %s failed for invoice %s: %s", rule_id, getattr(invoice, 'id', '?'), e)
+            logger.warning("Billing rule %s failed for invoice %s: %s", rule_id, getattr(invoice, "id", "?"), e)
     return anomalies
 
 
@@ -672,26 +731,26 @@ def persist_insights(
         # V66 P2.4 — Bridge billing anomaly → ActionItem (idempotent)
         if org_id:
             idem_key = f"billing:{invoice.id}:{a['type']}"
-            existing_action = db.query(ActionItem).filter(
-                ActionItem.idempotency_key == idem_key
-            ).first()
+            existing_action = db.query(ActionItem).filter(ActionItem.idempotency_key == idem_key).first()
             if not existing_action:
                 sev = a.get("severity", "medium").lower()
                 priority = 1 if sev == "critical" else 2 if sev == "high" else 3
-                db.add(ActionItem(
-                    org_id=org_id,
-                    site_id=invoice.site_id,
-                    source_type=ActionSourceType.BILLING,
-                    source_id=str(insight.id),
-                    source_key=f"billing:{invoice.id}:{a['type']}",
-                    idempotency_key=idem_key,
-                    title=a.get("message", a["type"]),
-                    rationale=json.dumps(a.get("metrics", {})),
-                    priority=priority,
-                    severity=sev,
-                    estimated_gain_eur=a.get("estimated_loss_eur"),
-                    status=ActionStatus.OPEN,
-                ))
+                db.add(
+                    ActionItem(
+                        org_id=org_id,
+                        site_id=invoice.site_id,
+                        source_type=ActionSourceType.BILLING,
+                        source_id=str(insight.id),
+                        source_key=f"billing:{invoice.id}:{a['type']}",
+                        idempotency_key=idem_key,
+                        title=a.get("message", a["type"]),
+                        rationale=json.dumps(a.get("metrics", {})),
+                        priority=priority,
+                        severity=sev,
+                        estimated_gain_eur=a.get("estimated_loss_eur"),
+                        status=ActionStatus.OPEN,
+                    )
+                )
 
         insights.append(insight)
 
@@ -733,6 +792,7 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
 # Summary / read helpers
 # ========================================
 
+
 def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, Any]:
     """Aggregate billing summary for the organisation."""
     q = db.query(EnergyInvoice)
@@ -744,10 +804,7 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
     invoices = q.all()
     total_eur = sum(i.total_eur or 0 for i in invoices)
     total_kwh = sum(i.energy_kwh or 0 for i in invoices)
-    distinct_months = len({
-        (i.period_start.year, i.period_start.month)
-        for i in invoices if i.period_start
-    })
+    distinct_months = len({(i.period_start.year, i.period_start.month) for i in invoices if i.period_start})
 
     insights = db.query(BillingInsight).all()
     total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
@@ -778,7 +835,9 @@ def get_site_billing(db: Session, site_id: int) -> Dict[str, Any]:
     if not site:
         return {"error": "Site not found"}
 
-    invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id == site_id).order_by(EnergyInvoice.period_start).all()
+    invoices = (
+        db.query(EnergyInvoice).filter(EnergyInvoice.site_id == site_id).order_by(EnergyInvoice.period_start).all()
+    )
     contracts = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
     insights = db.query(BillingInsight).filter(BillingInsight.site_id == site_id).all()
 
@@ -787,7 +846,8 @@ def get_site_billing(db: Session, site_id: int) -> Dict[str, Any]:
         "site_nom": site.nom,
         "contracts": [
             {
-                "id": c.id, "supplier": c.supplier_name,
+                "id": c.id,
+                "supplier": c.supplier_name,
                 "energy_type": c.energy_type.value,
                 "price_ref": c.price_ref_eur_per_kwh,
                 "start": str(c.start_date) if c.start_date else None,
@@ -797,17 +857,21 @@ def get_site_billing(db: Session, site_id: int) -> Dict[str, Any]:
         ],
         "invoices": [
             {
-                "id": i.id, "number": i.invoice_number,
+                "id": i.id,
+                "number": i.invoice_number,
                 "period_start": str(i.period_start) if i.period_start else None,
                 "period_end": str(i.period_end) if i.period_end else None,
-                "total_eur": i.total_eur, "energy_kwh": i.energy_kwh,
+                "total_eur": i.total_eur,
+                "energy_kwh": i.energy_kwh,
                 "status": i.status.value if i.status else None,
             }
             for i in invoices
         ],
         "insights": [
             {
-                "id": ins.id, "type": ins.type, "severity": ins.severity,
+                "id": ins.id,
+                "type": ins.type,
+                "severity": ins.severity,
                 "message": ins.message,
                 "estimated_loss_eur": ins.estimated_loss_eur,
             }

@@ -12,6 +12,7 @@ Rules:
     - Only add items that don't already exist (by ID)
     - Report what was added/skipped
 """
+
 import sys
 import yaml
 import shutil
@@ -39,13 +40,15 @@ def list_packs():
             if manifest_path.exists():
                 with open(manifest_path, "r", encoding="utf-8") as f:
                     manifest = yaml.safe_load(f)
-                packs.append({
-                    "pack_id": manifest.get("pack_id", pack_dir.name),
-                    "version": manifest.get("version", "?"),
-                    "description": manifest.get("description", ""),
-                    "total_items": manifest.get("stats", {}).get("total_items", len(manifest.get("items", []))),
-                    "path": pack_dir
-                })
+                packs.append(
+                    {
+                        "pack_id": manifest.get("pack_id", pack_dir.name),
+                        "version": manifest.get("version", "?"),
+                        "description": manifest.get("description", ""),
+                        "total_items": manifest.get("stats", {}).get("total_items", len(manifest.get("items", []))),
+                        "path": pack_dir,
+                    }
+                )
     return packs
 
 
@@ -134,18 +137,19 @@ def expand_pack(pack_id: str, dry_run: bool = False):
         added += 1
         print(f"  [ADDED] {item_id} -> {target_path.relative_to(PROJECT_ROOT)}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Seed expand complete:")
     print(f"  Added:   {added}")
     print(f"  Skipped: {skipped} (already exist)")
     print(f"  Errors:  {errors}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     return errors == 0
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Expand KB from seed packs")
     parser.add_argument("--pack", help="Seed pack ID to expand")
     parser.add_argument("--list-packs", action="store_true", help="List available seed packs")

@@ -56,23 +56,38 @@ function EffectiveAccessPanel({ userId, onClose }) {
         <h4 className="text-sm font-semibold text-blue-800 flex items-center gap-1.5">
           <Eye size={14} /> Acces effectif
         </h4>
-        <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600">Fermer</button>
+        <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600">
+          Fermer
+        </button>
       </div>
 
       {/* Scopes */}
       <div className="mb-3">
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Scopes assignes</p>
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          Scopes assignes
+        </p>
         <div className="flex flex-wrap gap-1.5">
-          {data.scopes?.length ? data.scopes.map((s, i) => {
-            const Icon = SCOPE_ICONS[s.level] || MapPin;
-            return (
-              <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-blue-200 rounded-lg text-xs text-blue-700">
-                <Icon size={12} />
-                {s.label}
-                {s.expires_at && <span className="text-orange-500 ml-1">(exp: {new Date(s.expires_at).toLocaleDateString('fr-FR')})</span>}
-              </span>
-            );
-          }) : <span className="text-xs text-gray-400">Aucun scope</span>}
+          {data.scopes?.length ? (
+            data.scopes.map((s, i) => {
+              const Icon = SCOPE_ICONS[s.level] || MapPin;
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-blue-200 rounded-lg text-xs text-blue-700"
+                >
+                  <Icon size={12} />
+                  {s.label}
+                  {s.expires_at && (
+                    <span className="text-orange-500 ml-1">
+                      (exp: {new Date(s.expires_at).toLocaleDateString('fr-FR')})
+                    </span>
+                  )}
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-xs text-gray-400">Aucun scope</span>
+          )}
         </div>
       </div>
 
@@ -84,7 +99,10 @@ function EffectiveAccessPanel({ userId, onClose }) {
         {data.sites?.length ? (
           <div className="flex flex-wrap gap-1">
             {data.sites.map((s) => (
-              <span key={s.id} className="inline-block px-2 py-0.5 bg-white border border-gray-200 rounded text-[11px] text-gray-600">
+              <span
+                key={s.id}
+                className="inline-block px-2 py-0.5 bg-white border border-gray-200 rounded text-[11px] text-gray-600"
+              >
                 {s.nom} <span className="text-gray-400">({s.type || '?'})</span>
               </span>
             ))}
@@ -97,13 +115,19 @@ function EffectiveAccessPanel({ userId, onClose }) {
       {/* Permissions */}
       {data.permissions && (
         <div className="mt-3">
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Permissions</p>
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Permissions
+          </p>
           <div className="flex flex-wrap gap-1">
             {Object.entries(data.permissions).map(([k, v]) => {
               if (v === false || (Array.isArray(v) && v.length === 0)) return null;
-              const label = v === true ? k : v === '__all__' ? `${k}: ALL` : `${k}: ${v.join(', ')}`;
+              const label =
+                v === true ? k : v === '__all__' ? `${k}: ALL` : `${k}: ${v.join(', ')}`;
               return (
-                <span key={k} className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">
+                <span
+                  key={k}
+                  className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200"
+                >
                   {label}
                 </span>
               );
@@ -132,7 +156,9 @@ export default function AdminUsersPage() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = users.filter((u) =>
     `${u.prenom} ${u.nom} ${u.email} ${u.role}`.toLowerCase().includes(search.toLowerCase())
@@ -141,7 +167,11 @@ export default function AdminUsersPage() {
   if (!hasPermission('admin')) {
     return (
       <PageShell icon={Users} title="Utilisateurs">
-        <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+        <EmptyState
+          icon={Shield}
+          title="Acces refuse"
+          text="Vous n'avez pas les droits d'administration."
+        />
       </PageShell>
     );
   }
@@ -157,7 +187,6 @@ export default function AdminUsersPage() {
         </Button>
       }
     >
-
       {/* Search */}
       <div className="relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -186,48 +215,74 @@ export default function AdminUsersPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Chargement...</td></tr>
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  Chargement...
+                </td>
+              </tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                {search ? 'Aucun résultat pour cette recherche' : 'Aucun utilisateur'}
-              </td></tr>
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  {search ? 'Aucun résultat pour cette recherche' : 'Aucun utilisateur'}
+                </td>
+              </tr>
             ) : (
               filtered.map((u) => (
                 <tr key={u.id} className="group">
                   <td colSpan={7} className="p-0">
-                    <div className={`hover:bg-gray-50 transition ${expandedUser === u.id ? 'bg-blue-50/30' : ''}`}>
+                    <div
+                      className={`hover:bg-gray-50 transition ${expandedUser === u.id ? 'bg-blue-50/30' : ''}`}
+                    >
                       <div className="flex items-center">
                         <div className="flex-1 grid grid-cols-7 items-center">
                           <div className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                                {(u.prenom?.[0] || '').toUpperCase()}{(u.nom?.[0] || '').toUpperCase()}
+                                {(u.prenom?.[0] || '').toUpperCase()}
+                                {(u.nom?.[0] || '').toUpperCase()}
                               </div>
-                              <span className="font-medium text-gray-900">{u.prenom} {u.nom}</span>
+                              <span className="font-medium text-gray-900">
+                                {u.prenom} {u.nom}
+                              </span>
                             </div>
                           </div>
                           <div className="px-4 py-3 text-gray-600 truncate">{u.email}</div>
                           <div className="px-4 py-3">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}>
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}
+                            >
                               {ROLE_LABELS[u.role] || u.role}
                             </span>
                           </div>
                           <div className="px-4 py-3 text-xs">
-                            {u.scopes?.length ? u.scopes.map((s, i) => (
-                              <span key={i} className="inline-flex items-center gap-0.5 bg-gray-100 rounded px-1.5 py-0.5 mr-1 text-gray-600">
-                                {SCOPE_LABELS[s.level]?.charAt(0) || '?'}:{s.id}
-                                {s.expires_at && <span className="text-orange-500">*</span>}
-                              </span>
-                            )) : <span className="text-gray-300">-</span>}
+                            {u.scopes?.length ? (
+                              u.scopes.map((s, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-0.5 bg-gray-100 rounded px-1.5 py-0.5 mr-1 text-gray-600"
+                                >
+                                  {SCOPE_LABELS[s.level]?.charAt(0) || '?'}:{s.id}
+                                  {s.expires_at && <span className="text-orange-500">*</span>}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
                           </div>
                           <div className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1 text-xs font-medium ${u.actif ? 'text-green-600' : 'text-red-500'}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${u.actif ? 'bg-green-500' : 'bg-red-400'}`} />
+                            <span
+                              className={`inline-flex items-center gap-1 text-xs font-medium ${u.actif ? 'text-green-600' : 'text-red-500'}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${u.actif ? 'bg-green-500' : 'bg-red-400'}`}
+                              />
                               {u.actif ? 'Actif' : 'Desactive'}
                             </span>
                           </div>
                           <div className="px-4 py-3 text-xs text-gray-400">
-                            {u.last_login ? new Date(u.last_login).toLocaleDateString('fr-FR') : 'Jamais'}
+                            {u.last_login
+                              ? new Date(u.last_login).toLocaleDateString('fr-FR')
+                              : 'Jamais'}
                           </div>
                           <div className="px-4 py-3 text-center">
                             <button

@@ -3,7 +3,15 @@
  * Covers: sitesToObligations, isOverdue, buildScopeParams, parseBundleError
  */
 import { describe, it, expect } from 'vitest';
-import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError, resolveScopeLabel, computeBacsV2Summary, computeScopeLabel } from '../ConformitePage';
+import {
+  sitesToObligations,
+  isOverdue,
+  buildScopeParams,
+  parseBundleError,
+  resolveScopeLabel,
+  computeBacsV2Summary,
+  computeScopeLabel,
+} from '../ConformitePage';
 
 /* ---------- isOverdue ---------- */
 describe('isOverdue', () => {
@@ -31,12 +39,18 @@ describe('isOverdue', () => {
 /* ---------- sitesToObligations ---------- */
 describe('sitesToObligations', () => {
   const makeSite = (id, nom, findings) => ({
-    site_id: id, site_nom: nom, findings,
+    site_id: id,
+    site_nom: nom,
+    findings,
   });
 
   const makeFinding = (reg, status, severity = 'low', extra = {}) => ({
-    regulation: reg, rule_id: `${reg}_SCOPE`, status, severity,
-    evidence: 'test', ...extra,
+    regulation: reg,
+    rule_id: `${reg}_SCOPE`,
+    status,
+    severity,
+    evidence: 'test',
+    ...extra,
   });
 
   it('returns empty array for null input', () => {
@@ -54,7 +68,7 @@ describe('sitesToObligations', () => {
       makeSite(2, 'B', [makeFinding('bacs', 'OK')]),
     ];
     const result = sitesToObligations(sites);
-    const codes = result.map(o => o.code);
+    const codes = result.map((o) => o.code);
     expect(codes).toContain('bacs');
     expect(codes).toContain('decret_tertiaire');
     expect(result).toHaveLength(2);
@@ -66,7 +80,7 @@ describe('sitesToObligations', () => {
       makeSite(2, 'B', [makeFinding('bacs', 'OK', 'critical')]),
     ];
     const result = sitesToObligations(sites);
-    const bacs = result.find(o => o.code === 'bacs');
+    const bacs = result.find((o) => o.code === 'bacs');
     expect(bacs.severity).toBe('critical');
   });
 
@@ -77,7 +91,7 @@ describe('sitesToObligations', () => {
       makeSite(3, 'C', [makeFinding('bacs', 'OK')]),
     ];
     const result = sitesToObligations(sites);
-    const bacs = result.find(o => o.code === 'bacs');
+    const bacs = result.find((o) => o.code === 'bacs');
     expect(bacs.sites_concernes).toBe(3);
     expect(bacs.sites_conformes).toBe(2);
   });
@@ -117,9 +131,7 @@ describe('sitesToObligations', () => {
   });
 
   it('sets statut hors_perimetre when OUT_OF_SCOPE', () => {
-    const sites = [
-      makeSite(1, 'A', [makeFinding('bacs', 'OUT_OF_SCOPE')]),
-    ];
+    const sites = [makeSite(1, 'A', [makeFinding('bacs', 'OUT_OF_SCOPE')])];
     const result = sitesToObligations(sites);
     expect(result[0].statut).toBe('hors_perimetre');
   });
@@ -209,11 +221,17 @@ describe('parseBundleError', () => {
 /* ---------- sitesToObligations with 3 regulations ---------- */
 describe('sitesToObligations — 3 regulations', () => {
   const makeSite = (id, nom, findings) => ({
-    site_id: id, site_nom: nom, findings,
+    site_id: id,
+    site_nom: nom,
+    findings,
   });
   const makeFinding = (reg, status, severity = 'medium', extra = {}) => ({
-    regulation: reg, rule_id: `${reg}_RULE`, status, severity,
-    evidence: 'test', ...extra,
+    regulation: reg,
+    rule_id: `${reg}_RULE`,
+    status,
+    severity,
+    evidence: 'test',
+    ...extra,
   });
 
   it('groups 3 regulations into 3 obligations', () => {
@@ -230,7 +248,7 @@ describe('sitesToObligations — 3 regulations', () => {
       ]),
     ];
     const obligations = sitesToObligations(sites);
-    const codes = obligations.map(o => o.code);
+    const codes = obligations.map((o) => o.code);
     expect(codes).toContain('bacs');
     expect(codes).toContain('decret_tertiaire_operat');
     expect(codes).toContain('aper');
@@ -291,8 +309,20 @@ describe('computeBacsV2Summary', () => {
 
   it('aggregates applicable from bundle entries', () => {
     const data = {
-      1: { applicable: true, deadline: '2025-01-01', threshold_kw: 290, putile_kw: 350, tri_exemption: false },
-      2: { applicable: false, deadline: null, threshold_kw: 0, putile_kw: 50, tri_exemption: false },
+      1: {
+        applicable: true,
+        deadline: '2025-01-01',
+        threshold_kw: 290,
+        putile_kw: 350,
+        tri_exemption: false,
+      },
+      2: {
+        applicable: false,
+        deadline: null,
+        threshold_kw: 0,
+        putile_kw: 50,
+        tri_exemption: false,
+      },
     };
     const result = computeBacsV2Summary(data);
     expect(result.applicable).toBe(true);
@@ -302,8 +332,20 @@ describe('computeBacsV2Summary', () => {
 
   it('picks closest deadline', () => {
     const data = {
-      1: { applicable: true, deadline: '2030-01-01', threshold_kw: 70, putile_kw: 150, tri_exemption: false },
-      2: { applicable: true, deadline: '2025-01-01', threshold_kw: 290, putile_kw: 350, tri_exemption: true },
+      1: {
+        applicable: true,
+        deadline: '2030-01-01',
+        threshold_kw: 70,
+        putile_kw: 150,
+        tri_exemption: false,
+      },
+      2: {
+        applicable: true,
+        deadline: '2025-01-01',
+        threshold_kw: 290,
+        putile_kw: 350,
+        tri_exemption: true,
+      },
     };
     const result = computeBacsV2Summary(data);
     expect(result.deadline).toBe('2025-01-01');
@@ -312,7 +354,13 @@ describe('computeBacsV2Summary', () => {
 
   it('returns TIER2 when max threshold < 290', () => {
     const data = {
-      1: { applicable: true, deadline: '2030-01-01', threshold_kw: 70, putile_kw: 150, tri_exemption: false },
+      1: {
+        applicable: true,
+        deadline: '2030-01-01',
+        threshold_kw: 70,
+        putile_kw: 150,
+        tri_exemption: false,
+      },
     };
     const result = computeBacsV2Summary(data);
     expect(result.tier).toBe('TIER2');
@@ -357,7 +405,10 @@ describe('FR demo-ready — forbidden strings in key pages', () => {
   const readPage = (name) => fs.readFileSync(path.resolve(__dirname, '..', name), 'utf8');
 
   it('CreateActionModal uses "À planifier" not "Backlog"', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../../components/CreateActionModal.jsx'), 'utf8');
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '../../components/CreateActionModal.jsx'),
+      'utf8'
+    );
     // "Backlog" should not appear as a user-facing label
     expect(src).not.toMatch(/label:\s*['"]Backlog['"]/);
     expect(src).toMatch(/À planifier/);
@@ -386,7 +437,7 @@ describe('FR labels — no English in user-facing constants', () => {
   it('STATUT_LABELS has only FR text', () => {
     const { STATUT_LABELS } = require('../../domain/compliance/complianceLabels.fr');
     const values = Object.values(STATUT_LABELS);
-    values.forEach(v => {
+    values.forEach((v) => {
       expect(v).not.toMatch(/^(Compliant|Non compliant|At risk|Unknown|Out of scope)$/i);
     });
     expect(STATUT_LABELS.a_qualifier).toBe('À qualifier');
@@ -405,7 +456,7 @@ describe('FR labels — no English in user-facing constants', () => {
     const { RULE_LABELS } = require('../../domain/compliance/complianceLabels.fr');
     const rules = Object.values(RULE_LABELS);
     expect(rules.length).toBeGreaterThanOrEqual(13);
-    rules.forEach(r => {
+    rules.forEach((r) => {
       expect(r).toHaveProperty('title_fr');
       expect(r).toHaveProperty('why_fr');
       expect(r.title_fr.length).toBeGreaterThan(3);
@@ -427,4 +478,3 @@ describe('FR labels — no English in user-facing constants', () => {
     expect(SEVERITY_LABELS.low).toBe('Faible');
   });
 });
-

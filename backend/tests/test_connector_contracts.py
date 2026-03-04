@@ -2,8 +2,10 @@
 PROMEOS - Connector Contract Tests
 Parametrized tests for connector meta, sync contract, and mapping validation.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -22,6 +24,7 @@ from connectors.contracts import (
 # Fixtures
 # ========================================
 
+
 @pytest.fixture
 def all_connector_names():
     """All registered connector names."""
@@ -31,6 +34,7 @@ def all_connector_names():
 # ========================================
 # Contract Tests — Parametrized
 # ========================================
+
 
 class TestConnectorMeta:
     """Every connector must have basic metadata."""
@@ -52,9 +56,7 @@ class TestConnectorMeta:
             c = get_connector(name)
             result = c.test_connection()
             assert "status" in result, f"{name}: test_connection missing 'status'"
-            assert result["status"] in ("ok", "stub", "error"), (
-                f"{name}: invalid status {result['status']}"
-            )
+            assert result["status"] in ("ok", "stub", "error"), f"{name}: invalid status {result['status']}"
 
 
 class TestMappingValidator:
@@ -128,11 +130,19 @@ class TestConnectorSyncContract:
             records = []
 
         if records:
-            report = validate_mapping("site", [
-                {"metric": getattr(r, "metric", None), "value": getattr(r, "value", None),
-                 "unit": getattr(r, "unit", None), "ts_start": str(getattr(r, "ts_start", ""))}
-                for r in records[:5]
-            ], "rte_eco2mix")
+            report = validate_mapping(
+                "site",
+                [
+                    {
+                        "metric": getattr(r, "metric", None),
+                        "value": getattr(r, "value", None),
+                        "unit": getattr(r, "unit", None),
+                        "ts_start": str(getattr(r, "ts_start", "")),
+                    }
+                    for r in records[:5]
+                ],
+                "rte_eco2mix",
+            )
             # At minimum, no crashes
             assert isinstance(report, MappingReport)
 
@@ -148,9 +158,17 @@ class TestConnectorSyncContract:
             records = []
 
         if records:
-            report = validate_mapping("site", [
-                {"metric": getattr(r, "metric", None), "value": getattr(r, "value", None),
-                 "unit": getattr(r, "unit", None), "ts_start": str(getattr(r, "ts_start", ""))}
-                for r in records[:5]
-            ], "pvgis")
+            report = validate_mapping(
+                "site",
+                [
+                    {
+                        "metric": getattr(r, "metric", None),
+                        "value": getattr(r, "value", None),
+                        "unit": getattr(r, "unit", None),
+                        "ts_start": str(getattr(r, "ts_start", "")),
+                    }
+                    for r in records[:5]
+                ],
+                "pvgis",
+            )
             assert isinstance(report, MappingReport)

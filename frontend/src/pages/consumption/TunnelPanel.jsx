@@ -16,7 +16,14 @@ import SignatureLayer from './layers/SignatureLayer';
 import EvidenceDrawer from './EvidenceDrawer';
 import { CONFIDENCE_BADGE } from './constants';
 
-export default function TunnelPanel({ siteId, days, energyType, showSignature = false, toast, initialTunnel }) {
+export default function TunnelPanel({
+  siteId,
+  days,
+  energyType,
+  showSignature = false,
+  toast,
+  initialTunnel,
+}) {
   const [tunnel, setTunnel] = useState(initialTunnel || null);
   const [loading, setLoading] = useState(false);
   const [dayType, setDayType] = useState('weekday');
@@ -57,10 +64,14 @@ export default function TunnelPanel({ siteId, days, energyType, showSignature = 
 
   const conf = CONFIDENCE_BADGE[tunnel.confidence] || CONFIDENCE_BADGE.low;
   const envelope = tunnel.envelope?.[dayType] || [];
-  const chartData = envelope.map(s => ({
+  const chartData = envelope.map((s) => ({
     hour: `${s.hour}h`,
     hourNum: s.hour,
-    p10: s.p10, p25: s.p25, p50: s.p50, p75: s.p75, p90: s.p90,
+    p10: s.p10,
+    p25: s.p25,
+    p50: s.p50,
+    p75: s.p75,
+    p90: s.p90,
   }));
 
   const handleChartClick = (data) => {
@@ -88,13 +99,17 @@ export default function TunnelPanel({ siteId, days, energyType, showSignature = 
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Releves</p>
-            <p className="text-xl font-bold text-gray-800">{tunnel.readings_count.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-800">
+              {tunnel.readings_count.toLocaleString()}
+            </p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">% hors bande</p>
-            <p className={`text-xl font-bold ${tunnel.outside_pct > 15 ? 'text-red-600' : tunnel.outside_pct > 5 ? 'text-amber-600' : 'text-green-600'}`}>
+            <p
+              className={`text-xl font-bold ${tunnel.outside_pct > 15 ? 'text-red-600' : tunnel.outside_pct > 5 ? 'text-amber-600' : 'text-green-600'}`}
+            >
               {tunnel.outside_pct}%
             </p>
           </CardBody>
@@ -102,7 +117,9 @@ export default function TunnelPanel({ siteId, days, energyType, showSignature = 
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Hors bande (7j)</p>
-            <p className="text-xl font-bold text-gray-800">{tunnel.outside_count}/{tunnel.total_evaluated}</p>
+            <p className="text-xl font-bold text-gray-800">
+              {tunnel.outside_count}/{tunnel.total_evaluated}
+            </p>
           </CardBody>
         </Card>
       </div>
@@ -158,20 +175,22 @@ export default function TunnelPanel({ siteId, days, energyType, showSignature = 
                   meters: tunnel.meters_count,
                   source: tunnel.source,
                   quality: tunnel.readings_count
-                    ? Math.round(Math.min(100, tunnel.readings_count / 500 * 100))
+                    ? Math.round(Math.min(100, (tunnel.readings_count / 500) * 100))
                     : null,
                 }}
               >
                 <TunnelLayer visible={showP10P90} opacity={showP25P75 ? 0.2 : 0.3} />
                 <SignatureLayer visible={showSignature} />
               </ExplorerChart>
-              <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
+              <p className="text-xs text-gray-400 mt-1 text-center">
+                Cliquez sur un creneau pour ouvrir l'analyse detaillee
+              </p>
             </div>
             <LayerToggle
               layers={{ tunnel: showP10P90, talon: showP25P75, signature: showSignature }}
               onToggle={(key) => {
-                if (key === 'tunnel') setShowP10P90(v => !v);
-                if (key === 'talon') setShowP25P75(v => !v);
+                if (key === 'tunnel') setShowP10P90((v) => !v);
+                if (key === 'talon') setShowP25P75((v) => !v);
               }}
             />
           </div>

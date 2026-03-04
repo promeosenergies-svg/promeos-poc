@@ -38,14 +38,19 @@ export const EMPTY_BILLING_INSIGHTS = Object.freeze({
 export function normalizeBillingInsights(raw) {
   if (!raw || typeof raw !== 'object') return EMPTY_BILLING_INSIGHTS;
 
-  const anomalies_count = typeof raw.anomalies_count === 'number' ? Math.max(0, raw.anomalies_count) : 0;
-  const total_loss_eur = typeof raw.total_loss_eur === 'number' ? Math.max(0, raw.total_loss_eur) : 0;
-  const invoices_impacted = typeof raw.invoices_impacted === 'number' ? Math.max(0, raw.invoices_impacted) : 0;
+  const anomalies_count =
+    typeof raw.anomalies_count === 'number' ? Math.max(0, raw.anomalies_count) : 0;
+  const total_loss_eur =
+    typeof raw.total_loss_eur === 'number' ? Math.max(0, raw.total_loss_eur) : 0;
+  const invoices_impacted =
+    typeof raw.invoices_impacted === 'number' ? Math.max(0, raw.invoices_impacted) : 0;
 
   if (anomalies_count === 0 && total_loss_eur === 0) return EMPTY_BILLING_INSIGHTS;
 
   const confidence = ['high', 'medium', 'low'].includes(raw.confidence) ? raw.confidence : 'low';
-  const proof_links = Array.isArray(raw.proof_links) ? raw.proof_links.filter((l) => typeof l === 'string') : [];
+  const proof_links = Array.isArray(raw.proof_links)
+    ? raw.proof_links.filter((l) => typeof l === 'string')
+    : [];
 
   return { anomalies_count, total_loss_eur, invoices_impacted, confidence, proof_links };
 }

@@ -11,9 +11,7 @@
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload,
-} from 'lucide-react';
+import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload } from 'lucide-react';
 import { PageShell, EmptyState, Tooltip } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
@@ -23,24 +21,24 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 const MAX_SITES = 20;
 
-const SEV_LABEL   = { CRITICAL: 'Critique', HIGH: 'Élevé', MEDIUM: 'Moyen', LOW: 'Faible' };
-const SEV_COLOR   = {
+const SEV_LABEL = { CRITICAL: 'Critique', HIGH: 'Élevé', MEDIUM: 'Moyen', LOW: 'Faible' };
+const SEV_COLOR = {
   CRITICAL: 'bg-red-100 text-red-700',
-  HIGH:     'bg-orange-100 text-orange-700',
-  MEDIUM:   'bg-amber-100 text-amber-700',
-  LOW:      'bg-blue-100 text-blue-700',
+  HIGH: 'bg-orange-100 text-orange-700',
+  MEDIUM: 'bg-amber-100 text-amber-700',
+  LOW: 'bg-blue-100 text-blue-700',
 };
-const FW_LABEL  = { DECRET_TERTIAIRE: 'Décret Tertiaire', FACTURATION: 'Facturation', BACS: 'BACS' };
-const FW_COLOR  = {
+const FW_LABEL = { DECRET_TERTIAIRE: 'Décret Tertiaire', FACTURATION: 'Facturation', BACS: 'BACS' };
+const FW_COLOR = {
   DECRET_TERTIAIRE: 'bg-purple-50 text-purple-700',
-  FACTURATION:      'bg-blue-50 text-blue-700',
-  BACS:             'bg-teal-50 text-teal-700',
+  FACTURATION: 'bg-blue-50 text-blue-700',
+  BACS: 'bg-teal-50 text-teal-700',
 };
 
 function fmtEur(n) {
   if (!n || n <= 0) return '—';
   if (n >= 1_000_000) return `~${(n / 1_000_000).toFixed(1)} M€`;
-  if (n >= 1_000)     return `~${Math.round(n / 1_000)} k€`;
+  if (n >= 1_000) return `~${Math.round(n / 1_000)} k€`;
   return `~${Math.round(n)} €`;
 }
 
@@ -48,19 +46,19 @@ function fmtEur(n) {
 
 export default function AnomaliesPage() {
   const navigate = useNavigate();
-  const { scopedSites, scope, sitesLoading } = useScope();
+  const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
-  const [anomalies, setAnomalies] = useState([]);  // flat [{...anomaly, site_id, site_nom}]
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState(null);
-  const fetchIdRef                = useRef(0);
+  const [anomalies, setAnomalies] = useState([]); // flat [{...anomaly, site_id, site_nom}]
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const fetchIdRef = useRef(0);
 
   // Filtres
-  const [filterFw,   setFilterFw]   = useState('');
-  const [filterSev,  setFilterSev]  = useState('');
+  const [filterFw, setFilterFw] = useState('');
+  const [filterSev, setFilterSev] = useState('');
   const [filterSite, setFilterSite] = useState('');
-  const [search,     setSearch]     = useState('');
+  const [search, setSearch] = useState('');
 
   /* ── Fetch anomalies ── */
   useEffect(() => {
@@ -74,70 +72,71 @@ export default function AnomaliesPage() {
     setLoading(true);
     setError(null);
 
-    const patrimoinePromises = sitesToFetch.map(site =>
+    const patrimoinePromises = sitesToFetch.map((site) =>
       getPatrimoineAnomalies(site.id)
-        .then(data => ({ site, data, ok: true }))
+        .then((data) => ({ site, data, ok: true }))
         .catch(() => ({ site, data: null, ok: false }))
     );
     const billingPromise = getBillingAnomaliesScoped()
-      .then(data => ({ data, ok: true }))
+      .then((data) => ({ data, ok: true }))
       .catch(() => ({ data: null, ok: false }));
 
-    Promise.all([...patrimoinePromises, billingPromise]).then(allResults => {
-      if (fetchIdRef.current !== fetchId) return;
-      const billingResult = allResults[allResults.length - 1];
-      const patrimoineResults = allResults.slice(0, -1);
+    Promise.all([...patrimoinePromises, billingPromise])
+      .then((allResults) => {
+        if (fetchIdRef.current !== fetchId) return;
+        const billingResult = allResults[allResults.length - 1];
+        const patrimoineResults = allResults.slice(0, -1);
 
-      const flat = patrimoineResults.flatMap(({ site, data, ok }) => {
-        if (!ok || !data) return [];
-        return (data.anomalies ?? []).map(a => ({
-          ...a,
-          site_id:  site.id,
-          site_nom: site.nom,
-        }));
-      });
+        const flat = patrimoineResults.flatMap(({ site, data, ok }) => {
+          if (!ok || !data) return [];
+          return (data.anomalies ?? []).map((a) => ({
+            ...a,
+            site_id: site.id,
+            site_nom: site.nom,
+          }));
+        });
 
-      // Merge billing anomalies — normalize to patrimoine format
-      if (billingResult.ok && billingResult.data?.anomalies?.length) {
-        for (const b of billingResult.data.anomalies) {
-          flat.push({
-            ...b,
-            site_id: b.site_id ?? null,
-            site_nom: b.site_nom || b.site_name || 'Facturation',
-            regulatory_impact: { framework: 'FACTURATION' },
-            _isBilling: true,
-          });
+        // Merge billing anomalies — normalize to patrimoine format
+        if (billingResult.ok && billingResult.data?.anomalies?.length) {
+          for (const b of billingResult.data.anomalies) {
+            flat.push({
+              ...b,
+              site_id: b.site_id ?? null,
+              site_nom: b.site_nom || b.site_name || 'Facturation',
+              regulatory_impact: { framework: 'FACTURATION' },
+              _isBilling: true,
+            });
+          }
         }
-      }
 
-      setAnomalies(flat);
-      setLoading(false);
-    }).catch(() => {
-      if (fetchIdRef.current !== fetchId) return;
-      setError('Impossible de charger les anomalies du parc.');
-      setLoading(false);
-    });
+        setAnomalies(flat);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (fetchIdRef.current !== fetchId) return;
+        setError('Impossible de charger les anomalies du parc.');
+        setLoading(false);
+      });
   }, [scopedSites]);
 
   /* ── KPIs ── */
   const kpis = useMemo(() => {
-    const total     = anomalies.length;
-    const critiques = anomalies.filter(a => a.severity === 'CRITICAL').length;
-    const risque    = anomalies.reduce((s, a) => s + (a.business_impact?.estimated_risk_eur ?? 0), 0);
+    const total = anomalies.length;
+    const critiques = anomalies.filter((a) => a.severity === 'CRITICAL').length;
+    const risque = anomalies.reduce((s, a) => s + (a.business_impact?.estimated_risk_eur ?? 0), 0);
     return { total, critiques, risque };
   }, [anomalies]);
 
   /* ── Filtrage + tri ── */
   const filtered = useMemo(() => {
     let r = [...anomalies];
-    if (filterFw)   r = r.filter(a => a.regulatory_impact?.framework === filterFw);
-    if (filterSev)  r = r.filter(a => a.severity === filterSev);
-    if (filterSite) r = r.filter(a => String(a.site_id) === filterSite);
+    if (filterFw) r = r.filter((a) => a.regulatory_impact?.framework === filterFw);
+    if (filterSev) r = r.filter((a) => a.severity === filterSev);
+    if (filterSite) r = r.filter((a) => String(a.site_id) === filterSite);
     if (search) {
       const q = search.toLowerCase();
-      r = r.filter(a =>
-        a.title_fr?.toLowerCase().includes(q) ||
-        a.site_nom?.toLowerCase().includes(q)
+      r = r.filter(
+        (a) => a.title_fr?.toLowerCase().includes(q) || a.site_nom?.toLowerCase().includes(q)
       );
     }
     // Tri : impact € DESC puis priority_score DESC
@@ -154,7 +153,10 @@ export default function AnomaliesPage() {
   const hasFilters = filterFw || filterSev || filterSite || search;
 
   function resetFilters() {
-    setFilterFw(''); setFilterSev(''); setFilterSite(''); setSearch('');
+    setFilterFw('');
+    setFilterSev('');
+    setFilterSite('');
+    setSearch('');
   }
 
   function openSite(siteId, isBilling = false) {
@@ -171,7 +173,9 @@ export default function AnomaliesPage() {
     return (
       <PageShell icon={AlertTriangle} title="Action Center" subtitle="Chargement...">
         <div className="space-y-2 animate-pulse">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-lg" />)}
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+          ))}
         </div>
       </PageShell>
     );
@@ -187,7 +191,10 @@ export default function AnomaliesPage() {
           ctaLabel="Importer mon patrimoine"
           onCta={() => navigate('/import')}
           actions={
-            <button onClick={() => navigate('/import')} className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 hover:bg-blue-100 transition">
+            <button
+              onClick={() => navigate('/import')}
+              className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 hover:bg-blue-100 transition"
+            >
               <Upload size={14} /> Charger HELIOS
             </button>
           }
@@ -203,24 +210,44 @@ export default function AnomaliesPage() {
   return (
     <PageShell icon={AlertTriangle} title="Action Center" subtitle={subtitle}>
       <div className="space-y-4">
-
         {/* ── KPI row ── */}
         <div className="grid grid-cols-3 gap-3">
-          <KpiCard icon={AlertTriangle} color="bg-blue-600"  label="Anomalies totales" value={kpis.total}    loading={loading} />
-          <KpiCard icon={AlertTriangle} color="bg-red-600"   label="Critiques"         value={kpis.critiques} loading={loading} />
-          <KpiCard icon={Euro}          color="bg-amber-600" label="Risque estimé"     value={fmtEur(kpis.risque)} loading={loading} />
+          <KpiCard
+            icon={AlertTriangle}
+            color="bg-blue-600"
+            label="Anomalies totales"
+            value={kpis.total}
+            loading={loading}
+          />
+          <KpiCard
+            icon={AlertTriangle}
+            color="bg-red-600"
+            label="Critiques"
+            value={kpis.critiques}
+            loading={loading}
+          />
+          <KpiCard
+            icon={Euro}
+            color="bg-amber-600"
+            label="Risque estimé"
+            value={fmtEur(kpis.risque)}
+            loading={loading}
+          />
         </div>
 
         {/* ── Toolbar ── */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Recherche texte */}
           <div className="relative flex-1 min-w-[180px] max-w-sm">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               placeholder="Rechercher une anomalie ou un site..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
@@ -230,10 +257,10 @@ export default function AnomaliesPage() {
             value={filterFw}
             onChange={setFilterFw}
             options={[
-              { value: '',                 label: 'Framework'        },
+              { value: '', label: 'Framework' },
               { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
-              { value: 'FACTURATION',      label: 'Facturation'      },
-              { value: 'BACS',             label: 'BACS'             },
+              { value: 'FACTURATION', label: 'Facturation' },
+              { value: 'BACS', label: 'BACS' },
             ]}
           />
 
@@ -242,11 +269,11 @@ export default function AnomaliesPage() {
             value={filterSev}
             onChange={setFilterSev}
             options={[
-              { value: '',         label: 'Sévérité' },
+              { value: '', label: 'Sévérité' },
               { value: 'CRITICAL', label: 'Critique' },
-              { value: 'HIGH',     label: 'Élevé'    },
-              { value: 'MEDIUM',   label: 'Moyen'    },
-              { value: 'LOW',      label: 'Faible'   },
+              { value: 'HIGH', label: 'Élevé' },
+              { value: 'MEDIUM', label: 'Moyen' },
+              { value: 'LOW', label: 'Faible' },
             ]}
           />
 
@@ -256,13 +283,18 @@ export default function AnomaliesPage() {
             onChange={setFilterSite}
             options={[
               { value: '', label: 'Tous les sites' },
-              ...scopedSites.slice(0, MAX_SITES).map(s => ({ value: String(s.id), label: s.nom })),
+              ...scopedSites
+                .slice(0, MAX_SITES)
+                .map((s) => ({ value: String(s.id), label: s.nom })),
             ]}
           />
 
           {/* Reset */}
           {hasFilters && (
-            <button onClick={resetFilters} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition">
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+            >
               <X size={12} /> Réinitialiser
             </button>
           )}
@@ -278,7 +310,9 @@ export default function AnomaliesPage() {
         {/* ── Liste anomalies ── */}
         {loading ? (
           <div className="space-y-2 animate-pulse">
-            {[...Array(5)].map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-lg" />)}
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-gray-400">
@@ -293,7 +327,7 @@ export default function AnomaliesPage() {
         ) : (
           <div className="space-y-1.5">
             {filtered.map((anom, idx) => {
-              const impactFmt     = fmtEur(anom.business_impact?.estimated_risk_eur);
+              const impactFmt = fmtEur(anom.business_impact?.estimated_risk_eur);
 
               return (
                 <div
@@ -308,17 +342,25 @@ export default function AnomaliesPage() {
                         {anom.site_nom}
                       </span>
                       {/* Severity */}
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${SEV_COLOR[anom.severity] ?? 'bg-gray-100 text-gray-600'}`}>
+                      <span
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${SEV_COLOR[anom.severity] ?? 'bg-gray-100 text-gray-600'}`}
+                      >
                         {SEV_LABEL[anom.severity] ?? anom.severity}
                       </span>
                       {/* Framework */}
-                      {anom.regulatory_impact?.framework && anom.regulatory_impact.framework !== 'NONE' && (
-                        <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${FW_COLOR[anom.regulatory_impact.framework] ?? 'bg-gray-50 text-gray-600'}`}>
-                          {FW_LABEL[anom.regulatory_impact.framework] ?? anom.regulatory_impact.framework}
-                        </span>
-                      )}
+                      {anom.regulatory_impact?.framework &&
+                        anom.regulatory_impact.framework !== 'NONE' && (
+                          <span
+                            className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${FW_COLOR[anom.regulatory_impact.framework] ?? 'bg-gray-50 text-gray-600'}`}
+                          >
+                            {FW_LABEL[anom.regulatory_impact.framework] ??
+                              anom.regulatory_impact.framework}
+                          </span>
+                        )}
                       {/* Titre */}
-                      <span className="text-sm font-medium text-gray-800 truncate">{anom.title_fr}</span>
+                      <span className="text-sm font-medium text-gray-800 truncate">
+                        {anom.title_fr}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {impactFmt !== '—' && (
@@ -343,13 +385,15 @@ export default function AnomaliesPage() {
                     <Tooltip text="Créer une action pour cette anomalie">
                       <button
                         type="button"
-                        onClick={() => openActionDrawer({
-                          prefill: { titre: anom.title_fr, type: 'anomalie' },
-                          siteId: anom.site_id,
-                          sourceType: 'anomaly',
-                          sourceId: anom.code,
-                          idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
-                        })}
+                        onClick={() =>
+                          openActionDrawer({
+                            prefill: { titre: anom.title_fr, type: 'anomalie' },
+                            siteId: anom.site_id,
+                            sourceType: 'anomaly',
+                            sourceId: anom.code,
+                            idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
+                          })
+                        }
                         className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
                       >
                         Créer action
@@ -362,11 +406,11 @@ export default function AnomaliesPage() {
 
             <p className="text-[11px] text-gray-400 text-center pt-1">
               {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
-              {scopedSites.length > MAX_SITES && ` · ${MAX_SITES} sites analysés sur ${scopedSites.length}`}
+              {scopedSites.length > MAX_SITES &&
+                ` · ${MAX_SITES} sites analysés sur ${scopedSites.length}`}
             </p>
           </div>
         )}
-
       </div>
 
       {/* Action Drawer — managed by ActionDrawerContext */}
@@ -384,10 +428,11 @@ function KpiCard({ icon: Icon, color, label, value, loading }) {
       </div>
       <div>
         <p className="text-[11px] text-gray-400 font-medium">{label}</p>
-        {loading
-          ? <div className="h-5 w-12 bg-gray-100 rounded animate-pulse mt-0.5" />
-          : <p className="text-lg font-bold text-gray-900 leading-tight">{value}</p>
-        }
+        {loading ? (
+          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse mt-0.5" />
+        ) : (
+          <p className="text-lg font-bold text-gray-900 leading-tight">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -397,12 +442,16 @@ function QuickSelect({ value, onChange, options }) {
   return (
     <select
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       className={`text-xs px-2.5 py-1.5 rounded-lg border bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
         value ? 'border-blue-300 text-blue-700 font-medium' : 'border-gray-200 text-gray-600'
       }`}
     >
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
     </select>
   );
 }

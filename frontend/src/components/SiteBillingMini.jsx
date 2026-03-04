@@ -34,7 +34,7 @@ export default function SiteBillingMini({ siteId }) {
     setLoading(true);
     setError(null);
     getSiteBilling(siteId)
-      .then(d => {
+      .then((d) => {
         setData(d);
         setLoading(false);
       })
@@ -47,15 +47,13 @@ export default function SiteBillingMini({ siteId }) {
   if (loading) return <SkeletonCard lines={3} />;
 
   if (error) {
-    return (
-      <div className="py-4 text-center text-sm text-red-500">{error}</div>
-    );
+    return <div className="py-4 text-center text-sm text-red-500">{error}</div>;
   }
 
   const invoices = data?.invoices || [];
   const insights = data?.insights || [];
   const lastInvoice = invoices.length > 0 ? invoices[invoices.length - 1] : null;
-  const openInsights = insights.filter(i => i.insight_status === 'open' || !i.insight_status);
+  const openInsights = insights.filter((i) => i.insight_status === 'open' || !i.insight_status);
 
   if (!data || invoices.length === 0) {
     return (
@@ -76,12 +74,7 @@ export default function SiteBillingMini({ siteId }) {
     <div className="space-y-4 pt-4">
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <KpiCard
-          icon={FileText}
-          label="Factures"
-          value={invoices.length}
-          color="text-blue-600"
-        />
+        <KpiCard icon={FileText} label="Factures" value={invoices.length} color="text-blue-600" />
         <KpiCard
           icon={AlertTriangle}
           label="Anomalies"
@@ -101,10 +94,11 @@ export default function SiteBillingMini({ siteId }) {
         <Card>
           <CardBody>
             <p className="text-xs font-semibold text-red-600 mb-2">
-              {openInsights.length} anomalie{openInsights.length > 1 ? 's' : ''} ouverte{openInsights.length > 1 ? 's' : ''}
+              {openInsights.length} anomalie{openInsights.length > 1 ? 's' : ''} ouverte
+              {openInsights.length > 1 ? 's' : ''}
             </p>
             <ul className="space-y-1">
-              {openInsights.slice(0, 3).map(ins => (
+              {openInsights.slice(0, 3).map((ins) => (
                 <li key={ins.id} className="text-xs text-gray-600 flex items-center gap-1">
                   <AlertTriangle size={11} className="text-orange-400 flex-shrink-0" />
                   {ins.message || ins.type}

@@ -170,23 +170,26 @@ export const tint = {
     const mod = _modLookup[moduleKey];
     const p = _palLookup[mod?.tint || 'slate'] || _palLookup.slate;
     return {
-      navActive:  () => `${p.activeBg} ${p.activeText} ${p.activeBorder}`,
+      navActive: () => `${p.activeBg} ${p.activeText} ${p.activeBorder}`,
       headerBand: () => p.headerBand,
-      pill:       () => `${p.pillBg} ${p.pillText} ring-1 ${p.pillRing}`,
-      icon:       () => p.icon,
-      softBg:     () => p.softBg,
-      dot:        () => p.dot,
-      tab:        () => ({ active: `border-b-2 ${p.activeBorder} ${p.activeText}`, ring: p.pillRing.replace('/60', '') }),
-      raw:        () => p,
+      pill: () => `${p.pillBg} ${p.pillText} ring-1 ${p.pillRing}`,
+      icon: () => p.icon,
+      softBg: () => p.softBg,
+      dot: () => p.dot,
+      tab: () => ({
+        active: `border-b-2 ${p.activeBorder} ${p.activeText}`,
+        ring: p.pillRing.replace('/60', ''),
+      }),
+      raw: () => p,
     };
   },
   severity(level) {
     const s = SEVERITY_TINT[level] || SEVERITY_TINT.neutral;
     return {
       badge: () => `${s.chipBg} ${s.chipText} border ${s.chipBorder}`,
-      dot:   () => s.dot,
+      dot: () => s.dot,
       label: () => s.label,
-      raw:   () => s,
+      raw: () => s,
     };
   },
 };

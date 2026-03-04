@@ -8,6 +8,7 @@ Risk factors:
 - Volatility (coefficient of variation of power)
 - Peak concentration (how clustered peak events are)
 """
+
 from typing import List, Dict, Any, Optional
 
 
@@ -15,15 +16,18 @@ class PowerEngine:
     """Compute power/capacity risk score from KPIs and subscribed power."""
 
     # Weight configuration
-    WEIGHT_RATIO = 0.45       # P95/Psub ratio
-    WEIGHT_DEPASSEMENT = 0.30 # Frequency of exceeding subscribed power
+    WEIGHT_RATIO = 0.45  # P95/Psub ratio
+    WEIGHT_DEPASSEMENT = 0.30  # Frequency of exceeding subscribed power
     WEIGHT_VOLATILITY = 0.15  # CV of power
-    WEIGHT_PEAK_CONC = 0.10   # Peak concentration
+    WEIGHT_PEAK_CONC = 0.10  # Peak concentration
 
-    def compute(self, kpis: Dict[str, Any],
-                readings: List[Dict[str, Any]],
-                subscribed_power_kva: Optional[float] = None,
-                interval_minutes: int = 60) -> Dict[str, Any]:
+    def compute(
+        self,
+        kpis: Dict[str, Any],
+        readings: List[Dict[str, Any]],
+        subscribed_power_kva: Optional[float] = None,
+        interval_minutes: int = 60,
+    ) -> Dict[str, Any]:
         """
         Compute power risk score.
 
@@ -47,7 +51,11 @@ class PowerEngine:
         pmean = kpis.get("pmean_kw", 0)
 
         # If no subscribed power, estimate from P95 * 1.2
-        p_sub = subscribed_power_kva if subscribed_power_kva and subscribed_power_kva > 0 else (p95 * 1.2 if p95 > 0 else 100)
+        p_sub = (
+            subscribed_power_kva
+            if subscribed_power_kva and subscribed_power_kva > 0
+            else (p95 * 1.2 if p95 > 0 else 100)
+        )
 
         # --- Factor 1: P95/Psub ratio ---
         ratio_p95 = p95 / p_sub if p_sub > 0 else 0
@@ -68,12 +76,16 @@ class PowerEngine:
             p_kw = r["value_kwh"] / hours_per_interval
             if p_kw > p_sub:
                 depassement_count += 1
-                depassements.append({
-                    "timestamp": r["timestamp"].isoformat() if hasattr(r["timestamp"], 'isoformat') else str(r["timestamp"]),
-                    "power_kw": round(p_kw, 2),
-                    "subscribed_kva": round(p_sub, 2),
-                    "excess_pct": round((p_kw / p_sub - 1) * 100, 1)
-                })
+                depassements.append(
+                    {
+                        "timestamp": r["timestamp"].isoformat()
+                        if hasattr(r["timestamp"], "isoformat")
+                        else str(r["timestamp"]),
+                        "power_kw": round(p_kw, 2),
+                        "subscribed_kva": round(p_sub, 2),
+                        "excess_pct": round((p_kw / p_sub - 1) * 100, 1),
+                    }
+                )
 
         depassement_rate = depassement_count / len(readings) if readings else 0
         # Score: 0% = 0, >5% = 100
@@ -82,7 +94,7 @@ class PowerEngine:
         # --- Factor 3: Volatility (CV) ---
         if pmean > 0 and len(powers_kw) > 1:
             variance = sum((p - pmean) ** 2 for p in powers_kw) / len(powers_kw)
-            std_dev = variance ** 0.5
+            std_dev = variance**0.5
             cv = std_dev / pmean
         else:
             cv = 0
@@ -95,7 +107,7 @@ class PowerEngine:
             threshold_top = sorted(powers_kw, reverse=True)[max(1, len(powers_kw) // 100)]
             peaks_indices = [i for i, p in enumerate(powers_kw) if p >= threshold_top]
             if len(peaks_indices) > 1:
-                gaps = [peaks_indices[i+1] - peaks_indices[i] for i in range(len(peaks_indices)-1)]
+                gaps = [peaks_indices[i + 1] - peaks_indices[i] for i in range(len(peaks_indices) - 1)]
                 avg_gap = sum(gaps) / len(gaps)
                 # Smaller gaps = more concentrated peaks = higher risk
                 score_peak_conc = min(100, max(0, (10 - avg_gap) * 12.5))
@@ -106,10 +118,10 @@ class PowerEngine:
 
         # --- Weighted total ---
         risk_score = (
-            score_ratio * self.WEIGHT_RATIO +
-            score_depassement * self.WEIGHT_DEPASSEMENT +
-            score_volatility * self.WEIGHT_VOLATILITY +
-            score_peak_conc * self.WEIGHT_PEAK_CONC
+            score_ratio * self.WEIGHT_RATIO
+            + score_depassement * self.WEIGHT_DEPASSEMENT
+            + score_volatility * self.WEIGHT_VOLATILITY
+            + score_peak_conc * self.WEIGHT_PEAK_CONC
         )
         risk_score = round(min(100, max(0, risk_score)), 1)
 

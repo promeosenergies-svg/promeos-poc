@@ -11,13 +11,14 @@ import { readFileSync } from 'fs';
 import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
-const backend = (rel) => readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
+const backend = (rel) =>
+  readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
-const SITE360     = src('pages/Site360.jsx');
-const NAV_REG     = src('layout/NavRegistry.js');
-const NAV_PANEL   = src('layout/NavPanel.jsx');
+const SITE360 = src('pages/Site360.jsx');
+const NAV_REG = src('layout/NavRegistry.js');
+const NAV_PANEL = src('layout/NavPanel.jsx');
 const IMPORT_PAGE = src('pages/ImportPage.jsx');
-const IMPORT_PY   = backend('routes/import_sites.py');
+const IMPORT_PY = backend('routes/import_sites.py');
 
 // ── A. Site360 — real anomalies data ─────────────────────────────────────
 

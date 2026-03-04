@@ -4,7 +4,16 @@
  * Matrix view: Users × Scopes → Roles.
  */
 import { useState, useEffect } from 'react';
-import { Users, Shield, Building2, MapPin, ChevronRight, Check, Search, RefreshCw } from 'lucide-react';
+import {
+  Users,
+  Shield,
+  Building2,
+  MapPin,
+  ChevronRight,
+  Check,
+  Search,
+  RefreshCw,
+} from 'lucide-react';
 import { getAdminUsers, getAdminRoles, setAdminScopes, changeAdminRole } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PageShell, Button, EmptyState } from '../ui';
@@ -50,10 +59,12 @@ function WizardExpress({ users, roles, onDone }) {
       // Update role
       await changeAdminRole(selectedUser.id, selectedRole);
       // Update scopes
-      await setAdminScopes(selectedUser.id, [{
-        level: selectedScopeLevel,
-        id: parseInt(selectedScopeId) || 1,
-      }]);
+      await setAdminScopes(selectedUser.id, [
+        {
+          level: selectedScopeLevel,
+          id: parseInt(selectedScopeId) || 1,
+        },
+      ]);
       onDone();
     } catch (err) {
       toast('Erreur: ' + (err.response?.data?.detail || err.message), 'error');
@@ -73,11 +84,15 @@ function WizardExpress({ users, roles, onDone }) {
       <div className="flex items-center gap-2 mb-6 text-sm">
         {['Utilisateur', 'Périmètre', 'Rôle', 'Confirmer'].map((label, i) => (
           <div key={label} className="flex items-center gap-1">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-              ${step > i + 1 ? 'bg-green-100 text-green-700' : step === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+              ${step > i + 1 ? 'bg-green-100 text-green-700' : step === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}
+            >
               {step > i + 1 ? <Check size={12} /> : i + 1}
             </div>
-            <span className={step === i + 1 ? 'text-gray-800 font-medium' : 'text-gray-400'}>{label}</span>
+            <span className={step === i + 1 ? 'text-gray-800 font-medium' : 'text-gray-400'}>
+              {label}
+            </span>
             {i < 3 && <ChevronRight size={14} className="text-gray-300" />}
           </div>
         ))}
@@ -100,11 +115,16 @@ function WizardExpress({ users, roles, onDone }) {
             {filteredUsers.map((u) => (
               <button
                 key={u.id}
-                onClick={() => { setSelectedUser(u); setStep(2); }}
+                onClick={() => {
+                  setSelectedUser(u);
+                  setStep(2);
+                }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-blue-50 transition
                   ${selectedUser?.id === u.id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'}`}
               >
-                <span className="font-medium">{u.prenom} {u.nom}</span>
+                <span className="font-medium">
+                  {u.prenom} {u.nom}
+                </span>
                 <span className="text-gray-400 ml-2">{u.email}</span>
               </button>
             ))}
@@ -115,7 +135,12 @@ function WizardExpress({ users, roles, onDone }) {
       {/* Step 2: Select scope */}
       {step === 2 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Perimetre d'acces pour <strong>{selectedUser?.prenom} {selectedUser?.nom}</strong></p>
+          <p className="text-sm text-gray-500">
+            Perimetre d'acces pour{' '}
+            <strong>
+              {selectedUser?.prenom} {selectedUser?.nom}
+            </strong>
+          </p>
           <div className="flex gap-2">
             {['org', 'entite', 'site'].map((level) => (
               <button
@@ -132,7 +157,9 @@ function WizardExpress({ users, roles, onDone }) {
             ))}
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">ID du {SCOPE_LABELS[selectedScopeLevel]}</label>
+            <label className="text-xs text-gray-500 block mb-1">
+              ID du {SCOPE_LABELS[selectedScopeLevel]}
+            </label>
             <input
               type="number"
               value={selectedScopeId}
@@ -141,7 +168,10 @@ function WizardExpress({ users, roles, onDone }) {
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm w-32"
             />
           </div>
-          <button onClick={() => setStep(3)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+          <button
+            onClick={() => setStep(3)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+          >
             Suivant
           </button>
         </div>
@@ -150,7 +180,12 @@ function WizardExpress({ users, roles, onDone }) {
       {/* Step 3: Select role */}
       {step === 3 && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Role pour <strong>{selectedUser?.prenom} {selectedUser?.nom}</strong></p>
+          <p className="text-sm text-gray-500">
+            Role pour{' '}
+            <strong>
+              {selectedUser?.prenom} {selectedUser?.nom}
+            </strong>
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {roles.map((r) => (
               <button
@@ -177,9 +212,21 @@ function WizardExpress({ users, roles, onDone }) {
       {step === 4 && (
         <div className="space-y-4">
           <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-            <div><span className="text-gray-500">Utilisateur:</span> <strong>{selectedUser?.prenom} {selectedUser?.nom}</strong> ({selectedUser?.email})</div>
-            <div><span className="text-gray-500">Scope:</span> <strong>{SCOPE_LABELS[selectedScopeLevel]}</strong> #{selectedScopeId || '1'}</div>
-            <div><span className="text-gray-500">Role:</span> <strong>{ROLE_LABELS[selectedRole] || selectedRole}</strong></div>
+            <div>
+              <span className="text-gray-500">Utilisateur:</span>{' '}
+              <strong>
+                {selectedUser?.prenom} {selectedUser?.nom}
+              </strong>{' '}
+              ({selectedUser?.email})
+            </div>
+            <div>
+              <span className="text-gray-500">Scope:</span>{' '}
+              <strong>{SCOPE_LABELS[selectedScopeLevel]}</strong> #{selectedScopeId || '1'}
+            </div>
+            <div>
+              <span className="text-gray-500">Role:</span>{' '}
+              <strong>{ROLE_LABELS[selectedRole] || selectedRole}</strong>
+            </div>
           </div>
 
           {effectivePerms && (
@@ -188,9 +235,13 @@ function WizardExpress({ users, roles, onDone }) {
               <div className="flex flex-wrap gap-1">
                 {Object.entries(effectivePerms).map(([k, v]) => {
                   if (v === false || (Array.isArray(v) && v.length === 0)) return null;
-                  const label = v === true ? k : v === '__all__' ? `${k}: ALL` : `${k}: ${v.join(', ')}`;
+                  const label =
+                    v === true ? k : v === '__all__' ? `${k}: ALL` : `${k}: ${v.join(', ')}`;
                   return (
-                    <span key={k} className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full">
+                    <span
+                      key={k}
+                      className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full"
+                    >
                       {label}
                     </span>
                   );
@@ -200,7 +251,10 @@ function WizardExpress({ users, roles, onDone }) {
           )}
 
           <div className="flex gap-2">
-            <button onClick={() => setStep(1)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">
+            <button
+              onClick={() => setStep(1)}
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
+            >
               Annuler
             </button>
             <button
@@ -253,7 +307,9 @@ function MatrixView({ users, roles: _roles }) {
           <tbody>
             {filtered.map((u) => (
               <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="px-4 py-2 font-medium text-gray-700">{u.prenom} {u.nom}</td>
+                <td className="px-4 py-2 font-medium text-gray-700">
+                  {u.prenom} {u.nom}
+                </td>
                 <td className="px-3 py-2 text-gray-500">{u.email}</td>
                 <td className="px-3 py-2 text-center">
                   <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-[10px] font-semibold">
@@ -274,7 +330,9 @@ function MatrixView({ users, roles: _roles }) {
                   )}
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <span className={`inline-block w-2 h-2 rounded-full ${u.actif ? 'bg-green-500' : 'bg-red-400'}`} />
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full ${u.actif ? 'bg-green-500' : 'bg-red-400'}`}
+                  />
                 </td>
               </tr>
             ))}
@@ -296,18 +354,27 @@ export default function AdminAssignmentsPage() {
   const load = () => {
     setLoading(true);
     Promise.all([getAdminUsers(), getAdminRoles()])
-      .then(([u, r]) => { setUsers(u); setRoles(r); })
+      .then(([u, r]) => {
+        setUsers(u);
+        setRoles(r);
+      })
       .catch(() => toast('Erreur lors du chargement des données', 'error'))
       .finally(() => setLoading(false));
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (!hasPermission('admin')) {
     return (
       <PageShell icon={Users} title="Affectations">
-        <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+        <EmptyState
+          icon={Shield}
+          title="Acces refuse"
+          text="Vous n'avez pas les droits d'administration."
+        />
       </PageShell>
     );
   }
@@ -315,7 +382,8 @@ export default function AdminAssignmentsPage() {
   if (loading) {
     return (
       <PageShell icon={Users} title="Affectations" subtitle="Chargement...">
-        <SkeletonCard /><SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </PageShell>
     );
   }

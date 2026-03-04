@@ -1,7 +1,9 @@
 """
 PROMEOS — Tests V11 C1: KB endpoints smoke test (no 404 on happy path)
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -17,8 +19,9 @@ from main import app
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite:///:memory:", echo=False,
-                           connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
@@ -28,8 +31,11 @@ def db():
 @pytest.fixture
 def client(db):
     def _override():
-        try: yield db
-        finally: pass
+        try:
+            yield db
+        finally:
+            pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()

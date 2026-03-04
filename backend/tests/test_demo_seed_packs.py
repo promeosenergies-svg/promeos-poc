@@ -7,8 +7,10 @@ V85 changes:
   - helios generates 730 days hourly + 30 days 15-min + 60 months monthly
   - monitoring enabled for all packs (hourly data available for helios)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -24,7 +26,8 @@ from models import PurchaseScenarioResult, EmsWeatherCache, ConsumptionInsight, 
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -37,6 +40,7 @@ def db_session():
 def _seed(db, pack="helios", size="S"):
     """Run SeedOrchestrator and return result."""
     from services.demo_seed import SeedOrchestrator
+
     orch = SeedOrchestrator(db)
     return orch.seed(pack=pack, size=size, rng_seed=42, days=30)
 
@@ -45,6 +49,7 @@ def _seed(db, pack="helios", size="S"):
 # TestSeedHeliosPack — canonical E2E demo pack (V83 + V85)
 # 3 entites, 5 sites, 7 batiments, mixed sectors
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestSeedHeliosPack:
     def test_helios_s_creates_5_sites(self, db_session):
@@ -65,18 +70,14 @@ class TestSeedHeliosPack:
         # 60 months × 5 meters = 300 monthly records
         assert result["readings_count"] == 60 * 5
         assert result["readings_frequency"] == "monthly"
-        monthly = db_session.query(MeterReading).filter_by(
-            frequency=FrequencyType.MONTHLY
-        ).count()
+        monthly = db_session.query(MeterReading).filter_by(frequency=FrequencyType.MONTHLY).count()
         assert monthly == 60 * 5
 
     def test_helios_s_creates_hourly_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
         # 730 days × 24h × 5 meters = 87 600 hourly records
         assert result["hourly_readings_count"] > 80_000
-        hourly = db_session.query(MeterReading).filter_by(
-            frequency=FrequencyType.HOURLY
-        ).count()
+        hourly = db_session.query(MeterReading).filter_by(frequency=FrequencyType.HOURLY).count()
         assert hourly > 80_000
 
     def test_helios_s_creates_15min_readings(self, db_session):
@@ -84,9 +85,7 @@ class TestSeedHeliosPack:
         # V107: 365 days × 72 unique slots × 5 meters ≈ 131,400
         # (:00 slots collide with hourly readings → 72 unique per day)
         assert result["min15_readings_count"] > 100_000
-        min15 = db_session.query(MeterReading).filter_by(
-            frequency=FrequencyType.MIN_15
-        ).count()
+        min15 = db_session.query(MeterReading).filter_by(frequency=FrequencyType.MIN_15).count()
         assert min15 > 100_000
 
     def test_helios_s_creates_weather(self, db_session):
@@ -128,20 +127,17 @@ class TestSeedHeliosPack:
     def test_helios_idempotent_reseed(self, db_session):
         """Deterministic: same RNG seed + soft reset produces identical counts."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         r1 = orch.seed(pack="helios", size="S", rng_seed=42, days=30)
-        count1_hourly = db_session.query(MeterReading).filter_by(
-            frequency=FrequencyType.HOURLY
-        ).count()
+        count1_hourly = db_session.query(MeterReading).filter_by(frequency=FrequencyType.HOURLY).count()
         count1_weather = db_session.query(EmsWeatherCache).count()
 
         # Reset then reseed with identical params
         orch.reset(mode="soft")
         r2 = orch.seed(pack="helios", size="S", rng_seed=42, days=30)
-        count2_hourly = db_session.query(MeterReading).filter_by(
-            frequency=FrequencyType.HOURLY
-        ).count()
+        count2_hourly = db_session.query(MeterReading).filter_by(frequency=FrequencyType.HOURLY).count()
         count2_weather = db_session.query(EmsWeatherCache).count()
 
         # Same RNG seed → same counts (deterministic + INSERT OR IGNORE works)
@@ -152,6 +148,7 @@ class TestSeedHeliosPack:
 # ═══════════════════════════════════════════════════════════════════════
 # TestSeedTertiairePack — legacy pack (10 sites, hourly 30 days)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestSeedTertiairePack:
     def test_tertiaire_s_creates_10_sites(self, db_session):
@@ -177,10 +174,12 @@ class TestSeedTertiairePack:
 # Status / Reset / Validation
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestSeedStatus:
     def test_status_after_seed(self, db_session):
         _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         status = orch.status()
         assert status["organisations"] == 1
@@ -190,6 +189,7 @@ class TestSeedStatus:
 
     def test_status_empty_db(self, db_session):
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         status = orch.status()
         assert status["sites"] == 0
@@ -200,6 +200,7 @@ class TestSeedReset:
     def test_reset_hard_clears_all(self, db_session):
         _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         assert db_session.query(Site).count() > 0
@@ -214,6 +215,7 @@ class TestSeedReset:
     def test_seed_reset_reseed_cycle(self, db_session):
         """Full cycle: seed → status → reset → status → reseed → status."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         # 1. Seed
@@ -237,12 +239,14 @@ class TestSeedReset:
 class TestSeedValidation:
     def test_invalid_pack(self, db_session):
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         result = orch.seed(pack="nonexistent")
         assert "error" in result
 
     def test_invalid_size(self, db_session):
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         result = orch.seed(pack="helios", size="XL")
         assert "error" in result
@@ -287,11 +291,15 @@ class TestIsDemoFlag:
     def test_non_demo_sites_unaffected(self, db_session):
         """Manually inserted non-demo site should have is_demo=False."""
         from models import Portefeuille
+
         _seed(db_session, "tertiaire", "S")
         pf = db_session.query(Portefeuille).first()
         manual_site = Site(
-            nom="Manual Site", type=Site.__table__.c.type.type.enum_class.BUREAU,
-            portefeuille_id=pf.id, actif=True, is_demo=False,
+            nom="Manual Site",
+            type=Site.__table__.c.type.type.enum_class.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
+            is_demo=False,
         )
         db_session.add(manual_site)
         db_session.commit()
@@ -307,6 +315,7 @@ class TestSoftReset:
     def test_soft_reset_clears_demo_data(self, db_session):
         _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         assert db_session.query(Site).count() == 5
@@ -323,6 +332,7 @@ class TestSoftReset:
     def test_soft_reset_no_demo_data(self, db_session):
         """Soft reset on empty DB returns no_demo_data message."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         result = orch.reset(mode="soft")
         assert result["status"] == "ok"
@@ -331,6 +341,7 @@ class TestSoftReset:
     def test_soft_reset_then_reseed(self, db_session):
         """Full cycle: seed → soft reset → reseed."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         r1 = orch.seed(pack="tertiaire", size="S", rng_seed=42, days=30)
@@ -348,6 +359,7 @@ class TestSoftReset:
         """Ensure all child tables are cleaned by soft reset."""
         _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
 
         assert db_session.query(MonitoringSnapshot).count() > 0
@@ -402,6 +414,7 @@ class TestScopeInSeedResult:
     def test_status_pack_returns_org_after_seed(self, db_session):
         """status-pack should expose org_id + default_site_id after seed."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         seed_result = orch.seed(pack="tertiaire", size="S", rng_seed=42, days=30)
 
@@ -415,6 +428,7 @@ class TestScopeInSeedResult:
     def test_status_pack_empty_after_reset(self, db_session):
         """After soft reset, org query returns None."""
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(db_session)
         orch.seed(pack="helios", size="S", rng_seed=42, days=30)
         orch.reset(mode="soft")

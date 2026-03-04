@@ -2,6 +2,7 @@
 PROMEOS - Modèle Entité Juridique
 SIREN/SIRET - qui signe les contrats / qui paye
 """
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin

@@ -2,6 +2,7 @@
 PROMEOS - Modele ComplianceRunBatch
 Batch d'evaluation de conformite (Sprint 9).
 """
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -13,6 +14,7 @@ class ComplianceRunBatch(Base, TimestampMixin):
     Enregistre un run d'evaluation de conformite (recompute-rules).
     Permet le suivi historique des evaluations.
     """
+
     __tablename__ = "compliance_run_batches"
 
     id = Column(Integer, primary_key=True, index=True)

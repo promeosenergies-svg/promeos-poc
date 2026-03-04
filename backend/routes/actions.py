@@ -2,6 +2,7 @@
 PROMEOS — Action Hub Routes (Sprint 10 + V4.9 + V5.0)
 Endpoints: create, sync, list, summary, detail, patch, batches, export CSV.
 """
+
 import csv
 import hashlib
 import io
@@ -16,9 +17,14 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Organisation, ActionItem, ActionSyncBatch,
-    ActionSourceType, ActionStatus,
-    ActionEvent, ActionComment, ActionEvidence,
+    Organisation,
+    ActionItem,
+    ActionSyncBatch,
+    ActionSourceType,
+    ActionStatus,
+    ActionEvent,
+    ActionComment,
+    ActionEvidence,
 )
 from services.action_hub_service import sync_actions, compute_priority
 from services.action_close_rules import is_operat_action, check_closable
@@ -33,8 +39,10 @@ router = APIRouter(prefix="/api/actions", tags=["Actions"])
 # Schemas
 # ========================================
 
+
 class ActionCreate(BaseModel):
     """Schema for direct action creation from UI."""
+
     org_id: Optional[int] = Field(None, ge=1)
     site_id: Optional[int] = Field(None, ge=1)
     campaign_sites: Optional[List[int]] = Field(None, max_length=50)
@@ -84,6 +92,7 @@ class EvidenceCreate(BaseModel):
 # Helpers
 # ========================================
 
+
 def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
     """Delegate to centralized resolve_org_id (DEMO_MODE-aware)."""
     return resolve_org_id(request, auth, db, org_id_override=org_id)
@@ -102,13 +111,13 @@ _SOURCE_LABELS = {
 
 def _source_label(source_type) -> str:
     """FR label for a source type."""
-    val = source_type.value if hasattr(source_type, 'value') else str(source_type or "")
+    val = source_type.value if hasattr(source_type, "value") else str(source_type or "")
     return _SOURCE_LABELS.get(val, val)
 
 
 def _source_deeplink(source_type, source_id) -> str | None:
     """Build a relative URL to navigate back to the source object."""
-    val = source_type.value if hasattr(source_type, 'value') else str(source_type or "")
+    val = source_type.value if hasattr(source_type, "value") else str(source_type or "")
     sid = source_id or ""
     if val == "compliance":
         return "/conformite"
@@ -134,6 +143,7 @@ def _serialize_action(a: ActionItem) -> dict:
     campaign_sites = None
     if a.notes and a.notes.startswith("##CAMPAIGN:"):
         import json as _json
+
         try:
             campaign_sites = _json.loads(a.notes.split("##CAMPAIGN:", 1)[1].split("\n", 1)[0])
         except Exception:
@@ -177,8 +187,9 @@ def _serialize_action(a: ActionItem) -> dict:
     }
 
 
-def _create_event(db: Session, action_id: int, event_type: str, actor: str = "system",
-                   old_value: str = None, new_value: str = None):
+def _create_event(
+    db: Session, action_id: int, event_type: str, actor: str = "system", old_value: str = None, new_value: str = None
+):
     """Insert an audit trail event."""
     event = ActionEvent(
         action_id=action_id,
@@ -194,6 +205,7 @@ def _create_event(db: Session, action_id: int, event_type: str, actor: str = "sy
 # ========================================
 # Endpoints
 # ========================================
+
 
 @router.post("")
 def create_action(
@@ -211,11 +223,7 @@ def create_action(
 
     # Idempotency: if key provided and action exists, return existing
     if data.idempotency_key:
-        existing = (
-            db.query(ActionItem)
-            .filter(ActionItem.idempotency_key == data.idempotency_key)
-            .first()
-        )
+        existing = db.query(ActionItem).filter(ActionItem.idempotency_key == data.idempotency_key).first()
         if existing:
             return {"status": "existing", **_serialize_action(existing)}
 
@@ -271,12 +279,11 @@ def create_action(
 
     # Generate source_key for uniqueness
     source_id = data.source_id or f"manual_{int(datetime.now(timezone.utc).timestamp())}"
-    source_key = hashlib.sha256(
-        f"{data.title}:{source_id}".encode()
-    ).hexdigest()[:16]
+    source_key = hashlib.sha256(f"{data.title}:{source_id}".encode()).hexdigest()[:16]
 
     # Encode campaign_sites into notes prefix (no schema migration needed)
     import json as _json
+
     notes = data.notes or ""
     if data.campaign_sites:
         notes = f"##CAMPAIGN:{_json.dumps(data.campaign_sites)}\n{notes}"
@@ -497,9 +504,13 @@ def patch_action(
         old_val = action.realized_gain_eur
         action.realized_gain_eur = data.realized_gain_eur
         if old_val != data.realized_gain_eur:
-            _create_event(db, action.id, "realized_updated",
-                          old_value=str(old_val) if old_val else None,
-                          new_value=str(data.realized_gain_eur))
+            _create_event(
+                db,
+                action.id,
+                "realized_updated",
+                old_value=str(old_val) if old_val else None,
+                new_value=str(data.realized_gain_eur),
+            )
 
     if data.realized_at is not None:
         try:
@@ -597,23 +608,35 @@ def export_csv(
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow([
-        "id", "source", "titre", "priorite", "severite",
-        "gain_eur", "echeance", "statut", "responsable", "notes",
-    ])
+    writer.writerow(
+        [
+            "id",
+            "source",
+            "titre",
+            "priorite",
+            "severite",
+            "gain_eur",
+            "echeance",
+            "statut",
+            "responsable",
+            "notes",
+        ]
+    )
     for a in actions:
-        writer.writerow([
-            a.id,
-            a.source_type.value if a.source_type else "",
-            a.title,
-            a.priority,
-            a.severity or "",
-            a.estimated_gain_eur or "",
-            a.due_date.isoformat() if a.due_date else "",
-            a.status.value if a.status else "",
-            a.owner or "",
-            a.notes or "",
-        ])
+        writer.writerow(
+            [
+                a.id,
+                a.source_type.value if a.source_type else "",
+                a.title,
+                a.priority,
+                a.severity or "",
+                a.estimated_gain_eur or "",
+                a.due_date.isoformat() if a.due_date else "",
+                a.status.value if a.status else "",
+                a.owner or "",
+                a.notes or "",
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(
@@ -626,6 +649,7 @@ def export_csv(
 # ========================================
 # ROI Summary
 # ========================================
+
 
 @router.get("/roi_summary")
 def roi_summary(
@@ -690,8 +714,13 @@ def roi_summary(
         "total_realized_eur": round(total_realized, 2),
         "roi_ratio": roi_ratio,
         "actions_with_realized": actions_with_realized,
-        "by_source": {k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in by_source.items()},
-        "by_category": {k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in by_category.items()},
+        "by_source": {
+            k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in by_source.items()
+        },
+        "by_category": {
+            k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()}
+            for k, v in by_category.items()
+        },
         "top_roi_actions": top_roi,
     }
 
@@ -699,6 +728,7 @@ def roi_summary(
 # ========================================
 # Sub-resource endpoints: comments, evidence, events
 # ========================================
+
 
 @router.post("/{action_id}/comments")
 def add_comment(
@@ -862,10 +892,7 @@ def list_events(
         raise HTTPException(status_code=404, detail="Action non trouvee")
 
     events = (
-        db.query(ActionEvent)
-        .filter(ActionEvent.action_id == action_id)
-        .order_by(ActionEvent.created_at.asc())
-        .all()
+        db.query(ActionEvent).filter(ActionEvent.action_id == action_id).order_by(ActionEvent.created_at.asc()).all()
     )
     return [
         {
@@ -885,6 +912,7 @@ def list_events(
 # V49: Action closeability check
 # ========================================
 
+
 @router.get("/{action_id}/closeability")
 def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
     """
@@ -898,7 +926,7 @@ def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
     ev_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
     result = check_closable(action, evidence_count=ev_count)
     result["is_operat"] = is_operat_action(action)
-    result["evidence_required"] = getattr(action, 'evidence_required', False)
+    result["evidence_required"] = getattr(action, "evidence_required", False)
     result["evidence_count"] = ev_count
     return result
 
@@ -906,6 +934,7 @@ def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
 # ========================================
 # V48: Action ↔ Proof persistence endpoints
 # ========================================
+
 
 @router.get("/{action_id}/proofs")
 def get_action_proofs(action_id: int, db: Session = Depends(get_db)):
@@ -919,6 +948,7 @@ def get_action_proofs(action_id: int, db: Session = Depends(get_db)):
 
     try:
         from app.kb.store import KBStore
+
         kb_store = KBStore()
         return kb_store.list_action_proofs(action_id)
     except Exception:
@@ -942,6 +972,7 @@ def link_proof_to_action(
 
     try:
         from app.kb.store import KBStore
+
         kb_store = KBStore()
         result = kb_store.link_doc_to_action(action_id, kb_doc_id)
         if result.get("status") == "error":
@@ -956,6 +987,7 @@ def link_proof_to_action(
 # ========================================
 # Detail endpoint (after fixed-path routes to avoid conflict)
 # ========================================
+
 
 @router.get("/{action_id}")
 def get_action_detail(

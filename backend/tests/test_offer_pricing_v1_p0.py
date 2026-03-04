@@ -3,8 +3,10 @@ PROMEOS — V2 Offer Pricing V1 P0 Invariants
 Tests: structural invariants, catalog integration, multi-strategy, helpers.
 All pure / deterministic (no DB needed).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import math
@@ -22,8 +24,10 @@ from services.offer_pricing_v1 import (
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-def _quote(strategy="fixe", energy_type="elec", kwh=1000, price=0.18,
-           period_start=None, period_end=None, fixed_fee=0.0):
+
+def _quote(
+    strategy="fixe", energy_type="elec", kwh=1000, price=0.18, period_start=None, period_end=None, fixed_fee=0.0
+):
     return compute_offer_quote(
         strategy=strategy,
         energy_type=energy_type,
@@ -38,6 +42,7 @@ def _quote(strategy="fixe", energy_type="elec", kwh=1000, price=0.18,
 # ========================================================================
 # A. Structural Invariants
 # ========================================================================
+
 
 class TestOffer_TotalEqualsSumComponents:
     """OFFER-INV-01: totals.ttc == sum(component.ttc)."""
@@ -144,7 +149,8 @@ class TestOffer_ProrataFactor:
 
     def test_no_dates_defaults_30(self):
         r = compute_offer_quote(
-            strategy="fixe", consumption_kwh=1000,
+            strategy="fixe",
+            consumption_kwh=1000,
             price_ref_eur_per_kwh=0.18,
         )
         assert r["meta"]["prorata_factor"] == pytest.approx(1.0)
@@ -154,6 +160,7 @@ class TestOffer_ProrataFactor:
 # ========================================================================
 # B. Strategy Factors
 # ========================================================================
+
 
 class TestStrategyFactors:
     """Strategy multipliers applied correctly."""
@@ -187,18 +194,21 @@ class TestStrategyFactors:
 # C. Multi-strategy Quotes
 # ========================================================================
 
+
 class TestMultiStrategyQuotes:
     """compute_multi_strategy_quotes returns all strategies."""
 
     def test_has_three_strategies(self):
         r = compute_multi_strategy_quotes(
-            consumption_kwh=1000, price_ref_eur_per_kwh=0.18,
+            consumption_kwh=1000,
+            price_ref_eur_per_kwh=0.18,
         )
         assert set(r["strategies"].keys()) == {"fixe", "indexe", "spot"}
 
     def test_comparison_has_ttc(self):
         r = compute_multi_strategy_quotes(
-            consumption_kwh=1000, price_ref_eur_per_kwh=0.18,
+            consumption_kwh=1000,
+            price_ref_eur_per_kwh=0.18,
         )
         for strat in ["fixe", "indexe", "spot"]:
             assert "ttc" in r["comparison"][strat]
@@ -206,7 +216,8 @@ class TestMultiStrategyQuotes:
 
     def test_fixe_most_expensive(self):
         r = compute_multi_strategy_quotes(
-            consumption_kwh=1000, price_ref_eur_per_kwh=0.18,
+            consumption_kwh=1000,
+            price_ref_eur_per_kwh=0.18,
         )
         assert r["comparison"]["fixe"]["ttc"] > r["comparison"]["spot"]["ttc"]
 
@@ -214,6 +225,7 @@ class TestMultiStrategyQuotes:
 # ========================================================================
 # D. Helpers
 # ========================================================================
+
 
 class TestHelpers:
     """Helper functions."""
@@ -242,6 +254,7 @@ class TestHelpers:
 # ========================================================================
 # E. Meta & Model Version
 # ========================================================================
+
 
 class TestMeta:
     """Meta fields present and correct."""
@@ -274,12 +287,12 @@ class TestMeta:
 # F. E2E Offer Calculation
 # ========================================================================
 
+
 class TestE2E_OfferFixeElec:
     """Full offer calculation for FIXE 1000 kWh elec."""
 
     def test_full_breakdown(self):
-        r = _quote("fixe", "elec", kwh=1000, price=0.18,
-                    period_start=date(2025, 1, 1), period_end=date(2025, 1, 31))
+        r = _quote("fixe", "elec", kwh=1000, price=0.18, period_start=date(2025, 1, 1), period_end=date(2025, 1, 31))
 
         # Fourniture: 1000 × 0.18 × 1.05 = 189.00
         fourniture = next(c for c in r["components"] if c["code"] == "fourniture")

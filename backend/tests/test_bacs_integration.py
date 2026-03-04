@@ -2,8 +2,10 @@
 PROMEOS - BACS Integration Tests (E2E)
 Full flow tests covering the complete BACS lifecycle.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -17,9 +19,17 @@ from fastapi.testclient import TestClient
 
 from main import app
 from models import (
-    Base, Site, Batiment, TypeSite,
-    BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection,
-    CvcSystemType, CvcArchitecture, InspectionStatus,
+    Base,
+    Site,
+    Batiment,
+    TypeSite,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    InspectionStatus,
 )
 from database import get_db
 from services.bacs_engine import evaluate_bacs
@@ -137,7 +147,9 @@ class TestFullFlowRenewal:
 
         # Add system
         units = json.dumps([{"label": "PAC", "kw": 100}])
-        r = client.post(f"/api/regops/bacs/asset/{asset_id}/system?system_type=heating&architecture=independent&units_json={units}")
+        r = client.post(
+            f"/api/regops/bacs/asset/{asset_id}/system?system_type=heating&architecture=independent&units_json={units}"
+        )
         assert r.status_code == 200
 
         # Recompute
@@ -162,7 +174,9 @@ class TestFullFlowOutOfScope:
         asset_id = r.json()["id"]
 
         units = json.dumps([{"label": "Split", "kw": 30}])
-        client.post(f"/api/regops/bacs/asset/{asset_id}/system?system_type=cooling&architecture=independent&units_json={units}")
+        client.post(
+            f"/api/regops/bacs/asset/{asset_id}/system?system_type=cooling&architecture=independent&units_json={units}"
+        )
 
         r = client.post(f"/api/regops/bacs/recompute/{site.id}")
         assert r.status_code == 200
@@ -261,7 +275,9 @@ class TestDataQualityGateProgression:
         # 3. Add system → WARNING or OK
         asset = db.query(BacsAsset).filter(BacsAsset.site_id == site.id).first()
         units = json.dumps([{"kw": 200}])
-        client.post(f"/api/regops/bacs/asset/{asset.id}/system?system_type=heating&architecture=cascade&units_json={units}")
+        client.post(
+            f"/api/regops/bacs/asset/{asset.id}/system?system_type=heating&architecture=cascade&units_json={units}"
+        )
 
         r = client.get(f"/api/regops/bacs/data_quality/{site.id}")
         assert r.json()["gate_status"] in ("WARNING", "OK")

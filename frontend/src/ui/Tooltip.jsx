@@ -10,7 +10,7 @@
 import TooltipPortal from './TooltipPortal';
 
 export default function Tooltip({ text, content, children, position = 'top', className = '' }) {
-  const resolved = (text ?? content ?? '');
+  const resolved = text ?? content ?? '';
   const trimmed = typeof resolved === 'string' ? resolved.trim() : resolved;
 
   // Guard: no text → render children as-is, no invisible tooltip bubble

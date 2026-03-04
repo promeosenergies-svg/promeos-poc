@@ -5,8 +5,10 @@ Proves: no cross-org data leakage via patrimoine routes.
 Setup: 2 orgs (Alpha, Bravo), each with EJ → Portfolio → Sites.
 Every test uses X-Org-Id headers to simulate org context.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -16,22 +18,36 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    Site, Compteur, EnergyContract,
-    StagingBatch, StagingSite, StagingCompteur,
-    StagingStatus, ImportSourceType,
-    TypeSite, TypeCompteur, EnergyVector, BillingEnergyType,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Compteur,
+    EnergyContract,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    StagingStatus,
+    ImportSourceType,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
 from services.patrimoine_service import (
-    create_staging_batch, run_quality_gate, activate_batch,
+    create_staging_batch,
+    run_quality_gate,
+    activate_batch,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -54,6 +70,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -72,16 +89,24 @@ def _create_two_orgs(db):
     db.add(pf_a)
     db.flush()
     site_a = Site(
-        portefeuille_id=pf_a.id, nom="Site Alpha", type=TypeSite.BUREAU,
-        adresse="10 rue Alpha", code_postal="75001", ville="Paris",
-        surface_m2=1000, actif=True,
+        portefeuille_id=pf_a.id,
+        nom="Site Alpha",
+        type=TypeSite.BUREAU,
+        adresse="10 rue Alpha",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=1000,
+        actif=True,
     )
     db.add(site_a)
     db.flush()
     cpt_a = Compteur(
-        site_id=site_a.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie="CPT-ALPHA-001", meter_id="11111111111111",
-        energy_vector=EnergyVector.ELECTRICITY, actif=True,
+        site_id=site_a.id,
+        type=TypeCompteur.ELECTRICITE,
+        numero_serie="CPT-ALPHA-001",
+        meter_id="11111111111111",
+        energy_vector=EnergyVector.ELECTRICITY,
+        actif=True,
     )
     db.add(cpt_a)
     db.flush()
@@ -97,24 +122,40 @@ def _create_two_orgs(db):
     db.add(pf_b)
     db.flush()
     site_b = Site(
-        portefeuille_id=pf_b.id, nom="Site Bravo", type=TypeSite.BUREAU,
-        adresse="20 rue Bravo", code_postal="69001", ville="Lyon",
-        surface_m2=800, actif=True,
+        portefeuille_id=pf_b.id,
+        nom="Site Bravo",
+        type=TypeSite.BUREAU,
+        adresse="20 rue Bravo",
+        code_postal="69001",
+        ville="Lyon",
+        surface_m2=800,
+        actif=True,
     )
     db.add(site_b)
     db.flush()
     cpt_b = Compteur(
-        site_id=site_b.id, type=TypeCompteur.GAZ,
-        numero_serie="CPT-BRAVO-001", meter_id="22222222222222",
-        energy_vector=EnergyVector.GAS, actif=True,
+        site_id=site_b.id,
+        type=TypeCompteur.GAZ,
+        numero_serie="CPT-BRAVO-001",
+        meter_id="22222222222222",
+        energy_vector=EnergyVector.GAS,
+        actif=True,
     )
     db.add(cpt_b)
     db.flush()
 
     db.commit()
     return {
-        "org_a": org_a, "ej_a": ej_a, "pf_a": pf_a, "site_a": site_a, "cpt_a": cpt_a,
-        "org_b": org_b, "ej_b": ej_b, "pf_b": pf_b, "site_b": site_b, "cpt_b": cpt_b,
+        "org_a": org_a,
+        "ej_a": ej_a,
+        "pf_a": pf_a,
+        "site_a": site_a,
+        "cpt_a": cpt_a,
+        "org_b": org_b,
+        "ej_b": ej_b,
+        "pf_b": pf_b,
+        "site_b": site_b,
+        "cpt_b": cpt_b,
     }
 
 
@@ -126,20 +167,30 @@ def _headers(org_id: int) -> dict:
 def _create_batch_for_org(db, org_id):
     """Create a staging batch with 1 site, assigned to the given org."""
     batch = create_staging_batch(
-        db, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
     ss = StagingSite(
-        batch_id=batch.id, row_number=2, nom="Staged Site",
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
+        batch_id=batch.id,
+        row_number=2,
+        nom="Staged Site",
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
         surface_m2=500,
     )
     db.add(ss)
     db.flush()
     sc = StagingCompteur(
-        batch_id=batch.id, staging_site_id=ss.id,
-        numero_serie="PRM-TEST-001", meter_id="99999999999999",
-        type_compteur="electricite", puissance_kw=36,
+        batch_id=batch.id,
+        staging_site_id=ss.id,
+        numero_serie="PRM-TEST-001",
+        meter_id="99999999999999",
+        type_compteur="electricite",
+        puissance_kw=36,
     )
     db.add(sc)
     db.flush()
@@ -149,6 +200,7 @@ def _create_batch_for_org(db, org_id):
 # ========================================
 # Test 1: Import — batch gets correct org_id
 # ========================================
+
 
 class TestImportIsolation:
     def test_import_assigns_correct_org(self, client, db):
@@ -190,6 +242,7 @@ class TestImportIsolation:
 # ========================================
 # Test 2: Activation — cross-org denied
 # ========================================
+
 
 class TestActivationIsolation:
     def test_activate_own_batch_own_portfolio(self, client, db):
@@ -240,6 +293,7 @@ class TestActivationIsolation:
 # Test 3: List endpoints — isolation
 # ========================================
 
+
 class TestListIsolation:
     def test_list_sites_isolated(self, client, db):
         """Org A sees only its sites, not Org B's."""
@@ -285,11 +339,13 @@ class TestListIsolation:
         data = _create_two_orgs(db)
         # Create contracts for each org
         ct_a = EnergyContract(
-            site_id=data["site_a"].id, energy_type=BillingEnergyType.ELEC,
+            site_id=data["site_a"].id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF",
         )
         ct_b = EnergyContract(
-            site_id=data["site_b"].id, energy_type=BillingEnergyType.GAZ,
+            site_id=data["site_b"].id,
+            energy_type=BillingEnergyType.GAZ,
             supplier_name="Engie",
         )
         db.add_all([ct_a, ct_b])
@@ -309,6 +365,7 @@ class TestListIsolation:
 # ========================================
 # Test 4: Update — cross-org denied
 # ========================================
+
 
 class TestUpdateIsolation:
     def test_update_own_site(self, client, db):
@@ -357,6 +414,7 @@ class TestUpdateIsolation:
 # Test 5: Delete / Archive — cross-org denied
 # ========================================
 
+
 class TestDeleteIsolation:
     def test_archive_own_site(self, client, db):
         """Org A can archive its own site."""
@@ -380,7 +438,8 @@ class TestDeleteIsolation:
         """Org A tries to delete Org B's contract → 404 (JOIN-based, no ID enumeration)."""
         data = _create_two_orgs(db)
         ct_b = EnergyContract(
-            site_id=data["site_b"].id, energy_type=BillingEnergyType.ELEC,
+            site_id=data["site_b"].id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="Engie",
         )
         db.add(ct_b)
@@ -418,14 +477,18 @@ class TestDeleteIsolation:
 # Test 6: Merge — cross-org denied
 # ========================================
 
+
 class TestMergeIsolation:
     def test_merge_own_sites(self, client, db):
         """Org A can merge two of its own sites."""
         data = _create_two_orgs(db)
         # Create a second site for Alpha
         site_a2 = Site(
-            portefeuille_id=data["pf_a"].id, nom="Site Alpha 2",
-            type=TypeSite.BUREAU, surface_m2=500, actif=True,
+            portefeuille_id=data["pf_a"].id,
+            nom="Site Alpha 2",
+            type=TypeSite.BUREAU,
+            surface_m2=500,
+            actif=True,
         )
         db.add(site_a2)
         db.commit()
@@ -451,6 +514,7 @@ class TestMergeIsolation:
 # ========================================
 # Test 7: Batch operations — cross-org denied
 # ========================================
+
 
 class TestBatchIsolation:
     def test_batch_summary_cross_org_denied(self, client, db):
@@ -494,8 +558,8 @@ class TestBatchIsolation:
 # Test 8: Demo/load — production guard (Phase A1)
 # ========================================
 
-class TestDemoLoadGuard:
 
+class TestDemoLoadGuard:
     def test_demo_load_blocked_in_production(self, client, monkeypatch):
         """demo/load returns 403 when DEMO_MODE is False."""
         monkeypatch.setattr("middleware.auth.DEMO_MODE", False)
@@ -514,15 +578,20 @@ class TestDemoLoadGuard:
 # Test 9: Fail-closed — orphan site (Phase A1)
 # ========================================
 
-class TestFailClosed:
 
+class TestFailClosed:
     def test_orphan_site_without_portfolio_blocked(self, client, db):
         """A site with portefeuille_id=None is inaccessible (fail-closed)."""
         data = _create_two_orgs(db)
         orphan = Site(
-            nom="Orphan Site", type=TypeSite.BUREAU,
-            adresse="1 rue Orphan", code_postal="75001", ville="Paris",
-            surface_m2=100, portefeuille_id=None, actif=True,
+            nom="Orphan Site",
+            type=TypeSite.BUREAU,
+            adresse="1 rue Orphan",
+            code_postal="75001",
+            ville="Paris",
+            surface_m2=100,
+            portefeuille_id=None,
+            actif=True,
         )
         db.add(orphan)
         db.commit()
@@ -537,9 +606,14 @@ class TestFailClosed:
         """Cannot PATCH a site with no portfolio (fail-closed)."""
         data = _create_two_orgs(db)
         orphan = Site(
-            nom="Orphan 2", type=TypeSite.BUREAU,
-            adresse="2 rue Orphan", code_postal="75001", ville="Paris",
-            surface_m2=100, portefeuille_id=None, actif=True,
+            nom="Orphan 2",
+            type=TypeSite.BUREAU,
+            adresse="2 rue Orphan",
+            code_postal="75001",
+            ville="Paris",
+            surface_m2=100,
+            portefeuille_id=None,
+            actif=True,
         )
         db.add(orphan)
         db.commit()

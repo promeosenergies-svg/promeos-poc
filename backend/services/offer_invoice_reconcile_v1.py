@@ -3,6 +3,7 @@ PROMEOS — Offer ↔ Invoice Reconciliation V1 (Sprint V2)
 Compares an offer quote to the shadow billing of an invoice.
 Produces per-component deltas, explanations, and confidence assessment.
 """
+
 import logging
 from datetime import date
 from typing import Optional, List
@@ -41,23 +42,16 @@ def reconcile_offer_vs_invoice(
     if not invoice:
         return {"error": "invoice_not_found", "invoice_id": invoice_id}
 
-    lines = (
-        db.query(EnergyInvoiceLine)
-        .filter(EnergyInvoiceLine.invoice_id == invoice_id)
-        .all()
-    )
+    lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == invoice_id).all()
 
     contract = None
     if invoice.contract_id:
-        contract = (
-            db.query(EnergyContract)
-            .filter(EnergyContract.id == invoice.contract_id)
-            .first()
-        )
+        contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
         if not contract:
             logger.warning(
                 "Invoice %d references missing contract %d",
-                invoice_id, invoice.contract_id,
+                invoice_id,
+                invoice.contract_id,
             )
 
     # ── Determine energy type & kwh ──────────────────────────────
@@ -127,9 +121,7 @@ def reconcile_offer_vs_invoice(
         confidence = "MED"
 
     # ── Build explanations ───────────────────────────────────────
-    explanations = _build_explanations(
-        delta_by_component, delta_totals, missing_data, strategy, shadow, offer
-    )
+    explanations = _build_explanations(delta_by_component, delta_totals, missing_data, strategy, shadow, offer)
 
     return {
         "invoice_id": invoice_id,
@@ -208,14 +200,13 @@ def reconcile_offer_vs_shadow(
             "by_component": delta_by_component,
             "totals": delta_totals,
         },
-        "explanations": _build_explanations(
-            delta_by_component, delta_totals, [], strategy, shadow_result, offer
-        ),
+        "explanations": _build_explanations(delta_by_component, delta_totals, [], strategy, shadow_result, offer),
         "confidence": "HIGH",
     }
 
 
 # ── Internal helpers ─────────────────────────────────────────────────
+
 
 def _compute_component_deltas(offer: dict, shadow: dict) -> list:
     """Compare offer components to shadow components by code."""
@@ -230,14 +221,16 @@ def _compute_component_deltas(offer: dict, shadow: dict) -> list:
         shadow_ht = shadow_comp.get("ht", 0)
         delta_ht = round(comp["ht"] - shadow_ht, 2)
         delta_pct = round(delta_ht / shadow_ht * 100, 1) if shadow_ht else 0.0
-        deltas.append({
-            "code": code,
-            "label": comp["label"],
-            "offer_ht": comp["ht"],
-            "shadow_ht": shadow_ht,
-            "delta_ht": delta_ht,
-            "delta_pct": delta_pct,
-        })
+        deltas.append(
+            {
+                "code": code,
+                "label": comp["label"],
+                "offer_ht": comp["ht"],
+                "shadow_ht": shadow_ht,
+                "delta_ht": delta_ht,
+                "delta_pct": delta_pct,
+            }
+        )
     return deltas
 
 
@@ -263,17 +256,14 @@ def _build_explanations(
             f"L'offre {strategy.upper()} économiserait {abs(ttc_delta):.2f} € TTC par rapport à la facture attendue."
         )
     else:
-        explanations.append(
-            f"L'offre {strategy.upper()} est alignée avec la facture attendue."
-        )
+        explanations.append(f"L'offre {strategy.upper()} est alignée avec la facture attendue.")
 
     # Component-level explanations for significant deltas
     for delta in delta_by_component:
         if abs(delta["delta_pct"]) > 5 and abs(delta["delta_ht"]) > 1:
             direction = "supérieur" if delta["delta_ht"] > 0 else "inférieur"
             explanations.append(
-                f"{delta['label']} : {delta['delta_ht']:+.2f} € HT "
-                f"({delta['delta_pct']:+.1f}%, {direction} au shadow)."
+                f"{delta['label']} : {delta['delta_ht']:+.2f} € HT ({delta['delta_pct']:+.1f}%, {direction} au shadow)."
             )
 
     # Missing data warnings

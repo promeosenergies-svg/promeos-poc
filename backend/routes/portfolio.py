@@ -4,6 +4,7 @@ Aggregated multi-site view: summary + per-site table.
 V2: patrimoine-first — all sites shown, data_status badge, coverage_pct per site,
     without_data filter, coverage sort.
 """
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case, and_
@@ -32,56 +33,72 @@ def _parse_date_or_default(val: Optional[str], default_days_ago: int = 90) -> da
 
 def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
     """Get aggregated consumption for a single site in the period."""
-    row = db.query(
-        func.sum(MeterReading.value_kwh).label("kwh"),
-        func.count(MeterReading.id).label("n_readings"),
-        func.max(MeterReading.timestamp).label("last_reading"),
-    ).join(Meter, MeterReading.meter_id == Meter.id).filter(
-        Meter.site_id == site_id,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-        MeterReading.timestamp >= dt_from,
-        MeterReading.timestamp < dt_to,
-    ).first()
+    row = (
+        db.query(
+            func.sum(MeterReading.value_kwh).label("kwh"),
+            func.count(MeterReading.id).label("n_readings"),
+            func.max(MeterReading.timestamp).label("last_reading"),
+        )
+        .join(Meter, MeterReading.meter_id == Meter.id)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            MeterReading.timestamp >= dt_from,
+            MeterReading.timestamp < dt_to,
+        )
+        .first()
+    )
     return row
 
 
 def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
     """P95 approximation: max hourly kWh reading (proxy for kW peak)."""
-    row = db.query(
-        func.max(MeterReading.value_kwh).label("peak"),
-    ).join(Meter, MeterReading.meter_id == Meter.id).filter(
-        Meter.site_id == site_id,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-        MeterReading.timestamp >= dt_from,
-        MeterReading.timestamp < dt_to,
-    ).first()
+    row = (
+        db.query(
+            func.max(MeterReading.value_kwh).label("peak"),
+        )
+        .join(Meter, MeterReading.meter_id == Meter.id)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            MeterReading.timestamp >= dt_from,
+            MeterReading.timestamp < dt_to,
+        )
+        .first()
+    )
     return row.peak if row and row.peak else None
 
 
 def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
     """Base nocturne %: ratio night (22h-6h) vs day (6h-22h) avg kWh."""
     from sqlalchemy import extract
-    night_avg = db.query(func.avg(MeterReading.value_kwh)).join(
-        Meter, MeterReading.meter_id == Meter.id
-    ).filter(
-        Meter.site_id == site_id,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-        MeterReading.timestamp >= dt_from,
-        MeterReading.timestamp < dt_to,
-        ((extract("hour", MeterReading.timestamp) < 6) |
-         (extract("hour", MeterReading.timestamp) >= 22)),
-    ).scalar()
 
-    day_avg = db.query(func.avg(MeterReading.value_kwh)).join(
-        Meter, MeterReading.meter_id == Meter.id
-    ).filter(
-        Meter.site_id == site_id,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-        MeterReading.timestamp >= dt_from,
-        MeterReading.timestamp < dt_to,
-        extract("hour", MeterReading.timestamp) >= 6,
-        extract("hour", MeterReading.timestamp) < 22,
-    ).scalar()
+    night_avg = (
+        db.query(func.avg(MeterReading.value_kwh))
+        .join(Meter, MeterReading.meter_id == Meter.id)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            MeterReading.timestamp >= dt_from,
+            MeterReading.timestamp < dt_to,
+            ((extract("hour", MeterReading.timestamp) < 6) | (extract("hour", MeterReading.timestamp) >= 22)),
+        )
+        .scalar()
+    )
+
+    day_avg = (
+        db.query(func.avg(MeterReading.value_kwh))
+        .join(Meter, MeterReading.meter_id == Meter.id)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            MeterReading.timestamp >= dt_from,
+            MeterReading.timestamp < dt_to,
+            extract("hour", MeterReading.timestamp) >= 6,
+            extract("hour", MeterReading.timestamp) < 22,
+        )
+        .scalar()
+    )
 
     if not day_avg or day_avg == 0:
         return None
@@ -100,20 +117,29 @@ def _confidence_for_readings(n_readings: int, days: int) -> str:
 
 def _site_impact_eur(db: Session, site_id: int, dt_from: datetime) -> float:
     """Sum of estimated_loss_eur from consumption insights for a site."""
-    total = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).filter(
-        ConsumptionInsight.site_id == site_id,
-        ConsumptionInsight.period_start >= dt_from,
-        ConsumptionInsight.estimated_loss_eur.isnot(None),
-    ).scalar()
+    total = (
+        db.query(func.sum(ConsumptionInsight.estimated_loss_eur))
+        .filter(
+            ConsumptionInsight.site_id == site_id,
+            ConsumptionInsight.period_start >= dt_from,
+            ConsumptionInsight.estimated_loss_eur.isnot(None),
+        )
+        .scalar()
+    )
     return round(total, 2) if total else 0.0
 
 
 def _site_open_actions(db: Session, site_id: int) -> int:
     """Count of open/in_progress actions for a site."""
-    return db.query(func.count(ActionItem.id)).filter(
-        ActionItem.site_id == site_id,
-        ActionItem.status.in_([ActionStatus.OPEN, ActionStatus.IN_PROGRESS]),
-    ).scalar() or 0
+    return (
+        db.query(func.count(ActionItem.id))
+        .filter(
+            ActionItem.site_id == site_id,
+            ActionItem.status.in_([ActionStatus.OPEN, ActionStatus.IN_PROGRESS]),
+        )
+        .scalar()
+        or 0
+    )
 
 
 def _build_site_row(db, site, dt_from, dt_to, days):
@@ -131,19 +157,24 @@ def _build_site_row(db, site, dt_from, dt_to, days):
     if coverage_pct > 100:
         coverage_pct = 100
     if not has_data:
-        data_status = "none"       # Aucune donnee
+        data_status = "none"  # Aucune donnee
     elif coverage_pct >= 80:
-        data_status = "ok"         # Donnees completes
+        data_status = "ok"  # Donnees completes
     else:
-        data_status = "partial"    # Donnees partielles
+        data_status = "partial"  # Donnees partielles
 
     eur = round(kwh * DEFAULT_EUR_KWH, 2)
     co2 = round(kwh * CO2E_FACTOR, 1)
 
-    diag_count = db.query(func.count(ConsumptionInsight.id)).filter(
-        ConsumptionInsight.site_id == site.id,
-        ConsumptionInsight.period_start >= dt_from,
-    ).scalar() or 0
+    diag_count = (
+        db.query(func.count(ConsumptionInsight.id))
+        .filter(
+            ConsumptionInsight.site_id == site.id,
+            ConsumptionInsight.period_start >= dt_from,
+        )
+        .scalar()
+        or 0
+    )
 
     peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to) if has_data else None
     base_night = _base_night_pct(db, site.id, dt_from, dt_to) if has_data else None
@@ -276,7 +307,9 @@ def get_portfolio_summary(
 def get_portfolio_sites(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
-    sort: str = Query("impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics|coverage"),
+    sort: str = Query(
+        "impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics|coverage"
+    ),
     confidence: Optional[str] = Query(None, description="high|medium|low"),
     with_anomalies: bool = Query(False),
     with_actions: Optional[str] = Query(None, description="with|without — filter by open actions"),
@@ -333,7 +366,7 @@ def get_portfolio_sites(
     rows.sort(key=sort_key)
 
     total = len(rows)
-    page = rows[offset:offset + limit]
+    page = rows[offset : offset + limit]
 
     return {
         "total": total,

@@ -10,21 +10,21 @@
 const STORAGE_KEY = 'promeos_anomaly_actions';
 
 export const ACTION_STATUS = {
-  TODO:        'todo',
+  TODO: 'todo',
   IN_PROGRESS: 'in_progress',
-  RESOLVED:    'resolved',
+  RESOLVED: 'resolved',
 };
 
 export const ACTION_STATUS_LABEL = {
-  todo:        'À traiter',
+  todo: 'À traiter',
   in_progress: 'En cours',
-  resolved:    'Résolu',
+  resolved: 'Résolu',
 };
 
 export const ACTION_STATUS_COLOR = {
-  todo:        'bg-gray-100 text-gray-600',
+  todo: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-amber-100 text-amber-700',
-  resolved:    'bg-green-100 text-green-700',
+  resolved: 'bg-green-100 text-green-700',
 };
 
 /* ── Helpers internes ── */
@@ -68,9 +68,9 @@ export function saveAnomalyAction(orgId, siteId, anomalyCode, record) {
   data[_key(orgId, siteId, anomalyCode)] = {
     ...record,
     anomaly_code: anomalyCode,
-    site_id:      siteId,
-    org_id:       orgId ?? 'demo',
-    updated_at:   new Date().toISOString(),
+    site_id: siteId,
+    org_id: orgId ?? 'demo',
+    updated_at: new Date().toISOString(),
   };
   _save(data);
 }
@@ -90,9 +90,7 @@ export function deleteAnomalyAction(orgId, siteId, anomalyCode) {
  */
 export function getAllActionsForSite(orgId, siteId) {
   const data = _load();
-  return Object.values(data).filter(
-    r => r.org_id === (orgId ?? 'demo') && r.site_id === siteId
-  );
+  return Object.values(data).filter((r) => r.org_id === (orgId ?? 'demo') && r.site_id === siteId);
 }
 
 /**
@@ -101,7 +99,5 @@ export function getAllActionsForSite(orgId, siteId) {
  */
 export function getAllActionsForOrg(orgId) {
   const data = _load();
-  return Object.values(data).filter(
-    r => r.org_id === (orgId ?? 'demo')
-  );
+  return Object.values(data).filter((r) => r.org_id === (orgId ?? 'demo'));
 }

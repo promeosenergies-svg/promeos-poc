@@ -55,7 +55,7 @@ export default function useExplorerMotor({
 
   // ── Layer toggle ────────────────────────────────────────────────────────
   const toggleLayer = useCallback((layerKey) => {
-    setLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
+    setLayers((prev) => ({ ...prev, [layerKey]: !prev[layerKey] }));
   }, []);
 
   // ── Fetch all data for current siteIds ────────────────────────────────
@@ -130,15 +130,17 @@ export default function useExplorerMotor({
     }
   }, [siteIds, energyType, days]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   // ── Derived: merged availability (union of all site data) ─────────────
   const mergedAvailability = useMemo(() => {
     const avails = Object.values(availabilityBySite).filter(Boolean);
     if (!avails.length) return null;
-    const hasData = avails.some(a => a.has_data);
-    const allTypes = [...new Set(avails.flatMap(a => a.energy_types || []))];
-    const reasons = hasData ? [] : avails.flatMap(a => a.reasons || []);
+    const hasData = avails.some((a) => a.has_data);
+    const allTypes = [...new Set(avails.flatMap((a) => a.energy_types || []))];
+    const reasons = hasData ? [] : avails.flatMap((a) => a.reasons || []);
     const primary = avails[0];
     return {
       has_data: hasData,
@@ -153,7 +155,7 @@ export default function useExplorerMotor({
 
   // ── Derived: active site IDs (those with data) ────────────────────────
   const activeSiteIds = useMemo(
-    () => siteIds.filter(sid => availabilityBySite[sid]?.has_data),
+    () => siteIds.filter((sid) => availabilityBySite[sid]?.has_data),
     [siteIds, availabilityBySite]
   );
 

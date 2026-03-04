@@ -2,8 +2,10 @@
 PROMEOS - Tests for /api/compliance/bundle endpoint
 Tests scope isolation, empty reason codes, and bundled response.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -13,8 +15,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    TypeSite,
 )
 from database import get_db
 from main import app
@@ -23,7 +30,8 @@ from main import app
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -40,6 +48,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -64,25 +73,34 @@ def _seed_two_orgs(db_session):
 
     # Org1: 3 sites, Org2: 2 sites
     for i in range(1, 4):
-        db_session.add(Site(id=i, nom=f"Site Nexity {i}", type=TypeSite.BUREAU,
-                            portefeuille_id=1, actif=True))
+        db_session.add(Site(id=i, nom=f"Site Nexity {i}", type=TypeSite.BUREAU, portefeuille_id=1, actif=True))
     for i in range(4, 6):
-        db_session.add(Site(id=i, nom=f"Site Tertiaire {i}", type=TypeSite.BUREAU,
-                            portefeuille_id=2, actif=True))
+        db_session.add(Site(id=i, nom=f"Site Tertiaire {i}", type=TypeSite.BUREAU, portefeuille_id=2, actif=True))
     db_session.flush()
 
     # Findings: org1 has 1 NOK + 2 OK; org2 has 2 OK
     for sid in [1, 2, 3]:
-        db_session.add(ComplianceFinding(
-            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status="NOK" if sid == 1 else "OK", severity="high",
-            evidence="test nexity",
-        ))
+        db_session.add(
+            ComplianceFinding(
+                site_id=sid,
+                regulation="bacs",
+                rule_id="BACS_SCOPE",
+                status="NOK" if sid == 1 else "OK",
+                severity="high",
+                evidence="test nexity",
+            )
+        )
     for sid in [4, 5]:
-        db_session.add(ComplianceFinding(
-            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status="OK", severity="low", evidence="test tertiaire",
-        ))
+        db_session.add(
+            ComplianceFinding(
+                site_id=sid,
+                regulation="bacs",
+                rule_id="BACS_SCOPE",
+                status="OK",
+                severity="low",
+                evidence="test tertiaire",
+            )
+        )
     db_session.commit()
 
 
@@ -171,8 +189,7 @@ class TestBundleEndpoint:
         pf = Portefeuille(id=10, nom="PF Empty", entite_juridique_id=10)
         db_session.add(pf)
         db_session.flush()
-        db_session.add(Site(id=100, nom="Site Vide", type=TypeSite.BUREAU,
-                            portefeuille_id=10, actif=True))
+        db_session.add(Site(id=100, nom="Site Vide", type=TypeSite.BUREAU, portefeuille_id=10, actif=True))
         db_session.commit()
 
         r = client.get("/api/compliance/bundle", params={"org_id": 10})
@@ -196,22 +213,32 @@ def _seed_portefeuille_scope(db_session):
     db_session.flush()
     # PF Alpha: sites 1,2 — PF Beta: sites 3,4
     for i in [1, 2]:
-        db_session.add(Site(id=i, nom=f"Alpha Site {i}", type=TypeSite.BUREAU,
-                            portefeuille_id=1, actif=True))
+        db_session.add(Site(id=i, nom=f"Alpha Site {i}", type=TypeSite.BUREAU, portefeuille_id=1, actif=True))
     for i in [3, 4]:
-        db_session.add(Site(id=i, nom=f"Beta Site {i}", type=TypeSite.BUREAU,
-                            portefeuille_id=2, actif=True))
+        db_session.add(Site(id=i, nom=f"Beta Site {i}", type=TypeSite.BUREAU, portefeuille_id=2, actif=True))
     db_session.flush()
     for sid in [1, 2]:
-        db_session.add(ComplianceFinding(
-            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status="NOK", severity="high", evidence="test alpha",
-        ))
+        db_session.add(
+            ComplianceFinding(
+                site_id=sid,
+                regulation="bacs",
+                rule_id="BACS_SCOPE",
+                status="NOK",
+                severity="high",
+                evidence="test alpha",
+            )
+        )
     for sid in [3, 4]:
-        db_session.add(ComplianceFinding(
-            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status="OK", severity="low", evidence="test beta",
-        ))
+        db_session.add(
+            ComplianceFinding(
+                site_id=sid,
+                regulation="bacs",
+                rule_id="BACS_SCOPE",
+                status="OK",
+                severity="low",
+                evidence="test beta",
+            )
+        )
     db_session.commit()
 
 

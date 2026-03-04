@@ -10,6 +10,7 @@ KPIs computed:
 - Monthly consumption breakdown
 - Ramp rates (max delta P between consecutive readings)
 """
+
 import math
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
@@ -19,9 +20,9 @@ from collections import defaultdict
 class KPIEngine:
     """Compute expert electricity KPIs from time-series readings."""
 
-    def compute(self, readings: List[Dict[str, Any]],
-                interval_minutes: int = 60,
-                schedule: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def compute(
+        self, readings: List[Dict[str, Any]], interval_minutes: int = 60, schedule: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Compute all KPIs from a list of readings.
 
@@ -57,8 +58,7 @@ class KPIEngine:
         pbase = p10
 
         # Night base (00:00-05:00)
-        night_powers = [p for p, ts in zip(powers_kw, timestamps)
-                        if 0 <= ts.hour < 5]
+        night_powers = [p for p, ts in zip(powers_kw, timestamps) if 0 <= ts.hour < 5]
         pbase_night = self._percentile(night_powers, 10) if night_powers else pbase
 
         # Load factor
@@ -80,8 +80,7 @@ class KPIEngine:
         weekend_ratio = we_avg / wd_avg if wd_avg > 0 else 0
 
         # Night ratio (22:00-06:00 vs total)
-        night_kwh = sum(v for v, ts in zip(values, timestamps)
-                        if ts.hour >= 22 or ts.hour < 6)
+        night_kwh = sum(v for v, ts in zip(values, timestamps) if ts.hour >= 22 or ts.hour < 6)
         night_ratio = night_kwh / total_kwh if total_kwh > 0 else 0
 
         # Hourly profiles (jour-type)
@@ -102,9 +101,7 @@ class KPIEngine:
         ramp_rate_max = max(ramp_rates) if ramp_rates else 0
 
         # Off-hours energy (hors horaires)
-        off_hours_kwh, off_hours_ratio = self._compute_off_hours(
-            readings, schedule
-        )
+        off_hours_kwh, off_hours_ratio = self._compute_off_hours(readings, schedule)
 
         return {
             "pmax_kw": round(pmax, 2),
@@ -128,8 +125,9 @@ class KPIEngine:
             "off_hours_ratio": round(off_hours_ratio, 4),
         }
 
-    def _compute_off_hours(self, readings: List[Dict[str, Any]],
-                           schedule: Optional[Dict[str, Any]]) -> Tuple[float, float]:
+    def _compute_off_hours(
+        self, readings: List[Dict[str, Any]], schedule: Optional[Dict[str, Any]]
+    ) -> Tuple[float, float]:
         """
         Compute energy consumed outside operating hours.
 
@@ -200,8 +198,7 @@ class KPIEngine:
         d1 = sorted_data[c] * (k - f)
         return round(d0 + d1, 4)
 
-    def _hourly_profile(self, readings: List[Dict], weekend: bool,
-                        interval_minutes: int = 60) -> List[float]:
+    def _hourly_profile(self, readings: List[Dict], weekend: bool, interval_minutes: int = 60) -> List[float]:
         """Compute average power (kW) by hour of day."""
         hours_per_interval = interval_minutes / 60.0
         by_hour = defaultdict(list)
@@ -223,11 +220,19 @@ class KPIEngine:
 
     def _empty_kpis(self) -> Dict[str, Any]:
         return {
-            "pmax_kw": 0, "p95_kw": 0, "p99_kw": 0, "pmean_kw": 0,
-            "pbase_kw": 0, "pbase_night_kw": 0,
-            "load_factor": 0, "peak_to_average": 0,
-            "weekend_ratio": 0, "night_ratio": 0,
-            "total_kwh": 0, "readings_count": 0, "interval_minutes": 60,
+            "pmax_kw": 0,
+            "p95_kw": 0,
+            "p99_kw": 0,
+            "pmean_kw": 0,
+            "pbase_kw": 0,
+            "pbase_night_kw": 0,
+            "load_factor": 0,
+            "peak_to_average": 0,
+            "weekend_ratio": 0,
+            "night_ratio": 0,
+            "total_kwh": 0,
+            "readings_count": 0,
+            "interval_minutes": 60,
             "ramp_rate_max_kw_h": 0,
             "weekday_profile_kw": [0] * 24,
             "weekend_profile_kw": [0] * 24,

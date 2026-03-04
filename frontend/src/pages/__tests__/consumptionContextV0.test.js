@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
 
-const root = resolve(__dirname, '../../../');  // → frontend/
+const root = resolve(__dirname, '../../../'); // → frontend/
 
 const readSrc = (...parts) => readFileSync(resolve(root, 'src', ...parts), 'utf-8');
 const readBackend = (...parts) => readFileSync(resolve(root, '..', 'backend', ...parts), 'utf-8');

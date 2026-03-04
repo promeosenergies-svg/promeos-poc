@@ -8,8 +8,12 @@ import { getRecents, getRecentPaths, addRecent, clearRecents } from '../navRecen
 const store = {};
 const localStorageMock = {
   getItem: vi.fn((key) => store[key] ?? null),
-  setItem: vi.fn((key, val) => { store[key] = val; }),
-  removeItem: vi.fn((key) => { delete store[key]; }),
+  setItem: vi.fn((key, val) => {
+    store[key] = val;
+  }),
+  removeItem: vi.fn((key) => {
+    delete store[key];
+  }),
 };
 vi.stubGlobal('localStorage', localStorageMock);
 
@@ -55,9 +59,7 @@ describe('getRecentPaths', () => {
 describe('addRecent', () => {
   it('adds a path with metadata', () => {
     const result = addRecent('/actions', { label: "Plan d'actions", module: 'operations' });
-    expect(result).toEqual([
-      { path: '/actions', label: "Plan d'actions", module: 'operations' },
-    ]);
+    expect(result).toEqual([{ path: '/actions', label: "Plan d'actions", module: 'operations' }]);
   });
 
   it('prepends new paths (most recent first)', () => {
@@ -90,7 +92,7 @@ describe('addRecent', () => {
     addRecent('/actions', { label: 'Test' });
     expect(localStorageMock.setItem).toHaveBeenCalledWith(
       'promeos.nav.recent',
-      expect.stringContaining('/actions'),
+      expect.stringContaining('/actions')
     );
   });
 

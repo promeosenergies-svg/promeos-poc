@@ -5,8 +5,10 @@ reference prices, invoices) as inputs for scenario computation.
 
 Brique 3: Leader du Marche
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -17,10 +19,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    EnergyContract, EnergyInvoice, SiteTariffProfile,
-    PurchaseAssumptionSet, PurchaseScenarioResult,
-    BillingEnergyType, BillingInvoiceStatus, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    EnergyContract,
+    EnergyInvoice,
+    SiteTariffProfile,
+    PurchaseAssumptionSet,
+    PurchaseScenarioResult,
+    BillingEnergyType,
+    BillingInvoiceStatus,
+    TypeSite,
 )
 from database import get_db
 from main import app
@@ -47,6 +58,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -63,9 +75,13 @@ def _create_org_site(db, surface=2000):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site Test B1B2", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=surface, portefeuille_id=pf.id,
+        nom="Site Test B1B2",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=surface,
+        portefeuille_id=pf.id,
     )
     db.add(site)
     db.flush()
@@ -76,12 +92,14 @@ def _create_org_site(db, surface=2000):
 # Contract: get_reference_price resolution chain
 # ═══════════════════════════════════════════════
 
+
 class TestReferencePrice:
     """B1→B2 bridge: reference price resolution priority chain."""
 
     def test_price_from_contract(self, db):
         """Priority 1: price comes from active EnergyContract."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db)
         contract = EnergyContract(
             site_id=site.id,
@@ -99,6 +117,7 @@ class TestReferencePrice:
     def test_price_from_tariff_profile(self, db):
         """Priority 2: price from SiteTariffProfile when no contract."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db)
         tariff = SiteTariffProfile(
             site_id=site.id,
@@ -114,6 +133,7 @@ class TestReferencePrice:
     def test_price_default_fallback(self, db):
         """Priority 3: default price when no contract or tariff."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -124,6 +144,7 @@ class TestReferencePrice:
     def test_contract_beats_tariff(self, db):
         """Contract price takes precedence over tariff profile."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db)
         contract = EnergyContract(
             site_id=site.id,
@@ -145,6 +166,7 @@ class TestReferencePrice:
     def test_contract_period_overlap(self, db):
         """Contract with period dates: only matches if period overlaps."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db)
         today = date.today()
         contract = EnergyContract(
@@ -160,7 +182,9 @@ class TestReferencePrice:
 
         # Within period — should match
         price, source = get_reference_price(
-            db, site.id, "elec",
+            db,
+            site.id,
+            "elec",
             period_start=today - timedelta(days=10),
             period_end=today,
         )
@@ -172,12 +196,14 @@ class TestReferencePrice:
 # Contract: estimate_consumption from B1 data
 # ═══════════════════════════════════════════════
 
+
 class TestConsumptionEstimate:
     """B1→B2 bridge: consumption estimate from invoices/readings."""
 
     def test_estimate_from_invoices(self, db):
         """Purchase estimate uses B1 invoice data."""
         from services.purchase_service import estimate_consumption
+
         _, site = _create_org_site(db)
         contract = EnergyContract(
             site_id=site.id,
@@ -194,8 +220,8 @@ class TestConsumptionEstimate:
                 site_id=site.id,
                 contract_id=contract.id,
                 invoice_number=f"INV-{i}",
-                period_start=date.today() - timedelta(days=90 - i*30),
-                period_end=date.today() - timedelta(days=60 - i*30),
+                period_start=date.today() - timedelta(days=90 - i * 30),
+                period_end=date.today() - timedelta(days=60 - i * 30),
                 total_eur=3600,
                 energy_kwh=20000,
                 status=BillingInvoiceStatus.IMPORTED,
@@ -211,6 +237,7 @@ class TestConsumptionEstimate:
     def test_estimate_fallback_no_data(self, db):
         """Falls back to 500k kWh default when no B1 data."""
         from services.purchase_service import estimate_consumption
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -223,12 +250,14 @@ class TestConsumptionEstimate:
 # Contract: scenarios use correct reference price
 # ═══════════════════════════════════════════════
 
+
 class TestScenariosUseRefPrice:
     """B1→B2 bridge: computed scenarios use the correct reference price from billing."""
 
     def test_scenarios_use_contract_price(self, db):
         """Scenarios reflect the contract reference price, not default."""
         from services.purchase_service import compute_scenarios
+
         _, site = _create_org_site(db)
         contract = EnergyContract(
             site_id=site.id,
@@ -249,6 +278,7 @@ class TestScenariosUseRefPrice:
     def test_scenarios_use_default_price(self, db):
         """Without contract, scenarios use default 0.18 price."""
         from services.purchase_service import compute_scenarios
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -260,6 +290,7 @@ class TestScenariosUseRefPrice:
     def test_four_strategies_generated(self, db):
         """Always generates exactly 4 strategies (V79: + reflex_solar)."""
         from services.purchase_service import compute_scenarios
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -271,6 +302,7 @@ class TestScenariosUseRefPrice:
     def test_risk_ordering(self, db):
         """Fixe < Indexe < Spot risk ordering."""
         from services.purchase_service import compute_scenarios
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -284,6 +316,7 @@ class TestScenariosUseRefPrice:
 # ═══════════════════════════════════════════════
 # Contract: end-to-end compute via API
 # ═══════════════════════════════════════════════
+
 
 class TestEndToEndCompute:
     """B1→B2 bridge: full endpoint test with billing data present."""
@@ -360,9 +393,12 @@ class TestEndToEndCompute:
         db.commit()
 
         # Try to create GAZ assumption → should be blocked
-        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
-            "energy_type": "gaz",
-            "volume_kwh_an": 300000,
-        })
+        resp = client.put(
+            f"/api/purchase/assumptions/{site.id}",
+            json={
+                "energy_type": "gaz",
+                "volume_kwh_an": 300000,
+            },
+        )
         assert resp.status_code == 422
         assert "non supportee" in resp.json()["detail"]

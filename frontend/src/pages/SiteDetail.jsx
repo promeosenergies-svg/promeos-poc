@@ -51,10 +51,13 @@ const EVIDENCE_TYPE_LABELS = {
 
 const Badge = ({ statut }) => {
   const cfg = STATUT_CONFIG[statut];
-  if (!cfg) return <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">Inconnu</span>;
+  if (!cfg)
+    return <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">Inconnu</span>;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${cfg.bg} ${cfg.text}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${cfg.bg} ${cfg.text}`}
+    >
       <Icon size={14} />
       {cfg.label}
     </span>
@@ -63,10 +66,13 @@ const Badge = ({ statut }) => {
 
 const EvidenceBadge = ({ status }) => {
   const cfg = EVIDENCE_STATUS_CONFIG[status];
-  if (!cfg) return <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">{status}</span>;
+  if (!cfg)
+    return <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">{status}</span>;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${cfg.bg} ${cfg.text}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${cfg.bg} ${cfg.text}`}
+    >
       <Icon size={12} />
       {cfg.label}
     </span>
@@ -86,18 +92,20 @@ const SiteDetail = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`/api/sites/${id}/compliance`).then(r => {
+      fetch(`/api/sites/${id}/compliance`).then((r) => {
         if (!r.ok) throw new Error(`Site ${id} non trouvé`);
         return r.json();
       }),
-      fetch(`/api/sites/${id}/guardrails`).then(r => r.json()).catch(() => null),
+      fetch(`/api/sites/${id}/guardrails`)
+        .then((r) => r.json())
+        .catch(() => null),
     ])
       .then(([complianceData, guardrailsData]) => {
         setData(complianceData);
         setGuardrails(guardrailsData);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
@@ -125,9 +133,8 @@ const SiteDetail = () => {
   const { site, obligations, evidences, explanations, actions } = data;
 
   // Worst statut across both dimensions
-  const worstStatut = [site.statut_decret_tertiaire, site.statut_bacs]
-    .filter(Boolean)
-    .sort((a, b) => {
+  const worstStatut =
+    [site.statut_decret_tertiaire, site.statut_bacs].filter(Boolean).sort((a, b) => {
       const order = { conforme: 0, derogation: 1, a_risque: 2, non_conforme: 3 };
       return (order[b] || 0) - (order[a] || 0);
     })[0] || 'a_risque';
@@ -146,7 +153,10 @@ const SiteDetail = () => {
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <Link to="/cockpit" className="inline-flex items-center gap-1 text-blue-200 hover:text-white text-sm mb-3 transition">
+          <Link
+            to="/cockpit"
+            className="inline-flex items-center gap-1 text-blue-200 hover:text-white text-sm mb-3 transition"
+          >
             <ArrowLeft size={16} /> Retour au cockpit
           </Link>
           <div className="flex items-start justify-between">
@@ -156,8 +166,12 @@ const SiteDetail = () => {
                 <h1 className="text-2xl font-bold">{site.nom}</h1>
               </div>
               <div className="flex items-center gap-4 mt-2 text-blue-100 text-sm">
-                <span className="flex items-center gap-1"><MapPin size={14} /> {site.ville}</span>
-                <span className="flex items-center gap-1"><FolderOpen size={14} /> Portefeuille #{site.portefeuille_id}</span>
+                <span className="flex items-center gap-1">
+                  <MapPin size={14} /> {site.ville}
+                </span>
+                <span className="flex items-center gap-1">
+                  <FolderOpen size={14} /> Portefeuille #{site.portefeuille_id}
+                </span>
                 <span>{site.surface_m2} m2</span>
               </div>
             </div>
@@ -176,25 +190,34 @@ const SiteDetail = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-
         {/* Guardrails violations */}
         {(grErrors.length > 0 || grWarnings.length > 0) && (
           <div className="mb-6 space-y-2">
             {grErrors.map((v, i) => (
-              <div key={`err-${i}`} className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              <div
+                key={`err-${i}`}
+                className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+              >
                 <ShieldX size={18} className="text-red-500 shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-red-800">{v.message}</span>
-                  <UIBadge status="crit" className="ml-2">{v.code}</UIBadge>
+                  <UIBadge status="crit" className="ml-2">
+                    {v.code}
+                  </UIBadge>
                 </div>
               </div>
             ))}
             {grWarnings.map((v, i) => (
-              <div key={`warn-${i}`} className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
+              <div
+                key={`warn-${i}`}
+                className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-lg px-4 py-3"
+              >
                 <AlertTriangle size={18} className="text-orange-500 shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-orange-800">{v.message}</span>
-                  <UIBadge status="warn" className="ml-2">{v.code}</UIBadge>
+                  <UIBadge status="warn" className="ml-2">
+                    {v.code}
+                  </UIBadge>
                 </div>
               </div>
             ))}
@@ -231,9 +254,14 @@ const SiteDetail = () => {
               <div className="flex flex-col">
                 <span className="text-sm text-gray-500 mb-2">Risque financier</span>
                 <div className="flex items-center gap-2">
-                  <Euro size={24} className={site.risque_financier_euro > 0 ? 'text-red-500' : 'text-green-500'} />
-                  <span className={`text-2xl font-bold ${site.risque_financier_euro > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {site.risque_financier_euro.toLocaleString('fr-FR')} EUR
+                  <Euro
+                    size={24}
+                    className={site.risque_financier_euro > 0 ? 'text-red-500' : 'text-green-500'}
+                  />
+                  <span
+                    className={`text-2xl font-bold ${site.risque_financier_euro > 0 ? 'text-red-600' : 'text-green-600'}`}
+                  >
+                    {site.risque_financier_euro.toLocaleString('fr-FR')} €
                   </span>
                 </div>
                 {site.risque_financier_euro > 0 && (
@@ -255,7 +283,9 @@ const SiteDetail = () => {
                   <span className="text-sm text-green-600 font-medium">Aucune action requise</span>
                 )}
                 {actions.length > 1 && (
-                  <span className="text-xs text-gray-500 mt-1">+{actions.length - 1} autre(s) action(s)</span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    +{actions.length - 1} autre(s) action(s)
+                  </span>
                 )}
               </div>
             </div>
@@ -268,7 +298,9 @@ const SiteDetail = () => {
             <Rocket size={24} />
             <div>
               <span className="font-semibold">Voir le plan d'action global</span>
-              <p className="text-blue-200 text-xs mt-0.5">Actions priorisees pour tout le patrimoine</p>
+              <p className="text-blue-200 text-xs mt-0.5">
+                Actions priorisees pour tout le patrimoine
+              </p>
             </div>
           </div>
           <button
@@ -283,7 +315,7 @@ const SiteDetail = () => {
         <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
             <nav className="flex">
-              {tabs.map(tab => {
+              {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.key;
                 return (
@@ -299,7 +331,9 @@ const SiteDetail = () => {
                     <Icon size={16} />
                     {tab.label}
                     {tab.key === 'alertes' && site.anomalie_facture && (
-                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">!</span>
+                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        !
+                      </span>
                     )}
                   </button>
                 );
@@ -330,25 +364,40 @@ const SiteDetail = () => {
               </div>
 
               {/* Obligations table */}
-              <h3 className="text-base font-semibold text-gray-800 mb-4">Obligations réglementaires</h3>
+              <h3 className="text-base font-semibold text-gray-800 mb-4">
+                Obligations réglementaires
+              </h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Echeance</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avancement</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Statut
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Echeance
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Avancement
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Description
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {obligations.map(ob => (
+                    {obligations.map((ob) => (
                       <tr key={ob.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="text-sm font-medium text-gray-900">
-                            {ob.type === 'decret_tertiaire' ? 'Decret Tertiaire' :
-                             ob.type === 'bacs' ? 'BACS' : ob.type.toUpperCase()}
+                            {ob.type === 'decret_tertiaire'
+                              ? 'Decret Tertiaire'
+                              : ob.type === 'bacs'
+                                ? 'BACS'
+                                : ob.type.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -362,13 +411,18 @@ const SiteDetail = () => {
                             <div className="w-20 bg-gray-200 rounded-full h-2">
                               <div
                                 className={`h-2 rounded-full ${
-                                  ob.avancement_pct >= 80 ? 'bg-green-500' :
-                                  ob.avancement_pct >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                  ob.avancement_pct >= 80
+                                    ? 'bg-green-500'
+                                    : ob.avancement_pct >= 50
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
                                 }`}
                                 style={{ width: `${Math.min(ob.avancement_pct, 100)}%` }}
                               />
                             </div>
-                            <span className="text-xs text-gray-600">{Math.round(ob.avancement_pct)}%</span>
+                            <span className="text-xs text-gray-600">
+                              {Math.round(ob.avancement_pct)}%
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
@@ -386,10 +440,15 @@ const SiteDetail = () => {
               {/* Actions */}
               {actions.length > 0 && (
                 <div className="mt-8">
-                  <h3 className="text-base font-semibold text-gray-800 mb-4">Actions recommandees</h3>
+                  <h3 className="text-base font-semibold text-gray-800 mb-4">
+                    Actions recommandees
+                  </h3>
                   <div className="space-y-2">
                     {actions.map((action, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3">
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3"
+                      >
                         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-yellow-200 text-yellow-800 text-xs font-bold">
                           {i + 1}
                         </span>
@@ -410,7 +469,7 @@ const SiteDetail = () => {
               </h3>
               {evidences.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {evidences.map(ev => (
+                  {evidences.map((ev) => (
                     <div key={ev.id} className="border rounded-lg p-4 hover:shadow-md transition">
                       <div className="flex items-start justify-between mb-2">
                         <span className="text-sm font-medium text-gray-900">
@@ -418,9 +477,7 @@ const SiteDetail = () => {
                         </span>
                         <EvidenceBadge status={ev.statut} />
                       </div>
-                      {ev.note && (
-                        <p className="text-sm text-gray-600 mb-2">{ev.note}</p>
-                      )}
+                      {ev.note && <p className="text-sm text-gray-600 mb-2">{ev.note}</p>}
                       {ev.file_url ? (
                         <a
                           href={ev.file_url}
@@ -451,8 +508,12 @@ const SiteDetail = () => {
                 <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
                   <AlertTriangle size={18} className="text-red-500" />
                   <div>
-                    <span className="text-sm font-medium text-red-800">Anomalie de facturation détectée</span>
-                    <p className="text-xs text-red-600 mt-0.5">Une incohérence a été identifiée sur les factures de ce site.</p>
+                    <span className="text-sm font-medium text-red-800">
+                      Anomalie de facturation détectée
+                    </span>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      Une incohérence a été identifiée sur les factures de ce site.
+                    </p>
                   </div>
                 </div>
               )}

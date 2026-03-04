@@ -3,6 +3,7 @@ PROMEOS -- Impact Model Service (Sprint V4.9)
 Resolves electricity price and computes EUR impacts for monitoring KPIs.
 Three modes: CONTRAT (contract price), TARIF (site tariff profile), DEMO (default 0.18).
 """
+
 from dataclasses import dataclass, field
 from datetime import date
 from typing import List, Optional
@@ -112,7 +113,7 @@ def compute_off_hours_eur(
     eur_year = round(reducible_kwh * price_info.price_eur_kwh, 2)
 
     assumptions.append(f"Annualisation: {off_hours_kwh:.0f} kWh sur {period_days}j -> {annualized_kwh:.0f} kWh/an")
-    assumptions.append(f"Reduction cible: {reduction_pct*100:.0f}% -> {reducible_kwh:.0f} kWh economisables")
+    assumptions.append(f"Reduction cible: {reduction_pct * 100:.0f}% -> {reducible_kwh:.0f} kWh economisables")
     assumptions.append(f"Prix: {price_info.price_eur_kwh} EUR/kWh (mode {price_info.mode})")
 
     return ImpactResult(
@@ -159,7 +160,9 @@ def compute_power_overrun_eur(
 
     eur_year = round(excess_kva * TURPE_PENALTY_EUR_KVA_MONTH * 12, 2)
     assumptions.append(f"Depassement: P95 ({p95_kw:.1f} kW) - Psub ({psub_kva:.1f} kVA) = {excess_kva:.1f} kVA")
-    assumptions.append(f"Penalite TURPE: {TURPE_PENALTY_EUR_KVA_MONTH} EUR/kVA/mois x 12 = {TURPE_PENALTY_EUR_KVA_MONTH * 12:.2f} EUR/kVA/an")
+    assumptions.append(
+        f"Penalite TURPE: {TURPE_PENALTY_EUR_KVA_MONTH} EUR/kVA/mois x 12 = {TURPE_PENALTY_EUR_KVA_MONTH * 12:.2f} EUR/kVA/an"
+    )
     assumptions.append(f"Prix electricite: {price_info.price_eur_kwh} EUR/kWh (mode {price_info.mode})")
 
     return ImpactResult(

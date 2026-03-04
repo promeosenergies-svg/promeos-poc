@@ -3,6 +3,7 @@ PROMEOS - Safe schema migrations (no Alembic).
 Adds missing columns/tables to existing schema without dropping anything.
 SQLite supports ALTER TABLE ADD COLUMN for nullable columns.
 """
+
 import logging
 from sqlalchemy import inspect, text
 
@@ -88,9 +89,7 @@ def _add_soft_delete_columns(engine):
             existing_indexes = {idx["name"] for idx in insp.get_indexes(table_name) if idx.get("name")}
             if idx_name not in existing_indexes:
                 try:
-                    conn.execute(text(
-                        f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "{table_name}" ("deleted_at")'
-                    ))
+                    conn.execute(text(f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "{table_name}" ("deleted_at")'))
                     logger.info("migration: created index %s", idx_name)
                 except Exception:
                     pass  # index may already exist under different name
@@ -119,11 +118,13 @@ def _add_unique_meter_id_index(engine):
 
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "compteurs" ("meter_id") '
-                f'WHERE "meter_id" IS NOT NULL AND "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "compteurs" ("meter_id") '
+                    f'WHERE "meter_id" IS NOT NULL AND "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique partial index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -133,6 +134,7 @@ def _add_unique_meter_id_index(engine):
 # DeliveryPoint migrations
 # ========================================
 
+
 def _create_delivery_points_table(engine):
     """Create delivery_points table if it does not exist."""
     insp = inspect(engine)
@@ -141,7 +143,8 @@ def _create_delivery_points_table(engine):
         return
 
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS "delivery_points" (
                 "id" INTEGER PRIMARY KEY,
                 "code" VARCHAR(14) NOT NULL,
@@ -158,16 +161,13 @@ def _create_delivery_points_table(engine):
                 "deleted_by" VARCHAR(200),
                 "delete_reason" VARCHAR(500)
             )
-        """))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_code" ON "delivery_points" ("code")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_site_id" ON "delivery_points" ("site_id")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_deleted_at" ON "delivery_points" ("deleted_at")'
-        ))
+        """)
+        )
+        conn.execute(text('CREATE INDEX IF NOT EXISTS "ix_delivery_points_code" ON "delivery_points" ("code")'))
+        conn.execute(text('CREATE INDEX IF NOT EXISTS "ix_delivery_points_site_id" ON "delivery_points" ("site_id")'))
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_delivery_points_deleted_at" ON "delivery_points" ("deleted_at")')
+        )
     logger.info("migration: created delivery_points table with indexes")
 
 
@@ -183,14 +183,12 @@ def _add_compteur_delivery_point_fk(engine):
         return
 
     with engine.begin() as conn:
-        conn.execute(text(
-            'ALTER TABLE "compteurs" ADD COLUMN "delivery_point_id" INTEGER '
-            'REFERENCES "delivery_points"("id")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_compteurs_delivery_point_id" '
-            'ON "compteurs" ("delivery_point_id")'
-        ))
+        conn.execute(
+            text('ALTER TABLE "compteurs" ADD COLUMN "delivery_point_id" INTEGER REFERENCES "delivery_points"("id")')
+        )
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_compteurs_delivery_point_id" ON "compteurs" ("delivery_point_id")')
+        )
     logger.info("migration: added compteurs.delivery_point_id + index")
 
 
@@ -212,7 +210,8 @@ def _backfill_delivery_points(engine):
 
     with engine.begin() as conn:
         # Find active compteurs with meter_id that are not yet linked
-        rows = conn.execute(text("""
+        rows = conn.execute(
+            text("""
             SELECT c.id, c.meter_id, c.site_id, c.type, c.data_source, c.data_source_ref
             FROM compteurs c
             WHERE c.meter_id IS NOT NULL
@@ -220,7 +219,8 @@ def _backfill_delivery_points(engine):
               AND c.deleted_at IS NULL
               AND c.delivery_point_id IS NULL
             ORDER BY c.site_id, c.meter_id
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         if not rows:
             logger.debug("migration: backfill — no unlinked compteurs with meter_id")
@@ -233,41 +233,51 @@ def _backfill_delivery_points(engine):
             cpt_id, meter_id, site_id, cpt_type, data_source, data_source_ref = row
 
             # Check if a DeliveryPoint already exists for this code + site (active)
-            existing = conn.execute(text("""
+            existing = conn.execute(
+                text("""
                 SELECT id FROM delivery_points
                 WHERE code = :code AND site_id = :site_id AND deleted_at IS NULL
                 LIMIT 1
-            """), {"code": meter_id, "site_id": site_id}).fetchone()
+            """),
+                {"code": meter_id, "site_id": site_id},
+            ).fetchone()
 
             if existing:
                 dp_id = existing[0]
             else:
                 # Auto-detect energy_type from compteur type
                 energy_type = _guess_energy_type(cpt_type)
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     INSERT INTO delivery_points (code, energy_type, site_id, status,
                         data_source, data_source_ref, created_at, updated_at)
                     VALUES (:code, :energy_type, :site_id, 'active',
                         :data_source, :data_source_ref, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                """), {
-                    "code": meter_id,
-                    "energy_type": energy_type,
-                    "site_id": site_id,
-                    "data_source": data_source or "backfill",
-                    "data_source_ref": data_source_ref or "migration_backfill",
-                })
+                """),
+                    {
+                        "code": meter_id,
+                        "energy_type": energy_type,
+                        "site_id": site_id,
+                        "data_source": data_source or "backfill",
+                        "data_source_ref": data_source_ref or "migration_backfill",
+                    },
+                )
                 dp_id = conn.execute(text("SELECT last_insert_rowid()")).scalar()
                 created += 1
 
             # Link compteur to delivery_point
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 UPDATE compteurs SET delivery_point_id = :dp_id WHERE id = :cpt_id
-            """), {"dp_id": dp_id, "cpt_id": cpt_id})
+            """),
+                {"dp_id": dp_id, "cpt_id": cpt_id},
+            )
             linked += 1
 
         logger.info(
             "migration: backfill — created %d delivery_points, linked %d compteurs",
-            created, linked,
+            created,
+            linked,
         )
 
 
@@ -303,11 +313,13 @@ def _add_unique_delivery_point_code_index(engine):
 
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "delivery_points" ("code") '
-                f'WHERE "code" IS NOT NULL AND "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "delivery_points" ("code") '
+                    f'WHERE "code" IS NOT NULL AND "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique partial index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -316,6 +328,7 @@ def _add_unique_delivery_point_code_index(engine):
 # ========================================
 # Phase 2A — Integrity constraints
 # ========================================
+
 
 def _add_unique_org_siren_index(engine):
     """UNIQUE(siren) on organisations WHERE active (deleted_at IS NULL, siren IS NOT NULL)."""
@@ -328,11 +341,13 @@ def _add_unique_org_siren_index(engine):
         return
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "organisations" ("siren") '
-                f'WHERE "siren" IS NOT NULL AND "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "organisations" ("siren") '
+                    f'WHERE "siren" IS NOT NULL AND "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -349,11 +364,13 @@ def _add_unique_portefeuille_ej_nom_index(engine):
         return
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "portefeuilles" ("entite_juridique_id", "nom") '
-                f'WHERE "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "portefeuilles" ("entite_juridique_id", "nom") '
+                    f'WHERE "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -370,11 +387,13 @@ def _add_unique_site_portefeuille_siret_index(engine):
         return
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "sites" ("portefeuille_id", "siret") '
-                f'WHERE "siret" IS NOT NULL AND "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "sites" ("portefeuille_id", "siret") '
+                    f'WHERE "siret" IS NOT NULL AND "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -391,11 +410,13 @@ def _add_unique_batiment_site_nom_index(engine):
         return
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "batiments" ("site_id", "nom") '
-                f'WHERE "deleted_at" IS NULL'
-            ))
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                    f'ON "batiments" ("site_id", "nom") '
+                    f'WHERE "deleted_at" IS NULL'
+                )
+            )
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -410,14 +431,14 @@ def _add_dp_compteur_cascade_trigger(engine):
     trigger_name = "trg_dp_delete_nullify_compteurs"
     with engine.begin() as conn:
         # Check if trigger exists
-        row = conn.execute(text(
-            "SELECT COUNT(*) FROM sqlite_master "
-            "WHERE type='trigger' AND name=:name"
-        ), {"name": trigger_name}).scalar()
+        row = conn.execute(
+            text("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name=:name"), {"name": trigger_name}
+        ).scalar()
         if row and row > 0:
             return
         try:
-            conn.execute(text(f"""
+            conn.execute(
+                text(f"""
                 CREATE TRIGGER "{trigger_name}"
                 BEFORE DELETE ON "delivery_points"
                 FOR EACH ROW
@@ -426,7 +447,8 @@ def _add_dp_compteur_cascade_trigger(engine):
                     SET "delivery_point_id" = NULL
                     WHERE "delivery_point_id" = OLD."id";
                 END
-            """))
+            """)
+            )
             logger.info("migration: created trigger %s", trigger_name)
         except Exception as e:
             logger.warning("migration: could not create trigger %s: %s", trigger_name, e)
@@ -596,6 +618,7 @@ def _create_tertiaire_tables(engine):
 # V2-Conso — meter_reading dedup + unique
 # ========================================
 
+
 def _dedup_meter_reading(engine):
     """Remove duplicate (meter_id, timestamp) rows from meter_reading.
 
@@ -607,12 +630,14 @@ def _dedup_meter_reading(engine):
         return
 
     with engine.begin() as conn:
-        dupes = conn.execute(text("""
+        dupes = conn.execute(
+            text("""
             SELECT meter_id, timestamp, COUNT(*) AS cnt
             FROM meter_reading
             GROUP BY meter_id, timestamp
             HAVING cnt > 1
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         if not dupes:
             logger.debug("migration: meter_reading — no duplicates found")
@@ -621,7 +646,8 @@ def _dedup_meter_reading(engine):
         deleted = 0
         for meter_id, ts, cnt in dupes:
             # Keep the best row (highest quality_score, then latest created_at, then highest id)
-            keep = conn.execute(text("""
+            keep = conn.execute(
+                text("""
                 SELECT id FROM meter_reading
                 WHERE meter_id = :mid AND timestamp = :ts
                 ORDER BY
@@ -629,17 +655,21 @@ def _dedup_meter_reading(engine):
                     COALESCE(created_at, '1970-01-01') DESC,
                     id DESC
                 LIMIT 1
-            """), {"mid": meter_id, "ts": ts}).scalar()
+            """),
+                {"mid": meter_id, "ts": ts},
+            ).scalar()
 
             if keep:
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text("""
                     DELETE FROM meter_reading
                     WHERE meter_id = :mid AND timestamp = :ts AND id != :keep_id
-                """), {"mid": meter_id, "ts": ts, "keep_id": keep})
+                """),
+                    {"mid": meter_id, "ts": ts, "keep_id": keep},
+                )
                 deleted += result.rowcount
 
-        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d pairs",
-                     deleted, len(dupes))
+        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d pairs", deleted, len(dupes))
 
 
 def _add_unique_meter_reading_index(engine):
@@ -656,10 +686,9 @@ def _add_unique_meter_reading_index(engine):
 
     with engine.begin() as conn:
         try:
-            conn.execute(text(
-                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
-                f'ON "meter_reading" ("meter_id", "timestamp")'
-            ))
+            conn.execute(
+                text(f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" ON "meter_reading" ("meter_id", "timestamp")')
+            )
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
@@ -668,6 +697,7 @@ def _add_unique_meter_reading_index(engine):
 # ========================================
 # Étape 4 — Action Engine: evidence_required
 # ========================================
+
 
 def _add_action_evidence_required_column(engine):
     """Add evidence_required BOOLEAN column to action_items if missing.
@@ -684,15 +714,14 @@ def _add_action_evidence_required_column(engine):
         return
 
     with engine.begin() as conn:
-        conn.execute(text(
-            'ALTER TABLE "action_items" ADD COLUMN "evidence_required" BOOLEAN NOT NULL DEFAULT 0'
-        ))
+        conn.execute(text('ALTER TABLE "action_items" ADD COLUMN "evidence_required" BOOLEAN NOT NULL DEFAULT 0'))
         logger.info("migration: added action_items.evidence_required")
 
 
 # ========================================
 # Fix delivery_points energy_type enum case
 # ========================================
+
 
 def _fix_delivery_point_energy_type_case(engine):
     """Fix enum values in delivery_points: SQLAlchemy Enum stores names (ELEC/GAZ/ACTIVE),
@@ -714,9 +743,9 @@ def _fix_delivery_point_energy_type_case(engine):
         fixed = 0
         for col, mappings in fixes:
             for old, new in mappings:
-                result = conn.execute(text(
-                    f'UPDATE "delivery_points" SET "{col}" = :new WHERE "{col}" = :old'
-                ), {"old": old, "new": new})
+                result = conn.execute(
+                    text(f'UPDATE "delivery_points" SET "{col}" = :new WHERE "{col}" = :old'), {"old": old, "new": new}
+                )
                 fixed += result.rowcount
 
     if fixed > 0:
@@ -728,6 +757,7 @@ def _fix_delivery_point_energy_type_case(engine):
 # ========================================
 # Backfill risque_financier_euro from obligations
 # ========================================
+
 
 def _backfill_site_risque_financier(engine):
     """Compute risque_financier_euro for sites based on their obligations.
@@ -742,7 +772,8 @@ def _backfill_site_risque_financier(engine):
 
     with engine.begin() as conn:
         # Get sites with risque_financier_euro = 0 (or NULL) that have non-conforme/a_risque obligations
-        rows = conn.execute(text("""
+        rows = conn.execute(
+            text("""
             SELECT s.id,
                    COALESCE(SUM(CASE WHEN o.statut IN ('NON_CONFORME', 'non_conforme') THEN 7500.0 ELSE 0 END), 0)
                    + COALESCE(SUM(CASE WHEN o.statut IN ('A_RISQUE', 'a_risque') THEN 3750.0 ELSE 0 END), 0)
@@ -752,13 +783,15 @@ def _backfill_site_risque_financier(engine):
             WHERE COALESCE(s.risque_financier_euro, 0) = 0
             GROUP BY s.id
             HAVING risque > 0
-        """)).fetchall()
+        """)
+        ).fetchall()
 
         updated = 0
         for row in rows:
-            conn.execute(text(
-                'UPDATE sites SET risque_financier_euro = :risque WHERE id = :sid'
-            ), {"risque": row[1], "sid": row[0]})
+            conn.execute(
+                text("UPDATE sites SET risque_financier_euro = :risque WHERE id = :sid"),
+                {"risque": row[1], "sid": row[0]},
+            )
             updated += 1
 
         if updated > 0:
@@ -771,6 +804,7 @@ def _backfill_site_risque_financier(engine):
 # V96 — Patrimoine Unique Monde
 # ========================================
 
+
 def _create_payment_rules_table(engine):
     """V96: Create payment_rules table if it does not exist. Idempotent."""
     insp = inspect(engine)
@@ -779,7 +813,8 @@ def _create_payment_rules_table(engine):
         return
 
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS "payment_rules" (
                 "id" INTEGER PRIMARY KEY,
                 "level" VARCHAR(20) NOT NULL,
@@ -793,19 +828,15 @@ def _create_payment_rules_table(engine):
                 "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE("level", "portefeuille_id", "site_id", "contract_id")
             )
-        """))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_portefeuille_id" '
-            'ON "payment_rules" ("portefeuille_id")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_site_id" '
-            'ON "payment_rules" ("site_id")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_contract_id" '
-            'ON "payment_rules" ("contract_id")'
-        ))
+        """)
+        )
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_payment_rules_portefeuille_id" ON "payment_rules" ("portefeuille_id")')
+        )
+        conn.execute(text('CREATE INDEX IF NOT EXISTS "ix_payment_rules_site_id" ON "payment_rules" ("site_id")'))
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_payment_rules_contract_id" ON "payment_rules" ("contract_id")')
+        )
     logger.info("migration: created payment_rules table with indexes")
 
 
@@ -830,9 +861,7 @@ def _add_contract_v96_columns(engine):
         for col_name, col_type in v96_columns:
             if col_name in existing_cols:
                 continue
-            conn.execute(text(
-                f'ALTER TABLE "energy_contracts" ADD COLUMN "{col_name}" {col_type}'
-            ))
+            conn.execute(text(f'ALTER TABLE "energy_contracts" ADD COLUMN "{col_name}" {col_type}'))
             added += 1
             logger.info("migration: added energy_contracts.%s (%s)", col_name, col_type)
 
@@ -846,6 +875,7 @@ def _add_contract_v96_columns(engine):
 # V97 — Resolution Engine
 # ========================================
 
+
 def _create_reconciliation_fix_logs_table(engine):
     """V97: Create reconciliation_fix_logs table for audit trail. Idempotent."""
     insp = inspect(engine)
@@ -854,7 +884,8 @@ def _create_reconciliation_fix_logs_table(engine):
         return
 
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS "reconciliation_fix_logs" (
                 "id" INTEGER PRIMARY KEY,
                 "site_id" INTEGER NOT NULL REFERENCES "sites"("id"),
@@ -868,21 +899,21 @@ def _create_reconciliation_fix_logs_table(engine):
                 "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
-        """))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_site_id" '
-            'ON "reconciliation_fix_logs" ("site_id")'
-        ))
-        conn.execute(text(
-            'CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_check_id" '
-            'ON "reconciliation_fix_logs" ("check_id")'
-        ))
+        """)
+        )
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_site_id" ON "reconciliation_fix_logs" ("site_id")')
+        )
+        conn.execute(
+            text('CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_check_id" ON "reconciliation_fix_logs" ("check_id")')
+        )
     logger.info("migration: created reconciliation_fix_logs table with indexes")
 
 
 # ========================================
 # V100 — Segmentation enrichment
 # ========================================
+
 
 def _migrate_segmentation_v100(engine):
     """V100: Add missing columns to segmentation_profiles + create segmentation_answers table.
@@ -894,7 +925,8 @@ def _migrate_segmentation_v100(engine):
     # 1. Create segmentation_profiles table if it doesn't exist at all
     if not insp.has_table("segmentation_profiles"):
         with engine.begin() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS "segmentation_profiles" (
                     "id" INTEGER PRIMARY KEY,
                     "organisation_id" INTEGER NOT NULL REFERENCES "organisations"("id"),
@@ -909,21 +941,26 @@ def _migrate_segmentation_v100(engine):
                     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
-            """))
-            conn.execute(text(
-                'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_org_id" '
-                'ON "segmentation_profiles" ("organisation_id")'
-            ))
-            conn.execute(text(
-                'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_portfolio_id" '
-                'ON "segmentation_profiles" ("portfolio_id")'
-            ))
+            """)
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_org_id" '
+                    'ON "segmentation_profiles" ("organisation_id")'
+                )
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_portfolio_id" '
+                    'ON "segmentation_profiles" ("portfolio_id")'
+                )
+            )
         logger.info("migration: V100 — created segmentation_profiles table")
     else:
         # Add V100 columns if missing
         existing_cols = {c["name"] for c in insp.get_columns("segmentation_profiles")}
         v100_columns = [
-            ("portfolio_id", "INTEGER REFERENCES \"portefeuilles\"(\"id\")"),
+            ("portfolio_id", 'INTEGER REFERENCES "portefeuilles"("id")'),
             ("segment_label", "VARCHAR(100)"),
             ("derived_from", "VARCHAR(30) DEFAULT 'mix'"),
         ]
@@ -932,9 +969,7 @@ def _migrate_segmentation_v100(engine):
             for col_name, col_type in v100_columns:
                 if col_name in existing_cols:
                     continue
-                conn.execute(text(
-                    f'ALTER TABLE "segmentation_profiles" ADD COLUMN "{col_name}" {col_type}'
-                ))
+                conn.execute(text(f'ALTER TABLE "segmentation_profiles" ADD COLUMN "{col_name}" {col_type}'))
                 added += 1
                 logger.info("migration: V100 — added segmentation_profiles.%s", col_name)
         if added > 0:
@@ -943,7 +978,8 @@ def _migrate_segmentation_v100(engine):
     # 2. Create segmentation_answers table if it doesn't exist
     if not insp.has_table("segmentation_answers"):
         with engine.begin() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS "segmentation_answers" (
                     "id" INTEGER PRIMARY KEY,
                     "profile_id" INTEGER NOT NULL REFERENCES "segmentation_profiles"("id"),
@@ -954,13 +990,18 @@ def _migrate_segmentation_v100(engine):
                     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
-            """))
-            conn.execute(text(
-                'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_profile_id" '
-                'ON "segmentation_answers" ("profile_id")'
-            ))
-            conn.execute(text(
-                'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_org_id" '
-                'ON "segmentation_answers" ("organisation_id")'
-            ))
+            """)
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_profile_id" '
+                    'ON "segmentation_answers" ("profile_id")'
+                )
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_org_id" '
+                    'ON "segmentation_answers" ("organisation_id")'
+                )
+            )
         logger.info("migration: V100 — created segmentation_answers table")

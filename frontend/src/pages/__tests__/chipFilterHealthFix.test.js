@@ -66,17 +66,28 @@ describe('A · Chip filters actually filter "Sites à traiter"', () => {
 // B. HealthSummary — no AMBER when reasons.length===0
 // ============================================================
 describe('B · computeHealthState: no AMBER card with 0 reasons', () => {
-  const BASE = { total: 10, conformes: 10, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 80 };
+  const BASE = {
+    total: 10,
+    conformes: 10,
+    nonConformes: 0,
+    aRisque: 0,
+    risqueTotal: 0,
+    couvertureDonnees: 80,
+  };
 
   it('AMBER when alertsCount > 0 (alerts surface as reasons)', () => {
     const state = computeHealthState({ kpis: BASE, watchlist: [], alertsCount: 5 });
     expect(state.level).toBe('AMBER');
     expect(state.reasons.length).toBeGreaterThan(0);
-    expect(state.reasons.some(r => r.id === 'alerts-active')).toBe(true);
+    expect(state.reasons.some((r) => r.id === 'alerts-active')).toBe(true);
   });
 
   it('AMBER when kpis.aRisque > 0 even without watchlist items', () => {
-    const state = computeHealthState({ kpis: { ...BASE, aRisque: 2 }, watchlist: [], alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE, aRisque: 2 },
+      watchlist: [],
+      alertsCount: 0,
+    });
     expect(state.level).toBe('AMBER');
   });
 
@@ -94,7 +105,11 @@ describe('B · computeHealthState: no AMBER card with 0 reasons', () => {
   });
 
   it('RED still works when nonConformes > 0 even without watchlist', () => {
-    const state = computeHealthState({ kpis: { ...BASE, nonConformes: 1 }, watchlist: [], alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE, nonConformes: 1 },
+      watchlist: [],
+      alertsCount: 0,
+    });
     expect(state.level).toBe('RED');
   });
 

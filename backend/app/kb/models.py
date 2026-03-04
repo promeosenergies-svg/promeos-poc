@@ -2,6 +2,7 @@
 PROMEOS KB - Database Models
 SQLite schema for Knowledge Base items, FTS5 index, and HTML docs
 """
+
 import sqlite3
 from pathlib import Path
 from typing import Optional

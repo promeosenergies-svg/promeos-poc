@@ -2,8 +2,10 @@
 PROMEOS - Tests for BACS API endpoints
 15+ integration tests covering full API surface.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -41,6 +43,7 @@ def client():
 def _seed_site(session, name="Test Site", cvc_kw=300, arch=CvcArchitecture.CASCADE):
     """Helper to create a site with BacsAsset and one CVC system."""
     from datetime import date
+
     site = Site(nom=name, type=TypeSite.BUREAU, surface_m2=2000, actif=True)
     session.add(site)
     session.flush()
@@ -63,7 +66,6 @@ def _seed_site(session, name="Test Site", cvc_kw=300, arch=CvcArchitecture.CASCA
 
 
 class TestGetAssessment:
-
     def test_full_290kw(self, client):
         c, session = client
         site, asset, _ = _seed_site(session, cvc_kw=450)
@@ -102,7 +104,6 @@ class TestGetAssessment:
 
 
 class TestRecompute:
-
     def test_recompute_updates(self, client):
         c, session = client
         site, _, _ = _seed_site(session, cvc_kw=150)
@@ -114,7 +115,6 @@ class TestRecompute:
 
 
 class TestScoreExplain:
-
     def test_shows_putile_trace(self, client):
         c, session = client
         site, _, _ = _seed_site(session, cvc_kw=300)
@@ -127,7 +127,6 @@ class TestScoreExplain:
 
 
 class TestDataQuality:
-
     def test_blocked_no_asset(self, client):
         c, session = client
         site = Site(nom="NoAsset", type=TypeSite.BUREAU)
@@ -146,7 +145,6 @@ class TestDataQuality:
 
 
 class TestAssetCrud:
-
     def test_create_asset(self, client):
         c, session = client
         site = Site(nom="New", type=TypeSite.BUREAU)
@@ -168,8 +166,7 @@ class TestAssetCrud:
         site, asset, _ = _seed_site(session)
         units = json.dumps([{"label": "New Unit", "kw": 100}])
         r = c.post(
-            f"/api/regops/bacs/asset/{asset.id}/system"
-            f"?system_type=cooling&architecture=independent&units_json={units}"
+            f"/api/regops/bacs/asset/{asset.id}/system?system_type=cooling&architecture=independent&units_json={units}"
         )
         assert r.status_code == 200
         assert r.json()["system_type"] == "cooling"
@@ -190,7 +187,6 @@ class TestAssetCrud:
 
 
 class TestSeedDemo:
-
     def test_seed_creates_assets(self, client):
         c, session = client
         r = c.post("/api/regops/bacs/seed_demo")

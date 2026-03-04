@@ -32,27 +32,33 @@ function Section({ title, children }) {
   );
 }
 
-export default function ExplorerDebugPanel({ params = {}, tsState = {}, availability = null, scope = null, chartMeta = null }) {
+export default function ExplorerDebugPanel({
+  params = {},
+  tsState = {},
+  availability = null,
+  scope = null,
+  chartMeta = null,
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const {
-    siteIds, energyType, days, unit, mode, startDate, endDate,
-  } = params;
+  const { siteIds, energyType, days, unit, mode, startDate, endDate } = params;
 
-  const {
-    status, meta, granularity, debugInfo, error,
-  } = tsState;
+  const { status, meta, granularity, debugInfo, error } = tsState;
 
   const avail = availability || {};
 
   const handleCopy = () => {
-    const payload = JSON.stringify({
-      scope,
-      params,
-      tsState: { status, meta, granularity, error, debugInfo },
-      availability: avail,
-    }, null, 2);
+    const payload = JSON.stringify(
+      {
+        scope,
+        params,
+        tsState: { status, meta, granularity, error, debugInfo },
+        availability: avail,
+      },
+      null,
+      2
+    );
     try {
       navigator.clipboard.writeText(payload);
       setCopied(true);
@@ -64,7 +70,7 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
     <div className="rounded-lg border border-green-900 bg-gray-950 text-green-400 select-none overflow-hidden">
       {/* Header */}
       <button
-        onClick={() => setCollapsed(v => !v)}
+        onClick={() => setCollapsed((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2 bg-gray-900 hover:bg-gray-800 transition"
       >
         <span className="text-xs font-mono font-bold text-green-400">
@@ -73,7 +79,10 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
         <div className="flex items-center gap-2">
           {!collapsed && (
             <button
-              onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopy();
+              }}
               className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-300 transition"
             >
               {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
@@ -122,7 +131,10 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
           {chartMeta && (
             <Section title="Mapping chartData (V20)">
               <Row label="effectiveValueKey" value={chartMeta.effectiveValueKey} />
-              <Row label="overlayValueKeys" value={chartMeta.overlayValueKeys?.join(', ') || '(none — single series)'} />
+              <Row
+                label="overlayValueKeys"
+                value={chartMeta.overlayValueKeys?.join(', ') || '(none — single series)'}
+              />
             </Section>
           )}
 
@@ -131,7 +143,10 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
             <Section title="API debug">
               <Row label="endpoint" value={debugInfo.endpoint} />
               <Row label="params" value={debugInfo.params} />
-              <Row label="responseMs" value={debugInfo.responseMs != null ? `${debugInfo.responseMs} ms` : null} />
+              <Row
+                label="responseMs"
+                value={debugInfo.responseMs != null ? `${debugInfo.responseMs} ms` : null}
+              />
               <Row label="seriesCount" value={debugInfo.seriesCount} />
               <Row label="pointsCount" value={debugInfo.pointsCount} />
               <Row label="yMin" value={debugInfo.yMin} />
@@ -140,14 +155,24 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
           )}
 
           {/* Validity breakdown (V20-A) */}
-          {debugInfo && (debugInfo.validCount != null) && (
+          {debugInfo && debugInfo.validCount != null && (
             <Section title="Validité points (V20)">
               <Row label="validCount" value={debugInfo.validCount} />
               <Row label="zerosCount" value={debugInfo.zerosCount} />
               <Row label="nullsCount" value={debugInfo.nullsCount} />
               <Row label="nanCount" value={debugInfo.nanCount} />
-              <Row label="samplePoints[0]" value={debugInfo.samplePoints?.[0] ? JSON.stringify(debugInfo.samplePoints[0]) : null} />
-              <Row label="samplePoints[1]" value={debugInfo.samplePoints?.[1] ? JSON.stringify(debugInfo.samplePoints[1]) : null} />
+              <Row
+                label="samplePoints[0]"
+                value={
+                  debugInfo.samplePoints?.[0] ? JSON.stringify(debugInfo.samplePoints[0]) : null
+                }
+              />
+              <Row
+                label="samplePoints[1]"
+                value={
+                  debugInfo.samplePoints?.[1] ? JSON.stringify(debugInfo.samplePoints[1]) : null
+                }
+              />
             </Section>
           )}
 

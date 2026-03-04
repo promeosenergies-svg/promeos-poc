@@ -1,7 +1,9 @@
 """
 PROMEOS — Tests V11 C3: Tunnel V2 (energy + power mode)
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -20,8 +22,9 @@ from main import app
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite:///:memory:", echo=False,
-                           connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
@@ -35,7 +38,9 @@ def seeded_db(db):
     db.add(site)
     db.flush()
     meter = Meter(
-        site_id=site.id, meter_id="PDL-TUNNEL-V2", name="Compteur Test",
+        site_id=site.id,
+        meter_id="PDL-TUNNEL-V2",
+        name="Compteur Test",
         energy_vector=EnergyVector.ELECTRICITY,
         is_active=True,
     )
@@ -45,11 +50,13 @@ def seeded_db(db):
     # Generate 100 hourly readings over ~4 days
     now = datetime.now(timezone.utc)
     for i in range(100):
-        db.add(MeterReading(
-            meter_id=meter.id,
-            timestamp=now - timedelta(hours=100 - i),
-            value_kwh=10.0 + (i % 24) * 0.5,  # pattern by hour
-        ))
+        db.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=now - timedelta(hours=100 - i),
+                value_kwh=10.0 + (i % 24) * 0.5,  # pattern by hour
+            )
+        )
     db.commit()
     return db, site.id
 
@@ -57,9 +64,13 @@ def seeded_db(db):
 @pytest.fixture
 def client(seeded_db):
     db, _ = seeded_db
+
     def _override():
-        try: yield db
-        finally: pass
+        try:
+            yield db
+        finally:
+            pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()

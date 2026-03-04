@@ -2,8 +2,10 @@
 PROMEOS Tests - KB Seed Demo + Empty Returns 200
 Tests: seed_demo idempotent, empty list endpoints return 200 with []
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -13,14 +15,21 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, KBVersion, KBArchetype, KBMappingCode, KBAnomalyRule,
-    KBRecommendation, KBStatus, KBConfidence,
+    Base,
+    KBVersion,
+    KBArchetype,
+    KBMappingCode,
+    KBAnomalyRule,
+    KBRecommendation,
+    KBStatus,
+    KBConfidence,
 )
 from database import get_db
 from main import app
 
 
 # ── Fixtures ──────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def db_session():
@@ -43,6 +52,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -50,8 +60,8 @@ def client(db_session):
 
 # ── Tests: Empty KB returns 200 with [] ───────────────────────────
 
-class TestKBEmptyReturns200:
 
+class TestKBEmptyReturns200:
     def test_archetypes_empty(self, client):
         r = client.get("/api/kb/archetypes")
         assert r.status_code == 200
@@ -91,8 +101,8 @@ class TestKBEmptyReturns200:
 
 # ── Tests: Seed Demo ─────────────────────────────────────────────
 
-class TestKBSeedDemo:
 
+class TestKBSeedDemo:
     def test_seed_creates_items(self, client, db_session):
         r = client.post("/api/kb/seed_demo")
         assert r.status_code == 200

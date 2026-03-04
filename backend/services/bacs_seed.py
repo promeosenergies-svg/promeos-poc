@@ -2,14 +2,20 @@
 PROMEOS - BACS Demo Seed
 Seed 10 demo sites with diverse BACS configurations covering all edge cases.
 """
+
 import json
 from datetime import date
 
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, BacsAsset, BacsCvcSystem, BacsInspection,
-    CvcSystemType, CvcArchitecture, InspectionStatus,
+    Site,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    InspectionStatus,
 )
 from services.bacs_engine import evaluate_bacs
 
@@ -22,7 +28,11 @@ _BACS_DEMO_CONFIGS = [
         "is_tertiary": True,
         "pc_date": "1970-06-01",
         "systems": [
-            {"type": "heating", "arch": "cascade", "units": [{"label": "PAC 1", "kw": 250}, {"label": "PAC 2", "kw": 200}]},
+            {
+                "type": "heating",
+                "arch": "cascade",
+                "units": [{"label": "PAC 1", "kw": 250}, {"label": "PAC 2", "kw": 200}],
+            },
         ],
         "inspections": [],
         "note": ">290 kW, deadline 2025, no attestation",
@@ -32,7 +42,11 @@ _BACS_DEMO_CONFIGS = [
         "is_tertiary": True,
         "pc_date": "1985-03-15",
         "systems": [
-            {"type": "cooling", "arch": "network", "units": [{"label": "Chiller A", "kw": 180}, {"label": "Chiller B", "kw": 140}]},
+            {
+                "type": "cooling",
+                "arch": "network",
+                "units": [{"label": "Chiller A", "kw": 180}, {"label": "Chiller B", "kw": 140}],
+            },
         ],
         "inspections": [
             {"date": "2023-06-01", "status": "completed", "report": "RPT-VLZ-2023"},
@@ -44,7 +58,11 @@ _BACS_DEMO_CONFIGS = [
         "is_tertiary": True,
         "pc_date": "2005-09-20",
         "systems": [
-            {"type": "heating", "arch": "independent", "units": [{"label": "Chaudiere 1", "kw": 150}, {"label": "Chaudiere 2", "kw": 80}]},
+            {
+                "type": "heating",
+                "arch": "independent",
+                "units": [{"label": "Chaudiere 1", "kw": 150}, {"label": "Chaudiere 2", "kw": 80}],
+            },
         ],
         "inspections": [],
         "note": "70-290 kW (max=150), deadline 2030",
@@ -55,7 +73,11 @@ _BACS_DEMO_CONFIGS = [
         "pc_date": "1975-01-10",
         "systems": [
             {"type": "heating", "arch": "cascade", "units": [{"label": "Chaufferie centrale", "kw": 500}]},
-            {"type": "cooling", "arch": "cascade", "units": [{"label": "Groupe froid 1", "kw": 200}, {"label": "Groupe froid 2", "kw": 100}]},
+            {
+                "type": "cooling",
+                "arch": "cascade",
+                "units": [{"label": "Groupe froid 1", "kw": 200}, {"label": "Groupe froid 2", "kw": 100}],
+            },
         ],
         "inspections": [
             {"date": "2021-03-15", "status": "completed", "report": "RPT-LYS-2021"},
@@ -89,7 +111,11 @@ _BACS_DEMO_CONFIGS = [
         "is_tertiary": True,
         "pc_date": "2010-04-01",
         "systems": [
-            {"type": "cooling", "arch": "independent", "units": [{"label": "Split 1", "kw": 30}, {"label": "Split 2", "kw": 30}]},
+            {
+                "type": "cooling",
+                "arch": "independent",
+                "units": [{"label": "Split 1", "kw": 30}, {"label": "Split 2", "kw": 30}],
+            },
         ],
         "inspections": [],
         "note": "<70 kW = OUT_OF_SCOPE",
@@ -99,7 +125,11 @@ _BACS_DEMO_CONFIGS = [
         "is_tertiary": True,
         "pc_date": None,
         "systems": [
-            {"type": "cooling", "arch": "cascade", "units": [{"label": "CRAC 1", "kw": 300}, {"label": "CRAC 2", "kw": 200}]},
+            {
+                "type": "cooling",
+                "arch": "cascade",
+                "units": [{"label": "CRAC 1", "kw": 300}, {"label": "CRAC 2", "kw": 200}],
+            },
         ],
         "inspections": [],
         "note": ">290 kW, DQ BLOCKED (no PC date)",
@@ -145,6 +175,7 @@ def seed_bacs_demo(db: Session) -> dict:
         site = db.query(Site).filter(Site.nom == site_name).first()
         if not site:
             from models import TypeSite
+
             site = Site(
                 nom=site_name,
                 type=TypeSite.BUREAU,
@@ -199,14 +230,16 @@ def seed_bacs_demo(db: Session) -> dict:
         tri_ctx = cfg.get("tri_context")
         assessment = evaluate_bacs(db, site.id, tri_context=tri_ctx)
 
-        seeded.append({
-            "site": site_name,
-            "site_id": site.id,
-            "asset_id": asset.id,
-            "status": "created",
-            "is_obligated": assessment.is_obligated if assessment else None,
-            "putile_kw": assessment.threshold_applied if assessment else None,
-            "note": cfg.get("note", ""),
-        })
+        seeded.append(
+            {
+                "site": site_name,
+                "site_id": site.id,
+                "asset_id": asset.id,
+                "status": "created",
+                "is_obligated": assessment.is_obligated if assessment else None,
+                "putile_kw": assessment.threshold_applied if assessment else None,
+                "note": cfg.get("note", ""),
+            }
+        )
 
     return {"seeded": seeded, "total": len(seeded), "errors": errors}

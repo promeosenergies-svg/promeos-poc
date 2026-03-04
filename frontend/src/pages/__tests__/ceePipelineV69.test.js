@@ -56,7 +56,7 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
   });
 
   it('renders S/M/L size badges', () => {
-    expect(code).toContain("SIZE_BADGE");
+    expect(code).toContain('SIZE_BADGE');
     expect(code).toContain("'S'");
     expect(code).toContain("'M'");
     expect(code).toContain("'L'");
@@ -69,7 +69,7 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
   });
 
   it('renders CEE kanban steps array', () => {
-    expect(code).toContain("CEE_STEPS");
+    expect(code).toContain('CEE_STEPS');
     expect(code).toContain("'devis'");
     expect(code).toContain("'engagement'");
     expect(code).toContain("'travaux'");
@@ -80,11 +80,11 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
 
   it('renders kanban step labels', () => {
     expect(code).toContain('CEE_STEP_LABELS');
-    expect(code).toContain("Devis");
-    expect(code).toContain("Engagement");
-    expect(code).toContain("Travaux");
-    expect(code).toContain("PV+Photos");
-    expect(code).toContain("Versement");
+    expect(code).toContain('Devis');
+    expect(code).toContain('Engagement');
+    expect(code).toContain('Travaux');
+    expect(code).toContain('PV+Photos');
+    expect(code).toContain('Versement');
   });
 
   it('imports KanbanCee component', () => {

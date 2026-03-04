@@ -2,6 +2,7 @@
 PROMEOS - Smart Intake Service (DIAMANT)
 Session CRUD, submit answers, apply to models, compute diff, demo autofill.
 """
+
 import json
 from datetime import datetime, timezone
 from typing import Optional
@@ -9,18 +10,32 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Batiment, Evidence, AuditLog,
-    IntakeSession, IntakeAnswer, IntakeFieldOverride,
-    IntakeSessionStatus, IntakeMode, IntakeSource,
-    TypeEvidence, StatutEvidence, ParkingType, OperatStatus,
+    Site,
+    Batiment,
+    Evidence,
+    AuditLog,
+    IntakeSession,
+    IntakeAnswer,
+    IntakeFieldOverride,
+    IntakeSessionStatus,
+    IntakeMode,
+    IntakeSource,
+    TypeEvidence,
+    StatutEvidence,
+    ParkingType,
+    OperatStatus,
 )
 from services.intake_engine import (
-    generate_questions, prefill_from_existing, compute_before_after,
-    DEMO_DEFAULTS, QUESTION_BANK,
+    generate_questions,
+    prefill_from_existing,
+    compute_before_after,
+    DEMO_DEFAULTS,
+    QUESTION_BANK,
 )
 from services.compliance_engine import recompute_site
 from services.onboarding_service import (
-    create_batiment_for_site, create_obligations_for_site,
+    create_batiment_for_site,
+    create_obligations_for_site,
 )
 
 
@@ -54,6 +69,7 @@ _ENUM_CONVERTERS = {
 # ========================================
 # Session lifecycle
 # ========================================
+
 
 def create_session(
     db: Session,
@@ -96,6 +112,7 @@ def create_session(
 # ========================================
 # Submit answers
 # ========================================
+
 
 def _get_previous_value(db: Session, site_id: int, field_path: str):
     """Get the current value of a field from the database."""
@@ -161,13 +178,20 @@ def submit_answer(
     db.flush()
 
     # Log audit
-    _log_audit(db, session.user_id, "intake_answer", "site", str(session.site_id), {
-        "session_id": session_id,
-        "field_path": field_path,
-        "value": value,
-        "previous": previous,
-        "source": source.value if hasattr(source, "value") else str(source),
-    })
+    _log_audit(
+        db,
+        session.user_id,
+        "intake_answer",
+        "site",
+        str(session.site_id),
+        {
+            "session_id": session_id,
+            "field_path": field_path,
+            "value": value,
+            "previous": previous,
+            "source": source.value if hasattr(source, "value") else str(source),
+        },
+    )
 
     return answer
 
@@ -176,6 +200,7 @@ def submit_answer(
 # Compute diff
 # ========================================
 
+
 def compute_diff(db: Session, session_id: int) -> dict:
     """Compute before/after compliance diff from all unapplied answers."""
     session = db.query(IntakeSession).filter(IntakeSession.id == session_id).first()
@@ -183,10 +208,14 @@ def compute_diff(db: Session, session_id: int) -> dict:
         raise ValueError(f"IntakeSession {session_id} not found")
 
     # Collect unapplied answers
-    answers = db.query(IntakeAnswer).filter(
-        IntakeAnswer.session_id == session_id,
-        IntakeAnswer.applied_at.is_(None),
-    ).all()
+    answers = (
+        db.query(IntakeAnswer)
+        .filter(
+            IntakeAnswer.session_id == session_id,
+            IntakeAnswer.applied_at.is_(None),
+        )
+        .all()
+    )
 
     proposed = {}
     for a in answers:
@@ -204,6 +233,7 @@ def compute_diff(db: Session, session_id: int) -> dict:
 # Apply answers to final models
 # ========================================
 
+
 def apply_answers(db: Session, session_id: int) -> dict:
     """Write answers to final models, then recompute compliance."""
     session = db.query(IntakeSession).filter(IntakeSession.id == session_id).first()
@@ -215,10 +245,14 @@ def apply_answers(db: Session, session_id: int) -> dict:
         raise ValueError(f"Site {session.site_id} not found")
 
     # Get unapplied answers
-    answers = db.query(IntakeAnswer).filter(
-        IntakeAnswer.session_id == session_id,
-        IntakeAnswer.applied_at.is_(None),
-    ).all()
+    answers = (
+        db.query(IntakeAnswer)
+        .filter(
+            IntakeAnswer.session_id == session_id,
+            IntakeAnswer.applied_at.is_(None),
+        )
+        .all()
+    )
 
     if not answers:
         return {"fields_applied": 0, "score_before": session.score_before, "score_after": session.score_before}
@@ -254,10 +288,14 @@ def apply_answers(db: Session, session_id: int) -> dict:
             if value:  # Only create evidence if answer is True
                 evidence_type = TypeEvidence(column.lower())
                 # Check if already exists
-                existing = db.query(Evidence).filter(
-                    Evidence.site_id == site.id,
-                    Evidence.type == evidence_type,
-                ).first()
+                existing = (
+                    db.query(Evidence)
+                    .filter(
+                        Evidence.site_id == site.id,
+                        Evidence.type == evidence_type,
+                    )
+                    .first()
+                )
                 if not existing:
                     ev = Evidence(
                         site_id=site.id,
@@ -287,12 +325,19 @@ def apply_answers(db: Session, session_id: int) -> dict:
     session.score_after = diff["score_before"]  # Current score IS the "after"
     db.flush()
 
-    _log_audit(db, session.user_id, "intake_apply", "site", str(site.id), {
-        "session_id": session_id,
-        "fields_applied": fields_applied,
-        "score_before": session.score_before,
-        "score_after": session.score_after,
-    })
+    _log_audit(
+        db,
+        session.user_id,
+        "intake_apply",
+        "site",
+        str(site.id),
+        {
+            "session_id": session_id,
+            "fields_applied": fields_applied,
+            "score_before": session.score_before,
+            "score_after": session.score_after,
+        },
+    )
 
     return {
         "fields_applied": fields_applied,
@@ -305,6 +350,7 @@ def apply_answers(db: Session, session_id: int) -> dict:
 # ========================================
 # Demo autofill
 # ========================================
+
 
 def demo_autofill(db: Session, session_id: int) -> dict:
     """Fill all missing fields with demo defaults, then apply."""
@@ -337,6 +383,7 @@ def demo_autofill(db: Session, session_id: int) -> dict:
 # Complete session
 # ========================================
 
+
 def complete_session(db: Session, session_id: int) -> IntakeSession:
     """Mark session as COMPLETED."""
     session = db.query(IntakeSession).filter(IntakeSession.id == session_id).first()
@@ -347,12 +394,19 @@ def complete_session(db: Session, session_id: int) -> IntakeSession:
     session.completed_at = datetime.now(timezone.utc)
     db.flush()
 
-    _log_audit(db, session.user_id, "intake_complete", "intake_session", str(session_id), {
-        "site_id": session.site_id,
-        "score_before": session.score_before,
-        "score_after": session.score_after,
-        "answers_count": session.answers_count,
-    })
+    _log_audit(
+        db,
+        session.user_id,
+        "intake_complete",
+        "intake_session",
+        str(session_id),
+        {
+            "site_id": session.site_id,
+            "score_before": session.score_before,
+            "score_after": session.score_after,
+            "answers_count": session.answers_count,
+        },
+    )
 
     return session
 
@@ -361,15 +415,14 @@ def complete_session(db: Session, session_id: int) -> IntakeSession:
 # Get session detail
 # ========================================
 
+
 def get_session_detail(db: Session, session_id: int) -> dict:
     """Return full session with answers and diff."""
     session = db.query(IntakeSession).filter(IntakeSession.id == session_id).first()
     if not session:
         raise ValueError(f"IntakeSession {session_id} not found")
 
-    answers = db.query(IntakeAnswer).filter(
-        IntakeAnswer.session_id == session_id
-    ).all()
+    answers = db.query(IntakeAnswer).filter(IntakeAnswer.session_id == session_id).all()
 
     return {
         "session": {
@@ -402,6 +455,7 @@ def get_session_detail(db: Session, session_id: int) -> dict:
 # Purge demo sessions
 # ========================================
 
+
 def purge_demo_sessions(db: Session, org_id: Optional[int] = None) -> int:
     """Delete all DEMO-mode sessions and their answers."""
     query = db.query(IntakeSession).filter(IntakeSession.mode == IntakeMode.DEMO)
@@ -424,8 +478,8 @@ def purge_demo_sessions(db: Session, org_id: Optional[int] = None) -> int:
 # Audit helper
 # ========================================
 
-def _log_audit(db: Session, user_id: Optional[int], action: str,
-               resource_type: str, resource_id: str, detail: dict):
+
+def _log_audit(db: Session, user_id: Optional[int], action: str, resource_type: str, resource_id: str, detail: dict):
     """Log to existing AuditLog model."""
     log = AuditLog(
         user_id=user_id,

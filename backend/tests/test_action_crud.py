@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint V5.0: Action CRUD + Auto-Events + Idempotency
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,9 +14,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ActionItem, ActionSourceType, ActionStatus,
-    ActionEvent, ActionComment, ActionEvidence,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ActionItem,
+    ActionSourceType,
+    ActionStatus,
+    ActionEvent,
+    ActionComment,
+    ActionEvidence,
     TypeSite,
 )
 from database import get_db
@@ -42,6 +52,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -77,6 +88,7 @@ def _create_action_via_api(client, site_id=None, title="Test action", **kwargs):
 # Comments CRUD
 # ========================================
 
+
 class TestCommentsCRUD:
     def test_add_and_list_comments(self, db, client):
         """POST + GET comments work."""
@@ -85,18 +97,24 @@ class TestCommentsCRUD:
         action_id = resp.json()["id"]
 
         # Add two comments
-        r1 = client.post(f"/api/actions/{action_id}/comments", json={
-            "author": "J. Dupont",
-            "body": "Premier commentaire",
-        })
+        r1 = client.post(
+            f"/api/actions/{action_id}/comments",
+            json={
+                "author": "J. Dupont",
+                "body": "Premier commentaire",
+            },
+        )
         assert r1.status_code == 200
         assert r1.json()["author"] == "J. Dupont"
         assert r1.json()["body"] == "Premier commentaire"
 
-        r2 = client.post(f"/api/actions/{action_id}/comments", json={
-            "author": "A. Martin",
-            "body": "Deuxieme commentaire",
-        })
+        r2 = client.post(
+            f"/api/actions/{action_id}/comments",
+            json={
+                "author": "A. Martin",
+                "body": "Deuxieme commentaire",
+            },
+        )
         assert r2.status_code == 200
 
         # List
@@ -112,25 +130,32 @@ class TestCommentsCRUD:
         resp = _create_action_via_api(client, site.id)
         action_id = resp.json()["id"]
 
-        r = client.post(f"/api/actions/{action_id}/comments", json={
-            "author": "Test",
-            "body": "   ",
-        })
+        r = client.post(
+            f"/api/actions/{action_id}/comments",
+            json={
+                "author": "Test",
+                "body": "   ",
+            },
+        )
         assert r.status_code == 422
 
     def test_comment_on_nonexistent_action(self, db, client):
         """Comment on nonexistent action returns 404."""
         _create_org_site(db)
-        r = client.post("/api/actions/99999/comments", json={
-            "author": "Test",
-            "body": "Should fail",
-        })
+        r = client.post(
+            "/api/actions/99999/comments",
+            json={
+                "author": "Test",
+                "body": "Should fail",
+            },
+        )
         assert r.status_code == 404
 
 
 # ========================================
 # Evidence CRUD
 # ========================================
+
 
 class TestEvidenceCRUD:
     def test_add_and_list_evidence(self, db, client):
@@ -139,12 +164,15 @@ class TestEvidenceCRUD:
         resp = _create_action_via_api(client, site.id)
         action_id = resp.json()["id"]
 
-        r1 = client.post(f"/api/actions/{action_id}/evidence", json={
-            "label": "Rapport audit",
-            "file_url": "https://docs.example.com/audit.pdf",
-            "mime_type": "application/pdf",
-            "uploaded_by": "J. Dupont",
-        })
+        r1 = client.post(
+            f"/api/actions/{action_id}/evidence",
+            json={
+                "label": "Rapport audit",
+                "file_url": "https://docs.example.com/audit.pdf",
+                "mime_type": "application/pdf",
+                "uploaded_by": "J. Dupont",
+            },
+        )
         assert r1.status_code == 200
         assert r1.json()["label"] == "Rapport audit"
 
@@ -159,15 +187,19 @@ class TestEvidenceCRUD:
         resp = _create_action_via_api(client, site.id)
         action_id = resp.json()["id"]
 
-        r = client.post(f"/api/actions/{action_id}/evidence", json={
-            "label": "  ",
-        })
+        r = client.post(
+            f"/api/actions/{action_id}/evidence",
+            json={
+                "label": "  ",
+            },
+        )
         assert r.status_code == 422
 
 
 # ========================================
 # Events (audit trail)
 # ========================================
+
 
 class TestAutoEvents:
     def test_auto_event_on_create(self, db, client):
@@ -203,10 +235,13 @@ class TestAutoEvents:
         resp = _create_action_via_api(client, site.id)
         action_id = resp.json()["id"]
 
-        client.post(f"/api/actions/{action_id}/comments", json={
-            "author": "Test",
-            "body": "Hello",
-        })
+        client.post(
+            f"/api/actions/{action_id}/comments",
+            json={
+                "author": "Test",
+                "body": "Hello",
+            },
+        )
 
         r = client.get(f"/api/actions/{action_id}/events")
         events = r.json()
@@ -220,10 +255,13 @@ class TestAutoEvents:
         resp = _create_action_via_api(client, site.id)
         action_id = resp.json()["id"]
 
-        client.post(f"/api/actions/{action_id}/evidence", json={
-            "label": "Photo chantier",
-            "uploaded_by": "J. Dupont",
-        })
+        client.post(
+            f"/api/actions/{action_id}/evidence",
+            json={
+                "label": "Photo chantier",
+                "uploaded_by": "J. Dupont",
+            },
+        )
 
         r = client.get(f"/api/actions/{action_id}/events")
         events = r.json()
@@ -244,6 +282,7 @@ class TestAutoEvents:
 # ========================================
 # Idempotency + Collision Detection
 # ========================================
+
 
 class TestIdempotency:
     def test_idempotency_key_returns_existing(self, db, client):

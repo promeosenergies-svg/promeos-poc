@@ -3,6 +3,7 @@ PROMEOS KB — Document Ingestion
 Ingest raw documents (HTML/TXT/MD) into KB with manifest, chunking, and FTS indexing.
 Supports importing from referential snapshots.
 """
+
 import hashlib
 import json
 import os
@@ -41,6 +42,7 @@ def _extract_text_from_html(html: str) -> str:
     """Simple HTML to text (reuse normalize_text if available, fallback to regex)."""
     try:
         from scripts.referential.normalize_text import html_to_markdown
+
         return html_to_markdown(html)
     except ImportError:
         # Fallback: strip tags with regex
@@ -65,27 +67,33 @@ def _extract_text_from_pdf(file_path: str) -> str:
     return "\n\n---\n\n".join(pages)
 
 
-def _chunk_text(text: str, max_words: int = MAX_CHUNK_WORDS, overlap: int = CHUNK_OVERLAP_WORDS) -> List[Dict[str, Any]]:
+def _chunk_text(
+    text: str, max_words: int = MAX_CHUNK_WORDS, overlap: int = CHUNK_OVERLAP_WORDS
+) -> List[Dict[str, Any]]:
     """Split text into overlapping chunks."""
     words = text.split()
     if len(words) <= max_words:
-        return [{
-            "chunk_index": 0,
-            "text": text,
-            "word_count": len(words),
-        }]
+        return [
+            {
+                "chunk_index": 0,
+                "text": text,
+                "word_count": len(words),
+            }
+        ]
 
     chunks = []
     i = 0
     idx = 0
     while i < len(words):
-        chunk_words = words[i:i + max_words]
+        chunk_words = words[i : i + max_words]
         chunk_text = " ".join(chunk_words)
-        chunks.append({
-            "chunk_index": idx,
-            "text": chunk_text,
-            "word_count": len(chunk_words),
-        })
+        chunks.append(
+            {
+                "chunk_index": idx,
+                "text": chunk_text,
+                "word_count": len(chunk_words),
+            }
+        )
         i += max_words - overlap
         idx += 1
 
@@ -187,25 +195,30 @@ def ingest_document(
 
     # Update enhanced manifest columns
     cursor = db.conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE kb_docs SET source_org=?, doc_type=?, published_date=?,
             effective_from=?, effective_to=?, version_tag=?
         WHERE doc_id=?
-    """, (source_org, doc_type, published_date, effective_from, effective_to, version_tag, doc_id))
+    """,
+        (source_org, doc_type, published_date, effective_from, effective_to, version_tag, doc_id),
+    )
 
     # Store chunks (delete old ones first)
     cursor.execute("DELETE FROM kb_chunks WHERE doc_id = ?", (doc_id,))
     for chunk in chunks:
         chunk_id = f"{doc_id}_chunk_{chunk['chunk_index']:04d}"
-        store.upsert_chunk({
-            "chunk_id": chunk_id,
-            "doc_id": doc_id,
-            "section_path": None,
-            "anchor": None,
-            "text": chunk["text"],
-            "word_count": chunk["word_count"],
-            "chunk_index": chunk["chunk_index"],
-        })
+        store.upsert_chunk(
+            {
+                "chunk_id": chunk_id,
+                "doc_id": doc_id,
+                "section_path": None,
+                "anchor": None,
+                "text": chunk["text"],
+                "word_count": chunk["word_count"],
+                "chunk_index": chunk["chunk_index"],
+            }
+        )
 
     db.conn.commit()
 
@@ -290,37 +303,45 @@ def search_doc_chunks(query: str, doc_id: Optional[str] = None, limit: int = 10)
     cursor = db.conn.cursor()
 
     if doc_id:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT c.*, d.title as doc_title, d.source_org, d.doc_type
             FROM kb_chunks c
             JOIN kb_docs d ON c.doc_id = d.doc_id
             WHERE c.doc_id = ? AND c.text LIKE ?
             ORDER BY c.chunk_index
             LIMIT ?
-        """, (doc_id, f"%{query}%", limit))
+        """,
+            (doc_id, f"%{query}%", limit),
+        )
     else:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT c.*, d.title as doc_title, d.source_org, d.doc_type
             FROM kb_chunks c
             JOIN kb_docs d ON c.doc_id = d.doc_id
             WHERE c.text LIKE ?
             ORDER BY d.doc_id, c.chunk_index
             LIMIT ?
-        """, (f"%{query}%", limit))
+        """,
+            (f"%{query}%", limit),
+        )
 
     results = []
     for row in cursor.fetchall():
         r = dict(row)
-        results.append({
-            "chunk_id": r["chunk_id"],
-            "doc_id": r["doc_id"],
-            "doc_title": r.get("doc_title", ""),
-            "source_org": r.get("source_org", ""),
-            "doc_type": r.get("doc_type", ""),
-            "section_path": r.get("section_path"),
-            "text": r["text"],
-            "word_count": r.get("word_count", 0),
-            "chunk_index": r.get("chunk_index", 0),
-        })
+        results.append(
+            {
+                "chunk_id": r["chunk_id"],
+                "doc_id": r["doc_id"],
+                "doc_title": r.get("doc_title", ""),
+                "source_org": r.get("source_org", ""),
+                "doc_type": r.get("doc_type", ""),
+                "section_path": r.get("section_path"),
+                "text": r["text"],
+                "word_count": r.get("word_count", 0),
+                "chunk_index": r.get("chunk_index", 0),
+            }
+        )
 
     return results

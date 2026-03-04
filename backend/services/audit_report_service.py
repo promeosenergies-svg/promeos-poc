@@ -2,6 +2,7 @@
 PROMEOS — Audit Report Service (Sprint 10.1)
 Builds structured audit data from all briques, renders a multi-page B2B PDF.
 """
+
 import io
 from datetime import date, datetime, timezone
 from typing import Optional
@@ -10,13 +11,24 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import (
-    Organisation, Site, Batiment, Compteur,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
-    ActionItem, ActionSyncBatch,
-    ActionSourceType, ActionStatus, InsightStatus,
-    EnergyContract, EnergyInvoice,
-    PurchaseScenarioResult, PurchaseRecoStatus,
-    EntiteJuridique, Portefeuille,
+    Organisation,
+    Site,
+    Batiment,
+    Compteur,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
+    ActionItem,
+    ActionSyncBatch,
+    ActionSourceType,
+    ActionStatus,
+    InsightStatus,
+    EnergyContract,
+    EnergyInvoice,
+    PurchaseScenarioResult,
+    PurchaseRecoStatus,
+    EntiteJuridique,
+    Portefeuille,
     not_deleted,
 )
 
@@ -24,6 +36,7 @@ from models import (
 # ========================================
 # Step 1: Build audit report data (JSON)
 # ========================================
+
 
 def build_audit_report_data(db: Session, org_id: Optional[int] = None) -> dict:
     """
@@ -60,10 +73,7 @@ def build_audit_report_data(db: Session, org_id: Optional[int] = None) -> dict:
     actions = _build_actions_section(db, org_id)
 
     # -- Synthese executive --
-    total_risk_eur = (
-        (consumption.get("total_loss_eur") or 0) +
-        (billing.get("total_loss_eur") or 0)
-    )
+    total_risk_eur = (consumption.get("total_loss_eur") or 0) + (billing.get("total_loss_eur") or 0)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -95,26 +105,24 @@ def build_audit_report_data(db: Session, org_id: Optional[int] = None) -> dict:
 
 def _get_site_ids(db: Session, org_id: int) -> list:
     """Resolve site IDs for an org (same pattern as action_hub_service)."""
-    ej_ids = [r[0] for r in db.query(EntiteJuridique.id).filter(
-        EntiteJuridique.organisation_id == org_id).all()]
+    ej_ids = [r[0] for r in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if not ej_ids:
         return []
-    pf_ids = [r[0] for r in db.query(Portefeuille.id).filter(
-        Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
+    pf_ids = [r[0] for r in db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
     if not pf_ids:
         return []
-    return [r[0] for r in not_deleted(db.query(Site.id), Site).filter(
-        Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()]
+    return [
+        r[0]
+        for r in not_deleted(db.query(Site.id), Site).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()
+    ]
 
 
 def _build_compliance_section(db: Session, org_id: int) -> dict:
     site_ids = _get_site_ids(db, org_id)
     if not site_ids:
-        return {"total_findings": 0, "nok": 0, "ok": 0, "unknown": 0,
-                "conformite_pct": 0, "top_findings": []}
+        return {"total_findings": 0, "nok": 0, "ok": 0, "unknown": 0, "conformite_pct": 0, "top_findings": []}
 
-    findings = db.query(ComplianceFinding).filter(
-        ComplianceFinding.site_id.in_(site_ids)).all()
+    findings = db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
 
     nok = [f for f in findings if f.status == "NOK"]
     ok = [f for f in findings if f.status == "OK"]
@@ -129,14 +137,16 @@ def _build_compliance_section(db: Session, org_id: int) -> dict:
     top_findings = []
     for f in nok_sorted[:5]:
         site = db.query(Site).filter(Site.id == f.site_id).first()
-        top_findings.append({
-            "rule_id": f.rule_id,
-            "regulation": f.regulation,
-            "severity": f.severity,
-            "evidence": f.evidence,
-            "site_nom": site.nom if site else "?",
-            "deadline": f.deadline.isoformat() if f.deadline else None,
-        })
+        top_findings.append(
+            {
+                "rule_id": f.rule_id,
+                "regulation": f.regulation,
+                "severity": f.severity,
+                "evidence": f.evidence,
+                "site_nom": site.nom if site else "?",
+                "deadline": f.deadline.isoformat() if f.deadline else None,
+            }
+        )
 
     return {
         "total_findings": len(findings),
@@ -153,10 +163,14 @@ def _build_consumption_section(db: Session, org_id: int) -> dict:
     if not site_ids:
         return {"total_insights": 0, "total_loss_eur": 0, "top_insights": []}
 
-    insights = db.query(ConsumptionInsight).filter(
-        ConsumptionInsight.site_id.in_(site_ids),
-        ConsumptionInsight.estimated_loss_eur > 0,
-    ).all()
+    insights = (
+        db.query(ConsumptionInsight)
+        .filter(
+            ConsumptionInsight.site_id.in_(site_ids),
+            ConsumptionInsight.estimated_loss_eur > 0,
+        )
+        .all()
+    )
 
     total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
 
@@ -165,13 +179,15 @@ def _build_consumption_section(db: Session, org_id: int) -> dict:
     top_insights = []
     for ins in sorted_ins[:5]:
         site = db.query(Site).filter(Site.id == ins.site_id).first()
-        top_insights.append({
-            "type": ins.type,
-            "severity": ins.severity,
-            "message": ins.message,
-            "estimated_loss_eur": round(ins.estimated_loss_eur or 0, 2),
-            "site_nom": site.nom if site else "?",
-        })
+        top_insights.append(
+            {
+                "type": ins.type,
+                "severity": ins.severity,
+                "message": ins.message,
+                "estimated_loss_eur": round(ins.estimated_loss_eur or 0, 2),
+                "site_nom": site.nom if site else "?",
+            }
+        )
 
     return {
         "total_insights": len(insights),
@@ -185,10 +201,14 @@ def _build_billing_section(db: Session, org_id: int) -> dict:
     if not site_ids:
         return {"total_insights": 0, "total_loss_eur": 0, "top_insights": []}
 
-    insights = db.query(BillingInsight).filter(
-        BillingInsight.site_id.in_(site_ids),
-        BillingInsight.insight_status != InsightStatus.FALSE_POSITIVE,
-    ).all()
+    insights = (
+        db.query(BillingInsight)
+        .filter(
+            BillingInsight.site_id.in_(site_ids),
+            BillingInsight.insight_status != InsightStatus.FALSE_POSITIVE,
+        )
+        .all()
+    )
 
     total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
 
@@ -196,13 +216,15 @@ def _build_billing_section(db: Session, org_id: int) -> dict:
     top_insights = []
     for ins in sorted_ins[:5]:
         site = db.query(Site).filter(Site.id == ins.site_id).first()
-        top_insights.append({
-            "type": ins.type,
-            "severity": ins.severity,
-            "message": ins.message,
-            "estimated_loss_eur": round(ins.estimated_loss_eur or 0, 2),
-            "site_nom": site.nom if site else "?",
-        })
+        top_insights.append(
+            {
+                "type": ins.type,
+                "severity": ins.severity,
+                "message": ins.message,
+                "estimated_loss_eur": round(ins.estimated_loss_eur or 0, 2),
+                "site_nom": site.nom if site else "?",
+            }
+        )
 
     return {
         "total_insights": len(insights),
@@ -236,8 +258,15 @@ def _build_purchase_section(db: Session, org_id: int) -> dict:
 def _build_actions_section(db: Session, org_id: int) -> dict:
     items = db.query(ActionItem).filter(ActionItem.org_id == org_id).all()
     if not items:
-        return {"total": 0, "open": 0, "in_progress": 0, "done": 0,
-                "total_gain_eur": 0, "by_source": {}, "top_actions": []}
+        return {
+            "total": 0,
+            "open": 0,
+            "in_progress": 0,
+            "done": 0,
+            "total_gain_eur": 0,
+            "by_source": {},
+            "top_actions": [],
+        }
 
     open_count = sum(1 for a in items if a.status == ActionStatus.OPEN)
     in_progress = sum(1 for a in items if a.status == ActionStatus.IN_PROGRESS)
@@ -255,15 +284,17 @@ def _build_actions_section(db: Session, org_id: int) -> dict:
 
     top_actions = []
     for a in open_items[:5]:
-        top_actions.append({
-            "title": a.title,
-            "source_type": a.source_type.value if a.source_type else None,
-            "priority": a.priority,
-            "severity": a.severity,
-            "estimated_gain_eur": a.estimated_gain_eur,
-            "due_date": a.due_date.isoformat() if a.due_date else None,
-            "owner": a.owner,
-        })
+        top_actions.append(
+            {
+                "title": a.title,
+                "source_type": a.source_type.value if a.source_type else None,
+                "priority": a.priority,
+                "severity": a.severity,
+                "estimated_gain_eur": a.estimated_gain_eur,
+                "due_date": a.due_date.isoformat() if a.due_date else None,
+                "owner": a.owner,
+            }
+        )
 
     return {
         "total": len(items),
@@ -296,6 +327,7 @@ def _compute_confidence(compliance_n: int, conso_n: int, billing_n: int) -> str:
 # Step 2: Render PDF with reportlab
 # ========================================
 
+
 def render_audit_pdf(data: dict) -> bytes:
     """
     Render a multi-page B2B audit PDF from structured data.
@@ -305,8 +337,13 @@ def render_audit_pdf(data: dict) -> bytes:
     from reportlab.lib.units import mm
     from reportlab.lib.colors import HexColor
     from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-        PageBreak, KeepTogether,
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+        PageBreak,
+        KeepTogether,
     )
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
@@ -341,38 +378,66 @@ def render_audit_pdf(data: dict) -> bytes:
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
-        "AuditTitle", parent=styles["Title"],
-        fontSize=22, textColor=BLUE, spaceAfter=4 * mm,
+        "AuditTitle",
+        parent=styles["Title"],
+        fontSize=22,
+        textColor=BLUE,
+        spaceAfter=4 * mm,
     )
     subtitle_style = ParagraphStyle(
-        "AuditSubtitle", parent=styles["Normal"],
-        fontSize=11, textColor=GRAY, spaceAfter=8 * mm,
+        "AuditSubtitle",
+        parent=styles["Normal"],
+        fontSize=11,
+        textColor=GRAY,
+        spaceAfter=8 * mm,
     )
     h2_style = ParagraphStyle(
-        "AuditH2", parent=styles["Heading2"],
-        fontSize=14, textColor=DARK, spaceBefore=6 * mm, spaceAfter=3 * mm,
-        borderWidth=0, borderColor=BLUE, borderPadding=0,
+        "AuditH2",
+        parent=styles["Heading2"],
+        fontSize=14,
+        textColor=DARK,
+        spaceBefore=6 * mm,
+        spaceAfter=3 * mm,
+        borderWidth=0,
+        borderColor=BLUE,
+        borderPadding=0,
     )
     body_style = ParagraphStyle(
-        "AuditBody", parent=styles["Normal"],
-        fontSize=10, textColor=DARK, spaceAfter=2 * mm, leading=14,
+        "AuditBody",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=DARK,
+        spaceAfter=2 * mm,
+        leading=14,
     )
     small_style = ParagraphStyle(
-        "AuditSmall", parent=styles["Normal"],
-        fontSize=8, textColor=GRAY, spaceAfter=1 * mm,
+        "AuditSmall",
+        parent=styles["Normal"],
+        fontSize=8,
+        textColor=GRAY,
+        spaceAfter=1 * mm,
     )
     bold_style = ParagraphStyle(
-        "AuditBold", parent=body_style,
+        "AuditBold",
+        parent=body_style,
         fontName="Helvetica-Bold",
     )
     kpi_style = ParagraphStyle(
-        "AuditKPI", parent=styles["Normal"],
-        fontSize=18, fontName="Helvetica-Bold", textColor=BLUE,
-        alignment=TA_CENTER, spaceAfter=1 * mm,
+        "AuditKPI",
+        parent=styles["Normal"],
+        fontSize=18,
+        fontName="Helvetica-Bold",
+        textColor=BLUE,
+        alignment=TA_CENTER,
+        spaceAfter=1 * mm,
     )
     kpi_label_style = ParagraphStyle(
-        "AuditKPILabel", parent=styles["Normal"],
-        fontSize=9, textColor=GRAY, alignment=TA_CENTER, spaceAfter=0,
+        "AuditKPILabel",
+        parent=styles["Normal"],
+        fontSize=9,
+        textColor=GRAY,
+        alignment=TA_CENTER,
+        spaceAfter=0,
     )
 
     elements = []
@@ -383,52 +448,84 @@ def render_audit_pdf(data: dict) -> bytes:
     # Page 1: Cover + Synthese executive
     # ========================================
     elements.append(Spacer(1, 15 * mm))
-    elements.append(Paragraph("PROMEOS", ParagraphStyle(
-        "Logo", parent=styles["Normal"],
-        fontSize=28, fontName="Helvetica-Bold", textColor=BLUE,
-    )))
+    elements.append(
+        Paragraph(
+            "PROMEOS",
+            ParagraphStyle(
+                "Logo",
+                parent=styles["Normal"],
+                fontSize=28,
+                fontName="Helvetica-Bold",
+                textColor=BLUE,
+            ),
+        )
+    )
     elements.append(Spacer(1, 5 * mm))
     elements.append(Paragraph("Rapport d'audit energetique", title_style))
-    elements.append(Paragraph(
-        f"{org.get('nom', '?')} - {org.get('type_client', '?')} | "
-        f"{org.get('total_sites', 0)} sites | {org.get('total_surface_m2', 0):,} m2",
-        subtitle_style,
-    ))
-    elements.append(Paragraph(
-        f"Date de generation : {data.get('generated_at', '?')[:10]}",
-        small_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"{org.get('nom', '?')} - {org.get('type_client', '?')} | "
+            f"{org.get('total_sites', 0)} sites | {org.get('total_surface_m2', 0):,} m2",
+            subtitle_style,
+        )
+    )
+    elements.append(
+        Paragraph(
+            f"Date de generation : {data.get('generated_at', '?')[:10]}",
+            small_style,
+        )
+    )
     elements.append(Spacer(1, 8 * mm))
 
     # Confidence badge
     conf = synth.get("confidence", "low")
     conf_hex = {"high": C_GREEN, "medium": C_ORANGE, "low": C_RED}.get(conf, "#6B7280")
     conf_label = {"high": "Elevee", "medium": "Moyenne", "low": "Faible"}.get(conf, "?")
-    elements.append(Paragraph(
-        f"Indice de confiance : <font color='{conf_hex}'><b>{conf_label}</b></font>",
-        body_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"Indice de confiance : <font color='{conf_hex}'><b>{conf_label}</b></font>",
+            body_style,
+        )
+    )
     elements.append(Spacer(1, 6 * mm))
 
     # KPI cards as table
     kpi_data = [
         [
-            _kpi_cell("Risque financier", f"{synth.get('total_risk_eur', 0):,.0f} EUR", RED, kpi_style, kpi_label_style),
-            _kpi_cell("Gain potentiel", f"{synth.get('total_gain_potentiel_eur', 0):,.0f} EUR", GREEN, kpi_style, kpi_label_style),
+            _kpi_cell(
+                "Risque financier", f"{synth.get('total_risk_eur', 0):,.0f} EUR", RED, kpi_style, kpi_label_style
+            ),
+            _kpi_cell(
+                "Gain potentiel",
+                f"{synth.get('total_gain_potentiel_eur', 0):,.0f} EUR",
+                GREEN,
+                kpi_style,
+                kpi_label_style,
+            ),
             _kpi_cell("Conformite", f"{synth.get('conformite_pct', 0)}%", BLUE, kpi_style, kpi_label_style),
-            _kpi_cell("Actions ouvertes", f"{synth.get('actions_open', 0)} / {synth.get('actions_total', 0)}", ORANGE, kpi_style, kpi_label_style),
+            _kpi_cell(
+                "Actions ouvertes",
+                f"{synth.get('actions_open', 0)} / {synth.get('actions_total', 0)}",
+                ORANGE,
+                kpi_style,
+                kpi_label_style,
+            ),
         ],
     ]
     kpi_table = Table(kpi_data, colWidths=[42 * mm] * 4)
-    kpi_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), LIGHT_BG),
-        ("ROUNDEDCORNERS", [4, 4, 4, 4]),
-        ("BOX", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 4 * mm),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4 * mm),
-    ]))
+    kpi_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), LIGHT_BG),
+                ("ROUNDEDCORNERS", [4, 4, 4, 4]),
+                ("BOX", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4 * mm),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4 * mm),
+            ]
+        )
+    )
     elements.append(kpi_table)
 
     # ========================================
@@ -437,13 +534,15 @@ def render_audit_pdf(data: dict) -> bytes:
     elements.append(PageBreak())
     comp = data.get("compliance", {})
     elements.append(Paragraph("1. Conformite reglementaire", h2_style))
-    elements.append(Paragraph(
-        f"<b>{comp.get('total_findings', 0)}</b> points evalues | "
-        f"<font color='{C_GREEN}'><b>{comp.get('ok', 0)}</b> OK</font> | "
-        f"<font color='{C_RED}'><b>{comp.get('nok', 0)}</b> NOK</font> | "
-        f"<font color='{C_ORANGE}'><b>{comp.get('unknown', 0)}</b> inconnus</font>",
-        body_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"<b>{comp.get('total_findings', 0)}</b> points evalues | "
+            f"<font color='{C_GREEN}'><b>{comp.get('ok', 0)}</b> OK</font> | "
+            f"<font color='{C_RED}'><b>{comp.get('nok', 0)}</b> NOK</font> | "
+            f"<font color='{C_ORANGE}'><b>{comp.get('unknown', 0)}</b> inconnus</font>",
+            body_style,
+        )
+    )
     elements.append(Spacer(1, 4 * mm))
 
     top_findings = comp.get("top_findings", [])
@@ -454,13 +553,15 @@ def render_audit_pdf(data: dict) -> bytes:
         header = ["Regle", "Site", "Severite", "Echeance", "Constat"]
         rows = [header]
         for f in top_findings:
-            rows.append([
-                f.get("rule_id", "?"),
-                _truncate(f.get("site_nom", "?"), 25),
-                f.get("severity", "?"),
-                f.get("deadline", "-"),
-                _truncate(f.get("evidence", "?"), 40),
-            ])
+            rows.append(
+                [
+                    f.get("rule_id", "?"),
+                    _truncate(f.get("site_nom", "?"), 25),
+                    f.get("severity", "?"),
+                    f.get("deadline", "-"),
+                    _truncate(f.get("evidence", "?"), 40),
+                ]
+            )
         t = _make_table(rows, [28 * mm, 38 * mm, 22 * mm, 22 * mm, 60 * mm])
         elements.append(t)
     else:
@@ -472,11 +573,13 @@ def render_audit_pdf(data: dict) -> bytes:
     elements.append(PageBreak())
     conso = data.get("consumption", {})
     elements.append(Paragraph("2. Diagnostics de consommation", h2_style))
-    elements.append(Paragraph(
-        f"<b>{conso.get('total_insights', 0)}</b> anomalies detectees | "
-        f"Pertes estimees : <font color='{C_RED}'><b>{conso.get('total_loss_eur', 0):,.0f} EUR/an</b></font>",
-        body_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"<b>{conso.get('total_insights', 0)}</b> anomalies detectees | "
+            f"Pertes estimees : <font color='{C_RED}'><b>{conso.get('total_loss_eur', 0):,.0f} EUR/an</b></font>",
+            body_style,
+        )
+    )
     elements.append(Spacer(1, 3 * mm))
 
     top_conso = conso.get("top_insights", [])
@@ -484,13 +587,15 @@ def render_audit_pdf(data: dict) -> bytes:
         header = ["Type", "Site", "Severite", "Perte EUR/an", "Description"]
         rows = [header]
         for ins in top_conso:
-            rows.append([
-                ins.get("type", "?"),
-                _truncate(ins.get("site_nom", "?"), 25),
-                ins.get("severity", "?"),
-                f"{ins.get('estimated_loss_eur', 0):,.0f}",
-                _truncate(ins.get("message", "?"), 35),
-            ])
+            rows.append(
+                [
+                    ins.get("type", "?"),
+                    _truncate(ins.get("site_nom", "?"), 25),
+                    ins.get("severity", "?"),
+                    f"{ins.get('estimated_loss_eur', 0):,.0f}",
+                    _truncate(ins.get("message", "?"), 35),
+                ]
+            )
         elements.append(_make_table(rows, [25 * mm, 35 * mm, 22 * mm, 25 * mm, 63 * mm]))
     else:
         elements.append(Paragraph("Aucune anomalie de consommation detectee.", body_style))
@@ -500,11 +605,13 @@ def render_audit_pdf(data: dict) -> bytes:
     # Billing
     bill = data.get("billing", {})
     elements.append(Paragraph("3. Anomalies de facturation", h2_style))
-    elements.append(Paragraph(
-        f"<b>{bill.get('total_insights', 0)}</b> anomalies de facturation | "
-        f"Ecart total : <font color='{C_RED}'><b>{bill.get('total_loss_eur', 0):,.0f} EUR</b></font>",
-        body_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"<b>{bill.get('total_insights', 0)}</b> anomalies de facturation | "
+            f"Ecart total : <font color='{C_RED}'><b>{bill.get('total_loss_eur', 0):,.0f} EUR</b></font>",
+            body_style,
+        )
+    )
     elements.append(Spacer(1, 3 * mm))
 
     top_bill = bill.get("top_insights", [])
@@ -512,13 +619,15 @@ def render_audit_pdf(data: dict) -> bytes:
         header = ["Type", "Site", "Severite", "Ecart EUR", "Description"]
         rows = [header]
         for ins in top_bill:
-            rows.append([
-                ins.get("type", "?"),
-                _truncate(ins.get("site_nom", "?"), 25),
-                ins.get("severity", "?"),
-                f"{ins.get('estimated_loss_eur', 0):,.0f}",
-                _truncate(ins.get("message", "?"), 35),
-            ])
+            rows.append(
+                [
+                    ins.get("type", "?"),
+                    _truncate(ins.get("site_nom", "?"), 25),
+                    ins.get("severity", "?"),
+                    f"{ins.get('estimated_loss_eur', 0):,.0f}",
+                    _truncate(ins.get("message", "?"), 35),
+                ]
+            )
         elements.append(_make_table(rows, [25 * mm, 35 * mm, 22 * mm, 25 * mm, 63 * mm]))
     else:
         elements.append(Paragraph("Aucune anomalie de facturation detectee.", body_style))
@@ -531,40 +640,48 @@ def render_audit_pdf(data: dict) -> bytes:
     elements.append(Paragraph("4. Achats energie", h2_style))
     if purch.get("recommendation"):
         rec = purch["recommendation"]
-        elements.append(Paragraph(
-            f"Strategie recommandee : <b>{rec.get('strategy', '?')}</b> | "
-            f"Prix : {rec.get('price_eur_per_kwh', 0):.4f} EUR/kWh | "
-            f"Budget annuel : {rec.get('total_annual_eur', 0):,.0f} EUR | "
-            f"Economie : {rec.get('savings_vs_current_pct', 0):.1f}%",
-            body_style,
-        ))
+        elements.append(
+            Paragraph(
+                f"Strategie recommandee : <b>{rec.get('strategy', '?')}</b> | "
+                f"Prix : {rec.get('price_eur_per_kwh', 0):.4f} EUR/kWh | "
+                f"Budget annuel : {rec.get('total_annual_eur', 0):,.0f} EUR | "
+                f"Economie : {rec.get('savings_vs_current_pct', 0):.1f}%",
+                body_style,
+            )
+        )
     else:
-        elements.append(Paragraph(
-            f"{purch.get('total_scenarios', 0)} scenarios evalues. Aucune recommandation finalisee.",
-            body_style,
-        ))
+        elements.append(
+            Paragraph(
+                f"{purch.get('total_scenarios', 0)} scenarios evalues. Aucune recommandation finalisee.",
+                body_style,
+            )
+        )
 
     elements.append(Spacer(1, 8 * mm))
 
     # Plan d'action
     act = data.get("actions", {})
     elements.append(Paragraph("5. Plan d'action", h2_style))
-    elements.append(Paragraph(
-        f"<b>{act.get('total', 0)}</b> actions | "
-        f"<font color='{C_ORANGE}'>{act.get('open', 0)} ouvertes</font> | "
-        f"<font color='{C_BLUE}'>{act.get('in_progress', 0)} en cours</font> | "
-        f"<font color='{C_GREEN}'>{act.get('done', 0)} terminees</font> | "
-        f"Gain potentiel : <font color='{C_GREEN}'><b>{act.get('total_gain_eur', 0):,.0f} EUR</b></font>",
-        body_style,
-    ))
+    elements.append(
+        Paragraph(
+            f"<b>{act.get('total', 0)}</b> actions | "
+            f"<font color='{C_ORANGE}'>{act.get('open', 0)} ouvertes</font> | "
+            f"<font color='{C_BLUE}'>{act.get('in_progress', 0)} en cours</font> | "
+            f"<font color='{C_GREEN}'>{act.get('done', 0)} terminees</font> | "
+            f"Gain potentiel : <font color='{C_GREEN}'><b>{act.get('total_gain_eur', 0):,.0f} EUR</b></font>",
+            body_style,
+        )
+    )
     elements.append(Spacer(1, 3 * mm))
 
     # By source
     by_source = act.get("by_source", {})
     if by_source:
         source_label = {
-            "compliance": "Conformite", "consumption": "Consommation",
-            "billing": "Facturation", "purchase": "Achats",
+            "compliance": "Conformite",
+            "consumption": "Consommation",
+            "billing": "Facturation",
+            "purchase": "Achats",
         }
         parts = [f"{source_label.get(k, k)}: {v}" for k, v in by_source.items()]
         elements.append(Paragraph(f"Repartition : {' | '.join(parts)}", body_style))
@@ -577,23 +694,27 @@ def render_audit_pdf(data: dict) -> bytes:
         header = ["Priorite", "Source", "Action", "Gain EUR", "Echeance", "Owner"]
         rows = [header]
         for a in top_actions:
-            rows.append([
-                f"P{a.get('priority', '?')}",
-                a.get("source_type", "?"),
-                _truncate(a.get("title", "?"), 35),
-                f"{a.get('estimated_gain_eur', 0) or 0:,.0f}",
-                a.get("due_date", "-") or "-",
-                a.get("owner", "-") or "-",
-            ])
+            rows.append(
+                [
+                    f"P{a.get('priority', '?')}",
+                    a.get("source_type", "?"),
+                    _truncate(a.get("title", "?"), 35),
+                    f"{a.get('estimated_gain_eur', 0) or 0:,.0f}",
+                    a.get("due_date", "-") or "-",
+                    a.get("owner", "-") or "-",
+                ]
+            )
         elements.append(_make_table(rows, [18 * mm, 25 * mm, 55 * mm, 22 * mm, 22 * mm, 28 * mm]))
 
     # Footer
     elements.append(Spacer(1, 10 * mm))
-    elements.append(Paragraph(
-        "Ce rapport est genere automatiquement par PROMEOS. "
-        "Les donnees refletent l'etat du systeme au moment de la generation.",
-        small_style,
-    ))
+    elements.append(
+        Paragraph(
+            "Ce rapport est genere automatiquement par PROMEOS. "
+            "Les donnees refletent l'etat du systeme au moment de la generation.",
+            small_style,
+        )
+    )
 
     # Build
     doc.build(elements, onFirstPage=_page_footer, onLaterPages=_page_footer)
@@ -604,10 +725,12 @@ def render_audit_pdf(data: dict) -> bytes:
 # Helpers
 # ========================================
 
+
 def _kpi_cell(label, value, color, kpi_style, label_style):
     """Build a KPI cell (value + label) as a list of Flowables."""
     from reportlab.platypus import Paragraph as P
     from reportlab.lib.styles import ParagraphStyle
+
     custom_kpi = ParagraphStyle("kpi_custom", parent=kpi_style, textColor=color)
     return [
         P(value, custom_kpi),
@@ -622,21 +745,25 @@ def _make_table(rows, col_widths):
     from reportlab.platypus import Table, TableStyle
 
     t = Table(rows, colWidths=col_widths, repeatRows=1)
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), HexColor("#2563EB")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), HexColor("#FFFFFF")),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
-        ("BACKGROUND", (0, 1), (-1, -1), HexColor("#FFFFFF")),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#FFFFFF"), HexColor("#F9FAFB")]),
-        ("GRID", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING", (0, 0), (-1, -1), 2 * mm),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2 * mm),
-        ("LEFTPADDING", (0, 0), (-1, -1), 2 * mm),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 2 * mm),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), HexColor("#2563EB")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), HexColor("#FFFFFF")),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTSIZE", (0, 1), (-1, -1), 8),
+                ("BACKGROUND", (0, 1), (-1, -1), HexColor("#FFFFFF")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#FFFFFF"), HexColor("#F9FAFB")]),
+                ("GRID", (0, 0), (-1, -1), 0.5, HexColor("#E5E7EB")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2 * mm),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2 * mm),
+                ("LEFTPADDING", (0, 0), (-1, -1), 2 * mm),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 2 * mm),
+            ]
+        )
+    )
     return t
 
 
@@ -650,6 +777,7 @@ def _page_footer(canvas, doc):
     """Draw footer on every page."""
     from reportlab.lib.units import mm
     from reportlab.lib.colors import HexColor
+
     canvas.saveState()
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(HexColor("#9CA3AF"))

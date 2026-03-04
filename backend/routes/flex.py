@@ -2,6 +2,7 @@
 PROMEOS - Flex Mini Routes
 GET /api/sites/{site_id}/flex/mini — flex potential score + top 3 levers
 """
+
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session

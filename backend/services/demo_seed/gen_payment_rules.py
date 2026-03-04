@@ -3,6 +3,7 @@ PROMEOS — Demo Seed: Payment Rules & Reconciliation Generator (V108)
 Creates PaymentRule records (portefeuille + site level) and
 ReconciliationFixLog entries for audit trail demonstration.
 """
+
 import json
 import random
 from datetime import datetime, timedelta, timezone
@@ -20,17 +21,13 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
     rules_created = 0
 
     # Get entites for this org
-    entites = db.query(EntiteJuridique).filter_by(
-        organisation_id=org.id
-    ).all()
+    entites = db.query(EntiteJuridique).filter_by(organisation_id=org.id).all()
     if not entites:
         return {"payment_rules_created": 0, "reconciliation_logs_created": 0}
 
     # Get portefeuilles
     ej_ids = [e.id for e in entites]
-    portefeuilles = db.query(Portefeuille).filter(
-        Portefeuille.entite_juridique_id.in_(ej_ids)
-    ).all()
+    portefeuilles = db.query(Portefeuille).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()
 
     # Cost center labels per site type
     _COST_CENTERS = {
@@ -47,10 +44,14 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
         if not invoice_ej:
             continue
 
-        existing = db.query(PaymentRule).filter_by(
-            level=PaymentRuleLevel.PORTEFEUILLE,
-            portefeuille_id=pf.id,
-        ).first()
+        existing = (
+            db.query(PaymentRule)
+            .filter_by(
+                level=PaymentRuleLevel.PORTEFEUILLE,
+                portefeuille_id=pf.id,
+            )
+            .first()
+        )
         if existing:
             continue
 
@@ -70,7 +71,7 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
 
     # 2. Site-level overrides (different cost center per site)
     for idx, site in enumerate(sites):
-        type_site = getattr(site, '_type_site', 'bureau')
+        type_site = getattr(site, "_type_site", "bureau")
         cc_pattern = _COST_CENTERS.get(type_site, "CC-GEN-{idx:03d}")
         cost_center = cc_pattern.format(idx=idx + 1)
 
@@ -88,10 +89,14 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
             if other_entites:
                 payer_ej_id = rng.choice(other_entites).id
 
-        existing = db.query(PaymentRule).filter_by(
-            level=PaymentRuleLevel.SITE,
-            site_id=site.id,
-        ).first()
+        existing = (
+            db.query(PaymentRule)
+            .filter_by(
+                level=PaymentRuleLevel.SITE,
+                site_id=site.id,
+            )
+            .first()
+        )
         if existing:
             continue
 

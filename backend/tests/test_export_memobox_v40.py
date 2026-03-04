@@ -1,6 +1,7 @@
 """
 PROMEOS V40 — Tests: export pack OPERAT → KB doc + proof_artifact
 """
+
 import hashlib
 import json
 import os
@@ -20,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. KB doc creation logic (unit)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestKBDocFromExportPack:
     """Test the KB doc registration logic isolated from DB."""
@@ -90,6 +92,7 @@ class TestKBDocFromExportPack:
 # 2. Service function source guards
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestServiceSourceGuards:
     """Verify tertiaire_service.py contains V40 code."""
 
@@ -138,6 +141,7 @@ class TestServiceSourceGuards:
 # 3. Proof artifact model
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestDisplayNameInKBStore:
     """V40.1: Verify display_name column is supported in KB store + models."""
 
@@ -160,17 +164,18 @@ class TestProofArtifactModel:
         src_path = Path(__file__).resolve().parent.parent / "models" / "tertiaire.py"
         code = src_path.read_text(encoding="utf-8")
         assert "kb_doc_id" in code
-        assert 'String(200)' in code
+        assert "String(200)" in code
 
     def test_type_column_exists(self):
         src_path = Path(__file__).resolve().parent.parent / "models" / "tertiaire.py"
         code = src_path.read_text(encoding="utf-8")
-        assert 'type = Column(String(100)' in code
+        assert "type = Column(String(100)" in code
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 4. E2E: POST create EFA returns 201 (TestClient)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestCreateEfaEndpoint:
     """Verify the POST /api/tertiaire/efa endpoint returns 201."""
@@ -178,11 +183,15 @@ class TestCreateEfaEndpoint:
     def test_create_efa_minimal_payload(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "Test E2E V39.3",
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "Test E2E V39.3",
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["nom"] == "Test E2E V39.3"
@@ -192,24 +201,32 @@ class TestCreateEfaEndpoint:
     def test_create_efa_without_email(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "EFA sans email",
-            "role_assujetti": "locataire",
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "EFA sans email",
+                "role_assujetti": "locataire",
+            },
+        )
         assert resp.status_code == 201
         assert resp.json()["role_assujetti"] == "locataire"
 
     def test_list_returns_created_efa(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         # Create
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "EFA list check",
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "EFA list check",
+            },
+        )
         assert resp.status_code == 201
         efa_id = resp.json()["id"]
         # List
@@ -223,12 +240,14 @@ class TestCreateEfaEndpoint:
 # 5. Swagger: /api/tertiaire/* exposed in OpenAPI
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSwaggerTertiaireRoutes:
     """Verify /api/tertiaire endpoints appear in /docs (OpenAPI schema)."""
 
     def test_get_efa_returns_200(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         resp = client.get("/api/tertiaire/efa")
         assert resp.status_code == 200
@@ -237,6 +256,7 @@ class TestSwaggerTertiaireRoutes:
     def test_openapi_exposes_tertiaire_routes(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         resp = client.get("/openapi.json")
         assert resp.status_code == 200

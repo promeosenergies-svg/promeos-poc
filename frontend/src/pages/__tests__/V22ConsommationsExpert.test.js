@@ -15,7 +15,13 @@ import { getAvailableGranularities } from '../consumption/helpers';
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function makeSeries(values) {
-  return [{ key: 'agg', label: 'Total', data: values.map((v, i) => ({ t: `2025-01-${String(i + 1).padStart(2, '0')}`, v })) }];
+  return [
+    {
+      key: 'agg',
+      label: 'Total',
+      data: values.map((v, i) => ({ t: `2025-01-${String(i + 1).padStart(2, '0')}`, v })),
+    },
+  ];
 }
 
 // ── extractValues ─────────────────────────────────────────────────────────────
@@ -30,7 +36,17 @@ describe('extractValues', () => {
   });
 
   it('filters out null and NaN values', () => {
-    const series = [{ key: 'agg', data: [{ t: 't1', v: 100 }, { t: 't2', v: null }, { t: 't3', v: NaN }, { t: 't4', v: 200 }] }];
+    const series = [
+      {
+        key: 'agg',
+        data: [
+          { t: 't1', v: 100 },
+          { t: 't2', v: null },
+          { t: 't3', v: NaN },
+          { t: 't4', v: 200 },
+        ],
+      },
+    ];
     const result = extractValues(series);
     expect(result).toHaveLength(2);
     expect(result).toContain(100);
@@ -39,8 +55,20 @@ describe('extractValues', () => {
 
   it('collects values from multiple series', () => {
     const series = [
-      { key: 's1', data: [{ t: 't1', v: 10 }, { t: 't2', v: 20 }] },
-      { key: 's2', data: [{ t: 't1', v: 30 }, { t: 't2', v: 40 }] },
+      {
+        key: 's1',
+        data: [
+          { t: 't1', v: 10 },
+          { t: 't2', v: 20 },
+        ],
+      },
+      {
+        key: 's2',
+        data: [
+          { t: 't1', v: 30 },
+          { t: 't2', v: 40 },
+        ],
+      },
     ];
     expect(extractValues(series)).toHaveLength(4);
   });
@@ -125,7 +153,7 @@ describe('computeInsightKpis', () => {
 
 describe('getAvailableGranularities — samplingMinutes intersection (V22-B)', () => {
   it('samplingMinutes=null → behaves as period-only (backward compat)', () => {
-    const keys = getAvailableGranularities(90, null).map(g => g.key);
+    const keys = getAvailableGranularities(90, null).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
     expect(keys).toContain('monthly');
@@ -134,7 +162,7 @@ describe('getAvailableGranularities — samplingMinutes intersection (V22-B)', (
 
   it('samplingMinutes=1440 (daily) → 30min and hourly excluded even within period window', () => {
     // days=7 normally includes 30min and hourly, but daily data can't be 30min
-    const keys = getAvailableGranularities(7, 1440).map(g => g.key);
+    const keys = getAvailableGranularities(7, 1440).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
     expect(keys).not.toContain('30min');
@@ -142,7 +170,7 @@ describe('getAvailableGranularities — samplingMinutes intersection (V22-B)', (
   });
 
   it('samplingMinutes=30 → 30min and coarser available for short period', () => {
-    const keys = getAvailableGranularities(7, 30).map(g => g.key);
+    const keys = getAvailableGranularities(7, 30).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('30min');
     expect(keys).toContain('hourly');
@@ -150,14 +178,14 @@ describe('getAvailableGranularities — samplingMinutes intersection (V22-B)', (
   });
 
   it('samplingMinutes=60 (hourly) → 30min excluded', () => {
-    const keys = getAvailableGranularities(7, 60).map(g => g.key);
+    const keys = getAvailableGranularities(7, 60).map((g) => g.key);
     expect(keys).not.toContain('30min');
     expect(keys).toContain('hourly');
   });
 
   it('always includes auto regardless of samplingMinutes', () => {
-    expect(getAvailableGranularities(7, 1440).map(g => g.key)).toContain('auto');
-    expect(getAvailableGranularities(90, 30).map(g => g.key)).toContain('auto');
-    expect(getAvailableGranularities(365, 43200).map(g => g.key)).toContain('auto');
+    expect(getAvailableGranularities(7, 1440).map((g) => g.key)).toContain('auto');
+    expect(getAvailableGranularities(90, 30).map((g) => g.key)).toContain('auto');
+    expect(getAvailableGranularities(365, 43200).map((g) => g.key)).toContain('auto');
   });
 });

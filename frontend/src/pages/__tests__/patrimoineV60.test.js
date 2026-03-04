@@ -17,10 +17,10 @@ const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf
 const backend = (rel) =>
   readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
-const API_JS           = src('services/api.js');
-const HEALTH_BAR_JSX   = src('components/PatrimoinePortfolioHealthBar.jsx');
-const PATRIMOINE_JSX   = src('pages/Patrimoine.jsx');
-const ROUTES_PY        = backend('routes/patrimoine.py');
+const API_JS = src('services/api.js');
+const HEALTH_BAR_JSX = src('components/PatrimoinePortfolioHealthBar.jsx');
+const PATRIMOINE_JSX = src('pages/Patrimoine.jsx');
+const ROUTES_PY = backend('routes/patrimoine.py');
 
 // ── API wrapper V60 ────────────────────────────────────────────────────────
 
@@ -132,7 +132,9 @@ describe('Patrimoine.jsx — import + wiring V60', () => {
   });
 
   test('onSiteClick câblé sur openDrawerOnAnomalies', () => {
-    expect(PATRIMOINE_JSX).toMatch(/onSiteClick.*openDrawerOnAnomalies|openDrawerOnAnomalies.*onSiteClick/s);
+    expect(PATRIMOINE_JSX).toMatch(
+      /onSiteClick.*openDrawerOnAnomalies|openDrawerOnAnomalies.*onSiteClick/s
+    );
   });
 
   test('drawerInitialTab state présent', () => {
@@ -214,9 +216,7 @@ describe('routes/patrimoine.py — V60 logique endpoint', () => {
 
   test('sans Organisation.first() (multi-org guard)', () => {
     // Dans la fonction get_portfolio_summary uniquement
-    const fnMatch = ROUTES_PY.match(
-      /def get_portfolio_summary[\s\S]*?(?=\n@router|\nclass |$)/
-    );
+    const fnMatch = ROUTES_PY.match(/def get_portfolio_summary[\s\S]*?(?=\n@router|\nclass |$)/);
     if (fnMatch) {
       expect(fnMatch[0]).not.toMatch(/Organisation\s*\)\s*\.first\(\)/);
     }

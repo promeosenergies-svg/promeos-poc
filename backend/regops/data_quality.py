@@ -2,6 +2,7 @@
 PROMEOS RegOps - Data Quality Gate
 Compute data quality report: coverage, confidence, gate status per regulation.
 """
+
 from dataclasses import dataclass, field
 
 from sqlalchemy.orm import Session
@@ -35,16 +36,10 @@ def _get_field_value(site, batiments, evidences, field_name: str):
 
     # Evidence-based booleans
     if field_name == "has_bacs_attestation":
-        return any(
-            e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
 
     if field_name == "has_bacs_derogation":
-        return any(
-            e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
 
     return None
 
@@ -99,11 +94,13 @@ def compute_data_quality(db: Session, site_id: int) -> DataQualityReport:
                 filled_fields += 1
                 critical_ok += 1
             else:
-                missing_critical.append({
-                    "field": f,
-                    "regulation": reg_name,
-                    "impact": f"Required for {reg_name} evaluation",
-                })
+                missing_critical.append(
+                    {
+                        "field": f,
+                        "regulation": reg_name,
+                        "impact": f"Required for {reg_name} evaluation",
+                    }
+                )
 
         for f in spec["optional"]:
             total_fields += 1
@@ -112,11 +109,13 @@ def compute_data_quality(db: Session, site_id: int) -> DataQualityReport:
                 filled_fields += 1
                 optional_ok += 1
             else:
-                missing_optional.append({
-                    "field": f,
-                    "regulation": reg_name,
-                    "impact": f"Improves {reg_name} confidence",
-                })
+                missing_optional.append(
+                    {
+                        "field": f,
+                        "regulation": reg_name,
+                        "impact": f"Improves {reg_name} confidence",
+                    }
+                )
 
         reg_status = "OK"
         if critical_ok < critical_total:

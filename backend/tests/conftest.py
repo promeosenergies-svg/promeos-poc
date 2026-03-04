@@ -8,6 +8,7 @@ This file MUST be loaded before any backend module import — pytest
 discovers conftest.py before test collection, which triggers os.environ
 before middleware/auth.py reads the variable at import time.
 """
+
 import os
 import pytest
 
@@ -23,6 +24,7 @@ def _clear_portfolio_cache():
     le test suivant qui recréerait une DB fraîche dont l'org aurait aussi id=1.
     """
     import services.patrimoine_portfolio_cache as _cache
+
     _cache.clear_all()
     yield
     _cache.clear_all()

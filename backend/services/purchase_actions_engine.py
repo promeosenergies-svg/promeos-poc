@@ -3,13 +3,17 @@ PROMEOS — Purchase Actions Engine (Sprint 8.1)
 Ephemeral, computed purchase action recommendations.
 Follows the action_plan_engine.py pattern — not persisted.
 """
+
 from datetime import date, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, EnergyContract,
-    PurchaseScenarioResult, PurchaseAssumptionSet, PurchaseRecoStatus,
+    Site,
+    EnergyContract,
+    PurchaseScenarioResult,
+    PurchaseAssumptionSet,
+    PurchaseRecoStatus,
 )
 from services.purchase_service import get_org_site_ids
 
@@ -28,7 +32,9 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
     Build prioritized purchase action list from contracts + scenarios.
     Pure computation, nothing persisted.
     """
-    site_ids = get_org_site_ids(db, org_id) if org_id else [s.id for s in db.query(Site.id).filter(Site.actif == True).all()]
+    site_ids = (
+        get_org_site_ids(db, org_id) if org_id else [s.id for s in db.query(Site.id).filter(Site.actif == True).all()]
+    )
     if not site_ids:
         return {"total_actions": 0, "actions": [], "gain_potentiel_eur": 0}
 
@@ -37,10 +43,14 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
     site_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(site_ids)).all()}
 
     # ── Renewal actions from contracts ──
-    contracts = db.query(EnergyContract).filter(
-        EnergyContract.site_id.in_(site_ids),
-        EnergyContract.end_date.isnot(None),
-    ).all()
+    contracts = (
+        db.query(EnergyContract)
+        .filter(
+            EnergyContract.site_id.in_(site_ids),
+            EnergyContract.end_date.isnot(None),
+        )
+        .all()
+    )
 
     for c in contracts:
         days_until_expiry = (c.end_date - today).days
@@ -54,73 +64,91 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
 
         if days_until_notice <= 0:
             # Past notice deadline but before expiry
-            actions.append({
-                "type": "renewal_urgent",
-                "priority": _ACTION_WEIGHTS["renewal_urgent"],
-                "site_id": c.site_id,
-                "site_nom": site_nom,
-                "contract_id": c.id,
-                "supplier": c.supplier_name,
-                "label": f"URGENT: Renouveler contrat {c.supplier_name} pour {site_nom} avant le {c.end_date.strftime('%d/%m/%Y')}",
-                "days_until_expiry": days_until_expiry,
-                "days_until_notice": days_until_notice,
-                "auto_renew": c.auto_renew,
-                "severity": "red",
-            })
+            actions.append(
+                {
+                    "type": "renewal_urgent",
+                    "priority": _ACTION_WEIGHTS["renewal_urgent"],
+                    "site_id": c.site_id,
+                    "site_nom": site_nom,
+                    "contract_id": c.id,
+                    "supplier": c.supplier_name,
+                    "label": f"URGENT: Renouveler contrat {c.supplier_name} pour {site_nom} avant le {c.end_date.strftime('%d/%m/%Y')}",
+                    "days_until_expiry": days_until_expiry,
+                    "days_until_notice": days_until_notice,
+                    "auto_renew": c.auto_renew,
+                    "severity": "red",
+                }
+            )
         elif days_until_notice <= 30:
-            actions.append({
-                "type": "renewal_urgent",
-                "priority": _ACTION_WEIGHTS["renewal_urgent"],
-                "site_id": c.site_id,
-                "site_nom": site_nom,
-                "contract_id": c.id,
-                "supplier": c.supplier_name,
-                "label": f"Renouveler contrat {c.supplier_name} pour {site_nom} avant le {notice_deadline.strftime('%d/%m/%Y')}",
-                "days_until_expiry": days_until_expiry,
-                "days_until_notice": days_until_notice,
-                "auto_renew": c.auto_renew,
-                "severity": "red",
-            })
+            actions.append(
+                {
+                    "type": "renewal_urgent",
+                    "priority": _ACTION_WEIGHTS["renewal_urgent"],
+                    "site_id": c.site_id,
+                    "site_nom": site_nom,
+                    "contract_id": c.id,
+                    "supplier": c.supplier_name,
+                    "label": f"Renouveler contrat {c.supplier_name} pour {site_nom} avant le {notice_deadline.strftime('%d/%m/%Y')}",
+                    "days_until_expiry": days_until_expiry,
+                    "days_until_notice": days_until_notice,
+                    "auto_renew": c.auto_renew,
+                    "severity": "red",
+                }
+            )
         elif days_until_notice <= 60:
-            actions.append({
-                "type": "renewal_soon",
-                "priority": _ACTION_WEIGHTS["renewal_soon"],
-                "site_id": c.site_id,
-                "site_nom": site_nom,
-                "contract_id": c.id,
-                "supplier": c.supplier_name,
-                "label": f"Planifier renouvellement contrat {c.supplier_name} pour {site_nom} (echeance {c.end_date.strftime('%d/%m/%Y')})",
-                "days_until_expiry": days_until_expiry,
-                "days_until_notice": days_until_notice,
-                "auto_renew": c.auto_renew,
-                "severity": "orange",
-            })
+            actions.append(
+                {
+                    "type": "renewal_soon",
+                    "priority": _ACTION_WEIGHTS["renewal_soon"],
+                    "site_id": c.site_id,
+                    "site_nom": site_nom,
+                    "contract_id": c.id,
+                    "supplier": c.supplier_name,
+                    "label": f"Planifier renouvellement contrat {c.supplier_name} pour {site_nom} (echeance {c.end_date.strftime('%d/%m/%Y')})",
+                    "days_until_expiry": days_until_expiry,
+                    "days_until_notice": days_until_notice,
+                    "auto_renew": c.auto_renew,
+                    "severity": "orange",
+                }
+            )
         elif days_until_notice <= 90:
-            actions.append({
-                "type": "renewal_plan",
-                "priority": _ACTION_WEIGHTS["renewal_plan"],
-                "site_id": c.site_id,
-                "site_nom": site_nom,
-                "contract_id": c.id,
-                "supplier": c.supplier_name,
-                "label": f"Anticiper renouvellement contrat {c.supplier_name} pour {site_nom} (fin {c.end_date.strftime('%d/%m/%Y')})",
-                "days_until_expiry": days_until_expiry,
-                "days_until_notice": days_until_notice,
-                "auto_renew": c.auto_renew,
-                "severity": "yellow",
-            })
+            actions.append(
+                {
+                    "type": "renewal_plan",
+                    "priority": _ACTION_WEIGHTS["renewal_plan"],
+                    "site_id": c.site_id,
+                    "site_nom": site_nom,
+                    "contract_id": c.id,
+                    "supplier": c.supplier_name,
+                    "label": f"Anticiper renouvellement contrat {c.supplier_name} pour {site_nom} (fin {c.end_date.strftime('%d/%m/%Y')})",
+                    "days_until_expiry": days_until_expiry,
+                    "days_until_notice": days_until_notice,
+                    "auto_renew": c.auto_renew,
+                    "severity": "yellow",
+                }
+            )
 
     # ── Strategy switch / accept actions from scenarios ──
-    recos = db.query(PurchaseScenarioResult).filter(
-        PurchaseScenarioResult.is_recommended == True,
-        PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
-    ).all()
+    recos = (
+        db.query(PurchaseScenarioResult)
+        .filter(
+            PurchaseScenarioResult.is_recommended == True,
+            PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
+        )
+        .all()
+    )
 
     # Batch-fetch assumptions for all recos (avoid N+1 and double query)
     assumption_ids = {r.assumption_set_id for r in recos}
-    assumptions_list = db.query(PurchaseAssumptionSet).filter(
-        PurchaseAssumptionSet.id.in_(assumption_ids),
-    ).all() if assumption_ids else []
+    assumptions_list = (
+        db.query(PurchaseAssumptionSet)
+        .filter(
+            PurchaseAssumptionSet.id.in_(assumption_ids),
+        )
+        .all()
+        if assumption_ids
+        else []
+    )
     assumption_map = {a.id: a for a in assumptions_list}
 
     gain_potentiel = 0.0
@@ -136,26 +164,30 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
         )
 
         if r.savings_vs_current_pct and r.savings_vs_current_pct > 5:
-            actions.append({
-                "type": "strategy_switch",
-                "priority": _ACTION_WEIGHTS["strategy_switch"],
-                "site_id": assumption.site_id,
-                "site_nom": site_nom,
-                "label": f"Envisager passage {strategy_label} pour {site_nom} ({r.savings_vs_current_pct}% d'economie)",
-                "savings_pct": r.savings_vs_current_pct,
-                "strategy": r.strategy.value,
-                "severity": "blue",
-            })
+            actions.append(
+                {
+                    "type": "strategy_switch",
+                    "priority": _ACTION_WEIGHTS["strategy_switch"],
+                    "site_id": assumption.site_id,
+                    "site_nom": site_nom,
+                    "label": f"Envisager passage {strategy_label} pour {site_nom} ({r.savings_vs_current_pct}% d'economie)",
+                    "savings_pct": r.savings_vs_current_pct,
+                    "strategy": r.strategy.value,
+                    "severity": "blue",
+                }
+            )
         else:
-            actions.append({
-                "type": "accept_reco",
-                "priority": _ACTION_WEIGHTS["accept_reco"],
-                "site_id": assumption.site_id,
-                "site_nom": site_nom,
-                "label": f"Valider la recommandation d'achat pour {site_nom}",
-                "strategy": r.strategy.value,
-                "severity": "blue",
-            })
+            actions.append(
+                {
+                    "type": "accept_reco",
+                    "priority": _ACTION_WEIGHTS["accept_reco"],
+                    "site_id": assumption.site_id,
+                    "site_nom": site_nom,
+                    "label": f"Valider la recommandation d'achat pour {site_nom}",
+                    "strategy": r.strategy.value,
+                    "severity": "blue",
+                }
+            )
 
         # Accumulate gain potentiel: savings relative to current cost
         if r.savings_vs_current_pct and r.savings_vs_current_pct > 0 and r.savings_vs_current_pct < 100:
@@ -172,5 +204,3 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
         "actions": actions,
         "gain_potentiel_eur": round(gain_potentiel, 2),
     }
-
-

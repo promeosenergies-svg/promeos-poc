@@ -3,8 +3,10 @@ PROMEOS — V66 Billing PDF Parser Tests
 Tests for: extract_text_with_fitz, parse_pdf_bytes, POST /import-pdf.
 Uses a minimal valid PDF (created in-memory) to avoid storing binary files.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -57,11 +59,12 @@ startxref
 # Unit tests — pdf_parser module
 # ========================================
 
-class TestPdfParserUnit:
 
+class TestPdfParserUnit:
     def test_extract_text_with_fitz_returns_string(self):
         """extract_text_with_fitz runs on minimal PDF without error."""
         from app.bill_intelligence.parsers.pdf_parser import extract_text_with_fitz
+
         pdf_bytes = _minimal_pdf_bytes()
         try:
             text = extract_text_with_fitz(pdf_bytes)
@@ -73,6 +76,7 @@ class TestPdfParserUnit:
     def test_parse_pdf_bytes_returns_none_or_invoice(self):
         """parse_pdf_bytes on minimal PDF returns None or InvoiceDomain (no crash)."""
         from app.bill_intelligence.parsers.pdf_parser import parse_pdf_bytes
+
         pdf_bytes = _minimal_pdf_bytes()
         try:
             result = parse_pdf_bytes(pdf_bytes, "test.pdf")
@@ -84,6 +88,7 @@ class TestPdfParserUnit:
     def test_parse_pdf_bytes_low_confidence_text(self):
         """parse_pdf_text on garbage text returns None, low confidence, or raises ValueError."""
         from app.bill_intelligence.parsers.pdf_parser import parse_pdf_text
+
         # pass garbage text directly (no fitz needed)
         try:
             result = parse_pdf_text("gibberish text no supplier match", "test.pdf")
@@ -98,6 +103,7 @@ class TestPdfParserUnit:
     def test_parse_pdf_text_edf_template_detection(self):
         """parse_pdf_text recognises EDF template from supplier keyword."""
         from app.bill_intelligence.parsers.pdf_parser import parse_pdf_text
+
         text = "EDF SA\nFacture n°F-2024-001\nMontant TTC: 1 234,56 €\nPeriode: 01/01/2024 au 31/01/2024"
         result = parse_pdf_text(text, "edf_test.pdf")
         # If parsing succeeds, supplier should contain EDF
@@ -109,9 +115,11 @@ class TestPdfParserUnit:
 # Integration test — POST /import-pdf
 # ========================================
 
+
 @pytest.fixture
 def db():
     from models import Base
+
     engine = create_engine(
         "sqlite:///:memory:",
         echo=False,
@@ -128,11 +136,13 @@ def db():
 def client(db):
     from database import get_db
     from main import app
+
     def _override():
         try:
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -141,6 +151,7 @@ def client(db):
 def _seed_site(db):
     """Create minimal org→EJ→Portefeuille→Site chain for billing tests."""
     from models import Organisation, EntiteJuridique, Portefeuille, Site, TypeSite
+
     org = Organisation(nom="PDF Test Org", type_client="bureau", actif=True, siren="400000001")
     db.add(org)
     db.flush()
@@ -151,9 +162,14 @@ def _seed_site(db):
     db.add(pf)
     db.flush()
     site = Site(
-        portefeuille_id=pf.id, nom="Site PDF", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=200, actif=True,
+        portefeuille_id=pf.id,
+        nom="Site PDF",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=200,
+        actif=True,
     )
     db.add(site)
     db.commit()
@@ -161,7 +177,6 @@ def _seed_site(db):
 
 
 class TestImportPdfEndpoint:
-
     def test_import_pdf_low_confidence_returns_422(self, client, db):
         """POST /import-pdf with a PDF that parses with confidence < 0.5 → 422."""
         d = _seed_site(db)

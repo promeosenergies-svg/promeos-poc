@@ -161,6 +161,7 @@ ISSUE_PROOF_MAPPING = {
 
 # ── API functions ────────────────────────────────────────────────────────────
 
+
 def get_proof_types() -> dict:
     """Retourne le catalogue complet des types de preuves OPERAT."""
     return {

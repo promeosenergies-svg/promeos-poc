@@ -32,9 +32,10 @@ export default function ProofDepositCTA({
   });
 
   // Override domain in the generated link and add status=draft for pre-filtering
-  let finalLink = domain !== 'reglementaire'
-    ? link.replace(/domain=[^&]*/, `domain=${encodeURIComponent(domain)}`)
-    : link;
+  let finalLink =
+    domain !== 'reglementaire'
+      ? link.replace(/domain=[^&]*/, `domain=${encodeURIComponent(domain)}`)
+      : link;
   if (!finalLink.includes('status=')) {
     finalLink += '&status=draft';
   }

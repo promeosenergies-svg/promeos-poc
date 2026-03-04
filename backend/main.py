@@ -1,6 +1,7 @@
 """
 PROMEOS - Point d'entrée principal de l'API
 """
+
 import os
 from contextlib import asynccontextmanager
 
@@ -16,11 +17,25 @@ setup_logging()
 
 # Import des routes
 from routes import (
-    sites_router, compteurs_router, consommations_router, alertes_router,
-    cockpit_router, compliance_router, demo_router, guidance_router,
-    regops_router, connectors_router, watchers_router, ai_router,
-    kb_usages_router, energy_router, monitoring_router, onboarding_router,
-    import_router, dashboard_2min_router, segmentation_router,
+    sites_router,
+    compteurs_router,
+    consommations_router,
+    alertes_router,
+    cockpit_router,
+    compliance_router,
+    demo_router,
+    guidance_router,
+    regops_router,
+    connectors_router,
+    watchers_router,
+    ai_router,
+    kb_usages_router,
+    energy_router,
+    monitoring_router,
+    onboarding_router,
+    import_router,
+    dashboard_2min_router,
+    segmentation_router,
     consumption_diag_router,
     site_config_router,
     billing_router,
@@ -40,6 +55,11 @@ from routes import (
     portfolio_router,
     consumption_context_router,
     contracts_radar_router,
+    data_quality_router,
+    operat_router,
+    copilot_router,
+    action_templates_router,
+    onboarding_stepper_router,
 )
 
 # Import KB router
@@ -114,9 +134,15 @@ app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, p
 app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 app.include_router(consumption_context_router)  # Consumption Context V0 (usages & horaires)
 app.include_router(contracts_radar_router)  # V99 Contract Renewal Radar + Purchase Scenarios
+app.include_router(data_quality_router)  # V113 Data Quality Dashboard
+app.include_router(operat_router)  # V113 OPERAT CSV Export
+app.include_router(copilot_router)  # V113 Energy Copilot
+app.include_router(action_templates_router)  # V113 Action Templates
+app.include_router(onboarding_stepper_router)  # V113 Onboarding Stepper
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations
+
 _run_migrations(_engine)
 
 # Startup route validation: verify critical V67 billing routes are registered
@@ -125,9 +151,13 @@ _registered = {r.path for r in app.routes}
 _missing = [p for p in _REQUIRED_BILLING_PATHS if p not in _registered]
 if _missing:
     import logging
-    logging.getLogger("promeos").error(f"[STARTUP] CRITICAL: billing routes missing from app: {_missing}. Restart uvicorn.")
+
+    logging.getLogger("promeos").error(
+        f"[STARTUP] CRITICAL: billing routes missing from app: {_missing}. Restart uvicorn."
+    )
 else:
     import logging
+
     logging.getLogger("promeos").info(f"[STARTUP] Billing V67 routes OK ({len(_REQUIRED_BILLING_PATHS)} verified)")
 
 
@@ -147,22 +177,25 @@ async def _startup_restore_or_seed_helios():
     db = SessionLocal()
     try:
         from models import Organisation, Site, Portefeuille, EntiteJuridique
-        demo_org = (db.query(Organisation)
+
+        demo_org = (
+            db.query(Organisation)
             .filter(Organisation.actif == True, Organisation.is_demo == True)
             .order_by(Organisation.id.desc())
-            .first())
+            .first()
+        )
 
         if demo_org:
-            pf_ids = [row.id for row in (
-                db.query(Portefeuille.id)
-                .join(EntiteJuridique,
-                      Portefeuille.entite_juridique_id == EntiteJuridique.id)
-                .filter(EntiteJuridique.organisation_id == demo_org.id)
-                .all()
-            )]
-            sites_q = db.query(Site).filter(
-                Site.portefeuille_id.in_(pf_ids), Site.actif == True
-            )
+            pf_ids = [
+                row.id
+                for row in (
+                    db.query(Portefeuille.id)
+                    .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+                    .filter(EntiteJuridique.organisation_id == demo_org.id)
+                    .all()
+                )
+            ]
+            sites_q = db.query(Site).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True)
             sites_count = sites_q.count()
             first_site = sites_q.first()
             DemoState.set_demo_org(
@@ -177,11 +210,13 @@ async def _startup_restore_or_seed_helios():
         else:
             from services.demo_seed import SeedOrchestrator
             import logging
+
             logging.getLogger("promeos.startup").info("[startup] Seeding HELIOS demo data...")
             orch = SeedOrchestrator(db)
             orch.seed(pack="helios", size="S", rng_seed=42)
     except Exception as exc:
         import logging
+
         logging.getLogger("promeos.startup").warning(f"[startup] HELIOS init failed (non-bloquant): {exc}")
     finally:
         db.close()
@@ -198,18 +233,18 @@ async def _startup_seed_hourly_if_missing():
 
     db = SessionLocal()
     try:
-        hourly_count = db.execute(
-            text("SELECT COUNT(*) FROM meter_reading WHERE frequency = 'HOURLY'")
-        ).scalar()
+        hourly_count = db.execute(text("SELECT COUNT(*) FROM meter_reading WHERE frequency = 'HOURLY'")).scalar()
         if hourly_count and hourly_count > 0:
             return
 
         from models import Site
+
         sites = db.query(Site).filter(Site.actif == True).limit(5).all()
         if not sites:
             return
 
         from services.consumption_diagnostic import generate_demo_consumption
+
         seeded = 0
         for site in sites:
             try:
@@ -236,6 +271,7 @@ async def _lifespan(app):
     await _startup_seed_hourly_if_missing()
     yield
 
+
 app.router.lifespan_context = _lifespan
 
 
@@ -247,8 +283,9 @@ def root():
         "version": "1.0.0",
         "sites": 120,
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
+
 
 # Health check
 @app.get("/api/health")
@@ -261,11 +298,15 @@ def api_health():
 
     git_sha = "unknown"
     try:
-        git_sha = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=os.path.dirname(__file__),
-            stderr=subprocess.DEVNULL,
-        ).decode().strip()
+        git_sha = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=os.path.dirname(__file__),
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
     except Exception:
         _logger.debug("Could not resolve git SHA", exc_info=True)
 
@@ -295,16 +336,27 @@ def api_health():
 def api_meta_version():
     """V69: Git sha + branch — visible en mode Expert."""
     import subprocess, datetime
+
     git_sha, branch = "unknown", "unknown"
     try:
-        git_sha = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
-        ).decode().strip()
-        branch = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
-        ).decode().strip()
+        git_sha = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=os.path.dirname(__file__),
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
+        branch = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=os.path.dirname(__file__),
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
     except Exception:
         pass
     return {
@@ -317,18 +369,9 @@ def api_meta_version():
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy",
-        "message": "Backend PROMEOS opérationnel",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "message": "Backend PROMEOS opérationnel", "version": "1.0.0"}
+
 
 # Lancement du serveur
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="127.0.0.1",
-        port=int(os.environ.get("PORT", 8001)),
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main:app", host="127.0.0.1", port=int(os.environ.get("PORT", 8001)), reload=True, log_level="info")

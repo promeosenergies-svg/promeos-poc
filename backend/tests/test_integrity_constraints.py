@@ -9,8 +9,10 @@ Covers:
   6) Contract overlap rejection (incl. open-ended)
   7) DeliveryPoint delete → compteur.delivery_point_id SET NULL
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,10 +23,20 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.exc import IntegrityError
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    Site, Batiment, Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, BillingEnergyType,
-    DeliveryPointStatus, DeliveryPointEnergyType,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    BillingEnergyType,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
 )
 from database.migrations import run_migrations
 
@@ -32,6 +44,7 @@ from database.migrations import run_migrations
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def engine():
@@ -41,6 +54,7 @@ def engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
     # Enable FK enforcement (required for ON DELETE behavior in SQLite)
     @event.listens_for(eng, "connect")
     def _set_fk_pragma(dbapi_conn, _):
@@ -82,8 +96,10 @@ def _make_portefeuille(db, ej_id, nom="Portfolio A"):
 
 def _make_site(db, portefeuille_id, nom="Site 1", siret=None):
     s = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        portefeuille_id=portefeuille_id, siret=siret,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        portefeuille_id=portefeuille_id,
+        siret=siret,
     )
     db.add(s)
     db.flush()
@@ -99,7 +115,8 @@ def _make_batiment(db, site_id, nom="Bat A"):
 
 def _make_dp(db, site_id, code="12345678901234", energy_type=None):
     dp = DeliveryPoint(
-        code=code, site_id=site_id,
+        code=code,
+        site_id=site_id,
         energy_type=DeliveryPointEnergyType.ELEC if energy_type is None else energy_type,
         status=DeliveryPointStatus.ACTIVE,
     )
@@ -110,19 +127,23 @@ def _make_dp(db, site_id, code="12345678901234", energy_type=None):
 
 def _make_compteur(db, site_id, dp_id=None, numero_serie="CPT-001"):
     c = Compteur(
-        site_id=site_id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=numero_serie, delivery_point_id=dp_id,
+        site_id=site_id,
+        type=TypeCompteur.ELECTRICITE,
+        numero_serie=numero_serie,
+        delivery_point_id=dp_id,
     )
     db.add(c)
     db.flush()
     return c
 
 
-def _make_contract(db, site_id, energy_type=BillingEnergyType.ELEC,
-                   start=None, end=None, supplier="EDF"):
+def _make_contract(db, site_id, energy_type=BillingEnergyType.ELEC, start=None, end=None, supplier="EDF"):
     c = EnergyContract(
-        site_id=site_id, energy_type=energy_type,
-        supplier_name=supplier, start_date=start, end_date=end,
+        site_id=site_id,
+        energy_type=energy_type,
+        supplier_name=supplier,
+        start_date=start,
+        end_date=end,
     )
     db.add(c)
     db.flush()
@@ -142,6 +163,7 @@ def _scaffold(db):
 # ========================================
 # TEST 1: Unique org siren
 # ========================================
+
 
 class TestUniqueOrgSiren:
     def test_duplicate_siren_rejected(self, db):
@@ -164,6 +186,7 @@ class TestUniqueOrgSiren:
     def test_soft_deleted_siren_allows_reuse(self, db):
         """A soft-deleted org's siren can be reused by a new active org."""
         from datetime import datetime
+
         org = _make_org(db, siren="222222222")
         db.commit()
         org.deleted_at = datetime.now(timezone.utc)
@@ -176,6 +199,7 @@ class TestUniqueOrgSiren:
 # ========================================
 # TEST 2: Unique portefeuille (EJ + nom)
 # ========================================
+
 
 class TestUniquePortefeuilleNamePerEntite:
     def test_duplicate_name_same_ej_rejected(self, db):
@@ -202,6 +226,7 @@ class TestUniquePortefeuilleNamePerEntite:
     def test_soft_deleted_name_allows_reuse(self, db):
         """Soft-deleted portefeuille name can be reused in same EJ."""
         from datetime import datetime
+
         org = _make_org(db)
         ej = _make_ej(db, org.id)
         pf = _make_portefeuille(db, ej.id, nom="Recyclé")
@@ -216,6 +241,7 @@ class TestUniquePortefeuilleNamePerEntite:
 # TEST 3: Unique site (portefeuille + siret)
 # ========================================
 
+
 class TestUniqueSiteSiretPerPortefeuille:
     def test_duplicate_siret_same_portefeuille_rejected(self, db):
         org, ej, pf, _ = _scaffold(db)
@@ -224,8 +250,7 @@ class TestUniqueSiteSiretPerPortefeuille:
         db.commit()
 
         with pytest.raises(IntegrityError):
-            s2 = Site(nom="Site B", type=TypeSite.BUREAU,
-                      portefeuille_id=pf.id, siret="12345678901234")
+            s2 = Site(nom="Site B", type=TypeSite.BUREAU, portefeuille_id=pf.id, siret="12345678901234")
             db.add(s2)
             db.flush()
         db.rollback()
@@ -250,6 +275,7 @@ class TestUniqueSiteSiretPerPortefeuille:
     def test_soft_deleted_siret_allows_reuse(self, db):
         """Soft-deleted site siret can be reused in same portefeuille."""
         from datetime import datetime
+
         org, ej, pf, _ = _scaffold(db)
         s = _make_site(db, pf.id, nom="Old", siret="99988877766655")
         db.commit()
@@ -263,6 +289,7 @@ class TestUniqueSiteSiretPerPortefeuille:
 # TEST 4: Unique delivery_point code
 # ========================================
 
+
 class TestUniqueDeliveryPointCode:
     def test_duplicate_code_rejected(self, db):
         _, _, _, site = _scaffold(db)
@@ -272,7 +299,8 @@ class TestUniqueDeliveryPointCode:
 
         with pytest.raises(IntegrityError):
             dp2 = DeliveryPoint(
-                code="12345678901234", site_id=site.id,
+                code="12345678901234",
+                site_id=site.id,
                 energy_type=DeliveryPointEnergyType.ELEC,
                 status=DeliveryPointStatus.ACTIVE,
             )
@@ -282,6 +310,7 @@ class TestUniqueDeliveryPointCode:
 
     def test_soft_deleted_code_allows_reuse(self, db):
         from datetime import datetime
+
         _, _, _, site = _scaffold(db)
 
         dp = _make_dp(db, site.id, code="99999999999999")
@@ -296,6 +325,7 @@ class TestUniqueDeliveryPointCode:
 # ========================================
 # TEST 5: Unique batiment (site + nom)
 # ========================================
+
 
 class TestUniqueBatimentNamePerSite:
     def test_duplicate_name_same_site_rejected(self, db):
@@ -324,6 +354,7 @@ class TestUniqueBatimentNamePerSite:
     def test_soft_deleted_name_allows_reuse(self, db):
         """Soft-deleted batiment name can be reused on same site."""
         from datetime import datetime
+
         _, _, _, site = _scaffold(db)
         b = _make_batiment(db, site.id, nom="Hall Recyclé")
         db.commit()
@@ -337,12 +368,14 @@ class TestUniqueBatimentNamePerSite:
 # TEST 6: Contract overlap rejection
 # ========================================
 
+
 class TestContractOverlapRejected:
     """Tests for check_contract_overlap via the billing route."""
 
     def test_overlapping_contracts_rejected(self, db):
         """Two contracts for same site+energy with overlapping dates → 409."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 12, 31))
@@ -350,63 +383,81 @@ class TestContractOverlapRejected:
 
         # Overlaps: 2024-06-01 to 2025-06-01
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 6, 1), date(2025, 6, 1),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 6, 1),
+            date(2025, 6, 1),
         )
         assert overlap is not None
 
     def test_non_overlapping_contracts_allowed(self, db):
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
         db.commit()
 
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 7, 1), date(2024, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 7, 1),
+            date(2024, 12, 31),
         )
         assert overlap is None
 
     def test_open_ended_contract_overlaps_everything(self, db):
         """A contract with end_date=None (open-ended) overlaps any future date."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=date(2024, 1, 1), end=None)
         db.commit()
 
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2030, 1, 1), date(2030, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2030, 1, 1),
+            date(2030, 12, 31),
         )
         assert overlap is not None
 
     def test_different_energy_type_no_overlap(self, db):
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
-        _make_contract(db, site.id, energy_type=BillingEnergyType.ELEC,
-                       start=date(2024, 1, 1), end=date(2024, 12, 31))
+        _make_contract(db, site.id, energy_type=BillingEnergyType.ELEC, start=date(2024, 1, 1), end=date(2024, 12, 31))
         db.commit()
 
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.GAZ,
-            date(2024, 6, 1), date(2025, 6, 1),
+            db,
+            site.id,
+            BillingEnergyType.GAZ,
+            date(2024, 6, 1),
+            date(2025, 6, 1),
         )
         assert overlap is None
 
     def test_exclude_self_on_update(self, db):
         """When updating a contract, exclude_id prevents self-match."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         c = _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 12, 31))
         db.commit()
 
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 1, 1), date(2024, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 1, 1),
+            date(2024, 12, 31),
             exclude_id=c.id,
         )
         assert overlap is None
@@ -414,20 +465,25 @@ class TestContractOverlapRejected:
     def test_both_open_ended_overlap(self, db):
         """Two fully open-ended contracts (start=None, end=None) overlap."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=None, end=None)
         db.commit()
 
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            None, None,
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            None,
+            None,
         )
         assert overlap is not None
 
     def test_adjacent_contracts_no_overlap(self, db):
         """Back-to-back contracts (end = day before start) do NOT overlap."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
@@ -435,14 +491,18 @@ class TestContractOverlapRejected:
 
         # Adjacent: starts the day after
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 7, 1), date(2024, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 7, 1),
+            date(2024, 12, 31),
         )
         assert overlap is None
 
     def test_touching_contracts_overlap(self, db):
         """Contracts sharing a boundary day (end = start) DO overlap."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
@@ -450,8 +510,11 @@ class TestContractOverlapRejected:
 
         # Starts on same day as end
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 6, 30), date(2024, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 6, 30),
+            date(2024, 12, 31),
         )
         assert overlap is not None
 
@@ -460,12 +523,14 @@ class TestContractOverlapRejected:
 # TEST 6b: Contract update overlap (PATCH guard)
 # ========================================
 
+
 class TestContractUpdateOverlap:
     """Updating a contract's dates must also check for overlap (exclude_id)."""
 
     def test_update_into_overlap_detected(self, db):
         """Moving a contract's dates to overlap another → check catches it."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         c1 = _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
@@ -474,8 +539,11 @@ class TestContractUpdateOverlap:
 
         # Simulate PATCH of c2: extend start_date into c1's range
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 3, 1), date(2024, 12, 31),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 3, 1),
+            date(2024, 12, 31),
             exclude_id=c2.id,
         )
         assert overlap is not None
@@ -484,6 +552,7 @@ class TestContractUpdateOverlap:
     def test_update_no_overlap_passes(self, db):
         """Moving dates within non-overlapping range → no conflict."""
         from routes.billing import check_contract_overlap
+
         _, _, _, site = _scaffold(db)
 
         c1 = _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
@@ -492,8 +561,11 @@ class TestContractUpdateOverlap:
 
         # Simulate PATCH of c2: shrink range (still non-overlapping)
         overlap = check_contract_overlap(
-            db, site.id, BillingEnergyType.ELEC,
-            date(2024, 8, 1), date(2024, 11, 30),
+            db,
+            site.id,
+            BillingEnergyType.ELEC,
+            date(2024, 8, 1),
+            date(2024, 11, 30),
             exclude_id=c2.id,
         )
         assert overlap is None
@@ -502,6 +574,7 @@ class TestContractUpdateOverlap:
 # ========================================
 # TEST 7: DeliveryPoint delete cascades
 # ========================================
+
 
 class TestDeliveryPointDeleteCascadesCompteur:
     def test_dp_hard_delete_nullifies_compteur_fk(self, db, engine):
@@ -530,6 +603,7 @@ class TestDeliveryPointDeleteCascadesCompteur:
     def test_dp_soft_delete_preserves_compteur_link(self, db):
         """Soft-deleting a DP does NOT nullify the FK (trigger only fires on hard DELETE)."""
         from datetime import datetime
+
         _, _, _, site = _scaffold(db)
 
         dp = _make_dp(db, site.id, code="22222222222222")

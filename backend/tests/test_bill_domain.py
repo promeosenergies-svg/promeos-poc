@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Tests for domain model.
 AC: Invoice, InvoiceComponent, InvoiceAnomaly, ShadowResult validate + serialize OK.
 """
+
 import sys
 import os
 from datetime import date
@@ -10,15 +11,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app.bill_intelligence.domain import (
-    Invoice, InvoiceComponent, InvoiceAnomaly, ShadowResult, AuditReport,
-    EnergyType, InvoiceStatus, ShadowLevel, ComponentType,
-    AnomalyType, AnomalySeverity,
+    Invoice,
+    InvoiceComponent,
+    InvoiceAnomaly,
+    ShadowResult,
+    AuditReport,
+    EnergyType,
+    InvoiceStatus,
+    ShadowLevel,
+    ComponentType,
+    AnomalyType,
+    AnomalySeverity,
 )
 
 
 # ========================================
 # Invoice tests
 # ========================================
+
 
 def test_create_invoice_minimal():
     """Create minimal invoice."""
@@ -145,14 +155,25 @@ def test_shadow_level_enum():
 # Component tests
 # ========================================
 
+
 def test_component_types_coverage():
     """All expected component types exist."""
     expected = [
-        "abonnement", "conso_hp", "conso_hc", "conso_base",
-        "turpe_fixe", "turpe_puissance", "turpe_energie",
-        "cta", "accise", "tva_reduite", "tva_normale",
-        "terme_fixe", "terme_variable",
-        "depassement_puissance", "reactive",
+        "abonnement",
+        "conso_hp",
+        "conso_hc",
+        "conso_base",
+        "turpe_fixe",
+        "turpe_puissance",
+        "turpe_energie",
+        "cta",
+        "accise",
+        "tva_reduite",
+        "tva_normale",
+        "terme_fixe",
+        "terme_variable",
+        "depassement_puissance",
+        "reactive",
     ]
     actual = {ct.value for ct in ComponentType}
     for e in expected:
@@ -179,6 +200,7 @@ def test_component_with_period():
 # Anomaly tests
 # ========================================
 
+
 def test_create_anomaly():
     """Create anomaly with rule card reference."""
     anom = InvoiceAnomaly(
@@ -200,10 +222,15 @@ def test_create_anomaly():
 def test_anomaly_types_coverage():
     """All expected anomaly types exist."""
     expected = [
-        "arithmetic_error", "tva_error", "prorata_error",
-        "missing_component", "duplicate_charge",
-        "period_overlap", "period_gap",
-        "unit_price_anomaly", "total_mismatch",
+        "arithmetic_error",
+        "tva_error",
+        "prorata_error",
+        "missing_component",
+        "duplicate_charge",
+        "period_overlap",
+        "period_gap",
+        "unit_price_anomaly",
+        "total_mismatch",
     ]
     actual = {at.value for at in AnomalyType}
     for e in expected:
@@ -213,6 +240,7 @@ def test_anomaly_types_coverage():
 # ========================================
 # Shadow result tests
 # ========================================
+
 
 def test_shadow_result():
     """Create shadow result."""
@@ -249,6 +277,7 @@ def test_shadow_result_l0_minimal():
 # ========================================
 # Audit report tests
 # ========================================
+
 
 def test_audit_report():
     """Create audit report."""

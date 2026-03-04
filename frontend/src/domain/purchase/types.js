@@ -84,7 +84,7 @@ export const BREAKDOWN_DEFAULTS_ELEC = {
   ACHEMINEMENT: 0.28,
   TAXES_CSPE: 0.15,
   CTA: 0.03,
-  TVA: 0.10,
+  TVA: 0.1,
   CEE: 0.04,
   CAPACITE: 0.03,
   ABONNEMENT: 0.02,
@@ -92,19 +92,21 @@ export const BREAKDOWN_DEFAULTS_ELEC = {
 
 // @deprecated V100 — Same as ELEC, replaced by backend catalog-backed breakdown.
 export const BREAKDOWN_DEFAULTS_GAZ = {
-  FOURNITURE: 0.40,
-  ACHEMINEMENT: 0.20,
+  FOURNITURE: 0.4,
+  ACHEMINEMENT: 0.2,
   TAXES_CSPE: 0.18,
   CTA: 0.02,
-  TVA: 0.10,
+  TVA: 0.1,
   CEE: 0.05,
-  CAPACITE: 0.00,
+  CAPACITE: 0.0,
   ABONNEMENT: 0.05,
 };
 
 // Seasonality coefficients (12 months, normalized to avg=1.0)
-export const SEASONALITY_ELEC = [1.15, 1.10, 1.05, 0.95, 0.85, 0.80, 0.78, 0.80, 0.90, 1.00, 1.10, 1.15];
-export const SEASONALITY_GAZ  = [1.45, 1.35, 1.15, 0.85, 0.60, 0.45, 0.40, 0.45, 0.65, 0.95, 1.25, 1.45];
+export const SEASONALITY_ELEC = [1.15, 1.1, 1.05, 0.95, 0.85, 0.8, 0.78, 0.8, 0.9, 1.0, 1.1, 1.15];
+export const SEASONALITY_GAZ = [
+  1.45, 1.35, 1.15, 0.85, 0.6, 0.45, 0.4, 0.45, 0.65, 0.95, 1.25, 1.45,
+];
 
 // ── Factory Helpers ────────────────────────────────────────────────
 

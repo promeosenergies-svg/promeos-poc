@@ -47,7 +47,11 @@ function formatMonthKey(monthKey) {
 
 function formatEur(amount) {
   if (amount == null) return '—';
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 function formatKwh(kwh) {
@@ -78,7 +82,9 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth,
   };
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${cfg.bg} ${cfg.border}${isActive ? ' ring-2 ring-amber-400' : ''}`}>
+    <div
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${cfg.bg} ${cfg.border}${isActive ? ' ring-2 ring-amber-400' : ''}`}
+    >
       {/* Statut icon */}
       <Icon size={16} className={`flex-shrink-0 ${cfg.color}`} />
 
@@ -88,7 +94,9 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth,
           <span className="text-sm font-medium text-gray-800 capitalize">
             {formatMonthKey(period.month_key)}
           </span>
-          <Badge variant={cfg.badgeVariant} size="xs">{cfg.label}</Badge>
+          <Badge variant={cfg.badgeVariant} size="xs">
+            {cfg.label}
+          </Badge>
           {period.coverage_ratio > 0 && period.coverage_status !== 'covered' && (
             <span className="text-xs text-gray-500">
               {Math.round(period.coverage_ratio * 100)}%
@@ -154,18 +162,21 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth,
   );
 }
 
-export default function BillingTimeline({ periods = [], siteId, onCreateAction, createdActions, activeMonth, onImport }) {
+export default function BillingTimeline({
+  periods = [],
+  siteId,
+  onCreateAction,
+  createdActions,
+  activeMonth,
+  onImport,
+}) {
   if (periods.length === 0) {
-    return (
-      <div className="text-center py-8 text-sm text-gray-500">
-        Aucune période à afficher.
-      </div>
-    );
+    return <div className="text-center py-8 text-sm text-gray-500">Aucune période à afficher.</div>;
   }
 
   return (
     <div className="space-y-2">
-      {periods.map(period => (
+      {periods.map((period) => (
         <MonthRow
           key={period.month_key}
           period={period}

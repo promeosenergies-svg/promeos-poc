@@ -3,6 +3,7 @@ PROMEOS - Routes Site Configuration (schedule + tariff)
 GET/PUT /api/site/:id/schedule
 GET/PUT /api/site/:id/tariff
 """
+
 import json
 import re
 from typing import Optional
@@ -27,6 +28,7 @@ HH_MM_RE = re.compile(r"^\d{2}:\d{2}$")
 
 
 # ---- Interval validation ----
+
 
 def _parse_hhmm(t: str) -> int:
     """Parse HH:MM to total minutes. Raises ValueError on bad format."""
@@ -74,10 +76,14 @@ def validate_intervals(intervals: dict) -> list:
         parsed = []
         for idx, slot in enumerate(slots):
             if not isinstance(slot, dict) or "start" not in slot or "end" not in slot:
-                errors.append({
-                    "day": day_key, "index": idx, "code": "missing_fields",
-                    "message": f"Jour {day_key} plage {idx}: champs start/end requis",
-                })
+                errors.append(
+                    {
+                        "day": day_key,
+                        "index": idx,
+                        "code": "missing_fields",
+                        "message": f"Jour {day_key} plage {idx}: champs start/end requis",
+                    }
+                )
                 continue
 
             try:
@@ -92,10 +98,14 @@ def validate_intervals(intervals: dict) -> list:
                 continue
 
             if s_min >= e_min:
-                errors.append({
-                    "day": day_key, "index": idx, "code": "start_ge_end",
-                    "message": f"Jour {day_key} plage {idx}: debut ({slot['start']}) >= fin ({slot['end']})",
-                })
+                errors.append(
+                    {
+                        "day": day_key,
+                        "index": idx,
+                        "code": "start_ge_end",
+                        "message": f"Jour {day_key} plage {idx}: debut ({slot['start']}) >= fin ({slot['end']})",
+                    }
+                )
                 continue
 
             parsed.append((s_min, e_min, idx, slot["start"], slot["end"]))
@@ -106,16 +116,18 @@ def validate_intervals(intervals: dict) -> list:
             prev_end = parsed[i - 1][1]
             curr_start = parsed[i][0]
             if curr_start < prev_end:
-                errors.append({
-                    "day": day_key,
-                    "index": parsed[i][2],
-                    "code": "overlap",
-                    "message": (
-                        f"Jour {day_key}: chevauchement entre "
-                        f"{parsed[i-1][3]}\u2013{parsed[i-1][4]} et "
-                        f"{parsed[i][3]}\u2013{parsed[i][4]}"
-                    ),
-                })
+                errors.append(
+                    {
+                        "day": day_key,
+                        "index": parsed[i][2],
+                        "code": "overlap",
+                        "message": (
+                            f"Jour {day_key}: chevauchement entre "
+                            f"{parsed[i - 1][3]}\u2013{parsed[i - 1][4]} et "
+                            f"{parsed[i][3]}\u2013{parsed[i][4]}"
+                        ),
+                    }
+                )
 
     return errors
 
@@ -144,6 +156,7 @@ def _intervals_to_legacy(intervals: dict) -> tuple:
 
 # ---- Schemas ----
 
+
 class ScheduleIn(BaseModel):
     timezone: str = Field(DEFAULT_TIMEZONE, max_length=50)
     open_days: str = Field(DEFAULT_OPEN_DAYS, max_length=20, description="CSV: 0=Mon,6=Sun")
@@ -160,6 +173,7 @@ class TariffIn(BaseModel):
 
 
 # ---- Schedule endpoints ----
+
 
 def _build_schedule_response(site_id: int, sched, is_default: bool = False) -> dict:
     """Build schedule response dict from SiteOperatingSchedule or defaults."""
@@ -195,9 +209,7 @@ def get_schedule(site_id: int, db: Session = Depends(get_db)):
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
 
-    sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
 
     if not sched:
         return _build_schedule_response(site_id, None, is_default=True)
@@ -252,9 +264,7 @@ def put_schedule(site_id: int, data: ScheduleIn, db: Session = Depends(get_db)):
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
 
-    sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
 
     if sched:
         sched.timezone = data.timezone
@@ -284,6 +294,7 @@ def put_schedule(site_id: int, data: ScheduleIn, db: Session = Depends(get_db)):
 
 # ---- Tariff endpoints ----
 
+
 @router.get("/{site_id}/tariff")
 def get_tariff(site_id: int, db: Session = Depends(get_db)):
     """Return tariff profile for site (fallback to default if none)."""
@@ -291,9 +302,7 @@ def get_tariff(site_id: int, db: Session = Depends(get_db)):
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
 
-    tariff = db.query(SiteTariffProfile).filter(
-        SiteTariffProfile.site_id == site_id
-    ).first()
+    tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()
 
     if not tariff:
         return {
@@ -318,9 +327,7 @@ def put_tariff(site_id: int, data: TariffIn, db: Session = Depends(get_db)):
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
 
-    tariff = db.query(SiteTariffProfile).filter(
-        SiteTariffProfile.site_id == site_id
-    ).first()
+    tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()
 
     if tariff:
         tariff.price_ref_eur_per_kwh = data.price_ref_eur_per_kwh
@@ -345,15 +352,14 @@ def put_tariff(site_id: int, data: TariffIn, db: Session = Depends(get_db)):
 
 # ---- Helper for consumption_diagnostic ----
 
+
 def get_site_schedule_params(db: Session, site_id: int) -> dict:
     """Get schedule params for diagnostic. Returns dict with open_time, close_time, open_days, is_24_7.
 
     If intervals_json is set, derives open_time/close_time from the first interval
     of each day for backward compatibility with the off-hours detector.
     """
-    sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
 
     if sched:
         open_time_h = int(sched.open_time.split(":")[0])
@@ -378,9 +384,7 @@ def get_site_schedule_params(db: Session, site_id: int) -> dict:
 
 def get_site_price_ref(db: Session, site_id: int) -> float:
     """Get EUR/kWh price for a site. Fallback to DEFAULT_PRICE_REF."""
-    tariff = db.query(SiteTariffProfile).filter(
-        SiteTariffProfile.site_id == site_id
-    ).first()
+    tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()
     if tariff:
         return tariff.price_ref_eur_per_kwh
     return DEFAULT_PRICE_REF

@@ -3,13 +3,18 @@ PROMEOS - Service de segmentation B2B
 Detection automatique de la typologie client + questionnaire d'affinage.
 V100: portfolio_id, derived_from, segment_label, missing_questions, recommendations.
 """
+
 import json
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
 
 from models import (
-    Organisation, Site, Compteur, SegmentationProfile, SegmentationAnswer,
+    Organisation,
+    Site,
+    Compteur,
+    SegmentationProfile,
+    SegmentationAnswer,
     TypeSite,
 )
 from models.enums import Typologie
@@ -151,37 +156,127 @@ QUESTIONS_V1 = [
 
 _RECOMMENDATIONS = {
     Typologie.TERTIAIRE_PRIVE: [
-        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Le decret tertiaire impose une declaration annuelle sur la plateforme OPERAT.", "priority": "high"},
-        {"key": "bacs", "label": "Verifier conformite BACS", "description": "Vos batiments > 290 kW doivent disposer d'un systeme d'automatisation.", "priority": "high"},
-        {"key": "cee", "label": "Valoriser les CEE", "description": "Identifiez les travaux eligibles aux Certificats d'Economie d'Energie.", "priority": "medium"},
+        {
+            "key": "operat",
+            "label": "Declarer sur OPERAT",
+            "description": "Le decret tertiaire impose une declaration annuelle sur la plateforme OPERAT.",
+            "priority": "high",
+        },
+        {
+            "key": "bacs",
+            "label": "Verifier conformite BACS",
+            "description": "Vos batiments > 290 kW doivent disposer d'un systeme d'automatisation.",
+            "priority": "high",
+        },
+        {
+            "key": "cee",
+            "label": "Valoriser les CEE",
+            "description": "Identifiez les travaux eligibles aux Certificats d'Economie d'Energie.",
+            "priority": "medium",
+        },
     ],
     Typologie.INDUSTRIE: [
-        {"key": "iso50001", "label": "Audit energetique / ISO 50001", "description": "Obligation d'audit tous les 4 ans pour les grandes entreprises.", "priority": "high"},
-        {"key": "cee", "label": "Valoriser les CEE industriels", "description": "Fiches CEE specifiques industrie (variateurs, recuperation chaleur).", "priority": "high"},
-        {"key": "flex", "label": "Evaluer la flexibilite", "description": "Monetisez votre capacite d'effacement via les mecanismes de marche.", "priority": "medium"},
+        {
+            "key": "iso50001",
+            "label": "Audit energetique / ISO 50001",
+            "description": "Obligation d'audit tous les 4 ans pour les grandes entreprises.",
+            "priority": "high",
+        },
+        {
+            "key": "cee",
+            "label": "Valoriser les CEE industriels",
+            "description": "Fiches CEE specifiques industrie (variateurs, recuperation chaleur).",
+            "priority": "high",
+        },
+        {
+            "key": "flex",
+            "label": "Evaluer la flexibilite",
+            "description": "Monetisez votre capacite d'effacement via les mecanismes de marche.",
+            "priority": "medium",
+        },
     ],
     Typologie.COPROPRIETE_SYNDIC: [
-        {"key": "dpe_collectif", "label": "DPE collectif", "description": "Obligatoire pour les coproprietes > 50 lots (depuis 2024).", "priority": "high"},
-        {"key": "ptz_copro", "label": "Eco-PTZ copropriete", "description": "Financement a taux zero pour travaux de renovation energetique.", "priority": "medium"},
-        {"key": "maprimereno", "label": "MaPrimeRenov Copropriete", "description": "Aide collective pour la renovation globale.", "priority": "medium"},
+        {
+            "key": "dpe_collectif",
+            "label": "DPE collectif",
+            "description": "Obligatoire pour les coproprietes > 50 lots (depuis 2024).",
+            "priority": "high",
+        },
+        {
+            "key": "ptz_copro",
+            "label": "Eco-PTZ copropriete",
+            "description": "Financement a taux zero pour travaux de renovation energetique.",
+            "priority": "medium",
+        },
+        {
+            "key": "maprimereno",
+            "label": "MaPrimeRenov Copropriete",
+            "description": "Aide collective pour la renovation globale.",
+            "priority": "medium",
+        },
     ],
     Typologie.COLLECTIVITE: [
-        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Batiments publics > 1000 m2 soumis au decret tertiaire.", "priority": "high"},
-        {"key": "schema_directeur", "label": "Schema directeur energie", "description": "Planifier la transition energetique du patrimoine public.", "priority": "high"},
-        {"key": "intracting", "label": "Intracting energetique", "description": "Reinvestir les economies d'energie dans de nouveaux travaux.", "priority": "medium"},
+        {
+            "key": "operat",
+            "label": "Declarer sur OPERAT",
+            "description": "Batiments publics > 1000 m2 soumis au decret tertiaire.",
+            "priority": "high",
+        },
+        {
+            "key": "schema_directeur",
+            "label": "Schema directeur energie",
+            "description": "Planifier la transition energetique du patrimoine public.",
+            "priority": "high",
+        },
+        {
+            "key": "intracting",
+            "label": "Intracting energetique",
+            "description": "Reinvestir les economies d'energie dans de nouveaux travaux.",
+            "priority": "medium",
+        },
     ],
     Typologie.SANTE_MEDICO_SOCIAL: [
-        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Etablissements de sante soumis au decret tertiaire.", "priority": "high"},
-        {"key": "bacs", "label": "BACS et GTB", "description": "Automatisation critique pour le confort et les economies.", "priority": "high"},
-        {"key": "continu", "label": "Optimiser le 24h/24", "description": "Pilotage specifique pour les batiments a occupation continue.", "priority": "medium"},
+        {
+            "key": "operat",
+            "label": "Declarer sur OPERAT",
+            "description": "Etablissements de sante soumis au decret tertiaire.",
+            "priority": "high",
+        },
+        {
+            "key": "bacs",
+            "label": "BACS et GTB",
+            "description": "Automatisation critique pour le confort et les economies.",
+            "priority": "high",
+        },
+        {
+            "key": "continu",
+            "label": "Optimiser le 24h/24",
+            "description": "Pilotage specifique pour les batiments a occupation continue.",
+            "priority": "medium",
+        },
     ],
 }
 
 # Default recommendations for typologies without specific ones
 _DEFAULT_RECOMMENDATIONS = [
-    {"key": "audit", "label": "Realiser un audit energetique", "description": "Identifiez les principaux postes de consommation et les gisements d'economies.", "priority": "high"},
-    {"key": "suivi", "label": "Mettre en place un suivi mensuel", "description": "Suivez vos consommations pour detecter les derives.", "priority": "medium"},
-    {"key": "contrats", "label": "Optimiser vos contrats", "description": "Verifiez la coherence de vos puissances souscrites et tarifs.", "priority": "medium"},
+    {
+        "key": "audit",
+        "label": "Realiser un audit energetique",
+        "description": "Identifiez les principaux postes de consommation et les gisements d'economies.",
+        "priority": "high",
+    },
+    {
+        "key": "suivi",
+        "label": "Mettre en place un suivi mensuel",
+        "description": "Suivez vos consommations pour detecter les derives.",
+        "priority": "medium",
+    },
+    {
+        "key": "contrats",
+        "label": "Optimiser vos contrats",
+        "description": "Verifiez la coherence de vos puissances souscrites et tarifs.",
+        "priority": "medium",
+    },
 ]
 
 
@@ -200,6 +295,7 @@ def get_recommendations(typologie_str: str) -> list:
 # Detection automatique de la typologie
 # ========================================
 
+
 def _detect_from_naf(naf_code: Optional[str]) -> Optional[Typologie]:
     """Detecte la typologie a partir du code NAF."""
     if not naf_code:
@@ -211,6 +307,7 @@ def _detect_from_naf(naf_code: Optional[str]) -> Optional[Typologie]:
 def _detect_from_sites(db: Session, org_id: int) -> Optional[Typologie]:
     """Detecte la typologie a partir des types de sites du patrimoine."""
     from models import Portefeuille, EntiteJuridique
+
     sites = (
         db.query(Site)
         .join(Site.portefeuille)
@@ -238,9 +335,7 @@ def _detect_from_sites(db: Session, org_id: int) -> Optional[Typologie]:
     return max(type_counts, key=type_counts.get)
 
 
-def _detect_from_heuristics(
-    db: Session, org_id: int, type_client: Optional[str] = None
-) -> Optional[Typologie]:
+def _detect_from_heuristics(db: Session, org_id: int, type_client: Optional[str] = None) -> Optional[Typologie]:
     """Heuristiques supplementaires basees sur type_client de l'org."""
     if not type_client:
         return None
@@ -275,9 +370,7 @@ def _detect_from_heuristics(
     return _CLIENT_MAP.get(key)
 
 
-def detect_typologie(
-    db: Session, org_id: int
-) -> dict:
+def detect_typologie(db: Session, org_id: int) -> dict:
     """Detecte la typologie d'une organisation.
 
     Strategie en cascade:
@@ -316,9 +409,8 @@ def detect_typologie(
 
     # 2. Code NAF
     from models import EntiteJuridique
-    entite = db.query(EntiteJuridique).filter(
-        EntiteJuridique.organisation_id == org_id
-    ).first()
+
+    entite = db.query(EntiteJuridique).filter(EntiteJuridique.organisation_id == org_id).first()
     naf_code = entite.naf_code if entite and entite.naf_code else None
 
     if naf_code:
@@ -380,6 +472,7 @@ def detect_typologie(
 # Score boost from answers
 # ========================================
 
+
 def _score_boost_from_answers(answers: dict) -> float:
     """Calcule le boost de confiance apporte par les reponses au questionnaire."""
     boost = 0.0
@@ -393,6 +486,7 @@ def _score_boost_from_answers(answers: dict) -> float:
 # Missing questions helper
 # ========================================
 
+
 def get_missing_questions(profile: SegmentationProfile) -> list:
     """Return list of question IDs not yet answered."""
     existing = json.loads(profile.answers_json) if profile.answers_json else {}
@@ -404,12 +498,17 @@ def get_missing_questions(profile: SegmentationProfile) -> list:
 # CRUD operations
 # ========================================
 
+
 def get_or_create_profile(db: Session, org_id: int) -> SegmentationProfile:
     """Recupere ou cree le profil de segmentation pour une org."""
-    profile = db.query(SegmentationProfile).filter(
-        SegmentationProfile.organisation_id == org_id,
-        SegmentationProfile.portfolio_id.is_(None),
-    ).first()
+    profile = (
+        db.query(SegmentationProfile)
+        .filter(
+            SegmentationProfile.organisation_id == org_id,
+            SegmentationProfile.portfolio_id.is_(None),
+        )
+        .first()
+    )
 
     if profile:
         return profile
@@ -433,9 +532,7 @@ def get_or_create_profile(db: Session, org_id: int) -> SegmentationProfile:
     return profile
 
 
-def update_profile_with_answers(
-    db: Session, org_id: int, answers: dict
-) -> SegmentationProfile:
+def update_profile_with_answers(db: Session, org_id: int, answers: dict) -> SegmentationProfile:
     """Met a jour le profil avec les reponses au questionnaire."""
     profile = get_or_create_profile(db, org_id)
 
@@ -448,20 +545,26 @@ def update_profile_with_answers(
     for qid, val in answers.items():
         if not val:
             continue
-        sa = db.query(SegmentationAnswer).filter(
-            SegmentationAnswer.profile_id == profile.id,
-            SegmentationAnswer.question_id == qid,
-        ).first()
+        sa = (
+            db.query(SegmentationAnswer)
+            .filter(
+                SegmentationAnswer.profile_id == profile.id,
+                SegmentationAnswer.question_id == qid,
+            )
+            .first()
+        )
         if sa:
             sa.answer_value = val
         else:
-            db.add(SegmentationAnswer(
-                profile_id=profile.id,
-                organisation_id=org_id,
-                portfolio_id=profile.portfolio_id,
-                question_id=qid,
-                answer_value=val,
-            ))
+            db.add(
+                SegmentationAnswer(
+                    profile_id=profile.id,
+                    organisation_id=org_id,
+                    portfolio_id=profile.portfolio_id,
+                    question_id=qid,
+                    answer_value=val,
+                )
+            )
 
     # Recalculate confidence with boost
     detection = detect_typologie(db, org_id)
@@ -529,6 +632,7 @@ def get_questions(org_id: int = None) -> list:
 # V101: Next Best Step
 # ========================================
 
+
 def compute_next_best_step(db: Session, org_id: int, portfolio_id: Optional[int] = None) -> dict:
     """
     V101: 1 prochaine action recommandee, deterministe.
@@ -560,6 +664,7 @@ def compute_next_best_step(db: Session, org_id: int, portfolio_id: Optional[int]
     # 2. Expiring contracts → renouvellement
     try:
         from services.contract_radar_service import compute_contract_radar
+
         radar = compute_contract_radar(db, org_id, portfolio_id, horizon_days=90)
         expiring = radar.get("stats", {}).get("expiring", 0)
         expired = radar.get("stats", {}).get("expired", 0)
@@ -584,6 +689,7 @@ def compute_next_best_step(db: Session, org_id: int, portfolio_id: Optional[int]
     # 3. Reconciliation failures → patrimoine
     try:
         from services.reconciliation_service import reconcile_portfolio
+
         recon = reconcile_portfolio(db, org_id, portfolio_id)
         fail_count = recon.get("stats", {}).get("fail", 0)
         if fail_count > 0:

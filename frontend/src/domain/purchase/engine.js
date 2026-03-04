@@ -5,9 +5,20 @@
  * Coordinates scenario generation, pricing, risk, and corridor computation.
  * Memoized: only recomputes when params change.
  */
-import { OfferStructure, BREAKDOWN_DEFAULTS_ELEC, BREAKDOWN_DEFAULTS_GAZ, EnergyType, USE_BACKEND_PRICING } from './types.js';
+import {
+  OfferStructure,
+  BREAKDOWN_DEFAULTS_ELEC,
+  BREAKDOWN_DEFAULTS_GAZ,
+  EnergyType,
+} from './types.js';
 import { distributeMonthly } from './assumptions.js';
-import { monteCarloOffer, computeWorstMonth, probExceedBudget, cvar90, volatilityProxy } from './risk.js';
+import {
+  monteCarloOffer,
+  computeWorstMonth,
+  probExceedBudget,
+  cvar90,
+  volatilityProxy,
+} from './risk.js';
 
 // V100: Backend pricing mode flag — re-exported for consumers
 export { USE_BACKEND_PRICING } from './types.js';
@@ -29,7 +40,8 @@ function hashParams(params) {
  * @returns {{ pricing: import('./types.js').PricingModel, normalized: boolean, message: string|null }}
  */
 export function normalizeHybridShares(pricing) {
-  const total = (pricing.fixedSharePct || 0) + (pricing.indexedSharePct || 0) + (pricing.spotSharePct || 0);
+  const total =
+    (pricing.fixedSharePct || 0) + (pricing.indexedSharePct || 0) + (pricing.spotSharePct || 0);
 
   if (Math.abs(total - 1.0) <= 0.005) {
     return { pricing, normalized: false, message: null };
@@ -46,9 +58,9 @@ export function normalizeHybridShares(pricing) {
   return {
     pricing: {
       ...pricing,
-      fixedSharePct: Math.round((pricing.fixedSharePct || 0) / total * 1000) / 1000,
-      indexedSharePct: Math.round((pricing.indexedSharePct || 0) / total * 1000) / 1000,
-      spotSharePct: Math.round((pricing.spotSharePct || 0) / total * 1000) / 1000,
+      fixedSharePct: Math.round(((pricing.fixedSharePct || 0) / total) * 1000) / 1000,
+      indexedSharePct: Math.round(((pricing.indexedSharePct || 0) / total) * 1000) / 1000,
+      spotSharePct: Math.round(((pricing.spotSharePct || 0) / total) * 1000) / 1000,
     },
     normalized: true,
     message: `Parts normalisees (somme etait ${(total * 100).toFixed(1)}%, ajustee a 100%)`,
@@ -63,9 +75,11 @@ export function normalizeHybridShares(pricing) {
  * @returns {{ complete: boolean, knownCount: number, totalComponents: number, missingComponents: string[] }}
  */
 export function validateBreakdown(breakdown) {
-  const knownComponents = new Set(breakdown.filter(b => b.status === 'KNOWN').map(b => b.component));
+  const knownComponents = new Set(
+    breakdown.filter((b) => b.status === 'KNOWN').map((b) => b.component)
+  );
   const allComponents = Object.keys(BREAKDOWN_DEFAULTS_ELEC);
-  const missing = allComponents.filter(c => !knownComponents.has(c));
+  const missing = allComponents.filter((c) => !knownComponents.has(c));
   const threshold = Math.max(allComponents.length - 1, 1);
 
   return {
@@ -84,7 +98,7 @@ export function validateBreakdown(breakdown) {
  */
 export function fillBreakdownDefaults(breakdown, energyType) {
   const defaults = energyType === EnergyType.GAZ ? BREAKDOWN_DEFAULTS_GAZ : BREAKDOWN_DEFAULTS_ELEC;
-  const existing = new Set(breakdown.map(b => b.component));
+  const existing = new Set(breakdown.map((b) => b.component));
   const filled = [...breakdown];
 
   for (const [component, share] of Object.entries(defaults)) {
@@ -141,12 +155,27 @@ export function fillBreakdownDefaults(breakdown, energyType) {
  * @returns {EngineOutput}
  */
 export function runEngine(params) {
-  const { offers, annualKwh, energyType, horizonMonths, scenarioPreset, mcIterations, mcSeed, budgetEur } = params;
+  const {
+    offers,
+    annualKwh,
+    energyType,
+    horizonMonths,
+    scenarioPreset,
+    mcIterations,
+    mcSeed,
+    budgetEur,
+  } = params;
 
   // Memoization check — include offer structure+pricing to catch edits
   const paramsHash = hashParams({
-    annualKwh, energyType, horizonMonths, scenarioPreset, mcIterations, mcSeed, budgetEur,
-    offers: offers.map(o => ({ id: o.id, structure: o.structure, pricing: o.pricing })),
+    annualKwh,
+    energyType,
+    horizonMonths,
+    scenarioPreset,
+    mcIterations,
+    mcSeed,
+    budgetEur,
+    offers: offers.map((o) => ({ id: o.id, structure: o.structure, pricing: o.pricing })),
   });
   if (paramsHash === _lastParamsHash && _lastResults) {
     return _lastResults;
@@ -183,7 +212,11 @@ export function runEngine(params) {
 
     // Worst month
     const { worstMonthEur, worstMonthIndex } = computeWorstMonth(
-      processedOffer, monthlyKwh, horizonMonths, scenarioPreset, offerSeed,
+      processedOffer,
+      monthlyKwh,
+      horizonMonths,
+      scenarioPreset,
+      offerSeed
     );
 
     // Metrics

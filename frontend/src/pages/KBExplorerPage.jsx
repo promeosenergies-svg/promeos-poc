@@ -6,12 +6,33 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
-  ChevronDown, ChevronUp, ExternalLink, Filter, AlertTriangle,
-  Upload, FileText, X, ArrowLeft,
+  Search,
+  BookOpen,
+  ShieldCheck,
+  Zap,
+  Sun,
+  Receipt,
+  Wind,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Filter,
+  AlertTriangle,
+  Upload,
+  FileText,
+  X,
+  ArrowLeft,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, TrustBadge } from '../ui';
-import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus, linkTertiaireProof, linkProofToAction } from '../services/api';
+import {
+  searchKBItems,
+  getKBFullStats,
+  uploadKBDoc,
+  getKBDocs,
+  changeKBDocStatus,
+  linkTertiaireProof,
+  linkProofToAction,
+} from '../services/api';
 import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
 
 const DOMAIN_TABS = [
@@ -24,13 +45,21 @@ const DOMAIN_TABS = [
 ];
 
 const TYPE_LABELS = {
-  rule: 'Regle', knowledge: 'Connaissance', checklist: 'Checklist', calc: 'Calcul',
+  rule: 'Regle',
+  knowledge: 'Connaissance',
+  checklist: 'Checklist',
+  calc: 'Calcul',
 };
 const TYPE_BADGE = {
-  rule: 'crit', knowledge: 'info', checklist: 'warn', calc: 'neutral',
+  rule: 'crit',
+  knowledge: 'info',
+  checklist: 'warn',
+  calc: 'neutral',
 };
 const CONFIDENCE_BADGE = {
-  high: 'ok', medium: 'warn', low: 'neutral',
+  high: 'ok',
+  medium: 'warn',
+  low: 'neutral',
 };
 const DOMAIN_COLORS = {
   reglementaire: 'bg-red-50 text-red-700',
@@ -54,7 +83,9 @@ export default function KBExplorerPage() {
   const debounceRef = useRef(null);
 
   // V38: Docs tab
-  const [activeTab, setActiveTab] = useState(searchParams.get('context') === 'proof' ? 'docs' : 'items');
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('context') === 'proof' ? 'docs' : 'items'
+  );
   const [docs, setDocs] = useState([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
@@ -88,9 +119,14 @@ export default function KBExplorerPage() {
 
   // Load stats on mount
   useEffect(() => {
-    getKBFullStats().then((s) => { setStats(s); setKbError(null); }).catch(() => {
-      setKbError('kb_unavailable');
-    });
+    getKBFullStats()
+      .then((s) => {
+        setStats(s);
+        setKbError(null);
+      })
+      .catch(() => {
+        setKbError('kb_unavailable');
+      });
   }, []);
 
   // Search with debounce (items tab)
@@ -100,7 +136,9 @@ export default function KBExplorerPage() {
     debounceRef.current = setTimeout(() => {
       doSearch();
     }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, domain, typeFilter, activeTab]);
 
@@ -158,12 +196,18 @@ export default function KBExplorerPage() {
       if (result.status === 'already_exists') {
         setUploadMsg({ type: 'info', text: 'Document déjà présent (contenu identique)' });
       } else {
-        const linkInfo = result.action_link === 'linked' ? ' — lié à l\'action' : '';
-        setUploadMsg({ type: 'ok', text: `Document ingéré : ${result.doc_id} (${result.nb_chunks} chunks)${linkInfo}` });
+        const linkInfo = result.action_link === 'linked' ? " — lié à l'action" : '';
+        setUploadMsg({
+          type: 'ok',
+          text: `Document ingéré : ${result.doc_id} (${result.nb_chunks} chunks)${linkInfo}`,
+        });
       }
       loadDocs();
     } catch (err) {
-      setUploadMsg({ type: 'error', text: err?.response?.data?.detail || 'Erreur lors de l\u2019upload' });
+      setUploadMsg({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Erreur lors de l\u2019upload',
+      });
     }
     // Reset input to allow re-uploading same file
     e.target.value = '';
@@ -174,7 +218,10 @@ export default function KBExplorerPage() {
       await changeKBDocStatus(docId, newStatus);
       loadDocs();
     } catch (err) {
-      setUploadMsg({ type: 'error', text: err?.response?.data?.detail || 'Erreur changement de statut' });
+      setUploadMsg({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Erreur changement de statut',
+      });
     }
   }
 
@@ -195,15 +242,20 @@ export default function KBExplorerPage() {
     <PageShell
       icon={BookOpen}
       title="Mémobox"
-      subtitle={stats ? `${stats.total_items} items — Règles, documents & preuves` : 'Règles, documents & preuves'}
-      actions={stats && (
-        <div className="flex items-center gap-2">
-          <Badge status="ok">{stats.by_status?.validated || 0} validés</Badge>
-          <Badge status="neutral">{stats.by_status?.draft || 0} brouillons</Badge>
-        </div>
-      )}
+      subtitle={
+        stats
+          ? `${stats.total_items} items — Règles, documents & preuves`
+          : 'Règles, documents & preuves'
+      }
+      actions={
+        stats && (
+          <div className="flex items-center gap-2">
+            <Badge status="ok">{stats.by_status?.validated || 0} validés</Badge>
+            <Badge status="neutral">{stats.by_status?.draft || 0} brouillons</Badge>
+          </div>
+        )
+      }
     >
-
       {/* KB unavailable fallback banner */}
       {kbError === 'kb_unavailable' && (
         <Card className="bg-amber-50 border-amber-200">
@@ -211,7 +263,9 @@ export default function KBExplorerPage() {
             <AlertTriangle size={20} className="text-amber-600 shrink-0" />
             <div>
               <p className="text-sm font-medium text-amber-800">KB locale chargée</p>
-              <p className="text-xs text-amber-600">Le service Mémobox n&apos;est pas disponible. Les données locales sont affichées.</p>
+              <p className="text-xs text-amber-600">
+                Le service Mémobox n&apos;est pas disponible. Les données locales sont affichées.
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -228,13 +282,24 @@ export default function KBExplorerPage() {
             <p className="text-xs font-medium text-indigo-800">
               Preuve attendue
               {proofContext.domain && (
-                <span className="text-indigo-500 font-normal"> — Domaine : {proofContext.domain.replace('conformite/', 'Conformité / ').replace('tertiaire-operat', 'Tertiaire OPERAT')}</span>
+                <span className="text-indigo-500 font-normal">
+                  {' '}
+                  — Domaine :{' '}
+                  {proofContext.domain
+                    .replace('conformite/', 'Conformité / ')
+                    .replace('tertiaire-operat', 'Tertiaire OPERAT')}
+                </span>
               )}
             </p>
             {proofContext.proof_type && (
-              <p className="text-[11px] text-indigo-700 font-medium mt-0.5" data-testid="proof-type-label">
+              <p
+                className="text-[11px] text-indigo-700 font-medium mt-0.5"
+                data-testid="proof-type-label"
+              >
                 Type : {proofContext.proof_type.replace(/_/g, ' ')}
-                {proofContext.efa_id && <span className="text-indigo-500 font-normal"> · EFA #{proofContext.efa_id}</span>}
+                {proofContext.efa_id && (
+                  <span className="text-indigo-500 font-normal"> · EFA #{proofContext.efa_id}</span>
+                )}
               </p>
             )}
             {proofContext.hint && (
@@ -317,9 +382,10 @@ export default function KBExplorerPage() {
                 key={label}
                 onClick={() => setDomain(key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
-                  ${domain === key
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  ${
+                    domain === key
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 <Icon size={14} />
@@ -338,9 +404,10 @@ export default function KBExplorerPage() {
                   key={key}
                   onClick={() => setTypeFilter(typeFilter === key ? null : key)}
                   className={`px-2 py-1 rounded text-xs font-medium transition
-                    ${typeFilter === key
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                    ${
+                      typeFilter === key
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                     }`}
                 >
                   {label}
@@ -382,12 +449,22 @@ export default function KBExplorerPage() {
             <Card>
               <CardBody className="text-center py-12">
                 <BookOpen size={40} className="text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">Explorez la base de connaissances</h3>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  Explorez la base de connaissances
+                </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles, obligations et recommandations.
+                  Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles,
+                  obligations et recommandations.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {['BACS 290 kW', 'décret tertiaire', 'autoconsommation', 'OPERAT', 'flexibilité', 'ARENH'].map((q) => (
+                  {[
+                    'BACS 290 kW',
+                    'décret tertiaire',
+                    'autoconsommation',
+                    'OPERAT',
+                    'flexibilité',
+                    'ARENH',
+                  ].map((q) => (
                     <button
                       key={q}
                       onClick={() => setQuery(q)}
@@ -423,11 +500,15 @@ export default function KBExplorerPage() {
 
           {/* Upload feedback */}
           {uploadMsg && (
-            <div className={`text-xs px-3 py-2 rounded-lg ${
-              uploadMsg.type === 'ok' ? 'bg-green-50 text-green-700' :
-              uploadMsg.type === 'info' ? 'bg-blue-50 text-blue-700' :
-              'bg-red-50 text-red-700'
-            }`}>
+            <div
+              className={`text-xs px-3 py-2 rounded-lg ${
+                uploadMsg.type === 'ok'
+                  ? 'bg-green-50 text-green-700'
+                  : uploadMsg.type === 'info'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'bg-red-50 text-red-700'
+              }`}
+            >
               {uploadMsg.text}
             </div>
           )}
@@ -439,9 +520,10 @@ export default function KBExplorerPage() {
                 key={label}
                 onClick={() => setDomain(key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition
-                  ${domain === key
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  ${
+                    domain === key
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 <Icon size={14} />
@@ -452,7 +534,9 @@ export default function KBExplorerPage() {
 
           {/* Docs list */}
           {docsLoading && (
-            <div className="text-center py-8 text-gray-400 text-sm">Chargement des documents...</div>
+            <div className="text-center py-8 text-gray-400 text-sm">
+              Chargement des documents...
+            </div>
           )}
 
           {!docsLoading && docs.length === 0 && (
@@ -460,16 +544,26 @@ export default function KBExplorerPage() {
               <CardBody className="text-center py-8">
                 <FileText size={32} className="text-gray-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">Aucun document déposé</p>
-                <p className="text-xs text-gray-400 mt-1">Utilisez la zone ci-dessus pour déposer un fichier</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Utilisez la zone ci-dessus pour déposer un fichier
+                </p>
               </CardBody>
             </Card>
           )}
 
           {!docsLoading && docs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-400">{docs.length} document{docs.length > 1 ? 's' : ''}</p>
+              <p className="text-xs text-gray-400">
+                {docs.length} document{docs.length > 1 ? 's' : ''}
+              </p>
               {docs.map((doc) => (
-                <DocCard key={doc.doc_id} doc={doc} onStatusChange={handleStatusChange} proofContext={proofContext} onLinkMsg={setUploadMsg} />
+                <DocCard
+                  key={doc.doc_id}
+                  doc={doc}
+                  onStatusChange={handleStatusChange}
+                  proofContext={proofContext}
+                  onLinkMsg={setUploadMsg}
+                />
               ))}
             </div>
           )}
@@ -481,7 +575,6 @@ export default function KBExplorerPage() {
     </PageShell>
   );
 }
-
 
 // ── Doc Card (V38) ───────────────────────────────────────────────────────────
 
@@ -518,10 +611,12 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
         proof_type: proofContext.proof_type,
         year: new Date().getFullYear(),
       });
-      const msg = result.status === 'already_linked'
-        ? 'Preuve déjà liée à cette EFA'
-        : `Preuve liée à l'EFA #${proofContext.efa_id}`;
-      if (onLinkMsg) onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
+      const msg =
+        result.status === 'already_linked'
+          ? 'Preuve déjà liée à cette EFA'
+          : `Preuve liée à l'EFA #${proofContext.efa_id}`;
+      if (onLinkMsg)
+        onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
     } catch {
       if (onLinkMsg) onLinkMsg({ type: 'error', text: 'Erreur lors du rattachement de la preuve' });
     }
@@ -533,12 +628,14 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
     setLinkingAction(true);
     try {
       const result = await linkProofToAction(proofContext.action_id, doc.doc_id);
-      const msg = result.status === 'already_linked'
-        ? 'Document déjà lié à cette action'
-        : `Document lié à l'action #${proofContext.action_id}`;
-      if (onLinkMsg) onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
+      const msg =
+        result.status === 'already_linked'
+          ? 'Document déjà lié à cette action'
+          : `Document lié à l'action #${proofContext.action_id}`;
+      if (onLinkMsg)
+        onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
     } catch {
-      if (onLinkMsg) onLinkMsg({ type: 'error', text: 'Erreur lors du rattachement à l\'action' });
+      if (onLinkMsg) onLinkMsg({ type: 'error', text: "Erreur lors du rattachement à l'action" });
     }
     setLinkingAction(false);
   }
@@ -555,9 +652,13 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
               <span className="text-[11px] text-gray-400">•</span>
               <span className="text-[11px] text-gray-400">{doc.nb_chunks ?? 0} chunks</span>
               <span className="text-[11px] text-gray-400">•</span>
-              <span className="text-[11px] text-gray-400 font-mono">{doc.content_hash?.slice(0, 8)}</span>
+              <span className="text-[11px] text-gray-400 font-mono">
+                {doc.content_hash?.slice(0, 8)}
+              </span>
               {doc.domain && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${domainColor}`}>{doc.domain}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${domainColor}`}>
+                  {doc.domain}
+                </span>
               )}
             </div>
           </div>
@@ -598,16 +699,21 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
         </div>
         {/* V38: Gating warning for non-deterministic docs */}
         {(status === 'draft' || status === 'review') && (
-          <div className="flex items-center gap-1.5 mt-2 px-2 py-1 bg-amber-50 rounded text-[10px] text-amber-700" data-testid="gating-warning">
+          <div
+            className="flex items-center gap-1.5 mt-2 px-2 py-1 bg-amber-50 rounded text-[10px] text-amber-700"
+            data-testid="gating-warning"
+          >
             <AlertTriangle size={12} className="shrink-0" />
-            <span>Document non utilisable pour le calcul déterministe (statut{'\u00a0'}: {DOC_STATUS_LABELS[status]})</span>
+            <span>
+              Document non utilisable pour le calcul déterministe (statut{'\u00a0'}:{' '}
+              {DOC_STATUS_LABELS[status]})
+            </span>
           </div>
         )}
       </CardBody>
     </Card>
   );
 }
-
 
 // ── KB Item Card (unchanged) ─────────────────────────────────────────────────
 
@@ -621,7 +727,9 @@ function KBItemCard({ item, expanded, onToggle }) {
         <div className="flex items-start gap-3 cursor-pointer" onClick={onToggle}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${domainColor}`}>
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${domainColor}`}
+              >
                 {item.domain}
               </span>
               <Badge status={TYPE_BADGE[item.type] || 'neutral'}>
@@ -630,13 +738,13 @@ function KBItemCard({ item, expanded, onToggle }) {
               <Badge status={CONFIDENCE_BADGE[item.confidence] || 'neutral'}>
                 {item.confidence}
               </Badge>
-              {item.status === 'validated' && (
-                <Badge status="ok">Validé</Badge>
-              )}
+              {item.status === 'validated' && <Badge status="ok">Validé</Badge>}
             </div>
             <h4 className="text-sm font-semibold text-gray-900 leading-tight">{item.title}</h4>
             {!expanded && item.summary && (
-              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary.slice(0, 200)}</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                {item.summary.slice(0, 200)}
+              </p>
             )}
           </div>
           <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
@@ -657,12 +765,18 @@ function KBItemCard({ item, expanded, onToggle }) {
             {/* Tags */}
             {item.tags && (
               <div className="flex flex-wrap gap-1">
-                {Object.entries(item.tags).map(([cat, values]) =>
-                  Array.isArray(values) && values.length > 0 && values.map((v) => (
-                    <span key={`${cat}-${v}`} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                      {cat}:{v}
-                    </span>
-                  ))
+                {Object.entries(item.tags).map(
+                  ([cat, values]) =>
+                    Array.isArray(values) &&
+                    values.length > 0 &&
+                    values.map((v) => (
+                      <span
+                        key={`${cat}-${v}`}
+                        className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
+                      >
+                        {cat}:{v}
+                      </span>
+                    ))
                 )}
               </div>
             )}
@@ -670,10 +784,14 @@ function KBItemCard({ item, expanded, onToggle }) {
             {/* Logic/scope */}
             {item.logic && (
               <div className="bg-blue-50 rounded-lg p-3">
-                <p className="text-xs font-semibold text-blue-700 mb-1">Logique d&apos;évaluation</p>
+                <p className="text-xs font-semibold text-blue-700 mb-1">
+                  Logique d&apos;évaluation
+                </p>
                 {item.logic.then?.outputs?.map((output, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-blue-800 mt-1">
-                    <span className={`inline-block w-2 h-2 rounded-full ${output.severity === 'critical' ? 'bg-red-500' : output.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${output.severity === 'critical' ? 'bg-red-500' : output.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`}
+                    />
                     <span className="font-medium">{output.label}</span>
                     {output.deadline && <span className="text-blue-600">({output.deadline})</span>}
                   </div>
@@ -688,7 +806,9 @@ function KBItemCard({ item, expanded, onToggle }) {
                 {item.sources.map((src, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
                     <ExternalLink size={12} />
-                    <span>{src.label} - {src.section}</span>
+                    <span>
+                      {src.label} - {src.section}
+                    </span>
                   </div>
                 ))}
               </div>

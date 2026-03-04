@@ -2,7 +2,9 @@
 PROMEOS - EMS Weather Multi-Site + Availability Tests
 Covers: get_weather_multi envelope, multi_city_risk, availability in timeseries.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -56,7 +58,7 @@ def _seed_sites(db, n=3, lat_base=48.86, lat_spread=0.5):
     sites = []
     for i in range(n):
         s = Site(
-            nom=f"Site Multi {i+1}",
+            nom=f"Site Multi {i + 1}",
             type=TypeSite.BUREAU,
             latitude=lat_base + i * lat_spread,
             longitude=2.35,
@@ -68,7 +70,6 @@ def _seed_sites(db, n=3, lat_base=48.86, lat_spread=0.5):
 
 
 class TestWeatherMulti:
-
     def test_returns_dict_with_days_and_meta(self, db):
         sites = _seed_sites(db, 2)
         result = get_weather_multi(db, [s.id for s in sites], date(2025, 6, 1), date(2025, 6, 10))
@@ -118,14 +119,18 @@ class TestWeatherMulti:
 
 
 class TestWeatherEndpoint:
-
     def test_weather_multi_endpoint(self, env):
         client, db = env
         sites = _seed_sites(db, 2)
         ids = ",".join(str(s.id) for s in sites)
-        r = client.get("/api/ems/weather", params={
-            "site_ids": ids, "date_from": "2025-06-01", "date_to": "2025-06-05",
-        })
+        r = client.get(
+            "/api/ems/weather",
+            params={
+                "site_ids": ids,
+                "date_from": "2025-06-01",
+                "date_to": "2025-06-05",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["mode"] == "average"
@@ -134,14 +139,12 @@ class TestWeatherEndpoint:
 
 
 class TestAvailability:
-
     def test_timeseries_includes_availability(self, env):
         client, db = env
         site = Site(nom="Avail Test", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35)
         db.add(site)
         db.flush()
-        m = Meter(meter_id="PRM-AVAIL-1", name="AvailM", site_id=site.id,
-                  energy_vector=EnergyVector.ELECTRICITY)
+        m = Meter(meter_id="PRM-AVAIL-1", name="AvailM", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)
         db.add(m)
         db.flush()
 
@@ -150,16 +153,25 @@ class TestAvailability:
             dt = datetime(2025, 1, 1) + timedelta(days=d)
             for h in range(24):
                 ts = dt.replace(hour=h)
-                db.add(MeterReading(
-                    meter_id=m.id, timestamp=ts,
-                    frequency=FrequencyType.HOURLY, value_kwh=50.0,
-                ))
+                db.add(
+                    MeterReading(
+                        meter_id=m.id,
+                        timestamp=ts,
+                        frequency=FrequencyType.HOURLY,
+                        value_kwh=50.0,
+                    )
+                )
         db.flush()
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": str(site.id), "date_from": "2025-01-01", "date_to": "2025-01-31",
-            "granularity": "daily",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(site.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-31",
+                "granularity": "daily",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert "availability" in data
@@ -174,24 +186,32 @@ class TestAvailability:
         site = Site(nom="Gap Test", type=TypeSite.BUREAU, latitude=48.86, longitude=2.35)
         db.add(site)
         db.flush()
-        m = Meter(meter_id="PRM-GAP-1", name="GapM", site_id=site.id,
-                  energy_vector=EnergyVector.ELECTRICITY)
+        m = Meter(meter_id="PRM-GAP-1", name="GapM", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)
         db.add(m)
         db.flush()
 
         # Seed days 1-10 and 20-30 (gap of 9 days in the middle)
         for d in list(range(10)) + list(range(19, 30)):
             dt = datetime(2025, 1, 1) + timedelta(days=d)
-            db.add(MeterReading(
-                meter_id=m.id, timestamp=dt,
-                frequency=FrequencyType.DAILY, value_kwh=50.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=m.id,
+                    timestamp=dt,
+                    frequency=FrequencyType.DAILY,
+                    value_kwh=50.0,
+                )
+            )
         db.flush()
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": str(site.id), "date_from": "2025-01-01", "date_to": "2025-01-31",
-            "granularity": "daily",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(site.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-31",
+                "granularity": "daily",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         avail = data["availability"][0]

@@ -2,8 +2,10 @@
 PROMEOS V48 — Tests: Action ↔ Proof persistence (KB link table)
 Tests the action_proof_link table, store operations, and API endpoints.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -66,9 +68,7 @@ class TestActionProofLinkTable:
             (1, "doc_001"),
         )
         self.conn.commit()
-        row = self.conn.execute(
-            "SELECT * FROM action_proof_link WHERE action_id = 1"
-        ).fetchone()
+        row = self.conn.execute("SELECT * FROM action_proof_link WHERE action_id = 1").fetchone()
         assert row is not None
         assert dict(row)["kb_doc_id"] == "doc_001"
 
@@ -156,16 +156,12 @@ class TestActionProofLinkTable:
             (1, "doc_001"),
         )
         self.conn.commit()
-        row = self.conn.execute(
-            "SELECT * FROM action_proof_link WHERE action_id = 1"
-        ).fetchone()
+        row = self.conn.execute("SELECT * FROM action_proof_link WHERE action_id = 1").fetchone()
         assert row is None
 
     def test_action_id_unknown_no_crash(self):
         """Querying proofs for non-existent action returns empty."""
-        rows = self.conn.execute(
-            "SELECT * FROM action_proof_link WHERE action_id = 999"
-        ).fetchall()
+        rows = self.conn.execute("SELECT * FROM action_proof_link WHERE action_id = 999").fetchall()
         assert len(rows) == 0
 
     def test_proof_type_stored(self):
@@ -175,7 +171,5 @@ class TestActionProofLinkTable:
             (1, "doc_001", "attestation_conso"),
         )
         self.conn.commit()
-        row = self.conn.execute(
-            "SELECT proof_type FROM action_proof_link WHERE action_id = 1"
-        ).fetchone()
+        row = self.conn.execute("SELECT proof_type FROM action_proof_link WHERE action_id = 1").fetchone()
         assert dict(row)["proof_type"] == "attestation_conso"

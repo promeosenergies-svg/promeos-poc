@@ -12,6 +12,7 @@ Tests:
   8) 404 for nonexistent EFA
   9) Source guards on proof_catalog.py + proof_templates.py
 """
+
 import sys
 from pathlib import Path
 import pytest
@@ -20,10 +21,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from database import engine
 from models.base import Base
+
 Base.metadata.create_all(bind=engine)
 
 
 # ── Catalog endpoints ────────────────────────────────────────────────────────
+
 
 class TestProofCatalogV2:
     """GET /api/tertiaire/proofs/catalog (V50)."""
@@ -32,6 +35,7 @@ class TestProofCatalogV2:
     def _setup(self):
         from main import app
         from fastapi.testclient import TestClient
+
         self.client = TestClient(app)
 
     def test_catalog_returns_200(self):
@@ -65,6 +69,7 @@ class TestIssueMappingV2:
     def _setup(self):
         from main import app
         from fastapi.testclient import TestClient
+
         self.client = TestClient(app)
 
     def test_mapping_returns_200(self):
@@ -92,6 +97,7 @@ class TestIssueProofsEndpoint:
     def _setup(self):
         from main import app
         from fastapi.testclient import TestClient
+
         self.client = TestClient(app)
 
     def test_known_issue_returns_proof_types(self):
@@ -120,6 +126,7 @@ class TestIssueProofsEndpoint:
 
 # ── Template generation ──────────────────────────────────────────────────────
 
+
 class TestTemplateGeneration:
     """POST /api/tertiaire/efa/{id}/proofs/templates (V50)."""
 
@@ -129,11 +136,13 @@ class TestTemplateGeneration:
     def _setup(self):
         from main import app
         from fastapi.testclient import TestClient
+
         self.client = TestClient(app)
         TestTemplateGeneration._counter += 1
         # Clean stale KB template docs from prior runs (fixes flaky dedup)
         try:
             from app.kb.store import KBStore
+
             kb = KBStore()
             cursor = kb.db.conn.cursor()
             cursor.execute("DELETE FROM kb_docs WHERE doc_id LIKE 'operat_template:%'")
@@ -143,11 +152,14 @@ class TestTemplateGeneration:
 
     def _create_efa(self, suffix=""):
         tag = f"v50_{TestTemplateGeneration._counter}_{suffix}"
-        resp = self.client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": f"V50 Test {tag}",
-            "role_assujetti": "proprietaire",
-        })
+        resp = self.client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": f"V50 Test {tag}",
+                "role_assujetti": "proprietaire",
+            },
+        )
         assert resp.status_code == 201
         return resp.json()["id"]
 
@@ -233,6 +245,7 @@ class TestTemplateGeneration:
 
 # ── OpenAPI ──────────────────────────────────────────────────────────────────
 
+
 class TestOpenAPIV50:
     """Verify V50 endpoints appear in OpenAPI spec."""
 
@@ -240,6 +253,7 @@ class TestOpenAPIV50:
     def _setup(self):
         from main import app
         from fastapi.testclient import TestClient
+
         self.client = TestClient(app)
 
     def test_openapi_has_proofs_catalog(self):
@@ -262,6 +276,7 @@ class TestOpenAPIV50:
 
 
 # ── Source guards ────────────────────────────────────────────────────────────
+
 
 class TestSourceGuardsV50:
     """Source code guards for V50 files."""

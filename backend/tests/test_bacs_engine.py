@@ -2,8 +2,10 @@
 PROMEOS - Tests for BACS Engine v2
 25+ unit tests covering Putile, obligation, TRI, inspections, and full flow.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -15,18 +17,35 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Batiment, TypeSite,
-    BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection,
-    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
+    Base,
+    Site,
+    Batiment,
+    TypeSite,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    BacsTriggerReason,
+    InspectionStatus,
 )
 from services.bacs_engine import (
-    compute_putile, determine_obligation, compute_tri,
-    compute_inspection_schedule, evaluate_bacs, evaluate_legacy,
-    DEADLINE_290, DEADLINE_70, RENEWAL_CUTOFF, ENGINE_VERSION,
+    compute_putile,
+    determine_obligation,
+    compute_tri,
+    compute_inspection_schedule,
+    evaluate_bacs,
+    evaluate_legacy,
+    DEADLINE_290,
+    DEADLINE_70,
+    RENEWAL_CUTOFF,
+    ENGINE_VERSION,
 )
 
 
 # ── Test DB fixture ──
+
 
 @pytest.fixture
 def db():
@@ -66,8 +85,8 @@ def _make_inspection(asset_id=1, **kw):
 # Putile tests
 # ════════════════════════════════════════════
 
-class TestPutile:
 
+class TestPutile:
     def test_cascade_heating_sums_units(self):
         systems = [_make_system(units=[{"label": "PAC 1", "kw": 150}, {"label": "PAC 2", "kw": 100}])]
         result = compute_putile(systems)
@@ -75,20 +94,24 @@ class TestPutile:
         assert result["putile_kw"] == 250
 
     def test_independent_heating_takes_max(self):
-        systems = [_make_system(
-            arch=CvcArchitecture.INDEPENDENT,
-            units=[{"label": "PAC 1", "kw": 150}, {"label": "PAC 2", "kw": 100}],
-        )]
+        systems = [
+            _make_system(
+                arch=CvcArchitecture.INDEPENDENT,
+                units=[{"label": "PAC 1", "kw": 150}, {"label": "PAC 2", "kw": 100}],
+            )
+        ]
         result = compute_putile(systems)
         assert result["putile_heating_kw"] == 150
         assert result["putile_kw"] == 150
 
     def test_network_cooling_sums(self):
-        systems = [_make_system(
-            sys_type=CvcSystemType.COOLING,
-            arch=CvcArchitecture.NETWORK,
-            units=[{"label": "Chiller 1", "kw": 80}, {"label": "Chiller 2", "kw": 60}],
-        )]
+        systems = [
+            _make_system(
+                sys_type=CvcSystemType.COOLING,
+                arch=CvcArchitecture.NETWORK,
+                units=[{"label": "Chiller 1", "kw": 80}, {"label": "Chiller 2", "kw": 60}],
+            )
+        ]
         result = compute_putile(systems)
         assert result["putile_cooling_kw"] == 140
         assert result["putile_kw"] == 140
@@ -144,6 +167,7 @@ class TestPutile:
 # Obligation tests
 # ════════════════════════════════════════════
 
+
 class TestObligation:
     CONFIG = {"high_kw": 290, "low_kw": 70}
 
@@ -189,8 +213,8 @@ class TestObligation:
 # TRI tests
 # ════════════════════════════════════════════
 
-class TestTRI:
 
+class TestTRI:
     def test_above_10_years_exemption(self):
         ctx = {"cout_bacs_eur": 100000, "aides_pct": 0, "conso_kwh": 50000, "gain_pct": 10, "prix_kwh": 0.15}
         result = compute_tri(ctx)
@@ -227,8 +251,8 @@ class TestTRI:
 # Inspection schedule tests
 # ════════════════════════════════════════════
 
-class TestInspectionSchedule:
 
+class TestInspectionSchedule:
     def test_first_due_matches_deadline(self):
         deadline = date(2025, 1, 1)
         result = compute_inspection_schedule(deadline, [])
@@ -256,8 +280,8 @@ class TestInspectionSchedule:
 # Full flow tests (with DB)
 # ════════════════════════════════════════════
 
-class TestEvaluateBacs:
 
+class TestEvaluateBacs:
     def _seed_site(self, db, cvc_kw=300, arch=CvcArchitecture.CASCADE, pc_date=None):
         site = Site(id=1, nom="Test Site", type=TypeSite.BUREAU)
         db.add(site)
@@ -322,8 +346,8 @@ class TestEvaluateBacs:
 # Legacy wrapper test
 # ════════════════════════════════════════════
 
-class TestLegacyWrapper:
 
+class TestLegacyWrapper:
     def test_returns_finding_list(self):
         bat = Batiment(id=1, site_id=1, nom="B1", surface_m2=500, cvc_power_kw=300)
         config = {"thresholds": {"high_kw": 290, "low_kw": 70}}
@@ -346,15 +370,17 @@ class TestLegacyWrapper:
 # Data quality specs test
 # ════════════════════════════════════════════
 
-class TestDataQualitySpecs:
 
+class TestDataQualitySpecs:
     def test_bacs_generic_gate_has_cvc_power(self):
         from regops.data_quality_specs import DATA_QUALITY_SPECS
+
         spec = DATA_QUALITY_SPECS["bacs"]
         assert "cvc_power_kw" in spec["critical"]
 
     def test_bacs_optional_preserved(self):
         from regops.data_quality_specs import DATA_QUALITY_SPECS
+
         spec = DATA_QUALITY_SPECS["bacs"]
         assert "has_bacs_attestation" in spec["optional"]
 
@@ -362,6 +388,7 @@ class TestDataQualitySpecs:
         """Extended BACS v2 fields are documented as comments in the spec."""
         import inspect
         from regops import data_quality_specs
+
         source = inspect.getsource(data_quality_specs)
         assert "critical_ext" in source
         assert "important_ext" in source

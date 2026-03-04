@@ -2,6 +2,7 @@
 PROMEOS - IAM Service (Auth, JWT, Permissions, Scopes)
 Sprint 11: IAM ULTIMATE
 """
+
 import logging
 import os
 import json
@@ -13,9 +14,16 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
 from models import (
-    User, UserOrgRole, UserScope, AuditLog,
-    Organisation, EntiteJuridique, Portefeuille, Site,
-    UserRole, ScopeLevel,
+    User,
+    UserOrgRole,
+    UserScope,
+    AuditLog,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    UserRole,
+    ScopeLevel,
 )
 
 _logger = logging.getLogger("promeos.iam")
@@ -29,10 +37,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 30
 
 if JWT_SECRET == "dev-secret-change-me-in-prod":
-    _logger.warning(
-        "PROMEOS_JWT_SECRET is using the default dev value. "
-        "Set PROMEOS_JWT_SECRET env var for production."
-    )
+    _logger.warning("PROMEOS_JWT_SECRET is using the default dev value. Set PROMEOS_JWT_SECRET env var for production.")
 
 # Sentinel for "all modules"
 ALL = "__ALL__"
@@ -43,12 +48,20 @@ ALL = "__ALL__"
 
 ROLE_PERMISSIONS = {
     UserRole.DG_OWNER: {
-        "view": ALL, "edit": ALL, "admin": True,
-        "export": True, "sync": True, "approve": True,
+        "view": ALL,
+        "edit": ALL,
+        "admin": True,
+        "export": True,
+        "sync": True,
+        "approve": True,
     },
     UserRole.DSI_ADMIN: {
-        "view": ALL, "edit": ALL, "admin": True,
-        "export": True, "sync": True, "approve": False,
+        "view": ALL,
+        "edit": ALL,
+        "admin": True,
+        "export": True,
+        "sync": True,
+        "approve": False,
     },
     UserRole.DAF: {
         "view": ["cockpit", "billing", "purchase", "actions", "reports"],
@@ -66,8 +79,10 @@ ROLE_PERMISSIONS = {
         "export": True,
     },
     UserRole.ENERGY_MANAGER: {
-        "view": ALL, "edit": ["consommations", "diagnostic", "actions", "monitoring"],
-        "export": True, "sync": True,
+        "view": ALL,
+        "edit": ["consommations", "diagnostic", "actions", "monitoring"],
+        "export": True,
+        "sync": True,
     },
     UserRole.RESP_IMMOBILIER: {
         "view": ["patrimoine", "consommations", "actions"],
@@ -83,11 +98,13 @@ ROLE_PERMISSIONS = {
         "edit": [],
     },
     UserRole.AUDITEUR: {
-        "view": ALL, "edit": [],
+        "view": ALL,
+        "edit": [],
         "export": True,
     },
     UserRole.PMO_ACC: {
-        "view": ALL, "edit": ["actions"],
+        "view": ALL,
+        "edit": ["actions"],
         "export": True,
     },
 }
@@ -96,6 +113,7 @@ ROLE_PERMISSIONS = {
 # ========================================
 # Password hashing
 # ========================================
+
 
 def hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -108,6 +126,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ========================================
 # JWT tokens
 # ========================================
+
 
 def create_access_token(user_id: int, org_id: int, role: str, expires_delta: Optional[timedelta] = None) -> str:
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
@@ -129,6 +148,7 @@ def decode_token(token: str) -> dict:
 # ========================================
 # Permission checks
 # ========================================
+
 
 def check_permission(role: UserRole, action: str, module: Optional[str] = None) -> bool:
     """Check if role has permission for action on module."""
@@ -162,13 +182,12 @@ def get_permissions_for_role(role: UserRole) -> dict:
 # Scope resolution
 # ========================================
 
+
 def get_scoped_site_ids(db: Session, user_org_role: UserOrgRole) -> list[int]:
     """Resolve hierarchical scopes → list of accessible site IDs.
     Deny-by-default: no scopes → empty list.
     """
-    scopes = db.query(UserScope).filter(
-        UserScope.user_org_role_id == user_org_role.id
-    ).all()
+    scopes = db.query(UserScope).filter(UserScope.user_org_role_id == user_org_role.id).all()
 
     if not scopes:
         return []
@@ -213,6 +232,7 @@ def get_scoped_site_ids(db: Session, user_org_role: UserOrgRole) -> list[int]:
 # can() — full authorization check
 # ========================================
 
+
 def can(
     db: Session,
     user_id: int,
@@ -245,17 +265,17 @@ def can(
 
         # If no scope_type required, role permission is enough
         if scope_type is None:
-            matched.append({
-                "org_id": uor.org_id,
-                "role": uor.role.value,
-                "scope": "role_level",
-            })
+            matched.append(
+                {
+                    "org_id": uor.org_id,
+                    "role": uor.role.value,
+                    "scope": "role_level",
+                }
+            )
             continue
 
         # Resolve scope: check if user has access to the requested scope
-        scopes = db.query(UserScope).filter(
-            UserScope.user_org_role_id == uor.id
-        ).all()
+        scopes = db.query(UserScope).filter(UserScope.user_org_role_id == uor.id).all()
 
         for scope in scopes:
             if scope.expires_at and scope.expires_at < now_naive:
@@ -268,10 +288,14 @@ def can(
                 if scope_type == "org" and scope.scope_id == scope_id:
                     has_access = True
                 elif scope_type == "entite":
-                    ej = db.query(EntiteJuridique).filter(
-                        EntiteJuridique.id == scope_id,
-                        EntiteJuridique.organisation_id == scope.scope_id,
-                    ).first()
+                    ej = (
+                        db.query(EntiteJuridique)
+                        .filter(
+                            EntiteJuridique.id == scope_id,
+                            EntiteJuridique.organisation_id == scope.scope_id,
+                        )
+                        .first()
+                    )
                     has_access = ej is not None
                 elif scope_type == "site":
                     site = (
@@ -284,6 +308,7 @@ def can(
                     has_access = site is not None
                 elif scope_type == "meter":
                     from models import Compteur
+
                     meter = (
                         db.query(Compteur)
                         .join(Site, Compteur.site_id == Site.id)
@@ -307,6 +332,7 @@ def can(
                     has_access = site is not None
                 elif scope_type == "meter":
                     from models import Compteur
+
                     meter = (
                         db.query(Compteur)
                         .join(Site, Compteur.site_id == Site.id)
@@ -321,18 +347,21 @@ def can(
                     has_access = True
                 elif scope_type == "meter":
                     from models import Compteur
-                    meter = db.query(Compteur).filter(
-                        Compteur.id == scope_id, Compteur.site_id == scope.scope_id
-                    ).first()
+
+                    meter = (
+                        db.query(Compteur).filter(Compteur.id == scope_id, Compteur.site_id == scope.scope_id).first()
+                    )
                     has_access = meter is not None
 
             if has_access:
-                matched.append({
-                    "org_id": uor.org_id,
-                    "role": uor.role.value,
-                    "scope_level": scope.scope_level.value,
-                    "scope_id": scope.scope_id,
-                })
+                matched.append(
+                    {
+                        "org_id": uor.org_id,
+                        "role": uor.role.value,
+                        "scope_level": scope.scope_level.value,
+                        "scope_id": scope.scope_id,
+                    }
+                )
 
     if matched:
         return {"allowed": True, "reason": "Authorized", "matched_assignments": matched}
@@ -341,9 +370,7 @@ def can(
 
 def get_accessible_entity_ids(db: Session, user_org_role: UserOrgRole) -> list[int]:
     """Resolve scopes → list of accessible EntiteJuridique IDs."""
-    scopes = db.query(UserScope).filter(
-        UserScope.user_org_role_id == user_org_role.id
-    ).all()
+    scopes = db.query(UserScope).filter(UserScope.user_org_role_id == user_org_role.id).all()
     if not scopes:
         return []
 
@@ -354,9 +381,7 @@ def get_accessible_entity_ids(db: Session, user_org_role: UserOrgRole) -> list[i
         if scope.expires_at and scope.expires_at < now:
             continue
         if scope.scope_level == ScopeLevel.ORG:
-            ids = db.query(EntiteJuridique.id).filter(
-                EntiteJuridique.organisation_id == scope.scope_id
-            ).all()
+            ids = db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == scope.scope_id).all()
             entity_ids.update(r[0] for r in ids)
         elif scope.scope_level == ScopeLevel.ENTITE:
             entity_ids.add(scope.scope_id)
@@ -377,6 +402,7 @@ def get_accessible_entity_ids(db: Session, user_org_role: UserOrgRole) -> list[i
 # ========================================
 # User CRUD helpers
 # ========================================
+
 
 def create_user(db: Session, email: str, password: str, nom: str, prenom: str) -> User:
     user = User(
@@ -417,19 +443,27 @@ def assign_scope(
 
 def remove_role(db: Session, user_id: int, org_id: int) -> bool:
     """Remove user role from org. Returns False if last-owner protection triggered."""
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id,
-        UserOrgRole.org_id == org_id,
-    ).first()
+    uor = (
+        db.query(UserOrgRole)
+        .filter(
+            UserOrgRole.user_id == user_id,
+            UserOrgRole.org_id == org_id,
+        )
+        .first()
+    )
     if not uor:
         return False
 
     # Last-owner protection
     if uor.role == UserRole.DG_OWNER:
-        count = db.query(UserOrgRole).filter(
-            UserOrgRole.org_id == org_id,
-            UserOrgRole.role == UserRole.DG_OWNER,
-        ).count()
+        count = (
+            db.query(UserOrgRole)
+            .filter(
+                UserOrgRole.org_id == org_id,
+                UserOrgRole.role == UserRole.DG_OWNER,
+            )
+            .count()
+        )
         if count <= 1:
             return False  # Cannot remove last DG_OWNER
 

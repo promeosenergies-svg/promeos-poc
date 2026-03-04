@@ -2,20 +2,22 @@
  * NextBestActionCard — Hero card showing the single most important action.
  * Placed at top of ConformitePage, before tabs.
  */
-import {
-  Database, Clock, FileText, AlertTriangle, CheckCircle2,
-} from 'lucide-react';
+import { Database, Clock, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '../../ui';
 
 const SEVERITY_STYLE = {
   critical: { border: 'border-red-300', bg: 'bg-red-50', badge: 'crit' },
-  high:     { border: 'border-amber-300', bg: 'bg-amber-50', badge: 'warn' },
-  medium:   { border: 'border-blue-300', bg: 'bg-blue-50', badge: 'info' },
-  low:      { border: 'border-green-300', bg: 'bg-green-50', badge: 'ok' },
+  high: { border: 'border-amber-300', bg: 'bg-amber-50', badge: 'warn' },
+  medium: { border: 'border-blue-300', bg: 'bg-blue-50', badge: 'info' },
+  low: { border: 'border-green-300', bg: 'bg-green-50', badge: 'ok' },
 };
 
 const ICON_MAP = {
-  Database, Clock, FileText, AlertTriangle, CheckCircle: CheckCircle2,
+  Database,
+  Clock,
+  FileText,
+  AlertTriangle,
+  CheckCircle: CheckCircle2,
   CheckCircle2,
 };
 
@@ -36,15 +38,19 @@ export default function NextBestActionCard({ action, onAction }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-sm font-bold text-gray-900">{action.title}</h3>
-                <Badge status={style.badge}>{action.severity === 'critical' ? 'Urgent' : action.severity === 'high' ? 'Important' : action.severity === 'medium' ? 'Recommandé' : 'Info'}</Badge>
+                <Badge status={style.badge}>
+                  {action.severity === 'critical'
+                    ? 'Urgent'
+                    : action.severity === 'high'
+                      ? 'Important'
+                      : action.severity === 'medium'
+                        ? 'Recommandé'
+                        : 'Info'}
+                </Badge>
               </div>
               <p className="text-sm text-gray-600">{action.description}</p>
             </div>
-            <Button
-              data-testid="nba-cta"
-              size="sm"
-              onClick={() => onAction(action.ctaAction)}
-            >
+            <Button data-testid="nba-cta" size="sm" onClick={() => onAction(action.ctaAction)}>
               {action.ctaLabel}
             </Button>
           </div>

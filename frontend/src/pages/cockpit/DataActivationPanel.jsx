@@ -7,9 +7,7 @@
  */
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Database, CheckCircle2, Circle, ArrowRight, Loader2,
-} from 'lucide-react';
+import { Database, CheckCircle2, Circle, ArrowRight, Loader2 } from 'lucide-react';
 import { Card, CardBody, InfoTip, Button, Progress } from '../../ui';
 import { TOOLTIPS } from '../../ui/tooltips';
 import { buildActivationChecklist } from '../../models/dataActivationModel';
@@ -20,12 +18,13 @@ export default function DataActivationPanel({ kpis }) {
   const { billingSummary, purchaseSignals, loading } = useActivationData(kpis?.total);
 
   const activation = useMemo(
-    () => buildActivationChecklist({
-      kpis: kpis || {},
-      billingSummary: billingSummary || {},
-      purchaseSignals,
-    }),
-    [kpis, billingSummary, purchaseSignals],
+    () =>
+      buildActivationChecklist({
+        kpis: kpis || {},
+        billingSummary: billingSummary || {},
+        purchaseSignals,
+      }),
+    [kpis, billingSummary, purchaseSignals]
   );
 
   if (loading) {
@@ -42,7 +41,10 @@ export default function DataActivationPanel({ kpis }) {
   const allActive = activation.activatedCount === activation.totalDimensions;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4" data-testid="data-activation-panel">
+    <div
+      className="rounded-lg border border-gray-200 bg-white p-4"
+      data-testid="data-activation-panel"
+    >
       {/* En-tete */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -59,15 +61,20 @@ export default function DataActivationPanel({ kpis }) {
 
       {/* Barre de progression */}
       <Progress value={activation.overallCoverage} size="sm" color="blue" />
-      <p className="text-[10px] text-gray-400 mt-1">{activation.overallCoverage}{'\u202f'}% couverture moyenne</p>
+      <p className="text-[10px] text-gray-400 mt-1">
+        {activation.overallCoverage}
+        {'\u202f'}% couverture moyenne
+      </p>
 
       {/* Badges par dimension */}
       <div className="flex flex-wrap gap-2 mt-3">
         {activation.dimensions.map((dim) => (
           <div key={dim.key} className="flex items-center gap-1">
-            {dim.available
-              ? <CheckCircle2 size={12} className="text-emerald-500" />
-              : <Circle size={12} className="text-gray-300" />}
+            {dim.available ? (
+              <CheckCircle2 size={12} className="text-emerald-500" />
+            ) : (
+              <Circle size={12} className="text-gray-300" />
+            )}
             <span className={`text-[11px] ${dim.available ? 'text-gray-600' : 'text-gray-400'}`}>
               {dim.label}
             </span>
@@ -80,9 +87,7 @@ export default function DataActivationPanel({ kpis }) {
 
       {/* Etat succes ou CTA */}
       {allActive ? (
-        <p className="mt-3 text-xs text-emerald-600 font-medium">
-          Toutes les briques sont actives
-        </p>
+        <p className="mt-3 text-xs text-emerald-600 font-medium">Toutes les briques sont actives</p>
       ) : (
         <>
           {activation.nextAction && (

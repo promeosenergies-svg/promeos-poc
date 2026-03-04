@@ -56,7 +56,7 @@ export function clampCoords(coords, viewportW, viewportH, estW = 180, estH = 28)
   return {
     ...coords,
     left: Math.max(4, Math.min(coords.left, viewportW - estW - 4)),
-    top:  Math.max(4, Math.min(coords.top,  viewportH - estH - 4)),
+    top: Math.max(4, Math.min(coords.top, viewportH - estH - 4)),
   };
 }
 
@@ -70,9 +70,9 @@ export default function TooltipPortal({
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState(null);
   const triggerRef = useRef(null);
-  const timerRef   = useRef(null);
+  const timerRef = useRef(null);
   // Stable unique id per tooltip instance (for aria-describedby linkage)
-  const tooltipId  = useRef(`tp-${Math.random().toString(36).slice(2)}`);
+  const tooltipId = useRef(`tp-${Math.random().toString(36).slice(2)}`);
 
   const show = useCallback(() => {
     // Guard: no text → never show tooltip
@@ -81,9 +81,9 @@ export default function TooltipPortal({
     timerRef.current = setTimeout(() => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        const raw  = computePosition(rect, position);
-        const vw   = (typeof window !== 'undefined' ? window.innerWidth  : 1280);
-        const vh   = (typeof window !== 'undefined' ? window.innerHeight : 800);
+        const raw = computePosition(rect, position);
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
         setCoords(clampCoords(raw, vw, vh));
       }
       setVisible(true);
@@ -109,17 +109,19 @@ export default function TooltipPortal({
       aria-describedby={visible ? tooltipId.current : undefined}
     >
       {children}
-      {visible && coords && createPortal(
-        <span
-          id={tooltipId.current}
-          className="fixed z-[120] px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-100 motion-reduce:transition-none"
-          style={{ top: coords.top, left: coords.left, transform: coords.transform }}
-          role="tooltip"
-        >
-          {text}
-        </span>,
-        document.body,
-      )}
+      {visible &&
+        coords &&
+        createPortal(
+          <span
+            id={tooltipId.current}
+            className="fixed z-[120] px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-100 motion-reduce:transition-none"
+            style={{ top: coords.top, left: coords.left, transform: coords.transform }}
+            role="tooltip"
+          >
+            {text}
+          </span>,
+          document.body
+        )}
     </span>
   );
 }

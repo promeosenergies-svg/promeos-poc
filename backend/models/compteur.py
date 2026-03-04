@@ -2,6 +2,7 @@
 PROMEOS - Modèle Compteur
 Equipements de mesure énergétique (électricité, gaz, eau)
 """
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin
@@ -13,6 +14,7 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     Compteur d'énergie (électricité, gaz, eau)
     Un site peut avoir plusieurs compteurs
     """
+
     __tablename__ = "compteurs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -28,8 +30,10 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
 
     # DeliveryPoint FK (nullable — SET NULL on DP deletion via trigger)
     delivery_point_id = Column(
-        Integer, ForeignKey("delivery_points.id", ondelete="SET NULL"),
-        nullable=True, index=True,
+        Integer,
+        ForeignKey("delivery_points.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
         comment="Point de livraison associe (PRM/PCE)",
     )
 
@@ -41,10 +45,7 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     site = relationship("Site", back_populates="compteurs")
     delivery_point = relationship("DeliveryPoint", back_populates="compteurs")
     consommations = relationship(
-        "Consommation",
-        back_populates="compteur",
-        cascade="all, delete-orphan",
-        lazy="dynamic"
+        "Consommation", back_populates="compteur", cascade="all, delete-orphan", lazy="dynamic"
     )
 
     @property

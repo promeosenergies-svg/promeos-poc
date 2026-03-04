@@ -2,6 +2,7 @@
 PROMEOS - Routes API Monitoring (Electric Consumption Mastery)
 6 endpoints for KPIs, analysis, snapshots, alerts lifecycle.
 """
+
 import math
 import random
 from datetime import datetime, timedelta, timezone
@@ -14,8 +15,15 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from models import (
-    Site, Meter, MeterReading, MonitoringSnapshot, MonitoringAlert,
-    AlertStatus, AlertSeverity, FrequencyType, SiteOperatingSchedule
+    Site,
+    Meter,
+    MeterReading,
+    MonitoringSnapshot,
+    MonitoringAlert,
+    AlertStatus,
+    AlertSeverity,
+    FrequencyType,
+    SiteOperatingSchedule,
 )
 from models.energy_models import EnergyVector
 
@@ -23,6 +31,7 @@ router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
 
 # --- Pydantic models ---
+
 
 class MonitoringRunRequest(BaseModel):
     site_id: int
@@ -41,6 +50,7 @@ class AlertResolveRequest(BaseModel):
 
 
 # --- 1. GET /api/monitoring/kpis ---
+
 
 @router.get("/kpis")
 def get_monitoring_kpis(
@@ -65,6 +75,7 @@ def get_monitoring_kpis(
     try:
         from services.ems.weather_service import get_weather
         from services.electric_monitoring import ClimateEngine
+
         # Resolve meter: prefer snapshot's meter, fallback to any active meter on site
         meter_obj = None
         if snapshot.meter_id:
@@ -81,31 +92,43 @@ def get_monitoring_kpis(
                 # Filter by frequency: prefer 15-min > hourly (exclude monthly/daily)
                 _best_freq = None
                 for _freq in [FrequencyType.MIN_15, FrequencyType.HOURLY]:
-                    _cnt = db.query(MeterReading).filter(
-                        MeterReading.meter_id == meter_obj.id,
-                        MeterReading.frequency == _freq,
-                        MeterReading.timestamp >= snapshot.period_start,
-                        MeterReading.timestamp <= snapshot.period_end,
-                    ).count()
+                    _cnt = (
+                        db.query(MeterReading)
+                        .filter(
+                            MeterReading.meter_id == meter_obj.id,
+                            MeterReading.frequency == _freq,
+                            MeterReading.timestamp >= snapshot.period_start,
+                            MeterReading.timestamp <= snapshot.period_end,
+                        )
+                        .count()
+                    )
                     if _cnt >= 48:
                         _best_freq = _freq
                         break
                 _freq_filter = [_best_freq] if _best_freq else [FrequencyType.MIN_15, FrequencyType.HOURLY]
-                readings_orm = db.query(MeterReading).filter(
-                    MeterReading.meter_id == meter_obj.id,
-                    MeterReading.frequency.in_(_freq_filter),
-                    MeterReading.timestamp >= snapshot.period_start,
-                    MeterReading.timestamp <= snapshot.period_end,
-                ).order_by(MeterReading.timestamp).all()
+                readings_orm = (
+                    db.query(MeterReading)
+                    .filter(
+                        MeterReading.meter_id == meter_obj.id,
+                        MeterReading.frequency.in_(_freq_filter),
+                        MeterReading.timestamp >= snapshot.period_start,
+                        MeterReading.timestamp <= snapshot.period_end,
+                    )
+                    .order_by(MeterReading.timestamp)
+                    .all()
+                )
                 if len(readings_orm) < 240:
-                    climate_data = {"reason": "insufficient_readings", "scatter": [], "fit_line": [],
-                                    "n_readings": len(readings_orm)}
+                    climate_data = {
+                        "reason": "insufficient_readings",
+                        "scatter": [],
+                        "fit_line": [],
+                        "n_readings": len(readings_orm),
+                    }
                 else:
                     readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
                     climate_data = ClimateEngine().compute(readings, weather)
     except Exception as e:
-        climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [],
-                        "error_detail": str(e)[:200]}
+        climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [], "error_detail": str(e)[:200]}
 
     # Fetch operating schedule for display
     schedule_data = None
@@ -127,6 +150,7 @@ def get_monitoring_kpis(
     try:
         from services.impact_model import resolve_price, compute_off_hours_eur, compute_power_overrun_eur
         from dataclasses import asdict
+
         price_info = resolve_price(db, site_id)
         impact_data["price"] = asdict(price_info)
 
@@ -150,9 +174,8 @@ def get_monitoring_kpis(
     emissions_data = {}
     try:
         from services.emissions_service import compute_emissions_summary
-        emissions_data = compute_emissions_summary(
-            db, site_id, snapshot.kpis_json or {}
-        )
+
+        emissions_data = compute_emissions_summary(db, site_id, snapshot.kpis_json or {})
     except Exception as e:
         emissions_data = {"error": str(e)[:200]}
 
@@ -176,6 +199,7 @@ def get_monitoring_kpis(
 
 
 # --- 1b. GET /api/monitoring/kpis/compare ---
+
 
 @router.get("/kpis/compare")
 def get_monitoring_kpis_compare(
@@ -216,6 +240,7 @@ def get_monitoring_kpis_compare(
     elif mode == "n-1":
         # Find snapshot from ~1 year ago (period_start close to current - 365 days)
         from datetime import timedelta as td
+
         target_start = current.period_start - td(days=365)
         target_end = current.period_end - td(days=365)
         compare_snapshot = (
@@ -233,6 +258,7 @@ def get_monitoring_kpis_compare(
         # Find snapshot overlapping the custom date range
         if custom_start and custom_end:
             from datetime import datetime as dt_cls
+
             try:
                 cs = dt_cls.fromisoformat(custom_start)
                 ce = dt_cls.fromisoformat(custom_end)
@@ -260,6 +286,7 @@ def get_monitoring_kpis_compare(
     try:
         from services.impact_model import resolve_price, compute_off_hours_eur, compute_power_overrun_eur
         from dataclasses import asdict
+
         price_info = resolve_price(db, site_id)
         compare_impact["price"] = asdict(price_info)
         ckpis = compare_snapshot.kpis_json or {}
@@ -289,6 +316,7 @@ def get_monitoring_kpis_compare(
 
 # --- 2. POST /api/monitoring/run ---
 
+
 @router.post("/run")
 def run_monitoring(request: MonitoringRunRequest, db: Session = Depends(get_db)):
     """Run full monitoring pipeline for a site/meter."""
@@ -300,16 +328,14 @@ def run_monitoring(request: MonitoringRunRequest, db: Session = Depends(get_db))
 
     orchestrator = MonitoringOrchestrator(db)
     result = orchestrator.run(
-        site_id=request.site_id,
-        meter_id=request.meter_id,
-        days=request.days,
-        interval_minutes=request.interval_minutes
+        site_id=request.site_id, meter_id=request.meter_id, days=request.days, interval_minutes=request.interval_minutes
     )
 
     return result
 
 
 # --- 3. GET /api/monitoring/snapshots ---
+
 
 @router.get("/snapshots")
 def list_snapshots(
@@ -346,6 +372,7 @@ def list_snapshots(
 
 
 # --- 4. GET /api/monitoring/alerts ---
+
 
 @router.get("/alerts")
 def list_alerts(
@@ -402,12 +429,9 @@ def list_alerts(
 
 # --- 5. POST /api/monitoring/alerts/{id}/ack ---
 
+
 @router.post("/alerts/{alert_id}/ack")
-def acknowledge_alert(
-    alert_id: int,
-    request: AlertAckRequest,
-    db: Session = Depends(get_db)
-):
+def acknowledge_alert(alert_id: int, request: AlertAckRequest, db: Session = Depends(get_db)):
     """Acknowledge an open alert."""
     alert = db.query(MonitoringAlert).filter_by(id=alert_id).first()
     if not alert:
@@ -426,12 +450,9 @@ def acknowledge_alert(
 
 # --- 6. POST /api/monitoring/alerts/{id}/resolve ---
 
+
 @router.post("/alerts/{alert_id}/resolve")
-def resolve_alert(
-    alert_id: int,
-    request: AlertResolveRequest,
-    db: Session = Depends(get_db)
-):
+def resolve_alert(alert_id: int, request: AlertResolveRequest, db: Session = Depends(get_db)):
     """Resolve an alert (from open or acknowledged)."""
     alert = db.query(MonitoringAlert).filter_by(id=alert_id).first()
     if not alert:
@@ -451,6 +472,7 @@ def resolve_alert(
 
 # --- 7. POST /api/monitoring/demo/generate ---
 
+
 class MonitoringDemoRequest(BaseModel):
     site_id: int
     days: int = 90
@@ -458,31 +480,97 @@ class MonitoringDemoRequest(BaseModel):
 
 
 USAGE_PROFILES = {
-    "office":    {"peak": 35, "shoulder": 18, "night": 6, "weekend": 5,
-                  "peak_h": (8, 18), "heat_coeff": 1.5, "cool_coeff": 0.8,
-                  "psub_kva": 80, "label": "Bureau tertiaire",
-                  "open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False},
-    "hotel":     {"peak": 25, "shoulder": 20, "night": 15, "weekend": 22,
-                  "peak_h": (7, 22), "heat_coeff": 2.0, "cool_coeff": 1.2,
-                  "psub_kva": 100, "label": "Hotel / Hebergement",
-                  "open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
-    "retail":    {"peak": 40, "shoulder": 15, "night": 4, "weekend": 38,
-                  "peak_h": (9, 20), "heat_coeff": 1.0, "cool_coeff": 1.5,
-                  "psub_kva": 120, "label": "Commerce / Retail",
-                  "open_days": "0,1,2,3,4,5", "open_time": "09:00", "close_time": "20:00", "is_24_7": False},
-    "warehouse": {"peak": 20, "shoulder": 15, "night": 12, "weekend": 10,
-                  "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3,
-                  "psub_kva": 60, "label": "Entrepot / Logistique",
-                  "open_days": "0,1,2,3,4", "open_time": "06:00", "close_time": "20:00", "is_24_7": False},
-    "school":    {"peak": 28, "shoulder": 12, "night": 3, "weekend": 3,
-                  "peak_h": (8, 17), "heat_coeff": 2.5, "cool_coeff": 0.3,
-                  "psub_kva": 60, "label": "Ecole / Etablissement scolaire",
-                  "open_days": "0,1,2,3,4", "open_time": "07:30", "close_time": "18:00", "is_24_7": False,
-                  "vacation_weeks": [1, 2, 7, 8, 16, 17, 27, 28, 29, 30, 31, 32, 33, 34]},
-    "hospital":  {"peak": 45, "shoulder": 35, "night": 28, "weekend": 30,
-                  "peak_h": (7, 21), "heat_coeff": 2.0, "cool_coeff": 1.8,
-                  "psub_kva": 200, "label": "Hopital / Sante",
-                  "open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
+    "office": {
+        "peak": 35,
+        "shoulder": 18,
+        "night": 6,
+        "weekend": 5,
+        "peak_h": (8, 18),
+        "heat_coeff": 1.5,
+        "cool_coeff": 0.8,
+        "psub_kva": 80,
+        "label": "Bureau tertiaire",
+        "open_days": "0,1,2,3,4",
+        "open_time": "08:00",
+        "close_time": "19:00",
+        "is_24_7": False,
+    },
+    "hotel": {
+        "peak": 25,
+        "shoulder": 20,
+        "night": 15,
+        "weekend": 22,
+        "peak_h": (7, 22),
+        "heat_coeff": 2.0,
+        "cool_coeff": 1.2,
+        "psub_kva": 100,
+        "label": "Hotel / Hebergement",
+        "open_days": "0,1,2,3,4,5,6",
+        "open_time": "00:00",
+        "close_time": "23:59",
+        "is_24_7": True,
+    },
+    "retail": {
+        "peak": 40,
+        "shoulder": 15,
+        "night": 4,
+        "weekend": 38,
+        "peak_h": (9, 20),
+        "heat_coeff": 1.0,
+        "cool_coeff": 1.5,
+        "psub_kva": 120,
+        "label": "Commerce / Retail",
+        "open_days": "0,1,2,3,4,5",
+        "open_time": "09:00",
+        "close_time": "20:00",
+        "is_24_7": False,
+    },
+    "warehouse": {
+        "peak": 20,
+        "shoulder": 15,
+        "night": 12,
+        "weekend": 10,
+        "peak_h": (6, 20),
+        "heat_coeff": 0.5,
+        "cool_coeff": 0.3,
+        "psub_kva": 60,
+        "label": "Entrepot / Logistique",
+        "open_days": "0,1,2,3,4",
+        "open_time": "06:00",
+        "close_time": "20:00",
+        "is_24_7": False,
+    },
+    "school": {
+        "peak": 28,
+        "shoulder": 12,
+        "night": 3,
+        "weekend": 3,
+        "peak_h": (8, 17),
+        "heat_coeff": 2.5,
+        "cool_coeff": 0.3,
+        "psub_kva": 60,
+        "label": "Ecole / Etablissement scolaire",
+        "open_days": "0,1,2,3,4",
+        "open_time": "07:30",
+        "close_time": "18:00",
+        "is_24_7": False,
+        "vacation_weeks": [1, 2, 7, 8, 16, 17, 27, 28, 29, 30, 31, 32, 33, 34],
+    },
+    "hospital": {
+        "peak": 45,
+        "shoulder": 35,
+        "night": 28,
+        "weekend": 30,
+        "peak_h": (7, 21),
+        "heat_coeff": 2.0,
+        "cool_coeff": 1.8,
+        "psub_kva": 200,
+        "label": "Hopital / Sante",
+        "open_days": "0,1,2,3,4,5,6",
+        "open_time": "00:00",
+        "close_time": "23:59",
+        "is_24_7": True,
+    },
 }
 
 # Max plausible EUR/an impact per alert to prevent absurd values in demo
@@ -553,6 +641,7 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
     # Pre-generate weather data so consumption can be correlated
     try:
         from services.ems.weather_service import get_weather
+
         weather_days = get_weather(db, request.site_id, start.date(), now.date())
     except Exception:
         weather_days = []
@@ -618,13 +707,15 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
             max_kw = profile.get("psub_kva", 80) * 3
             value = max(0.1, min(round(value, 2), max_kw))
 
-            readings.append(MeterReading(
-                meter_id=meter.id,
-                timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=value,
-                is_estimated=False,
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=value,
+                    is_estimated=False,
+                )
+            )
 
     db.bulk_save_objects(readings)
     db.commit()
@@ -645,6 +736,7 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
 
 # --- 8. GET /api/monitoring/emissions ---
 
+
 @router.get("/emissions")
 def get_emissions(
     site_id: int = Query(...),
@@ -664,6 +756,7 @@ def get_emissions(
         raise HTTPException(status_code=404, detail="No monitoring snapshot found. Run analysis first.")
 
     from services.emissions_service import compute_emissions_summary
+
     emissions = compute_emissions_summary(db, site_id, snapshot.kpis_json or {})
 
     return {
@@ -675,6 +768,7 @@ def get_emissions(
 
 
 # --- 9. GET /api/monitoring/emission-factors ---
+
 
 @router.get("/emission-factors")
 def list_emission_factors(
@@ -709,14 +803,13 @@ def list_emission_factors(
 
 # --- 10. POST /api/monitoring/emission-factors/seed ---
 
+
 @router.post("/emission-factors/seed")
 def seed_emission_factors(db: Session = Depends(get_db)):
     """Seed default FR emission factor for demo."""
     from models import EmissionFactor
 
-    existing = db.query(EmissionFactor).filter_by(
-        energy_type="electricity", region="FR"
-    ).first()
+    existing = db.query(EmissionFactor).filter_by(energy_type="electricity", region="FR").first()
     if existing:
         return {"status": "already_exists", "id": existing.id}
 

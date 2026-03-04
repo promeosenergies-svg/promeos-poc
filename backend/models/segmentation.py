@@ -3,6 +3,7 @@ PROMEOS - Modele SegmentationProfile + SegmentationAnswer
 Stocke le profil de segmentation detecte pour une organisation
 et les reponses individuelles au questionnaire.
 """
+
 from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -16,6 +17,7 @@ class SegmentationProfile(Base, TimestampMixin):
     Detecte automatiquement (NAF, heuristiques) ou affine par questionnaire.
     V100: portfolio_id nullable + derived_from + segment_label.
     """
+
     __tablename__ = "segmentation_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -81,6 +83,7 @@ class SegmentationAnswer(Base, TimestampMixin):
     V100: Reponse individuelle au questionnaire de segmentation.
     Remplace progressivement answers_json dans SegmentationProfile.
     """
+
     __tablename__ = "segmentation_answers"
 
     id = Column(Integer, primary_key=True, index=True)

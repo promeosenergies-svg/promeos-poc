@@ -2,6 +2,7 @@
 PROMEOS Connectors - RTE eCO2mix (REAL - public API)
 Donnees du mix electrique francais (intensite CO2, prix).
 """
+
 import urllib.request
 import json
 from datetime import datetime, timezone
@@ -58,7 +59,7 @@ class RTEEco2MixConnector(Connector):
                             quality_score=1.0,
                             coverage_ratio=1.0,
                             retrieved_at=datetime.now(timezone.utc),
-                            source_ref=url
+                            source_ref=url,
                         )
                         db.add(dp)
                         datapoints.append(dp)

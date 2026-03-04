@@ -17,8 +17,22 @@ const modelSrc = readFileSync(resolve(__dirname, '../guidedModeModel.js'), 'utf-
 // ── Fixtures ──
 const FIXTURE_SUMMARY = { total_findings: 10, pct_ok: 60 };
 const FIXTURE_SITES = [
-  { site_id: 1, site_nom: 'Site A', data_quality_gate: 'OK', findings: [{ status: 'NOK' }], conso_kwh_an: 1000, surface_m2: 500 },
-  { site_id: 2, site_nom: 'Site B', data_quality_gate: 'OK', findings: [{ status: 'OK' }], conso_kwh_an: 2000, surface_m2: 800 },
+  {
+    site_id: 1,
+    site_nom: 'Site A',
+    data_quality_gate: 'OK',
+    findings: [{ status: 'NOK' }],
+    conso_kwh_an: 1000,
+    surface_m2: 500,
+  },
+  {
+    site_id: 2,
+    site_nom: 'Site B',
+    data_quality_gate: 'OK',
+    findings: [{ status: 'OK' }],
+    conso_kwh_an: 2000,
+    surface_m2: 800,
+  },
 ];
 const FIXTURE_BUNDLE = { summary: FIXTURE_SUMMARY, sites: FIXTURE_SITES };
 const NOW = new Date('2026-03-01');
@@ -61,10 +75,15 @@ describe('GUIDED_STEPS', () => {
   });
 
   it('step IDs are correct', () => {
-    const ids = GUIDED_STEPS.map(s => s.id);
+    const ids = GUIDED_STEPS.map((s) => s.id);
     expect(ids).toEqual([
-      'assujettissement', 'donnees', 'deadlines', 'plan',
-      'cee_gouvernance', 'preuves', 'mv',
+      'assujettissement',
+      'donnees',
+      'deadlines',
+      'plan',
+      'cee_gouvernance',
+      'preuves',
+      'mv',
     ]);
   });
 
@@ -77,7 +96,7 @@ describe('GUIDED_STEPS', () => {
   });
 
   it('step donnees has blocking: true', () => {
-    const donnees = GUIDED_STEPS.find(s => s.id === 'donnees');
+    const donnees = GUIDED_STEPS.find((s) => s.id === 'donnees');
     expect(donnees.blocking).toBe(true);
   });
 
@@ -111,27 +130,23 @@ describe('computeGuidedSteps', () => {
   });
 
   it('step 2 (donnees) is blocked when any site BLOCKED', () => {
-    const blockedSites = [
-      { site_id: 1, data_quality_gate: 'BLOCKED', findings: [] },
-    ];
+    const blockedSites = [{ site_id: 1, data_quality_gate: 'BLOCKED', findings: [] }];
     const steps = computeGuidedSteps(null, blockedSites, FIXTURE_SUMMARY, {});
     expect(steps[1].status).toBe('blocked');
   });
 
   it('cascade: steps 3-7 blocked when donnees is blocked', () => {
-    const blockedSites = [
-      { site_id: 1, data_quality_gate: 'BLOCKED', findings: [] },
-    ];
+    const blockedSites = [{ site_id: 1, data_quality_gate: 'BLOCKED', findings: [] }];
     const steps = computeGuidedSteps(null, blockedSites, FIXTURE_SUMMARY, {
       obligations: [{ id: 'bacs' }],
     });
     expect(steps[0].status).toBe('complete'); // assujettissement
-    expect(steps[1].status).toBe('blocked');  // donnees
-    expect(steps[2].status).toBe('blocked');  // deadlines
-    expect(steps[3].status).toBe('blocked');  // plan
-    expect(steps[4].status).toBe('blocked');  // cee
-    expect(steps[5].status).toBe('blocked');  // preuves
-    expect(steps[6].status).toBe('blocked');  // mv
+    expect(steps[1].status).toBe('blocked'); // donnees
+    expect(steps[2].status).toBe('blocked'); // deadlines
+    expect(steps[3].status).toBe('blocked'); // plan
+    expect(steps[4].status).toBe('blocked'); // cee
+    expect(steps[5].status).toBe('blocked'); // preuves
+    expect(steps[6].status).toBe('blocked'); // mv
   });
 
   it('all steps can reach complete', () => {
@@ -142,9 +157,7 @@ describe('computeGuidedSteps', () => {
       workPackages: [{ cee_step: 'validated' }],
       mvSummary: { has_data: true },
     };
-    const goodSites = [
-      { site_id: 1, data_quality_gate: 'OK', findings: [{ status: 'OK' }] },
-    ];
+    const goodSites = [{ site_id: 1, data_quality_gate: 'OK', findings: [{ status: 'OK' }] }];
     const steps = computeGuidedSteps(FIXTURE_BUNDLE, goodSites, FIXTURE_SUMMARY, signals);
     expect(steps[0].status).toBe('complete');
     expect(steps[1].status).toBe('complete');
@@ -177,74 +190,131 @@ describe('computeNextBestAction', () => {
   });
 
   it('P2: returns deadline when obligation deadline < 90 days', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [{
-        code: 'bacs', regulation: 'BACS', statut: 'non_conforme',
-        echeance: '2026-04-15', sites_concernes: 3,
-      }],
-      actionableFindings: [{ id: 1 }],
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [
+          {
+            code: 'bacs',
+            regulation: 'BACS',
+            statut: 'non_conforme',
+            echeance: '2026-04-15',
+            sites_concernes: 3,
+          },
+        ],
+        actionableFindings: [{ id: 1 }],
+      },
+      NOW
+    );
     expect(nba.id).toBe('nba-deadline-bacs');
     expect(nba.severity).toBe('high');
     expect(nba.ctaAction.tab).toBe('obligations');
   });
 
   it('P2: skips deadline > 90 days away', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [{
-        code: 'bacs', regulation: 'BACS', statut: 'non_conforme',
-        echeance: '2030-01-01', sites_concernes: 2,
-      }],
-      actionableFindings: [{ id: 1, severity: 'high' }],
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [
+          {
+            code: 'bacs',
+            regulation: 'BACS',
+            statut: 'non_conforme',
+            echeance: '2030-01-01',
+            sites_concernes: 2,
+          },
+        ],
+        actionableFindings: [{ id: 1, severity: 'high' }],
+      },
+      NOW
+    );
     // Should skip P2 and hit P4 (findings)
     expect(nba.id).toBe('nba-findings');
   });
 
   it('P3: returns missing-proofs when conforme obligations have no proof', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [
-        { id: 'bacs', code: 'bacs', statut: 'conforme', echeance: null },
-        { id: 'dt', code: 'dt', statut: 'conforme', echeance: null },
-      ],
-      actionableFindings: [],
-      proofFiles: {},
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [
+          { id: 'bacs', code: 'bacs', statut: 'conforme', echeance: null },
+          { id: 'dt', code: 'dt', statut: 'conforme', echeance: null },
+        ],
+        actionableFindings: [],
+        proofFiles: {},
+      },
+      NOW
+    );
     expect(nba.id).toBe('nba-missing-proofs');
     expect(nba.severity).toBe('medium');
     expect(nba.ctaAction.tab).toBe('preuves');
   });
 
   it('P4: returns findings when NOK exist', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [],
-      actionableFindings: [{ id: 1, severity: 'high' }, { id: 2, severity: 'medium' }],
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [],
+        actionableFindings: [
+          { id: 1, severity: 'high' },
+          { id: 2, severity: 'medium' },
+        ],
+      },
+      NOW
+    );
     expect(nba.id).toBe('nba-findings');
     expect(nba.title).toContain('2');
   });
 
   it('P4: severity is critical when any finding is critical', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [],
-      actionableFindings: [{ id: 1, severity: 'critical' }],
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [],
+        actionableFindings: [{ id: 1, severity: 'critical' }],
+      },
+      NOW
+    );
     expect(nba.severity).toBe('critical');
   });
 
   it('P5: returns all-good when nothing actionable', () => {
-    const nba = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, {
-      obligations: [{ id: 'bacs', code: 'bacs', statut: 'conforme' }],
-      actionableFindings: [],
-      proofFiles: { bacs: [{ name: 'proof.pdf' }] },
-    }, NOW);
+    const nba = computeNextBestAction(
+      null,
+      FIXTURE_SITES,
+      FIXTURE_SUMMARY,
+      {
+        obligations: [{ id: 'bacs', code: 'bacs', statut: 'conforme' }],
+        actionableFindings: [],
+        proofFiles: { bacs: [{ name: 'proof.pdf' }] },
+      },
+      NOW
+    );
     expect(nba.id).toBe('nba-all-good');
     expect(nba.severity).toBe('low');
   });
 
   it('is deterministic: same input → same output', () => {
     const signals = {
-      obligations: [{ code: 'dt', regulation: 'DT', statut: 'non_conforme', echeance: '2026-05-01', sites_concernes: 5 }],
+      obligations: [
+        {
+          code: 'dt',
+          regulation: 'DT',
+          statut: 'non_conforme',
+          echeance: '2026-05-01',
+          sites_concernes: 5,
+        },
+      ],
       actionableFindings: [{ id: 1 }],
     };
     const a = computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, signals, NOW);
@@ -255,7 +325,13 @@ describe('computeNextBestAction', () => {
   it('all NBAs have required fields', () => {
     const scenarios = [
       computeNextBestAction(null, [{ data_quality_gate: 'BLOCKED' }], null, {}, NOW),
-      computeNextBestAction(null, FIXTURE_SITES, FIXTURE_SUMMARY, { obligations: [], actionableFindings: [] }, NOW),
+      computeNextBestAction(
+        null,
+        FIXTURE_SITES,
+        FIXTURE_SUMMARY,
+        { obligations: [], actionableFindings: [] },
+        NOW
+      ),
     ];
     for (const nba of scenarios) {
       expect(nba).toHaveProperty('id');
@@ -285,10 +361,14 @@ describe('computeDonneesMetrics', () => {
   });
 
   it('computes completude from DQ results when available', () => {
-    const m = computeDonneesMetrics(FIXTURE_SITES, [
-      { coverage_pct: 80, confidence_score: 90 },
-      { coverage_pct: 60, confidence_score: 70 },
-    ], {});
+    const m = computeDonneesMetrics(
+      FIXTURE_SITES,
+      [
+        { coverage_pct: 80, confidence_score: 90 },
+        { coverage_pct: 60, confidence_score: 70 },
+      ],
+      {}
+    );
     expect(m.completude_pct).toBe(70);
   });
 
@@ -313,26 +393,30 @@ describe('computeDonneesMetrics', () => {
     const emptySites = [{ site_id: 1, findings: [] }];
     const m = computeDonneesMetrics(emptySites, [], { billingMonthCount: 6 });
     expect(m.gaps.length).toBeGreaterThan(0);
-    expect(m.gaps.every(g => g.ctaPath && g.ctaLabel)).toBe(true);
+    expect(m.gaps.every((g) => g.ctaPath && g.ctaLabel)).toBe(true);
   });
 
   it('no patrimoine gap when completude >= 80', () => {
-    const m = computeDonneesMetrics(FIXTURE_SITES, [
-      { coverage_pct: 90, confidence_score: 80 },
-      { coverage_pct: 85, confidence_score: 80 },
-    ], { billingMonthCount: 24 });
-    expect(m.gaps.find(g => g.id === 'patrimoine_incomplet')).toBeUndefined();
+    const m = computeDonneesMetrics(
+      FIXTURE_SITES,
+      [
+        { coverage_pct: 90, confidence_score: 80 },
+        { coverage_pct: 85, confidence_score: 80 },
+      ],
+      { billingMonthCount: 24 }
+    );
+    expect(m.gaps.find((g) => g.id === 'patrimoine_incomplet')).toBeUndefined();
   });
 
   it('billing gap when months < cible', () => {
     const m = computeDonneesMetrics(FIXTURE_SITES, [], { billingMonthCount: 12 });
-    expect(m.gaps.find(g => g.id === 'factures_insuffisantes')).toBeDefined();
+    expect(m.gaps.find((g) => g.id === 'factures_insuffisantes')).toBeDefined();
   });
 
   it('no billing gap when months >= cible', () => {
-    const m = computeDonneesMetrics(FIXTURE_SITES, [
-      { coverage_pct: 90, confidence_score: 80 },
-    ], { billingMonthCount: 24 });
-    expect(m.gaps.find(g => g.id === 'factures_insuffisantes')).toBeUndefined();
+    const m = computeDonneesMetrics(FIXTURE_SITES, [{ coverage_pct: 90, confidence_score: 80 }], {
+      billingMonthCount: 24,
+    });
+    expect(m.gaps.find((g) => g.id === 'factures_insuffisantes')).toBeUndefined();
   });
 });

@@ -2,13 +2,24 @@
 PROMEOS - Demo Seed: Master Data Generator
 Creates org, entite_juridique, portefeuilles, sites, batiments, meters.
 """
+
 import random
 from datetime import datetime
 
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment,
-    Compteur, Meter, SiteOperatingSchedule,
-    TypeSite, TypeCompteur, EnergyVector, ParkingType, OperatStatus,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Compteur,
+    Meter,
+    SiteOperatingSchedule,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
+    ParkingType,
+    OperatStatus,
 )
 from models.energy_models import EnergyVector as EnergyVectorModel
 from models.usage import Usage
@@ -19,25 +30,31 @@ from .packs import _VILLES, _RUES
 
 # Mapping from pack type_site string to TypeSite enum
 _TYPE_MAP = {
-    "commerce": TypeSite.COMMERCE, "bureau": TypeSite.BUREAU,
-    "entrepot": TypeSite.ENTREPOT, "hotel": TypeSite.HOTEL,
-    "sante": TypeSite.SANTE, "enseignement": TypeSite.ENSEIGNEMENT,
-    "magasin": TypeSite.MAGASIN, "copropriete": TypeSite.COPROPRIETE,
+    "commerce": TypeSite.COMMERCE,
+    "bureau": TypeSite.BUREAU,
+    "entrepot": TypeSite.ENTREPOT,
+    "hotel": TypeSite.HOTEL,
+    "sante": TypeSite.SANTE,
+    "enseignement": TypeSite.ENSEIGNEMENT,
+    "magasin": TypeSite.MAGASIN,
+    "copropriete": TypeSite.COPROPRIETE,
 }
 
 _PARKING_MAP = {
-    "outdoor": ParkingType.OUTDOOR, "indoor": ParkingType.INDOOR,
-    "underground": ParkingType.UNDERGROUND, "unknown": ParkingType.UNKNOWN,
+    "outdoor": ParkingType.OUTDOOR,
+    "indoor": ParkingType.INDOOR,
+    "underground": ParkingType.UNDERGROUND,
+    "unknown": ParkingType.UNKNOWN,
 }
 
 # Profiles → schedule mapping
 _PROFILE_SCHEDULES = {
-    "office":    {"open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False},
-    "hotel":     {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
-    "retail":    {"open_days": "0,1,2,3,4,5", "open_time": "09:00", "close_time": "20:00", "is_24_7": False},
+    "office": {"open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False},
+    "hotel": {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
+    "retail": {"open_days": "0,1,2,3,4,5", "open_time": "09:00", "close_time": "20:00", "is_24_7": False},
     "warehouse": {"open_days": "0,1,2,3,4", "open_time": "06:00", "close_time": "20:00", "is_24_7": False},
-    "school":    {"open_days": "0,1,2,3,4", "open_time": "07:30", "close_time": "18:00", "is_24_7": False},
-    "hospital":  {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
+    "school": {"open_days": "0,1,2,3,4", "open_time": "07:30", "close_time": "18:00", "is_24_7": False},
+    "hospital": {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
 }
 
 # V107: Usage breakdown per building type (profile → {TypeUsage: description})
@@ -94,8 +111,11 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
     # 1. Organisation
     org_cfg = pack["org"]
     org = Organisation(
-        nom=org_cfg["nom"], type_client=org_cfg["type_client"],
-        actif=True, siren=org_cfg["siren"], is_demo=True,
+        nom=org_cfg["nom"],
+        type_client=org_cfg["type_client"],
+        actif=True,
+        siren=org_cfg["siren"],
+        is_demo=True,
     )
     db.add(org)
     db.flush()
@@ -104,9 +124,12 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
     entites = []
     for ej_cfg in pack["entites"]:
         ej = EntiteJuridique(
-            organisation_id=org.id, nom=ej_cfg["nom"],
-            siren=ej_cfg["siren"], siret=ej_cfg.get("siret"),
-            naf_code=ej_cfg.get("naf_code"), region_code=ej_cfg.get("region_code"),
+            organisation_id=org.id,
+            nom=ej_cfg["nom"],
+            siren=ej_cfg["siren"],
+            siret=ej_cfg.get("siret"),
+            naf_code=ej_cfg.get("naf_code"),
+            region_code=ej_cfg.get("region_code"),
         )
         db.add(ej)
         entites.append(ej)
@@ -118,7 +141,8 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
         ej_idx = pf_cfg.get("entite_idx", 0)
         pf = Portefeuille(
             entite_juridique_id=entites[ej_idx].id,
-            nom=pf_cfg["nom"], description=pf_cfg["description"],
+            nom=pf_cfg["nom"],
+            description=pf_cfg["description"],
         )
         db.add(pf)
         portefeuilles.append(pf)
@@ -140,11 +164,15 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 nom=spec["nom"],
                 type=_TYPE_MAP.get(spec["type_site"], TypeSite.BUREAU),
                 adresse=f"{rng.randint(1, 200)} {_RUES[site_counter % len(_RUES)]}",
-                code_postal=spec["cp"], ville=spec["ville"], region=spec["region"],
+                code_postal=spec["cp"],
+                ville=spec["ville"],
+                region=spec["region"],
                 surface_m2=spec["surface_m2"],
                 nombre_employes=spec.get("employees", 50),
-                latitude=spec["lat"], longitude=spec["lon"],
-                actif=True, is_demo=True,
+                latitude=spec["lat"],
+                longitude=spec["lon"],
+                actif=True,
+                is_demo=True,
                 tertiaire_area_m2=spec.get("tertiaire_area_m2"),
                 parking_area_m2=spec.get("parking_m2"),
                 parking_type=_PARKING_MAP.get(spec.get("parking_type"), ParkingType.UNKNOWN),
@@ -189,11 +217,13 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
             usage_defs = _USAGE_BREAKDOWN.get(profile_key, _USAGE_BREAKDOWN["office"])
             for bat_id in bat_ids:
                 for usage_type, usage_desc in usage_defs:
-                    db.add(Usage(
-                        batiment_id=bat_id,
-                        type=usage_type,
-                        description=usage_desc,
-                    ))
+                    db.add(
+                        Usage(
+                            batiment_id=bat_id,
+                            type=usage_type,
+                            description=usage_desc,
+                        )
+                    )
 
             # Meter (electricity)
             meter_id_str = f"DEMO-HELI-{site.id:04d}"
@@ -211,14 +241,18 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
             all_meters.append(meter)
 
             # Compteur legacy (elec)
-            db.add(Compteur(
-                site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                numero_serie=f"DEMO-E-{site.id:04d}",
-                puissance_souscrite_kw=meter.subscribed_power_kva,
-                meter_id=meter_id_str,
-                energy_vector=EnergyVector.ELECTRICITY, actif=True,
-                data_source="demo",
-            ))
+            db.add(
+                Compteur(
+                    site_id=site.id,
+                    type=TypeCompteur.ELECTRICITE,
+                    numero_serie=f"DEMO-E-{site.id:04d}",
+                    puissance_souscrite_kw=meter.subscribed_power_kva,
+                    meter_id=meter_id_str,
+                    energy_vector=EnergyVector.ELECTRICITY,
+                    actif=True,
+                    data_source="demo",
+                )
+            )
 
             # Gas compteur + Meter if needed (V107: gas readings require a Meter)
             if spec.get("gas"):
@@ -236,24 +270,30 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 db.flush()
                 all_meters.append(gas_meter)
 
-                db.add(Compteur(
-                    site_id=site.id, type=TypeCompteur.GAZ,
-                    numero_serie=f"DEMO-G-{site.id:04d}",
-                    meter_id=gas_meter_id_str,
-                    energy_vector=EnergyVector.GAS, actif=True,
-                    data_source="demo",
-                ))
+                db.add(
+                    Compteur(
+                        site_id=site.id,
+                        type=TypeCompteur.GAZ,
+                        numero_serie=f"DEMO-G-{site.id:04d}",
+                        meter_id=gas_meter_id_str,
+                        energy_vector=EnergyVector.GAS,
+                        actif=True,
+                        data_source="demo",
+                    )
+                )
 
             # Operating schedule
             profile_name = spec.get("profile", "office")
             sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])
-            db.add(SiteOperatingSchedule(
-                site_id=site.id,
-                open_days=sched_cfg["open_days"],
-                open_time=sched_cfg["open_time"],
-                close_time=sched_cfg["close_time"],
-                is_24_7=sched_cfg["is_24_7"],
-            ))
+            db.add(
+                SiteOperatingSchedule(
+                    site_id=site.id,
+                    open_days=sched_cfg["open_days"],
+                    open_time=sched_cfg["open_time"],
+                    close_time=sched_cfg["close_time"],
+                    is_24_7=sched_cfg["is_24_7"],
+                )
+            )
 
         db.flush()
 
@@ -294,11 +334,15 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     nom=f"{group['prefix']} {ville} #{site_counter + 1:02d}",
                     type=_TYPE_MAP.get(site_type_str, TypeSite.BUREAU),
                     adresse=f"{rng.randint(1, 200)} {_RUES[site_counter % len(_RUES)]}",
-                    code_postal=cp, ville=ville, region=region,
-                    surface_m2=surface, nombre_employes=rng.randint(*group["employees_range"]),
+                    code_postal=cp,
+                    ville=ville,
+                    region=region,
+                    surface_m2=surface,
+                    nombre_employes=rng.randint(*group["employees_range"]),
                     latitude=lat + rng.uniform(-0.02, 0.02),
                     longitude=lon + rng.uniform(-0.02, 0.02),
-                    actif=True, is_demo=True,
+                    actif=True,
+                    is_demo=True,
                     tertiaire_area_m2=surface if surface >= 1000 else None,
                     parking_area_m2=parking,
                     parking_type=_PARKING_MAP.get(group.get("parking_type"), ParkingType.UNKNOWN),
@@ -333,11 +377,13 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 # V107: Usage records per batiment
                 usage_defs = _USAGE_BREAKDOWN.get(profile_name, _USAGE_BREAKDOWN["office"])
                 for usage_type, usage_desc in usage_defs:
-                    db.add(Usage(
-                        batiment_id=bat.id,
-                        type=usage_type,
-                        description=usage_desc,
-                    ))
+                    db.add(
+                        Usage(
+                            batiment_id=bat.id,
+                            type=usage_type,
+                            description=usage_desc,
+                        )
+                    )
 
                 # OPERAT status for assujetti sites
                 if site.tertiaire_area_m2 and site.tertiaire_area_m2 >= 1000:
@@ -365,24 +411,32 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 all_meters.append(meter)
 
                 # Compteur (legacy model)
-                db.add(Compteur(
-                    site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                    numero_serie=f"DEMO-E-{site.id:04d}",
-                    puissance_souscrite_kw=meter.subscribed_power_kva,
-                    meter_id=meter_id_str,
-                    energy_vector=EnergyVector.ELECTRICITY, actif=True,
-                    data_source="demo",
-                ))
+                db.add(
+                    Compteur(
+                        site_id=site.id,
+                        type=TypeCompteur.ELECTRICITE,
+                        numero_serie=f"DEMO-E-{site.id:04d}",
+                        puissance_souscrite_kw=meter.subscribed_power_kva,
+                        meter_id=meter_id_str,
+                        energy_vector=EnergyVector.ELECTRICITY,
+                        actif=True,
+                        data_source="demo",
+                    )
+                )
 
                 # Gas meter for some sites
                 if rng.random() < group.get("gas_pct", 0):
-                    db.add(Compteur(
-                        site_id=site.id, type=TypeCompteur.GAZ,
-                        numero_serie=f"DEMO-G-{site.id:04d}",
-                        meter_id=f"GRD{rng.randint(100000000, 999999999)}",
-                        energy_vector=EnergyVector.GAS, actif=True,
-                        data_source="demo",
-                    ))
+                    db.add(
+                        Compteur(
+                            site_id=site.id,
+                            type=TypeCompteur.GAZ,
+                            numero_serie=f"DEMO-G-{site.id:04d}",
+                            meter_id=f"GRD{rng.randint(100000000, 999999999)}",
+                            energy_vector=EnergyVector.GAS,
+                            actif=True,
+                            data_source="demo",
+                        )
+                    )
 
                 # Operating schedule
                 sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])

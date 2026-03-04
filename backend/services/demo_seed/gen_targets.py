@@ -3,6 +3,7 @@ PROMEOS - Demo Seed: Consumption Targets Generator (V110)
 Creates ConsumptionTarget records per site: ADEME benchmarks, seasonal profiles,
 both electricity and gas, with realistic actuals for past months.
 """
+
 import math
 import random
 from datetime import datetime, timezone
@@ -12,12 +13,12 @@ from models.consumption_target import ConsumptionTarget
 # ── ADEME surface benchmarks (kWh/m2/year) ────────────────────────────────────
 
 ADEME_BENCHMARKS = {
-    "bureau":       {"electricity": 170, "gas": 50},
-    "entrepot":     {"electricity": 120, "gas": 80},
-    "hotel":        {"electricity": 280, "gas": 100},
+    "bureau": {"electricity": 170, "gas": 50},
+    "entrepot": {"electricity": 120, "gas": 80},
+    "hotel": {"electricity": 280, "gas": 100},
     "enseignement": {"electricity": 110, "gas": 60},
-    "commerce":     {"electricity": 200, "gas": 40},
-    "sante":        {"electricity": 250, "gas": 120},
+    "commerce": {"electricity": 200, "gas": 40},
+    "sante": {"electricity": 250, "gas": 120},
 }
 
 EUR_PER_KWH = {"electricity": 0.18, "gas": 0.08}
@@ -26,16 +27,16 @@ CO2_KG_PER_KWH = {"electricity": 0.0569, "gas": 0.227}
 # ── Seasonal weight profiles (Jan-Dec, sum ~12.0) ─────────────────────────────
 
 _SEASONAL_ELEC = {
-    "bureau":       [1.30, 1.25, 1.10, 0.95, 0.80, 0.70, 0.65, 0.70, 0.85, 1.00, 1.20, 1.30],
-    "entrepot":     [1.10, 1.08, 1.02, 0.98, 0.95, 0.92, 0.90, 0.92, 0.95, 1.00, 1.08, 1.10],
-    "hotel":        [0.75, 0.80, 0.88, 0.95, 1.10, 1.20, 1.30, 1.28, 1.10, 0.90, 0.80, 0.74],
+    "bureau": [1.30, 1.25, 1.10, 0.95, 0.80, 0.70, 0.65, 0.70, 0.85, 1.00, 1.20, 1.30],
+    "entrepot": [1.10, 1.08, 1.02, 0.98, 0.95, 0.92, 0.90, 0.92, 0.95, 1.00, 1.08, 1.10],
+    "hotel": [0.75, 0.80, 0.88, 0.95, 1.10, 1.20, 1.30, 1.28, 1.10, 0.90, 0.80, 0.74],
     "enseignement": [1.30, 1.25, 1.15, 1.00, 0.90, 0.60, 0.20, 0.20, 0.90, 1.10, 1.20, 1.30],
 }
 
 _SEASONAL_GAS = {
-    "bureau":       [1.80, 1.65, 1.30, 0.80, 0.30, 0.10, 0.05, 0.05, 0.30, 0.85, 1.40, 1.80],
-    "entrepot":     [1.70, 1.55, 1.25, 0.80, 0.35, 0.15, 0.08, 0.08, 0.35, 0.85, 1.35, 1.70],
-    "hotel":        [1.50, 1.40, 1.15, 0.85, 0.50, 0.30, 0.20, 0.20, 0.50, 0.90, 1.30, 1.50],
+    "bureau": [1.80, 1.65, 1.30, 0.80, 0.30, 0.10, 0.05, 0.05, 0.30, 0.85, 1.40, 1.80],
+    "entrepot": [1.70, 1.55, 1.25, 0.80, 0.35, 0.15, 0.08, 0.08, 0.35, 0.85, 1.35, 1.70],
+    "hotel": [1.50, 1.40, 1.15, 0.85, 0.50, 0.30, 0.20, 0.20, 0.50, 0.90, 1.30, 1.50],
     "enseignement": [1.70, 1.55, 1.25, 0.80, 0.35, 0.10, 0.05, 0.05, 0.35, 0.85, 1.40, 1.70],
 }
 
@@ -50,8 +51,7 @@ def _get_weights(type_site: str, energy_type: str) -> list:
     return [w * 12.0 / s for w in raw] if s > 0 else [1.0] * 12
 
 
-def generate_targets(db, sites: list, rng: random.Random,
-                     site_meta: dict = None) -> dict:
+def generate_targets(db, sites: list, rng: random.Random, site_meta: dict = None) -> dict:
     """
     Generate ConsumptionTarget for 2024-2026 per site.
     Each year: 1 yearly + 12 monthly targets with seasonal distribution.
@@ -70,15 +70,20 @@ def generate_targets(db, sites: list, rng: random.Random,
         surface_m2 = meta.get("surface_m2", 0) or getattr(site, "surface_m2", 0) or 0
 
         # Determine energy types for this site
-        has_gas = getattr(site, '_has_gas', False)
+        has_gas = getattr(site, "_has_gas", False)
         if not has_gas:
             # Check from gen_master metadata
             from models import Meter
             from models.energy_models import EnergyVector
-            gas_meter = db.query(Meter).filter(
-                Meter.site_id == site.id,
-                Meter.energy_vector == EnergyVector.GAS,
-            ).first()
+
+            gas_meter = (
+                db.query(Meter)
+                .filter(
+                    Meter.site_id == site.id,
+                    Meter.energy_vector == EnergyVector.GAS,
+                )
+                .first()
+            )
             has_gas = gas_meter is not None
 
         energy_types = ["electricity"]
@@ -106,55 +111,56 @@ def generate_targets(db, sites: list, rng: random.Random,
 
                 # Yearly target
                 yearly_actual = _compute_yearly_actual(
-                    annual_target, year, current_year, current_month, current_day,
-                    weights, rng, eur_rate, co2_rate
+                    annual_target, year, current_year, current_month, current_day, weights, rng, eur_rate, co2_rate
                 )
-                db.add(ConsumptionTarget(
-                    site_id=site.id,
-                    energy_type=energy_type,
-                    period="yearly",
-                    year=year,
-                    month=None,
-                    target_kwh=round(annual_target),
-                    target_eur=round(annual_target * eur_rate),
-                    target_co2e_kg=round(annual_target * co2_rate),
-                    actual_kwh=yearly_actual["kwh"],
-                    actual_eur=yearly_actual["eur"],
-                    actual_co2e_kg=yearly_actual["co2"],
-                    source="forecast",
-                    notes=f"ADEME {type_site} {bench_kwh_m2} kWh/m2, surface {surface_m2} m2",
-                ))
+                db.add(
+                    ConsumptionTarget(
+                        site_id=site.id,
+                        energy_type=energy_type,
+                        period="yearly",
+                        year=year,
+                        month=None,
+                        target_kwh=round(annual_target),
+                        target_eur=round(annual_target * eur_rate),
+                        target_co2e_kg=round(annual_target * co2_rate),
+                        actual_kwh=yearly_actual["kwh"],
+                        actual_eur=yearly_actual["eur"],
+                        actual_co2e_kg=yearly_actual["co2"],
+                        source="forecast",
+                        notes=f"ADEME {type_site} {bench_kwh_m2} kWh/m2, surface {surface_m2} m2",
+                    )
+                )
                 count += 1
 
                 # Monthly targets
                 for m in range(1, 13):
                     monthly_target = annual_target * weights[m - 1] / 12.0
                     actual = _compute_monthly_actual(
-                        monthly_target, year, m, current_year, current_month,
-                        current_day, rng, eur_rate, co2_rate
+                        monthly_target, year, m, current_year, current_month, current_day, rng, eur_rate, co2_rate
                     )
-                    db.add(ConsumptionTarget(
-                        site_id=site.id,
-                        energy_type=energy_type,
-                        period="monthly",
-                        year=year,
-                        month=m,
-                        target_kwh=round(monthly_target),
-                        target_eur=round(monthly_target * eur_rate),
-                        target_co2e_kg=round(monthly_target * co2_rate),
-                        actual_kwh=actual["kwh"],
-                        actual_eur=actual["eur"],
-                        actual_co2e_kg=actual["co2"],
-                        source="forecast",
-                    ))
+                    db.add(
+                        ConsumptionTarget(
+                            site_id=site.id,
+                            energy_type=energy_type,
+                            period="monthly",
+                            year=year,
+                            month=m,
+                            target_kwh=round(monthly_target),
+                            target_eur=round(monthly_target * eur_rate),
+                            target_co2e_kg=round(monthly_target * co2_rate),
+                            actual_kwh=actual["kwh"],
+                            actual_eur=actual["eur"],
+                            actual_co2e_kg=actual["co2"],
+                            source="forecast",
+                        )
+                    )
                     count += 1
 
     db.flush()
     return {"targets_count": count}
 
 
-def _compute_monthly_actual(target_kwh, year, month, cur_year, cur_month,
-                            cur_day, rng, eur_rate, co2_rate) -> dict:
+def _compute_monthly_actual(target_kwh, year, month, cur_year, cur_month, cur_day, rng, eur_rate, co2_rate) -> dict:
     """Compute actual values for a given month. None if future."""
     # Future month
     if year > cur_year or (year == cur_year and month > cur_month):
@@ -195,8 +201,7 @@ def _compute_monthly_actual(target_kwh, year, month, cur_year, cur_month,
     }
 
 
-def _compute_yearly_actual(annual_target, year, cur_year, cur_month, cur_day,
-                           weights, rng, eur_rate, co2_rate) -> dict:
+def _compute_yearly_actual(annual_target, year, cur_year, cur_month, cur_day, weights, rng, eur_rate, co2_rate) -> dict:
     """Compute yearly actual as sum of monthly actuals for completed months."""
     if year > cur_year:
         return {"kwh": None, "eur": None, "co2": None}
@@ -206,9 +211,7 @@ def _compute_yearly_actual(annual_target, year, cur_year, cur_month, cur_day,
     # For past years, sum all 12 months; for current year, sum completed months
     for m in range(1, months_done + 1):
         monthly_target = annual_target * weights[m - 1] / 12.0
-        actual = _compute_monthly_actual(
-            monthly_target, year, m, cur_year, cur_month, cur_day, rng, eur_rate, co2_rate
-        )
+        actual = _compute_monthly_actual(monthly_target, year, m, cur_year, cur_month, cur_day, rng, eur_rate, co2_rate)
         if actual["kwh"] is not None:
             total_kwh += actual["kwh"]
 

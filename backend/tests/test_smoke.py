@@ -3,8 +3,10 @@ PROMEOS - Smoke Test Suite
 Minimal tests that must pass before any deploy/merge.
 Tests: health endpoint, DB connectivity, basic CRUD chain.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -76,9 +78,10 @@ class TestDBConnectivity:
 
     def test_db_session_works(self):
         from database import SessionLocal
+
         db = SessionLocal()
         try:
-            result = db.execute(__import__('sqlalchemy').text("SELECT 1")).scalar()
+            result = db.execute(__import__("sqlalchemy").text("SELECT 1")).scalar()
             assert result == 1
         finally:
             db.close()
@@ -86,6 +89,7 @@ class TestDBConnectivity:
     def test_sites_table_exists(self):
         from database import SessionLocal
         from models import Site
+
         db = SessionLocal()
         try:
             count = db.query(Site).count()
@@ -95,6 +99,7 @@ class TestDBConnectivity:
 
     def test_site_has_expected_columns(self):
         from models import Site
+
         columns = [c.name for c in Site.__table__.columns]
         assert "id" in columns
         assert "nom" in columns
@@ -217,10 +222,13 @@ class TestAPICreateChain:
     """Verify write operations: create Org + Site via onboarding API."""
 
     def test_onboarding_creates_org_and_site(self, isolated_client):
-        r = isolated_client.post("/api/onboarding", json={
-            "organisation": {"nom": "Smoke Corp", "siren": "999999999", "type_client": "bureau"},
-            "sites": [{"nom": "Smoke Site", "type": "bureau", "surface_m2": 1500}],
-        })
+        r = isolated_client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Smoke Corp", "siren": "999999999", "type_client": "bureau"},
+                "sites": [{"nom": "Smoke Site", "type": "bureau", "surface_m2": 1500}],
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "ok"
@@ -229,10 +237,13 @@ class TestAPICreateChain:
 
     def test_onboarding_status_reflects_creation(self, isolated_client):
         # Create
-        isolated_client.post("/api/onboarding", json={
-            "organisation": {"nom": "Status Corp"},
-            "sites": [{"nom": "Site A", "type": "bureau"}],
-        })
+        isolated_client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Status Corp"},
+                "sites": [{"nom": "Site A", "type": "bureau"}],
+            },
+        )
         # Check status
         r = isolated_client.get("/api/onboarding/status")
         assert r.status_code == 200

@@ -2,6 +2,7 @@
 PROMEOS — Request Context Middleware (ASGI)
 Genere un request_id, mesure le temps, log en JSON, ajoute headers X-Request-Id + X-Response-Time.
 """
+
 import time
 import uuid
 import logging

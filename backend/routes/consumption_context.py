@@ -11,6 +11,7 @@ GET /api/consumption-context/site/{site_id}/activity/detected  — auto-detect s
 GET /api/consumption-context/site/{site_id}/activity/compare   — compare declared vs detected
 POST /api/consumption-context/site/{site_id}/activity/apply_detected — apply detected schedule
 """
+
 import json
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -218,9 +219,7 @@ def apply_detected_schedule(
     intervals_json_str = json.dumps(detected_intervals)
 
     # Upsert schedule
-    sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
 
     if sched:
         sched.open_days = open_days_csv

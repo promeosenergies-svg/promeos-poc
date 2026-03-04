@@ -125,7 +125,7 @@ describe('useEmsTimeseries: date computation logic', () => {
 
   it('ytd: dateFrom is Jan 1 of current year', () => {
     const { dateFrom } = computeDateRange('ytd', null, null);
-    expect(dateFrom.getMonth()).toBe(0);  // January
+    expect(dateFrom.getMonth()).toBe(0); // January
     expect(dateFrom.getDate()).toBe(1);
     expect(dateFrom.getFullYear()).toBe(new Date().getFullYear());
   });
@@ -145,7 +145,7 @@ describe('seriesToChartData: maps EMS API series → chartData', () => {
   function seriesToChartData(series, granularity) {
     if (!series || series.length === 0) return [];
     if (series.length === 1) {
-      return series[0].data.map(p => ({
+      return series[0].data.map((p) => ({
         date: formatDate(p.t, granularity),
         value: p.v ?? null,
       }));
@@ -163,15 +163,17 @@ describe('seriesToChartData: maps EMS API series → chartData', () => {
   }
 
   it('single series: maps data to [{date, value}]', () => {
-    const series = [{
-      key: 'agg',
-      label: 'Agrégé',
-      data: [
-        { t: '2025-01-01T00:00:00Z', v: 100 },
-        { t: '2025-01-02T00:00:00Z', v: 120 },
-        { t: '2025-01-03T00:00:00Z', v: 90 },
-      ],
-    }];
+    const series = [
+      {
+        key: 'agg',
+        label: 'Agrégé',
+        data: [
+          { t: '2025-01-01T00:00:00Z', v: 100 },
+          { t: '2025-01-02T00:00:00Z', v: 120 },
+          { t: '2025-01-03T00:00:00Z', v: 90 },
+        ],
+      },
+    ];
     const chartData = seriesToChartData(series, 'daily');
     expect(chartData).toHaveLength(3);
     expect(chartData[0].value).toBe(100);
@@ -185,13 +187,15 @@ describe('seriesToChartData: maps EMS API series → chartData', () => {
   });
 
   it('null values: preserved as null in chartData', () => {
-    const series = [{
-      key: 'agg',
-      data: [
-        { t: '2025-01-01T00:00:00Z', v: null },
-        { t: '2025-01-02T00:00:00Z', v: 50 },
-      ],
-    }];
+    const series = [
+      {
+        key: 'agg',
+        data: [
+          { t: '2025-01-01T00:00:00Z', v: null },
+          { t: '2025-01-02T00:00:00Z', v: 50 },
+        ],
+      },
+    ];
     const chartData = seriesToChartData(series, 'daily');
     expect(chartData[0].value).toBeNull();
     expect(chartData[1].value).toBe(50);
@@ -221,13 +225,13 @@ describe('seriesToChartData: maps EMS API series → chartData', () => {
 
 describe('ChartRenderGuard: valid points filtering', () => {
   function countValidPoints(data, valueKey = 'value') {
-    return data.filter(p => p[valueKey] != null && !isNaN(p[valueKey])).length;
+    return data.filter((p) => p[valueKey] != null && !isNaN(p[valueKey])).length;
   }
 
   function computeYDomain(data, valueKey = 'value') {
     const ys = data
-      .filter(p => p[valueKey] != null && !isNaN(p[valueKey]))
-      .map(p => p[valueKey])
+      .filter((p) => p[valueKey] != null && !isNaN(p[valueKey]))
+      .map((p) => p[valueKey])
       .filter(Number.isFinite);
     const yMin = ys.length ? Math.min(...ys) : 0;
     const yMax = ys.length ? Math.max(...ys) : 1;
@@ -254,19 +258,12 @@ describe('ChartRenderGuard: valid points filtering', () => {
   });
 
   it('null/NaN values excluded from valid count', () => {
-    const data = [
-      { value: null },
-      { value: NaN },
-      { value: 100 },
-      { value: 120 },
-    ];
+    const data = [{ value: null }, { value: NaN }, { value: 100 }, { value: 120 }];
     expect(countValidPoints(data)).toBe(2);
   });
 
   it('flat line (all same value): yDomain gets padding', () => {
-    const data = [
-      { value: 50 }, { value: 50 }, { value: 50 },
-    ];
+    const data = [{ value: 50 }, { value: 50 }, { value: 50 }];
     const [yMin, yMax] = computeYDomain(data);
     // yMin < 50 (or 0) and yMax > 50 due to padding
     expect(yMax).toBeGreaterThan(50);
@@ -274,9 +271,7 @@ describe('ChartRenderGuard: valid points filtering', () => {
   });
 
   it('varying values: no padding applied to yDomain', () => {
-    const data = [
-      { value: 10 }, { value: 50 }, { value: 30 },
-    ];
+    const data = [{ value: 10 }, { value: 50 }, { value: 30 }];
     const [yMin, yMax] = computeYDomain(data);
     expect(yMin).toBe(10); // Math.max(0, 10) = 10
     expect(yMax).toBe(50);

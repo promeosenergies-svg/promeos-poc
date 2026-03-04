@@ -9,8 +9,10 @@ Covers:
   5) DEMO_MODE default is false (secure-by-default)
   6) No inline _resolve_org_id remain in hardened routes
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import inspect
@@ -28,6 +30,7 @@ from models import Base, Organisation
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -72,6 +75,7 @@ class _FakeAuth:
 # ========================================
 # Tests — core resolve_org_id behaviour
 # ========================================
+
 
 class TestDemoModeAllowsFallback:
     """DEMO_MODE=true → auth=None without header → fallback to DB org."""
@@ -143,6 +147,7 @@ class TestDemoModeDefault:
         """Source code default for PROMEOS_DEMO_MODE is 'false' (secure-by-default)."""
         import inspect
         import middleware.auth as mod
+
         src = inspect.getsource(mod)
         # The env var default must be "false" — not "true"
         assert 'get("PROMEOS_DEMO_MODE", "false")' in src
@@ -152,41 +157,48 @@ class TestDemoModeDefault:
 # Tests — no inline resolvers in hardened routes
 # ========================================
 
+
 class TestNoInlineResolvers:
     """Ensure hardened routes delegate to centralized resolve_org_id."""
 
     def test_actions_no_inline_resolver(self):
         """actions.py has no insecure _resolve_org_id with Organisation.first()."""
         import routes.actions as mod
+
         src = inspect.getsource(mod)
         assert "Organisation).first()" not in src
 
     def test_notifications_no_inline_resolver(self):
         """notifications.py has no insecure _resolve_org_id with Organisation.first()."""
         import routes.notifications as mod
+
         src = inspect.getsource(mod)
         assert "Organisation).first()" not in src
 
     def test_reports_no_inline_resolver(self):
         """reports.py has no insecure _resolve_org_id with Organisation.first()."""
         import routes.reports as mod
+
         src = inspect.getsource(mod)
         assert "Organisation).first()" not in src
 
     def test_cockpit_no_inline_resolver(self):
         """cockpit.py has no header-only _get_org_id helper."""
         import routes.cockpit as mod
+
         src = inspect.getsource(mod)
         assert "def _get_org_id(" not in src
 
     def test_dashboard_no_inline_resolver(self):
         """dashboard_2min.py has no header-only _get_org_id_from_header helper."""
         import routes.dashboard_2min as mod
+
         src = inspect.getsource(mod)
         assert "def _get_org_id_from_header(" not in src
 
     def test_sites_no_inline_resolver(self):
         """sites.py has no header-only _get_org_id_from_request helper."""
         import routes.sites as mod
+
         src = inspect.getsource(mod)
         assert "def _get_org_id_from_request(" not in src

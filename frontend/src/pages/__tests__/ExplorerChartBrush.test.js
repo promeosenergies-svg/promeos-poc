@@ -62,9 +62,9 @@ describe('ExplorerChart — summary row logic', () => {
 
   it('French singular: 1 point, 1 série, 1 compteur', () => {
     const parts = buildSummaryParts({ points: 1, series: 1, meters: 1 });
-    expect(parts[0]).toMatch(/1\u00a0point$/);   // not "points"
-    expect(parts[1]).toMatch(/1\u00a0série$/);   // not "séries"
-    expect(parts[2]).toMatch(/1\u00a0compteur$/);// not "compteurs"
+    expect(parts[0]).toMatch(/1\u00a0point$/); // not "points"
+    expect(parts[1]).toMatch(/1\u00a0série$/); // not "séries"
+    expect(parts[2]).toMatch(/1\u00a0compteur$/); // not "compteurs"
   });
 
   it('French plural: 2 points, 3 séries, 5 compteurs', () => {
@@ -76,17 +76,17 @@ describe('ExplorerChart — summary row logic', () => {
 
   it('omits source when falsy', () => {
     const parts = buildSummaryParts({ points: 10, source: '' });
-    expect(parts.some(p => p.includes('Source'))).toBe(false);
+    expect(parts.some((p) => p.includes('Source'))).toBe(false);
   });
 
   it('omits quality when null', () => {
     const parts = buildSummaryParts({ points: 10, quality: null });
-    expect(parts.some(p => p.includes('Qualité'))).toBe(false);
+    expect(parts.some((p) => p.includes('Qualité'))).toBe(false);
   });
 
   it('includes quality: 0% (zero is valid)', () => {
     const parts = buildSummaryParts({ quality: 0 });
-    expect(parts.some(p => p.includes('0'))).toBe(true);
+    expect(parts.some((p) => p.includes('0'))).toBe(true);
   });
 });
 

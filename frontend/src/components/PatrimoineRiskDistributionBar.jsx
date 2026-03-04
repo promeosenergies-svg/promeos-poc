@@ -30,7 +30,7 @@ export function computeRiskBuckets(risks) {
   const n = risks.length;
   if (n === 0) return { ok: 0, warn: 0, critical: 0, thresholds: { p40: 0, p80: 0 } };
 
-  const allZero = risks.every(r => r === 0);
+  const allZero = risks.every((r) => r === 0);
   if (allZero) return { ok: n, warn: 0, critical: 0, thresholds: { p40: 0, p80: 0 } };
 
   const sorted = [...risks].sort((a, b) => a - b);
@@ -45,7 +45,9 @@ export function computeRiskBuckets(risks) {
     return { ok, warn, critical, thresholds: { p40, p80 } };
   }
 
-  let ok = 0, warn = 0, critical = 0;
+  let ok = 0,
+    warn = 0,
+    critical = 0;
   for (const r of risks) {
     if (r <= p40) ok++;
     else if (r <= p80) warn++;
@@ -65,20 +67,22 @@ export function computeRiskBuckets(risks) {
 export default function PatrimoineRiskDistributionBar({ sites }) {
   if (!sites || sites.length === 0) return null;
 
-  const risks = sites.map(s => Number(s.total_risk_eur ?? s.risque_eur ?? s.risk_eur ?? 0));
+  const risks = sites.map((s) => Number(s.total_risk_eur ?? s.risque_eur ?? s.risk_eur ?? 0));
   const { ok, warn, critical, thresholds } = computeRiskBuckets(risks);
   const n = risks.length;
 
-  const okPct   = (ok       / n) * 100;
-  const warnPct = (warn     / n) * 100;
+  const okPct = (ok / n) * 100;
+  const warnPct = (warn / n) * 100;
   const critPct = (critical / n) * 100;
 
   const tooltip = `Basé sur quantiles du risque (€/site) — p40 : ${fmtK(thresholds.p40)}, p80 : ${fmtK(thresholds.p80)}`;
 
   const parts = [];
-  if (ok       > 0) parts.push({ key: 'ok',   text: `${ok} OK`,            cls: 'text-green-600 font-semibold' });
-  if (warn     > 0) parts.push({ key: 'warn', text: `${warn} À surveiller`, cls: 'text-amber-600 font-semibold' });
-  if (critical > 0) parts.push({ key: 'crit', text: `${critical} Critique`,  cls: 'text-red-500 font-semibold'  });
+  if (ok > 0) parts.push({ key: 'ok', text: `${ok} OK`, cls: 'text-green-600 font-semibold' });
+  if (warn > 0)
+    parts.push({ key: 'warn', text: `${warn} À surveiller`, cls: 'text-amber-600 font-semibold' });
+  if (critical > 0)
+    parts.push({ key: 'crit', text: `${critical} Critique`, cls: 'text-red-500 font-semibold' });
 
   return (
     <div className="flex items-center gap-3 py-1" title={tooltip}>
@@ -88,9 +92,15 @@ export default function PatrimoineRiskDistributionBar({ sites }) {
         role="img"
         aria-label={`Distribution du risque : ${ok} OK, ${warn} à surveiller, ${critical} critique`}
       >
-        {okPct   > 0 && <div className="bg-green-300 transition-all" style={{ width: `${okPct}%`   }} />}
-        {warnPct > 0 && <div className="bg-amber-400 transition-all" style={{ width: `${warnPct}%` }} />}
-        {critPct > 0 && <div className="bg-red-500   transition-all" style={{ width: `${critPct}%` }} />}
+        {okPct > 0 && (
+          <div className="bg-green-300 transition-all" style={{ width: `${okPct}%` }} />
+        )}
+        {warnPct > 0 && (
+          <div className="bg-amber-400 transition-all" style={{ width: `${warnPct}%` }} />
+        )}
+        {critPct > 0 && (
+          <div className="bg-red-500   transition-all" style={{ width: `${critPct}%` }} />
+        )}
       </div>
 
       {/* Résumé textuel */}

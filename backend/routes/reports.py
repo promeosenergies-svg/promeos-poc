@@ -3,6 +3,7 @@ PROMEOS — Reports Routes (Sprint 10.1)
 GET /api/reports/audit.pdf  - Download audit PDF
 GET /api/reports/audit.json - Audit data as JSON
 """
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

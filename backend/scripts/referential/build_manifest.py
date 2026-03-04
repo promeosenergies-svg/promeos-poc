@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Manifest builder.
 Scans snapshots directory, builds sources_manifest.json + optional SQLite index.
 """
+
 import json
 import os
 import sqlite3
@@ -81,15 +82,17 @@ def build_manifest(window_start: Optional[str] = None, window_end: Optional[str]
             if window_end and doc_date > window_end:
                 in_window = False
 
-            snapshots.append({
-                "date": snap_date,
-                "sha256_raw": current_hash,
-                "sha256_md": meta.get("sha256_md", ""),
-                "content_changed": content_changed,
-                "in_window_24m": in_window,
-                "title": meta.get("title"),
-                "fetched_at": meta.get("fetched_at_utc"),
-            })
+            snapshots.append(
+                {
+                    "date": snap_date,
+                    "sha256_raw": current_hash,
+                    "sha256_md": meta.get("sha256_md", ""),
+                    "content_changed": content_changed,
+                    "in_window_24m": in_window,
+                    "title": meta.get("title"),
+                    "fetched_at": meta.get("fetched_at_utc"),
+                }
+            )
 
         latest = snapshots[-1]
         has_changes = any(s["content_changed"] for s in snapshots)
@@ -129,10 +132,7 @@ def write_manifest(manifest: dict) -> Path:
     """Write manifest to indices/sources_manifest.json."""
     INDICES_DIR.mkdir(parents=True, exist_ok=True)
     out_path = INDICES_DIR / "sources_manifest.json"
-    out_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return out_path
 
 
@@ -182,39 +182,45 @@ def build_sqlite_index(manifest: dict) -> Path:
 
     for source_id, data in manifest.get("sources", {}).items():
         latest = data.get("latest", {})
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO sources (source_id, url, authority, category, energy, regulation,
                                  tags, total_snapshots, has_content_changes, latest_sha256, latest_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            source_id,
-            data.get("url"),
-            data.get("authority"),
-            data.get("category"),
-            data.get("energy"),
-            data.get("regulation"),
-            ",".join(data.get("tags", [])),
-            data.get("total_snapshots", 0),
-            data.get("has_content_changes", False),
-            latest.get("sha256_raw"),
-            latest.get("date"),
-        ))
+        """,
+            (
+                source_id,
+                data.get("url"),
+                data.get("authority"),
+                data.get("category"),
+                data.get("energy"),
+                data.get("regulation"),
+                ",".join(data.get("tags", [])),
+                data.get("total_snapshots", 0),
+                data.get("has_content_changes", False),
+                latest.get("sha256_raw"),
+                latest.get("date"),
+            ),
+        )
 
         for snap in data.get("history", []):
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO snapshots (source_id, snapshot_date, sha256_raw, sha256_md,
                                        content_changed, in_window_24m, title, fetched_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                source_id,
-                snap.get("date"),
-                snap.get("sha256_raw"),
-                snap.get("sha256_md"),
-                snap.get("content_changed", False),
-                snap.get("in_window_24m", True),
-                snap.get("title"),
-                snap.get("fetched_at"),
-            ))
+            """,
+                (
+                    source_id,
+                    snap.get("date"),
+                    snap.get("sha256_raw"),
+                    snap.get("sha256_md"),
+                    snap.get("content_changed", False),
+                    snap.get("in_window_24m", True),
+                    snap.get("title"),
+                    snap.get("fetched_at"),
+                ),
+            )
 
     conn.commit()
     conn.close()

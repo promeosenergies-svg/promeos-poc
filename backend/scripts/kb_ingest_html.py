@@ -2,6 +2,7 @@
 PROMEOS KB - HTML Ingestion CLI
 Usage: python backend/scripts/kb_ingest_html.py --input <path> --doc-id <DOC_ID> [options]
 """
+
 import sys
 import os
 import argparse
@@ -19,8 +20,7 @@ def main():
     parser.add_argument("--doc-id", required=True, help="Unique document ID")
     parser.add_argument("--title", help="Document title (auto-detect if not provided)")
     parser.add_argument("--updated-at", help="ISO date (YYYY-MM-DD)")
-    parser.add_argument("--auto-import", type=bool, default=False,
-                        help="Auto-import generated drafts to DB")
+    parser.add_argument("--auto-import", type=bool, default=False, help="Auto-import generated drafts to DB")
 
     args = parser.parse_args()
 
@@ -38,7 +38,7 @@ def main():
             doc_id=args.doc_id,
             title=args.title,
             updated_at=args.updated_at,
-            auto_import=args.auto_import
+            auto_import=args.auto_import,
         )
 
         if "error" in report:
@@ -46,9 +46,9 @@ def main():
             sys.exit(1)
 
         # Print report
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("HTML INGESTION REPORT")
-        print("="*60)
+        print("=" * 60)
         print(f"Document ID:    {report['doc_id']}")
         print(f"Title:          {report['title']}")
         print(f"Content Hash:   {report['content_hash']}")
@@ -56,9 +56,9 @@ def main():
         print(f"Chunks:         {report['nb_chunks']}")
         print(f"YAML Drafts:    {report['nb_drafts']}")
         print("\nOutput paths:")
-        for key, path in report['paths'].items():
+        for key, path in report["paths"].items():
             print(f"  {key:12} → {path}")
-        print("="*60)
+        print("=" * 60)
         print("\n✅ Ingestion complete!")
         print("\nNext steps:")
         print("  1. Review generated drafts in docs/kb/drafts/")
@@ -68,6 +68,7 @@ def main():
     except Exception as e:
         print(f"❌ Fatal error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

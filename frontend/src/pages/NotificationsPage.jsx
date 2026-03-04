@@ -11,12 +11,32 @@ import {
   patchNotification,
   getNotificationsSummary,
 } from '../services/api';
-import { Card, Button, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, SkeletonCard, Pagination, Tabs, Drawer } from '../ui';
+import {
+  Card,
+  Button,
+  PageShell,
+  MetricCard,
+  StatusDot,
+  EmptyState,
+  ErrorState,
+  SkeletonCard,
+  Pagination,
+  Tabs,
+  Drawer,
+} from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
-  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, Clock, Database,
+  Bell,
+  RefreshCw,
+  ExternalLink,
+  Eye,
+  X,
+  Trash2,
+  Search,
+  Clock,
+  Database,
 } from 'lucide-react';
 
 const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
@@ -81,7 +101,9 @@ export default function NotificationsPage() {
     }
   }, [selectedSiteId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -99,8 +121,8 @@ export default function NotificationsPage() {
   const handlePatch = async (id, status) => {
     try {
       await patchNotification(id, { status });
-      setEvents(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-      if (drawerEvent?.id === id) setDrawerEvent(prev => ({ ...prev, status }));
+      setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
+      if (drawerEvent?.id === id) setDrawerEvent((prev) => ({ ...prev, status }));
     } catch {
       toast('Erreur mise a jour', 'error');
     }
@@ -109,14 +131,17 @@ export default function NotificationsPage() {
   const handleBulkAction = async (status) => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    await Promise.allSettled(ids.map(id => patchNotification(id, { status })));
-    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status } : e));
+    await Promise.allSettled(ids.map((id) => patchNotification(id, { status })));
+    setEvents((prev) => prev.map((e) => (ids.includes(e.id) ? { ...e, status } : e)));
     setSelected(new Set());
-    toast(`${ids.length} alerte(s) ${status === 'dismissed' ? 'ignoree(s)' : 'marquee(s) lue(s)'}`, 'success');
+    toast(
+      `${ids.length} alerte(s) ${status === 'dismissed' ? 'ignoree(s)' : 'marquee(s) lue(s)'}`,
+      'success'
+    );
   };
 
   const toggleSelect = (id) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -127,22 +152,22 @@ export default function NotificationsPage() {
     if (selected.size === pageData.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(pageData.map(e => e.id)));
+      setSelected(new Set(pageData.map((e) => e.id)));
     }
   };
 
   const filteredEvents = useMemo(() => {
     let list = events;
     if (triageTab !== 'all') {
-      list = list.filter(e => e.status === triageTab);
+      list = list.filter((e) => e.status === triageTab);
     }
     if (filterSource) {
-      list = list.filter(e => e.source_type === filterSource);
+      list = list.filter((e) => e.source_type === filterSource);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(e =>
-        e.title.toLowerCase().includes(q) || (e.message || '').toLowerCase().includes(q)
+      list = list.filter(
+        (e) => e.title.toLowerCase().includes(q) || (e.message || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -153,8 +178,10 @@ export default function NotificationsPage() {
 
   const tabsWithCounts = useMemo(() => {
     const counts = { all: events.length, new: 0, read: 0, dismissed: 0 };
-    for (const e of events) { counts[e.status] = (counts[e.status] || 0) + 1; }
-    return TRIAGE_TABS.map(t => ({
+    for (const e of events) {
+      counts[e.status] = (counts[e.status] || 0) + 1;
+    }
+    return TRIAGE_TABS.map((t) => ({
       ...t,
       label: `${t.label} (${counts[t.id] || 0})`,
     }));
@@ -164,7 +191,9 @@ export default function NotificationsPage() {
     return (
       <PageShell icon={Bell} title="Alertes" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </PageShell>
     );
@@ -182,7 +211,7 @@ export default function NotificationsPage() {
     <PageShell
       icon={Bell}
       title="Alertes"
-      subtitle={`${events.length} alertes${events.filter(e => e.status === 'new').length > 0 ? ` · ${events.filter(e => e.status === 'new').length} nouvelles` : ''}`}
+      subtitle={`${events.length} alertes${events.filter((e) => e.status === 'new').length > 0 ? ` · ${events.filter((e) => e.status === 'new').length} nouvelles` : ''}`}
       actions={
         <div className="flex items-center gap-2">
           {/* Sync meta — compact */}
@@ -238,7 +267,11 @@ export default function NotificationsPage() {
       <Tabs
         tabs={tabsWithCounts}
         active={triageTab}
-        onChange={(id) => { setTriageTab(id); setPage(1); setSelected(new Set()); }}
+        onChange={(id) => {
+          setTriageTab(id);
+          setPage(1);
+          setSelected(new Set());
+        }}
       />
 
       {/* Sticky filter bar */}
@@ -249,21 +282,29 @@ export default function NotificationsPage() {
             type="text"
             placeholder="Rechercher..."
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <select
           value={filterSource}
-          onChange={(e) => { setFilterSource(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setFilterSource(e.target.value);
+            setPage(1);
+          }}
           className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white
             focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Filtrer par source"
         >
           <option value="">Toutes sources</option>
           {Object.entries(SOURCE_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
+            <option key={k} value={k}>
+              {v}
+            </option>
           ))}
         </select>
 
@@ -284,15 +325,22 @@ export default function NotificationsPage() {
       {totalFiltered === 0 ? (
         <EmptyState
           icon={Bell}
-          title={searchQuery.trim() || filterSource ? 'Aucune alerte pour ces filtres' : 'Aucune alerte'}
-          text={searchQuery.trim() || filterSource
-            ? 'Modifiez vos filtres ou réinitialiser la vue.'
-            : 'Synchronisez pour détecter les alertes depuis toutes les briques.'
+          title={
+            searchQuery.trim() || filterSource ? 'Aucune alerte pour ces filtres' : 'Aucune alerte'
+          }
+          text={
+            searchQuery.trim() || filterSource
+              ? 'Modifiez vos filtres ou réinitialiser la vue.'
+              : 'Synchronisez pour détecter les alertes depuis toutes les briques.'
           }
           ctaLabel={searchQuery.trim() || filterSource ? 'Réinitialiser' : 'Synchroniser'}
-          onCta={searchQuery.trim() || filterSource
-            ? () => { setSearchQuery(''); setFilterSource(''); }
-            : handleSync
+          onCta={
+            searchQuery.trim() || filterSource
+              ? () => {
+                  setSearchQuery('');
+                  setFilterSource('');
+                }
+              : handleSync
           }
         />
       ) : (
@@ -341,11 +389,19 @@ export default function NotificationsPage() {
                     </Td>
                     <Td className="max-w-md">
                       <div className="flex items-center gap-2">
-                        {isNew && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+                        {isNew && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                        )}
                         <div className="min-w-0">
-                          <p className={`truncate ${isNew ? 'font-semibold text-gray-900' : 'font-medium text-gray-800'}`}>{evt.title}</p>
+                          <p
+                            className={`truncate ${isNew ? 'font-semibold text-gray-900' : 'font-medium text-gray-800'}`}
+                          >
+                            {evt.title}
+                          </p>
                           {evt.message && (
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{evt.message}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                              {evt.message}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -357,20 +413,24 @@ export default function NotificationsPage() {
                     </Td>
                     <Td className="text-right text-sm font-medium">
                       {evt.estimated_impact_eur ? (
-                        <span className="text-amber-700">{Math.round(evt.estimated_impact_eur).toLocaleString('fr-FR')} EUR</span>
+                        <span className="text-amber-700">
+                          {Math.round(evt.estimated_impact_eur).toLocaleString('fr-FR')} EUR
+                        </span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </Td>
-                    <Td className="text-xs text-gray-500 whitespace-nowrap">{evt.due_date || '-'}</Td>
+                    <Td className="text-xs text-gray-500 whitespace-nowrap">
+                      {evt.due_date || '-'}
+                    </Td>
                     <Td>
-                      <span className={`text-xs ${isNew ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                      <span
+                        className={`text-xs ${isNew ? 'font-medium text-gray-900' : 'text-gray-500'}`}
+                      >
                         {STATUS_LABELS[evt.status] || evt.status}
                       </span>
                     </Td>
-                    {isExpert && (
-                      <Td className="text-xs text-gray-400 font-mono">{evt.id}</Td>
-                    )}
+                    {isExpert && <Td className="text-xs text-gray-400 font-mono">{evt.id}</Td>}
                     <Td className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {evt.deeplink_path && (
@@ -412,7 +472,12 @@ export default function NotificationsPage() {
           </Table>
           {totalFiltered > pageSize && (
             <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
-              <Pagination page={page} pageSize={pageSize} total={totalFiltered} onChange={setPage} />
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={totalFiltered}
+                onChange={setPage}
+              />
             </div>
           )}
         </Card>
@@ -451,12 +516,16 @@ export default function NotificationsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Source</p>
-                <p className="text-sm text-gray-900">{SOURCE_LABELS[drawerEvent.source_type] || drawerEvent.source_type}</p>
+                <p className="text-sm text-gray-900">
+                  {SOURCE_LABELS[drawerEvent.source_type] || drawerEvent.source_type}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estime</p>
                 <p className="text-sm text-gray-900">
-                  {drawerEvent.estimated_impact_eur ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} EUR` : 'Non estime'}
+                  {drawerEvent.estimated_impact_eur
+                    ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} EUR`
+                    : 'Non estime'}
                 </p>
               </div>
               <div>
@@ -476,7 +545,9 @@ export default function NotificationsPage() {
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Debug</p>
                 <p className="text-xs font-mono text-gray-400">ID : {drawerEvent.id}</p>
                 {drawerEvent.source_id && (
-                  <p className="text-xs font-mono text-gray-400">Source ID : {drawerEvent.source_id}</p>
+                  <p className="text-xs font-mono text-gray-400">
+                    Source ID : {drawerEvent.source_id}
+                  </p>
                 )}
                 {drawerEvent.created_at && (
                   <p className="text-xs font-mono text-gray-400">Cree : {drawerEvent.created_at}</p>
@@ -486,17 +557,31 @@ export default function NotificationsPage() {
 
             <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
               {drawerEvent.deeplink_path && (
-                <Button size="sm" onClick={() => { setDrawerEvent(null); navigate(drawerEvent.deeplink_path); }}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setDrawerEvent(null);
+                    navigate(drawerEvent.deeplink_path);
+                  }}
+                >
                   <ExternalLink size={14} /> Ouvrir
                 </Button>
               )}
               {drawerEvent.status === 'new' && (
-                <Button variant="secondary" size="sm" onClick={() => handlePatch(drawerEvent.id, 'read')}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePatch(drawerEvent.id, 'read')}
+                >
                   <Eye size={14} /> Marquer lu
                 </Button>
               )}
               {drawerEvent.status !== 'dismissed' && (
-                <Button variant="secondary" size="sm" onClick={() => handlePatch(drawerEvent.id, 'dismissed')}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePatch(drawerEvent.id, 'dismissed')}
+                >
                   <X size={14} /> Ignorer
                 </Button>
               )}

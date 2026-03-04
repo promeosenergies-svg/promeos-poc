@@ -33,7 +33,7 @@ export function evidenceConformite(scopeLabel) {
     ],
     assumptions: [
       'Les données patrimoniales (surface, usage) sont à jour.',
-      'Aucun audit externe n\'est intégré — évaluation interne uniquement.',
+      "Aucun audit externe n'est intégré — évaluation interne uniquement.",
     ],
   });
 }
@@ -42,7 +42,7 @@ export function evidenceRisque(scopeLabel, risqueEur) {
   return buildEvidence({
     id: 'exec-risque',
     title: 'Risque financier estimé',
-    valueLabel: risqueEur != null ? `${(risqueEur / 1000).toFixed(0)}k€` : null,
+    valueLabel: risqueEur != null ? `${Math.round(risqueEur / 1000)} k€` : null,
     scopeLabel,
     sources: [
       {
@@ -56,8 +56,8 @@ export function evidenceRisque(scopeLabel, risqueEur) {
         kind: 'calc',
         label: 'Findings réglementaires',
         confidence: 'high',
-        details: 'Chaque finding porte un risque unitaire basé sur la sévérité et l\'urgence.',
-        links: [{ label: 'Plan d\'action', href: '/action-plan' }],
+        details: "Chaque finding porte un risque unitaire basé sur la sévérité et l'urgence.",
+        links: [{ label: "Plan d'action", href: '/action-plan' }],
       },
     ],
     method: [
@@ -67,7 +67,7 @@ export function evidenceRisque(scopeLabel, risqueEur) {
     ],
     assumptions: [
       'Barèmes basés sur les sanctions théoriques maximales (Décret Tertiaire, BACS).',
-      'Le risque réel dépend de l\'application effective des sanctions par les autorités.',
+      "Le risque réel dépend de l'application effective des sanctions par les autorités.",
     ],
   });
 }
@@ -97,7 +97,7 @@ export function evidenceKwhTotal(scopeLabel, periodLabel, kwhValue) {
     ],
     method: [
       'Somme des mesures horaires (ou 15 min) sur la période sélectionnée.',
-      'Filtrage par fréquence compatible (exclusion des lectures MONTHLY dans l\'agrégation horaire).',
+      "Filtrage par fréquence compatible (exclusion des lectures MONTHLY dans l'agrégation horaire).",
       'Multi-site : somme des totaux par site sélectionné.',
     ],
     assumptions: [
@@ -123,7 +123,7 @@ export function evidenceCO2e(scopeLabel, periodLabel, co2Value) {
       },
       {
         kind: 'calc',
-        label: 'Facteur d\'émission ADEME 2024',
+        label: "Facteur d'émission ADEME 2024",
         confidence: 'high',
         details: 'Mix électrique France : 0,052 kgCO2e/kWh.',
         links: [{ label: 'Référentiel ADEME', href: '/kb' }],
@@ -136,7 +136,7 @@ export function evidenceCO2e(scopeLabel, periodLabel, co2Value) {
     ],
     assumptions: [
       'Facteur ADEME 2024 constant sur toute la période.',
-      'Ne tient pas compte de l\'autoconsommation PV éventuelle.',
+      "Ne tient pas compte de l'autoconsommation PV éventuelle.",
     ],
   });
 }

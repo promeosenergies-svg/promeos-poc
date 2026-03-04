@@ -4,6 +4,7 @@ Deterministic pricing with catalog-backed breakdown identical to shadow_v2 struc
 Components: fourniture / réseau / taxes-accises / abonnement, each with per-component TVA.
 Replaces frontend hardcoded % splits with authoritative backend calculation.
 """
+
 import logging
 from datetime import date
 from typing import Optional
@@ -24,6 +25,7 @@ DEFAULT_SEGMENT = "C5"
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
+
 def convert_eur_mwh_to_eur_kwh(price_eur_per_mwh: float) -> float:
     """Convert €/MWh to €/kWh."""
     return price_eur_per_mwh / 1000.0
@@ -40,6 +42,7 @@ def _catalog_rate(code: str, at_date: Optional[date] = None) -> float:
     """Get rate from tax catalog with hardcoded fallback."""
     try:
         from app.referential.tax_catalog_service import get_rate
+
         return get_rate(code, at_date)
     except Exception:
         return _FALLBACK_RATES.get(code, 0.0)
@@ -49,6 +52,7 @@ def _catalog_trace(code: str, at_date: Optional[date] = None) -> dict:
     """Get audit trace from catalog (returns {} on failure)."""
     try:
         from app.referential.tax_catalog_service import trace
+
         return trace(code, at_date)
     except Exception:
         return {}
@@ -70,6 +74,7 @@ _FALLBACK_RATES = {
 
 
 # ── Main engine ──────────────────────────────────────────────────────
+
 
 def compute_offer_quote(
     strategy: str,
@@ -111,9 +116,7 @@ def compute_offer_quote(
     elif price_ref_eur_per_mwh and price_ref_eur_per_mwh > 0:
         base_price = convert_eur_mwh_to_eur_kwh(price_ref_eur_per_mwh)
     else:
-        base_price = _catalog_rate(
-            "DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ", at_date
-        )
+        base_price = _catalog_rate("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ", at_date)
 
     # Apply strategy factor
     factor = STRATEGY_FACTORS.get(strategy_lower, 1.0)
@@ -136,10 +139,7 @@ def compute_offer_quote(
         turpe_gestion = _catalog_rate("TURPE_GESTION_C5_BT", at_date)
         accise = _catalog_rate("ACCISE_ELEC", at_date)
     else:
-        turpe_energie = (
-            _catalog_rate("ATRD_GAZ", at_date)
-            + _catalog_rate("ATRT_GAZ", at_date)
-        )
+        turpe_energie = _catalog_rate("ATRD_GAZ", at_date) + _catalog_rate("ATRT_GAZ", at_date)
         turpe_gestion = 0.0
         accise = _catalog_rate("ACCISE_GAZ", at_date)
 
@@ -171,9 +171,9 @@ def compute_offer_quote(
             "qty": kwh,
             "unit_rate": round(offer_price, 6),
             "unit": "EUR/kWh",
-            "trace": _catalog_trace(
-                "DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ", at_date
-            ) if not price_ref_eur_per_kwh else {"source": "contract_or_input"},
+            "trace": _catalog_trace("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ", at_date)
+            if not price_ref_eur_per_kwh
+            else {"source": "contract_or_input"},
         },
         {
             "code": "reseau",
@@ -185,9 +185,7 @@ def compute_offer_quote(
             "qty": kwh,
             "unit_rate": round(turpe_energie, 6),
             "unit": "EUR/kWh",
-            "trace": _catalog_trace(
-                "TURPE_ENERGIE_C5_BT" if is_elec else "ATRD_GAZ", at_date
-            ),
+            "trace": _catalog_trace("TURPE_ENERGIE_C5_BT" if is_elec else "ATRD_GAZ", at_date),
         },
         {
             "code": "taxes",
@@ -199,9 +197,7 @@ def compute_offer_quote(
             "qty": kwh,
             "unit_rate": round(accise, 6),
             "unit": "EUR/kWh",
-            "trace": _catalog_trace(
-                "ACCISE_ELEC" if is_elec else "ACCISE_GAZ", at_date
-            ),
+            "trace": _catalog_trace("ACCISE_ELEC" if is_elec else "ACCISE_GAZ", at_date),
         },
         {
             "code": "abonnement",

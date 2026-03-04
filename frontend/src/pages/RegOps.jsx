@@ -8,10 +8,14 @@ import {
   getRegOpsAssessment,
   getAiExplanation,
   getAiRecommendations,
-  getAiDataQuality
+  getAiDataQuality,
 } from '../services/api';
 import { useToast } from '../ui/ToastProvider';
-import { REGOPS_STATUS_LABELS, REGOPS_SEVERITY_LABELS, RULE_LABELS } from '../domain/compliance/complianceLabels.fr';
+import {
+  REGOPS_STATUS_LABELS,
+  REGOPS_SEVERITY_LABELS,
+  RULE_LABELS,
+} from '../domain/compliance/complianceLabels.fr';
 
 export default function RegOps() {
   const { id } = useParams();
@@ -33,12 +37,14 @@ export default function RegOps() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [assessmentData, explanationData, recommendationsData, qualityData] = await Promise.all([
-        getRegOpsAssessment(id),
-        getAiExplanation(id),
-        getAiRecommendations(id),
-        getAiDataQuality(id)
-      ]);
+      const [assessmentData, explanationData, recommendationsData, qualityData] = await Promise.all(
+        [
+          getRegOpsAssessment(id),
+          getAiExplanation(id),
+          getAiRecommendations(id),
+          getAiDataQuality(id),
+        ]
+      );
 
       setAssessment(assessmentData);
       setAiExplanation(explanationData);
@@ -53,22 +59,22 @@ export default function RegOps() {
 
   const getStatusBadgeColor = (status) => {
     const colors = {
-      'COMPLIANT': 'bg-green-100 text-green-800',
-      'AT_RISK': 'bg-yellow-100 text-yellow-800',
-      'NON_COMPLIANT': 'bg-red-100 text-red-800',
-      'UNKNOWN': 'bg-gray-100 text-gray-800',
-      'OUT_OF_SCOPE': 'bg-blue-100 text-blue-800',
-      'EXEMPTION_POSSIBLE': 'bg-purple-100 text-purple-800'
+      COMPLIANT: 'bg-green-100 text-green-800',
+      AT_RISK: 'bg-yellow-100 text-yellow-800',
+      NON_COMPLIANT: 'bg-red-100 text-red-800',
+      UNKNOWN: 'bg-gray-100 text-gray-800',
+      OUT_OF_SCOPE: 'bg-blue-100 text-blue-800',
+      EXEMPTION_POSSIBLE: 'bg-purple-100 text-purple-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getSeverityBadgeColor = (severity) => {
     const colors = {
-      'CRITICAL': 'bg-red-600 text-white',
-      'HIGH': 'bg-orange-500 text-white',
-      'MEDIUM': 'bg-yellow-500 text-white',
-      'LOW': 'bg-blue-500 text-white'
+      CRITICAL: 'bg-red-600 text-white',
+      HIGH: 'bg-orange-500 text-white',
+      MEDIUM: 'bg-yellow-500 text-white',
+      LOW: 'bg-blue-500 text-white',
     };
     return colors[severity] || 'bg-gray-500 text-white';
   };
@@ -123,14 +129,18 @@ export default function RegOps() {
           <div>
             <h2 className="text-lg font-semibold text-gray-700 mb-2">Score de Conformité</h2>
             <div className="flex items-baseline gap-2">
-              <span className={`text-5xl font-bold ${getComplianceScoreColor(assessment.compliance_score)}`}>
+              <span
+                className={`text-5xl font-bold ${getComplianceScoreColor(assessment.compliance_score)}`}
+              >
                 {assessment.compliance_score.toFixed(1)}
               </span>
               <span className="text-2xl text-gray-400">/100</span>
             </div>
           </div>
           <div className="text-right">
-            <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeColor(assessment.global_status)}`}>
+            <span
+              className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeColor(assessment.global_status)}`}
+            >
               {REGOPS_STATUS_LABELS[assessment.global_status] || assessment.global_status}
             </span>
             {assessment.next_deadline && (
@@ -190,10 +200,14 @@ export default function RegOps() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${getSeverityBadgeColor(finding.severity)}`}>
+                        <span
+                          className={`px-3 py-1 rounded text-xs font-semibold ${getSeverityBadgeColor(finding.severity)}`}
+                        >
                           {REGOPS_SEVERITY_LABELS[finding.severity] || finding.severity}
                         </span>
-                        <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(finding.status)}`}>
+                        <span
+                          className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(finding.status)}`}
+                        >
                           {REGOPS_STATUS_LABELS[finding.status] || finding.status}
                         </span>
                       </div>
@@ -201,12 +215,15 @@ export default function RegOps() {
                     <p className="text-gray-700 mb-2">{finding.explanation}</p>
                     {finding.legal_deadline && (
                       <p className="text-sm text-orange-600">
-                        ⚠️ Échéance légale: {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
+                        ⚠️ Échéance légale:{' '}
+                        {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
                       </p>
                     )}
                     {finding.inputs_used && finding.inputs_used.length > 0 && (
                       <details className="mt-2">
-                        <summary className="text-sm text-gray-600 cursor-pointer">Données utilisées</summary>
+                        <summary className="text-sm text-gray-600 cursor-pointer">
+                          Données utilisées
+                        </summary>
                         <ul className="text-xs text-gray-500 mt-1 ml-4 list-disc">
                           {finding.inputs_used.map((input, i) => (
                             <li key={i}>{input}</li>
@@ -228,10 +245,16 @@ export default function RegOps() {
             {assessment.actions && assessment.actions.length > 0 ? (
               <div className="space-y-3">
                 {assessment.actions
-                  .filter(action => !action.is_ai_suggestion)
+                  .filter((action) => !action.is_ai_suggestion)
                   .map((action, idx) => (
                     <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded">
-                      <span className="text-2xl">{action.priority_score > 70 ? '🔴' : action.priority_score > 50 ? '🟡' : '🟢'}</span>
+                      <span className="text-2xl">
+                        {action.priority_score > 70
+                          ? '🔴'
+                          : action.priority_score > 50
+                            ? '🟡'
+                            : '🟢'}
+                      </span>
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-800">{action.label}</h4>
                         {action.urgency_reason && (
@@ -271,7 +294,9 @@ export default function RegOps() {
           {/* AI Brief */}
           {aiExplanation && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-purple-800 mb-4">💡 Synthèse IA (2 minutes)</h2>
+              <h2 className="text-xl font-semibold text-purple-800 mb-4">
+                💡 Synthèse IA (2 minutes)
+              </h2>
               <p className="text-gray-700 whitespace-pre-wrap">{aiExplanation.brief}</p>
               {aiExplanation.needs_human_review && (
                 <div className="mt-4 text-sm text-purple-700">
@@ -282,29 +307,31 @@ export default function RegOps() {
           )}
 
           {/* AI Recommendations */}
-          {aiRecommendations && aiRecommendations.suggestions && aiRecommendations.suggestions.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">🤖 Suggestions IA</h2>
-              <div className="space-y-3">
-                {aiRecommendations.suggestions.map((suggestion, idx) => (
-                  <div key={idx} className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <span className="text-purple-600 font-semibold">IA</span>
-                      <div className="flex-1">
-                        <p className="text-gray-800">{suggestion.label || suggestion}</p>
-                        {typeof suggestion === 'object' && suggestion.reasoning && (
-                          <p className="text-sm text-gray-600 mt-1">{suggestion.reasoning}</p>
-                        )}
+          {aiRecommendations &&
+            aiRecommendations.suggestions &&
+            aiRecommendations.suggestions.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">🤖 Suggestions IA</h2>
+                <div className="space-y-3">
+                  {aiRecommendations.suggestions.map((suggestion, idx) => (
+                    <div key={idx} className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <span className="text-purple-600 font-semibold">IA</span>
+                        <div className="flex-1">
+                          <p className="text-gray-800">{suggestion.label || suggestion}</p>
+                          {typeof suggestion === 'object' && suggestion.reasoning && (
+                            <p className="text-sm text-gray-600 mt-1">{suggestion.reasoning}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-4">
+                  ℹ️ Les suggestions IA ne modifient jamais le statut de conformité déterministe
+                </p>
               </div>
-              <p className="text-xs text-gray-500 mt-4">
-                ℹ️ Les suggestions IA ne modifient jamais le statut de conformité déterministe
-              </p>
-            </div>
-          )}
+            )}
 
           {/* Data Quality */}
           {dataQuality && dataQuality.analysis && (

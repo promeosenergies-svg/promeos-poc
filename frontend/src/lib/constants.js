@@ -76,11 +76,11 @@ export const ANOMALY_THRESHOLDS = {
 // ── Status configuration (conformité) ────────────────────────────────────────
 
 export const STATUS_CONFIG = {
-  conforme:     { variant: 'ok',      label: 'Conforme' },
-  non_conforme: { variant: 'crit',    label: 'Non conforme' },
-  a_risque:     { variant: 'warn',    label: 'À risque' },
-  a_evaluer:    { variant: 'neutral', label: 'À évaluer' },
-  derogation:   { variant: 'info',    label: 'Dérogation' },
+  conforme: { variant: 'ok', label: 'Conforme' },
+  non_conforme: { variant: 'crit', label: 'Non conforme' },
+  a_risque: { variant: 'warn', label: 'À risque' },
+  a_evaluer: { variant: 'neutral', label: 'À évaluer' },
+  derogation: { variant: 'info', label: 'Dérogation' },
 };
 
 /**
@@ -110,17 +110,17 @@ export function getRiskStatus(amount, thresholds = RISK_THRESHOLDS.org) {
 /** Severity sort order (lower = more urgent). Used by dashboardEssentials, Site360. */
 export const SEVERITY_RANK = {
   critical: 0,
-  high:     1,
-  warn:     2,
-  medium:   3,
-  info:     4,
-  low:      5,
+  high: 1,
+  warn: 2,
+  medium: 3,
+  info: 4,
+  low: 5,
 };
 
 /** API severity → Badge variant mapping. Used by Site360 KB results. */
 export const SEV_BADGE = {
   critical: 'crit',
-  high:     'warn',
-  medium:   'info',
-  low:      'neutral',
+  high: 'warn',
+  medium: 'info',
+  low: 'neutral',
 };

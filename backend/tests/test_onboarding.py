@@ -2,8 +2,10 @@
 PROMEOS - Tests Onboarding B2B
 Tests complets: API endpoints, classification NAF, auto-provisioning.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import io
@@ -14,22 +16,33 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Batiment, Obligation, Organisation,
-    EntiteJuridique, Portefeuille,
-    TypeSite, TypeObligation, StatutConformite,
+    Base,
+    Site,
+    Batiment,
+    Obligation,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+    TypeObligation,
+    StatutConformite,
 )
 from database import get_db
 from main import app
 from services.naf_classifier import classify_naf
 from services.onboarding_service import (
-    estimate_cvc_power, is_tertiaire,
-    create_organisation_full, create_site_from_data, provision_site,
+    estimate_cvc_power,
+    is_tertiaire,
+    create_organisation_full,
+    create_site_from_data,
+    provision_site,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -52,6 +65,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -60,6 +74,7 @@ def client(db_session):
 # ========================================
 # T2 — Classification NAF
 # ========================================
+
 
 class TestNafClassifier:
     """Test classify_naf() pour chaque segment B2B."""
@@ -132,6 +147,7 @@ class TestNafClassifier:
 # T4 — Service onboarding (unit)
 # ========================================
 
+
 class TestOnboardingService:
     """Tests unitaires pour onboarding_service.py"""
 
@@ -181,7 +197,10 @@ class TestOnboardingService:
 
     def test_create_site_from_data_with_type(self, db_session):
         result = create_organisation_full(
-            db=db_session, org_nom="Org", org_siren="", org_type_client="bureau",
+            db=db_session,
+            org_nom="Org",
+            org_siren="",
+            org_type_client="bureau",
             portefeuilles_data=[],
         )
         site = create_site_from_data(
@@ -197,7 +216,10 @@ class TestOnboardingService:
 
     def test_create_site_from_data_naf_auto(self, db_session):
         result = create_organisation_full(
-            db=db_session, org_nom="Org", org_siren="", org_type_client="bureau",
+            db=db_session,
+            org_nom="Org",
+            org_siren="",
+            org_type_client="bureau",
             portefeuilles_data=[],
         )
         site = create_site_from_data(
@@ -212,7 +234,10 @@ class TestOnboardingService:
 
     def test_provision_site_creates_batiment(self, db_session):
         result = create_organisation_full(
-            db=db_session, org_nom="Org", org_siren="", org_type_client="bureau",
+            db=db_session,
+            org_nom="Org",
+            org_siren="",
+            org_type_client="bureau",
             portefeuilles_data=[],
         )
         site = create_site_from_data(
@@ -233,7 +258,10 @@ class TestOnboardingService:
 
     def test_provision_site_tertiaire_gt1000_creates_decret(self, db_session):
         result = create_organisation_full(
-            db=db_session, org_nom="Org", org_siren="", org_type_client="bureau",
+            db=db_session,
+            org_nom="Org",
+            org_siren="",
+            org_type_client="bureau",
             portefeuilles_data=[],
         )
         site = create_site_from_data(
@@ -252,7 +280,10 @@ class TestOnboardingService:
 
     def test_provision_site_small_no_decret(self, db_session):
         result = create_organisation_full(
-            db=db_session, org_nom="Org", org_siren="", org_type_client="bureau",
+            db=db_session,
+            org_nom="Org",
+            org_siren="",
+            org_type_client="bureau",
             portefeuilles_data=[],
         )
         site = create_site_from_data(
@@ -265,9 +296,14 @@ class TestOnboardingService:
         prov = provision_site(db_session, site)
         db_session.commit()
 
-        obls = db_session.query(Obligation).filter_by(
-            site_id=site.id, type=TypeObligation.DECRET_TERTIAIRE,
-        ).all()
+        obls = (
+            db_session.query(Obligation)
+            .filter_by(
+                site_id=site.id,
+                type=TypeObligation.DECRET_TERTIAIRE,
+            )
+            .all()
+        )
         assert len(obls) == 0
 
 
@@ -275,22 +311,28 @@ class TestOnboardingService:
 # T3 — API Onboarding (integration)
 # ========================================
 
+
 class TestOnboardingAPI:
     """Tests integration sur les 3 endpoints /api/onboarding."""
 
     def test_create_org_complete(self, client):
-        r = client.post("/api/onboarding", json={
-            "organisation": {"nom": "Nexity", "siren": "444346795", "type_client": "copropriete"},
-            "portefeuilles": [{"nom": "IDF"}, {"nom": "PACA"}],
-            "sites": [{
-                "nom": "Residence Les Lilas",
-                "type": "copropriete",
-                "adresse": "12 rue des Lilas",
-                "code_postal": "75020",
-                "ville": "Paris",
-                "surface_m2": 3500,
-            }],
-        })
+        r = client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Nexity", "siren": "444346795", "type_client": "copropriete"},
+                "portefeuilles": [{"nom": "IDF"}, {"nom": "PACA"}],
+                "sites": [
+                    {
+                        "nom": "Residence Les Lilas",
+                        "type": "copropriete",
+                        "adresse": "12 rue des Lilas",
+                        "code_postal": "75020",
+                        "ville": "Paris",
+                        "surface_m2": 3500,
+                    }
+                ],
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "ok"
@@ -299,9 +341,12 @@ class TestOnboardingAPI:
         assert len(data["portefeuille_ids"]) == 2
 
     def test_create_org_sans_sites(self, client):
-        r = client.post("/api/onboarding", json={
-            "organisation": {"nom": "Org Vide"},
-        })
+        r = client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Org Vide"},
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["sites_created"] == 0
@@ -309,13 +354,19 @@ class TestOnboardingAPI:
 
     def test_409_if_org_already_exists(self, client):
         # Premier appel: OK
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "Premiere Org"},
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Premiere Org"},
+            },
+        )
         # Deuxieme appel: 409
-        r = client.post("/api/onboarding", json={
-            "organisation": {"nom": "Deuxieme Org"},
-        })
+        r = client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Deuxieme Org"},
+            },
+        )
         assert r.status_code == 409
         assert "existe deja" in r.json()["detail"]
 
@@ -328,10 +379,13 @@ class TestOnboardingAPI:
         assert data["total_sites"] == 0
 
     def test_status_after_onboarding(self, client):
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "Ma Corp"},
-            "sites": [{"nom": "Site 1", "type": "bureau"}],
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Ma Corp"},
+                "sites": [{"nom": "Site 1", "type": "bureau"}],
+            },
+        )
         r = client.get("/api/onboarding/status")
         data = r.json()
         assert data["has_organisation"] is True
@@ -341,9 +395,12 @@ class TestOnboardingAPI:
 
     def test_import_csv_basic(self, client):
         # D'abord creer une org
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "CSV Corp"},
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "CSV Corp"},
+            },
+        )
         # Puis importer un CSV
         csv_content = (
             "nom,adresse,code_postal,ville,surface_m2,type,naf_code\n"
@@ -361,9 +418,12 @@ class TestOnboardingAPI:
         assert data["errors"] == 0
 
     def test_import_csv_naf_auto_classification(self, client):
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "NAF Corp"},
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "NAF Corp"},
+            },
+        )
         csv_content = (
             "nom,adresse,code_postal,ville,surface_m2,type,naf_code\n"
             "Mairie Brest,,29200,Brest,2000,,84.11Z\n"
@@ -381,9 +441,12 @@ class TestOnboardingAPI:
         assert "enseignement" in site_types
 
     def test_import_csv_semicolon_delimiter(self, client):
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "Semicolon Corp"},
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Semicolon Corp"},
+            },
+        )
         csv_content = (
             "nom;adresse;code_postal;ville;surface_m2;type;naf_code\n"
             "Bureau Marseille;La Canebiere;13001;Marseille;900;bureau;\n"
@@ -396,9 +459,12 @@ class TestOnboardingAPI:
         assert data["imported"] == 1
 
     def test_import_csv_with_errors(self, client):
-        client.post("/api/onboarding", json={
-            "organisation": {"nom": "Error Corp"},
-        })
+        client.post(
+            "/api/onboarding",
+            json={
+                "organisation": {"nom": "Error Corp"},
+            },
+        )
         csv_content = (
             "nom,adresse,code_postal,ville,surface_m2,type,naf_code\n"
             ",rue vide,,Paris,1000,bureau,\n"

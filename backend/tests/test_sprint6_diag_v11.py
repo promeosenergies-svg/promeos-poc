@@ -4,8 +4,10 @@ Schedule-aware hors_horaires, tariff-aware loss EUR,
 robust stats (median+MAD, linreg), recommended actions,
 site config endpoints (schedule + tariff).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -17,9 +19,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Meter, MeterReading, ConsumptionInsight,
-    Organisation, EntiteJuridique, Portefeuille,
-    SiteOperatingSchedule, SiteTariffProfile,
+    Base,
+    Site,
+    Meter,
+    MeterReading,
+    ConsumptionInsight,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    SiteOperatingSchedule,
+    SiteTariffProfile,
     TypeSite,
 )
 from models.energy_models import FrequencyType
@@ -48,6 +57,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -82,7 +92,9 @@ def _create_org_site(db_session, surface=2000):
     return org, site
 
 
-def _create_meter_readings(db_session, site_id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=0, drift_per_day=0.0):
+def _create_meter_readings(
+    db_session, site_id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=0, drift_per_day=0.0
+):
     """Create meter + hourly readings with controllable patterns."""
     meter = Meter(
         meter_id=f"PRM-TEST-{site_id:04d}",
@@ -116,15 +128,17 @@ def _create_meter_readings(db_session, site_id, days=30, base_kwh=20, peak_kwh=8
 
         # Drift
         if drift_per_day > 0:
-            val *= (1.0 + drift_per_day * day_idx)
+            val *= 1.0 + drift_per_day * day_idx
 
-        readings.append(MeterReading(
-            meter_id=meter.id,
-            timestamp=ts,
-            frequency=FrequencyType.HOURLY,
-            value_kwh=round(val, 2),
-            quality_score=0.95,
-        ))
+        readings.append(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=round(val, 2),
+                quality_score=0.95,
+            )
+        )
         ts += timedelta(hours=1)
 
     db_session.bulk_save_objects(readings)
@@ -135,6 +149,7 @@ def _create_meter_readings(db_session, site_id, days=30, base_kwh=20, peak_kwh=8
 # ==============================================
 # Test SiteOperatingSchedule model
 # ==============================================
+
 
 class TestScheduleModel:
     def test_create_schedule(self, db_session):
@@ -168,6 +183,7 @@ class TestScheduleModel:
 # Test SiteTariffProfile model
 # ==============================================
 
+
 class TestTariffModel:
     def test_create_tariff(self, db_session):
         _, site = _create_org_site(db_session)
@@ -193,6 +209,7 @@ class TestTariffModel:
 # Test Schedule API endpoints
 # ==============================================
 
+
 class TestScheduleAPI:
     def test_get_schedule_default(self, client, db_session):
         _, site = _create_org_site(db_session)
@@ -207,13 +224,16 @@ class TestScheduleAPI:
     def test_put_schedule(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
-        resp = client.put(f"/api/site/{site.id}/schedule", json={
-            "timezone": "Europe/Paris",
-            "open_days": "0,1,2,3,4,5",
-            "open_time": "07:00",
-            "close_time": "22:00",
-            "is_24_7": False,
-        })
+        resp = client.put(
+            f"/api/site/{site.id}/schedule",
+            json={
+                "timezone": "Europe/Paris",
+                "open_days": "0,1,2,3,4,5",
+                "open_time": "07:00",
+                "close_time": "22:00",
+                "is_24_7": False,
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["open_time"] == "07:00"
@@ -223,12 +243,20 @@ class TestScheduleAPI:
     def test_put_schedule_update(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
-        client.put(f"/api/site/{site.id}/schedule", json={
-            "open_time": "09:00", "close_time": "18:00",
-        })
-        resp = client.put(f"/api/site/{site.id}/schedule", json={
-            "open_time": "10:00", "close_time": "20:00",
-        })
+        client.put(
+            f"/api/site/{site.id}/schedule",
+            json={
+                "open_time": "09:00",
+                "close_time": "18:00",
+            },
+        )
+        resp = client.put(
+            f"/api/site/{site.id}/schedule",
+            json={
+                "open_time": "10:00",
+                "close_time": "20:00",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["open_time"] == "10:00"
 
@@ -239,27 +267,34 @@ class TestScheduleAPI:
     def test_schedule_with_exceptions(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
-        resp = client.put(f"/api/site/{site.id}/schedule", json={
-            "open_time": "08:00",
-            "close_time": "19:00",
-            "exceptions_json": json.dumps(["2026-01-01", "2026-05-01"]),
-        })
+        resp = client.put(
+            f"/api/site/{site.id}/schedule",
+            json={
+                "open_time": "08:00",
+                "close_time": "19:00",
+                "exceptions_json": json.dumps(["2026-01-01", "2026-05-01"]),
+            },
+        )
         assert resp.status_code == 200
 
     def test_schedule_invalid_exceptions(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
-        resp = client.put(f"/api/site/{site.id}/schedule", json={
-            "open_time": "08:00",
-            "close_time": "19:00",
-            "exceptions_json": "not a json array",
-        })
+        resp = client.put(
+            f"/api/site/{site.id}/schedule",
+            json={
+                "open_time": "08:00",
+                "close_time": "19:00",
+                "exceptions_json": "not a json array",
+            },
+        )
         assert resp.status_code == 422
 
 
 # ==============================================
 # Test Tariff API endpoints
 # ==============================================
+
 
 class TestTariffAPI:
     def test_get_tariff_default(self, client, db_session):
@@ -274,10 +309,13 @@ class TestTariffAPI:
     def test_put_tariff(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
-        resp = client.put(f"/api/site/{site.id}/tariff", json={
-            "price_ref_eur_per_kwh": 0.25,
-            "currency": "EUR",
-        })
+        resp = client.put(
+            f"/api/site/{site.id}/tariff",
+            json={
+                "price_ref_eur_per_kwh": 0.25,
+                "currency": "EUR",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["price_ref_eur_per_kwh"] == 0.25
@@ -292,10 +330,12 @@ class TestTariffAPI:
 # Test schedule-aware hors_horaires detector
 # ==============================================
 
+
 class TestScheduleAwareDetection:
     def test_hors_horaires_changes_with_schedule(self, db_session):
         """Changing open_time/close_time should change hors_horaires detection."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         db_session.commit()
@@ -330,6 +370,7 @@ class TestScheduleAwareDetection:
     def test_24_7_site_no_hors_horaires(self, db_session):
         """A 24/7 site should never trigger hors_horaires."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         sched = SiteOperatingSchedule(
@@ -348,10 +389,12 @@ class TestScheduleAwareDetection:
 # Test tariff-aware loss EUR
 # ==============================================
 
+
 class TestTariffAwareLoss:
     def test_loss_eur_uses_site_price(self, db_session):
         """estimated_loss_eur should use SiteTariffProfile price."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
 
@@ -365,12 +408,14 @@ class TestTariffAwareLoss:
             if ci.estimated_loss_kwh and ci.estimated_loss_kwh > 0:
                 # Check EUR = kWh * 0.30
                 expected_eur = round(ci.estimated_loss_kwh * 0.30, 0)
-                assert ci.estimated_loss_eur == expected_eur, \
+                assert ci.estimated_loss_eur == expected_eur, (
                     f"type={ci.type}: {ci.estimated_loss_eur} != {expected_eur}"
+                )
 
     def test_loss_eur_fallback_default(self, db_session):
         """Without tariff profile, should use DEFAULT_PRICE_REF_KWH (0.18)."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         db_session.commit()
@@ -384,6 +429,7 @@ class TestTariffAwareLoss:
     def test_price_ref_in_metrics(self, db_session):
         """price_ref_eur_kwh should appear in metrics_json."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         db_session.commit()
@@ -398,6 +444,7 @@ class TestTariffAwareLoss:
 # ==============================================
 # Test robust statistics
 # ==============================================
+
 
 class TestRobustStats:
     def test_pointe_robust_single_outlier_no_alert(self, db_session):
@@ -426,6 +473,7 @@ class TestRobustStats:
     def test_derive_linreg_in_metrics(self, db_session):
         """Derive should include linreg and fallback drift in metrics."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         # Create readings with drift of +1% per day
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, drift_per_day=0.01)
@@ -444,10 +492,12 @@ class TestRobustStats:
 # Test recommended actions
 # ==============================================
 
+
 class TestRecommendedActions:
     def test_insights_have_recommended_actions(self, db_session):
         """All insights should have recommended_actions_json."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         db_session.commit()
@@ -466,6 +516,7 @@ class TestRecommendedActions:
     def test_hors_horaires_actions(self, db_session):
         """hors_horaires should produce CVC and GTC actions."""
         from services.consumption_diagnostic import run_diagnostic
+
         _, site = _create_org_site(db_session)
         _create_meter_readings(db_session, site.id, days=30, base_kwh=20, peak_kwh=80, anomaly_every_n=3)
         db_session.commit()
@@ -485,6 +536,7 @@ class TestRecommendedActions:
 
         # Run diagnostic first
         from services.consumption_diagnostic import run_diagnostic
+
         run_diagnostic(db_session, site.id)
         db_session.commit()
 
@@ -501,6 +553,7 @@ class TestRecommendedActions:
         db_session.commit()
 
         from services.consumption_diagnostic import run_diagnostic
+
         run_diagnostic(db_session, site.id)
         db_session.commit()
 
@@ -516,9 +569,11 @@ class TestRecommendedActions:
 # Test helper functions
 # ==============================================
 
+
 class TestHelpers:
     def test_median(self):
         from services.consumption_diagnostic import _median
+
         assert _median([1, 2, 3, 4, 5]) == 3
         assert _median([1, 2, 3, 4]) == 2.5
         assert _median([]) == 0.0
@@ -526,11 +581,13 @@ class TestHelpers:
 
     def test_mad(self):
         from services.consumption_diagnostic import _mad
+
         # MAD of [1,1,2,2,4,6,9] = median of [1,1,0,0,2,4,7] = 1
         assert _mad([1, 1, 2, 2, 4, 6, 9]) == 1.0
 
     def test_linear_slope(self):
         from services.consumption_diagnostic import _linear_slope
+
         # Perfect linear: y = 2*x
         assert abs(_linear_slope([0, 2, 4, 6, 8]) - 2.0) < 0.01
         # Flat
@@ -543,6 +600,7 @@ class TestHelpers:
 # Test dashboard 2min integration
 # ==============================================
 
+
 class TestDashboard2minIntegration:
     def test_dashboard_conso_insight_action_fallback(self, client, db_session):
         """When no compliance NOK, dashboard action_1 should come from conso insight."""
@@ -551,6 +609,7 @@ class TestDashboard2minIntegration:
         db_session.commit()
 
         from services.consumption_diagnostic import run_diagnostic
+
         run_diagnostic(db_session, site.id)
         db_session.commit()
 

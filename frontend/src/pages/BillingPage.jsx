@@ -6,7 +6,16 @@
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarRange, AlertTriangle, CheckCircle, XCircle, RefreshCw, Upload, Zap, Search } from 'lucide-react';
+import {
+  CalendarRange,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Upload,
+  Zap,
+  Search,
+} from 'lucide-react';
 import {
   getBillingPeriods,
   getCoverageSummary,
@@ -96,100 +105,109 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteFilter]);
 
-  const fetchAll = useCallback(async (siteId, offset = 0, append = false) => {
-    if (!append) setLoading(true);
-    else setLoadingMore(true);
-    setError(null);
+  const fetchAll = useCallback(
+    async (siteId, offset = 0, append = false) => {
+      if (!append) setLoading(true);
+      else setLoadingMore(true);
+      setError(null);
 
-    const params = {};
-    if (siteId) params.site_id = siteId;
+      const params = {};
+      if (siteId) params.site_id = siteId;
 
-    // Critical: periods — si ça échoue, rien à afficher
-    try {
-      const periodsData = await getBillingPeriods({ ...params, limit: LIMIT, offset });
-      setPeriodsTotal(periodsData.total);
-      setPeriodsOffset(offset + periodsData.periods.length);
-      if (append) {
-        setPeriods(prev => [...prev, ...periodsData.periods]);
-      } else {
-        setPeriods(periodsData.periods);
-      }
-    } catch (err) {
-      const status = err?.response?.status;
-      // Build comprehensive debug payload for Expert mode
-      const debugPayload = {
-        endpoint: err?.config?.url || '/billing/periods',
-        params: err?.config?.params || params,
-        status: status || 0,
-        contentType: err?.response?.headers?.['content-type'] || 'N/A',
-        bodySnippet: typeof err?.response?.data === 'string'
-          ? err.response.data.slice(0, 120)
-          : JSON.stringify(err?.response?.data || err?.message || 'no body').slice(0, 120),
-        orgHeader: err?.config?.headers?.['X-Org-Id'] || 'missing',
-      };
-      if (isExpert) console.error('[BillingPage] getBillingPeriods FAILED:', debugPayload, err);
+      // Critical: periods — si ça échoue, rien à afficher
+      try {
+        const periodsData = await getBillingPeriods({ ...params, limit: LIMIT, offset });
+        setPeriodsTotal(periodsData.total);
+        setPeriodsOffset(offset + periodsData.periods.length);
+        if (append) {
+          setPeriods((prev) => [...prev, ...periodsData.periods]);
+        } else {
+          setPeriods(periodsData.periods);
+        }
+      } catch (err) {
+        const status = err?.response?.status;
+        // Build comprehensive debug payload for Expert mode
+        const debugPayload = {
+          endpoint: err?.config?.url || '/billing/periods',
+          params: err?.config?.params || params,
+          status: status || 0,
+          contentType: err?.response?.headers?.['content-type'] || 'N/A',
+          bodySnippet:
+            typeof err?.response?.data === 'string'
+              ? err.response.data.slice(0, 120)
+              : JSON.stringify(err?.response?.data || err?.message || 'no body').slice(0, 120),
+          orgHeader: err?.config?.headers?.['X-Org-Id'] || 'missing',
+        };
+        if (isExpert) console.error('[BillingPage] getBillingPeriods FAILED:', debugPayload, err);
 
-      if (status === 404 && siteId) {
-        // P0: purge stale siteId from localStorage scope
-        try {
-          const raw = localStorage.getItem('promeos_scope');
-          if (raw) {
-            const scope = JSON.parse(raw);
-            scope.siteId = null;
-            localStorage.setItem('promeos_scope', JSON.stringify(scope));
+        if (status === 404 && siteId) {
+          // P0: purge stale siteId from localStorage scope
+          try {
+            const raw = localStorage.getItem('promeos_scope');
+            if (raw) {
+              const scope = JSON.parse(raw);
+              scope.siteId = null;
+              localStorage.setItem('promeos_scope', JSON.stringify(scope));
+            }
+          } catch {
+            /* ignore storage errors */
           }
-        } catch { /* ignore storage errors */ }
-        setSiteFilter('');
-        const baseMsg = 'Site introuvable. Retour à la vue tous les sites.';
-        if (isExpert) {
-          setError(`${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=404, site_id=${siteId}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}]`);
+          setSiteFilter('');
+          const baseMsg = 'Site introuvable. Retour à la vue tous les sites.';
+          if (isExpert) {
+            setError(
+              `${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=404, site_id=${siteId}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}]`
+            );
+          } else {
+            setError(baseMsg);
+          }
         } else {
-          setError(baseMsg);
+          const baseMsg = 'Impossible de charger les données de facturation.';
+          if (isExpert) {
+            setError(
+              `${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=${debugPayload.status}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}, body=${debugPayload.bodySnippet}]`
+            );
+          } else {
+            setError(baseMsg);
+          }
         }
-      } else {
-        const baseMsg = 'Impossible de charger les données de facturation.';
-        if (isExpert) {
-          setError(`${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=${debugPayload.status}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}, body=${debugPayload.bodySnippet}]`);
-        } else {
-          setError(baseMsg);
-        }
+        setLoading(false);
+        setLoadingMore(false);
+        return;
       }
+
       setLoading(false);
       setLoadingMore(false);
-      return;
-    }
 
-    setLoading(false);
-    setLoadingMore(false);
-
-    // Non-bloquant : coverage-summary (best-effort, ne casse pas la timeline)
-    if (offset === 0) {
-      try {
-        const summaryData = await getCoverageSummary(params);
-        setSummary(summaryData);
-      } catch (err) {
-        if (isExpert) console.warn('[BillingPage] coverage-summary failed (non-bloquant):', err);
-        setSummary(null);
+      // Non-bloquant : coverage-summary (best-effort, ne casse pas la timeline)
+      if (offset === 0) {
+        try {
+          const summaryData = await getCoverageSummary(params);
+          setSummary(summaryData);
+        } catch (err) {
+          if (isExpert) console.warn('[BillingPage] coverage-summary failed (non-bloquant):', err);
+          setSummary(null);
+        }
       }
-    }
 
-    // Non-bloquant : missing-periods (best-effort)
-    if (offset === 0) {
-      try {
-        const missingData = await getMissingPeriods({ limit: 10 });
-        setMissingPeriods(missingData.items || []);
-      } catch (err) {
-        if (isExpert) console.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
-        setMissingPeriods([]);
+      // Non-bloquant : missing-periods (best-effort)
+      if (offset === 0) {
+        try {
+          const missingData = await getMissingPeriods({ limit: 10 });
+          setMissingPeriods(missingData.items || []);
+        } catch (err) {
+          if (isExpert) console.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
+          setMissingPeriods([]);
+        }
       }
-    }
-  }, [isExpert]);
+    },
+    [isExpert]
+  );
 
   useEffect(() => {
     fetchAll(siteFilter, 0, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteFilter]);
-
 
   const handleLoadMore = () => {
     fetchAll(siteFilter, periodsOffset, true);
@@ -197,18 +215,23 @@ export default function BillingPage() {
 
   const handleCreateAction = (actionKey, period) => {
     if (actionMap.has(actionKey)) return;
-    openActionDrawer({
-      prefill: {
-        titre: `Période manquante : ${period.month_key}${period.missing_reason ? ' — ' + period.missing_reason : ''}`,
-        type: 'facture',
-        description: `Période manquante : ${period.month_key}`,
+    openActionDrawer(
+      {
+        prefill: {
+          titre: `Période manquante : ${period.month_key}${period.missing_reason ? ' — ' + period.missing_reason : ''}`,
+          type: 'facture',
+          description: `Période manquante : ${period.month_key}`,
+        },
+        siteId: siteFilter ? parseInt(siteFilter, 10) : null,
+        sourceType: 'billing',
+        sourceId: actionKey,
       },
-      siteId: siteFilter ? parseInt(siteFilter, 10) : null,
-      sourceType: 'billing',
-      sourceId: actionKey,
-    }, { onSave: (result) => {
-      setActionMap(prev => new Map([...prev, [actionKey, result?.id || true]]));
-    }});
+      {
+        onSave: (result) => {
+          setActionMap((prev) => new Map([...prev, [actionKey, result?.id || true]]));
+        },
+      }
+    );
   };
 
   const hasMore = periodsOffset < periodsTotal;
@@ -223,20 +246,19 @@ export default function BillingPage() {
       const months = periodPreset === 'last3' ? 3 : periodPreset === 'last6' ? 6 : 12;
       const cutoff = new Date(now.getFullYear(), now.getMonth() - months, 1);
       const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}`;
-      result = result.filter(p => p.month_key >= cutoffKey);
+      result = result.filter((p) => p.month_key >= cutoffKey);
     }
 
     // Status filter
     if (statusFilter !== 'all') {
-      result = result.filter(p => p.coverage_status === statusFilter);
+      result = result.filter((p) => p.coverage_status === statusFilter);
     }
 
     // Text search
     if (timelineSearch.trim()) {
       const q = timelineSearch.trim().toLowerCase();
-      result = result.filter(p =>
-        p.month_key?.toLowerCase().includes(q) ||
-        p.pdl_prm?.toLowerCase().includes(q)
+      result = result.filter(
+        (p) => p.month_key?.toLowerCase().includes(q) || p.pdl_prm?.toLowerCase().includes(q)
       );
     }
 
@@ -252,12 +274,15 @@ export default function BillingPage() {
     return result;
   }, [periods, periodPreset, statusFilter, timelineSearch, sortMode]);
 
-  const statusCounts = useMemo(() => ({
-    all: periods.length,
-    covered: periods.filter(p => p.coverage_status === 'covered').length,
-    partial: periods.filter(p => p.coverage_status === 'partial').length,
-    missing: periods.filter(p => p.coverage_status === 'missing').length,
-  }), [periods]);
+  const statusCounts = useMemo(
+    () => ({
+      all: periods.length,
+      covered: periods.filter((p) => p.coverage_status === 'covered').length,
+      partial: periods.filter((p) => p.coverage_status === 'partial').length,
+      missing: periods.filter((p) => p.coverage_status === 'missing').length,
+    }),
+    [periods]
+  );
 
   // Import contextuel handlers
   const handleImportClick = (siteId, monthKey, type) => {
@@ -331,17 +356,22 @@ export default function BillingPage() {
       <div className="flex flex-wrap gap-2 items-center">
         {scopeHasSite ? (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-            Hérité : {orgSites.find(s => s.id === scopeSiteId)?.nom || `Site ${scopeSiteId}`}
+            Hérité : {orgSites.find((s) => s.id === scopeSiteId)?.nom || `Site ${scopeSiteId}`}
           </div>
         ) : (
           <select
             className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700"
             value={siteFilter}
-            onChange={e => { setSiteFilter(e.target.value); setPeriodsOffset(0); }}
+            onChange={(e) => {
+              setSiteFilter(e.target.value);
+              setPeriodsOffset(0);
+            }}
           >
             <option value="">Tous les sites</option>
-            {orgSites.map(s => (
-              <option key={s.id} value={s.id}>{s.nom}</option>
+            {orgSites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nom}
+              </option>
             ))}
           </select>
         )}
@@ -352,8 +382,11 @@ export default function BillingPage() {
         )}
         {localFilterActive && (
           <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-            Vue filtrée : Site {orgSites.find(s => String(s.id) === String(siteFilter))?.nom || siteFilter}
-            <span className="text-amber-500">(scope global : {scopeLabel || 'Tous les sites'})</span>
+            Vue filtrée : Site{' '}
+            {orgSites.find((s) => String(s.id) === String(siteFilter))?.nom || siteFilter}
+            <span className="text-amber-500">
+              (scope global : {scopeLabel || 'Tous les sites'})
+            </span>
           </div>
         )}
       </div>
@@ -414,14 +447,17 @@ export default function BillingPage() {
               Périodes manquantes ou incomplètes ({missingPeriods.length})
             </h2>
             <div className="space-y-2">
-              {missingPeriods.slice(0, 5).map(item => (
+              {missingPeriods.slice(0, 5).map((item) => (
                 <div
                   key={`${item.site_id}-${item.month_key}`}
                   className="flex items-center justify-between gap-3 px-3 py-2 bg-red-50 border border-red-100 rounded-lg"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={item.coverage_status === 'missing' ? 'danger' : 'warning'} size="xs">
+                      <Badge
+                        variant={item.coverage_status === 'missing' ? 'danger' : 'warning'}
+                        size="xs"
+                      >
                         {item.coverage_status === 'missing' ? 'Manquant' : 'Partiel'}
                       </Badge>
                       <span className="text-sm font-medium text-gray-800">{item.month_key}</span>
@@ -454,12 +490,15 @@ export default function BillingPage() {
                       size="xs"
                       variant="ghost"
                       disabled={actionMap.has(`missing-${item.month_key}-${item.site_id}`)}
-                      onClick={() => handleCreateAction(
-                        `missing-${item.month_key}-${item.site_id}`,
-                        item
-                      )}
+                      onClick={() =>
+                        handleCreateAction(`missing-${item.month_key}-${item.site_id}`, item)
+                      }
                     >
-                      {actionMap.has(`missing-${item.month_key}-${item.site_id}`) ? '✓' : <Zap size={11} />}
+                      {actionMap.has(`missing-${item.month_key}-${item.site_id}`) ? (
+                        '✓'
+                      ) : (
+                        <Zap size={11} />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -474,7 +513,7 @@ export default function BillingPage() {
         <select
           className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700"
           value={periodPreset}
-          onChange={e => setPeriodPreset(e.target.value)}
+          onChange={(e) => setPeriodPreset(e.target.value)}
         >
           <option value="all">Toutes périodes</option>
           <option value="last3">3 derniers mois</option>
@@ -486,7 +525,7 @@ export default function BillingPage() {
           { key: 'covered', label: 'Couverts' },
           { key: 'partial', label: 'Partiels' },
           { key: 'missing', label: 'Manquants' },
-        ].map(opt => (
+        ].map((opt) => (
           <button
             key={opt.key}
             type="button"
@@ -506,14 +545,14 @@ export default function BillingPage() {
             type="text"
             placeholder="Mois ou PDL..."
             value={timelineSearch}
-            onChange={e => setTimelineSearch(e.target.value)}
+            onChange={(e) => setTimelineSearch(e.target.value)}
             className="text-xs border border-gray-200 rounded-lg pl-6 pr-2 py-1.5 bg-white text-gray-700 w-36"
           />
         </div>
         <select
           className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700"
           value={sortMode}
-          onChange={e => setSortMode(e.target.value)}
+          onChange={(e) => setSortMode(e.target.value)}
         >
           <option value="date_desc">Date desc</option>
           <option value="priority_missing">Priorité manquants</option>
@@ -570,8 +609,20 @@ export default function BillingPage() {
       </Card>
 
       {/* Hidden file inputs for contextual import */}
-      <input ref={csvInputRef} type="file" accept=".csv" className="sr-only" onChange={handleContextualCsvImport} />
-      <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handleContextualPdfImport} />
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv"
+        className="sr-only"
+        onChange={handleContextualCsvImport}
+      />
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept=".pdf"
+        className="sr-only"
+        onChange={handleContextualPdfImport}
+      />
 
       {/* Action creation handled by ActionDrawerContext */}
     </div>

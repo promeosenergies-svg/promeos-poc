@@ -2,6 +2,7 @@
 PROMEOS KB Models - Knowledge Base with Provenance
 KB system tables for usages, archetypes, rules, recommendations
 """
+
 from sqlalchemy import Column, String, Integer, Float, Text, JSON, DateTime, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -12,6 +13,7 @@ from .base import Base
 
 class KBConfidence(str, enum.Enum):
     """KB item confidence levels"""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -19,6 +21,7 @@ class KBConfidence(str, enum.Enum):
 
 class KBStatus(str, enum.Enum):
     """KB item lifecycle status"""
+
     DRAFT = "draft"
     VALIDATED = "validated"
     DEPRECATED = "deprecated"
@@ -26,6 +29,7 @@ class KBStatus(str, enum.Enum):
 
 class KBVersion(Base):
     """KB version tracking for source documents"""
+
     __tablename__ = "kb_version"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -54,6 +58,7 @@ class KBVersion(Base):
 
 class KBArchetype(Base):
     """Usage archetypes extracted from KB source"""
+
     __tablename__ = "kb_archetype"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -98,6 +103,7 @@ class KBArchetype(Base):
 
 class KBMappingCode(Base):
     """NAF code to archetype mappings"""
+
     __tablename__ = "kb_mapping_code"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -124,6 +130,7 @@ class KBMappingCode(Base):
 
 class KBAnomalyRule(Base):
     """Anomaly detection rules from KB"""
+
     __tablename__ = "kb_anomaly_rule"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -166,6 +173,7 @@ class KBAnomalyRule(Base):
 
 class KBRecommendation(Base):
     """Recommendation playbooks from KB"""
+
     __tablename__ = "kb_recommendation"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -217,6 +225,7 @@ class KBRecommendation(Base):
 
 class KBTaxonomy(Base):
     """Taxonomy validation - allowed values for tags"""
+
     __tablename__ = "kb_taxonomy"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

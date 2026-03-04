@@ -5,6 +5,7 @@ Chaque Citation pointe vers un document KB + un pointeur (page/section/article).
 
 Regle P5 : aucune "rule" normative sans au moins 1 Citation.
 """
+
 import hashlib
 import json
 import sqlite3
@@ -16,6 +17,7 @@ from .models import get_kb_db
 # ========================================
 # Schema extension
 # ========================================
+
 
 def init_citations_schema(conn: sqlite3.Connection):
     """Create citations + rule_cards tables if they don't exist."""
@@ -110,6 +112,7 @@ def init_citations_schema(conn: sqlite3.Connection):
 # Citation CRUD
 # ========================================
 
+
 def _make_excerpt_hash(text: str) -> str:
     """SHA-256 of the excerpt text for deduplication."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
@@ -145,7 +148,8 @@ def create_citation(
     now = datetime.now(timezone.utc).isoformat()
 
     cursor = db.conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO kb_citations (
             citation_id, doc_id, doc_title,
             pointer_page, pointer_section, pointer_article,
@@ -163,12 +167,22 @@ def create_citation(
             excerpt_hash=excluded.excerpt_hash,
             retrieved_at=excluded.retrieved_at,
             confidence=excluded.confidence
-    """, (
-        citation_id, doc_id, doc_title,
-        pointer_page, pointer_section, pointer_article,
-        pointer_table, pointer_line_range,
-        excerpt_text, excerpt_hash, now, confidence,
-    ))
+    """,
+        (
+            citation_id,
+            doc_id,
+            doc_title,
+            pointer_page,
+            pointer_section,
+            pointer_article,
+            pointer_table,
+            pointer_line_range,
+            excerpt_text,
+            excerpt_hash,
+            now,
+            confidence,
+        ),
+    )
     db.conn.commit()
 
     return {
@@ -204,10 +218,7 @@ def get_citations_by_doc(doc_id: str) -> List[Dict[str, Any]]:
     """Get all citations for a document."""
     db = get_kb_db()
     cursor = db.conn.cursor()
-    cursor.execute(
-        "SELECT * FROM kb_citations WHERE doc_id = ? ORDER BY created_at",
-        (doc_id,)
-    )
+    cursor.execute("SELECT * FROM kb_citations WHERE doc_id = ? ORDER BY created_at", (doc_id,))
     return [_row_to_citation(dict(row)) for row in cursor.fetchall()]
 
 
@@ -216,8 +227,7 @@ def search_citations(query: str, limit: int = 20) -> List[Dict[str, Any]]:
     db = get_kb_db()
     cursor = db.conn.cursor()
     cursor.execute(
-        "SELECT * FROM kb_citations WHERE excerpt_text LIKE ? ORDER BY retrieved_at DESC LIMIT ?",
-        (f"%{query}%", limit)
+        "SELECT * FROM kb_citations WHERE excerpt_text LIKE ? ORDER BY retrieved_at DESC LIMIT ?", (f"%{query}%", limit)
     )
     return [_row_to_citation(dict(row)) for row in cursor.fetchall()]
 
@@ -246,6 +256,7 @@ def _row_to_citation(row: dict) -> Dict[str, Any]:
 # RuleCard CRUD
 # ========================================
 
+
 def create_rule_card(
     rule_card_id: str,
     name: str,
@@ -272,7 +283,8 @@ def create_rule_card(
     inputs_json = json.dumps(inputs_needed or [])
 
     cursor = db.conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO kb_rule_cards (
             rule_card_id, name, scope, category, intent,
             inputs_needed_json, formula_or_check,
@@ -290,19 +302,33 @@ def create_rule_card(
             status=excluded.status,
             notes=excluded.notes,
             updated_at=excluded.updated_at
-    """, (
-        rule_card_id, name, scope, category, intent,
-        inputs_json, formula_or_check,
-        effective_from, effective_to, status, notes, now,
-    ))
+    """,
+        (
+            rule_card_id,
+            name,
+            scope,
+            category,
+            intent,
+            inputs_json,
+            formula_or_check,
+            effective_from,
+            effective_to,
+            status,
+            notes,
+            now,
+        ),
+    )
 
     # Link citations
     if citation_ids:
         for cid in citation_ids:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO kb_rule_card_citations (rule_card_id, citation_id)
                 VALUES (?, ?)
-            """, (rule_card_id, cid))
+            """,
+                (rule_card_id, cid),
+            )
 
     db.conn.commit()
 
@@ -323,12 +349,15 @@ def get_rule_card(rule_card_id: str) -> Optional[Dict[str, Any]]:
     card["inputs_needed"] = json.loads(card.pop("inputs_needed_json", "[]"))
 
     # Fetch linked citations
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT c.* FROM kb_citations c
         JOIN kb_rule_card_citations rc ON c.citation_id = rc.citation_id
         WHERE rc.rule_card_id = ?
         ORDER BY c.retrieved_at
-    """, (rule_card_id,))
+    """,
+        (rule_card_id,),
+    )
 
     card["citations"] = [_row_to_citation(dict(r)) for r in cursor.fetchall()]
     return card
@@ -371,10 +400,13 @@ def add_citation_to_rule_card(rule_card_id: str, citation_id: str) -> bool:
     db = get_kb_db()
     cursor = db.conn.cursor()
     try:
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT OR IGNORE INTO kb_rule_card_citations (rule_card_id, citation_id)
             VALUES (?, ?)
-        """, (rule_card_id, citation_id))
+        """,
+            (rule_card_id, citation_id),
+        )
         db.conn.commit()
         return True
     except sqlite3.Error:

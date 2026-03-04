@@ -1,6 +1,7 @@
 """
 PROMEOS Watchers - RTE (Reseau de Transport d'Electricite)
 """
+
 from .rss_watcher import RSSWatcher
 
 

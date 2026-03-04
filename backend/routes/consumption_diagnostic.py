@@ -10,6 +10,7 @@ CRUD /api/consumption/tou_schedules — grilles HP/HC
 GET /api/consumption/hp_hc — ratio HP/HC
 GET /api/consumption/gas/summary — resume gaz
 """
+
 from typing import Optional, List
 from datetime import date, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -36,17 +37,28 @@ from models.tou_schedule import TOUSchedule
 logger = logging.getLogger(__name__)
 from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
-    get_targets, create_target, update_target, delete_target, get_progression, get_progression_v2,
+    get_targets,
+    create_target,
+    update_target,
+    delete_target,
+    get_progression,
+    get_progression_v2,
 )
 from services.tou_service import (
-    get_schedules, get_active_schedule, create_schedule, update_schedule,
-    delete_schedule, compute_hp_hc_ratio, compute_hphc_breakdown_v2,
+    get_schedules,
+    get_active_schedule,
+    create_schedule,
+    update_schedule,
+    delete_schedule,
+    compute_hp_hc_ratio,
+    compute_hphc_breakdown_v2,
 )
 from models.tariff_calendar import TariffCalendar
 
 
 class InsightPatch(BaseModel):
     insight_status: Optional[str] = None
+
 
 router = APIRouter(prefix="/api/consumption", tags=["Consumption Diagnostic"])
 
@@ -77,19 +89,18 @@ def consumption_insights(
 
 
 @router.get("/site/{site_id}")
-def site_insights(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def site_insights(
+    site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """Get consumption insights for a specific site."""
     check_site_access(auth, site_id)
     import json
+
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
 
-    insights = (
-        db.query(ConsumptionInsight)
-        .filter(ConsumptionInsight.site_id == site_id)
-        .all()
-    )
+    insights = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site_id).all()
 
     return {
         "site_id": site_id,
@@ -161,48 +172,75 @@ def seed_demo_consumption(
     tariff_seeded = 0
     existing_names = {t.name for t in db.query(TariffCalendar.name).all()}
 
-    turpe6_windows = json.dumps([
-        {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
-        {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC"},
-        {"day_types": ["saturday", "sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
-    ])
-    turpe7_windows = json.dumps([
-        {"day_types": ["weekday"], "start": "07:00", "end": "23:00", "period": "HP"},
-        {"day_types": ["weekday"], "start": "23:00", "end": "07:00", "period": "HC"},
-        {"day_types": ["saturday"], "start": "07:00", "end": "14:00", "period": "HP"},
-        {"day_types": ["saturday"], "start": "14:00", "end": "07:00", "period": "HC"},
-        {"day_types": ["sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
-    ])
+    turpe6_windows = json.dumps(
+        [
+            {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
+            {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC"},
+            {"day_types": ["saturday", "sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
+        ]
+    )
+    turpe7_windows = json.dumps(
+        [
+            {"day_types": ["weekday"], "start": "07:00", "end": "23:00", "period": "HP"},
+            {"day_types": ["weekday"], "start": "23:00", "end": "07:00", "period": "HC"},
+            {"day_types": ["saturday"], "start": "07:00", "end": "14:00", "period": "HP"},
+            {"day_types": ["saturday"], "start": "14:00", "end": "07:00", "period": "HC"},
+            {"day_types": ["sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
+        ]
+    )
 
     if "TURPE 6 HTA" not in existing_names:
-        db.add(TariffCalendar(
-            name="TURPE 6 HTA", version="6.0", effective_from="2024-01-01",
-            region="national", ruleset_json=turpe6_windows, is_active=True,
-            source="CRE", notes="Grille TURPE 6 standard HTA",
-        ))
+        db.add(
+            TariffCalendar(
+                name="TURPE 6 HTA",
+                version="6.0",
+                effective_from="2024-01-01",
+                region="national",
+                ruleset_json=turpe6_windows,
+                is_active=True,
+                source="CRE",
+                notes="Grille TURPE 6 standard HTA",
+            )
+        )
         tariff_seeded += 1
     if "TURPE 7 HTA-nov2025" not in existing_names:
-        db.add(TariffCalendar(
-            name="TURPE 7 HTA-nov2025", version="7.0-beta", effective_from="2025-11-01",
-            region="national", ruleset_json=turpe7_windows, is_active=True,
-            source="CRE", notes="Grille TURPE 7 simulee (projet nov 2025)",
-        ))
+        db.add(
+            TariffCalendar(
+                name="TURPE 7 HTA-nov2025",
+                version="7.0-beta",
+                effective_from="2025-11-01",
+                region="national",
+                ruleset_json=turpe7_windows,
+                is_active=True,
+                source="CRE",
+                notes="Grille TURPE 7 simulee (projet nov 2025)",
+            )
+        )
         tariff_seeded += 1
 
     # --- Seed seasonal gas readings for gas meters ---
     gas_seeded = 0
     now = datetime.now(timezone.utc)
     for site in sites:
-        gas_meters = db.query(Meter).filter(
-            Meter.site_id == site.id, Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.GAS,
-        ).all()
+        gas_meters = (
+            db.query(Meter)
+            .filter(
+                Meter.site_id == site.id,
+                Meter.is_active == True,
+                Meter.energy_vector == EnergyVector.GAS,
+            )
+            .all()
+        )
         for meter in gas_meters:
             # Check if already has enough readings
-            count = db.query(MeterReading).filter(
-                MeterReading.meter_id == meter.id,
-                MeterReading.timestamp >= now - timedelta(days=days),
-            ).count()
+            count = (
+                db.query(MeterReading)
+                .filter(
+                    MeterReading.meter_id == meter.id,
+                    MeterReading.timestamp >= now - timedelta(days=days),
+                )
+                .count()
+            )
             if count >= days * 12:
                 continue  # Already seeded
 
@@ -214,17 +252,21 @@ def seed_demo_consumption(
                 dju = max(0, 18 - t_avg)
                 daily_kwh = 25 + 6 * dju + (math.sin(doy * 3.7) * 3)  # base + heating + noise
                 for h in [0, 4, 8, 12, 16, 20]:  # 6 readings/day (every 4h)
-                    db.add(MeterReading(
-                        meter_id=meter.id,
-                        timestamp=dt_base.replace(hour=h, minute=0, second=0),
-                        value_kwh=round(daily_kwh / 6, 2),
-                    ))
+                    db.add(
+                        MeterReading(
+                            meter_id=meter.id,
+                            timestamp=dt_base.replace(hour=h, minute=0, second=0),
+                            value_kwh=round(daily_kwh / 6, 2),
+                        )
+                    )
             gas_seeded += 1
 
     db.commit()
 
     return {
-        "status": "ok", "sites": results, "total": len(results),
+        "status": "ok",
+        "sites": results,
+        "total": len(results),
         "tariff_calendars_seeded": tariff_seeded,
         "gas_meters_seeded": gas_seeded,
     }
@@ -235,9 +277,13 @@ def seed_demo_consumption(
 # =============================================
 
 ENERGY_TYPE_ALIASES = {
-    "electricity": "electricity", "elec": "electricity", "electricite": "electricity",
-    "électricité": "electricity", "electric": "electricity",
-    "gas": "gas", "gaz": "gas",
+    "electricity": "electricity",
+    "elec": "electricity",
+    "electricite": "electricity",
+    "électricité": "electricity",
+    "electric": "electricity",
+    "gas": "gas",
+    "gaz": "gas",
 }
 
 
@@ -269,17 +315,20 @@ def consumption_availability(
     # All active meters for this site
     all_meters = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).all()
     if not all_meters:
-        return {"has_data": False, "reasons": ["no_meter"], "energy_types": [], "meters_count": 0,
-                "site_nom": site.nom}
+        return {"has_data": False, "reasons": ["no_meter"], "energy_types": [], "meters_count": 0, "site_nom": site.nom}
 
     # Available energy types
     ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
-    available_types = list({
-        "electricity" if m.energy_vector == EnergyVector.ELECTRICITY
-        else "gas" if m.energy_vector == EnergyVector.GAS
-        else "other"
-        for m in all_meters
-    })
+    available_types = list(
+        {
+            "electricity"
+            if m.energy_vector == EnergyVector.ELECTRICITY
+            else "gas"
+            if m.energy_vector == EnergyVector.GAS
+            else "other"
+            for m in all_meters
+        }
+    )
 
     # Filter by requested energy type
     target_ev = ev_map.get(energy_type)
@@ -288,19 +337,26 @@ def consumption_availability(
     if not matching_meters:
         reasons.append("wrong_energy_type")
         return {
-            "has_data": False, "reasons": reasons, "energy_types": available_types,
-            "meters_count": len(all_meters), "matching_meters": 0,
+            "has_data": False,
+            "reasons": reasons,
+            "energy_types": available_types,
+            "meters_count": len(all_meters),
+            "matching_meters": 0,
             "site_nom": site.nom,
         }
 
     meter_ids = [m.id for m in matching_meters]
 
     # Date range of available readings
-    stats = db.query(
-        func.count(MeterReading.id),
-        func.min(MeterReading.timestamp),
-        func.max(MeterReading.timestamp),
-    ).filter(MeterReading.meter_id.in_(meter_ids)).first()
+    stats = (
+        db.query(
+            func.count(MeterReading.id),
+            func.min(MeterReading.timestamp),
+            func.max(MeterReading.timestamp),
+        )
+        .filter(MeterReading.meter_id.in_(meter_ids))
+        .first()
+    )
 
     readings_count = stats[0] or 0
     first_ts = stats[1].isoformat() if stats[1] else None
@@ -309,8 +365,11 @@ def consumption_availability(
     if readings_count == 0:
         reasons.append("no_readings")
         return {
-            "has_data": False, "reasons": reasons, "energy_types": available_types,
-            "meters_count": len(matching_meters), "readings_count": 0,
+            "has_data": False,
+            "reasons": reasons,
+            "energy_types": available_types,
+            "meters_count": len(matching_meters),
+            "readings_count": 0,
             "site_nom": site.nom,
         }
 
@@ -348,11 +407,22 @@ def patch_consumption_insight(
             ci.insight_status = InsightStatus(data.insight_status)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {data.insight_status}")
-    log_audit(db, auth.user.id if auth else None, "patch_insight", "consumption_insight", str(insight_id),
-              {"old_status": old_status, "new_status": data.insight_status},
-              ip_address=request.client.host if request.client else None)
-    logger.info("PATCH consumption insight %s: %s -> %s (user=%s)", insight_id, old_status, data.insight_status,
-                auth.user.id if auth else "anonymous")
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "patch_insight",
+        "consumption_insight",
+        str(insight_id),
+        {"old_status": old_status, "new_status": data.insight_status},
+        ip_address=request.client.host if request.client else None,
+    )
+    logger.info(
+        "PATCH consumption insight %s: %s -> %s (user=%s)",
+        insight_id,
+        old_status,
+        data.insight_status,
+        auth.user.id if auth else "anonymous",
+    )
     db.commit()
     db.refresh(ci)
     return {"status": "updated", "id": ci.id, "insight_status": ci.insight_status.value}
@@ -361,6 +431,7 @@ def patch_consumption_insight(
 # =============================================
 # V10 — Tunnel (Enveloppe Quantile)
 # =============================================
+
 
 @router.get("/tunnel")
 def get_tunnel(
@@ -382,6 +453,7 @@ def get_tunnel(
 # =============================================
 # V11 — Tunnel V2 (energy + power mode)
 # =============================================
+
 
 @router.get("/tunnel_v2")
 def get_tunnel_v2(
@@ -406,6 +478,7 @@ def get_tunnel_v2(
 # =============================================
 # V10 — Targets (Objectifs & Budgets)
 # =============================================
+
 
 class TargetCreateRequest(BaseModel):
     site_id: int
@@ -482,8 +555,15 @@ def patch_target(
         raise HTTPException(status_code=404, detail="Objectif non trouve")
     check_site_access(auth, target.site_id)
     result = update_target(db, target_id, **req.model_dump(exclude_none=True))
-    log_audit(db, auth.user.id if auth else None, "patch_target", "consumption_target", str(target_id),
-              req.model_dump(exclude_none=True), ip_address=request.client.host if request.client else None)
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "patch_target",
+        "consumption_target",
+        str(target_id),
+        req.model_dump(exclude_none=True),
+        ip_address=request.client.host if request.client else None,
+    )
     db.commit()
     logger.info("PATCH target %s (user=%s)", target_id, auth.user.id if auth else "anonymous")
     return result
@@ -502,8 +582,14 @@ def remove_target(
         raise HTTPException(status_code=404, detail="Objectif non trouve")
     check_site_access(auth, target.site_id)
     delete_target(db, target_id)
-    log_audit(db, auth.user.id if auth else None, "delete_target", "consumption_target", str(target_id),
-              ip_address=request.client.host if request.client else None)
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "delete_target",
+        "consumption_target",
+        str(target_id),
+        ip_address=request.client.host if request.client else None,
+    )
     db.commit()
     logger.info("DELETE target %s (user=%s)", target_id, auth.user.id if auth else "anonymous")
     return {"status": "deleted"}
@@ -527,6 +613,7 @@ def targets_progression(
 # V11 — Targets V2 (variance decomposition)
 # =============================================
 
+
 @router.get("/targets/progress_v2")
 def targets_progression_v2(
     site_id: int = Query(...),
@@ -544,6 +631,7 @@ def targets_progression_v2(
 # =============================================
 # V10 — TOU Schedules (Grilles HP/HC)
 # =============================================
+
 
 class TOUWindowSchema(BaseModel):
     day_types: List[str]
@@ -650,8 +738,14 @@ def patch_tou_schedule(
     if "windows" in data:
         data["windows"] = [w if isinstance(w, dict) else w.model_dump() for w in data["windows"]]
     result = update_schedule(db, schedule_id, **data)
-    log_audit(db, auth.user.id if auth else None, "patch_tou_schedule", "tou_schedule", str(schedule_id),
-              ip_address=request.client.host if request.client else None)
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "patch_tou_schedule",
+        "tou_schedule",
+        str(schedule_id),
+        ip_address=request.client.host if request.client else None,
+    )
     db.commit()
     logger.info("PATCH tou_schedule %s (user=%s)", schedule_id, auth.user.id if auth else "anonymous")
     return result
@@ -671,8 +765,14 @@ def remove_tou_schedule(
     if sched.site_id:
         check_site_access(auth, sched.site_id)
     delete_schedule(db, schedule_id)
-    log_audit(db, auth.user.id if auth else None, "delete_tou_schedule", "tou_schedule", str(schedule_id),
-              ip_address=request.client.host if request.client else None)
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "delete_tou_schedule",
+        "tou_schedule",
+        str(schedule_id),
+        ip_address=request.client.host if request.client else None,
+    )
     db.commit()
     logger.info("DELETE tou_schedule %s (user=%s)", schedule_id, auth.user.id if auth else "anonymous")
     return {"status": "deactivated"}
@@ -681,6 +781,7 @@ def remove_tou_schedule(
 # =============================================
 # V10 — HP/HC Ratio
 # =============================================
+
 
 @router.get("/hp_hc")
 def get_hp_hc_ratio(
@@ -698,6 +799,7 @@ def get_hp_hc_ratio(
 # =============================================
 # V11 — HP/HC V2 (heatmap + opportunity + simulation)
 # =============================================
+
 
 @router.get("/hphc_breakdown_v2")
 def get_hphc_breakdown_v2(
@@ -717,6 +819,7 @@ def get_hphc_breakdown_v2(
 # V10 — Gas Summary (Beta)
 # =============================================
 
+
 @router.get("/gas/summary")
 def gas_summary(
     site_id: int = Query(...),
@@ -734,11 +837,15 @@ def gas_summary(
     end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=days)
 
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.GAS,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.GAS,
+        )
+        .all()
+    )
 
     if not meters:
         return {
@@ -798,6 +905,7 @@ def gas_summary(
 # V11 — Gas Weather Normalized (DJU)
 # =============================================
 
+
 @router.get("/gas/weather_normalized")
 def gas_weather_normalized(
     site_id: int = Query(...),
@@ -808,4 +916,5 @@ def gas_weather_normalized(
     """Conso gaz normalisee meteo : modele DJU + alertes (fuite, derive, chauffage precoce)."""
     check_site_access(auth, site_id)
     from services.gas_weather_service import compute_weather_normalized
+
     return compute_weather_normalized(db, site_id, days=days)

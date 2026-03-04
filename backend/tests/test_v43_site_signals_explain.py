@@ -3,6 +3,7 @@ PROMEOS V43 — Tests: Explainable Site Signals
 Backward compat V42 + new fields: rules_applied, reasons_fr,
 recommended_next_step, recommended_cta, top_missing_fields
 """
+
 import sys
 from pathlib import Path
 
@@ -12,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from database import engine
 from models.base import Base
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -19,12 +21,14 @@ Base.metadata.create_all(bind=engine)
 # 1. Backward compatibility — V42 fields still present
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV42BackwardCompat:
     """V42 response shape must remain intact."""
 
     def test_v42_top_level_fields(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         assert "sites" in data
@@ -36,6 +40,7 @@ class TestV42BackwardCompat:
     def test_v42_site_fields_preserved(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -52,6 +57,7 @@ class TestV42BackwardCompat:
     def test_counts_sum_matches_total(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         total = sum(data["counts"].values())
@@ -62,12 +68,14 @@ class TestV42BackwardCompat:
 # 2. V43 new fields — explainability per site
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV43ExplainFields:
     """Each site in response must have V43 explainability fields."""
 
     def test_signal_version_present(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -76,6 +84,7 @@ class TestV43ExplainFields:
     def test_rules_applied_present_and_shaped(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -91,6 +100,7 @@ class TestV43ExplainFields:
     def test_rules_applied_has_surface_threshold(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -100,6 +110,7 @@ class TestV43ExplainFields:
     def test_reasons_fr_present(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -113,6 +124,7 @@ class TestV43ExplainFields:
     def test_missing_fields_present(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -122,6 +134,7 @@ class TestV43ExplainFields:
     def test_recommended_next_step_valid(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         valid_steps = ("creer_efa", "completer_patrimoine", "aucune_action")
@@ -132,6 +145,7 @@ class TestV43ExplainFields:
     def test_recommended_cta_shape(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -148,12 +162,14 @@ class TestV43ExplainFields:
 # 3. V43 enriched summary
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV43Summary:
     """Top-level response has enriched summary."""
 
     def test_top_missing_fields_present(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         assert "top_missing_fields" in data
@@ -164,12 +180,14 @@ class TestV43Summary:
 # 4. Determinism — same input, same output
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV43Determinism:
     """Two identical calls must return identical reasons_fr."""
 
     def test_deterministic_reasons(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data1 = client.get("/api/tertiaire/site-signals").json()
         data2 = client.get("/api/tertiaire/site-signals").json()
@@ -183,12 +201,14 @@ class TestV43Determinism:
 # 5. Semantic coherence
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV43SemanticCoherence:
     """Signals and explanations must be logically coherent."""
 
     def test_assujetti_probable_has_surface_rule_ok(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -203,6 +223,7 @@ class TestV43SemanticCoherence:
     def test_uncovered_probable_recommends_creer_efa(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -214,6 +235,7 @@ class TestV43SemanticCoherence:
     def test_a_verifier_has_missing_fields(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -225,14 +247,15 @@ class TestV43SemanticCoherence:
 # 6. Source guards
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV43SourceGuards:
     """Verify V43 code exists in service file."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
-        self.service_code = (
-            Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py"
-        ).read_text(encoding="utf-8")
+        self.service_code = (Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py").read_text(
+            encoding="utf-8"
+        )
 
     def test_build_site_explanation_exists(self):
         assert "def _build_site_explanation" in self.service_code

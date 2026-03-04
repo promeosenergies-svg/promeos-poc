@@ -29,11 +29,17 @@ const TYPE_LABELS = {
 };
 
 const SEVERITY_LABELS = {
-  critical: 'Critique', high: 'Élevé', medium: 'Moyen', low: 'Faible',
+  critical: 'Critique',
+  high: 'Élevé',
+  medium: 'Moyen',
+  low: 'Faible',
 };
 
 const SEVERITY_BADGE = {
-  critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
+  critical: 'crit',
+  high: 'warn',
+  medium: 'info',
+  low: 'neutral',
 };
 
 function fmt(v) {
@@ -42,19 +48,29 @@ function fmt(v) {
 }
 
 const CAUSE_LABELS = {
-  shadow_gap: (m) => m.expected_ttc != null
-    ? `L'écart entre le montant facturé (${fmt(m.actual_ttc)} €) et le shadow billing (${fmt(m.expected_ttc)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`
-    : `L'écart entre le montant facturé (${fmt(m.actual_total_eur)} €) et le shadow billing (${fmt(m.shadow_total_eur)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`,
-  unit_price_high: (m) => `Le prix unitaire (${m.unit_price?.toFixed(4) || '?'} €/kWh) dépasse le seuil de ${m.threshold || 0.30} €/kWh pour ce type d'énergie.`,
+  shadow_gap: (m) =>
+    m.expected_ttc != null
+      ? `L'écart entre le montant facturé (${fmt(m.actual_ttc)} €) et le shadow billing (${fmt(m.expected_ttc)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`
+      : `L'écart entre le montant facturé (${fmt(m.actual_total_eur)} €) et le shadow billing (${fmt(m.shadow_total_eur)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`,
+  unit_price_high: (m) =>
+    `Le prix unitaire (${m.unit_price?.toFixed(4) || '?'} €/kWh) dépasse le seuil de ${m.threshold || 0.3} €/kWh pour ce type d'énergie.`,
   duplicate_invoice: () => `Cette facture est un doublon (même site, même période, même montant).`,
-  missing_period: () => `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
-  period_too_long: (m) => `La période de facturation (${m.days || '?'} jours) est anormalement longue.`,
-  negative_kwh: () => `La consommation est négative — possible erreur de relevé ou inversion d'index.`,
-  zero_amount: () => `Le montant facturé est nul — vérifiez s'il s'agit d'un avoir ou d'une erreur.`,
-  lines_sum_mismatch: (m) => `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
-  consumption_spike: (m) => `La consommation (${m.kwh?.toLocaleString() || '?'} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
-  price_drift: (m) => `Le prix unitaire a dérivé de ${m.drift_pct?.toFixed(1) || '?'}% par rapport à la période précédente.`,
-  reseau_mismatch: (m) => `L'écart réseau/TURPE (${fmt(m.delta_reseau)} €) dépasse le seuil de 10%.`,
+  missing_period: () =>
+    `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
+  period_too_long: (m) =>
+    `La période de facturation (${m.days || '?'} jours) est anormalement longue.`,
+  negative_kwh: () =>
+    `La consommation est négative — possible erreur de relevé ou inversion d'index.`,
+  zero_amount: () =>
+    `Le montant facturé est nul — vérifiez s'il s'agit d'un avoir ou d'une erreur.`,
+  lines_sum_mismatch: (m) =>
+    `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
+  consumption_spike: (m) =>
+    `La consommation (${m.kwh?.toLocaleString() || '?'} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
+  price_drift: (m) =>
+    `Le prix unitaire a dérivé de ${m.drift_pct?.toFixed(1) || '?'}% par rapport à la période précédente.`,
+  reseau_mismatch: (m) =>
+    `L'écart réseau/TURPE (${fmt(m.delta_reseau)} €) dépasse le seuil de 10%.`,
   taxes_mismatch: (m) => `L'écart taxes/CSPE (${fmt(m.delta_taxes)} €) dépasse le seuil de 5%.`,
 };
 
@@ -72,11 +88,18 @@ export default function InsightDrawer({ open, onClose, insightId }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!open || !insightId) { setDetail(null); setError(null); return; }
+    if (!open || !insightId) {
+      setDetail(null);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     getInsightDetail(insightId)
-      .then((data) => { setDetail(data); setError(null); })
+      .then((data) => {
+        setDetail(data);
+        setError(null);
+      })
       .catch((err) => {
         setDetail(null);
         setError({
@@ -122,7 +145,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
         <div className="space-y-6">
           {/* En-tête */}
           <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className={detail.severity === 'critical' ? 'text-red-600' : detail.severity === 'high' ? 'text-orange-600' : 'text-amber-500'} />
+            <AlertTriangle
+              size={20}
+              className={
+                detail.severity === 'critical'
+                  ? 'text-red-600'
+                  : detail.severity === 'high'
+                    ? 'text-orange-600'
+                    : 'text-amber-500'
+              }
+            />
             <div>
               <h3 className="text-sm font-semibold text-gray-900">
                 {TYPE_LABELS[detail.type] || detail.type}
@@ -156,8 +188,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             <div>
               <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Confiance</h4>
               <div className="flex items-center gap-2">
-                <Badge status={m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'}>
-                  {m.confidence === 'high' ? 'Élevée' : m.confidence === 'medium' ? 'Moyenne' : 'Faible'}
+                <Badge
+                  status={
+                    m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'
+                  }
+                >
+                  {m.confidence === 'high'
+                    ? 'Élevée'
+                    : m.confidence === 'medium'
+                      ? 'Moyenne'
+                      : 'Faible'}
                 </Badge>
               </div>
               {m.assumptions?.length > 0 && (
@@ -176,7 +216,9 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           {/* Tableau Facturé vs Attendu */}
           {hasBreakdown && (
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Facturé vs Attendu</h4>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                Facturé vs Attendu
+              </h4>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -187,7 +229,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {BREAKDOWN_ROWS.map(row => {
+                  {BREAKDOWN_ROWS.map((row) => {
                     const actual = m[`actual_${row.key}_ht`] ?? m[`actual_${row.key}`];
                     const expected = m[`expected_${row.key}_ht`] ?? m[`expected_${row.key}`];
                     const delta = m[`delta_${row.key}`];
@@ -197,7 +239,9 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                         <td className="py-2 text-gray-700">{row.label}</td>
                         <td className="py-2 text-right font-medium">{fmt(actual)} €</td>
                         <td className="py-2 text-right">{fmt(expected)} €</td>
-                        <td className={`py-2 text-right font-medium ${delta > 0 ? 'text-red-600' : delta < 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                        <td
+                          className={`py-2 text-right font-medium ${delta > 0 ? 'text-red-600' : delta < 0 ? 'text-green-600' : 'text-gray-500'}`}
+                        >
                           {delta != null ? `${delta > 0 ? '+' : ''}${fmt(delta)} €` : '—'}
                         </td>
                       </tr>
@@ -208,10 +252,17 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                     <td className="py-2 text-gray-900">Total TTC</td>
                     <td className="py-2 text-right">{fmt(m.actual_ttc)} €</td>
                     <td className="py-2 text-right">{fmt(m.expected_ttc)} €</td>
-                    <td className={`py-2 text-right ${m.delta_ttc > 0 ? 'text-red-600' : m.delta_ttc < 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                      {m.delta_ttc != null ? `${m.delta_ttc > 0 ? '+' : ''}${fmt(m.delta_ttc)} €` : '—'}
+                    <td
+                      className={`py-2 text-right ${m.delta_ttc > 0 ? 'text-red-600' : m.delta_ttc < 0 ? 'text-green-600' : 'text-gray-500'}`}
+                    >
+                      {m.delta_ttc != null
+                        ? `${m.delta_ttc > 0 ? '+' : ''}${fmt(m.delta_ttc)} €`
+                        : '—'}
                       {m.delta_pct != null && (
-                        <span className="ml-1 text-xs font-normal">({m.delta_pct > 0 ? '+' : ''}{m.delta_pct.toFixed(1)}%)</span>
+                        <span className="ml-1 text-xs font-normal">
+                          ({m.delta_pct > 0 ? '+' : ''}
+                          {m.delta_pct.toFixed(1)}%)
+                        </span>
                       )}
                     </td>
                   </tr>

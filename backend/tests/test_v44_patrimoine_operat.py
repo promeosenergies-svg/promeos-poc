@@ -2,6 +2,7 @@
 PROMEOS V44 — Tests: Patrimoine → OPERAT integration
 Dedup warning, site_id inference, surface snapshot, source guards
 """
+
 import sys
 from pathlib import Path
 
@@ -11,12 +12,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from database import engine
 from models.base import Base
+
 Base.metadata.create_all(bind=engine)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. Dedup warning — POST /efa returns warning when site already has EFA
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestDedupWarning:
     """POST /efa should warn (not block) when site already has an EFA."""
@@ -28,10 +31,16 @@ class TestDedupWarning:
         from fastapi.testclient import TestClient
         from database import SessionLocal
         from models.tertiaire import (
-            TertiaireEfaBuilding, TertiaireEfa, TertiaireResponsibility,
-            TertiaireDeclaration, TertiairePerimeterEvent,
-            TertiaireDataQualityIssue, TertiaireProofArtifact, TertiaireEfaLink,
+            TertiaireEfaBuilding,
+            TertiaireEfa,
+            TertiaireResponsibility,
+            TertiaireDeclaration,
+            TertiairePerimeterEvent,
+            TertiaireDataQualityIssue,
+            TertiaireProofArtifact,
+            TertiaireEfaLink,
         )
+
         client = TestClient(app)
         catalog = client.get("/api/tertiaire/catalog").json()
         if not catalog["sites"] or not catalog["sites"][0]["batiments"]:
@@ -39,25 +48,25 @@ class TestDedupWarning:
         site_id = catalog["sites"][0]["site_id"]
         db = SessionLocal()
         try:
-            efas = db.query(TertiaireEfa).filter(
-                TertiaireEfa.site_id == site_id
-            ).all()
+            efas = db.query(TertiaireEfa).filter(TertiaireEfa.site_id == site_id).all()
             efa_ids = [e.id for e in efas]
             if efa_ids:
-                for model in [TertiaireDataQualityIssue, TertiaireProofArtifact,
-                              TertiaireDeclaration, TertiairePerimeterEvent,
-                              TertiaireResponsibility, TertiaireEfaBuilding]:
-                    db.query(model).filter(model.efa_id.in_(efa_ids)).delete(
-                        synchronize_session=False)
-                db.query(TertiaireEfaLink).filter(
-                    TertiaireEfaLink.child_efa_id.in_(efa_ids)
-                ).delete(synchronize_session=False)
-                db.query(TertiaireEfaLink).filter(
-                    TertiaireEfaLink.parent_efa_id.in_(efa_ids)
-                ).delete(synchronize_session=False)
-                db.query(TertiaireEfa).filter(
-                    TertiaireEfa.id.in_(efa_ids)
-                ).delete(synchronize_session=False)
+                for model in [
+                    TertiaireDataQualityIssue,
+                    TertiaireProofArtifact,
+                    TertiaireDeclaration,
+                    TertiairePerimeterEvent,
+                    TertiaireResponsibility,
+                    TertiaireEfaBuilding,
+                ]:
+                    db.query(model).filter(model.efa_id.in_(efa_ids)).delete(synchronize_session=False)
+                db.query(TertiaireEfaLink).filter(TertiaireEfaLink.child_efa_id.in_(efa_ids)).delete(
+                    synchronize_session=False
+                )
+                db.query(TertiaireEfaLink).filter(TertiaireEfaLink.parent_efa_id.in_(efa_ids)).delete(
+                    synchronize_session=False
+                )
+                db.query(TertiaireEfa).filter(TertiaireEfa.id.in_(efa_ids)).delete(synchronize_session=False)
                 db.commit()
         except Exception:
             db.rollback()
@@ -67,6 +76,7 @@ class TestDedupWarning:
     def test_first_efa_no_warning(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         # Create first EFA with buildings from catalog
         catalog = client.get("/api/tertiaire/catalog").json()
@@ -74,11 +84,14 @@ class TestDedupWarning:
             pytest.skip("No patrimoine data for dedup test")
         site = catalog["sites"][0]
         bat = site["batiments"][0]
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "V44 Test Dedup First",
-            "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V44 Test Dedup First",
+                "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert "dedup_warning" not in data or data["dedup_warning"] is None
@@ -86,6 +99,7 @@ class TestDedupWarning:
     def test_second_efa_has_warning(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         catalog = client.get("/api/tertiaire/catalog").json()
         if not catalog["sites"] or not catalog["sites"][0]["batiments"]:
@@ -93,17 +107,23 @@ class TestDedupWarning:
         site = catalog["sites"][0]
         bat = site["batiments"][0]
         # Create first EFA
-        client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "V44 Dedup A",
-            "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
-        })
+        client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V44 Dedup A",
+                "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
+            },
+        )
         # Create second EFA for same site → warning expected
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "V44 Dedup B",
-            "buildings": [{"building_id": bat["id"], "usage_label": "Commerce"}],
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V44 Dedup B",
+                "buildings": [{"building_id": bat["id"], "usage_label": "Commerce"}],
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert "dedup_warning" in data
@@ -115,23 +135,28 @@ class TestDedupWarning:
 # 2. site_id inference from building
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSiteIdInference:
     """POST /efa infers site_id from first building."""
 
     def test_site_id_inferred(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         catalog = client.get("/api/tertiaire/catalog").json()
         if not catalog["sites"] or not catalog["sites"][0]["batiments"]:
             pytest.skip("No patrimoine data")
         site = catalog["sites"][0]
         bat = site["batiments"][0]
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "V44 Infer Site",
-            "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V44 Infer Site",
+                "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["site_id"] == site["site_id"]
@@ -141,22 +166,27 @@ class TestSiteIdInference:
 # 3. Surface snapshot from patrimoine
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSurfaceSnapshot:
     """EFA buildings get surface_m2 snapshotted from patrimoine."""
 
     def test_surface_snapshotted(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         catalog = client.get("/api/tertiaire/catalog").json()
         if not catalog["sites"] or not catalog["sites"][0]["batiments"]:
             pytest.skip("No patrimoine data")
         bat = catalog["sites"][0]["batiments"][0]
-        resp = client.post("/api/tertiaire/efa", json={
-            "org_id": 1,
-            "nom": "V44 Surface Snap",
-            "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
-        })
+        resp = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V44 Surface Snap",
+                "buildings": [{"building_id": bat["id"], "usage_label": "Bureaux"}],
+            },
+        )
         assert resp.status_code == 201
         data = resp.json()
         if "buildings" in data:
@@ -168,14 +198,15 @@ class TestSurfaceSnapshot:
 # 4. Source guards
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV44SourceGuards:
     """Verify V44 code exists in source files."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
-        self.route_code = (
-            Path(__file__).resolve().parent.parent / "routes" / "tertiaire.py"
-        ).read_text(encoding="utf-8")
+        self.route_code = (Path(__file__).resolve().parent.parent / "routes" / "tertiaire.py").read_text(
+            encoding="utf-8"
+        )
 
     def test_dedup_warning_in_route(self):
         assert "dedup_warning" in self.route_code

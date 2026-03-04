@@ -3,8 +3,10 @@ PROMEOS — V67 Billing Coverage Tests
 Tests pour: compute_coverage, compute_range, endpoints /periods /coverage-summary /missing-periods.
 Couvre: covered/partial/missing, avoirs, fallback issue_date, chevauchements, multi-org, pagination.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -16,8 +18,14 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    Site, TypeSite, EnergyInvoice, BillingInvoiceStatus,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    TypeSite,
+    EnergyInvoice,
+    BillingInvoiceStatus,
 )
 from database import get_db
 from main import app
@@ -26,6 +34,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -48,6 +57,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -64,18 +74,23 @@ def _make_org_site(db, nom="Org Test", siren="600000001"):
     db.add(pf)
     db.flush()
     site = Site(
-        portefeuille_id=pf.id, nom=f"Site {nom}", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=200, actif=True,
+        portefeuille_id=pf.id,
+        nom=f"Site {nom}",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=200,
+        actif=True,
     )
     db.add(site)
     db.commit()
     return org, site
 
 
-def _make_invoice(db, site_id, period_start=None, period_end=None, issue_date=None,
-                  total_eur=1000.0, number=None):
+def _make_invoice(db, site_id, period_start=None, period_end=None, issue_date=None, total_eur=1000.0, number=None):
     import random
+
     num = number or f"INV-COV-{random.randint(10000, 99999)}"
     inv = EnergyInvoice(
         site_id=site_id,
@@ -100,8 +115,8 @@ def _h(org_id):
 # Unit tests — Coverage Engine
 # ========================================
 
-class TestCoverageEngine:
 
+class TestCoverageEngine:
     def test_covered_month_full(self):
         """Facture couvrant tout janvier → 'covered'."""
         from services.billing_coverage import compute_coverage
@@ -226,8 +241,8 @@ class TestCoverageEngine:
 # Integration tests — Endpoints
 # ========================================
 
-class TestCoverageEndpoints:
 
+class TestCoverageEndpoints:
     def test_periods_empty_returns_empty(self, client, db):
         """GET /periods sans factures → periods=[], total=0."""
         org, site = _make_org_site(db, "Org Periods Empty", "600000010")

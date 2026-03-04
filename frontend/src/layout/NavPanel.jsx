@@ -7,9 +7,14 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Star, Clock } from 'lucide-react';
 import {
-  NAV_MODULES, ROUTE_MODULE_MAP, ALL_NAV_ITEMS,
-  QUICK_ACTIONS, SECTION_TINTS, TINT_PALETTE,
-  getSectionsForModule, matchRouteToModule,
+  NAV_MODULES,
+  ROUTE_MODULE_MAP,
+  ALL_NAV_ITEMS,
+  QUICK_ACTIONS,
+  SECTION_TINTS,
+  TINT_PALETTE,
+  getSectionsForModule,
+  matchRouteToModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,15 +22,17 @@ import { getRecents } from '../utils/navRecent';
 
 /* ── Badge severity styles ── */
 const BADGE_STYLES = {
-  alerts:     'bg-red-50 text-red-700 ring-1 ring-red-200',
+  alerts: 'bg-red-50 text-red-700 ring-1 ring-red-200',
   monitoring: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-  _default:   'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+  _default: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
 };
 
 /* ── Panel Link (premium active/hover) ── */
 function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin, tint, indent }) {
   const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
-  const badgeStyle = badgeKey ? (BADGE_STYLES[badgeKey] || BADGE_STYLES._default) : BADGE_STYLES._default;
+  const badgeStyle = badgeKey
+    ? BADGE_STYLES[badgeKey] || BADGE_STYLES._default
+    : BADGE_STYLES._default;
 
   return (
     <NavLink
@@ -33,26 +40,36 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
       end={to === '/'}
       className={({ isActive }) =>
         `group/link flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-all duration-150 relative px-2.5${indent ? ' ml-4' : ''}
-        ${isActive
-          ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
-          : `text-slate-600 hover:${t.hoverBg.replace('bg-', 'bg-')} hover:text-slate-900 font-normal`
+        ${
+          isActive
+            ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
+            : `text-slate-600 hover:${t.hoverBg.replace('bg-', 'bg-')} hover:text-slate-900 font-normal`
         }
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon size={15} className={`shrink-0 transition-colors duration-150 ${isActive ? t.icon : 'text-slate-400'}`} />
+          <Icon
+            size={15}
+            className={`shrink-0 transition-colors duration-150 ${isActive ? t.icon : 'text-slate-400'}`}
+          />
           <span className="flex-1 truncate">{label}</span>
           {badge > 0 && (
-            <span className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-full min-w-[18px] text-center ${badgeStyle}`}>
+            <span
+              className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-full min-w-[18px] text-center ${badgeStyle}`}
+            >
               {badge > 99 ? '99+' : badge}
             </span>
           )}
           {!badge && onTogglePin && (
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin(to); }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onTogglePin(to);
+              }}
               className={`ml-auto p-0.5 rounded transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 pinned
                   ? 'text-amber-500 opacity-100'
@@ -104,15 +121,18 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
 
   /* ── Permission filter ── */
-  const filterItems = useCallback((items) => {
-    if (!isAuthenticated) return items;
-    return items.filter((item) => {
-      if (item.requireAdmin) return hasPermission('admin');
-      const module = ROUTE_MODULE_MAP[item.to];
-      if (module === undefined) return true;
-      return hasPermission('view', module) || hasPermission('admin');
-    });
-  }, [isAuthenticated, hasPermission]);
+  const filterItems = useCallback(
+    (items) => {
+      if (!isAuthenticated) return items;
+      return items.filter((item) => {
+        if (item.requireAdmin) return hasPermission('admin');
+        const module = ROUTE_MODULE_MAP[item.to];
+        if (module === undefined) return true;
+        return hasPermission('view', module) || hasPermission('admin');
+      });
+    },
+    [isAuthenticated, hasPermission]
+  );
 
   /* ── Visible sections for this module ── */
   const moduleSections = useMemo(() => {
@@ -120,16 +140,15 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       .filter((s) => !s.expertOnly || isExpert)
       .map((s) => ({
         ...s,
-        items: filterItems(s.items.filter((item) => (!item.expertOnly || isExpert) && !item.hidden)),
+        items: filterItems(
+          s.items.filter((item) => (!item.expertOnly || isExpert) && !item.hidden)
+        ),
       }))
       .filter((s) => s.items.length > 0);
   }, [activeModule, isExpert, filterItems]);
 
   /* ── All visible items in this module ── */
-  const allModuleItems = useMemo(
-    () => moduleSections.flatMap((s) => s.items),
-    [moduleSections],
-  );
+  const allModuleItems = useMemo(() => moduleSections.flatMap((s) => s.items), [moduleSections]);
 
   /* ── Pinned items (only from this module's items) ── */
   const pinnedItems = useMemo(() => {
@@ -142,7 +161,13 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     const visiblePaths = new Set(allModuleItems.map((i) => i.to));
     const seen = new Set(); // dedup guard
     return recents
-      .filter((r) => !pins.includes(r.path) && !visiblePaths.has(r.path) && !seen.has(r.path) && (seen.add(r.path), true))
+      .filter(
+        (r) =>
+          !pins.includes(r.path) &&
+          !visiblePaths.has(r.path) &&
+          !seen.has(r.path) &&
+          (seen.add(r.path), true)
+      )
       .map((r) => {
         // Try static nav item first
         const navItem = ALL_NAV_ITEMS.find((item) => item.to === r.path);
@@ -173,8 +198,8 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   useEffect(() => {
     const currentPath = location.pathname;
     for (const section of moduleSections) {
-      const hasActive = section.items.some((item) =>
-        currentPath === item.to || currentPath.startsWith(item.to + '/')
+      const hasActive = section.items.some(
+        (item) => currentPath === item.to || currentPath.startsWith(item.to + '/')
       );
       if (hasActive) {
         setOpenSections((prev) => ({ ...prev, [section.key]: true }));
@@ -200,7 +225,9 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       aria-label={`Module ${mod.label}`}
     >
       {/* Module header — tinted gradient */}
-      <div className={`px-4 pt-4 pb-3 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}>
+      <div
+        className={`px-4 pt-4 pb-3 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}
+      >
         <div className="flex items-center gap-2">
           <mod.icon size={18} className={t.icon} />
           <h2 className="text-sm font-semibold text-slate-800">{mod.label}</h2>
@@ -257,7 +284,9 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
             </p>
             {recentItems.map((item) => {
               const isCrossModule = item._recentModule && item._recentModule !== activeModule;
-              const crossMod = isCrossModule ? NAV_MODULES.find((m) => m.key === item._recentModule) : null;
+              const crossMod = isCrossModule
+                ? NAV_MODULES.find((m) => m.key === item._recentModule)
+                : null;
               return (
                 <div key={`recent-${item.to}`} className="relative">
                   <PanelLink

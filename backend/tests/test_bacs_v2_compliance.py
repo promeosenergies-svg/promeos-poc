@@ -2,6 +2,7 @@
 PROMEOS - Tests for BACS v2 bundle enrichment + config loading.
 Pattern: TestClient + in-memory SQLite + StaticPool (same as test_compliance_bundle.py).
 """
+
 import sys
 import os
 import json
@@ -16,10 +17,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, TypeSite,
-    BacsAsset, BacsCvcSystem, BacsAssessment,
-    CvcSystemType, CvcArchitecture, BacsTriggerReason,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    TypeSite,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    CvcSystemType,
+    CvcArchitecture,
+    BacsTriggerReason,
 )
 from database import get_db
 from main import app
@@ -28,7 +38,8 @@ from main import app
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -45,6 +56,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -64,47 +76,68 @@ def _seed_bacs_sites(db_session):
 
     # 4 sites
     for i in range(1, 5):
-        db_session.add(Site(id=i, nom=f"Site {i}", type=TypeSite.BUREAU,
-                            portefeuille_id=1, actif=True))
+        db_session.add(Site(id=i, nom=f"Site {i}", type=TypeSite.BUREAU, portefeuille_id=1, actif=True))
     db_session.flush()
 
     # Site 1: CVC 350 kW (tier1, >290, deadline 2025)
     asset1 = BacsAsset(id=1, site_id=1, is_tertiary_non_residential=True)
     db_session.add(asset1)
     db_session.flush()
-    db_session.add(BacsCvcSystem(
-        id=1, asset_id=1, system_type=CvcSystemType.HEATING,
-        architecture=CvcArchitecture.INDEPENDENT,
-        units_json=json.dumps([{"label": "PAC1", "kw": 350}]),
-    ))
-    db_session.add(BacsAssessment(
-        id=1, asset_id=1, assessed_at=datetime.now(timezone.utc),
-        threshold_applied=290, is_obligated=True,
-        deadline_date=date(2025, 1, 1),
-        trigger_reason=BacsTriggerReason.THRESHOLD_290,
-        tri_exemption_possible=False, tri_years=5.0,
-        confidence_score=0.9, compliance_score=20.0,
-        engine_version="bacs_v2.0",
-    ))
+    db_session.add(
+        BacsCvcSystem(
+            id=1,
+            asset_id=1,
+            system_type=CvcSystemType.HEATING,
+            architecture=CvcArchitecture.INDEPENDENT,
+            units_json=json.dumps([{"label": "PAC1", "kw": 350}]),
+        )
+    )
+    db_session.add(
+        BacsAssessment(
+            id=1,
+            asset_id=1,
+            assessed_at=datetime.now(timezone.utc),
+            threshold_applied=290,
+            is_obligated=True,
+            deadline_date=date(2025, 1, 1),
+            trigger_reason=BacsTriggerReason.THRESHOLD_290,
+            tri_exemption_possible=False,
+            tri_years=5.0,
+            confidence_score=0.9,
+            compliance_score=20.0,
+            engine_version="bacs_v2.0",
+        )
+    )
 
     # Site 2: CVC 150 kW (tier2, 70-290, deadline 2030)
     asset2 = BacsAsset(id=2, site_id=2, is_tertiary_non_residential=True)
     db_session.add(asset2)
     db_session.flush()
-    db_session.add(BacsCvcSystem(
-        id=2, asset_id=2, system_type=CvcSystemType.COOLING,
-        architecture=CvcArchitecture.CASCADE,
-        units_json=json.dumps([{"label": "Clim1", "kw": 80}, {"label": "Clim2", "kw": 70}]),
-    ))
-    db_session.add(BacsAssessment(
-        id=2, asset_id=2, assessed_at=datetime.now(timezone.utc),
-        threshold_applied=70, is_obligated=True,
-        deadline_date=date(2030, 1, 1),
-        trigger_reason=BacsTriggerReason.THRESHOLD_70,
-        tri_exemption_possible=True, tri_years=12.0,
-        confidence_score=0.85, compliance_score=40.0,
-        engine_version="bacs_v2.0",
-    ))
+    db_session.add(
+        BacsCvcSystem(
+            id=2,
+            asset_id=2,
+            system_type=CvcSystemType.COOLING,
+            architecture=CvcArchitecture.CASCADE,
+            units_json=json.dumps([{"label": "Clim1", "kw": 80}, {"label": "Clim2", "kw": 70}]),
+        )
+    )
+    db_session.add(
+        BacsAssessment(
+            id=2,
+            asset_id=2,
+            assessed_at=datetime.now(timezone.utc),
+            threshold_applied=70,
+            is_obligated=True,
+            deadline_date=date(2030, 1, 1),
+            trigger_reason=BacsTriggerReason.THRESHOLD_70,
+            tri_exemption_possible=True,
+            tri_years=12.0,
+            confidence_score=0.85,
+            compliance_score=40.0,
+            engine_version="bacs_v2.0",
+        )
+    )
 
     # Site 3: CVC 50 kW (not applicable, <70) — no BacsAsset
     # Site 4: No CVC data (missing) — no BacsAsset
@@ -112,10 +145,16 @@ def _seed_bacs_sites(db_session):
     # Add compliance findings for all sites
     for sid in [1, 2, 3, 4]:
         status = "NOK" if sid <= 2 else "UNKNOWN"
-        db_session.add(ComplianceFinding(
-            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status=status, severity="high", evidence="test",
-        ))
+        db_session.add(
+            ComplianceFinding(
+                site_id=sid,
+                regulation="bacs",
+                rule_id="BACS_SCOPE",
+                status=status,
+                severity="high",
+                evidence="test",
+            )
+        )
     db_session.commit()
 
 
@@ -194,6 +233,7 @@ class TestBacsV2Bundle:
     def test_bacs_config_loads_from_yaml(self):
         """_load_bacs_config() returns valid thresholds and deadlines."""
         from services.bacs_engine import _load_bacs_config
+
         cfg = _load_bacs_config()
         assert cfg["thresholds_kw"]["tier1"] == 290
         assert cfg["thresholds_kw"]["tier2"] == 70

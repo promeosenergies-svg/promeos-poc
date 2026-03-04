@@ -42,7 +42,7 @@ describe('buildWatchlist', () => {
   it('nonConformes=3 → item severity=critical, path=/conformite', () => {
     const kpis = makeKpis({ nonConformes: 3, total: 5 });
     const result = buildWatchlist(kpis, []);
-    const item = result.find(i => i.id === 'non_conformes');
+    const item = result.find((i) => i.id === 'non_conformes');
     expect(item).toBeDefined();
     expect(item.severity).toBe('critical');
     expect(item.path).toBe('/conformite');
@@ -52,7 +52,7 @@ describe('buildWatchlist', () => {
     const kpis = makeKpis({ couvertureDonnees: 0, total: 5 });
     const sites = makeSites(5, { conso_kwh_an: 0 });
     const result = buildWatchlist(kpis, sites);
-    const item = result.find(i => i.id === 'no_conso_data');
+    const item = result.find((i) => i.id === 'no_conso_data');
     expect(item).toBeDefined();
     expect(item.severity).toBe('warn');
     expect(item.path).toBe('/consommations/import');
@@ -96,7 +96,7 @@ describe('checkConsistency', () => {
     const kpis = makeKpis({ couvertureDonnees: 0, total: 5 });
     const result = checkConsistency(kpis);
     expect(result.ok).toBe(false);
-    const issue = result.issues.find(i => i.code === 'no_data_coverage');
+    const issue = result.issues.find((i) => i.code === 'no_data_coverage');
     expect(issue).toBeDefined();
   });
 
@@ -113,9 +113,30 @@ describe('checkConsistency', () => {
 describe('buildTopSites', () => {
   it('worst 5: non-conformes sorted by risque_eur DESC', () => {
     const sites = [
-      { id: 1, nom: 'A', ville: 'Paris', statut_conformite: 'non_conforme', risque_eur: 5000, conso_kwh_an: 0 },
-      { id: 2, nom: 'B', ville: 'Lyon', statut_conformite: 'non_conforme', risque_eur: 20000, conso_kwh_an: 0 },
-      { id: 3, nom: 'C', ville: 'Lille', statut_conformite: 'non_conforme', risque_eur: 12000, conso_kwh_an: 0 },
+      {
+        id: 1,
+        nom: 'A',
+        ville: 'Paris',
+        statut_conformite: 'non_conforme',
+        risque_eur: 5000,
+        conso_kwh_an: 0,
+      },
+      {
+        id: 2,
+        nom: 'B',
+        ville: 'Lyon',
+        statut_conformite: 'non_conforme',
+        risque_eur: 20000,
+        conso_kwh_an: 0,
+      },
+      {
+        id: 3,
+        nom: 'C',
+        ville: 'Lille',
+        statut_conformite: 'non_conforme',
+        risque_eur: 12000,
+        conso_kwh_an: 0,
+      },
     ];
     const { worst } = buildTopSites(sites);
     expect(worst[0].risque_eur).toBe(20000);
@@ -125,12 +146,33 @@ describe('buildTopSites', () => {
 
   it('best 5: conformes only', () => {
     const sites = [
-      { id: 1, nom: 'A', statut_conformite: 'conforme', conso_kwh_an: 1000, risque_eur: 0, ville: 'Paris' },
-      { id: 2, nom: 'B', statut_conformite: 'non_conforme', conso_kwh_an: 2000, risque_eur: 500, ville: 'Lyon' },
-      { id: 3, nom: 'C', statut_conformite: 'conforme', conso_kwh_an: 500, risque_eur: 0, ville: 'Lille' },
+      {
+        id: 1,
+        nom: 'A',
+        statut_conformite: 'conforme',
+        conso_kwh_an: 1000,
+        risque_eur: 0,
+        ville: 'Paris',
+      },
+      {
+        id: 2,
+        nom: 'B',
+        statut_conformite: 'non_conforme',
+        conso_kwh_an: 2000,
+        risque_eur: 500,
+        ville: 'Lyon',
+      },
+      {
+        id: 3,
+        nom: 'C',
+        statut_conformite: 'conforme',
+        conso_kwh_an: 500,
+        risque_eur: 0,
+        ville: 'Lille',
+      },
     ];
     const { best } = buildTopSites(sites);
-    expect(best.every(s => s.statut_conformite === 'conforme')).toBe(true);
+    expect(best.every((s) => s.statut_conformite === 'conforme')).toBe(true);
     expect(best).toHaveLength(2);
   });
 
@@ -142,8 +184,22 @@ describe('buildTopSites', () => {
 
   it('only 2 non-conformes → worst has length 2 (not padded to 5)', () => {
     const sites = [
-      { id: 1, nom: 'A', statut_conformite: 'non_conforme', risque_eur: 1000, conso_kwh_an: 0, ville: 'Lyon' },
-      { id: 2, nom: 'B', statut_conformite: 'non_conforme', risque_eur: 2000, conso_kwh_an: 0, ville: 'Lyon' },
+      {
+        id: 1,
+        nom: 'A',
+        statut_conformite: 'non_conforme',
+        risque_eur: 1000,
+        conso_kwh_an: 0,
+        ville: 'Lyon',
+      },
+      {
+        id: 2,
+        nom: 'B',
+        statut_conformite: 'non_conforme',
+        risque_eur: 2000,
+        conso_kwh_an: 0,
+        ville: 'Lyon',
+      },
     ];
     const { worst } = buildTopSites(sites);
     expect(worst).toHaveLength(2);
@@ -162,7 +218,7 @@ describe('buildOpportunities', () => {
   it('isExpert=true + couvertureDonnees<80 → at least 1 opportunity (complete_data)', () => {
     const kpis = makeKpis({ couvertureDonnees: 40, total: 5, nonConformes: 0, risqueTotal: 0 });
     const result = buildOpportunities(kpis, makeSites(5), { isExpert: true });
-    const opp = result.find(o => o.id === 'complete_data');
+    const opp = result.find((o) => o.id === 'complete_data');
     expect(opp).toBeDefined();
     expect(opp.path).toBe('/consommations/explorer');
   });
@@ -191,7 +247,7 @@ describe('buildBriefing', () => {
   it('nonConformes > 0 → first item id=non_conformes, severity=critical', () => {
     const kpis = makeKpis({ nonConformes: 2, aRisque: 0, couvertureDonnees: 100 });
     const result = buildBriefing(kpis, []);
-    const item = result.find(i => i.id === 'non_conformes');
+    const item = result.find((i) => i.id === 'non_conformes');
     expect(item).toBeDefined();
     expect(item.severity).toBe('critical');
     expect(item.path).toBe('/conformite');
@@ -200,7 +256,7 @@ describe('buildBriefing', () => {
   it('aRisque > 0 → item id=a_risque, severity=high', () => {
     const kpis = makeKpis({ nonConformes: 0, aRisque: 3, couvertureDonnees: 100 });
     const result = buildBriefing(kpis, []);
-    const item = result.find(i => i.id === 'a_risque');
+    const item = result.find((i) => i.id === 'a_risque');
     expect(item).toBeDefined();
     expect(item.severity).toBe('high');
     expect(item.path).toBe('/actions');
@@ -209,7 +265,7 @@ describe('buildBriefing', () => {
   it('couvertureDonnees < 80 and total > 0 → item id=coverage, severity=warn', () => {
     const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 50, total: 4 });
     const result = buildBriefing(kpis, []);
-    const item = result.find(i => i.id === 'coverage');
+    const item = result.find((i) => i.id === 'coverage');
     expect(item).toBeDefined();
     expect(item.severity).toBe('warn');
     expect(item.path).toBe('/consommations/import');
@@ -224,7 +280,7 @@ describe('buildBriefing', () => {
   it('couvertureDonnees >= 80 → no coverage item', () => {
     const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 80, total: 5 });
     const result = buildBriefing(kpis, []);
-    expect(result.find(i => i.id === 'coverage')).toBeUndefined();
+    expect(result.find((i) => i.id === 'coverage')).toBeUndefined();
   });
 });
 
@@ -283,7 +339,7 @@ describe('copy hygiene — no raw \\u00a0 escape sequences in model strings', ()
   it('buildOpportunities subs use formatPercentFR (contain "%" not raw escape)', () => {
     const kpis = makeKpis({ couvertureDonnees: 40, total: 5, nonConformes: 0, risqueTotal: 0 });
     const result = buildOpportunities(kpis, makeSites(5), { isExpert: true });
-    const opp = result.find(o => o.id === 'complete_data');
+    const opp = result.find((o) => o.id === 'complete_data');
     expect(opp?.sub).toContain('%');
     expect(opp?.sub).not.toContain('\\u00a0');
   });

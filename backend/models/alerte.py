@@ -2,6 +2,7 @@
 PROMEOS - Modèle Alerte
 Notifications de dépassement ou anomalie énergétique
 """
+
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
@@ -10,6 +11,7 @@ from .enums import SeveriteAlerte
 
 class Alerte(Base, TimestampMixin):
     """Alerte de dépassement ou anomalie énergétique"""
+
     __tablename__ = "alertes"
 
     id = Column(Integer, primary_key=True, index=True)

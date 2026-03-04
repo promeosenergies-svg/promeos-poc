@@ -1,6 +1,7 @@
 """
 PROMEOS - Package Routes
 """
+
 from .sites import router as sites_router
 from .compteurs import router as compteurs_router
 from .consommations import router as consommations_router
@@ -39,6 +40,11 @@ from .tertiaire import router as tertiaire_router
 from .portfolio import router as portfolio_router
 from .consumption_context import router as consumption_context_router
 from .contracts_radar import router as contracts_radar_router
+from .data_quality import router as data_quality_router
+from .operat import router as operat_router
+from .copilot import router as copilot_router
+from .action_templates import router as action_templates_router
+from .onboarding_stepper import router as onboarding_stepper_router
 
 __all__ = [
     "sites_router",
@@ -79,4 +85,9 @@ __all__ = [
     "portfolio_router",
     "consumption_context_router",
     "contracts_radar_router",
+    "data_quality_router",
+    "operat_router",
+    "copilot_router",
+    "action_templates_router",
+    "onboarding_stepper_router",
 ]

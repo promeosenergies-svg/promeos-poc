@@ -4,6 +4,7 @@ Evenements de veille reglementaire detectes par les watchers.
 Stockage minimal : hash + snippet uniquement (pas de copie massive).
 Pipeline: NEW -> REVIEWED -> APPLIED | DISMISSED
 """
+
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, Enum as SAEnum
 from .base import Base
 from .enums import WatcherEventStatus

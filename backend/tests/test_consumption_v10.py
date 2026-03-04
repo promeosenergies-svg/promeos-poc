@@ -2,8 +2,10 @@
 PROMEOS - Tests Sprint V10: Consumption World-Class
 Tunnel, Targets, TOU Schedules, HP/HC, Gas Summary
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -15,9 +17,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Meter, MeterReading, ConsumptionInsight,
-    Organisation, EntiteJuridique, Portefeuille,
-    TypeSite, ConsumptionTarget, TOUSchedule,
+    Base,
+    Site,
+    Meter,
+    MeterReading,
+    ConsumptionInsight,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+    ConsumptionTarget,
+    TOUSchedule,
 )
 from models.energy_models import EnergyVector, FrequencyType
 from database import get_db
@@ -27,6 +37,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -49,6 +60,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -132,12 +144,14 @@ def _seed_readings(db, meter, days=30, interval_hours=1, base_kwh=10.0, pattern=
 # TestTunnelService
 # ========================================
 
+
 class TestTunnelService:
     """Tests for tunnel_service: envelope computation."""
 
     def test_tunnel_empty_no_meter(self, db):
         """Tunnel with no meter returns empty envelope."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         result = compute_tunnel(db, site.id, days=30)
         assert result["readings_count"] == 0
@@ -148,6 +162,7 @@ class TestTunnelService:
     def test_tunnel_insufficient_data(self, db):
         """Tunnel with < 48 readings returns empty envelope."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
         _seed_readings(db, meter, days=1)  # ~24 readings, below threshold
@@ -158,6 +173,7 @@ class TestTunnelService:
     def test_tunnel_valid_envelope(self, db):
         """Tunnel with sufficient data returns valid P10-P90 envelope."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
         _seed_readings(db, meter, days=30)
@@ -179,6 +195,7 @@ class TestTunnelService:
     def test_tunnel_outside_pct(self, db):
         """Tunnel computes outside_pct for recent readings."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
         _seed_readings(db, meter, days=60)
@@ -190,6 +207,7 @@ class TestTunnelService:
     def test_tunnel_gas_filter(self, db):
         """Tunnel filters by energy type (gas)."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         _create_meter(db, site, energy_vector=EnergyVector.ELECTRICITY)
         result = compute_tunnel(db, site.id, days=30, energy_type="gas")
@@ -198,6 +216,7 @@ class TestTunnelService:
     def test_tunnel_confidence_scoring(self, db):
         """Tunnel confidence is high with dense data."""
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
         _seed_readings(db, meter, days=90, base_kwh=15.0)
@@ -234,11 +253,13 @@ class TestTunnelEndpoint:
 # TestTargetsService
 # ========================================
 
+
 class TestTargetsService:
     """Tests for targets_service: CRUD + progression."""
 
     def test_create_target(self, db):
         from services.targets_service import create_target, get_targets
+
         _, site = _create_org_site(db)
         t = create_target(db, site.id, "electricity", "monthly", 2026, 1, target_kwh=5000)
         assert t["site_id"] == site.id
@@ -248,6 +269,7 @@ class TestTargetsService:
     def test_create_target_upsert(self, db):
         """Creating duplicate target updates existing."""
         from services.targets_service import create_target
+
         _, site = _create_org_site(db)
         t1 = create_target(db, site.id, "electricity", "monthly", 2026, 1, target_kwh=5000)
         t2 = create_target(db, site.id, "electricity", "monthly", 2026, 1, target_kwh=6000)
@@ -257,6 +279,7 @@ class TestTargetsService:
 
     def test_list_targets(self, db):
         from services.targets_service import create_target, get_targets
+
         _, site = _create_org_site(db)
         create_target(db, site.id, "electricity", "monthly", 2026, 1, target_kwh=5000)
         create_target(db, site.id, "electricity", "monthly", 2026, 2, target_kwh=4800)
@@ -265,6 +288,7 @@ class TestTargetsService:
 
     def test_update_target(self, db):
         from services.targets_service import create_target, update_target
+
         _, site = _create_org_site(db)
         t = create_target(db, site.id, "electricity", "monthly", 2026, 3, target_kwh=5000)
         updated = update_target(db, t["id"], actual_kwh=4500)
@@ -272,6 +296,7 @@ class TestTargetsService:
 
     def test_delete_target(self, db):
         from services.targets_service import create_target, delete_target, get_targets
+
         _, site = _create_org_site(db)
         t = create_target(db, site.id, "electricity", "monthly", 2026, 4, target_kwh=5000)
         assert delete_target(db, t["id"]) is True
@@ -279,10 +304,12 @@ class TestTargetsService:
 
     def test_delete_nonexistent(self, db):
         from services.targets_service import delete_target
+
         assert delete_target(db, 9999) is False
 
     def test_progression_no_targets(self, db):
         from services.targets_service import get_progression
+
         _, site = _create_org_site(db)
         prog = get_progression(db, site.id, year=2026)
         assert prog["yearly_target_kwh"] == 0
@@ -290,6 +317,7 @@ class TestTargetsService:
 
     def test_progression_with_targets(self, db):
         from services.targets_service import create_target, update_target, get_progression
+
         _, site = _create_org_site(db)
         for m in range(1, 13):
             t = create_target(db, site.id, "electricity", "monthly", 2026, m, target_kwh=5000)
@@ -305,6 +333,7 @@ class TestTargetsService:
 
     def test_progression_over_budget(self, db):
         from services.targets_service import create_target, update_target, get_progression
+
         _, site = _create_org_site(db)
         for m in range(1, 13):
             t = create_target(db, site.id, "electricity", "monthly", 2026, m, target_kwh=5000)
@@ -319,31 +348,48 @@ class TestTargetsEndpoint:
 
     def test_create_target_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        resp = client.post("/api/consumption/targets", json={
-            "site_id": site.id,
-            "energy_type": "electricity",
-            "period": "monthly",
-            "year": 2026,
-            "month": 1,
-            "target_kwh": 5000,
-        })
+        resp = client.post(
+            "/api/consumption/targets",
+            json={
+                "site_id": site.id,
+                "energy_type": "electricity",
+                "period": "monthly",
+                "year": 2026,
+                "month": 1,
+                "target_kwh": 5000,
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["target_kwh"] == 5000
 
     def test_list_targets_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        client.post("/api/consumption/targets", json={
-            "site_id": site.id, "period": "monthly", "year": 2026, "month": 1, "target_kwh": 5000,
-        })
+        client.post(
+            "/api/consumption/targets",
+            json={
+                "site_id": site.id,
+                "period": "monthly",
+                "year": 2026,
+                "month": 1,
+                "target_kwh": 5000,
+            },
+        )
         resp = client.get(f"/api/consumption/targets?site_id={site.id}&year=2026")
         assert resp.status_code == 200
         assert len(resp.json()) == 1
 
     def test_patch_target_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        create_resp = client.post("/api/consumption/targets", json={
-            "site_id": site.id, "period": "monthly", "year": 2026, "month": 5, "target_kwh": 5000,
-        })
+        create_resp = client.post(
+            "/api/consumption/targets",
+            json={
+                "site_id": site.id,
+                "period": "monthly",
+                "year": 2026,
+                "month": 5,
+                "target_kwh": 5000,
+            },
+        )
         tid = create_resp.json()["id"]
         resp = client.patch(f"/api/consumption/targets/{tid}", json={"actual_kwh": 4900})
         assert resp.status_code == 200
@@ -351,9 +397,16 @@ class TestTargetsEndpoint:
 
     def test_delete_target_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        create_resp = client.post("/api/consumption/targets", json={
-            "site_id": site.id, "period": "monthly", "year": 2026, "month": 6, "target_kwh": 3000,
-        })
+        create_resp = client.post(
+            "/api/consumption/targets",
+            json={
+                "site_id": site.id,
+                "period": "monthly",
+                "year": 2026,
+                "month": 6,
+                "target_kwh": 3000,
+            },
+        )
         tid = create_resp.json()["id"]
         resp = client.delete(f"/api/consumption/targets/{tid}")
         assert resp.status_code == 200
@@ -374,11 +427,13 @@ class TestTargetsEndpoint:
 # TestTOUService
 # ========================================
 
+
 class TestTOUService:
     """Tests for tou_service: schedule CRUD + HP/HC ratio."""
 
     def test_default_schedule(self, db):
         from services.tou_service import get_active_schedule
+
         _, site = _create_org_site(db)
         active = get_active_schedule(db, site.id)
         assert active is not None
@@ -387,6 +442,7 @@ class TestTOUService:
 
     def test_create_schedule(self, db):
         from services.tou_service import create_schedule, get_schedules
+
         _, site = _create_org_site(db)
         windows = [
             {"day_types": ["weekday"], "start": "07:00", "end": "23:00", "period": "HP", "price_eur_kwh": 0.20},
@@ -394,10 +450,16 @@ class TestTOUService:
             {"day_types": ["weekend"], "start": "00:00", "end": "24:00", "period": "HC", "price_eur_kwh": 0.14},
         ]
         sched = create_schedule(
-            db, site_id=site.id, meter_id=None,
-            name="TURPE 7", effective_from=date(2025, 1, 1),
-            effective_to=None, windows=windows,
-            source="turpe", price_hp_eur_kwh=0.20, price_hc_eur_kwh=0.14,
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="TURPE 7",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=windows,
+            source="turpe",
+            price_hp_eur_kwh=0.20,
+            price_hc_eur_kwh=0.14,
         )
         assert sched["name"] == "TURPE 7"
         assert sched["is_default"] is False
@@ -405,6 +467,7 @@ class TestTOUService:
 
     def test_active_schedule_versioning(self, db):
         from services.tou_service import create_schedule, get_active_schedule
+
         _, site = _create_org_site(db)
         windows_v1 = [
             {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
@@ -414,39 +477,71 @@ class TestTOUService:
             {"day_types": ["weekday"], "start": "07:00", "end": "23:00", "period": "HP"},
             {"day_types": ["weekday"], "start": "23:00", "end": "07:00", "period": "HC"},
         ]
-        create_schedule(db, site_id=site.id, meter_id=None,
-                        name="V1", effective_from=date(2024, 1, 1), effective_to=None,
-                        windows=windows_v1, price_hp_eur_kwh=0.18, price_hc_eur_kwh=0.12)
-        create_schedule(db, site_id=site.id, meter_id=None,
-                        name="V2", effective_from=date(2025, 1, 1), effective_to=None,
-                        windows=windows_v2, price_hp_eur_kwh=0.20, price_hc_eur_kwh=0.14)
+        create_schedule(
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="V1",
+            effective_from=date(2024, 1, 1),
+            effective_to=None,
+            windows=windows_v1,
+            price_hp_eur_kwh=0.18,
+            price_hc_eur_kwh=0.12,
+        )
+        create_schedule(
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="V2",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=windows_v2,
+            price_hp_eur_kwh=0.20,
+            price_hc_eur_kwh=0.14,
+        )
 
         active = get_active_schedule(db, site.id, ref_date=date(2025, 6, 1))
         assert active["name"] == "V2"
 
     def test_update_schedule(self, db):
         from services.tou_service import create_schedule, update_schedule
+
         _, site = _create_org_site(db)
-        sched = create_schedule(db, site_id=site.id, meter_id=None,
-                                name="Test", effective_from=date(2025, 1, 1),
-                                effective_to=None, windows=[],
-                                price_hp_eur_kwh=0.18, price_hc_eur_kwh=0.12)
+        sched = create_schedule(
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="Test",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=[],
+            price_hp_eur_kwh=0.18,
+            price_hc_eur_kwh=0.12,
+        )
         updated = update_schedule(db, sched["id"], name="Test Updated", price_hp_eur_kwh=0.22)
         assert updated["name"] == "Test Updated"
         assert updated["price_hp_eur_kwh"] == 0.22
 
     def test_delete_schedule(self, db):
         from services.tou_service import create_schedule, delete_schedule, get_schedules
+
         _, site = _create_org_site(db)
-        sched = create_schedule(db, site_id=site.id, meter_id=None,
-                                name="To Delete", effective_from=date(2025, 1, 1),
-                                effective_to=None, windows=[])
+        sched = create_schedule(
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="To Delete",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=[],
+        )
         assert delete_schedule(db, sched["id"]) is True
         active = get_schedules(db, site_id=site.id, active_only=True)
         assert all(s["id"] != sched["id"] or not s.get("is_active") for s in active)
 
     def test_hp_hc_ratio_no_data(self, db):
         from services.tou_service import compute_hp_hc_ratio
+
         _, site = _create_org_site(db)
         result = compute_hp_hc_ratio(db, site.id, days=30)
         assert result["total_kwh"] == 0
@@ -454,6 +549,7 @@ class TestTOUService:
 
     def test_hp_hc_ratio_with_data(self, db):
         from services.tou_service import compute_hp_hc_ratio
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
         _seed_readings(db, meter, days=30)
@@ -466,6 +562,7 @@ class TestTOUService:
     def test_classify_period(self):
         """Test HP/HC classification logic."""
         from services.tou_service import _classify_period, DEFAULT_WINDOWS
+
         # Weekday 10:00 → HP
         ts_hp = datetime(2025, 6, 2, 10, 0)  # Monday
         assert _classify_period(ts_hp, DEFAULT_WINDOWS) == "HP"
@@ -490,18 +587,21 @@ class TestTOUEndpoint:
 
     def test_create_tou_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        resp = client.post("/api/consumption/tou_schedules", json={
-            "site_id": site.id,
-            "name": "TURPE 7 Test",
-            "effective_from": "2025-01-01",
-            "windows": [
-                {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
-                {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC"},
-            ],
-            "source": "manual",
-            "price_hp_eur_kwh": 0.18,
-            "price_hc_eur_kwh": 0.12,
-        })
+        resp = client.post(
+            "/api/consumption/tou_schedules",
+            json={
+                "site_id": site.id,
+                "name": "TURPE 7 Test",
+                "effective_from": "2025-01-01",
+                "windows": [
+                    {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
+                    {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC"},
+                ],
+                "source": "manual",
+                "price_hp_eur_kwh": 0.18,
+                "price_hc_eur_kwh": 0.12,
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["name"] == "TURPE 7 Test"
@@ -516,10 +616,17 @@ class TestTOUEndpoint:
 
     def test_patch_tou_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        create_resp = client.post("/api/consumption/tou_schedules", json={
-            "site_id": site.id, "name": "Test", "effective_from": "2025-01-01",
-            "windows": [], "price_hp_eur_kwh": 0.18, "price_hc_eur_kwh": 0.12,
-        })
+        create_resp = client.post(
+            "/api/consumption/tou_schedules",
+            json={
+                "site_id": site.id,
+                "name": "Test",
+                "effective_from": "2025-01-01",
+                "windows": [],
+                "price_hp_eur_kwh": 0.18,
+                "price_hc_eur_kwh": 0.12,
+            },
+        )
         sid = create_resp.json()["id"]
         resp = client.patch(f"/api/consumption/tou_schedules/{sid}", json={"name": "Updated"})
         assert resp.status_code == 200
@@ -527,10 +634,15 @@ class TestTOUEndpoint:
 
     def test_delete_tou_endpoint(self, client, db):
         _, site = _create_org_site(db)
-        create_resp = client.post("/api/consumption/tou_schedules", json={
-            "site_id": site.id, "name": "To Delete", "effective_from": "2025-01-01",
-            "windows": [],
-        })
+        create_resp = client.post(
+            "/api/consumption/tou_schedules",
+            json={
+                "site_id": site.id,
+                "name": "To Delete",
+                "effective_from": "2025-01-01",
+                "windows": [],
+            },
+        )
         sid = create_resp.json()["id"]
         resp = client.delete(f"/api/consumption/tou_schedules/{sid}")
         assert resp.status_code == 200
@@ -546,6 +658,7 @@ class TestTOUEndpoint:
 # ========================================
 # TestGasSummary
 # ========================================
+
 
 class TestGasSummary:
     """Tests for gas summary endpoint."""
@@ -583,21 +696,25 @@ class TestGasSummary:
 # TestConfidenceGating
 # ========================================
 
+
 class TestConfidenceGating:
     """Tests for confidence scoring in tunnel/HP-HC."""
 
     def test_tunnel_low_confidence(self, db):
         from services.tunnel_service import _compute_confidence
+
         score, level = _compute_confidence(50, 90)
         assert level == "low"
 
     def test_tunnel_medium_confidence(self, db):
         from services.tunnel_service import _compute_confidence
+
         score, level = _compute_confidence(1200, 90)  # ratio ~0.55, >= 200 readings
         assert level == "medium"
 
     def test_tunnel_high_confidence(self, db):
         from services.tunnel_service import _compute_confidence
+
         score, level = _compute_confidence(2000, 90)
         assert level == "high"
         assert score >= 80
@@ -607,11 +724,13 @@ class TestConfidenceGating:
 # TestEdgeCases
 # ========================================
 
+
 class TestEdgeCases:
     """Edge cases and boundary conditions."""
 
     def test_target_yearly_period(self, db):
         from services.targets_service import create_target
+
         _, site = _create_org_site(db)
         t = create_target(db, site.id, "electricity", "yearly", 2026, None, target_kwh=60000)
         assert t["period"] == "yearly"
@@ -619,6 +738,7 @@ class TestEdgeCases:
 
     def test_target_with_co2(self, db):
         from services.targets_service import create_target
+
         _, site = _create_org_site(db)
         t = create_target(db, site.id, "gas", "monthly", 2026, 1, target_kwh=5000, target_co2e_kg=1200)
         assert t["target_co2e_kg"] == 1200
@@ -626,6 +746,7 @@ class TestEdgeCases:
 
     def test_tunnel_with_gas_meter(self, db):
         from services.tunnel_service import compute_tunnel
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site, energy_vector=EnergyVector.GAS, meter_id="PCE-002")
         _seed_readings(db, meter, days=30, base_kwh=50.0, pattern="flat")
@@ -636,27 +757,47 @@ class TestEdgeCases:
     def test_tou_schedule_meter_level(self, db):
         """Meter-level schedule takes precedence over site-level."""
         from services.tou_service import create_schedule, get_active_schedule
+
         _, site = _create_org_site(db)
         meter = _create_meter(db, site)
 
-        create_schedule(db, site_id=site.id, meter_id=None,
-                        name="Site Level", effective_from=date(2025, 1, 1),
-                        effective_to=None, windows=[], price_hp_eur_kwh=0.18, price_hc_eur_kwh=0.12)
-        create_schedule(db, site_id=None, meter_id=meter.id,
-                        name="Meter Level", effective_from=date(2025, 1, 1),
-                        effective_to=None, windows=[], price_hp_eur_kwh=0.22, price_hc_eur_kwh=0.15)
+        create_schedule(
+            db,
+            site_id=site.id,
+            meter_id=None,
+            name="Site Level",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=[],
+            price_hp_eur_kwh=0.18,
+            price_hc_eur_kwh=0.12,
+        )
+        create_schedule(
+            db,
+            site_id=None,
+            meter_id=meter.id,
+            name="Meter Level",
+            effective_from=date(2025, 1, 1),
+            effective_to=None,
+            windows=[],
+            price_hp_eur_kwh=0.22,
+            price_hc_eur_kwh=0.15,
+        )
 
         active = get_active_schedule(db, site.id, meter_id=meter.id, ref_date=date(2025, 6, 1))
         assert active["name"] == "Meter Level"
 
     def test_update_nonexistent_target(self, db):
         from services.targets_service import update_target
+
         assert update_target(db, 9999, target_kwh=100) is None
 
     def test_update_nonexistent_schedule(self, db):
         from services.tou_service import update_schedule
+
         assert update_schedule(db, 9999, name="X") is None
 
     def test_delete_nonexistent_schedule(self, db):
         from services.tou_service import delete_schedule
+
         assert delete_schedule(db, 9999) is False

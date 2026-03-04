@@ -17,7 +17,13 @@ import { toPurchase } from '../services/routes';
 
 // ── Constantes ──────────────────────────────────────────────────────────────
 
-export const ACTIVATION_DIMENSIONS = ['patrimoine', 'conformite', 'consommation', 'facturation', 'achat'];
+export const ACTIVATION_DIMENSIONS = [
+  'patrimoine',
+  'conformite',
+  'consommation',
+  'facturation',
+  'achat',
+];
 export const ACTIVATION_THRESHOLD = 3;
 
 /**
@@ -87,7 +93,7 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
     {
       key: 'facturation',
       label: 'Audit facturation',
-      description: 'Factures analysees par le moteur d\'audit',
+      description: "Factures analysees par le moteur d'audit",
       available: hasBilling,
       coverage: hasBilling ? 100 : 0,
       detail: hasBilling ? `${billingSummary.total_invoices ?? '\u2013'} factures` : null,
@@ -100,7 +106,9 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
       description: 'Contrats de fourniture renseignes par site',
       available: hasPurchase,
       coverage: purchaseSignals?.coverageContractsPct ?? 0,
-      detail: hasPurchase ? `${purchaseSignals.totalContracts} contrat${purchaseSignals.totalContracts > 1 ? 's' : ''}` : null,
+      detail: hasPurchase
+        ? `${purchaseSignals.totalContracts} contrat${purchaseSignals.totalContracts > 1 ? 's' : ''}`
+        : null,
       ctaPath: toPurchase(),
       ctaLabel: 'Renseigner les contrats',
     },
@@ -108,9 +116,10 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
 
   const activatedCount = dimensions.filter((d) => d.available).length;
   const totalDimensions = dimensions.length;
-  const overallCoverage = totalDimensions > 0
-    ? Math.round(dimensions.reduce((sum, d) => sum + d.coverage, 0) / totalDimensions)
-    : 0;
+  const overallCoverage =
+    totalDimensions > 0
+      ? Math.round(dimensions.reduce((sum, d) => sum + d.coverage, 0) / totalDimensions)
+      : 0;
   const nextAction = dimensions.find((d) => !d.available) || null;
 
   return { dimensions, activatedCount, totalDimensions, overallCoverage, nextAction };

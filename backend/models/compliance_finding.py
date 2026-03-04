@@ -2,6 +2,7 @@
 PROMEOS - Modele ComplianceFinding
 Resultat persistant d'une evaluation de conformite par regle.
 """
+
 from sqlalchemy import Column, Integer, String, Float, Text, Date, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 
@@ -14,6 +15,7 @@ class ComplianceFinding(Base, TimestampMixin):
     Un finding = une regle evaluee pour un site.
     Status: OK / NOK / UNKNOWN / OUT_OF_SCOPE
     """
+
     __tablename__ = "compliance_findings"
 
     id = Column(Integer, primary_key=True, index=True)

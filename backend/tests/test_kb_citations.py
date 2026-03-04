@@ -2,6 +2,7 @@
 PROMEOS KB — Tests for Citations + RuleCards
 AC: tables created, insert/query OK, P5 compliance check works.
 """
+
 import sys
 import os
 import sqlite3
@@ -50,6 +51,7 @@ def kb_db(tmp_path_factory):
 
     # Monkey-patch get_kb_db to return our test DB
     import app.kb.citations as citations_mod
+
     citations_mod.get_kb_db = lambda: db
 
     yield db
@@ -59,6 +61,7 @@ def kb_db(tmp_path_factory):
 # ========================================
 # Schema tests
 # ========================================
+
 
 def test_citations_table_exists(kb_db):
     """Table kb_citations created."""
@@ -96,6 +99,7 @@ def test_doc_manifest_v2_columns(kb_db):
 # ========================================
 # Citation CRUD tests
 # ========================================
+
 
 def test_create_citation(kb_db):
     """Create a citation and retrieve it."""
@@ -156,6 +160,7 @@ def test_citation_upsert_idempotent(kb_db):
 # ========================================
 # RuleCard CRUD tests
 # ========================================
+
 
 def test_create_rule_card_with_citations(kb_db):
     """Create a RuleCard linked to citations."""
@@ -251,6 +256,7 @@ def test_add_citation_to_existing_rule_card(kb_db):
 # ========================================
 # Stats / P5 compliance tests
 # ========================================
+
 
 def test_rule_card_stats(kb_db):
     """Stats include P5 compliance indicator."""

@@ -48,12 +48,14 @@ describe('buildActionPayload', () => {
   });
 
   it('genere un payload facturation (anomalies)', () => {
-    const payload = buildActionPayload(makeLever({
-      type: 'facturation',
-      actionKey: 'lev-fact-anom',
-      label: 'Corriger 5 anomalies facture',
-      impactEur: 8000,
-    }));
+    const payload = buildActionPayload(
+      makeLever({
+        type: 'facturation',
+        actionKey: 'lev-fact-anom',
+        label: 'Corriger 5 anomalies facture',
+        impactEur: 8000,
+      })
+    );
 
     expect(payload.severity).toBe('high');
     expect(payload.source_id).toBe('lev-fact-anom');
@@ -63,12 +65,14 @@ describe('buildActionPayload', () => {
   });
 
   it('genere un payload optimisation', () => {
-    const payload = buildActionPayload(makeLever({
-      type: 'optimisation',
-      actionKey: 'lev-optim-ener',
-      label: 'Lancer l\'optimisation energetique',
-      impactEur: 5000,
-    }));
+    const payload = buildActionPayload(
+      makeLever({
+        type: 'optimisation',
+        actionKey: 'lev-optim-ener',
+        label: "Lancer l'optimisation energetique",
+        impactEur: 5000,
+      })
+    );
 
     expect(payload.severity).toBe('low');
     expect(payload.priority).toBe(3);
@@ -130,7 +134,13 @@ describe('buildLeverDeepLink', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('LEVER_ACTION_TEMPLATES', () => {
-  const EXPECTED_KEYS = ['lev-conf-nc', 'lev-conf-ar', 'lev-fact-anom', 'lev-fact-loss', 'lev-optim-ener'];
+  const EXPECTED_KEYS = [
+    'lev-conf-nc',
+    'lev-conf-ar',
+    'lev-fact-anom',
+    'lev-fact-loss',
+    'lev-optim-ener',
+  ];
 
   it('contient les 5 templates attendus', () => {
     for (const key of EXPECTED_KEYS) {
@@ -156,16 +166,13 @@ describe('LEVER_ACTION_TEMPLATES', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('GUARD: leverActionModel est un module pur', () => {
-  const src = readFileSync(
-    resolve(__dirname, '..', '..', 'models', 'leverActionModel.js'),
-    'utf8',
-  );
+  const src = readFileSync(resolve(__dirname, '..', '..', 'models', 'leverActionModel.js'), 'utf8');
 
-  it('n\'importe pas React', () => {
+  it("n'importe pas React", () => {
     expect(src).not.toContain("from 'react'");
   });
 
-  it('n\'importe aucun service API', () => {
+  it("n'importe aucun service API", () => {
     expect(src).not.toContain('services/api');
     expect(src).not.toContain('fetch(');
   });

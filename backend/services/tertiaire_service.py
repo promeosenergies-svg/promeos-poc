@@ -2,6 +2,7 @@
 PROMEOS V40 — Service Tertiaire / OPERAT
 qualify_efa, run_controls, precheck_declaration, generate_operat_pack
 """
+
 import hashlib
 import json
 import logging
@@ -13,18 +14,26 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from models import (
-    TertiaireEfa, TertiaireEfaBuilding, TertiaireResponsibility,
-    TertiairePerimeterEvent, TertiaireDeclaration,
-    TertiaireProofArtifact, TertiaireDataQualityIssue,
-    EfaStatut, DeclarationStatus,
-    DataQualityIssueSeverity, DataQualityIssueStatus,
-    Site, Batiment,  # V42
+    TertiaireEfa,
+    TertiaireEfaBuilding,
+    TertiaireResponsibility,
+    TertiairePerimeterEvent,
+    TertiaireDeclaration,
+    TertiaireProofArtifact,
+    TertiaireDataQualityIssue,
+    EfaStatut,
+    DeclarationStatus,
+    DataQualityIssueSeverity,
+    DataQualityIssueStatus,
+    Site,
+    Batiment,  # V42
 )
 
 logger = logging.getLogger(__name__)
 
 
 # ── Qualification ────────────────────────────────────────────────────────────
+
 
 def qualify_efa(db: Session, efa_id: int) -> dict:
     """Retourne le statut de qualification d'une EFA (completude donnees)."""
@@ -35,12 +44,8 @@ def qualify_efa(db: Session, efa_id: int) -> dict:
     if efa.statut == EfaStatut.CLOSED:
         return {"status": "closed", "explanation": "EFA fermée", "efa_id": efa_id}
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id
-    ).all()
-    responsibilities = db.query(TertiaireResponsibility).filter(
-        TertiaireResponsibility.efa_id == efa_id
-    ).all()
+    buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa_id).all()
+    responsibilities = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa_id).all()
 
     checks = {
         "has_buildings": len(buildings) > 0,
@@ -77,6 +82,7 @@ def qualify_efa(db: Session, efa_id: int) -> dict:
 
 # ── Controles qualite V2 ─────────────────────────────────────────────────────
 
+
 # V45: proof_required structuré — type, label_fr, owner_role, deadline_hint, doc_domain
 def _proof(proof_type, label_fr, owner_role="proprietaire", deadline_hint="Avant dépôt"):
     """Helper pour construire un proof_required structuré V45."""
@@ -106,22 +112,27 @@ CONTROL_RULES = [
         "code": "TERTIAIRE_MISSING_SURFACE",
         "severity": "high",
         "title_fr": "Surface manquante",
-        "check": lambda efa, buildings, resps, events: any(
-            not b.surface_m2 or b.surface_m2 <= 0 for b in buildings
-        ) if buildings else False,
+        "check": lambda efa, buildings, resps, events: (
+            any(not b.surface_m2 or b.surface_m2 <= 0 for b in buildings) if buildings else False
+        ),
         "message_fr": "Surface manquante ou nulle sur un ou plusieurs bâtiments",
         "impact_fr": "La surface totale EFA ne peut pas être calculée correctement",
         "action_fr": "Renseigner la surface (m²) de chaque bâtiment associé",
-        "proof_required": _proof("preuve_surface_usage", "Preuve de surface (plan, DPE, géomètre)", "mandataire", "À fournir pour compléter le patrimoine"),
+        "proof_required": _proof(
+            "preuve_surface_usage",
+            "Preuve de surface (plan, DPE, géomètre)",
+            "mandataire",
+            "À fournir pour compléter le patrimoine",
+        ),
         "proof_owner": "mandataire",
     },
     {
         "code": "TERTIAIRE_MISSING_USAGE",
         "severity": "medium",
         "title_fr": "Usage non renseigné",
-        "check": lambda efa, buildings, resps, events: any(
-            not b.usage_label for b in buildings
-        ) if buildings else False,
+        "check": lambda efa, buildings, resps, events: (
+            any(not b.usage_label for b in buildings) if buildings else False
+        ),
         "message_fr": "Catégorie d'usage non renseignée sur un ou plusieurs bâtiments",
         "impact_fr": "La catégorie d'activité OPERAT ne peut pas être déterminée",
         "action_fr": "Renseigner la catégorie d'usage (bureaux, commerce, enseignement, etc.)",
@@ -136,7 +147,9 @@ CONTROL_RULES = [
         "message_fr": "Aucun responsable défini pour l'EFA",
         "impact_fr": "Le rôle de l'assujetti n'est pas clair (propriétaire, locataire, mandataire)",
         "action_fr": "Définir au moins un responsable avec son rôle",
-        "proof_required": _proof("bail_titre_propriete", "Bail ou titre de propriété", "proprietaire", "À conserver en cas d'audit"),
+        "proof_required": _proof(
+            "bail_titre_propriete", "Bail ou titre de propriété", "proprietaire", "À conserver en cas d'audit"
+        ),
         "proof_owner": "proprietaire",
     },
     {
@@ -155,12 +168,19 @@ CONTROL_RULES = [
         "severity": "medium",
         "title_fr": "Surface < seuil",
         "check": lambda efa, buildings, resps, events: (
-            sum(b.surface_m2 or 0 for b in buildings) < 1000
-        ) if buildings and all(b.surface_m2 for b in buildings) else False,
+            (sum(b.surface_m2 or 0 for b in buildings) < 1000)
+            if buildings and all(b.surface_m2 for b in buildings)
+            else False
+        ),
         "message_fr": "Surface totale EFA inférieure au seuil d'assujettissement (1 000 m²)",
         "impact_fr": "L'EFA pourrait ne pas être assujettie au Décret tertiaire",
         "action_fr": "Vérifier les surfaces. Si < 1 000 m², l'EFA n'est peut-être pas assujettie",
-        "proof_required": _proof("justificatif_exemption", "Justificatif d'exemption ou d'exclusion", "proprietaire", "À conserver en cas d'audit"),
+        "proof_required": _proof(
+            "justificatif_exemption",
+            "Justificatif d'exemption ou d'exclusion",
+            "proprietaire",
+            "À conserver en cas d'audit",
+        ),
         "proof_owner": "proprietaire",
     },
     # V45: nouvelles règles
@@ -168,9 +188,7 @@ CONTROL_RULES = [
         "code": "TERTIAIRE_RESP_NO_EMAIL",
         "severity": "low",
         "title_fr": "Email responsable manquant",
-        "check": lambda efa, buildings, resps, events: (
-            len(resps) > 0 and any(not r.contact_email for r in resps)
-        ),
+        "check": lambda efa, buildings, resps, events: len(resps) > 0 and any(not r.contact_email for r in resps),
         "message_fr": "Email de contact non renseigné pour un ou plusieurs responsables",
         "impact_fr": "Impossible de contacter le responsable en cas d'audit ou de relance",
         "action_fr": "Renseigner l'email de contact de chaque responsable",
@@ -185,7 +203,12 @@ CONTROL_RULES = [
         "message_fr": "Événement de périmètre déclaré — preuve de modulation requise",
         "impact_fr": "Sans justificatif, la modulation ne sera pas acceptée par OPERAT",
         "action_fr": "Déposer le dossier de modulation (vacance, travaux, changement d'usage)",
-        "proof_required": _proof("dossier_modulation", "Dossier de modulation (vacance, travaux, changement d'usage)", "proprietaire", "À joindre au dépôt si modulation demandée"),
+        "proof_required": _proof(
+            "dossier_modulation",
+            "Dossier de modulation (vacance, travaux, changement d'usage)",
+            "proprietaire",
+            "À joindre au dépôt si modulation demandée",
+        ),
         "proof_owner": "proprietaire",
     },
 ]
@@ -219,15 +242,9 @@ def run_controls(db: Session, efa_id: int, year: int = None) -> list[dict]:
     if not efa:
         return []
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id
-    ).all()
-    resps = db.query(TertiaireResponsibility).filter(
-        TertiaireResponsibility.efa_id == efa_id
-    ).all()
-    events = db.query(TertiairePerimeterEvent).filter(
-        TertiairePerimeterEvent.efa_id == efa_id
-    ).all()
+    buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa_id).all()
+    resps = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa_id).all()
+    events = db.query(TertiairePerimeterEvent).filter(TertiairePerimeterEvent.efa_id == efa_id).all()
 
     issues = []
     for rule in CONTROL_RULES:
@@ -260,30 +277,37 @@ def run_controls(db: Session, efa_id: int, year: int = None) -> list[dict]:
 
     # Persist issues (upsert by code + efa_id)
     for issue_data in issues:
-        existing = db.query(TertiaireDataQualityIssue).filter(
-            TertiaireDataQualityIssue.efa_id == efa_id,
-            TertiaireDataQualityIssue.code == issue_data["code"],
-            TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
-        ).first()
+        existing = (
+            db.query(TertiaireDataQualityIssue)
+            .filter(
+                TertiaireDataQualityIssue.efa_id == efa_id,
+                TertiaireDataQualityIssue.code == issue_data["code"],
+                TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
+            )
+            .first()
+        )
         if not existing:
-            db.add(TertiaireDataQualityIssue(
-                efa_id=issue_data["efa_id"],
-                year=issue_data["year"],
-                code=issue_data["code"],
-                severity=DataQualityIssueSeverity(issue_data["severity"]),
-                message_fr=issue_data["message_fr"],
-                impact_fr=issue_data["impact_fr"],
-                action_fr=issue_data["action_fr"],
-                status=DataQualityIssueStatus.OPEN,
-                proof_required_json=issue_data["proof_required_json"],
-                proof_owner_role=issue_data["proof_owner_role"],
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=issue_data["efa_id"],
+                    year=issue_data["year"],
+                    code=issue_data["code"],
+                    severity=DataQualityIssueSeverity(issue_data["severity"]),
+                    message_fr=issue_data["message_fr"],
+                    impact_fr=issue_data["impact_fr"],
+                    action_fr=issue_data["action_fr"],
+                    status=DataQualityIssueStatus.OPEN,
+                    proof_required_json=issue_data["proof_required_json"],
+                    proof_owner_role=issue_data["proof_owner_role"],
+                )
+            )
     db.commit()
 
     return issues
 
 
 # ── Precheck declaration ──────────────────────────────────────────────────────
+
 
 def precheck_declaration(db: Session, efa_id: int, year: int) -> dict:
     """Pre-verification avant generation du pack export.
@@ -296,15 +320,9 @@ def precheck_declaration(db: Session, efa_id: int, year: int) -> dict:
     # Run controls first
     issues = run_controls(db, efa_id, year)
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id
-    ).all()
-    resps = db.query(TertiaireResponsibility).filter(
-        TertiaireResponsibility.efa_id == efa_id
-    ).all()
-    proofs = db.query(TertiaireProofArtifact).filter(
-        TertiaireProofArtifact.efa_id == efa_id
-    ).all()
+    buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa_id).all()
+    resps = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa_id).all()
+    proofs = db.query(TertiaireProofArtifact).filter(TertiaireProofArtifact.efa_id == efa_id).all()
 
     total_surface = sum(b.surface_m2 or 0 for b in buildings)
 
@@ -355,10 +373,14 @@ def precheck_declaration(db: Session, efa_id: int, year: int) -> dict:
         status = "pret"
 
     # Update or create declaration record
-    decl = db.query(TertiaireDeclaration).filter(
-        TertiaireDeclaration.efa_id == efa_id,
-        TertiaireDeclaration.year == year,
-    ).first()
+    decl = (
+        db.query(TertiaireDeclaration)
+        .filter(
+            TertiaireDeclaration.efa_id == efa_id,
+            TertiaireDeclaration.year == year,
+        )
+        .first()
+    )
     if not decl:
         decl = TertiaireDeclaration(
             efa_id=efa_id,
@@ -387,6 +409,7 @@ def precheck_declaration(db: Session, efa_id: int, year: int) -> dict:
 
 # ── Export pack (SIMULE) ─────────────────────────────────────────────────────
 
+
 def generate_operat_pack(db: Session, efa_id: int, year: int) -> dict:
     """Genere un pack d'export OPERAT simule (zip + attestation HTML + JSON recap).
     IMPORTANT: Ce pack est une SIMULATION, pas une soumission reelle OPERAT.
@@ -395,15 +418,9 @@ def generate_operat_pack(db: Session, efa_id: int, year: int) -> dict:
     if not efa:
         return {"status": "not_found"}
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id
-    ).all()
-    resps = db.query(TertiaireResponsibility).filter(
-        TertiaireResponsibility.efa_id == efa_id
-    ).all()
-    events = db.query(TertiairePerimeterEvent).filter(
-        TertiairePerimeterEvent.efa_id == efa_id
-    ).all()
+    buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa_id).all()
+    resps = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa_id).all()
+    events = db.query(TertiairePerimeterEvent).filter(TertiairePerimeterEvent.efa_id == efa_id).all()
 
     total_surface = sum(b.surface_m2 or 0 for b in buildings)
     usages = list(set(b.usage_label for b in buildings if b.usage_label))
@@ -421,10 +438,7 @@ def generate_operat_pack(db: Session, efa_id: int, year: int) -> dict:
         "nb_batiments": len(buildings),
         "nb_responsables": len(resps),
         "nb_evenements_perimetre": len(events),
-        "responsables": [
-            {"role": r.role.value if r.role else None, "entity": r.entity_value}
-            for r in resps
-        ],
+        "responsables": [{"role": r.role.value if r.role else None, "entity": r.entity_value} for r in resps],
     }
 
     # HTML attestation
@@ -440,11 +454,11 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 <h2>EFA : {efa.nom}</h2>
 <table style="border-collapse: collapse; width: 100%;">
 <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Surface totale</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{int(total_surface)} m²</td></tr>
-<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Catégories d'usage</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{', '.join(usages) or 'Non renseigné'}</td></tr>
+<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Catégories d'usage</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{", ".join(usages) or "Non renseigné"}</td></tr>
 <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nombre de bâtiments</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{len(buildings)}</td></tr>
 <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Responsables</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{len(resps)}</td></tr>
 </table>
-<p style="margin-top: 24px; color: #666;">Généré le {datetime.now(timezone.utc).strftime('%d/%m/%Y à %H:%M')} par PROMEOS</p>
+<p style="margin-top: 24px; color: #666;">Généré le {datetime.now(timezone.utc).strftime("%d/%m/%Y à %H:%M")} par PROMEOS</p>
 </body></html>"""
 
     # Write files
@@ -468,10 +482,14 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         zf.write(html_path, "attestation_simulation.html")
 
     # Update declaration
-    decl = db.query(TertiaireDeclaration).filter(
-        TertiaireDeclaration.efa_id == efa_id,
-        TertiaireDeclaration.year == year,
-    ).first()
+    decl = (
+        db.query(TertiaireDeclaration)
+        .filter(
+            TertiaireDeclaration.efa_id == efa_id,
+            TertiaireDeclaration.year == year,
+        )
+        .first()
+    )
     if decl:
         decl.status = DeclarationStatus.EXPORTED
         decl.exported_pack_path = str(zip_path)
@@ -487,6 +505,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         kb_doc_id = f"generated_operat_{sha256[:12]}"
 
         from app.kb.store import KBStore
+
         kb_store = KBStore()
 
         # Dedup : si même hash, on ne recrée pas
@@ -495,26 +514,28 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 
         existing = kb_store.get_doc(kb_doc_id)
         if not existing or existing.get("content_hash") != sha256:
-            kb_store.upsert_doc({
-                "doc_id": kb_doc_id,
-                "title": f"Pack OPERAT — {efa.nom} — {year}",
-                "display_name": kb_display_name,
-                "source_type": "pdf",
-                "source_path": str(zip_path),
-                "content_hash": sha256,
-                "nb_sections": 2,
-                "nb_chunks": 0,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                "meta": {
-                    "efa_id": efa_id,
-                    "efa_nom": efa.nom,
-                    "year": year,
-                    "surface_m2": total_surface,
-                    "simulation": True,
-                    "generated_type": "operat_export",
-                },
-                "status": "review",
-            })
+            kb_store.upsert_doc(
+                {
+                    "doc_id": kb_doc_id,
+                    "title": f"Pack OPERAT — {efa.nom} — {year}",
+                    "display_name": kb_display_name,
+                    "source_type": "pdf",
+                    "source_path": str(zip_path),
+                    "content_hash": sha256,
+                    "nb_sections": 2,
+                    "nb_chunks": 0,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "meta": {
+                        "efa_id": efa_id,
+                        "efa_nom": efa.nom,
+                        "year": year,
+                        "surface_m2": total_surface,
+                        "simulation": True,
+                        "generated_type": "operat_export",
+                    },
+                    "status": "review",
+                }
+            )
             # Set domain on the KB doc
             try:
                 kb_store.db.conn.cursor().execute(
@@ -526,11 +547,15 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
                 pass  # domain column may not exist yet
 
         # Create proof artifact (bridge Tertiaire ↔ KB)
-        existing_artifact = db.query(TertiaireProofArtifact).filter(
-            TertiaireProofArtifact.efa_id == efa_id,
-            TertiaireProofArtifact.type == "operat_export_pack",
-            TertiaireProofArtifact.kb_doc_id == kb_doc_id,
-        ).first()
+        existing_artifact = (
+            db.query(TertiaireProofArtifact)
+            .filter(
+                TertiaireProofArtifact.efa_id == efa_id,
+                TertiaireProofArtifact.type == "operat_export_pack",
+                TertiaireProofArtifact.kb_doc_id == kb_doc_id,
+            )
+            .first()
+        )
         if not existing_artifact:
             artifact = TertiaireProofArtifact(
                 efa_id=efa_id,
@@ -570,6 +595,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 
 # ── Dashboard KPIs ───────────────────────────────────────────────────────────
 
+
 def get_tertiaire_dashboard(db: Session, org_id: int = None, site_id: int = None) -> dict:
     """KPIs agrégés pour le dashboard tertiaire."""
     query = db.query(TertiaireEfa).filter(TertiaireEfa.deleted_at.is_(None))
@@ -589,14 +615,16 @@ def get_tertiaire_dashboard(db: Session, org_id: int = None, site_id: int = None
     open_issues = 0
     critical_issues = 0
     if efa_ids:
-        issues = db.query(TertiaireDataQualityIssue).filter(
-            TertiaireDataQualityIssue.efa_id.in_(efa_ids),
-            TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
-        ).all()
-        open_issues = len(issues)
-        critical_issues = sum(
-            1 for i in issues if i.severity == DataQualityIssueSeverity.CRITICAL
+        issues = (
+            db.query(TertiaireDataQualityIssue)
+            .filter(
+                TertiaireDataQualityIssue.efa_id.in_(efa_ids),
+                TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
+            )
+            .all()
         )
+        open_issues = len(issues)
+        critical_issues = sum(1 for i in issues if i.severity == DataQualityIssueSeverity.CRITICAL)
 
     return {
         "total_efa": total,
@@ -645,31 +673,37 @@ def _build_site_explanation(site, bats, surface_tertiaire, data_complete, is_cov
     rules = []
 
     # Rule 1: surface threshold
-    rules.append({
-        "code": "surface_threshold",
-        "label_fr": "Surface totale ≥ 1\u202f000 m²",
-        "value": surface_tertiaire,
-        "threshold": 1000,
-        "ok": bool(surface_tertiaire and surface_tertiaire >= 1000),
-    })
+    rules.append(
+        {
+            "code": "surface_threshold",
+            "label_fr": "Surface totale ≥ 1\u202f000 m²",
+            "value": surface_tertiaire,
+            "threshold": 1000,
+            "ok": bool(surface_tertiaire and surface_tertiaire >= 1000),
+        }
+    )
 
     # Rule 2: buildings present
-    rules.append({
-        "code": "batiments_renseignes",
-        "label_fr": "Au moins un bâtiment renseigné",
-        "value": len(bats),
-        "threshold": 1,
-        "ok": has_batiments,
-    })
+    rules.append(
+        {
+            "code": "batiments_renseignes",
+            "label_fr": "Au moins un bâtiment renseigné",
+            "value": len(bats),
+            "threshold": 1,
+            "ok": has_batiments,
+        }
+    )
 
     # Rule 3: all surfaces filled
-    rules.append({
-        "code": "surfaces_completes",
-        "label_fr": "Surfaces renseignées pour tous les bâtiments",
-        "value": sum(1 for b in bats if b.surface_m2 and b.surface_m2 > 0),
-        "threshold": len(bats) if has_batiments else 1,
-        "ok": all_surfaces_ok,
-    })
+    rules.append(
+        {
+            "code": "surfaces_completes",
+            "label_fr": "Surfaces renseignées pour tous les bâtiments",
+            "value": sum(1 for b in bats if b.surface_m2 and b.surface_m2 > 0),
+            "threshold": len(bats) if has_batiments else 1,
+            "ok": all_surfaces_ok,
+        }
+    )
 
     # ── Reasons FR ───────────────────────────────────────────────────────
     reasons = []
@@ -715,8 +749,10 @@ def _build_site_explanation(site, bats, surface_tertiaire, data_complete, is_cov
 
     # ── Recommended next step + CTA ──────────────────────────────────────
     signal = (
-        "assujetti_probable" if surface_tertiaire and surface_tertiaire >= 1000
-        else "a_verifier" if not data_complete
+        "assujetti_probable"
+        if surface_tertiaire and surface_tertiaire >= 1000
+        else "a_verifier"
+        if not data_complete
         else "non_concerne"
     )
 
@@ -767,13 +803,21 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
     # Collect all EFA building associations to determine coverage
     covered_site_ids = set()
     efa_by_site = {}
-    efas = db.query(TertiaireEfa).filter(
-        TertiaireEfa.deleted_at.is_(None),
-    ).all()
+    efas = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .all()
+    )
     for efa in efas:
-        buildings = db.query(TertiaireEfaBuilding).filter(
-            TertiaireEfaBuilding.efa_id == efa.id,
-        ).all()
+        buildings = (
+            db.query(TertiaireEfaBuilding)
+            .filter(
+                TertiaireEfaBuilding.efa_id == efa.id,
+            )
+            .all()
+        )
         for b in buildings:
             if b.building_id:
                 bat = db.query(Batiment).filter(Batiment.id == b.building_id).first()
@@ -786,10 +830,14 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
     all_missing_fields = {}
 
     for site in sites:
-        bats = db.query(Batiment).filter(
-            Batiment.site_id == site.id,
-            Batiment.deleted_at.is_(None),
-        ).all()
+        bats = (
+            db.query(Batiment)
+            .filter(
+                Batiment.site_id == site.id,
+                Batiment.deleted_at.is_(None),
+            )
+            .all()
+        )
 
         # Surface tertiaire: use site.tertiaire_area_m2 if set, else sum of building surfaces
         surface_tertiaire = site.tertiaire_area_m2
@@ -815,36 +863,41 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
 
         # V43: explainability
         explain = _build_site_explanation(
-            site, bats, surface_tertiaire, data_complete, is_covered, efa_ids,
+            site,
+            bats,
+            surface_tertiaire,
+            data_complete,
+            is_covered,
+            efa_ids,
         )
 
         # Track missing fields for summary
         for field in explain["missing_fields"]:
             all_missing_fields[field] = all_missing_fields.get(field, 0) + 1
 
-        signals.append({
-            # V42 fields (unchanged)
-            "site_id": site.id,
-            "site_nom": site.nom,
-            "ville": site.ville,
-            "surface_tertiaire_m2": surface_tertiaire,
-            "nb_batiments": len(bats),
-            "signal": signal,
-            "data_complete": data_complete,
-            "is_covered": is_covered,
-            "efa_ids": efa_ids,
-            # V43 fields
-            **explain,
-        })
+        signals.append(
+            {
+                # V42 fields (unchanged)
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "ville": site.ville,
+                "surface_tertiaire_m2": surface_tertiaire,
+                "nb_batiments": len(bats),
+                "signal": signal,
+                "data_complete": data_complete,
+                "is_covered": is_covered,
+                "efa_ids": efa_ids,
+                # V43 fields
+                **explain,
+            }
+        )
 
     counts = {
         "assujetti_probable": sum(1 for s in signals if s["signal"] == "assujetti_probable"),
         "a_verifier": sum(1 for s in signals if s["signal"] == "a_verifier"),
         "non_concerne": sum(1 for s in signals if s["signal"] == "non_concerne"),
     }
-    uncovered_probable = sum(
-        1 for s in signals if s["signal"] == "assujetti_probable" and not s["is_covered"]
-    )
+    uncovered_probable = sum(1 for s in signals if s["signal"] == "assujetti_probable" and not s["is_covered"])
     incomplete_data = sum(1 for s in signals if not s["data_complete"])
 
     return {

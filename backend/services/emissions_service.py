@@ -6,6 +6,7 @@ Usage:
     summary = compute_emissions_summary(db, site_id, kpis)
     # Returns: { total_co2e_kg, off_hours_co2e_kg, factor_used, ... }
 """
+
 from typing import Dict, Any, Optional
 from datetime import date
 

@@ -2,6 +2,7 @@
 PROMEOS - Modèle Portefeuille
 Regroupement décisionnel (ex: "Retail IDF", "Région Sud")
 """
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin

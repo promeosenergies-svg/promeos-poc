@@ -9,6 +9,7 @@ Levers:
 
 No spot/NEBEF/HPHC — pure demand-side flexibility potential.
 """
+
 import json
 from typing import Dict, List, Optional
 
@@ -53,8 +54,13 @@ def compute_flex_mini(
     """
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        return {"site_id": site_id, "flex_potential_score": 0, "levers": [],
-                "inputs_used": {}, "error": "site_not_found"}
+        return {
+            "site_id": site_id,
+            "flex_potential_score": 0,
+            "levers": [],
+            "inputs_used": {},
+            "error": "site_not_found",
+        }
 
     # Gather insights
     q = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site_id)
@@ -193,7 +199,7 @@ def _score_irve(by_type: Dict, site: Site, site_type: Optional[str]) -> Dict:
             estimate_kw = round((max_daily - median_daily) / 24 * 0.5, 1)
 
     # Site type bonus (parking-likely)
-    has_parking = getattr(site, 'parking_type', None) is not None
+    has_parking = getattr(site, "parking_type", None) is not None
     if has_parking:
         score += 25
         reasons.append("Parking present (IRVE possible)")

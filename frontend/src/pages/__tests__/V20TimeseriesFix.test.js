@@ -17,7 +17,7 @@ import { formatDate, MODE_MAP } from '../consumption/useEmsTimeseries';
 function seriesToChartData(series, granularity) {
   if (!series || series.length === 0) return [];
   if (series.length === 1) {
-    return series[0].data.map(p => ({
+    return series[0].data.map((p) => ({
       date: formatDate(p.t, granularity),
       value: p.v ?? null,
     }));
@@ -38,8 +38,8 @@ function seriesToChartData(series, granularity) {
 function computeOverlayValueKeys(seriesData) {
   if (seriesData.length <= 1) return [];
   return seriesData
-    .filter(s => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
-    .map(s => s.key);
+    .filter((s) => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
+    .map((s) => s.key);
 }
 
 // ── 1. overlayValueKeys fix (RC1) ─────────────────────────────────────────────
@@ -96,24 +96,20 @@ describe('formatDate ISO normalization (RC2)', () => {
 
 describe('Zero values are valid (not treated as missing)', () => {
   it('dataset with zeros → all points count as valid (zero ≠ null)', () => {
-    const chartData = [
-      { value: 0 },
-      { value: 0 },
-      { value: 42 },
-    ];
+    const chartData = [{ value: 0 }, { value: 0 }, { value: 42 }];
     const effectiveValueKey = 'value';
-    const validPoints = chartData.filter(p => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey]));
+    const validPoints = chartData.filter(
+      (p) => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey])
+    );
     expect(validPoints).toHaveLength(3);
   });
 
   it('dataset with nulls and one zero → only 1 valid point', () => {
-    const chartData = [
-      { value: null },
-      { value: undefined },
-      { value: 0 },
-    ];
+    const chartData = [{ value: null }, { value: undefined }, { value: 0 }];
     const effectiveValueKey = 'value';
-    const validPoints = chartData.filter(p => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey]));
+    const validPoints = chartData.filter(
+      (p) => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey])
+    );
     expect(validPoints).toHaveLength(1);
   });
 
@@ -123,7 +119,9 @@ describe('Zero values are valid (not treated as missing)', () => {
       { date: '02 janv.', total: 15.3 },
     ];
     const effectiveValueKey = 'total';
-    const validPoints = chartData.filter(p => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey]));
+    const validPoints = chartData.filter(
+      (p) => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey])
+    );
     expect(validPoints).toHaveLength(2);
   });
 
@@ -138,13 +136,15 @@ describe('Zero values are valid (not treated as missing)', () => {
 
 describe('seriesToChartData output shape', () => {
   it('single series → each point has {date, value}', () => {
-    const series = [{
-      key: 'total',
-      data: [
-        { t: '2025-01-01', v: 100 },
-        { t: '2025-01-02', v: 200 },
-      ],
-    }];
+    const series = [
+      {
+        key: 'total',
+        data: [
+          { t: '2025-01-01', v: 100 },
+          { t: '2025-01-02', v: 200 },
+        ],
+      },
+    ];
     const result = seriesToChartData(series, 'daily');
     expect(result).toHaveLength(2);
     expect(result[0]).toHaveProperty('date');

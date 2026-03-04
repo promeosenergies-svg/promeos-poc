@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Tests for fetch pipeline (dry-run mode + normalizer + CRE extractor).
 No real HTTP calls are made.
 """
+
 import sys
 import os
 
@@ -17,6 +18,7 @@ from scripts.referential.extract_cre_metadata import extract_cre_metadata, _norm
 # ========================================
 # Normalize text tests
 # ========================================
+
 
 def test_html_to_markdown_basic():
     """Basic HTML is converted to text."""
@@ -67,9 +69,10 @@ def test_extract_title_missing():
 # CRE metadata extractor tests
 # ========================================
 
+
 def test_cre_extract_deliberation_number():
     """Extracts deliberation number from CRE page."""
-    html = '<div>Deliberation N° 2025-018 du 16 janvier 2025</div>'
+    html = "<div>Deliberation N° 2025-018 du 16 janvier 2025</div>"
     meta = extract_cre_metadata(html)
     assert meta.get("deliberation_number") == "2025-018"
 
@@ -133,6 +136,7 @@ def test_normalize_french_date_invalid():
 # Fetch dry-run tests
 # ========================================
 
+
 def test_fetch_source_dry_run():
     """Dry run returns dry_run_ok without downloading."""
     source = {
@@ -151,12 +155,21 @@ def test_fetch_source_dry_run():
 def test_fetch_all_dry_run():
     """Dry run processes all sources without HTTP calls."""
     sources = [
-        {"id": "src1", "url": "https://www.cre.fr/src1", "category": "tarif_reseau",
-         "energy": "electricite", "authority": "CRE"},
-        {"id": "src2", "url": "https://www.cre.fr/src2", "category": "tarif_reseau",
-         "energy": "gaz", "authority": "CRE"},
-        {"id": "src3", "url": "https://www.cre.fr/src3", "category": "taxe",
-         "energy": "multi", "authority": "CRE"},
+        {
+            "id": "src1",
+            "url": "https://www.cre.fr/src1",
+            "category": "tarif_reseau",
+            "energy": "electricite",
+            "authority": "CRE",
+        },
+        {
+            "id": "src2",
+            "url": "https://www.cre.fr/src2",
+            "category": "tarif_reseau",
+            "energy": "gaz",
+            "authority": "CRE",
+        },
+        {"id": "src3", "url": "https://www.cre.fr/src3", "category": "taxe", "energy": "multi", "authority": "CRE"},
     ]
     results = fetch_all(sources, dry_run=True)
     assert len(results) == 3
@@ -166,8 +179,14 @@ def test_fetch_all_dry_run():
 def test_fetch_all_dry_run_skip_before_window():
     """Sources before window are skipped (non-baseline)."""
     sources = [
-        {"id": "old_src", "url": "https://www.cre.fr/old", "date_hint": "2023-01-01",
-         "category": "tarif_reseau", "energy": "electricite", "authority": "CRE"},
+        {
+            "id": "old_src",
+            "url": "https://www.cre.fr/old",
+            "date_hint": "2023-01-01",
+            "category": "tarif_reseau",
+            "energy": "electricite",
+            "authority": "CRE",
+        },
     ]
     results = fetch_all(sources, since="2024-02-01", dry_run=True)
     assert len(results) == 1
@@ -177,8 +196,14 @@ def test_fetch_all_dry_run_skip_before_window():
 def test_fetch_all_dry_run_skip_after_window():
     """Sources after window are skipped."""
     sources = [
-        {"id": "future_src", "url": "https://www.cre.fr/future", "date_hint": "2027-01-01",
-         "category": "tarif_reseau", "energy": "electricite", "authority": "CRE"},
+        {
+            "id": "future_src",
+            "url": "https://www.cre.fr/future",
+            "date_hint": "2027-01-01",
+            "category": "tarif_reseau",
+            "energy": "electricite",
+            "authority": "CRE",
+        },
     ]
     results = fetch_all(sources, until="2026-02-10", dry_run=True)
     assert len(results) == 1
@@ -188,8 +213,15 @@ def test_fetch_all_dry_run_skip_after_window():
 def test_fetch_all_dry_run_baseline_not_skipped():
     """Baseline sources are NOT skipped even if before window."""
     sources = [
-        {"id": "baseline_src", "url": "https://www.cre.fr/baseline", "date_hint": "2023-01-01",
-         "baseline": True, "category": "tarif_reseau", "energy": "gaz", "authority": "CRE"},
+        {
+            "id": "baseline_src",
+            "url": "https://www.cre.fr/baseline",
+            "date_hint": "2023-01-01",
+            "baseline": True,
+            "category": "tarif_reseau",
+            "energy": "gaz",
+            "authority": "CRE",
+        },
     ]
     results = fetch_all(sources, since="2024-02-01", dry_run=True)
     assert len(results) == 1

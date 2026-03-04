@@ -12,6 +12,7 @@ Règles:
   - Chevauchements gérés par set() de jours → pas de double-comptage
   - COVERAGE_THRESHOLD = 0.80 (configurable)
 """
+
 from __future__ import annotations
 
 import json
@@ -26,16 +27,16 @@ COVERAGE_THRESHOLD = 0.80  # 80% des jours du mois = "covered"
 
 @dataclass
 class MonthCoverage:
-    month_key: str           # "YYYY-MM"
+    month_key: str  # "YYYY-MM"
     month_start: date
     month_end: date
-    coverage_status: str     # "covered" | "partial" | "missing"
-    coverage_ratio: float    # 0.0 → 1.0
-    invoices_count: int      # toutes factures incl. avoirs
+    coverage_status: str  # "covered" | "partial" | "missing"
+    coverage_ratio: float  # 0.0 → 1.0
+    invoices_count: int  # toutes factures incl. avoirs
     total_ttc: Optional[float]  # somme total_eur (incl. avoirs) ou None si vide
     missing_reason: Optional[str]
-    energy_kwh: Optional[float] = field(default=None)   # P0-2: somme kWh factures positives
-    pdl_prm: Optional[str] = field(default=None)         # P0-2: PDL/PRM depuis raw_json
+    energy_kwh: Optional[float] = field(default=None)  # P0-2: somme kWh factures positives
+    pdl_prm: Optional[str] = field(default=None)  # P0-2: PDL/PRM depuis raw_json
     invoice_ids: List[int] = field(default_factory=list)  # V70: IDs factures du mois
 
 
@@ -98,7 +99,7 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
         covered_days: set[date] = set()
         inv_in_month: list = []
         total_ttc = 0.0
-        total_kwh = 0.0           # P0-2
+        total_kwh = 0.0  # P0-2
         pdl_found: Optional[str] = None  # P0-2
 
         for inv in invoices:
@@ -113,11 +114,11 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
                 continue  # facture hors du mois
 
             inv_in_month.append(inv)
-            total_ttc += (inv.total_eur or 0.0)
+            total_ttc += inv.total_eur or 0.0
 
             # Avoirs (total_eur <= 0) ne contribuent pas à la couverture
             if (inv.total_eur or 0.0) > 0:
-                total_kwh += (getattr(inv, "energy_kwh", None) or 0.0)  # P0-2: accumuler kWh
+                total_kwh += getattr(inv, "energy_kwh", None) or 0.0  # P0-2: accumuler kWh
                 # P0-2: extraire PDL depuis raw_json si pas encore trouvé
                 if pdl_found is None:
                     try:
@@ -146,19 +147,21 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
             else:
                 reason = "Factures présentes mais sans dates valides (vérifier R4)"
 
-        results.append(MonthCoverage(
-            month_key=f"{y:04d}-{m:02d}",
-            month_start=ms,
-            month_end=me,
-            coverage_status=status,
-            coverage_ratio=round(ratio, 4),
-            invoices_count=len(inv_in_month),
-            total_ttc=round(total_ttc, 2) if inv_in_month else None,
-            missing_reason=reason,
-            energy_kwh=round(total_kwh, 1) if inv_in_month else None,  # P0-2
-            pdl_prm=pdl_found,                                          # P0-2
-            invoice_ids=[inv.id for inv in inv_in_month],               # V70
-        ))
+        results.append(
+            MonthCoverage(
+                month_key=f"{y:04d}-{m:02d}",
+                month_start=ms,
+                month_end=me,
+                coverage_status=status,
+                coverage_ratio=round(ratio, 4),
+                invoices_count=len(inv_in_month),
+                total_ttc=round(total_ttc, 2) if inv_in_month else None,
+                missing_reason=reason,
+                energy_kwh=round(total_kwh, 1) if inv_in_month else None,  # P0-2
+                pdl_prm=pdl_found,  # P0-2
+                invoice_ids=[inv.id for inv in inv_in_month],  # V70
+            )
+        )
 
     return results
 
@@ -193,11 +196,13 @@ def compute_top_sites_missing(db, effective_org_id: int, site_id_filter: Optiona
         months = compute_coverage(invs, rstart, rend)
         missing_count = sum(1 for mc in months if mc.coverage_status != "covered")
         if missing_count > 0:
-            site_missing.append({
-                "site_id": site.id,
-                "site_name": site.nom,
-                "missing_months_count": missing_count,
-            })
+            site_missing.append(
+                {
+                    "site_id": site.id,
+                    "site_name": site.nom,
+                    "missing_months_count": missing_count,
+                }
+            )
 
     site_missing.sort(key=lambda x: x["missing_months_count"], reverse=True)
     return site_missing[:10]

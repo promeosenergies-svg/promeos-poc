@@ -62,7 +62,13 @@ describe('Popover content', () => {
     // Force 4 reasons by having all evaluators fail
     const state = computeDataReadinessState(
       { dimensions: [{ key: 'consommation', coverage: 0 }], activatedCount: 0 },
-      { billingMonthCount: 0, operatModuleActive: true, efaDashboard: { total_sites: 0 }, connectors: [], hasManualImport: false },
+      {
+        billingMonthCount: 0,
+        operatModuleActive: true,
+        efaDashboard: { total_sites: 0 },
+        connectors: [],
+        hasManualImport: false,
+      }
     );
     expect(state.reasons.length).toBeLessThanOrEqual(3);
     expect(state.allReasonCount).toBe(4);
@@ -122,7 +128,13 @@ describe('Wording FR', () => {
   it('"points" used in overflow CTA, not "signaux"', () => {
     const state = computeDataReadinessState(
       { dimensions: [{ key: 'consommation', coverage: 0 }], activatedCount: 0 },
-      { billingMonthCount: 0, operatModuleActive: true, efaDashboard: { total_sites: 0 }, connectors: [], hasManualImport: false },
+      {
+        billingMonthCount: 0,
+        operatModuleActive: true,
+        efaDashboard: { total_sites: 0 },
+        connectors: [],
+        hasManualImport: false,
+      }
     );
     if (state.secondaryCta) {
       expect(state.secondaryCta.label).toContain('points');
@@ -138,7 +150,13 @@ describe('Wording FR', () => {
   it('all reason labels are in French', () => {
     const state = computeDataReadinessState(
       { dimensions: [{ key: 'consommation', coverage: 0 }], activatedCount: 0 },
-      { billingMonthCount: 0, operatModuleActive: true, efaDashboard: { total_sites: 0 }, connectors: [], hasManualImport: false },
+      {
+        billingMonthCount: 0,
+        operatModuleActive: true,
+        efaDashboard: { total_sites: 0 },
+        connectors: [],
+        hasManualImport: false,
+      }
     );
     for (const r of state.reasons) {
       expect(r.label).not.toMatch(/^[A-Z][a-z]+ data|No data|Missing/i);
@@ -179,10 +197,16 @@ describe('Snapshot scoping', () => {
   const store = {};
   const localStorageMock = {
     getItem: vi.fn((key) => store[key] ?? null),
-    setItem: vi.fn((key, val) => { store[key] = val; }),
-    removeItem: vi.fn((key) => { delete store[key]; }),
+    setItem: vi.fn((key, val) => {
+      store[key] = val;
+    }),
+    removeItem: vi.fn((key) => {
+      delete store[key];
+    }),
     key: vi.fn((i) => Object.keys(store)[i] ?? null),
-    get length() { return Object.keys(store).length; },
+    get length() {
+      return Object.keys(store).length;
+    },
   };
   vi.stubGlobal('localStorage', localStorageMock);
 
@@ -232,7 +256,7 @@ describe('Source guards — Step 3.1', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/components/DataReadinessBadge.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('readiness-popover');
     expect(src).toContain('Corriger maintenant');
@@ -244,7 +268,7 @@ describe('Source guards — Step 3.1', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/PurchasePage.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('computeDataConfidence');
     expect(src).toContain('purchase-confidence');

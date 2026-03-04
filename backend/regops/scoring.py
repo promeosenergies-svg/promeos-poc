@@ -2,6 +2,7 @@
 PROMEOS RegOps - Scoring module
 Extracted scoring logic with dedup, clamp, profiling, and score_explain.
 """
+
 import json
 from dataclasses import dataclass, field
 from datetime import date
@@ -58,8 +59,12 @@ def _severity_rank(severity: str) -> int:
 def _status_rank(status: str) -> int:
     """Rank statuses for dedup comparison."""
     return {
-        "NON_COMPLIANT": 4, "UNKNOWN": 3, "AT_RISK": 2,
-        "EXEMPTION_POSSIBLE": 1, "COMPLIANT": 0, "OUT_OF_SCOPE": 0,
+        "NON_COMPLIANT": 4,
+        "UNKNOWN": 3,
+        "AT_RISK": 2,
+        "EXEMPTION_POSSIBLE": 1,
+        "COMPLIANT": 0,
+        "OUT_OF_SCOPE": 0,
     }.get(status, 0)
 
 
@@ -156,14 +161,16 @@ def compute_regops_score(
         penalty_amount = finding_weight * status_p
         weighted_sum += penalty_amount
 
-        penalties.append(ScoringPenalty(
-            regulation=f.regulation,
-            rule_id=f.rule_id,
-            severity=f.severity,
-            amount=round(penalty_amount, 4),
-            reason=f.explanation,
-            evidence_refs=f.inputs_used if f.inputs_used else [],
-        ))
+        penalties.append(
+            ScoringPenalty(
+                regulation=f.regulation,
+                rule_id=f.rule_id,
+                severity=f.severity,
+                amount=round(penalty_amount, 4),
+                reason=f.explanation,
+                evidence_refs=f.inputs_used if f.inputs_used else [],
+            )
+        )
 
     # 4. Normalize and clamp
     if total_weight > 0:

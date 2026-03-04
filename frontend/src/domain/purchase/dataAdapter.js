@@ -6,15 +6,9 @@
  * and maps it to the domain types expected by the engine.
  * Falls back to demo data when APIs are unavailable.
  */
-import {
-  getSites, getSite,
-} from '../../services/api.js';
-import {
-  getSiteBilling, getBillingInsights,
-} from '../../services/api.js';
-import {
-  getPurchaseAssumptions, getPurchasePreferences,
-} from '../../services/api.js';
+import { getSites, getSite } from '../../services/api.js';
+import { getSiteBilling, getBillingInsights } from '../../services/api.js';
+import { getPurchaseAssumptions, getPurchasePreferences } from '../../services/api.js';
 import { EnergyType, SEASONALITY_ELEC, SEASONALITY_GAZ } from './types.js';
 import { DEMO_ORGANIZATIONS, DEMO_OFFERS, aggregateDemoSites } from './demoData.js';
 
@@ -32,9 +26,7 @@ export async function fetchSites(params = {}) {
     return sites.map(mapBackendSiteToDomain);
   } catch {
     // Fallback to demo
-    return DEMO_ORGANIZATIONS.flatMap(org =>
-      org.entities.flatMap(e => e.sites)
-    );
+    return DEMO_ORGANIZATIONS.flatMap((org) => org.entities.flatMap((e) => e.sites));
   }
 }
 
@@ -58,7 +50,7 @@ export async function fetchSiteWithBilling(siteId) {
     // Search demo
     for (const org of DEMO_ORGANIZATIONS) {
       for (const entity of org.entities) {
-        const found = entity.sites.find(s => s.id === siteId);
+        const found = entity.sites.find((s) => s.id === siteId);
         if (found) return found;
       }
     }
@@ -76,7 +68,7 @@ export async function fetchAnomalies(siteIds) {
     const insights = await getBillingInsights({ site_ids: siteIds.join(',') });
     const items = Array.isArray(insights) ? insights : insights?.items || [];
     return items
-      .filter(i => i.severity === 'high' || i.severity === 'critical' || i.severity === 'medium')
+      .filter((i) => i.severity === 'high' || i.severity === 'critical' || i.severity === 'medium')
       .map(mapInsightToAnomaly);
   } catch {
     // Fallback: aggregate demo anomalies
@@ -117,9 +109,9 @@ export async function fetchAssumptions(siteId) {
  * @returns {{ organizations: Object[], offers: Object[], sites: Object[] }}
  */
 export function getDemoDataset() {
-  const sites = DEMO_ORGANIZATIONS.flatMap(org =>
-    org.entities.flatMap(e =>
-      e.sites.map(s => ({
+  const sites = DEMO_ORGANIZATIONS.flatMap((org) =>
+    org.entities.flatMap((e) =>
+      e.sites.map((s) => ({
         ...s,
         organizationName: org.name,
         entityName: e.name,
@@ -151,7 +143,10 @@ function mapBackendSiteToDomain(backendSite) {
     energyType: isElec ? EnergyType.ELEC : EnergyType.GAZ,
     consumption: {
       annualKwh,
-      monthlyKwh: (() => { const sum = seasonality.reduce((a, b) => a + b, 0); return seasonality.map(c => Math.round(annualKwh * c / sum)); })(),
+      monthlyKwh: (() => {
+        const sum = seasonality.reduce((a, b) => a + b, 0);
+        return seasonality.map((c) => Math.round((annualKwh * c) / sum));
+      })(),
       granularity: 'monthly',
       profileFactor: 1,
       seasonality,

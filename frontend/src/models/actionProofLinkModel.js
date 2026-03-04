@@ -17,16 +17,16 @@
 // ── Constantes ───────────────────────────────────────────────────────────────
 
 export const PROOF_STATUS_LABELS = Object.freeze({
-  none:      'Aucune preuve liée',
-  draft:     'Preuve en brouillon',
-  review:    'En revue',
+  none: 'Aucune preuve liée',
+  draft: 'Preuve en brouillon',
+  review: 'En revue',
   validated: 'Preuve validée',
 });
 
 const PROOF_STATUS_BADGE = Object.freeze({
-  none:      'neutral',
-  draft:     'warn',
-  review:    'warn',
+  none: 'neutral',
+  draft: 'warn',
+  review: 'warn',
   validated: 'ok',
 });
 

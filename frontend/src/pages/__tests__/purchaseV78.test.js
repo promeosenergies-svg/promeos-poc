@@ -24,7 +24,9 @@ describe('A · Sous-titre grand public', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('desc is the new punchy subtitle', () => {
-    expect(code).toContain("Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.");
+    expect(code).toContain(
+      'Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.'
+    );
   });
 
   it('no old "Profitez des prix bas" subtitle remnant', () => {
@@ -32,7 +34,9 @@ describe('A · Sous-titre grand public', () => {
   });
 
   it('subtitle is in STRATEGY_META reflex_solar.desc', () => {
-    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Payez moins quand le soleil brille/);
+    const match = code.match(
+      /reflex_solar:\s*\{[\s\S]*?desc:\s*["']Payez moins quand le soleil brille/
+    );
     expect(match).not.toBeNull();
   });
 });
@@ -161,7 +165,9 @@ describe('E · Mode normal visibility', () => {
 
   it('card is NOT gated by isExpert (visible for all)', () => {
     // reflex_solar card renders for all strategies without isExpert check
-    const match = code.match(/const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 
@@ -172,7 +178,7 @@ describe('E · Mode normal visibility', () => {
   });
 
   it('subtitle is in STRATEGY_META (not conditional)', () => {
-    expect(code).toContain("Payez moins quand le soleil brille");
+    expect(code).toContain('Payez moins quand le soleil brille');
   });
 
   it('expert tooltip IS gated by isExpert', () => {

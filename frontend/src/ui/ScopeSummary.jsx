@@ -25,18 +25,21 @@ export default function ScopeSummary({ separator = ' \u00b7 ', className = '', s
     right = scopeLabel;
   } else if (showCount) {
     // All-sites mode: "10 sites" or "Tous les sites" while loading
-    right = sitesCount > 0
-      ? `${sitesCount}\u00a0site${sitesCount !== 1 ? 's' : ''}`
-      : orgSites.length === 0 && org
-        ? 'chargement…'
-        : 'Tous les sites';
+    right =
+      sitesCount > 0
+        ? `${sitesCount}\u00a0site${sitesCount !== 1 ? 's' : ''}`
+        : orgSites.length === 0 && org
+          ? 'chargement…'
+          : 'Tous les sites';
   } else {
     right = 'Tous les sites';
   }
 
   return (
     <span className={className}>
-      {orgNom}{separator}{right}
+      {orgNom}
+      {separator}
+      {right}
     </span>
   );
 }

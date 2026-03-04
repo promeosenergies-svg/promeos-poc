@@ -22,7 +22,7 @@ const backend = (rel) =>
   readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
 const HEALTH_BAR_JSX = src('components/PatrimoinePortfolioHealthBar.jsx');
-const ROUTES_PY      = backend('routes/patrimoine.py');
+const ROUTES_PY = backend('routes/patrimoine.py');
 
 // ── HealthBar sous-composant ──────────────────────────────────────────────
 
@@ -176,7 +176,9 @@ describe('routes/patrimoine.py — V61 Pydantic models', () => {
   });
 
   test('PortfolioSummaryResponse contient sites_health', () => {
-    expect(ROUTES_PY).toMatch(/sites_health.*PortfolioSitesHealth|PortfolioSitesHealth.*sites_health/);
+    expect(ROUTES_PY).toMatch(
+      /sites_health.*PortfolioSitesHealth|PortfolioSitesHealth.*sites_health/
+    );
   });
 
   test('PortfolioSummaryResponse contient trend Optional', () => {
@@ -202,7 +204,7 @@ describe('routes/patrimoine.py — V61 logique endpoint', () => {
     expect(ROUTES_PY).toMatch(/"trend".*None|trend.*None/);
   });
 
-  test('healthy_pct calculé dans l\'endpoint', () => {
+  test("healthy_pct calculé dans l'endpoint", () => {
     expect(ROUTES_PY).toMatch(/healthy_pct/);
   });
 

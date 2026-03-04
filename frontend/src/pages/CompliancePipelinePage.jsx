@@ -6,8 +6,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  ShieldCheck, AlertTriangle, Clock, CheckCircle, Database,
-  ChevronRight, XCircle, AlertOctagon, ArrowRight, Building,
+  ShieldCheck,
+  AlertTriangle,
+  Clock,
+  CheckCircle,
+  Database,
+  ChevronRight,
+  XCircle,
+  AlertOctagon,
+  ArrowRight,
+  Building,
 } from 'lucide-react';
 import { getPortfolioComplianceSummary } from '../services/api';
 import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel } from '../services/routes';
@@ -31,7 +39,9 @@ function GateBadge({ status }) {
   const cfg = GATE_BADGE[status] || GATE_BADGE.OK;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}
+    >
       <Icon size={12} />
       {cfg.label}
     </span>
@@ -59,7 +69,9 @@ export default function CompliancePipelinePage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-64 bg-gray-200 rounded" />
           <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+            ))}
           </div>
           <div className="h-60 bg-gray-200 rounded-lg" />
         </div>
@@ -78,7 +90,10 @@ export default function CompliancePipelinePage() {
           <Building size={48} className="mx-auto mb-3 text-gray-300" />
           <p className="font-medium">Aucun site dans le portefeuille</p>
           <p className="text-sm mt-1">
-            <Link to="/patrimoine" className="text-blue-600 hover:underline">Ajoutez des sites</Link> pour démarrer l'évaluation.
+            <Link to="/patrimoine" className="text-blue-600 hover:underline">
+              Ajoutez des sites
+            </Link>{' '}
+            pour démarrer l'évaluation.
           </p>
         </div>
       </div>
@@ -102,7 +117,9 @@ export default function CompliancePipelinePage() {
           </p>
         </div>
         <button
-          onClick={() => openActionDrawer({ prefill: { type: 'conformite' }, sourceType: 'compliance' })}
+          onClick={() =>
+            openActionDrawer({ prefill: { type: 'conformite' }, sourceType: 'compliance' })
+          }
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
           data-testid="cta-creer-action"
         >
@@ -166,12 +183,29 @@ export default function CompliancePipelinePage() {
           </h3>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: '30 jours', items: deadlines.d30, color: 'border-red-400', textColor: 'text-red-600' },
-              { label: '90 jours', items: deadlines.d90, color: 'border-amber-400', textColor: 'text-amber-600' },
-              { label: '180 jours', items: deadlines.d180, color: 'border-blue-400', textColor: 'text-blue-600' },
+              {
+                label: '30 jours',
+                items: deadlines.d30,
+                color: 'border-red-400',
+                textColor: 'text-red-600',
+              },
+              {
+                label: '90 jours',
+                items: deadlines.d90,
+                color: 'border-amber-400',
+                textColor: 'text-amber-600',
+              },
+              {
+                label: '180 jours',
+                items: deadlines.d180,
+                color: 'border-blue-400',
+                textColor: 'text-blue-600',
+              },
             ].map(({ label, items, color, textColor }) => (
               <div key={label} className={`border-l-2 ${color} pl-3`}>
-                <p className={`text-xs font-semibold ${textColor} mb-2`}>{label} ({items.length})</p>
+                <p className={`text-xs font-semibold ${textColor} mb-2`}>
+                  {label} ({items.length})
+                </p>
                 {items.length === 0 ? (
                   <p className="text-xs text-gray-400">Aucune</p>
                 ) : (
@@ -219,7 +253,10 @@ export default function CompliancePipelinePage() {
       )}
 
       {/* Sites table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden" data-section="pipeline-sites-table">
+      <div
+        className="bg-white rounded-lg shadow overflow-hidden"
+        data-section="pipeline-sites-table"
+      >
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
@@ -238,13 +275,18 @@ export default function CompliancePipelinePage() {
             {sites.map((s) => (
               <tr key={s.site_id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900">{s.site_nom}</td>
-                <td className="px-4 py-3"><GateBadge status={s.gate_status} /></td>
+                <td className="px-4 py-3">
+                  <GateBadge status={s.gate_status} />
+                </td>
                 <td className="px-4 py-3 text-center">
                   <div className="w-16 mx-auto bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        s.completeness_pct >= 80 ? 'bg-green-500' :
-                        s.completeness_pct >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                        s.completeness_pct >= 80
+                          ? 'bg-green-500'
+                          : s.completeness_pct >= 50
+                            ? 'bg-amber-500'
+                            : 'bg-red-500'
                       }`}
                       style={{ width: `${s.completeness_pct}%` }}
                     />
@@ -252,23 +294,34 @@ export default function CompliancePipelinePage() {
                   <span className="text-xs text-gray-400">{s.completeness_pct}%</span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <span className={`text-xs font-bold ${
-                    s.reg_risk >= 60 ? 'text-red-600' : s.reg_risk >= 30 ? 'text-amber-600' : 'text-green-600'
-                  }`}>
+                  <span
+                    className={`text-xs font-bold ${
+                      s.reg_risk >= 60
+                        ? 'text-red-600'
+                        : s.reg_risk >= 30
+                          ? 'text-amber-600'
+                          : 'text-green-600'
+                    }`}
+                  >
                     {s.reg_risk}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right font-medium">
                   {s.financial_opportunity_eur > 0
                     ? `${s.financial_opportunity_eur.toLocaleString('fr-FR')} €`
-                    : '-'
-                  }
+                    : '-'}
                 </td>
                 {['tertiaire_operat', 'bacs', 'aper'].map((reg) => (
                   <td key={reg} className="px-4 py-3 text-center">
-                    {s.applicability[reg] === true && <CheckCircle size={14} className="text-green-500 mx-auto" />}
-                    {s.applicability[reg] === false && <span className="text-xs text-gray-400">—</span>}
-                    {s.applicability[reg] === null && <AlertTriangle size={14} className="text-amber-400 mx-auto" />}
+                    {s.applicability[reg] === true && (
+                      <CheckCircle size={14} className="text-green-500 mx-auto" />
+                    )}
+                    {s.applicability[reg] === false && (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                    {s.applicability[reg] === null && (
+                      <AlertTriangle size={14} className="text-amber-400 mx-auto" />
+                    )}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-center">

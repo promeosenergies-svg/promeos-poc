@@ -2,6 +2,7 @@
 PROMEOS V39 — Routes Tertiaire / OPERAT
 Namespace: /api/tertiaire
 """
+
 from datetime import date, timezone
 from typing import Optional, List
 
@@ -11,23 +12,39 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    TertiaireEfa, TertiaireEfaLink, TertiaireEfaBuilding,
-    TertiaireResponsibility, TertiairePerimeterEvent,
-    TertiaireDeclaration, TertiaireProofArtifact, TertiaireDataQualityIssue,
-    EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
+    TertiaireEfa,
+    TertiaireEfaLink,
+    TertiaireEfaBuilding,
+    TertiaireResponsibility,
+    TertiairePerimeterEvent,
+    TertiaireDeclaration,
+    TertiaireProofArtifact,
+    TertiaireDataQualityIssue,
+    EfaStatut,
+    EfaRole,
+    DeclarationStatus,
+    PerimeterEventType,
     DataQualityIssueStatus,
-    Site, Batiment,  # V41
+    Site,
+    Batiment,  # V41
 )
 from services.tertiaire_service import (
-    qualify_efa, run_controls, precheck_declaration,
-    generate_operat_pack, get_tertiaire_dashboard,
+    qualify_efa,
+    run_controls,
+    precheck_declaration,
+    generate_operat_pack,
+    get_tertiaire_dashboard,
     compute_site_signals,  # V42
 )
 from services.tertiaire_proofs import (  # V45
-    PROOF_CATALOG, get_expected_proofs_for_efa, list_proofs_status,
+    PROOF_CATALOG,
+    get_expected_proofs_for_efa,
+    list_proofs_status,
 )
 from services.tertiaire_proof_catalog import (  # V50
-    get_proof_types, get_issue_proof_mapping, get_proofs_for_issue,
+    get_proof_types,
+    get_issue_proof_mapping,
+    get_proofs_for_issue,
 )
 from services.tertiaire_proof_templates import generate_proof_templates  # V50
 
@@ -35,6 +52,7 @@ router = APIRouter(prefix="/api/tertiaire", tags=["Tertiaire / OPERAT"])
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
+
 
 class BuildingWithUsage(BaseModel):
     building_id: int
@@ -144,6 +162,7 @@ class SiteSignalsResponse(BaseModel):
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _efa_to_dict(efa: TertiaireEfa) -> dict:
     return {
         "id": efa.id,
@@ -210,6 +229,7 @@ def _issue_to_dict(i: TertiaireDataQualityIssue) -> dict:
 
 # ── CRUD EFA ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/efa")
 def list_efas(
     org_id: Optional[int] = Query(None),
@@ -234,10 +254,14 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
     batiment_lookup = {}
     if body.buildings:
         building_ids = [b.building_id for b in body.buildings]
-        batiments = db.query(Batiment).filter(
-            Batiment.id.in_(building_ids),
-            Batiment.deleted_at.is_(None),
-        ).all()
+        batiments = (
+            db.query(Batiment)
+            .filter(
+                Batiment.id.in_(building_ids),
+                Batiment.deleted_at.is_(None),
+            )
+            .all()
+        )
         found_ids = {b.id for b in batiments}
         missing = set(building_ids) - found_ids
         if missing:
@@ -253,11 +277,15 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
     # V44: Dedup warning — check if site already has an active/draft EFA
     dedup_warning = None
     if inferred_site_id:
-        existing_efas = db.query(TertiaireEfa).filter(
-            TertiaireEfa.site_id == inferred_site_id,
-            TertiaireEfa.deleted_at.is_(None),
-            TertiaireEfa.statut.in_([EfaStatut.DRAFT, EfaStatut.ACTIVE]),
-        ).all()
+        existing_efas = (
+            db.query(TertiaireEfa)
+            .filter(
+                TertiaireEfa.site_id == inferred_site_id,
+                TertiaireEfa.deleted_at.is_(None),
+                TertiaireEfa.statut.in_([EfaStatut.DRAFT, EfaStatut.ACTIVE]),
+            )
+            .all()
+        )
         if existing_efas:
             names = ", ".join(e.nom for e in existing_efas[:3])
             dedup_warning = f"Ce site a déjà {len(existing_efas)} EFA existante(s) : {names}"
@@ -302,35 +330,45 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
 
 @router.get("/efa/{efa_id}")
 def get_efa(efa_id: int, db: Session = Depends(get_db)):
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id
-    ).all()
-    resps = db.query(TertiaireResponsibility).filter(
-        TertiaireResponsibility.efa_id == efa_id
-    ).all()
-    events = db.query(TertiairePerimeterEvent).filter(
-        TertiairePerimeterEvent.efa_id == efa_id
-    ).order_by(TertiairePerimeterEvent.effective_date.desc()).all()
-    declarations = db.query(TertiaireDeclaration).filter(
-        TertiaireDeclaration.efa_id == efa_id
-    ).order_by(TertiaireDeclaration.year.desc()).all()
-    proofs = db.query(TertiaireProofArtifact).filter(
-        TertiaireProofArtifact.efa_id == efa_id
-    ).all()
-    issues = db.query(TertiaireDataQualityIssue).filter(
-        TertiaireDataQualityIssue.efa_id == efa_id,
-        TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
-    ).all()
-    links = db.query(TertiaireEfaLink).filter(
-        (TertiaireEfaLink.child_efa_id == efa_id) | (TertiaireEfaLink.parent_efa_id == efa_id)
-    ).all()
+    buildings = db.query(TertiaireEfaBuilding).filter(TertiaireEfaBuilding.efa_id == efa_id).all()
+    resps = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa_id).all()
+    events = (
+        db.query(TertiairePerimeterEvent)
+        .filter(TertiairePerimeterEvent.efa_id == efa_id)
+        .order_by(TertiairePerimeterEvent.effective_date.desc())
+        .all()
+    )
+    declarations = (
+        db.query(TertiaireDeclaration)
+        .filter(TertiaireDeclaration.efa_id == efa_id)
+        .order_by(TertiaireDeclaration.year.desc())
+        .all()
+    )
+    proofs = db.query(TertiaireProofArtifact).filter(TertiaireProofArtifact.efa_id == efa_id).all()
+    issues = (
+        db.query(TertiaireDataQualityIssue)
+        .filter(
+            TertiaireDataQualityIssue.efa_id == efa_id,
+            TertiaireDataQualityIssue.status == DataQualityIssueStatus.OPEN,
+        )
+        .all()
+    )
+    links = (
+        db.query(TertiaireEfaLink)
+        .filter((TertiaireEfaLink.child_efa_id == efa_id) | (TertiaireEfaLink.parent_efa_id == efa_id))
+        .all()
+    )
 
     result = _efa_to_dict(efa)
     result["buildings"] = [_building_to_dict(b) for b in buildings]
@@ -338,15 +376,15 @@ def get_efa(efa_id: int, db: Session = Depends(get_db)):
     result["events"] = [_event_to_dict(e) for e in events]
     result["declarations"] = [
         {
-            "id": d.id, "year": d.year,
+            "id": d.id,
+            "year": d.year,
             "status": d.status.value if d.status else None,
             "exported_pack_path": d.exported_pack_path,
         }
         for d in declarations
     ]
     result["proofs"] = [
-        {"id": p.id, "type": p.type, "kb_doc_id": p.kb_doc_id, "file_path": p.file_path}
-        for p in proofs
+        {"id": p.id, "type": p.type, "kb_doc_id": p.kb_doc_id, "file_path": p.file_path} for p in proofs
     ]
     result["open_issues"] = [_issue_to_dict(i) for i in issues]
     result["links"] = [
@@ -359,10 +397,14 @@ def get_efa(efa_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/efa/{efa_id}")
 def update_efa(efa_id: int, body: EfaUpdate, db: Session = Depends(get_db)):
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 
@@ -386,20 +428,26 @@ def update_efa(efa_id: int, body: EfaUpdate, db: Session = Depends(get_db)):
 
 @router.delete("/efa/{efa_id}")
 def delete_efa(efa_id: int, db: Session = Depends(get_db)):
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 
     from datetime import datetime
+
     efa.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "deleted", "efa_id": efa_id}
 
 
 # ── Buildings ────────────────────────────────────────────────────────────────
+
 
 @router.post("/efa/{efa_id}/buildings", status_code=201)
 def add_building(efa_id: int, body: BuildingAssoc, db: Session = Depends(get_db)):
@@ -420,6 +468,7 @@ def add_building(efa_id: int, body: BuildingAssoc, db: Session = Depends(get_db)
 
 
 # ── Responsibilities ─────────────────────────────────────────────────────────
+
 
 @router.post("/efa/{efa_id}/responsibilities", status_code=201)
 def add_responsibility(efa_id: int, body: ResponsibilityCreate, db: Session = Depends(get_db)):
@@ -443,6 +492,7 @@ def add_responsibility(efa_id: int, body: ResponsibilityCreate, db: Session = De
 
 # ── Perimeter events ─────────────────────────────────────────────────────────
 
+
 @router.post("/efa/{efa_id}/events", status_code=201)
 def add_event(efa_id: int, body: PerimeterEventCreate, db: Session = Depends(get_db)):
     efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id).first()
@@ -464,6 +514,7 @@ def add_event(efa_id: int, body: PerimeterEventCreate, db: Session = Depends(get
 
 # ── EFA links ────────────────────────────────────────────────────────────────
 
+
 @router.post("/efa/{efa_id}/links", status_code=201)
 def add_efa_link(efa_id: int, body: EfaLinkCreate, db: Session = Depends(get_db)):
     child = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id).first()
@@ -479,10 +530,16 @@ def add_efa_link(efa_id: int, body: EfaLinkCreate, db: Session = Depends(get_db)
     db.add(link)
     db.commit()
     db.refresh(link)
-    return {"id": link.id, "child_efa_id": link.child_efa_id, "parent_efa_id": link.parent_efa_id, "reason": link.reason}
+    return {
+        "id": link.id,
+        "child_efa_id": link.child_efa_id,
+        "parent_efa_id": link.parent_efa_id,
+        "reason": link.reason,
+    }
 
 
 # ── Controls & Precheck ──────────────────────────────────────────────────────
+
 
 @router.post("/efa/{efa_id}/controls")
 def run_efa_controls(efa_id: int, year: int = Query(None), db: Session = Depends(get_db)):
@@ -500,6 +557,7 @@ def precheck_efa(efa_id: int, year: int = Query(...), db: Session = Depends(get_
 
 # ── Export pack ──────────────────────────────────────────────────────────────
 
+
 @router.post("/efa/{efa_id}/export-pack")
 def export_pack(efa_id: int, year: int = Query(...), db: Session = Depends(get_db)):
     result = generate_operat_pack(db, efa_id, year)
@@ -509,6 +567,7 @@ def export_pack(efa_id: int, year: int = Query(...), db: Session = Depends(get_d
 
 
 # ── Issues management ────────────────────────────────────────────────────────
+
 
 @router.get("/issues")
 def list_issues(
@@ -530,9 +589,7 @@ def list_issues(
 
 @router.patch("/issues/{issue_id}")
 def update_issue_status(issue_id: int, body: IssueStatusUpdate, db: Session = Depends(get_db)):
-    issue = db.query(TertiaireDataQualityIssue).filter(
-        TertiaireDataQualityIssue.id == issue_id
-    ).first()
+    issue = db.query(TertiaireDataQualityIssue).filter(TertiaireDataQualityIssue.id == issue_id).first()
     if not issue:
         raise HTTPException(404, "Issue introuvable")
     issue.status = DataQualityIssueStatus(body.status)
@@ -541,6 +598,7 @@ def update_issue_status(issue_id: int, body: IssueStatusUpdate, db: Session = De
 
 
 # ── Dashboard ────────────────────────────────────────────────────────────────
+
 
 @router.get("/dashboard")
 def dashboard(
@@ -552,6 +610,7 @@ def dashboard(
 
 
 # ── Site Signals V42 ─────────────────────────────────────────────────────────
+
 
 @router.get("/site-signals", response_model=SiteSignalsResponse)
 def site_signals(
@@ -565,37 +624,49 @@ def site_signals(
 
 # ── Catalog (patrimoine buildings for wizard) ────────────────────────────────
 
+
 @router.get("/catalog")
 def building_catalog(
     org_id: int = Query(1),
     db: Session = Depends(get_db),
 ):
     """Sites + bâtiments pour le wizard EFA (scoped org)."""
-    sites = db.query(Site).filter(
-        Site.actif.is_(True),
-        Site.deleted_at.is_(None),
-    ).order_by(Site.nom).all()
+    sites = (
+        db.query(Site)
+        .filter(
+            Site.actif.is_(True),
+            Site.deleted_at.is_(None),
+        )
+        .order_by(Site.nom)
+        .all()
+    )
 
     result = []
     for site in sites:
-        bats = db.query(Batiment).filter(
-            Batiment.site_id == site.id,
-            Batiment.deleted_at.is_(None),
-        ).all()
-        result.append({
-            "site_id": site.id,
-            "site_nom": site.nom,
-            "ville": site.ville,
-            "batiments": [
-                {
-                    "id": b.id,
-                    "nom": b.nom,
-                    "surface_m2": b.surface_m2,
-                    "annee_construction": b.annee_construction,
-                }
-                for b in bats
-            ],
-        })
+        bats = (
+            db.query(Batiment)
+            .filter(
+                Batiment.site_id == site.id,
+                Batiment.deleted_at.is_(None),
+            )
+            .all()
+        )
+        result.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "ville": site.ville,
+                "batiments": [
+                    {
+                        "id": b.id,
+                        "nom": b.nom,
+                        "surface_m2": b.surface_m2,
+                        "annee_construction": b.annee_construction,
+                    }
+                    for b in bats
+                ],
+            }
+        )
 
     return {
         "sites": result,
@@ -604,6 +675,7 @@ def building_catalog(
 
 
 # ── Proof catalog + status V45 ───────────────────────────────────────────────
+
 
 @router.get("/proof-catalog")
 def get_proof_catalog():
@@ -618,10 +690,14 @@ def get_efa_proofs(
     db: Session = Depends(get_db),
 ):
     """V45: Statut des preuves pour une EFA (expected/deposited/validated)."""
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
     return list_proofs_status(db, efa_id, year)
@@ -641,19 +717,27 @@ def link_proof_to_efa(
     db: Session = Depends(get_db),
 ):
     """V45: Lie un document KB à une EFA comme preuve."""
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 
     # Dedup: check if artifact already exists
-    existing = db.query(TertiaireProofArtifact).filter(
-        TertiaireProofArtifact.efa_id == efa_id,
-        TertiaireProofArtifact.kb_doc_id == body.kb_doc_id,
-        TertiaireProofArtifact.type == body.proof_type,
-    ).first()
+    existing = (
+        db.query(TertiaireProofArtifact)
+        .filter(
+            TertiaireProofArtifact.efa_id == efa_id,
+            TertiaireProofArtifact.kb_doc_id == body.kb_doc_id,
+            TertiaireProofArtifact.type == body.proof_type,
+        )
+        .first()
+    )
     if existing:
         return {
             "id": existing.id,
@@ -662,16 +746,19 @@ def link_proof_to_efa(
         }
 
     import json
+
     artifact = TertiaireProofArtifact(
         efa_id=efa_id,
         type=body.proof_type,
         kb_doc_id=body.kb_doc_id,
         owner_role=efa.role_assujetti,
-        tags_json=json.dumps({
-            "year": body.year,
-            "issue_code": body.issue_code,
-            "proof_type": body.proof_type,
-        }),
+        tags_json=json.dumps(
+            {
+                "year": body.year,
+                "issue_code": body.issue_code,
+                "proof_type": body.proof_type,
+            }
+        ),
     )
     db.add(artifact)
     db.commit()
@@ -687,6 +774,7 @@ def link_proof_to_efa(
 
 
 # ── Proof Catalog V2 (V50) ──────────────────────────────────────────────────
+
 
 @router.get("/proofs/catalog")
 def proof_catalog_v2():
@@ -708,6 +796,7 @@ def issue_proofs(issue_code: str):
 
 # ── Template generation V50 ─────────────────────────────────────────────────
 
+
 class ProofTemplateBody(BaseModel):
     issue_code: str
     proof_types: List[str]
@@ -722,10 +811,14 @@ def create_proof_templates(
     db: Session = Depends(get_db),
 ):
     """V50: Génère des modèles de preuves dans la Mémobox (draft)."""
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 

@@ -35,7 +35,8 @@ const DemoBanner = ({ onUpgradeClick }) => {
         <div className="flex items-center gap-3">
           <CheckCircle size={20} />
           <span className="font-medium text-sm">
-            {org.nom} — {sitesCount} site{sitesCount > 1 ? 's' : ''}, {portefeuilles.length} portefeuille{portefeuilles.length > 1 ? 's' : ''}
+            {org.nom} — {sitesCount} site{sitesCount > 1 ? 's' : ''}, {portefeuilles.length}{' '}
+            portefeuille{portefeuilles.length > 1 ? 's' : ''}
           </span>
         </div>
       </div>

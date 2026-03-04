@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — JSON Invoice Parser
 Parse demo JSON invoices into canonical Invoice objects.
 """
+
 import json
 import hashlib
 from datetime import date, datetime, timezone
@@ -11,8 +12,14 @@ from typing import Optional, Dict, Any
 import re
 
 from ..domain import (
-    Invoice, InvoiceComponent, EnergyType, InvoiceStatus,
-    ShadowLevel, ComponentType, BillingConcept, ConceptAllocation,
+    Invoice,
+    InvoiceComponent,
+    EnergyType,
+    InvoiceStatus,
+    ShadowLevel,
+    ComponentType,
+    BillingConcept,
+    ConceptAllocation,
 )
 
 
@@ -77,9 +84,21 @@ _COMPONENT_CONCEPT_MAP: Dict[ComponentType, str] = {
 # Regex fallback rules for label-based allocation (used when component_type is AUTRE)
 _LABEL_CONCEPT_RULES: list = [
     (re.compile(r"abonnement|prime\s+fixe|souscri", re.IGNORECASE), BillingConcept.ABONNEMENT.value, 0.85),
-    (re.compile(r"consommation|energie|kwh|heure|hp\b|hc\b|base|pointe", re.IGNORECASE), BillingConcept.FOURNITURE.value, 0.80),
-    (re.compile(r"turpe|acheminement|soutirage|gestion|atrd|reseau", re.IGNORECASE), BillingConcept.ACHEMINEMENT.value, 0.85),
-    (re.compile(r"accise|cspe|ticfe|ticgn|taxe|cta|contribution", re.IGNORECASE), BillingConcept.TAXES_CONTRIBUTIONS.value, 0.85),
+    (
+        re.compile(r"consommation|energie|kwh|heure|hp\b|hc\b|base|pointe", re.IGNORECASE),
+        BillingConcept.FOURNITURE.value,
+        0.80,
+    ),
+    (
+        re.compile(r"turpe|acheminement|soutirage|gestion|atrd|reseau", re.IGNORECASE),
+        BillingConcept.ACHEMINEMENT.value,
+        0.85,
+    ),
+    (
+        re.compile(r"accise|cspe|ticfe|ticgn|taxe|cta|contribution", re.IGNORECASE),
+        BillingConcept.TAXES_CONTRIBUTIONS.value,
+        0.85,
+    ),
     (re.compile(r"tva", re.IGNORECASE), BillingConcept.TVA.value, 0.90),
     (re.compile(r"depassement|reactive|capacit", re.IGNORECASE), BillingConcept.CAPACITE.value, 0.80),
     (re.compile(r"regularis|prorata|ajust|remise|avoir", re.IGNORECASE), BillingConcept.AJUSTEMENT.value, 0.75),

@@ -1,6 +1,7 @@
 """
 PROMEOS RegOps - Versioning (hash computation for cache invalidation)
 """
+
 import hashlib
 import json
 

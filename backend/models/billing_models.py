@@ -3,13 +3,34 @@ PROMEOS — Bill Intelligence SQLAlchemy models
 Persisted: EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight.
 Complement the dataclass-based domain model in app/bill_intelligence/domain.py.
 """
+
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, Date, DateTime, Enum, UniqueConstraint, Index
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    Boolean,
+    ForeignKey,
+    Date,
+    DateTime,
+    Enum,
+    UniqueConstraint,
+    Index,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
-from .enums import BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus, ContractIndexation, ContractStatus
+from .enums import (
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
+    InsightStatus,
+    ContractIndexation,
+    ContractStatus,
+)
 
 
 class EnergyContract(Base, TimestampMixin):
@@ -17,62 +38,79 @@ class EnergyContract(Base, TimestampMixin):
     Contrat d'energie lie a un site.
     Un site peut avoir plusieurs contrats (elec + gaz, ou succession).
     """
+
     __tablename__ = "energy_contracts"
 
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(
-        Integer, ForeignKey("sites.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("sites.id"),
+        nullable=False,
+        index=True,
         comment="Site concerne",
     )
     energy_type = Column(
-        Enum(BillingEnergyType), nullable=False,
+        Enum(BillingEnergyType),
+        nullable=False,
         comment="Type d'energie (elec/gaz)",
     )
     supplier_name = Column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
         comment="Nom du fournisseur (EDF, Engie, TotalEnergies...)",
     )
     start_date = Column(Date, nullable=True, comment="Debut du contrat")
     end_date = Column(Date, nullable=True, comment="Fin du contrat")
     price_ref_eur_per_kwh = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Prix de reference EUR HT/kWh",
     )
     fixed_fee_eur_per_month = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Abonnement mensuel EUR HT",
     )
     metadata_json = Column(Text, nullable=True, comment="Metadata libre (JSON)")
     notice_period_days = Column(
-        Integer, nullable=False, default=90,
+        Integer,
+        nullable=False,
+        default=90,
         comment="Preavis de resiliation en jours",
     )
     auto_renew = Column(
-        Boolean, nullable=False, default=False,
+        Boolean,
+        nullable=False,
+        default=False,
         comment="Reconduction tacite",
     )
     # V96 — Contrats achats-ready
     offer_indexation = Column(
-        Enum(ContractIndexation), nullable=True,
+        Enum(ContractIndexation),
+        nullable=True,
         comment="Type d'indexation (fixe/indexe/spot/hybride)",
     )
     price_granularity = Column(
-        String(50), nullable=True,
+        String(50),
+        nullable=True,
         comment="Granularite prix: annuel/trimestriel/mensuel/horaire",
     )
     renewal_alert_days = Column(
-        Integer, nullable=True,
+        Integer,
+        nullable=True,
         comment="Jours avant echeance pour alerte renouvellement",
     )
     contract_status = Column(
-        Enum(ContractStatus), nullable=True,
+        Enum(ContractStatus),
+        nullable=True,
         comment="Statut lifecycle (active/expiring/expired)",
     )
 
     # Relations
     site = relationship("Site", backref="energy_contracts")
     invoices = relationship(
-        "EnergyInvoice", back_populates="contract",
+        "EnergyInvoice",
+        back_populates="contract",
         cascade="all, delete-orphan",
     )
 
@@ -82,25 +120,37 @@ class EnergyInvoice(Base, TimestampMixin):
     Facture d'energie importee (CSV, JSON, PDF ou saisie manuelle).
     Chaque facture peut porter N lignes (EnergyInvoiceLine).
     """
+
     __tablename__ = "energy_invoices"
     __table_args__ = (
         UniqueConstraint(
-            "site_id", "invoice_number", "period_start", "period_end",
+            "site_id",
+            "invoice_number",
+            "period_start",
+            "period_end",
             name="uq_invoice_site_number_period",
         ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(
-        Integer, ForeignKey("sites.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("sites.id"),
+        nullable=False,
+        index=True,
         comment="Site concerne",
     )
     contract_id = Column(
-        Integer, ForeignKey("energy_contracts.id"), nullable=True, index=True,
+        Integer,
+        ForeignKey("energy_contracts.id"),
+        nullable=True,
+        index=True,
         comment="Contrat rattache (optionnel)",
     )
     invoice_number = Column(
-        String(100), nullable=False, index=True,
+        String(100),
+        nullable=False,
+        index=True,
         comment="Numero de facture",
     )
     period_start = Column(Date, nullable=True, comment="Debut de periode facturee")
@@ -109,11 +159,14 @@ class EnergyInvoice(Base, TimestampMixin):
     total_eur = Column(Float, nullable=True, comment="Montant total EUR TTC")
     energy_kwh = Column(Float, nullable=True, comment="Consommation en kWh")
     status = Column(
-        Enum(BillingInvoiceStatus), default=BillingInvoiceStatus.IMPORTED,
-        nullable=False, comment="Statut de la facture",
+        Enum(BillingInvoiceStatus),
+        default=BillingInvoiceStatus.IMPORTED,
+        nullable=False,
+        comment="Statut de la facture",
     )
     source = Column(
-        String(50), nullable=True,
+        String(50),
+        nullable=True,
         comment="Source d'import: csv, json, pdf, manual",
     )
     raw_json = Column(Text, nullable=True, comment="Donnees brutes (JSON)")
@@ -122,7 +175,8 @@ class EnergyInvoice(Base, TimestampMixin):
     site = relationship("Site", backref="energy_invoices")
     contract = relationship("EnergyContract", back_populates="invoices")
     lines = relationship(
-        "EnergyInvoiceLine", back_populates="invoice",
+        "EnergyInvoiceLine",
+        back_populates="invoice",
         cascade="all, delete-orphan",
     )
 
@@ -139,15 +193,20 @@ class EnergyInvoiceLine(Base, TimestampMixin):
     Ligne de detail d'une facture energie.
     Categorisee: ENERGY, NETWORK, TAX, OTHER.
     """
+
     __tablename__ = "energy_invoice_lines"
 
     id = Column(Integer, primary_key=True, index=True)
     invoice_id = Column(
-        Integer, ForeignKey("energy_invoices.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("energy_invoices.id"),
+        nullable=False,
+        index=True,
         comment="Facture parente",
     )
     line_type = Column(
-        Enum(InvoiceLineType), nullable=False,
+        Enum(InvoiceLineType),
+        nullable=False,
         comment="Type de ligne (energy/network/tax/other)",
     )
     label = Column(String(300), nullable=False, comment="Libelle de la ligne")
@@ -166,45 +225,62 @@ class BillingInsight(Base, TimestampMixin):
     Insight de facturation detecte par l'anomaly engine.
     Ex: surfacturation, derive de prix, ecart shadow billing, doublon...
     """
+
     __tablename__ = "billing_insights"
 
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(
-        Integer, ForeignKey("sites.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("sites.id"),
+        nullable=False,
+        index=True,
         comment="Site concerne",
     )
     invoice_id = Column(
-        Integer, ForeignKey("energy_invoices.id"), nullable=True, index=True,
+        Integer,
+        ForeignKey("energy_invoices.id"),
+        nullable=True,
+        index=True,
         comment="Facture liee (optionnel, pour insights globaux)",
     )
     type = Column(
-        String(50), nullable=False, index=True,
+        String(50),
+        nullable=False,
+        index=True,
         comment="Type d'insight: overcharge, price_drift, shadow_gap, duplicate, missing_period...",
     )
     severity = Column(
-        String(20), nullable=False, default="medium",
+        String(20),
+        nullable=False,
+        default="medium",
         comment="low, medium, high, critical",
     )
     message = Column(String(500), nullable=False, comment="Description humaine")
     metrics_json = Column(Text, nullable=True, comment="Metriques detaillees (JSON)")
     estimated_loss_eur = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Perte estimee en EUR",
     )
     recommended_actions_json = Column(
-        Text, nullable=True,
+        Text,
+        nullable=True,
         comment="Actions recommandees (JSON array)",
     )
     insight_status = Column(
-        Enum(InsightStatus), default=InsightStatus.OPEN, nullable=False,
+        Enum(InsightStatus),
+        default=InsightStatus.OPEN,
+        nullable=False,
         comment="Statut workflow: open, ack, resolved, false_positive",
     )
     owner = Column(
-        String(100), nullable=True,
+        String(100),
+        nullable=True,
         comment="Responsable assigne (email ou nom)",
     )
     notes = Column(
-        Text, nullable=True,
+        Text,
+        nullable=True,
         comment="Notes operateur (motif de resolution, etc.)",
     )
 
@@ -219,23 +295,32 @@ class ConceptAllocation(Base, TimestampMixin):
     Chaque EnergyInvoiceLine peut avoir 1 ConceptAllocation.
     concept_id mappe vers BillingConcept (fourniture, acheminement, taxes, tva, ...).
     """
+
     __tablename__ = "concept_allocations"
 
     id = Column(Integer, primary_key=True, index=True)
     invoice_line_id = Column(
-        Integer, ForeignKey("energy_invoice_lines.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("energy_invoice_lines.id"),
+        nullable=False,
+        index=True,
         comment="Ligne de facture allouee",
     )
     concept_id = Column(
-        String(50), nullable=False, index=True,
+        String(50),
+        nullable=False,
+        index=True,
         comment="Concept de facturation (fourniture, acheminement, taxes, tva, abonnement...)",
     )
     confidence = Column(
-        Float, nullable=False, default=1.0,
+        Float,
+        nullable=False,
+        default=1.0,
         comment="Confiance de l'allocation (0.0-1.0)",
     )
     matched_rules_json = Column(
-        Text, nullable=True,
+        Text,
+        nullable=True,
         comment="Regles ayant contribue a l'allocation (JSON array)",
     )
 
@@ -248,20 +333,27 @@ class BillingImportBatch(Base, TimestampMixin):
     Batch d'import CSV avec hash de contenu pour idempotence.
     Un re-upload du meme fichier (meme org + meme hash) est rejete.
     """
+
     __tablename__ = "billing_import_batches"
 
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(
-        Integer, nullable=True, index=True,
+        Integer,
+        nullable=True,
+        index=True,
         comment="Organisation d'import (None si single-tenant)",
     )
     filename = Column(String(500), nullable=True, comment="Nom du fichier uploade")
     content_hash = Column(
-        String(64), nullable=False, index=True,
+        String(64),
+        nullable=False,
+        index=True,
         comment="SHA-256 du contenu CSV brut",
     )
     imported_at = Column(
-        DateTime, default=datetime.utcnow, nullable=False,
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
         comment="Date d'import",
     )
     rows_total = Column(Integer, nullable=False, default=0)

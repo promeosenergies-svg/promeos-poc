@@ -1,8 +1,8 @@
 const variants = {
-  primary:   'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
+  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
   secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus-visible:ring-gray-400',
-  ghost:     'bg-transparent text-gray-600 hover:bg-gray-100 focus-visible:ring-gray-400',
-  danger:    'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
+  ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus-visible:ring-gray-400',
+  danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
 };
 
 const sizes = {
@@ -12,7 +12,11 @@ const sizes = {
 };
 
 export default function Button({
-  variant = 'primary', size = 'md', className = '', children, ...props
+  variant = 'primary',
+  size = 'md',
+  className = '',
+  children,
+  ...props
 }) {
   return (
     <button

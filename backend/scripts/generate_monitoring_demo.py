@@ -13,6 +13,7 @@ Site 2: Commerce (supermarket) - 90 days hourly data
   - Anomaly: 3-day data gap
   - Anomaly: 2 negative readings
 """
+
 import sys
 import os
 import math
@@ -20,7 +21,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 # Add backend to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from database.connection import SessionLocal
 from models import Site, Meter, MeterReading, FrequencyType
@@ -54,7 +55,7 @@ def _generate_site1(db):
             site_id=site.id,
             energy_vector=EnergyVector.ELECTRICITY,
             subscribed_power_kva=80.0,
-            tariff_type="C5"
+            tariff_type="C5",
         )
         db.add(meter)
         db.commit()
@@ -104,13 +105,11 @@ def _generate_site1(db):
             value *= random.uniform(0.90, 1.10)
             value = max(0.1, round(value, 2))
 
-            readings.append(MeterReading(
-                meter_id=meter.id,
-                timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=value,
-                is_estimated=False
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter.id, timestamp=ts, frequency=FrequencyType.HOURLY, value_kwh=value, is_estimated=False
+                )
+            )
 
     db.bulk_save_objects(readings)
     db.commit()
@@ -136,7 +135,7 @@ def _generate_site2(db):
             site_id=site.id,
             energy_vector=EnergyVector.ELECTRICITY,
             subscribed_power_kva=60.0,  # Deliberately low for depassement
-            tariff_type="C5"
+            tariff_type="C5",
         )
         db.add(meter)
         db.commit()
@@ -170,11 +169,13 @@ def _generate_site2(db):
                 base_kwh = 52.0  # Slightly lower weekend
 
             # ANOMALY: Power spikes that exceed 60 kVA (5 events)
-            if (day_offset == 10 and hour == 14) or \
-               (day_offset == 25 and hour == 11) or \
-               (day_offset == 40 and hour == 15) or \
-               (day_offset == 60 and hour == 13) or \
-               (day_offset == 75 and hour == 16):
+            if (
+                (day_offset == 10 and hour == 14)
+                or (day_offset == 25 and hour == 11)
+                or (day_offset == 40 and hour == 15)
+                or (day_offset == 60 and hour == 13)
+                or (day_offset == 75 and hour == 16)
+            ):
                 base_kwh = 85.0  # Way above 60 kVA subscribed
 
             # ANOMALY: 2 negative readings
@@ -186,13 +187,11 @@ def _generate_site2(db):
             value = base_kwh * random.uniform(0.92, 1.08)
             value = round(value, 2)
 
-            readings.append(MeterReading(
-                meter_id=meter.id,
-                timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=value,
-                is_estimated=False
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter.id, timestamp=ts, frequency=FrequencyType.HOURLY, value_kwh=value, is_estimated=False
+                )
+            )
 
     db.bulk_save_objects(readings)
     db.commit()

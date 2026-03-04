@@ -14,6 +14,7 @@ Usage :
         from services.demo_state import DemoState
         org_id = DemoState.get_demo_org_id()
 """
+
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -102,6 +103,7 @@ def resolve_org_id(
 
     # DEMO_MODE=true: fallback chain
     from services.demo_state import DemoState
+
     demo_org_id = DemoState.get_demo_org_id()
     if demo_org_id:
         return demo_org_id

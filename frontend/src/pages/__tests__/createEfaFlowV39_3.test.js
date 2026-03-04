@@ -9,8 +9,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. Dashboard CTAs
@@ -59,7 +58,7 @@ describe('Wizard EFA submit flow', () => {
   });
 
   it('navigates to EFA detail on success', () => {
-    expect(code).toContain("navigate(`/conformite/tertiaire/efa/${efa.id}`");
+    expect(code).toContain('navigate(`/conformite/tertiaire/efa/${efa.id}`');
   });
 
   it('passes justCreated state on redirect', () => {
@@ -133,7 +132,7 @@ describe('EFA detail — export pack accessible', () => {
 describe('Backend EfaCreate schema', () => {
   const code = fs.readFileSync(
     path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'routes', 'tertiaire.py'),
-    'utf-8',
+    'utf-8'
   );
 
   it('site_id is Optional', () => {

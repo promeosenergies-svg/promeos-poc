@@ -5,8 +5,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. operatActionModel exports
@@ -152,13 +151,13 @@ describe('ActionsPage has V46 OPERAT integration', () => {
   });
 
   it('reads source=operat from URL', () => {
-    expect(page).toContain("source");
+    expect(page).toContain('source');
     expect(page).toContain("'operat'");
   });
 
   it('maps insight+operat: source_id to operat type', () => {
     expect(page).toContain('isOperat');
-    expect(page).toContain("operat:");
+    expect(page).toContain('operat:');
   });
 
   it('has operat in TYPE_BADGE', () => {
@@ -178,7 +177,7 @@ describe('complianceLabels has OPERAT type', () => {
   const labels = src('domain/compliance/complianceLabels.fr.js');
 
   it('has operat in ACTION_TYPE_LABELS', () => {
-    expect(labels).toContain("operat:");
+    expect(labels).toContain('operat:');
     expect(labels).toContain("'OPERAT'");
   });
 });

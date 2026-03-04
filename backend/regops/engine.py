@@ -2,6 +2,7 @@
 PROMEOS RegOps - Engine orchestrateur
 Coordonne les 4 moteurs de regles + scoring + cache.
 """
+
 import yaml
 import os
 from pathlib import Path
@@ -95,10 +96,7 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
     severity_weights = scoring.get("severity_weights", {})
     confidence_weights = scoring.get("confidence_weights", {})
 
-    total_required = sum(
-        len(regs.get(r, {}).get("required_inputs", []))
-        for r in ["tertiaire_operat", "bacs", "aper"]
-    )
+    total_required = sum(len(regs.get(r, {}).get("required_inputs", [])) for r in ["tertiaire_operat", "bacs", "aper"])
     dq_coverage = ((total_required - len(missing_data)) / max(1, total_required)) * 100.0
 
     score_result = compute_regops_score(all_findings, dq_coverage)
@@ -112,7 +110,9 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
     actions = []
     for i, f in enumerate(all_findings):
         if f.status in ["AT_RISK", "NON_COMPLIANT", "UNKNOWN"]:
-            priority_score = severity_weights.get(f.severity.lower(), 10) * confidence_weights.get(f.confidence.lower(), 1.0)
+            priority_score = severity_weights.get(f.severity.lower(), 10) * confidence_weights.get(
+                f.confidence.lower(), 1.0
+            )
             if f.legal_deadline:
                 days_to_deadline = (f.legal_deadline - date.today()).days
                 if days_to_deadline < 90:
@@ -122,12 +122,14 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
                 action_code=f.rule_id,
                 label=f.explanation,
                 priority_score=priority_score,
-                urgency_reason=f"Echeance: {f.legal_deadline.isoformat()}" if f.legal_deadline else "Pas d'echeance specifique",
+                urgency_reason=f"Echeance: {f.legal_deadline.isoformat()}"
+                if f.legal_deadline
+                else "Pas d'echeance specifique",
                 owner_role="Energy Manager",
                 effort="MEDIUM",
                 roi_hint=None,
                 cee_p6_hints=None,
-                is_ai_suggestion=False
+                is_ai_suggestion=False,
             )
             actions.append(action)
 
@@ -179,27 +181,38 @@ def persist_assessment(db: Session, summary: SiteSummary):
     """
     import json
 
-    existing = db.query(RegAssessment).filter(
-        RegAssessment.object_type == "site",
-        RegAssessment.object_id == summary.site_id
-    ).first()
+    existing = (
+        db.query(RegAssessment)
+        .filter(RegAssessment.object_type == "site", RegAssessment.object_id == summary.site_id)
+        .first()
+    )
 
-    findings_json = json.dumps([{
-        "regulation": f.regulation,
-        "rule_id": f.rule_id,
-        "status": f.status,
-        "severity": f.severity,
-        "confidence": f.confidence,
-        "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
-        "explanation": f.explanation
-    } for f in summary.findings])
+    findings_json = json.dumps(
+        [
+            {
+                "regulation": f.regulation,
+                "rule_id": f.rule_id,
+                "status": f.status,
+                "severity": f.severity,
+                "confidence": f.confidence,
+                "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
+                "explanation": f.explanation,
+            }
+            for f in summary.findings
+        ]
+    )
 
-    actions_json = json.dumps([{
-        "action_code": a.action_code,
-        "label": a.label,
-        "priority_score": a.priority_score,
-        "urgency_reason": a.urgency_reason
-    } for a in summary.actions[:10]])  # Top 10 only
+    actions_json = json.dumps(
+        [
+            {
+                "action_code": a.action_code,
+                "label": a.label,
+                "priority_score": a.priority_score,
+                "urgency_reason": a.urgency_reason,
+            }
+            for a in summary.actions[:10]
+        ]
+    )  # Top 10 only
 
     missing_data_json = json.dumps(summary.missing_data)
 
@@ -227,7 +240,7 @@ def persist_assessment(db: Session, summary: SiteSummary):
             missing_data_json=missing_data_json,
             deterministic_version=summary.deterministic_version,
             data_version="",
-            is_stale=False
+            is_stale=False,
         )
         db.add(assessment)
 

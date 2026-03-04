@@ -9,6 +9,7 @@ Covers:
   5) Seed endpoints return 403 when DEMO_SEED_ENABLED=false
   6) datetime.now(timezone.utc) removed from purchase-related modules
 """
+
 import sys
 import os
 import inspect
@@ -23,9 +24,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    PurchaseAssumptionSet, PurchaseScenarioResult,
-    PurchaseStrategy, PurchaseRecoStatus, BillingEnergyType,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    PurchaseAssumptionSet,
+    PurchaseScenarioResult,
+    PurchaseStrategy,
+    PurchaseRecoStatus,
+    BillingEnergyType,
     TypeSite,
 )
 from database import get_db
@@ -35,6 +43,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -57,6 +66,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -73,9 +83,13 @@ def _create_org_site(db):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site A", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=2000, portefeuille_id=pf.id,
+        nom="Site A",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=2000,
+        portefeuille_id=pf.id,
     )
     db.add(site)
     db.flush()
@@ -108,12 +122,14 @@ def _create_result(db, site):
 # Auth on PATCH /accept
 # ========================================
 
+
 class TestAcceptAuthGuard:
     """PATCH /results/{id}/accept now requires auth (same guard as other endpoints)."""
 
     def test_accept_has_auth_dependency(self):
         """accept_result endpoint declares get_optional_auth dependency."""
         import routes.purchase as mod
+
         src = inspect.getsource(mod.accept_result)
         assert "get_optional_auth" in src
 
@@ -138,24 +154,28 @@ class TestAcceptAuthGuard:
 # Auth + DEMO_SEED_ENABLED on seed endpoints
 # ========================================
 
+
 class TestSeedEndpointGuards:
     """POST /seed-* endpoints require admin role + DEMO_SEED_ENABLED=true."""
 
     def test_seed_demo_has_require_admin(self):
         """seed_demo endpoint declares require_admin dependency."""
         import routes.purchase as mod
+
         src = inspect.getsource(mod.seed_demo)
         assert "require_admin" in src
 
     def test_seed_wow_happy_has_require_admin(self):
         """seed_wow_happy_endpoint declares require_admin dependency."""
         import routes.purchase as mod
+
         src = inspect.getsource(mod.seed_wow_happy_endpoint)
         assert "require_admin" in src
 
     def test_seed_wow_dirty_has_require_admin(self):
         """seed_wow_dirty_endpoint declares require_admin dependency."""
         import routes.purchase as mod
+
         src = inspect.getsource(mod.seed_wow_dirty_endpoint)
         assert "require_admin" in src
 
@@ -184,9 +204,13 @@ class TestSeedEndpointGuards:
         """seed-demo works when DEMO_SEED_ENABLED=true (in demo mode, admin is lenient)."""
         org, site = _create_org_site(db_session)
         site_b = Site(
-            nom="Site B", type=TypeSite.ENTREPOT,
-            adresse="2 rue Test", code_postal="69001", ville="Lyon",
-            surface_m2=5000, portefeuille_id=site.portefeuille_id,
+            nom="Site B",
+            type=TypeSite.ENTREPOT,
+            adresse="2 rue Test",
+            code_postal="69001",
+            ville="Lyon",
+            surface_m2=5000,
+            portefeuille_id=site.portefeuille_id,
         )
         db_session.add(site_b)
         db_session.commit()
@@ -202,6 +226,7 @@ class TestSeedEndpointGuards:
     def test_demo_seed_enabled_default_is_false(self):
         """DEMO_SEED_ENABLED defaults to false (secure-by-default)."""
         import routes.purchase as mod
+
         src = inspect.getsource(mod)
         assert 'get("DEMO_SEED_ENABLED", "false")' in src
 
@@ -210,30 +235,36 @@ class TestSeedEndpointGuards:
 # datetime.now(timezone.utc) removal verification
 # ========================================
 
+
 class TestDatetimeCompat:
     """datetime.now(timezone.utc) must be replaced with datetime.now(timezone.utc) in purchase modules."""
 
     def test_purchase_route_no_utcnow(self):
         import routes.purchase as mod
+
         src = inspect.getsource(mod)
         assert "utcnow()" not in src
 
     def test_purchase_service_no_utcnow(self):
         import services.purchase_service as mod
+
         src = inspect.getsource(mod)
         assert "utcnow()" not in src
 
     def test_purchase_seed_no_utcnow(self):
         import services.purchase_seed as mod
+
         src = inspect.getsource(mod)
         assert "utcnow()" not in src
 
     def test_purchase_seed_wow_no_utcnow(self):
         import services.purchase_seed_wow as mod
+
         src = inspect.getsource(mod)
         assert "utcnow()" not in src
 
     def test_energy_route_no_utcnow(self):
         import routes.energy as mod
+
         src = inspect.getsource(mod)
         assert "utcnow()" not in src

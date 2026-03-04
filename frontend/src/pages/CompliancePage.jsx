@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, XCircle, HelpCircle, RefreshCw, Filter, ChevronDown, ChevronRight } from 'lucide-react';
-import { getComplianceSummary, getComplianceSites, recomputeComplianceRules } from '../services/api';
+import {
+  ShieldCheck,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  RefreshCw,
+  Filter,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  getComplianceSummary,
+  getComplianceSites,
+  recomputeComplianceRules,
+} from '../services/api';
 import { useToast } from '../ui/ToastProvider';
 
 const STATUS_CONFIG = {
@@ -27,7 +40,9 @@ const REG_LABELS = {
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.UNKNOWN;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}
+    >
       {cfg.icon && <cfg.icon size={12} />}
       {cfg.label}
     </span>
@@ -38,9 +53,7 @@ function SeverityBadge({ severity }) {
   const cfg = SEVERITY_CONFIG[severity];
   if (!cfg) return null;
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>
-      {cfg.label}
-    </span>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
   );
 }
 
@@ -90,9 +103,7 @@ function TopActions({ actions }) {
               {a.nb_sites} site{a.nb_sites > 1 ? 's' : ''}
             </span>
             {a.deadline && (
-              <span className="text-xs text-red-500 font-medium">
-                Ech. {a.deadline}
-              </span>
+              <span className="text-xs text-red-500 font-medium">Ech. {a.deadline}</span>
             )}
           </div>
         ))}
@@ -109,7 +120,7 @@ function SiteRow({ site }) {
     return worst;
   }, 'OK');
 
-  const nokCount = site.findings.filter(f => f.status === 'NOK').length;
+  const nokCount = site.findings.filter((f) => f.status === 'NOK').length;
 
   return (
     <div className="border border-gray-200 rounded-lg mb-2">
@@ -144,24 +155,30 @@ function SiteRow({ site }) {
                 <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-1.5 font-mono text-xs">{f.rule_id}</td>
                   <td className="py-1.5 text-xs">{REG_LABELS[f.regulation] || f.regulation}</td>
-                  <td className="py-1.5"><StatusBadge status={f.status} /></td>
-                  <td className="py-1.5">{f.severity && <SeverityBadge severity={f.severity} />}</td>
+                  <td className="py-1.5">
+                    <StatusBadge status={f.status} />
+                  </td>
+                  <td className="py-1.5">
+                    {f.severity && <SeverityBadge severity={f.severity} />}
+                  </td>
                   <td className="py-1.5 text-xs text-gray-500">{f.deadline || '-'}</td>
                   <td className="py-1.5 text-xs text-gray-600 max-w-xs truncate">{f.evidence}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {site.findings.some(f => f.actions && f.actions.length > 0) && (
+          {site.findings.some((f) => f.actions && f.actions.length > 0) && (
             <div className="mt-2 p-2 bg-amber-50 rounded">
               <p className="text-xs font-semibold text-amber-700 mb-1">Actions recommandees:</p>
               <ul className="space-y-0.5">
                 {site.findings
-                  .filter(f => f.actions && f.actions.length > 0)
-                  .flatMap(f => f.actions)
+                  .filter((f) => f.actions && f.actions.length > 0)
+                  .flatMap((f) => f.actions)
                   .filter((v, i, a) => a.indexOf(v) === i)
                   .map((action, i) => (
-                    <li key={i} className="text-xs text-amber-800">• {action}</li>
+                    <li key={i} className="text-xs text-amber-800">
+                      • {action}
+                    </li>
                   ))}
               </ul>
             </div>
@@ -189,18 +206,19 @@ export default function CompliancePage() {
     if (filterStatus) params.status = filterStatus;
     if (filterSeverity) params.severity = filterSeverity;
 
-    Promise.all([
-      getComplianceSummary(),
-      getComplianceSites(params),
-    ]).then(([s, st]) => {
-      setSummary(s);
-      setSites(st);
-    }).catch(() => toast('Erreur lors du chargement de la conformité', 'error'))
+    Promise.all([getComplianceSummary(), getComplianceSites(params)])
+      .then(([s, st]) => {
+        setSummary(s);
+        setSites(st);
+      })
+      .catch(() => toast('Erreur lors du chargement de la conformité', 'error'))
       .finally(() => setLoading(false));
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(); }, [filterReg, filterStatus, filterSeverity]);
+  useEffect(() => {
+    loadData();
+  }, [filterReg, filterStatus, filterSeverity]);
 
   const handleRecompute = async () => {
     setRecomputing(true);
@@ -239,7 +257,9 @@ export default function CompliancePage() {
       {loading ? (
         <div className="animate-pulse space-y-4">
           <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-200 rounded-lg" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded-lg" />
+            ))}
           </div>
           <div className="h-40 bg-gray-200 rounded-lg" />
         </div>
@@ -292,7 +312,10 @@ export default function CompliancePage() {
                 <p>Aucun constat.</p>
                 <p className="text-sm mt-1">
                   Cliquez « Réévaluer » pour lancer l'évaluation ou{' '}
-                  <Link to="/import" className="text-blue-600 hover:underline">importez des sites</Link>.
+                  <Link to="/import" className="text-blue-600 hover:underline">
+                    importez des sites
+                  </Link>
+                  .
                 </p>
               </div>
             ) : (

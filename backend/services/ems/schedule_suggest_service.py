@@ -3,6 +3,7 @@ PROMEOS -- Schedule Suggestion Service (Sprint V4.9)
 Suggests operating schedule from actual consumption data (MeterReading).
 Algorithm: build 7x24 avg power matrix, detect active hours from talon.
 """
+
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -30,11 +31,7 @@ def suggest_schedule_from_consumption(
         }
     """
     # Find active meters for this site
-    meter = (
-        db.query(Meter)
-        .filter_by(site_id=site_id, is_active=True)
-        .first()
-    )
+    meter = db.query(Meter).filter_by(site_id=site_id, is_active=True).first()
     if not meter:
         return {
             "error": "no_meter",

@@ -23,9 +23,9 @@ import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
 
-const HEALTH_BAR  = src('components/PatrimoinePortfolioHealthBar.jsx');
-const PATRIMOINE  = src('pages/Patrimoine.jsx');
-const SCOPE_CTX   = src('contexts/ScopeContext.jsx');
+const HEALTH_BAR = src('components/PatrimoinePortfolioHealthBar.jsx');
+const PATRIMOINE = src('pages/Patrimoine.jsx');
+const SCOPE_CTX = src('contexts/ScopeContext.jsx');
 
 // ── A. ScopeContext — appel synchrone de setApiScope ─────────────────────
 
@@ -43,7 +43,9 @@ describe('ScopeContext — setApiScope synchrone (anti-race)', () => {
   });
 
   test('appel synchrone documenté (commentaire anti-race ou belt-and-suspenders)', () => {
-    expect(SCOPE_CTX).toMatch(/synchron|belt-and-suspenders|avant.*child|child.*avant|child.*effect/i);
+    expect(SCOPE_CTX).toMatch(
+      /synchron|belt-and-suspenders|avant.*child|child.*avant|child.*effect/i
+    );
   });
 
   test('setApiScope importé depuis api.js', () => {
@@ -76,7 +78,7 @@ describe('PatrimoinePortfolioHealthBar — prop orgId (anti-race)', () => {
     expect(HEALTH_BAR).toMatch(/if\s*\(\s*!orgId\s*\)[\s\S]{0,200}animate-pulse/);
   });
 
-  test('fetchSummary toujours défini (n\'a pas disparu)', () => {
+  test("fetchSummary toujours défini (n'a pas disparu)", () => {
     expect(HEALTH_BAR).toMatch(/fetchSummary/);
   });
 
@@ -93,7 +95,9 @@ describe('Patrimoine.jsx — passage de scope.orgId', () => {
   });
 
   test('orgId={scope.orgId} passé à PatrimoinePortfolioHealthBar', () => {
-    expect(PATRIMOINE).toMatch(/PatrimoinePortfolioHealthBar[\s\S]{0,200}orgId\s*=\s*\{scope\.orgId\}/);
+    expect(PATRIMOINE).toMatch(
+      /PatrimoinePortfolioHealthBar[\s\S]{0,200}orgId\s*=\s*\{scope\.orgId\}/
+    );
   });
 
   test('PatrimoinePortfolioHealthBar toujours rendu dans Patrimoine.jsx', () => {

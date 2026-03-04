@@ -2,7 +2,9 @@
 PROMEOS - EMS Saved Views CRUD Tests
 10 tests covering create, read, update, delete, filtering and edge cases.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -40,22 +42,31 @@ def env():
 
 def _config(**kwargs):
     default = {
-        "scope_type": "site", "scope_ids": [1],
-        "date_from": "2025-01-01", "date_to": "2025-04-01",
-        "granularity": "daily", "mode": "aggregate", "metric": "kwh",
-        "show_weather": False, "show_quality": False,
+        "scope_type": "site",
+        "scope_ids": [1],
+        "date_from": "2025-01-01",
+        "date_to": "2025-04-01",
+        "granularity": "daily",
+        "mode": "aggregate",
+        "metric": "kwh",
+        "show_weather": False,
+        "show_quality": False,
     }
     default.update(kwargs)
     return json.dumps(default)
 
 
 class TestSavedViews:
-
     def test_create_view_201(self, env):
         client, db = env
-        r = client.post("/api/ems/views", params={
-            "name": "Vue Test", "config_json": _config(), "user_id": 1,
-        })
+        r = client.post(
+            "/api/ems/views",
+            params={
+                "name": "Vue Test",
+                "config_json": _config(),
+                "user_id": 1,
+            },
+        )
         assert r.status_code == 201
         data = r.json()
         assert data["name"] == "Vue Test"
@@ -63,9 +74,13 @@ class TestSavedViews:
 
     def test_get_view(self, env):
         client, db = env
-        r = client.post("/api/ems/views", params={
-            "name": "Vue A", "config_json": _config(),
-        })
+        r = client.post(
+            "/api/ems/views",
+            params={
+                "name": "Vue A",
+                "config_json": _config(),
+            },
+        )
         view_id = r.json()["id"]
 
         r2 = client.get(f"/api/ems/views/{view_id}")
@@ -85,9 +100,13 @@ class TestSavedViews:
 
     def test_update_name(self, env):
         client, db = env
-        r = client.post("/api/ems/views", params={
-            "name": "Old Name", "config_json": _config(),
-        })
+        r = client.post(
+            "/api/ems/views",
+            params={
+                "name": "Old Name",
+                "config_json": _config(),
+            },
+        )
         view_id = r.json()["id"]
 
         r2 = client.put(f"/api/ems/views/{view_id}", params={"name": "New Name"})
@@ -96,9 +115,13 @@ class TestSavedViews:
 
     def test_update_config(self, env):
         client, db = env
-        r = client.post("/api/ems/views", params={
-            "name": "Config View", "config_json": _config(),
-        })
+        r = client.post(
+            "/api/ems/views",
+            params={
+                "name": "Config View",
+                "config_json": _config(),
+            },
+        )
         view_id = r.json()["id"]
         new_cfg = _config(granularity="monthly", show_weather=True)
 
@@ -112,9 +135,13 @@ class TestSavedViews:
 
     def test_delete(self, env):
         client, db = env
-        r = client.post("/api/ems/views", params={
-            "name": "To Delete", "config_json": _config(),
-        })
+        r = client.post(
+            "/api/ems/views",
+            params={
+                "name": "To Delete",
+                "config_json": _config(),
+            },
+        )
         view_id = r.json()["id"]
 
         r2 = client.delete(f"/api/ems/views/{view_id}")
@@ -136,12 +163,22 @@ class TestSavedViews:
 
     def test_list_user_filter(self, env):
         client, db = env
-        client.post("/api/ems/views", params={
-            "name": "User1 View", "config_json": _config(), "user_id": 1,
-        })
-        client.post("/api/ems/views", params={
-            "name": "User2 View", "config_json": _config(), "user_id": 2,
-        })
+        client.post(
+            "/api/ems/views",
+            params={
+                "name": "User1 View",
+                "config_json": _config(),
+                "user_id": 1,
+            },
+        )
+        client.post(
+            "/api/ems/views",
+            params={
+                "name": "User2 View",
+                "config_json": _config(),
+                "user_id": 2,
+            },
+        )
 
         r = client.get("/api/ems/views", params={"user_id": 1})
         names = [v["name"] for v in r.json()]
@@ -152,13 +189,22 @@ class TestSavedViews:
         """Views with user_id=null are shared and visible to all users."""
         client, db = env
         # Create shared view (no user_id)
-        client.post("/api/ems/views", params={
-            "name": "Shared View", "config_json": _config(),
-        })
+        client.post(
+            "/api/ems/views",
+            params={
+                "name": "Shared View",
+                "config_json": _config(),
+            },
+        )
         # Create user-specific view
-        client.post("/api/ems/views", params={
-            "name": "Private View", "config_json": _config(), "user_id": 5,
-        })
+        client.post(
+            "/api/ems/views",
+            params={
+                "name": "Private View",
+                "config_json": _config(),
+                "user_id": 5,
+            },
+        )
 
         # User 5 should see both shared and own
         r = client.get("/api/ems/views", params={"user_id": 5})

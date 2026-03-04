@@ -8,6 +8,7 @@ Usage:
     python backend/scripts/referential/cli.py build-manifest
     python backend/scripts/referential/cli.py report
 """
+
 import argparse
 import json
 import sys
@@ -78,6 +79,7 @@ def cmd_validate(args):
         # ID format
         if not sid.replace("_", "").replace("0123456789", "").isalpha():
             import re
+
             if not re.match(r"^[a-z0-9_]+$", sid):
                 errors.append(f"{sid}: id must be [a-z0-9_]")
 
@@ -118,6 +120,7 @@ def cmd_validate(args):
         date_hint = src.get("date_hint")
         if date_hint:
             import re
+
             if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_hint):
                 errors.append(f"{sid}: date_hint must be YYYY-MM-DD: {date_hint}")
 
@@ -270,11 +273,11 @@ def cmd_report(args):
     # List all sources with latest hash
     print(f"\n  Detail sources ({stats['total_sources']}):")
     print(f"  {'ID':<50} {'Auth':<12} {'Energy':<12} {'Hash (12)':<14}")
-    print(f"  {'-'*50} {'-'*12} {'-'*12} {'-'*14}")
+    print(f"  {'-' * 50} {'-' * 12} {'-' * 12} {'-' * 14}")
     for sid, data in sorted(sources.items()):
         latest = data.get("latest", {})
         h = latest.get("sha256_raw", "")[:12]
-        print(f"  {sid:<50} {data.get('authority',''):<12} {data.get('energy',''):<12} {h:<14}")
+        print(f"  {sid:<50} {data.get('authority', ''):<12} {data.get('energy', ''):<12} {h:<14}")
 
     print()
     print("REPORT OK")
@@ -294,10 +297,7 @@ def _print_results(errors: list, warnings: list):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        prog="referential-cli",
-        description="PROMEOS Referentiel Tarifs & Taxes — CLI"
-    )
+    parser = argparse.ArgumentParser(prog="referential-cli", description="PROMEOS Referentiel Tarifs & Taxes — CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # validate

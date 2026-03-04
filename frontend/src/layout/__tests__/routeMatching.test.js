@@ -168,8 +168,13 @@ describe('matchRouteToModule — moduleLabel is always FR', () => {
   it('all moduleLabels are valid module labels', () => {
     const validLabels = NAV_MODULES.map((m) => m.label);
     const testPaths = [
-      '/', '/conformite', '/consommations', '/bill-intel',
-      '/patrimoine', '/sites/1', '/actions/99',
+      '/',
+      '/conformite',
+      '/consommations',
+      '/bill-intel',
+      '/patrimoine',
+      '/sites/1',
+      '/actions/99',
     ];
     for (const p of testPaths) {
       const { moduleLabel } = matchRouteToModule(p);

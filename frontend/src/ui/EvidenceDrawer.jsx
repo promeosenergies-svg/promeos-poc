@@ -17,7 +17,9 @@ function ConfidencePill({ level }) {
   const cfg = CONFIDENCE_CFG[level];
   if (!cfg) return null;
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -35,19 +37,17 @@ function SourceCard({ source }) {
         </span>
         {source.confidence && <ConfidencePill level={source.confidence} />}
       </div>
-      {source.details && (
-        <p className="text-xs text-gray-500 leading-relaxed">{source.details}</p>
-      )}
-      {source.freshness && (
-        <p className="text-[11px] text-gray-400 italic">{source.freshness}</p>
-      )}
+      {source.details && <p className="text-xs text-gray-500 leading-relaxed">{source.details}</p>}
+      {source.freshness && <p className="text-[11px] text-gray-400 italic">{source.freshness}</p>}
     </div>
   );
 }
 
 function SectionTitle({ children }) {
   return (
-    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{children}</p>
+    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      {children}
+    </p>
   );
 }
 
@@ -56,7 +56,7 @@ export default function EvidenceDrawer({ open, onClose, evidence }) {
 
   if (!evidence) return null;
 
-  const allLinks = (evidence.sources || []).flatMap(s => s.links || []);
+  const allLinks = (evidence.sources || []).flatMap((s) => s.links || []);
 
   return (
     <Drawer open={open} onClose={onClose} title="Pourquoi ce chiffre ?">
@@ -69,10 +69,14 @@ export default function EvidenceDrawer({ open, onClose, evidence }) {
           )}
           <div className="flex flex-wrap gap-2 mt-1">
             {evidence.scopeLabel && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{evidence.scopeLabel}</span>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {evidence.scopeLabel}
+              </span>
             )}
             {evidence.periodLabel && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{evidence.periodLabel}</span>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {evidence.periodLabel}
+              </span>
             )}
           </div>
         </div>
@@ -128,7 +132,10 @@ export default function EvidenceDrawer({ open, onClose, evidence }) {
               {allLinks.map((link, i) => (
                 <button
                   key={i}
-                  onClick={() => { onClose(); navigate(link.href); }}
+                  onClick={() => {
+                    onClose();
+                    navigate(link.href);
+                  }}
                   className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium
                     px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

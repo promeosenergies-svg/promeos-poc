@@ -2,8 +2,10 @@
 PROMEOS - Tests Soft Delete
 Covers: SoftDeleteMixin fields, restore, list filtering, get 404, tree exclusion.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -14,8 +16,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    Batiment, Compteur, not_deleted, TypeSite, TypeCompteur,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Batiment,
+    Compteur,
+    not_deleted,
+    TypeSite,
+    TypeCompteur,
 )
 from database import get_db
 from main import app
@@ -24,6 +34,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -46,6 +57,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -72,6 +84,7 @@ def _seed_org_hierarchy(db_session):
 # Tests
 # ========================================
 
+
 class TestSoftDeleteSetsFields:
     """Verify soft_delete() sets deleted_at, deleted_by, delete_reason correctly."""
 
@@ -79,8 +92,10 @@ class TestSoftDeleteSetsFields:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site = Site(
-            nom="Site A", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site A",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(site)
         db_session.flush()
@@ -102,8 +117,10 @@ class TestSoftDeleteSetsFields:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site = Site(
-            nom="Site B", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site B",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(site)
         db_session.flush()
@@ -123,8 +140,10 @@ class TestRestoreUnsetsFields:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site = Site(
-            nom="Site Restore", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Restore",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(site)
         db_session.flush()
@@ -149,12 +168,16 @@ class TestListSitesExcludesDeleted:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site_a = Site(
-            nom="Site Actif", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Actif",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         site_b = Site(
-            nom="Site Supprime", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Supprime",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add_all([site_a, site_b])
         db_session.flush()
@@ -176,8 +199,10 @@ class TestListSitesExcludesDeleted:
 
         for i in range(5):
             s = Site(
-                nom=f"Site {i}", type=TypeSite.BUREAU,
-                portefeuille_id=pf.id, actif=True,
+                nom=f"Site {i}",
+                type=TypeSite.BUREAU,
+                portefeuille_id=pf.id,
+                actif=True,
             )
             db_session.add(s)
         db_session.flush()
@@ -198,8 +223,10 @@ class TestGetSiteDeletedReturns404:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site = Site(
-            nom="Site Fantome", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Fantome",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(site)
         db_session.flush()
@@ -225,8 +252,10 @@ class TestTreeExcludesDeletedNodes:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site = Site(
-            nom="Site Parent", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Parent",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(site)
         db_session.flush()
@@ -234,11 +263,13 @@ class TestTreeExcludesDeletedNodes:
         bat_a = Batiment(site_id=site.id, nom="Bat A", surface_m2=500)
         bat_b = Batiment(site_id=site.id, nom="Bat B", surface_m2=300)
         cpt_a = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
             numero_serie="CPT-001",
         )
         cpt_b = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
             numero_serie="CPT-002",
         )
         db_session.add_all([bat_a, bat_b, cpt_a, cpt_b])
@@ -269,13 +300,17 @@ class TestTreeExcludesDeletedNodes:
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site_a = Site(
-            nom="Site OK", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site OK",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
             risque_financier_euro=1000,
         )
         site_b = Site(
-            nom="Site Deleted", type=TypeSite.BUREAU,
-            portefeuille_id=pf.id, actif=True,
+            nom="Site Deleted",
+            type=TypeSite.BUREAU,
+            portefeuille_id=pf.id,
+            actif=True,
             risque_financier_euro=5000,
         )
         db_session.add_all([site_a, site_b])

@@ -1,6 +1,7 @@
 """
 PROMEOS AI - Client IA (stub mode if no API key)
 """
+
 import os
 
 

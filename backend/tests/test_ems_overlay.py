@@ -2,7 +2,9 @@
 PROMEOS - EMS Overlay Mode Tests
 8 tests covering overlay series-per-site, max 8 sites cap, "Autres" bucket, labels.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -58,20 +60,21 @@ def _seed_readings(db, meter_id, days=3, kwh=10.0):
     readings = []
     for d in range(days):
         for h in range(24):
-            readings.append(MeterReading(
-                meter_id=meter_id,
-                timestamp=start + timedelta(days=d, hours=h),
-                frequency=FrequencyType.HOURLY,
-                value_kwh=kwh,
-                quality_score=0.95,
-                is_estimated=False,
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter_id,
+                    timestamp=start + timedelta(days=d, hours=h),
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=kwh,
+                    quality_score=0.95,
+                    is_estimated=False,
+                )
+            )
     db.bulk_save_objects(readings)
     db.flush()
 
 
 class TestOverlayMode:
-
     def test_overlay_two_sites(self, env):
         """Overlay mode produces one series per site."""
         client, db = env
@@ -82,11 +85,16 @@ class TestOverlayMode:
         _seed_readings(db, m1.id, days=2, kwh=10)
         _seed_readings(db, m2.id, days=2, kwh=5)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": f"{s1.id},{s2.id}",
-            "date_from": "2025-01-01", "date_to": "2025-01-03",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": f"{s1.id},{s2.id}",
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-03",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert len(data["series"]) == 2
@@ -102,11 +110,16 @@ class TestOverlayMode:
         _seed_readings(db, _seed_meter(db, s1.id, "M1").id, days=1)
         _seed_readings(db, _seed_meter(db, s2.id, "M2").id, days=1)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": f"{s1.id},{s2.id}",
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": f"{s1.id},{s2.id}",
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         labels = {s["label"] for s in r.json()["series"]}
         assert "Bureau Paris" in labels
         assert "Retail Lyon" in labels
@@ -117,11 +130,16 @@ class TestOverlayMode:
         s1 = _seed_site(db, "Solo Site")
         _seed_readings(db, _seed_meter(db, s1.id, "M1").id, days=2)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": str(s1.id),
-            "date_from": "2025-01-01", "date_to": "2025-01-03",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(s1.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-03",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         assert len(r.json()["series"]) == 1
 
     def test_overlay_aggregates_meters_within_site(self, env):
@@ -133,11 +151,16 @@ class TestOverlayMode:
         _seed_readings(db, m1.id, days=1, kwh=10)
         _seed_readings(db, m2.id, days=1, kwh=5)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": str(site.id),
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(site.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         series = r.json()["series"]
         assert len(series) == 1
         # Daily: (10 + 5) * 24 = 360
@@ -152,11 +175,16 @@ class TestOverlayMode:
             _seed_readings(db, _seed_meter(db, s.id, f"M{i}").id, days=1)
             site_ids.append(s.id)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": ",".join(str(x) for x in site_ids),
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": ",".join(str(x) for x in site_ids),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         assert len(r.json()["series"]) == 8
         keys = [s["key"] for s in r.json()["series"]]
         assert "others" not in keys
@@ -170,11 +198,16 @@ class TestOverlayMode:
             _seed_readings(db, _seed_meter(db, s.id, f"M{i}").id, days=1)
             site_ids.append(s.id)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": ",".join(str(x) for x in site_ids),
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": ",".join(str(x) for x in site_ids),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         series = r.json()["series"]
         assert len(series) == 9  # 8 main + 1 "Autres"
         assert series[-1]["key"] == "others"
@@ -190,11 +223,16 @@ class TestOverlayMode:
             _seed_readings(db, _seed_meter(db, s.id, f"M{i}").id, days=1)
             site_ids.append(s.id)
 
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": ",".join(str(x) for x in site_ids),
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": ",".join(str(x) for x in site_ids),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         series = r.json()["series"]
         assert len(series) == 9  # 8 main + "Autres"
         assert series[-1]["key"] == "others"
@@ -204,9 +242,14 @@ class TestOverlayMode:
         """Overlay is a valid mode parameter (no 400)."""
         client, db = env
         s = _seed_site(db, "Test")
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": str(s.id),
-            "date_from": "2025-01-01", "date_to": "2025-01-02",
-            "granularity": "daily", "mode": "overlay",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(s.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-02",
+                "granularity": "daily",
+                "mode": "overlay",
+            },
+        )
         assert r.status_code == 200

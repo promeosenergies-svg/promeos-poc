@@ -29,17 +29,39 @@ import { computeActionableLevers } from '../../models/leverEngineModel';
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
 const makeKpis = (ov = {}) => ({
-  total: 10, conformes: 7, nonConformes: 2, aRisque: 1, risqueTotal: 30000, ...ov,
+  total: 10,
+  conformes: 7,
+  nonConformes: 2,
+  aRisque: 1,
+  risqueTotal: 30000,
+  ...ov,
 });
 
 const makeBilling = (ov = {}) => ({
-  total_invoices: 50, total_eur: 500000, total_loss_eur: 8000, invoices_with_anomalies: 5, ...ov,
+  total_invoices: 50,
+  total_eur: 500000,
+  total_loss_eur: 8000,
+  invoices_with_anomalies: 5,
+  ...ov,
 });
 
 const makeComplianceSignals = () => ({
   signals: [
-    { source: 'operat', code: 'DT-2030', severity: 'critical', due_date: '2030-12-31', proof_expected: 'Declaration OPERAT', label: 'Echeance 2030' },
-    { source: 'bacs', code: 'BACS-CL1', severity: 'high', proof_expected: 'Certificat BACS classe A', label: 'GTB classe A' },
+    {
+      source: 'operat',
+      code: 'DT-2030',
+      severity: 'critical',
+      due_date: '2030-12-31',
+      proof_expected: 'Declaration OPERAT',
+      label: 'Echeance 2030',
+    },
+    {
+      source: 'bacs',
+      code: 'BACS-CL1',
+      severity: 'high',
+      proof_expected: 'Certificat BACS classe A',
+      label: 'GTB classe A',
+    },
     { source: 'decret_tertiaire', code: 'DT-SUIVI', severity: 'medium', label: 'Suivi annuel' },
   ],
 });
@@ -110,7 +132,9 @@ describe('BillingInsightsContract', () => {
     expect(normalizeBillingInsights(null)).toBe(EMPTY_BILLING_INSIGHTS);
     expect(normalizeBillingInsights(undefined)).toBe(EMPTY_BILLING_INSIGHTS);
     expect(normalizeBillingInsights(42)).toBe(EMPTY_BILLING_INSIGHTS);
-    expect(normalizeBillingInsights({ anomalies_count: 0, total_loss_eur: 0 })).toBe(EMPTY_BILLING_INSIGHTS);
+    expect(normalizeBillingInsights({ anomalies_count: 0, total_loss_eur: 0 })).toBe(
+      EMPTY_BILLING_INSIGHTS
+    );
   });
 
   it('clampe les valeurs negatives a 0', () => {
@@ -240,7 +264,11 @@ describe('Lever Engine V35 — billingInsights enrichment', () => {
   });
 
   it('prend le max entre billingInsights.total_loss et billingSummary.total_loss', () => {
-    const insights = normalizeBillingInsights({ anomalies_count: 2, total_loss_eur: 15000, confidence: 'medium' });
+    const insights = normalizeBillingInsights({
+      anomalies_count: 2,
+      total_loss_eur: 15000,
+      confidence: 'medium',
+    });
     const result = computeActionableLevers({
       kpis: makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }),
       billingSummary: { total_loss_eur: 8000, total_eur: 0 },
@@ -269,24 +297,33 @@ describe('Lever Engine V35 — billingInsights enrichment', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('GUARD: V35 contracts sont des modules purs', () => {
-  const compSrc = readFileSync(resolve(__dirname, '..', '..', 'models', 'complianceSignalsContract.js'), 'utf8');
-  const billSrc = readFileSync(resolve(__dirname, '..', '..', 'models', 'billingInsightsContract.js'), 'utf8');
+  const compSrc = readFileSync(
+    resolve(__dirname, '..', '..', 'models', 'complianceSignalsContract.js'),
+    'utf8'
+  );
+  const billSrc = readFileSync(
+    resolve(__dirname, '..', '..', 'models', 'billingInsightsContract.js'),
+    'utf8'
+  );
 
-  it('complianceSignalsContract n\'importe pas React', () => {
+  it("complianceSignalsContract n'importe pas React", () => {
     expect(compSrc).not.toContain("from 'react'");
   });
 
-  it('billingInsightsContract n\'importe pas React', () => {
+  it("billingInsightsContract n'importe pas React", () => {
     expect(billSrc).not.toContain("from 'react'");
   });
 
-  it('aucun contract n\'importe d\'API', () => {
+  it("aucun contract n'importe d'API", () => {
     expect(compSrc).not.toContain('services/api');
     expect(billSrc).not.toContain('services/api');
   });
 
   it('leverEngineModel importe les 2 contracts', () => {
-    const engineSrc = readFileSync(resolve(__dirname, '..', '..', 'models', 'leverEngineModel.js'), 'utf8');
+    const engineSrc = readFileSync(
+      resolve(__dirname, '..', '..', 'models', 'leverEngineModel.js'),
+      'utf8'
+    );
     expect(engineSrc).toContain('complianceSignalsContract');
     expect(engineSrc).toContain('billingInsightsContract');
   });

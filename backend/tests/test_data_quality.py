@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Test Data Quality Engine
 Tests for gap detection, duplicates, DST, negatives, completeness.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -20,10 +22,7 @@ def _make_readings(count=24, interval_minutes=60, start=None, value=10.0):
     """Generate uniform readings."""
     if start is None:
         start = datetime(2025, 1, 1, 0, 0)
-    return [
-        {"timestamp": start + timedelta(minutes=i * interval_minutes), "value_kwh": value}
-        for i in range(count)
-    ]
+    return [{"timestamp": start + timedelta(minutes=i * interval_minutes), "value_kwh": value} for i in range(count)]
 
 
 class TestCompleteness:
@@ -38,9 +37,7 @@ class TestCompleteness:
         # Only 12 readings for a 24-hour period
         readings = _make_readings(12, start=start)
         result = engine.compute(
-            readings, interval_minutes=60,
-            period_start=start,
-            period_end=start + timedelta(hours=23)
+            readings, interval_minutes=60, period_start=start, period_end=start + timedelta(hours=23)
         )
         assert result["completeness_pct"] < 60
 
@@ -156,9 +153,7 @@ class TestQualityLevel:
         for r in readings[:5]:
             r["value_kwh"] = -1.0
         result = engine.compute(
-            readings, interval_minutes=60,
-            period_start=start,
-            period_end=start + timedelta(hours=100)
+            readings, interval_minutes=60, period_start=start, period_end=start + timedelta(hours=100)
         )
         assert result["quality_level"] in ("poor", "fair")
 

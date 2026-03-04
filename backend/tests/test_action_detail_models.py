@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint V5.0: Action Detail Models + GET Detail Endpoint
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -12,9 +14,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ActionItem, ActionSourceType, ActionStatus,
-    ActionEvent, ActionComment, ActionEvidence,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ActionItem,
+    ActionSourceType,
+    ActionStatus,
+    ActionEvent,
+    ActionComment,
+    ActionEvidence,
     TypeSite,
 )
 from database import get_db
@@ -42,6 +52,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -82,6 +93,7 @@ def _create_action(db, org, site, title="Test Action"):
 # ========================================
 # Model relationship tests
 # ========================================
+
 
 class TestActionDetailModels:
     def test_create_action_event(self, db):
@@ -144,6 +156,7 @@ class TestActionDetailModels:
     def test_new_columns_persist(self, db):
         """New V5.0 columns (category, description, realized_gain_eur, etc.) persist."""
         from datetime import date, datetime
+
         org, site = _create_org_site(db)
         item = ActionItem(
             org_id=org.id,
@@ -175,13 +188,17 @@ class TestActionDetailModels:
     def test_idempotency_key_unique(self, db):
         """idempotency_key unique constraint is enforced."""
         from sqlalchemy.exc import IntegrityError
+
         org, site = _create_org_site(db)
 
         item1 = ActionItem(
-            org_id=org.id, site_id=site.id,
+            org_id=org.id,
+            site_id=site.id,
             source_type=ActionSourceType.MANUAL,
-            source_id="a1", source_key="k1",
-            title="Action 1", priority=3,
+            source_id="a1",
+            source_key="k1",
+            title="Action 1",
+            priority=3,
             status=ActionStatus.OPEN,
             idempotency_key="unique_key_1",
         )
@@ -189,10 +206,13 @@ class TestActionDetailModels:
         db.commit()
 
         item2 = ActionItem(
-            org_id=org.id, site_id=site.id,
+            org_id=org.id,
+            site_id=site.id,
             source_type=ActionSourceType.MANUAL,
-            source_id="a2", source_key="k2",
-            title="Action 2", priority=3,
+            source_id="a2",
+            source_key="k2",
+            title="Action 2",
+            priority=3,
             status=ActionStatus.OPEN,
             idempotency_key="unique_key_1",  # duplicate
         )
@@ -205,6 +225,7 @@ class TestActionDetailModels:
 # ========================================
 # GET /api/actions/{action_id} endpoint tests
 # ========================================
+
 
 class TestGetActionDetail:
     def test_detail_returns_full_data(self, db, client):

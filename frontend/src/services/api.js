@@ -586,9 +586,16 @@ export const recomputeSegmentation = () => api.post('/segmentation/recompute').t
 export const getSegmentationNextStep = (portfolioId) =>
   api.get('/segmentation/next-step', { params: { portfolio_id: portfolioId } }).then((r) => r.data);
 export const createActionFromRecommendation = (recommendationKey, portfolioId) =>
-  api.post('/segmentation/actions/from-recommendation', { recommendation_key: recommendationKey, portfolio_id: portfolioId }).then((r) => r.data);
+  api
+    .post('/segmentation/actions/from-recommendation', {
+      recommendation_key: recommendationKey,
+      portfolio_id: portfolioId,
+    })
+    .then((r) => r.data);
 export const createActionFromNextStep = (portfolioId) =>
-  api.post('/segmentation/actions/from-next-step', { portfolio_id: portfolioId }).then((r) => r.data);
+  api
+    .post('/segmentation/actions/from-next-step', { portfolio_id: portfolioId })
+    .then((r) => r.data);
 
 // ========================================
 // COMPLIANCE (Rules-based)
@@ -626,7 +633,11 @@ export const getSiteWorkPackages = (siteId) =>
 export const createWorkPackage = (siteId, data) =>
   api.post(`/compliance/sites/${siteId}/packages`, data).then((r) => r.data);
 export const createCeeDossier = (siteId, workPackageId) =>
-  api.post(`/compliance/sites/${siteId}/cee/dossier`, null, { params: { work_package_id: workPackageId } }).then((r) => r.data);
+  api
+    .post(`/compliance/sites/${siteId}/cee/dossier`, null, {
+      params: { work_package_id: workPackageId },
+    })
+    .then((r) => r.data);
 export const advanceCeeStep = (dossierId, step) =>
   api.patch(`/compliance/cee/dossier/${dossierId}/step`, { step }).then((r) => r.data);
 export const getMvSummary = (siteId) =>
@@ -847,7 +858,9 @@ export const getPurchasePreferences = (params = {}) =>
 export const putPurchasePreferences = (data) =>
   api.put('/purchase/preferences', data).then((r) => r.data);
 export const computePurchaseScenarios = (siteId, { report_pct } = {}) =>
-  api.post(`/purchase/compute/${siteId}`, null, { params: report_pct != null ? { report_pct } : {} }).then((r) => r.data);
+  api
+    .post(`/purchase/compute/${siteId}`, null, { params: report_pct != null ? { report_pct } : {} })
+    .then((r) => r.data);
 export const getPurchaseResults = (siteId) =>
   api.get(`/purchase/results/${siteId}`).then((r) => r.data);
 export const acceptPurchaseResult = (resultId) =>
@@ -866,12 +879,19 @@ export const seedWowDirty = () => api.post('/purchase/seed-wow-dirty').then((r) 
 // skipSiteHeader: portfolio = multi-sites, never filter by single site scope
 export const computePortfolio = (orgId) =>
   api
-    .post('/purchase/compute', null, { params: { org_id: orgId, scope: 'org' }, skipSiteHeader: true })
+    .post('/purchase/compute', null, {
+      params: { org_id: orgId, scope: 'org' },
+      skipSiteHeader: true,
+    })
     .then((r) => r.data);
 export const getPortfolioResults = (orgId) =>
-  api.get('/purchase/results', { params: { org_id: orgId }, skipSiteHeader: true }).then((r) => r.data);
+  api
+    .get('/purchase/results', { params: { org_id: orgId }, skipSiteHeader: true })
+    .then((r) => r.data);
 export const getPurchaseRenewals = (orgId = null) =>
-  api.get('/purchase/renewals', { params: orgId ? { org_id: orgId } : {}, skipSiteHeader: true }).then((r) => r.data);
+  api
+    .get('/purchase/renewals', { params: orgId ? { org_id: orgId } : {}, skipSiteHeader: true })
+    .then((r) => r.data);
 export const getPurchaseHistory = (siteId) =>
   api.get(`/purchase/history/${siteId}`).then((r) => r.data);
 export const getPurchaseActions = (orgId = null) =>
@@ -1397,21 +1417,39 @@ export const getPortfolioSites = (params = {}) =>
 export const getConsumptionContext = (siteId, days = 30) =>
   _cachedGet(`/consumption-context/site/${siteId}`, { params: { days } }).then((r) => r.data);
 export const getConsumptionProfile = (siteId, days = 30) =>
-  _cachedGet(`/consumption-context/site/${siteId}/profile`, { params: { days } }).then((r) => r.data);
+  _cachedGet(`/consumption-context/site/${siteId}/profile`, { params: { days } }).then(
+    (r) => r.data
+  );
 export const getConsumptionActivity = (siteId) =>
   _cachedGet(`/consumption-context/site/${siteId}/activity`).then((r) => r.data);
 export const getConsumptionAnomalies = (siteId, days = 30) =>
-  _cachedGet(`/consumption-context/site/${siteId}/anomalies`, { params: { days } }).then((r) => r.data);
+  _cachedGet(`/consumption-context/site/${siteId}/anomalies`, { params: { days } }).then(
+    (r) => r.data
+  );
 export const refreshConsumptionDiagnose = (siteId, days = 30) =>
-  api.post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } }).then((r) => r.data);
+  api
+    .post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } })
+    .then((r) => r.data);
 export const suggestSchedule = (siteId) =>
   api.get(`/consumption-context/site/${siteId}/suggest-schedule`).then((r) => r.data);
 export const getDetectedSchedule = (siteId, windowDays = 56) =>
-  api.get(`/consumption-context/site/${siteId}/activity/detected`, { params: { window_days: windowDays } }).then((r) => r.data);
+  api
+    .get(`/consumption-context/site/${siteId}/activity/detected`, {
+      params: { window_days: windowDays },
+    })
+    .then((r) => r.data);
 export const compareSchedules = (siteId, windowDays = 56) =>
-  api.get(`/consumption-context/site/${siteId}/activity/compare`, { params: { window_days: windowDays } }).then((r) => r.data);
+  api
+    .get(`/consumption-context/site/${siteId}/activity/compare`, {
+      params: { window_days: windowDays },
+    })
+    .then((r) => r.data);
 export const applyDetectedSchedule = (siteId, windowDays = 56) =>
-  api.post(`/consumption-context/site/${siteId}/activity/apply_detected`, null, { params: { window_days: windowDays } }).then((r) => r.data);
+  api
+    .post(`/consumption-context/site/${siteId}/activity/apply_detected`, null, {
+      params: { window_days: windowDays },
+    })
+    .then((r) => r.data);
 export const getPortfolioBehaviorSummary = (days = 30) =>
   _cachedGet('/consumption-context/portfolio/summary', { params: { days } }).then((r) => r.data);
 
@@ -1425,39 +1463,105 @@ export const getMetaVersion = () =>
 // ========================================
 // V96: Payment Rules
 // ========================================
-export const getPaymentRules = (params = {}) => api.get('/patrimoine/payment-rules', { params }).then(r => r.data);
-export const createPaymentRule = (data) => api.post('/patrimoine/payment-rules', data).then(r => r.data);
-export const updatePaymentRule = (id, data) => api.put(`/patrimoine/payment-rules/${id}`, data).then(r => r.data);
-export const deletePaymentRule = (id) => api.delete(`/patrimoine/payment-rules/${id}`).then(r => r.data);
-export const applyPaymentRulesBulk = (data) => api.post('/patrimoine/payment-rules/apply-bulk', data).then(r => r.data);
-export const getSitePaymentInfo = (siteId) => api.get(`/patrimoine/sites/${siteId}/payment-info`).then(r => r.data);
+export const getPaymentRules = (params = {}) =>
+  api.get('/patrimoine/payment-rules', { params }).then((r) => r.data);
+export const createPaymentRule = (data) =>
+  api.post('/patrimoine/payment-rules', data).then((r) => r.data);
+export const updatePaymentRule = (id, data) =>
+  api.put(`/patrimoine/payment-rules/${id}`, data).then((r) => r.data);
+export const deletePaymentRule = (id) =>
+  api.delete(`/patrimoine/payment-rules/${id}`).then((r) => r.data);
+export const applyPaymentRulesBulk = (data) =>
+  api.post('/patrimoine/payment-rules/apply-bulk', data).then((r) => r.data);
+export const getSitePaymentInfo = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/payment-info`).then((r) => r.data);
 
 // V96: Reconciliation
-export const getReconciliation = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation`).then(r => r.data);
-export const getPortfolioReconciliation = (params = {}) => api.get('/patrimoine/portfolio/reconciliation', { params }).then(r => r.data);
+export const getReconciliation = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/reconciliation`).then((r) => r.data);
+export const getPortfolioReconciliation = (params = {}) =>
+  api.get('/patrimoine/portfolio/reconciliation', { params }).then((r) => r.data);
 
 // V96: Contracts (if not already exported above)
-export const getPatrimoineContracts = (params = {}) => api.get('/patrimoine/contracts', { params }).then(r => r.data);
+export const getPatrimoineContracts = (params = {}) =>
+  api.get('/patrimoine/contracts', { params }).then((r) => r.data);
 
 // V97: Resolution Engine
-export const applyReconciliationFix = (siteId, data) => api.post(`/patrimoine/sites/${siteId}/reconciliation/fix`, data).then(r => r.data);
-export const getReconciliationHistory = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/history`).then(r => r.data);
-export const getReconciliationEvidence = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence`).then(r => r.data);
-export const getReconciliationEvidenceCsv = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/csv`, { responseType: 'blob' }).then(r => r.data);
-export const getPortfolioReconciliationCsv = (params = {}) => api.get('/patrimoine/portfolio/reconciliation/evidence/csv', { params, responseType: 'blob' }).then(r => r.data);
+export const applyReconciliationFix = (siteId, data) =>
+  api.post(`/patrimoine/sites/${siteId}/reconciliation/fix`, data).then((r) => r.data);
+export const getReconciliationHistory = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/reconciliation/history`).then((r) => r.data);
+export const getReconciliationEvidence = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence`).then((r) => r.data);
+export const getReconciliationEvidenceCsv = (siteId) =>
+  api
+    .get(`/patrimoine/sites/${siteId}/reconciliation/evidence/csv`, { responseType: 'blob' })
+    .then((r) => r.data);
+export const getPortfolioReconciliationCsv = (params = {}) =>
+  api
+    .get('/patrimoine/portfolio/reconciliation/evidence/csv', { params, responseType: 'blob' })
+    .then((r) => r.data);
 
 // V98: Guidance Layer
-export const getReconciliationEvidenceSummary = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/summary`).then(r => r.data);
+export const getReconciliationEvidenceSummary = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/summary`).then((r) => r.data);
 
 // V99: Contract Renewal Radar
-export const getContractRadar = (params = {}) => api.get('/contracts/radar', { params, skipSiteHeader: true }).then(r => r.data);
-export const getContractPurchaseScenarios = (contractId) => api.get(`/contracts/${contractId}/purchase-scenarios`).then(r => r.data);
-export const createActionsFromScenario = (contractId, scenario) => api.post(`/contracts/${contractId}/actions/from-scenario`, { scenario }).then(r => r.data);
-export const getContractScenarioSummary = (contractId) => api.get(`/contracts/${contractId}/scenario-summary`).then(r => r.data);
+export const getContractRadar = (params = {}) =>
+  api.get('/contracts/radar', { params, skipSiteHeader: true }).then((r) => r.data);
+export const getContractPurchaseScenarios = (contractId) =>
+  api.get(`/contracts/${contractId}/purchase-scenarios`).then((r) => r.data);
+export const createActionsFromScenario = (contractId, scenario) =>
+  api.post(`/contracts/${contractId}/actions/from-scenario`, { scenario }).then((r) => r.data);
+export const getContractScenarioSummary = (contractId) =>
+  api.get(`/contracts/${contractId}/scenario-summary`).then((r) => r.data);
 
 // V100: Offer Pricing V1 + Reconciliation
-export const quoteOffer = (params) => api.post('/purchase/quote-offer', params).then(r => r.data);
-export const quoteMultiStrategy = (params) => api.post('/purchase/quote-multi', params).then(r => r.data);
-export const reconcileOfferVsInvoice = (params) => api.post('/purchase/reconcile', params).then(r => r.data);
+export const quoteOffer = (params) => api.post('/purchase/quote-offer', params).then((r) => r.data);
+export const quoteMultiStrategy = (params) =>
+  api.post('/purchase/quote-multi', params).then((r) => r.data);
+export const reconcileOfferVsInvoice = (params) =>
+  api.post('/purchase/reconcile', params).then((r) => r.data);
+
+// V113: Action Templates
+export const getActionTemplates = (category = null) =>
+  _cachedGet('/action-templates', { params: category ? { category } : {} }).then((r) => r.data);
+export const seedActionTemplates = () => api.post('/action-templates/seed').then((r) => r.data);
+
+// V113: Energy Copilot
+export const getCopilotActions = (orgId, params = {}) =>
+  _cachedGet('/copilot/actions', { params: { org_id: orgId, ...params } }).then((r) => r.data);
+export const runCopilot = (orgId) =>
+  api.post('/copilot/run', { org_id: orgId }).then((r) => r.data);
+export const validateCopilotAction = (actionId) =>
+  api.post(`/copilot/actions/${actionId}/validate`).then((r) => r.data);
+export const rejectCopilotAction = (actionId, reason = '') =>
+  api.post(`/copilot/actions/${actionId}/reject`, { reason }).then((r) => r.data);
+
+// V113: OPERAT Export
+export const exportOperatCsv = (orgId, year, efaIds = null) =>
+  api
+    .post('/operat/export', { org_id: orgId, year, efa_ids: efaIds }, { responseType: 'blob' })
+    .then((r) => r.data);
+export const previewOperatExport = (orgId, year, efaIds = null) =>
+  api.post('/operat/export/preview', { org_id: orgId, year, efa_ids: efaIds }).then((r) => r.data);
+
+// V113: Data Quality Dashboard
+export const getDataQualityCompleteness = (orgId) =>
+  _cachedGet('/data-quality/completeness', { params: { org_id: orgId } }).then((r) => r.data);
+export const getDataQualitySite = (siteId) =>
+  _cachedGet(`/data-quality/completeness/${siteId}`).then((r) => r.data);
+
+// V113: Onboarding Stepper
+export const getOnboardingProgress = (orgId) =>
+  _cachedGet('/onboarding-progress', { params: { org_id: orgId } }).then((r) => r.data);
+export const updateOnboardingStep = (orgId, step, done = true) =>
+  api
+    .patch('/onboarding-progress/step', { step, done }, { params: { org_id: orgId } })
+    .then((r) => r.data);
+export const dismissOnboarding = (orgId) =>
+  api.post('/onboarding-progress/dismiss', null, { params: { org_id: orgId } }).then((r) => r.data);
+export const autoDetectOnboarding = (orgId) =>
+  api.post('/onboarding-progress/auto', null, { params: { org_id: orgId } }).then((r) => r.data);
 
 export default api;

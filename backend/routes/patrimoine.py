@@ -3,6 +3,7 @@ PROMEOS - Routes Patrimoine (WORLD CLASS)
 VNext pipeline: template, import, quality gate, corrections, activation, export.
 CRUD Sites/Compteurs/Contrats + QA scoring.
 """
+
 import csv
 import io
 import json
@@ -17,24 +18,53 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Organisation, EntiteJuridique, Portefeuille,
-    StagingBatch, StagingSite, StagingCompteur,
-    QualityFinding, ImportSourceType, StagingStatus, QualityRuleSeverity,
-    ActivationLog, ActivationLogStatus,
-    Site, DeliveryPoint, not_deleted,
-    Compteur, TypeSite, TypeCompteur, EnergyVector,
-    EnergyContract, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    ImportSourceType,
+    StagingStatus,
+    QualityRuleSeverity,
+    ActivationLog,
+    ActivationLogStatus,
+    Site,
+    DeliveryPoint,
+    not_deleted,
+    Compteur,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
+    EnergyContract,
+    BillingEnergyType,
     StatutConformite,
-    PaymentRule, PaymentRuleLevel, ContractIndexation, ContractStatus,
+    PaymentRule,
+    PaymentRuleLevel,
+    ContractIndexation,
+    ContractStatus,
 )
 from services.patrimoine_service import (
-    create_staging_batch, import_csv_to_staging, import_invoices_to_staging,
-    get_staging_summary, run_quality_gate, apply_fix, activate_batch,
-    get_diff_plan, compute_content_hash, abandon_batch,
+    create_staging_batch,
+    import_csv_to_staging,
+    import_invoices_to_staging,
+    get_staging_summary,
+    run_quality_gate,
+    apply_fix,
+    activate_batch,
+    get_diff_plan,
+    compute_content_hash,
+    abandon_batch,
 )
 from services.import_mapping import (
-    CANONICAL_COLUMNS, generate_csv_template, generate_xlsx_template,
-    map_headers, detect_encoding, detect_delimiter, normalize_column_name,
+    CANONICAL_COLUMNS,
+    generate_csv_template,
+    generate_xlsx_template,
+    map_headers,
+    detect_encoding,
+    detect_delimiter,
+    normalize_column_name,
     get_mapping_report,
 )
 from middleware.auth import get_optional_auth, get_portfolio_optional_auth, AuthContext
@@ -47,6 +77,7 @@ router = APIRouter(prefix="/api/patrimoine", tags=["Patrimoine"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class FixRequest(BaseModel):
     fix_type: str
@@ -161,9 +192,11 @@ class ReconciliationFixRequest(BaseModel):
 # Multi-org scope helpers
 # ========================================
 
+
 def _get_org_id(request: Request, auth: Optional[AuthContext], db: Session) -> int:
     """Resolve org_id via centralized scope chain (DEMO_MODE-aware)."""
     from services.scope_utils import resolve_org_id
+
     return resolve_org_id(request, auth, db)
 
 
@@ -243,6 +276,7 @@ def _load_contract_with_org_check(db: Session, contract_id: int, org_id: int) ->
 # Template download
 # ========================================
 
+
 @router.get("/import/template")
 def import_template(
     format: str = Query("xlsx", description="xlsx or csv"),
@@ -286,6 +320,7 @@ def import_template_columns():
 # Import endpoints
 # ========================================
 
+
 @router.post("/staging/import")
 async def staging_import(
     request: Request,
@@ -311,11 +346,15 @@ async def staging_import(
         source_type = ImportSourceType.CSV
 
     # Check for duplicate import (same content hash, same org)
-    existing = db.query(StagingBatch).filter(
-        StagingBatch.content_hash == content_hash,
-        StagingBatch.org_id == org_id,
-        StagingBatch.status != StagingStatus.ABANDONED,
-    ).first()
+    existing = (
+        db.query(StagingBatch)
+        .filter(
+            StagingBatch.content_hash == content_hash,
+            StagingBatch.org_id == org_id,
+            StagingBatch.status != StagingStatus.ABANDONED,
+        )
+        .first()
+    )
     if existing:
         summary = get_staging_summary(db, existing.id)
         return {
@@ -404,8 +443,14 @@ def staging_import_invoices(
 # Quality gate & corrections
 # ========================================
 
+
 @router.get("/staging/{batch_id}/summary")
-def staging_summary(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_summary(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Get staging batch summary stats."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -441,11 +486,16 @@ def staging_rows(
         query = query.filter(StagingSite.skip.is_(False))
     elif status == "error":
         # Sites with unresolved findings
-        error_site_ids = db.query(QualityFinding.staging_site_id).filter(
-            QualityFinding.batch_id == batch_id,
-            QualityFinding.resolved.is_(False),
-            QualityFinding.staging_site_id.isnot(None),
-        ).distinct().all()
+        error_site_ids = (
+            db.query(QualityFinding.staging_site_id)
+            .filter(
+                QualityFinding.batch_id == batch_id,
+                QualityFinding.resolved.is_(False),
+                QualityFinding.staging_site_id.isnot(None),
+            )
+            .distinct()
+            .all()
+        )
         error_ids = [r[0] for r in error_site_ids]
         query = query.filter(StagingSite.id.in_(error_ids)) if error_ids else query.filter(False)
 
@@ -453,20 +503,24 @@ def staging_rows(
     if q:
         search = f"%{q}%"
         query = query.filter(
-            (StagingSite.nom.ilike(search)) |
-            (StagingSite.adresse.ilike(search)) |
-            (StagingSite.ville.ilike(search)) |
-            (StagingSite.siret.ilike(search))
+            (StagingSite.nom.ilike(search))
+            | (StagingSite.adresse.ilike(search))
+            | (StagingSite.ville.ilike(search))
+            | (StagingSite.siret.ilike(search))
         )
 
     total = query.count()
     sites = query.order_by(StagingSite.row_number).offset((page - 1) * page_size).limit(page_size).all()
 
     # Get findings indexed by staging_site_id
-    all_findings = db.query(QualityFinding).filter(
-        QualityFinding.batch_id == batch_id,
-        QualityFinding.resolved.is_(False),
-    ).all()
+    all_findings = (
+        db.query(QualityFinding)
+        .filter(
+            QualityFinding.batch_id == batch_id,
+            QualityFinding.resolved.is_(False),
+        )
+        .all()
+    )
     site_findings = {}
     for f in all_findings:
         if f.staging_site_id:
@@ -474,39 +528,45 @@ def staging_rows(
 
     rows = []
     for ss in sites:
-        compteurs = db.query(StagingCompteur).filter(
-            StagingCompteur.staging_site_id == ss.id,
-        ).all()
+        compteurs = (
+            db.query(StagingCompteur)
+            .filter(
+                StagingCompteur.staging_site_id == ss.id,
+            )
+            .all()
+        )
 
         findings_for_site = site_findings.get(ss.id, [])
 
-        rows.append({
-            "id": ss.id,
-            "row_number": ss.row_number,
-            "nom": ss.nom,
-            "adresse": ss.adresse,
-            "code_postal": ss.code_postal,
-            "ville": ss.ville,
-            "surface_m2": ss.surface_m2,
-            "type_site": ss.type_site,
-            "siret": ss.siret,
-            "naf_code": ss.naf_code,
-            "skip": ss.skip,
-            "target_site_id": ss.target_site_id,
-            "issues_count": len(findings_for_site),
-            "compteurs": [
-                {
-                    "id": sc.id,
-                    "row_number": sc.row_number,
-                    "numero_serie": sc.numero_serie,
-                    "meter_id": sc.meter_id,
-                    "type_compteur": sc.type_compteur,
-                    "puissance_kw": sc.puissance_kw,
-                    "skip": sc.skip,
-                }
-                for sc in compteurs
-            ],
-        })
+        rows.append(
+            {
+                "id": ss.id,
+                "row_number": ss.row_number,
+                "nom": ss.nom,
+                "adresse": ss.adresse,
+                "code_postal": ss.code_postal,
+                "ville": ss.ville,
+                "surface_m2": ss.surface_m2,
+                "type_site": ss.type_site,
+                "siret": ss.siret,
+                "naf_code": ss.naf_code,
+                "skip": ss.skip,
+                "target_site_id": ss.target_site_id,
+                "issues_count": len(findings_for_site),
+                "compteurs": [
+                    {
+                        "id": sc.id,
+                        "row_number": sc.row_number,
+                        "numero_serie": sc.numero_serie,
+                        "meter_id": sc.meter_id,
+                        "type_compteur": sc.type_compteur,
+                        "puissance_kw": sc.puissance_kw,
+                        "skip": sc.skip,
+                    }
+                    for sc in compteurs
+                ],
+            }
+        )
 
     return {
         "total": total,
@@ -564,7 +624,12 @@ def staging_issues(
 
 
 @router.post("/staging/{batch_id}/validate")
-def staging_validate(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_validate(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Run quality gate on staging batch."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -585,7 +650,13 @@ def staging_validate(batch_id: int, request: Request, db: Session = Depends(get_
 
 
 @router.put("/staging/{batch_id}/fix")
-def staging_fix(batch_id: int, request: Request, body: FixRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_fix(
+    batch_id: int,
+    request: Request,
+    body: FixRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Apply a correction to staging data."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -596,7 +667,13 @@ def staging_fix(batch_id: int, request: Request, body: FixRequest, db: Session =
 
 
 @router.put("/staging/{batch_id}/fix/bulk")
-def staging_fix_bulk(batch_id: int, request: Request, body: BulkFixRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_fix_bulk(
+    batch_id: int,
+    request: Request,
+    body: BulkFixRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Apply multiple corrections in a single transaction."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -615,7 +692,12 @@ def staging_fix_bulk(batch_id: int, request: Request, body: BulkFixRequest, db: 
 
 
 @router.post("/staging/{batch_id}/autofix")
-def staging_autofix(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_autofix(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Apply safe auto-corrections to staging data.
 
     Safe fixes:
@@ -631,10 +713,14 @@ def staging_autofix(batch_id: int, request: Request, db: Session = Depends(get_d
     fixes_applied = 0
 
     # Fix 1: Trim + normalize staging sites
-    sites = db.query(StagingSite).filter(
-        StagingSite.batch_id == batch_id,
-        StagingSite.skip.is_(False),
-    ).all()
+    sites = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == batch_id,
+            StagingSite.skip.is_(False),
+        )
+        .all()
+    )
 
     for ss in sites:
         changed = False
@@ -654,10 +740,14 @@ def staging_autofix(batch_id: int, request: Request, db: Session = Depends(get_d
             fixes_applied += 1
 
     # Fix 2: Normalize compteur types + trim
-    compteurs = db.query(StagingCompteur).filter(
-        StagingCompteur.batch_id == batch_id,
-        StagingCompteur.skip.is_(False),
-    ).all()
+    compteurs = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.batch_id == batch_id,
+            StagingCompteur.skip.is_(False),
+        )
+        .all()
+    )
 
     for sc in compteurs:
         changed = False
@@ -688,7 +778,12 @@ def staging_autofix(batch_id: int, request: Request, db: Session = Depends(get_d
 
 
 @router.delete("/staging/{batch_id}")
-def staging_abandon(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_abandon(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Abandon a staging batch."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -705,8 +800,15 @@ def staging_abandon(batch_id: int, request: Request, db: Session = Depends(get_d
 # Activation
 # ========================================
 
+
 @router.post("/staging/{batch_id}/activate")
-def staging_activate(batch_id: int, request: Request, body: ActivateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_activate(
+    batch_id: int,
+    request: Request,
+    body: ActivateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Activate a validated staging batch → create real entities."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -721,7 +823,12 @@ def staging_activate(batch_id: int, request: Request, body: ActivateRequest, db:
 
 
 @router.get("/staging/{batch_id}/result")
-def staging_result(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_result(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Get activation result for a batch (post-activation)."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
@@ -730,9 +837,14 @@ def staging_result(batch_id: int, request: Request, db: Session = Depends(get_db
     summary = get_staging_summary(db, batch_id)
 
     # Find activation log
-    log = db.query(ActivationLog).filter(
-        ActivationLog.batch_id == batch_id,
-    ).order_by(ActivationLog.id.desc()).first()
+    log = (
+        db.query(ActivationLog)
+        .filter(
+            ActivationLog.batch_id == batch_id,
+        )
+        .order_by(ActivationLog.id.desc())
+        .first()
+    )
 
     result = {
         "batch_id": batch_id,
@@ -765,19 +877,33 @@ def staging_result(batch_id: int, request: Request, db: Session = Depends(get_db
 
 
 @router.get("/staging/{batch_id}/export/report.csv")
-def staging_export_report(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def staging_export_report(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Export batch report as CSV: all rows + issues + status."""
     org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
     _check_batch_org(batch, org_id)
 
-    sites = db.query(StagingSite).filter(
-        StagingSite.batch_id == batch_id,
-    ).order_by(StagingSite.row_number).all()
+    sites = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == batch_id,
+        )
+        .order_by(StagingSite.row_number)
+        .all()
+    )
 
-    findings = db.query(QualityFinding).filter(
-        QualityFinding.batch_id == batch_id,
-    ).all()
+    findings = (
+        db.query(QualityFinding)
+        .filter(
+            QualityFinding.batch_id == batch_id,
+        )
+        .all()
+    )
 
     # Index findings by staging_site_id
     site_findings_map = {}
@@ -789,34 +915,56 @@ def staging_export_report(batch_id: int, request: Request, db: Session = Depends
     writer = csv.writer(output, delimiter=";")
 
     # Header
-    writer.writerow([
-        "row", "nom", "adresse", "code_postal", "ville", "surface_m2",
-        "type_site", "siret", "naf_code", "status",
-        "compteurs", "issues_count", "issues_detail",
-    ])
+    writer.writerow(
+        [
+            "row",
+            "nom",
+            "adresse",
+            "code_postal",
+            "ville",
+            "surface_m2",
+            "type_site",
+            "siret",
+            "naf_code",
+            "status",
+            "compteurs",
+            "issues_count",
+            "issues_detail",
+        ]
+    )
 
     for ss in sites:
-        compteurs = db.query(StagingCompteur).filter(
-            StagingCompteur.staging_site_id == ss.id,
-        ).all()
-        cpt_list = "; ".join(
-            f"{sc.meter_id or sc.numero_serie or '?'} ({sc.type_compteur or '?'})"
-            for sc in compteurs
+        compteurs = (
+            db.query(StagingCompteur)
+            .filter(
+                StagingCompteur.staging_site_id == ss.id,
+            )
+            .all()
         )
+        cpt_list = "; ".join(f"{sc.meter_id or sc.numero_serie or '?'} ({sc.type_compteur or '?'})" for sc in compteurs)
 
         findings_for_site = site_findings_map.get(ss.id, [])
-        issues_detail = "; ".join(
-            f"[{f.severity.value}] {f.rule_id}"
-            for f in findings_for_site
-        )
+        issues_detail = "; ".join(f"[{f.severity.value}] {f.rule_id}" for f in findings_for_site)
 
         status = "skipped" if ss.skip else ("merged" if ss.target_site_id else "active")
 
-        writer.writerow([
-            ss.row_number, ss.nom, ss.adresse, ss.code_postal, ss.ville,
-            ss.surface_m2, ss.type_site, ss.siret, ss.naf_code, status,
-            cpt_list, len(findings_for_site), issues_detail,
-        ])
+        writer.writerow(
+            [
+                ss.row_number,
+                ss.nom,
+                ss.adresse,
+                ss.code_postal,
+                ss.ville,
+                ss.surface_m2,
+                ss.type_site,
+                ss.siret,
+                ss.naf_code,
+                status,
+                cpt_list,
+                len(findings_for_site),
+                issues_detail,
+            ]
+        )
 
     csv_bytes = output.getvalue().encode("utf-8-sig")
 
@@ -831,15 +979,25 @@ def staging_export_report(batch_id: int, request: Request, db: Session = Depends
 # Delivery Points
 # ========================================
 
+
 @router.get("/sites/{site_id}/delivery-points")
-def site_delivery_points(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def site_delivery_points(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """List active delivery points (PRM/PCE) for a site."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
 
-    dps = not_deleted(db.query(DeliveryPoint), DeliveryPoint).filter(
-        DeliveryPoint.site_id == site_id,
-    ).all()
+    dps = (
+        not_deleted(db.query(DeliveryPoint), DeliveryPoint)
+        .filter(
+            DeliveryPoint.site_id == site_id,
+        )
+        .all()
+    )
 
     return [
         {
@@ -858,6 +1016,7 @@ def site_delivery_points(site_id: int, request: Request, db: Session = Depends(g
 # ========================================
 # Incremental sync
 # ========================================
+
 
 @router.post("/{portfolio_id}/sync")
 async def portfolio_sync(
@@ -907,14 +1066,17 @@ async def portfolio_sync(
 # Demo loader
 # ========================================
 
+
 @router.post("/demo/load")
 def demo_load(db: Session = Depends(get_db)):
     """Load demo patrimoine data (Collectivite Azur). Requires DEMO_MODE."""
     from middleware.auth import DEMO_MODE
+
     if not DEMO_MODE:
         raise HTTPException(status_code=403, detail="Demo load désactivé en production")
     try:
         from scripts.seed_data import seed_patrimoine_demo
+
         result = seed_patrimoine_demo(db)
         db.commit()
         return {"status": "ok", **result}
@@ -928,6 +1090,7 @@ def demo_load(db: Session = Depends(get_db)):
 # ========================================
 # Helpers
 # ========================================
+
 
 def _normalize_compteur_type(raw: str) -> str:
     """Normalize compteur type string for autofix."""
@@ -972,6 +1135,7 @@ def _parse_excel_to_staging(db: Session, batch_id: int, content: bytes) -> dict:
 # Mapping preview (header recognition)
 # ========================================
 
+
 class MappingPreviewRequest(BaseModel):
     headers: list
 
@@ -985,6 +1149,7 @@ def mapping_preview(body: MappingPreviewRequest):
 # ========================================
 # KPIs (server-side aggregation)
 # ========================================
+
 
 @router.get("/kpis")
 def patrimoine_kpis(
@@ -1032,6 +1197,7 @@ def patrimoine_kpis(
 # Site CRUD (WORLD CLASS)
 # ========================================
 
+
 def _serialize_site(site: Site) -> dict:
     return {
         "id": site.id,
@@ -1058,8 +1224,9 @@ def _serialize_site(site: Site) -> dict:
     }
 
 
-def _build_sites_query(db: Session, org_id: int, portefeuille_id=None, actif=None,
-                       ville=None, type_site=None, search=None):
+def _build_sites_query(
+    db: Session, org_id: int, portefeuille_id=None, actif=None, ville=None, type_site=None, search=None
+):
     """Build a filtered site query scoped to org — shared by list_sites and export."""
     q = (
         db.query(Site)
@@ -1077,9 +1244,7 @@ def _build_sites_query(db: Session, org_id: int, portefeuille_id=None, actif=Non
         q = q.filter(Site.type == type_site)
     if search:
         q = q.filter(
-            (Site.nom.ilike(f"%{search}%")) |
-            (Site.ville.ilike(f"%{search}%")) |
-            (Site.adresse.ilike(f"%{search}%"))
+            (Site.nom.ilike(f"%{search}%")) | (Site.ville.ilike(f"%{search}%")) | (Site.adresse.ilike(f"%{search}%"))
         )
     return q
 
@@ -1148,10 +1313,22 @@ def export_sites_csv(
     sites = q.all()
 
     headers = [
-        "id", "nom", "type", "adresse", "code_postal", "ville", "region",
-        "surface_m2", "nombre_employes", "siret", "actif",
-        "risque_financier_euro", "statut_conformite", "anomalie_facture",
-        "conso_kwh_an", "portefeuille_id",
+        "id",
+        "nom",
+        "type",
+        "adresse",
+        "code_postal",
+        "ville",
+        "region",
+        "surface_m2",
+        "nombre_employes",
+        "siret",
+        "actif",
+        "risque_financier_euro",
+        "statut_conformite",
+        "anomalie_facture",
+        "conso_kwh_an",
+        "portefeuille_id",
     ]
 
     def iter_csv():
@@ -1163,19 +1340,26 @@ def export_sites_csv(
         for site in sites:
             out = io.StringIO()
             w = csv.writer(out, delimiter=";")
-            w.writerow([
-                site.id, site.nom,
-                site.type.value if site.type else "",
-                site.adresse or "", site.code_postal or "", site.ville or "",
-                site.region or "", site.surface_m2 or "",
-                site.nombre_employes or "", site.siret or "",
-                site.actif,
-                site.risque_financier_euro or 0,
-                site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else "",
-                site.anomalie_facture or False,
-                site.annual_kwh_total or "",
-                site.portefeuille_id or "",
-            ])
+            w.writerow(
+                [
+                    site.id,
+                    site.nom,
+                    site.type.value if site.type else "",
+                    site.adresse or "",
+                    site.code_postal or "",
+                    site.ville or "",
+                    site.region or "",
+                    site.surface_m2 or "",
+                    site.nombre_employes or "",
+                    site.siret or "",
+                    site.actif,
+                    site.risque_financier_euro or 0,
+                    site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else "",
+                    site.anomalie_facture or False,
+                    site.annual_kwh_total or "",
+                    site.portefeuille_id or "",
+                ]
+            )
             yield out.getvalue()
 
     filename = f"patrimoine_sites_{date.today().isoformat()}.csv"
@@ -1187,7 +1371,12 @@ def export_sites_csv(
 
 
 @router.get("/sites/{site_id}")
-def get_site_detail(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_site_detail(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Get a site with compteurs and contracts count."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -1201,7 +1390,13 @@ def get_site_detail(site_id: int, request: Request, db: Session = Depends(get_db
 
 
 @router.patch("/sites/{site_id}")
-def update_site(site_id: int, request: Request, body: SiteUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def update_site(
+    site_id: int,
+    request: Request,
+    body: SiteUpdateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Update a site (partial update)."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -1221,7 +1416,12 @@ def update_site(site_id: int, request: Request, body: SiteUpdateRequest, db: Ses
 
 
 @router.post("/sites/{site_id}/archive")
-def archive_site(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def archive_site(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Soft-delete a site (set actif=False)."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -1233,7 +1433,12 @@ def archive_site(site_id: int, request: Request, db: Session = Depends(get_db), 
 
 
 @router.post("/sites/{site_id}/restore")
-def restore_site(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def restore_site(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Restore an archived site (set actif=True)."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
@@ -1245,7 +1450,12 @@ def restore_site(site_id: int, request: Request, db: Session = Depends(get_db), 
 
 
 @router.post("/sites/merge")
-def merge_sites(request: Request, body: SiteMergeRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def merge_sites(
+    request: Request,
+    body: SiteMergeRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Merge source site into target: transfer compteurs+contracts, archive source."""
     org_id = _get_org_id(request, auth, db)
     source = _load_site_with_org_check(db, body.source_site_id, org_id)
@@ -1254,12 +1464,16 @@ def merge_sites(request: Request, body: SiteMergeRequest, db: Session = Depends(
         raise HTTPException(status_code=400, detail="Source et cible identiques")
 
     # Transfer compteurs
-    compteurs_moved = db.query(Compteur).filter(Compteur.site_id == source.id).update(
-        {"site_id": target.id}, synchronize_session="fetch"
+    compteurs_moved = (
+        db.query(Compteur)
+        .filter(Compteur.site_id == source.id)
+        .update({"site_id": target.id}, synchronize_session="fetch")
     )
     # Transfer contracts
-    contracts_moved = db.query(EnergyContract).filter(EnergyContract.site_id == source.id).update(
-        {"site_id": target.id}, synchronize_session="fetch"
+    contracts_moved = (
+        db.query(EnergyContract)
+        .filter(EnergyContract.site_id == source.id)
+        .update({"site_id": target.id}, synchronize_session="fetch")
     )
     # Archive source
     source.actif = False
@@ -1276,6 +1490,7 @@ def merge_sites(request: Request, body: SiteMergeRequest, db: Session = Depends(
 # ========================================
 # Compteur Operations (WORLD CLASS)
 # ========================================
+
 
 def _serialize_compteur(c: Compteur) -> dict:
     return {
@@ -1320,7 +1535,13 @@ def list_compteurs(
 
 
 @router.patch("/compteurs/{compteur_id}")
-def update_compteur(compteur_id: int, request: Request, body: CompteurUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def update_compteur(
+    compteur_id: int,
+    request: Request,
+    body: CompteurUpdateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Update a compteur (partial update)."""
     org_id = _get_org_id(request, auth, db)
     c = _load_compteur_with_org_check(db, compteur_id, org_id)
@@ -1340,7 +1561,13 @@ def update_compteur(compteur_id: int, request: Request, body: CompteurUpdateRequ
 
 
 @router.post("/compteurs/{compteur_id}/move")
-def move_compteur(compteur_id: int, request: Request, body: CompteurMoveRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def move_compteur(
+    compteur_id: int,
+    request: Request,
+    body: CompteurMoveRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Move a compteur to another site."""
     org_id = _get_org_id(request, auth, db)
     c = _load_compteur_with_org_check(db, compteur_id, org_id)
@@ -1356,7 +1583,12 @@ def move_compteur(compteur_id: int, request: Request, body: CompteurMoveRequest,
 
 
 @router.post("/compteurs/{compteur_id}/detach")
-def detach_compteur(compteur_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def detach_compteur(
+    compteur_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Deactivate a compteur (soft detach)."""
     org_id = _get_org_id(request, auth, db)
     c = _load_compteur_with_org_check(db, compteur_id, org_id)
@@ -1368,6 +1600,7 @@ def detach_compteur(compteur_id: int, request: Request, db: Session = Depends(ge
 # ========================================
 # Contract CRUD (WORLD CLASS)
 # ========================================
+
 
 def _serialize_contract(ct: EnergyContract) -> dict:
     return {
@@ -1394,16 +1627,17 @@ def _serialize_contract(ct: EnergyContract) -> dict:
 # Response models — Snapshot & Anomalies (V59)
 # ========================================
 
+
 class RegulatoryImpact(BaseModel):
-    framework: str          # DECRET_TERTIAIRE / FACTURATION / BACS / NONE
-    risk_level: str         # HIGH / MEDIUM / LOW
+    framework: str  # DECRET_TERTIAIRE / FACTURATION / BACS / NONE
+    risk_level: str  # HIGH / MEDIUM / LOW
     explanation_fr: str
 
 
 class BusinessImpact(BaseModel):
-    type: str               # DATA_QUALITY / REGULATORY_RISK / BILLING_RISK
+    type: str  # DATA_QUALITY / REGULATORY_RISK / BILLING_RISK
     estimated_risk_eur: float
-    confidence: float       # 0..1
+    confidence: float  # 0..1
     explanation_fr: str
 
 
@@ -1452,6 +1686,7 @@ class OrgAnomaliesResponse(BaseModel):
 
 # ── V60/V61 : Portfolio summary ────────────────────────────────────────────
 
+
 class PortfolioSitesAtRisk(BaseModel):
     critical: int = 0
     high: int = 0
@@ -1461,17 +1696,19 @@ class PortfolioSitesAtRisk(BaseModel):
 
 class PortfolioSitesHealth(BaseModel):
     """V61 — distribution des sites par score de complétude (data quality)."""
-    healthy: int = 0       # completude_score >= 85
-    warning: int = 0       # 50 <= completude_score < 85
-    critical: int = 0      # completude_score < 50
+
+    healthy: int = 0  # completude_score >= 85
+    warning: int = 0  # 50 <= completude_score < 85
+    critical: int = 0  # completude_score < 50
     healthy_pct: float = 0.0
 
 
 class PortfolioTrend(BaseModel):
     """V61 — tendance vs snapshot précédent. Null si pas d'historique."""
+
     risk_eur_delta: Optional[float] = None
     sites_count_delta: Optional[int] = None
-    direction: Optional[str] = None    # "up" | "down" | "stable" | null
+    direction: Optional[str] = None  # "up" | "down" | "stable" | null
     vs_computed_at: Optional[str] = None
 
 
@@ -1494,16 +1731,17 @@ class PortfolioSummaryResponse(BaseModel):
     total_estimated_risk_eur: float
     sites_count: int
     sites_at_risk: PortfolioSitesAtRisk
-    sites_health: PortfolioSitesHealth          # V61 NEW
+    sites_health: PortfolioSitesHealth  # V61 NEW
     framework_breakdown: List[PortfolioFrameworkItem]
     top_sites: List[PortfolioTopSiteItem]
-    trend: Optional[PortfolioTrend] = None      # V61 NEW (null — pas d'historique encore)
+    trend: Optional[PortfolioTrend] = None  # V61 NEW (null — pas d'historique encore)
     computed_at: str
 
 
 # ========================================
 # Snapshot & Anomalies (V58 → V59)
 # ========================================
+
 
 @router.get("/sites/{site_id}/snapshot")
 def get_site_snapshot_endpoint(
@@ -1517,6 +1755,7 @@ def get_site_snapshot_endpoint(
     points de livraison, contrats.  Scoped org — zéro N+1.
     """
     from services.patrimoine_snapshot import get_site_snapshot
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)  # 404/403 si hors périmètre
     snapshot = get_site_snapshot(site_id, org_id, db)
@@ -1548,13 +1787,8 @@ def get_site_anomalies_endpoint(
     result = compute_site_anomalies(site_id, db)
     # Snapshot optionnel pour améliorer SURFACE_MISMATCH (usage-aware)
     snapshot = get_site_snapshot(site_id, org_id, db) or {}
-    enriched = enrich_anomalies_with_impact(
-        result["anomalies"], snapshot, DEFAULT_ASSUMPTIONS
-    )
-    total_risk_eur = sum(
-        (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
-        for a in enriched
-    )
+    enriched = enrich_anomalies_with_impact(result["anomalies"], snapshot, DEFAULT_ASSUMPTIONS)
+    total_risk_eur = sum((a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0 for a in enriched)
     return {
         **result,
         "anomalies": enriched,
@@ -1599,28 +1833,27 @@ def list_org_anomalies(
         if min_score is not None and data["completude_score"] > min_score:
             continue
         enriched = enrich_anomalies_with_impact(data["anomalies"], None, DEFAULT_ASSUMPTIONS)
-        total_risk_eur = sum(
-            (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
-            for a in enriched
-        )
+        total_risk_eur = sum((a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0 for a in enriched)
         top_priority = enriched[0]["priority_score"] if enriched else None
-        results.append({
-            "site_id": site.id,
-            "nom": site.nom,
-            "completude_score": data["completude_score"],
-            "nb_anomalies": data["nb_anomalies"],
-            "top_severity": enriched[0]["severity"] if enriched else None,
-            "top_priority_score": top_priority,
-            "total_estimated_risk_eur": round(total_risk_eur, 0),
-            "anomalies": enriched,
-        })
+        results.append(
+            {
+                "site_id": site.id,
+                "nom": site.nom,
+                "completude_score": data["completude_score"],
+                "nb_anomalies": data["nb_anomalies"],
+                "top_severity": enriched[0]["severity"] if enriched else None,
+                "top_priority_score": top_priority,
+                "total_estimated_risk_eur": round(total_risk_eur, 0),
+                "anomalies": enriched,
+            }
+        )
 
     # Tri : scores les plus bas en premier (les plus à risque)
     results.sort(key=lambda r: r["completude_score"])
 
     total = len(results)
     offset = (page - 1) * page_size
-    page_items = results[offset: offset + page_size]
+    page_items = results[offset : offset + page_size]
 
     return {
         "total": total,
@@ -1637,6 +1870,7 @@ def get_patrimoine_assumptions():
     Permet au frontend d'afficher la transparence des estimations.
     """
     from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
     return DEFAULT_ASSUMPTIONS.to_dict()
 
 
@@ -1671,6 +1905,7 @@ def get_portfolio_summary(
         # Org non résolue : pas d'auth, pas de DemoState, pas d'org active en DB.
         # Retourner une réponse vide valide plutôt qu'une erreur 401/403.
         from datetime import datetime as _dt
+
         return {
             "scope": {"org_id": None, "portefeuille_id": portefeuille_id, "site_id": site_id},
             "total_estimated_risk_eur": 0.0,
@@ -1701,8 +1936,8 @@ def get_portfolio_summary(
 
     all_sites = sites_q.all()
 
-    _HEALTH_HEALTHY  = 85
-    _HEALTH_WARNING  = 50
+    _HEALTH_HEALTHY = 85
+    _HEALTH_WARNING = 50
 
     # Scope vide → tout à 0
     if not all_sites:
@@ -1732,10 +1967,7 @@ def get_portfolio_summary(
         data = compute_site_anomalies(site.id, db)
         enriched = enrich_anomalies_with_impact(data["anomalies"], None, DEFAULT_ASSUMPTIONS)
 
-        site_risk = sum(
-            (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
-            for a in enriched
-        )
+        site_risk = sum((a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0 for a in enriched)
         total_risk += site_risk
 
         # Pire sévérité du site → bucket sites_at_risk
@@ -1774,13 +2006,15 @@ def get_portfolio_summary(
             fw0 = ri.get("framework", "NONE")
             top_fw = fw0 if fw0 != "NONE" else None
 
-        site_summaries.append({
-            "site_id": site.id,
-            "site_nom": site.nom,
-            "risk_eur": round(site_risk, 0),
-            "anomalies_count": data["nb_anomalies"],
-            "top_framework": top_fw,
-        })
+        site_summaries.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "risk_eur": round(site_risk, 0),
+                "anomalies_count": data["nb_anomalies"],
+                "top_framework": top_fw,
+            }
+        )
 
     # healthy_pct final
     n_total = len(all_sites)
@@ -1827,11 +2061,14 @@ def get_portfolio_summary(
                 "vs_computed_at": prev["computed_at"],
             }
         # Mettre à jour le snapshot courant APRÈS avoir lu le précédent
-        set_snapshot(org_id, {
-            "computed_at": computed_at,
-            "total_estimated_risk_eur": total_risk_rounded,
-            "sites_count": n_total,
-        })
+        set_snapshot(
+            org_id,
+            {
+                "computed_at": computed_at,
+                "total_estimated_risk_eur": total_risk_rounded,
+                "sites_count": n_total,
+            },
+        )
 
     return {
         "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
@@ -1875,7 +2112,12 @@ def list_contracts(
 
 
 @router.post("/contracts")
-def create_contract(request: Request, body: ContractCreateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def create_contract(
+    request: Request,
+    body: ContractCreateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create a new energy contract."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, body.site_id, org_id)
@@ -1921,7 +2163,13 @@ def create_contract(request: Request, body: ContractCreateRequest, db: Session =
 
 
 @router.patch("/contracts/{contract_id}")
-def update_contract(contract_id: int, request: Request, body: ContractUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def update_contract(
+    contract_id: int,
+    request: Request,
+    body: ContractUpdateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Update an energy contract (partial update)."""
     org_id = _get_org_id(request, auth, db)
     ct = _load_contract_with_org_check(db, contract_id, org_id)
@@ -1947,16 +2195,19 @@ def update_contract(contract_id: int, request: Request, body: ContractUpdateRequ
     # If dates changed, check for overlap with other contracts
     if "start_date" in updates or "end_date" in updates:
         overlap = check_contract_overlap(
-            db, ct.site_id, ct.energy_type,
-            ct.start_date, ct.end_date,
+            db,
+            ct.site_id,
+            ct.energy_type,
+            ct.start_date,
+            ct.end_date,
             exclude_id=ct.id,
         )
         if overlap:
             raise HTTPException(
                 status_code=409,
                 detail=f"Chevauchement avec le contrat #{overlap.id} "
-                       f"({overlap.supplier_name}, "
-                       f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
+                f"({overlap.supplier_name}, "
+                f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
             )
 
     db.commit()
@@ -1964,7 +2215,12 @@ def update_contract(contract_id: int, request: Request, body: ContractUpdateRequ
 
 
 @router.delete("/contracts/{contract_id}")
-def delete_contract(contract_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def delete_contract(
+    contract_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Delete an energy contract."""
     org_id = _get_org_id(request, auth, db)
     ct = _load_contract_with_org_check(db, contract_id, org_id)
@@ -1976,6 +2232,7 @@ def delete_contract(contract_id: int, request: Request, db: Session = Depends(ge
 # ========================================
 # V96: Payment Rules CRUD
 # ========================================
+
 
 def _serialize_payment_rule(pr: PaymentRule) -> dict:
     return {
@@ -1995,28 +2252,40 @@ def _resolve_payment_rule(db: Session, site_id: int, contract_id: int = None) ->
     """Cascade resolution: contrat > site > portefeuille > None."""
     # 1. Contract-level
     if contract_id:
-        pr = db.query(PaymentRule).filter(
-            PaymentRule.level == PaymentRuleLevel.CONTRAT,
-            PaymentRule.contract_id == contract_id,
-        ).first()
+        pr = (
+            db.query(PaymentRule)
+            .filter(
+                PaymentRule.level == PaymentRuleLevel.CONTRAT,
+                PaymentRule.contract_id == contract_id,
+            )
+            .first()
+        )
         if pr:
             return pr
 
     # 2. Site-level
-    pr = db.query(PaymentRule).filter(
-        PaymentRule.level == PaymentRuleLevel.SITE,
-        PaymentRule.site_id == site_id,
-    ).first()
+    pr = (
+        db.query(PaymentRule)
+        .filter(
+            PaymentRule.level == PaymentRuleLevel.SITE,
+            PaymentRule.site_id == site_id,
+        )
+        .first()
+    )
     if pr:
         return pr
 
     # 3. Portefeuille-level
     site = db.query(Site).filter(Site.id == site_id).first()
     if site and site.portefeuille_id:
-        pr = db.query(PaymentRule).filter(
-            PaymentRule.level == PaymentRuleLevel.PORTEFEUILLE,
-            PaymentRule.portefeuille_id == site.portefeuille_id,
-        ).first()
+        pr = (
+            db.query(PaymentRule)
+            .filter(
+                PaymentRule.level == PaymentRuleLevel.PORTEFEUILLE,
+                PaymentRule.portefeuille_id == site.portefeuille_id,
+            )
+            .first()
+        )
         if pr:
             return pr
 
@@ -2065,18 +2334,26 @@ def create_payment_rule(
         raise HTTPException(status_code=400, detail=f"Niveau invalide: {body.level}")
 
     # Validate entity belongs to org
-    ej = db.query(EntiteJuridique).filter(
-        EntiteJuridique.id == body.invoice_entity_id,
-        EntiteJuridique.organisation_id == org_id,
-    ).first()
+    ej = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.id == body.invoice_entity_id,
+            EntiteJuridique.organisation_id == org_id,
+        )
+        .first()
+    )
     if not ej:
         raise HTTPException(status_code=404, detail="Entite juridique facturee non trouvee")
 
     if body.payer_entity_id:
-        pej = db.query(EntiteJuridique).filter(
-            EntiteJuridique.id == body.payer_entity_id,
-            EntiteJuridique.organisation_id == org_id,
-        ).first()
+        pej = (
+            db.query(EntiteJuridique)
+            .filter(
+                EntiteJuridique.id == body.payer_entity_id,
+                EntiteJuridique.organisation_id == org_id,
+            )
+            .first()
+        )
         if not pej:
             raise HTTPException(status_code=404, detail="Entite juridique payeuse non trouvee")
 
@@ -2089,12 +2366,16 @@ def create_payment_rule(
         _load_contract_with_org_check(db, body.contract_id, org_id)
 
     # Upsert: check for existing rule at same scope
-    existing = db.query(PaymentRule).filter(
-        PaymentRule.level == lvl,
-        PaymentRule.portefeuille_id == body.portefeuille_id,
-        PaymentRule.site_id == body.site_id,
-        PaymentRule.contract_id == body.contract_id,
-    ).first()
+    existing = (
+        db.query(PaymentRule)
+        .filter(
+            PaymentRule.level == lvl,
+            PaymentRule.portefeuille_id == body.portefeuille_id,
+            PaymentRule.site_id == body.site_id,
+            PaymentRule.contract_id == body.contract_id,
+        )
+        .first()
+    )
 
     if existing:
         existing.invoice_entity_id = body.invoice_entity_id
@@ -2133,10 +2414,14 @@ def update_payment_rule(
         raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
 
     # Check org ownership via invoice entity
-    ej = db.query(EntiteJuridique).filter(
-        EntiteJuridique.id == pr.invoice_entity_id,
-        EntiteJuridique.organisation_id == org_id,
-    ).first()
+    ej = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.id == pr.invoice_entity_id,
+            EntiteJuridique.organisation_id == org_id,
+        )
+        .first()
+    )
     if not ej:
         raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
 
@@ -2160,10 +2445,14 @@ def delete_payment_rule(
     if not pr:
         raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
 
-    ej = db.query(EntiteJuridique).filter(
-        EntiteJuridique.id == pr.invoice_entity_id,
-        EntiteJuridique.organisation_id == org_id,
-    ).first()
+    ej = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.id == pr.invoice_entity_id,
+            EntiteJuridique.organisation_id == org_id,
+        )
+        .first()
+    )
     if not ej:
         raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
 
@@ -2182,10 +2471,14 @@ def apply_payment_rules_bulk(
     """Apply payment rule to N sites atomically."""
     org_id = _get_org_id(request, auth, db)
 
-    ej = db.query(EntiteJuridique).filter(
-        EntiteJuridique.id == body.invoice_entity_id,
-        EntiteJuridique.organisation_id == org_id,
-    ).first()
+    ej = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.id == body.invoice_entity_id,
+            EntiteJuridique.organisation_id == org_id,
+        )
+        .first()
+    )
     if not ej:
         raise HTTPException(status_code=404, detail="Entite juridique non trouvee")
 
@@ -2193,22 +2486,28 @@ def apply_payment_rules_bulk(
     created = 0
     for sid in body.site_ids:
         _load_site_with_org_check(db, sid, org_id)
-        existing = db.query(PaymentRule).filter(
-            PaymentRule.level == PaymentRuleLevel.SITE,
-            PaymentRule.site_id == sid,
-        ).first()
+        existing = (
+            db.query(PaymentRule)
+            .filter(
+                PaymentRule.level == PaymentRuleLevel.SITE,
+                PaymentRule.site_id == sid,
+            )
+            .first()
+        )
         if existing:
             existing.invoice_entity_id = body.invoice_entity_id
             existing.payer_entity_id = body.payer_entity_id
             existing.cost_center = body.cost_center
         else:
-            db.add(PaymentRule(
-                level=PaymentRuleLevel.SITE,
-                site_id=sid,
-                invoice_entity_id=body.invoice_entity_id,
-                payer_entity_id=body.payer_entity_id,
-                cost_center=body.cost_center,
-            ))
+            db.add(
+                PaymentRule(
+                    level=PaymentRuleLevel.SITE,
+                    site_id=sid,
+                    invoice_entity_id=body.invoice_entity_id,
+                    payer_entity_id=body.payer_entity_id,
+                    cost_center=body.cost_center,
+                )
+            )
             created += 1
 
     db.commit()
@@ -2247,6 +2546,7 @@ def get_site_payment_info(
 # V96: Reconciliation endpoints
 # ========================================
 
+
 @router.get("/sites/{site_id}/reconciliation")
 def get_site_reconciliation(
     site_id: int,
@@ -2256,6 +2556,7 @@ def get_site_reconciliation(
 ):
     """3-way reconciliation for a single site."""
     from services.reconciliation_service import reconcile_site
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return reconcile_site(db, site_id)
@@ -2270,6 +2571,7 @@ def get_portfolio_reconciliation(
 ):
     """Aggregate reconciliation across all sites in scope."""
     from services.reconciliation_service import reconcile_portfolio
+
     org_id = _get_org_id(request, auth, db)
     if portefeuille_id:
         _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
@@ -2279,6 +2581,7 @@ def get_portfolio_reconciliation(
 # ========================================
 # V97: Resolution Engine endpoints
 # ========================================
+
 
 @router.post("/sites/{site_id}/reconciliation/fix")
 def apply_reconciliation_fix(
@@ -2290,15 +2593,18 @@ def apply_reconciliation_fix(
 ):
     """V97: Apply a 1-click fix for a reconciliation check."""
     from services.reconciliation_service import (
-        fix_create_delivery_point, fix_extend_contract,
-        fix_adjust_contract_dates, fix_align_energy_type,
+        fix_create_delivery_point,
+        fix_extend_contract,
+        fix_adjust_contract_dates,
+        fix_align_energy_type,
         fix_create_payment_rule,
     )
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
 
     params = body.params or {}
-    applied_by = auth.user_email if auth and hasattr(auth, 'user_email') else None
+    applied_by = auth.user_email if auth and hasattr(auth, "user_email") else None
 
     FIXERS = {
         "create_delivery_point": fix_create_delivery_point,
@@ -2331,6 +2637,7 @@ def get_reconciliation_fix_history(
 ):
     """V97: Get audit trail for reconciliation fixes on a site."""
     from services.reconciliation_service import get_fix_logs
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return {"site_id": site_id, "logs": get_fix_logs(db, site_id)}
@@ -2345,6 +2652,7 @@ def get_reconciliation_evidence(
 ):
     """V97 Phase 4: Get evidence pack (JSON) for a site's reconciliation."""
     from services.reconciliation_service import get_evidence_pack
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return get_evidence_pack(db, site_id)
@@ -2359,6 +2667,7 @@ def get_reconciliation_evidence_summary(
 ):
     """V98: Get 1-page evidence summary for a site's reconciliation."""
     from services.reconciliation_service import get_evidence_summary
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return get_evidence_summary(db, site_id)
@@ -2373,6 +2682,7 @@ def get_reconciliation_evidence_csv(
 ):
     """V97 Phase 4: Export evidence pack as CSV."""
     from services.reconciliation_service import get_evidence_pack
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     pack = get_evidence_pack(db, site_id)
@@ -2381,18 +2691,29 @@ def get_reconciliation_evidence_csv(
     writer = csv.writer(output)
     writer.writerow(["check_id", "label_fr", "status", "reason_fr", "suggestion_fr"])
     for check in pack["reconciliation"]["checks"]:
-        writer.writerow([
-            check["id"], check["label_fr"], check["status"],
-            check["reason_fr"], check.get("suggestion_fr", ""),
-        ])
+        writer.writerow(
+            [
+                check["id"],
+                check["label_fr"],
+                check["status"],
+                check["reason_fr"],
+                check.get("suggestion_fr", ""),
+            ]
+        )
     writer.writerow([])
     writer.writerow(["fix_id", "check_id", "action", "status_before", "status_after", "applied_by", "applied_at"])
     for log in pack["fix_history"]:
-        writer.writerow([
-            log["id"], log["check_id"], log["action"],
-            log["status_before"], log["status_after"],
-            log.get("applied_by", ""), log.get("applied_at", ""),
-        ])
+        writer.writerow(
+            [
+                log["id"],
+                log["check_id"],
+                log["action"],
+                log["status_before"],
+                log["status_after"],
+                log.get("applied_by", ""),
+                log.get("applied_at", ""),
+            ]
+        )
 
     content = output.getvalue()
     return StreamingResponse(
@@ -2411,6 +2732,7 @@ def get_portfolio_evidence_csv(
 ):
     """V97 Phase 4: Export portfolio reconciliation summary as CSV."""
     from services.reconciliation_service import reconcile_portfolio
+
     org_id = _get_org_id(request, auth, db)
     if portefeuille_id:
         _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)

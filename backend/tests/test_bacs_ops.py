@@ -2,8 +2,10 @@
 PROMEOS - Tests for BACS Ops Monitoring
 6 tests covering KPIs, consumption linkage, and API endpoint.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -16,13 +18,23 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from models import (
-    Base, Site, TypeSite,
-    BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection,
-    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
+    Base,
+    Site,
+    TypeSite,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
+    BacsInspection,
+    CvcSystemType,
+    CvcArchitecture,
+    BacsTriggerReason,
+    InspectionStatus,
     ConsumptionInsight,
 )
 from services.bacs_ops_monitor import (
-    compute_bacs_ops_kpis, link_consumption_findings, get_bacs_ops_panel,
+    compute_bacs_ops_kpis,
+    link_consumption_findings,
+    get_bacs_ops_panel,
 )
 from services.bacs_engine import evaluate_bacs
 
@@ -67,7 +79,6 @@ def _seed(db, cvc_kw=300, deadline=None, inspection_date=None):
 
 
 class TestBacsOpsKpis:
-
     def test_kpis_with_deadline(self, db):
         _seed(db, cvc_kw=450)
         kpis = compute_bacs_ops_kpis(db, 1)
@@ -88,7 +99,6 @@ class TestBacsOpsKpis:
 
 
 class TestConsumptionLinkage:
-
     def test_link_hors_horaires(self, db):
         _seed(db, cvc_kw=300)
         ins = ConsumptionInsight(site_id=1, type="hors_horaires", severity="high", message="58% hors horaires")
@@ -111,7 +121,6 @@ class TestConsumptionLinkage:
 
 
 class TestBacsOpsPanel:
-
     def test_full_panel(self, db):
         _seed(db, cvc_kw=450)
         panel = get_bacs_ops_panel(db, 1)
@@ -124,7 +133,6 @@ class TestBacsOpsPanel:
 
 
 class TestBacsOpsApi:
-
     def test_ops_endpoint(self):
         from main import app
         from database import get_db

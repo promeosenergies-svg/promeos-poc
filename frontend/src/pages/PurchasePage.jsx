@@ -46,7 +46,16 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList, toPurchaseAssistant, toPurchase, toConsoExplorer, toBillIntel, toConsoDiag, toMonitoring } from '../services/routes';
+import {
+  toActionNew,
+  toActionsList,
+  toPurchaseAssistant,
+  toPurchase,
+  toConsoExplorer,
+  toBillIntel,
+  toConsoDiag,
+  toMonitoring,
+} from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -112,7 +121,7 @@ const STRATEGY_META = {
     icon: Sun,
     bgClass: 'bg-amber-50',
     textClass: 'text-amber-600',
-    desc: "Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.",
+    desc: 'Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.',
     dynamic: true,
   },
 };
@@ -130,7 +139,9 @@ const URGENCY_STYLES = {
   gray: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 
-function round1(n) { return Math.round(n * 10) / 10; }
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
 
 function riskLevel(score) {
   if (score <= 30) return 'low';
@@ -156,9 +167,11 @@ const VALID_TABS = new Set(TABS.map((t) => t.key));
 /** Hypothèses clés derrière chaque stratégie (affichées dans "Pourquoi ?"). */
 const STRATEGY_WHY = {
   fixe: 'Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.',
-  indexe: "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
-  spot: "Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.",
-  reflex_solar: "• Été : prix bas de 13h à 16h (sem.) et 10h–17h (WE) grâce à la surproduction solaire.\n• Hiver : créneaux réduits 8h–10h et 17h–20h — restez gagnant toute l'année.\n• Aucune pénalité si vous ne décalez rien. Report optionnel en mode Expert pour maximiser.",
+  indexe:
+    "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
+  spot: 'Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.',
+  reflex_solar:
+    "• Été : prix bas de 13h à 16h (sem.) et 10h–17h (WE) grâce à la surproduction solaire.\n• Hiver : créneaux réduits 8h–10h et 17h–20h — restez gagnant toute l'année.\n• Aucune pénalité si vous ne décalez rien. Report optionnel en mode Expert pour maximiser.",
 };
 
 export default function PurchasePage() {
@@ -169,13 +182,26 @@ export default function PurchasePage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Data confidence (Step 3.1)
-  const purchaseKpis = useMemo(() => ({
-    total: scopedSites.length,
-    conformes: 0, nonConformes: 0, aRisque: 0,
-    couvertureDonnees: scopedSites.length > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / scopedSites.length * 100) : 0,
-  }), [scopedSites]);
+  const purchaseKpis = useMemo(
+    () => ({
+      total: scopedSites.length,
+      conformes: 0,
+      nonConformes: 0,
+      aRisque: 0,
+      couvertureDonnees:
+        scopedSites.length > 0
+          ? Math.round(
+              (scopedSites.filter((s) => s.conso_kwh_an > 0).length / scopedSites.length) * 100
+            )
+          : 0,
+    }),
+    [scopedSites]
+  );
   const { readinessState: purchaseReadiness } = useDataReadiness(purchaseKpis);
-  const dataConfidence = useMemo(() => computeDataConfidence(purchaseReadiness), [purchaseReadiness]);
+  const dataConfidence = useMemo(
+    () => computeDataConfidence(purchaseReadiness),
+    [purchaseReadiness]
+  );
 
   // Tab state — initialise from ?tab= or ?filter= deep-link if present
   const [activeTab, setActiveTab] = useState(() => {
@@ -280,7 +306,10 @@ export default function PurchasePage() {
     const urlSiteId = searchParams.get('site_id');
     if (urlSiteId) {
       const parsed = Number(urlSiteId);
-      if (!isNaN(parsed)) { setSelectedSiteId(parsed); return; }
+      if (!isNaN(parsed)) {
+        setSelectedSiteId(parsed);
+        return;
+      }
     }
     if (scopeSiteId) {
       setSelectedSiteId(scopeSiteId);
@@ -290,35 +319,38 @@ export default function PurchasePage() {
   }, [scopedSites, scopeSiteId, searchParams]);
 
   // Load data when site changes
-  const loadSiteData = useCallback(async (siteId) => {
-    if (!siteId) return;
-    setLoading(true);
-    try {
-      const [est, assump, prefs, results] = await Promise.all([
-        getPurchaseEstimate(siteId),
-        getPurchaseAssumptions(siteId),
-        getPurchasePreferences(),
-        getPurchaseResults(siteId),
-      ]);
-      setEstimate(est);
-      setAssumptions({
-        volume_kwh_an: assump.volume_kwh_an || est.volume_kwh_an || 0,
-        horizon_months: assump.horizon_months || 24,
-        energy_type: assump.energy_type || 'elec',
-        profile_factor: assump.profile_factor || est.profile_factor || 1.0,
-      });
-      setPreferences({
-        risk_tolerance: prefs.risk_tolerance || 'medium',
-        budget_priority: prefs.budget_priority ?? 0.5,
-        green_preference: prefs.green_preference || false,
-      });
-      setScenarios(results.scenarios || []);
-      setAcceptedId(null);
-    } catch {
-      toast('Erreur lors du chargement des données du site', 'error');
-    }
-    setLoading(false);
-  }, [toast]);
+  const loadSiteData = useCallback(
+    async (siteId) => {
+      if (!siteId) return;
+      setLoading(true);
+      try {
+        const [est, assump, prefs, results] = await Promise.all([
+          getPurchaseEstimate(siteId),
+          getPurchaseAssumptions(siteId),
+          getPurchasePreferences(),
+          getPurchaseResults(siteId),
+        ]);
+        setEstimate(est);
+        setAssumptions({
+          volume_kwh_an: assump.volume_kwh_an || est.volume_kwh_an || 0,
+          horizon_months: assump.horizon_months || 24,
+          energy_type: assump.energy_type || 'elec',
+          profile_factor: assump.profile_factor || est.profile_factor || 1.0,
+        });
+        setPreferences({
+          risk_tolerance: prefs.risk_tolerance || 'medium',
+          budget_priority: prefs.budget_priority ?? 0.5,
+          green_preference: prefs.green_preference || false,
+        });
+        setScenarios(results.scenarios || []);
+        setAcceptedId(null);
+      } catch {
+        toast('Erreur lors du chargement des données du site', 'error');
+      }
+      setLoading(false);
+    },
+    [toast]
+  );
 
   useEffect(() => {
     if (selectedSiteId) loadSiteData(selectedSiteId);
@@ -371,13 +403,18 @@ export default function PurchasePage() {
 
   useEffect(() => {
     autosave();
-    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
   }, [autosave]);
 
   // V72: when toggling to estimation, sync volume from estimate
   useEffect(() => {
     if (useEstimation && estimate) {
-      setAssumptions((prev) => ({ ...prev, volume_kwh_an: estimate.volume_kwh_an || prev.volume_kwh_an }));
+      setAssumptions((prev) => ({
+        ...prev,
+        volume_kwh_an: estimate.volume_kwh_an || prev.volume_kwh_an,
+      }));
     }
   }, [useEstimation, estimate]);
 
@@ -443,7 +480,9 @@ export default function PurchasePage() {
             {dataConfidence && (
               <Tooltip text={dataConfidence.tooltipFR}>
                 <span className="inline-flex items-center gap-1" data-testid="purchase-confidence">
-                  <Badge status={dataConfidence.badgeStatus}>Confiance : {dataConfidence.label}</Badge>
+                  <Badge status={dataConfidence.badgeStatus}>
+                    Confiance : {dataConfidence.label}
+                  </Badge>
                 </span>
               </Tooltip>
             )}
@@ -480,10 +519,14 @@ export default function PurchasePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
                   {isScopeLocked ? (
-                    <div data-testid="scope-locked-site" className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                    <div
+                      data-testid="scope-locked-site"
+                      className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
+                    >
                       <Lock size={14} className="text-blue-500" />
                       <span className="font-medium text-blue-900">
-                        {scopedSites.find((s) => s.id === selectedSiteId)?.nom || `Site #${selectedSiteId}`}
+                        {scopedSites.find((s) => s.id === selectedSiteId)?.nom ||
+                          `Site #${selectedSiteId}`}
                       </span>
                       <button
                         data-testid="cta-change-site"
@@ -502,7 +545,9 @@ export default function PurchasePage() {
                       data-testid="site-selector-open"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                       value={selectedSiteId || ''}
-                      onChange={(e) => setSelectedSiteId(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) =>
+                        setSelectedSiteId(e.target.value ? Number(e.target.value) : null)
+                      }
                     >
                       <option value="">Choisir un site...</option>
                       {scopedSites.map((s) => (
@@ -527,10 +572,15 @@ export default function PurchasePage() {
                       </div>
                       {/* V72: confidence badges */}
                       <div className="flex gap-1.5 mt-2" data-testid="confidence-badges">
-                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${estimate.source === 'compteur' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                          <BadgeCheck size={10} /> {estimate.source === 'compteur' ? 'Relevé réel' : 'Estimé'}
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${estimate.source === 'compteur' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                        >
+                          <BadgeCheck size={10} />{' '}
+                          {estimate.source === 'compteur' ? 'Relevé réel' : 'Estimé'}
                         </span>
-                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(estimate.months_covered || 0) >= 12 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(estimate.months_covered || 0) >= 12 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}
+                        >
                           {estimate.months_covered || 0} mois
                         </span>
                       </div>
@@ -577,7 +627,10 @@ export default function PurchasePage() {
                     </button>
                   </div>
                   {useEstimation ? (
-                    <div data-testid="volume-estimation" className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-900 font-medium flex items-center gap-2">
+                    <div
+                      data-testid="volume-estimation"
+                      className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-900 font-medium flex items-center gap-2"
+                    >
                       <Zap size={14} className="text-blue-500" />
                       {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
                       <Lock size={12} className="text-blue-300 ml-auto" />
@@ -589,7 +642,10 @@ export default function PurchasePage() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                       value={assumptions.volume_kwh_an}
                       onChange={(e) =>
-                        setAssumptions((prev) => ({ ...prev, volume_kwh_an: Number(e.target.value) }))
+                        setAssumptions((prev) => ({
+                          ...prev,
+                          volume_kwh_an: Number(e.target.value),
+                        }))
                       }
                     />
                   )}
@@ -691,11 +747,16 @@ export default function PurchasePage() {
                   </label>
                 </div>
                 {/* V75: RéFlex report toggle + slider (Expert) */}
-                <div data-testid="reflex-report-controls" className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                <div
+                  data-testid="reflex-report-controls"
+                  className="bg-amber-50 rounded-lg p-3 border border-amber-200"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
                       <Sun size={14} /> Décalage heures pleines → solaire
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">TARIF HEURES SOLAIRES</span>
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">
+                        TARIF HEURES SOLAIRES
+                      </span>
                     </label>
                     <button
                       data-testid="report-toggle"
@@ -717,16 +778,26 @@ export default function PurchasePage() {
                         onChange={(e) => setReportPct(Number(e.target.value) / 100)}
                         className="flex-1 h-1.5 rounded-full accent-amber-500"
                       />
-                      <span className="text-xs font-mono text-amber-700 w-10 text-right">{Math.round(reportPct * 100)}%</span>
+                      <span className="text-xs font-mono text-amber-700 w-10 text-right">
+                        {Math.round(reportPct * 100)}%
+                      </span>
                     </div>
                   )}
                   {reportEnabled && !isExpert && (
-                    <p className="text-xs text-amber-600">Report fixé à 15%. Activez le mode Expert pour ajuster.</p>
+                    <p className="text-xs text-amber-600">
+                      Report fixé à 15%. Activez le mode Expert pour ajuster.
+                    </p>
                   )}
                 </div>
                 <div>
                   {/* V72: CTA unique — plus de double "Sauvegarder" */}
-                  <Tooltip text={selectedSiteId && assumptions.volume_kwh_an === 0 ? 'Données de consommation requises pour la simulation' : ''}>
+                  <Tooltip
+                    text={
+                      selectedSiteId && assumptions.volume_kwh_an === 0
+                        ? 'Données de consommation requises pour la simulation'
+                        : ''
+                    }
+                  >
                     <button
                       data-testid="cta-comparer-scenarios"
                       onClick={handleCompute}
@@ -747,41 +818,66 @@ export default function PurchasePage() {
                   <Target size={18} /> Scénarios 2026–2030
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  {scenarios.length} stratégies comparées · Horizon {assumptions.horizon_months || 24} mois · Volume {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
+                  {scenarios.length} stratégies comparées · Horizon{' '}
+                  {assumptions.horizon_months || 24} mois · Volume{' '}
+                  {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
                 </p>
 
                 {/* KPI strip: Budget / Risque / Recommandation */}
                 {(() => {
                   const reco = scenarios.find((s) => s.is_recommended);
-                  const cheapest = [...scenarios].sort((a, b) => a.total_annual_eur - b.total_annual_eur)[0];
-                  const mostExpensive = [...scenarios].sort((a, b) => b.total_annual_eur - a.total_annual_eur)[0];
-                  const recoMeta = reco ? (STRATEGY_META[reco.strategy] || STRATEGY_META.fixe) : null;
+                  const cheapest = [...scenarios].sort(
+                    (a, b) => a.total_annual_eur - b.total_annual_eur
+                  )[0];
+                  const mostExpensive = [...scenarios].sort(
+                    (a, b) => b.total_annual_eur - a.total_annual_eur
+                  )[0];
+                  const recoMeta = reco ? STRATEGY_META[reco.strategy] || STRATEGY_META.fixe : null;
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" data-testid="scenario-kpi-strip">
+                    <div
+                      className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+                      data-testid="scenario-kpi-strip"
+                    >
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                        <div className="text-xs text-gray-500 uppercase font-medium">Budget annuel</div>
-                        <div className="text-2xl font-bold text-gray-900 mt-1">
-                          {cheapest && mostExpensive ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}` : '—'} EUR
+                        <div className="text-xs text-gray-500 uppercase font-medium">
+                          Budget annuel
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">Fourchette des {scenarios.length} stratégies</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-1">
+                          {cheapest && mostExpensive
+                            ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}`
+                            : '—'}{' '}
+                          EUR
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          Fourchette des {scenarios.length} stratégies
+                        </div>
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
-                        <div className="text-xs text-gray-500 uppercase font-medium">Risque moyen</div>
+                        <div className="text-xs text-gray-500 uppercase font-medium">
+                          Risque moyen
+                        </div>
                         <div className="text-2xl font-bold text-gray-900 mt-1">
                           {reco ? `${reco.risk_score}/100` : '—'}
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">Score de la stratégie recommandée</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          Score de la stratégie recommandée
+                        </div>
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                        <div className="text-xs text-gray-500 uppercase font-medium">Recommandation</div>
+                        <div className="text-xs text-gray-500 uppercase font-medium">
+                          Recommandation
+                        </div>
                         <div className="text-2xl font-bold text-gray-900 mt-1 flex items-center gap-2">
                           {recoMeta ? recoMeta.label : 'Aucune'}
                           {reco?.savings_vs_current_pct > 0 && (
-                            <span className="text-sm font-medium text-green-600">−{reco.savings_vs_current_pct}%</span>
+                            <span className="text-sm font-medium text-green-600">
+                              −{reco.savings_vs_current_pct}%
+                            </span>
                           )}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {reco?.reasoning || 'Calculez les scénarios pour obtenir une recommandation'}
+                          {reco?.reasoning ||
+                            'Calculez les scénarios pour obtenir une recommandation'}
                         </div>
                       </div>
                     </div>
@@ -812,10 +908,21 @@ export default function PurchasePage() {
                               <h4 className="font-semibold text-gray-900 flex items-center gap-1.5">
                                 {meta.label}
                                 {s.strategy === 'reflex_solar' && isExpert && (
-                                  <span data-testid="reflex-expert-tooltip" title="Tarification dynamique par blocs horaires avec optimisation solaire" className="cursor-help"><Info size={10} className="text-gray-400" /></span>
+                                  <span
+                                    data-testid="reflex-expert-tooltip"
+                                    title="Tarification dynamique par blocs horaires avec optimisation solaire"
+                                    className="cursor-help"
+                                  >
+                                    <Info size={10} className="text-gray-400" />
+                                  </span>
                                 )}
                                 {meta.dynamic && (
-                                  <span data-testid="reflex-dynamic-badge" className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded">DYNAMIQUE</span>
+                                  <span
+                                    data-testid="reflex-dynamic-badge"
+                                    className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded"
+                                  >
+                                    DYNAMIQUE
+                                  </span>
                                 )}
                               </h4>
                               <p className="text-xs text-gray-500">{meta.desc}</p>
@@ -869,43 +976,71 @@ export default function PurchasePage() {
                           <summary className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800">
                             <HelpCircle size={12} /> Pourquoi cette stratégie ?
                           </summary>
-                          <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2 whitespace-pre-line">{whyText}</p>
+                          <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2 whitespace-pre-line">
+                            {whyText}
+                          </p>
                         </details>
 
                         {/* V82: Option Tarif Heures Solaires — composant structuré */}
                         {s.strategy === 'reflex_solar' && (
-                          <div data-testid="reflex-solar-detail" className="mb-3 rounded-lg border border-amber-200 bg-amber-50/50 overflow-hidden">
+                          <div
+                            data-testid="reflex-solar-detail"
+                            className="mb-3 rounded-lg border border-amber-200 bg-amber-50/50 overflow-hidden"
+                          >
                             {/* Header: titre + badge Sans pénalité */}
-                            <div data-testid="option-ths-header" className="flex items-center justify-between px-3 py-2 bg-amber-100/60 border-b border-amber-200">
+                            <div
+                              data-testid="option-ths-header"
+                              className="flex items-center justify-between px-3 py-2 bg-amber-100/60 border-b border-amber-200"
+                            >
                               <h5 className="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
-                                <Sun size={14} className="text-amber-600" /> Option Tarif Heures Solaires
+                                <Sun size={14} className="text-amber-600" /> Option Tarif Heures
+                                Solaires
                               </h5>
-                              <span data-testid="reflex-sans-penalite" className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <span
+                                data-testid="reflex-sans-penalite"
+                                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              >
                                 <CheckCircle2 size={12} /> Sans pénalité
                               </span>
                             </div>
                             {/* 2 bullets grand public */}
                             <div data-testid="option-ths-bullets" className="px-3 py-2 space-y-1">
                               <p className="text-xs text-gray-700 flex items-start gap-1.5">
-                                <TrendingDown size={12} className="text-green-600 mt-0.5 shrink-0" />
-                                Profitez d'un prix réduit pendant les heures de forte production solaire — été comme hiver.
+                                <TrendingDown
+                                  size={12}
+                                  className="text-green-600 mt-0.5 shrink-0"
+                                />
+                                Profitez d'un prix réduit pendant les heures de forte production
+                                solaire — été comme hiver.
                               </p>
                               <p className="text-xs text-gray-700 flex items-start gap-1.5">
                                 <Shield size={12} className="text-blue-600 mt-0.5 shrink-0" />
-                                Aucun engagement de décalage : si vous ne changez rien, votre facture reste identique.
+                                Aucun engagement de décalage : si vous ne changez rien, votre
+                                facture reste identique.
                               </p>
                             </div>
                             {/* Badges: Budget / Risque / Effort */}
                             <div className="px-3 pb-2">
-                              <div data-testid="reflex-badges" className="flex items-center gap-2 flex-wrap">
+                              <div
+                                data-testid="reflex-badges"
+                                className="flex items-center gap-2 flex-wrap"
+                              >
                                 <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-                                  <TrendingDown size={10} /> Budget {s.savings_vs_current_pct > 0 ? `-${s.savings_vs_current_pct}%` : '—'}
+                                  <TrendingDown size={10} /> Budget{' '}
+                                  {s.savings_vs_current_pct > 0
+                                    ? `-${s.savings_vs_current_pct}%`
+                                    : '—'}
                                 </span>
-                                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${RISK_COLORS[risk]}`}>
+                                <span
+                                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${RISK_COLORS[risk]}`}
+                                >
                                   <Shield size={10} /> Risque {s.risk_score}/100
                                 </span>
                                 {s.effort_score != null && (
-                                  <span data-testid="reflex-effort-badge" className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                                  <span
+                                    data-testid="reflex-effort-badge"
+                                    className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}
+                                  >
                                     <Settings2 size={10} /> Effort {s.effort_score}/100
                                   </span>
                                 )}
@@ -914,13 +1049,22 @@ export default function PurchasePage() {
                             {/* Créneaux + détails (collapsible) */}
                             <div className="px-3 pb-2 space-y-2">
                               {/* Créneaux Heures Solaires */}
-                              <div data-testid="reflex-creneaux" className="text-xs bg-white/60 rounded p-2 border border-amber-100">
+                              <div
+                                data-testid="reflex-creneaux"
+                                className="text-xs bg-white/60 rounded p-2 border border-amber-100"
+                              >
                                 <p className="font-semibold text-amber-800 flex items-center gap-1 mb-1">
                                   <Clock size={12} /> Créneaux Heures Solaires
                                 </p>
                                 <div className="grid grid-cols-2 gap-2 text-gray-700">
-                                  <div><span className="font-medium text-amber-700">Été :</span> 13h–16h (sem.) · 10h–17h (WE)</div>
-                                  <div><span className="font-medium text-amber-700">Hiver :</span> 8h–10h & 17h–20h</div>
+                                  <div>
+                                    <span className="font-medium text-amber-700">Été :</span>{' '}
+                                    13h–16h (sem.) · 10h–17h (WE)
+                                  </div>
+                                  <div>
+                                    <span className="font-medium text-amber-700">Hiver :</span>{' '}
+                                    8h–10h & 17h–20h
+                                  </div>
                                 </div>
                               </div>
                               {/* Blocs horaires summary */}
@@ -932,8 +1076,13 @@ export default function PurchasePage() {
                                   <div className="mt-1.5 text-xs bg-white/60 rounded p-2 space-y-1 border border-amber-100">
                                     {s.blocs.map((b) => (
                                       <div key={b.bloc} className="flex justify-between">
-                                        <span className="text-gray-700">{b.bloc.replace(/_/g, ' ')}</span>
-                                        <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh?.toFixed(4) ?? '—'} EUR/kWh</span>
+                                        <span className="text-gray-700">
+                                          {b.bloc.replace(/_/g, ' ')}
+                                        </span>
+                                        <span className="font-mono text-gray-600">
+                                          {b.weight_pct}% — {b.price_eur_kwh?.toFixed(4) ?? '—'}{' '}
+                                          EUR/kWh
+                                        </span>
                                       </div>
                                     ))}
                                   </div>
@@ -941,7 +1090,10 @@ export default function PurchasePage() {
                               )}
                               {/* Report info */}
                               {s.report_pct != null && s.report_pct > 0 && (
-                                <p data-testid="reflex-report-pct" className="text-xs text-amber-700">
+                                <p
+                                  data-testid="reflex-report-pct"
+                                  className="text-xs text-amber-700"
+                                >
                                   <RefreshCw size={10} className="inline mr-1" />
                                   Décalage heures pleines → solaire: {s.report_pct}%
                                 </p>
@@ -950,32 +1102,48 @@ export default function PurchasePage() {
                               {(() => {
                                 const fixeScenario = scenarios.find((sc) => sc.strategy === 'fixe');
                                 if (!fixeScenario || !s.total_annual_eur) return null;
-                                const deltaEur = Math.round(fixeScenario.total_annual_eur - s.total_annual_eur);
-                                const deltaPct = fixeScenario.total_annual_eur > 0 ? round1((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
+                                const deltaEur = Math.round(
+                                  fixeScenario.total_annual_eur - s.total_annual_eur
+                                );
+                                const deltaPct =
+                                  fixeScenario.total_annual_eur > 0
+                                    ? round1((deltaEur / fixeScenario.total_annual_eur) * 100)
+                                    : 0;
                                 return (
-                                  <div data-testid="reflex-delta-vs-fixe" className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5">
+                                  <div
+                                    data-testid="reflex-delta-vs-fixe"
+                                    className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5"
+                                  >
                                     <TrendingDown size={12} className="text-green-600" />
                                     <span className="text-green-700">
-                                      {deltaEur > 0 ? `-${deltaEur.toLocaleString()} EUR/an` : `+${Math.abs(deltaEur).toLocaleString()} EUR/an`}
-                                      {' '}({deltaPct > 0 ? '-' : '+'}{Math.abs(deltaPct)}%) vs Prix Fixe standard
+                                      {deltaEur > 0
+                                        ? `-${deltaEur.toLocaleString()} EUR/an`
+                                        : `+${Math.abs(deltaEur).toLocaleString()} EUR/an`}{' '}
+                                      ({deltaPct > 0 ? '-' : '+'}
+                                      {Math.abs(deltaPct)}%) vs Prix Fixe standard
                                     </span>
                                   </div>
                                 );
                               })()}
                             </div>
                             {/* Cross-brique CTAs */}
-                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap px-3 pb-3 pt-1 border-t border-amber-200">
+                            <div
+                              data-testid="reflex-cross-ctas"
+                              className="flex items-center gap-2 flex-wrap px-3 pb-3 pt-1 border-t border-amber-200"
+                            >
                               <button
                                 data-testid="cta-conso-explorer-reflex"
                                 onClick={() => {
                                   const now = new Date();
                                   const from = new Date(now);
                                   from.setDate(from.getDate() - 90);
-                                  navigate(toConsoExplorer({
-                                    site_id: selectedSiteId,
-                                    date_from: from.toISOString().slice(0, 10),
-                                    date_to: now.toISOString().slice(0, 10),
-                                  }));
+                                  navigate(
+                                    toConsoExplorer({
+                                      site_id: selectedSiteId,
+                                      date_from: from.toISOString().slice(0, 10),
+                                      date_to: now.toISOString().slice(0, 10),
+                                    })
+                                  );
                                 }}
                                 className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 underline"
                               >
@@ -983,7 +1151,14 @@ export default function PurchasePage() {
                               </button>
                               <button
                                 data-testid="cta-bill-intel-reflex"
-                                onClick={() => navigate(toBillIntel({ site_id: selectedSiteId, month: new Date().toISOString().slice(0, 7) }))}
+                                onClick={() =>
+                                  navigate(
+                                    toBillIntel({
+                                      site_id: selectedSiteId,
+                                      month: new Date().toISOString().slice(0, 7),
+                                    })
+                                  )
+                                }
                                 className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 underline"
                               >
                                 <FileSearch size={12} /> Contrôler facture
@@ -997,28 +1172,49 @@ export default function PurchasePage() {
                               </button>
                               <button
                                 data-testid="cta-create-action-reflex"
-                                onClick={() => navigate(toActionNew({
-                                  source: 'purchase',
-                                  source_type: 'achat',
-                                  site_id: selectedSiteId,
-                                  title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
-                                  scenario_label: 'Tarif Heures Solaires',
-                                  impact_eur: s.savings_vs_current_pct > 0 && s.total_annual_eur ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
-                                }))}
+                                onClick={() =>
+                                  navigate(
+                                    toActionNew({
+                                      source: 'purchase',
+                                      source_type: 'achat',
+                                      site_id: selectedSiteId,
+                                      title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
+                                      scenario_label: 'Tarif Heures Solaires',
+                                      impact_eur:
+                                        s.savings_vs_current_pct > 0 && s.total_annual_eur
+                                          ? Math.round(
+                                              (s.total_annual_eur * s.savings_vs_current_pct) / 100
+                                            )
+                                          : undefined,
+                                    })
+                                  )
+                                }
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
                               >
                                 <Plus size={12} /> Créer action
                               </button>
                               <button
                                 data-testid="cta-tester-tarif-solaire"
-                                onClick={() => navigate(toPurchase({ tab: 'simulation', site_id: selectedSiteId }))}
+                                onClick={() =>
+                                  navigate(
+                                    toPurchase({ tab: 'simulation', site_id: selectedSiteId })
+                                  )
+                                }
                                 className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 underline font-medium"
                               >
                                 <Sun size={12} /> Tester un Tarif Heures Solaires
                               </button>
                               <button
                                 data-testid="cta-assistant-ths"
-                                onClick={() => navigate(toPurchaseAssistant({ site_id: selectedSiteId, step: 'offres', offer: 'HEURES_SOLAIRES' }))}
+                                onClick={() =>
+                                  navigate(
+                                    toPurchaseAssistant({
+                                      site_id: selectedSiteId,
+                                      step: 'offres',
+                                      offer: 'HEURES_SOLAIRES',
+                                    })
+                                  )
+                                }
                                 className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 underline"
                               >
                                 <Rocket size={12} /> Tester dans l'Assistant
@@ -1046,14 +1242,23 @@ export default function PurchasePage() {
                         {isAccepted && (
                           <button
                             data-testid={`cta-create-action-${s.strategy}`}
-                            onClick={() => navigate(toActionNew({
-                              source: 'purchase',
-                              source_type: 'achat',
-                              site_id: selectedSiteId,
-                              title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString()} EUR/an)`,
-                              scenario_label: meta.label,
-                              impact_eur: s.savings_vs_current_pct > 0 && s.total_annual_eur ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
-                            }))}
+                            onClick={() =>
+                              navigate(
+                                toActionNew({
+                                  source: 'purchase',
+                                  source_type: 'achat',
+                                  site_id: selectedSiteId,
+                                  title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString()} EUR/an)`,
+                                  scenario_label: meta.label,
+                                  impact_eur:
+                                    s.savings_vs_current_pct > 0 && s.total_annual_eur
+                                      ? Math.round(
+                                          (s.total_annual_eur * s.savings_vs_current_pct) / 100
+                                        )
+                                      : undefined,
+                                })
+                              )
+                            }
                             className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
                           >
                             <Plus size={14} /> Créer action
@@ -1093,11 +1298,15 @@ export default function PurchasePage() {
             )}
             {/* V71: empty state guidé quand aucun scénario */}
             {!loading && scenarios.length === 0 && selectedSiteId && (
-              <div data-testid="empty-state-scenarios" className="bg-white rounded-lg shadow p-8 text-center">
+              <div
+                data-testid="empty-state-scenarios"
+                className="bg-white rounded-lg shadow p-8 text-center"
+              >
                 <Target size={40} className="mx-auto text-gray-300 mb-3" />
                 <h4 className="text-lg font-semibold text-gray-700 mb-1">Aucun scénario calculé</h4>
                 <p className="text-sm text-gray-500 mb-4">
-                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Comparer les scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
+                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Comparer les
+                  scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
                 </p>
                 <button
                   data-testid="cta-assistant-achat"
@@ -1206,142 +1415,271 @@ export default function PurchasePage() {
                   </div>
                 </div>
                 {/* V75: RéFlex portfolio table with enhanced columns */}
-                {portfolioData.sites?.length > 0 && (() => {
-                  const enriched = portfolioData.sites.map((site) => {
-                    const reco = site.scenarios?.find((s) => s.is_recommended);
-                    const reflex = site.scenarios?.find((s) => s.strategy === 'reflex_solar');
-                    const fixe = site.scenarios?.find((s) => s.strategy === 'fixe');
-                    const baseline = fixe?.total_annual_eur || reco?.total_annual_eur || 0;
-                    const reflexCost = reflex?.total_annual_eur || 0;
-                    const gain = baseline > 0 ? round1((1 - reflexCost / baseline) * 100) : 0;
-                    return { ...site, reco, reflex, baseline, reflexCost, gain };
-                  });
-                  const topGains = [...enriched].sort((a, b) => b.gain - a.gain).slice(0, 3);
-                  const topRisk = [...enriched].filter((s) => s.reflex).sort((a, b) => (b.reflex?.risk_score || 0) - (a.reflex?.risk_score || 0)).slice(0, 3);
-                  const easiest = [...enriched].filter((s) => s.reflex?.effort_score != null).sort((a, b) => (a.reflex?.effort_score || 0) - (b.reflex?.effort_score || 0)).slice(0, 3);
-                  const campaignSites = enriched.filter((s) => s.gain > 0);
-                  const campaignGainTotal = campaignSites.reduce((sum, s) => sum + Math.round(s.baseline * s.gain / 100), 0);
-                  return (
-                    <>
-                      {/* V75: Top-lists */}
-                      <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                          { items: topGains, cardClass: 'bg-green-50 border-green-200', titleClass: 'text-green-800', icon: <Award size={14} />, title: 'Meilleurs gains Tarif Heures Solaires',
-                            metric: (s) => <span className="font-medium text-green-700">-{s.gain}%</span>,
-                            actionTitle: (s) => `Tarif Heures Solaires — gain ${s.gain}%` },
-                          { items: topRisk, cardClass: 'bg-red-50 border-red-200', titleClass: 'text-red-800', icon: <Flame size={14} />, title: 'Risque pointe',
-                            metric: (s) => <span className="font-medium text-red-700">{s.reflex?.risk_score}/100</span>,
-                            actionTitle: (s) => `Risque pointe — ${s.reflex?.risk_score}/100` },
-                          { items: easiest, cardClass: 'bg-blue-50 border-blue-200', titleClass: 'text-blue-800', icon: <ArrowUpDown size={14} />, title: 'Faciles à basculer',
-                            metric: (s) => <span className="font-medium text-blue-700">Effort {s.reflex?.effort_score}/100</span>,
-                            actionTitle: (s) => `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100` },
-                        ].map(({ items, cardClass, titleClass, icon, title, metric, actionTitle }) => (
-                          <div key={title} className={`${cardClass} rounded-lg p-4 border`}>
-                            <h4 className={`text-xs font-bold ${titleClass} uppercase flex items-center gap-1.5 mb-2`}>
-                              {icon} {title}
-                            </h4>
-                            {items.map((s) => (
-                              <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
-                                <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
-                                <div className="flex items-center gap-2">
-                                  {metric(s)}
-                                  <button aria-label="Explorer conso" onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
-                                  <button aria-label="Diagnostic" onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
-                                  <button aria-label="Facture" onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                  <button aria-label="Creer action" onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: actionTitle(s), scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                      {/* V75: Enhanced portfolio table */}
-                      <div data-testid="reflex-portfolio-table" className="bg-white rounded-lg shadow overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
-                            <tr>
-                              <th className="px-4 py-3 text-left">Site</th>
-                              <th className="px-4 py-3 text-right">Budget baseline</th>
-                              <th className="px-4 py-3 text-right">Tarif Heures Solaires</th>
-                              <th className="px-4 py-3 text-right">Gain</th>
-                              <th className="px-4 py-3 text-right">Risque</th>
-                              <th className="px-4 py-3 text-right">Effort</th>
-                              <th className="px-4 py-3 text-center">Confiance</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {enriched.map((site) => (
-                              <tr key={site.site_id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-medium text-gray-900">
-                                  {site.site_nom || `Site ${site.site_id}`}
-                                </td>
-                                <td className="px-4 py-3 text-right text-gray-600">
-                                  {Math.round(site.baseline).toLocaleString()} EUR
-                                </td>
-                                <td className="px-4 py-3 text-right font-medium text-amber-700">
-                                  {site.reflex ? `${Math.round(site.reflexCost).toLocaleString()} EUR` : '—'}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  {site.gain > 0 ? (
-                                    <span className="text-green-600 font-medium">-{site.gain}%</span>
-                                  ) : site.gain < 0 ? (
-                                    <span className="text-red-600">+{Math.abs(site.gain)}%</span>
-                                  ) : '—'}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  {site.reflex ? `${site.reflex.risk_score}/100` : '—'}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  {site.reflex?.effort_score != null ? (
-                                    <span className={site.reflex?.effort_score <= 30 ? 'text-green-600' : site.reflex?.effort_score <= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                                      {site.reflex?.effort_score}/100
-                                    </span>
-                                  ) : '—'}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  {site.volume_kwh_an > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">
-                                      <BadgeCheck size={10} /> Données
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">
-                                      Estimé
-                                    </span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {/* V75: Campaign CTA + Export */}
-                      <div className="flex items-center justify-between mt-4">
-                        {campaignSites.length > 0 && (
-                          <button
-                            data-testid="cta-campaign-reflex"
-                            onClick={() => navigate(toActionNew({
-                              source: 'purchase',
-                              source_type: 'achat',
-                              site_ids: campaignSites.map((s) => s.site_id),
-                              title: `Campagne Tarif Heures Solaires — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
-                              scenario_label: 'Tarif Heures Solaires',
-                              impact_eur: campaignGainTotal,
-                            }))}
-                            className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
-                          >
-                            <Rocket size={16} /> Lancer campagne Tarif Heures Solaires ({campaignSites.length} sites)
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setShowPackRFP(true)}
-                          className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
+                {portfolioData.sites?.length > 0 &&
+                  (() => {
+                    const enriched = portfolioData.sites.map((site) => {
+                      const reco = site.scenarios?.find((s) => s.is_recommended);
+                      const reflex = site.scenarios?.find((s) => s.strategy === 'reflex_solar');
+                      const fixe = site.scenarios?.find((s) => s.strategy === 'fixe');
+                      const baseline = fixe?.total_annual_eur || reco?.total_annual_eur || 0;
+                      const reflexCost = reflex?.total_annual_eur || 0;
+                      const gain = baseline > 0 ? round1((1 - reflexCost / baseline) * 100) : 0;
+                      return { ...site, reco, reflex, baseline, reflexCost, gain };
+                    });
+                    const topGains = [...enriched].sort((a, b) => b.gain - a.gain).slice(0, 3);
+                    const topRisk = [...enriched]
+                      .filter((s) => s.reflex)
+                      .sort((a, b) => (b.reflex?.risk_score || 0) - (a.reflex?.risk_score || 0))
+                      .slice(0, 3);
+                    const easiest = [...enriched]
+                      .filter((s) => s.reflex?.effort_score != null)
+                      .sort((a, b) => (a.reflex?.effort_score || 0) - (b.reflex?.effort_score || 0))
+                      .slice(0, 3);
+                    const campaignSites = enriched.filter((s) => s.gain > 0);
+                    const campaignGainTotal = campaignSites.reduce(
+                      (sum, s) => sum + Math.round((s.baseline * s.gain) / 100),
+                      0
+                    );
+                    return (
+                      <>
+                        {/* V75: Top-lists */}
+                        <div
+                          data-testid="reflex-top-lists"
+                          className="grid grid-cols-1 md:grid-cols-3 gap-4"
                         >
-                          <FileText size={14} /> Exporter Pack RFP (A4)
-                        </button>
-                      </div>
-                    </>
-                  );
-                })()}
+                          {[
+                            {
+                              items: topGains,
+                              cardClass: 'bg-green-50 border-green-200',
+                              titleClass: 'text-green-800',
+                              icon: <Award size={14} />,
+                              title: 'Meilleurs gains Tarif Heures Solaires',
+                              metric: (s) => (
+                                <span className="font-medium text-green-700">-{s.gain}%</span>
+                              ),
+                              actionTitle: (s) => `Tarif Heures Solaires — gain ${s.gain}%`,
+                            },
+                            {
+                              items: topRisk,
+                              cardClass: 'bg-red-50 border-red-200',
+                              titleClass: 'text-red-800',
+                              icon: <Flame size={14} />,
+                              title: 'Risque pointe',
+                              metric: (s) => (
+                                <span className="font-medium text-red-700">
+                                  {s.reflex?.risk_score}/100
+                                </span>
+                              ),
+                              actionTitle: (s) => `Risque pointe — ${s.reflex?.risk_score}/100`,
+                            },
+                            {
+                              items: easiest,
+                              cardClass: 'bg-blue-50 border-blue-200',
+                              titleClass: 'text-blue-800',
+                              icon: <ArrowUpDown size={14} />,
+                              title: 'Faciles à basculer',
+                              metric: (s) => (
+                                <span className="font-medium text-blue-700">
+                                  Effort {s.reflex?.effort_score}/100
+                                </span>
+                              ),
+                              actionTitle: (s) =>
+                                `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100`,
+                            },
+                          ].map(
+                            ({
+                              items,
+                              cardClass,
+                              titleClass,
+                              icon,
+                              title,
+                              metric,
+                              actionTitle,
+                            }) => (
+                              <div key={title} className={`${cardClass} rounded-lg p-4 border`}>
+                                <h4
+                                  className={`text-xs font-bold ${titleClass} uppercase flex items-center gap-1.5 mb-2`}
+                                >
+                                  {icon} {title}
+                                </h4>
+                                {items.map((s) => (
+                                  <div
+                                    key={s.site_id}
+                                    className="flex items-center justify-between text-sm py-1"
+                                  >
+                                    <span className="text-gray-700">
+                                      {s.site_nom || `Site ${s.site_id}`}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {metric(s)}
+                                      <button
+                                        aria-label="Explorer conso"
+                                        onClick={() =>
+                                          navigate(
+                                            toConsoExplorer({ site_id: s.site_id, days: 90 })
+                                          )
+                                        }
+                                        className="text-blue-500 hover:text-blue-700"
+                                        title="Explorer"
+                                      >
+                                        <BarChart3 size={12} />
+                                      </button>
+                                      <button
+                                        aria-label="Diagnostic"
+                                        onClick={() =>
+                                          navigate(toConsoDiag({ site_id: s.site_id }))
+                                        }
+                                        className="text-purple-500 hover:text-purple-700"
+                                        title="Diagnostic"
+                                      >
+                                        <Activity size={12} />
+                                      </button>
+                                      <button
+                                        aria-label="Facture"
+                                        onClick={() =>
+                                          navigate(toBillIntel({ site_id: s.site_id }))
+                                        }
+                                        className="text-indigo-500 hover:text-indigo-700"
+                                        title="Facture"
+                                      >
+                                        <FileSearch size={12} />
+                                      </button>
+                                      <button
+                                        aria-label="Creer action"
+                                        onClick={() =>
+                                          navigate(
+                                            toActionNew({
+                                              source: 'purchase',
+                                              source_type: 'achat',
+                                              site_id: s.site_id,
+                                              title: actionTitle(s),
+                                              scenario_label: 'Tarif Heures Solaires',
+                                            })
+                                          )
+                                        }
+                                        className="text-green-500 hover:text-green-700"
+                                        title="Action"
+                                      >
+                                        <Plus size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          )}
+                        </div>
+                        {/* V75: Enhanced portfolio table */}
+                        <div
+                          data-testid="reflex-portfolio-table"
+                          className="bg-white rounded-lg shadow overflow-x-auto"
+                        >
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                              <tr>
+                                <th className="px-4 py-3 text-left">Site</th>
+                                <th className="px-4 py-3 text-right">Budget baseline</th>
+                                <th className="px-4 py-3 text-right">Tarif Heures Solaires</th>
+                                <th className="px-4 py-3 text-right">Gain</th>
+                                <th className="px-4 py-3 text-right">Risque</th>
+                                <th className="px-4 py-3 text-right">Effort</th>
+                                <th className="px-4 py-3 text-center">Confiance</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {enriched.map((site) => (
+                                <tr key={site.site_id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 font-medium text-gray-900">
+                                    {site.site_nom || `Site ${site.site_id}`}
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-gray-600">
+                                    {Math.round(site.baseline).toLocaleString()} EUR
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-medium text-amber-700">
+                                    {site.reflex
+                                      ? `${Math.round(site.reflexCost).toLocaleString()} EUR`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {site.gain > 0 ? (
+                                      <span className="text-green-600 font-medium">
+                                        -{site.gain}%
+                                      </span>
+                                    ) : site.gain < 0 ? (
+                                      <span className="text-red-600">+{Math.abs(site.gain)}%</span>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {site.reflex ? `${site.reflex.risk_score}/100` : '—'}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {site.reflex?.effort_score != null ? (
+                                      <span
+                                        className={
+                                          site.reflex?.effort_score <= 30
+                                            ? 'text-green-600'
+                                            : site.reflex?.effort_score <= 60
+                                              ? 'text-yellow-600'
+                                              : 'text-red-600'
+                                        }
+                                      >
+                                        {site.reflex?.effort_score}/100
+                                      </span>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    {site.volume_kwh_an > 0 ? (
+                                      <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">
+                                        <BadgeCheck size={10} /> Données
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">
+                                        Estimé
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {/* V75: Campaign CTA + Export */}
+                        <div className="flex items-center justify-between mt-4">
+                          {campaignSites.length > 0 && (
+                            <button
+                              data-testid="cta-campaign-reflex"
+                              onClick={() =>
+                                navigate(
+                                  toActionNew({
+                                    source: 'purchase',
+                                    source_type: 'achat',
+                                    site_ids: campaignSites.map((s) => s.site_id),
+                                    title: `Campagne Tarif Heures Solaires — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
+                                    scenario_label: 'Tarif Heures Solaires',
+                                    impact_eur: campaignGainTotal,
+                                  })
+                                )
+                              }
+                              className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
+                            >
+                              <Rocket size={16} /> Lancer campagne Tarif Heures Solaires (
+                              {campaignSites.length} sites)
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setShowPackRFP(true)}
+                            className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
+                          >
+                            <FileText size={14} /> Exporter Pack RFP (A4)
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
               </>
             )}
             {!portfolioData && !portfolioLoading && (
@@ -1375,90 +1713,101 @@ export default function PurchasePage() {
         )}
 
         {/* ══ TAB: Echeances (V1.1) ══ */}
-        {activeTab === 'echeances' && (() => {
-          const filteredRenewals = scopeSiteId
-            ? renewals.filter(r => String(r.site_id) === String(scopeSiteId))
-            : renewals;
-          return (
-          <div className="space-y-4">
-            {scopeSiteId && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
-                Filtre actif : site selectionne dans le bandeau ({scopedSites.find(s => String(s.id) === String(scopeSiteId))?.nom || scopeSiteId}).
-                {filteredRenewals.length === 0 && renewals.length > 0 && ' Aucune echeance pour ce site.'}
+        {activeTab === 'echeances' &&
+          (() => {
+            const filteredRenewals = scopeSiteId
+              ? renewals.filter((r) => String(r.site_id) === String(scopeSiteId))
+              : renewals;
+            return (
+              <div className="space-y-4">
+                {scopeSiteId && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
+                    Filtre actif : site selectionne dans le bandeau (
+                    {scopedSites.find((s) => String(s.id) === String(scopeSiteId))?.nom ||
+                      scopeSiteId}
+                    ).
+                    {filteredRenewals.length === 0 &&
+                      renewals.length > 0 &&
+                      ' Aucune echeance pour ce site.'}
+                  </div>
+                )}
+                {renewalsLoading ? (
+                  <div className="text-center py-12 text-gray-400">Chargement...</div>
+                ) : filteredRenewals.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    Aucun contrat avec echeance a venir
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                        <tr>
+                          <th className="px-4 py-3 text-left">Urgence</th>
+                          <th className="px-4 py-3 text-left">Site</th>
+                          <th className="px-4 py-3 text-left">Fournisseur</th>
+                          <th className="px-4 py-3 text-left">Energie</th>
+                          <th className="px-4 py-3 text-left">Fin contrat</th>
+                          <th className="px-4 py-3 text-left">Deadline preavis</th>
+                          <th className="px-4 py-3 text-right">Jours restants</th>
+                          <th className="px-4 py-3 text-center">Auto-renew</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {filteredRenewals.map((r) => (
+                          <tr key={r.contract_id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-1 text-xs font-bold rounded ${URGENCY_STYLES[r.urgency] || URGENCY_STYLES.gray}`}
+                              >
+                                {r.urgency === 'red'
+                                  ? 'Urgent'
+                                  : r.urgency === 'orange'
+                                    ? 'Bientot'
+                                    : r.urgency === 'yellow'
+                                      ? 'A planifier'
+                                      : 'OK'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                              {r.site_nom || `Site ${r.site_id}`}
+                            </td>
+                            <td className="px-4 py-3">{r.supplier_name}</td>
+                            <td className="px-4 py-3 capitalize">
+                              {r.energy_type}
+                              {r.energy_type === 'gaz' && (
+                                <span
+                                  className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-gray-200 text-gray-500 rounded"
+                                  title="Simulation achat non disponible pour le gaz dans cette version"
+                                >
+                                  hors-perimetre
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {new Date(r.end_date).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-4 py-3">
+                              {new Date(r.notice_deadline).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-4 py-3 text-right font-semibold">
+                              {r.days_until_expiry}j
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {r.auto_renew ? (
+                                <span className="text-green-600 text-xs font-medium">Oui</span>
+                              ) : (
+                                <span className="text-gray-400 text-xs">Non</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            )}
-            {renewalsLoading ? (
-              <div className="text-center py-12 text-gray-400">Chargement...</div>
-            ) : filteredRenewals.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                Aucun contrat avec echeance a venir
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Urgence</th>
-                      <th className="px-4 py-3 text-left">Site</th>
-                      <th className="px-4 py-3 text-left">Fournisseur</th>
-                      <th className="px-4 py-3 text-left">Energie</th>
-                      <th className="px-4 py-3 text-left">Fin contrat</th>
-                      <th className="px-4 py-3 text-left">Deadline preavis</th>
-                      <th className="px-4 py-3 text-right">Jours restants</th>
-                      <th className="px-4 py-3 text-center">Auto-renew</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredRenewals.map((r) => (
-                      <tr key={r.contract_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 text-xs font-bold rounded ${URGENCY_STYLES[r.urgency] || URGENCY_STYLES.gray}`}
-                          >
-                            {r.urgency === 'red'
-                              ? 'Urgent'
-                              : r.urgency === 'orange'
-                                ? 'Bientot'
-                                : r.urgency === 'yellow'
-                                  ? 'A planifier'
-                                  : 'OK'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">
-                          {r.site_nom || `Site ${r.site_id}`}
-                        </td>
-                        <td className="px-4 py-3">{r.supplier_name}</td>
-                        <td className="px-4 py-3 capitalize">
-                        {r.energy_type}
-                        {r.energy_type === 'gaz' && (
-                          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-gray-200 text-gray-500 rounded" title="Simulation achat non disponible pour le gaz dans cette version">hors-perimetre</span>
-                        )}
-                      </td>
-                        <td className="px-4 py-3">
-                          {new Date(r.end_date).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-4 py-3">
-                          {new Date(r.notice_deadline).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold">
-                          {r.days_until_expiry}j
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {r.auto_renew ? (
-                            <span className="text-green-600 text-xs font-medium">Oui</span>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Non</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* ══ TAB: Historique (V1.1) ══ */}
         {activeTab === 'historique' && (
@@ -1501,7 +1850,8 @@ export default function PurchasePage() {
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
                           Simulation #{idx + 1}
-                          {run.summary?.recommended_strategy && ` — ${run.summary.recommended_strategy}`}
+                          {run.summary?.recommended_strategy &&
+                            ` — ${run.summary.recommended_strategy}`}
                         </div>
                       </div>
                       <div className="text-right">

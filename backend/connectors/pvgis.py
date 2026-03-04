@@ -2,6 +2,7 @@
 PROMEOS Connectors - PVGIS (REAL - public API EU JRC)
 Estimation de production photovoltaique.
 """
+
 import urllib.request
 import json
 from datetime import datetime, timezone
@@ -66,7 +67,7 @@ class PVGISConnector(Connector):
                             quality_score=0.8,
                             coverage_ratio=1.0,
                             retrieved_at=datetime.now(timezone.utc),
-                            source_ref=url
+                            source_ref=url,
                         )
                         db.add(dp)
                         datapoints.append(dp)

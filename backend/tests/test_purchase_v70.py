@@ -2,6 +2,7 @@
 PROMEOS - V70 Achat Énergie Audit Tests
 Validates P0 fixes: _check_seed_enabled, org_id param, route structure.
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock, patch
@@ -18,6 +19,7 @@ from services.purchase_seed import seed_purchase_demo
 # Test: _check_seed_enabled guard
 # ═══════════════════════════════════════════════
 
+
 class TestCheckSeedEnabled:
     def test_function_exists(self):
         """_check_seed_enabled is callable."""
@@ -26,6 +28,7 @@ class TestCheckSeedEnabled:
     def test_raises_when_disabled(self):
         """Raises HTTPException 403 when DEMO_SEED_ENABLED is False."""
         from fastapi import HTTPException
+
         with patch("routes.purchase.DEMO_SEED_ENABLED", False):
             with pytest.raises(HTTPException) as exc_info:
                 _check_seed_enabled()
@@ -42,16 +45,19 @@ class TestCheckSeedEnabled:
 # Test: seed_purchase_demo org_id parameter
 # ═══════════════════════════════════════════════
 
+
 class TestSeedOrgId:
     def test_accepts_org_id_param(self):
         """seed_purchase_demo signature has org_id parameter."""
         import inspect
+
         sig = inspect.signature(seed_purchase_demo)
         assert "org_id" in sig.parameters
 
     def test_org_id_default_is_1(self):
         """Default org_id is 1 for backward compat."""
         import inspect
+
         sig = inspect.signature(seed_purchase_demo)
         assert sig.parameters["org_id"].default == 1
 
@@ -74,7 +80,7 @@ class TestSeedOrgId:
         pref_call = None
         for call in add_calls:
             obj = call[0][0]
-            if hasattr(obj, 'org_id') and obj.org_id == 42:
+            if hasattr(obj, "org_id") and obj.org_id == 42:
                 pref_call = obj
                 break
         assert pref_call is not None, "PurchasePreference should be created with org_id=42"
@@ -83,6 +89,7 @@ class TestSeedOrgId:
 # ═══════════════════════════════════════════════
 # Test: Route structure
 # ═══════════════════════════════════════════════
+
 
 class TestRouteStructure:
     PREFIX = "/api/purchase"
@@ -156,7 +163,9 @@ class TestRouteStructure:
 # Test: Energy Gate
 # ═══════════════════════════════════════════════
 
+
 class TestEnergyGate:
     def test_allowed_energy_types_is_elec_only(self):
         from routes.purchase import ALLOWED_ENERGY_TYPES
+
         assert ALLOWED_ENERGY_TYPES == {"elec"}

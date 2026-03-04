@@ -1,6 +1,7 @@
 """
 PROMEOS Connectors - Meteo-France (STUB - requires API key)
 """
+
 import os
 from .base import Connector
 
@@ -17,7 +18,7 @@ class MeteoFranceConnector(Connector):
             return {
                 "status": "stub",
                 "message": "Stub mode: definir METEOFRANCE_API_KEY pour activer",
-                "doc": "https://portail-api.meteofrance.fr/"
+                "doc": "https://portail-api.meteofrance.fr/",
             }
         return {"status": "ok", "message": "API key presente (non teste)"}
 

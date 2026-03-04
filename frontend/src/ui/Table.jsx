@@ -23,13 +23,14 @@ export function Thead({ children, sticky = false }) {
 export function Th({ children, className = '', sortable, sorted, onSort, pin }) {
   const { pinFirst } = useContext(TableCtx);
   const base = 'px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider';
-  const pinCls = pin || (pinFirst && pin !== false)
-    ? 'sticky left-0 z-[1] bg-gray-50'
-    : '';
+  const pinCls = pin || (pinFirst && pin !== false) ? 'sticky left-0 z-[1] bg-gray-50' : '';
 
   if (!sortable) return <th className={`${base} ${pinCls} ${className}`}>{children}</th>;
   return (
-    <th className={`${base} cursor-pointer select-none hover:text-gray-700 ${pinCls} ${className}`} onClick={onSort}>
+    <th
+      className={`${base} cursor-pointer select-none hover:text-gray-700 ${pinCls} ${className}`}
+      onClick={onSort}
+    >
       <span className="inline-flex items-center gap-1">
         {children}
         {sorted === 'asc' && <span>&#9650;</span>}
@@ -58,10 +59,13 @@ export function Tr({ children, className = '', onClick, selected }) {
 export function Td({ children, className = '', pin }) {
   const { compact, pinFirst } = useContext(TableCtx);
   const py = compact ? 'py-2' : 'py-3';
-  const pinCls = pin || (pinFirst && pin !== false)
-    ? 'sticky left-0 z-[1] bg-white group-hover:bg-gray-50'
-    : '';
-  return <td className={`px-4 ${py} text-gray-700 max-w-[240px] truncate ${pinCls} ${className}`}>{children}</td>;
+  const pinCls =
+    pin || (pinFirst && pin !== false) ? 'sticky left-0 z-[1] bg-white group-hover:bg-gray-50' : '';
+  return (
+    <td className={`px-4 ${py} text-gray-700 max-w-[240px] truncate ${pinCls} ${className}`}>
+      {children}
+    </td>
+  );
 }
 
 export function ThCheckbox({ checked, onChange }) {

@@ -26,10 +26,13 @@ export function resolveIcon(icon, props = {}) {
 
 export default function KpiCard({
   icon,
-  title, label,
+  title,
+  label,
   value,
-  sub, sublabel,
-  badge, badgeStatus,
+  sub,
+  sublabel,
+  badge,
+  badgeStatus,
   color = 'bg-blue-600',
   onClick,
   className = '',
@@ -42,22 +45,26 @@ export default function KpiCard({
 
   const Wrapper = onClick ? 'button' : 'div';
   return (
-    <Card className={`${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className}`}>
+    <Card
+      className={`${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className}`}
+    >
       <CardBody>
         <Wrapper
           onClick={onClick}
           className={`flex items-start gap-4 w-full text-left ${onClick ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg' : ''}`}
           {...(onClick ? { type: 'button' } : {})}
         >
-          {iconNode && (
-            <div className={`p-3 rounded-lg ${color} shrink-0`}>
-              {iconNode}
-            </div>
-          )}
+          {iconNode && <div className={`p-3 rounded-lg ${color} shrink-0`}>{iconNode}</div>}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider truncate">{resolvedTitle}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1 truncate tabular-nums">{value ?? '-'}</p>
-            {resolvedSub && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{resolvedSub}</p>}
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider truncate">
+              {resolvedTitle}
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-1 truncate tabular-nums">
+              {value ?? '-'}
+            </p>
+            {resolvedSub && (
+              <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{resolvedSub}</p>
+            )}
           </div>
           {badge && <Badge status={badgeStatus}>{badge}</Badge>}
         </Wrapper>
@@ -82,7 +89,9 @@ export function KpiCardCompact({ icon: Icon, color, label, value, detail, active
           <Icon size={16} className="text-white" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">{label}</p>
+          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">
+            {label}
+          </p>
           <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{value}</p>
         </div>
       </div>

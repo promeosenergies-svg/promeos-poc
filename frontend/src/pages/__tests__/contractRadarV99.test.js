@@ -14,8 +14,10 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
-const backend = (rel) => readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
-const backendExists = (rel) => existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
+const backend = (rel) =>
+  readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
+const backendExists = (rel) =>
+  existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
 
 const PAGE = src('pages/ContractRadarPage.jsx');
 const API_JS = src('services/api.js');

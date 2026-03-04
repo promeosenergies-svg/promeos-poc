@@ -9,7 +9,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const readPage = (name) => readFileSync(resolve(__dirname, '..', name), 'utf8');
-const readComponent = (name) => readFileSync(resolve(__dirname, '..', '..', 'components', name), 'utf8');
+const readComponent = (name) =>
+  readFileSync(resolve(__dirname, '..', '..', 'components', name), 'utf8');
 
 // ── 1. Dashboard uses useScope(), not getSites() ──────────────────────────
 

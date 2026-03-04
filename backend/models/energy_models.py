@@ -2,7 +2,20 @@
 PROMEOS Energy Models - Consumption Data & Analytics
 Time series data, usage profiles, anomalies, recommendations
 """
-from sqlalchemy import Column, String, Integer, Float, Text, JSON, DateTime, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint
+
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    Float,
+    Text,
+    JSON,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Enum as SQLEnum,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -12,6 +25,7 @@ from .base import Base
 
 class EnergyVector(str, enum.Enum):
     """Energy type"""
+
     ELECTRICITY = "electricity"
     GAS = "gas"
     HEAT = "heat"
@@ -21,6 +35,7 @@ class EnergyVector(str, enum.Enum):
 
 class FrequencyType(str, enum.Enum):
     """Time series frequency"""
+
     MIN_15 = "15min"
     MIN_30 = "30min"
     HOURLY = "hourly"
@@ -30,6 +45,7 @@ class FrequencyType(str, enum.Enum):
 
 class ImportStatus(str, enum.Enum):
     """Import job status"""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -39,6 +55,7 @@ class ImportStatus(str, enum.Enum):
 
 class AnomalySeverity(str, enum.Enum):
     """Anomaly severity levels"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -47,6 +64,7 @@ class AnomalySeverity(str, enum.Enum):
 
 class RecommendationStatus(str, enum.Enum):
     """Recommendation lifecycle status"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -55,6 +73,7 @@ class RecommendationStatus(str, enum.Enum):
 
 class Meter(Base):
     """Energy meter with enhanced metadata"""
+
     __tablename__ = "meter"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -95,10 +114,9 @@ class Meter(Base):
 
 class MeterReading(Base):
     """Time series consumption data"""
+
     __tablename__ = "meter_reading"
-    __table_args__ = (
-        UniqueConstraint("meter_id", "timestamp", name="uq_meter_reading_meter_ts"),
-    )
+    __table_args__ = (UniqueConstraint("meter_id", "timestamp", name="uq_meter_reading_meter_ts"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -132,12 +150,15 @@ class MeterReading(Base):
 
 class DataImportJob(Base):
     """Track data import operations"""
+
     __tablename__ = "data_import_job"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Job metadata
-    job_type = Column(String(50), nullable=False, default="consumption_import")  # consumption_import, manual_entry, api_sync
+    job_type = Column(
+        String(50), nullable=False, default="consumption_import"
+    )  # consumption_import, manual_entry, api_sync
     status = Column(SQLEnum(ImportStatus), nullable=False, default=ImportStatus.PENDING)
 
     # File reference
@@ -176,11 +197,14 @@ class DataImportJob(Base):
     readings = relationship("MeterReading", back_populates="import_job")
 
     def __repr__(self):
-        return f"<DataImportJob(id={self.id}, status='{self.status.value}', rows={self.rows_imported}/{self.rows_total})>"
+        return (
+            f"<DataImportJob(id={self.id}, status='{self.status.value}', rows={self.rows_imported}/{self.rows_total})>"
+        )
 
 
 class UsageProfile(Base):
     """Analyzed usage profile for a meter"""
+
     __tablename__ = "usage_profile"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -237,6 +261,7 @@ class UsageProfile(Base):
 
 class Anomaly(Base):
     """Detected anomaly instance"""
+
     __tablename__ = "anomaly"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -292,6 +317,7 @@ class Anomaly(Base):
 
 class Recommendation(Base):
     """Generated recommendation instance"""
+
     __tablename__ = "recommendation"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -356,8 +382,10 @@ class Recommendation(Base):
 # Monitoring Models (Electric Consumption Mastery)
 # ========================================
 
+
 class AlertStatus(str, enum.Enum):
     """Monitoring alert lifecycle"""
+
     OPEN = "open"
     ACKNOWLEDGED = "ack"
     RESOLVED = "resolved"
@@ -365,6 +393,7 @@ class AlertStatus(str, enum.Enum):
 
 class AlertSeverity(str, enum.Enum):
     """Alert severity levels"""
+
     INFO = "info"
     WARNING = "warning"
     HIGH = "high"
@@ -373,6 +402,7 @@ class AlertSeverity(str, enum.Enum):
 
 class MonitoringSnapshot(Base):
     """Periodic monitoring snapshot with KPIs for a site/meter"""
+
     __tablename__ = "monitoring_snapshot"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -409,11 +439,14 @@ class MonitoringSnapshot(Base):
     meter = relationship("Meter")
 
     def __repr__(self):
-        return f"<MonitoringSnapshot(site_id={self.site_id}, period={self.period_start.date()}-{self.period_end.date()})>"
+        return (
+            f"<MonitoringSnapshot(site_id={self.site_id}, period={self.period_start.date()}-{self.period_end.date()})>"
+        )
 
 
 class MonitoringAlert(Base):
     """Monitoring alert instance with lifecycle (open/ack/resolved)"""
+
     __tablename__ = "monitoring_alert"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

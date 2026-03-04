@@ -48,7 +48,7 @@ export default function WatchersPage() {
       const statusParam = filterStatus === 'all' ? null : filterStatus;
       const [watchersData, eventsData] = await Promise.all([
         listWatchers(),
-        listRegEvents(filterSource || null, null, statusParam)
+        listRegEvents(filterSource || null, null, statusParam),
       ]);
       setWatchers(watchersData.watchers || []);
       setEvents(eventsData.events || []);
@@ -61,13 +61,13 @@ export default function WatchersPage() {
 
   const handleRunWatcher = async (watcherName) => {
     try {
-      setRunResults(prev => ({ ...prev, [watcherName]: { loading: true } }));
+      setRunResults((prev) => ({ ...prev, [watcherName]: { loading: true } }));
       const result = await runWatcher(watcherName);
-      setRunResults(prev => ({ ...prev, [watcherName]: result }));
+      setRunResults((prev) => ({ ...prev, [watcherName]: result }));
       toast(`${watcherName}: ${result.new_events} nouveaux événements`, 'success');
       setTimeout(() => loadData(), 1000);
     } catch (error) {
-      setRunResults(prev => ({ ...prev, [watcherName]: { error: error.message } }));
+      setRunResults((prev) => ({ ...prev, [watcherName]: { error: error.message } }));
       toast(`Erreur execution ${watcherName}`, 'error');
     }
   };
@@ -88,7 +88,9 @@ export default function WatchersPage() {
     return (
       <PageShell icon={Eye} title="Veille" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
         <SkeletonCard />
       </PageShell>
@@ -110,7 +112,11 @@ export default function WatchersPage() {
       <div>
         <h2 className="text-base font-semibold text-gray-800 mb-3">Watchers Actifs</h2>
         {watchers.length === 0 ? (
-          <EmptyState icon={Eye} title="Aucun watcher configuré" text="Configurez vos sources de veille réglementaire." />
+          <EmptyState
+            icon={Eye}
+            title="Aucun watcher configuré"
+            text="Configurez vos sources de veille réglementaire."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {watchers.map((watcher) => (
@@ -120,11 +126,12 @@ export default function WatchersPage() {
                   <p className="text-sm text-gray-500 mb-3">{watcher.description}</p>
 
                   {runResults[watcher.name] && !runResults[watcher.name].loading && (
-                    <div className={`text-xs mb-3 rounded-lg px-3 py-2 ${runResults[watcher.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    <div
+                      className={`text-xs mb-3 rounded-lg px-3 py-2 ${runResults[watcher.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                    >
                       {runResults[watcher.name].error
                         ? `Erreur: ${runResults[watcher.name].error}`
-                        : `${runResults[watcher.name].new_events} nouveaux événements`
-                      }
+                        : `${runResults[watcher.name].new_events} nouveaux événements`}
                     </div>
                   )}
 
@@ -135,9 +142,13 @@ export default function WatchersPage() {
                     disabled={runResults[watcher.name]?.loading}
                   >
                     {runResults[watcher.name]?.loading ? (
-                      <><RefreshCw size={14} className="mr-1.5 animate-spin" /> Execution...</>
+                      <>
+                        <RefreshCw size={14} className="mr-1.5 animate-spin" /> Execution...
+                      </>
                     ) : (
-                      <><Play size={14} className="mr-1.5" /> Executer</>
+                      <>
+                        <Play size={14} className="mr-1.5" /> Executer
+                      </>
                     )}
                   </Button>
                 </CardBody>
@@ -157,21 +168,23 @@ export default function WatchersPage() {
             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
           >
             <option value="">Toutes les sources</option>
-            {watchers.map(w => (
-              <option key={w.name} value={w.name}>{w.name}</option>
+            {watchers.map((w) => (
+              <option key={w.name} value={w.name}>
+                {w.name}
+              </option>
             ))}
           </select>
         </div>
 
-        <Tabs
-          tabs={STATUS_TABS}
-          active={filterStatus}
-          onChange={setFilterStatus}
-        />
+        <Tabs tabs={STATUS_TABS} active={filterStatus} onChange={setFilterStatus} />
 
         <div className="mt-4">
           {events.length === 0 ? (
-            <EmptyState icon={Eye} title="Aucun événement" text="Exécutez un watcher pour détecter les événements réglementaires." />
+            <EmptyState
+              icon={Eye}
+              title="Aucun événement"
+              text="Exécutez un watcher pour détecter les événements réglementaires."
+            />
           ) : (
             <Card>
               <div className="divide-y divide-gray-100">
@@ -198,14 +211,20 @@ export default function WatchersPage() {
                           <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
                             <p className="text-sm text-gray-700">{event.snippet}</p>
                             {event.url && (
-                              <a href={event.url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                              <a
+                                href={event.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                              >
                                 <ExternalLink size={12} /> Lien source
                               </a>
                             )}
                             {event.review_note && (
                               <div className="p-2 bg-green-50 border border-green-200 rounded">
-                                <p className="text-xs text-green-800"><strong>Note:</strong> {event.review_note}</p>
+                                <p className="text-xs text-green-800">
+                                  <strong>Note:</strong> {event.review_note}
+                                </p>
                               </div>
                             )}
                             {event.reviewed_at && (
@@ -222,14 +241,19 @@ export default function WatchersPage() {
                         <Button
                           variant="ghost"
                           className="text-sm"
-                          onClick={() => setExpandedEvent(expandedEvent === event.id ? null : event.id)}
+                          onClick={() =>
+                            setExpandedEvent(expandedEvent === event.id ? null : event.id)
+                          }
                         >
                           {expandedEvent === event.id ? 'Masquer' : 'Details'}
                         </Button>
                         {(event.status === 'new' || !event.status) && (
                           <Button
                             className="text-sm"
-                            onClick={() => { setReviewModal(event); setReviewNotes(''); }}
+                            onClick={() => {
+                              setReviewModal(event);
+                              setReviewNotes('');
+                            }}
                           >
                             Reviser
                           </Button>
@@ -250,7 +274,8 @@ export default function WatchersPage() {
           <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
           <p className="text-sm text-gray-700">
             Les watchers stockent uniquement un hash de contenu + snippet de 500 caracteres maximum.
-            Aucune copie massive de contenu réglementaire n'est effectuée (conformité droits d'auteur).
+            Aucune copie massive de contenu réglementaire n'est effectuée (conformité droits
+            d'auteur).
           </p>
         </CardBody>
       </Card>
@@ -279,8 +304,15 @@ export default function WatchersPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setReviewModal(null)}>Annuler</Button>
-              <Button variant="secondary" onClick={() => handleReviewSubmit(reviewModal.id, 'dismiss')}>Ignorer</Button>
+              <Button variant="secondary" onClick={() => setReviewModal(null)}>
+                Annuler
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => handleReviewSubmit(reviewModal.id, 'dismiss')}
+              >
+                Ignorer
+              </Button>
               <Button onClick={() => handleReviewSubmit(reviewModal.id, 'apply')}>Appliquer</Button>
             </div>
           </div>

@@ -14,7 +14,8 @@ import { readFileSync } from 'fs';
 import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
-const backend = (rel) => readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
+const backend = (rel) =>
+  readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
 const SITE360 = src('pages/Site360.jsx');
 const API_JS = src('services/api.js');

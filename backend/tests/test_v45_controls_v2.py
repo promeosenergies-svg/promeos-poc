@@ -1,6 +1,7 @@
 """
 PROMEOS V45 — Tests: Controls V2 (actionnable + proof_required)
 """
+
 import json
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from database import engine
 from models.base import Base
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -18,18 +20,22 @@ Base.metadata.create_all(bind=engine)
 # 1. CONTROL_RULES structure V2
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestControlRulesV2:
     def test_rules_count_at_least_8(self):
         from services.tertiaire_service import CONTROL_RULES
+
         assert len(CONTROL_RULES) >= 8
 
     def test_rules_have_title_fr(self):
         from services.tertiaire_service import CONTROL_RULES
+
         for rule in CONTROL_RULES:
             assert "title_fr" in rule, f"Rule {rule['code']} missing title_fr"
 
     def test_rules_have_required_fields(self):
         from services.tertiaire_service import CONTROL_RULES
+
         required = ["code", "severity", "check", "message_fr", "impact_fr", "action_fr"]
         for rule in CONTROL_RULES:
             for field in required:
@@ -37,12 +43,14 @@ class TestControlRulesV2:
 
     def test_new_rules_present(self):
         from services.tertiaire_service import CONTROL_RULES
+
         codes = [r["code"] for r in CONTROL_RULES]
         assert "TERTIAIRE_RESP_NO_EMAIL" in codes
         assert "TERTIAIRE_PERIMETER_EVENT_PROOF" in codes
 
     def test_proof_required_structured(self):
         from services.tertiaire_service import CONTROL_RULES
+
         for rule in CONTROL_RULES:
             proof = rule.get("proof_required")
             if proof is not None:
@@ -58,15 +66,21 @@ class TestControlRulesV2:
 # 2. run_controls V2 — enriched output
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRunControlsV2:
     def test_controls_returns_issues_with_proof_fields(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         # Create EFA without buildings → triggers TERTIAIRE_NO_BUILDING
-        efa = client.post("/api/tertiaire/efa", json={
-            "org_id": 1, "nom": "V45 Controls Test",
-        })
+        efa = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V45 Controls Test",
+            },
+        )
         if efa.status_code != 201:
             pytest.skip("Cannot create EFA")
         efa_id = efa.json()["id"]
@@ -82,10 +96,15 @@ class TestRunControlsV2:
     def test_controls_critical_no_building(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        efa = client.post("/api/tertiaire/efa", json={
-            "org_id": 1, "nom": "V45 No Building",
-        })
+        efa = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V45 No Building",
+            },
+        )
         if efa.status_code != 201:
             pytest.skip("Cannot create EFA")
         efa_id = efa.json()["id"]
@@ -98,10 +117,15 @@ class TestRunControlsV2:
     def test_controls_no_resp_has_proof_required(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        efa = client.post("/api/tertiaire/efa", json={
-            "org_id": 1, "nom": "V45 No Resp Proof",
-        })
+        efa = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V45 No Resp Proof",
+            },
+        )
         if efa.status_code != 201:
             pytest.skip("Cannot create EFA")
         efa_id = efa.json()["id"]
@@ -117,10 +141,15 @@ class TestRunControlsV2:
     def test_controls_deterministic(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        efa = client.post("/api/tertiaire/efa", json={
-            "org_id": 1, "nom": "V45 Deterministic",
-        })
+        efa = client.post(
+            "/api/tertiaire/efa",
+            json={
+                "org_id": 1,
+                "nom": "V45 Deterministic",
+            },
+        )
         if efa.status_code != 201:
             pytest.skip("Cannot create EFA")
         efa_id = efa.json()["id"]
@@ -134,12 +163,13 @@ class TestRunControlsV2:
 # 3. Source guards
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestV45ControlsSourceGuards:
     @pytest.fixture(autouse=True)
     def _load(self):
-        self.code = (
-            Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py"
-        ).read_text(encoding="utf-8")
+        self.code = (Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py").read_text(
+            encoding="utf-8"
+        )
 
     def test_v45_proof_helper(self):
         assert "def _proof(" in self.code

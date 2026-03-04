@@ -106,12 +106,21 @@ export default function CommandPalette({ open, onClose }) {
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition
                   ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
               >
-                {Icon && <Icon size={16} className={isSelected ? 'text-blue-500' : 'text-gray-400'} />}
-                {!Icon && <ArrowRight size={16} className={isSelected ? 'text-blue-500' : 'text-gray-400'} />}
+                {Icon && (
+                  <Icon size={16} className={isSelected ? 'text-blue-500' : 'text-gray-400'} />
+                )}
+                {!Icon && (
+                  <ArrowRight
+                    size={16}
+                    className={isSelected ? 'text-blue-500' : 'text-gray-400'}
+                  />
+                )}
                 <span className="flex-1 truncate">{item.label}</span>
                 {item.section && <span className="text-xs text-gray-400">{item.section}</span>}
                 {item.type === 'action' && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded font-medium">Action</span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded font-medium">
+                    Action
+                  </span>
                 )}
                 {isSelected && <CornerDownLeft size={12} className="text-gray-400" />}
               </button>
@@ -121,9 +130,15 @@ export default function CommandPalette({ open, onClose }) {
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4 text-[10px] text-gray-400">
-          <span><kbd className="px-1 bg-gray-100 rounded">↑↓</kbd> Naviguer</span>
-          <span><kbd className="px-1 bg-gray-100 rounded">↵</kbd> Ouvrir</span>
-          <span><kbd className="px-1 bg-gray-100 rounded">esc</kbd> Fermer</span>
+          <span>
+            <kbd className="px-1 bg-gray-100 rounded">↑↓</kbd> Naviguer
+          </span>
+          <span>
+            <kbd className="px-1 bg-gray-100 rounded">↵</kbd> Ouvrir
+          </span>
+          <span>
+            <kbd className="px-1 bg-gray-100 rounded">esc</kbd> Fermer
+          </span>
         </div>
       </div>
     </div>

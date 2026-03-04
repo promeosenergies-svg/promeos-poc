@@ -8,6 +8,7 @@ Usage:
     python backend/scripts/kb_coverage_report.py --output docs/kb/_meta/coverage_report.md
     python backend/scripts/kb_coverage_report.py --include-drafts
 """
+
 import sys
 import csv
 import yaml
@@ -30,13 +31,15 @@ def load_coverage_matrix():
     with open(COVERAGE_CSV, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            requirements.append({
-                "domain": row["domain"],
-                "segment": row["segment"],
-                "type": row["type"],
-                "required_min": int(row["required_min_items"]),
-                "description": row["description"]
-            })
+            requirements.append(
+                {
+                    "domain": row["domain"],
+                    "segment": row["segment"],
+                    "type": row["type"],
+                    "required_min": int(row["required_min_items"]),
+                    "description": row["description"],
+                }
+            )
     return requirements
 
 
@@ -91,13 +94,15 @@ def match_items_to_requirements(items, requirements):
             if req["segment"] not in segments:
                 continue
 
-            matching.append({
-                "id": item.get("id"),
-                "title": item.get("title"),
-                "confidence": item.get("confidence"),
-                "status": item.get("status", "validated"),
-                "source": item.get("_source")
-            })
+            matching.append(
+                {
+                    "id": item.get("id"),
+                    "title": item.get("title"),
+                    "confidence": item.get("confidence"),
+                    "status": item.get("status", "validated"),
+                    "source": item.get("_source"),
+                }
+            )
 
         # Coverage status
         validated_count = sum(1 for m in matching if m["status"] == "validated")
@@ -114,14 +119,16 @@ def match_items_to_requirements(items, requirements):
         else:
             coverage_status = "MISSING"
 
-        results.append({
-            **req,
-            "matching_items": matching,
-            "validated_count": validated_count,
-            "draft_count": draft_count,
-            "total_count": total,
-            "coverage_status": coverage_status
-        })
+        results.append(
+            {
+                **req,
+                "matching_items": matching,
+                "validated_count": validated_count,
+                "draft_count": draft_count,
+                "total_count": total,
+                "coverage_status": coverage_status,
+            }
+        )
 
     return results
 
@@ -169,7 +176,7 @@ def generate_report(results, include_drafts=False):
                 "COVERED": "[OK]",
                 "PARTIAL": "[PARTIAL]",
                 "INSUFFICIENT": "[LOW]",
-                "MISSING": "[MISSING]"
+                "MISSING": "[MISSING]",
             }.get(r["coverage_status"], "?")
 
             lines.append(
@@ -187,8 +194,9 @@ def generate_report(results, include_drafts=False):
         lines.append("")
         for r in missing_results:
             gap = r["required_min"] - r["validated_count"]
-            lines.append(f"- **{r['domain']}/{r['segment']}/{r['type']}**: "
-                        f"need {gap} more validated items ({r['description']})")
+            lines.append(
+                f"- **{r['domain']}/{r['segment']}/{r['type']}**: need {gap} more validated items ({r['description']})"
+            )
         lines.append("")
 
     return "\n".join(lines)
@@ -196,10 +204,10 @@ def generate_report(results, include_drafts=False):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="KB coverage report")
     parser.add_argument("--output", help="Output markdown file path")
-    parser.add_argument("--include-drafts", action="store_true",
-                        help="Include draft items in coverage count")
+    parser.add_argument("--include-drafts", action="store_true", help="Include draft items in coverage count")
     args = parser.parse_args()
 
     if not COVERAGE_CSV.exists():

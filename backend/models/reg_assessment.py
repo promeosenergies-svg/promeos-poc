@@ -2,6 +2,7 @@
 PROMEOS - Modele RegAssessment
 Cache persistant des evaluations reglementaires RegOps.
 """
+
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Boolean, Text, Enum
 from .base import Base
 from .enums import RegStatus

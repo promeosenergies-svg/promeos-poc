@@ -12,8 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const readSrc = (relPath) =>
-  readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
+const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── 1) Evidence model ──────────────────────────────────────────────────────
 describe('Evidence model (ui/evidence.js)', () => {

@@ -11,9 +11,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const store = {};
 const mockLocalStorage = {
   getItem: vi.fn((key) => store[key] ?? null),
-  setItem: vi.fn((key, val) => { store[key] = val; }),
-  removeItem: vi.fn((key) => { delete store[key]; }),
-  clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
+  setItem: vi.fn((key, val) => {
+    store[key] = val;
+  }),
+  removeItem: vi.fn((key) => {
+    delete store[key];
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach((k) => delete store[k]);
+  }),
 };
 vi.stubGlobal('localStorage', mockLocalStorage);
 
@@ -32,23 +38,28 @@ function readPresets() {
 }
 
 function writePresets(list) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch {}
 }
 
 function makePresetOps(initial = []) {
   let presets = [...initial];
 
-  const persist = (next) => { presets = next; writePresets(next); };
+  const persist = (next) => {
+    presets = next;
+    writePresets(next);
+  };
 
   const savePreset = (name, state) => {
     if (!name?.trim()) return;
-    const filtered = presets.filter(p => p.name !== name);
+    const filtered = presets.filter((p) => p.name !== name);
     const entry = { name, state, savedAt: new Date().toISOString() };
     persist([...filtered, entry].slice(-MAX_PRESETS));
   };
 
-  const loadPreset = (name) => presets.find(p => p.name === name)?.state ?? null;
-  const deletePreset = (name) => persist(presets.filter(p => p.name !== name));
+  const loadPreset = (name) => presets.find((p) => p.name === name)?.state ?? null;
+  const deletePreset = (name) => persist(presets.filter((p) => p.name !== name));
   const getPresets = () => presets;
 
   return { savePreset, loadPreset, deletePreset, getPresets };
@@ -59,7 +70,7 @@ function makePresetOps(initial = []) {
 describe('useExplorerPresets — save / load / delete', () => {
   beforeEach(() => {
     mockLocalStorage.clear();
-    Object.keys(store).forEach(k => delete store[k]);
+    Object.keys(store).forEach((k) => delete store[k]);
   });
 
   it('savePreset stores entry and loadPreset retrieves it', () => {
@@ -97,7 +108,7 @@ describe('useExplorerPresets — save / load / delete', () => {
     for (let i = 1; i <= 11; i++) {
       savePreset(`Preset ${i}`, { idx: i });
     }
-    const names = getPresets().map(p => p.name);
+    const names = getPresets().map((p) => p.name);
     expect(names).toHaveLength(MAX_PRESETS);
     // Oldest (Preset 1) should be gone
     expect(names).not.toContain('Preset 1');

@@ -3,8 +3,10 @@ PROMEOS RegOps Hardening Tests
 Covers: scoring, data quality gate, watcher pipeline, connector contracts, finding audit.
 ~30 tests across 5 test classes.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -17,17 +19,32 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from models import (
-    Base, Site, Batiment, Evidence, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, RegSourceEvent, WatcherEventStatus,
-    TypeSite, TypeEvidence, StatutEvidence, InsightStatus, OperatStatus,
+    Base,
+    Site,
+    Batiment,
+    Evidence,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    RegSourceEvent,
+    WatcherEventStatus,
+    TypeSite,
+    TypeEvidence,
+    StatutEvidence,
+    InsightStatus,
+    OperatStatus,
 )
 from database import get_db
 from main import app
 
 from regops.schemas import Finding
 from regops.scoring import (
-    compute_regops_score, load_scoring_profile,
-    _dedup_findings, ScoreResult, ScoringPenalty,
+    compute_regops_score,
+    load_scoring_profile,
+    _dedup_findings,
+    ScoreResult,
+    ScoringPenalty,
 )
 from regops.data_quality import compute_data_quality, DataQualityReport
 from regops.data_quality_specs import DATA_QUALITY_SPECS
@@ -38,6 +55,7 @@ from watchers.rss_watcher import _normalize_dedup_key
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -62,6 +80,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -115,16 +134,14 @@ def _make_finding(**overrides):
 # 1. Scoring Hardening (8 tests)
 # ========================================
 
+
 class TestScoringHardening:
     """Tests for regops/scoring.py — compute_regops_score, dedup, clamp, profile."""
 
     def test_score_clamped_0_100(self):
         """Score is always in [0, 100]."""
         # Many critical findings should not go below 0
-        findings = [
-            _make_finding(rule_id=f"R_{i}", severity="critical", status="NON_COMPLIANT")
-            for i in range(20)
-        ]
+        findings = [_make_finding(rule_id=f"R_{i}", severity="critical", status="NON_COMPLIANT") for i in range(20)]
         result = compute_regops_score(findings, 100.0)
         assert 0.0 <= result.score <= 100.0
 
@@ -203,6 +220,7 @@ class TestScoringHardening:
 # ========================================
 # 2. Data Quality Gate (6 tests)
 # ========================================
+
 
 class TestDataQualityGate:
     """Tests for regops/data_quality.py — compute_data_quality, specs."""
@@ -287,6 +305,7 @@ class TestDataQualityGate:
 # ========================================
 # 3. Watcher Pipeline (6 tests)
 # ========================================
+
 
 class TestWatcherPipeline:
     """Tests for watcher status pipeline and dedup key normalization."""
@@ -381,6 +400,7 @@ class TestWatcherPipeline:
 # 4. Connector Contracts (4 tests)
 # ========================================
 
+
 class TestConnectorContracts:
     """Tests for connectors/contracts.py — validate_mapping."""
 
@@ -424,6 +444,7 @@ class TestConnectorContracts:
 # ========================================
 # 5. Finding Audit (6 tests)
 # ========================================
+
 
 class TestFindingAudit:
     """Tests for finding audit fields (inputs_json, params_json, evidence_json, engine_version)."""

@@ -64,6 +64,8 @@ describe('classifyEmptyReason', () => {
     expect(classifyEmptyReason({ has_data: false, reasons: [] })).toBe('unknown');
   });
   it('multiple reasons => returns first', () => {
-    expect(classifyEmptyReason({ has_data: false, reasons: ['no_readings', 'insufficient_readings'] })).toBe('no_readings');
+    expect(
+      classifyEmptyReason({ has_data: false, reasons: ['no_readings', 'insufficient_readings'] })
+    ).toBe('no_readings');
   });
 });

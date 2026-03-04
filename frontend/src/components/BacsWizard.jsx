@@ -4,21 +4,30 @@
  */
 import { useState, useCallback } from 'react';
 import {
-  X, ChevronRight, ChevronLeft, Check, Plus, Trash2,
-  ShieldCheck, AlertTriangle, Clock, Calculator, FileText,
-  Building2, Thermometer, Snowflake, Wind,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Plus,
+  Trash2,
+  ShieldCheck,
+  AlertTriangle,
+  Clock,
+  Calculator,
+  FileText,
+  Building2,
+  Thermometer,
+  Snowflake,
+  Wind,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '../ui';
-import {
-  createBacsAsset, addCvcSystem, recomputeBacs,
-  getBacsScoreExplain,
-} from '../services/api';
+import { createBacsAsset, addCvcSystem, recomputeBacs, getBacsScoreExplain } from '../services/api';
 
 const PHASES = [
   { id: 'eligibilite', label: 'Éligibilité', icon: Building2 },
   { id: 'inventaire', label: 'Inventaire CVC', icon: Thermometer },
   { id: 'resultat', label: 'Résultat', icon: ShieldCheck },
-  { id: 'actions', label: 'Plan d\'actions', icon: FileText },
+  { id: 'actions', label: "Plan d'actions", icon: FileText },
 ];
 
 const SYSTEM_TYPES = [
@@ -42,8 +51,10 @@ function ProgressBar({ phase }) {
         const isDone = i < phase;
         return (
           <div key={p.id} className="flex items-center gap-2 flex-1">
-            <div className={`flex items-center gap-1.5 text-xs font-medium
-              ${isCurrent ? 'text-blue-600' : isDone ? 'text-green-600' : 'text-gray-400'}`}>
+            <div
+              className={`flex items-center gap-1.5 text-xs font-medium
+              ${isCurrent ? 'text-blue-600' : isDone ? 'text-green-600' : 'text-gray-400'}`}
+            >
               {isDone ? <Check size={14} /> : <Icon size={14} />}
               <span className="hidden sm:inline">{p.label}</span>
             </div>
@@ -78,7 +89,9 @@ function StepEligibilite({ data, setData, onNext }) {
       </label>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Date du permis de construire</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Date du permis de construire
+        </label>
         <input
           type="date"
           value={data.pc_date || ''}
@@ -95,14 +108,18 @@ function StepEligibilite({ data, setData, onNext }) {
           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
         <div>
-          <p className="text-sm font-medium text-gray-800">Renouvellement CVC depuis le 09/04/2023</p>
+          <p className="text-sm font-medium text-gray-800">
+            Renouvellement CVC depuis le 09/04/2023
+          </p>
           <p className="text-xs text-gray-500">Déclenche l'obligation même sous 70 kW</p>
         </div>
       </label>
 
       {data.has_renewal && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date du renouvellement</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Date du renouvellement
+          </label>
           <input
             type="date"
             value={data.renewal_date || ''}
@@ -140,7 +157,10 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
   const [editing, setEditing] = useState(null); // index or null
 
   const addSystem = () => {
-    setSystems([...systems, { type: 'heating', architecture: 'cascade', units: [{ label: '', kw: 0 }] }]);
+    setSystems([
+      ...systems,
+      { type: 'heating', architecture: 'cascade', units: [{ label: '', kw: 0 }] },
+    ]);
     setEditing(systems.length);
   };
 
@@ -177,13 +197,14 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
   // Compute local putile preview
   const totalKw = systems.reduce((sum, s) => {
     if (s.type === 'ventilation') return sum;
-    const kws = s.units.map(u => parseFloat(u.kw) || 0).filter(k => k > 0);
+    const kws = s.units.map((u) => parseFloat(u.kw) || 0).filter((k) => k > 0);
     if (!kws.length) return sum;
-    const sysKw = (s.architecture === 'independent') ? Math.max(...kws) : kws.reduce((a, b) => a + b, 0);
+    const sysKw =
+      s.architecture === 'independent' ? Math.max(...kws) : kws.reduce((a, b) => a + b, 0);
     return sum + sysKw;
   }, 0);
 
-  const sysIcon = (type) => SYSTEM_TYPES.find(t => t.value === type);
+  const sysIcon = (type) => SYSTEM_TYPES.find((t) => t.value === type);
 
   return (
     <div className="space-y-5">
@@ -236,7 +257,10 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
                     Système {idx + 1}: {typeInfo?.label || sys.type}
                   </span>
                 </div>
-                <button onClick={() => removeSystem(idx)} className="p-1 text-gray-400 hover:text-red-500">
+                <button
+                  onClick={() => removeSystem(idx)}
+                  className="p-1 text-gray-400 hover:text-red-500"
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -249,20 +273,30 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
                     onChange={(e) => updateSystem(idx, 'type', e.target.value)}
                     className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
                   >
-                    {SYSTEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    {SYSTEM_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Architecture</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Architecture
+                  </label>
                   <select
                     value={sys.architecture}
                     onChange={(e) => updateSystem(idx, 'architecture', e.target.value)}
                     className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
                   >
-                    {ARCHITECTURES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                    {ARCHITECTURES.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {a.label}
+                      </option>
+                    ))}
                   </select>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {ARCHITECTURES.find(a => a.value === sys.architecture)?.desc}
+                    {ARCHITECTURES.find((a) => a.value === sys.architecture)?.desc}
                   </p>
                 </div>
               </div>
@@ -271,7 +305,10 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-600">Unités</span>
-                  <button onClick={() => addUnit(idx)} className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
+                  <button
+                    onClick={() => addUnit(idx)}
+                    className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+                  >
                     <Plus size={12} /> Ajouter
                   </button>
                 </div>
@@ -292,7 +329,10 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
                     />
                     <span className="text-xs text-gray-400">kW</span>
                     {sys.units.length > 1 && (
-                      <button onClick={() => removeUnit(idx, ui)} className="p-1 text-gray-400 hover:text-red-500">
+                      <button
+                        onClick={() => removeUnit(idx, ui)}
+                        className="p-1 text-gray-400 hover:text-red-500"
+                      >
                         <Trash2 size={12} />
                       </button>
                     )}
@@ -333,7 +373,9 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
       <div className="text-center py-12 text-gray-400">
         <AlertTriangle size={28} className="mx-auto mb-2" />
         <p className="text-sm">Erreur: pas de résultat disponible.</p>
-        <Button variant="outline" className="mt-4" onClick={onPrev}>Retour</Button>
+        <Button variant="outline" className="mt-4" onClick={onPrev}>
+          Retour
+        </Button>
       </div>
     );
   }
@@ -347,7 +389,9 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
       <h3 className="text-base font-semibold text-gray-800">Résultat de l'évaluation</h3>
 
       {/* Main verdict */}
-      <Card className={`border-l-4 ${a.is_obligated ? 'border-l-red-500 bg-red-50' : 'border-l-green-500 bg-green-50'}`}>
+      <Card
+        className={`border-l-4 ${a.is_obligated ? 'border-l-red-500 bg-red-50' : 'border-l-green-500 bg-green-50'}`}
+      >
         <CardBody className="flex items-center gap-4">
           <ShieldCheck size={28} className={a.is_obligated ? 'text-red-500' : 'text-green-500'} />
           <div>
@@ -373,7 +417,9 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
             <p className="text-xs text-gray-500">Échéance</p>
             <p className="text-sm font-bold text-gray-800">{a.deadline_date || '—'}</p>
             {daysLeft !== null && (
-              <p className={`text-xs ${daysLeft < 0 ? 'text-red-600 font-bold' : daysLeft < 180 ? 'text-amber-600' : 'text-green-600'}`}>
+              <p
+                className={`text-xs ${daysLeft < 0 ? 'text-red-600 font-bold' : daysLeft < 180 ? 'text-amber-600' : 'text-green-600'}`}
+              >
                 {daysLeft < 0 ? `${Math.abs(daysLeft)}j en retard` : `${daysLeft}j restants`}
               </p>
             )}
@@ -384,31 +430,38 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
           </div>
           <div className="p-3 bg-gray-50 rounded-lg text-center">
             <p className="text-xs text-gray-500">Score conformité</p>
-            <p className={`text-sm font-bold ${(a.compliance_score || 0) >= 50 ? 'text-green-600' : 'text-red-600'}`}>
+            <p
+              className={`text-sm font-bold ${(a.compliance_score || 0) >= 50 ? 'text-green-600' : 'text-red-600'}`}
+            >
               {a.compliance_score?.toFixed(0) ?? '—'}%
             </p>
           </div>
           <div className="p-3 bg-gray-50 rounded-lg text-center">
             <p className="text-xs text-gray-500">Confiance</p>
-            <p className="text-sm font-bold text-gray-800">{((a.confidence_score || 0) * 100).toFixed(0)}%</p>
+            <p className="text-sm font-bold text-gray-800">
+              {((a.confidence_score || 0) * 100).toFixed(0)}%
+            </p>
           </div>
         </div>
       )}
 
       {/* TRI exemption */}
       {a.tri_exemption_possible !== null && (
-        <Card className={`border-l-4 ${a.tri_exemption_possible ? 'border-l-amber-400' : 'border-l-gray-300'}`}>
+        <Card
+          className={`border-l-4 ${a.tri_exemption_possible ? 'border-l-amber-400' : 'border-l-gray-300'}`}
+        >
           <CardBody>
             <div className="flex items-center gap-2">
               <Clock size={16} className="text-amber-500" />
               <h4 className="text-sm font-semibold text-gray-800">Exemption TRI</h4>
               <Badge status={a.tri_exemption_possible ? 'warn' : 'neutral'}>
-                {a.tri_exemption_possible ? 'Exemption possible' : 'Pas d\'exemption'}
+                {a.tri_exemption_possible ? 'Exemption possible' : "Pas d'exemption"}
               </Badge>
             </div>
             {a.tri_years && (
               <p className="text-sm text-gray-600 mt-1">
-                TRI = {a.tri_years} ans {a.tri_years > 10 ? '(> 10 ans: exemption art. R. 175-7)' : '(<= 10 ans)'}
+                TRI = {a.tri_years} ans{' '}
+                {a.tri_years > 10 ? '(> 10 ans: exemption art. R. 175-7)' : '(<= 10 ans)'}
               </p>
             )}
           </CardBody>
@@ -423,8 +476,17 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
             <Card key={i} className="border-l-2 border-l-gray-300">
               <CardBody className="py-2">
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge status={f.status === 'NON_COMPLIANT' ? 'crit' : f.status === 'AT_RISK' ? 'warn' : 'ok'}>
-                    {{ NON_COMPLIANT: 'Non conforme', AT_RISK: 'À risque', COMPLIANT: 'Conforme', UNKNOWN: 'À qualifier' }[f.status] || f.status}
+                  <Badge
+                    status={
+                      f.status === 'NON_COMPLIANT' ? 'crit' : f.status === 'AT_RISK' ? 'warn' : 'ok'
+                    }
+                  >
+                    {{
+                      NON_COMPLIANT: 'Non conforme',
+                      AT_RISK: 'À risque',
+                      COMPLIANT: 'Conforme',
+                      UNKNOWN: 'À qualifier',
+                    }[f.status] || f.status}
                   </Badge>
                   <span className="text-xs text-gray-500">{f.regulation || f.rule_id}</span>
                 </div>
@@ -438,7 +500,9 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
       {/* Putile trace */}
       {scoreExplain?.putile?.trace && (
         <details className="text-xs text-gray-500">
-          <summary className="cursor-pointer text-blue-600 hover:underline">Trace Putile (audit)</summary>
+          <summary className="cursor-pointer text-blue-600 hover:underline">
+            Trace Putile (audit)
+          </summary>
           <pre className="mt-1 p-2 bg-gray-50 rounded text-xs whitespace-pre-wrap">
             {scoreExplain.putile.trace.join('\n')}
           </pre>
@@ -477,10 +541,30 @@ function StepActions({ assessment, onClose }) {
   }
 
   const actions = [
-    { priority: 'CRITICAL', label: 'Installer un systeme GTB/GTC conforme', effort: 'Élevé', roi: 'Conformité réglementaire' },
-    { priority: 'HIGH', label: 'Planifier l\'inspection quinquennale', effort: 'Moyen', roi: 'Éviter sanction' },
-    { priority: 'MEDIUM', label: 'Évaluer le TRI pour exemption éventuelle', effort: 'Faible', roi: 'Potentielle exemption' },
-    { priority: 'LOW', label: 'Documenter le responsable et les preuves', effort: 'Faible', roi: 'Auditabilité' },
+    {
+      priority: 'CRITICAL',
+      label: 'Installer un systeme GTB/GTC conforme',
+      effort: 'Élevé',
+      roi: 'Conformité réglementaire',
+    },
+    {
+      priority: 'HIGH',
+      label: "Planifier l'inspection quinquennale",
+      effort: 'Moyen',
+      roi: 'Éviter sanction',
+    },
+    {
+      priority: 'MEDIUM',
+      label: 'Évaluer le TRI pour exemption éventuelle',
+      effort: 'Faible',
+      roi: 'Potentielle exemption',
+    },
+    {
+      priority: 'LOW',
+      label: 'Documenter le responsable et les preuves',
+      effort: 'Faible',
+      roi: 'Auditabilité',
+    },
   ];
 
   return (
@@ -488,16 +572,29 @@ function StepActions({ assessment, onClose }) {
       <h3 className="text-base font-semibold text-gray-800">Plan d'actions recommandé</h3>
 
       {actions.map((a, i) => (
-        <Card key={i} className={`border-l-4 ${
-          a.priority === 'CRITICAL' ? 'border-l-red-500' :
-          a.priority === 'HIGH' ? 'border-l-orange-400' :
-          a.priority === 'MEDIUM' ? 'border-l-amber-400' : 'border-l-gray-300'
-        }`}>
+        <Card
+          key={i}
+          className={`border-l-4 ${
+            a.priority === 'CRITICAL'
+              ? 'border-l-red-500'
+              : a.priority === 'HIGH'
+                ? 'border-l-orange-400'
+                : a.priority === 'MEDIUM'
+                  ? 'border-l-amber-400'
+                  : 'border-l-gray-300'
+          }`}
+        >
           <CardBody className="flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Badge status={a.priority === 'CRITICAL' ? 'crit' : a.priority === 'HIGH' ? 'warn' : 'info'}>
-                  {{ CRITICAL: 'Critique', HIGH: 'Élevée', MEDIUM: 'Moyenne', LOW: 'Faible' }[a.priority] || a.priority}
+                <Badge
+                  status={
+                    a.priority === 'CRITICAL' ? 'crit' : a.priority === 'HIGH' ? 'warn' : 'info'
+                  }
+                >
+                  {{ CRITICAL: 'Critique', HIGH: 'Élevée', MEDIUM: 'Moyenne', LOW: 'Faible' }[
+                    a.priority
+                  ] || a.priority}
                 </Badge>
                 <span className="text-sm font-medium text-gray-800">{a.label}</span>
               </div>
@@ -513,15 +610,22 @@ function StepActions({ assessment, onClose }) {
       <Card>
         <CardBody className="text-center py-4">
           <p className="text-sm text-gray-500">Export du rapport BACS</p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => {
-            const blob = new Blob([JSON.stringify(assessment, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `bacs_assessment_${assessment.id || 'export'}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(assessment, null, 2)], {
+                type: 'application/json',
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `bacs_assessment_${assessment.id || 'export'}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <FileText size={14} className="mr-1" /> Télécharger JSON
           </Button>
         </CardBody>
@@ -565,11 +669,7 @@ export default function BacsWizard({ siteId, onClose }) {
     setLoading(true);
     setError(null);
     try {
-      const result = await createBacsAsset(
-        siteId,
-        eligData.is_tertiary,
-        eligData.pc_date || null,
-      );
+      const result = await createBacsAsset(siteId, eligData.is_tertiary, eligData.pc_date || null);
       setAssetId(result.id);
       setPhase(1);
     } catch (err) {
@@ -591,12 +691,7 @@ export default function BacsWizard({ siteId, onClose }) {
       // Submit each system
       if (assetId) {
         for (const sys of systems) {
-          await addCvcSystem(
-            assetId,
-            sys.type,
-            sys.architecture,
-            JSON.stringify(sys.units),
-          );
+          await addCvcSystem(assetId, sys.type, sys.architecture, JSON.stringify(sys.units));
         }
       }
 
@@ -608,7 +703,9 @@ export default function BacsWizard({ siteId, onClose }) {
       try {
         const explain = await getBacsScoreExplain(siteId);
         setScoreExplain(explain);
-      } catch { /* best-effort */ }
+      } catch {
+        /* best-effort */
+      }
 
       setPhase(2);
     } catch (err) {
@@ -618,8 +715,15 @@ export default function BacsWizard({ siteId, onClose }) {
   }, [siteId, assetId, systems]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]" onClick={onClose} />
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]"
+        onClick={onClose}
+      />
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideInUp_0.25s_ease-out]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
@@ -665,9 +769,7 @@ export default function BacsWizard({ siteId, onClose }) {
               onPrev={() => setPhase(1)}
             />
           )}
-          {phase === 3 && (
-            <StepActions assessment={assessment} onClose={onClose} />
-          )}
+          {phase === 3 && <StepActions assessment={assessment} onClose={onClose} />}
         </div>
       </div>
     </div>

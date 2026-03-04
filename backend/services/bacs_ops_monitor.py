@@ -2,6 +2,7 @@
 PROMEOS - BACS Ops Monitor
 Operational KPIs, consumption linkage, and monitoring panel for BACS.
 """
+
 import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
@@ -10,8 +11,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import (
-    Site, BacsAsset, BacsAssessment, BacsInspection,
-    ConsumptionInsight, MeterReading, Meter, InspectionStatus,
+    Site,
+    BacsAsset,
+    BacsAssessment,
+    BacsInspection,
+    ConsumptionInsight,
+    MeterReading,
+    Meter,
+    InspectionStatus,
 )
 
 
@@ -73,16 +80,26 @@ def compute_bacs_ops_kpis(db: Session, site_id: int, period_days: int = 30) -> d
             current_start = now - timedelta(days=period_days)
             prev_start = now - timedelta(days=period_days * 2)
 
-            current_sum = db.query(func.sum(MeterReading.value_kwh)).filter(
-                MeterReading.meter_id == meter.id,
-                MeterReading.timestamp >= current_start,
-            ).scalar() or 0
+            current_sum = (
+                db.query(func.sum(MeterReading.value_kwh))
+                .filter(
+                    MeterReading.meter_id == meter.id,
+                    MeterReading.timestamp >= current_start,
+                )
+                .scalar()
+                or 0
+            )
 
-            prev_sum = db.query(func.sum(MeterReading.value_kwh)).filter(
-                MeterReading.meter_id == meter.id,
-                MeterReading.timestamp >= prev_start,
-                MeterReading.timestamp < current_start,
-            ).scalar() or 0
+            prev_sum = (
+                db.query(func.sum(MeterReading.value_kwh))
+                .filter(
+                    MeterReading.meter_id == meter.id,
+                    MeterReading.timestamp >= prev_start,
+                    MeterReading.timestamp < current_start,
+                )
+                .scalar()
+                or 0
+            )
 
             if prev_sum > 0:
                 kpis["gains_vs_baseline_pct"] = round((current_sum - prev_sum) / prev_sum * 100, 1)
@@ -111,12 +128,14 @@ def link_consumption_findings(db: Session, site_id: int) -> list[dict]:
         elif "pointe" in insight_str or "base_load" in insight_str:
             bacs_context = "Talon/pointe anormal — verifier les consignes GTB"
 
-        enriched.append({
-            "id": ins.id,
-            "type": insight_str,
-            "bacs_context": bacs_context,
-            "site_id": ins.site_id,
-        })
+        enriched.append(
+            {
+                "id": ins.id,
+                "type": insight_str,
+                "bacs_context": bacs_context,
+                "site_id": ins.site_id,
+            }
+        )
 
     return enriched
 
@@ -133,12 +152,12 @@ def get_monthly_consumption(db: Session, site_id: int, months: int = 12) -> list
 
         readings = (
             db.query(
-                func.strftime('%Y-%m', MeterReading.timestamp).label('month'),
-                func.sum(MeterReading.value_kwh).label('total_kwh'),
+                func.strftime("%Y-%m", MeterReading.timestamp).label("month"),
+                func.sum(MeterReading.value_kwh).label("total_kwh"),
             )
             .filter(MeterReading.meter_id == meter.id, MeterReading.timestamp >= start)
-            .group_by('month')
-            .order_by('month')
+            .group_by("month")
+            .order_by("month")
             .all()
         )
 
@@ -161,9 +180,7 @@ def get_hourly_heatmap(db: Session, site_id: int, days: int = 7) -> list[list[fl
         start = now - timedelta(days=days * 4)  # 4 weeks of data
 
         readings = (
-            db.query(MeterReading)
-            .filter(MeterReading.meter_id == meter.id, MeterReading.timestamp >= start)
-            .all()
+            db.query(MeterReading).filter(MeterReading.meter_id == meter.id, MeterReading.timestamp >= start).all()
         )
 
         # Build 7x24 grid

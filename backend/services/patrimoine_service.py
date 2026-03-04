@@ -2,6 +2,7 @@
 PROMEOS - Patrimoine Service (DIAMANT)
 Staging pipeline: import → quality gate → corrections → activation.
 """
+
 import io
 import csv
 import json
@@ -14,11 +15,21 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from models import (
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
-    Site, Compteur, TypeCompteur, EnergyVector,
-    ActivationLog, ActivationLogStatus,
-    DeliveryPoint, DeliveryPointEnergyType,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    Site,
+    Compteur,
+    TypeCompteur,
+    EnergyVector,
+    ActivationLog,
+    ActivationLogStatus,
+    DeliveryPoint,
+    DeliveryPointEnergyType,
     not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
@@ -29,6 +40,7 @@ from services.import_mapping import normalize_header, normalize_type_site, norma
 # ========================================
 # Batch lifecycle
 # ========================================
+
 
 def create_staging_batch(
     db: Session,
@@ -58,10 +70,23 @@ def create_staging_batch(
 # CSV Import
 # ========================================
 
-_CSV_COLUMNS = ["nom", "adresse", "code_postal", "ville", "surface_m2", "type",
-                "naf_code", "siren", "siret", "energy_type",
-                "delivery_code", "numero_serie", "meter_id",
-                "type_compteur", "puissance_kw"]
+_CSV_COLUMNS = [
+    "nom",
+    "adresse",
+    "code_postal",
+    "ville",
+    "surface_m2",
+    "type",
+    "naf_code",
+    "siren",
+    "siret",
+    "energy_type",
+    "delivery_code",
+    "numero_serie",
+    "meter_id",
+    "type_compteur",
+    "puissance_kw",
+]
 
 
 def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> dict:
@@ -88,7 +113,8 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
         canonical_headers.append(mapped if mapped else h.strip().lower())
 
     reader = csv.DictReader(
-        io.StringIO(text), delimiter=delimiter,
+        io.StringIO(text),
+        delimiter=delimiter,
         fieldnames=canonical_headers,
     )
     next(reader)  # skip original header row
@@ -119,7 +145,9 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     batch_id=batch_id,
                     row_number=row_num,
                     nom=nom,
-                    type_site=normalize_type_site((row.get("type") or "").strip()) or (row.get("type") or "").strip() or None,
+                    type_site=normalize_type_site((row.get("type") or "").strip())
+                    or (row.get("type") or "").strip()
+                    or None,
                     adresse=(row.get("adresse") or "").strip() or None,
                     code_postal=(row.get("code_postal") or "").strip() or None,
                     ville=(row.get("ville") or "").strip() or None,
@@ -170,11 +198,13 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
     db.flush()
 
     # Update batch stats
-    batch.stats_json = json.dumps({
-        "sites_count": sites_created,
-        "compteurs_count": compteurs_created,
-        "parse_errors": len(parse_errors),
-    })
+    batch.stats_json = json.dumps(
+        {
+            "sites_count": sites_created,
+            "compteurs_count": compteurs_created,
+            "parse_errors": len(parse_errors),
+        }
+    )
 
     return {
         "sites_count": sites_created,
@@ -186,6 +216,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
 # ========================================
 # Invoice-based import
 # ========================================
+
 
 def import_invoices_to_staging(db: Session, batch_id: int, metadata: dict) -> dict:
     """Extract site/meter info from invoice metadata into staging.
@@ -236,10 +267,12 @@ def import_invoices_to_staging(db: Session, batch_id: int, metadata: dict) -> di
 
     db.flush()
 
-    batch.stats_json = json.dumps({
-        "sites_count": len(site_map),
-        "compteurs_count": compteurs_detected,
-    })
+    batch.stats_json = json.dumps(
+        {
+            "sites_count": len(site_map),
+            "compteurs_count": compteurs_detected,
+        }
+    )
 
     return {
         "sites_detected": len(site_map),
@@ -252,19 +285,35 @@ def import_invoices_to_staging(db: Session, batch_id: int, metadata: dict) -> di
 # ========================================
 
 # Gating thresholds for quality score (0-100)
-QA_THRESHOLD_EXCELLENT = 85   # Green — auto-activable
-QA_THRESHOLD_BON = 70         # Amber — activable with review
-QA_THRESHOLD_MOYEN = 50       # Orange — requires corrections
+QA_THRESHOLD_EXCELLENT = 85  # Green — auto-activable
+QA_THRESHOLD_BON = 70  # Amber — activable with review
+QA_THRESHOLD_MOYEN = 50  # Orange — requires corrections
 
 QA_GRADES = {
-    "excellent": {"min": QA_THRESHOLD_EXCELLENT, "label": "Excellent", "color": "green",
-                  "message": "Donnees de haute qualite, activation automatique possible."},
-    "bon": {"min": QA_THRESHOLD_BON, "label": "Bon", "color": "amber",
-            "message": "Quelques avertissements mineurs. Activation possible apres revue."},
-    "moyen": {"min": QA_THRESHOLD_MOYEN, "label": "Moyen", "color": "orange",
-              "message": "Corrections recommandees avant activation."},
-    "insuffisant": {"min": 0, "label": "Insuffisant", "color": "red",
-                    "message": "Donnees degradees. Corrections obligatoires."},
+    "excellent": {
+        "min": QA_THRESHOLD_EXCELLENT,
+        "label": "Excellent",
+        "color": "green",
+        "message": "Donnees de haute qualite, activation automatique possible.",
+    },
+    "bon": {
+        "min": QA_THRESHOLD_BON,
+        "label": "Bon",
+        "color": "amber",
+        "message": "Quelques avertissements mineurs. Activation possible apres revue.",
+    },
+    "moyen": {
+        "min": QA_THRESHOLD_MOYEN,
+        "label": "Moyen",
+        "color": "orange",
+        "message": "Corrections recommandees avant activation.",
+    },
+    "insuffisant": {
+        "min": 0,
+        "label": "Insuffisant",
+        "color": "red",
+        "message": "Donnees degradees. Corrections obligatoires.",
+    },
 }
 
 
@@ -312,28 +361,45 @@ def compute_quality_grade(score: float) -> dict:
 # Summary & Quality Gate
 # ========================================
 
+
 def get_staging_summary(db: Session, batch_id: int) -> dict:
     """Returns summary stats for a staging batch."""
     batch = db.query(StagingBatch).get(batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
-    sites_count = db.query(StagingSite).filter(
-        StagingSite.batch_id == batch_id,
-        StagingSite.skip.is_(False),
-    ).count()
+    sites_count = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == batch_id,
+            StagingSite.skip.is_(False),
+        )
+        .count()
+    )
 
-    compteurs_count = db.query(StagingCompteur).filter(
-        StagingCompteur.batch_id == batch_id,
-        StagingCompteur.skip.is_(False),
-    ).count()
+    compteurs_count = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.batch_id == batch_id,
+            StagingCompteur.skip.is_(False),
+        )
+        .count()
+    )
 
-    findings = db.query(QualityFinding).filter(
-        QualityFinding.batch_id == batch_id,
-    ).all()
+    findings = (
+        db.query(QualityFinding)
+        .filter(
+            QualityFinding.batch_id == batch_id,
+        )
+        .all()
+    )
 
     critical = sum(1 for f in findings if f.severity == QualityRuleSeverity.CRITICAL and not f.resolved)
-    blocking = sum(1 for f in findings if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL) and not f.resolved)
+    blocking = sum(
+        1
+        for f in findings
+        if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL) and not f.resolved
+    )
     warnings = sum(1 for f in findings if f.severity == QualityRuleSeverity.WARNING and not f.resolved)
     info_count = sum(1 for f in findings if f.severity == QualityRuleSeverity.INFO and not f.resolved)
     total_findings = len(findings)
@@ -398,8 +464,7 @@ def run_quality_gate(db: Session, batch_id: int) -> list:
 
     # Update batch status (CRITICAL or BLOCKING findings prevent validation)
     blocking_count = sum(
-        1 for f in persisted
-        if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL)
+        1 for f in persisted if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL)
     )
     if blocking_count == 0:
         batch.status = StagingStatus.VALIDATED
@@ -422,6 +487,7 @@ def run_quality_gate(db: Session, batch_id: int) -> list:
 # ========================================
 # Corrections (apply_fix)
 # ========================================
+
 
 def apply_fix(db: Session, batch_id: int, fix_type: str, params: dict) -> dict:
     """Apply a correction to staging data.
@@ -447,10 +513,14 @@ def _fix_merge_sites(db: Session, batch_id: int, params: dict) -> dict:
     if not staging_site_id or not target_site_id:
         return {"applied": False, "detail": "staging_site_id and target_site_id required"}
 
-    ss = db.query(StagingSite).filter(
-        StagingSite.id == staging_site_id,
-        StagingSite.batch_id == batch_id,
-    ).first()
+    ss = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.id == staging_site_id,
+            StagingSite.batch_id == batch_id,
+        )
+        .first()
+    )
     if not ss:
         return {"applied": False, "detail": f"StagingSite {staging_site_id} not found in batch"}
 
@@ -458,9 +528,13 @@ def _fix_merge_sites(db: Session, batch_id: int, params: dict) -> dict:
     ss.skip = True
 
     # Remap orphan compteurs from this staging site to target
-    compteurs = db.query(StagingCompteur).filter(
-        StagingCompteur.staging_site_id == staging_site_id,
-    ).all()
+    compteurs = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.staging_site_id == staging_site_id,
+        )
+        .all()
+    )
     for sc in compteurs:
         sc.target_site_id = target_site_id
 
@@ -477,10 +551,14 @@ def _fix_skip(db: Session, batch_id: int, params: dict) -> dict:
     staging_compteur_id = params.get("staging_compteur_id")
 
     if staging_site_id:
-        ss = db.query(StagingSite).filter(
-            StagingSite.id == staging_site_id,
-            StagingSite.batch_id == batch_id,
-        ).first()
+        ss = (
+            db.query(StagingSite)
+            .filter(
+                StagingSite.id == staging_site_id,
+                StagingSite.batch_id == batch_id,
+            )
+            .first()
+        )
         if ss:
             ss.skip = True
             _resolve_findings(db, batch_id, staging_site_id=staging_site_id, resolution="skipped")
@@ -488,10 +566,14 @@ def _fix_skip(db: Session, batch_id: int, params: dict) -> dict:
             return {"applied": True, "detail": f"Skipped staging site {staging_site_id}"}
 
     if staging_compteur_id:
-        sc = db.query(StagingCompteur).filter(
-            StagingCompteur.id == staging_compteur_id,
-            StagingCompteur.batch_id == batch_id,
-        ).first()
+        sc = (
+            db.query(StagingCompteur)
+            .filter(
+                StagingCompteur.id == staging_compteur_id,
+                StagingCompteur.batch_id == batch_id,
+            )
+            .first()
+        )
         if sc:
             sc.skip = True
             _resolve_findings(db, batch_id, staging_compteur_id=staging_compteur_id, resolution="skipped")
@@ -510,10 +592,14 @@ def _fix_remap(db: Session, batch_id: int, params: dict) -> dict:
     if not staging_compteur_id:
         return {"applied": False, "detail": "staging_compteur_id required"}
 
-    sc = db.query(StagingCompteur).filter(
-        StagingCompteur.id == staging_compteur_id,
-        StagingCompteur.batch_id == batch_id,
-    ).first()
+    sc = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.id == staging_compteur_id,
+            StagingCompteur.batch_id == batch_id,
+        )
+        .first()
+    )
     if not sc:
         return {"applied": False, "detail": f"StagingCompteur {staging_compteur_id} not found"}
 
@@ -538,10 +624,14 @@ def _fix_update_field(db: Session, batch_id: int, params: dict) -> dict:
     if not staging_site_id or not field:
         return {"applied": False, "detail": "staging_site_id and field required"}
 
-    ss = db.query(StagingSite).filter(
-        StagingSite.id == staging_site_id,
-        StagingSite.batch_id == batch_id,
-    ).first()
+    ss = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.id == staging_site_id,
+            StagingSite.batch_id == batch_id,
+        )
+        .first()
+    )
     if not ss:
         return {"applied": False, "detail": f"StagingSite {staging_site_id} not found"}
 
@@ -555,7 +645,8 @@ def _fix_update_field(db: Session, batch_id: int, params: dict) -> dict:
 
 
 def _resolve_findings(
-    db: Session, batch_id: int,
+    db: Session,
+    batch_id: int,
     staging_site_id: Optional[int] = None,
     staging_compteur_id: Optional[int] = None,
     resolution: str = "fixed",
@@ -594,68 +685,97 @@ _ENERGY_TYPE_MAP = {
 def _pre_activation_checks(db: Session, batch_id: int):
     """Pre-activation safety checks. Raises ValueError on any failure."""
     # 1. No unresolved blocking/critical findings
-    blocking = db.query(QualityFinding).filter(
-        QualityFinding.batch_id == batch_id,
-        QualityFinding.severity.in_([QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL]),
-        QualityFinding.resolved.is_(False),
-    ).count()
+    blocking = (
+        db.query(QualityFinding)
+        .filter(
+            QualityFinding.batch_id == batch_id,
+            QualityFinding.severity.in_([QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL]),
+            QualityFinding.resolved.is_(False),
+        )
+        .count()
+    )
     if blocking > 0:
         raise ValueError(f"{blocking} unresolved blocking/critical findings — run quality gate fixes first")
 
     # 2. meter_id uniqueness against live DB
-    staging_compteurs = db.query(StagingCompteur).filter(
-        StagingCompteur.batch_id == batch_id,
-        StagingCompteur.skip.is_(False),
-        StagingCompteur.target_compteur_id.is_(None),
-        StagingCompteur.meter_id.isnot(None),
-    ).all()
+    staging_compteurs = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.batch_id == batch_id,
+            StagingCompteur.skip.is_(False),
+            StagingCompteur.target_compteur_id.is_(None),
+            StagingCompteur.meter_id.isnot(None),
+        )
+        .all()
+    )
     staging_meter_ids = [sc.meter_id.strip() for sc in staging_compteurs if sc.meter_id and sc.meter_id.strip()]
     if staging_meter_ids:
-        collisions = not_deleted(db.query(Compteur), Compteur).filter(
-            Compteur.meter_id.in_(staging_meter_ids),
-        ).all()
+        collisions = (
+            not_deleted(db.query(Compteur), Compteur)
+            .filter(
+                Compteur.meter_id.in_(staging_meter_ids),
+            )
+            .all()
+        )
         if collisions:
             collision_ids = [f"{c.meter_id} (compteur #{c.id})" for c in collisions]
-            raise ValueError(
-                f"Activation blocked: duplicate delivery point(s) in DB: {', '.join(collision_ids)}"
-            )
+            raise ValueError(f"Activation blocked: duplicate delivery point(s) in DB: {', '.join(collision_ids)}")
 
     # 3. numero_serie uniqueness against live DB
-    staging_series = db.query(StagingCompteur).filter(
-        StagingCompteur.batch_id == batch_id,
-        StagingCompteur.skip.is_(False),
-        StagingCompteur.target_compteur_id.is_(None),
-        StagingCompteur.numero_serie.isnot(None),
-    ).all()
+    staging_series = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.batch_id == batch_id,
+            StagingCompteur.skip.is_(False),
+            StagingCompteur.target_compteur_id.is_(None),
+            StagingCompteur.numero_serie.isnot(None),
+        )
+        .all()
+    )
     serie_vals = [sc.numero_serie.strip() for sc in staging_series if sc.numero_serie and sc.numero_serie.strip()]
     if serie_vals:
-        serie_collisions = not_deleted(db.query(Compteur), Compteur).filter(
-            Compteur.numero_serie.in_(serie_vals),
-        ).all()
+        serie_collisions = (
+            not_deleted(db.query(Compteur), Compteur)
+            .filter(
+                Compteur.numero_serie.in_(serie_vals),
+            )
+            .all()
+        )
         if serie_collisions:
             collision_ids = [f"{c.numero_serie} (compteur #{c.id})" for c in serie_collisions]
-            raise ValueError(
-                f"Activation blocked: duplicate numero_serie in DB: {', '.join(collision_ids)}"
-            )
+            raise ValueError(f"Activation blocked: duplicate numero_serie in DB: {', '.join(collision_ids)}")
 
 
 def _compute_activation_hash(db: Session, batch_id: int) -> str:
     """Compute SHA-256 fingerprint of staging content for idempotence."""
-    sites = db.query(StagingSite).filter(
-        StagingSite.batch_id == batch_id,
-        StagingSite.skip.is_(False),
-    ).order_by(StagingSite.id).all()
+    sites = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == batch_id,
+            StagingSite.skip.is_(False),
+        )
+        .order_by(StagingSite.id)
+        .all()
+    )
 
-    compteurs = db.query(StagingCompteur).filter(
-        StagingCompteur.batch_id == batch_id,
-        StagingCompteur.skip.is_(False),
-    ).order_by(StagingCompteur.id).all()
+    compteurs = (
+        db.query(StagingCompteur)
+        .filter(
+            StagingCompteur.batch_id == batch_id,
+            StagingCompteur.skip.is_(False),
+        )
+        .order_by(StagingCompteur.id)
+        .all()
+    )
 
-    content = json.dumps({
-        "batch_id": batch_id,
-        "sites": [{"id": s.id, "nom": s.nom, "cp": s.code_postal} for s in sites],
-        "compteurs": [{"id": c.id, "mid": c.meter_id, "ns": c.numero_serie} for c in compteurs],
-    }, sort_keys=True)
+    content = json.dumps(
+        {
+            "batch_id": batch_id,
+            "sites": [{"id": s.id, "nom": s.nom, "cp": s.code_postal} for s in sites],
+            "compteurs": [{"id": c.id, "mid": c.meter_id, "ns": c.numero_serie} for c in compteurs],
+        },
+        sort_keys=True,
+    )
 
     return hashlib.sha256(content.encode()).hexdigest()
 
@@ -671,10 +791,14 @@ def _find_or_create_delivery_point(db, site_id, meter_id, type_compteur, batch, 
     code = meter_id.strip()
 
     # Check for existing active DP with same code on this site
-    existing = not_deleted(db.query(DeliveryPoint), DeliveryPoint).filter(
-        DeliveryPoint.code == code,
-        DeliveryPoint.site_id == site_id,
-    ).first()
+    existing = (
+        not_deleted(db.query(DeliveryPoint), DeliveryPoint)
+        .filter(
+            DeliveryPoint.code == code,
+            DeliveryPoint.site_id == site_id,
+        )
+        .first()
+    )
     if existing:
         return existing, False
 
@@ -699,10 +823,14 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     Must be called within a SAVEPOINT (begin_nested) for atomicity.
     Creates Site + DeliveryPoint + Compteur for each staging row.
     """
-    staging_sites = db.query(StagingSite).filter(
-        StagingSite.batch_id == batch_id,
-        StagingSite.skip.is_(False),
-    ).all()
+    staging_sites = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == batch_id,
+            StagingSite.skip.is_(False),
+        )
+        .all()
+    )
 
     sites_created = 0
     compteurs_created = 0
@@ -738,10 +866,14 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
             total_obligations += prov.get("obligations", 0)
             sites_created += 1
 
-        staging_compteurs = db.query(StagingCompteur).filter(
-            StagingCompteur.staging_site_id == ss.id,
-            StagingCompteur.skip.is_(False),
-        ).all()
+        staging_compteurs = (
+            db.query(StagingCompteur)
+            .filter(
+                StagingCompteur.staging_site_id == ss.id,
+                StagingCompteur.skip.is_(False),
+            )
+            .all()
+        )
 
         for sc in staging_compteurs:
             if sc.target_compteur_id:
@@ -749,7 +881,13 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
 
             # Find or create DeliveryPoint for this meter_id
             dp, dp_created = _find_or_create_delivery_point(
-                db, site.id, sc.meter_id, sc.type_compteur, batch, batch_id, now,
+                db,
+                site.id,
+                sc.meter_id,
+                sc.type_compteur,
+                batch,
+                batch_id,
+                now,
             )
             if dp_created:
                 delivery_points_created += 1
@@ -772,14 +910,16 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
 
     # Mark batch as applied (inside savepoint — rolled back on failure)
     batch.status = StagingStatus.APPLIED
-    batch.stats_json = json.dumps({
-        "sites_created": sites_created,
-        "compteurs_created": compteurs_created,
-        "delivery_points_created": delivery_points_created,
-        "batiments": total_batiments,
-        "obligations": total_obligations,
-        "activated_at": now.isoformat(),
-    })
+    batch.stats_json = json.dumps(
+        {
+            "sites_created": sites_created,
+            "compteurs_created": compteurs_created,
+            "delivery_points_created": delivery_points_created,
+            "batiments": total_batiments,
+            "obligations": total_obligations,
+            "activated_at": now.isoformat(),
+        }
+    )
 
     db.flush()
 
@@ -805,35 +945,50 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
 
     # Idempotence: already applied → return cached result
     if batch.status == StagingStatus.APPLIED:
-        existing_log = db.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch_id,
-            ActivationLog.status == ActivationLogStatus.SUCCESS,
-        ).first()
+        existing_log = (
+            db.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch_id,
+                ActivationLog.status == ActivationLogStatus.SUCCESS,
+            )
+            .first()
+        )
         if existing_log:
             return {
                 "sites_created": existing_log.sites_created,
                 "compteurs_created": existing_log.compteurs_created,
-                "batiments": 0, "obligations": 0,
+                "batiments": 0,
+                "obligations": 0,
                 "detail": "Batch already applied (idempotent)",
                 "activation_log_id": existing_log.id,
             }
-        return {"sites_created": 0, "compteurs_created": 0, "batiments": 0, "obligations": 0,
-                "detail": "Batch already applied"}
+        return {
+            "sites_created": 0,
+            "compteurs_created": 0,
+            "batiments": 0,
+            "obligations": 0,
+            "detail": "Batch already applied",
+        }
 
     # Pre-activation safety checks (outside savepoint — fail fast)
     _pre_activation_checks(db, batch_id)
 
     # Idempotence: check activation_hash
     activation_hash = _compute_activation_hash(db, batch_id)
-    existing_success = db.query(ActivationLog).filter(
-        ActivationLog.activation_hash == activation_hash,
-        ActivationLog.status == ActivationLogStatus.SUCCESS,
-    ).first()
+    existing_success = (
+        db.query(ActivationLog)
+        .filter(
+            ActivationLog.activation_hash == activation_hash,
+            ActivationLog.status == ActivationLogStatus.SUCCESS,
+        )
+        .first()
+    )
     if existing_success:
         return {
             "sites_created": existing_success.sites_created,
             "compteurs_created": existing_success.compteurs_created,
-            "batiments": 0, "obligations": 0,
+            "batiments": 0,
+            "obligations": 0,
             "detail": "Idempotent: same content already activated",
             "activation_log_id": existing_success.id,
         }
@@ -887,6 +1042,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
 # Diff plan (incremental sync)
 # ========================================
 
+
 def get_diff_plan(db: Session, portfolio_id: int, staging_batch_id: int) -> dict:
     """Compare staging batch vs existing portfolio → diff plan.
 
@@ -898,15 +1054,23 @@ def get_diff_plan(db: Session, portfolio_id: int, staging_batch_id: int) -> dict
     if not pf:
         raise ValueError(f"Portefeuille {portfolio_id} not found")
 
-    existing_sites = db.query(Site).filter(
-        Site.portefeuille_id == portfolio_id,
-        Site.actif.is_(True),
-    ).all()
+    existing_sites = (
+        db.query(Site)
+        .filter(
+            Site.portefeuille_id == portfolio_id,
+            Site.actif.is_(True),
+        )
+        .all()
+    )
 
-    staging_sites = db.query(StagingSite).filter(
-        StagingSite.batch_id == staging_batch_id,
-        StagingSite.skip.is_(False),
-    ).all()
+    staging_sites = (
+        db.query(StagingSite)
+        .filter(
+            StagingSite.batch_id == staging_batch_id,
+            StagingSite.skip.is_(False),
+        )
+        .all()
+    )
 
     # Build lookup by name + code_postal
     existing_by_key = {}
@@ -925,26 +1089,32 @@ def get_diff_plan(db: Session, portfolio_id: int, staging_batch_id: int) -> dict
             existing = existing_by_key[key]
             changes = _compute_site_diff(ss, existing)
             if changes:
-                to_update.append({
-                    "staging_site_id": ss.id,
-                    "existing_site_id": existing.id,
-                    "name": ss.nom,
-                    "changes": changes,
-                })
+                to_update.append(
+                    {
+                        "staging_site_id": ss.id,
+                        "existing_site_id": existing.id,
+                        "name": ss.nom,
+                        "changes": changes,
+                    }
+                )
             else:
-                to_merge.append({
-                    "staging_site_id": ss.id,
-                    "existing_site_id": existing.id,
-                    "name": ss.nom,
-                    "detail": "identical",
-                })
+                to_merge.append(
+                    {
+                        "staging_site_id": ss.id,
+                        "existing_site_id": existing.id,
+                        "name": ss.nom,
+                        "detail": "identical",
+                    }
+                )
         else:
-            to_create.append({
-                "staging_site_id": ss.id,
-                "name": ss.nom,
-                "type": ss.type_site,
-                "address": ss.adresse,
-            })
+            to_create.append(
+                {
+                    "staging_site_id": ss.id,
+                    "name": ss.nom,
+                    "type": ss.type_site,
+                    "address": ss.adresse,
+                }
+            )
 
     return {
         "to_create": to_create,
@@ -971,6 +1141,7 @@ def _compute_site_diff(staging: StagingSite, existing: Site) -> list:
 # ========================================
 # Utilities
 # ========================================
+
 
 def compute_content_hash(content: bytes) -> str:
     """SHA-256 hash of file content for idempotence check."""

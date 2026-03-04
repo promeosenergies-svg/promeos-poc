@@ -2,6 +2,7 @@
 PROMEOS - Routes Smart Intake (DIAMANT)
 Question engine, answers, apply, demo autofill, before/after diff.
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
@@ -11,8 +12,13 @@ from database import get_db
 from models import Site, IntakeMode, IntakeSource, IntakeFieldOverride
 from services.intake_engine import generate_questions, prefill_from_existing, resolve_overrides, compute_before_after
 from services.intake_service import (
-    create_session, submit_answer, compute_diff, apply_answers,
-    demo_autofill, complete_session, get_session_detail,
+    create_session,
+    submit_answer,
+    compute_diff,
+    apply_answers,
+    demo_autofill,
+    complete_session,
+    get_session_detail,
     purge_demo_sessions,
 )
 
@@ -22,6 +28,7 @@ router = APIRouter(prefix="/api/intake", tags=["Smart Intake"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class AnswerRequest(BaseModel):
     field_path: str
@@ -42,6 +49,7 @@ class BulkOverrideRequest(BaseModel):
 # ========================================
 # Endpoints
 # ========================================
+
 
 @router.get("/{site_id}/questions")
 def get_questions(site_id: int, db: Session = Depends(get_db)):
@@ -77,10 +85,15 @@ def post_answer(site_id: int, body: AnswerRequest, db: Session = Depends(get_db)
 
     # Find or create active session
     from models import IntakeSession, IntakeSessionStatus
-    session = db.query(IntakeSession).filter(
-        IntakeSession.site_id == site_id,
-        IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
-    ).first()
+
+    session = (
+        db.query(IntakeSession)
+        .filter(
+            IntakeSession.site_id == site_id,
+            IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
+        )
+        .first()
+    )
 
     if not session:
         session = create_session(db, site_id, mode=IntakeMode.WIZARD)
@@ -118,10 +131,15 @@ def apply_suggestions(site_id: int, body: ApplySuggestionsRequest, db: Session =
         raise HTTPException(404, f"Site {site_id} not found")
 
     from models import IntakeSession, IntakeSessionStatus
-    session = db.query(IntakeSession).filter(
-        IntakeSession.site_id == site_id,
-        IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
-    ).first()
+
+    session = (
+        db.query(IntakeSession)
+        .filter(
+            IntakeSession.site_id == site_id,
+            IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
+        )
+        .first()
+    )
 
     if not session:
         session = create_session(db, site_id, mode=IntakeMode.WIZARD)
@@ -175,10 +193,15 @@ def demo_autofill_endpoint(site_id: int, db: Session = Depends(get_db)):
 def complete_endpoint(site_id: int, db: Session = Depends(get_db)):
     """Apply all answers and complete the session."""
     from models import IntakeSession, IntakeSessionStatus
-    session = db.query(IntakeSession).filter(
-        IntakeSession.site_id == site_id,
-        IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
-    ).first()
+
+    session = (
+        db.query(IntakeSession)
+        .filter(
+            IntakeSession.site_id == site_id,
+            IntakeSession.status == IntakeSessionStatus.IN_PROGRESS,
+        )
+        .first()
+    )
 
     if not session:
         raise HTTPException(404, "No active intake session for this site")
@@ -218,22 +241,28 @@ def bulk_override(body: BulkOverrideRequest, db: Session = Depends(get_db)):
             continue
 
         # Upsert: check existing
-        existing = db.query(IntakeFieldOverride).filter(
-            IntakeFieldOverride.scope_type == body.scope_type,
-            IntakeFieldOverride.scope_id == body.scope_id,
-            IntakeFieldOverride.field_path == fp,
-        ).first()
+        existing = (
+            db.query(IntakeFieldOverride)
+            .filter(
+                IntakeFieldOverride.scope_type == body.scope_type,
+                IntakeFieldOverride.scope_id == body.scope_id,
+                IntakeFieldOverride.field_path == fp,
+            )
+            .first()
+        )
 
         if existing:
             existing.value_json = json.dumps(val)
         else:
-            db.add(IntakeFieldOverride(
-                scope_type=body.scope_type,
-                scope_id=body.scope_id,
-                field_path=fp,
-                value_json=json.dumps(val),
-                source="bulk",
-            ))
+            db.add(
+                IntakeFieldOverride(
+                    scope_type=body.scope_type,
+                    scope_id=body.scope_id,
+                    field_path=fp,
+                    value_json=json.dumps(val),
+                    source="bulk",
+                )
+            )
         overrides_created += 1
 
     db.commit()

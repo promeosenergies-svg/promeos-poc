@@ -43,7 +43,7 @@ describe('A · Scenarios header dynamique', () => {
 // ============================================================
 // B. CTA "Tester dans l'Assistant"
 // ============================================================
-describe('B · CTA Tester dans l\'Assistant', () => {
+describe("B · CTA Tester dans l'Assistant", () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('has cta-assistant-ths data-testid', () => {

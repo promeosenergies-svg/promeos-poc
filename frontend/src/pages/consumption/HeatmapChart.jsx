@@ -18,16 +18,15 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
   const [hover, setHover] = useState(null);
 
   // Filter: 'all', 'weekday' (Lun-Ven), 'weekend' (Sam-Dim)
-  const visibleDays = filter === 'weekday' ? [0,1,2,3,4]
-    : filter === 'weekend' ? [5,6]
-    : [0,1,2,3,4,5,6];
+  const visibleDays =
+    filter === 'weekday' ? [0, 1, 2, 3, 4] : filter === 'weekend' ? [5, 6] : [0, 1, 2, 3, 4, 5, 6];
 
   // Index lookup: O(1) per cell instead of O(n) .find()
   const { cellIndex, maxKwh } = useMemo(() => {
     if (!data?.length) return { cellIndex: new Map(), maxKwh: 0.01 };
     const idx = new Map();
     let max = 0.01;
-    data.forEach(c => {
+    data.forEach((c) => {
       if (visibleDays.includes(c.day)) {
         idx.set(c.day * 24 + c.hour, c);
         if (c.avg_kwh > max) max = c.avg_kwh;
@@ -49,7 +48,9 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
           <span className="w-3 h-3 rounded bg-blue-400" /> HC
         </div>
         <span className="ml-auto">Intensite = consommation moyenne ({unit})</span>
-        {onCellClick && <span className="text-blue-500">Cliquez sur un creneau pour le detail</span>}
+        {onCellClick && (
+          <span className="text-blue-500">Cliquez sur un creneau pour le detail</span>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -58,7 +59,10 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
             <tr>
               <th className="w-10" />
               {Array.from({ length: 24 }, (_, h) => (
-                <th key={h} className="text-[10px] text-gray-400 font-normal px-0.5 text-center w-7">
+                <th
+                  key={h}
+                  className="text-[10px] text-gray-400 font-normal px-0.5 text-center w-7"
+                >
                   {h}h
                 </th>
               ))}
@@ -67,7 +71,9 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
           <tbody>
             {visibleDays.map((dow) => (
               <tr key={dow}>
-                <td className="text-[10px] text-gray-500 font-medium pr-1 text-right">{DAY_LABELS[dow]}</td>
+                <td className="text-[10px] text-gray-500 font-medium pr-1 text-right">
+                  {DAY_LABELS[dow]}
+                </td>
                 {Array.from({ length: 24 }, (_, h) => {
                   const cell = cellIndex.get(dow * 24 + h) || { avg_kwh: 0, period: 'HC' };
                   const isHP = cell.period === 'HP';
@@ -80,7 +86,9 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
                       className="p-0"
                       onMouseEnter={() => setHover({ day: dow, hour: h, ...cell })}
                       onMouseLeave={() => setHover(null)}
-                      onClick={() => onCellClick?.({ day: dow, dayLabel: DAY_LABELS[dow], hour: h, ...cell })}
+                      onClick={() =>
+                        onCellClick?.({ day: dow, dayLabel: DAY_LABELS[dow], hour: h, ...cell })
+                      }
                     >
                       <div
                         className={`w-7 h-6 rounded-sm border transition ${onCellClick ? 'cursor-pointer' : ''} ${isHovered ? 'border-gray-500 ring-1 ring-gray-300' : 'border-transparent'}`}
@@ -99,9 +107,15 @@ export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, fil
       {/* Hover tooltip */}
       {hover && (
         <div className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-1.5 inline-flex items-center gap-3">
-          <span className="font-medium">{DAY_LABELS[hover.day]} {hover.hour}h</span>
-          <span>{hover.avg_kwh} {unit}</span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${hover.period === 'HP' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+          <span className="font-medium">
+            {DAY_LABELS[hover.day]} {hover.hour}h
+          </span>
+          <span>
+            {hover.avg_kwh} {unit}
+          </span>
+          <span
+            className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${hover.period === 'HP' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}
+          >
             {hover.period}
           </span>
         </div>

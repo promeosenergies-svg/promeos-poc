@@ -6,8 +6,10 @@ Tests added by V1 audit fixes:
   3. Archetype lookup error is logged, not silenced
   4. Portfolio uses proper join chain (not Site.org_id)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -18,8 +20,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    Meter, MeterReading, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Meter,
+    MeterReading,
+    TypeSite,
 )
 from models.energy_models import FrequencyType, EnergyVector
 from database import get_db
@@ -29,6 +37,7 @@ from main import app
 # ═══════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════
+
 
 @pytest.fixture
 def db():
@@ -51,6 +60,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -73,9 +83,14 @@ def _create_org_with_site(db, name="Alpha", ville="Paris"):
     db.add(pf)
     db.flush()
     site = Site(
-        portefeuille_id=pf.id, nom=f"Site {name}", type=TypeSite.BUREAU,
-        adresse=f"1 rue {name}", code_postal="75001", ville=ville,
-        surface_m2=1000, actif=True,
+        portefeuille_id=pf.id,
+        nom=f"Site {name}",
+        type=TypeSite.BUREAU,
+        adresse=f"1 rue {name}",
+        code_postal="75001",
+        ville=ville,
+        surface_m2=1000,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -85,6 +100,7 @@ def _create_org_with_site(db, name="Alpha", ville="Paris"):
 def _add_meter_readings(db, site, days=7, hourly_kwh=10.0):
     """Add a meter with hourly readings for the given site."""
     import uuid
+
     meter = Meter(
         site_id=site.id,
         meter_id=f"PRM-{uuid.uuid4().hex[:8]}",
@@ -98,12 +114,14 @@ def _add_meter_readings(db, site, days=7, hourly_kwh=10.0):
     start = now - timedelta(days=days)
     t = start
     while t < now:
-        db.add(MeterReading(
-            meter_id=meter.id,
-            timestamp=t,
-            value_kwh=hourly_kwh,
-            frequency=FrequencyType.HOURLY,
-        ))
+        db.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=t,
+                value_kwh=hourly_kwh,
+                frequency=FrequencyType.HOURLY,
+            )
+        )
         t += timedelta(hours=1)
     db.flush()
     return meter
@@ -112,6 +130,7 @@ def _add_meter_readings(db, site, days=7, hourly_kwh=10.0):
 # ═══════════════════════════════════════════════
 # A. Multi-tenant isolation: portfolio/summary
 # ═══════════════════════════════════════════════
+
 
 class TestPortfolioMultiTenant:
     """Portfolio endpoint must only return sites belonging to the requested org."""
@@ -122,8 +141,7 @@ class TestPortfolioMultiTenant:
         org_b, site_b = _create_org_with_site(db, "Bravo")
         db.commit()
 
-        resp = client.get("/api/consumption-context/portfolio/summary?days=7",
-                          headers=_h(org_a.id))
+        resp = client.get("/api/consumption-context/portfolio/summary?days=7", headers=_h(org_a.id))
         assert resp.status_code == 200
         data = resp.json()
         site_ids = [s["site_id"] for s in data["sites"]]
@@ -136,8 +154,7 @@ class TestPortfolioMultiTenant:
         org_b, site_b = _create_org_with_site(db, "Bravo")
         db.commit()
 
-        resp = client.get("/api/consumption-context/portfolio/summary?days=7",
-                          headers=_h(org_b.id))
+        resp = client.get("/api/consumption-context/portfolio/summary?days=7", headers=_h(org_b.id))
         assert resp.status_code == 200
         data = resp.json()
         site_ids = [s["site_id"] for s in data["sites"]]
@@ -149,8 +166,7 @@ class TestPortfolioMultiTenant:
         _create_org_with_site(db, "Alpha")
         db.commit()
 
-        resp = client.get("/api/consumption-context/portfolio/summary?days=7",
-                          headers=_h(999999))
+        resp = client.get("/api/consumption-context/portfolio/summary?days=7", headers=_h(999999))
         assert resp.status_code == 200
         data = resp.json()
         assert data["sites_count"] == 0
@@ -161,8 +177,7 @@ class TestPortfolioMultiTenant:
         org_a, site_a = _create_org_with_site(db, "TestNom")
         db.commit()
 
-        resp = client.get("/api/consumption-context/portfolio/summary?days=7",
-                          headers=_h(org_a.id))
+        resp = client.get("/api/consumption-context/portfolio/summary?days=7", headers=_h(org_a.id))
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["sites"]) == 1
@@ -172,6 +187,7 @@ class TestPortfolioMultiTenant:
 # ═══════════════════════════════════════════════
 # B. Activity context: HTTPException instead of dict error
 # ═══════════════════════════════════════════════
+
 
 class TestActivityContextErrors:
     """get_activity_context must raise HTTPException, not return dict."""
@@ -197,26 +213,26 @@ class TestActivityContextErrors:
 # C. Source guards: no bare except, proper error handling
 # ═══════════════════════════════════════════════
 
+
 class TestSourceGuards:
     """Verify error-handling patterns in service code."""
 
     def test_no_bare_except_in_service(self):
         """consumption_context_service.py must not have bare 'except Exception:' blocks."""
         import re
+
         service_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "services", "consumption_context_service.py"
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "services", "consumption_context_service.py"
         )
         code = open(service_path).read()
         # Should NOT match bare "except Exception:" with only pass/continue/return None
-        bare_excepts = re.findall(r'except\s+Exception\s*:\s*\n\s*(pass|continue)\s*$', code, re.MULTILINE)
+        bare_excepts = re.findall(r"except\s+Exception\s*:\s*\n\s*(pass|continue)\s*$", code, re.MULTILINE)
         assert len(bare_excepts) == 0, f"Found {len(bare_excepts)} bare except Exception blocks"
 
     def test_no_dict_error_return_in_service(self):
         """Service functions must not return dict errors — they should raise."""
         service_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "services", "consumption_context_service.py"
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "services", "consumption_context_service.py"
         )
         code = open(service_path).read()
         assert 'return {"error":' not in code, "Service must not return dict errors"
@@ -224,8 +240,7 @@ class TestSourceGuards:
     def test_logger_exists_in_service(self):
         """Service must use structured logging."""
         service_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "services", "consumption_context_service.py"
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "services", "consumption_context_service.py"
         )
         code = open(service_path).read()
         assert "logger = logging.getLogger" in code
@@ -233,8 +248,7 @@ class TestSourceGuards:
     def test_portfolio_uses_join_not_org_id(self):
         """Portfolio query must use EntiteJuridique join, not Site.org_id."""
         service_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "services", "consumption_context_service.py"
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "services", "consumption_context_service.py"
         )
         code = open(service_path).read()
         assert "Site.org_id" not in code, "Site model has no org_id — must use join"

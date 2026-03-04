@@ -25,29 +25,29 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
   const [submitError, setSubmitError] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getSegmentationQuestions(),
-      getSegmentationProfile(),
-    ]).then(([qData, pData]) => {
-      // Show only missing priority questions, then fill with others
-      const allQ = qData.questions || [];
-      const existingAnswers = pData?.answers || {};
-      setProfile(pData);
-      setAnswers(existingAnswers);
+    Promise.all([getSegmentationQuestions(), getSegmentationProfile()])
+      .then(([qData, pData]) => {
+        // Show only missing priority questions, then fill with others
+        const allQ = qData.questions || [];
+        const existingAnswers = pData?.answers || {};
+        setProfile(pData);
+        setAnswers(existingAnswers);
 
-      // Filter to unanswered questions, prioritizing PRIORITY_QUESTIONS
-      const unanswered = allQ.filter(q => !existingAnswers[q.id]);
-      const priority = unanswered.filter(q => PRIORITY_QUESTIONS.includes(q.id));
-      const others = unanswered.filter(q => !PRIORITY_QUESTIONS.includes(q.id));
-      // Show up to 4 questions: priority first, then fill with others
-      setQuestions([...priority, ...others].slice(0, 4));
-    }).catch((err) => {
-      setLoadError(true);
-    }).finally(() => setLoading(false));
+        // Filter to unanswered questions, prioritizing PRIORITY_QUESTIONS
+        const unanswered = allQ.filter((q) => !existingAnswers[q.id]);
+        const priority = unanswered.filter((q) => PRIORITY_QUESTIONS.includes(q.id));
+        const others = unanswered.filter((q) => !PRIORITY_QUESTIONS.includes(q.id));
+        // Show up to 4 questions: priority first, then fill with others
+        setQuestions([...priority, ...others].slice(0, 4));
+      })
+      .catch((_err) => {
+        setLoadError(true);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleAnswer = (qid, value) => {
-    setAnswers(prev => ({ ...prev, [qid]: value }));
+    setAnswers((prev) => ({ ...prev, [qid]: value }));
   };
 
   const handleSubmit = async () => {
@@ -64,10 +64,13 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
     }
   };
 
-  const answeredCount = questions.filter(q => answers[q.id]).length;
+  const answeredCount = questions.filter((q) => answers[q.id]).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
       <div
         className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
@@ -89,12 +92,18 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
             <div className="py-8 text-center text-sm text-gray-400">Chargement...</div>
           ) : loadError ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-red-600">Impossible de charger le questionnaire. Verifiez votre connexion.</p>
-              <button onClick={onClose} className="mt-3 text-xs text-blue-600 hover:underline">Fermer</button>
+              <p className="text-sm text-red-600">
+                Impossible de charger le questionnaire. Verifiez votre connexion.
+              </p>
+              <button onClick={onClose} className="mt-3 text-xs text-blue-600 hover:underline">
+                Fermer
+              </button>
             </div>
           ) : questions.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-sm text-gray-600 mb-2">Toutes les questions ont deja ete repondues.</p>
+              <p className="text-sm text-gray-600 mb-2">
+                Toutes les questions ont deja ete repondues.
+              </p>
               {profile && (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
                   <span className="text-sm font-medium text-blue-700">
@@ -118,14 +127,15 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
                     {q.text}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {q.options.map(opt => (
+                    {q.options.map((opt) => (
                       <button
                         key={opt.value}
                         onClick={() => handleAnswer(q.id, opt.value)}
                         className={`px-3 py-1.5 rounded-lg text-xs border transition
-                          ${answers[q.id] === opt.value
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                          ${
+                            answers[q.id] === opt.value
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
                           }`}
                       >
                         {opt.label}
@@ -148,7 +158,9 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
               {answeredCount}/{questions.length} reponse{answeredCount > 1 ? 's' : ''}
             </span>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={onClose}>Plus tard</Button>
+              <Button variant="secondary" size="sm" onClick={onClose}>
+                Plus tard
+              </Button>
               <Button size="sm" onClick={handleSubmit} disabled={answeredCount === 0 || submitting}>
                 <Send size={12} className="mr-1" />
                 {submitting ? 'Envoi...' : 'Valider'}

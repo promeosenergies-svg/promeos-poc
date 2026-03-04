@@ -10,7 +10,7 @@
  *   DOSSIER_SECTION_LABELS → { [key]: string }
  */
 
-import { SOURCE_LABELS_FR, buildSourceDeepLink, computeEvidenceRequirement } from './evidenceRules';
+import { SOURCE_LABELS_FR, buildSourceDeepLink } from './evidenceRules';
 
 // ── Labels ──────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,13 @@ export const DOSSIER_SECTION_LABELS = {
  */
 export function buildDossier(source, actions = [], evidenceMap = new Map()) {
   if (!source || !source.sourceType) {
-    return { header: null, actions: [], evidence: [], missing: [], stats: { total: 0, done: 0, open: 0, evidenceCount: 0, missingCount: 0 } };
+    return {
+      header: null,
+      actions: [],
+      evidence: [],
+      missing: [],
+      stats: { total: 0, done: 0, open: 0, evidenceCount: 0, missingCount: 0 },
+    };
   }
 
   const sourceLabel = source.label || SOURCE_LABELS_FR[source.sourceType] || source.sourceType;
@@ -42,7 +48,7 @@ export function buildDossier(source, actions = [], evidenceMap = new Map()) {
 
   // Filter actions linked to this source
   const linked = actions.filter(
-    (a) => a.source_type === source.sourceType && a.source_id === source.sourceId,
+    (a) => a.source_type === source.sourceType && a.source_id === source.sourceId
   );
 
   // Build evidence flat list + missing list

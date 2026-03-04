@@ -2,13 +2,17 @@
 PROMEOS - Demo Seed: Purchase Scenarios Generator
 Creates purchase assumption sets + scenario results for a few sites.
 """
+
 import random
 import uuid
 from datetime import datetime
 
 from models import (
-    PurchaseAssumptionSet, PurchaseScenarioResult,
-    BillingEnergyType, PurchaseStrategy, PurchaseRecoStatus,
+    PurchaseAssumptionSet,
+    PurchaseScenarioResult,
+    BillingEnergyType,
+    PurchaseStrategy,
+    PurchaseRecoStatus,
 )
 
 
@@ -47,19 +51,21 @@ def generate_purchase(db, sites: list, rng: random.Random) -> dict:
             total = round(annual_kwh * base_price, 2)
             is_reco = strategy == PurchaseStrategy.FIXE
 
-            db.add(PurchaseScenarioResult(
-                run_id=run_id,
-                assumption_set_id=ass.id,
-                strategy=strategy,
-                price_eur_per_kwh=base_price,
-                total_annual_eur=total,
-                risk_score=risk + rng.randint(-10, 10),
-                savings_vs_current_pct=round((1.0 - price_mult) * 100, 1),
-                p10_eur=round(total * 0.85, 2),
-                p90_eur=round(total * 1.20, 2),
-                is_recommended=is_reco,
-                reco_status=PurchaseRecoStatus.DRAFT,
-            ))
+            db.add(
+                PurchaseScenarioResult(
+                    run_id=run_id,
+                    assumption_set_id=ass.id,
+                    strategy=strategy,
+                    price_eur_per_kwh=base_price,
+                    total_annual_eur=total,
+                    risk_score=risk + rng.randint(-10, 10),
+                    savings_vs_current_pct=round((1.0 - price_mult) * 100, 1),
+                    p10_eur=round(total * 0.85, 2),
+                    p90_eur=round(total * 1.20, 2),
+                    is_recommended=is_reco,
+                    reco_status=PurchaseRecoStatus.DRAFT,
+                )
+            )
             scenarios += 1
 
     db.flush()

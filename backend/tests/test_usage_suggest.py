@@ -1,7 +1,9 @@
 """
 PROMEOS - Tests for GET /api/ems/usage_suggest endpoint
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -19,7 +21,8 @@ from main import app
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -33,6 +36,7 @@ def db_session():
 def client(db_session):
     def override():
         yield db_session
+
     app.dependency_overrides[get_db] = override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -47,8 +51,11 @@ def _make_site(db, naf_code=None, site_type=TypeSite.BUREAU):
 
 def _make_archetype(db, code="BUREAU_STANDARD", title="Bureau standard"):
     arch = KBArchetype(
-        code=code, title=title, description="test",
-        confidence=KBConfidence.HIGH, status=KBStatus.VALIDATED,
+        code=code,
+        title=title,
+        description="test",
+        confidence=KBConfidence.HIGH,
+        status=KBStatus.VALIDATED,
     )
     db.add(arch)
     db.flush()
@@ -59,10 +66,14 @@ class TestUsageSuggest:
     def test_suggest_with_naf(self, client, db_session):
         """Site with NAF code mapped to archetype → source='naf', confidence='high'."""
         arch = _make_archetype(db_session, "BUREAU_STANDARD", "Bureau standard")
-        db_session.add(KBMappingCode(
-            naf_code="70.10Z", archetype_id=arch.id,
-            confidence=KBConfidence.HIGH, priority=1,
-        ))
+        db_session.add(
+            KBMappingCode(
+                naf_code="70.10Z",
+                archetype_id=arch.id,
+                confidence=KBConfidence.HIGH,
+                priority=1,
+            )
+        )
         site = _make_site(db_session, naf_code="70.10Z")
         db_session.commit()
 
@@ -101,10 +112,15 @@ class TestUsageSuggest:
     def test_suggest_returns_current_schedule(self, client, db_session):
         """If site has an existing schedule, it's returned in schedule_current."""
         site = _make_site(db_session)
-        db_session.add(SiteOperatingSchedule(
-            site_id=site.id, open_days="0,1,2,3,4",
-            open_time="09:00", close_time="18:00", is_24_7=False,
-        ))
+        db_session.add(
+            SiteOperatingSchedule(
+                site_id=site.id,
+                open_days="0,1,2,3,4",
+                open_time="09:00",
+                close_time="18:00",
+                is_24_7=False,
+            )
+        )
         db_session.commit()
 
         r = client.get("/api/ems/usage_suggest", params={"site_id": site.id})

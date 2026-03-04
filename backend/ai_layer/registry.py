@@ -1,6 +1,7 @@
 """
 PROMEOS AI - Registry des agents
 """
+
 from typing import Dict
 from .agents import regops_explainer, regops_recommender, data_quality_agent, reg_change_agent, exec_brief_agent
 

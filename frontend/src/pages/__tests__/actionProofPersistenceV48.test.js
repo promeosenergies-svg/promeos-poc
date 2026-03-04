@@ -12,10 +12,7 @@ function src(rel) {
 }
 
 function backendSrc(rel) {
-  return readFileSync(
-    resolve(__dirname, '..', '..', '..', '..', 'backend', rel),
-    'utf-8',
-  );
+  return readFileSync(resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf-8');
 }
 
 // ── API: persistent proof endpoints ──────────────────────────────────────────
@@ -95,7 +92,7 @@ describe('KBExplorerPage — V48 action link on upload', () => {
     expect(code).toContain('btn-link-proof-action');
   });
 
-  it('affiche le texte Lier à l\'action', () => {
+  it("affiche le texte Lier à l'action", () => {
     expect(code).toContain('Lier à l');
     expect(code).toContain('action');
   });
@@ -105,11 +102,11 @@ describe('KBExplorerPage — V48 action link on upload', () => {
     expect(code).toContain('linkProofToAction(proofContext.action_id');
   });
 
-  it('conserve le bouton Lier à l\'EFA', () => {
+  it("conserve le bouton Lier à l'EFA", () => {
     expect(code).toContain('btn-link-proof-efa');
   });
 
-  it('conserve le bouton Retour à l\'action', () => {
+  it("conserve le bouton Retour à l'action", () => {
     expect(code).toContain('btn-return-action');
   });
 });

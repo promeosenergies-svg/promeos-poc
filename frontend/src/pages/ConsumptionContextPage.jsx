@@ -6,10 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Activity, RefreshCw } from 'lucide-react';
-import {
-  getConsumptionContext,
-  refreshConsumptionDiagnose,
-} from '../services/api';
+import { getConsumptionContext, refreshConsumptionDiagnose } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { PageShell, KpiCard, Tabs, Card, CardBody, EmptyState, Badge, Button } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -51,7 +48,9 @@ export default function ConsumptionContextPage() {
     }
   }, [siteId, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleRefresh = async () => {
     if (!siteId) return;
@@ -75,8 +74,15 @@ export default function ConsumptionContextPage() {
 
   if (!siteId) {
     return (
-      <PageShell icon={Activity} title="Usages & Horaires" subtitle="Profil conso · Anomalies comportementales">
-        <EmptyState title="Aucun site sélectionné" message="Sélectionnez un site pour voir le contexte de consommation." />
+      <PageShell
+        icon={Activity}
+        title="Usages & Horaires"
+        subtitle="Profil conso · Anomalies comportementales"
+      >
+        <EmptyState
+          title="Aucun site sélectionné"
+          message="Sélectionnez un site pour voir le contexte de consommation."
+        />
       </PageShell>
     );
   }
@@ -100,11 +106,27 @@ export default function ConsumptionContextPage() {
             label="Score Comportement"
             value={score}
             suffix="/100"
-            badge={<Badge variant={scoreBadge(score)}>{score >= 80 ? 'Bon' : score >= 50 ? 'Moyen' : 'Mauvais'}</Badge>}
+            badge={
+              <Badge variant={scoreBadge(score)}>
+                {score >= 80 ? 'Bon' : score >= 50 ? 'Moyen' : 'Mauvais'}
+              </Badge>
+            }
           />
-          <KpiCard label="Hors horaires" value={`${kpis.offhours_pct ?? 0}%`} detail="Conso hors plages ouverture" />
-          <KpiCard label="Talon" value={`${profileData.baseload_kw ?? 0} kW`} detail="Puissance minimale (Q10 nuit)" />
-          <KpiCard label="Dérive" value={`${kpis.drift_pct ?? 0}%`} detail="Tendance sur la période" />
+          <KpiCard
+            label="Hors horaires"
+            value={`${kpis.offhours_pct ?? 0}%`}
+            detail="Conso hors plages ouverture"
+          />
+          <KpiCard
+            label="Talon"
+            value={`${profileData.baseload_kw ?? 0} kW`}
+            detail="Puissance minimale (Q10 nuit)"
+          />
+          <KpiCard
+            label="Dérive"
+            value={`${kpis.drift_pct ?? 0}%`}
+            detail="Tendance sur la période"
+          />
         </div>
       )}
 
@@ -117,7 +139,11 @@ export default function ConsumptionContextPage() {
 
       <div className="mt-4">
         {loading ? (
-          <Card><CardBody><div className="animate-pulse h-64 bg-gray-100 rounded" /></CardBody></Card>
+          <Card>
+            <CardBody>
+              <div className="animate-pulse h-64 bg-gray-100 rounded" />
+            </CardBody>
+          </Card>
         ) : tabParam === 'profile' ? (
           <ProfileHeatmapTab profile={profileData} loading={loading} />
         ) : (

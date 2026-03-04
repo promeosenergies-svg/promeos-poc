@@ -108,20 +108,20 @@ describe('buildWatchlist', () => {
   it('returns non_conformes item when nonConformes > 0', () => {
     const kpis = makeKpis({ nonConformes: 2 });
     const result = buildWatchlist(kpis, makeSites());
-    expect(result.some(w => w.id === 'non_conformes')).toBe(true);
+    expect(result.some((w) => w.id === 'non_conformes')).toBe(true);
   });
 
   it('returns a_risque item when aRisque > 0', () => {
     const kpis = makeKpis({ aRisque: 1, nonConformes: 0 });
     const result = buildWatchlist(kpis, makeSites());
-    expect(result.some(w => w.id === 'a_risque')).toBe(true);
+    expect(result.some((w) => w.id === 'a_risque')).toBe(true);
   });
 
   it('returns no items when all conformes and coverage is good', () => {
     const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 90 });
     const result = buildWatchlist(kpis, makeSites());
-    expect(result.some(w => w.id === 'non_conformes')).toBe(false);
-    expect(result.some(w => w.id === 'a_risque')).toBe(false);
+    expect(result.some((w) => w.id === 'non_conformes')).toBe(false);
+    expect(result.some((w) => w.id === 'a_risque')).toBe(false);
   });
 
   it('all watchlist items have required fields: id, label, severity, path, cta', () => {
@@ -148,7 +148,13 @@ describe('buildBriefing', () => {
   });
 
   it('returns empty array when no issues', () => {
-    const kpis = makeKpis({ nonConformes: 0, aRisque: 0, risque: 0, pctConf: 100, couvertureDonnees: 90 });
+    const kpis = makeKpis({
+      nonConformes: 0,
+      aRisque: 0,
+      risque: 0,
+      pctConf: 100,
+      couvertureDonnees: 90,
+    });
     const result = buildBriefing(kpis, []);
     expect(result).toHaveLength(0);
   });
@@ -173,7 +179,7 @@ describe('buildBriefing', () => {
   it('includes non_conformes bullet when nonConformes > 0', () => {
     const kpis = makeKpis({ nonConformes: 2 });
     const result = buildBriefing(kpis, buildWatchlist(kpis, makeSites()));
-    expect(result.some(b => b.id === 'non_conformes')).toBe(true);
+    expect(result.some((b) => b.id === 'non_conformes')).toBe(true);
   });
 });
 
@@ -205,18 +211,18 @@ describe('CommandCenter data-flow (watchlist→briefing→todayActions)', () => 
     const watchlist = buildWatchlist(kpis, sites);
     const opps = buildOpportunities(kpis, sites, {});
     const todayActions = buildTodayActions(kpis, watchlist, opps);
-    const watchlistIds = watchlist.map(w => w.id);
-    const todayIds = todayActions.map(t => t.id);
-    const hasWatchlistItem = watchlistIds.some(id => todayIds.includes(id));
+    const watchlistIds = watchlist.map((w) => w.id);
+    const todayIds = todayActions.map((t) => t.id);
+    const hasWatchlistItem = watchlistIds.some((id) => todayIds.includes(id));
     expect(hasWatchlistItem).toBe(true);
   });
 
   it('todayActions is empty when no watchlist items and no opportunities', () => {
     const kpis = makeKpis({ nonConformes: 0, aRisque: 0, couvertureDonnees: 100 });
-    const sites = makeSites(5).map(s => ({ ...s, statut_conformite: 'conforme' }));
+    const sites = makeSites(5).map((s) => ({ ...s, statut_conformite: 'conforme' }));
     const watchlist = buildWatchlist(kpis, sites);
     const todayActions = buildTodayActions(kpis, watchlist, []);
-    expect(todayActions.filter(t => t.type === 'watchlist')).toHaveLength(0);
+    expect(todayActions.filter((t) => t.type === 'watchlist')).toHaveLength(0);
   });
 
   it('briefing bullet path values are non-empty strings', () => {
@@ -235,9 +241,8 @@ describe('CommandCenter data-flow (watchlist→briefing→todayActions)', () => 
     // Simulate the kpis shape CommandCenter passes to EssentialsRow
     const sites = makeSites(10); // 7 with conso_kwh_an > 0
     const total = sites.length;
-    const couvertureDonnees = total > 0
-      ? Math.round(sites.filter(s => s.conso_kwh_an > 0).length / total * 100)
-      : 0;
+    const couvertureDonnees =
+      total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
     expect(couvertureDonnees).toBe(70);
   });
 });

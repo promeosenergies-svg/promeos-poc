@@ -2,7 +2,9 @@
 PROMEOS - Flex Mini V0 Tests
 Covers: compute_flex_mini heuristics, endpoint, edge cases.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -74,7 +76,6 @@ def _add_insight(db, site_id, itype, severity, metrics, loss_kwh=0, loss_eur=0):
 
 
 class TestFlexMiniService:
-
     def test_no_insights_low_score(self, db):
         """Without insights, score is low (only archetype bonus if any)."""
         site = _seed_site(db)
@@ -91,12 +92,18 @@ class TestFlexMiniService:
 
     def test_hvac_high_off_hours(self, db):
         site = _seed_site(db, TypeSite.BUREAU)
-        _add_insight(db, site.id, "hors_horaires", "critical",
-                     {"off_hours_pct": 55, "avg_off_hour_kw": 20},
-                     loss_kwh=5000, loss_eur=900)
-        _add_insight(db, site.id, "base_load", "high",
-                     {"base_ratio_pct": 55, "base_load_kw": 25},
-                     loss_kwh=3000, loss_eur=540)
+        _add_insight(
+            db,
+            site.id,
+            "hors_horaires",
+            "critical",
+            {"off_hours_pct": 55, "avg_off_hour_kw": 20},
+            loss_kwh=5000,
+            loss_eur=900,
+        )
+        _add_insight(
+            db, site.id, "base_load", "high", {"base_ratio_pct": 55, "base_load_kw": 25}, loss_kwh=3000, loss_eur=540
+        )
 
         result = compute_flex_mini(db, site.id)
         hvac = next(l for l in result["levers"] if l["id"] == "hvac")
@@ -107,9 +114,15 @@ class TestFlexMiniService:
 
     def test_irve_peaks(self, db):
         site = _seed_site(db, TypeSite.COMMERCE)
-        _add_insight(db, site.id, "pointe", "high",
-                     {"anomaly_days_count": 8, "max_daily_kwh": 2000, "median_daily_kwh": 1000},
-                     loss_kwh=4000, loss_eur=720)
+        _add_insight(
+            db,
+            site.id,
+            "pointe",
+            "high",
+            {"anomaly_days_count": 8, "max_daily_kwh": 2000, "median_daily_kwh": 1000},
+            loss_kwh=4000,
+            loss_eur=720,
+        )
 
         result = compute_flex_mini(db, site.id)
         irve = next(l for l in result["levers"] if l["id"] == "irve")
@@ -118,9 +131,9 @@ class TestFlexMiniService:
 
     def test_froid_archetype(self, db):
         site = _seed_site(db, TypeSite.MAGASIN, nom="Supermarche Froid")
-        _add_insight(db, site.id, "base_load", "high",
-                     {"base_ratio_pct": 65, "base_load_kw": 30},
-                     loss_kwh=6000, loss_eur=1080)
+        _add_insight(
+            db, site.id, "base_load", "high", {"base_ratio_pct": 65, "base_load_kw": 30}, loss_kwh=6000, loss_eur=1080
+        )
 
         result = compute_flex_mini(db, site.id)
         froid = next(l for l in result["levers"] if l["id"] == "froid")
@@ -131,13 +144,17 @@ class TestFlexMiniService:
         site = _seed_site(db)
         # Add many insights to try to exceed 100
         for i in range(5):
-            _add_insight(db, site.id, "hors_horaires", "critical",
-                         {"off_hours_pct": 80, "avg_off_hour_kw": 50},
-                         loss_kwh=10000)
-            _add_insight(db, site.id, "base_load", "critical",
-                         {"base_ratio_pct": 80, "base_load_kw": 60})
-            _add_insight(db, site.id, "pointe", "critical",
-                         {"anomaly_days_count": 20, "max_daily_kwh": 5000, "median_daily_kwh": 1000})
+            _add_insight(
+                db, site.id, "hors_horaires", "critical", {"off_hours_pct": 80, "avg_off_hour_kw": 50}, loss_kwh=10000
+            )
+            _add_insight(db, site.id, "base_load", "critical", {"base_ratio_pct": 80, "base_load_kw": 60})
+            _add_insight(
+                db,
+                site.id,
+                "pointe",
+                "critical",
+                {"anomaly_days_count": 20, "max_daily_kwh": 5000, "median_daily_kwh": 1000},
+            )
 
         result = compute_flex_mini(db, site.id)
         assert 0 <= result["flex_potential_score"] <= 100
@@ -145,8 +162,7 @@ class TestFlexMiniService:
 
     def test_levers_sorted_by_score_desc(self, db):
         site = _seed_site(db, TypeSite.BUREAU)
-        _add_insight(db, site.id, "hors_horaires", "critical",
-                     {"off_hours_pct": 60, "avg_off_hour_kw": 30})
+        _add_insight(db, site.id, "hors_horaires", "critical", {"off_hours_pct": 60, "avg_off_hour_kw": 30})
 
         result = compute_flex_mini(db, site.id)
         scores = [l["score"] for l in result["levers"]]
@@ -154,8 +170,7 @@ class TestFlexMiniService:
 
     def test_inputs_used_populated(self, db):
         site = _seed_site(db, TypeSite.BUREAU)
-        _add_insight(db, site.id, "hors_horaires", "medium",
-                     {"off_hours_pct": 25})
+        _add_insight(db, site.id, "hors_horaires", "medium", {"off_hours_pct": 25})
 
         result = compute_flex_mini(db, site.id)
         assert result["inputs_used"]["insights_count"] == 1
@@ -163,7 +178,6 @@ class TestFlexMiniService:
 
 
 class TestFlexEndpoint:
-
     def test_endpoint_returns_200(self, env):
         client, db = env
         site = _seed_site(db)
@@ -177,8 +191,7 @@ class TestFlexEndpoint:
     def test_endpoint_with_insights(self, env):
         client, db = env
         site = _seed_site(db, TypeSite.BUREAU)
-        _add_insight(db, site.id, "hors_horaires", "high",
-                     {"off_hours_pct": 50, "avg_off_hour_kw": 15})
+        _add_insight(db, site.id, "hors_horaires", "high", {"off_hours_pct": 50, "avg_off_hour_kw": 15})
         r = client.get(f"/api/sites/{site.id}/flex/mini")
         assert r.status_code == 200
         data = r.json()

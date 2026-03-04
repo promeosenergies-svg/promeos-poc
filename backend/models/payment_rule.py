@@ -3,6 +3,7 @@ PROMEOS — V96 PaymentRule model
 Matrice Facturé / Payeur / Centre de coûts.
 3-level hierarchy: portefeuille > site > contrat.
 """
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -15,41 +16,60 @@ class PaymentRule(Base, TimestampMixin):
     Règle de paiement à 3 niveaux (portefeuille, site, contrat).
     Résolution en cascade : contrat > site > portefeuille.
     """
+
     __tablename__ = "payment_rules"
     __table_args__ = (
         UniqueConstraint(
-            "level", "portefeuille_id", "site_id", "contract_id",
+            "level",
+            "portefeuille_id",
+            "site_id",
+            "contract_id",
             name="uq_payment_rule_scope",
         ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     level = Column(
-        Enum(PaymentRuleLevel), nullable=False,
+        Enum(PaymentRuleLevel),
+        nullable=False,
         comment="Niveau d'application (portefeuille/site/contrat)",
     )
     portefeuille_id = Column(
-        Integer, ForeignKey("portefeuilles.id"), nullable=True, index=True,
+        Integer,
+        ForeignKey("portefeuilles.id"),
+        nullable=True,
+        index=True,
         comment="Portefeuille cible (si level=portefeuille)",
     )
     site_id = Column(
-        Integer, ForeignKey("sites.id"), nullable=True, index=True,
+        Integer,
+        ForeignKey("sites.id"),
+        nullable=True,
+        index=True,
         comment="Site cible (si level=site)",
     )
     contract_id = Column(
-        Integer, ForeignKey("energy_contracts.id"), nullable=True, index=True,
+        Integer,
+        ForeignKey("energy_contracts.id"),
+        nullable=True,
+        index=True,
         comment="Contrat cible (si level=contrat)",
     )
     invoice_entity_id = Column(
-        Integer, ForeignKey("entites_juridiques.id"), nullable=False,
+        Integer,
+        ForeignKey("entites_juridiques.id"),
+        nullable=False,
         comment="Entité juridique facturée (qui reçoit la facture)",
     )
     payer_entity_id = Column(
-        Integer, ForeignKey("entites_juridiques.id"), nullable=True,
+        Integer,
+        ForeignKey("entites_juridiques.id"),
+        nullable=True,
         comment="Entité juridique payeuse (si différente du facturé)",
     )
     cost_center = Column(
-        String(100), nullable=True,
+        String(100),
+        nullable=True,
         comment="Centre de coûts / imputation analytique",
     )
 

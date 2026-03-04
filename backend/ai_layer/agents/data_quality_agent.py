@@ -1,6 +1,7 @@
 """
 PROMEOS AI - Data Quality Agent
 """
+
 import json
 from models import AiInsight, InsightType
 from ..client import get_client
@@ -14,7 +15,7 @@ def run(db, site_id: int, **kwargs):
         object_id=site_id,
         insight_type=InsightType.DATA_QUALITY,
         content_json=json.dumps({"analysis": response}),
-        ai_version=client.model
+        ai_version=client.model,
     )
     db.add(insight)
     db.commit()

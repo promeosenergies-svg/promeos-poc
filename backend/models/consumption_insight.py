@@ -2,6 +2,7 @@
 PROMEOS - Modele ConsumptionInsight
 Resultat d'un diagnostic de consommation (hors horaires, base load, pointe, derive).
 """
+
 from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -15,6 +16,7 @@ class ConsumptionInsight(Base, TimestampMixin):
     Un insight = un diagnostic de consommation detecte pour un site.
     Types: hors_horaires, base_load, pointe, derive, data_gap
     """
+
     __tablename__ = "consumption_insights"
 
     id = Column(Integer, primary_key=True, index=True)

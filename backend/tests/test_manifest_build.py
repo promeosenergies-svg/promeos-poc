@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Tests for manifest builder.
 Tests build_manifest + write_manifest + SQLite index on synthetic snapshots.
 """
+
 import sys
 import os
 import json
@@ -80,6 +81,7 @@ def tmp_snapshots(tmp_path):
 # ========================================
 # Tests
 # ========================================
+
 
 def test_build_manifest_structure(tmp_snapshots):
     """Manifest has expected top-level keys."""
@@ -167,8 +169,10 @@ def test_build_manifest_metadata_fields(tmp_snapshots):
 def test_write_manifest(tmp_snapshots):
     """write_manifest writes valid JSON to indices dir."""
     snapshots_dir, indices_dir = tmp_snapshots
-    with patch("scripts.referential.build_manifest.SNAPSHOTS_DIR", snapshots_dir), \
-         patch("scripts.referential.build_manifest.INDICES_DIR", indices_dir):
+    with (
+        patch("scripts.referential.build_manifest.SNAPSHOTS_DIR", snapshots_dir),
+        patch("scripts.referential.build_manifest.INDICES_DIR", indices_dir),
+    ):
         manifest = build_manifest()
         out_path = write_manifest(manifest)
 
@@ -180,8 +184,10 @@ def test_write_manifest(tmp_snapshots):
 def test_build_sqlite_index(tmp_snapshots):
     """SQLite index has correct tables and rows."""
     snapshots_dir, indices_dir = tmp_snapshots
-    with patch("scripts.referential.build_manifest.SNAPSHOTS_DIR", snapshots_dir), \
-         patch("scripts.referential.build_manifest.INDICES_DIR", indices_dir):
+    with (
+        patch("scripts.referential.build_manifest.SNAPSHOTS_DIR", snapshots_dir),
+        patch("scripts.referential.build_manifest.INDICES_DIR", indices_dir),
+    ):
         manifest = build_manifest()
         db_path = build_sqlite_index(manifest)
 

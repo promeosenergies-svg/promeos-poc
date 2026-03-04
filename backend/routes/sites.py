@@ -1,10 +1,25 @@
 """
 PROMEOS - Routes API pour les Sites
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Site, Portefeuille, EntiteJuridique, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation, not_deleted
+from models import (
+    Site,
+    Portefeuille,
+    EntiteJuridique,
+    Compteur,
+    Alerte,
+    Consommation,
+    Obligation,
+    Evidence,
+    Batiment,
+    StatutConformite,
+    StatutEvidence,
+    TypeObligation,
+    not_deleted,
+)
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
@@ -67,6 +82,7 @@ def create_site(
 
     # Auto-evaluate compliance rules
     from services.compliance_rules import evaluate_site as eval_rules
+
     findings = eval_rules(db, site.id)
 
     db.commit()
@@ -77,6 +93,7 @@ def create_site(
         "findings_count": len(findings),
         **prov,
     }
+
 
 @router.get("", response_model=SiteListResponse)
 def get_sites(
@@ -99,8 +116,7 @@ def get_sites(
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     query = (
-        query
-        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        query.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
         .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
         .filter(EntiteJuridique.organisation_id == effective_org_id)
     )
@@ -119,10 +135,8 @@ def get_sites(
     total = query.count()
     sites = query.offset(skip).limit(limit).all()
 
-    return {
-        "total": total,
-        "sites": sites
-    }
+    return {"total": total, "sites": sites}
+
 
 @router.get("/{site_id}", response_model=SiteResponse)
 def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
@@ -137,8 +151,11 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
 
     return site
 
+
 @router.get("/{site_id}/stats", response_model=SiteStats)
-def get_site_stats(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_site_stats(
+    site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """
     Statistiques d'un site
     """
@@ -150,34 +167,34 @@ def get_site_stats(site_id: int, db: Session = Depends(get_db), auth: Optional[A
 
     # Nombre de compteurs
     nb_compteurs = db.query(Compteur).filter(Compteur.site_id == site_id).count()
-    
+
     # Nombre d'alertes actives
-    nb_alertes_actives = db.query(Alerte).filter(
-        Alerte.site_id == site_id,
-        Alerte.resolue == False
-    ).count()
-    
+    nb_alertes_actives = db.query(Alerte).filter(Alerte.site_id == site_id, Alerte.resolue == False).count()
+
     # Consommation du mois dernier
     date_debut = datetime.now() - timedelta(days=30)
-    
-    consommations = db.query(
-        func.sum(Consommation.valeur).label('total_valeur'),
-        func.sum(Consommation.cout_euro).label('total_cout')
-    ).join(Compteur).filter(
-        Compteur.site_id == site_id,
-        Consommation.timestamp >= date_debut
-    ).first()
-    
+
+    consommations = (
+        db.query(
+            func.sum(Consommation.valeur).label("total_valeur"), func.sum(Consommation.cout_euro).label("total_cout")
+        )
+        .join(Compteur)
+        .filter(Compteur.site_id == site_id, Consommation.timestamp >= date_debut)
+        .first()
+    )
+
     return {
         "nb_compteurs": nb_compteurs,
         "nb_alertes_actives": nb_alertes_actives,
         "consommation_totale_mois": consommations.total_valeur or 0,
-        "cout_total_mois": consommations.total_cout or 0
+        "cout_total_mois": consommations.total_cout or 0,
     }
 
 
 @router.get("/{site_id}/compliance", response_model=SiteComplianceResponse)
-def get_site_compliance(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_site_compliance(
+    site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """
     Conformité détaillée d'un site : obligations, evidences, explications et actions.
     """
@@ -213,20 +230,24 @@ def get_site_compliance(site_id: int, db: Session = Depends(get_db), auth: Optio
             label = ob.type.value.upper()
             why = ob.description or f"Statut: {ob.statut.value}"
 
-        explanations.append({
-            "label": label,
-            "statut": ob.statut,
-            "why": why,
-        })
+        explanations.append(
+            {
+                "label": label,
+                "statut": ob.statut,
+                "why": why,
+            }
+        )
 
     # Add evidence gap explanation
     manquantes = [e for e in evidences if e.statut == StatutEvidence.MANQUANT]
     if manquantes:
-        explanations.append({
-            "label": "Preuves manquantes",
-            "statut": StatutConformite.A_RISQUE,
-            "why": f"{len(manquantes)} document(s) manquant(s) : {', '.join(e.note.split(' - ')[0] for e in manquantes)}",
-        })
+        explanations.append(
+            {
+                "label": "Preuves manquantes",
+                "statut": StatutConformite.A_RISQUE,
+                "why": f"{len(manquantes)} document(s) manquant(s) : {', '.join(e.note.split(' - ')[0] for e in manquantes)}",
+            }
+        )
 
     # Build actions list from engine templates + evidence gaps
     actions = []
@@ -247,12 +268,15 @@ def get_site_compliance(site_id: int, db: Session = Depends(get_db), auth: Optio
 
 
 @router.get("/{site_id}/guardrails")
-def get_site_guardrails(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_site_guardrails(
+    site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """
     Regles de validation (guardrails) pour un site.
     """
     check_site_access(auth, site_id)
     from services.guardrails import validate_site
+
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")

@@ -7,6 +7,7 @@ Fonction principale :
     → Dedup : si un doc KB existe déjà pour (efa_id, year, proof_type), skip
     → Optionnel : auto-link vers une action via kb.link_doc_to_action (V48)
 """
+
 import hashlib
 from datetime import datetime, timezone
 
@@ -14,6 +15,7 @@ from services.tertiaire_proof_catalog import PROOF_TYPES
 
 
 # ── Template renderer ────────────────────────────────────────────────────────
+
 
 def render_template_md(proof_type: str, context: dict) -> tuple:
     """Génère (filename, content_md, display_name) pour un type de preuve.
@@ -77,6 +79,7 @@ def render_template_md(proof_type: str, context: dict) -> tuple:
 
 # ── Template generation engine ───────────────────────────────────────────────
 
+
 def generate_proof_templates(
     efa_id: int,
     year: int,
@@ -98,6 +101,7 @@ def generate_proof_templates(
         }
     """
     from app.kb.store import KBStore
+
     kb = KBStore()
 
     context = {
@@ -114,10 +118,12 @@ def generate_proof_templates(
 
     for pt in proof_types:
         if pt not in PROOF_TYPES:
-            errors.append({
-                "proof_type": pt,
-                "error": f"Type de preuve inconnu : {pt}",
-            })
+            errors.append(
+                {
+                    "proof_type": pt,
+                    "error": f"Type de preuve inconnu : {pt}",
+                }
+            )
             continue
 
         # Deterministic doc_id for dedup
@@ -126,11 +132,13 @@ def generate_proof_templates(
         # Check dedup: if doc already exists in KB, skip
         existing = kb.get_doc(doc_id) if hasattr(kb, "get_doc") else None
         if existing:
-            skipped.append({
-                "proof_type": pt,
-                "doc_id": doc_id,
-                "reason": "Modèle déjà existant dans la Mémobox",
-            })
+            skipped.append(
+                {
+                    "proof_type": pt,
+                    "doc_id": doc_id,
+                    "reason": "Modèle déjà existant dans la Mémobox",
+                }
+            )
             continue
 
         try:
@@ -170,20 +178,24 @@ def generate_proof_templates(
                     proof_type=pt,
                 )
 
-            created.append({
-                "proof_type": pt,
-                "doc_id": doc_id,
-                "display_name": display_name,
-                "filename": filename,
-                "status": "draft",
-                "action_link": link_result,
-            })
+            created.append(
+                {
+                    "proof_type": pt,
+                    "doc_id": doc_id,
+                    "display_name": display_name,
+                    "filename": filename,
+                    "status": "draft",
+                    "action_link": link_result,
+                }
+            )
 
         except Exception as exc:
-            errors.append({
-                "proof_type": pt,
-                "error": str(exc),
-            })
+            errors.append(
+                {
+                    "proof_type": pt,
+                    "error": str(exc),
+                }
+            )
 
     return {
         "efa_id": efa_id,

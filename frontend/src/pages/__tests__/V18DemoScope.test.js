@@ -43,21 +43,21 @@ describe('sitesLoading state transitions (V18-A RC1)', () => {
   it('sitesLoading becomes true when effectiveOrgId is set, then false on success', () => {
     const sites = [{ id: 1 }, { id: 2 }, { id: 3 }];
     const states = simulateSitesEffect(42, sites);
-    expect(states[1].sitesLoading).toBe(true);   // started
-    expect(states[2].sitesLoading).toBe(false);  // done
+    expect(states[1].sitesLoading).toBe(true); // started
+    expect(states[2].sitesLoading).toBe(false); // done
     expect(states[2].apiSites).toHaveLength(3);
   });
 
   it('sitesLoading returns false on API failure, apiSites stays []', () => {
     const states = simulateSitesEffect(42, new Error('Network error'));
-    expect(states[1].sitesLoading).toBe(true);   // started
-    expect(states[2].sitesLoading).toBe(false);  // done (error path)
+    expect(states[1].sitesLoading).toBe(true); // started
+    expect(states[2].sitesLoading).toBe(false); // done (error path)
     expect(states[2].apiSites).toHaveLength(0);
   });
 
   it('null effectiveOrgId → sitesLoading stays false, no loading spinner', () => {
     const states = simulateSitesEffect(null, []);
-    expect(states.every(s => s.sitesLoading === false)).toBe(true);
+    expect(states.every((s) => s.sitesLoading === false)).toBe(true);
   });
 });
 
@@ -68,8 +68,12 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
   function makeRequestGuard() {
     let currentId = 0;
     return {
-      newRequest() { return ++currentId; },
-      isFresh(myId) { return myId === currentId; },
+      newRequest() {
+        return ++currentId;
+      },
+      isFresh(myId) {
+        return myId === currentId;
+      },
       currentId: () => currentId,
     };
   }
@@ -96,8 +100,8 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
     const guard = makeRequestGuard();
     let apiSites = [];
 
-    const heliosReqId = guard.newRequest();   // org=Helios, id=1
-    const tertiReqId  = guard.newRequest();   // org=Tertiaire, id=2
+    const heliosReqId = guard.newRequest(); // org=Helios, id=1
+    const tertiReqId = guard.newRequest(); // org=Tertiaire, id=2
 
     // Helios API responds (stale)
     const heliosSites = Array.from({ length: 5 }, (_, i) => ({ id: i + 1 }));
@@ -111,7 +115,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
       apiSites = tertiSites; // should execute
     }
 
-    expect(apiSites).toHaveLength(10);  // Tertiaire wins, no stale-Helios contamination
+    expect(apiSites).toHaveLength(10); // Tertiaire wins, no stale-Helios contamination
     expect(apiSites).toBe(tertiSites);
   });
 
@@ -129,7 +133,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
       }
     });
 
-    expect(accepted).toHaveLength(1);          // only one accepted
+    expect(accepted).toHaveLength(1); // only one accepted
     expect(accepted[0]).toBe(ids[ids.length - 1]); // the last one
   });
 });
@@ -141,27 +145,39 @@ describe('getEffectiveSiteIds helper (V18-B guard)', () => {
   function getEffectiveSiteIds({ sitesLoading, orgSites, selectedSiteId }) {
     if (sitesLoading) return null; // signal: "wait, don't render"
     if (selectedSiteId) {
-      const found = orgSites.find(s => s.id === selectedSiteId);
+      const found = orgSites.find((s) => s.id === selectedSiteId);
       return found ? [selectedSiteId] : null;
     }
     if (orgSites.length === 0) return []; // genuinely empty org
-    return orgSites.map(s => s.id);
+    return orgSites.map((s) => s.id);
   }
 
   const tertiaire10 = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
 
   it('returns null when sitesLoading=true (guard prevents rendering)', () => {
-    const ids = getEffectiveSiteIds({ sitesLoading: true, orgSites: tertiaire10, selectedSiteId: null });
+    const ids = getEffectiveSiteIds({
+      sitesLoading: true,
+      orgSites: tertiaire10,
+      selectedSiteId: null,
+    });
     expect(ids).toBeNull();
   });
 
   it('returns [siteId] when site selected and found in orgSites', () => {
-    const ids = getEffectiveSiteIds({ sitesLoading: false, orgSites: tertiaire10, selectedSiteId: 5 });
+    const ids = getEffectiveSiteIds({
+      sitesLoading: false,
+      orgSites: tertiaire10,
+      selectedSiteId: 5,
+    });
     expect(ids).toEqual([5]);
   });
 
   it('returns all 10 IDs when siteId=null and 10 sites loaded', () => {
-    const ids = getEffectiveSiteIds({ sitesLoading: false, orgSites: tertiaire10, selectedSiteId: null });
+    const ids = getEffectiveSiteIds({
+      sitesLoading: false,
+      orgSites: tertiaire10,
+      selectedSiteId: null,
+    });
     expect(ids).toHaveLength(10);
     expect(ids).toContain(1);
     expect(ids).toContain(10);
@@ -178,7 +194,14 @@ describe('getEffectiveSiteIds helper (V18-B guard)', () => {
 
 describe('ScopeSummary loading label (V18-C)', () => {
   // Simulates the V18 ScopeSummary rendering logic
-  function buildScopeSummaryLabel({ orgNom, sitesLoading, selectedSiteId, scopeLabel, sitesCount, showCount = true }) {
+  function buildScopeSummaryLabel({
+    orgNom,
+    sitesLoading,
+    selectedSiteId,
+    scopeLabel,
+    sitesCount,
+    showCount = true,
+  }) {
     if (!orgNom) return null;
     if (sitesLoading) {
       return `${orgNom} — Chargement\u2026`; // loading state
@@ -238,12 +261,18 @@ describe('ScopeSummary loading label (V18-C)', () => {
   it('loading label is stable even when sitesCount becomes available later', () => {
     // During loading, sitesCount might be 0 (still fetching) — label must say "Chargement"
     const labelWhileLoading = buildScopeSummaryLabel({
-      orgNom: 'SCI Les Terrasses', sitesLoading: true, selectedSiteId: null,
-      scopeLabel: 'Tous les sites', sitesCount: 0,
+      orgNom: 'SCI Les Terrasses',
+      sitesLoading: true,
+      selectedSiteId: null,
+      scopeLabel: 'Tous les sites',
+      sitesCount: 0,
     });
     const labelAfterLoad = buildScopeSummaryLabel({
-      orgNom: 'SCI Les Terrasses', sitesLoading: false, selectedSiteId: null,
-      scopeLabel: 'Tous les sites', sitesCount: 10,
+      orgNom: 'SCI Les Terrasses',
+      sitesLoading: false,
+      selectedSiteId: null,
+      scopeLabel: 'Tous les sites',
+      sitesCount: 10,
     });
     expect(labelWhileLoading).toContain('Chargement');
     expect(labelAfterLoad).toContain('(10)');

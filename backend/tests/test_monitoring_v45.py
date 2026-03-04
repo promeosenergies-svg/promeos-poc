@@ -3,8 +3,10 @@ PROMEOS - Sprint V4.5 Tests
 Covers: climate engine reason codes, weather multi-site envelope,
 timeseries availability/coverage, monitoring orchestrator edge cases.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -15,6 +17,7 @@ from services.ems.timeseries_service import estimate_points, _compute_availabili
 
 
 # --- Climate Engine: explicit reason codes ---
+
 
 class TestClimateReasonCodes:
     """Climate engine returns explicit reason when analysis cannot run."""
@@ -27,8 +30,7 @@ class TestClimateReasonCodes:
 
     def test_no_weather_returns_no_weather_reason(self):
         eng = ClimateEngine()
-        readings = [{"timestamp": datetime(2025, 1, 1, h), "value_kwh": 10}
-                    for h in range(24)]
+        readings = [{"timestamp": datetime(2025, 1, 1, h), "value_kwh": 10} for h in range(24)]
         result = eng.compute(readings, [])
         assert result["reason"] == "no_weather"
 
@@ -57,10 +59,12 @@ class TestClimateReasonCodes:
                 temp = 5 + d * 0.5
                 base = 200 + max(0, 15 - temp) * 10  # heating pattern
                 readings.append({"timestamp": dt.replace(hour=h), "value_kwh": base / 24})
-            weather.append({
-                "date": (datetime(2025, 1, 1) + timedelta(days=d)).date().isoformat(),
-                "temp_avg_c": 5 + d * 0.5,
-            })
+            weather.append(
+                {
+                    "date": (datetime(2025, 1, 1) + timedelta(days=d)).date().isoformat(),
+                    "temp_avg_c": 5 + d * 0.5,
+                }
+            )
         result = eng.compute(readings, weather)
         assert result.get("reason") is None
         assert result["slope_kw_per_c"] is not None
@@ -68,6 +72,7 @@ class TestClimateReasonCodes:
 
 
 # --- Timeseries availability / coverage ---
+
 
 class TestTimeseriesAvailability:
     """estimate_points and _compute_availability edge cases."""
@@ -92,10 +97,12 @@ class TestTimeseriesAvailability:
 
     def test_compute_availability_full_coverage(self):
         """100% coverage when all expected points present."""
-        series = [{
-            "key": "meter_1",
-            "data": [{"t": datetime(2025, 1, 1, h).isoformat()} for h in range(24)],
-        }]
+        series = [
+            {
+                "key": "meter_1",
+                "data": [{"t": datetime(2025, 1, 1, h).isoformat()} for h in range(24)],
+            }
+        ]
         result = _compute_availability(series, 24, "hourly")
         assert len(result) == 1
         assert result[0]["actual_points"] == 24
@@ -124,12 +131,14 @@ class TestTimeseriesAvailability:
 
 # --- Weather multi-site ---
 
+
 class TestWeatherMultiMeta:
     """Weather multi-site envelope and multi_city_risk detection."""
 
     def test_multi_city_risk_detected(self):
         """Latitude spread > 2 degrees triggers multi_city_risk."""
         from services.ems.weather_service import get_weather_multi
+
         # We can't easily test with DB, but we can test the logic
         # by checking that the function signature accepts site_ids
         # (full integration tested via test_monitoring_integration.py)
@@ -149,11 +158,13 @@ class TestWeatherMultiMeta:
 
 # --- Monitoring orchestrator: explicit edge cases ---
 
+
 class TestOrchestratorReasonCodes:
     """Orchestrator returns proper status/reason for edge cases."""
 
     def test_empty_readings_status_no_data(self):
         from services.electric_monitoring.monitoring_orchestrator import MonitoringOrchestrator
+
         orch = MonitoringOrchestrator()
         result = orch.run_standalone([])
         assert result.get("kpis") == {}
@@ -162,6 +173,7 @@ class TestOrchestratorReasonCodes:
     def test_climate_with_weather_returns_data(self):
         from services.electric_monitoring.monitoring_orchestrator import MonitoringOrchestrator
         import random
+
         random.seed(42)
         # Generate 30 days of readings
         readings = []
@@ -175,13 +187,15 @@ class TestOrchestratorReasonCodes:
                 base = 20 + max(0, 15 - temp) * 2
                 value = base + random.uniform(-2, 2)
                 readings.append({"timestamp": ts, "value_kwh": max(0.1, round(value, 2))})
-            weather.append({
-                "date": dt.date().isoformat(),
-                "temp_avg_c": round(temp, 1),
-                "temp_min_c": round(temp - 3, 1),
-                "temp_max_c": round(temp + 3, 1),
-                "source": "test",
-            })
+            weather.append(
+                {
+                    "date": dt.date().isoformat(),
+                    "temp_avg_c": round(temp, 1),
+                    "temp_min_c": round(temp - 3, 1),
+                    "temp_max_c": round(temp + 3, 1),
+                    "source": "test",
+                }
+            )
 
         orch = MonitoringOrchestrator()
         result = orch.run_standalone(readings, weather_data=weather)

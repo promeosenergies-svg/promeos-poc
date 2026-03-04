@@ -2,12 +2,19 @@
 PROMEOS - Routes API pour la Knowledge Base Usages
 Archetypes, anomaly rules, recommendations, provenance, reload
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models import (
-    KBVersion, KBArchetype, KBMappingCode, KBAnomalyRule,
-    KBRecommendation, KBTaxonomy, KBStatus, KBConfidence
+    KBVersion,
+    KBArchetype,
+    KBMappingCode,
+    KBAnomalyRule,
+    KBRecommendation,
+    KBTaxonomy,
+    KBStatus,
+    KBConfidence,
 )
 from services.kb_service import KBService
 from pathlib import Path
@@ -19,6 +26,7 @@ router = APIRouter(prefix="/api/kb", tags=["Knowledge Base"])
 
 
 # --- Pydantic response models ---
+
 
 class ArchetypeResponse(BaseModel):
     id: int
@@ -97,6 +105,7 @@ class ReloadResponse(BaseModel):
 
 # --- Endpoints ---
 
+
 @router.get("/ping")
 def kb_ping():
     """Smoke test — KB endpoint is reachable"""
@@ -104,10 +113,7 @@ def kb_ping():
 
 
 @router.get("/archetypes", response_model=List[ArchetypeResponse])
-def list_archetypes(
-    segment: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
+def list_archetypes(segment: Optional[str] = None, db: Session = Depends(get_db)):
     """List all KB archetypes with optional segment filter"""
     query = db.query(KBArchetype).filter_by(status=KBStatus.VALIDATED)
 
@@ -120,19 +126,21 @@ def list_archetypes(
     result = []
     for arch in archetypes:
         naf_codes = [m.naf_code for m in db.query(KBMappingCode).filter_by(archetype_id=arch.id).all()]
-        result.append(ArchetypeResponse(
-            id=arch.id,
-            code=arch.code,
-            title=arch.title,
-            description=arch.description,
-            kwh_m2_min=arch.kwh_m2_min,
-            kwh_m2_max=arch.kwh_m2_max,
-            kwh_m2_avg=arch.kwh_m2_avg,
-            segment_tags=arch.segment_tags,
-            naf_codes=naf_codes,
-            confidence=arch.confidence.value if arch.confidence else "medium",
-            source_section=arch.source_section
-        ))
+        result.append(
+            ArchetypeResponse(
+                id=arch.id,
+                code=arch.code,
+                title=arch.title,
+                description=arch.description,
+                kwh_m2_min=arch.kwh_m2_min,
+                kwh_m2_max=arch.kwh_m2_max,
+                kwh_m2_avg=arch.kwh_m2_avg,
+                segment_tags=arch.segment_tags,
+                naf_codes=naf_codes,
+                confidence=arch.confidence.value if arch.confidence else "medium",
+                source_section=arch.source_section,
+            )
+        )
 
     return result
 
@@ -157,7 +165,7 @@ def get_archetype(code: str, db: Session = Depends(get_db)):
         segment_tags=arch.segment_tags,
         naf_codes=naf_codes,
         confidence=arch.confidence.value if arch.confidence else "medium",
-        source_section=arch.source_section
+        source_section=arch.source_section,
     )
 
 
@@ -182,111 +190,129 @@ def get_archetype_by_naf(naf_code: str, db: Session = Depends(get_db)):
         segment_tags=arch.segment_tags,
         naf_codes=naf_codes,
         confidence=arch.confidence.value if arch.confidence else "medium",
-        source_section=arch.source_section
+        source_section=arch.source_section,
     )
 
 
 @router.get("/rules", response_model=List[AnomalyRuleResponse])
-def list_anomaly_rules(
-    archetype_code: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
+def list_anomaly_rules(archetype_code: Optional[str] = None, db: Session = Depends(get_db)):
     """List all KB anomaly rules"""
     query = db.query(KBAnomalyRule).filter_by(status=KBStatus.VALIDATED)
     rules = query.all()
 
-    return [AnomalyRuleResponse(
-        id=r.id,
-        code=r.code,
-        title=r.title,
-        description=r.description,
-        rule_type=r.rule_type,
-        severity=r.severity,
-        confidence=r.confidence.value if r.confidence else "medium",
-        source_section=r.source_section
-    ) for r in rules]
+    return [
+        AnomalyRuleResponse(
+            id=r.id,
+            code=r.code,
+            title=r.title,
+            description=r.description,
+            rule_type=r.rule_type,
+            severity=r.severity,
+            confidence=r.confidence.value if r.confidence else "medium",
+            source_section=r.source_section,
+        )
+        for r in rules
+    ]
 
 
 @router.get("/recommendations", response_model=List[RecommendationResponse])
-def list_recommendations(
-    archetype_code: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
+def list_recommendations(archetype_code: Optional[str] = None, db: Session = Depends(get_db)):
     """List all KB recommendations, sorted by ICE score"""
     query = db.query(KBRecommendation).filter_by(status=KBStatus.VALIDATED)
     recos = query.order_by(KBRecommendation.ice_score.desc()).all()
 
-    return [RecommendationResponse(
-        id=r.id,
-        code=r.code,
-        title=r.title,
-        description=r.description,
-        action_type=r.action_type,
-        target_asset=r.target_asset,
-        savings_min_pct=r.savings_min_pct,
-        savings_max_pct=r.savings_max_pct,
-        ice_score=r.ice_score,
-        confidence=r.confidence.value if r.confidence else "medium",
-        source_section=r.source_section
-    ) for r in recos]
+    return [
+        RecommendationResponse(
+            id=r.id,
+            code=r.code,
+            title=r.title,
+            description=r.description,
+            action_type=r.action_type,
+            target_asset=r.target_asset,
+            savings_min_pct=r.savings_min_pct,
+            savings_max_pct=r.savings_max_pct,
+            ice_score=r.ice_score,
+            confidence=r.confidence.value if r.confidence else "medium",
+            source_section=r.source_section,
+        )
+        for r in recos
+    ]
 
 
 @router.get("/search")
 def search_kb(
     q: str = Query(..., min_length=2, description="Search query"),
     type: Optional[str] = Query(None, description="Filter by type: archetype, rule, recommendation"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Full-text search across KB items"""
     results = []
     search_term = f"%{q}%"
 
     if not type or type == "archetype":
-        archetypes = db.query(KBArchetype).filter(
-            KBArchetype.title.ilike(search_term) |
-            KBArchetype.description.ilike(search_term) |
-            KBArchetype.code.ilike(search_term)
-        ).all()
+        archetypes = (
+            db.query(KBArchetype)
+            .filter(
+                KBArchetype.title.ilike(search_term)
+                | KBArchetype.description.ilike(search_term)
+                | KBArchetype.code.ilike(search_term)
+            )
+            .all()
+        )
         for a in archetypes:
-            results.append({
-                "type": "archetype",
-                "code": a.code,
-                "title": a.title,
-                "description": a.description,
-                "confidence": a.confidence.value if a.confidence else "medium"
-            })
+            results.append(
+                {
+                    "type": "archetype",
+                    "code": a.code,
+                    "title": a.title,
+                    "description": a.description,
+                    "confidence": a.confidence.value if a.confidence else "medium",
+                }
+            )
 
     if not type or type == "rule":
-        rules = db.query(KBAnomalyRule).filter(
-            KBAnomalyRule.title.ilike(search_term) |
-            KBAnomalyRule.description.ilike(search_term) |
-            KBAnomalyRule.code.ilike(search_term)
-        ).all()
+        rules = (
+            db.query(KBAnomalyRule)
+            .filter(
+                KBAnomalyRule.title.ilike(search_term)
+                | KBAnomalyRule.description.ilike(search_term)
+                | KBAnomalyRule.code.ilike(search_term)
+            )
+            .all()
+        )
         for r in rules:
-            results.append({
-                "type": "rule",
-                "code": r.code,
-                "title": r.title,
-                "description": r.description,
-                "severity": r.severity,
-                "confidence": r.confidence.value if r.confidence else "medium"
-            })
+            results.append(
+                {
+                    "type": "rule",
+                    "code": r.code,
+                    "title": r.title,
+                    "description": r.description,
+                    "severity": r.severity,
+                    "confidence": r.confidence.value if r.confidence else "medium",
+                }
+            )
 
     if not type or type == "recommendation":
-        recos = db.query(KBRecommendation).filter(
-            KBRecommendation.title.ilike(search_term) |
-            KBRecommendation.description.ilike(search_term) |
-            KBRecommendation.code.ilike(search_term)
-        ).all()
+        recos = (
+            db.query(KBRecommendation)
+            .filter(
+                KBRecommendation.title.ilike(search_term)
+                | KBRecommendation.description.ilike(search_term)
+                | KBRecommendation.code.ilike(search_term)
+            )
+            .all()
+        )
         for r in recos:
-            results.append({
-                "type": "recommendation",
-                "code": r.code,
-                "title": r.title,
-                "description": r.description,
-                "ice_score": r.ice_score,
-                "confidence": r.confidence.value if r.confidence else "medium"
-            })
+            results.append(
+                {
+                    "type": "recommendation",
+                    "code": r.code,
+                    "title": r.title,
+                    "description": r.description,
+                    "ice_score": r.ice_score,
+                    "confidence": r.confidence.value if r.confidence else "medium",
+                }
+            )
 
     return {"query": q, "results": results, "total": len(results)}
 
@@ -320,7 +346,7 @@ def get_provenance(item_type: str, code: str, db: Session = Depends(get_db)):
         source_sha256=kb_version.source_sha256 if kb_version else None,
         source_section=item.source_section,
         confidence=item.confidence.value if item.confidence else "medium",
-        status=item.status.value if item.status else "validated"
+        status=item.status.value if item.status else "validated",
     )
 
 
@@ -341,11 +367,12 @@ def get_kb_stats(db: Session = Depends(get_db)):
         naf_mappings_count=naf_count,
         kb_version=kb_version.version if kb_version else None,
         kb_doc_id=kb_version.doc_id if kb_version else None,
-        kb_sha256=kb_version.source_sha256 if kb_version else None
+        kb_sha256=kb_version.source_sha256 if kb_version else None,
     )
 
 
 # ── V11.1: POST /search (body-based FTS search) ──────────────────────────
+
 
 class KBSearchBody(BaseModel):
     q: str = "*"
@@ -371,57 +398,70 @@ def search_kb_post(body: KBSearchBody, db: Session = Depends(get_db)):
         q = db.query(KBArchetype).filter(KBArchetype.status.in_(statuses))
         if body.q and body.q != "*":
             q = q.filter(
-                KBArchetype.title.ilike(search_term) |
-                KBArchetype.description.ilike(search_term) |
-                KBArchetype.code.ilike(search_term)
+                KBArchetype.title.ilike(search_term)
+                | KBArchetype.description.ilike(search_term)
+                | KBArchetype.code.ilike(search_term)
             )
         for a in q.limit(body.limit).all():
-            results.append({
-                "type": "archetype", "code": a.code, "title": a.title,
-                "description": a.description,
-                "confidence": a.confidence.value if a.confidence else "medium",
-                "status": a.status.value if a.status else "validated",
-            })
+            results.append(
+                {
+                    "type": "archetype",
+                    "code": a.code,
+                    "title": a.title,
+                    "description": a.description,
+                    "confidence": a.confidence.value if a.confidence else "medium",
+                    "status": a.status.value if a.status else "validated",
+                }
+            )
 
     # Rules
     if not body.type or body.type == "rule":
         q = db.query(KBAnomalyRule).filter(KBAnomalyRule.status.in_(statuses))
         if body.q and body.q != "*":
             q = q.filter(
-                KBAnomalyRule.title.ilike(search_term) |
-                KBAnomalyRule.description.ilike(search_term) |
-                KBAnomalyRule.code.ilike(search_term)
+                KBAnomalyRule.title.ilike(search_term)
+                | KBAnomalyRule.description.ilike(search_term)
+                | KBAnomalyRule.code.ilike(search_term)
             )
         for r in q.limit(body.limit).all():
-            results.append({
-                "type": "rule", "code": r.code, "title": r.title,
-                "description": r.description,
-                "confidence": r.confidence.value if r.confidence else "medium",
-                "status": r.status.value if r.status else "validated",
-            })
+            results.append(
+                {
+                    "type": "rule",
+                    "code": r.code,
+                    "title": r.title,
+                    "description": r.description,
+                    "confidence": r.confidence.value if r.confidence else "medium",
+                    "status": r.status.value if r.status else "validated",
+                }
+            )
 
     # Recommendations
     if not body.type or body.type == "recommendation":
         q = db.query(KBRecommendation).filter(KBRecommendation.status.in_(statuses))
         if body.q and body.q != "*":
             q = q.filter(
-                KBRecommendation.title.ilike(search_term) |
-                KBRecommendation.description.ilike(search_term) |
-                KBRecommendation.code.ilike(search_term)
+                KBRecommendation.title.ilike(search_term)
+                | KBRecommendation.description.ilike(search_term)
+                | KBRecommendation.code.ilike(search_term)
             )
         for r in q.limit(body.limit).all():
-            results.append({
-                "type": "recommendation", "code": r.code, "title": r.title,
-                "description": r.description,
-                "confidence": r.confidence.value if r.confidence else "medium",
-                "status": r.status.value if r.status else "validated",
-            })
+            results.append(
+                {
+                    "type": "recommendation",
+                    "code": r.code,
+                    "title": r.title,
+                    "description": r.description,
+                    "confidence": r.confidence.value if r.confidence else "medium",
+                    "status": r.status.value if r.status else "validated",
+                }
+            )
 
-    trimmed = results[:body.limit]
+    trimmed = results[: body.limit]
     return {"results": trimmed, "total": len(trimmed)}
 
 
 # ── V11.1: GET /stats (rich stats shape expected by KBExplorerPage) ────────
+
 
 @router.get("/stats")
 def get_kb_full_stats(db: Session = Depends(get_db)):
@@ -493,16 +533,96 @@ def seed_demo_kb(db: Session = Depends(get_db)):
 
     # ── Archetypes (10) ──
     DEMO_ARCHETYPES = [
-        {"code": "BUREAU_STANDARD",     "title": "Bureau standard",            "kwh_m2_min": 150, "kwh_m2_max": 250, "kwh_m2_avg": 200, "segments": ["tertiaire", "bureau"],           "conf": KBConfidence.HIGH},
-        {"code": "BUREAU_PERFORMANT",   "title": "Bureau performant RT2012",   "kwh_m2_min": 80,  "kwh_m2_max": 150, "kwh_m2_avg": 115, "segments": ["tertiaire", "bureau", "HQE"],    "conf": KBConfidence.HIGH},
-        {"code": "COMMERCE_ALIMENTAIRE","title": "Commerce alimentaire",       "kwh_m2_min": 400, "kwh_m2_max": 800, "kwh_m2_avg": 550, "segments": ["commerce", "alimentaire"],       "conf": KBConfidence.HIGH},
-        {"code": "RESTAURATION_SERVICE","title": "Restauration & service",     "kwh_m2_min": 250, "kwh_m2_max": 450, "kwh_m2_avg": 350, "segments": ["restauration"],                  "conf": KBConfidence.MEDIUM},
-        {"code": "INDUSTRIE_LEGERE",    "title": "Industrie legere",           "kwh_m2_min": 80,  "kwh_m2_max": 200, "kwh_m2_avg": 140, "segments": ["industrie", "PMI"],              "conf": KBConfidence.MEDIUM},
-        {"code": "INDUSTRIE_LOURDE",    "title": "Industrie lourde (process)", "kwh_m2_min": 300, "kwh_m2_max": 1500,"kwh_m2_avg": 800, "segments": ["industrie", "process"],          "conf": KBConfidence.MEDIUM},
-        {"code": "LOGISTIQUE_ENTREPOT", "title": "Entrepot logistique",        "kwh_m2_min": 30,  "kwh_m2_max": 100, "kwh_m2_avg": 60,  "segments": ["logistique", "entrepot"],        "conf": KBConfidence.HIGH},
-        {"code": "SANTE_HOPITAL",       "title": "Etablissement de sante",     "kwh_m2_min": 200, "kwh_m2_max": 400, "kwh_m2_avg": 300, "segments": ["sante", "hopital"],              "conf": KBConfidence.MEDIUM},
-        {"code": "ENSEIGNEMENT",        "title": "Enseignement & formation",   "kwh_m2_min": 80,  "kwh_m2_max": 180, "kwh_m2_avg": 130, "segments": ["enseignement", "formation"],     "conf": KBConfidence.HIGH},
-        {"code": "DATACENTER",          "title": "Datacenter & salle serveur", "kwh_m2_min": 500, "kwh_m2_max": 3000,"kwh_m2_avg":1200, "segments": ["IT", "datacenter"],              "conf": KBConfidence.HIGH},
+        {
+            "code": "BUREAU_STANDARD",
+            "title": "Bureau standard",
+            "kwh_m2_min": 150,
+            "kwh_m2_max": 250,
+            "kwh_m2_avg": 200,
+            "segments": ["tertiaire", "bureau"],
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "BUREAU_PERFORMANT",
+            "title": "Bureau performant RT2012",
+            "kwh_m2_min": 80,
+            "kwh_m2_max": 150,
+            "kwh_m2_avg": 115,
+            "segments": ["tertiaire", "bureau", "HQE"],
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "COMMERCE_ALIMENTAIRE",
+            "title": "Commerce alimentaire",
+            "kwh_m2_min": 400,
+            "kwh_m2_max": 800,
+            "kwh_m2_avg": 550,
+            "segments": ["commerce", "alimentaire"],
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RESTAURATION_SERVICE",
+            "title": "Restauration & service",
+            "kwh_m2_min": 250,
+            "kwh_m2_max": 450,
+            "kwh_m2_avg": 350,
+            "segments": ["restauration"],
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "INDUSTRIE_LEGERE",
+            "title": "Industrie legere",
+            "kwh_m2_min": 80,
+            "kwh_m2_max": 200,
+            "kwh_m2_avg": 140,
+            "segments": ["industrie", "PMI"],
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "INDUSTRIE_LOURDE",
+            "title": "Industrie lourde (process)",
+            "kwh_m2_min": 300,
+            "kwh_m2_max": 1500,
+            "kwh_m2_avg": 800,
+            "segments": ["industrie", "process"],
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "LOGISTIQUE_ENTREPOT",
+            "title": "Entrepot logistique",
+            "kwh_m2_min": 30,
+            "kwh_m2_max": 100,
+            "kwh_m2_avg": 60,
+            "segments": ["logistique", "entrepot"],
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "SANTE_HOPITAL",
+            "title": "Etablissement de sante",
+            "kwh_m2_min": 200,
+            "kwh_m2_max": 400,
+            "kwh_m2_avg": 300,
+            "segments": ["sante", "hopital"],
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "ENSEIGNEMENT",
+            "title": "Enseignement & formation",
+            "kwh_m2_min": 80,
+            "kwh_m2_max": 180,
+            "kwh_m2_avg": 130,
+            "segments": ["enseignement", "formation"],
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "DATACENTER",
+            "title": "Datacenter & salle serveur",
+            "kwh_m2_min": 500,
+            "kwh_m2_max": 3000,
+            "kwh_m2_avg": 1200,
+            "segments": ["IT", "datacenter"],
+            "conf": KBConfidence.HIGH,
+        },
     ]
 
     archetypes_seeded = 0
@@ -513,10 +633,17 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             archetype_map[a["code"]] = existing.id
             continue
         obj = KBArchetype(
-            code=a["code"], title=a["title"], description=f"Archetype demo: {a['title']}",
-            kwh_m2_min=a["kwh_m2_min"], kwh_m2_max=a["kwh_m2_max"], kwh_m2_avg=a["kwh_m2_avg"],
-            segment_tags=a["segments"], confidence=a["conf"],
-            status=KBStatus.VALIDATED, kb_version_id=vid, source_section="demo_seed",
+            code=a["code"],
+            title=a["title"],
+            description=f"Archetype demo: {a['title']}",
+            kwh_m2_min=a["kwh_m2_min"],
+            kwh_m2_max=a["kwh_m2_max"],
+            kwh_m2_avg=a["kwh_m2_avg"],
+            segment_tags=a["segments"],
+            confidence=a["conf"],
+            status=KBStatus.VALIDATED,
+            kb_version_id=vid,
+            source_section="demo_seed",
         )
         db.add(obj)
         db.flush()
@@ -525,21 +652,36 @@ def seed_demo_kb(db: Session = Depends(get_db)):
 
     # ── NAF Mappings (30) ──
     DEMO_NAF = [
-        ("70.10Z", "BUREAU_STANDARD"),  ("70.22Z", "BUREAU_STANDARD"),
-        ("69.10Z", "BUREAU_STANDARD"),  ("69.20Z", "BUREAU_PERFORMANT"),
-        ("62.01Z", "BUREAU_PERFORMANT"),("62.02A", "BUREAU_PERFORMANT"),
-        ("47.11B", "COMMERCE_ALIMENTAIRE"), ("47.11C", "COMMERCE_ALIMENTAIRE"),
-        ("47.11D", "COMMERCE_ALIMENTAIRE"), ("47.21Z", "COMMERCE_ALIMENTAIRE"),
-        ("56.10A", "RESTAURATION_SERVICE"), ("56.10B", "RESTAURATION_SERVICE"),
-        ("56.21Z", "RESTAURATION_SERVICE"), ("56.30Z", "RESTAURATION_SERVICE"),
-        ("25.11Z", "INDUSTRIE_LEGERE"),  ("25.62A", "INDUSTRIE_LEGERE"),
-        ("28.11Z", "INDUSTRIE_LEGERE"),  ("24.10Z", "INDUSTRIE_LOURDE"),
-        ("24.20Z", "INDUSTRIE_LOURDE"),  ("20.11Z", "INDUSTRIE_LOURDE"),
-        ("52.10A", "LOGISTIQUE_ENTREPOT"),("52.10B", "LOGISTIQUE_ENTREPOT"),
-        ("49.41A", "LOGISTIQUE_ENTREPOT"),("86.10Z", "SANTE_HOPITAL"),
-        ("86.21Z", "SANTE_HOPITAL"),     ("86.22A", "SANTE_HOPITAL"),
-        ("85.10Z", "ENSEIGNEMENT"),      ("85.20Z", "ENSEIGNEMENT"),
-        ("63.11Z", "DATACENTER"),        ("63.12Z", "DATACENTER"),
+        ("70.10Z", "BUREAU_STANDARD"),
+        ("70.22Z", "BUREAU_STANDARD"),
+        ("69.10Z", "BUREAU_STANDARD"),
+        ("69.20Z", "BUREAU_PERFORMANT"),
+        ("62.01Z", "BUREAU_PERFORMANT"),
+        ("62.02A", "BUREAU_PERFORMANT"),
+        ("47.11B", "COMMERCE_ALIMENTAIRE"),
+        ("47.11C", "COMMERCE_ALIMENTAIRE"),
+        ("47.11D", "COMMERCE_ALIMENTAIRE"),
+        ("47.21Z", "COMMERCE_ALIMENTAIRE"),
+        ("56.10A", "RESTAURATION_SERVICE"),
+        ("56.10B", "RESTAURATION_SERVICE"),
+        ("56.21Z", "RESTAURATION_SERVICE"),
+        ("56.30Z", "RESTAURATION_SERVICE"),
+        ("25.11Z", "INDUSTRIE_LEGERE"),
+        ("25.62A", "INDUSTRIE_LEGERE"),
+        ("28.11Z", "INDUSTRIE_LEGERE"),
+        ("24.10Z", "INDUSTRIE_LOURDE"),
+        ("24.20Z", "INDUSTRIE_LOURDE"),
+        ("20.11Z", "INDUSTRIE_LOURDE"),
+        ("52.10A", "LOGISTIQUE_ENTREPOT"),
+        ("52.10B", "LOGISTIQUE_ENTREPOT"),
+        ("49.41A", "LOGISTIQUE_ENTREPOT"),
+        ("86.10Z", "SANTE_HOPITAL"),
+        ("86.21Z", "SANTE_HOPITAL"),
+        ("86.22A", "SANTE_HOPITAL"),
+        ("85.10Z", "ENSEIGNEMENT"),
+        ("85.20Z", "ENSEIGNEMENT"),
+        ("63.11Z", "DATACENTER"),
+        ("63.12Z", "DATACENTER"),
     ]
 
     naf_seeded = 0
@@ -550,55 +692,258 @@ def seed_demo_kb(db: Session = Depends(get_db)):
         existing = db.query(KBMappingCode).filter_by(naf_code=naf_code, archetype_id=arch_id).first()
         if existing:
             continue
-        db.add(KBMappingCode(
-            naf_code=naf_code, archetype_id=arch_id,
-            confidence=KBConfidence.HIGH, priority=1, kb_version_id=vid,
-        ))
+        db.add(
+            KBMappingCode(
+                naf_code=naf_code,
+                archetype_id=arch_id,
+                confidence=KBConfidence.HIGH,
+                priority=1,
+                kb_version_id=vid,
+            )
+        )
         naf_seeded += 1
 
     # ── Anomaly Rules (15) ──
     DEMO_RULES = [
-        {"code": "RULE-BASE-NUIT-001",    "title": "Talon nocturne excessif",          "rule_type": "base_nuit",    "severity": "high",     "conf": KBConfidence.HIGH},
-        {"code": "RULE-BASE-NUIT-002",    "title": "Ratio nuit/jour > 80%",            "rule_type": "base_nuit",    "severity": "medium",   "conf": KBConfidence.HIGH},
-        {"code": "RULE-WEEKEND-001",      "title": "Surconsommation weekend",          "rule_type": "weekend",      "severity": "medium",   "conf": KBConfidence.HIGH},
-        {"code": "RULE-WEEKEND-002",      "title": "Weekend > 90% jours ouvres",       "rule_type": "weekend",      "severity": "high",     "conf": KBConfidence.MEDIUM},
-        {"code": "RULE-PUISSANCE-001",    "title": "Puissance souscrite surdimensionnee","rule_type": "puissance",  "severity": "medium",   "conf": KBConfidence.HIGH},
-        {"code": "RULE-PUISSANCE-002",    "title": "Depassement puissance souscrite",  "rule_type": "puissance",    "severity": "critical", "conf": KBConfidence.HIGH},
-        {"code": "RULE-SAISONNIER-001",   "title": "Profil saisonnier absent",         "rule_type": "saisonnier",   "severity": "low",      "conf": KBConfidence.MEDIUM},
-        {"code": "RULE-SAISONNIER-002",   "title": "Surconsommation estivale anormale","rule_type": "saisonnier",   "severity": "medium",   "conf": KBConfidence.MEDIUM},
-        {"code": "RULE-TENDANCE-001",     "title": "Derive haussiere > 10%/an",        "rule_type": "tendance",     "severity": "medium",   "conf": KBConfidence.MEDIUM},
-        {"code": "RULE-TENDANCE-002",     "title": "Consommation constante (pas de MDE)","rule_type": "tendance",   "severity": "low",      "conf": KBConfidence.LOW},
-        {"code": "RULE-FACTURATION-001",  "title": "Ecart facture vs releve > 5%",     "rule_type": "facturation",  "severity": "high",     "conf": KBConfidence.HIGH},
-        {"code": "RULE-FACTURATION-002",  "title": "Doublon de facture detecte",       "rule_type": "facturation",  "severity": "critical", "conf": KBConfidence.HIGH},
-        {"code": "RULE-QUALITE-001",      "title": "Trous de donnees > 48h",           "rule_type": "qualite",      "severity": "medium",   "conf": KBConfidence.HIGH},
-        {"code": "RULE-QUALITE-002",      "title": "Valeurs negatives detectees",      "rule_type": "qualite",      "severity": "high",     "conf": KBConfidence.HIGH},
-        {"code": "RULE-BENCHMARK-001",    "title": "kWh/m2 > P90 du segment",          "rule_type": "benchmark",    "severity": "medium",   "conf": KBConfidence.MEDIUM},
+        {
+            "code": "RULE-BASE-NUIT-001",
+            "title": "Talon nocturne excessif",
+            "rule_type": "base_nuit",
+            "severity": "high",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-BASE-NUIT-002",
+            "title": "Ratio nuit/jour > 80%",
+            "rule_type": "base_nuit",
+            "severity": "medium",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-WEEKEND-001",
+            "title": "Surconsommation weekend",
+            "rule_type": "weekend",
+            "severity": "medium",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-WEEKEND-002",
+            "title": "Weekend > 90% jours ouvres",
+            "rule_type": "weekend",
+            "severity": "high",
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "RULE-PUISSANCE-001",
+            "title": "Puissance souscrite surdimensionnee",
+            "rule_type": "puissance",
+            "severity": "medium",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-PUISSANCE-002",
+            "title": "Depassement puissance souscrite",
+            "rule_type": "puissance",
+            "severity": "critical",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-SAISONNIER-001",
+            "title": "Profil saisonnier absent",
+            "rule_type": "saisonnier",
+            "severity": "low",
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "RULE-SAISONNIER-002",
+            "title": "Surconsommation estivale anormale",
+            "rule_type": "saisonnier",
+            "severity": "medium",
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "RULE-TENDANCE-001",
+            "title": "Derive haussiere > 10%/an",
+            "rule_type": "tendance",
+            "severity": "medium",
+            "conf": KBConfidence.MEDIUM,
+        },
+        {
+            "code": "RULE-TENDANCE-002",
+            "title": "Consommation constante (pas de MDE)",
+            "rule_type": "tendance",
+            "severity": "low",
+            "conf": KBConfidence.LOW,
+        },
+        {
+            "code": "RULE-FACTURATION-001",
+            "title": "Ecart facture vs releve > 5%",
+            "rule_type": "facturation",
+            "severity": "high",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-FACTURATION-002",
+            "title": "Doublon de facture detecte",
+            "rule_type": "facturation",
+            "severity": "critical",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-QUALITE-001",
+            "title": "Trous de donnees > 48h",
+            "rule_type": "qualite",
+            "severity": "medium",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-QUALITE-002",
+            "title": "Valeurs negatives detectees",
+            "rule_type": "qualite",
+            "severity": "high",
+            "conf": KBConfidence.HIGH,
+        },
+        {
+            "code": "RULE-BENCHMARK-001",
+            "title": "kWh/m2 > P90 du segment",
+            "rule_type": "benchmark",
+            "severity": "medium",
+            "conf": KBConfidence.MEDIUM,
+        },
     ]
 
     rules_seeded = 0
     for r in DEMO_RULES:
         if db.query(KBAnomalyRule).filter_by(code=r["code"]).first():
             continue
-        db.add(KBAnomalyRule(
-            code=r["code"], title=r["title"], description=f"Regle demo: {r['title']}",
-            rule_type=r["rule_type"], severity=r["severity"],
-            confidence=r["conf"], status=KBStatus.VALIDATED,
-            kb_version_id=vid, source_section="demo_seed", archetype_codes=["*"],
-        ))
+        db.add(
+            KBAnomalyRule(
+                code=r["code"],
+                title=r["title"],
+                description=f"Regle demo: {r['title']}",
+                rule_type=r["rule_type"],
+                severity=r["severity"],
+                confidence=r["conf"],
+                status=KBStatus.VALIDATED,
+                kb_version_id=vid,
+                source_section="demo_seed",
+                archetype_codes=["*"],
+            )
+        )
         rules_seeded += 1
 
     # ── Recommendations (10) ──
     DEMO_RECOS = [
-        {"code": "RECO-ECLAIRAGE-LED",    "title": "Passage LED integral",         "action": "equipment", "target": "eclairage",  "smin": 30, "smax": 60, "I": 7, "C": 9, "E": 8},
-        {"code": "RECO-CVC-REGULATION",    "title": "Regulation CVC intelligente",  "action": "equipment", "target": "hvac",       "smin": 15, "smax": 35, "I": 8, "C": 7, "E": 5},
-        {"code": "RECO-BACS-CLASSE-B",     "title": "GTB BACS classe B minimum",    "action": "regulation","target": "gtb",        "smin": 10, "smax": 25, "I": 7, "C": 8, "E": 4},
-        {"code": "RECO-ARRET-WEEKEND",     "title": "Programmation arret weekend",  "action": "behavior",  "target": "hvac",       "smin": 5,  "smax": 15, "I": 5, "C": 8, "E": 9},
-        {"code": "RECO-FROID-MAINTENANCE", "title": "Maintenance froid alimentaire","action": "equipment", "target": "froid",      "smin": 10, "smax": 20, "I": 6, "C": 7, "E": 6},
-        {"code": "RECO-PUISSANCE-OPTIM",   "title": "Optimisation puissance souscrite","action": "contract","target": "compteur",  "smin": 3,  "smax": 10, "I": 4, "C": 9, "E": 9},
-        {"code": "RECO-ISOLATION-COMBLES", "title": "Isolation combles & toiture",  "action": "equipment", "target": "enveloppe",  "smin": 10, "smax": 25, "I": 7, "C": 6, "E": 3},
-        {"code": "RECO-AUTOCONSO-PV",      "title": "Autoconsommation PV",         "action": "equipment", "target": "production", "smin": 15, "smax": 40, "I": 8, "C": 5, "E": 3},
-        {"code": "RECO-SOBRIETE-SENSIB",   "title": "Plan de sobriete energetique","action": "behavior",  "target": "global",     "smin": 5,  "smax": 15, "I": 5, "C": 6, "E": 8},
-        {"code": "RECO-CONTRAT-OPTIM",     "title": "Reneg contrat fournisseur",   "action": "contract",  "target": "contrat",    "smin": 5,  "smax": 20, "I": 6, "C": 7, "E": 7},
+        {
+            "code": "RECO-ECLAIRAGE-LED",
+            "title": "Passage LED integral",
+            "action": "equipment",
+            "target": "eclairage",
+            "smin": 30,
+            "smax": 60,
+            "I": 7,
+            "C": 9,
+            "E": 8,
+        },
+        {
+            "code": "RECO-CVC-REGULATION",
+            "title": "Regulation CVC intelligente",
+            "action": "equipment",
+            "target": "hvac",
+            "smin": 15,
+            "smax": 35,
+            "I": 8,
+            "C": 7,
+            "E": 5,
+        },
+        {
+            "code": "RECO-BACS-CLASSE-B",
+            "title": "GTB BACS classe B minimum",
+            "action": "regulation",
+            "target": "gtb",
+            "smin": 10,
+            "smax": 25,
+            "I": 7,
+            "C": 8,
+            "E": 4,
+        },
+        {
+            "code": "RECO-ARRET-WEEKEND",
+            "title": "Programmation arret weekend",
+            "action": "behavior",
+            "target": "hvac",
+            "smin": 5,
+            "smax": 15,
+            "I": 5,
+            "C": 8,
+            "E": 9,
+        },
+        {
+            "code": "RECO-FROID-MAINTENANCE",
+            "title": "Maintenance froid alimentaire",
+            "action": "equipment",
+            "target": "froid",
+            "smin": 10,
+            "smax": 20,
+            "I": 6,
+            "C": 7,
+            "E": 6,
+        },
+        {
+            "code": "RECO-PUISSANCE-OPTIM",
+            "title": "Optimisation puissance souscrite",
+            "action": "contract",
+            "target": "compteur",
+            "smin": 3,
+            "smax": 10,
+            "I": 4,
+            "C": 9,
+            "E": 9,
+        },
+        {
+            "code": "RECO-ISOLATION-COMBLES",
+            "title": "Isolation combles & toiture",
+            "action": "equipment",
+            "target": "enveloppe",
+            "smin": 10,
+            "smax": 25,
+            "I": 7,
+            "C": 6,
+            "E": 3,
+        },
+        {
+            "code": "RECO-AUTOCONSO-PV",
+            "title": "Autoconsommation PV",
+            "action": "equipment",
+            "target": "production",
+            "smin": 15,
+            "smax": 40,
+            "I": 8,
+            "C": 5,
+            "E": 3,
+        },
+        {
+            "code": "RECO-SOBRIETE-SENSIB",
+            "title": "Plan de sobriete energetique",
+            "action": "behavior",
+            "target": "global",
+            "smin": 5,
+            "smax": 15,
+            "I": 5,
+            "C": 6,
+            "E": 8,
+        },
+        {
+            "code": "RECO-CONTRAT-OPTIM",
+            "title": "Reneg contrat fournisseur",
+            "action": "contract",
+            "target": "contrat",
+            "smin": 5,
+            "smax": 20,
+            "I": 6,
+            "C": 7,
+            "E": 7,
+        },
     ]
 
     recos_seeded = 0
@@ -606,15 +951,26 @@ def seed_demo_kb(db: Session = Depends(get_db)):
         if db.query(KBRecommendation).filter_by(code=r["code"]).first():
             continue
         ice = (r["I"] * r["C"] * r["E"]) / 1000
-        db.add(KBRecommendation(
-            code=r["code"], title=r["title"], description=f"Recommandation demo: {r['title']}",
-            action_type=r["action"], target_asset=r["target"],
-            savings_min_pct=r["smin"], savings_max_pct=r["smax"],
-            impact_score=r["I"], confidence_score=r["C"], ease_score=r["E"],
-            ice_score=ice, confidence=KBConfidence.MEDIUM,
-            status=KBStatus.VALIDATED, kb_version_id=vid,
-            source_section="demo_seed", archetype_codes=["*"],
-        ))
+        db.add(
+            KBRecommendation(
+                code=r["code"],
+                title=r["title"],
+                description=f"Recommandation demo: {r['title']}",
+                action_type=r["action"],
+                target_asset=r["target"],
+                savings_min_pct=r["smin"],
+                savings_max_pct=r["smax"],
+                impact_score=r["I"],
+                confidence_score=r["C"],
+                ease_score=r["E"],
+                ice_score=ice,
+                confidence=KBConfidence.MEDIUM,
+                status=KBStatus.VALIDATED,
+                kb_version_id=vid,
+                source_section="demo_seed",
+                archetype_codes=["*"],
+            )
+        )
         recos_seeded += 1
 
     db.commit()
@@ -623,14 +979,19 @@ def seed_demo_kb(db: Session = Depends(get_db)):
     if total == 0:
         return SeedDemoResponse(
             status="already_seeded",
-            archetypes_seeded=0, rules_seeded=0, recommendations_seeded=0, naf_mappings_seeded=0,
+            archetypes_seeded=0,
+            rules_seeded=0,
+            recommendations_seeded=0,
+            naf_mappings_seeded=0,
             message="Demo KB deja presente — aucun ajout",
         )
 
     return SeedDemoResponse(
         status="ok",
-        archetypes_seeded=archetypes_seeded, rules_seeded=rules_seeded,
-        recommendations_seeded=recos_seeded, naf_mappings_seeded=naf_seeded,
+        archetypes_seeded=archetypes_seeded,
+        rules_seeded=rules_seeded,
+        recommendations_seeded=recos_seeded,
+        naf_mappings_seeded=naf_seeded,
         message=f"Demo KB seedee: {total} items",
     )
 
@@ -662,5 +1023,5 @@ def reload_kb(db: Session = Depends(get_db)):
         archetypes_loaded=archetypes_count,
         rules_loaded=rules_count,
         recommendations_loaded=recos_count,
-        message=f"KB reloaded: {total} items from {kb_version.doc_id} v{kb_version.version}"
+        message=f"KB reloaded: {total} items from {kb_version.doc_id} v{kb_version.version}",
     )

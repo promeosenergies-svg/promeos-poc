@@ -5,12 +5,22 @@
  */
 import { useState, useCallback } from 'react';
 import {
-  X, ChevronRight, ChevronLeft, Check, Zap,
-  ClipboardCheck, HelpCircle, ArrowRight, Sparkles,
-  AlertTriangle, CheckCircle2,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Zap,
+  ClipboardCheck,
+  HelpCircle,
+  ArrowRight,
+  Sparkles,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import {
-  getIntakeQuestions, submitIntakeAnswer, completeIntake,
+  getIntakeQuestions,
+  submitIntakeAnswer,
+  completeIntake,
   intakeDemoAutofill,
 } from '../services/api';
 
@@ -33,7 +43,8 @@ function DeltaBadge({ delta }) {
   const positive = delta > 0;
   return (
     <span className={`text-sm font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}>
-      {positive ? '+' : ''}{delta.toFixed(1)}%
+      {positive ? '+' : ''}
+      {delta.toFixed(1)}%
     </span>
   );
 }
@@ -57,8 +68,13 @@ export default function IntakeWizard({ siteId, onClose }) {
   const [result, setResult] = useState(null);
 
   // Phase: 'intro' | 'questions' | 'review' | 'result'
-  const phase = result ? 'result' : mode === null ? 'intro' :
-    (questions.length === 0 || currentQ >= questions.length) ? 'review' : 'questions';
+  const phase = result
+    ? 'result'
+    : mode === null
+      ? 'intro'
+      : questions.length === 0 || currentQ >= questions.length
+        ? 'review'
+        : 'questions';
 
   // Load questions on start
   const loadQuestions = useCallback(async () => {
@@ -103,10 +119,10 @@ export default function IntakeWizard({ siteId, onClose }) {
 
   // Submit one answer
   const handleAnswer = async (fieldPath, value) => {
-    setAnswers(prev => ({ ...prev, [fieldPath]: value }));
+    setAnswers((prev) => ({ ...prev, [fieldPath]: value }));
     try {
       const data = await submitIntakeAnswer(siteId, fieldPath, value);
-      setDiffs(prev => ({ ...prev, [fieldPath]: data.diff_preview }));
+      setDiffs((prev) => ({ ...prev, [fieldPath]: data.diff_preview }));
     } catch (err) {
       // Non-blocking: answer saved locally even if diff fails
     }
@@ -151,7 +167,10 @@ export default function IntakeWizard({ siteId, onClose }) {
               </span>
             )}
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          >
             <X size={18} />
           </button>
         </div>
@@ -178,10 +197,12 @@ export default function IntakeWizard({ siteId, onClose }) {
           {phase === 'intro' && (
             <div className="space-y-6">
               <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Completer les donnees reglementaires</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Completer les donnees reglementaires
+                </h4>
                 <p className="text-sm text-gray-500">
-                  Repondez a quelques questions pour ameliorer votre score de conformite.
-                  Les resultats sont determines par les regles reglementaires, pas par l'IA.
+                  Repondez a quelques questions pour ameliorer votre score de conformite. Les
+                  resultats sont determines par les regles reglementaires, pas par l'IA.
                 </p>
               </div>
 
@@ -191,9 +212,14 @@ export default function IntakeWizard({ siteId, onClose }) {
                   disabled={loading}
                   className="p-5 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition text-left group"
                 >
-                  <ClipboardCheck size={24} className="text-blue-500 mb-3 group-hover:text-blue-600" />
+                  <ClipboardCheck
+                    size={24}
+                    className="text-blue-500 mb-3 group-hover:text-blue-600"
+                  />
                   <div className="font-medium text-gray-900">Wizard</div>
-                  <div className="text-xs text-gray-500 mt-1">Repondez etape par etape (max 8 questions)</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Repondez etape par etape (max 8 questions)
+                  </div>
                   <div className="text-xs text-blue-600 mt-2">~3 min</div>
                 </button>
 
@@ -204,7 +230,9 @@ export default function IntakeWizard({ siteId, onClose }) {
                 >
                   <Zap size={24} className="text-green-500 mb-3 group-hover:text-green-600" />
                   <div className="font-medium text-gray-900">Demo</div>
-                  <div className="text-xs text-gray-500 mt-1">Remplissage automatique avec valeurs demo</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Remplissage automatique avec valeurs demo
+                  </div>
                   <div className="text-xs text-green-600 mt-2">~10 sec</div>
                 </button>
               </div>
@@ -217,11 +245,15 @@ export default function IntakeWizard({ siteId, onClose }) {
               {/* Question header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${SEVERITY_COLORS[q.severity] || SEVERITY_COLORS.info}`}>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${SEVERITY_COLORS[q.severity] || SEVERITY_COLORS.info}`}
+                  >
                     {q.severity}
                   </span>
-                  {q.regulations?.map(r => (
-                    <span key={r} className="text-xs text-gray-400">{r}</span>
+                  {q.regulations?.map((r) => (
+                    <span key={r} className="text-xs text-gray-400">
+                      {r}
+                    </span>
                   ))}
                 </div>
                 <h4 className="text-lg font-medium text-gray-900">{q.question}</h4>
@@ -264,17 +296,21 @@ export default function IntakeWizard({ siteId, onClose }) {
                 <div className="text-center py-8 text-gray-400">
                   <CheckCircle2 size={40} className="mx-auto mb-3 text-green-400" />
                   <p className="font-medium text-gray-600">Aucune question a completer</p>
-                  <p className="text-sm">Toutes les donnees reglementaires sont deja renseignees.</p>
+                  <p className="text-sm">
+                    Toutes les donnees reglementaires sont deja renseignees.
+                  </p>
                 </div>
               ) : (
                 <>
                   <div className="divide-y divide-gray-100">
                     {Object.entries(answers).map(([fp, val]) => {
-                      const qDef = questions.find(q => q.field_path === fp);
+                      const qDef = questions.find((q) => q.field_path === fp);
                       return (
                         <div key={fp} className="py-3 flex items-center justify-between">
                           <div>
-                            <div className="text-sm font-medium text-gray-800">{qDef?.question || fp}</div>
+                            <div className="text-sm font-medium text-gray-800">
+                              {qDef?.question || fp}
+                            </div>
                             <div className="text-xs text-gray-400">{fp}</div>
                           </div>
                           <div className="text-sm font-medium text-gray-900">
@@ -287,22 +323,25 @@ export default function IntakeWizard({ siteId, onClose }) {
                   </div>
 
                   {/* Final diff */}
-                  {Object.values(diffs).length > 0 && (() => {
-                    const lastDiff = Object.values(diffs)[Object.values(diffs).length - 1];
-                    return (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-blue-700">Impact sur la conformite</span>
-                          <div className="flex items-center gap-3">
-                            <ScoreBadge score={lastDiff.score_before} />
-                            <ArrowRight size={16} className="text-blue-400" />
-                            <ScoreBadge score={lastDiff.score_after} />
-                            <DeltaBadge delta={lastDiff.delta} />
+                  {Object.values(diffs).length > 0 &&
+                    (() => {
+                      const lastDiff = Object.values(diffs)[Object.values(diffs).length - 1];
+                      return (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-blue-700">
+                              Impact sur la conformite
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <ScoreBadge score={lastDiff.score_before} />
+                              <ArrowRight size={16} className="text-blue-400" />
+                              <ScoreBadge score={lastDiff.score_after} />
+                              <DeltaBadge delta={lastDiff.delta} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
                 </>
               )}
             </div>
@@ -396,7 +435,8 @@ export default function IntakeWizard({ siteId, onClose }) {
                 disabled={loading}
                 className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-60"
               >
-                <Check size={16} /> Appliquer ({answeredCount} reponse{answeredCount > 1 ? 's' : ''})
+                <Check size={16} /> Appliquer ({answeredCount} reponse{answeredCount > 1 ? 's' : ''}
+                )
               </button>
             )}
 
@@ -415,7 +455,6 @@ export default function IntakeWizard({ siteId, onClose }) {
   );
 }
 
-
 /**
  * Dynamic input based on question type.
  */
@@ -425,7 +464,10 @@ function QuestionInput({ question, value, prefill, onChange }) {
   if (input_type === 'boolean') {
     return (
       <div className="flex gap-3">
-        {[{ val: true, label: 'Oui' }, { val: false, label: 'Non' }].map(({ val, label }) => (
+        {[
+          { val: true, label: 'Oui' },
+          { val: false, label: 'Non' },
+        ].map(({ val, label }) => (
           <button
             key={label}
             onClick={() => onChange(val)}
@@ -445,7 +487,7 @@ function QuestionInput({ question, value, prefill, onChange }) {
   if (input_type === 'select' && options) {
     return (
       <div className="grid grid-cols-2 gap-2">
-        {options.map(opt => (
+        {options.map((opt) => (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
@@ -469,15 +511,22 @@ function QuestionInput({ question, value, prefill, onChange }) {
         <input
           type={input_type === 'number' ? 'number' : 'text'}
           value={value ?? ''}
-          onChange={e => {
-            const v = input_type === 'number' ? (e.target.value ? parseFloat(e.target.value) : '') : e.target.value;
+          onChange={(e) => {
+            const v =
+              input_type === 'number'
+                ? e.target.value
+                  ? parseFloat(e.target.value)
+                  : ''
+                : e.target.value;
             onChange(v);
           }}
           placeholder={prefill != null ? `Suggestion: ${prefill}` : ''}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {unit && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">{unit}</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+            {unit}
+          </span>
         )}
       </div>
       {prefill != null && value !== prefill && (

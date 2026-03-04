@@ -2,6 +2,7 @@
 PROMEOS - Modèle Organisation
 Niveau groupe/client COMEX (ex: "Groupe HELIOS", "Ville de Lyon")
 """
+
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin

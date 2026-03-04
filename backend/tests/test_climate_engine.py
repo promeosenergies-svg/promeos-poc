@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Climate Engine Tests
 Tests correlation, slope, balance point computation.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -38,10 +40,12 @@ def _make_correlated_data(days=60, base_kwh=200, heating_slope=8.0, cooling_slop
             ts = dt.replace(hour=h)
             readings.append({"timestamp": ts, "value_kwh": round(hourly, 2)})
 
-        weather.append({
-            "date": dt.date().isoformat(),
-            "temp_avg_c": round(temp, 1),
-        })
+        weather.append(
+            {
+                "date": dt.date().isoformat(),
+                "temp_avg_c": round(temp, 1),
+            }
+        )
 
     return readings, weather
 

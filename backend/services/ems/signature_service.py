@@ -4,6 +4,7 @@ Piecewise change-point model: y = base + a*max(0, Tb-T) + b*max(0, T-Tc)
 Grid search on Tb/Tc + least squares via numpy.
 Model selection via adjusted R² (heating-only, cooling-only, full).
 """
+
 from typing import List, Dict, Any
 import numpy as np
 
@@ -139,10 +140,7 @@ def run_signature(
 
     T_line = np.linspace(float(T.min()), float(T.max()), 50)
     pred_line = base + a * np.maximum(0, Tb - T_line) + b * np.maximum(0, T_line - Tc)
-    fit_line = [
-        {"T": round(float(t), 1), "predicted": round(float(p), 1)}
-        for t, p in zip(T_line, pred_line)
-    ]
+    fit_line = [{"T": round(float(t), 1), "predicted": round(float(p), 1)} for t, p in zip(T_line, pred_line)]
 
     return {
         "base_kwh": round(base, 1),

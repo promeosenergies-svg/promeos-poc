@@ -3,6 +3,7 @@ PROMEOS - TOU Schedule (Grille Tarifaire HP/HC)
 Time-of-Use schedule with effective date versioning.
 Supports HP/HC windows per day-type, with source tracking (manual, TURPE, Enedis).
 """
+
 from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -12,6 +13,7 @@ from .base import Base, TimestampMixin
 
 class TOUSchedule(Base, TimestampMixin):
     """Versioned Time-of-Use tariff schedule for a meter or site."""
+
     __tablename__ = "tou_schedules"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

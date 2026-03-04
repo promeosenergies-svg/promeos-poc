@@ -18,7 +18,9 @@ export default function FilterBar({ children, onReset, count, className = '' }) 
         </button>
       )}
       {count != null && (
-        <span className="ml-auto text-xs text-gray-400">{count} resultat{count !== 1 ? 's' : ''}</span>
+        <span className="ml-auto text-xs text-gray-400">
+          {count} resultat{count !== 1 ? 's' : ''}
+        </span>
       )}
     </div>
   );

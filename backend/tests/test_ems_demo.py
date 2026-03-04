@@ -2,7 +2,9 @@
 PROMEOS - EMS Demo Data Generation Tests
 10 tests covering generation, idempotence, purge, profiles, anomalies.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -45,13 +47,17 @@ def env():
 
 
 class TestDemoGeneration:
-
     def test_generate_ok(self, env):
         """Generate demo data returns ok with readings count."""
         client, db = env
-        r = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 3, "days": 7, "seed": 42,
-        })
+        r = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 3,
+                "days": 7,
+                "seed": 42,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "ok"
@@ -61,9 +67,14 @@ class TestDemoGeneration:
     def test_generate_creates_meters(self, env):
         """Demo generate creates EMS-DEMO-* meters."""
         client, db = env
-        client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42,
-        })
+        client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+            },
+        )
 
         demo_meters = db.query(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).all()
         assert len(demo_meters) == 2
@@ -71,59 +82,91 @@ class TestDemoGeneration:
     def test_generate_creates_readings(self, env):
         """Demo generate creates hourly readings."""
         client, db = env
-        client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 1, "days": 2, "seed": 42,
-        })
+        client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 1,
+                "days": 2,
+                "seed": 42,
+            },
+        )
 
-        count = db.query(MeterReading).join(Meter).filter(
-            Meter.meter_id.like("EMS-DEMO-%")
-        ).count()
+        count = db.query(MeterReading).join(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).count()
         # 1 site * 2 days * 24 hours = 48
         assert count == 48
 
     def test_generate_creates_weather(self, env):
         """Demo generate creates weather cache entries."""
         client, db = env
-        client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 1, "days": 5, "seed": 42,
-        })
+        client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 1,
+                "days": 5,
+                "seed": 42,
+            },
+        )
 
-        weather_count = db.query(EmsWeatherCache).filter(
-            EmsWeatherCache.source == "demo_ems"
-        ).count()
+        weather_count = db.query(EmsWeatherCache).filter(EmsWeatherCache.source == "demo_ems").count()
         assert weather_count == 5
 
     def test_idempotent_skip(self, env):
         """Second call without force returns 'skipped'."""
         client, db = env
-        r1 = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42,
-        })
+        r1 = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+            },
+        )
         assert r1.json()["status"] == "ok"
 
-        r2 = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42,
-        })
+        r2 = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+            },
+        )
         assert r2.json()["status"] == "skipped"
 
     def test_force_regenerate(self, env):
         """force=true regenerates even if data exists."""
         client, db = env
-        client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42,
-        })
+        client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+            },
+        )
 
-        r = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42, "force": True,
-        })
+        r = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+                "force": True,
+            },
+        )
         assert r.json()["status"] == "ok"
 
     def test_purge(self, env):
         """Purge removes all demo data."""
         client, db = env
-        client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 2, "days": 3, "seed": 42,
-        })
+        client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 2,
+                "days": 3,
+                "seed": 42,
+            },
+        )
 
         r = client.post("/api/ems/demo/purge")
         assert r.status_code == 200
@@ -146,9 +189,14 @@ class TestDemoGeneration:
     def test_profiles_respect_archetypes(self, env):
         """Generated sites have different archetypes in the report."""
         client, db = env
-        r = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 12, "days": 3, "seed": 42,
-        })
+        r = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 12,
+                "days": 3,
+                "seed": 42,
+            },
+        )
         data = r.json()
         archetypes = {s["archetype"] for s in data["sites"]}
         # Should have at least bureau and retail
@@ -158,9 +206,14 @@ class TestDemoGeneration:
     def test_anomalies_injected(self, env):
         """Some sites have anomalies flagged in the report."""
         client, db = env
-        r = client.post("/api/ems/demo/generate", params={
-            "portfolio_size": 12, "days": 3, "seed": 42,
-        })
+        r = client.post(
+            "/api/ems/demo/generate",
+            params={
+                "portfolio_size": 12,
+                "days": 3,
+                "seed": 42,
+            },
+        )
         data = r.json()
         anomalies = [s["anomaly"] for s in data["sites"] if s["anomaly"]]
         assert len(anomalies) >= 3  # At least 3 of the 4 anomaly types

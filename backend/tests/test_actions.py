@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 10: Action Hub V1
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -13,10 +15,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
-    ActionItem, ActionSyncBatch,
-    ActionSourceType, ActionStatus, InsightStatus,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
+    ActionItem,
+    ActionSyncBatch,
+    ActionSourceType,
+    ActionStatus,
+    InsightStatus,
     TypeSite,
 )
 from database import get_db
@@ -44,6 +55,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -75,8 +87,9 @@ def _create_org_site(db_session, site_name="Site Test"):
     return org, site
 
 
-def _create_compliance_finding(db_session, site_id, rule_id="TEST_RULE", status="NOK",
-                                severity="high", actions_json=None):
+def _create_compliance_finding(
+    db_session, site_id, rule_id="TEST_RULE", status="NOK", severity="high", actions_json=None
+):
     """Create a compliance finding."""
     f = ComplianceFinding(
         site_id=site_id,
@@ -101,9 +114,11 @@ def _create_consumption_insight(db_session, site_id, loss_eur=5000):
         severity="medium",
         message="Consommation hors horaires detectee",
         estimated_loss_eur=loss_eur,
-        recommended_actions_json=json.dumps([
-            {"title": "Programmer arret CVC", "rationale": "CVC actif la nuit", "expected_gain_eur": 3000},
-        ]),
+        recommended_actions_json=json.dumps(
+            [
+                {"title": "Programmer arret CVC", "rationale": "CVC actif la nuit", "expected_gain_eur": 3000},
+            ]
+        ),
     )
     db_session.add(ins)
     db_session.flush()
@@ -113,6 +128,7 @@ def _create_consumption_insight(db_session, site_id, loss_eur=5000):
 # ========================================
 # Test Sync Idempotent
 # ========================================
+
 
 class TestSyncIdempotent:
     def test_double_sync_no_duplicates(self, client, db_session):
@@ -148,6 +164,7 @@ class TestSyncIdempotent:
 # Test Preserve Workflow
 # ========================================
 
+
 class TestPreserveWorkflow:
     def test_patch_then_resync_preserves_status(self, client, db_session):
         """PATCH status/owner/notes, then resync -> must preserve them."""
@@ -162,11 +179,14 @@ class TestPreserveWorkflow:
         action_id = actions[0]["id"]
 
         # PATCH
-        r = client.patch(f"/api/actions/{action_id}", json={
-            "status": "in_progress",
-            "owner": "j.dupont@acme.fr",
-            "notes": "Travaux en cours",
-        })
+        r = client.patch(
+            f"/api/actions/{action_id}",
+            json={
+                "status": "in_progress",
+                "owner": "j.dupont@acme.fr",
+                "notes": "Travaux en cours",
+            },
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "in_progress"
 
@@ -183,6 +203,7 @@ class TestPreserveWorkflow:
 # ========================================
 # Test Priority
 # ========================================
+
 
 class TestPriority:
     def test_priority_range(self, client, db_session):
@@ -217,6 +238,7 @@ class TestPriority:
 # Test Export CSV
 # ========================================
 
+
 class TestExportCSV:
     def test_export_returns_csv(self, client, db_session):
         """Export endpoint returns text/csv with header + rows."""
@@ -238,6 +260,7 @@ class TestExportCSV:
 # ========================================
 # Test Dashboard 2min ActionHub
 # ========================================
+
 
 class TestDashboard2MinActionHub:
     def test_action_hub_in_dashboard(self, client, db_session):
@@ -276,6 +299,7 @@ class TestDashboard2MinActionHub:
 # ========================================
 # Test Patch Workflow
 # ========================================
+
 
 class TestPatchWorkflow:
     def test_patch_status(self, client, db_session):
@@ -331,6 +355,7 @@ class TestPatchWorkflow:
 # ========================================
 # Test Filter Endpoints
 # ========================================
+
 
 class TestFilterEndpoints:
     def test_filter_by_source_type(self, client, db_session):
@@ -403,19 +428,23 @@ class TestFilterEndpoints:
 # Test Direct Create (POST /api/actions)
 # ========================================
 
+
 class TestDirectCreate:
     def test_create_manual_action(self, client, db_session):
         """POST /api/actions with source_type=manual creates an action."""
         org, site = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "site_id": site.id,
-            "source_type": "manual",
-            "title": "Planifier audit energetique",
-            "severity": "medium",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "site_id": site.id,
+                "source_type": "manual",
+                "title": "Planifier audit energetique",
+                "severity": "medium",
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "open"  # action workflow status (from _serialize_action)
@@ -429,15 +458,18 @@ class TestDirectCreate:
         org, site = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "site_id": site.id,
-            "source_type": "insight",
-            "source_id": "insight_42",
-            "title": "Reduire consommation hors horaires",
-            "severity": "high",
-            "estimated_gain_eur": 12000,
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "site_id": site.id,
+                "source_type": "insight",
+                "source_id": "insight_42",
+                "title": "Reduire consommation hors horaires",
+                "severity": "high",
+                "estimated_gain_eur": 12000,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["source_type"] == "insight"
@@ -449,11 +481,14 @@ class TestDirectCreate:
         org, _ = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "source_type": "manual",
-            "title": "",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "source_type": "manual",
+                "title": "",
+            },
+        )
         assert r.status_code == 422
 
     def test_reject_invalid_source_type(self, client, db_session):
@@ -461,11 +496,14 @@ class TestDirectCreate:
         org, _ = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "source_type": "compliance",
-            "title": "Test action",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "source_type": "compliance",
+                "title": "Test action",
+            },
+        )
         assert r.status_code == 400
         assert "manual" in r.json()["detail"] or "insight" in r.json()["detail"]
 
@@ -474,13 +512,16 @@ class TestDirectCreate:
         org, _ = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "source_type": "manual",
-            "title": "Action critique urgente",
-            "severity": "critical",
-            "estimated_gain_eur": 20000,
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "source_type": "manual",
+                "title": "Action critique urgente",
+                "severity": "critical",
+                "estimated_gain_eur": 20000,
+            },
+        )
         assert r.status_code == 200
         # critical + high gain -> priority should be 1
         assert r.json()["priority"] == 1
@@ -490,12 +531,15 @@ class TestDirectCreate:
         org, site = _create_org_site(db_session)
         db_session.commit()
 
-        client.post("/api/actions", json={
-            "org_id": org.id,
-            "site_id": site.id,
-            "source_type": "manual",
-            "title": "Action visible dans la liste",
-        })
+        client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "site_id": site.id,
+                "source_type": "manual",
+                "title": "Action visible dans la liste",
+            },
+        )
 
         r = client.get(f"/api/actions/list?org_id={org.id}")
         assert r.status_code == 200
@@ -508,12 +552,15 @@ class TestDirectCreate:
         db_session.commit()
 
         # Create a manual action
-        r = client.post("/api/actions", json={
-            "org_id": org.id,
-            "site_id": site.id,
-            "source_type": "manual",
-            "title": "Action manuelle a preserver",
-        })
+        r = client.post(
+            "/api/actions",
+            json={
+                "org_id": org.id,
+                "site_id": site.id,
+                "source_type": "manual",
+                "title": "Action manuelle a preserver",
+            },
+        )
         assert r.status_code == 200
         manual_id = r.json()["id"]
 

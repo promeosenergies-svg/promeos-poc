@@ -2,6 +2,7 @@
 PROMEOS Referentiel — HTML to Markdown normalizer.
 Strips navigation, scripts, styles. Keeps readable text.
 """
+
 import re
 from html.parser import HTMLParser
 from typing import Optional
@@ -11,8 +12,27 @@ class _TextExtractor(HTMLParser):
     """Minimal HTML-to-text extractor without external deps."""
 
     SKIP_TAGS = {"script", "style", "nav", "header", "footer", "noscript", "svg", "iframe"}
-    BLOCK_TAGS = {"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr", "br", "hr",
-                  "blockquote", "section", "article", "main", "table", "thead", "tbody"}
+    BLOCK_TAGS = {
+        "p",
+        "div",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "li",
+        "tr",
+        "br",
+        "hr",
+        "blockquote",
+        "section",
+        "article",
+        "main",
+        "table",
+        "thead",
+        "tbody",
+    }
 
     def __init__(self):
         super().__init__()

@@ -2,8 +2,10 @@
 PROMEOS - Tests Sprint 5: Diagnostic Consommation V1
 (seed demo, detect hors horaires / base load / pointe / derive / data gap, endpoints)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -15,8 +17,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Meter, MeterReading, ConsumptionInsight,
-    Organisation, EntiteJuridique, Portefeuille,
+    Base,
+    Site,
+    Meter,
+    MeterReading,
+    ConsumptionInsight,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
     TypeSite,
 )
 from models.energy_models import FrequencyType
@@ -45,6 +53,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -138,13 +147,15 @@ def _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
         else:
             kwh = 20.0
 
-        readings.append(MeterReading(
-            meter_id=meter.id,
-            timestamp=ts,
-            frequency=FrequencyType.HOURLY,
-            value_kwh=round(kwh, 2),
-            quality_score=0.95,
-        ))
+        readings.append(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=round(kwh, 2),
+                quality_score=0.95,
+            )
+        )
         ts += timedelta(hours=1)
 
     db_session.bulk_save_objects(readings)
@@ -155,6 +166,7 @@ def _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
 # ========================================
 # ConsumptionInsight model
 # ========================================
+
 
 class TestConsumptionInsightModel:
     def test_create_insight(self, db_session):
@@ -192,9 +204,11 @@ class TestConsumptionInsightModel:
 # generate_demo_consumption
 # ========================================
 
+
 class TestGenerateDemoConso:
     def test_generate_basic(self, db_session):
         from services.consumption_diagnostic import generate_demo_consumption
+
         org, site = _create_org_site(db_session)
         result = generate_demo_consumption(db_session, site.id, days=7)
         assert result["readings_count"] > 100  # 7 * 24 = 168
@@ -202,6 +216,7 @@ class TestGenerateDemoConso:
 
     def test_generate_creates_meter(self, db_session):
         from services.consumption_diagnostic import generate_demo_consumption
+
         org, site = _create_org_site(db_session)
         result = generate_demo_consumption(db_session, site.id, days=3)
         meter = db_session.query(Meter).filter(Meter.site_id == site.id).first()
@@ -210,6 +225,7 @@ class TestGenerateDemoConso:
 
     def test_generate_replaces_existing_readings(self, db_session):
         from services.consumption_diagnostic import generate_demo_consumption
+
         org, site = _create_org_site(db_session)
         r1 = generate_demo_consumption(db_session, site.id, days=3)
         r2 = generate_demo_consumption(db_session, site.id, days=3)
@@ -218,12 +234,14 @@ class TestGenerateDemoConso:
 
     def test_generate_with_anomaly(self, db_session):
         from services.consumption_diagnostic import generate_demo_consumption
+
         org, site = _create_org_site(db_session)
         result = generate_demo_consumption(db_session, site.id, days=30, anomaly=True)
         assert result["anomaly_days"] >= 3
 
     def test_generate_site_not_found(self, db_session):
         from services.consumption_diagnostic import generate_demo_consumption
+
         result = generate_demo_consumption(db_session, 9999, days=7)
         assert "error" in result
 
@@ -232,17 +250,22 @@ class TestGenerateDemoConso:
 # Detectors (unit tests)
 # ========================================
 
+
 class TestDetectors:
     def test_detect_hors_horaires_bureau_with_anomaly(self, db_session):
         """Bureau pattern with night anomaly → should detect hors horaires."""
         from services.consumption_diagnostic import _detect_hors_horaires
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
 
-        readings = db_session.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = (
+            db_session.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id)
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         result = _detect_hors_horaires(readings)
         assert result is not None
@@ -252,13 +275,17 @@ class TestDetectors:
     def test_detect_base_load_flat_pattern(self, db_session):
         """Flat consumption → high base load ratio → detect."""
         from services.consumption_diagnostic import _detect_base_load
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="flat", anomaly=False)
 
-        readings = db_session.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = (
+            db_session.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id)
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         result = _detect_base_load(readings)
         # Flat pattern: Q10 ≈ Q50 → base_ratio ≈ 100% → detected
@@ -269,13 +296,17 @@ class TestDetectors:
     def test_detect_derive_with_drift(self, db_session):
         """Bureau pattern with +15% last week drift → detect derive."""
         from services.consumption_diagnostic import _detect_derive
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=False)
 
-        readings = db_session.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = (
+            db_session.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id)
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         result = _detect_derive(readings)
         assert result is not None
@@ -285,13 +316,17 @@ class TestDetectors:
     def test_detect_data_gaps(self, db_session):
         """Pattern with gaps → detect data_gap."""
         from services.consumption_diagnostic import _detect_data_gaps
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="gaps", anomaly=False)
 
-        readings = db_session.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = (
+            db_session.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id)
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         result = _detect_data_gaps(readings)
         assert result is not None
@@ -301,26 +336,35 @@ class TestDetectors:
     def test_detect_not_enough_data(self, db_session):
         """Less than 2 days of data → all detectors return None."""
         from services.consumption_diagnostic import (
-            _detect_hors_horaires, _detect_base_load,
-            _detect_pointe, _detect_derive, _detect_data_gaps,
+            _detect_hors_horaires,
+            _detect_base_load,
+            _detect_pointe,
+            _detect_derive,
+            _detect_data_gaps,
         )
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         # Only 10 readings
         now = datetime.now(timezone.utc)
         for i in range(10):
-            db_session.add(MeterReading(
-                meter_id=meter.id,
-                timestamp=now - timedelta(hours=10 - i),
-                frequency=FrequencyType.HOURLY,
-                value_kwh=20.0,
-                quality_score=0.95,
-            ))
+            db_session.add(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=now - timedelta(hours=10 - i),
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=20.0,
+                    quality_score=0.95,
+                )
+            )
         db_session.commit()
 
-        readings = db_session.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id
-        ).order_by(MeterReading.timestamp).all()
+        readings = (
+            db_session.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id)
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         assert _detect_hors_horaires(readings) is None
         assert _detect_base_load(readings) is None
@@ -333,10 +377,12 @@ class TestDetectors:
 # run_diagnostic (full pipeline)
 # ========================================
 
+
 class TestRunDiagnostic:
     def test_run_diagnostic_bureau(self, db_session):
         """Full diagnostic on bureau with anomaly → produces insights."""
         from services.consumption_diagnostic import run_diagnostic
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
@@ -348,33 +394,29 @@ class TestRunDiagnostic:
         assert "hors_horaires" in types
 
         # All persisted
-        count = db_session.query(ConsumptionInsight).filter(
-            ConsumptionInsight.site_id == site.id
-        ).count()
+        count = db_session.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site.id).count()
         assert count == len(insights)
 
     def test_run_diagnostic_replaces_previous(self, db_session):
         """Re-running diagnostic replaces old insights."""
         from services.consumption_diagnostic import run_diagnostic
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
 
         insights1 = run_diagnostic(db_session, site.id)
-        count1 = db_session.query(ConsumptionInsight).filter(
-            ConsumptionInsight.site_id == site.id
-        ).count()
+        count1 = db_session.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site.id).count()
 
         insights2 = run_diagnostic(db_session, site.id)
-        count2 = db_session.query(ConsumptionInsight).filter(
-            ConsumptionInsight.site_id == site.id
-        ).count()
+        count2 = db_session.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site.id).count()
 
         assert count1 == count2  # Replaced, not appended
 
     def test_run_diagnostic_no_meter(self, db_session):
         """Site with no meter → empty result."""
         from services.consumption_diagnostic import run_diagnostic
+
         org, site = _create_org_site(db_session)
         insights = run_diagnostic(db_session, site.id)
         assert insights == []
@@ -382,6 +424,7 @@ class TestRunDiagnostic:
     def test_run_diagnostic_org(self, db_session):
         """Run diagnostics across all org sites."""
         from services.consumption_diagnostic import run_diagnostic_org
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
@@ -393,6 +436,7 @@ class TestRunDiagnostic:
     def test_insights_summary(self, db_session):
         """get_insights_summary returns aggregated data."""
         from services.consumption_diagnostic import run_diagnostic, get_insights_summary
+
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
@@ -415,10 +459,12 @@ class TestRunDiagnostic:
 # API Endpoints
 # ========================================
 
+
 class TestConsumptionEndpoints:
     def test_insights_no_org(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable (was 200 with empty data)
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.get("/api/consumption/insights")
         assert r.status_code in (200, 403)
@@ -483,6 +529,7 @@ class TestConsumptionEndpoints:
     def test_diagnose_no_org(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.post("/api/consumption/diagnose")
         assert r.status_code in (400, 403)
@@ -495,6 +542,7 @@ class TestConsumptionEndpoints:
 # ========================================
 # Dashboard 2min integration
 # ========================================
+
 
 class TestDashboard2MinConso:
     def test_pertes_estimees_includes_conso(self, client):

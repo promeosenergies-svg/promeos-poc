@@ -40,7 +40,7 @@ function Column({ title, sites, dotStatus, subFn, onNavigate, emptyText }) {
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{title}</p>
       {sites.length > 0 ? (
         <div className="space-y-0.5">
-          {sites.map(site => (
+          {sites.map((site) => (
             <SiteRow
               key={site.id}
               site={site}
@@ -65,8 +65,7 @@ export default function TopSitesCard({ topSites = { worst: [], best: [] }, onNav
 
   if (!worst.length && !best.length) return null;
 
-  const worstDot = (site) =>
-    site.statut_conformite === 'non_conforme' ? 'crit' : 'warn';
+  const worstDot = (site) => (site.statut_conformite === 'non_conforme' ? 'crit' : 'warn');
 
   const worstSub = (site) =>
     site.risque_eur > 0
@@ -79,12 +78,16 @@ export default function TopSitesCard({ topSites = { worst: [], best: [] }, onNav
     <Card>
       {/* Collapsible header */}
       <button
-        onClick={() => setExpanded(v => !v)}
+        onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition rounded-t-xl focus-visible:ring-2 focus-visible:ring-blue-500"
         aria-expanded={expanded}
       >
         <h3 className="text-sm font-semibold text-gray-800">Analyse détaillée des sites</h3>
-        {expanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+        {expanded ? (
+          <ChevronUp size={16} className="text-gray-400" />
+        ) : (
+          <ChevronDown size={16} className="text-gray-400" />
+        )}
       </button>
 
       {expanded && (

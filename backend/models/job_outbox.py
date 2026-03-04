@@ -2,6 +2,7 @@
 PROMEOS - Modele JobOutbox
 File d'attente asynchrone pour recompute, sync, watchers, agents IA.
 """
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, Enum
 from .base import Base
 from .enums import JobType, JobStatus

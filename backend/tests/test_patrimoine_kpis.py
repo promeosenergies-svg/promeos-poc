@@ -2,8 +2,10 @@
 PROMEOS — Tests KPIs Patrimoine (PR1 Phase 3)
 Tests for: GET /api/patrimoine/kpis server-side aggregation.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -13,8 +15,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    TypeSite, StatutConformite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+    StatutConformite,
 )
 from database import get_db
 from main import app
@@ -23,6 +30,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -45,6 +53,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -63,12 +72,16 @@ def _create_org(db):
     return org, ej, pf
 
 
-def _create_site(db, pf, nom="Site KPI", statut=StatutConformite.CONFORME,
-                 risque=0.0, anomalie=False, surface=1500.0):
+def _create_site(db, pf, nom="Site KPI", statut=StatutConformite.CONFORME, risque=0.0, anomalie=False, surface=1500.0):
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=surface, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=surface,
+        portefeuille_id=pf.id,
+        actif=True,
         statut_decret_tertiaire=statut,
         risque_financier_euro=risque,
         anomalie_facture=anomalie,
@@ -82,8 +95,8 @@ def _create_site(db, pf, nom="Site KPI", statut=StatutConformite.CONFORME,
 # Tests
 # ========================================
 
-class TestPatrimoineKpis:
 
+class TestPatrimoineKpis:
     def test_kpis_empty_org(self, client, db):
         """KPIs for an org with zero sites returns all zeros."""
         _create_org(db)

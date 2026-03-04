@@ -10,14 +10,10 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 const backendSrc = (rel) =>
-  fs.readFileSync(
-    path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel),
-    'utf-8',
-  );
+  fs.readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. Wizard — EFA name prefill from site_nom
@@ -132,7 +128,7 @@ describe('Zero duplicate data entry (V44 principle)', () => {
   it('surface comes from patrimoine (read-only display)', () => {
     // Surface is computed from selectedBuildings, never user-input
     expect(wizard).toContain('totalSurface');
-    expect(wizard).toContain("reduce((s, b) => s + (b.surface_m2 || 0), 0)");
+    expect(wizard).toContain('reduce((s, b) => s + (b.surface_m2 || 0), 0)');
   });
 
   it('buildings come from catalog (patrimoine)', () => {

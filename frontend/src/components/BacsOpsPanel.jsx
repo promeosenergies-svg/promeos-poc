@@ -3,9 +3,7 @@
  * Operational monitoring panel for BACS: KPIs, consumption chart, heatmap, alerts.
  */
 import { useState, useEffect } from 'react';
-import {
-  Clock, ShieldCheck, AlertTriangle, TrendingUp, Thermometer, Activity,
-} from 'lucide-react';
+import { Clock, ShieldCheck, AlertTriangle, TrendingUp, Thermometer, Activity } from 'lucide-react';
 import { Card, CardBody, Badge } from '../ui';
 import { getBacsOpsPanel } from '../services/api';
 
@@ -34,7 +32,7 @@ function MonthlyChart({ data }) {
     return <p className="text-xs text-gray-400 text-center py-4">Pas de donnees mensuelles</p>;
   }
 
-  const maxKwh = Math.max(...data.map(d => d.kwh), 1);
+  const maxKwh = Math.max(...data.map((d) => d.kwh), 1);
 
   return (
     <div className="flex items-end gap-1 h-32 px-2">
@@ -59,7 +57,7 @@ function HeatmapGrid({ data }) {
     return <p className="text-xs text-gray-400 text-center py-4">Pas de donnees heatmap</p>;
   }
 
-  const allValues = data.flat().filter(v => v > 0);
+  const allValues = data.flat().filter((v) => v > 0);
   const maxVal = Math.max(...allValues, 1);
 
   const getColor = (val) => {
@@ -77,8 +75,10 @@ function HeatmapGrid({ data }) {
       <div className="grid grid-cols-[auto_repeat(24,1fr)] gap-px text-[9px]">
         {/* Header row */}
         <div />
-        {HOURS.map(h => (
-          <div key={h} className="text-center text-gray-400 py-0.5">{h}</div>
+        {HOURS.map((h) => (
+          <div key={h} className="text-center text-gray-400 py-0.5">
+            {h}
+          </div>
         ))}
         {/* Data rows */}
         {data.map((row, d) => (
@@ -115,7 +115,9 @@ export default function BacsOpsPanel({ siteId }) {
     return (
       <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-gray-100 rounded-lg" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 bg-gray-100 rounded-lg" />
+          ))}
         </div>
         <div className="h-40 bg-gray-100 rounded-lg" />
       </div>
@@ -142,18 +144,16 @@ export default function BacsOpsPanel({ siteId }) {
         <KpiCard
           icon={Clock}
           label="Delai conformite"
-          value={kpis.compliance_delay_days !== null
-            ? `${kpis.compliance_delay_days}j`
-            : '—'}
+          value={kpis.compliance_delay_days !== null ? `${kpis.compliance_delay_days}j` : '—'}
           sub={kpis.compliance_delay_days < 0 ? 'En retard' : 'Restants'}
           color={kpis.compliance_delay_days < 0 ? 'text-red-600' : 'text-green-600'}
         />
         <KpiCard
           icon={ShieldCheck}
           label="Prochaine inspection"
-          value={kpis.inspection_countdown_days !== null
-            ? `${kpis.inspection_countdown_days}j`
-            : '—'}
+          value={
+            kpis.inspection_countdown_days !== null ? `${kpis.inspection_countdown_days}j` : '—'
+          }
           color={kpis.inspection_countdown_days < 0 ? 'text-red-600' : 'text-blue-600'}
         />
         <KpiCard
@@ -166,9 +166,11 @@ export default function BacsOpsPanel({ siteId }) {
         <KpiCard
           icon={TrendingUp}
           label="Gain vs baseline"
-          value={kpis.gains_vs_baseline_pct !== null
-            ? `${kpis.gains_vs_baseline_pct > 0 ? '+' : ''}${kpis.gains_vs_baseline_pct}%`
-            : '—'}
+          value={
+            kpis.gains_vs_baseline_pct !== null
+              ? `${kpis.gains_vs_baseline_pct > 0 ? '+' : ''}${kpis.gains_vs_baseline_pct}%`
+              : '—'
+          }
           color={kpis.gains_vs_baseline_pct < 0 ? 'text-green-600' : 'text-red-600'}
         />
       </div>
@@ -216,7 +218,15 @@ export default function BacsOpsPanel({ siteId }) {
           <CardBody className="space-y-2">
             {cvc_alerts_stub.map((alert, i) => (
               <div key={i} className="flex items-center gap-3 py-1.5">
-                <Badge status={alert.severity === 'high' ? 'warn' : alert.severity === 'medium' ? 'info' : 'neutral'}>
+                <Badge
+                  status={
+                    alert.severity === 'high'
+                      ? 'warn'
+                      : alert.severity === 'medium'
+                        ? 'info'
+                        : 'neutral'
+                  }
+                >
                   {alert.severity}
                 </Badge>
                 <span className="text-sm text-gray-700">{alert.message}</span>
@@ -233,12 +243,19 @@ export default function BacsOpsPanel({ siteId }) {
             <h3 className="text-sm font-semibold text-gray-700">Findings operationnels lies</h3>
           </div>
           <CardBody className="space-y-2">
-            {consumption_findings.filter(f => f.bacs_context).map((f, i) => (
-              <div key={i} className="flex items-start gap-3 py-1.5 border-b border-gray-50 last:border-0">
-                <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{f.type}</span>
-                <p className="text-sm text-gray-700">{f.bacs_context}</p>
-              </div>
-            ))}
+            {consumption_findings
+              .filter((f) => f.bacs_context)
+              .map((f, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 py-1.5 border-b border-gray-50 last:border-0"
+                >
+                  <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                    {f.type}
+                  </span>
+                  <p className="text-sm text-gray-700">{f.bacs_context}</p>
+                </div>
+              ))}
           </CardBody>
         </Card>
       )}

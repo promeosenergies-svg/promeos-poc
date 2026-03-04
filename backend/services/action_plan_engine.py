@@ -3,14 +3,20 @@ PROMEOS - Action Plan Engine
 Generates a prioritized, cross-portfolio action plan from compliance data.
 "Waze for energy compliance" - tells the user what to do next, in order.
 """
+
 from collections import defaultdict
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Obligation, Evidence, Portefeuille,
-    StatutConformite, TypeObligation, StatutEvidence,
+    Site,
+    Obligation,
+    Evidence,
+    Portefeuille,
+    StatutConformite,
+    TypeObligation,
+    StatutEvidence,
     not_deleted,
 )
 
@@ -23,14 +29,13 @@ _PRIORITY_WEIGHTS = {
 }
 
 _ACTION_LABELS = {
-    (TypeObligation.BACS, StatutConformite.NON_CONFORME):
-        "Installer GTB/GTC conforme (BACS obligatoire)",
-    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.NON_CONFORME):
-        "Lancer audit decret tertiaire - trajectoire 2030 KO",
-    (TypeObligation.BACS, StatutConformite.A_RISQUE):
-        "Planifier mise en conformite BACS avant echeance",
-    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.A_RISQUE):
-        "Accelerer trajectoire decret tertiaire",
+    (TypeObligation.BACS, StatutConformite.NON_CONFORME): "Installer GTB/GTC conforme (BACS obligatoire)",
+    (
+        TypeObligation.DECRET_TERTIAIRE,
+        StatutConformite.NON_CONFORME,
+    ): "Lancer audit decret tertiaire - trajectoire 2030 KO",
+    (TypeObligation.BACS, StatutConformite.A_RISQUE): "Planifier mise en conformite BACS avant echeance",
+    (TypeObligation.DECRET_TERTIAIRE, StatutConformite.A_RISQUE): "Accelerer trajectoire decret tertiaire",
 }
 
 
@@ -67,12 +72,8 @@ def compute_action_plan(
         }
 
     # Bulk load
-    all_obligations = db.query(Obligation).filter(
-        Obligation.site_id.in_(site_ids)
-    ).all()
-    all_evidences = db.query(Evidence).filter(
-        Evidence.site_id.in_(site_ids)
-    ).all()
+    all_obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
+    all_evidences = db.query(Evidence).filter(Evidence.site_id.in_(site_ids)).all()
 
     obs_by_site = defaultdict(list)
     for ob in all_obligations:
@@ -108,45 +109,50 @@ def compute_action_plan(
             key = (ob.type, ob.statut)
             weight = _PRIORITY_WEIGHTS.get(key)
             if weight:
-                actions.append({
+                actions.append(
+                    {
+                        "site_id": site.id,
+                        "site_nom": site.nom,
+                        "ville": site.ville or "",
+                        "portefeuille_nom": ptf_map.get(site.portefeuille_id, ""),
+                        "obligation_type": ob.type.value,
+                        "statut": ob.statut.value,
+                        "action_label": _ACTION_LABELS.get(key, "Action requise"),
+                        "priority": weight,
+                        "risque_financier_euro": site.risque_financier_euro or 0,
+                        "avancement_pct": ob.avancement_pct,
+                        "echeance": ob.echeance.isoformat() if ob.echeance else None,
+                        "evidence_gaps": evidence_gaps,
+                    }
+                )
+
+        # Evidence gap action
+        if evidence_gaps > 0:
+            actions.append(
+                {
                     "site_id": site.id,
                     "site_nom": site.nom,
                     "ville": site.ville or "",
                     "portefeuille_nom": ptf_map.get(site.portefeuille_id, ""),
-                    "obligation_type": ob.type.value,
-                    "statut": ob.statut.value,
-                    "action_label": _ACTION_LABELS.get(key, "Action requise"),
-                    "priority": weight,
-                    "risque_financier_euro": site.risque_financier_euro or 0,
-                    "avancement_pct": ob.avancement_pct,
-                    "echeance": ob.echeance.isoformat() if ob.echeance else None,
+                    "obligation_type": "evidence",
+                    "statut": "manquant",
+                    "action_label": f"Fournir {evidence_gaps} preuve(s) manquante(s)",
+                    "priority": 50,
+                    "risque_financier_euro": 0,
+                    "avancement_pct": 0,
+                    "echeance": None,
                     "evidence_gaps": evidence_gaps,
-                })
-
-        # Evidence gap action
-        if evidence_gaps > 0:
-            actions.append({
-                "site_id": site.id,
-                "site_nom": site.nom,
-                "ville": site.ville or "",
-                "portefeuille_nom": ptf_map.get(site.portefeuille_id, ""),
-                "obligation_type": "evidence",
-                "statut": "manquant",
-                "action_label": f"Fournir {evidence_gaps} preuve(s) manquante(s)",
-                "priority": 50,
-                "risque_financier_euro": 0,
-                "avancement_pct": 0,
-                "echeance": None,
-                "evidence_gaps": evidence_gaps,
-            })
+                }
+            )
 
         # Classify for summary
         risque_total += site.risque_financier_euro or 0
-        if site.statut_decret_tertiaire == StatutConformite.NON_CONFORME or \
-           site.statut_bacs == StatutConformite.NON_CONFORME:
+        if (
+            site.statut_decret_tertiaire == StatutConformite.NON_CONFORME
+            or site.statut_bacs == StatutConformite.NON_CONFORME
+        ):
             sites_non_conformes += 1
-        elif site.statut_decret_tertiaire == StatutConformite.A_RISQUE or \
-             site.statut_bacs == StatutConformite.A_RISQUE:
+        elif site.statut_decret_tertiaire == StatutConformite.A_RISQUE or site.statut_bacs == StatutConformite.A_RISQUE:
             sites_a_risque += 1
         else:
             sites_conformes += 1
@@ -159,9 +165,7 @@ def compute_action_plan(
         action["rank"] = i + 1
 
     total_sites = len(sites)
-    readiness_score = round(
-        (sites_conformes / total_sites * 100) if total_sites > 0 else 0, 1
-    )
+    readiness_score = round((sites_conformes / total_sites * 100) if total_sites > 0 else 0, 1)
 
     return {
         "total_actions": len(actions),

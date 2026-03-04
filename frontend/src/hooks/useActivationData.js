@@ -9,7 +9,13 @@
  *   - Normalizes purchase signals via normalizePurchaseSignals()
  */
 import { useState, useEffect, useRef } from 'react';
-import { getBillingSummary, getPurchaseRenewals, patrimoineContracts, getTertiaireDashboard, listConnectors } from '../services/api';
+import {
+  getBillingSummary,
+  getPurchaseRenewals,
+  patrimoineContracts,
+  getTertiaireDashboard,
+  listConnectors,
+} from '../services/api';
 import { normalizePurchaseSignals } from '../models/purchaseSignalsContract';
 
 // In-flight promise cache — avoids duplicate network requests when multiple
@@ -26,21 +32,27 @@ function _fetchAll(totalSites) {
     patrimoineContracts().catch(() => ({ total: 0, contracts: [] })),
     getTertiaireDashboard().catch(() => null),
     listConnectors().catch(() => []),
-  ]).then(([billing, renewals, contracts, efaDashboard, connectors]) => {
-    const signals = normalizePurchaseSignals({ renewals, contracts, totalSites });
+  ])
+    .then(([billing, renewals, contracts, efaDashboard, connectors]) => {
+      const signals = normalizePurchaseSignals({ renewals, contracts, totalSites });
 
-    // Extract contract site IDs
-    const rawContracts = contracts?.contracts ?? contracts?.data ?? [];
-    const contractSiteIds = new Set(
-      (Array.isArray(rawContracts) ? rawContracts : [])
-        .map((c) => c?.site_id)
-        .filter(Boolean),
-    );
+      // Extract contract site IDs
+      const rawContracts = contracts?.contracts ?? contracts?.data ?? [];
+      const contractSiteIds = new Set(
+        (Array.isArray(rawContracts) ? rawContracts : []).map((c) => c?.site_id).filter(Boolean)
+      );
 
-    return { billingSummary: billing, purchaseSignals: signals, contractSiteIds, efaDashboard, connectors };
-  }).finally(() => {
-    _inflight.delete(key);
-  });
+      return {
+        billingSummary: billing,
+        purchaseSignals: signals,
+        contractSiteIds,
+        efaDashboard,
+        connectors,
+      };
+    })
+    .finally(() => {
+      _inflight.delete(key);
+    });
 
   _inflight.set(key, promise);
   return promise;
@@ -83,7 +95,9 @@ export default function useActivationData(totalSites) {
   useEffect(() => {
     mountRef.current = true;
     fetchData();
-    return () => { mountRef.current = false; };
+    return () => {
+      mountRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalSites]);
 

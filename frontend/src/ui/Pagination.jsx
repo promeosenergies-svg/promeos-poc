@@ -20,7 +20,9 @@ export default function Pagination({ page, pageSize, total, onChange }) {
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="px-3 text-gray-700 font-medium tabular-nums">{page} / {totalPages}</span>
+        <span className="px-3 text-gray-700 font-medium tabular-nums">
+          {page} / {totalPages}
+        </span>
         <button
           onClick={() => onChange(page + 1)}
           disabled={page >= totalPages}

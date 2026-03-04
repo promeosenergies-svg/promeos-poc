@@ -2,6 +2,7 @@
 PROMEOS — Achat Energie V75 — Backend tests
 report_pct in compute endpoint, portfolio site_nom, compute_scenarios with report.
 """
+
 import sys
 import os
 
@@ -17,6 +18,7 @@ from unittest.mock import patch, MagicMock
 class TestComputeScenariosReportPct:
     def test_default_report_pct_is_zero(self):
         from services.purchase_service import compute_scenarios
+
         with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
@@ -25,6 +27,7 @@ class TestComputeScenariosReportPct:
 
     def test_report_pct_passed_to_reflex(self):
         from services.purchase_service import compute_scenarios
+
         with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.15)
@@ -33,6 +36,7 @@ class TestComputeScenariosReportPct:
 
     def test_report_pct_affects_effort_score(self):
         from services.purchase_service import compute_scenarios
+
         with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
@@ -44,6 +48,7 @@ class TestComputeScenariosReportPct:
 
     def test_report_pct_lowers_reflex_cost(self):
         from services.purchase_service import compute_scenarios
+
         with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
@@ -54,6 +59,7 @@ class TestComputeScenariosReportPct:
 
     def test_non_reflex_scenarios_unaffected(self):
         from services.purchase_service import compute_scenarios
+
         with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
@@ -78,22 +84,39 @@ class TestComputeEndpointReportPct:
         from main import app
         from fastapi.testclient import TestClient
 
-        engine = create_engine("sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        engine = create_engine(
+            "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+        )
         Base.metadata.create_all(bind=engine)
         session = sessionmaker(bind=engine)()
         org = Organisation(nom="Test Corp", type_client="bureau", actif=True)
-        session.add(org); session.flush()
+        session.add(org)
+        session.flush()
         ej = EntiteJuridique(organisation_id=org.id, nom="Test Corp", siren="123456789")
-        session.add(ej); session.flush()
+        session.add(ej)
+        session.flush()
         pf = Portefeuille(entite_juridique_id=ej.id, nom="Default", description="Test PF")
-        session.add(pf); session.flush()
-        site = Site(nom="Site A", type=TypeSite.BUREAU, adresse="1 rue Test", code_postal="75001", ville="Paris", surface_m2=2000, portefeuille_id=pf.id)
-        session.add(site); session.flush()
+        session.add(pf)
+        session.flush()
+        site = Site(
+            nom="Site A",
+            type=TypeSite.BUREAU,
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
+            surface_m2=2000,
+            portefeuille_id=pf.id,
+        )
+        session.add(site)
+        session.flush()
         session.commit()
 
         def _override():
-            try: yield session
-            finally: pass
+            try:
+                yield session
+            finally:
+                pass
+
         app.dependency_overrides[get_db] = _override
         client = TestClient(app)
         yield session, client, site, org
@@ -135,22 +158,39 @@ class TestPortfolioSiteNom:
         from main import app
         from fastapi.testclient import TestClient
 
-        engine = create_engine("sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        engine = create_engine(
+            "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+        )
         Base.metadata.create_all(bind=engine)
         session = sessionmaker(bind=engine)()
         org = Organisation(nom="Test Corp", type_client="bureau", actif=True)
-        session.add(org); session.flush()
+        session.add(org)
+        session.flush()
         ej = EntiteJuridique(organisation_id=org.id, nom="Test Corp", siren="123456789")
-        session.add(ej); session.flush()
+        session.add(ej)
+        session.flush()
         pf = Portefeuille(entite_juridique_id=ej.id, nom="Default", description="Test PF")
-        session.add(pf); session.flush()
-        site = Site(nom="Magasin Paris", type=TypeSite.BUREAU, adresse="1 rue Test", code_postal="75001", ville="Paris", surface_m2=2000, portefeuille_id=pf.id)
-        session.add(site); session.flush()
+        session.add(pf)
+        session.flush()
+        site = Site(
+            nom="Magasin Paris",
+            type=TypeSite.BUREAU,
+            adresse="1 rue Test",
+            code_postal="75001",
+            ville="Paris",
+            surface_m2=2000,
+            portefeuille_id=pf.id,
+        )
+        session.add(site)
+        session.flush()
         session.commit()
 
         def _override():
-            try: yield session
-            finally: pass
+            try:
+                yield session
+            finally:
+                pass
+
         app.dependency_overrides[get_db] = _override
         client = TestClient(app)
         yield session, client, site, org

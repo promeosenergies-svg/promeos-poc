@@ -4,8 +4,13 @@
  */
 import { memo, useMemo } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
 } from 'recharts';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
 
@@ -43,12 +48,16 @@ const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
         {/* Header row */}
         <div className="w-10" />
         {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} className="text-[10px] text-gray-400 text-center w-7">{h}h</div>
+          <div key={h} className="text-[10px] text-gray-400 text-center w-7">
+            {h}h
+          </div>
         ))}
         {/* Data rows */}
         {grid.matrix.map((row, d) => (
           <>
-            <div key={`l${d}`} className="text-xs text-gray-500 pr-1 flex items-center">{DAY_LABELS[d]}</div>
+            <div key={`l${d}`} className="text-xs text-gray-500 pr-1 flex items-center">
+              {DAY_LABELS[d]}
+            </div>
             {row.map((val, h) => (
               <div
                 key={`${d}-${h}`}
@@ -64,12 +73,16 @@ const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
 });
 
 const DailyProfileChart = memo(function DailyProfileChart({ dailyProfile }) {
-  const chartData = useMemo(() => (dailyProfile || []).map((pt) => ({
-    hour: `${pt.hour}h`,
-    avg: pt.avg_kwh,
-    min: pt.min_kwh,
-    max: pt.max_kwh,
-  })), [dailyProfile]);
+  const chartData = useMemo(
+    () =>
+      (dailyProfile || []).map((pt) => ({
+        hour: `${pt.hour}h`,
+        avg: pt.avg_kwh,
+        min: pt.min_kwh,
+        max: pt.max_kwh,
+      })),
+    [dailyProfile]
+  );
 
   if (!chartData.length) return null;
 
@@ -89,9 +102,25 @@ const DailyProfileChart = memo(function DailyProfileChart({ dailyProfile }) {
 });
 
 export default function ProfileHeatmapTab({ profile, loading }) {
-  if (loading) return <Card><CardBody><div className="h-64 animate-pulse bg-gray-100 rounded" /></CardBody></Card>;
+  if (loading)
+    return (
+      <Card>
+        <CardBody>
+          <div className="h-64 animate-pulse bg-gray-100 rounded" />
+        </CardBody>
+      </Card>
+    );
 
-  const { heatmap, daily_profile, baseload_kw, peak_kw, load_factor, total_kwh, confidence, readings_count } = profile || {};
+  const {
+    heatmap,
+    daily_profile,
+    baseload_kw,
+    peak_kw,
+    load_factor,
+    total_kwh,
+    confidence,
+    readings_count,
+  } = profile || {};
 
   return (
     <div className="space-y-6">
@@ -100,10 +129,20 @@ export default function ProfileHeatmapTab({ profile, loading }) {
         <CardBody>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">Heatmap 7×24</h3>
-            {confidence && <Badge variant={confidence === 'high' ? 'success' : confidence === 'medium' ? 'info' : 'neutral'}>{confidence}</Badge>}
+            {confidence && (
+              <Badge
+                variant={
+                  confidence === 'high' ? 'success' : confidence === 'medium' ? 'info' : 'neutral'
+                }
+              >
+                {confidence}
+              </Badge>
+            )}
           </div>
           <HeatmapGrid heatmap={heatmap} />
-          <p className="text-xs text-gray-400 mt-2">{readings_count ?? 0} relevés · {total_kwh ?? 0} kWh total</p>
+          <p className="text-xs text-gray-400 mt-2">
+            {readings_count ?? 0} relevés · {total_kwh ?? 0} kWh total
+          </p>
         </CardBody>
       </Card>
 
@@ -117,9 +156,24 @@ export default function ProfileHeatmapTab({ profile, loading }) {
 
       {/* Baseload / Peak / Load Factor */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Talon (Q10)" value={`${baseload_kw ?? 0}`} suffix="kW" detail="Puissance min nuit jours ouvrés" />
-        <KpiCard label="Pointe (P90)" value={`${peak_kw ?? 0}`} suffix="kW" detail="Puissance de pointe" />
-        <KpiCard label="Load Factor" value={`${((load_factor ?? 0) * 100).toFixed(1)}`} suffix="%" detail="Talon / Pointe" />
+        <KpiCard
+          label="Talon (Q10)"
+          value={`${baseload_kw ?? 0}`}
+          suffix="kW"
+          detail="Puissance min nuit jours ouvrés"
+        />
+        <KpiCard
+          label="Pointe (P90)"
+          value={`${peak_kw ?? 0}`}
+          suffix="kW"
+          detail="Puissance de pointe"
+        />
+        <KpiCard
+          label="Load Factor"
+          value={`${((load_factor ?? 0) * 100).toFixed(1)}`}
+          suffix="%"
+          detail="Talon / Pointe"
+        />
       </div>
     </div>
   );

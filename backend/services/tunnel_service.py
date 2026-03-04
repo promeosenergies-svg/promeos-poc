@@ -3,6 +3,7 @@ PROMEOS - Tunnel Service (Consumption Envelope)
 Computes quantile-based envelopes (P10-P25-P50-P75-P90) per time slot
 and calculates the percentage of readings "outside" the normal band.
 """
+
 import math
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
@@ -67,16 +68,22 @@ def compute_tunnel(
     start_date = end_date - timedelta(days=days)
 
     # Find meters for this site and energy type
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+        )
+        .all()
+    )
 
     if energy_type == "electricity":
         from models.energy_models import EnergyVector
+
         meters = [m for m in meters if m.energy_vector == EnergyVector.ELECTRICITY]
     elif energy_type == "gas":
         from models.energy_models import EnergyVector
+
         meters = [m for m in meters if m.energy_vector == EnergyVector.GAS]
 
     if not meters:
@@ -119,15 +126,17 @@ def compute_tunnel(
         for h in range(24):
             vals = buckets[day_type].get(h, [])
             if vals:
-                slots.append({
-                    "hour": h,
-                    "p10": round(_percentile(vals, 10), 2),
-                    "p25": round(_percentile(vals, 25), 2),
-                    "p50": round(_percentile(vals, 50), 2),
-                    "p75": round(_percentile(vals, 75), 2),
-                    "p90": round(_percentile(vals, 90), 2),
-                    "count": len(vals),
-                })
+                slots.append(
+                    {
+                        "hour": h,
+                        "p10": round(_percentile(vals, 10), 2),
+                        "p25": round(_percentile(vals, 25), 2),
+                        "p50": round(_percentile(vals, 50), 2),
+                        "p75": round(_percentile(vals, 75), 2),
+                        "p90": round(_percentile(vals, 90), 2),
+                        "count": len(vals),
+                    }
+                )
             else:
                 slots.append({"hour": h, "p10": 0, "p25": 0, "p50": 0, "p75": 0, "p90": 0, "count": 0})
         envelope[day_type] = slots
@@ -201,16 +210,22 @@ def compute_tunnel_v2(
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+        )
+        .all()
+    )
 
     if energy_type == "electricity":
         from models.energy_models import EnergyVector
+
         meters = [m for m in meters if m.energy_vector == EnergyVector.ELECTRICITY]
     elif energy_type == "gas":
         from models.energy_models import EnergyVector
+
         meters = [m for m in meters if m.energy_vector == EnergyVector.GAS]
 
     unit = "kW" if mode == "power" else "kWh"
@@ -254,15 +269,17 @@ def compute_tunnel_v2(
         for h in range(24):
             vals = buckets[day_type].get(h, [])
             if vals:
-                slots.append({
-                    "hour": h,
-                    "p10": round(_percentile(vals, 10), 2),
-                    "p25": round(_percentile(vals, 25), 2),
-                    "p50": round(_percentile(vals, 50), 2),
-                    "p75": round(_percentile(vals, 75), 2),
-                    "p90": round(_percentile(vals, 90), 2),
-                    "count": len(vals),
-                })
+                slots.append(
+                    {
+                        "hour": h,
+                        "p10": round(_percentile(vals, 10), 2),
+                        "p25": round(_percentile(vals, 25), 2),
+                        "p50": round(_percentile(vals, 50), 2),
+                        "p75": round(_percentile(vals, 75), 2),
+                        "p90": round(_percentile(vals, 90), 2),
+                        "count": len(vals),
+                    }
+                )
             else:
                 slots.append({"hour": h, "p10": 0, "p25": 0, "p50": 0, "p75": 0, "p90": 0, "count": 0})
         envelope[day_type] = slots
@@ -312,12 +329,20 @@ def compute_tunnel_v2(
 def _empty_tunnel_v2(site_id, energy_type, days, mode, unit, readings_count=0):
     empty_slots = [{"hour": h, "p10": 0, "p25": 0, "p50": 0, "p75": 0, "p90": 0, "count": 0} for h in range(24)]
     return {
-        "site_id": site_id, "energy_type": energy_type, "days": days,
-        "mode": mode, "unit": unit, "readings_count": readings_count,
-        "sample_size": readings_count, "reference_band_method": "percentile_hourly",
+        "site_id": site_id,
+        "energy_type": energy_type,
+        "days": days,
+        "mode": mode,
+        "unit": unit,
+        "readings_count": readings_count,
+        "sample_size": readings_count,
+        "reference_band_method": "percentile_hourly",
         "envelope": {"weekday": list(empty_slots), "weekend": [dict(s) for s in empty_slots]},
-        "outside_pct": 0, "outside_count": 0, "total_evaluated": 0,
-        "confidence": "low", "confidence_score": 0,
+        "outside_pct": 0,
+        "outside_count": 0,
+        "total_evaluated": 0,
+        "confidence": "low",
+        "confidence_score": 0,
     }
 
 

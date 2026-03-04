@@ -17,18 +17,18 @@ const EVIDENCE_KPIS = new Set(['conformite', 'risque']);
 
 const KPI_ICONS = {
   conformite: ShieldCheck,
-  risque:     TrendingDown,
-  maturite:   BarChart3,
+  risque: TrendingDown,
+  maturite: BarChart3,
   couverture: Database,
-  neutral:    Database,
+  neutral: Database,
 };
 
 // ── Status dot ────────────────────────────────────────────────────────────────
 
 const STATUS_DOT = {
-  crit:    'bg-red-500',
-  warn:    'bg-amber-400',
-  ok:      'bg-emerald-500',
+  crit: 'bg-red-500',
+  warn: 'bg-amber-400',
+  ok: 'bg-emerald-500',
   neutral: 'bg-gray-300',
 };
 
@@ -49,25 +49,30 @@ function KpiTile({ kpi, onNavigate, onEvidence }) {
           ${kpi.path ? 'hover:shadow-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500' : ''}`}
       >
         {/* Icon pill */}
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${acc.iconBg}`}>
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${acc.iconBg}`}
+        >
           <Icon size={18} className={acc.iconText} />
         </div>
 
         {/* Text */}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">{kpi.label}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            {kpi.label}
+          </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <p className="text-lg font-bold text-gray-900 leading-tight truncate">{kpi.value}</p>
             <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
           </div>
-          {kpi.sub && (
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{kpi.sub}</p>
-          )}
+          {kpi.sub && <p className="text-xs text-gray-500 mt-0.5 truncate">{kpi.sub}</p>}
         </div>
       </El>
       {hasEvidence && (
         <button
-          onClick={(e) => { e.stopPropagation(); onEvidence(kpi.id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEvidence(kpi.id);
+          }}
           className="absolute top-2 right-2 p-1 rounded-md text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           aria-label={`Pourquoi ce chiffre : ${kpi.label}`}
@@ -86,7 +91,9 @@ export default function ExecutiveKpiRow({ kpis = [], onNavigate, onEvidence }) {
   if (!kpis.length) return null;
 
   return (
-    <div className={`grid gap-3 grid-cols-2 ${kpis.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+    <div
+      className={`grid gap-3 grid-cols-2 ${kpis.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+    >
       {kpis.map((kpi) => (
         <KpiTile key={kpi.id} kpi={kpi} onNavigate={onNavigate} onEvidence={onEvidence} />
       ))}

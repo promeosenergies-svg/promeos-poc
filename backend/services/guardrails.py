@@ -2,13 +2,20 @@
 PROMEOS - Guardrails Engine
 Prevents incoherent actions: validation rules for compliance workflow.
 """
+
 from typing import List
 
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Obligation, Evidence, Batiment,
-    StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
+    Site,
+    Obligation,
+    Evidence,
+    Batiment,
+    StatutConformite,
+    TypeObligation,
+    TypeEvidence,
+    StatutEvidence,
 )
 
 
@@ -28,26 +35,32 @@ def check_bacs_conforme(db: Session, site_id: int) -> List[GuardrailViolation]:
     """Cannot mark BACS conforme without valid attestation or CVC data."""
     violations = []
 
-    evidences = db.query(Evidence).filter(
-        Evidence.site_id == site_id,
-        Evidence.type == TypeEvidence.ATTESTATION_BACS,
-    ).all()
-
-    has_valid_attestation = any(
-        e.statut == StatutEvidence.VALIDE for e in evidences
+    evidences = (
+        db.query(Evidence)
+        .filter(
+            Evidence.site_id == site_id,
+            Evidence.type == TypeEvidence.ATTESTATION_BACS,
+        )
+        .all()
     )
+
+    has_valid_attestation = any(e.statut == StatutEvidence.VALIDE for e in evidences)
     if not has_valid_attestation:
-        violations.append(GuardrailViolation(
-            code="BACS_NO_ATTESTATION",
-            message="Impossible de marquer BACS conforme sans attestation BACS valide.",
-        ))
+        violations.append(
+            GuardrailViolation(
+                code="BACS_NO_ATTESTATION",
+                message="Impossible de marquer BACS conforme sans attestation BACS valide.",
+            )
+        )
 
     batiment = db.query(Batiment).filter(Batiment.site_id == site_id).first()
     if not batiment or not batiment.cvc_power_kw:
-        violations.append(GuardrailViolation(
-            code="BACS_NO_CVC_DATA",
-            message="Donnees puissance CVC manquantes. Renseigner le batiment d'abord.",
-        ))
+        violations.append(
+            GuardrailViolation(
+                code="BACS_NO_CVC_DATA",
+                message="Donnees puissance CVC manquantes. Renseigner le batiment d'abord.",
+            )
+        )
 
     return violations
 
@@ -56,18 +69,24 @@ def check_decret_trajectory(db: Session, site_id: int) -> List[GuardrailViolatio
     """Warn if decret tertiaire avancement is too low."""
     violations = []
 
-    obligations = db.query(Obligation).filter(
-        Obligation.site_id == site_id,
-        Obligation.type == TypeObligation.DECRET_TERTIAIRE,
-    ).all()
+    obligations = (
+        db.query(Obligation)
+        .filter(
+            Obligation.site_id == site_id,
+            Obligation.type == TypeObligation.DECRET_TERTIAIRE,
+        )
+        .all()
+    )
 
     for ob in obligations:
         if ob.avancement_pct < 60:
-            violations.append(GuardrailViolation(
-                code="DECRET_LOW_AVANCEMENT",
-                message=f"Avancement insuffisant ({ob.avancement_pct:.0f}%). Minimum 60% requis pour la trajectoire.",
-                severity="warning",
-            ))
+            violations.append(
+                GuardrailViolation(
+                    code="DECRET_LOW_AVANCEMENT",
+                    message=f"Avancement insuffisant ({ob.avancement_pct:.0f}%). Minimum 60% requis pour la trajectoire.",
+                    severity="warning",
+                )
+            )
 
     return violations
 
@@ -76,17 +95,23 @@ def check_evidence_completeness(db: Session, site_id: int) -> List[GuardrailViol
     """Warn if site has MANQUANT evidences."""
     violations = []
 
-    manquantes = db.query(Evidence).filter(
-        Evidence.site_id == site_id,
-        Evidence.statut == StatutEvidence.MANQUANT,
-    ).count()
+    manquantes = (
+        db.query(Evidence)
+        .filter(
+            Evidence.site_id == site_id,
+            Evidence.statut == StatutEvidence.MANQUANT,
+        )
+        .count()
+    )
 
     if manquantes > 0:
-        violations.append(GuardrailViolation(
-            code="EVIDENCE_GAPS",
-            message=f"{manquantes} preuve(s) manquante(s). Fournir les documents avant validation.",
-            severity="warning",
-        ))
+        violations.append(
+            GuardrailViolation(
+                code="EVIDENCE_GAPS",
+                message=f"{manquantes} preuve(s) manquante(s). Fournir les documents avant validation.",
+                severity="warning",
+            )
+        )
 
     return violations
 

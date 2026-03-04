@@ -4,6 +4,7 @@ CSV import (idempotent) + audit + summary + site billing + insight workflow.
 V66: org scoping (resolve_org_id), response_model Pydantic, PDF import, anomalies-scoped.
 Prefix: /api/billing
 """
+
 import csv
 import hashlib
 import io
@@ -17,11 +18,20 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
-    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
-    InsightStatus, BillingImportBatch,
-    Portefeuille, EntiteJuridique,
-    ActionItem, ActionSourceType,
+    Site,
+    EnergyContract,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    BillingInsight,
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
+    InsightStatus,
+    BillingImportBatch,
+    Portefeuille,
+    EntiteJuridique,
+    ActionItem,
+    ActionSourceType,
 )
 from services.billing_service import (
     audit_invoice_full,
@@ -39,6 +49,7 @@ router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 # ========================================
 # Pydantic schemas — Input
 # ========================================
+
 
 class ContractCreate(BaseModel):
     site_id: int = Field(..., ge=1)
@@ -71,6 +82,7 @@ class InsightPatch(BaseModel):
 # ========================================
 # Pydantic schemas — Response (V66 P1.2)
 # ========================================
+
 
 class ContractResponse(BaseModel):
     id: int
@@ -145,6 +157,7 @@ class InsightListResponse(BaseModel):
 # Org-scoping helpers (V66 P1.1)
 # ========================================
 
+
 def _org_sites_query(db: Session, model_class, effective_org_id: int):
     """Filter model_class queries via site→portefeuille→entite_juridique→org."""
     return (
@@ -186,6 +199,7 @@ def _check_site_belongs_to_org(db: Session, site_id: int, effective_org_id: int)
 # Contract endpoints
 # ========================================
 
+
 @router.post("/contracts")
 def create_contract(
     data: ContractCreate,
@@ -212,8 +226,8 @@ def create_contract(
         raise HTTPException(
             status_code=409,
             detail=f"Chevauchement avec le contrat #{overlap.id} "
-                   f"({overlap.supplier_name}, "
-                   f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
+            f"({overlap.supplier_name}, "
+            f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
         )
 
     contract = EnergyContract(
@@ -248,7 +262,8 @@ def list_contracts(
     return {
         "contracts": [
             {
-                "id": c.id, "site_id": c.site_id,
+                "id": c.id,
+                "site_id": c.site_id,
                 "energy_type": c.energy_type.value,
                 "supplier_name": c.supplier_name,
                 "price_ref_eur_per_kwh": c.price_ref_eur_per_kwh,
@@ -264,6 +279,7 @@ def list_contracts(
 # ========================================
 # CSV Import (idempotent — Sprint 7.1)
 # ========================================
+
 
 @router.post("/import-csv")
 def import_invoices_csv(
@@ -284,7 +300,12 @@ def import_invoices_csv(
     fname = (file.filename or "").lower()
     if not fname.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Le fichier doit etre un CSV")
-    if file.content_type and file.content_type not in ("text/csv", "text/plain", "application/vnd.ms-excel", "application/octet-stream"):
+    if file.content_type and file.content_type not in (
+        "text/csv",
+        "text/plain",
+        "application/vnd.ms-excel",
+        "application/octet-stream",
+    ):
         raise HTTPException(status_code=400, detail="Type MIME invalide — CSV attendu")
 
     raw = file.file.read()
@@ -294,10 +315,14 @@ def import_invoices_csv(
 
     # --- Idempotency check (content hash) ---
     content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
-    existing_batch = db.query(BillingImportBatch).filter(
-        BillingImportBatch.content_hash == content_hash,
-        BillingImportBatch.org_id == effective_org_id,
-    ).first()
+    existing_batch = (
+        db.query(BillingImportBatch)
+        .filter(
+            BillingImportBatch.content_hash == content_hash,
+            BillingImportBatch.org_id == effective_org_id,
+        )
+        .first()
+    )
     if existing_batch:
         return {
             "status": "already_imported",
@@ -340,10 +365,14 @@ def import_invoices_csv(
                 continue
 
             # Check duplicate
-            existing = db.query(EnergyInvoice).filter(
-                EnergyInvoice.site_id == site_id,
-                EnergyInvoice.invoice_number == invoice_number,
-            ).first()
+            existing = (
+                db.query(EnergyInvoice)
+                .filter(
+                    EnergyInvoice.site_id == site_id,
+                    EnergyInvoice.invoice_number == invoice_number,
+                )
+                .first()
+            )
             if existing:
                 skipped += 1
                 errors.append({"row": row_num, "error": f"Facture {invoice_number} deja importee"})
@@ -421,6 +450,7 @@ def import_invoices_csv(
 # Import batches listing (Sprint 7.1)
 # ========================================
 
+
 @router.get("/import/batches", response_model=dict)
 def list_import_batches(
     request: Request,
@@ -457,6 +487,7 @@ def list_import_batches(
 # ========================================
 # Single invoice create
 # ========================================
+
 
 @router.post("/invoices")
 def create_invoice(
@@ -512,6 +543,7 @@ def create_invoice(
 # Audit
 # ========================================
 
+
 @router.post("/audit/{invoice_id}")
 def audit_invoice_endpoint(
     invoice_id: int,
@@ -523,9 +555,7 @@ def audit_invoice_endpoint(
     """Run shadow billing + anomaly engine on a persisted invoice."""
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     # Verify invoice belongs to org
-    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(
-        EnergyInvoice.id == invoice_id
-    ).first()
+    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(EnergyInvoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Facture non trouvée ou accès refusé")
     result = audit_invoice_full(db, invoice_id)
@@ -547,11 +577,13 @@ def audit_all_invoices(
     results = []
     for inv in invoices:
         r = audit_invoice_full(db, inv.id)
-        results.append({
-            "invoice_id": inv.id,
-            "invoice_number": inv.invoice_number,
-            "anomalies_count": r.get("anomalies_count", 0),
-        })
+        results.append(
+            {
+                "invoice_id": inv.id,
+                "invoice_number": inv.invoice_number,
+                "anomalies_count": r.get("anomalies_count", 0),
+            }
+        )
     return {
         "status": "ok",
         "audited": len(results),
@@ -564,6 +596,7 @@ def audit_all_invoices(
 # Read endpoints
 # ========================================
 
+
 @router.get("/summary", response_model=BillingSummaryResponse)
 def billing_summary(
     request: Request,
@@ -575,13 +608,9 @@ def billing_summary(
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     site_ids = _get_org_site_ids(db, effective_org_id)
 
-    invoices = db.query(EnergyInvoice).filter(
-        EnergyInvoice.site_id.in_(site_ids)
-    ).all() if site_ids else []
+    invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).all() if site_ids else []
 
-    insights = db.query(BillingInsight).filter(
-        BillingInsight.site_id.in_(site_ids)
-    ).all() if site_ids else []
+    insights = db.query(BillingInsight).filter(BillingInsight.site_id.in_(site_ids)).all() if site_ids else []
 
     total_eur = sum(i.total_eur or 0 for i in invoices)
     total_kwh = sum(i.energy_kwh or 0 for i in invoices)
@@ -634,17 +663,25 @@ def list_insights(
     insight_ids_str = [str(i.id) for i in insights]
     action_map = {}
     if insight_ids_str:
-        actions = db.query(ActionItem.source_id, ActionItem.id).filter(
-            ActionItem.source_type == ActionSourceType.BILLING,
-            ActionItem.source_id.in_(insight_ids_str),
-        ).all()
+        actions = (
+            db.query(ActionItem.source_id, ActionItem.id)
+            .filter(
+                ActionItem.source_type == ActionSourceType.BILLING,
+                ActionItem.source_id.in_(insight_ids_str),
+            )
+            .all()
+        )
         action_map = {a.source_id: a.id for a in actions}
 
     return {
         "insights": [
             {
-                "id": i.id, "site_id": i.site_id, "invoice_id": i.invoice_id,
-                "type": i.type, "severity": i.severity, "message": i.message,
+                "id": i.id,
+                "site_id": i.site_id,
+                "invoice_id": i.invoice_id,
+                "type": i.type,
+                "severity": i.severity,
+                "message": i.message,
                 "estimated_loss_eur": i.estimated_loss_eur,
                 "insight_status": i.insight_status.value if i.insight_status else "open",
                 "owner": i.owner,
@@ -672,10 +709,14 @@ def get_insight_detail(
         raise HTTPException(status_code=404, detail="Insight not found")
     _check_site_belongs_to_org(db, insight.site_id, effective_org_id)
     # Resolve linked action
-    action = db.query(ActionItem).filter(
-        ActionItem.source_type == ActionSourceType.BILLING,
-        ActionItem.source_id == str(insight.id),
-    ).first()
+    action = (
+        db.query(ActionItem)
+        .filter(
+            ActionItem.source_type == ActionSourceType.BILLING,
+            ActionItem.source_id == str(insight.id),
+        )
+        .first()
+    )
 
     metrics = json.loads(insight.metrics_json or "{}")
 
@@ -683,16 +724,13 @@ def get_insight_detail(
     if metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None:
         try:
             from services.billing_shadow_v2 import shadow_billing_v2
+
             invoice = db.query(EnergyInvoice).filter(EnergyInvoice.id == insight.invoice_id).first()
             if invoice:
-                lines = db.query(EnergyInvoiceLine).filter(
-                    EnergyInvoiceLine.invoice_id == invoice.id
-                ).all()
+                lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == invoice.id).all()
                 contract = None
                 if invoice.contract_id:
-                    contract = db.query(EnergyContract).filter(
-                        EnergyContract.id == invoice.contract_id
-                    ).first()
+                    contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
                 if lines:
                     v2 = shadow_billing_v2(invoice, lines, contract)
                     metrics.update(v2)
@@ -731,6 +769,7 @@ def get_insight_detail(
 # Insight workflow (Sprint 7.1)
 # ========================================
 
+
 @router.patch("/insights/{insight_id}")
 def patch_insight(
     insight_id: int,
@@ -742,9 +781,7 @@ def patch_insight(
 ):
     """Update insight status / owner / notes (ops workflow) — scoped to org."""
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(
-        BillingInsight.id == insight_id
-    ).first()
+    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(BillingInsight.id == insight_id).first()
     if not insight:
         raise HTTPException(status_code=404, detail="Insight non trouve ou accès refusé")
 
@@ -780,9 +817,7 @@ def resolve_insight(
 ):
     """Shortcut: mark insight as RESOLVED with optional notes — scoped to org."""
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(
-        BillingInsight.id == insight_id
-    ).first()
+    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(BillingInsight.id == insight_id).first()
     if not insight:
         raise HTTPException(status_code=404, detail="Insight non trouve ou accès refusé")
 
@@ -811,6 +846,7 @@ def list_invoices_normalized(
 ):
     """Factures normalisées (ht/tva/fournisseur calculés) — scoped to org."""
     from services.billing_normalization import normalize_invoice
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     q = _org_sites_query(db, EnergyInvoice, effective_org_id)
     if site_id:
@@ -831,22 +867,15 @@ def list_invoices_normalized(
         invoices = filtered
 
     total = len(invoices)
-    page = invoices[offset: offset + limit]
+    page = invoices[offset : offset + limit]
 
     normalized = []
     for inv in page:
-        lines = db.query(EnergyInvoiceLine).filter(
-            EnergyInvoiceLine.invoice_id == inv.id
-        ).all()
+        lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         contract = (
-            db.query(EnergyContract).filter(
-                EnergyContract.id == inv.contract_id
-            ).first()
-            if inv.contract_id else None
+            db.query(EnergyContract).filter(EnergyContract.id == inv.contract_id).first() if inv.contract_id else None
         )
-        normalized.append(
-            normalize_invoice(inv, lines, contract, effective_org_id).model_dump()
-        )
+        normalized.append(normalize_invoice(inv, lines, contract, effective_org_id).model_dump())
 
     return {
         "invoices": normalized,
@@ -879,10 +908,13 @@ def list_invoices(
     return {
         "invoices": [
             {
-                "id": i.id, "site_id": i.site_id, "invoice_number": i.invoice_number,
+                "id": i.id,
+                "site_id": i.site_id,
+                "invoice_number": i.invoice_number,
                 "period_start": str(i.period_start) if i.period_start else None,
                 "period_end": str(i.period_end) if i.period_end else None,
-                "total_eur": i.total_eur, "energy_kwh": i.energy_kwh,
+                "total_eur": i.total_eur,
+                "energy_kwh": i.energy_kwh,
                 "status": i.status.value if i.status else None,
                 "source": i.source,
             }
@@ -913,10 +945,7 @@ def site_billing_endpoint(
 def list_billing_rules():
     """List all billing anomaly rules."""
     return {
-        "rules": [
-            {"id": r[0], "name": r[1]}
-            for r in BILLING_RULES
-        ],
+        "rules": [{"id": r[0], "name": r[1]} for r in BILLING_RULES],
         "count": len(BILLING_RULES),
     }
 
@@ -987,7 +1016,7 @@ async def import_invoice_pdf(
         raise HTTPException(
             status_code=422,
             detail="PDF non reconnu ou confiance insuffisante (< 0.5). "
-                   "Vérifiez le format EDF/Engie ou saisissez manuellement.",
+            "Vérifiez le format EDF/Engie ou saisissez manuellement.",
         )
 
     db_invoice = EnergyInvoice(
@@ -1000,31 +1029,36 @@ async def import_invoice_pdf(
         energy_kwh=getattr(invoice_domain, "conso_kwh", None),  # P0-3: correct field name
         status=BillingInvoiceStatus.IMPORTED,
         source="pdf",
-        raw_json=json.dumps({
-            "supplier": getattr(invoice_domain, "supplier", "") or "",
-            "confidence": getattr(invoice_domain, "parsing_confidence", 0) or 0,
-            "filename": file.filename or "",
-            "pdl_prm": getattr(invoice_domain, "pdl_pce", None) or "",  # P0-3: store PDL
-        }),
+        raw_json=json.dumps(
+            {
+                "supplier": getattr(invoice_domain, "supplier", "") or "",
+                "confidence": getattr(invoice_domain, "parsing_confidence", 0) or 0,
+                "filename": file.filename or "",
+                "pdl_prm": getattr(invoice_domain, "pdl_pce", None) or "",  # P0-3: store PDL
+            }
+        ),
     )
     db.add(db_invoice)
     db.flush()
 
     # P0-1: créer les lignes EnergyInvoiceLine depuis les composantes PDF
-    for comp in (getattr(invoice_domain, "components", None) or []):
+    for comp in getattr(invoice_domain, "components", None) or []:
         line_type = _component_to_line_type(comp.component_type)
-        db.add(EnergyInvoiceLine(
-            invoice_id=db_invoice.id,
-            line_type=line_type,
-            label=getattr(comp, "label", "") or "",
-            qty=getattr(comp, "quantity", None),
-            unit=getattr(comp, "unit", None),
-            unit_price=getattr(comp, "unit_price", None),
-            amount_eur=(
-                comp.amount_ht if getattr(comp, "amount_ht", None) is not None
-                else getattr(comp, "amount_ttc", None)
-            ),
-        ))
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=db_invoice.id,
+                line_type=line_type,
+                label=getattr(comp, "label", "") or "",
+                qty=getattr(comp, "quantity", None),
+                unit=getattr(comp, "unit", None),
+                unit_price=getattr(comp, "unit_price", None),
+                amount_eur=(
+                    comp.amount_ht
+                    if getattr(comp, "amount_ht", None) is not None
+                    else getattr(comp, "amount_ttc", None)
+                ),
+            )
+        )
 
     anomalies_list = []
     if run_audit:
@@ -1039,14 +1073,15 @@ async def import_invoice_pdf(
         "confidence": round(float(confidence), 2),
         "supplier": getattr(invoice_domain, "supplier", "") or "",
         "anomalies_count": len(anomalies_list),
-        "kb_updated": run_audit,                                              # P0-5
-        "kb_rules_applied": [a.get("rule_id") for a in anomalies_list],      # P0-5
+        "kb_updated": run_audit,  # P0-5
+        "kb_rules_applied": [a.get("rule_id") for a in anomalies_list],  # P0-5
     }
 
 
 # ========================================
 # Anomalies scoped (V66 P2.8)
 # ========================================
+
 
 @router.get("/anomalies-scoped")
 def get_billing_anomalies_scoped(
@@ -1071,19 +1106,21 @@ def get_billing_anomalies_scoped(
     anomalies = []
     for i in insights:
         site = sites_map.get(i.site_id)
-        anomalies.append({
-            "code": i.type or "billing_anomaly",
-            "severity": (i.severity or "MEDIUM").upper(),
-            "title_fr": i.message or "Anomalie facturation",
-            "detail_fr": i.notes or i.message or "",
-            "fix_hint_fr": "Vérifier la facture dans le module Facturation.",
-            "business_impact": {"estimated_risk_eur": i.estimated_loss_eur or 0},
-            "priority_score": 90 if i.severity == "CRITICAL" else 70 if i.severity == "HIGH" else 50,
-            "framework": "FACTURATION",
-            "site_id": i.site_id,
-            "site_nom": site.nom if site else f"Site {i.site_id}",
-            "insight_id": i.id,
-        })
+        anomalies.append(
+            {
+                "code": i.type or "billing_anomaly",
+                "severity": (i.severity or "MEDIUM").upper(),
+                "title_fr": i.message or "Anomalie facturation",
+                "detail_fr": i.notes or i.message or "",
+                "fix_hint_fr": "Vérifier la facture dans le module Facturation.",
+                "business_impact": {"estimated_risk_eur": i.estimated_loss_eur or 0},
+                "priority_score": 90 if i.severity == "CRITICAL" else 70 if i.severity == "HIGH" else 50,
+                "framework": "FACTURATION",
+                "site_id": i.site_id,
+                "site_nom": site.nom if site else f"Site {i.site_id}",
+                "insight_id": i.id,
+            }
+        )
 
     return {"anomalies": anomalies, "count": len(anomalies)}
 
@@ -1091,6 +1128,7 @@ def get_billing_anomalies_scoped(
 # ========================================
 # V67 — Coverage endpoints
 # ========================================
+
 
 @router.get("/periods")
 def get_billing_periods(
@@ -1109,6 +1147,7 @@ def get_billing_periods(
     Paginée (limit/offset). Tri: plus récent en premier.
     """
     from services.billing_coverage import compute_coverage, compute_range
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     q = _org_sites_query(db, EnergyInvoice, effective_org_id)
@@ -1126,6 +1165,7 @@ def get_billing_periods(
         try:
             y, m = map(int, month_from.split("-"))
             from datetime import date as _date
+
             range_start = max(range_start, _date(y, m, 1))
         except (ValueError, TypeError):
             pass
@@ -1134,6 +1174,7 @@ def get_billing_periods(
             y, m = map(int, month_to.split("-"))
             from calendar import monthrange as _mr
             from datetime import date as _date
+
             _, last = _mr(y, m)
             range_end = min(range_end, _date(y, m, last))
         except (ValueError, TypeError):
@@ -1143,7 +1184,7 @@ def get_billing_periods(
     # Tri: plus récent en premier
     all_months.sort(key=lambda x: x.month_key, reverse=True)
     total = len(all_months)
-    page = all_months[offset: offset + limit]
+    page = all_months[offset : offset + limit]
 
     return {
         "periods": [
@@ -1156,8 +1197,8 @@ def get_billing_periods(
                 "invoices_count": mc.invoices_count,
                 "total_ttc": mc.total_ttc,
                 "missing_reason": mc.missing_reason,
-                "energy_kwh": mc.energy_kwh,   # P0-2
-                "pdl_prm": mc.pdl_prm,         # P0-2
+                "energy_kwh": mc.energy_kwh,  # P0-2
+                "pdl_prm": mc.pdl_prm,  # P0-2
                 "invoice_ids": mc.invoice_ids,  # V70
             }
             for mc in page
@@ -1181,6 +1222,7 @@ def get_coverage_summary(
     liste des mois manquants (max 24), top sites avec le plus de trous.
     """
     from services.billing_coverage import compute_coverage, compute_range, compute_top_sites_missing
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     q = _org_sites_query(db, EnergyInvoice, effective_org_id)
@@ -1206,7 +1248,8 @@ def get_coverage_summary(
     partial = sum(1 for mc in months if mc.coverage_status == "partial")
     missing = sum(1 for mc in months if mc.coverage_status == "missing")
     missing_months = [
-        mc.month_key for mc in sorted(months, key=lambda x: x.month_key, reverse=True)
+        mc.month_key
+        for mc in sorted(months, key=lambda x: x.month_key, reverse=True)
         if mc.coverage_status != "covered"
     ][:24]
 
@@ -1241,6 +1284,7 @@ def get_missing_periods(
     Compatible avec AnomaliesPage (framework FACTURATION).
     """
     from services.billing_coverage import compute_coverage, compute_range
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     # Charger toutes les factures + sites en 2 requêtes
@@ -1264,16 +1308,18 @@ def get_missing_periods(
         site_name = site.nom if site else f"Site {site_id_key}"
         for mc in months:
             if mc.coverage_status != "covered":
-                all_missing.append({
-                    "month_key": mc.month_key,
-                    "site_id": site_id_key,
-                    "site_name": site_name,
-                    "coverage_status": mc.coverage_status,
-                    "coverage_ratio": mc.coverage_ratio,
-                    "missing_reason": mc.missing_reason,
-                    "regulatory_impact": {"framework": "FACTURATION"},
-                    "cta_url": f"/bill-intel?site_id={site_id_key}&month={mc.month_key}",
-                })
+                all_missing.append(
+                    {
+                        "month_key": mc.month_key,
+                        "site_id": site_id_key,
+                        "site_name": site_name,
+                        "coverage_status": mc.coverage_status,
+                        "coverage_ratio": mc.coverage_ratio,
+                        "missing_reason": mc.missing_reason,
+                        "regulatory_impact": {"framework": "FACTURATION"},
+                        "cta_url": f"/bill-intel?site_id={site_id_key}&month={mc.month_key}",
+                    }
+                )
 
     # Tri: missing avant partial, puis mois décroissant
     status_order = {"missing": 0, "partial": 1}
@@ -1282,7 +1328,7 @@ def get_missing_periods(
     all_missing.sort(key=lambda x: status_order.get(x["coverage_status"], 2))
 
     total = len(all_missing)
-    page = all_missing[offset: offset + limit]
+    page = all_missing[offset : offset + limit]
 
     return {"items": page, "total": total, "offset": offset, "limit": limit}
 
@@ -1291,6 +1337,7 @@ def get_missing_periods(
 # Seed demo
 # ========================================
 
+
 @router.post("/seed-demo")
 def seed_demo(
     db: Session = Depends(get_db),
@@ -1298,6 +1345,7 @@ def seed_demo(
 ):
     """Seed 2 contracts + 5 invoices (3 good + 2 anomalous) for demo."""
     from services.billing_seed import seed_billing_demo
+
     result = seed_billing_demo(db)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -1307,6 +1355,7 @@ def seed_demo(
 # ========================================
 # Helpers
 # ========================================
+
 
 def _parse_date(val: Optional[str]) -> Optional[date]:
     """Parse date string (YYYY-MM-DD) or return None."""
@@ -1350,9 +1399,9 @@ def check_contract_overlap(
 
     for c in q.all():
         # startA <= endB  (if either is None, condition is True)
-        cond1 = (start_date is None or c.end_date is None or start_date <= c.end_date)
+        cond1 = start_date is None or c.end_date is None or start_date <= c.end_date
         # startB <= endA  (if either is None, condition is True)
-        cond2 = (c.start_date is None or end_date is None or c.start_date <= end_date)
+        cond2 = c.start_date is None or end_date is None or c.start_date <= end_date
         if cond1 and cond2:
             return c
     return None

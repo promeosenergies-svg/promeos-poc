@@ -1,6 +1,7 @@
 """
 PROMEOS Jobs - Worker pour traiter les jobs de l'outbox
 """
+
 import json
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
@@ -24,7 +25,7 @@ def enqueue_job(db: Session, job_type: JobType, payload: dict, priority: int = 0
         payload_json=json.dumps(payload),
         priority=priority,
         status=JobStatus.PENDING,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
     )
     db.add(job)
     db.commit()
@@ -35,10 +36,7 @@ def enqueue_cascade(db: Session, object_type: str, object_id: int):
     """Enqueue recompute jobs suivant les regles de cascade."""
     cascade_types = CASCADE_RULES.get(object_type, [])
     for target_type in cascade_types:
-        payload = {
-            "object_type": target_type,
-            "object_id": object_id
-        }
+        payload = {"object_type": target_type, "object_id": object_id}
         enqueue_job(db, JobType.RECOMPUTE_ASSESSMENT, payload, priority=5)
 
 
@@ -48,12 +46,12 @@ def process_one(db: Session) -> bool:
     Retourne True si un job a ete traite, False sinon.
     """
     # Pick oldest PENDING job
-    job = db.query(JobOutbox).filter(
-        JobOutbox.status == JobStatus.PENDING
-    ).order_by(
-        JobOutbox.priority.desc(),
-        JobOutbox.created_at.asc()
-    ).first()
+    job = (
+        db.query(JobOutbox)
+        .filter(JobOutbox.status == JobStatus.PENDING)
+        .order_by(JobOutbox.priority.desc(), JobOutbox.created_at.asc())
+        .first()
+    )
 
     if not job:
         return False

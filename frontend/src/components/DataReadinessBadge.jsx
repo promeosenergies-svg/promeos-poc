@@ -42,23 +42,25 @@ export default function DataReadinessBadge() {
   const kpis = useMemo(() => {
     const sites = scopedSites;
     const total = sites.length;
-    const conformes = sites.filter(s => s.statut_conformite === 'conforme').length;
-    const nonConformes = sites.filter(s => s.statut_conformite === 'non_conforme').length;
-    const aRisque = sites.filter(s => s.statut_conformite === 'a_risque').length;
-    const couvertureDonnees = total > 0
-      ? Math.round(sites.filter(s => s.conso_kwh_an > 0).length / total * 100)
-      : 0;
+    const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nonConformes = sites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = sites.filter((s) => s.statut_conformite === 'a_risque').length;
+    const couvertureDonnees =
+      total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
   }, [scopedSites]);
 
   const { readinessState, loading } = useDataReadiness(kpis);
 
   // Snapshot scope
-  const snapshotScope = useMemo(() => ({
-    orgId: org?.id,
-    scopeType: scope?.portefeuilleId ? 'pf' : scope?.siteId ? 'site' : 'all',
-    scopeId: scope?.portefeuilleId || scope?.siteId || 0,
-  }), [org?.id, scope?.portefeuilleId, scope?.siteId]);
+  const snapshotScope = useMemo(
+    () => ({
+      orgId: org?.id,
+      scopeType: scope?.portefeuilleId ? 'pf' : scope?.siteId ? 'site' : 'all',
+      scopeId: scope?.portefeuilleId || scope?.siteId || 0,
+    }),
+    [org?.id, scope?.portefeuilleId, scope?.siteId]
+  );
 
   // Trend
   const trend = useMemo(() => {
@@ -87,7 +89,9 @@ export default function DataReadinessBadge() {
   // Close on Escape
   useEffect(() => {
     if (!open) return;
-    function handleKey(e) { if (e.key === 'Escape') setOpen(false); }
+    function handleKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
@@ -106,8 +110,14 @@ export default function DataReadinessBadge() {
         <Database size={14} className="text-slate-400" />
         <Badge status={readinessState.badgeStatus}>{readinessState.badgeLabel}</Badge>
         {trend.delta !== 0 && (
-          <span className={`text-[10px] font-medium ${trend.delta > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {trend.delta > 0 ? <TrendingUp size={10} className="inline" /> : <TrendingDown size={10} className="inline" />}
+          <span
+            className={`text-[10px] font-medium ${trend.delta > 0 ? 'text-green-600' : 'text-red-500'}`}
+          >
+            {trend.delta > 0 ? (
+              <TrendingUp size={10} className="inline" />
+            ) : (
+              <TrendingDown size={10} className="inline" />
+            )}
           </span>
         )}
       </button>
@@ -127,7 +137,9 @@ export default function DataReadinessBadge() {
                 Données : {readinessState.badgeLabel}
               </h3>
               {trend.labelFR && (
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${trend.delta > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                <span
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${trend.delta > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}
+                >
                   {trend.labelFR}
                 </span>
               )}
@@ -141,17 +153,25 @@ export default function DataReadinessBadge() {
               {readinessState.reasons.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => { navigate(r.path); setOpen(false); }}
+                  onClick={() => {
+                    navigate(r.path);
+                    setOpen(false);
+                  }}
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition text-left"
                 >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${SEVERITY_DOT[r.severity] || 'bg-gray-400'}`} />
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${SEVERITY_DOT[r.severity] || 'bg-gray-400'}`}
+                  />
                   <span className="text-xs text-gray-700 flex-1 truncate">{r.label}</span>
                   <ArrowRight size={12} className="text-gray-300 shrink-0" />
                 </button>
               ))}
               {readinessState.secondaryCta && (
                 <button
-                  onClick={() => { navigate(readinessState.secondaryCta.to); setOpen(false); }}
+                  onClick={() => {
+                    navigate(readinessState.secondaryCta.to);
+                    setOpen(false);
+                  }}
                   className="w-full text-center text-[11px] font-medium text-blue-600 hover:text-blue-800 py-1"
                 >
                   {readinessState.secondaryCta.label}
@@ -163,13 +183,16 @@ export default function DataReadinessBadge() {
           {/* CTA */}
           <div className="px-3 py-2.5 border-t border-gray-100 bg-gray-50/50">
             <button
-              onClick={() => { navigate(readinessState.primaryCta.to); setOpen(false); }}
+              onClick={() => {
+                navigate(readinessState.primaryCta.to);
+                setOpen(false);
+              }}
               className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold
                 text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               data-testid="readiness-cta"
             >
               {readinessState.level !== 'GREEN' && <AlertTriangle size={12} />}
-              {readinessState.level === 'GREEN' ? 'Voir l\'activation' : 'Corriger maintenant'}
+              {readinessState.level === 'GREEN' ? "Voir l'activation" : 'Corriger maintenant'}
             </button>
           </div>
         </div>

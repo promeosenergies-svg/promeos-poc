@@ -2,8 +2,10 @@
 PROMEOS - Tests Sprint 7: Bill Intelligence V1
 Models, CSV import, shadow billing, anomaly engine, read endpoints, seed demo.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import io
@@ -16,10 +18,21 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
-    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
-    InsightStatus, BillingImportBatch, SiteTariffProfile,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    EnergyContract,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    BillingInsight,
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
+    InsightStatus,
+    BillingImportBatch,
+    SiteTariffProfile,
     TypeSite,
 )
 from database import get_db
@@ -47,6 +60,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -64,9 +78,13 @@ def _create_org_site(db, surface=2000):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site A", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=surface, portefeuille_id=pf.id,
+        nom="Site A",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=surface,
+        portefeuille_id=pf.id,
     )
     db.add(site)
     db.flush()
@@ -77,9 +95,13 @@ def _create_two_sites(db):
     """Helper: create org + 2 sites."""
     org, site_a = _create_org_site(db)
     site_b = Site(
-        nom="Site B", type=TypeSite.ENTREPOT,
-        adresse="2 rue Test", code_postal="69001", ville="Lyon",
-        surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+        nom="Site B",
+        type=TypeSite.ENTREPOT,
+        adresse="2 rue Test",
+        code_postal="69001",
+        ville="Lyon",
+        surface_m2=5000,
+        portefeuille_id=site_a.portefeuille_id,
     )
     db.add(site_b)
     db.flush()
@@ -89,6 +111,7 @@ def _create_two_sites(db):
 # ========================================
 # Model tests
 # ========================================
+
 
 class TestModels:
     def test_create_contract(self, db_session):
@@ -120,7 +143,10 @@ class TestModels:
             invoice_id=invoice.id,
             line_type=InvoiceLineType.ENERGY,
             label="Consommation",
-            qty=5000, unit="kWh", unit_price=0.18, amount_eur=900,
+            qty=5000,
+            unit="kWh",
+            unit_price=0.18,
+            amount_eur=900,
         )
         db_session.add(line)
         db_session.commit()
@@ -132,15 +158,19 @@ class TestModels:
     def test_create_billing_insight(self, db_session):
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="TEST-002",
-            total_eur=500, energy_kwh=2000,
+            site_id=site.id,
+            invoice_number="TEST-002",
+            total_eur=500,
+            energy_kwh=2000,
         )
         db_session.add(invoice)
         db_session.flush()
 
         insight = BillingInsight(
-            site_id=site.id, invoice_id=invoice.id,
-            type="shadow_gap", severity="high",
+            site_id=site.id,
+            invoice_id=invoice.id,
+            type="shadow_gap",
+            severity="high",
             message="Ecart shadow billing de +25%",
             estimated_loss_eur=125.0,
         )
@@ -159,7 +189,9 @@ class TestModels:
         """V1.1: BillingInsight defaults to OPEN."""
         _, site = _create_org_site(db_session)
         insight = BillingInsight(
-            site_id=site.id, type="shadow_gap", severity="high",
+            site_id=site.id,
+            type="shadow_gap",
+            severity="high",
             message="Test insight default status",
         )
         db_session.add(insight)
@@ -169,9 +201,12 @@ class TestModels:
     def test_create_import_batch(self, db_session):
         """V1.1: BillingImportBatch creation with stats."""
         batch = BillingImportBatch(
-            org_id=None, filename="test.csv",
-            content_hash="abc123def456", rows_total=10,
-            rows_inserted=8, rows_skipped=2,
+            org_id=None,
+            filename="test.csv",
+            content_hash="abc123def456",
+            rows_total=10,
+            rows_inserted=8,
+            rows_skipped=2,
         )
         db_session.add(batch)
         db_session.commit()
@@ -185,21 +220,27 @@ class TestModels:
 # Service tests
 # ========================================
 
+
 class TestBillingService:
     def test_shadow_billing_simple(self, db_session):
         from services.billing_service import shadow_billing_simple
+
         _, site = _create_org_site(db_session)
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="EDF", price_ref_eur_per_kwh=0.20,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            price_ref_eur_per_kwh=0.20,
         )
         db_session.add(contract)
         db_session.flush()
 
         invoice = EnergyInvoice(
-            site_id=site.id, contract_id=contract.id,
+            site_id=site.id,
+            contract_id=contract.id,
             invoice_number="SH-001",
-            total_eur=1200, energy_kwh=5000,
+            total_eur=1200,
+            energy_kwh=5000,
         )
         db_session.add(invoice)
         db_session.commit()
@@ -212,10 +253,13 @@ class TestBillingService:
 
     def test_shadow_billing_no_kwh(self, db_session):
         from services.billing_service import shadow_billing_simple
+
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="SH-002",
-            total_eur=1000, energy_kwh=None,
+            site_id=site.id,
+            invoice_number="SH-002",
+            total_eur=1000,
+            energy_kwh=None,
         )
         db_session.add(invoice)
         db_session.commit()
@@ -225,20 +269,26 @@ class TestBillingService:
 
     def test_anomaly_engine_shadow_gap(self, db_session):
         from services.billing_service import run_anomaly_engine
+
         _, site = _create_org_site(db_session)
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="EDF", price_ref_eur_per_kwh=0.18,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            price_ref_eur_per_kwh=0.18,
         )
         db_session.add(contract)
         db_session.flush()
 
         # Invoice with 30% overcharge
         invoice = EnergyInvoice(
-            site_id=site.id, contract_id=contract.id,
+            site_id=site.id,
+            contract_id=contract.id,
             invoice_number="ANO-001",
-            total_eur=1170, energy_kwh=5000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            total_eur=1170,
+            energy_kwh=5000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -250,11 +300,15 @@ class TestBillingService:
 
     def test_anomaly_engine_period_too_long(self, db_session):
         from services.billing_service import run_anomaly_engine
+
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="ANO-002",
-            total_eur=500, energy_kwh=3000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 4, 30),
+            site_id=site.id,
+            invoice_number="ANO-002",
+            total_eur=500,
+            energy_kwh=3000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 4, 30),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -265,11 +319,15 @@ class TestBillingService:
 
     def test_anomaly_engine_negative_kwh(self, db_session):
         from services.billing_service import run_anomaly_engine
+
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="ANO-003",
-            total_eur=100, energy_kwh=-500,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            site_id=site.id,
+            invoice_number="ANO-003",
+            total_eur=100,
+            energy_kwh=-500,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -280,19 +338,25 @@ class TestBillingService:
 
     def test_anomaly_engine_lines_mismatch(self, db_session):
         from services.billing_service import run_anomaly_engine
+
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="ANO-004",
-            total_eur=1000, energy_kwh=5000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            site_id=site.id,
+            invoice_number="ANO-004",
+            total_eur=1000,
+            energy_kwh=5000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.flush()
 
         lines = [
             EnergyInvoiceLine(
-                invoice_id=invoice.id, line_type=InvoiceLineType.ENERGY,
-                label="Conso", amount_eur=700,
+                invoice_id=invoice.id,
+                line_type=InvoiceLineType.ENERGY,
+                label="Conso",
+                amount_eur=700,
             ),
         ]
         for l in lines:
@@ -305,11 +369,15 @@ class TestBillingService:
 
     def test_audit_full_pipeline(self, db_session):
         from services.billing_service import audit_invoice_full
+
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="PIPE-001",
-            total_eur=2000, energy_kwh=5000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            site_id=site.id,
+            invoice_number="PIPE-001",
+            total_eur=2000,
+            energy_kwh=5000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -322,11 +390,14 @@ class TestBillingService:
 
     def test_billing_summary(self, db_session):
         from services.billing_service import get_billing_summary
+
         _, site = _create_org_site(db_session)
 
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="SUM-001",
-            total_eur=1000, energy_kwh=5000,
+            site_id=site.id,
+            invoice_number="SUM-001",
+            total_eur=1000,
+            energy_kwh=5000,
         )
         db_session.add(invoice)
         db_session.commit()
@@ -337,18 +408,24 @@ class TestBillingService:
 
     def test_site_billing(self, db_session):
         from services.billing_service import get_site_billing
+
         _, site = _create_org_site(db_session)
 
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.GAZ,
-            supplier_name="Engie", price_ref_eur_per_kwh=0.09,
+            site_id=site.id,
+            energy_type=BillingEnergyType.GAZ,
+            supplier_name="Engie",
+            price_ref_eur_per_kwh=0.09,
         )
         db_session.add(contract)
         db_session.flush()
 
         invoice = EnergyInvoice(
-            site_id=site.id, contract_id=contract.id,
-            invoice_number="SITE-001", total_eur=540, energy_kwh=6000,
+            site_id=site.id,
+            contract_id=contract.id,
+            invoice_number="SITE-001",
+            total_eur=540,
+            energy_kwh=6000,
         )
         db_session.add(invoice)
         db_session.commit()
@@ -361,11 +438,15 @@ class TestBillingService:
     def test_ref_price_from_contract(self, db_session):
         """V1.1: get_reference_price priority 1 — active contract."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db_session)
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="EDF", price_ref_eur_per_kwh=0.22,
-            start_date=date(2025, 1, 1), end_date=date(2025, 12, 31),
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            price_ref_eur_per_kwh=0.22,
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         db_session.add(contract)
         db_session.commit()
@@ -377,6 +458,7 @@ class TestBillingService:
     def test_ref_price_from_tariff_profile(self, db_session):
         """V1.1: get_reference_price priority 2 — SiteTariffProfile."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db_session)
         tp = SiteTariffProfile(site_id=site.id, price_ref_eur_per_kwh=0.19)
         db_session.add(tp)
@@ -389,6 +471,7 @@ class TestBillingService:
     def test_ref_price_fallback(self, db_session):
         """V1.1: get_reference_price priority 3 — default fallback."""
         from services.billing_service import get_reference_price
+
         _, site = _create_org_site(db_session)
         db_session.commit()
 
@@ -402,19 +485,25 @@ class TestBillingService:
     def test_rule_metrics_have_inputs(self, db_session):
         """V1.1: all triggered rules include 'inputs' in metrics."""
         from services.billing_service import run_anomaly_engine
+
         _, site = _create_org_site(db_session)
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="EDF", price_ref_eur_per_kwh=0.18,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            price_ref_eur_per_kwh=0.18,
         )
         db_session.add(contract)
         db_session.flush()
         # Invoice designed to trigger shadow_gap + price_drift
         invoice = EnergyInvoice(
-            site_id=site.id, contract_id=contract.id,
+            site_id=site.id,
+            contract_id=contract.id,
             invoice_number="PROOF-001",
-            total_eur=1400, energy_kwh=5000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            total_eur=1400,
+            energy_kwh=5000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -429,26 +518,34 @@ class TestBillingService:
 # API endpoint tests
 # ========================================
 
+
 class TestBillingAPI:
     def test_create_contract(self, client, db_session):
         _, site = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/billing/contracts", json={
-            "site_id": site.id,
-            "energy_type": "elec",
-            "supplier_name": "EDF",
-            "price_ref_eur_per_kwh": 0.18,
-        })
+        r = client.post(
+            "/api/billing/contracts",
+            json={
+                "site_id": site.id,
+                "energy_type": "elec",
+                "supplier_name": "EDF",
+                "price_ref_eur_per_kwh": 0.18,
+            },
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "created"
 
     def test_list_contracts(self, client, db_session):
         _, site = _create_org_site(db_session)
-        db_session.add(EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="EDF", price_ref_eur_per_kwh=0.18,
-        ))
+        db_session.add(
+            EnergyContract(
+                site_id=site.id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="EDF",
+                price_ref_eur_per_kwh=0.18,
+            )
+        )
         db_session.commit()
 
         r = client.get("/api/billing/contracts")
@@ -459,25 +556,39 @@ class TestBillingAPI:
         _, site = _create_org_site(db_session)
         db_session.commit()
 
-        r = client.post("/api/billing/invoices", json={
-            "site_id": site.id,
-            "invoice_number": "API-001",
-            "total_eur": 1500,
-            "energy_kwh": 8000,
-            "lines": [
-                {"line_type": "energy", "label": "HP", "qty": 5000, "unit": "kWh", "unit_price": 0.20, "amount_eur": 1000},
-                {"line_type": "tax", "label": "CSPE", "amount_eur": 50},
-            ],
-        })
+        r = client.post(
+            "/api/billing/invoices",
+            json={
+                "site_id": site.id,
+                "invoice_number": "API-001",
+                "total_eur": 1500,
+                "energy_kwh": 8000,
+                "lines": [
+                    {
+                        "line_type": "energy",
+                        "label": "HP",
+                        "qty": 5000,
+                        "unit": "kWh",
+                        "unit_price": 0.20,
+                        "amount_eur": 1000,
+                    },
+                    {"line_type": "tax", "label": "CSPE", "amount_eur": 50},
+                ],
+            },
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "created"
 
     def test_list_invoices(self, client, db_session):
         _, site = _create_org_site(db_session)
-        db_session.add(EnergyInvoice(
-            site_id=site.id, invoice_number="LIST-001",
-            total_eur=1000, energy_kwh=5000,
-        ))
+        db_session.add(
+            EnergyInvoice(
+                site_id=site.id,
+                invoice_number="LIST-001",
+                total_eur=1000,
+                energy_kwh=5000,
+            )
+        )
         db_session.commit()
 
         r = client.get("/api/billing/invoices")
@@ -487,9 +598,12 @@ class TestBillingAPI:
     def test_audit_invoice(self, client, db_session):
         _, site = _create_org_site(db_session)
         invoice = EnergyInvoice(
-            site_id=site.id, invoice_number="AUD-001",
-            total_eur=2000, energy_kwh=5000,
-            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+            site_id=site.id,
+            invoice_number="AUD-001",
+            total_eur=2000,
+            energy_kwh=5000,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
         )
         db_session.add(invoice)
         db_session.commit()
@@ -501,10 +615,14 @@ class TestBillingAPI:
     def test_audit_all(self, client, db_session):
         _, site = _create_org_site(db_session)
         for i in range(3):
-            db_session.add(EnergyInvoice(
-                site_id=site.id, invoice_number=f"BATCH-{i:03d}",
-                total_eur=1000 + i * 100, energy_kwh=5000,
-            ))
+            db_session.add(
+                EnergyInvoice(
+                    site_id=site.id,
+                    invoice_number=f"BATCH-{i:03d}",
+                    total_eur=1000 + i * 100,
+                    energy_kwh=5000,
+                )
+            )
         db_session.commit()
 
         r = client.post("/api/billing/audit-all")
@@ -513,10 +631,14 @@ class TestBillingAPI:
 
     def test_billing_summary(self, client, db_session):
         _, site = _create_org_site(db_session)
-        db_session.add(EnergyInvoice(
-            site_id=site.id, invoice_number="SUM-001",
-            total_eur=1500, energy_kwh=8000,
-        ))
+        db_session.add(
+            EnergyInvoice(
+                site_id=site.id,
+                invoice_number="SUM-001",
+                total_eur=1500,
+                energy_kwh=8000,
+            )
+        )
         db_session.commit()
 
         r = client.get("/api/billing/summary")
@@ -533,10 +655,14 @@ class TestBillingAPI:
 
     def test_site_billing(self, client, db_session):
         _, site = _create_org_site(db_session)
-        db_session.add(EnergyInvoice(
-            site_id=site.id, invoice_number="SITE-001",
-            total_eur=800, energy_kwh=4000,
-        ))
+        db_session.add(
+            EnergyInvoice(
+                site_id=site.id,
+                invoice_number="SITE-001",
+                total_eur=800,
+                energy_kwh=4000,
+            )
+        )
         db_session.commit()
 
         r = client.get(f"/api/billing/site/{site.id}")
@@ -564,10 +690,14 @@ class TestBillingAPI:
 
     def test_csv_import_duplicate_rejected(self, client, db_session):
         _, site = _create_org_site(db_session)
-        db_session.add(EnergyInvoice(
-            site_id=site.id, invoice_number="DUP-001",
-            total_eur=1000, energy_kwh=5000,
-        ))
+        db_session.add(
+            EnergyInvoice(
+                site_id=site.id,
+                invoice_number="DUP-001",
+                total_eur=1000,
+                energy_kwh=5000,
+            )
+        )
         db_session.commit()
 
         csv_content = f"site_id,invoice_number,total_eur,energy_kwh\n{site.id},DUP-001,1000,5000\n"
@@ -599,7 +729,7 @@ class TestBillingAPI:
         r = client.post("/api/billing/seed-demo")
         assert r.status_code == 200
         data = r.json()
-        assert data["invoices_created"] == 69   # V68: 34 elec + 35 gaz (36 mois - 3 trous)
+        assert data["invoices_created"] == 69  # V68: 34 elec + 35 gaz (36 mois - 3 trous)
         assert data["contracts_created"] == 2
         assert data["controlled_gaps"] == 3
         assert data["controlled_anomalies"] == 3
@@ -627,7 +757,7 @@ class TestBillingAPI:
         r = client.get("/api/billing/summary")
         assert r.status_code == 200
         s = r.json()
-        assert s["total_invoices"] == 69   # V68: 36 mois × 2 sites - 3 trous
+        assert s["total_invoices"] == 69  # V68: 36 mois × 2 sites - 3 trous
         assert s["total_insights"] > 0
         assert s["total_estimated_loss_eur"] > 0
 
@@ -675,15 +805,22 @@ class TestBillingAPI:
         """V1.1: PATCH insight → status=ack, owner set."""
         _, site = _create_org_site(db_session)
         insight = BillingInsight(
-            site_id=site.id, type="shadow_gap", severity="high",
-            message="Test patch", estimated_loss_eur=100,
+            site_id=site.id,
+            type="shadow_gap",
+            severity="high",
+            message="Test patch",
+            estimated_loss_eur=100,
         )
         db_session.add(insight)
         db_session.commit()
 
-        r = client.patch(f"/api/billing/insights/{insight.id}", json={
-            "status": "ack", "owner": "Jean Dupont",
-        })
+        r = client.patch(
+            f"/api/billing/insights/{insight.id}",
+            json={
+                "status": "ack",
+                "owner": "Jean Dupont",
+            },
+        )
         assert r.status_code == 200
         assert r.json()["insight_status"] == "ack"
         assert r.json()["owner"] == "Jean Dupont"
@@ -692,7 +829,9 @@ class TestBillingAPI:
         """V1.1: POST resolve → status=resolved."""
         _, site = _create_org_site(db_session)
         insight = BillingInsight(
-            site_id=site.id, type="price_drift", severity="medium",
+            site_id=site.id,
+            type="price_drift",
+            severity="medium",
             message="Test resolve",
         )
         db_session.add(insight)
@@ -706,12 +845,18 @@ class TestBillingAPI:
         """V1.1: GET insights?status=open filters correctly."""
         _, site = _create_org_site(db_session)
         i1 = BillingInsight(
-            site_id=site.id, type="shadow_gap", severity="high",
-            message="Open one", insight_status=InsightStatus.OPEN,
+            site_id=site.id,
+            type="shadow_gap",
+            severity="high",
+            message="Open one",
+            insight_status=InsightStatus.OPEN,
         )
         i2 = BillingInsight(
-            site_id=site.id, type="price_drift", severity="medium",
-            message="Resolved one", insight_status=InsightStatus.RESOLVED,
+            site_id=site.id,
+            type="price_drift",
+            severity="medium",
+            message="Resolved one",
+            insight_status=InsightStatus.RESOLVED,
         )
         db_session.add_all([i1, i2])
         db_session.commit()

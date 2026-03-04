@@ -21,23 +21,34 @@ import {
 } from '../../models/dataActivationModel';
 
 import { computeActionableLevers } from '../../models/leverEngineModel';
-import { LEVER_ACTION_TEMPLATES, buildActionPayload, buildLeverDeepLink } from '../../models/leverActionModel';
+import {
+  LEVER_ACTION_TEMPLATES,
+  buildActionPayload,
+  buildLeverDeepLink,
+} from '../../models/leverActionModel';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const readSrc = (relPath) =>
-  readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
+const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
 const makeKpis = (ov = {}) => ({
-  total: 10, conformes: 7, nonConformes: 2, aRisque: 1,
-  risqueTotal: 30000, couvertureDonnees: 80, ...ov,
+  total: 10,
+  conformes: 7,
+  nonConformes: 2,
+  aRisque: 1,
+  risqueTotal: 30000,
+  couvertureDonnees: 80,
+  ...ov,
 });
 
 const makeBilling = (ov = {}) => ({
-  total_invoices: 50, total_eur: 500000, total_loss_eur: 8000,
-  invoices_with_anomalies: 5, ...ov,
+  total_invoices: 50,
+  total_eur: 500000,
+  total_loss_eur: 8000,
+  invoices_with_anomalies: 5,
+  ...ov,
 });
 
 const makePurchaseSignals = (ov = {}) => ({
@@ -58,14 +69,22 @@ const makePurchaseSignals = (ov = {}) => ({
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('dataActivationModel — buildActivationChecklist', () => {
-  it('retourne 5 dimensions dans l\'ordre', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis(), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() });
+  it("retourne 5 dimensions dans l'ordre", () => {
+    const result = buildActivationChecklist({
+      kpis: makeKpis(),
+      billingSummary: makeBilling(),
+      purchaseSignals: makePurchaseSignals(),
+    });
     expect(result.dimensions).toHaveLength(5);
     expect(result.dimensions.map((d) => d.key)).toEqual(ACTIVATION_DIMENSIONS);
   });
 
   it('activatedCount = 5 quand tout est fourni', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis(), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() });
+    const result = buildActivationChecklist({
+      kpis: makeKpis(),
+      billingSummary: makeBilling(),
+      purchaseSignals: makePurchaseSignals(),
+    });
     expect(result.activatedCount).toBe(5);
     expect(result.totalDimensions).toBe(5);
   });
@@ -77,21 +96,33 @@ describe('dataActivationModel — buildActivationChecklist', () => {
   });
 
   it('overallCoverage calcule correctement', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis(), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() });
+    const result = buildActivationChecklist({
+      kpis: makeKpis(),
+      billingSummary: makeBilling(),
+      purchaseSignals: makePurchaseSignals(),
+    });
     // patrimoine=100, conformite=100 (10/10), consommation=80, facturation=100, achat=80
     // (100 + 100 + 80 + 100 + 80) / 5 = 92
     expect(result.overallCoverage).toBe(92);
   });
 
   it('nextAction = premiere dimension manquante', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis({ couvertureDonnees: 0 }), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() });
+    const result = buildActivationChecklist({
+      kpis: makeKpis({ couvertureDonnees: 0 }),
+      billingSummary: makeBilling(),
+      purchaseSignals: makePurchaseSignals(),
+    });
     expect(result.nextAction).not.toBeNull();
     expect(result.nextAction.key).toBe('consommation');
     expect(result.nextAction.ctaPath).toBe('/consommations/import');
   });
 
   it('nextAction = null quand tout est actif', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis(), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() });
+    const result = buildActivationChecklist({
+      kpis: makeKpis(),
+      billingSummary: makeBilling(),
+      purchaseSignals: makePurchaseSignals(),
+    });
     expect(result.nextAction).toBeNull();
   });
 
@@ -103,7 +134,9 @@ describe('dataActivationModel — buildActivationChecklist', () => {
   });
 
   it('coverage conformite proportionnelle', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis({ total: 10, conformes: 3, nonConformes: 2, aRisque: 1 }) });
+    const result = buildActivationChecklist({
+      kpis: makeKpis({ total: 10, conformes: 3, nonConformes: 2, aRisque: 1 }),
+    });
     const dim = result.dimensions.find((d) => d.key === 'conformite');
     expect(dim.available).toBe(true);
     // (3+2+1)/10 * 100 = 60
@@ -118,7 +151,10 @@ describe('dataActivationModel — buildActivationChecklist', () => {
   });
 
   it('coverage achat = coverageContractsPct', () => {
-    const result = buildActivationChecklist({ kpis: makeKpis(), purchaseSignals: makePurchaseSignals({ coverageContractsPct: 60 }) });
+    const result = buildActivationChecklist({
+      kpis: makeKpis(),
+      purchaseSignals: makePurchaseSignals({ coverageContractsPct: 60 }),
+    });
     const dim = result.dimensions.find((d) => d.key === 'achat');
     expect(dim.available).toBe(true);
     expect(dim.coverage).toBe(60);
@@ -144,7 +180,13 @@ describe('dataActivationModel — buildActivationChecklist', () => {
 
 describe('dataActivationModel — computeActivatedCount', () => {
   it('5 quand tout fourni', () => {
-    expect(computeActivatedCount({ kpis: makeKpis(), billingSummary: makeBilling(), purchaseSignals: makePurchaseSignals() })).toBe(5);
+    expect(
+      computeActivatedCount({
+        kpis: makeKpis(),
+        billingSummary: makeBilling(),
+        purchaseSignals: makePurchaseSignals(),
+      })
+    ).toBe(5);
   });
 
   it('0 quand rien', () => {
@@ -153,19 +195,23 @@ describe('dataActivationModel — computeActivatedCount', () => {
   });
 
   it('4 quand couvertureDonnees manquant', () => {
-    expect(computeActivatedCount({
-      kpis: makeKpis({ couvertureDonnees: 0 }),
-      billingSummary: makeBilling(),
-      purchaseSignals: makePurchaseSignals(),
-    })).toBe(4);
+    expect(
+      computeActivatedCount({
+        kpis: makeKpis({ couvertureDonnees: 0 }),
+        billingSummary: makeBilling(),
+        purchaseSignals: makePurchaseSignals(),
+      })
+    ).toBe(4);
   });
 
   it('3 quand billing + purchase manquants', () => {
-    expect(computeActivatedCount({
-      kpis: makeKpis(),
-      billingSummary: {},
-      purchaseSignals: null,
-    })).toBe(3);
+    expect(
+      computeActivatedCount({
+        kpis: makeKpis(),
+        billingSummary: {},
+        purchaseSignals: null,
+      })
+    ).toBe(3);
   });
 
   it('pas de crash avec null/undefined', () => {
@@ -194,7 +240,14 @@ describe('Lever Engine V37 — data_activation lever', () => {
   it('levier quand activatedCount < 3', () => {
     // kpis.total > 0, pas de conformite, pas de conso, pas de billing, pas de purchase → 1 brique (patrimoine)
     const result = computeActionableLevers({
-      kpis: { total: 5, conformes: 0, nonConformes: 0, aRisque: 0, couvertureDonnees: 0, risqueTotal: 0 },
+      kpis: {
+        total: 5,
+        conformes: 0,
+        nonConformes: 0,
+        aRisque: 0,
+        couvertureDonnees: 0,
+        risqueTotal: 0,
+      },
       billingSummary: {},
     });
     const daLevers = result.topLevers.filter((l) => l.type === 'data_activation');
@@ -224,7 +277,14 @@ describe('Lever Engine V37 — data_activation lever', () => {
 
   it('label indique le nombre de briques manquantes', () => {
     const result = computeActionableLevers({
-      kpis: { total: 5, conformes: 0, nonConformes: 0, aRisque: 0, couvertureDonnees: 0, risqueTotal: 0 },
+      kpis: {
+        total: 5,
+        conformes: 0,
+        nonConformes: 0,
+        aRisque: 0,
+        couvertureDonnees: 0,
+        risqueTotal: 0,
+      },
       billingSummary: {},
     });
     const lever = result.topLevers.find((l) => l.type === 'data_activation');
@@ -300,8 +360,8 @@ describe('DataActivationPanel — V37 guards', () => {
   });
 
   it('aria-label FR sur lien detail', () => {
-    expect(src).toContain("Voir le d");
-    expect(src).toContain("activation des donn");
+    expect(src).toContain('Voir le d');
+    expect(src).toContain('activation des donn');
   });
 
   it('affiche couverture dynamique (briques + couverture moyenne)', () => {
@@ -420,7 +480,7 @@ describe('Guard: modules purs V37', () => {
     expect(src).toContain('purchaseSignalsContract');
   });
 
-  it('impactDecisionModel inchange (pas d\'import dataActivation)', () => {
+  it("impactDecisionModel inchange (pas d'import dataActivation)", () => {
     const src = readSrc('models/impactDecisionModel.js');
     expect(src).not.toContain('dataActivation');
   });

@@ -52,7 +52,12 @@ function ProgressRing({ score }) {
       <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90">
         <circle cx="18" cy="18" r="15.5" fill="none" className="stroke-gray-200" strokeWidth="3" />
         <circle
-          cx="18" cy="18" r="15.5" fill="none" className="stroke-blue-500" strokeWidth="3"
+          cx="18"
+          cy="18"
+          r="15.5"
+          fill="none"
+          className="stroke-blue-500"
+          strokeWidth="3"
           strokeDasharray={`${score * 0.975} 100`}
           strokeLinecap="round"
         />
@@ -67,54 +72,57 @@ function ProgressRing({ score }) {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, onNavigate }) {
-  const {
-    couvertureDonnees = 0,
-    readinessScore = 0,
-    total = 0,
-  } = kpis;
+  const { couvertureDonnees = 0, readinessScore = 0, total = 0 } = kpis;
 
-  const totalConsoMWh = Math.round(
-    sites.reduce((s, x) => s + (x.conso_kwh_an || 0), 0) / 1000
-  );
-  const totalSurfaceM2 = Math.round(
-    sites.reduce((s, x) => s + (x.surface_m2 || 0), 0)
-  );
-  const sitesWithConso = sites.filter(s => s.conso_kwh_an > 0).length;
+  const totalConsoMWh = Math.round(sites.reduce((s, x) => s + (x.conso_kwh_an || 0), 0) / 1000);
+  const totalSurfaceM2 = Math.round(sites.reduce((s, x) => s + (x.surface_m2 || 0), 0));
+  const sitesWithConso = sites.filter((s) => s.conso_kwh_an > 0).length;
 
   // Analyse module tint for conso card icon color
   const analyseTint = tint.module('analyse');
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-
       {/* 1 — Couverture données */}
       <MiniCard
         accentKey="neutral"
         icon={Database}
         label="Couverture données"
         value={couvertureDonnees === 0 ? 'Aucune donnée' : formatPercentFR(couvertureDonnees)}
-        sub={couvertureDonnees === 0
-          ? 'Importez des relevés de consommation'
-          : `${sitesWithConso} site${sitesWithConso > 1 ? 's' : ''} avec données`}
+        sub={
+          couvertureDonnees === 0
+            ? 'Importez des relevés de consommation'
+            : `${sitesWithConso} site${sitesWithConso > 1 ? 's' : ''} avec données`
+        }
         ctaLabel="Importer"
         onCta={() => onNavigate?.('/consommations/import')}
       />
 
       {/* 2 — Consommation */}
       <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 hover:shadow-sm transition-shadow">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${analyseTint.softBg()}`}>
+        <div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${analyseTint.softBg()}`}
+        >
           <Zap size={18} className={analyseTint.icon()} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Consommation</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            Consommation
+          </p>
           {totalConsoMWh > 0 ? (
             <>
-              <p className="text-lg font-bold text-gray-900 leading-tight">{totalConsoMWh.toLocaleString('fr-FR')} MWh/an</p>
-              <p className="text-xs text-gray-500 truncate mt-0.5">{sitesWithConso} site{sitesWithConso > 1 ? 's' : ''} couverts</p>
+              <p className="text-lg font-bold text-gray-900 leading-tight">
+                {totalConsoMWh.toLocaleString('fr-FR')} MWh/an
+              </p>
+              <p className="text-xs text-gray-500 truncate mt-0.5">
+                {sitesWithConso} site{sitesWithConso > 1 ? 's' : ''} couverts
+              </p>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-gray-400 leading-tight">Données insuffisantes</p>
+              <p className="text-sm font-semibold text-gray-400 leading-tight">
+                Données insuffisantes
+              </p>
               <p className="text-xs text-gray-400 mt-0.5">Importez des relevés</p>
             </>
           )}
@@ -133,9 +141,11 @@ export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, o
         icon={Building2}
         label="Patrimoine"
         value={`${total} site${total > 1 ? 's' : ''}`}
-        sub={totalSurfaceM2 > 0
-          ? `${totalSurfaceM2.toLocaleString('fr-FR')} m² total`
-          : 'Surface non renseignée'}
+        sub={
+          totalSurfaceM2 > 0
+            ? `${totalSurfaceM2.toLocaleString('fr-FR')} m² total`
+            : 'Surface non renseignée'
+        }
         ctaLabel="Voir"
         onCta={() => onNavigate?.('/patrimoine')}
       />
@@ -144,7 +154,12 @@ export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, o
       <div
         className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 hover:shadow-sm transition-shadow cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
         onClick={onOpenMaturite}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenMaturite?.(); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenMaturite?.();
+          }
+        }}
         role="button"
         tabIndex={0}
         aria-label="Ouvrir le détail de maturité"
@@ -152,12 +167,13 @@ export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, o
         <ProgressRing score={readinessScore} />
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Maturité</p>
-          <p className="text-lg font-bold text-gray-900 leading-tight">{formatPercentFR(readinessScore)}</p>
+          <p className="text-lg font-bold text-gray-900 leading-tight">
+            {formatPercentFR(readinessScore)}
+          </p>
           <p className="text-xs text-gray-500 truncate mt-0.5">Données + conformité + actions</p>
         </div>
         <span className="text-xs text-gray-400 shrink-0">Détail →</span>
       </div>
-
     </div>
   );
 }

@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, ChevronRight, ChevronLeft, Building2, Building, MapPin,
-  FileSpreadsheet, Check, Rocket, AlertTriangle, Upload,
-  Zap, Plus, Trash2, SkipForward,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Building2,
+  Building,
+  MapPin,
+  FileSpreadsheet,
+  Check,
+  Rocket,
+  AlertTriangle,
+  Upload,
+  Zap,
+  Plus,
+  Trash2,
+  SkipForward,
 } from 'lucide-react';
-import {
-  createOnboarding, importSitesCsv, createCompteur,
-} from '../services/api';
+import { createOnboarding, importSitesCsv, createCompteur } from '../services/api';
 
 const STEPS = [
   { key: 'organisation', label: 'Organisation' },
@@ -49,7 +59,14 @@ const COMPTEUR_TYPES = [
   { value: 'eau', label: 'Eau' },
 ];
 
-const emptySite = { nom: '', type: 'bureau', ville: '', code_postal: '', surface_m2: '', naf_code: '' };
+const emptySite = {
+  nom: '',
+  type: 'bureau',
+  ville: '',
+  code_postal: '',
+  surface_m2: '',
+  naf_code: '',
+};
 const emptyCompteur = { site_index: 0, type: 'electricite', numero_serie: '', puissance_kw: '' };
 
 const UpgradeWizard = ({ onClose }) => {
@@ -73,7 +90,7 @@ const UpgradeWizard = ({ onClose }) => {
 
   useEffect(() => {
     if (step === 1 && !formData.ejNom) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         ejNom: prev.orgNom,
         ejSiren: prev.orgSiren,
@@ -83,12 +100,12 @@ const UpgradeWizard = ({ onClose }) => {
   }, [step]);
 
   const updateField = (key, value) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData((prev) => ({ ...prev, [key]: value }));
     setError(null);
   };
 
   const updateSite = (index, key, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const sites = [...prev.sites];
       sites[index] = { ...sites[index], [key]: value };
       return { ...prev, sites };
@@ -96,20 +113,21 @@ const UpgradeWizard = ({ onClose }) => {
   };
 
   const addSite = () => {
-    setFormData(prev => ({ ...prev, sites: [...prev.sites, { ...emptySite }] }));
+    setFormData((prev) => ({ ...prev, sites: [...prev.sites, { ...emptySite }] }));
   };
 
   const removeSite = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       sites: prev.sites.filter((_, i) => i !== index),
-      compteurs: prev.compteurs.filter(c => c.site_index !== index)
-        .map(c => ({ ...c, site_index: c.site_index > index ? c.site_index - 1 : c.site_index })),
+      compteurs: prev.compteurs
+        .filter((c) => c.site_index !== index)
+        .map((c) => ({ ...c, site_index: c.site_index > index ? c.site_index - 1 : c.site_index })),
     }));
   };
 
   const updateCompteur = (index, key, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const compteurs = [...prev.compteurs];
       compteurs[index] = { ...compteurs[index], [key]: value };
       return { ...prev, compteurs };
@@ -117,14 +135,14 @@ const UpgradeWizard = ({ onClose }) => {
   };
 
   const addCompteur = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       compteurs: [...prev.compteurs, { ...emptyCompteur }],
     }));
   };
 
   const removeCompteur = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       compteurs: prev.compteurs.filter((_, i) => i !== index),
     }));
@@ -137,7 +155,7 @@ const UpgradeWizard = ({ onClose }) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target.result;
-      const lines = text.split('\n').filter(l => l.trim());
+      const lines = text.split('\n').filter((l) => l.trim());
       setCsvPreview(lines.slice(0, 6));
     };
     reader.readAsText(file);
@@ -148,16 +166,19 @@ const UpgradeWizard = ({ onClose }) => {
     setError(null);
 
     try {
-      const sitesPayload = formData.importMethod === 'manual'
-        ? formData.sites.filter(s => s.nom.trim()).map(s => ({
-            nom: s.nom,
-            type: s.type || null,
-            code_postal: s.code_postal || null,
-            ville: s.ville || null,
-            surface_m2: s.surface_m2 ? parseFloat(s.surface_m2) : null,
-            naf_code: s.naf_code || null,
-          }))
-        : [];
+      const sitesPayload =
+        formData.importMethod === 'manual'
+          ? formData.sites
+              .filter((s) => s.nom.trim())
+              .map((s) => ({
+                nom: s.nom,
+                type: s.type || null,
+                code_postal: s.code_postal || null,
+                ville: s.ville || null,
+                surface_m2: s.surface_m2 ? parseFloat(s.surface_m2) : null,
+                naf_code: s.naf_code || null,
+              }))
+          : [];
 
       const payload = {
         organisation: {
@@ -189,7 +210,9 @@ const UpgradeWizard = ({ onClose }) => {
                 puissance_souscrite_kw: c.puissance_kw ? parseFloat(c.puissance_kw) : null,
               });
               compteursCreated++;
-            } catch { /* skip individual compteur errors */ }
+            } catch {
+              /* skip individual compteur errors */
+            }
           }
         }
       }
@@ -201,7 +224,6 @@ const UpgradeWizard = ({ onClose }) => {
         compteurs_created: compteursCreated,
       });
       setStep(4);
-
     } catch (err) {
       const detail = err.response?.data?.detail || err.message;
       setError(detail);
@@ -219,7 +241,7 @@ const UpgradeWizard = ({ onClose }) => {
     if (step === 1) return true;
     if (step === 2) {
       if (formData.importMethod === 'csv') return csvFile !== null;
-      return formData.sites.some(s => s.nom.trim().length > 0);
+      return formData.sites.some((s) => s.nom.trim().length > 0);
     }
     if (step === 3) return true;
     return true;
@@ -237,10 +259,10 @@ const UpgradeWizard = ({ onClose }) => {
 
   const handleSkip = () => {
     if (step === 2) {
-      setFormData(prev => ({ ...prev, sites: [], compteurs: [] }));
+      setFormData((prev) => ({ ...prev, sites: [], compteurs: [] }));
       setStep(3);
     } else if (step === 3) {
-      setFormData(prev => ({ ...prev, compteurs: [] }));
+      setFormData((prev) => ({ ...prev, compteurs: [] }));
       handleSubmit();
     }
   };
@@ -263,14 +285,20 @@ const UpgradeWizard = ({ onClose }) => {
         <div className="px-6 py-3 flex items-center gap-1">
           {STEPS.map((s, i) => (
             <React.Fragment key={s.key}>
-              <div className={`flex items-center gap-1 text-xs ${
-                i <= step ? 'text-blue-600 font-medium' : 'text-gray-400'
-              }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  i < step ? 'bg-blue-600 text-white' :
-                  i === step ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-600' :
-                  'bg-gray-100 text-gray-400'
-                }`}>
+              <div
+                className={`flex items-center gap-1 text-xs ${
+                  i <= step ? 'text-blue-600 font-medium' : 'text-gray-400'
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    i < step
+                      ? 'bg-blue-600 text-white'
+                      : i === step
+                        ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-600'
+                        : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
                   {i < step ? <Check size={12} /> : i + 1}
                 </div>
                 <span className="hidden lg:inline">{s.label}</span>
@@ -284,7 +312,6 @@ const UpgradeWizard = ({ onClose }) => {
 
         {/* Step content */}
         <div className="px-6 py-5 min-h-[320px]">
-
           {/* Step 0: Organisation */}
           {step === 0 && (
             <div>
@@ -295,26 +322,44 @@ const UpgradeWizard = ({ onClose }) => {
               <p className="text-sm text-gray-500 mb-5">Qui etes-vous ?</p>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'organisation *</label>
-                  <input type="text" value={formData.orgNom}
-                    onChange={e => updateField('orgNom', e.target.value)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nom de l'organisation *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.orgNom}
+                    onChange={(e) => updateField('orgNom', e.target.value)}
                     placeholder="Ex: Nexity, Ville de Lyon, OPH 93..."
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">SIREN (optionnel)</label>
-                    <input type="text" value={formData.orgSiren}
-                      onChange={e => updateField('orgSiren', e.target.value)}
-                      placeholder="9 chiffres" maxLength={9}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      SIREN (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.orgSiren}
+                      onChange={(e) => updateField('orgSiren', e.target.value)}
+                      placeholder="9 chiffres"
+                      maxLength={9}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type de client</label>
-                    <select value={formData.orgType} onChange={e => updateField('orgType', e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                      {TYPE_CLIENT_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de client
+                    </label>
+                    <select
+                      value={formData.orgType}
+                      onChange={(e) => updateField('orgType', e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    >
+                      {TYPE_CLIENT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -330,25 +375,37 @@ const UpgradeWizard = ({ onClose }) => {
                 <Building size={20} className="text-indigo-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Entite juridique</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-5">Qui signe les contrats ? (pre-rempli depuis l'organisation)</p>
+              <p className="text-sm text-gray-500 mb-5">
+                Qui signe les contrats ? (pre-rempli depuis l'organisation)
+              </p>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Raison sociale</label>
-                  <input type="text" value={formData.ejNom}
-                    onChange={e => updateField('ejNom', e.target.value)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Raison sociale
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ejNom}
+                    onChange={(e) => updateField('ejNom', e.target.value)}
                     placeholder="Ex: Nexity SA"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">SIREN</label>
-                  <input type="text" value={formData.ejSiren}
-                    onChange={e => updateField('ejSiren', e.target.value)}
-                    placeholder="9 chiffres" maxLength={9}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                  <input
+                    type="text"
+                    value={formData.ejSiren}
+                    onChange={(e) => updateField('ejSiren', e.target.value)}
+                    placeholder="9 chiffres"
+                    maxLength={9}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-700">
-                    L'entite juridique est creee automatiquement. Vous pourrez en ajouter d'autres plus tard.
+                    L'entite juridique est creee automatiquement. Vous pourrez en ajouter d'autres
+                    plus tard.
                   </p>
                 </div>
               </div>
@@ -368,16 +425,18 @@ const UpgradeWizard = ({ onClose }) => {
                 {[
                   { value: 'manual', icon: Building2, title: 'Saisie manuelle' },
                   { value: 'csv', icon: FileSpreadsheet, title: 'Import CSV' },
-                ].map(opt => {
+                ].map((opt) => {
                   const Icon = opt.icon;
                   return (
-                    <button key={opt.value}
+                    <button
+                      key={opt.value}
                       onClick={() => updateField('importMethod', opt.value)}
                       className={`flex-1 flex items-center justify-center gap-2 p-2.5 border rounded-lg text-sm transition ${
                         formData.importMethod === opt.value
                           ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}>
+                      }`}
+                    >
                       <Icon size={16} />
                       {opt.title}
                     </button>
@@ -392,29 +451,62 @@ const UpgradeWizard = ({ onClose }) => {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-gray-500">Site {i + 1}</span>
                         {formData.sites.length > 1 && (
-                          <button onClick={() => removeSite(i)} className="text-gray-400 hover:text-red-500">
+                          <button
+                            onClick={() => removeSite(i)}
+                            className="text-gray-400 hover:text-red-500"
+                          >
                             <Trash2 size={14} />
                           </button>
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="text" value={site.nom} onChange={e => updateSite(i, 'nom', e.target.value)}
-                          placeholder="Nom du site *" className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
-                        <select value={site.type} onChange={e => updateSite(i, 'type', e.target.value)}
-                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
-                          {TYPE_SITE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        <input
+                          type="text"
+                          value={site.nom}
+                          onChange={(e) => updateSite(i, 'nom', e.target.value)}
+                          placeholder="Nom du site *"
+                          className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <select
+                          value={site.type}
+                          onChange={(e) => updateSite(i, 'type', e.target.value)}
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {TYPE_SITE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
                         </select>
-                        <input type="text" value={site.ville} onChange={e => updateSite(i, 'ville', e.target.value)}
-                          placeholder="Ville" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
-                        <input type="text" value={site.code_postal} onChange={e => updateSite(i, 'code_postal', e.target.value)}
-                          placeholder="Code postal" maxLength={5} className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
-                        <input type="number" value={site.surface_m2} onChange={e => updateSite(i, 'surface_m2', e.target.value)}
-                          placeholder="Surface m2" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        <input
+                          type="text"
+                          value={site.ville}
+                          onChange={(e) => updateSite(i, 'ville', e.target.value)}
+                          placeholder="Ville"
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <input
+                          type="text"
+                          value={site.code_postal}
+                          onChange={(e) => updateSite(i, 'code_postal', e.target.value)}
+                          placeholder="Code postal"
+                          maxLength={5}
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <input
+                          type="number"
+                          value={site.surface_m2}
+                          onChange={(e) => updateSite(i, 'surface_m2', e.target.value)}
+                          placeholder="Surface m2"
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        />
                       </div>
                     </div>
                   ))}
-                  <button onClick={addSite}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition">
+                  <button
+                    onClick={addSite}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition"
+                  >
                     <Plus size={14} /> Ajouter un site
                   </button>
                 </div>
@@ -424,17 +516,32 @@ const UpgradeWizard = ({ onClose }) => {
                 <div>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center">
                     <Upload size={28} className="mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Glissez votre fichier CSV ou cliquez</p>
-                    <input type="file" accept=".csv,.txt" onChange={handleCsvSelect}
-                      className="text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                    <p className="text-sm text-gray-600 mb-2">
+                      Glissez votre fichier CSV ou cliquez
+                    </p>
+                    <input
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleCsvSelect}
+                      className="text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
                   </div>
-                  <p className="mt-2 text-xs text-gray-400">Format : nom,adresse,code_postal,ville,surface_m2,type,naf_code</p>
+                  <p className="mt-2 text-xs text-gray-400">
+                    Format : nom,adresse,code_postal,ville,surface_m2,type,naf_code
+                  </p>
                   {csvPreview && (
                     <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-600 mb-1">Apercu ({csvFile?.name})</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">
+                        Apercu ({csvFile?.name})
+                      </p>
                       <div className="bg-gray-50 rounded border text-xs font-mono overflow-x-auto p-2 max-h-28">
                         {csvPreview.map((line, i) => (
-                          <div key={i} className={i === 0 ? 'font-bold text-blue-700' : 'text-gray-600'}>{line}</div>
+                          <div
+                            key={i}
+                            className={i === 0 ? 'font-bold text-blue-700' : 'text-gray-600'}
+                          >
+                            {line}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -455,7 +562,8 @@ const UpgradeWizard = ({ onClose }) => {
                 Rattachez des compteurs a vos sites (optionnel — ajoutables plus tard).
               </p>
 
-              {formData.sites.filter(s => s.nom.trim()).length === 0 && formData.importMethod === 'manual' ? (
+              {formData.sites.filter((s) => s.nom.trim()).length === 0 &&
+              formData.importMethod === 'manual' ? (
                 <div className="bg-gray-50 border rounded-lg p-4 text-center text-sm text-gray-500">
                   Aucun site saisi. Les compteurs seront ajoutables apres creation.
                 </div>
@@ -465,34 +573,65 @@ const UpgradeWizard = ({ onClose }) => {
                     <div key={i} className="border rounded-lg p-3 bg-gray-50 mb-2">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-gray-500">Compteur {i + 1}</span>
-                        <button onClick={() => removeCompteur(i)} className="text-gray-400 hover:text-red-500">
+                        <button
+                          onClick={() => removeCompteur(i)}
+                          className="text-gray-400 hover:text-red-500"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {formData.importMethod === 'manual' && (
-                          <select value={c.site_index} onChange={e => updateCompteur(i, 'site_index', parseInt(e.target.value))}
-                            className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
-                            {formData.sites.filter(s => s.nom.trim()).map((s, si) => (
-                              <option key={si} value={si}>{s.nom || `Site ${si + 1}`}</option>
-                            ))}
+                          <select
+                            value={c.site_index}
+                            onChange={(e) =>
+                              updateCompteur(i, 'site_index', parseInt(e.target.value))
+                            }
+                            className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            {formData.sites
+                              .filter((s) => s.nom.trim())
+                              .map((s, si) => (
+                                <option key={si} value={si}>
+                                  {s.nom || `Site ${si + 1}`}
+                                </option>
+                              ))}
                           </select>
                         )}
-                        <select value={c.type} onChange={e => updateCompteur(i, 'type', e.target.value)}
-                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
-                          {COMPTEUR_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        <select
+                          value={c.type}
+                          onChange={(e) => updateCompteur(i, 'type', e.target.value)}
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {COMPTEUR_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
                         </select>
-                        <input type="text" value={c.numero_serie} onChange={e => updateCompteur(i, 'numero_serie', e.target.value)}
-                          placeholder="N de serie (optionnel)" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        <input
+                          type="text"
+                          value={c.numero_serie}
+                          onChange={(e) => updateCompteur(i, 'numero_serie', e.target.value)}
+                          placeholder="N de serie (optionnel)"
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                        />
                         {c.type === 'electricite' && (
-                          <input type="number" value={c.puissance_kw} onChange={e => updateCompteur(i, 'puissance_kw', e.target.value)}
-                            placeholder="Puissance souscrite kW" className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                          <input
+                            type="number"
+                            value={c.puissance_kw}
+                            onChange={(e) => updateCompteur(i, 'puissance_kw', e.target.value)}
+                            placeholder="Puissance souscrite kW"
+                            className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                          />
                         )}
                       </div>
                     </div>
                   ))}
-                  <button onClick={addCompteur}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-amber-400 hover:text-amber-600 transition">
+                  <button
+                    onClick={addCompteur}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-amber-400 hover:text-amber-600 transition"
+                  >
                     <Plus size={14} /> Ajouter un compteur
                   </button>
                 </>
@@ -518,7 +657,9 @@ const UpgradeWizard = ({ onClose }) => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Sites crees</span>
-                  <span className="font-medium">{(result.sites_created || 0) + (result.csv_imported || 0)}</span>
+                  <span className="font-medium">
+                    {(result.sites_created || 0) + (result.csv_imported || 0)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Compteurs ajoutes</span>
@@ -535,10 +676,15 @@ const UpgradeWizard = ({ onClose }) => {
                 <div className="mt-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Sites provisionnes :</p>
                   <div className="space-y-1 max-h-36 overflow-y-auto">
-                    {result.sites.map(s => (
-                      <div key={s.id} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5">
+                    {result.sites.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5"
+                      >
                         <span>{s.nom}</span>
-                        <span className="text-xs text-gray-400">{s.type} | {s.obligations} obligation(s)</span>
+                        <span className="text-xs text-gray-400">
+                          {s.type} | {s.obligations} obligation(s)
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -561,7 +707,7 @@ const UpgradeWizard = ({ onClose }) => {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
           <button
-            onClick={() => step > 0 && step < 4 ? setStep(step - 1) : handleClose()}
+            onClick={() => (step > 0 && step < 4 ? setStep(step - 1) : handleClose())}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
           >
             <ChevronLeft size={16} />
@@ -570,8 +716,10 @@ const UpgradeWizard = ({ onClose }) => {
 
           <div className="flex items-center gap-2">
             {(step === 2 || step === 3) && !loading && (
-              <button onClick={handleSkip}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition">
+              <button
+                onClick={handleSkip}
+                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition"
+              >
                 <SkipForward size={14} />
                 Je n'ai pas tout
               </button>
@@ -589,15 +737,15 @@ const UpgradeWizard = ({ onClose }) => {
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {loading ? 'Creation en cours...' :
-                 step === 3 ? 'Creer mon patrimoine' :
-                 'Suivant'}
+                {loading ? 'Creation en cours...' : step === 3 ? 'Creer mon patrimoine' : 'Suivant'}
                 {!loading && <ChevronRight size={16} />}
               </button>
             )}
             {step === 4 && (
-              <button onClick={handleClose}
-                className="flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+              <button
+                onClick={handleClose}
+                className="flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+              >
                 Acceder au cockpit
                 <ChevronRight size={16} />
               </button>

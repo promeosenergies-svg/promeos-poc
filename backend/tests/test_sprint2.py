@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 2: Dashboard 2min, POST sites, POST compteurs
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -37,6 +39,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -50,6 +53,7 @@ def _seed(client):
 # ========================================
 # Dashboard 2min — GET /api/dashboard/2min
 # ========================================
+
 
 class TestDashboard2Min:
     """Tests pour GET /api/dashboard/2min."""
@@ -124,6 +128,7 @@ class TestDashboard2Min:
 # POST /api/sites — Create single site
 # ========================================
 
+
 class TestCreateSite:
     """Tests pour POST /api/sites."""
 
@@ -134,12 +139,15 @@ class TestCreateSite:
 
     def test_create_site_ok(self, client, db_session):
         _seed(client)
-        r = client.post("/api/sites", json={
-            "nom": "Nouveau Bureau",
-            "type": "bureau",
-            "ville": "Lyon",
-            "surface_m2": 2000,
-        })
+        r = client.post(
+            "/api/sites",
+            json={
+                "nom": "Nouveau Bureau",
+                "type": "bureau",
+                "ville": "Lyon",
+                "surface_m2": 2000,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["nom"] == "Nouveau Bureau"
@@ -149,10 +157,13 @@ class TestCreateSite:
 
     def test_create_site_naf_auto(self, client):
         _seed(client)
-        r = client.post("/api/sites", json={
-            "nom": "Hotel Marseille",
-            "naf_code": "55.10Z",
-        })
+        r = client.post(
+            "/api/sites",
+            json={
+                "nom": "Hotel Marseille",
+                "naf_code": "55.10Z",
+            },
+        )
         data = r.json()
         assert data["type"] == "hotel"
 
@@ -168,33 +179,43 @@ class TestCreateSite:
 # POST /api/compteurs — Create single compteur
 # ========================================
 
+
 class TestCreateCompteur:
     """Tests pour POST /api/compteurs."""
 
     def test_create_compteur_site_not_found(self, client):
-        r = client.post("/api/compteurs", json={
-            "site_id": 9999,
-            "type": "electricite",
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": 9999,
+                "type": "electricite",
+            },
+        )
         assert r.status_code == 404
 
     def test_create_compteur_invalid_type(self, client):
         _seed(client)
-        r = client.post("/api/compteurs", json={
-            "site_id": 1,
-            "type": "invalid_type",
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": 1,
+                "type": "invalid_type",
+            },
+        )
         assert r.status_code == 400
         assert "Type invalide" in r.json()["detail"]
 
     def test_create_compteur_elec(self, client, db_session):
         seed = _seed(client)
         site_id = seed["sites"][0]["id"]
-        r = client.post("/api/compteurs", json={
-            "site_id": site_id,
-            "type": "electricite",
-            "puissance_souscrite_kw": 150,
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": site_id,
+                "type": "electricite",
+                "puissance_souscrite_kw": 150,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["type"] == "electricite"
@@ -204,30 +225,39 @@ class TestCreateCompteur:
     def test_create_compteur_gaz(self, client, db_session):
         seed = _seed(client)
         site_id = seed["sites"][0]["id"]
-        r = client.post("/api/compteurs", json={
-            "site_id": site_id,
-            "type": "gaz",
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": site_id,
+                "type": "gaz",
+            },
+        )
         assert r.status_code == 200
         assert r.json()["type"] == "gaz"
 
     def test_create_compteur_auto_serie(self, client, db_session):
         seed = _seed(client)
         site_id = seed["sites"][0]["id"]
-        r = client.post("/api/compteurs", json={
-            "site_id": site_id,
-            "type": "eau",
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": site_id,
+                "type": "eau",
+            },
+        )
         data = r.json()
         assert data["numero_serie"]  # auto-generated
 
     def test_create_compteur_custom_serie(self, client, db_session):
         seed = _seed(client)
         site_id = seed["sites"][0]["id"]
-        r = client.post("/api/compteurs", json={
-            "site_id": site_id,
-            "type": "electricite",
-            "numero_serie": "PRM-123456",
-        })
+        r = client.post(
+            "/api/compteurs",
+            json={
+                "site_id": site_id,
+                "type": "electricite",
+                "numero_serie": "PRM-123456",
+            },
+        )
         data = r.json()
         assert data["numero_serie"] == "PRM-123456"

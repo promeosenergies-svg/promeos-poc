@@ -64,19 +64,23 @@ export function normalizePurchaseSignals(raw) {
   // Extraire les renewals valides
   const rawRenewals = raw.renewals?.renewals ?? raw.renewals?.data ?? [];
   const renewals = Array.isArray(rawRenewals)
-    ? rawRenewals.filter((r) => r && typeof r.site_id === 'number' && typeof r.days_until_expiry === 'number')
+    ? rawRenewals.filter(
+        (r) => r && typeof r.site_id === 'number' && typeof r.days_until_expiry === 'number'
+      )
     : [];
 
   // Extraire les contracts
   const rawContracts = raw.contracts?.contracts ?? raw.contracts?.data ?? [];
   const contractsList = Array.isArray(rawContracts) ? rawContracts : [];
-  const totalContracts = typeof raw.contracts?.total === 'number' ? raw.contracts.total : contractsList.length;
+  const totalContracts =
+    typeof raw.contracts?.total === 'number' ? raw.contracts.total : contractsList.length;
 
   // Total sites
   const totalSites = typeof raw.totalSites === 'number' ? Math.max(0, raw.totalSites) : 0;
 
   // Si rien du tout → EMPTY
-  if (renewals.length === 0 && totalContracts === 0 && totalSites === 0) return EMPTY_PURCHASE_SIGNALS;
+  if (renewals.length === 0 && totalContracts === 0 && totalSites === 0)
+    return EMPTY_PURCHASE_SIGNALS;
 
   // Expirations proches (<= 90 jours)
   const expiringSoon = renewals.filter((r) => r.days_until_expiry <= EXPIRING_SOON_DAYS);
@@ -85,7 +89,8 @@ export function normalizePurchaseSignals(raw) {
 
   // Couverture: sites uniques ayant au moins 1 contrat
   const sitesWithContract = new Set(contractsList.map((c) => c?.site_id).filter(Boolean));
-  const coverageContractsPct = totalSites > 0 ? Math.round((sitesWithContract.size / totalSites) * 100) : 0;
+  const coverageContractsPct =
+    totalSites > 0 ? Math.round((sitesWithContract.size / totalSites) * 100) : 0;
   const missingContractsCount = Math.max(0, totalSites - sitesWithContract.size);
 
   return {
@@ -108,5 +113,10 @@ export function normalizePurchaseSignals(raw) {
  * @returns {boolean}
  */
 export function isPurchaseAvailable(signals) {
-  return !!(signals && (signals.expiringSoonCount > 0 || signals.missingContractsCount > 0 || signals.totalContracts > 0));
+  return !!(
+    signals &&
+    (signals.expiringSoonCount > 0 ||
+      signals.missingContractsCount > 0 ||
+      signals.totalContracts > 0)
+  );
 }

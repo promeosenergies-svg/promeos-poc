@@ -1,6 +1,7 @@
 """
 PROMEOS Watchers - Registry avec auto-discovery
 """
+
 from typing import Dict, Optional
 from .base import Watcher
 from . import rss_watcher, legifrance_watcher, cre_watcher, rte_watcher

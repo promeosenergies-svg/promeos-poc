@@ -5,6 +5,7 @@ Import referential tariff snapshots into KB and create L2-min RuleCards.
 This module bridges the referential tarifs (app/referential/snapshots/)
 with the KB citation system, enabling shadow billing L2 (component-level).
 """
+
 import json
 import hashlib
 from datetime import datetime, timezone
@@ -79,16 +80,23 @@ def import_tariff_references_to_kb() -> Dict[str, Any]:
         now = datetime.now(timezone.utc).isoformat()
 
         # Upsert KB document
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO kb_docs (doc_id, title, source_type, source_path, content_hash, nb_sections, nb_chunks, updated_at, meta_json)
             VALUES (?, ?, 'md', ?, ?, 1, 1, ?, ?)
             ON CONFLICT(doc_id) DO UPDATE SET
                 title=excluded.title, content_hash=excluded.content_hash,
                 updated_at=excluded.updated_at, meta_json=excluded.meta_json
-        """, (
-            doc_id, doc_title, str(md_path), content_hash, now,
-            json.dumps(meta, ensure_ascii=False),
-        ))
+        """,
+            (
+                doc_id,
+                doc_title,
+                str(md_path),
+                content_hash,
+                now,
+                json.dumps(meta, ensure_ascii=False),
+            ),
+        )
         ingested_docs.append(doc_id)
 
         # Create citation for this document
@@ -164,6 +172,7 @@ def get_l2_rule_card_ids() -> List[str]:
     """Return list of L2 RuleCard IDs that are ACTIVE."""
     try:
         from ..kb.citations import get_active_rule_card_ids
+
         active = get_active_rule_card_ids()
         return [rid for rid in active if rid.startswith("RC_L2_")]
     except Exception:

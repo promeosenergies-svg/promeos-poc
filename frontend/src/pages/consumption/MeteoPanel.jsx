@@ -20,9 +20,15 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import {
-  ComposedChart, Area, Line,
-  XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { Cloud, Thermometer } from 'lucide-react';
 import useEmsTimeseries from './useEmsTimeseries';
@@ -83,7 +89,9 @@ function MeteoTooltip({ active, payload, label }) {
           />
           <span className="text-gray-500">{p.name}</span>
           <span className="font-semibold text-gray-900 ml-auto pl-4 tabular-nums">
-            {p.value != null ? Number(p.value).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) : '—'}
+            {p.value != null
+              ? Number(p.value).toLocaleString('fr-FR', { maximumFractionDigits: 1 })
+              : '—'}
           </span>
         </div>
       ))}
@@ -113,7 +121,7 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
       .then((res) => {
         // Build date→temp lookup from UTC hours
         const lookup = {};
-        for (const h of (res?.hours || [])) {
+        for (const h of res?.hours || []) {
           // Aggregate hourly to daily average for overlay
           const dayKey = h.t?.slice(0, 10);
           if (!dayKey) continue;
@@ -165,21 +173,26 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
 
   const absCorr = Math.abs(correlation);
   const correlationLabel = absCorr > 0.5 ? 'Forte' : absCorr > 0.2 ? 'Modérée' : 'Faible';
-  const correlationDir = correlation < -0.15 ? 'Chauffage' : correlation > 0.15 ? 'Climatisation' : 'Neutre';
+  const correlationDir =
+    correlation < -0.15 ? 'Chauffage' : correlation > 0.15 ? 'Climatisation' : 'Neutre';
   // Okabe-Ito colorblind-safe: blue #0072B2 (strong), orange #E69F00 (moderate), gray (weak)
-  const correlationColor = absCorr > 0.5
-    ? 'ring-1'
-    : absCorr > 0.2
+  const correlationColor =
+    absCorr > 0.5
       ? 'ring-1'
-      : 'text-gray-600 bg-gray-100 ring-1 ring-gray-200';
-  const correlationStyle = absCorr > 0.5
-    ? { color: '#005a8e', backgroundColor: '#0072B210', borderColor: '#0072B240' }
-    : absCorr > 0.2
-      ? { color: '#b07d00', backgroundColor: '#E69F0015', borderColor: '#E69F0040' }
-      : {};
+      : absCorr > 0.2
+        ? 'ring-1'
+        : 'text-gray-600 bg-gray-100 ring-1 ring-gray-200';
+  const correlationStyle =
+    absCorr > 0.5
+      ? { color: '#005a8e', backgroundColor: '#0072B210', borderColor: '#0072B240' }
+      : absCorr > 0.2
+        ? { color: '#b07d00', backgroundColor: '#E69F0015', borderColor: '#E69F0040' }
+        : {};
 
   const isRealWeather = !!utcWeather;
-  const _weatherSource = isRealWeather ? 'Temperature reelle (UTC)' : 'Temperature synthetique (modele)';
+  const _weatherSource = isRealWeather
+    ? 'Temperature reelle (UTC)'
+    : 'Temperature synthetique (modele)';
 
   // Loading state
   if (status === 'loading') {
@@ -218,7 +231,9 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Influence climatique</h3>
           <p className="text-xs text-gray-500">Consommation vs temperature exterieure</p>
-          <span className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${isRealWeather ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+          <span
+            className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${isRealWeather ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}
+          >
             {isRealWeather ? 'Meteo reelle' : 'Meteo synthetique'}
           </span>
         </div>
@@ -240,8 +255,12 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             {dju.toLocaleString('fr-FR')} °C·j
           </span>
           <span className="text-xs text-gray-500">Correlation :</span>
-          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full ${correlationColor}`} style={correlationStyle}>
-            {correlationLabel} · r={correlation >= 0 ? '+' : ''}{correlation.toFixed(2)}
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full ${correlationColor}`}
+            style={correlationStyle}
+          >
+            {correlationLabel} · r={correlation >= 0 ? '+' : ''}
+            {correlation.toFixed(2)}
             <span className="text-[10px] font-normal opacity-75">({correlationDir})</span>
           </span>
         </div>
@@ -266,7 +285,13 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             tickLine={false}
             axisLine={false}
             width={55}
-            label={{ value: 'kWh', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#0072B2' }}
+            label={{
+              value: 'kWh',
+              angle: -90,
+              position: 'insideLeft',
+              fontSize: 10,
+              fill: '#0072B2',
+            }}
           />
           {/* Right Y: temperature — hidden when toggle off */}
           {showTemp && (
@@ -277,15 +302,17 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
               tickLine={false}
               axisLine={false}
               width={42}
-              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#E69F00' }}
+              label={{
+                value: '°C',
+                angle: 90,
+                position: 'insideRight',
+                fontSize: 10,
+                fill: '#E69F00',
+              }}
             />
           )}
           <Tooltip content={<MeteoTooltip />} />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: 11 }}
-          />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
           <Area
             yAxisId="kwh"
             type="monotone"

@@ -2,6 +2,7 @@
 PROMEOS - Base SQLAlchemy
 Configuration de base pour tous les modeles de donnees
 """
+
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, DateTime, String
 from datetime import datetime, timezone
@@ -19,18 +20,16 @@ class TimestampMixin:
         created_at: Date de creation (auto)
         updated_at: Date de derniere modification (auto)
     """
+
     created_at = Column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        comment="Date de creation"
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, comment="Date de creation"
     )
     updated_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
-        comment="Date de derniere modification"
+        comment="Date de derniere modification",
     )
 
 
@@ -39,22 +38,10 @@ class SoftDeleteMixin:
     Mixin pour suppression logique (soft delete).
     Les objets ne sont jamais physiquement supprimes -- deleted_at est set.
     """
-    deleted_at = Column(
-        DateTime,
-        nullable=True,
-        index=True,
-        comment="Date de suppression logique (NULL = actif)"
-    )
-    deleted_by = Column(
-        String(200),
-        nullable=True,
-        comment="Identifiant utilisateur ayant supprime"
-    )
-    delete_reason = Column(
-        String(500),
-        nullable=True,
-        comment="Raison de la suppression"
-    )
+
+    deleted_at = Column(DateTime, nullable=True, index=True, comment="Date de suppression logique (NULL = actif)")
+    deleted_by = Column(String(200), nullable=True, comment="Identifiant utilisateur ayant supprime")
+    delete_reason = Column(String(500), nullable=True, comment="Raison de la suppression")
 
     @property
     def is_deleted(self):
@@ -78,6 +65,6 @@ def not_deleted(query, model):
     """Filtre les objets soft-deleted d'une query SQLAlchemy.
     Si le model n'a pas SoftDeleteMixin, retourne la query inchangee.
     """
-    if hasattr(model, 'deleted_at'):
+    if hasattr(model, "deleted_at"):
         return query.filter(model.deleted_at.is_(None))
     return query

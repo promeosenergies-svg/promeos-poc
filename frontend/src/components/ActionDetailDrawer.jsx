@@ -5,30 +5,63 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Clock, User, Tag, Paperclip, MessageSquare, History,
-  BadgeEuro, CheckCircle, AlertTriangle, ArrowRight, Plus,
-  Shield, ExternalLink, FileCheck,
+  Clock,
+  User,
+  Tag,
+  Paperclip,
+  MessageSquare,
+  History,
+  BadgeEuro,
+  CheckCircle,
+  AlertTriangle,
+  ArrowRight,
+  Plus,
+  Shield,
+  ExternalLink,
+  FileCheck,
 } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Button } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import {
-  getActionDetail, getActionComments, addActionComment,
-  getActionEvidence, addActionEvidence, getActionEvents,
-  patchAction, getTertiaireEfaProofs, getActionProofs,
+  getActionDetail,
+  getActionComments,
+  addActionComment,
+  getActionEvidence,
+  addActionEvidence,
+  getActionEvents,
+  patchAction,
+  getTertiaireEfaProofs,
+  getActionProofs,
   checkActionCloseability,
-  getIssueProofs, createOperatProofTemplates,
+  getIssueProofs,
+  createOperatProofTemplates,
 } from '../services/api';
 import { ACTION_STATUS_LABELS } from '../domain/compliance/complianceLabels.fr';
 import {
-  isOperatAction, parseOperatSourceId, buildActionProofLink,
-  isActionClosable, resolveProofStatus,
-  PROOF_STATUS_LABELS, PROOF_STATUS_BADGE,
+  isOperatAction,
+  parseOperatSourceId,
+  buildActionProofLink,
+  isActionClosable,
+  resolveProofStatus,
+  PROOF_STATUS_LABELS,
+  PROOF_STATUS_BADGE,
 } from '../models/actionProofLinkModel';
 import { SOURCE_LABELS_FR, buildSourceDeepLink } from '../models/evidenceRules';
 
-const _STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
-const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
+const _STATUS_TO_BE = {
+  backlog: 'open',
+  in_progress: 'in_progress',
+  done: 'done',
+  planned: 'blocked',
+};
+const STATUS_TO_FE = {
+  open: 'backlog',
+  in_progress: 'in_progress',
+  done: 'done',
+  blocked: 'planned',
+  false_positive: 'done',
+};
 
 const TABS = [
   { id: 'detail', label: 'Detail', icon: Tag },
@@ -38,14 +71,20 @@ const TABS = [
   { id: 'history', label: 'Historique', icon: History },
 ];
 
-const PRIORITY_LABEL = { 1: 'P1 — Critique', 2: 'P2 — Haute', 3: 'P3 — Moyenne', 4: 'P4 — Faible', 5: 'P5 — Faible' };
+const PRIORITY_LABEL = {
+  1: 'P1 — Critique',
+  2: 'P2 — Haute',
+  3: 'P3 — Moyenne',
+  4: 'P4 — Faible',
+  5: 'P5 — Faible',
+};
 const PRIORITY_BADGE = { 1: 'crit', 2: 'warn', 3: 'info', 4: 'neutral', 5: 'neutral' };
 
 const STATUS_PILL = {
-  open:           'bg-gray-100 text-gray-700',
-  in_progress:    'bg-amber-100 text-amber-700',
-  done:           'bg-green-100 text-green-700',
-  blocked:        'bg-blue-100 text-blue-700',
+  open: 'bg-gray-100 text-gray-700',
+  in_progress: 'bg-amber-100 text-amber-700',
+  done: 'bg-green-100 text-green-700',
+  blocked: 'bg-blue-100 text-blue-700',
   false_positive: 'bg-red-100 text-red-600',
 };
 
@@ -156,8 +195,14 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
   // V48 — Fetch preuves: persistent API + EFA fallback
   useEffect(() => {
-    if (!open || !detail) { setProofsSummary(null); return; }
-    if (!isOperatAction(detail)) { setProofsSummary(null); return; }
+    if (!open || !detail) {
+      setProofsSummary(null);
+      return;
+    }
+    if (!isOperatAction(detail)) {
+      setProofsSummary(null);
+      return;
+    }
     const parsed = parseOperatSourceId(detail.source_id);
 
     Promise.all([
@@ -180,10 +225,19 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
   // V50 — Fetch expected proofs for OPERAT issue
   useEffect(() => {
-    if (!open || !detail) { setExpectedProofs(null); return; }
-    if (!isOperatAction(detail)) { setExpectedProofs(null); return; }
+    if (!open || !detail) {
+      setExpectedProofs(null);
+      return;
+    }
+    if (!isOperatAction(detail)) {
+      setExpectedProofs(null);
+      return;
+    }
     const parsed = parseOperatSourceId(detail.source_id);
-    if (!parsed?.issue_code) { setExpectedProofs(null); return; }
+    if (!parsed?.issue_code) {
+      setExpectedProofs(null);
+      return;
+    }
 
     getIssueProofs(parsed.issue_code)
       .then((data) => setExpectedProofs(data))
@@ -205,11 +259,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
           issue_code: parsed.issue_code,
           proof_types: expectedProofs.proof_types,
           action_id: actionId || undefined,
-        },
+        }
       );
       toast(
         `${result.total_created} modèle(s) créé(s)${result.total_skipped ? `, ${result.total_skipped} existant(s)` : ''}`,
-        'success',
+        'success'
       );
     } catch {
       toast('Erreur lors de la génération des modèles', 'error');
@@ -247,7 +301,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
         payload.closure_justification = closureJustification.trim();
       }
       const resp = await patchAction(actionId, payload);
-      setDetail(prev => ({ ...prev, ...resp }));
+      setDetail((prev) => ({ ...prev, ...resp }));
       if (onUpdate) onUpdate(actionId, { status: STATUS_TO_FE[newStatus] || newStatus });
       toast('Statut mis à jour', 'success');
       setShowCloseForm(false);
@@ -259,7 +313,10 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     } catch (err) {
       const detail = err?.response?.data?.detail;
       // Structured error: { code, message } or plain string
-      const msg = (typeof detail === 'object' && detail?.message) ? detail.message : (detail || 'Erreur lors du changement de statut');
+      const msg =
+        typeof detail === 'object' && detail?.message
+          ? detail.message
+          : detail || 'Erreur lors du changement de statut';
       if (err?.response?.status === 400 && newStatus === 'done') {
         setShowCloseForm(true);
         setCloseError(msg);
@@ -281,7 +338,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       setComments(c);
       setEvents(ev);
     } catch {
-      toast('Erreur lors de l\'ajout du commentaire', 'error');
+      toast("Erreur lors de l'ajout du commentaire", 'error');
     } finally {
       setSubmittingComment(false);
     }
@@ -300,11 +357,14 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       });
       setEvidenceLabel('');
       setEvidenceUrl('');
-      const [ev, evts] = await Promise.all([getActionEvidence(actionId), getActionEvents(actionId)]);
+      const [ev, evts] = await Promise.all([
+        getActionEvidence(actionId),
+        getActionEvents(actionId),
+      ]);
       setEvidence(ev);
       setEvents(evts);
     } catch {
-      toast('Erreur lors de l\'ajout de la piece', 'error');
+      toast("Erreur lors de l'ajout de la piece", 'error');
     } finally {
       setSubmittingEvidence(false);
     }
@@ -316,7 +376,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       const val = parseFloat(realizedValue);
       if (isNaN(val)) return;
       const resp = await patchAction(actionId, { realized_gain_eur: val });
-      setDetail(prev => ({ ...prev, ...resp }));
+      setDetail((prev) => ({ ...prev, ...resp }));
       setEditingRealized(false);
       if (onUpdate) onUpdate(actionId, { realized_gain_eur: val });
       const ev = await getActionEvents(actionId);
@@ -334,11 +394,16 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     <Drawer open={open} onClose={onClose} title={d.title || action.titre || 'Detail'} wide>
       {/* Tab bar */}
       <div className="flex gap-1 mb-4 border-b border-gray-100 -mx-6 px-6">
-        {TABS.map(t => {
+        {TABS.map((t) => {
           const Icon = t.icon;
-          const count = t.id === 'comments' ? comments.length
-            : t.id === 'evidence' ? evidence.length
-            : t.id === 'history' ? events.length : null;
+          const count =
+            t.id === 'comments'
+              ? comments.length
+              : t.id === 'evidence'
+                ? evidence.length
+                : t.id === 'history'
+                  ? events.length
+                  : null;
           return (
             <button
               key={t.id}
@@ -352,7 +417,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               <Icon size={13} />
               {t.label}
               {count != null && count > 0 && (
-                <span className="ml-1 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{count}</span>
+                <span className="ml-1 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                  {count}
+                </span>
               )}
             </button>
           );
@@ -360,7 +427,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       </div>
 
       {loading && !detail ? (
-        <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Chargement...</div>
+        <div className="flex items-center justify-center py-12 text-gray-400 text-sm">
+          Chargement...
+        </div>
       ) : (
         <>
           {/* ── Tab: Detail ── */}
@@ -369,7 +438,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Type</p>
-                  <span className="text-sm font-medium">{SOURCE_LABELS[d.source_type] || d.source_type}</span>
+                  <span className="text-sm font-medium">
+                    {SOURCE_LABELS[d.source_type] || d.source_type}
+                  </span>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Priorite</p>
@@ -379,7 +450,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Statut</p>
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_PILL[d.status] || STATUS_PILL.open}`}>
+                  <span
+                    className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_PILL[d.status] || STATUS_PILL.open}`}
+                  >
                     {ACTION_STATUS_LABELS[STATUS_TO_FE[d.status]] || d.status}
                   </span>
                 </div>
@@ -397,13 +470,18 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Source</p>
                   <p className="text-sm font-medium text-gray-700">
-                    {SOURCE_LABELS_FR[d.source_type] || SOURCE_LABELS[d.source_type] || d.source_type}
+                    {SOURCE_LABELS_FR[d.source_type] ||
+                      SOURCE_LABELS[d.source_type] ||
+                      d.source_type}
                   </p>
                   {(() => {
                     const deepLink = buildSourceDeepLink(d.source_type, d.source_id);
                     return deepLink ? (
                       <button
-                        onClick={() => { navigate(deepLink); onClose(); }}
+                        onClick={() => {
+                          navigate(deepLink);
+                          onClose();
+                        }}
                         className="flex items-center gap-1 mt-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 transition"
                       >
                         <ExternalLink size={11} /> Revenir à la source
@@ -423,7 +501,8 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Responsable</p>
                   <p className="text-sm flex items-center gap-1">
-                    <User size={14} /> {d.owner || <span className="text-gray-400">Non assigne</span>}
+                    <User size={14} />{' '}
+                    {d.owner || <span className="text-gray-400">Non assigne</span>}
                   </p>
                 </div>
               </div>
@@ -431,14 +510,18 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               {d.description && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Description</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded-lg p-3">{d.description}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded-lg p-3">
+                    {d.description}
+                  </p>
                 </div>
               )}
 
               {d.rationale && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Justification</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded-lg p-3">{d.rationale}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded-lg p-3">
+                    {d.rationale}
+                  </p>
                 </div>
               )}
 
@@ -453,162 +536,211 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               {d.evidence_required && !isOperatAction(d) && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200">
                   <Paperclip size={14} className="text-amber-600" />
-                  <span className="text-xs font-medium text-amber-700">Preuve requise pour clôturer</span>
+                  <span className="text-xs font-medium text-amber-700">
+                    Preuve requise pour clôturer
+                  </span>
                   <Badge status={evidence.length > 0 ? 'ok' : 'warn'}>
-                    {evidence.length > 0 ? `${evidence.length} pièce${evidence.length > 1 ? 's' : ''}` : 'Aucune pièce'}
+                    {evidence.length > 0
+                      ? `${evidence.length} pièce${evidence.length > 1 ? 's' : ''}`
+                      : 'Aucune pièce'}
                   </Badge>
                 </div>
               )}
 
               {/* V47 — Bloc Preuves OPERAT */}
-              {isOperatAction(d) && (() => {
-                const proofStatus = resolveProofStatus(proofsSummary);
-                const badgeVariant = PROOF_STATUS_BADGE[proofStatus] || 'neutral';
-                const closability = isActionClosable(d, proofsSummary, evidence.length);
-                const proofLink = buildActionProofLink(d);
-                const parsed = parseOperatSourceId(d.source_id);
+              {isOperatAction(d) &&
+                (() => {
+                  const proofStatus = resolveProofStatus(proofsSummary);
+                  const badgeVariant = PROOF_STATUS_BADGE[proofStatus] || 'neutral';
+                  const closability = isActionClosable(d, proofsSummary, evidence.length);
+                  const proofLink = buildActionProofLink(d);
+                  const parsed = parseOperatSourceId(d.source_id);
 
-                return (
-                  <div className="border-t border-gray-100 pt-4 space-y-3" data-testid="operat-proof-bloc">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Shield size={14} className="text-blue-600" />
-                      <p className="text-xs font-semibold text-gray-700">Preuves OPERAT</p>
-                    </div>
-
-                    {/* Statut preuve */}
-                    <div className="flex items-center gap-3">
-                      <Badge status={badgeVariant}>{PROOF_STATUS_LABELS[proofStatus]}</Badge>
-                      {proofsSummary && (
-                        <span className="text-xs text-gray-500">
-                          {proofsSummary.validated_count || 0} validée(s) / {proofsSummary.expected_count || '—'} attendue(s)
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Compteurs si disponibles */}
-                    {proofsSummary && (
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                          <p className="text-lg font-bold text-blue-700">{proofsSummary.expected_count || 0}</p>
-                          <p className="text-[10px] text-gray-500">Attendues</p>
-                        </div>
-                        <div className="p-2 bg-amber-50 rounded-lg">
-                          <p className="text-lg font-bold text-amber-700">{proofsSummary.deposited_count || 0}</p>
-                          <p className="text-[10px] text-gray-500">Déposées</p>
-                        </div>
-                        <div className="p-2 bg-green-50 rounded-lg">
-                          <p className="text-lg font-bold text-green-700">{proofsSummary.validated_count || 0}</p>
-                          <p className="text-[10px] text-gray-500">Validées</p>
-                        </div>
+                  return (
+                    <div
+                      className="border-t border-gray-100 pt-4 space-y-3"
+                      data-testid="operat-proof-bloc"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield size={14} className="text-blue-600" />
+                        <p className="text-xs font-semibold text-gray-700">Preuves OPERAT</p>
                       </div>
-                    )}
 
-                    {/* V50 — Preuves attendues pour cette anomalie */}
-                    {expectedProofs && expectedProofs.proof_types?.length > 0 && (
-                      <div className="space-y-2" data-testid="v50-expected-proofs">
-                        <p className="text-xs font-medium text-gray-600">
-                          Preuves attendues
-                          {expectedProofs.confidence && (
-                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${
-                              expectedProofs.confidence === 'high' ? 'bg-green-100 text-green-700'
-                              : expectedProofs.confidence === 'medium' ? 'bg-amber-100 text-amber-700'
-                              : 'bg-gray-100 text-gray-500'
-                            }`}>
-                              {expectedProofs.confidence === 'high' ? 'Confirmé' : expectedProofs.confidence === 'medium' ? 'Probable' : 'À vérifier'}
-                            </span>
-                          )}
-                        </p>
-                        {expectedProofs.rationale_fr && (
-                          <p className="text-[11px] text-gray-500">{expectedProofs.rationale_fr}</p>
+                      {/* Statut preuve */}
+                      <div className="flex items-center gap-3">
+                        <Badge status={badgeVariant}>{PROOF_STATUS_LABELS[proofStatus]}</Badge>
+                        {proofsSummary && (
+                          <span className="text-xs text-gray-500">
+                            {proofsSummary.validated_count || 0} validée(s) /{' '}
+                            {proofsSummary.expected_count || '—'} attendue(s)
+                          </span>
                         )}
-                        <div className="space-y-1">
-                          {expectedProofs.details?.map((pt) => (
-                            <div key={pt.proof_type} className="flex items-start gap-2 p-2 bg-blue-50/50 rounded-lg">
-                              <FileCheck size={12} className="text-blue-500 mt-0.5 shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-gray-700">{pt.title_fr}</p>
-                                <p className="text-[10px] text-gray-400">{pt.description_fr}</p>
-                                {pt.examples_fr?.length > 0 && (
-                                  <p className="text-[10px] text-gray-400 mt-0.5">
-                                    Ex. : {pt.examples_fr.slice(0, 2).join(', ')}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                      </div>
+
+                      {/* Compteurs si disponibles */}
+                      {proofsSummary && (
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <p className="text-lg font-bold text-blue-700">
+                              {proofsSummary.expected_count || 0}
+                            </p>
+                            <p className="text-[10px] text-gray-500">Attendues</p>
+                          </div>
+                          <div className="p-2 bg-amber-50 rounded-lg">
+                            <p className="text-lg font-bold text-amber-700">
+                              {proofsSummary.deposited_count || 0}
+                            </p>
+                            <p className="text-[10px] text-gray-500">Déposées</p>
+                          </div>
+                          <div className="p-2 bg-green-50 rounded-lg">
+                            <p className="text-lg font-bold text-green-700">
+                              {proofsSummary.validated_count || 0}
+                            </p>
+                            <p className="text-[10px] text-gray-500">Validées</p>
+                          </div>
                         </div>
-                        {/* V50 CTA: Créer les modèles dans la Mémobox */}
+                      )}
+
+                      {/* V50 — Preuves attendues pour cette anomalie */}
+                      {expectedProofs && expectedProofs.proof_types?.length > 0 && (
+                        <div className="space-y-2" data-testid="v50-expected-proofs">
+                          <p className="text-xs font-medium text-gray-600">
+                            Preuves attendues
+                            {expectedProofs.confidence && (
+                              <span
+                                className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${
+                                  expectedProofs.confidence === 'high'
+                                    ? 'bg-green-100 text-green-700'
+                                    : expectedProofs.confidence === 'medium'
+                                      ? 'bg-amber-100 text-amber-700'
+                                      : 'bg-gray-100 text-gray-500'
+                                }`}
+                              >
+                                {expectedProofs.confidence === 'high'
+                                  ? 'Confirmé'
+                                  : expectedProofs.confidence === 'medium'
+                                    ? 'Probable'
+                                    : 'À vérifier'}
+                              </span>
+                            )}
+                          </p>
+                          {expectedProofs.rationale_fr && (
+                            <p className="text-[11px] text-gray-500">
+                              {expectedProofs.rationale_fr}
+                            </p>
+                          )}
+                          <div className="space-y-1">
+                            {expectedProofs.details?.map((pt) => (
+                              <div
+                                key={pt.proof_type}
+                                className="flex items-start gap-2 p-2 bg-blue-50/50 rounded-lg"
+                              >
+                                <FileCheck size={12} className="text-blue-500 mt-0.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-gray-700">{pt.title_fr}</p>
+                                  <p className="text-[10px] text-gray-400">{pt.description_fr}</p>
+                                  {pt.examples_fr?.length > 0 && (
+                                    <p className="text-[10px] text-gray-400 mt-0.5">
+                                      Ex. : {pt.examples_fr.slice(0, 2).join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* V50 CTA: Créer les modèles dans la Mémobox */}
+                          {parsed?.efa_id && (
+                            <button
+                              onClick={handleGenerateTemplates}
+                              disabled={generatingTemplates}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50"
+                              data-testid="v50-generate-templates-cta"
+                            >
+                              <Plus size={12} />
+                              {generatingTemplates
+                                ? 'Génération...'
+                                : 'Créer les modèles dans la Mémobox'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CTAs */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            onClose();
+                            navigate(proofLink);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                          data-testid="operat-proof-deposit-cta"
+                        >
+                          <FileCheck size={12} /> Déposer une preuve
+                        </button>
                         {parsed?.efa_id && (
                           <button
-                            onClick={handleGenerateTemplates}
-                            disabled={generatingTemplates}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50"
-                            data-testid="v50-generate-templates-cta"
+                            onClick={() => {
+                              onClose();
+                              navigate(`/conformite/tertiaire/efa/${parsed.efa_id}`);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition"
                           >
-                            <Plus size={12} />
-                            {generatingTemplates ? 'Génération...' : 'Créer les modèles dans la Mémobox'}
+                            <ExternalLink size={12} /> Fiche EFA
                           </button>
                         )}
                       </div>
-                    )}
 
-                    {/* CTAs */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => { onClose(); navigate(proofLink); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-                        data-testid="operat-proof-deposit-cta"
-                      >
-                        <FileCheck size={12} /> Déposer une preuve
-                      </button>
-                      {parsed?.efa_id && (
-                        <button
-                          onClick={() => { onClose(); navigate(`/conformite/tertiaire/efa/${parsed.efa_id}`); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition"
+                      {/* Aide FR — V49 */}
+                      <p className="text-[11px] text-gray-400 leading-relaxed bg-gray-50 rounded-lg p-2">
+                        Une action OPERAT est considérée clôturable quand une preuve validée est
+                        liée, ou qu'une justification de clôture est fournie (min. 10 caractères).
+                        Le serveur vérifie cette règle avant d'accepter la clôture.
+                      </p>
+
+                      {/* Avertissement si non clôturable */}
+                      {!closability.closable && d.status !== 'done' && (
+                        <div
+                          className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2"
+                          data-testid="operat-closability-warning"
                         >
-                          <ExternalLink size={12} /> Fiche EFA
-                        </button>
+                          <p className="font-medium mb-1">Clôture bloquée :</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            {(closability.raisons || []).map((r, i) => (
+                              <li key={`raison-${i}`}>{r}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
-
-                    {/* Aide FR — V49 */}
-                    <p className="text-[11px] text-gray-400 leading-relaxed bg-gray-50 rounded-lg p-2">
-                      Une action OPERAT est considérée clôturable quand une preuve validée est liée,
-                      ou qu'une justification de clôture est fournie (min. 10 caractères).
-                      Le serveur vérifie cette règle avant d'accepter la clôture.
-                    </p>
-
-                    {/* Avertissement si non clôturable */}
-                    {!closability.closable && d.status !== 'done' && (
-                      <div className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2" data-testid="operat-closability-warning">
-                        <p className="font-medium mb-1">Clôture bloquée :</p>
-                        <ul className="list-disc list-inside space-y-0.5">
-                          {(closability.raisons || []).map((r, i) => <li key={`raison-${i}`}>{r}</li>)}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               {/* Status workflow buttons */}
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs text-gray-500 mb-2">Changer le statut</p>
                 <div className="flex flex-wrap gap-2">
-                  {STATUS_WORKFLOW.map(s => {
+                  {STATUS_WORKFLOW.map((s) => {
                     const isDone = s.value === 'done';
-                    const operatBlocked = isDone && isOperatAction(d) && !isActionClosable(d, proofsSummary, evidence.length).closable;
-                    const evidenceBlocked = isDone && !isOperatAction(d) && d.evidence_required && evidence.length === 0;
+                    const operatBlocked =
+                      isDone &&
+                      isOperatAction(d) &&
+                      !isActionClosable(d, proofsSummary, evidence.length).closable;
+                    const evidenceBlocked =
+                      isDone && !isOperatAction(d) && d.evidence_required && evidence.length === 0;
                     return (
                       <button
                         key={s.value}
                         disabled={d.status === s.value}
                         onClick={() => handleStatusChange(s.value)}
-                        title={(operatBlocked || evidenceBlocked) ? 'Preuve requise pour clôturer' : undefined}
+                        title={
+                          operatBlocked || evidenceBlocked
+                            ? 'Preuve requise pour clôturer'
+                            : undefined
+                        }
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                           d.status === s.value
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : (operatBlocked || evidenceBlocked)
+                            : operatBlocked || evidenceBlocked
                               ? 'bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100'
                               : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
                         }`}
@@ -621,9 +753,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
                 {/* V49 + Étape 4: Guided close form for OPERAT + evidence_required actions */}
                 {showCloseForm && (isOperatAction(d) || d.evidence_required) && (
-                  <div className="mt-3 space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-lg" data-testid="v49-close-form">
+                  <div
+                    className="mt-3 space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                    data-testid="v49-close-form"
+                  >
                     {closeError && (
-                      <p className="text-xs text-amber-700 font-medium" data-testid="v49-close-error">{closeError}</p>
+                      <p
+                        className="text-xs text-amber-700 font-medium"
+                        data-testid="v49-close-error"
+                      >
+                        {closeError}
+                      </p>
                     )}
                     <label className="text-xs text-gray-600 block">
                       Justification de clôture (min. 10 caractères)
@@ -645,7 +785,10 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                         Clôturer avec justification
                       </Button>
                       <button
-                        onClick={() => { setShowCloseForm(false); setCloseError(null); }}
+                        onClick={() => {
+                          setShowCloseForm(false);
+                          setCloseError(null);
+                        }}
                         className="text-xs text-gray-400 hover:text-gray-600"
                       >
                         Annuler
@@ -659,14 +802,18 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               </div>
 
               {d.closed_at && (
-                <p className="text-xs text-gray-400 mt-2">Fermee le {new Date(d.closed_at).toLocaleDateString('fr-FR')}</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Fermee le {new Date(d.closed_at).toLocaleDateString('fr-FR')}
+                </p>
               )}
 
               {/* V49: Display closure justification if present */}
               {d.closure_justification && (
                 <div className="mt-2" data-testid="v49-closure-justification-display">
                   <p className="text-xs text-gray-500 mb-1">Justification de clôture</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-2 whitespace-pre-line">{d.closure_justification}</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-2 whitespace-pre-line">
+                    {d.closure_justification}
+                  </p>
                 </div>
               )}
             </div>
@@ -679,7 +826,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div className="p-4 bg-red-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Gain estime</p>
                   <p className="text-xl font-bold text-red-700">
-                    {d.estimated_gain_eur != null ? `${d.estimated_gain_eur.toLocaleString()} EUR` : '—'}
+                    {d.estimated_gain_eur != null
+                      ? `${d.estimated_gain_eur.toLocaleString()} EUR`
+                      : '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
@@ -694,16 +843,28 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                         autoFocus
                       />
                       <span className="text-xs text-gray-500">EUR</span>
-                      <Button size="sm" onClick={handleSaveRealized}>OK</Button>
-                      <button onClick={() => setEditingRealized(false)} className="text-xs text-gray-400 hover:text-gray-600">Annuler</button>
+                      <Button size="sm" onClick={handleSaveRealized}>
+                        OK
+                      </Button>
+                      <button
+                        onClick={() => setEditingRealized(false)}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Annuler
+                      </button>
                     </div>
                   ) : (
                     <p
                       className="text-xl font-bold text-green-700 cursor-pointer hover:underline"
-                      onClick={() => { setRealizedValue(String(d.realized_gain_eur || '')); setEditingRealized(true); }}
+                      onClick={() => {
+                        setRealizedValue(String(d.realized_gain_eur || ''));
+                        setEditingRealized(true);
+                      }}
                       title="Cliquer pour modifier"
                     >
-                      {d.realized_gain_eur != null ? `${d.realized_gain_eur.toLocaleString()} EUR` : '— (cliquer pour saisir)'}
+                      {d.realized_gain_eur != null
+                        ? `${d.realized_gain_eur.toLocaleString()} EUR`
+                        : '— (cliquer pour saisir)'}
                     </p>
                   )}
                 </div>
@@ -711,13 +872,18 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
               {/* Delta */}
               {d.estimated_gain_eur != null && d.realized_gain_eur != null && (
-                <div className={`p-3 rounded-lg text-sm font-medium ${
-                  d.realized_gain_eur >= d.estimated_gain_eur ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
-                }`}>
-                  Delta : {(d.realized_gain_eur - d.estimated_gain_eur).toLocaleString()} EUR
-                  ({d.estimated_gain_eur > 0
+                <div
+                  className={`p-3 rounded-lg text-sm font-medium ${
+                    d.realized_gain_eur >= d.estimated_gain_eur
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  Delta : {(d.realized_gain_eur - d.estimated_gain_eur).toLocaleString()} EUR (
+                  {d.estimated_gain_eur > 0
                     ? `${((d.realized_gain_eur / d.estimated_gain_eur) * 100).toFixed(0)}% du gain estime`
-                    : '—'})
+                    : '—'}
+                  )
                 </div>
               )}
 
@@ -743,7 +909,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               {d.severity && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Severite source</p>
-                  <Badge status={d.severity === 'critical' ? 'crit' : d.severity === 'high' ? 'warn' : 'info'}>
+                  <Badge
+                    status={
+                      d.severity === 'critical' ? 'crit' : d.severity === 'high' ? 'warn' : 'info'
+                    }
+                  >
                     {d.severity}
                   </Badge>
                 </div>
@@ -758,7 +928,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <p className="text-sm text-gray-400 text-center py-8">Aucune piece jointe</p>
               ) : (
                 <div className="space-y-2">
-                  {evidence.map(ev => (
+                  {evidence.map((ev) => (
                     <div key={ev.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                       <Paperclip size={14} className="text-gray-400 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -784,8 +954,13 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               )}
 
               {/* Add evidence form */}
-              <form onSubmit={handleAddEvidence} className="border-t border-gray-100 pt-4 space-y-2">
-                <p className="text-xs font-semibold text-gray-600 flex items-center gap-1"><Plus size={12} /> Ajouter une piece</p>
+              <form
+                onSubmit={handleAddEvidence}
+                className="border-t border-gray-100 pt-4 space-y-2"
+              >
+                <p className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                  <Plus size={12} /> Ajouter une piece
+                </p>
                 <input
                   value={evidenceLabel}
                   onChange={(e) => setEvidenceLabel(e.target.value)}
@@ -799,7 +974,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   placeholder="URL du document (optionnel)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <Button size="sm" type="submit" disabled={submittingEvidence || !evidenceLabel.trim()}>
+                <Button
+                  size="sm"
+                  type="submit"
+                  disabled={submittingEvidence || !evidenceLabel.trim()}
+                >
                   {submittingEvidence ? 'Ajout...' : 'Ajouter'}
                 </Button>
               </form>
@@ -813,7 +992,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <p className="text-sm text-gray-400 text-center py-8">Aucun commentaire</p>
               ) : (
                 <div className="space-y-2">
-                  {comments.map(c => (
+                  {comments.map((c) => (
                     <div key={c.id} className="p-3 bg-gray-50 rounded-lg text-sm">
                       <p className="font-medium text-gray-700">
                         {c.author}
@@ -844,7 +1023,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   required
                 />
-                <Button size="sm" type="submit" disabled={submittingComment || !commentBody.trim() || !commentAuthor.trim()}>
+                <Button
+                  size="sm"
+                  type="submit"
+                  disabled={submittingComment || !commentBody.trim() || !commentAuthor.trim()}
+                >
                   {submittingComment ? 'Envoi...' : 'Envoyer'}
                 </Button>
               </form>
@@ -857,28 +1040,44 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               {events.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-8">Aucun evenement</p>
               ) : (
-                events.map(ev => {
+                events.map((ev) => {
                   const Icon = EVENT_ICONS[ev.event_type] || Tag;
                   return (
-                    <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <div
+                      key={ev.id}
+                      className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0"
+                    >
                       <div className="mt-0.5 p-1.5 rounded-full bg-gray-100">
                         <Icon size={12} className="text-gray-500" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-800">
-                          <span className="font-medium">{EVENT_LABELS[ev.event_type] || ev.event_type}</span>
+                          <span className="font-medium">
+                            {EVENT_LABELS[ev.event_type] || ev.event_type}
+                          </span>
                           {ev.actor && <span className="text-gray-500 ml-1">par {ev.actor}</span>}
                         </p>
                         {(ev.old_value || ev.new_value) && (
                           <p className="text-xs text-gray-500 mt-0.5">
-                            {ev.old_value && <span className="line-through mr-1">{ev.old_value}</span>}
-                            {ev.old_value && ev.new_value && <ArrowRight size={10} className="inline mx-1" />}
+                            {ev.old_value && (
+                              <span className="line-through mr-1">{ev.old_value}</span>
+                            )}
+                            {ev.old_value && ev.new_value && (
+                              <ArrowRight size={10} className="inline mx-1" />
+                            )}
                             {ev.new_value && <span className="font-medium">{ev.new_value}</span>}
                           </p>
                         )}
                       </div>
                       <span className="text-[10px] text-gray-400 shrink-0">
-                        {ev.created_at && new Date(ev.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        {ev.created_at &&
+                          new Date(ev.created_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                       </span>
                     </div>
                   );

@@ -2,8 +2,10 @@
 PROMEOS - Tests for JobOutbox Lifecycle
 Tests the async job queue and cascade logic
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -20,6 +22,7 @@ from jobs.worker import enqueue_job, process_one, enqueue_cascade
 # Fixtures
 # ========================================
 
+
 @pytest.fixture
 def db_session():
     """In-memory SQLite database for testing"""
@@ -35,16 +38,12 @@ def db_session():
 # Tests
 # ========================================
 
+
 def test_enqueue_job(db_session):
     """Test basic job enqueueing"""
     payload = {"scope": "site", "site_id": 42}
 
-    job = enqueue_job(
-        db_session,
-        JobType.RECOMPUTE_ASSESSMENT,
-        payload,
-        priority=10
-    )
+    job = enqueue_job(db_session, JobType.RECOMPUTE_ASSESSMENT, payload, priority=10)
 
     assert job is not None
     assert job.id is not None
@@ -93,9 +92,12 @@ def test_job_priority_order(db_session):
     enqueue_job(db_session, JobType.RECOMPUTE_ASSESSMENT, {"scope": "site", "site_id": 3}, priority=5)
 
     # First job to process should be priority 10
-    next_job = db_session.query(JobOutbox).filter(
-        JobOutbox.status == JobStatus.PENDING
-    ).order_by(JobOutbox.priority.desc(), JobOutbox.created_at).first()
+    next_job = (
+        db_session.query(JobOutbox)
+        .filter(JobOutbox.status == JobStatus.PENDING)
+        .order_by(JobOutbox.priority.desc(), JobOutbox.created_at)
+        .first()
+    )
 
     payload = json.loads(next_job.payload_json)
     assert payload["site_id"] == 2  # This was priority 10
@@ -115,5 +117,5 @@ def test_job_timestamps(db_session):
 # Run Tests
 # ========================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

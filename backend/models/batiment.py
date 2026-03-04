@@ -2,6 +2,7 @@
 PROMEOS - Modèle Bâtiment
 Unité réglementaire (décret tertiaire, BACS)
 """
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin, SoftDeleteMixin

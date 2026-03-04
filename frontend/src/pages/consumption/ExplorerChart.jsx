@@ -22,9 +22,15 @@ import { useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
 import {
   ComposedChart,
-  Area, Line,
-  XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, Brush,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Brush,
 } from 'recharts';
 import { colorForSite } from './helpers';
 
@@ -54,7 +60,10 @@ function SummaryRow({ summaryData }) {
   if (!parts.length) return null;
 
   return (
-    <div className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500 select-none" aria-label="résumé du graphique">
+    <div
+      className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500 select-none"
+      aria-label="résumé du graphique"
+    >
       {parts.map((p, i) => (
         <span key={i}>{p}</span>
       ))}
@@ -69,7 +78,9 @@ function InsufficientDataPlaceholder({ count = 0 }) {
       <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-3">
         <BarChart3 size={24} className="text-amber-400" />
       </div>
-      <p className="text-sm font-medium text-gray-600">Données insuffisantes pour tracer le graphique</p>
+      <p className="text-sm font-medium text-gray-600">
+        Données insuffisantes pour tracer le graphique
+      </p>
       <p className="text-xs text-gray-400 mt-1">
         {count} point{count !== 1 ? 's' : ''} valide{count !== 1 ? 's' : ''} — 2 minimum requis
       </p>
@@ -83,16 +94,33 @@ function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, children }) {
     <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
       {siteIds.map((sid, idx) => {
         const color = colorForSite(sid, idx);
-        const siteData = data.map(p => ({ ...p, kwh: p[`kwh_${sid}`] ?? p.kwh ?? null }));
+        const siteData = data.map((p) => ({ ...p, kwh: p[`kwh_${sid}`] ?? p.kwh ?? null }));
         return (
           <div key={sid}>
             <ResponsiveContainer width="100%" height={Math.round(height * 0.6)}>
               <ComposedChart data={siteData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey={xKey} tick={{ fontSize: 9 }} />
-                <YAxis tick={{ fontSize: 9 }} label={{ value: UNIT_AXIS_LABELS[unit], angle: -90, position: 'insideLeft', style: { fontSize: 9 } }} />
-                <Tooltip formatter={(v) => v != null ? `${v} ${UNIT_AXIS_LABELS[unit]}` : 'N/A'} />
-                <Area type="monotone" dataKey={valueKey} stroke={color} fill={color} fillOpacity={0.2} name={`Site ${idx + 1}`} />
+                <YAxis
+                  tick={{ fontSize: 9 }}
+                  label={{
+                    value: UNIT_AXIS_LABELS[unit],
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 9 },
+                  }}
+                />
+                <Tooltip
+                  formatter={(v) => (v != null ? `${v} ${UNIT_AXIS_LABELS[unit]}` : 'N/A')}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={valueKey}
+                  stroke={color}
+                  fill={color}
+                  fillOpacity={0.2}
+                  name={`Site ${idx + 1}`}
+                />
                 {children}
               </ComposedChart>
             </ResponsiveContainer>
@@ -126,19 +154,22 @@ export default function ExplorerChart({
   const showBrushBar = showBrush && stableData.length > 20;
 
   // ── ChartRenderGuard: validate points before rendering ──
-  const validPoints = stableData.filter(p => p[valueKey] != null && !isNaN(p[valueKey]));
+  const validPoints = stableData.filter((p) => p[valueKey] != null && !isNaN(p[valueKey]));
 
   // For superpose/empile, also check per-site keys to avoid blank overlays
-  const hasAnySiteData = (mode === 'superpose' || mode === 'empile')
-    ? siteIds.some(sid => stableData.some(p => p[`kwh_${sid}`] != null && !isNaN(p[`kwh_${sid}`])))
-    : false;
+  const hasAnySiteData =
+    mode === 'superpose' || mode === 'empile'
+      ? siteIds.some((sid) =>
+          stableData.some((p) => p[`kwh_${sid}`] != null && !isNaN(p[`kwh_${sid}`]))
+        )
+      : false;
 
   if (validPoints.length < 2 && !hasAnySiteData) {
     return <InsufficientDataPlaceholder count={validPoints.length} />;
   }
 
   // Safe Y domain with padding to prevent flat-line chart (when all values equal)
-  const ys = validPoints.map(p => p[valueKey]).filter(Number.isFinite);
+  const ys = validPoints.map((p) => p[valueKey]).filter(Number.isFinite);
   const yMin = ys.length ? Math.min(...ys) : 0;
   const yMax = ys.length ? Math.max(...ys) : 1;
   const pad = yMin === yMax ? Math.max(1, Math.abs(yMin) * 0.05) : 0;
@@ -165,7 +196,11 @@ export default function ExplorerChart({
   return (
     <>
       <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart data={stableData} onClick={onSlotClick ? (d) => onSlotClick(d) : undefined} style={onSlotClick ? { cursor: 'pointer' } : {}}>
+        <ComposedChart
+          data={stableData}
+          onClick={onSlotClick ? (d) => onSlotClick(d) : undefined}
+          style={onSlotClick ? { cursor: 'pointer' } : {}}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
           <YAxis
@@ -173,7 +208,13 @@ export default function ExplorerChart({
             label={{ value: yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
             domain={yDomain}
           />
-          <Tooltip formatter={(v, name) => (v != null && !isNaN(v)) ? [`${Number(v).toLocaleString('fr-FR')} ${yLabel}`, name] : ['N/A', name]} />
+          <Tooltip
+            formatter={(v, name) =>
+              v != null && !isNaN(v)
+                ? [`${Number(v).toLocaleString('fr-FR')} ${yLabel}`, name]
+                : ['N/A', name]
+            }
+          />
           <Legend />
 
           {/* Core series by mode */}
@@ -188,49 +229,45 @@ export default function ExplorerChart({
             />
           )}
 
-          {mode === 'superpose' && siteIds.map((sid, idx) => {
-            const color = siteColors[sid] || colorForSite(sid, idx);
-            return (
-              <Line
-                key={sid}
-                type="monotone"
-                dataKey={`kwh_${sid}`}
-                stroke={color}
-                dot={false}
-                strokeWidth={2}
-                name={`Site ${idx + 1}`}
-              />
-            );
-          })}
+          {mode === 'superpose' &&
+            siteIds.map((sid, idx) => {
+              const color = siteColors[sid] || colorForSite(sid, idx);
+              return (
+                <Line
+                  key={sid}
+                  type="monotone"
+                  dataKey={`kwh_${sid}`}
+                  stroke={color}
+                  dot={false}
+                  strokeWidth={2}
+                  name={`Site ${idx + 1}`}
+                />
+              );
+            })}
 
-          {mode === 'empile' && siteIds.map((sid, idx) => {
-            const color = siteColors[sid] || colorForSite(sid, idx);
-            return (
-              <Area
-                key={sid}
-                type="monotone"
-                dataKey={`kwh_${sid}`}
-                stackId="stack"
-                stroke={color}
-                fill={color}
-                fillOpacity={0.4}
-                name={`Site ${idx + 1}`}
-              />
-            );
-          })}
+          {mode === 'empile' &&
+            siteIds.map((sid, idx) => {
+              const color = siteColors[sid] || colorForSite(sid, idx);
+              return (
+                <Area
+                  key={sid}
+                  type="monotone"
+                  dataKey={`kwh_${sid}`}
+                  stackId="stack"
+                  stroke={color}
+                  fill={color}
+                  fillOpacity={0.4}
+                  name={`Site ${idx + 1}`}
+                />
+              );
+            })}
 
           {/* Composable layer children */}
           {children}
 
           {/* Brush — mini-timeline zoom (only when enough data points) */}
           {showBrushBar && (
-            <Brush
-              dataKey={xKey}
-              height={24}
-              stroke="#94a3b8"
-              travellerWidth={6}
-              fill="#f8fafc"
-            />
+            <Brush dataKey={xKey} height={24} stroke="#94a3b8" travellerWidth={6} fill="#f8fafc" />
           )}
         </ComposedChart>
       </ResponsiveContainer>

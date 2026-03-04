@@ -3,6 +3,7 @@ PROMEOS — Gas Weather Service (DJU model + alerts)
 Weather-normalized gas consumption analysis.
 Uses mock DJU (deterministic seasonal formula) for POC scope.
 """
+
 import math
 import random
 from datetime import datetime, timedelta, timezone
@@ -35,10 +36,10 @@ def _linear_regression(x_vals, y_vals):
     sum_x = sum(x_vals)
     sum_y = sum(y_vals)
     sum_xy = sum(xi * yi for xi, yi in zip(x_vals, y_vals))
-    sum_x2 = sum(xi ** 2 for xi in x_vals)
-    sum_y2 = sum(yi ** 2 for yi in y_vals)
+    sum_x2 = sum(xi**2 for xi in x_vals)
+    sum_y2 = sum(yi**2 for yi in y_vals)
 
-    denom = n * sum_x2 - sum_x ** 2
+    denom = n * sum_x2 - sum_x**2
     if abs(denom) < 1e-10:
         return 0, sum_y / n, 0
 
@@ -72,11 +73,15 @@ def compute_weather_normalized(
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.GAS,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.GAS,
+        )
+        .all()
+    )
 
     if not meters:
         return _empty_gas_weather(site_id, days, reason="no_gas_meters")
@@ -94,8 +99,7 @@ def compute_weather_normalized(
     )
 
     if len(readings) < 48:
-        return _empty_gas_weather(site_id, days, reason="insufficient_data",
-                                  readings_count=len(readings))
+        return _empty_gas_weather(site_id, days, reason="insufficient_data", readings_count=len(readings))
 
     # Aggregate by day
     daily = defaultdict(float)
@@ -104,8 +108,7 @@ def compute_weather_normalized(
         daily[day_key] += r.value_kwh
 
     if len(daily) < 7:
-        return _empty_gas_weather(site_id, days, reason="insufficient_data",
-                                  readings_count=len(readings))
+        return _empty_gas_weather(site_id, days, reason="insufficient_data", readings_count=len(readings))
 
     # Build DJU data
     dju_data = []
@@ -145,20 +148,24 @@ def compute_weather_normalized(
     if summer_days:
         summer_avg = sum(d["kwh"] for d in summer_days) / len(summer_days)
         if summer_avg > base_kwh_day * 1.5 and base_kwh_day > 0:
-            alerts.append({
-                "type": "probable_leak",
-                "severity": "high",
-                "message": f"Consommation estivale anormalement elevee ({round(summer_avg, 1)} kWh/j vs base {round(base_kwh_day, 1)} kWh/j)",
-            })
+            alerts.append(
+                {
+                    "type": "probable_leak",
+                    "severity": "high",
+                    "message": f"Consommation estivale anormalement elevee ({round(summer_avg, 1)} kWh/j vs base {round(base_kwh_day, 1)} kWh/j)",
+                }
+            )
 
     # Alert: early heating (heating in months 5-9)
     warm_months = [d for d in dju_data if d["date"][5:7] in ("05", "06", "07", "08", "09") and d["dju"] > 2]
     if warm_months:
-        alerts.append({
-            "type": "early_heating",
-            "severity": "medium",
-            "message": f"Chauffage detecte en saison chaude ({len(warm_months)} jours avec DJU > 2)",
-        })
+        alerts.append(
+            {
+                "type": "early_heating",
+                "severity": "medium",
+                "message": f"Chauffage detecte en saison chaude ({len(warm_months)} jours avec DJU > 2)",
+            }
+        )
 
     # Alert: base drift (last 30d base vs overall base > 10%)
     recent_days = sorted(dju_data, key=lambda d: d["date"])[-30:]
@@ -167,11 +174,13 @@ def compute_weather_normalized(
         if low_dju_recent:
             recent_base = sum(d["kwh"] for d in low_dju_recent) / len(low_dju_recent)
             if base_kwh_day > 0 and (recent_base - base_kwh_day) / base_kwh_day > 0.10:
-                alerts.append({
-                    "type": "base_drift",
-                    "severity": "medium",
-                    "message": f"Derive du talon de base detectee (+{round((recent_base - base_kwh_day) / base_kwh_day * 100, 0)}% sur 30j)",
-                })
+                alerts.append(
+                    {
+                        "type": "base_drift",
+                        "severity": "medium",
+                        "message": f"Derive du talon de base detectee (+{round((recent_base - base_kwh_day) / base_kwh_day * 100, 0)}% sur 30j)",
+                    }
+                )
 
     confidence = "high" if r2 > 0.7 and len(daily) > 60 else ("medium" if r2 > 0.4 else "low")
 
@@ -200,8 +209,13 @@ def compute_weather_normalized(
 
 def _empty_gas_weather(site_id, days, reason="no_gas_meters", readings_count=0):
     return {
-        "site_id": site_id, "days": days, "readings_count": readings_count,
+        "site_id": site_id,
+        "days": days,
+        "readings_count": readings_count,
         "model": {"slope": 0, "intercept": 0, "r_squared": 0, "base_kwh_day": 0, "heating_sensitivity": 0},
-        "dju_data": [], "decomposition": {"base_pct": 0, "heating_pct": 0, "base_total_kwh": 0, "heating_total_kwh": 0},
-        "alerts": [], "confidence": "low", "reason": reason,
+        "dju_data": [],
+        "decomposition": {"base_pct": 0, "heating_pct": 0, "base_total_kwh": 0, "heating_total_kwh": 0},
+        "alerts": [],
+        "confidence": "low",
+        "reason": reason,
     }

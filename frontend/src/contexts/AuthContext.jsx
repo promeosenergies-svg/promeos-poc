@@ -30,11 +30,14 @@ export function AuthProvider({ children }) {
     setScopes(data.scopes || []);
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    _applyLoginResponse(res.data);
-    return res.data;
-  }, [_applyLoginResponse]);
+  const login = useCallback(
+    async (email, password) => {
+      const res = await api.post('/auth/login', { email, password });
+      _applyLoginResponse(res.data);
+      return res.data;
+    },
+    [_applyLoginResponse]
+  );
 
   const logout = useCallback(() => {
     api.post('/auth/logout').catch(() => {});
@@ -49,11 +52,14 @@ export function AuthProvider({ children }) {
     window.location.assign('/login');
   }, []);
 
-  const switchOrg = useCallback(async (orgId) => {
-    const res = await api.post('/auth/switch-org', { org_id: orgId });
-    _applyLoginResponse(res.data);
-    return res.data;
-  }, [_applyLoginResponse]);
+  const switchOrg = useCallback(
+    async (orgId) => {
+      const res = await api.post('/auth/switch-org', { org_id: orgId });
+      _applyLoginResponse(res.data);
+      return res.data;
+    },
+    [_applyLoginResponse]
+  );
 
   const refreshToken = useCallback(async () => {
     try {
@@ -67,18 +73,21 @@ export function AuthProvider({ children }) {
   }, [logout]);
 
   // Check permission helper
-  const hasPermission = useCallback((action, module) => {
-    if (!permissions) return false;
-    if (action === 'admin' || action === 'export' || action === 'sync' || action === 'approve') {
-      return permissions[action] === true;
-    }
-    const allowed = permissions[action];
-    if (allowed === '__all__') return true;
-    if (Array.isArray(allowed)) {
-      return module ? allowed.includes(module) : allowed.length > 0;
-    }
-    return false;
-  }, [permissions]);
+  const hasPermission = useCallback(
+    (action, module) => {
+      if (!permissions) return false;
+      if (action === 'admin' || action === 'export' || action === 'sync' || action === 'approve') {
+        return permissions[action] === true;
+      }
+      const allowed = permissions[action];
+      if (allowed === '__all__') return true;
+      if (Array.isArray(allowed)) {
+        return module ? allowed.includes(module) : allowed.length > 0;
+      }
+      return false;
+    },
+    [permissions]
+  );
 
   // On mount: try to restore session from token
   useEffect(() => {
@@ -87,7 +96,8 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-    api.get('/auth/me')
+    api
+      .get('/auth/me')
       .then((res) => {
         _applyLoginResponse(res.data);
       })
@@ -99,7 +109,9 @@ export function AuthProvider({ children }) {
 
   // Stable ref for refreshToken to avoid stale closures in setInterval
   const refreshRef = useRef(refreshToken);
-  useEffect(() => { refreshRef.current = refreshToken; }, [refreshToken]);
+  useEffect(() => {
+    refreshRef.current = refreshToken;
+  }, [refreshToken]);
 
   // Auto-refresh token every 20 minutes
   useEffect(() => {
@@ -109,9 +121,19 @@ export function AuthProvider({ children }) {
   }, [isAuthenticated]);
 
   const value = {
-    user, org, role, orgs, permissions, scopes,
-    isAuthenticated, loading,
-    login, logout, switchOrg, refreshToken, hasPermission,
+    user,
+    org,
+    role,
+    orgs,
+    permissions,
+    scopes,
+    isAuthenticated,
+    loading,
+    login,
+    logout,
+    switchOrg,
+    refreshToken,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

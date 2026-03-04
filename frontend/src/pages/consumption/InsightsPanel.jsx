@@ -66,7 +66,15 @@ export function percentile(sorted, p) {
 export function computeInsightKpis(seriesData, days) {
   const values = extractValues(seriesData);
   if (!values.length) {
-    return { total_kwh: 0, avg_per_day: 0, p95: 0, p05: 0, load_factor: 0, anomaly_count: 0, n_valid: 0 };
+    return {
+      total_kwh: 0,
+      avg_per_day: 0,
+      p95: 0,
+      p05: 0,
+      load_factor: 0,
+      anomaly_count: 0,
+      n_valid: 0,
+    };
   }
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -76,9 +84,9 @@ export function computeInsightKpis(seriesData, days) {
   const p05 = percentile(sorted, 5);
   // P99 threshold for anomaly detection
   const p99 = percentile(sorted, 99);
-  const anomaly_threshold = p99 * 1.0;  // values above P99 are anomalies
-  const anomaly_count = values.filter(v => v > anomaly_threshold && anomaly_threshold > 0).length;
-  const load_factor = p95 > 0 ? (total_kwh / values.length) / p95 : 0;
+  const anomaly_threshold = p99 * 1.0; // values above P99 are anomalies
+  const anomaly_count = values.filter((v) => v > anomaly_threshold && anomaly_threshold > 0).length;
+  const load_factor = p95 > 0 ? total_kwh / values.length / p95 : 0;
 
   return {
     total_kwh: Math.round(total_kwh * 10) / 10,
@@ -93,9 +101,9 @@ export function computeInsightKpis(seriesData, days) {
 
 // ── KPI card ─────────────────────────────────────────────────────────────────
 
-const u = (energyType) => energyType === 'gas' ? 'kWh PCS' : 'kWh';
-const uDay = (energyType) => energyType === 'gas' ? 'kWh PCS/j' : 'kWh/j';
-const uMwh = (energyType) => energyType === 'gas' ? 'MWh PCS' : 'MWh';
+const u = (energyType) => (energyType === 'gas' ? 'kWh PCS' : 'kWh');
+const uDay = (energyType) => (energyType === 'gas' ? 'kWh PCS/j' : 'kWh/j');
+const uMwh = (energyType) => (energyType === 'gas' ? 'MWh PCS' : 'MWh');
 
 const KPI_CONFIG = [
   {
@@ -104,7 +112,10 @@ const KPI_CONFIG = [
     icon: Zap,
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-500',
-    format: (v, et) => v >= 1000 ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${uMwh(et)}` : `${v.toLocaleString('fr-FR')} ${u(et)}`,
+    format: (v, et) =>
+      v >= 1000
+        ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${uMwh(et)}`
+        : `${v.toLocaleString('fr-FR')} ${u(et)}`,
     sub: (_kpis) => `sur la période analysée`,
   },
   {
@@ -141,11 +152,12 @@ const KPI_CONFIG = [
     iconBg: 'bg-amber-50',
     iconText: 'text-amber-500',
     format: (v) => `${(v * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`,
-    sub: (kpis) => kpis.load_factor < 0.5
-      ? 'Usages intermittents (< 50 %)'
-      : kpis.load_factor < 0.75
-        ? 'Charge modérée (50–75 %)'
-        : 'Charge élevée (> 75 %)',
+    sub: (kpis) =>
+      kpis.load_factor < 0.5
+        ? 'Usages intermittents (< 50 %)'
+        : kpis.load_factor < 0.75
+          ? 'Charge modérée (50–75 %)'
+          : 'Charge élevée (> 75 %)',
   },
   {
     id: 'anomaly_count',
@@ -153,7 +165,7 @@ const KPI_CONFIG = [
     icon: AlertTriangle,
     iconBg: 'bg-orange-50',
     iconText: 'text-orange-500',
-    format: (v) => v === 0 ? 'Aucune' : `${v} point${v > 1 ? 's' : ''}`,
+    format: (v) => (v === 0 ? 'Aucune' : `${v} point${v > 1 ? 's' : ''}`),
     sub: () => 'Valeurs au-dessus du seuil P99',
   },
 ];
@@ -162,12 +174,18 @@ function KpiCard({ config, value, kpis, energyType }) {
   const Icon = config.icon;
   return (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-start gap-3 hover:shadow-sm transition-shadow">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${config.iconBg}`}>
+      <div
+        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${config.iconBg}`}
+      >
         <Icon size={18} className={config.iconText} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">{config.label}</p>
-        <p className="text-lg font-bold text-gray-900 leading-tight truncate">{config.format(value, energyType)}</p>
+        <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+          {config.label}
+        </p>
+        <p className="text-lg font-bold text-gray-900 leading-tight truncate">
+          {config.format(value, energyType)}
+        </p>
         <p className="text-xs text-gray-500 mt-0.5 truncate">{config.sub(kpis)}</p>
       </div>
     </div>
@@ -184,10 +202,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
     granularityOverride: 'daily',
   });
 
-  const kpis = useMemo(
-    () => computeInsightKpis(seriesData, days),
-    [seriesData, days],
-  );
+  const kpis = useMemo(() => computeInsightKpis(seriesData, days), [seriesData, days]);
 
   // Loading state
   if (status === 'loading') {
@@ -214,7 +229,8 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
           Données insuffisantes pour l'analyse
         </h3>
         <p className="text-sm text-gray-500 max-w-xs">
-          Importez ou générez des données de consommation pour ce site afin d'obtenir l'analyse statistique.
+          Importez ou générez des données de consommation pour ce site afin d'obtenir l'analyse
+          statistique.
         </p>
       </div>
     );
@@ -234,7 +250,8 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-lg">
             <AlertTriangle size={13} className="text-orange-500" />
             <span className="text-xs font-medium text-orange-700">
-              {kpis.anomaly_count} anomalie{kpis.anomaly_count > 1 ? 's' : ''} détectée{kpis.anomaly_count > 1 ? 's' : ''}
+              {kpis.anomaly_count} anomalie{kpis.anomaly_count > 1 ? 's' : ''} détectée
+              {kpis.anomaly_count > 1 ? 's' : ''}
             </span>
           </div>
         )}
@@ -242,7 +259,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        {KPI_CONFIG.map(cfg => (
+        {KPI_CONFIG.map((cfg) => (
           <KpiCard
             key={cfg.id}
             config={cfg}

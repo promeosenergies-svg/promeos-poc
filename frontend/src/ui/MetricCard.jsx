@@ -55,11 +55,13 @@ export default function MetricCard({
   className = '',
 }) {
   const Wrapper = onClick ? 'button' : 'div';
-  const accentConfig = accent ? (KPI_ACCENTS[accent] || KPI_ACCENTS.neutral) : null;
-  const barColor = accentConfig ? (ACCENT_BAR[accentConfig.accent] || ACCENT_BAR.gray) : null;
+  const accentConfig = accent ? KPI_ACCENTS[accent] || KPI_ACCENTS.neutral : null;
+  const barColor = accentConfig ? ACCENT_BAR[accentConfig.accent] || ACCENT_BAR.gray : null;
 
   return (
-    <Card className={`${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all' : ''} ${className} overflow-hidden`}>
+    <Card
+      className={`${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all' : ''} ${className} overflow-hidden`}
+    >
       <div className="flex">
         {/* Left accent bar */}
         {barColor && <div className={`w-[3px] shrink-0 ${barColor} rounded-l-lg`} />}
@@ -72,20 +74,26 @@ export default function MetricCard({
             <div className="flex items-start gap-3">
               {/* Icon pill */}
               {Icon && accentConfig && (
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accentConfig.iconBg}`}>
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accentConfig.iconBg}`}
+                >
                   <Icon size={18} className={accentConfig.iconText} />
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{label}</p>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                    {label}
+                  </p>
                   {status && <StatusDot status={status} />}
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{value ?? '\u2014'}</p>
                 <div className="flex items-center gap-2 mt-1">
                   {sub && <p className="text-sm text-gray-500">{sub}</p>}
                   {trend && (
-                    <span className={`text-xs font-medium ${TREND_STYLE[trend] || TREND_STYLE.flat}`}>
+                    <span
+                      className={`text-xs font-medium ${TREND_STYLE[trend] || TREND_STYLE.flat}`}
+                    >
                       {TREND_ARROW[trend]} {trendLabel}
                     </span>
                   )}

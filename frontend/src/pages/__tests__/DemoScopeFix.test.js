@@ -14,7 +14,9 @@ describe('setApiScope: scope state management', () => {
     function setApiScope({ orgId = null, siteId = null } = {}) {
       _scope = { orgId: orgId ?? null, siteId: siteId ?? null };
     }
-    function getScope() { return { ..._scope }; }
+    function getScope() {
+      return { ..._scope };
+    }
     function buildHeaders(url) {
       const isDemoPath = url && (url.includes('/demo/') || url.includes('/seed'));
       const headers = {};
@@ -85,8 +87,14 @@ describe('setApiScope: scope state management', () => {
 // ── ScopeContext: orgSites / scopedSites logic ────────────────────────────────
 
 describe('ScopeContext: orgSites and scopedSites logic', () => {
-  const MOCK_SITES = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, nom: `Mock Site ${i + 1}` }));
-  const API_SITES_10 = Array.from({ length: 10 }, (_, i) => ({ id: i + 100, nom: `API Site ${i + 1}` }));
+  const MOCK_SITES = Array.from({ length: 60 }, (_, i) => ({
+    id: i + 1,
+    nom: `Mock Site ${i + 1}`,
+  }));
+  const API_SITES_10 = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 100,
+    nom: `API Site ${i + 1}`,
+  }));
 
   function computeOrgSites(apiSites, mockSites, effectiveOrgId) {
     if (apiSites.length > 0) return apiSites;
@@ -102,7 +110,7 @@ describe('ScopeContext: orgSites and scopedSites logic', () => {
       sites = effectiveOrgId === 1 ? mockSites : [];
     }
     if (siteId) {
-      sites = sites.filter(s => s.id === siteId);
+      sites = sites.filter((s) => s.id === siteId);
     }
     return sites;
   }
@@ -156,7 +164,7 @@ describe('ScopeContext: scopeLabel', () => {
 
   function computeScopeLabel(siteId, scopedSites) {
     if (!siteId) return 'Tous les sites';
-    const site = scopedSites.find(s => s.id === siteId);
+    const site = scopedSites.find((s) => s.id === siteId);
     return site ? `Site\u00a0: ${site.nom}` : 'Tous les sites';
   }
 
@@ -185,14 +193,18 @@ describe('ScopeSwitcher: site selector', () => {
 
   it('selecting a site calls setSite(id)', () => {
     const setSite = vi.fn();
-    function simulateClick(siteId) { setSite(siteId); }
+    function simulateClick(siteId) {
+      setSite(siteId);
+    }
     simulateClick(5);
     expect(setSite).toHaveBeenCalledWith(5);
   });
 
   it('"Tous les sites" calls setSite(null)', () => {
     const setSite = vi.fn();
-    function simulateTousLesSites() { setSite(null); }
+    function simulateTousLesSites() {
+      setSite(null);
+    }
     simulateTousLesSites();
     expect(setSite).toHaveBeenCalledWith(null);
   });
@@ -204,7 +216,9 @@ describe('ScopeSwitcher: site selector', () => {
   });
 
   it('clear button shown when siteId or portefeuilleId is set', () => {
-    function showClear(scope) { return !!(scope.portefeuilleId || scope.siteId); }
+    function showClear(scope) {
+      return !!(scope.portefeuilleId || scope.siteId);
+    }
     expect(showClear({ portefeuilleId: null, siteId: null })).toBe(false);
     expect(showClear({ portefeuilleId: 2, siteId: null })).toBe(true);
     expect(showClear({ portefeuilleId: null, siteId: 7 })).toBe(true);
@@ -262,7 +276,7 @@ describe('Demo scope: correct site count display', () => {
   it('after setSite(id) scopedSites has exactly 1 site', () => {
     const apiSites = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nom: `S${i + 1}` }));
     const siteId = 3;
-    const scoped = apiSites.filter(s => s.id === siteId);
+    const scoped = apiSites.filter((s) => s.id === siteId);
     expect(scoped).toHaveLength(1);
     expect(scoped[0].id).toBe(3);
   });

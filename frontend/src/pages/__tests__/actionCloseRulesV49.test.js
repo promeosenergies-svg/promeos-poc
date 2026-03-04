@@ -12,10 +12,7 @@ function src(rel) {
 }
 
 function backendSrc(rel) {
-  return readFileSync(
-    resolve(__dirname, '..', '..', '..', '..', 'backend', rel),
-    'utf-8',
-  );
+  return readFileSync(resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf-8');
 }
 
 // ── API: closeability endpoint ──────────────────────────────────────────────

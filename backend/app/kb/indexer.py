@@ -2,6 +2,7 @@
 PROMEOS KB - Indexer (FTS5 full-text search)
 Build and rebuild FTS5 index for KB items
 """
+
 import json
 from typing import List, Dict, Any
 from .models import get_kb_db
@@ -45,17 +46,13 @@ class KBIndexer:
                 sources_text = " ".join([s.get("label", "") for s in sources])
 
                 # Insert into FTS
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO kb_fts (id, title, summary, content_md, tags_text, sources_text)
                     VALUES (?, ?, ?, ?, ?, ?)
-                """, (
-                    row["id"],
-                    row["title"],
-                    row["summary"],
-                    row["content_md"] or "",
-                    tags_text,
-                    sources_text
-                ))
+                """,
+                    (row["id"], row["title"], row["summary"], row["content_md"] or "", tags_text, sources_text),
+                )
 
                 indexed_count += 1
 
@@ -64,11 +61,7 @@ class KBIndexer:
 
         self.db.conn.commit()
 
-        return {
-            "indexed": indexed_count,
-            "errors": errors,
-            "total_items": len(rows)
-        }
+        return {"indexed": indexed_count, "errors": errors, "total_items": len(rows)}
 
     def search(
         self,
@@ -77,7 +70,7 @@ class KBIndexer:
         type_filter: str = None,
         tags: Dict[str, List[str]] = None,
         include_drafts: bool = False,
-        limit: int = 20
+        limit: int = 20,
     ) -> List[Dict[str, Any]]:
         """
         Full-text search with FTS5 + filters
@@ -124,10 +117,7 @@ class KBIndexer:
             for category, values in tags.items():
                 if values:
                     # Check if any tag value matches (OR within category)
-                    tag_conditions = " OR ".join([
-                        f"kb_items.tags_json LIKE ?"
-                        for _ in values
-                    ])
+                    tag_conditions = " OR ".join([f"kb_items.tags_json LIKE ?" for _ in values])
                     sql += f" AND ({tag_conditions})"
                     params.extend([f'%"{val}"%' for val in values])
 
@@ -170,11 +160,11 @@ class KBIndexer:
         total_count = cursor.fetchone()[0]
 
         # Check if index is complete
-        is_complete = (indexed_count == total_count)
+        is_complete = indexed_count == total_count
 
         return {
             "indexed_items": indexed_count,
             "total_items": total_count,
             "is_complete": is_complete,
-            "missing": total_count - indexed_count
+            "missing": total_count - indexed_count,
         }

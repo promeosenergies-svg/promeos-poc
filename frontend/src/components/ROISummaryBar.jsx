@@ -6,13 +6,15 @@ import { useState, useEffect } from 'react';
 import { BadgeEuro, TrendingUp, ArrowRight } from 'lucide-react';
 import { getROISummary } from '../services/api';
 
-const fmtEur = (v) => v != null ? `${Math.round(v).toLocaleString()} EUR` : '— EUR';
+const fmtEur = (v) => (v != null ? `${Math.round(v).toLocaleString()} EUR` : '— EUR');
 
 export default function ROISummaryBar() {
   const [roi, setRoi] = useState(null);
 
   useEffect(() => {
-    getROISummary().then(setRoi).catch(() => {});
+    getROISummary()
+      .then(setRoi)
+      .catch(() => {});
   }, []);
 
   if (!roi || (roi.total_estimated_eur === 0 && roi.total_realized_eur === 0)) return null;
@@ -36,15 +38,19 @@ export default function ROISummaryBar() {
         <span className="font-semibold text-green-700">{fmtEur(roi.total_realized_eur)}</span>
       </div>
 
-      <div className={`ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-        isPositive ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-      }`}>
+      <div
+        className={`ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+          isPositive ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+        }`}
+      >
         <TrendingUp size={12} />
         ROI : {ratio}
       </div>
 
       {roi.actions_with_realized > 0 && (
-        <span className="text-[10px] text-gray-400">{roi.actions_with_realized} action(s) avec gain realise</span>
+        <span className="text-[10px] text-gray-400">
+          {roi.actions_with_realized} action(s) avec gain realise
+        </span>
       )}
     </div>
   );

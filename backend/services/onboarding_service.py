@@ -2,6 +2,7 @@
 PROMEOS - Service Onboarding
 Logique metier pour la creation d'un patrimoine (org + sites + batiments + obligations).
 """
+
 import random
 from datetime import datetime
 from typing import List, Optional
@@ -9,10 +10,17 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Organisation, EntiteJuridique, Portefeuille,
-    Site, Batiment, Obligation,
-    TypeSite, StatutConformite, TypeObligation,
-    ParkingType, OperatStatus,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Obligation,
+    TypeSite,
+    StatutConformite,
+    TypeObligation,
+    ParkingType,
+    OperatStatus,
 )
 from services.compliance_engine import bacs_deadline_for_power, BACS_SEUIL_HAUT, recompute_site
 from services.naf_classifier import classify_naf
@@ -48,15 +56,21 @@ def estimate_cvc_power(type_site: TypeSite, surface_m2: float) -> float:
 def is_tertiaire(type_site: TypeSite) -> bool:
     """Determine si un type de site est soumis au decret tertiaire."""
     return type_site in {
-        TypeSite.MAGASIN, TypeSite.BUREAU, TypeSite.COMMERCE,
-        TypeSite.HOTEL, TypeSite.SANTE, TypeSite.ENSEIGNEMENT,
-        TypeSite.COLLECTIVITE, TypeSite.ENTREPOT,
+        TypeSite.MAGASIN,
+        TypeSite.BUREAU,
+        TypeSite.COMMERCE,
+        TypeSite.HOTEL,
+        TypeSite.SANTE,
+        TypeSite.ENSEIGNEMENT,
+        TypeSite.COLLECTIVITE,
+        TypeSite.ENTREPOT,
     }
 
 
 # ========================================
 # Creation helpers
 # ========================================
+
 
 def create_batiment_for_site(db: Session, site: Site) -> Batiment:
     """Cree un batiment principal pour un site."""
@@ -72,9 +86,7 @@ def create_batiment_for_site(db: Session, site: Site) -> Batiment:
     return bat
 
 
-def create_obligations_for_site(
-    db: Session, site: Site, cvc_power_kw: float
-) -> List[Obligation]:
+def create_obligations_for_site(db: Session, site: Site, cvc_power_kw: float) -> List[Obligation]:
     """Cree les obligations reglementaires applicables a un site."""
     obligations = []
 

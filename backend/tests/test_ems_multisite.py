@@ -2,7 +2,9 @@
 PROMEOS - EMS Multi-site Tests
 5 tests covering multi-site aggregation, anti double-counting, and gas monthly.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -48,27 +50,30 @@ def _seed_readings(db, meter_id, days=3, kwh=10.0, freq=FrequencyType.HOURLY, st
     readings = []
     if freq == FrequencyType.MONTHLY:
         for d in range(days):
-            readings.append(MeterReading(
-                meter_id=meter_id,
-                timestamp=start + timedelta(days=30 * d),
-                frequency=freq,
-                value_kwh=kwh,
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter_id,
+                    timestamp=start + timedelta(days=30 * d),
+                    frequency=freq,
+                    value_kwh=kwh,
+                )
+            )
     else:
         for d in range(days):
             for h in range(24):
-                readings.append(MeterReading(
-                    meter_id=meter_id,
-                    timestamp=start + timedelta(days=d, hours=h),
-                    frequency=freq,
-                    value_kwh=kwh,
-                ))
+                readings.append(
+                    MeterReading(
+                        meter_id=meter_id,
+                        timestamp=start + timedelta(days=d, hours=h),
+                        frequency=freq,
+                        value_kwh=kwh,
+                    )
+                )
     db.bulk_save_objects(readings)
     db.flush()
 
 
 class TestMultiSite:
-
     def test_aggregate_two_sites(self, db):
         s1 = _seed_site(db, "Site A")
         s2 = _seed_site(db, "Site B")
@@ -78,9 +83,14 @@ class TestMultiSite:
         _seed_readings(db, m2.id, days=2, kwh=5)
 
         result = query_timeseries(
-            db, [s1.id, s2.id], None,
-            datetime(2025, 1, 1), datetime(2025, 1, 3),
-            "daily", "aggregate", "kwh",
+            db,
+            [s1.id, s2.id],
+            None,
+            datetime(2025, 1, 1),
+            datetime(2025, 1, 3),
+            "daily",
+            "aggregate",
+            "kwh",
         )
         assert len(result["series"]) == 1
         assert result["series"][0]["key"] == "total"
@@ -96,9 +106,14 @@ class TestMultiSite:
         _seed_readings(db, m2.id, days=2)
 
         result = query_timeseries(
-            db, [s1.id, s2.id], None,
-            datetime(2025, 1, 1), datetime(2025, 1, 3),
-            "daily", "split", "kwh",
+            db,
+            [s1.id, s2.id],
+            None,
+            datetime(2025, 1, 1),
+            datetime(2025, 1, 3),
+            "daily",
+            "split",
+            "kwh",
         )
         assert len(result["series"]) == 2
 
@@ -111,9 +126,14 @@ class TestMultiSite:
         _seed_readings(db, m2.id, days=2)
 
         result = query_timeseries(
-            db, [s1.id, s2.id], None,
-            datetime(2025, 1, 1), datetime(2025, 1, 3),
-            "daily", "stack", "kwh",
+            db,
+            [s1.id, s2.id],
+            None,
+            datetime(2025, 1, 1),
+            datetime(2025, 1, 3),
+            "daily",
+            "stack",
+            "kwh",
         )
         assert len(result["series"]) == 2
 
@@ -126,9 +146,14 @@ class TestMultiSite:
         _seed_readings(db, m2.id, days=1, kwh=5)
 
         result = query_timeseries(
-            db, [site.id], None,
-            datetime(2025, 1, 1), datetime(2025, 1, 2),
-            "daily", "aggregate", "kwh",
+            db,
+            [site.id],
+            None,
+            datetime(2025, 1, 1),
+            datetime(2025, 1, 2),
+            "daily",
+            "aggregate",
+            "kwh",
         )
         # (10+5) * 24 = 360
         assert result["series"][0]["data"][0]["v"] == 360.0
@@ -139,18 +164,26 @@ class TestMultiSite:
         gas = _seed_meter(db, site.id, "Gas", EnergyVector.GAS)
         # Seed 3 monthly readings on 1st of each month
         for month in [1, 2, 3]:
-            db.add(MeterReading(
-                meter_id=gas.id,
-                timestamp=datetime(2025, month, 1),
-                frequency=FrequencyType.MONTHLY,
-                value_kwh=1000,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=gas.id,
+                    timestamp=datetime(2025, month, 1),
+                    frequency=FrequencyType.MONTHLY,
+                    value_kwh=1000,
+                )
+            )
         db.flush()
 
         result = query_timeseries(
-            db, [site.id], None,
-            datetime(2025, 1, 1), datetime(2025, 4, 1),
-            "monthly", "aggregate", "kwh", "gas",
+            db,
+            [site.id],
+            None,
+            datetime(2025, 1, 1),
+            datetime(2025, 4, 1),
+            "monthly",
+            "aggregate",
+            "kwh",
+            "gas",
         )
         assert len(result["series"]) == 1
         assert len(result["series"][0]["data"]) == 3

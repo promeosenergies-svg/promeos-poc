@@ -5,14 +5,18 @@ PROOF_CATALOG : catalogue minimal des preuves attendues pour le Décret tertiair
 get_expected_proofs_for_efa : preuves attendues selon contexte EFA.
 list_proofs_status : compteurs expected/deposited/validated par EFA+year.
 """
+
 import json
 import logging
 
 from sqlalchemy.orm import Session
 
 from models import (
-    TertiaireEfa, TertiaireEfaBuilding, TertiaireResponsibility,
-    TertiairePerimeterEvent, TertiaireProofArtifact,
+    TertiaireEfa,
+    TertiaireEfaBuilding,
+    TertiaireResponsibility,
+    TertiairePerimeterEvent,
+    TertiaireProofArtifact,
     EfaStatut,
 )
 
@@ -87,19 +91,31 @@ def get_expected_proofs_for_efa(db: Session, efa_id: int, year: int = None) -> l
     - Si multi-occupation détectable: justificatif_multi_occupation
     - Si surfaces incohérentes / incomplètes: preuve_surface_usage
     """
-    efa = db.query(TertiaireEfa).filter(
-        TertiaireEfa.id == efa_id,
-        TertiaireEfa.deleted_at.is_(None),
-    ).first()
+    efa = (
+        db.query(TertiaireEfa)
+        .filter(
+            TertiaireEfa.id == efa_id,
+            TertiaireEfa.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not efa:
         return []
 
-    buildings = db.query(TertiaireEfaBuilding).filter(
-        TertiaireEfaBuilding.efa_id == efa_id,
-    ).all()
-    events = db.query(TertiairePerimeterEvent).filter(
-        TertiairePerimeterEvent.efa_id == efa_id,
-    ).all()
+    buildings = (
+        db.query(TertiaireEfaBuilding)
+        .filter(
+            TertiaireEfaBuilding.efa_id == efa_id,
+        )
+        .all()
+    )
+    events = (
+        db.query(TertiairePerimeterEvent)
+        .filter(
+            TertiairePerimeterEvent.efa_id == efa_id,
+        )
+        .all()
+    )
 
     expected = []
 
@@ -112,9 +128,7 @@ def get_expected_proofs_for_efa(db: Session, efa_id: int, year: int = None) -> l
         expected.append(PROOF_CATALOG["dossier_modulation"])
 
     # Si surfaces manquantes ou nulles → preuve surface/usage
-    has_missing_surface = any(
-        not b.surface_m2 or b.surface_m2 <= 0 for b in buildings
-    ) if buildings else not buildings
+    has_missing_surface = any(not b.surface_m2 or b.surface_m2 <= 0 for b in buildings) if buildings else not buildings
     if has_missing_surface:
         expected.append(PROOF_CATALOG["preuve_surface_usage"])
 
@@ -138,9 +152,13 @@ def list_proofs_status(db: Session, efa_id: int, year: int = None) -> dict:
     expected_types = [p["type"] for p in expected]
 
     # Deposited : proof artifacts existants
-    artifacts = db.query(TertiaireProofArtifact).filter(
-        TertiaireProofArtifact.efa_id == efa_id,
-    ).all()
+    artifacts = (
+        db.query(TertiaireProofArtifact)
+        .filter(
+            TertiaireProofArtifact.efa_id == efa_id,
+        )
+        .all()
+    )
 
     deposited = []
     validated = []
@@ -160,6 +178,7 @@ def list_proofs_status(db: Session, efa_id: int, year: int = None) -> dict:
         if artifact.kb_doc_id:
             try:
                 from app.kb.store import KBStore
+
                 kb_store = KBStore()
                 doc = kb_store.get_doc(artifact.kb_doc_id)
                 if doc and doc.get("status") == "validated":

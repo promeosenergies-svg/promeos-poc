@@ -326,6 +326,8 @@ describe('I · V74 backward compat preserved', () => {
   });
 
   it('V75 header comment', () => {
-    expect(code).toContain('V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA');
+    expect(code).toContain(
+      'V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA'
+    );
   });
 });

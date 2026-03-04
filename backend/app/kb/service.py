@@ -3,6 +3,7 @@ PROMEOS KB - Service (Apply Engine)
 Deterministic evaluation of KB items against site_context
 HARD RULE: No recommendation without structured KB item
 """
+
 from typing import List, Dict, Any, Optional
 from .store import KBStore
 from .indexer import KBIndexer
@@ -16,10 +17,7 @@ class KBService:
         self.indexer = KBIndexer()
 
     def apply(
-        self,
-        site_context: Dict[str, Any],
-        domain: Optional[str] = None,
-        allow_drafts: bool = False
+        self, site_context: Dict[str, Any], domain: Optional[str] = None, allow_drafts: bool = False
     ) -> Dict[str, Any]:
         """
         Apply KB items to site_context
@@ -53,27 +51,27 @@ class KBService:
             result = self._evaluate_item(item, site_context)
 
             if result["applicable"]:
-                applicable_items.append({
-                    "kb_item_id": item["id"],
-                    "title": item["title"],
-                    "domain": item["domain"],
-                    "type": item["type"],
-                    "confidence": item["confidence"],
-                    "priority": item.get("priority", 3),
-                    "why": result["why"],
-                    "actions": result["actions"],
-                    "sources": item["sources"],
-                    "missing_inputs": result["missing_inputs"]
-                })
+                applicable_items.append(
+                    {
+                        "kb_item_id": item["id"],
+                        "title": item["title"],
+                        "domain": item["domain"],
+                        "type": item["type"],
+                        "confidence": item["confidence"],
+                        "priority": item.get("priority", 3),
+                        "why": result["why"],
+                        "actions": result["actions"],
+                        "sources": item["sources"],
+                        "missing_inputs": result["missing_inputs"],
+                    }
+                )
 
             # Collect missing fields
             missing_fields.update(result["missing_inputs"])
 
         # Sort by priority (1=highest) then confidence
         confidence_order = {"high": 1, "medium": 2, "low": 3}
-        applicable_items.sort(
-            key=lambda x: (x["priority"], confidence_order.get(x["confidence"], 3))
-        )
+        applicable_items.sort(key=lambda x: (x["priority"], confidence_order.get(x["confidence"], 3)))
 
         # Determine status
         if not applicable_items and len(missing_fields) > 0:
@@ -84,11 +82,7 @@ class KBService:
             status = "ok"
 
         # Generate suggestions
-        suggestions = self._generate_suggestions(
-            applicable_items,
-            missing_fields,
-            site_context
-        )
+        suggestions = self._generate_suggestions(applicable_items, missing_fields, site_context)
 
         return {
             "applicable_items": applicable_items,
@@ -98,15 +92,11 @@ class KBService:
             "stats": {
                 "total_items_evaluated": len(items),
                 "applicable_count": len(applicable_items),
-                "missing_fields_count": len(missing_fields)
-            }
+                "missing_fields_count": len(missing_fields),
+            },
         }
 
-    def _evaluate_item(
-        self,
-        item: Dict[str, Any],
-        site_context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _evaluate_item(self, item: Dict[str, Any], site_context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Evaluate single KB item against site_context
         Returns: {applicable: bool, why: List[str], actions: List, missing_inputs: List[str]}
@@ -123,42 +113,23 @@ class KBService:
 
         # If scope doesn't pass, item is not applicable
         if not scope_pass:
-            return {
-                "applicable": False,
-                "why": why,
-                "actions": [],
-                "missing_inputs": missing_inputs
-            }
+            return {"applicable": False, "why": why, "actions": [], "missing_inputs": missing_inputs}
 
         # Evaluate logic.when (detailed conditions)
         logic_pass = True
         actions = []
 
         if logic and "when" in logic:
-            logic_pass = self._evaluate_when(
-                logic["when"],
-                site_context,
-                why,
-                missing_inputs
-            )
+            logic_pass = self._evaluate_when(logic["when"], site_context, why, missing_inputs)
 
             # If logic passes, extract actions from logic.then
             if logic_pass and "then" in logic:
                 actions = logic["then"].get("outputs", [])
 
-        return {
-            "applicable": logic_pass,
-            "why": why,
-            "actions": actions,
-            "missing_inputs": missing_inputs
-        }
+        return {"applicable": logic_pass, "why": why, "actions": actions, "missing_inputs": missing_inputs}
 
     def _evaluate_scope(
-        self,
-        scope: Dict[str, Any],
-        context: Dict[str, Any],
-        why: List[str],
-        missing: List[str]
+        self, scope: Dict[str, Any], context: Dict[str, Any], why: List[str], missing: List[str]
     ) -> bool:
         """
         Evaluate scope conditions (null-safe)
@@ -219,13 +190,7 @@ class KBService:
 
         return True
 
-    def _evaluate_when(
-        self,
-        when: Dict[str, Any],
-        context: Dict[str, Any],
-        why: List[str],
-        missing: List[str]
-    ) -> bool:
+    def _evaluate_when(self, when: Dict[str, Any], context: Dict[str, Any], why: List[str], missing: List[str]) -> bool:
         """
         Evaluate logic.when conditions (null-safe)
         Supports: all, any, condition objects
@@ -251,11 +216,7 @@ class KBService:
             return self._evaluate_condition(when, context, why, missing)
 
     def _evaluate_condition(
-        self,
-        cond: Dict[str, Any],
-        context: Dict[str, Any],
-        why: List[str],
-        missing: List[str]
+        self, cond: Dict[str, Any], context: Dict[str, Any], why: List[str], missing: List[str]
     ) -> bool:
         """
         Evaluate single condition
@@ -309,25 +270,16 @@ class KBService:
             why.append(f"Error evaluating {field} {op} {expected}: {e}")
             return False
 
-    def _generate_suggestions(
-        self,
-        applicable_items: List[Dict],
-        missing_fields: set,
-        site_context: Dict
-    ) -> List[str]:
+    def _generate_suggestions(self, applicable_items: List[Dict], missing_fields: set, site_context: Dict) -> List[str]:
         """Generate suggestions for user"""
         suggestions = []
 
         if not applicable_items and missing_fields:
-            suggestions.append(
-                f"Collect missing data to unlock KB items: {', '.join(sorted(missing_fields))}"
-            )
+            suggestions.append(f"Collect missing data to unlock KB items: {', '.join(sorted(missing_fields))}")
 
         if len(applicable_items) > 0:
             high_priority = [i for i in applicable_items if i["priority"] == 1]
             if high_priority:
-                suggestions.append(
-                    f"{len(high_priority)} high-priority items require action"
-                )
+                suggestions.append(f"{len(high_priority)} high-priority items require action")
 
         return suggestions

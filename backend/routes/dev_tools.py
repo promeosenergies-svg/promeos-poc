@@ -2,6 +2,7 @@
 PROMEOS - Dev Tools Routes (development only)
 POST /api/dev/reset_db - Backup + recreate schema + reseed demo data.
 """
+
 import logging
 import os
 import shutil
@@ -67,6 +68,7 @@ def reset_db(db: Session = Depends(get_db)):
     # 3. Run migrations (idempotent column additions)
     try:
         from database import run_migrations
+
         run_migrations(engine)
     except Exception:
         pass  # migrations are best-effort
@@ -76,6 +78,7 @@ def reset_db(db: Session = Depends(get_db)):
     try:
         new_db = next(get_db())
         from services.demo_seed import SeedOrchestrator
+
         orch = SeedOrchestrator(new_db)
         seed_result = orch.seed(pack="helios", size="S", rng_seed=42)
     except Exception as exc:

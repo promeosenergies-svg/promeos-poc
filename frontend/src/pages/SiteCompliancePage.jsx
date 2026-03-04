@@ -9,14 +9,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ShieldCheck, AlertTriangle, CheckCircle, Clock, XCircle,
-  Upload, Plus, ArrowLeft, FileCheck, ClipboardList,
-  Building, Zap, Sun, ArrowRight, Package, Columns,
-  Activity, ChevronRight, Hammer, Banknote,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Upload,
+  Plus,
+  ArrowLeft,
+  FileCheck,
+  ClipboardList,
+  Building,
+  Zap,
+  Sun,
+  ArrowRight,
+  Package,
+  Columns,
+  Activity,
+  ChevronRight,
+  Hammer,
+  Banknote,
 } from 'lucide-react';
 import {
-  getSiteComplianceSummary, getActionsList,
-  getSiteWorkPackages, createWorkPackage, createCeeDossier, advanceCeeStep, getMvSummary,
+  getSiteComplianceSummary,
+  getActionsList,
+  getSiteWorkPackages,
+  createWorkPackage,
+  createCeeDossier,
+  advanceCeeStep,
+  getMvSummary,
 } from '../services/api';
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
@@ -62,12 +83,22 @@ const CEE_STATUS_BADGE = {
 
 const CEE_STEPS = ['devis', 'engagement', 'travaux', 'pv_photos', 'mv', 'versement'];
 const CEE_STEP_LABELS = {
-  devis: 'Devis', engagement: 'Engagement', travaux: 'Travaux',
-  pv_photos: 'PV+Photos', mv: 'M&V', versement: 'Versement',
+  devis: 'Devis',
+  engagement: 'Engagement',
+  travaux: 'Travaux',
+  pv_photos: 'PV+Photos',
+  mv: 'M&V',
+  versement: 'Versement',
 };
 
 function Badge({ cfg }) {
-  return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.cls}`}>{cfg.label}</span>;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.cls}`}
+    >
+      {cfg.label}
+    </span>
+  );
 }
 
 /* ── Tab: Obligations ────────────────── */
@@ -80,33 +111,43 @@ function ObligationsTab({ data, navigate }) {
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center gap-3 mb-3">
           <h3 className="text-sm font-semibold text-gray-700">Data Readiness Gate</h3>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${GATE_BADGE[readiness.gate_status]?.cls || 'bg-gray-100'}`}>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${GATE_BADGE[readiness.gate_status]?.cls || 'bg-gray-100'}`}
+          >
             {GATE_BADGE[readiness.gate_status]?.label || readiness.gate_status}
           </span>
-          <span className="text-xs text-gray-400 ml-auto">Complétude: {readiness.completeness_pct}%</span>
+          <span className="text-xs text-gray-400 ml-auto">
+            Complétude: {readiness.completeness_pct}%
+          </span>
         </div>
         {readiness.missing.length > 0 && (
           <div className="space-y-1.5">
-            {readiness.missing.filter(m => m.level === 'blocking').map((m, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 rounded bg-red-50 text-sm">
-                <XCircle size={14} className="text-red-500 shrink-0" />
-                <span className="text-red-700 flex-1">{m.cta_label}</span>
-                <span className="text-xs text-gray-400">{m.regulation}</span>
-                <button
-                  onClick={() => navigate(CTA_NAVIGATE[m.cta_target]?.(data.site_id) || '/patrimoine')}
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                >
-                  Corriger <ArrowRight size={12} />
-                </button>
-              </div>
-            ))}
-            {readiness.missing.filter(m => m.level === 'recommended').map((m, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 rounded bg-amber-50 text-sm">
-                <AlertTriangle size={14} className="text-amber-500 shrink-0" />
-                <span className="text-amber-700 flex-1">{m.cta_label}</span>
-                <span className="text-xs text-gray-400">{m.regulation}</span>
-              </div>
-            ))}
+            {readiness.missing
+              .filter((m) => m.level === 'blocking')
+              .map((m, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded bg-red-50 text-sm">
+                  <XCircle size={14} className="text-red-500 shrink-0" />
+                  <span className="text-red-700 flex-1">{m.cta_label}</span>
+                  <span className="text-xs text-gray-400">{m.regulation}</span>
+                  <button
+                    onClick={() =>
+                      navigate(CTA_NAVIGATE[m.cta_target]?.(data.site_id) || '/patrimoine')
+                    }
+                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    Corriger <ArrowRight size={12} />
+                  </button>
+                </div>
+              ))}
+            {readiness.missing
+              .filter((m) => m.level === 'recommended')
+              .map((m, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded bg-amber-50 text-sm">
+                  <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                  <span className="text-amber-700 flex-1">{m.cta_label}</span>
+                  <span className="text-xs text-gray-400">{m.regulation}</span>
+                </div>
+              ))}
           </div>
         )}
         {readiness.missing.length === 0 && (
@@ -124,7 +165,7 @@ function ObligationsTab({ data, navigate }) {
           ...(deadlines.d30 || []),
           ...(deadlines.d90 || []),
           ...(deadlines.d180 || []),
-        ].filter(d => d.regulation === regKey || d.regulation === regKey.replace('_operat', ''));
+        ].filter((d) => d.regulation === regKey || d.regulation === regKey.replace('_operat', ''));
 
         return (
           <div key={regKey} className="bg-white rounded-lg shadow p-4">
@@ -134,27 +175,50 @@ function ObligationsTab({ data, navigate }) {
               </div>
               <h3 className="text-sm font-semibold text-gray-900">{cfg.label}</h3>
               {app && (
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  app.applicable === true ? 'bg-blue-100 text-blue-700' :
-                  app.applicable === false ? 'bg-gray-100 text-gray-500' :
-                  'bg-amber-100 text-amber-700'
-                }`}>
-                  {app.applicable === true ? 'Applicable' :
-                   app.applicable === false ? 'Non applicable' : 'Incertain'}
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    app.applicable === true
+                      ? 'bg-blue-100 text-blue-700'
+                      : app.applicable === false
+                        ? 'bg-gray-100 text-gray-500'
+                        : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
+                  {app.applicable === true
+                    ? 'Applicable'
+                    : app.applicable === false
+                      ? 'Non applicable'
+                      : 'Incertain'}
                 </span>
               )}
               {regKey === 'tertiaire_operat' && snapshot.statut_decret_tertiaire && (
-                <Badge cfg={STATUT_BADGE[snapshot.statut_decret_tertiaire] || { label: snapshot.statut_decret_tertiaire, cls: 'bg-gray-100' }} />
+                <Badge
+                  cfg={
+                    STATUT_BADGE[snapshot.statut_decret_tertiaire] || {
+                      label: snapshot.statut_decret_tertiaire,
+                      cls: 'bg-gray-100',
+                    }
+                  }
+                />
               )}
               {regKey === 'bacs' && snapshot.statut_bacs && (
-                <Badge cfg={STATUT_BADGE[snapshot.statut_bacs] || { label: snapshot.statut_bacs, cls: 'bg-gray-100' }} />
+                <Badge
+                  cfg={
+                    STATUT_BADGE[snapshot.statut_bacs] || {
+                      label: snapshot.statut_bacs,
+                      cls: 'bg-gray-100',
+                    }
+                  }
+                />
               )}
             </div>
             {app && <p className="text-xs text-gray-500 mb-2">{app.reason}</p>}
             {app?.missing_fields?.length > 0 && (
               <div className="space-y-1 mt-2">
                 {app.missing_fields.map((f, i) => (
-                  <p key={i} className="text-xs text-red-500">Champ manquant: {f}</p>
+                  <p key={i} className="text-xs text-red-500">
+                    Champ manquant: {f}
+                  </p>
                 ))}
               </div>
             )}
@@ -162,9 +226,14 @@ function ObligationsTab({ data, navigate }) {
               <div className="mt-2 space-y-1">
                 {deadlineItems.map((d, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                    <Clock size={12} className={d.days_remaining <= 30 ? 'text-red-500' : 'text-amber-500'} />
+                    <Clock
+                      size={12}
+                      className={d.days_remaining <= 30 ? 'text-red-500' : 'text-amber-500'}
+                    />
                     <span>{d.description}</span>
-                    <span className="ml-auto font-medium">{d.deadline} ({d.days_remaining}j)</span>
+                    <span className="ml-auto font-medium">
+                      {d.deadline} ({d.days_remaining}j)
+                    </span>
                   </div>
                 ))}
               </div>
@@ -180,9 +249,7 @@ function ObligationsTab({ data, navigate }) {
 function PreuvesTab({ data }) {
   const { evidences_count, readiness } = data;
 
-  const proofMissing = readiness.missing.filter(
-    m => m.field.startsWith('has_bacs_')
-  );
+  const proofMissing = readiness.missing.filter((m) => m.field.startsWith('has_bacs_'));
 
   return (
     <div className="space-y-4" data-section="tab-preuves">
@@ -200,9 +267,13 @@ function PreuvesTab({ data }) {
               <div key={i} className="flex items-center gap-2 p-2 rounded bg-amber-50">
                 <Upload size={14} className="text-amber-500" />
                 <span className="text-sm text-amber-700 flex-1">{m.cta_label}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  m.level === 'blocking' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                }`}>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded ${
+                    m.level === 'blocking'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
                   {m.level === 'blocking' ? 'Requis' : 'Recommandé'}
                 </span>
               </div>
@@ -231,7 +302,7 @@ function KanbanCee({ dossier, toast, onAdvance }) {
       toast('Dossier CEE avancé', 'success');
       if (onAdvance) onAdvance();
     } catch {
-      toast('Erreur lors de l\'avancement', 'error');
+      toast("Erreur lors de l'avancement", 'error');
     } finally {
       setAdvancing(false);
     }
@@ -252,12 +323,16 @@ function KanbanCee({ dossier, toast, onAdvance }) {
             <div
               key={step}
               className={`flex-1 min-w-[100px] rounded-lg border-2 p-2 text-center transition ${
-                isCurrent ? 'border-blue-500 bg-blue-50' :
-                isDone ? 'border-green-300 bg-green-50' :
-                'border-gray-200 bg-gray-50'
+                isCurrent
+                  ? 'border-blue-500 bg-blue-50'
+                  : isDone
+                    ? 'border-green-300 bg-green-50'
+                    : 'border-gray-200 bg-gray-50'
               }`}
             >
-              <p className={`text-xs font-medium ${isCurrent ? 'text-blue-700' : isDone ? 'text-green-700' : 'text-gray-500'}`}>
+              <p
+                className={`text-xs font-medium ${isCurrent ? 'text-blue-700' : isDone ? 'text-green-700' : 'text-gray-500'}`}
+              >
                 {CEE_STEP_LABELS[step]}
               </p>
               {isDone && <CheckCircle size={14} className="mx-auto mt-1 text-green-500" />}
@@ -290,11 +365,17 @@ function KanbanCee({ dossier, toast, onAdvance }) {
                 <Clock size={12} className="text-amber-500" />
               )}
               <span className="flex-1 text-gray-700">{ei.label}</span>
-              <span className={`px-1.5 py-0.5 rounded ${
-                ei.statut === 'manquant' ? 'bg-red-100 text-red-600' :
-                ei.statut === 'valide' ? 'bg-green-100 text-green-600' :
-                'bg-amber-100 text-amber-600'
-              }`}>{ei.statut}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded ${
+                  ei.statut === 'manquant'
+                    ? 'bg-red-100 text-red-600'
+                    : ei.statut === 'valide'
+                      ? 'bg-green-100 text-green-600'
+                      : 'bg-amber-100 text-amber-600'
+                }`}
+              >
+                {ei.statut}
+              </span>
             </div>
           ))}
         </div>
@@ -318,7 +399,8 @@ function MvWidget({ siteId }) {
   if (loading) return <div className="bg-white rounded-lg shadow p-4 animate-pulse h-32" />;
   if (!mv) return null;
 
-  const deltaColor = mv.delta_pct > 10 ? 'text-red-600' : mv.delta_pct < -5 ? 'text-green-600' : 'text-gray-700';
+  const deltaColor =
+    mv.delta_pct > 10 ? 'text-red-600' : mv.delta_pct < -5 ? 'text-green-600' : 'text-gray-700';
 
   return (
     <div className="bg-white rounded-lg shadow p-4" data-section="mv-widget">
@@ -329,25 +411,33 @@ function MvWidget({ siteId }) {
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div className="text-center">
           <p className="text-xs text-gray-500">Baseline</p>
-          <p className="text-sm font-bold text-gray-900">{mv.baseline_kwh_month.toLocaleString('fr-FR')} kWh/m</p>
+          <p className="text-sm font-bold text-gray-900">
+            {mv.baseline_kwh_month.toLocaleString('fr-FR')} kWh/m
+          </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500">Actuel</p>
-          <p className="text-sm font-bold text-gray-900">{mv.current_kwh_month.toLocaleString('fr-FR')} kWh/m</p>
+          <p className="text-sm font-bold text-gray-900">
+            {mv.current_kwh_month.toLocaleString('fr-FR')} kWh/m
+          </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500">Delta</p>
           <p className={`text-sm font-bold ${deltaColor}`}>
-            {mv.delta_pct > 0 ? '+' : ''}{mv.delta_pct}%
+            {mv.delta_pct > 0 ? '+' : ''}
+            {mv.delta_pct}%
           </p>
         </div>
       </div>
       {mv.alerts.length > 0 && (
         <div className="space-y-1.5">
           {mv.alerts.map((a, i) => (
-            <div key={i} className={`flex items-center gap-2 p-2 rounded text-xs ${
-              a.severity === 'high' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-            }`}>
+            <div
+              key={i}
+              className={`flex items-center gap-2 p-2 rounded text-xs ${
+                a.severity === 'high' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+              }`}
+            >
               <AlertTriangle size={12} className="shrink-0" />
               <span>{a.message}</span>
             </div>
@@ -369,7 +459,12 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewPkg, setShowNewPkg] = useState(false);
-  const [newPkg, setNewPkg] = useState({ label: '', size: 'M', capex_eur: '', savings_eur_year: '' });
+  const [newPkg, setNewPkg] = useState({
+    label: '',
+    size: 'M',
+    capex_eur: '',
+    savings_eur_year: '',
+  });
   const [creating, setCreating] = useState(false);
 
   const reload = useCallback(() => {
@@ -377,13 +472,17 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
     Promise.all([
       getActionsList({ site_id: siteId, source_type: 'compliance' }).catch(() => []),
       getSiteWorkPackages(siteId).catch(() => []),
-    ]).then(([acts, pkgs]) => {
-      setActions(Array.isArray(acts) ? acts : []);
-      setPackages(Array.isArray(pkgs) ? pkgs : []);
-    }).finally(() => setLoading(false));
+    ])
+      .then(([acts, pkgs]) => {
+        setActions(Array.isArray(acts) ? acts : []);
+        setPackages(Array.isArray(pkgs) ? pkgs : []);
+      })
+      .finally(() => setLoading(false));
   }, [siteId]);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const handleCreatePackage = async () => {
     if (!newPkg.label.trim()) return;
@@ -446,7 +545,7 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
           <div className="border border-indigo-200 rounded-lg p-3 mb-3 bg-indigo-50 space-y-2">
             <input
               value={newPkg.label}
-              onChange={(e) => setNewPkg(p => ({ ...p, label: e.target.value }))}
+              onChange={(e) => setNewPkg((p) => ({ ...p, label: e.target.value }))}
               placeholder="Nom du lot (ex: Isolation combles)"
               className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
               data-testid="pkg-label-input"
@@ -454,7 +553,7 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
             <div className="flex gap-2">
               <select
                 value={newPkg.size}
-                onChange={(e) => setNewPkg(p => ({ ...p, size: e.target.value }))}
+                onChange={(e) => setNewPkg((p) => ({ ...p, size: e.target.value }))}
                 className="px-2 py-1.5 text-sm border border-gray-300 rounded"
                 data-testid="pkg-size-select"
               >
@@ -464,21 +563,26 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
               </select>
               <input
                 value={newPkg.capex_eur}
-                onChange={(e) => setNewPkg(p => ({ ...p, capex_eur: e.target.value }))}
+                onChange={(e) => setNewPkg((p) => ({ ...p, capex_eur: e.target.value }))}
                 placeholder="CAPEX (EUR)"
                 type="number"
                 className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
               />
               <input
                 value={newPkg.savings_eur_year}
-                onChange={(e) => setNewPkg(p => ({ ...p, savings_eur_year: e.target.value }))}
+                onChange={(e) => setNewPkg((p) => ({ ...p, savings_eur_year: e.target.value }))}
                 placeholder="Économies/an (EUR)"
                 type="number"
                 className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
               />
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowNewPkg(false)} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700">Annuler</button>
+              <button
+                onClick={() => setShowNewPkg(false)}
+                className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                Annuler
+              </button>
               <button
                 onClick={handleCreatePackage}
                 disabled={creating || !newPkg.label.trim()}
@@ -493,7 +597,9 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
 
         {loading ? (
           <div className="animate-pulse space-y-2">
-            {[1, 2].map(i => <div key={i} className="h-16 bg-gray-200 rounded" />)}
+            {[1, 2].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded" />
+            ))}
           </div>
         ) : packages.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">Aucun package de travaux.</p>
@@ -508,14 +614,16 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
                 </div>
                 <div className="flex gap-4 text-xs text-gray-500 mb-2">
                   {wp.capex_eur != null && (
-                    <span className="flex items-center gap-1"><Banknote size={12} /> CAPEX: {wp.capex_eur.toLocaleString('fr-FR')} €</span>
+                    <span className="flex items-center gap-1">
+                      <Banknote size={12} /> CAPEX: {wp.capex_eur.toLocaleString('fr-FR')} €
+                    </span>
                   )}
                   {wp.savings_eur_year != null && (
-                    <span className="flex items-center gap-1"><Hammer size={12} /> Éco: {wp.savings_eur_year.toLocaleString('fr-FR')} €/an</span>
+                    <span className="flex items-center gap-1">
+                      <Hammer size={12} /> Éco: {wp.savings_eur_year.toLocaleString('fr-FR')} €/an
+                    </span>
                   )}
-                  {wp.payback_years != null && (
-                    <span>Payback: {wp.payback_years} ans</span>
-                  )}
+                  {wp.payback_years != null && <span>Payback: {wp.payback_years} ans</span>}
                 </div>
 
                 {/* CEE Dossier or CTA */}
@@ -556,7 +664,9 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
         </div>
         {loading ? (
           <div className="animate-pulse space-y-2">
-            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-200 rounded" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 bg-gray-200 rounded" />
+            ))}
           </div>
         ) : actions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -573,8 +683,13 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
         ) : (
           <div className="space-y-2">
             {actions.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 p-2 rounded border border-gray-200 hover:bg-gray-50">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_PILL[a.status] || STATUS_PILL.open}`}>
+              <div
+                key={a.id}
+                className="flex items-center gap-3 p-2 rounded border border-gray-200 hover:bg-gray-50"
+              >
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_PILL[a.status] || STATUS_PILL.open}`}
+                >
                   {a.status}
                 </span>
                 <span className="text-sm text-gray-900 flex-1 truncate">{a.title}</span>
@@ -642,23 +757,29 @@ export default function SiteCompliancePage() {
   const tabs = [
     { id: 'obligations', label: 'Obligations', icon: ShieldCheck },
     { id: 'preuves', label: 'Preuves', icon: FileCheck },
-    { id: 'plan', label: 'Plan d\'action', icon: ClipboardList },
+    { id: 'plan', label: "Plan d'action", icon: ClipboardList },
   ];
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8" data-section="site-compliance">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(toCompliancePipeline())} className="text-gray-400 hover:text-gray-600">
+        <button
+          onClick={() => navigate(toCompliancePipeline())}
+          className="text-gray-400 hover:text-gray-600"
+        >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{data.site_nom}</h1>
           <p className="text-sm text-gray-500">
-            Conformité — {data.obligations_count} obligation(s), {data.findings_count} constat(s), {data.evidences_count} preuve(s)
+            Conformité — {data.obligations_count} obligation(s), {data.findings_count} constat(s),{' '}
+            {data.evidences_count} preuve(s)
           </p>
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${GATE_BADGE[data.readiness.gate_status]?.cls || 'bg-gray-100'}`}>
+        <span
+          className={`px-2 py-1 rounded text-xs font-medium ${GATE_BADGE[data.readiness.gate_status]?.cls || 'bg-gray-100'}`}
+        >
           {GATE_BADGE[data.readiness.gate_status]?.label || 'N/A'}
         </span>
       </div>
@@ -667,13 +788,17 @@ export default function SiteCompliancePage() {
       <div className="grid grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-lg shadow p-3 text-center">
           <p className="text-xs text-gray-500">Risque régl.</p>
-          <p className={`text-lg font-bold ${data.scores.reg_risk >= 60 ? 'text-red-600' : data.scores.reg_risk >= 30 ? 'text-amber-600' : 'text-green-600'}`}>
+          <p
+            className={`text-lg font-bold ${data.scores.reg_risk >= 60 ? 'text-red-600' : data.scores.reg_risk >= 30 ? 'text-amber-600' : 'text-green-600'}`}
+          >
             {data.scores.reg_risk}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-3 text-center">
           <p className="text-xs text-gray-500">Risque preuve</p>
-          <p className={`text-lg font-bold ${data.scores.evidence_risk >= 60 ? 'text-red-600' : data.scores.evidence_risk >= 30 ? 'text-amber-600' : 'text-green-600'}`}>
+          <p
+            className={`text-lg font-bold ${data.scores.evidence_risk >= 60 ? 'text-red-600' : data.scores.evidence_risk >= 30 ? 'text-amber-600' : 'text-green-600'}`}
+          >
             {data.scores.evidence_risk}
           </p>
         </div>
@@ -682,13 +807,14 @@ export default function SiteCompliancePage() {
           <p className="text-lg font-bold text-gray-900">
             {data.scores.financial_opportunity_eur > 0
               ? `${data.scores.financial_opportunity_eur.toLocaleString('fr-FR')} €`
-              : '-'
-            }
+              : '-'}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-3 text-center">
           <p className="text-xs text-gray-500">Confiance donnée</p>
-          <p className={`text-lg font-bold ${data.data_trust.trust_score >= 70 ? 'text-green-600' : data.data_trust.trust_score >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
+          <p
+            className={`text-lg font-bold ${data.data_trust.trust_score >= 70 ? 'text-green-600' : data.data_trust.trust_score >= 40 ? 'text-amber-600' : 'text-red-600'}`}
+          >
             {data.data_trust.trust_score}%
           </p>
         </div>
@@ -720,7 +846,13 @@ export default function SiteCompliancePage() {
           siteId={siteId}
           siteName={data.site_nom}
           navigate={navigate}
-          onCreateAction={() => openActionDrawer({ prefill: { type: 'conformite' }, siteId: parseInt(siteId), sourceType: 'compliance' })}
+          onCreateAction={() =>
+            openActionDrawer({
+              prefill: { type: 'conformite' },
+              siteId: parseInt(siteId),
+              sourceType: 'compliance',
+            })
+          }
           toast={toast}
         />
       )}

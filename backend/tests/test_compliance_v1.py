@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 4: Compliance V1 (rules engine + findings + endpoints)
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -13,11 +15,24 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Batiment, Obligation, Evidence, ComplianceFinding,
-    Organisation, EntiteJuridique, Portefeuille,
-    TypeSite, TypeObligation, StatutConformite,
-    TypeEvidence, StatutEvidence, OperatStatus, ParkingType,
-    ComplianceRunBatch, InsightStatus,
+    Base,
+    Site,
+    Batiment,
+    Obligation,
+    Evidence,
+    ComplianceFinding,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+    TypeObligation,
+    StatutConformite,
+    TypeEvidence,
+    StatutEvidence,
+    OperatStatus,
+    ParkingType,
+    ComplianceRunBatch,
+    InsightStatus,
 )
 from database import get_db
 from main import app
@@ -44,6 +59,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -54,8 +70,7 @@ def _seed(client):
     return client.post("/api/demo/seed").json()
 
 
-def _create_org_site(db_session, type_site=TypeSite.BUREAU, surface=2000,
-                     operat_status=None, cvc_kw=100):
+def _create_org_site(db_session, type_site=TypeSite.BUREAU, surface=2000, operat_status=None, cvc_kw=100):
     """Helper: create org + entite + portefeuille + site + batiment."""
     org = Organisation(nom="Test Corp", type_client="bureau", actif=True)
     db_session.add(org)
@@ -93,9 +108,11 @@ def _create_org_site(db_session, type_site=TypeSite.BUREAU, surface=2000,
 # YAML Rule Packs
 # ========================================
 
+
 class TestYamlRulePacks:
     def test_load_all_packs(self):
         from services.compliance_rules import load_all_packs
+
         packs = load_all_packs()
         assert len(packs) == 3
         regs = [p["regulation"] for p in packs]
@@ -105,6 +122,7 @@ class TestYamlRulePacks:
 
     def test_decret_tertiaire_pack_structure(self):
         from services.compliance_rules import _load_pack
+
         pack = _load_pack("decret_tertiaire_operat_v1.yaml")
         assert pack["version"] == "1.0"
         assert len(pack["rules"]) == 5
@@ -114,6 +132,7 @@ class TestYamlRulePacks:
 
     def test_bacs_pack_structure(self):
         from services.compliance_rules import _load_pack
+
         pack = _load_pack("decret_bacs_v1.yaml")
         assert len(pack["rules"]) == 5
         assert "thresholds" in pack
@@ -121,6 +140,7 @@ class TestYamlRulePacks:
 
     def test_aper_pack_structure(self):
         from services.compliance_rules import _load_pack
+
         pack = _load_pack("loi_aper_v1.yaml")
         assert len(pack["rules"]) == 3
 
@@ -135,6 +155,7 @@ class TestYamlRulePacks:
 # ========================================
 # ComplianceFinding model
 # ========================================
+
 
 class TestComplianceFindingModel:
     def test_create_finding(self, db_session):
@@ -177,10 +198,12 @@ class TestComplianceFindingModel:
 # evaluate_site service
 # ========================================
 
+
 class TestEvaluateSite:
     def test_evaluate_bureau_2000m2(self, db_session):
         """Bureau 2000m2 with CVC 100kW → DT in scope, BACS in scope."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=2000, cvc_kw=100)
 
         findings = evaluate_site(db_session, site.id)
@@ -197,6 +220,7 @@ class TestEvaluateSite:
     def test_evaluate_small_site_out_of_scope(self, db_session):
         """Small site 500m2, CVC 30kW → both DT and BACS out of scope."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=500, cvc_kw=30)
         site.tertiaire_area_m2 = 500
         db_session.commit()
@@ -212,8 +236,11 @@ class TestEvaluateSite:
     def test_evaluate_operat_submitted(self, db_session):
         """Site with OPERAT submitted → DT_OPERAT should be OK."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(
-            db_session, surface=2000, cvc_kw=100,
+            db_session,
+            surface=2000,
+            cvc_kw=100,
             operat_status=OperatStatus.SUBMITTED,
         )
 
@@ -225,8 +252,11 @@ class TestEvaluateSite:
     def test_evaluate_operat_not_started(self, db_session):
         """Site with OPERAT not started → DT_OPERAT should be NOK."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(
-            db_session, surface=2000, cvc_kw=100,
+            db_session,
+            surface=2000,
+            cvc_kw=100,
             operat_status=OperatStatus.NOT_STARTED,
         )
 
@@ -239,6 +269,7 @@ class TestEvaluateSite:
     def test_evaluate_bacs_high_power(self, db_session):
         """CVC 400kW without attestation → BACS_HIGH_DEADLINE NOK critical."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=3000, cvc_kw=400)
 
         findings = evaluate_site(db_session, site.id)
@@ -250,6 +281,7 @@ class TestEvaluateSite:
     def test_evaluate_bacs_with_attestation(self, db_session):
         """CVC 400kW with valid attestation → BACS OK."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=3000, cvc_kw=400)
 
         # Add BACS attestation evidence
@@ -269,6 +301,7 @@ class TestEvaluateSite:
     def test_unknown_to_nok_after_data(self, db_session):
         """Site with no tertiaire_area → UNKNOWN, then set area → NOK or OK."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=2000, cvc_kw=100)
         site.tertiaire_area_m2 = None
         db_session.commit()
@@ -290,17 +323,14 @@ class TestEvaluateSite:
     def test_findings_replaced_on_reevaluation(self, db_session):
         """Re-evaluation replaces previous findings."""
         from services.compliance_rules import evaluate_site
+
         org, site, bat = _create_org_site(db_session, surface=2000, cvc_kw=100)
 
         f1 = evaluate_site(db_session, site.id)
-        count1 = db_session.query(ComplianceFinding).filter(
-            ComplianceFinding.site_id == site.id
-        ).count()
+        count1 = db_session.query(ComplianceFinding).filter(ComplianceFinding.site_id == site.id).count()
 
         f2 = evaluate_site(db_session, site.id)
-        count2 = db_session.query(ComplianceFinding).filter(
-            ComplianceFinding.site_id == site.id
-        ).count()
+        count2 = db_session.query(ComplianceFinding).filter(ComplianceFinding.site_id == site.id).count()
 
         assert count1 == count2  # Replaced, not appended
 
@@ -309,10 +339,12 @@ class TestEvaluateSite:
 # API Endpoints
 # ========================================
 
+
 class TestComplianceEndpoints:
     def test_summary_no_org(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.get("/api/compliance/summary")
         assert r.status_code in (200, 403)
@@ -330,6 +362,7 @@ class TestComplianceEndpoints:
     def test_sites_no_org(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.get("/api/compliance/sites")
         assert r.status_code in (200, 403)
@@ -376,6 +409,7 @@ class TestComplianceEndpoints:
         # V57: resolve_org_id returns 403 when no org is resolvable,
         # or 200 with 0 sites if DemoState has a stale org_id from another test
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.post("/api/compliance/recompute-rules")
         assert r.status_code in (400, 403)
@@ -394,6 +428,7 @@ class TestComplianceEndpoints:
 # ========================================
 # Dashboard 2min integration
 # ========================================
+
 
 class TestDashboard2MinFindings:
     def test_findings_summary_present(self, client):
@@ -419,14 +454,18 @@ class TestDashboard2MinFindings:
 # Auto-trigger on site creation
 # ========================================
 
+
 class TestAutoTrigger:
     def test_site_creation_triggers_evaluation(self, client):
         _seed(client)
-        r = client.post("/api/sites", json={
-            "nom": "Bureau Lyon",
-            "type": "bureau",
-            "surface_m2": 3000,
-        })
+        r = client.post(
+            "/api/sites",
+            json={
+                "nom": "Bureau Lyon",
+                "type": "bureau",
+                "surface_m2": 3000,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["findings_count"] > 0
@@ -436,13 +475,17 @@ class TestAutoTrigger:
 # Sprint 9: Workflow fields on ComplianceFinding
 # ========================================
 
+
 class TestComplianceWorkflow:
     def test_finding_has_workflow_fields(self, db_session):
         """New ComplianceFinding has insight_status=OPEN, owner=None, notes=None."""
         org, site, bat = _create_org_site(db_session)
         cf = ComplianceFinding(
-            site_id=site.id, regulation="bacs", rule_id="BACS_POWER",
-            status="NOK", severity="high",
+            site_id=site.id,
+            regulation="bacs",
+            rule_id="BACS_POWER",
+            status="NOK",
+            severity="high",
         )
         db_session.add(cf)
         db_session.commit()
@@ -506,6 +549,7 @@ class TestComplianceWorkflow:
 # Sprint 9: ComplianceRunBatch
 # ========================================
 
+
 class TestComplianceBatches:
     def test_recompute_creates_batch(self, client):
         """POST /recompute-rules → batch_id in response."""
@@ -544,6 +588,7 @@ class TestComplianceBatches:
 # ========================================
 # Sprint 9: GET /findings endpoint
 # ========================================
+
 
 class TestComplianceFindingsEndpoint:
     def test_get_findings(self, client):
@@ -584,6 +629,7 @@ class TestComplianceFindingsEndpoint:
 # ========================================
 # Sprint 9: Dashboard 2min workflow enrichment
 # ========================================
+
 
 class TestDashboard2MinWorkflow:
     def test_findings_summary_has_workflow(self, client):

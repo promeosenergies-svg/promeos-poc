@@ -9,6 +9,7 @@ Reutilise 100% des services existants:
 - site_config.py (get_site_schedule_params, get_site_price_ref)
 - kb archetypes (NAF → archetype lookup)
 """
+
 import json
 import logging
 import math
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 # ========================================
 # Pure computation: behavior_score
 # ========================================
+
 
 def compute_behavior_score(
     offhours_pct: float,
@@ -60,6 +62,7 @@ def compute_behavior_score(
 # Pure computation: weekend_active detection
 # ========================================
 
+
 def detect_weekend_active(readings: list, schedule: dict) -> dict:
     """Detect significant weekend activity when schedule says closed.
 
@@ -82,8 +85,8 @@ def detect_weekend_active(readings: list, schedule: dict) -> dict:
     weekend_kwh = []
 
     for r in readings:
-        wd = r.timestamp.weekday() if hasattr(r, 'timestamp') else r.get('weekday', 0)
-        val = r.value_kwh if hasattr(r, 'value_kwh') else r.get('value_kwh', 0)
+        wd = r.timestamp.weekday() if hasattr(r, "timestamp") else r.get("weekday", 0)
+        val = r.value_kwh if hasattr(r, "value_kwh") else r.get("value_kwh", 0)
         if wd >= 5:
             weekend_kwh.append(val)
         else:
@@ -116,14 +119,15 @@ def detect_weekend_active(readings: list, schedule: dict) -> dict:
         "ratio": round(ratio, 3),
         "severity": severity,
         "message": f"Consommation weekend = {ratio:.0%} de la semaine "
-                   f"({avg_weekend:.1f} vs {avg_weekday:.1f} kWh/h moy.) — "
-                   f"verifier les equipements en fonctionnement le week-end",
+        f"({avg_weekend:.1f} vs {avg_weekday:.1f} kWh/h moy.) — "
+        f"verifier les equipements en fonctionnement le week-end",
     }
 
 
 # ========================================
 # Profile: heatmap + daily profile + baseload
 # ========================================
+
 
 def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
     """Generate consumption profile: heatmap 7x24, daily profile 24pts, baseload, peak."""
@@ -134,11 +138,15 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
     heatmap = hphc.get("heatmap", [])
 
     # Get raw readings for daily profile + baseload
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+        )
+        .all()
+    )
 
     readings = []
     if meters:
@@ -163,24 +171,29 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
     for h in range(24):
         vals = hour_buckets[h]
         if vals:
-            daily_profile.append({
-                "hour": h,
-                "avg_kwh": round(sum(vals) / len(vals), 2),
-                "min_kwh": round(min(vals), 2),
-                "max_kwh": round(max(vals), 2),
-                "count": len(vals),
-            })
+            daily_profile.append(
+                {
+                    "hour": h,
+                    "avg_kwh": round(sum(vals) / len(vals), 2),
+                    "min_kwh": round(min(vals), 2),
+                    "max_kwh": round(max(vals), 2),
+                    "count": len(vals),
+                }
+            )
         else:
-            daily_profile.append({
-                "hour": h, "avg_kwh": 0, "min_kwh": 0, "max_kwh": 0, "count": 0,
-            })
+            daily_profile.append(
+                {
+                    "hour": h,
+                    "avg_kwh": 0,
+                    "min_kwh": 0,
+                    "max_kwh": 0,
+                    "count": 0,
+                }
+            )
 
     # Baseload: Q10 of night readings (00h-05h weekdays)
     all_values = sorted([r.value_kwh for r in readings]) if readings else []
-    night_values = [
-        r.value_kwh for r in readings
-        if r.timestamp.hour < 5 and r.timestamp.weekday() < 5
-    ]
+    night_values = [r.value_kwh for r in readings if r.timestamp.hour < 5 and r.timestamp.weekday() < 5]
     if not night_values and all_values:
         night_values = all_values  # fallback: use all data
 
@@ -202,9 +215,7 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
     else:
         days_span = 0
 
-    confidence = "high" if len(readings) >= days * 20 else (
-        "medium" if len(readings) >= days * 10 else "low"
-    )
+    confidence = "high" if len(readings) >= days * 20 else ("medium" if len(readings) >= days * 10 else "low")
 
     return {
         "site_id": site_id,
@@ -227,6 +238,7 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
 # Activity context: schedule + archetype + TOU
 # ========================================
 
+
 def get_activity_context(db: Session, site_id: int) -> dict:
     """Get activity context: operating schedule, archetype from NAF, active TOU."""
     from fastapi import HTTPException
@@ -242,9 +254,7 @@ def get_activity_context(db: Session, site_id: int) -> dict:
     schedule_params = get_site_schedule_params(db, site_id)
 
     # Raw schedule for UI (with string times)
-    raw_sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    raw_sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
     schedule_detail = None
     if raw_sched:
         schedule_detail = {
@@ -269,17 +279,14 @@ def get_activity_context(db: Session, site_id: int) -> dict:
 
     # Archetype from NAF
     archetype = None
-    naf_code = site.naf_code if hasattr(site, 'naf_code') else None
+    naf_code = site.naf_code if hasattr(site, "naf_code") else None
     if naf_code:
         try:
             from models.kb_models import KBArchetype, KBMappingCode
-            mapping = db.query(KBMappingCode).filter(
-                KBMappingCode.code == naf_code
-            ).first()
+
+            mapping = db.query(KBMappingCode).filter(KBMappingCode.code == naf_code).first()
             if mapping:
-                arch = db.query(KBArchetype).filter(
-                    KBArchetype.code == mapping.archetype_code
-                ).first()
+                arch = db.query(KBArchetype).filter(KBArchetype.code == mapping.archetype_code).first()
                 if arch:
                     archetype = {
                         "code": arch.code,
@@ -315,15 +322,14 @@ def get_activity_context(db: Session, site_id: int) -> dict:
 # Anomalies + score
 # ========================================
 
+
 def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
     """Get anomalies, KPIs, and behavior_score for a site."""
     from services.consumption_diagnostic import run_diagnostic
     from routes.site_config import get_site_schedule_params
 
     # Run or refresh diagnostics
-    existing = db.query(ConsumptionInsight).filter(
-        ConsumptionInsight.site_id == site_id
-    ).all()
+    existing = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site_id).all()
 
     if not existing:
         existing = run_diagnostic(db, site_id, days=days)
@@ -351,7 +357,7 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
             "metrics": metrics,
             "estimated_loss_kwh": ci.estimated_loss_kwh,
             "estimated_loss_eur": ci.estimated_loss_eur,
-            "status": ci.insight_status if hasattr(ci, 'insight_status') else "open",
+            "status": ci.insight_status if hasattr(ci, "insight_status") else "open",
         }
 
         if ci.recommended_actions_json:
@@ -372,11 +378,15 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
 
     # Weekend active detection
     schedule = get_site_schedule_params(db, site_id)
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+        )
+        .all()
+    )
 
     weekend_result = {"detected": False, "reason": "no_meters"}
     weekend_ratio = 0.0
@@ -396,9 +406,7 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
         weekend_ratio = weekend_result.get("ratio", 0)
 
     # Behavior score
-    score, breakdown = compute_behavior_score(
-        offhours_pct, baseload_ratio, drift_pct, weekend_ratio
-    )
+    score, breakdown = compute_behavior_score(offhours_pct, baseload_ratio, drift_pct, weekend_ratio)
 
     # Max severity
     severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
@@ -428,13 +436,15 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
 # Suggest schedule from NAF
 # ========================================
 
+
 def suggest_schedule_from_naf(db: Session, site_id: int) -> Optional[dict]:
     """Auto-suggest operating schedule based on site NAF code and KB archetypes."""
     site = db.query(Site).filter(Site.id == site_id).first()
-    if not site or not getattr(site, 'naf_code', None):
+    if not site or not getattr(site, "naf_code", None):
         return None
 
     from services.naf_classifier import classify_naf
+
     type_site = classify_naf(site.naf_code)
 
     # Simple archetype mapping based on TypeSite
@@ -449,7 +459,7 @@ def suggest_schedule_from_naf(db: Session, site_id: int) -> Optional[dict]:
         "collectivite": {"open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "18:00", "is_24_7": False},
     }
 
-    ts_lower = type_site.value.lower() if hasattr(type_site, 'value') else str(type_site).lower()
+    ts_lower = type_site.value.lower() if hasattr(type_site, "value") else str(type_site).lower()
     hint = SCHEDULE_HINTS.get(ts_lower, SCHEDULE_HINTS["bureau"])
 
     return {
@@ -464,6 +474,7 @@ def suggest_schedule_from_naf(db: Session, site_id: int) -> Optional[dict]:
 # ========================================
 # Portfolio summary (ranked by behavior_score)
 # ========================================
+
 
 def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> dict:
     """Return all org sites ranked by behavior_score, with KPI deltas."""
@@ -480,31 +491,35 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
         try:
             anomalies = get_anomalies_and_score(db, site.id, days)
             profile = get_consumption_profile(db, site.id, days)
-            rows.append({
-                "site_id": site.id,
-                "site_name": site.nom,
-                "behavior_score": anomalies.get("behavior_score"),
-                "max_severity": anomalies.get("max_severity"),
-                "offhours_pct": (anomalies.get("kpis") or {}).get("offhours_pct", 0),
-                "baseload_kw": profile.get("baseload_kw", 0),
-                "total_kwh": profile.get("total_kwh", 0),
-                "insights_count": len(anomalies.get("insights") or []),
-                "weekend_active": (anomalies.get("weekend_active") or {}).get("detected", False),
-            })
+            rows.append(
+                {
+                    "site_id": site.id,
+                    "site_name": site.nom,
+                    "behavior_score": anomalies.get("behavior_score"),
+                    "max_severity": anomalies.get("max_severity"),
+                    "offhours_pct": (anomalies.get("kpis") or {}).get("offhours_pct", 0),
+                    "baseload_kw": profile.get("baseload_kw", 0),
+                    "total_kwh": profile.get("total_kwh", 0),
+                    "insights_count": len(anomalies.get("insights") or []),
+                    "weekend_active": (anomalies.get("weekend_active") or {}).get("detected", False),
+                }
+            )
         except (ValueError, KeyError, AttributeError) as exc:
             logger.warning("Portfolio score failed for site %d: %s", site.id, exc)
-            rows.append({
-                "site_id": site.id,
-                "site_name": site.nom,
-                "behavior_score": None,
-                "max_severity": None,
-                "error": str(exc),
-                "offhours_pct": 0,
-                "baseload_kw": 0,
-                "total_kwh": 0,
-                "insights_count": 0,
-                "weekend_active": False,
-            })
+            rows.append(
+                {
+                    "site_id": site.id,
+                    "site_name": site.nom,
+                    "behavior_score": None,
+                    "max_severity": None,
+                    "error": str(exc),
+                    "offhours_pct": 0,
+                    "baseload_kw": 0,
+                    "total_kwh": 0,
+                    "insights_count": 0,
+                    "weekend_active": False,
+                }
+            )
 
     # Sort: sites with score first (ascending = worst first), then no-score
     scored = sorted([r for r in rows if r["behavior_score"] is not None], key=lambda r: r["behavior_score"])
@@ -523,6 +538,7 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
 # ========================================
 # Full context (aggregator)
 # ========================================
+
 
 def get_full_context(db: Session, site_id: int, days: int = 30) -> dict:
     """Aggregate profile + activity + anomalies into one response."""

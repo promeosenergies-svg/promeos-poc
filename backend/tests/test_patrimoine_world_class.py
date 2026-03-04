@@ -2,8 +2,10 @@
 PROMEOS - Tests Patrimoine WORLD CLASS
 Tests for: import_mapping, QA scoring thresholds, CRUD Sites/Compteurs/Contrats.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -14,27 +16,49 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille, Compteur,
-    EnergyContract, TypeSite, TypeCompteur, EnergyVector, BillingEnergyType,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Compteur,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
+    BillingEnergyType,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
 )
 from database import get_db
 from main import app
 from services.import_mapping import (
-    normalize_header, normalize_headers, normalize_type_site,
-    normalize_type_compteur, get_mapping_report,
+    normalize_header,
+    normalize_headers,
+    normalize_type_site,
+    normalize_type_compteur,
+    get_mapping_report,
 )
 from services.patrimoine_service import (
-    create_staging_batch, import_csv_to_staging,
-    get_staging_summary, compute_quality_grade,
-    QA_THRESHOLD_EXCELLENT, QA_THRESHOLD_BON, QA_THRESHOLD_MOYEN,
+    create_staging_batch,
+    import_csv_to_staging,
+    get_staging_summary,
+    compute_quality_grade,
+    QA_THRESHOLD_EXCELLENT,
+    QA_THRESHOLD_BON,
+    QA_THRESHOLD_MOYEN,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -57,6 +81,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -77,9 +102,14 @@ def _create_org(db):
 
 def _create_site(db, pf, nom="Site Test", ville="Paris", cp="75001"):
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal=cp, ville=ville,
-        surface_m2=1500, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal=cp,
+        ville=ville,
+        surface_m2=1500,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -88,9 +118,12 @@ def _create_site(db, pf, nom="Site Test", ville="Paris", cp="75001"):
 
 def _create_compteur(db, site, num="CPT-001"):
     c = Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=num, meter_id="12345678901234",
-        energy_vector=EnergyVector.ELECTRICITY, actif=True,
+        site_id=site.id,
+        type=TypeCompteur.ELECTRICITE,
+        numero_serie=num,
+        meter_id="12345678901234",
+        energy_vector=EnergyVector.ELECTRICITY,
+        actif=True,
     )
     db.add(c)
     db.flush()
@@ -99,8 +132,10 @@ def _create_compteur(db, site, num="CPT-001"):
 
 def _create_contract(db, site, supplier="EDF"):
     ct = EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name=supplier, price_ref_eur_per_kwh=0.18,
+        site_id=site.id,
+        energy_type=BillingEnergyType.ELEC,
+        supplier_name=supplier,
+        price_ref_eur_per_kwh=0.18,
         notice_period_days=90,
     )
     db.add(ct)
@@ -111,6 +146,7 @@ def _create_contract(db, site, supplier="EDF"):
 # ========================================
 # TestImportMapping (10 tests)
 # ========================================
+
 
 class TestImportMapping:
     def test_normalize_header_basic(self):
@@ -181,11 +217,15 @@ class TestImportMapping:
 # TestImportWithFRHeaders (3 tests)
 # ========================================
 
+
 class TestImportWithFRHeaders:
     def test_csv_with_fr_synonyms(self, db):
         batch = create_staging_batch(
-            db, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         csv_content = (
             "name,address,cp,commune,superficie,categorie,serial_number,fluide,puissance\n"
@@ -205,25 +245,27 @@ class TestImportWithFRHeaders:
 
     def test_csv_with_semicolon_delimiter(self, db):
         batch = create_staging_batch(
-            db, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        csv_content = (
-            "nom;adresse;code_postal;ville\n"
-            "Hotel Nice;Promenade;06000;Nice\n"
-        ).encode("utf-8")
+        csv_content = ("nom;adresse;code_postal;ville\nHotel Nice;Promenade;06000;Nice\n").encode("utf-8")
         result = import_csv_to_staging(db, batch.id, csv_content)
         assert result["sites_count"] == 1
 
     def test_csv_with_mixed_case_headers(self, db):
         batch = create_staging_batch(
-            db, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        csv_content = (
-            "NOM,ADRESSE,CODE_POSTAL,VILLE,SURFACE_M2\n"
-            "Entrepot Lille,Zone Ind,59000,Lille,4500\n"
-        ).encode("utf-8")
+        csv_content = ("NOM,ADRESSE,CODE_POSTAL,VILLE,SURFACE_M2\nEntrepot Lille,Zone Ind,59000,Lille,4500\n").encode(
+            "utf-8"
+        )
         result = import_csv_to_staging(db, batch.id, csv_content)
         assert result["sites_count"] == 1
 
@@ -231,6 +273,7 @@ class TestImportWithFRHeaders:
 # ========================================
 # TestQAScoring (6 tests)
 # ========================================
+
 
 class TestQAScoring:
     def test_grade_excellent(self):
@@ -264,13 +307,22 @@ class TestQAScoring:
 
     def test_summary_includes_grade(self, db):
         batch = create_staging_batch(
-            db, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         # Add 2 clean sites (no findings)
         for i in range(2):
-            ss = StagingSite(batch_id=batch.id, row_number=i+1, nom=f"Site {i}",
-                            adresse=f"{i} rue", code_postal="75001", ville="Paris")
+            ss = StagingSite(
+                batch_id=batch.id,
+                row_number=i + 1,
+                nom=f"Site {i}",
+                adresse=f"{i} rue",
+                code_postal="75001",
+                ville="Paris",
+            )
             db.add(ss)
         db.flush()
 
@@ -284,6 +336,7 @@ class TestQAScoring:
 # ========================================
 # TestSiteCRUD (8 tests)
 # ========================================
+
 
 class TestSiteCRUD:
     def test_list_sites(self, client, db):
@@ -360,10 +413,13 @@ class TestSiteCRUD:
         _create_contract(db, source, "Engie")
         db.commit()
 
-        resp = client.post("/api/patrimoine/sites/merge", json={
-            "source_site_id": source.id,
-            "target_site_id": target.id,
-        })
+        resp = client.post(
+            "/api/patrimoine/sites/merge",
+            json={
+                "source_site_id": source.id,
+                "target_site_id": target.id,
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["compteurs_moved"] == 1
@@ -375,10 +431,13 @@ class TestSiteCRUD:
         site = _create_site(db, pf)
         db.commit()
 
-        resp = client.post("/api/patrimoine/sites/merge", json={
-            "source_site_id": site.id,
-            "target_site_id": site.id,
-        })
+        resp = client.post(
+            "/api/patrimoine/sites/merge",
+            json={
+                "source_site_id": site.id,
+                "target_site_id": site.id,
+            },
+        )
         assert resp.status_code == 400
 
     def test_site_not_found(self, client, db):
@@ -391,6 +450,7 @@ class TestSiteCRUD:
 # ========================================
 # TestCompteurOps (4 tests)
 # ========================================
+
 
 class TestCompteurOps:
     def test_list_compteurs(self, client, db):
@@ -439,20 +499,24 @@ class TestCompteurOps:
 # TestContractCRUD (5 tests)
 # ========================================
 
+
 class TestContractCRUD:
     def test_create_contract(self, client, db):
         org, _, pf = _create_org(db)
         site = _create_site(db, pf)
         db.commit()
 
-        resp = client.post("/api/patrimoine/contracts", json={
-            "site_id": site.id,
-            "energy_type": "elec",
-            "supplier_name": "EDF Pro",
-            "price_ref_eur_per_kwh": 0.165,
-            "start_date": "2025-01-01",
-            "end_date": "2027-12-31",
-        })
+        resp = client.post(
+            "/api/patrimoine/contracts",
+            json={
+                "site_id": site.id,
+                "energy_type": "elec",
+                "supplier_name": "EDF Pro",
+                "price_ref_eur_per_kwh": 0.165,
+                "start_date": "2025-01-01",
+                "end_date": "2027-12-31",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["supplier_name"] == "EDF Pro"
@@ -476,10 +540,13 @@ class TestContractCRUD:
         ct = _create_contract(db, site)
         db.commit()
 
-        resp = client.patch(f"/api/patrimoine/contracts/{ct.id}", json={
-            "supplier_name": "TotalEnergies",
-            "price_ref_eur_per_kwh": 0.195,
-        })
+        resp = client.patch(
+            f"/api/patrimoine/contracts/{ct.id}",
+            json={
+                "supplier_name": "TotalEnergies",
+                "price_ref_eur_per_kwh": 0.195,
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["supplier_name"] == "TotalEnergies"
 
@@ -502,11 +569,14 @@ class TestContractCRUD:
         site = _create_site(db, pf)
         db.commit()
 
-        resp = client.post("/api/patrimoine/contracts", json={
-            "site_id": site.id,
-            "energy_type": "nuclear",
-            "supplier_name": "X",
-        })
+        resp = client.post(
+            "/api/patrimoine/contracts",
+            json={
+                "site_id": site.id,
+                "energy_type": "nuclear",
+                "supplier_name": "X",
+            },
+        )
         assert resp.status_code == 400
 
 
@@ -514,20 +584,27 @@ class TestContractCRUD:
 # TestMappingPreviewEndpoint (2 tests)
 # ========================================
 
+
 class TestMappingPreviewEndpoint:
     def test_mapping_preview(self, client):
-        resp = client.post("/api/patrimoine/mapping/preview", json={
-            "headers": ["nom", "adresse", "cp", "commune", "superficie"],
-        })
+        resp = client.post(
+            "/api/patrimoine/mapping/preview",
+            json={
+                "headers": ["nom", "adresse", "cp", "commune", "superficie"],
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["is_valid"] is True
         assert data["coverage_pct"] == 100.0
 
     def test_mapping_preview_missing_nom(self, client):
-        resp = client.post("/api/patrimoine/mapping/preview", json={
-            "headers": ["adresse", "ville", "inconnu"],
-        })
+        resp = client.post(
+            "/api/patrimoine/mapping/preview",
+            json={
+                "headers": ["adresse", "ville", "inconnu"],
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["is_valid"] is False

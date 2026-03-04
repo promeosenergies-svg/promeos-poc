@@ -14,7 +14,7 @@ const TABS = ['Scope', 'API', 'Perf', 'Cache', 'Env'];
 
 function ScopeTab() {
   const { scope, org, orgSites, sitesLoading, sitesCount, scopeLabel, selectedSiteId } = useScope();
-  const siteIds = orgSites.map(s => s.id);
+  const siteIds = orgSites.map((s) => s.id);
   const rows = [
     ['orgId', scope?.orgId ?? 'null'],
     ['org.nom', org?.nom ?? 'null'],
@@ -53,7 +53,11 @@ function ApiTab() {
     <div className="space-y-1 max-h-52 overflow-y-auto">
       {[...requests].reverse().map((r) => (
         <div key={r.id} className="flex items-center gap-2 text-[10px] leading-4">
-          <span className={r.error ? 'text-red-400' : r.status >= 400 ? 'text-yellow-400' : 'text-green-400'}>
+          <span
+            className={
+              r.error ? 'text-red-400' : r.status >= 400 ? 'text-yellow-400' : 'text-green-400'
+            }
+          >
             {r.status || '---'}
           </span>
           <span className="text-gray-400">{r.method || '?'}</span>
@@ -78,9 +82,7 @@ function PerfTab() {
             {t.duration}ms
           </span>
           <span className="text-green-300 truncate flex-1">{t.component}</span>
-          <span className="text-gray-500 shrink-0">
-            {new Date(t.ts).toLocaleTimeString()}
-          </span>
+          <span className="text-gray-500 shrink-0">{new Date(t.ts).toLocaleTimeString()}</span>
         </div>
       ))}
     </div>
@@ -98,7 +100,9 @@ function CacheTab() {
           result.push({ key, size: val.length });
         }
       }
-    } catch { /* private browsing */ }
+    } catch {
+      /* private browsing */
+    }
     return result;
   }, []);
 
@@ -136,13 +140,20 @@ function EnvTab() {
   );
 }
 
-const TAB_COMPONENTS = { Scope: ScopeTab, API: ApiTab, Perf: PerfTab, Cache: CacheTab, Env: EnvTab };
+const TAB_COMPONENTS = {
+  Scope: ScopeTab,
+  API: ApiTab,
+  Perf: PerfTab,
+  Cache: CacheTab,
+  Env: EnvTab,
+};
 
 export default function DevPanel() {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Scope');
 
-  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+  const isDebug =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
   if (!isDebug) return null;
 
   const TabContent = TAB_COMPONENTS[activeTab];
@@ -173,7 +184,10 @@ export default function DevPanel() {
             <span className="text-green-300 font-bold uppercase tracking-wider text-[10px]">
               PROMEOS DevPanel
             </span>
-            <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-gray-300 transition">
+            <button
+              onClick={() => setOpen(false)}
+              className="text-gray-500 hover:text-gray-300 transition"
+            >
               <X size={14} />
             </button>
           </div>
@@ -185,9 +199,11 @@ export default function DevPanel() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition
-                  ${activeTab === tab
-                    ? 'text-green-400 border-b-2 border-green-400'
-                    : 'text-gray-500 hover:text-gray-300'}`}
+                  ${
+                    activeTab === tab
+                      ? 'text-green-400 border-b-2 border-green-400'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
               >
                 {tab}
               </button>

@@ -185,16 +185,13 @@ describe('computeActionableLevers — empty', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('GUARD: leverEngineModel est un module pur', () => {
-  const src = readFileSync(
-    resolve(__dirname, '..', '..', 'models', 'leverEngineModel.js'),
-    'utf8',
-  );
+  const src = readFileSync(resolve(__dirname, '..', '..', 'models', 'leverEngineModel.js'), 'utf8');
 
-  it('n\'importe pas React', () => {
+  it("n'importe pas React", () => {
     expect(src).not.toContain("from 'react'");
   });
 
-  it('n\'importe aucun service API', () => {
+  it("n'importe aucun service API", () => {
     expect(src).not.toContain('services/api');
     expect(src).not.toContain('fetch(');
     expect(src).not.toContain('axios');

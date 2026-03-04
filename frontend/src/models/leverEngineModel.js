@@ -41,7 +41,13 @@ import { computeActivatedCount, ACTIVATION_THRESHOLD } from './dataActivationMod
  * @param {{ kpis?: object, billingSummary?: object, complianceSignals?: object, billingInsights?: object, purchaseSignals?: object }} input
  * @returns {LeverResult}
  */
-export function computeActionableLevers({ kpis = {}, billingSummary = {}, complianceSignals, billingInsights, purchaseSignals } = {}) {
+export function computeActionableLevers({
+  kpis = {},
+  billingSummary = {},
+  complianceSignals,
+  billingInsights,
+  purchaseSignals,
+} = {}) {
   const levers = [];
   const hasCompliance = isComplianceAvailable(complianceSignals);
   const hasBilling = isBillingInsightsAvailable(billingInsights);
@@ -55,22 +61,23 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
 
   // V35: enrichissement conformite via signals contract
   const compSignals = hasCompliance ? complianceSignals.signals : [];
-  const compHighCount = compSignals.filter((s) => s.severity === 'critical' || s.severity === 'high').length;
-  const compProofHint = compSignals.length > 0 && compSignals[0].proof_expected
-    ? compSignals[0].proof_expected
-    : null;
+  const compHighCount = compSignals.filter(
+    (s) => s.severity === 'critical' || s.severity === 'high'
+  ).length;
+  const compProofHint =
+    compSignals.length > 0 && compSignals[0].proof_expected ? compSignals[0].proof_expected : null;
 
   if (nonConformes > 0) {
-    const enrichedLabel = hasCompliance && compHighCount > 0
-      ? `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''} (${compHighCount} signal${compHighCount > 1 ? 's' : ''} critique${compHighCount > 1 ? 's' : ''})`
-      : `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''}`;
+    const enrichedLabel =
+      hasCompliance && compHighCount > 0
+        ? `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''} (${compHighCount} signal${compHighCount > 1 ? 's' : ''} critique${compHighCount > 1 ? 's' : ''})`
+        : `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''}`;
     levers.push({
       type: 'conformite',
       actionKey: 'lev-conf-nc',
       label: enrichedLabel,
-      impactEur: risqueTotal > 0
-        ? Math.round(risqueTotal * (nonConformes / (totalRisqueSites || 1)))
-        : null,
+      impactEur:
+        risqueTotal > 0 ? Math.round(risqueTotal * (nonConformes / (totalRisqueSites || 1))) : null,
       ctaPath: '/conformite',
       proofHint: compProofHint,
     });
@@ -81,9 +88,8 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
       type: 'conformite',
       actionKey: 'lev-conf-ar',
       label: `Prevenir ${aRisque} site${aRisque > 1 ? 's' : ''} a risque`,
-      impactEur: risqueTotal > 0
-        ? Math.round(risqueTotal * (aRisque / (totalRisqueSites || 1)))
-        : null,
+      impactEur:
+        risqueTotal > 0 ? Math.round(risqueTotal * (aRisque / (totalRisqueSites || 1))) : null,
       ctaPath: '/conformite',
       proofHint: compProofHint,
     });
@@ -97,13 +103,13 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
   const biAnom = hasBilling ? billingInsights.anomalies_count : 0;
   const biLoss = hasBilling ? billingInsights.total_loss_eur : 0;
   const biConf = hasBilling ? billingInsights.confidence : null;
-  const biProofs = hasBilling && billingInsights.proof_links?.length > 0
-    ? billingInsights.proof_links
-    : null;
+  const biProofs =
+    hasBilling && billingInsights.proof_links?.length > 0 ? billingInsights.proof_links : null;
 
   const effectiveAnomalies = hasBilling ? biAnom : anomalies;
   const effectiveLoss = hasBilling ? Math.max(biLoss, totalLoss) : totalLoss;
-  const confLabel = biConf === 'high' ? ' (confiance haute)' : biConf === 'medium' ? ' (confiance moyenne)' : '';
+  const confLabel =
+    biConf === 'high' ? ' (confiance haute)' : biConf === 'medium' ? ' (confiance moyenne)' : '';
 
   if (effectiveAnomalies > 0) {
     levers.push({
@@ -132,7 +138,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     levers.push({
       type: 'optimisation',
       actionKey: 'lev-optim-ener',
-      label: 'Lancer l\'optimisation energetique',
+      label: "Lancer l'optimisation energetique",
       impactEur: Math.round(totalEur * 0.01),
       ctaPath: '/diagnostic-conso',
     });
@@ -170,16 +176,18 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
   const tertiaireIssues = kpis._tertiaireIssues ?? 0;
   const tertiaireCritical = kpis._tertiaireCritical ?? 0;
   if (tertiaireIssues > 0) {
-    const severityLabel = tertiaireCritical > 0
-      ? ` (${tertiaireCritical} critique${tertiaireCritical > 1 ? 's' : ''})`
-      : '';
+    const severityLabel =
+      tertiaireCritical > 0
+        ? ` (${tertiaireCritical} critique${tertiaireCritical > 1 ? 's' : ''})`
+        : '';
     levers.push({
       type: 'conformite',
       actionKey: 'lev-tertiaire-efa',
       label: `Corriger ${tertiaireIssues} anomalie${tertiaireIssues > 1 ? 's' : ''} Décret tertiaire${severityLabel}`,
-      impactEur: risqueTotal > 0 && totalRisqueSites > 0
-        ? Math.round(risqueTotal * (tertiaireIssues / (totalRisqueSites + tertiaireIssues)))
-        : null,
+      impactEur:
+        risqueTotal > 0 && totalRisqueSites > 0
+          ? Math.round(risqueTotal * (tertiaireIssues / (totalRisqueSites + tertiaireIssues)))
+          : null,
       ctaPath: '/conformite/tertiaire/anomalies',
       proofHint: 'Attestation OPERAT ou dossier de modulation — Estimation V1',
     });
@@ -196,10 +204,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     // V43: build rationale from first uncovered probable site's reasons_fr
     const sampleSite = signalSites.find((s) => s.signal === 'assujetti_probable' && !s.is_covered);
     const reasons = sampleSite?.reasons_fr ?? [];
-    const rationaleLines = [
-      ...reasons.slice(0, 2),
-      'Aucune EFA créée — action recommandée',
-    ];
+    const rationaleLines = [...reasons.slice(0, 2), 'Aucune EFA créée — action recommandée'];
 
     // V44: deep-link with site_id for direct wizard prefill
     const ctaSiteId = sampleSite?.site_id;
@@ -221,14 +226,28 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
   if (incompleteData > 0) {
     // V43: build rationale from missing fields
     const missingLabels = [];
-    if (topMissingFields.surface > 0) missingLabels.push(`surface (${topMissingFields.surface} site${topMissingFields.surface > 1 ? 's' : ''})`);
-    if (topMissingFields.batiments > 0) missingLabels.push(`bâtiments (${topMissingFields.batiments} site${topMissingFields.batiments > 1 ? 's' : ''})`);
-    if (topMissingFields.usage_site > 0) missingLabels.push(`usage (${topMissingFields.usage_site} site${topMissingFields.usage_site > 1 ? 's' : ''})`);
-    if (topMissingFields.surface_batiment > 0) missingLabels.push(`surfaces bâtiment (${topMissingFields.surface_batiment} site${topMissingFields.surface_batiment > 1 ? 's' : ''})`);
+    if (topMissingFields.surface > 0)
+      missingLabels.push(
+        `surface (${topMissingFields.surface} site${topMissingFields.surface > 1 ? 's' : ''})`
+      );
+    if (topMissingFields.batiments > 0)
+      missingLabels.push(
+        `bâtiments (${topMissingFields.batiments} site${topMissingFields.batiments > 1 ? 's' : ''})`
+      );
+    if (topMissingFields.usage_site > 0)
+      missingLabels.push(
+        `usage (${topMissingFields.usage_site} site${topMissingFields.usage_site > 1 ? 's' : ''})`
+      );
+    if (topMissingFields.surface_batiment > 0)
+      missingLabels.push(
+        `surfaces bâtiment (${topMissingFields.surface_batiment} site${topMissingFields.surface_batiment > 1 ? 's' : ''})`
+      );
 
     const rationaleLines = [
       `${incompleteData} site${incompleteData > 1 ? 's' : ''} avec données incomplètes`,
-      missingLabels.length > 0 ? `Données manquantes : ${missingLabels.join(', ')}` : 'Qualification impossible sans données complètes',
+      missingLabels.length > 0
+        ? `Données manquantes : ${missingLabels.join(', ')}`
+        : 'Qualification impossible sans données complètes',
       'Heuristique V1 — à confirmer par analyse réglementaire',
     ];
 
@@ -256,9 +275,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
   }
 
   // ── Aggregation ─────────────────────────────────────────────────────────────
-  const topLevers = [...levers].sort(
-    (a, b) => (b.impactEur ?? -1) - (a.impactEur ?? -1),
-  );
+  const topLevers = [...levers].sort((a, b) => (b.impactEur ?? -1) - (a.impactEur ?? -1));
 
   const leversByType = {
     conformite: levers.filter((l) => l.type === 'conformite').length,
@@ -268,8 +285,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     data_activation: levers.filter((l) => l.type === 'data_activation').length,
   };
 
-  const estimatedImpactEur =
-    (risqueTotal > 0 ? risqueTotal : 0) + (totalLoss > 0 ? totalLoss : 0);
+  const estimatedImpactEur = (risqueTotal > 0 ? risqueTotal : 0) + (totalLoss > 0 ? totalLoss : 0);
 
   return { totalLevers: levers.length, leversByType, estimatedImpactEur, topLevers };
 }

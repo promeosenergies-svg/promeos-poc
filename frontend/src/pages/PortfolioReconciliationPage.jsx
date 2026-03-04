@@ -6,9 +6,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldCheck, Download, Search, Filter, CheckCircle, AlertTriangle, XCircle,
+  ShieldCheck,
+  Download,
+  Search,
+  Filter,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, PageShell, EmptyState } from '../ui';
+import { Card, Badge, Button, PageShell, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
 import { getPortfolioReconciliation, getPortfolioReconciliationCsv } from '../services/api';
@@ -54,7 +60,9 @@ export default function PortfolioReconciliationPage() {
       a.download = 'portfolio_reconciliation.csv';
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
@@ -79,7 +87,9 @@ export default function PortfolioReconciliationPage() {
                 key={st}
                 onClick={() => setFilter(filter === st ? 'all' : st)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
-                  filter === st ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'
+                  filter === st
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
                 }`}
               >
                 <Icon size={16} className={cfg.color} />
@@ -108,7 +118,10 @@ export default function PortfolioReconciliationPage() {
           />
         </div>
         {filter !== 'all' && (
-          <button onClick={() => setFilter('all')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+          <button
+            onClick={() => setFilter('all')}
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+          >
             <Filter size={12} /> Tout afficher
           </button>
         )}
@@ -135,7 +148,11 @@ export default function PortfolioReconciliationPage() {
                 const cfg = STATUS_CFG[s.status] || STATUS_CFG.warn;
                 const Icon = cfg.icon;
                 return (
-                  <Tr key={s.site_id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/sites/${s.site_id}`)}>
+                  <Tr
+                    key={s.site_id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => navigate(`/sites/${s.site_id}`)}
+                  >
                     <Td>
                       <div>
                         <p className="text-sm font-medium text-gray-800">{s.nom}</p>
@@ -160,7 +177,14 @@ export default function PortfolioReconciliationPage() {
                       </div>
                     </Td>
                     <Td className="text-right">
-                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); navigate(`/sites/${s.site_id}`); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/sites/${s.site_id}`);
+                        }}
+                      >
                         Résoudre
                       </Button>
                     </Td>

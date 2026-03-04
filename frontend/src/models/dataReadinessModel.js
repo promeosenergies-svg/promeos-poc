@@ -19,13 +19,31 @@ import { READINESS_GATE } from '../lib/constants';
 // Each returns { status: 'ok'|'partial'|'ko', reason? }
 
 function evalConso(activation, _signals) {
-  const dim = activation?.dimensions?.find(d => d.key === 'consommation');
+  const dim = activation?.dimensions?.find((d) => d.key === 'consommation');
   const coverage = dim?.coverage ?? 0;
   if (coverage === 0) {
-    return { status: 'ko', reason: { id: 'conso-ko', label: 'Aucune donnée de consommation importée', severity: 'critical', path: '/consommations/import', cta: 'Importer' } };
+    return {
+      status: 'ko',
+      reason: {
+        id: 'conso-ko',
+        label: 'Aucune donnée de consommation importée',
+        severity: 'critical',
+        path: '/consommations/import',
+        cta: 'Importer',
+      },
+    };
   }
   if (coverage < READINESS_GATE.conso.partialPct) {
-    return { status: 'partial', reason: { id: 'conso-partial', label: `Couverture consommation à ${coverage}% (seuil : ${READINESS_GATE.conso.partialPct}%)`, severity: 'high', path: '/consommations/import', cta: 'Compléter' } };
+    return {
+      status: 'partial',
+      reason: {
+        id: 'conso-partial',
+        label: `Couverture consommation à ${coverage}% (seuil : ${READINESS_GATE.conso.partialPct}%)`,
+        severity: 'high',
+        path: '/consommations/import',
+        cta: 'Compléter',
+      },
+    };
   }
   return { status: 'ok' };
 }
@@ -33,10 +51,31 @@ function evalConso(activation, _signals) {
 function evalFacturation(_activation, signals) {
   const months = signals?.billingMonthCount ?? 0;
   if (months < READINESS_GATE.facturation.ko) {
-    return { status: 'ko', reason: { id: 'factures-ko', label: months === 0 ? 'Aucune facture importée' : `Seulement ${months} mois de factures (minimum ${READINESS_GATE.facturation.ko})`, severity: 'critical', path: '/bill-intel', cta: 'Importer' } };
+    return {
+      status: 'ko',
+      reason: {
+        id: 'factures-ko',
+        label:
+          months === 0
+            ? 'Aucune facture importée'
+            : `Seulement ${months} mois de factures (minimum ${READINESS_GATE.facturation.ko})`,
+        severity: 'critical',
+        path: '/bill-intel',
+        cta: 'Importer',
+      },
+    };
   }
   if (months < READINESS_GATE.facturation.partial) {
-    return { status: 'partial', reason: { id: 'factures-partial', label: `${months} mois de factures (historique recommandé : ${READINESS_GATE.facturation.partial} mois)`, severity: 'high', path: '/bill-intel', cta: 'Compléter' } };
+    return {
+      status: 'partial',
+      reason: {
+        id: 'factures-partial',
+        label: `${months} mois de factures (historique recommandé : ${READINESS_GATE.facturation.partial} mois)`,
+        severity: 'high',
+        path: '/bill-intel',
+        cta: 'Compléter',
+      },
+    };
   }
   return { status: 'ok' };
 }
@@ -46,26 +85,63 @@ function evalOperat(_activation, signals) {
   const efa = signals?.efaDashboard;
   const efaCount = efa?.total_sites ?? efa?.total ?? 0;
   if (efaCount === 0) {
-    return { status: 'ko', reason: { id: 'operat-ko', label: 'Aucune fiche EFA renseignée pour OPERAT', severity: 'critical', path: '/tertiaire', cta: 'Configurer' } };
+    return {
+      status: 'ko',
+      reason: {
+        id: 'operat-ko',
+        label: 'Aucune fiche EFA renseignée pour OPERAT',
+        severity: 'critical',
+        path: '/tertiaire',
+        cta: 'Configurer',
+      },
+    };
   }
   const openIssues = efa?.open_issues ?? efa?.issues_count ?? 0;
   if (openIssues > READINESS_GATE.operat.issueThreshold) {
-    return { status: 'partial', reason: { id: 'operat-partial', label: `${openIssues} anomalies EFA ouvertes (seuil : ${READINESS_GATE.operat.issueThreshold})`, severity: 'high', path: '/tertiaire', cta: 'Corriger' } };
+    return {
+      status: 'partial',
+      reason: {
+        id: 'operat-partial',
+        label: `${openIssues} anomalies EFA ouvertes (seuil : ${READINESS_GATE.operat.issueThreshold})`,
+        severity: 'high',
+        path: '/tertiaire',
+        cta: 'Corriger',
+      },
+    };
   }
   return { status: 'ok' };
 }
 
 function evalConnectors(activation, signals) {
   const connectors = signals?.connectors;
-  const hasConnector = Array.isArray(connectors) && connectors.some(c => c.status === 'active' || c.enabled);
+  const hasConnector =
+    Array.isArray(connectors) && connectors.some((c) => c.status === 'active' || c.enabled);
   const hasData = (activation?.activatedCount ?? 0) > 1;
   const hasImport = signals?.hasManualImport ?? false;
 
   if (!hasConnector && !hasData && !hasImport) {
-    return { status: 'ko', reason: { id: 'connecteurs-ko', label: 'Aucun connecteur ni import de données configuré', severity: 'critical', path: '/activation', cta: 'Configurer' } };
+    return {
+      status: 'ko',
+      reason: {
+        id: 'connecteurs-ko',
+        label: 'Aucun connecteur ni import de données configuré',
+        severity: 'critical',
+        path: '/activation',
+        cta: 'Configurer',
+      },
+    };
   }
   if (!hasConnector && (hasData || hasImport)) {
-    return { status: 'partial', reason: { id: 'connecteurs-partial', label: 'Import manuel uniquement — aucun connecteur automatique', severity: 'high', path: '/activation', cta: 'Connecter' } };
+    return {
+      status: 'partial',
+      reason: {
+        id: 'connecteurs-partial',
+        label: 'Import manuel uniquement — aucun connecteur automatique',
+        severity: 'high',
+        path: '/activation',
+        cta: 'Connecter',
+      },
+    };
   }
   return { status: 'ok' };
 }
@@ -87,39 +163,47 @@ const LEVEL_BADGE_LABEL = { GREEN: 'OK', AMBER: 'Partiel', RED: 'Incomplet' };
  * @returns {ReadinessState}
  */
 export function computeDataReadinessState(activation, signals = {}) {
-  const results = EVALUATORS.map(fn => fn(activation, signals));
-  const reasons = results.filter(r => r.reason).map(r => r.reason);
+  const results = EVALUATORS.map((fn) => fn(activation, signals));
+  const reasons = results.filter((r) => r.reason).map((r) => r.reason);
 
   // Worst status wins
-  const hasKo = results.some(r => r.status === 'ko');
-  const hasPartial = results.some(r => r.status === 'partial');
+  const hasKo = results.some((r) => r.status === 'ko');
+  const hasPartial = results.some((r) => r.status === 'partial');
   const worstStatus = hasKo ? 'ko' : hasPartial ? 'partial' : 'ok';
   const level = STATUS_LEVEL[worstStatus];
 
   // Title & subtitle
   const titles = {
-    RED: { title: 'Données incomplètes', subtitle: 'Certaines briques essentielles manquent pour exploiter pleinement la plateforme.' },
-    AMBER: { title: 'Données partielles', subtitle: 'La plateforme est utilisable, mais certaines analyses seront limitées.' },
+    RED: {
+      title: 'Données incomplètes',
+      subtitle: 'Certaines briques essentielles manquent pour exploiter pleinement la plateforme.',
+    },
+    AMBER: {
+      title: 'Données partielles',
+      subtitle: 'La plateforme est utilisable, mais certaines analyses seront limitées.',
+    },
     GREEN: { title: 'Données complètes', subtitle: 'Toutes les briques de données sont en place.' },
   };
   const { title, subtitle } = titles[level];
 
   // Primary CTA — first reason path, or default to /activation
-  const primaryCta = reasons.length > 0
-    ? { label: reasons[0].cta || 'Compléter', to: reasons[0].path || '/activation' }
-    : { label: 'Voir l\'activation', to: '/activation' };
+  const primaryCta =
+    reasons.length > 0
+      ? { label: reasons[0].cta || 'Compléter', to: reasons[0].path || '/activation' }
+      : { label: "Voir l'activation", to: '/activation' };
 
   // Secondary CTA when overflow (popover shows max 3, full list on /activation)
   const cappedReasons = reasons.slice(0, 3);
-  const secondaryCta = reasons.length > 3
-    ? { label: `Voir les ${reasons.length} points`, to: '/activation' }
-    : undefined;
+  const secondaryCta =
+    reasons.length > 3
+      ? { label: `Voir les ${reasons.length} points`, to: '/activation' }
+      : undefined;
 
   // Gating flags
   const gating = {
-    canExportOperat: !reasons.some(r => r.id === 'operat-ko'),
-    canAuditAll: !reasons.some(r => r.id === 'factures-ko'),
-    canSimulatePurchase: !reasons.some(r => r.id === 'conso-ko'),
+    canExportOperat: !reasons.some((r) => r.id === 'operat-ko'),
+    canAuditAll: !reasons.some((r) => r.id === 'factures-ko'),
+    canSimulatePurchase: !reasons.some((r) => r.id === 'conso-ko'),
   };
 
   return {
@@ -141,14 +225,30 @@ export function computeDataReadinessState(activation, signals = {}) {
 export { LEVEL_BADGE_LABEL };
 
 /** Standard FR tooltip for soft-gated features. */
-export const SOFT_GATE_TOOLTIP_FR = 'Données insuffisantes — corrigez ce point pour débloquer cette fonctionnalité';
+export const SOFT_GATE_TOOLTIP_FR =
+  'Données insuffisantes — corrigez ce point pour débloquer cette fonctionnalité';
 
 // ── Data Confidence (Purchase) ──────────────────────────────────────────────
 
 const CONFIDENCE_LEVELS = {
-  high:   { label: 'Élevée',  level: 'high',   badgeStatus: 'ok',   tooltipFR: 'Consommation et factures complètes — fiabilité maximale' },
-  medium: { label: 'Moyenne', level: 'medium', badgeStatus: 'warn', tooltipFR: 'Données partielles sur une dimension — résultats indicatifs' },
-  low:    { label: 'Faible',  level: 'low',    badgeStatus: 'crit', tooltipFR: 'Données insuffisantes — résultats peu fiables' },
+  high: {
+    label: 'Élevée',
+    level: 'high',
+    badgeStatus: 'ok',
+    tooltipFR: 'Consommation et factures complètes — fiabilité maximale',
+  },
+  medium: {
+    label: 'Moyenne',
+    level: 'medium',
+    badgeStatus: 'warn',
+    tooltipFR: 'Données partielles sur une dimension — résultats indicatifs',
+  },
+  low: {
+    label: 'Faible',
+    level: 'low',
+    badgeStatus: 'crit',
+    tooltipFR: 'Données insuffisantes — résultats peu fiables',
+  },
 };
 
 /**
@@ -161,10 +261,10 @@ const CONFIDENCE_LEVELS = {
 export function computeDataConfidence(readinessState) {
   if (!readinessState) return CONFIDENCE_LEVELS.low;
 
-  const hasConsoKo = readinessState.reasons?.some(r => r.id === 'conso-ko');
-  const hasFacturesKo = readinessState.reasons?.some(r => r.id === 'factures-ko');
-  const hasConsoPartial = readinessState.reasons?.some(r => r.id === 'conso-partial');
-  const hasFacturesPartial = readinessState.reasons?.some(r => r.id === 'factures-partial');
+  const hasConsoKo = readinessState.reasons?.some((r) => r.id === 'conso-ko');
+  const hasFacturesKo = readinessState.reasons?.some((r) => r.id === 'factures-ko');
+  const hasConsoPartial = readinessState.reasons?.some((r) => r.id === 'conso-partial');
+  const hasFacturesPartial = readinessState.reasons?.some((r) => r.id === 'factures-partial');
 
   // Any KO → low confidence
   if (hasConsoKo || hasFacturesKo) return CONFIDENCE_LEVELS.low;
@@ -229,7 +329,9 @@ export function saveReadinessSnapshot(readinessState, scope = {}) {
     };
     localStorage.setItem(key, JSON.stringify(snapshot));
     _purgeExpiredSnapshots();
-  } catch { /* quota exceeded — silent */ }
+  } catch {
+    /* quota exceeded — silent */
+  }
 }
 
 function _purgeExpiredSnapshots() {
@@ -242,7 +344,9 @@ function _purgeExpiredSnapshots() {
         try {
           const v = JSON.parse(localStorage.getItem(k));
           if ((v?._ts || 0) < cutoff) toRemove.push(k);
-        } catch { toRemove.push(k); }
+        } catch {
+          toRemove.push(k);
+        }
       }
     }
     // Keep max snapshots
@@ -250,15 +354,19 @@ function _purgeExpiredSnapshots() {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k?.startsWith(SNAPSHOT_PREFIX)) {
-        try { all.push({ k, ts: JSON.parse(localStorage.getItem(k))?._ts || 0 }); } catch {}
+        try {
+          all.push({ k, ts: JSON.parse(localStorage.getItem(k))?._ts || 0 });
+        } catch {}
       }
     }
     if (all.length > MAX_SNAPSHOTS) {
       all.sort((a, b) => a.ts - b.ts);
       for (let i = 0; i < all.length - MAX_SNAPSHOTS; i++) toRemove.push(all[i].k);
     }
-    toRemove.forEach(k => localStorage.removeItem(k));
-  } catch { /* silent */ }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* silent */
+  }
 }
 
 /**

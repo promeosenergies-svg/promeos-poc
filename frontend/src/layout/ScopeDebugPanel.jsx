@@ -8,7 +8,8 @@ import { useScope } from '../contexts/ScopeContext';
 
 export default function ScopeDebugPanel() {
   const { scope, org, orgSites, sitesLoading, sitesCount, scopeLabel, selectedSiteId } = useScope();
-  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+  const isDebug =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
   if (!isDebug) return null;
 
   const rows = [

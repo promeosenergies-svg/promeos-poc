@@ -9,13 +9,19 @@ Décision D1 — surface SoT :
                    else site.surface_m2
                    else None
 """
+
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Batiment, Usage, Compteur, DeliveryPoint, EnergyContract,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
 )
 
 # Tolérance SURFACE_MISMATCH (D1) — 5 % par défaut
@@ -37,9 +43,7 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
 
     # ── 1. Bâtiments (soft-delete : deleted_at IS NULL) ──────────────────────
     batiments: List[Batiment] = (
-        db.query(Batiment)
-        .filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None))
-        .all()
+        db.query(Batiment).filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None)).all()
     )
 
     # ── 2. Usages (batch — pas de N+1) ───────────────────────────────────────
@@ -63,17 +67,11 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
 
     # ── 4. Points de livraison (deleted_at IS NULL) ───────────────────────────
     delivery_points: List[DeliveryPoint] = (
-        db.query(DeliveryPoint)
-        .filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None))
-        .all()
+        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
     )
 
     # ── 5. Contrats énergie ───────────────────────────────────────────────────
-    contracts: List[EnergyContract] = (
-        db.query(EnergyContract)
-        .filter(EnergyContract.site_id == site_id)
-        .all()
-    )
+    contracts: List[EnergyContract] = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
 
     # ── Surface SoT (D1) ──────────────────────────────────────────────────────
     if batiments:
@@ -89,10 +87,7 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
             "surface_m2": b.surface_m2,
             "annee_construction": b.annee_construction,
             "cvc_power_kw": b.cvc_power_kw,
-            "usages": [
-                {"id": u.id, "type": u.type.value if u.type else None}
-                for u in usages_by_bat.get(b.id, [])
-            ],
+            "usages": [{"id": u.id, "type": u.type.value if u.type else None} for u in usages_by_bat.get(b.id, [])],
         }
         for b in batiments
     ]

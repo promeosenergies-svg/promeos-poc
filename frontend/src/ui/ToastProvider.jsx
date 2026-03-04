@@ -46,32 +46,38 @@ export function ToastProvider({ children }) {
     return () => clearInterval(cleanup);
   }, []);
 
-  const toast = useCallback((message, type = 'info') => {
-    // Dedup: skip if same message was shown in last 2 seconds
-    const now = Date.now();
-    const key = `${type}:${message}`;
-    if (recentMessages.current.has(key) && now - recentMessages.current.get(key) < 2000) {
-      return -1;
-    }
-    recentMessages.current.set(key, now);
-    // Cleanup old entries to prevent memory leak
-    if (recentMessages.current.size > 50) {
-      for (const [k, ts] of recentMessages.current) {
-        if (now - ts > 5000) recentMessages.current.delete(k);
+  const toast = useCallback(
+    (message, type = 'info') => {
+      // Dedup: skip if same message was shown in last 2 seconds
+      const now = Date.now();
+      const key = `${type}:${message}`;
+      if (recentMessages.current.has(key) && now - recentMessages.current.get(key) < 2000) {
+        return -1;
       }
-    }
+      recentMessages.current.set(key, now);
+      // Cleanup old entries to prevent memory leak
+      if (recentMessages.current.size > 50) {
+        for (const [k, ts] of recentMessages.current) {
+          if (now - ts > 5000) recentMessages.current.delete(k);
+        }
+      }
 
-    const id = ++nextId;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    timers.current[id] = setTimeout(() => removeToast(id), 4000);
-    return id;
-  }, [removeToast]);
+      const id = ++nextId;
+      setToasts((prev) => [...prev, { id, message, type }]);
+      timers.current[id] = setTimeout(() => removeToast(id), 4000);
+      return id;
+    },
+    [removeToast]
+  );
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
       {/* Toast container */}
-      <div className="fixed top-4 right-4 z-[250] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+      <div
+        className="fixed top-4 right-4 z-[250] flex flex-col gap-2 pointer-events-none"
+        aria-live="polite"
+      >
         {toasts.map((t) => {
           const Icon = TOAST_ICONS[t.type] || TOAST_ICONS.info;
           const style = TOAST_STYLES[t.type] || TOAST_STYLES.info;

@@ -3,6 +3,7 @@ test_patrimoine_snapshot_v58.py -- Tests V58 : Snapshot canonique Patrimoine
 
 Couverture : surface SoT D1, soft-delete filtering, scoping org, endpoints HTTP.
 """
+
 import pytest
 from datetime import date, datetime, timezone
 from fastapi.testclient import TestClient
@@ -12,10 +13,21 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, TypeUsage,
-    DeliveryPointStatus, DeliveryPointEnergyType, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    TypeUsage,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
@@ -39,6 +51,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -60,8 +73,7 @@ def _make_org(db, nom, siren=None):
 
 
 def _make_full_site(db, pf, nom="Site", surface=5000.0):
-    site = Site(nom=nom, type=TypeSite.BUREAU, surface_m2=surface,
-                portefeuille_id=pf.id, actif=True)
+    site = Site(nom=nom, type=TypeSite.BUREAU, surface_m2=surface, portefeuille_id=pf.id, actif=True)
     db.add(site)
     db.flush()
     bat_a = Batiment(site_id=site.id, nom="Bat A", surface_m2=3000.0)
@@ -69,15 +81,28 @@ def _make_full_site(db, pf, nom="Site", surface=5000.0):
     db.add_all([bat_a, bat_b])
     db.flush()
     db.add(Usage(batiment_id=bat_a.id, type=TypeUsage.BUREAUX))
-    dp = DeliveryPoint(code="12345678901234", energy_type=DeliveryPointEnergyType.ELEC,
-                       site_id=site.id, status=DeliveryPointStatus.ACTIVE)
+    dp = DeliveryPoint(
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
+    )
     db.add(dp)
     db.flush()
-    db.add(Compteur(site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                    numero_serie="SN-001", actif=True, delivery_point_id=dp.id))
-    db.add(EnergyContract(site_id=site.id, energy_type=BillingEnergyType.ELEC,
-                          supplier_name="EDF", start_date=date(2023, 1, 1),
-                          end_date=date(2025, 12, 31)))
+    db.add(
+        Compteur(
+            site_id=site.id, type=TypeCompteur.ELECTRICITE, numero_serie="SN-001", actif=True, delivery_point_id=dp.id
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site, bat_a, bat_b, dp
 
@@ -86,6 +111,7 @@ class TestSnapshotService:
     def test_surface_sot_uses_batiments_sum(self, db):
         """D1: surface SoT = somme batiments quand batiments presents."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgSoT")
         site, _, _, _ = _make_full_site(db, pf, surface=5000.0)
         snap = get_site_snapshot(site.id, org.id, db)
@@ -96,9 +122,9 @@ class TestSnapshotService:
     def test_surface_sot_fallback_no_batiments(self, db):
         """D1 fallback: pas de batiments -> SoT = site.surface_m2."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgFallback")
-        site = Site(nom="NoBat", type=TypeSite.BUREAU, surface_m2=999.0,
-                    portefeuille_id=pf.id, actif=True)
+        site = Site(nom="NoBat", type=TypeSite.BUREAU, surface_m2=999.0, portefeuille_id=pf.id, actif=True)
         db.add(site)
         db.commit()
         snap = get_site_snapshot(site.id, org.id, db)
@@ -108,6 +134,7 @@ class TestSnapshotService:
     def test_soft_deleted_batiment_excluded(self, db):
         """Batiment soft-deleted (deleted_at != None) exclu du snapshot."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgDelBat")
         site, _, _, _ = _make_full_site(db, pf, surface=5000.0)
         bat_del = Batiment(site_id=site.id, nom="Bat Del", surface_m2=9999.0)
@@ -121,10 +148,10 @@ class TestSnapshotService:
     def test_inactive_compteur_excluded(self, db):
         """Compteur actif=False exclu du snapshot."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgInactCpt")
         site, _, _, _ = _make_full_site(db, pf)
-        db.add(Compteur(site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                        numero_serie="SN-INACTIF", actif=False))
+        db.add(Compteur(site_id=site.id, type=TypeCompteur.ELECTRICITE, numero_serie="SN-INACTIF", actif=False))
         db.commit()
         snap = get_site_snapshot(site.id, org.id, db)
         assert "SN-INACTIF" not in [c["numero_serie"] for c in snap["compteurs"]]
@@ -132,6 +159,7 @@ class TestSnapshotService:
     def test_snapshot_has_all_collections(self, db):
         """Snapshot expose batiments, compteurs, delivery_points, contracts."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgAllColl")
         site, _, _, _ = _make_full_site(db, pf)
         snap = get_site_snapshot(site.id, org.id, db)
@@ -145,11 +173,13 @@ class TestSnapshotService:
     def test_snapshot_none_for_missing_site(self, db):
         """get_site_snapshot retourne None si le site n existe pas."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         assert get_site_snapshot(99999, 1, db) is None
 
     def test_usages_included_in_batiment(self, db):
         """Les usages sont inclus dans les batiments du snapshot."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgUsages")
         site, bat_a, _, _ = _make_full_site(db, pf)
         snap = get_site_snapshot(site.id, org.id, db)
@@ -159,9 +189,9 @@ class TestSnapshotService:
     def test_surface_sot_none_no_surface(self, db):
         """Ni site.surface_m2 ni batiments -> surface_sot_m2 = None."""
         from services.patrimoine_snapshot import get_site_snapshot
+
         org, pf = _make_org(db, "OrgNoSurf")
-        site = Site(nom="NoSurf", type=TypeSite.BUREAU, surface_m2=None,
-                    portefeuille_id=pf.id, actif=True)
+        site = Site(nom="NoSurf", type=TypeSite.BUREAU, surface_m2=None, portefeuille_id=pf.id, actif=True)
         db.add(site)
         db.commit()
         snap = get_site_snapshot(site.id, org.id, db)

@@ -12,7 +12,7 @@ import {
   STATUS_LABELS_FR,
   PRIORITY_LABELS_FR,
 } from '../dossierModel';
-import { SOURCE_LABELS_FR, buildSourceDeepLink } from '../evidenceRules';
+import { buildSourceDeepLink } from '../evidenceRules';
 
 // ── Helper: mock actions ──────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ describe('buildDossier', () => {
     const dossier = buildDossier(
       { sourceType: 'compliance', sourceId: 'BACS', label: 'BACS Conformité' },
       actions,
-      evidenceMap,
+      evidenceMap
     );
 
     expect(dossier.header.sourceLabel).toBe('BACS Conformité');
@@ -85,13 +85,11 @@ describe('buildDossier', () => {
   });
 
   it('identifies missing evidence items', () => {
-    const actions = [
-      mockAction({ id: 10, evidence_required: true, owner: null }),
-    ];
+    const actions = [mockAction({ id: 10, evidence_required: true, owner: null })];
     const dossier = buildDossier(
       { sourceType: 'compliance', sourceId: 'BACS' },
       actions,
-      new Map([[10, []]]),
+      new Map([[10, []]])
     );
     expect(dossier.missing.length).toBeGreaterThanOrEqual(1);
     const evidenceMissing = dossier.missing.find((m) => m.type === 'evidence_missing');
@@ -100,13 +98,11 @@ describe('buildDossier', () => {
   });
 
   it('identifies missing owner', () => {
-    const actions = [
-      mockAction({ id: 11, owner: null }),
-    ];
+    const actions = [mockAction({ id: 11, owner: null })];
     const dossier = buildDossier(
       { sourceType: 'compliance', sourceId: 'BACS' },
       actions,
-      new Map(),
+      new Map()
     );
     const ownerMissing = dossier.missing.find((m) => m.type === 'owner_missing');
     expect(ownerMissing).toBeDefined();
@@ -114,11 +110,7 @@ describe('buildDossier', () => {
   });
 
   it('header has deepLink for compliance source', () => {
-    const dossier = buildDossier(
-      { sourceType: 'compliance', sourceId: 'RT2012' },
-      [],
-      new Map(),
-    );
+    const dossier = buildDossier({ sourceType: 'compliance', sourceId: 'RT2012' }, [], new Map());
     expect(dossier.header.deepLink).toBe('/conformite');
   });
 
@@ -131,7 +123,7 @@ describe('buildDossier', () => {
     const dossier = buildDossier(
       { sourceType: 'compliance', sourceId: 'BACS' },
       actions,
-      new Map(),
+      new Map()
     );
     expect(dossier.stats.done).toBe(1);
     expect(dossier.stats.open).toBe(2);
@@ -167,9 +159,7 @@ describe('groupActionsByWeek', () => {
 
   it('excludes done actions', () => {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    const actions = [
-      mockFEAction({ id: 1, due_date: yesterday, statut: 'done' }),
-    ];
+    const actions = [mockFEAction({ id: 1, due_date: yesterday, statut: 'done' })];
     const groups = groupActionsByWeek(actions);
     expect(groups.overdue).toHaveLength(0);
   });
@@ -186,7 +176,7 @@ describe('computeCloseabilityBadge', () => {
 
   it('evidence_required + no evidence → "Bloqué" crit', () => {
     const badge = computeCloseabilityBadge(
-      mockFEAction({ _backend: { evidence_required: true, evidence_count: 0 } }),
+      mockFEAction({ _backend: { evidence_required: true, evidence_count: 0 } })
     );
     expect(badge.label).toContain('Bloqué');
     expect(badge.status).toBe('crit');
@@ -197,7 +187,7 @@ describe('computeCloseabilityBadge', () => {
       mockFEAction({
         due_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
         _backend: { evidence_required: true, evidence_count: 2 },
-      }),
+      })
     );
     expect(badge.label).toContain('✓');
     expect(badge.status).toBe('ok');
@@ -208,7 +198,7 @@ describe('computeCloseabilityBadge', () => {
       mockFEAction({
         due_date: '2020-01-01',
         _backend: { evidence_required: false },
-      }),
+      })
     );
     expect(badge.label).toBe('En retard');
     expect(badge.status).toBe('warn');
@@ -219,7 +209,7 @@ describe('computeCloseabilityBadge', () => {
       mockFEAction({
         due_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
         _backend: { evidence_required: false },
-      }),
+      })
     );
     expect(badge.label).toBe('');
     expect(badge.status).toBe('neutral');
@@ -262,7 +252,7 @@ describe('Source guards — Étape 5 integration', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/ActionsPage.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('groupActionsByWeek');
     expect(src).toContain('computeCloseabilityBadge');
@@ -274,7 +264,7 @@ describe('Source guards — Étape 5 integration', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/ConformitePage.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('DossierPrintView');
     expect(src).toContain('dossierSource');
@@ -282,7 +272,7 @@ describe('Source guards — Étape 5 integration', () => {
     // onExportDossier now lives in ObligationsTab (V92 split)
     const tabSrc = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/conformite-tabs/ObligationsTab.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(tabSrc).toContain('onExportDossier');
   });
@@ -291,7 +281,7 @@ describe('Source guards — Étape 5 integration', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/BillIntelPage.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('DossierPrintView');
     expect(src).toContain('dossierSource');
@@ -302,7 +292,7 @@ describe('Source guards — Étape 5 integration', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/tertiaire/TertiaireEfaDetailPage.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('DossierPrintView');
     expect(src).toContain('showDossier');

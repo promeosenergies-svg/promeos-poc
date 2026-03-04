@@ -10,6 +10,7 @@ Couverture :
   - Multi-org guard → site org B invisible depuis org A
   - Pydantic models présents (PortfolioSummaryResponse, PortfolioTopSiteItem, etc.)
 """
+
 import pytest
 from datetime import date
 from fastapi.testclient import TestClient
@@ -19,16 +20,28 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, TypeUsage,
-    DeliveryPointStatus, DeliveryPointEnergyType, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    TypeUsage,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def db():
@@ -47,6 +60,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -54,6 +68,7 @@ def client(db):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_org(db, nom):
     org = Organisation(nom=nom, actif=True)
@@ -75,9 +90,11 @@ def _make_site_with_anomalies(db, pf, nom="Site A", surface_site=5000.0, surface
     risk attendu : |5000 - 3000| * 90 kWh/m² * 0.12 €/kWh = 21 600 €
     """
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
+        nom=nom,
+        type=TypeSite.BUREAU,
         surface_m2=surface_site,
-        portefeuille_id=pf.id, actif=True,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -86,20 +103,31 @@ def _make_site_with_anomalies(db, pf, nom="Site A", surface_site=5000.0, surface
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="12345678901234", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
@@ -107,9 +135,11 @@ def _make_site_with_anomalies(db, pf, nom="Site A", surface_site=5000.0, surface
 def _make_clean_site(db, pf, nom="Site Clean"):
     """Site sans anomalie : surface cohérente, compteur avec DP, contrat valide."""
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
+        nom=nom,
+        type=TypeSite.BUREAU,
         surface_m2=1000.0,
-        portefeuille_id=pf.id, actif=True,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -118,25 +148,37 @@ def _make_clean_site(db, pf, nom="Site Clean"):
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="99999999999999", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="99999999999999",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-C{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="Engie",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-C{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="Engie",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
 
 # ── Tests scope vide ──────────────────────────────────────────────────────────
+
 
 class TestPortfolioSummaryEmpty:
     def test_no_sites_returns_zeros(self, client, db):
@@ -179,6 +221,7 @@ class TestPortfolioSummaryEmpty:
 
 
 # ── Tests cas nominal (site avec anomalies) ───────────────────────────────────
+
 
 class TestPortfolioSummaryNominal:
     def test_total_risk_positive(self, client, db):
@@ -246,6 +289,7 @@ class TestPortfolioSummaryNominal:
 
 # ── Tests filtre site_id ──────────────────────────────────────────────────────
 
+
 class TestPortfolioSummarySiteFilter:
     def test_site_filter_reduces_scope(self, client, db):
         """Filtre site_id → summary limité à ce site."""
@@ -286,6 +330,7 @@ class TestPortfolioSummarySiteFilter:
 
 
 # ── Guard multi-org ───────────────────────────────────────────────────────────
+
 
 class TestPortfolioSummaryMultiOrg:
     def test_org_a_cannot_see_org_b_sites(self, client, db):

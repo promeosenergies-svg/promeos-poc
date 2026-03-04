@@ -22,9 +22,10 @@ function scheduleToIntervals(schedule) {
   // If intervals_json is already present, parse it
   if (schedule?.intervals_json) {
     try {
-      const parsed = typeof schedule.intervals_json === 'string'
-        ? JSON.parse(schedule.intervals_json)
-        : schedule.intervals_json;
+      const parsed =
+        typeof schedule.intervals_json === 'string'
+          ? JSON.parse(schedule.intervals_json)
+          : schedule.intervals_json;
       // Ensure all 7 days exist
       const result = {};
       for (const k of DAY_KEYS) result[k] = parsed[k] || [];
@@ -35,17 +36,13 @@ function scheduleToIntervals(schedule) {
   }
 
   // Legacy conversion: open_days + open_time/close_time → intervals
-  const openDays = new Set(
-    (schedule?.open_days || '0,1,2,3,4').split(',').map(Number)
-  );
+  const openDays = new Set((schedule?.open_days || '0,1,2,3,4').split(',').map(Number));
   const openTime = schedule?.open_time || '08:00';
   const closeTime = schedule?.close_time || '19:00';
 
   const result = {};
   for (const k of DAY_KEYS) {
-    result[k] = openDays.has(Number(k))
-      ? [{ start: openTime, end: closeTime }]
-      : [];
+    result[k] = openDays.has(Number(k)) ? [{ start: openTime, end: closeTime }] : [];
   }
   return result;
 }
@@ -130,9 +127,10 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
       // Suggest a start after last end, or default
       const lastEnd = existing.length > 0 ? existing[existing.length - 1].end : '08:00';
       const endMin = parseHHMM(lastEnd);
-      const sugEnd = endMin !== null && endMin + 60 <= 23 * 60 + 59
-        ? `${String(Math.floor((endMin + 60) / 60)).padStart(2, '0')}:${String((endMin + 60) % 60).padStart(2, '0')}`
-        : '19:00';
+      const sugEnd =
+        endMin !== null && endMin + 60 <= 23 * 60 + 59
+          ? `${String(Math.floor((endMin + 60) / 60)).padStart(2, '0')}:${String((endMin + 60) % 60).padStart(2, '0')}`
+          : '19:00';
       next[day] = [...existing, { start: lastEnd, end: sugEnd }];
       return next;
     });
@@ -156,9 +154,7 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
       if (sug?.suggested_schedule) {
         const s = sug.suggested_schedule;
         // Convert suggestion to intervals
-        const openDaysSet = new Set(
-          (s.open_days || '0,1,2,3,4').split(',').map(Number)
-        );
+        const openDaysSet = new Set((s.open_days || '0,1,2,3,4').split(',').map(Number));
         const newIntervals = {};
         for (const k of DAY_KEYS) {
           newIntervals[k] = openDaysSet.has(Number(k))
@@ -219,14 +215,13 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-500" />
             <h3 className="text-sm font-semibold text-gray-700">Horaires d&apos;activité</h3>
-            {schedule?.source && (
-              <Badge variant="neutral">{schedule.source}</Badge>
-            )}
+            {schedule?.source && <Badge variant="neutral">{schedule.source}</Badge>}
             {dirty && <Badge variant="warn">modifié</Badge>}
           </div>
           <div className="flex gap-2">
             <Button
-              size="sm" variant="outline"
+              size="sm"
+              variant="outline"
               onClick={handleSuggest}
               disabled={suggesting}
               title="Appliquer les horaires par défaut du code NAF"
@@ -241,10 +236,15 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
         <div className="flex items-center gap-2 mb-4">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <div
-              onClick={() => { setIs247((v) => !v); setDirty(true); }}
+              onClick={() => {
+                setIs247((v) => !v);
+                setDirty(true);
+              }}
               className={`w-9 h-5 rounded-full transition-colors cursor-pointer ${is247 ? 'bg-indigo-500' : 'bg-gray-200'}`}
             >
-              <div className={`w-4 h-4 rounded-full bg-white shadow mt-0.5 transition-transform ${is247 ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'}`} />
+              <div
+                className={`w-4 h-4 rounded-full bg-white shadow mt-0.5 transition-transform ${is247 ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'}`}
+              />
             </div>
             <span className="text-xs text-gray-600">Ouvert 24h/24, 7j/7</span>
           </label>
@@ -286,14 +286,20 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                     {isOpen && (
                       <div className="flex flex-wrap items-center gap-2 flex-1">
                         {slots.map((slot, idx) => (
-                          <div key={idx} className="flex items-center gap-1" data-testid={`interval-${dayKey}-${idx}`}>
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1"
+                            data-testid={`interval-${dayKey}-${idx}`}
+                          >
                             <input
                               type="time"
                               value={slot.start}
                               data-testid={`interval-start-${dayKey}-${idx}`}
                               onChange={(e) => updateSlot(dayKey, idx, 'start', e.target.value)}
                               className={`border rounded px-1.5 py-0.5 text-xs text-gray-700 w-20 focus:outline-none focus:ring-1 ${
-                                errs ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 focus:ring-indigo-300'
+                                errs
+                                  ? 'border-red-300 focus:ring-red-300'
+                                  : 'border-gray-200 focus:ring-indigo-300'
                               }`}
                             />
                             <span className="text-[10px] text-gray-400">\u2192</span>
@@ -303,7 +309,9 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                               data-testid={`interval-end-${dayKey}-${idx}`}
                               onChange={(e) => updateSlot(dayKey, idx, 'end', e.target.value)}
                               className={`border rounded px-1.5 py-0.5 text-xs text-gray-700 w-20 focus:outline-none focus:ring-1 ${
-                                errs ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 focus:ring-indigo-300'
+                                errs
+                                  ? 'border-red-300 focus:ring-red-300'
+                                  : 'border-gray-200 focus:ring-indigo-300'
                               }`}
                             />
                             <button
@@ -329,15 +337,15 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                       </div>
                     )}
 
-                    {!isOpen && (
-                      <span className="text-[10px] text-gray-300 italic">Fermé</span>
-                    )}
+                    {!isOpen && <span className="text-[10px] text-gray-300 italic">Fermé</span>}
                   </div>
 
                   {errs && (
                     <div data-testid={`day-error-${dayKey}`} className="ml-12 mt-0.5">
                       {errs.map((e, i) => (
-                        <p key={i} className="text-xs text-red-500">{e}</p>
+                        <p key={i} className="text-xs text-red-500">
+                          {e}
+                        </p>
                       ))}
                     </div>
                   )}
@@ -355,9 +363,11 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
             disabled={saving || !dirty || hasErrors}
             data-testid="schedule-save"
           >
-            {saving
-              ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-              : <Save className="w-3 h-3 mr-1" />}
+            {saving ? (
+              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+            ) : (
+              <Save className="w-3 h-3 mr-1" />
+            )}
             {saving ? 'Sauvegarde\u2026' : 'Sauvegarder & Recalculer'}
           </Button>
         </div>

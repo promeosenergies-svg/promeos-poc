@@ -3,7 +3,15 @@
  * Timeline filtrable: action, user, resource + detail panel (before/after).
  */
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardList, ChevronLeft, ChevronRight, Filter, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import {
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  Search,
+} from 'lucide-react';
 import { getAuditLogs } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PageShell, EmptyState } from '../ui';
@@ -43,9 +51,16 @@ function DetailPanel({ detail }) {
     return <span className="text-xs text-gray-300 italic">Aucun detail</span>;
   }
 
-  const entries = typeof detail === 'string' ? (() => {
-    try { return Object.entries(JSON.parse(detail)); } catch { return [['raw', detail]]; }
-  })() : Object.entries(detail);
+  const entries =
+    typeof detail === 'string'
+      ? (() => {
+          try {
+            return Object.entries(JSON.parse(detail));
+          } catch {
+            return [['raw', detail]];
+          }
+        })()
+      : Object.entries(detail);
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 mt-2 text-xs space-y-1.5">
@@ -85,17 +100,23 @@ export default function AdminAuditLogPage() {
         setEntries(data.entries || []);
         setTotal(data.total || 0);
       })
-      .catch(() => toast('Erreur lors du chargement de l\'audit log', 'error'))
+      .catch(() => toast("Erreur lors du chargement de l'audit log", 'error'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, actionFilter, resourceFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (!hasPermission('admin')) {
     return (
       <PageShell icon={ClipboardList} title="Audit Log">
-        <EmptyState icon={ClipboardList} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+        <EmptyState
+          icon={ClipboardList}
+          title="Acces refuse"
+          text="Vous n'avez pas les droits d'administration."
+        />
       </PageShell>
     );
   }
@@ -105,7 +126,8 @@ export default function AdminAuditLogPage() {
   const filtered = searchText
     ? entries.filter((e) =>
         `${e.action} ${e.user_name || ''} ${e.resource_type || ''} ${e.resource_id || ''}`
-          .toLowerCase().includes(searchText.toLowerCase())
+          .toLowerCase()
+          .includes(searchText.toLowerCase())
       )
     : entries;
 
@@ -115,13 +137,15 @@ export default function AdminAuditLogPage() {
       title="Audit Log"
       subtitle={`${total} événement${total !== 1 ? 's' : ''} tracés`}
     >
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <Filter size={16} className="text-gray-400" />
         <select
           value={actionFilter}
-          onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
+          onChange={(e) => {
+            setActionFilter(e.target.value);
+            setPage(0);
+          }}
           className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white"
         >
           <option value="">Toutes les actions</option>
@@ -138,7 +162,10 @@ export default function AdminAuditLogPage() {
         </select>
         <select
           value={resourceFilter}
-          onChange={(e) => { setResourceFilter(e.target.value); setPage(0); }}
+          onChange={(e) => {
+            setResourceFilter(e.target.value);
+            setPage(0);
+          }}
           className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white"
         >
           <option value="">Tous les types</option>
@@ -164,7 +191,9 @@ export default function AdminAuditLogPage() {
           <div className="p-6 text-center text-gray-400">Chargement...</div>
         ) : filtered.length === 0 ? (
           <div className="p-6 text-center text-gray-400">
-            {searchText || actionFilter || resourceFilter ? 'Aucun résultat pour ces filtres' : 'Aucun événement'}
+            {searchText || actionFilter || resourceFilter
+              ? 'Aucun résultat pour ces filtres'
+              : 'Aucun événement'}
           </div>
         ) : (
           filtered.map((e) => (
@@ -174,7 +203,9 @@ export default function AdminAuditLogPage() {
                 className="w-full text-left px-4 py-3 flex items-start gap-4"
               >
                 <div className="flex-shrink-0 mt-0.5">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${ACTION_COLORS[e.action] || 'bg-gray-100 text-gray-600'}`}>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${ACTION_COLORS[e.action] || 'bg-gray-100 text-gray-600'}`}
+                  >
                     {ACTION_LABELS[e.action] || e.action}
                   </span>
                 </div>
@@ -182,7 +213,11 @@ export default function AdminAuditLogPage() {
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">{e.user_name || 'Systeme'}</span>
                     {e.resource_type && (
-                      <span className="text-gray-400"> sur <span className="font-mono text-gray-500">{e.resource_type}</span> #{e.resource_id}</span>
+                      <span className="text-gray-400">
+                        {' '}
+                        sur <span className="font-mono text-gray-500">{e.resource_type}</span> #
+                        {e.resource_id}
+                      </span>
                     )}
                   </p>
                   {e.ip_address && (
@@ -191,11 +226,19 @@ export default function AdminAuditLogPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-xs text-gray-400">
-                    {e.created_at ? new Date(e.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' }) : ''}
+                    {e.created_at
+                      ? new Date(e.created_at).toLocaleString('fr-FR', {
+                          dateStyle: 'short',
+                          timeStyle: 'medium',
+                        })
+                      : ''}
                   </span>
-                  {e.detail && (
-                    expandedId === e.id ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-300" />
-                  )}
+                  {e.detail &&
+                    (expandedId === e.id ? (
+                      <ChevronUp size={14} className="text-gray-400" />
+                    ) : (
+                      <ChevronDown size={14} className="text-gray-300" />
+                    ))}
                 </div>
               </button>
               {expandedId === e.id && (

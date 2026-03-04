@@ -2,6 +2,7 @@
 PROMEOS — V25: Request Context Middleware tests
 Tests X-Request-Id, X-Response-Time, propagation, JSON logging.
 """
+
 import json
 import pytest
 from fastapi import FastAPI
@@ -12,6 +13,7 @@ from services.json_logger import JsonFormatter, setup_logging
 
 
 # ── Minimal test app ────────────────────────────────────────────────
+
 
 def create_test_app():
     app = FastAPI()
@@ -24,6 +26,7 @@ def create_test_app():
     @app.get("/slow")
     def slow():
         import time
+
         time.sleep(0.05)
         return {"status": "slow"}
 
@@ -35,6 +38,7 @@ client = TestClient(app)
 
 
 # ── Tests ───────────────────────────────────────────────────────────
+
 
 class TestRequestContextMiddleware:
     def test_response_contains_x_request_id(self):
@@ -73,6 +77,7 @@ class TestRequestContextMiddleware:
 class TestJsonFormatter:
     def test_json_format_output(self):
         import logging
+
         formatter = JsonFormatter()
         record = logging.LogRecord(
             name="promeos.test",

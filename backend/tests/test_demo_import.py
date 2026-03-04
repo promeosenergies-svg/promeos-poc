@@ -2,8 +2,10 @@
 PROMEOS - Tests Sprint 1: Demo Seed + Import CSV standalone
 Tests: /api/demo/seed, /api/demo/status, /api/import/sites, /api/import/template
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import io
@@ -39,6 +41,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -47,6 +50,7 @@ def client(db_session):
 # ========================================
 # Demo Seed — POST /api/demo/seed
 # ========================================
+
 
 class TestDemoSeed:
     """Tests pour l'endpoint POST /api/demo/seed."""
@@ -122,6 +126,7 @@ class TestDemoSeed:
 # Demo Status — GET /api/demo/status
 # ========================================
 
+
 class TestDemoStatus:
     """Tests pour enable/disable/status demo."""
 
@@ -145,6 +150,7 @@ class TestDemoStatus:
 # ========================================
 # Import Template — GET /api/import/template
 # ========================================
+
 
 class TestImportTemplate:
     """Tests pour GET /api/import/template."""
@@ -172,6 +178,7 @@ class TestImportTemplate:
 # ========================================
 # Import CSV standalone — POST /api/import/sites
 # ========================================
+
 
 class TestImportCSV:
     """Tests pour POST /api/import/sites (standalone)."""
@@ -208,10 +215,7 @@ class TestImportCSV:
 
     def test_import_naf_auto_classification(self, client):
         self._seed_org(client)
-        csv_content = (
-            "nom,adresse,code_postal,ville,surface_m2,type,naf_code\n"
-            "Mairie Test,,29200,Brest,2000,,84.11Z\n"
-        )
+        csv_content = "nom,adresse,code_postal,ville,surface_m2,type,naf_code\nMairie Test,,29200,Brest,2000,,84.11Z\n"
         r = client.post(
             "/api/import/sites",
             files={"file": ("sites.csv", io.BytesIO(csv_content.encode()), "text/csv")},
@@ -253,8 +257,7 @@ class TestImportCSV:
         self._seed_org(client)
         initial_bat = db_session.query(Batiment).count()
         csv_content = (
-            "nom,adresse,code_postal,ville,surface_m2,type,naf_code\n"
-            "Import Bureau,rue X,75001,Paris,2000,bureau,\n"
+            "nom,adresse,code_postal,ville,surface_m2,type,naf_code\nImport Bureau,rue X,75001,Paris,2000,bureau,\n"
         )
         client.post(
             "/api/import/sites",
@@ -267,10 +270,7 @@ class TestImportCSV:
         self._seed_org(client)
         pf = db_session.query(Portefeuille).first()
         initial_count = db_session.query(Site).filter_by(portefeuille_id=pf.id).count()
-        csv_content = (
-            "nom,type\n"
-            "Extra Site,bureau\n"
-        )
+        csv_content = "nom,type\nExtra Site,bureau\n"
         client.post(
             "/api/import/sites",
             files={"file": ("sites.csv", io.BytesIO(csv_content.encode()), "text/csv")},

@@ -3,6 +3,7 @@ PROMEOS - Admin Users Routes
 Sprint 11: IAM ULTIMATE
 CRUD users, roles, scopes (admin only)
 """
+
 import json
 from typing import Optional
 from datetime import datetime
@@ -13,12 +14,24 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    User, UserOrgRole, UserScope, Organisation,
-    UserRole, ScopeLevel,
+    User,
+    UserOrgRole,
+    UserScope,
+    Organisation,
+    UserRole,
+    ScopeLevel,
 )
 from services.iam_service import (
-    create_user, assign_role, assign_scope, remove_role, soft_delete_user,
-    hash_password, get_permissions_for_role, get_scoped_site_ids, log_audit, ROLE_PERMISSIONS,
+    create_user,
+    assign_role,
+    assign_scope,
+    remove_role,
+    soft_delete_user,
+    hash_password,
+    get_permissions_for_role,
+    get_scoped_site_ids,
+    log_audit,
+    ROLE_PERMISSIONS,
 )
 from middleware.auth import require_permission, get_current_user_role
 from models import Site, EntiteJuridique, Portefeuille
@@ -30,6 +43,7 @@ router = APIRouter(prefix="/api/admin", tags=["Admin Users"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class CreateUserRequest(BaseModel):
     email: str
@@ -59,6 +73,7 @@ class SetScopesRequest(BaseModel):
 # Helpers
 # ========================================
 
+
 def _serialize_user(db: Session, user: User, uor: Optional[UserOrgRole] = None) -> dict:
     result = {
         "id": user.id,
@@ -86,6 +101,7 @@ def _serialize_user(db: Session, user: User, uor: Optional[UserOrgRole] = None) 
 # ========================================
 # Endpoints
 # ========================================
+
 
 @router.get("/users")
 def list_users(
@@ -167,9 +183,7 @@ def get_user(
     uor = None
     if _admin:
         org_id = int(_admin.get("org_id", 0))
-        uor = db.query(UserOrgRole).filter(
-            UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-        ).first()
+        uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
     else:
         uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id).first()
 
@@ -221,9 +235,7 @@ def change_role(
 
     org_id = int(_admin.get("org_id", 0)) if _admin else 1
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-    ).first()
+    uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
 
     if not uor:
         # Create role
@@ -231,10 +243,14 @@ def change_role(
     else:
         # Last-owner protection
         if uor.role == UserRole.DG_OWNER and new_role != UserRole.DG_OWNER:
-            count = db.query(UserOrgRole).filter(
-                UserOrgRole.org_id == org_id,
-                UserOrgRole.role == UserRole.DG_OWNER,
-            ).count()
+            count = (
+                db.query(UserOrgRole)
+                .filter(
+                    UserOrgRole.org_id == org_id,
+                    UserOrgRole.role == UserRole.DG_OWNER,
+                )
+                .count()
+            )
             if count <= 1:
                 raise HTTPException(status_code=400, detail="Cannot remove last DG_OWNER")
         uor.role = new_role
@@ -254,9 +270,7 @@ def set_scopes(
     """Set scopes for user in current org (replaces all existing)."""
     org_id = int(_admin.get("org_id", 0)) if _admin else 1
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-    ).first()
+    uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
     if not uor:
         raise HTTPException(status_code=404, detail="User has no role in this org")
 
@@ -296,14 +310,16 @@ def delete_user(
     # Check if last DG_OWNER
     org_id = int(_admin.get("org_id", 0)) if _admin else None
     if org_id:
-        uor = db.query(UserOrgRole).filter(
-            UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-        ).first()
+        uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
         if uor and uor.role == UserRole.DG_OWNER:
-            count = db.query(UserOrgRole).filter(
-                UserOrgRole.org_id == org_id,
-                UserOrgRole.role == UserRole.DG_OWNER,
-            ).count()
+            count = (
+                db.query(UserOrgRole)
+                .filter(
+                    UserOrgRole.org_id == org_id,
+                    UserOrgRole.role == UserRole.DG_OWNER,
+                )
+                .count()
+            )
             if count <= 1:
                 raise HTTPException(status_code=400, detail="Cannot remove last DG_OWNER")
 
@@ -320,10 +336,12 @@ def list_roles(
     """List all roles with their permissions matrix."""
     result = []
     for role in UserRole:
-        result.append({
-            "role": role.value,
-            "permissions": get_permissions_for_role(role),
-        })
+        result.append(
+            {
+                "role": role.value,
+                "permissions": get_permissions_for_role(role),
+            }
+        )
     return result
 
 
@@ -360,12 +378,14 @@ def get_effective_access(
         elif s.scope_level == ScopeLevel.SITE:
             site = db.query(Site).filter(Site.id == s.scope_id).first()
             label = f"SITE: {site.nom}" if site else f"SITE #{s.scope_id}"
-        scope_desc.append({
-            "level": s.scope_level.value,
-            "id": s.scope_id,
-            "label": label,
-            "expires_at": s.expires_at.isoformat() if s.expires_at else None,
-        })
+        scope_desc.append(
+            {
+                "level": s.scope_level.value,
+                "id": s.scope_id,
+                "label": label,
+                "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+            }
+        )
 
     return {
         "user_id": user_id,

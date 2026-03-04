@@ -47,7 +47,9 @@ function DataCoverageBadge({ meta, siteCount, qualityPct }) {
     siteCount > 1 ? `${siteCount} sites` : null,
     meta?.n_meters ? `${meta.n_meters}\u00a0compteur${meta.n_meters > 1 ? 's' : ''}` : null,
     meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0points` : null,
-    meta?.granularity ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}` : null,
+    meta?.granularity
+      ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}`
+      : null,
     qualityPct != null ? `Qualité\u00a0: ${qualityPct}\u00a0%` : null,
     'Source\u00a0: EMS',
   ].filter(Boolean);
@@ -59,7 +61,9 @@ function DataCoverageBadge({ meta, siteCount, qualityPct }) {
       className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 px-1 select-none"
       aria-label="Couverture des données"
     >
-      {parts.map((p, i) => <span key={i}>{p}</span>)}
+      {parts.map((p, i) => (
+        <span key={i}>{p}</span>
+      ))}
     </div>
   );
 }
@@ -76,8 +80,8 @@ function InsufficientPoints({ count, onGenerateDemo }) {
         Données insuffisantes pour tracer une courbe
       </h3>
       <p className="text-sm text-gray-500 max-w-sm">
-        {count} point{count !== 1 ? 's' : ''} disponible{count !== 1 ? 's' : ''}.
-        Élargissez la période ou importez davantage de données.
+        {count} point{count !== 1 ? 's' : ''} disponible{count !== 1 ? 's' : ''}. Élargissez la
+        période ou importez davantage de données.
       </p>
       {onGenerateDemo && (
         <Button size="sm" variant="outline" onClick={onGenerateDemo} className="mt-3">
@@ -111,7 +115,14 @@ function ErrorState({ message, onRetry }) {
 
 // ── Empty state by reason (enhanced V16-B) ────────────────────────────────────
 
-function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPeriod, onSelectAll, onGenerateDemo }) {
+function EmptyByReason({
+  availability,
+  noSiteSelected,
+  onNavigate,
+  onExtendPeriod,
+  onSelectAll,
+  onGenerateDemo,
+}) {
   const reasons = availability?.reasons || [];
   const primary = reasons[0];
   const firstTs = availability?.first_ts;
@@ -126,7 +137,8 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
         </div>
         <h3 className="text-base font-semibold text-gray-700 mb-1">Aucun site sélectionné</h3>
         <p className="text-sm text-gray-500 max-w-xs mb-3">
-          Sélectionnez un ou plusieurs sites dans la barre de filtres pour afficher les courbes de consommation.
+          Sélectionnez un ou plusieurs sites dans la barre de filtres pour afficher les courbes de
+          consommation.
         </p>
         {onSelectAll && (
           <Button size="sm" onClick={onSelectAll}>
@@ -143,17 +155,35 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
     causes.push({ icon: AlertTriangle, text: 'Site introuvable — vérifiez votre sélection.' });
   }
   if (primary === 'no_meter') {
-    causes.push({ icon: Zap, text: 'Aucun compteur configuré sur ce site.', cta: 'Connecter', path: '/connectors' });
+    causes.push({
+      icon: Zap,
+      text: 'Aucun compteur configuré sur ce site.',
+      cta: 'Connecter',
+      path: '/connectors',
+    });
   }
   if (primary === 'no_readings' || primary === 'insufficient_readings') {
-    causes.push({ icon: Database, text: 'Peu de relevés importés sur cette période.', cta: 'Importer', path: '/consommations/import' });
+    causes.push({
+      icon: Database,
+      text: 'Peu de relevés importés sur cette période.',
+      cta: 'Importer',
+      path: '/consommations/import',
+    });
   }
   if (primary === 'wrong_energy_type') {
-    causes.push({ icon: Zap, text: 'Aucune donnée pour ce type d\'énergie sur ce site.' });
+    causes.push({ icon: Zap, text: "Aucune donnée pour ce type d'énergie sur ce site." });
   }
   if (firstTs && lastTs) {
-    const from = new Date(firstTs).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-    const to   = new Date(lastTs).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const from = new Date(firstTs).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    const to = new Date(lastTs).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
     causes.push({
       icon: BarChart3,
       text: `Données disponibles\u00a0: ${from} → ${to}`,
@@ -162,7 +192,12 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
     });
   }
   if (!causes.length) {
-    causes.push({ icon: Database, text: 'Configurez un site et importez des relevés.', cta: 'Importer', path: '/consommations/import' });
+    causes.push({
+      icon: Database,
+      text: 'Configurez un site et importez des relevés.',
+      cta: 'Importer',
+      path: '/consommations/import',
+    });
   }
 
   const FirstIcon = causes[0]?.icon || Database;
@@ -172,7 +207,9 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
       <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
         <FirstIcon size={28} className="text-gray-400" />
       </div>
-      <h3 className="text-base font-semibold text-gray-700 mb-2">Aucune donnée sur cette période</h3>
+      <h3 className="text-base font-semibold text-gray-700 mb-2">
+        Aucune donnée sur cette période
+      </h3>
 
       {causes.length > 0 && (
         <div className="space-y-2 mb-4">
@@ -180,10 +217,14 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
             <div key={i} className="flex items-center justify-center gap-2">
               <p className="text-sm text-gray-500 max-w-sm">{c.text}</p>
               {c.cta && c.onCta && (
-                <Button size="sm" variant="ghost" onClick={c.onCta}>{c.cta}</Button>
+                <Button size="sm" variant="ghost" onClick={c.onCta}>
+                  {c.cta}
+                </Button>
               )}
               {c.cta && c.path && onNavigate && (
-                <Button size="sm" variant="ghost" onClick={() => onNavigate(c.path)}>{c.cta}</Button>
+                <Button size="sm" variant="ghost" onClick={() => onNavigate(c.path)}>
+                  {c.cta}
+                </Button>
               )}
             </div>
           ))}
@@ -204,10 +245,7 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
 
 function ChartFrame({ children, minHeight = 360 }) {
   return (
-    <div
-      className="w-full rounded-xl border border-gray-100 bg-white"
-      style={{ minHeight }}
-    >
+    <div className="w-full rounded-xl border border-gray-100 bg-white" style={{ minHeight }}>
       {children}
     </div>
   );
@@ -226,13 +264,13 @@ export default function TimeseriesPanel({
   sites: _sites = [],
   siteColors = {},
   availability = null,
-  granularityOverride = null,  // V21-C: user-selected granularity or null for auto
+  granularityOverride = null, // V21-C: user-selected granularity or null for auto
   onNavigate,
   onRetry,
   onExtendPeriod,
   onSelectAll,
-  onGenerateDemo,  // V20-D: optional — triggers demo data generation + refetch
-  onMeta,          // V22-B: optional — called with meta object when data arrives
+  onGenerateDemo, // V20-D: optional — triggers demo data generation + refetch
+  onMeta, // V22-B: optional — called with meta object when data arrives
 }) {
   const tsState = useEmsTimeseries({
     siteIds,
@@ -268,17 +306,19 @@ export default function TimeseriesPanel({
 
   // V20-B (RC1 fix): overlayValueKeys only for genuine multi-series; 'total'/'agg'/'others' are
   // aggregate series — their value is always in chartData[i].value, not chartData[i][key].
-  const overlayValueKeys = seriesData.length <= 1
-    ? []
-    : seriesData
-        .filter(s => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
-        .map(s => s.key);
+  const overlayValueKeys =
+    seriesData.length <= 1
+      ? []
+      : seriesData
+          .filter((s) => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
+          .map((s) => s.key);
 
   // V20-B (RC3 fix): effectiveValueKey must match what ExplorerChart will use
   const effectiveValueKey = overlayValueKeys.length ? overlayValueKeys[0] : 'value';
 
   // Debug panel — shown in ALL states when ?debug=1 (after overlayValueKeys so chartMeta is available)
-  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+  const isDebug =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
   const debugPanel = isDebug ? (
     <ExplorerDebugPanel
       params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
@@ -294,7 +334,9 @@ export default function TimeseriesPanel({
     return (
       <ChartFrame>
         {debugPanel}
-        <div className="p-4"><SkeletonCard rows={6} /></div>
+        <div className="p-4">
+          <SkeletonCard rows={6} />
+        </div>
       </ChartFrame>
     );
   }
@@ -328,7 +370,9 @@ export default function TimeseriesPanel({
 
   // ── Insufficient points (< 2) ──
   // V20-B (RC3 fix): use effectiveValueKey to match ExplorerChart's perspective
-  const validPoints = chartData.filter(p => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey]));
+  const validPoints = chartData.filter(
+    (p) => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey])
+  );
   if (validPoints.length < 2) {
     return (
       <ChartFrame>
@@ -342,13 +386,13 @@ export default function TimeseriesPanel({
   const n_points = meta?.n_points ?? chartData.length;
   const n_meters = meta?.n_meters ?? null;
   const qualityPct = availability?.readings_count
-    ? Math.min(100, Math.round(availability.readings_count / 500 * 100))
+    ? Math.min(100, Math.round((availability.readings_count / 500) * 100))
     : null;
 
   // For multi-series overlay, ExplorerChart uses `superpose` mode with site keys
   const chartMode = seriesData.length > 1 && mode === 'superpose' ? 'superpose' : 'agrege';
   const chartSiteIds = overlayValueKeys.length
-    ? overlayValueKeys.map(k => parseInt(k.replace('site_', ''), 10))
+    ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10))
     : siteIds.slice(0, 1);
 
   return (
@@ -357,11 +401,7 @@ export default function TimeseriesPanel({
         {debugPanel}
 
         {/* DataCoverageBadge — compact coverage line above chart */}
-        <DataCoverageBadge
-          meta={meta}
-          siteCount={siteIds.length}
-          qualityPct={qualityPct}
-        />
+        <DataCoverageBadge meta={meta} siteCount={siteIds.length} qualityPct={qualityPct} />
 
         {/* Chart */}
         <ExplorerChart
@@ -389,9 +429,18 @@ export default function TimeseriesPanel({
             Granularité{'\u00a0'}: {GRAN_LABELS[granularity] || granularity}
             {meta?.date_from && meta?.date_to && (
               <span className="ml-2">
-                · {new Date(meta.date_from).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                {' '}→{' '}
-                {new Date(meta.date_to).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                ·{' '}
+                {new Date(meta.date_from).toLocaleDateString('fr-FR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: '2-digit',
+                })}{' '}
+                →{' '}
+                {new Date(meta.date_to).toLocaleDateString('fr-FR', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: '2-digit',
+                })}
               </span>
             )}
           </p>

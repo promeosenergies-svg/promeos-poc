@@ -22,9 +22,7 @@ function parseUrlState(search) {
   const p = new URLSearchParams(search);
 
   return {
-    siteIds: p.get('sites')
-      ? p.get('sites').split(',').map(Number).filter(Boolean)
-      : [],
+    siteIds: p.get('sites') ? p.get('sites').split(',').map(Number).filter(Boolean) : [],
     energy: p.get('energy') || DEFAULTS.energy,
     days: p.has('days') ? Number(p.get('days')) : DEFAULTS.days,
     startDate: p.get('start') || null,
@@ -32,9 +30,7 @@ function parseUrlState(search) {
     mode: p.get('mode') || DEFAULTS.mode,
     unit: p.get('unit') || DEFAULTS.unit,
     tab: p.get('tab') || DEFAULTS.tab,
-    layers: p.get('layers')
-      ? p.get('layers').split(',').filter(Boolean)
-      : null,
+    layers: p.get('layers') ? p.get('layers').split(',').filter(Boolean) : null,
   };
 }
 
@@ -144,7 +140,14 @@ describe('useExplorerURL — URL serialization (setUrlParams)', () => {
   });
 
   it('roundtrip: serialize then parse gives back same values', () => {
-    const input = { sites: [10, 20], energy: 'gas', days: 7, mode: 'superpose', unit: 'kw', layers: ['tunnel'] };
+    const input = {
+      sites: [10, 20],
+      energy: 'gas',
+      days: 7,
+      mode: 'superpose',
+      unit: 'kw',
+      layers: ['tunnel'],
+    };
     const serialized = applyUrlUpdates('', {
       sites: input.sites,
       energy: input.energy,

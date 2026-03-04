@@ -2,8 +2,10 @@
 PROMEOS - Tests V101: Segmentation → Action Plan + Onboarding Pilote
 Tests: enum, compute_next_best_step, next-step endpoint, action creation, V100 bug fixes.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -40,6 +42,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -53,6 +56,7 @@ def _seed(client):
 # ========================================
 # ActionSourceType — SEGMENTATION exists
 # ========================================
+
 
 class TestActionSourceTypeEnum:
     def test_segmentation_exists(self):
@@ -68,10 +72,12 @@ class TestActionSourceTypeEnum:
 # compute_next_best_step
 # ========================================
 
+
 class TestComputeNextBestStep:
     def test_low_confidence_returns_answer_questions(self, db_session):
         """When confidence < 50, step should be 'answer_questions'."""
         from services.segmentation_service import compute_next_best_step
+
         org = Organisation(nom="Test Org", type_client="bureau")
         db_session.add(org)
         db_session.commit()
@@ -95,6 +101,7 @@ class TestComputeNextBestStep:
     def test_high_confidence_fallthrough(self, db_session):
         """When confidence >= 50 and no contracts/recon issues, fall through to recommendation."""
         from services.segmentation_service import compute_next_best_step
+
         org = Organisation(nom="High Conf Org", type_client="bureau")
         db_session.add(org)
         db_session.commit()
@@ -106,7 +113,9 @@ class TestComputeNextBestStep:
             segment_label="Tertiaire Prive",
             confidence_score=85.0,
             derived_from="mix",
-            answers_json=json.dumps({"q_operat": "oui_a_jour", "q_bacs": "oui_conforme", "q_horaires": "bureau_standard"}),
+            answers_json=json.dumps(
+                {"q_operat": "oui_a_jour", "q_bacs": "oui_conforme", "q_horaires": "bureau_standard"}
+            ),
         )
         db_session.add(profile)
         db_session.commit()
@@ -120,6 +129,7 @@ class TestComputeNextBestStep:
     def test_required_fields(self, db_session):
         """Every next-best-step has all required fields."""
         from services.segmentation_service import compute_next_best_step
+
         org = Organisation(nom="Fields Test", type_client="collectivite")
         db_session.add(org)
         db_session.commit()
@@ -135,6 +145,7 @@ class TestComputeNextBestStep:
 # ========================================
 # GET /api/segmentation/next-step
 # ========================================
+
 
 class TestNextStepEndpoint:
     def test_200_ok(self, client):
@@ -165,6 +176,7 @@ class TestNextStepEndpoint:
 # ========================================
 # POST /api/segmentation/actions/from-recommendation
 # ========================================
+
 
 class TestActionsFromRecommendation:
     def test_create_action(self, client):
@@ -227,6 +239,7 @@ class TestActionsFromRecommendation:
 # POST /api/segmentation/actions/from-next-step
 # ========================================
 
+
 class TestActionsFromNextStep:
     def test_create_action(self, client):
         _seed(client)
@@ -250,6 +263,7 @@ class TestActionsFromNextStep:
 # V100 Bug Fixes verification
 # ========================================
 
+
 class TestV100BugFixes:
     def test_post_answers_returns_missing_questions(self, client):
         """Bug #4: POST /answers now returns missing_questions."""
@@ -267,6 +281,7 @@ class TestV100BugFixes:
     def test_get_recommendations_none_no_crash(self):
         """Bug #1: get_recommendations(None) should not crash."""
         from services.segmentation_service import get_recommendations
+
         result = get_recommendations(None)
         assert isinstance(result, list)
         assert len(result) > 0

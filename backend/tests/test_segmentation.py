@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 3: Segmentation B2B
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -39,6 +41,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -53,13 +56,21 @@ def _seed(client):
 # Enum Typologie
 # ========================================
 
+
 class TestTypologieEnum:
     def test_all_values_exist(self):
         expected = [
-            "tertiaire_prive", "tertiaire_public", "industrie",
-            "commerce_retail", "copropriete_syndic", "bailleur_social",
-            "collectivite", "hotellerie_restauration",
-            "sante_medico_social", "enseignement", "mixte",
+            "tertiaire_prive",
+            "tertiaire_public",
+            "industrie",
+            "commerce_retail",
+            "copropriete_syndic",
+            "bailleur_social",
+            "collectivite",
+            "hotellerie_restauration",
+            "sante_medico_social",
+            "enseignement",
+            "mixte",
         ]
         for val in expected:
             assert Typologie(val) is not None
@@ -71,6 +82,7 @@ class TestTypologieEnum:
 # ========================================
 # SegmentationProfile model
 # ========================================
+
 
 class TestSegmentationProfileModel:
     def test_create_profile(self, db_session):
@@ -115,6 +127,7 @@ class TestSegmentationProfileModel:
 # GET /api/segmentation/questions
 # ========================================
 
+
 class TestSegmentationQuestions:
     def test_list_questions(self, client):
         r = client.get("/api/segmentation/questions")
@@ -137,8 +150,14 @@ class TestSegmentationQuestions:
         ids = [q["id"] for q in data["questions"]]
         assert len(ids) == len(set(ids))  # unique
         expected_ids = [
-            "q_travaux", "q_gtb", "q_bacs", "q_operat",
-            "q_cee", "q_horaires", "q_chauffage", "q_irve",
+            "q_travaux",
+            "q_gtb",
+            "q_bacs",
+            "q_operat",
+            "q_cee",
+            "q_horaires",
+            "q_chauffage",
+            "q_irve",
         ]
         for eid in expected_ids:
             assert eid in ids
@@ -148,10 +167,12 @@ class TestSegmentationQuestions:
 # GET /api/segmentation/profile
 # ========================================
 
+
 class TestSegmentationProfile:
     def test_no_org_returns_no_profile(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
         r = client.get("/api/segmentation/profile")
         assert r.status_code in (200, 403)
@@ -189,21 +210,29 @@ class TestSegmentationProfile:
 # POST /api/segmentation/answers
 # ========================================
 
+
 class TestSegmentationAnswers:
     def test_submit_without_org(self, client):
         # V57: resolve_org_id returns 403 when no org resolvable
         from services.demo_state import DemoState
+
         DemoState.clear_demo_org()
-        r = client.post("/api/segmentation/answers", json={
-            "answers": {"q_travaux": "oui"},
-        })
+        r = client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": {"q_travaux": "oui"},
+            },
+        )
         assert r.status_code in (400, 403)
 
     def test_submit_answers(self, client):
         _seed(client)
-        r = client.post("/api/segmentation/answers", json={
-            "answers": {"q_travaux": "oui", "q_gtb": "non"},
-        })
+        r = client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": {"q_travaux": "oui", "q_gtb": "non"},
+            },
+        )
         assert r.status_code == 200
         data = r.json()
         assert data["answers_count"] == 2
@@ -217,27 +246,36 @@ class TestSegmentationAnswers:
         base_score = baseline["confidence_score"]
 
         # Submit answers
-        client.post("/api/segmentation/answers", json={
-            "answers": {
-                "q_travaux": "oui",
-                "q_gtb": "oui_centralisee",
-                "q_bacs": "oui_conforme",
-                "q_operat": "oui_a_jour",
+        client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": {
+                    "q_travaux": "oui",
+                    "q_gtb": "oui_centralisee",
+                    "q_bacs": "oui_conforme",
+                    "q_operat": "oui_a_jour",
+                },
             },
-        })
+        )
         updated = client.get("/api/segmentation/profile").json()
         assert updated["confidence_score"] > base_score
 
     def test_answers_merge(self, client):
         _seed(client)
         # First batch
-        client.post("/api/segmentation/answers", json={
-            "answers": {"q_travaux": "oui"},
-        })
+        client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": {"q_travaux": "oui"},
+            },
+        )
         # Second batch
-        r = client.post("/api/segmentation/answers", json={
-            "answers": {"q_gtb": "non"},
-        })
+        r = client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": {"q_gtb": "non"},
+            },
+        )
         data = r.json()
         assert data["answers_count"] == 2  # merged
 
@@ -253,9 +291,12 @@ class TestSegmentationAnswers:
             "q_chauffage": "gaz",
             "q_irve": "non",
         }
-        r = client.post("/api/segmentation/answers", json={
-            "answers": all_answers,
-        })
+        r = client.post(
+            "/api/segmentation/answers",
+            json={
+                "answers": all_answers,
+            },
+        )
         data = r.json()
         assert data["answers_count"] == 8
         assert data["confidence_score"] >= 50  # baseline + 8*2.5 = +20
@@ -265,9 +306,11 @@ class TestSegmentationAnswers:
 # Service: detect_typologie
 # ========================================
 
+
 class TestDetectTypologie:
     def test_detect_from_type_client_bureau(self, db_session):
         from services.segmentation_service import detect_typologie
+
         org = Organisation(nom="Bureau Corp", type_client="bureau", actif=True)
         db_session.add(org)
         db_session.commit()
@@ -277,6 +320,7 @@ class TestDetectTypologie:
 
     def test_detect_from_type_client_hotel(self, db_session):
         from services.segmentation_service import detect_typologie
+
         org = Organisation(nom="Hotel Group", type_client="hotel", actif=True)
         db_session.add(org)
         db_session.commit()
@@ -286,6 +330,7 @@ class TestDetectTypologie:
 
     def test_detect_from_type_client_collectivite(self, db_session):
         from services.segmentation_service import detect_typologie
+
         org = Organisation(nom="Mairie X", type_client="collectivite", actif=True)
         db_session.add(org)
         db_session.commit()
@@ -295,6 +340,7 @@ class TestDetectTypologie:
 
     def test_detect_unknown_defaults_tertiaire(self, db_session):
         from services.segmentation_service import detect_typologie
+
         org = Organisation(nom="Unknown", type_client=None, actif=True)
         db_session.add(org)
         db_session.commit()
@@ -305,6 +351,7 @@ class TestDetectTypologie:
 
     def test_detect_nonexistent_org(self, db_session):
         from services.segmentation_service import detect_typologie
+
         result = detect_typologie(db_session, 9999)
         assert result["typologie"] == Typologie.TERTIAIRE_PRIVE
         assert result["confidence_score"] == 0.0
@@ -312,13 +359,16 @@ class TestDetectTypologie:
     def test_confidence_increases_with_signals(self, db_session):
         from services.segmentation_service import detect_typologie
         from models import EntiteJuridique
+
         org = Organisation(nom="Industrie SA", type_client="usine", actif=True, siren="123456789")
         db_session.add(org)
         db_session.flush()
 
         entite = EntiteJuridique(
-            organisation_id=org.id, nom="Industrie SA",
-            siren="123456789", naf_code="25.11Z",
+            organisation_id=org.id,
+            nom="Industrie SA",
+            siren="123456789",
+            naf_code="25.11Z",
         )
         db_session.add(entite)
         db_session.commit()

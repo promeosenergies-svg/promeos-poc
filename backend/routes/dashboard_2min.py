@@ -2,6 +2,7 @@
 PROMEOS - Dashboard "2 minutes"
 GET /api/dashboard/2min - Vue synthetique en 3 blocs pour un prospect
 """
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -12,13 +13,26 @@ from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 from models import (
-    Portefeuille, EntiteJuridique,
-    Organisation, Site, Obligation, Compteur, ComplianceFinding,
-    ConsumptionInsight, StatutConformite, TypeObligation,
-    EnergyInvoice, BillingInsight, BillingInvoiceStatus,
-    PurchaseScenarioResult, PurchaseRecoStatus,
-    ActionItem, ActionStatus,
-    NotificationEvent, NotificationStatus, NotificationSeverity,
+    Portefeuille,
+    EntiteJuridique,
+    Organisation,
+    Site,
+    Obligation,
+    Compteur,
+    ComplianceFinding,
+    ConsumptionInsight,
+    StatutConformite,
+    TypeObligation,
+    EnergyInvoice,
+    BillingInsight,
+    BillingInvoiceStatus,
+    PurchaseScenarioResult,
+    PurchaseRecoStatus,
+    ActionItem,
+    ActionStatus,
+    NotificationEvent,
+    NotificationStatus,
+    NotificationSeverity,
     not_deleted,
 )
 
@@ -74,16 +88,11 @@ def get_dashboard_2min(
     sites_actifs = q_sites.filter(Site.actif == True).count()
     site_ids = [s.id for s in q_sites.with_entities(Site.id).all()]
     total_compteurs = (
-        not_deleted(db.query(Compteur), Compteur)
-        .filter(Compteur.site_id.in_(site_ids))
-        .count()
-    ) if site_ids else 0
+        (not_deleted(db.query(Compteur), Compteur).filter(Compteur.site_id.in_(site_ids)).count()) if site_ids else 0
+    )
 
     # Conformite globale — scoped to org's sites
-    obligations = (
-        db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
-        if site_ids else []
-    )
+    obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all() if site_ids else []
     if obligations:
         nb_conforme = sum(1 for o in obligations if o.statut == StatutConformite.CONFORME)
         nb_non_conforme = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
@@ -122,21 +131,25 @@ def get_dashboard_2min(
         }
 
     # Risque financier — scoped to org's sites
-    risque_total = (
-        _sites_for_org_query(db, org.id)
-        .with_entities(func.sum(Site.risque_financier_euro))
-        .scalar() or 0
-    )
+    risque_total = _sites_for_org_query(db, org.id).with_entities(func.sum(Site.risque_financier_euro)).scalar() or 0
     pertes_conso = (
-        db.query(func.sum(ConsumptionInsight.estimated_loss_eur))
-        .filter(ConsumptionInsight.site_id.in_(site_ids))
-        .scalar() or 0
-    ) if site_ids else 0
+        (
+            db.query(func.sum(ConsumptionInsight.estimated_loss_eur))
+            .filter(ConsumptionInsight.site_id.in_(site_ids))
+            .scalar()
+            or 0
+        )
+        if site_ids
+        else 0
+    )
     pertes_billing = (
-        db.query(func.sum(BillingInsight.estimated_loss_eur))
-        .filter(BillingInsight.site_id.in_(site_ids))
-        .scalar() or 0
-    ) if site_ids else 0
+        (
+            db.query(func.sum(BillingInsight.estimated_loss_eur)).filter(BillingInsight.site_id.in_(site_ids)).scalar()
+            or 0
+        )
+        if site_ids
+        else 0
+    )
 
     # Action prioritaire #1
     action_1 = _get_top_action(db, obligations)
@@ -145,10 +158,7 @@ def get_dashboard_2min(
     completude = _compute_completude(total_sites, total_compteurs, org)
 
     # ComplianceFinding-based summary (Sprint 4) — scoped
-    findings = (
-        db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
-        if site_ids else []
-    )
+    findings = db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all() if site_ids else []
     nok_findings = [f for f in findings if f.status == "NOK"]
     unknown_findings = [f for f in findings if f.status == "UNKNOWN"]
 
@@ -160,14 +170,21 @@ def get_dashboard_2min(
             "unknown": len(unknown_findings),
             "ok": sum(1 for f in findings if f.status == "OK"),
             "workflow": {
-                "open": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "open"),
-                "ack": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "ack"),
-                "resolved": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "resolved"),
+                "open": sum(
+                    1 for f in findings if getattr(f, "insight_status", None) and f.insight_status.value == "open"
+                ),
+                "ack": sum(
+                    1 for f in findings if getattr(f, "insight_status", None) and f.insight_status.value == "ack"
+                ),
+                "resolved": sum(
+                    1 for f in findings if getattr(f, "insight_status", None) and f.insight_status.value == "resolved"
+                ),
             },
         }
         # Override action_1 from findings if more specific
         if nok_findings:
             import json
+
             nok_findings.sort(
                 key=lambda f: {"critical": 4, "high": 3, "medium": 2, "low": 1}.get(f.severity, 0),
                 reverse=True,
@@ -185,15 +202,20 @@ def get_dashboard_2min(
     # V1.1: If no critical compliance NOK, try top conso insight for action_1
     if not nok_findings:
         import json as _json
+
         top_insight = (
-            db.query(ConsumptionInsight)
-            .filter(
-                ConsumptionInsight.site_id.in_(site_ids),
-                ConsumptionInsight.estimated_loss_eur > 0,
+            (
+                db.query(ConsumptionInsight)
+                .filter(
+                    ConsumptionInsight.site_id.in_(site_ids),
+                    ConsumptionInsight.estimated_loss_eur > 0,
+                )
+                .order_by(ConsumptionInsight.estimated_loss_eur.desc())
+                .first()
             )
-            .order_by(ConsumptionInsight.estimated_loss_eur.desc())
-            .first()
-        ) if site_ids else None
+            if site_ids
+            else None
+        )
         if top_insight and top_insight.recommended_actions_json:
             rec = _json.loads(top_insight.recommended_actions_json)
             if rec:
@@ -236,14 +258,20 @@ def _get_top_action(db: Session, obligations) -> dict:
     """Determine l'action prioritaire #1."""
     # Priorite: non_conforme decret_tertiaire > non_conforme bacs > a_risque decret > a_risque bacs
     priority_order = [
-        (TypeObligation.DECRET_TERTIAIRE, StatutConformite.NON_CONFORME,
-         "Declarer vos consommations sur OPERAT", "critical"),
-        (TypeObligation.BACS, StatutConformite.NON_CONFORME,
-         "Installer un systeme GTB/GTC conforme", "critical"),
-        (TypeObligation.DECRET_TERTIAIRE, StatutConformite.A_RISQUE,
-         "Accelerer votre trajectoire Decret Tertiaire 2030", "high"),
-        (TypeObligation.BACS, StatutConformite.A_RISQUE,
-         "Planifier la mise en conformite BACS", "high"),
+        (
+            TypeObligation.DECRET_TERTIAIRE,
+            StatutConformite.NON_CONFORME,
+            "Declarer vos consommations sur OPERAT",
+            "critical",
+        ),
+        (TypeObligation.BACS, StatutConformite.NON_CONFORME, "Installer un systeme GTB/GTC conforme", "critical"),
+        (
+            TypeObligation.DECRET_TERTIAIRE,
+            StatutConformite.A_RISQUE,
+            "Accelerer votre trajectoire Decret Tertiaire 2030",
+            "high",
+        ),
+        (TypeObligation.BACS, StatutConformite.A_RISQUE, "Planifier la mise en conformite BACS", "high"),
     ]
 
     for obl_type, obl_statut, action_text, priority in priority_order:
@@ -315,9 +343,7 @@ def _purchase_summary(db: Session, site_ids: list) -> dict:
     if total_results == 0:
         return None
 
-    recommended = q_base.filter(
-        PurchaseScenarioResult.is_recommended == True
-    ).first()
+    recommended = q_base.filter(PurchaseScenarioResult.is_recommended == True).first()
 
     base = {
         "total_scenarios": total_results,
@@ -383,27 +409,13 @@ def _billing_summary(db: Session, site_ids: list) -> dict:
     """Billing intelligence summary for dashboard 2min. Scoped to site_ids."""
     if not site_ids:
         return None
-    total_invoices = (
-        db.query(EnergyInvoice)
-        .filter(EnergyInvoice.site_id.in_(site_ids))
-        .count()
-    )
+    total_invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).count()
     if total_invoices == 0:
         return None
-    total_eur = (
-        db.query(func.sum(EnergyInvoice.total_eur))
-        .filter(EnergyInvoice.site_id.in_(site_ids))
-        .scalar() or 0
-    )
-    anomalies_count = (
-        db.query(BillingInsight)
-        .filter(BillingInsight.site_id.in_(site_ids))
-        .count()
-    )
+    total_eur = db.query(func.sum(EnergyInvoice.total_eur)).filter(EnergyInvoice.site_id.in_(site_ids)).scalar() or 0
+    anomalies_count = db.query(BillingInsight).filter(BillingInsight.site_id.in_(site_ids)).count()
     total_loss = (
-        db.query(func.sum(BillingInsight.estimated_loss_eur))
-        .filter(BillingInsight.site_id.in_(site_ids))
-        .scalar() or 0
+        db.query(func.sum(BillingInsight.estimated_loss_eur)).filter(BillingInsight.site_id.in_(site_ids)).scalar() or 0
     )
     return {
         "total_invoices": total_invoices,
@@ -452,22 +464,14 @@ def _action_hub_summary(db: Session, org_id: int) -> dict:
 
 def _notifications_summary(db: Session, org_id: int) -> dict:
     """Notifications summary for dashboard 2min. Returns None if no events exist."""
-    events = (
-        db.query(NotificationEvent)
-        .filter(NotificationEvent.org_id == org_id)
-        .all()
-    )
+    events = db.query(NotificationEvent).filter(NotificationEvent.org_id == org_id).all()
     if not events:
         return None
 
     new_critical = sum(
-        1 for e in events
-        if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.CRITICAL
+        1 for e in events if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.CRITICAL
     )
-    new_warn = sum(
-        1 for e in events
-        if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.WARN
-    )
+    new_warn = sum(1 for e in events if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.WARN)
     new_total = sum(1 for e in events if e.status == NotificationStatus.NEW)
 
     # Top alert: NEW + CRITICAL first, then WARN, ordered by created_at desc

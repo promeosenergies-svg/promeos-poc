@@ -16,7 +16,13 @@ const SIZE_MAP = {
   lg: 'h-4',
 };
 
-export default function Progress({ value = 0, color = 'blue', size = 'md', label, className = '' }) {
+export default function Progress({
+  value = 0,
+  color = 'blue',
+  size = 'md',
+  label,
+  className = '',
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   const barColor = COLOR_MAP[color] || COLOR_MAP.blue;
   const barSize = SIZE_MAP[size] || SIZE_MAP.md;

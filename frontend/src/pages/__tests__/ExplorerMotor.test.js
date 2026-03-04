@@ -8,8 +8,14 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  MODES, UNITS, LAYERS, DEFAULT_LAYERS,
-  MODE_LABELS, UNIT_LABELS, LAYER_LABELS, MAX_SITES,
+  MODES,
+  UNITS,
+  LAYERS,
+  DEFAULT_LAYERS,
+  MODE_LABELS,
+  UNIT_LABELS,
+  LAYER_LABELS,
+  MAX_SITES,
 } from '../consumption/types';
 import { enrichWithSignature } from '../consumption/layers/SignatureLayer';
 

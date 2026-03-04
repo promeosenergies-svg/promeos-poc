@@ -45,8 +45,8 @@ describe('Org-change siteIds validation — V17-A', () => {
 
   function resolveNewSiteIds(prevSiteIds, orgSites, selectedSiteId = null) {
     if (!orgSites.length) return prevSiteIds; // Still loading — no-op
-    const orgSiteIdsSet = new Set(orgSites.map(s => s.id));
-    const valid = prevSiteIds.filter(id => orgSiteIdsSet.has(Number(id)));
+    const orgSiteIdsSet = new Set(orgSites.map((s) => s.id));
+    const valid = prevSiteIds.filter((id) => orgSiteIdsSet.has(Number(id)));
     if (valid.length > 0) {
       return valid.length === prevSiteIds.length ? prevSiteIds : valid;
     }
@@ -54,7 +54,7 @@ describe('Org-change siteIds validation — V17-A', () => {
     if (selectedSiteId && orgSiteIdsSet.has(Number(selectedSiteId))) {
       return [Number(selectedSiteId)];
     }
-    return orgSites.length <= N_AUTO ? orgSites.map(s => s.id) : [orgSites[0].id];
+    return orgSites.length <= N_AUTO ? orgSites.map((s) => s.id) : [orgSites[0].id];
   }
 
   it('stale siteId reset to first Tertiaire site when N > 5', () => {
@@ -112,9 +112,7 @@ describe('Auto-select threshold (N ≤ 5) — V17-A', () => {
   const N_AUTO = 5;
 
   function autoSelect(orgSites) {
-    return orgSites.length <= N_AUTO
-      ? orgSites.map(s => s.id)
-      : [orgSites[0].id];
+    return orgSites.length <= N_AUTO ? orgSites.map((s) => s.id) : [orgSites[0].id];
   }
 
   it('N=3 → all 3 sites selected', () => {
@@ -176,17 +174,23 @@ describe('ScopeContext siteId filter — V17-B', () => {
    */
   function filterSitesByScopeId(sites, scopeSiteId) {
     if (!scopeSiteId) return sites;
-    return sites.filter(s => String(s.id) === String(scopeSiteId));
+    return sites.filter((s) => String(s.id) === String(scopeSiteId));
   }
 
   it('number s.id=5 matches number scope.siteId=5', () => {
-    const sites = [{ id: 5, nom: 'A' }, { id: 7, nom: 'B' }];
+    const sites = [
+      { id: 5, nom: 'A' },
+      { id: 7, nom: 'B' },
+    ];
     expect(filterSitesByScopeId(sites, 5)).toHaveLength(1);
     expect(filterSitesByScopeId(sites, 5)[0].nom).toBe('A');
   });
 
   it('number s.id=5 matches string scope.siteId="5" (localStorage case)', () => {
-    const sites = [{ id: 5, nom: 'A' }, { id: 7, nom: 'B' }];
+    const sites = [
+      { id: 5, nom: 'A' },
+      { id: 7, nom: 'B' },
+    ];
     expect(filterSitesByScopeId(sites, '5')).toHaveLength(1);
   });
 

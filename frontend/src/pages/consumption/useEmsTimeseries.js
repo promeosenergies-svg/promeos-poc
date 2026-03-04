@@ -18,10 +18,10 @@ import { getEmsTimeseries, getEmsTimeseriesSuggest } from '../../services/api';
 // ── Mode mapping: PROMEOS UI → EMS API ────────────────────────────────────────
 
 export const MODE_MAP = {
-  agrege:   'aggregate',
+  agrege: 'aggregate',
   superpose: 'overlay',
-  empile:   'stack',
-  separe:   'split',
+  empile: 'stack',
+  separe: 'split',
 };
 
 // ── Date formatting by granularity (French) ───────────────────────────────────
@@ -41,7 +41,12 @@ export function formatDate(isoStr, granularity) {
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
   if (granularity === 'hourly') {
-    return d.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
   // 15min / 30min
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -74,9 +79,9 @@ function seriesToChartData(series, granularity) {
 
   if (series.length === 1) {
     // Single aggregate series
-    return series[0].data.map(p => ({
+    return series[0].data.map((p) => ({
       date: formatDate(p.t, granularity),
-      rawDate: p.t,  // ISO timestamp for MeteoPanel weather matching
+      rawDate: p.t, // ISO timestamp for MeteoPanel weather matching
       value: p.v ?? null,
     }));
   }
@@ -105,7 +110,7 @@ export default function useEmsTimeseries({
   endDate = null,
   unit = 'kwh',
   mode = 'agrege',
-  granularityOverride = null,  // V21-C: user-selected granularity ('30min'|'hourly'|'daily'|'monthly') or null for auto
+  granularityOverride = null, // V21-C: user-selected granularity ('30min'|'hourly'|'daily'|'monthly') or null for auto
 } = {}) {
   const [state, setState] = useState({
     status: 'loading',
@@ -119,14 +124,14 @@ export default function useEmsTimeseries({
 
   useEffect(() => {
     if (!siteIds.length) {
-      setState(s => ({ ...s, status: 'empty', chartData: [], seriesData: [] }));
+      setState((s) => ({ ...s, status: 'empty', chartData: [], seriesData: [] }));
       return;
     }
 
     let cancelled = false;
     const t0 = Date.now();
 
-    setState(s => ({ ...s, status: 'loading' }));
+    setState((s) => ({ ...s, status: 'loading' }));
 
     async function fetchData() {
       try {
@@ -140,7 +145,7 @@ export default function useEmsTimeseries({
           try {
             const suggestion = await getEmsTimeseriesSuggest(
               dateFrom.toISOString(),
-              dateTo.toISOString(),
+              dateTo.toISOString()
             );
             granularity = suggestion?.granularity || 'daily';
           } catch {
@@ -173,16 +178,18 @@ export default function useEmsTimeseries({
         const chartData = seriesToChartData(series, granularity);
 
         // Compute debug info
-        const rawValues = chartData.map(p => p.value);
-        const allValidValues = rawValues.filter(v => v != null && !isNaN(v));
+        const rawValues = chartData.map((p) => p.value);
+        const allValidValues = rawValues.filter((v) => v != null && !isNaN(v));
         const yMin = allValidValues.length ? Math.min(...allValidValues) : null;
         const yMax = allValidValues.length ? Math.max(...allValidValues) : null;
 
         // V20-A: validity breakdown for debug
         const validCount = allValidValues.length;
-        const zerosCount = rawValues.filter(v => v === 0).length;
-        const nullsCount = rawValues.filter(v => v === null || v === undefined).length;
-        const nanCount = rawValues.filter(v => v != null && typeof v === 'number' && isNaN(v)).length;
+        const zerosCount = rawValues.filter((v) => v === 0).length;
+        const nullsCount = rawValues.filter((v) => v === null || v === undefined).length;
+        const nanCount = rawValues.filter(
+          (v) => v != null && typeof v === 'number' && isNaN(v)
+        ).length;
 
         const debugInfo = {
           endpoint: '/api/ems/timeseries',
@@ -190,11 +197,11 @@ export default function useEmsTimeseries({
           responseMs,
           seriesCount: series.length,
           pointsCount: chartData.length,
-          validCount,       // V20-A: non-null, non-NaN values
-          zerosCount,       // V20-A: 0 values (valid! must not be dropped)
-          nullsCount,       // V20-A: null/undefined values
-          nanCount,         // V20-A: NaN values
-          samplePoints: chartData.slice(0, 5),  // V20-A: first 5 raw points for inspection
+          validCount, // V20-A: non-null, non-NaN values
+          zerosCount, // V20-A: 0 values (valid! must not be dropped)
+          nullsCount, // V20-A: null/undefined values
+          nanCount, // V20-A: NaN values
+          samplePoints: chartData.slice(0, 5), // V20-A: first 5 raw points for inspection
           yMin,
           yMax,
           xRange: chartData.length
@@ -215,17 +222,23 @@ export default function useEmsTimeseries({
         });
       } catch (err) {
         if (cancelled) return;
-        setState(s => ({
+        setState((s) => ({
           ...s,
           status: 'error',
           error: err?.message || 'Erreur de chargement des données',
-          debugInfo: { endpoint: '/api/ems/timeseries', responseMs: Date.now() - t0, error: err?.message },
+          debugInfo: {
+            endpoint: '/api/ems/timeseries',
+            responseMs: Date.now() - t0,
+            error: err?.message,
+          },
         }));
       }
     }
 
     fetchData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode, granularityOverride]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;

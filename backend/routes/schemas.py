@@ -1,17 +1,24 @@
 """
 PROMEOS - Schémas Pydantic pour validation des données API
 """
+
 from pydantic import BaseModel, ConfigDict, model_validator
 from typing import Optional, List
 from datetime import datetime, date
 from models import (
-    TypeSite, TypeCompteur, SeveriteAlerte, StatutConformite,
-    TypeObligation, TypeEvidence, StatutEvidence,
+    TypeSite,
+    TypeCompteur,
+    SeveriteAlerte,
+    StatutConformite,
+    TypeObligation,
+    TypeEvidence,
+    StatutEvidence,
 )
 
 # ========================================
 # SCHÉMAS SITE
 # ========================================
+
 
 class SiteBase(BaseModel):
     nom: str
@@ -25,6 +32,7 @@ class SiteBase(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     actif: bool = True
+
 
 class SiteResponse(SiteBase):
     id: int
@@ -43,27 +51,33 @@ class SiteResponse(SiteBase):
         if self.conso_kwh_an is None and self.annual_kwh_total is not None:
             self.conso_kwh_an = self.annual_kwh_total
         return self
+
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class SiteStats(BaseModel):
     """Statistiques d'un site"""
+
     nb_compteurs: int
     nb_alertes_actives: int
     consommation_totale_mois: float
     cout_total_mois: float
 
+
 # ========================================
 # SCHÉMAS COMPTEUR
 # ========================================
+
 
 class CompteurBase(BaseModel):
     type: TypeCompteur
     numero_serie: str
     puissance_souscrite_kw: Optional[float] = None
     actif: bool = True
+
 
 class CompteurResponse(CompteurBase):
     id: int
@@ -72,9 +86,11 @@ class CompteurResponse(CompteurBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMAS CONSOMMATION
 # ========================================
+
 
 class ConsommationResponse(BaseModel):
     id: int
@@ -85,14 +101,17 @@ class ConsommationResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMAS ALERTE
 # ========================================
+
 
 class AlerteBase(BaseModel):
     severite: SeveriteAlerte
     titre: str
     description: Optional[str] = None
+
 
 class AlerteResponse(AlerteBase):
     id: int
@@ -103,21 +122,26 @@ class AlerteResponse(AlerteBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMAS DE RÉPONSE LISTE
 # ========================================
+
 
 class SiteListResponse(BaseModel):
     total: int
     sites: List[SiteResponse]
 
+
 class AlerteListResponse(BaseModel):
     total: int
     alertes: List[AlerteResponse]
 
+
 # ========================================
 # SCHÉMAS BATIMENT
 # ========================================
+
 
 class BatimentResponse(BaseModel):
     id: int
@@ -131,9 +155,11 @@ class BatimentResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMAS OBLIGATION
 # ========================================
+
 
 class ObligationResponse(BaseModel):
     id: int
@@ -148,9 +174,11 @@ class ObligationResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMAS EVIDENCE
 # ========================================
+
 
 class EvidenceResponse(BaseModel):
     id: int
@@ -164,18 +192,23 @@ class EvidenceResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ========================================
 # SCHÉMA COMPLIANCE DÉTAILLÉ
 # ========================================
 
+
 class ComplianceExplanation(BaseModel):
     """Explication lisible d'un aspect conformité"""
+
     label: str
     statut: StatutConformite
     why: str
 
+
 class SiteComplianceResponse(BaseModel):
     """Réponse détaillée conformité d'un site"""
+
     site: SiteResponse
     batiments: List[BatimentResponse]
     obligations: List[ObligationResponse]

@@ -3,15 +3,19 @@
  * Covers: deduplication, cross-module badge, FR labels, no duplicates.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getRecents, addRecent, clearRecents, getRecentPaths } from '../../utils/navRecent';
+import { getRecents, addRecent, getRecentPaths } from '../../utils/navRecent';
 import { matchRouteToModule, NAV_MODULES, ALL_NAV_ITEMS } from '../NavRegistry';
 
 /* Mock localStorage */
 const store = {};
 const localStorageMock = {
   getItem: vi.fn((key) => store[key] ?? null),
-  setItem: vi.fn((key, val) => { store[key] = val; }),
-  removeItem: vi.fn((key) => { delete store[key]; }),
+  setItem: vi.fn((key, val) => {
+    store[key] = val;
+  }),
+  removeItem: vi.fn((key) => {
+    delete store[key];
+  }),
 };
 vi.stubGlobal('localStorage', localStorageMock);
 

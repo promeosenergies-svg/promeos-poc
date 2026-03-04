@@ -3,9 +3,20 @@ PROMEOS - Action Hub Models (Sprint 10)
 ActionItem: persisted unified action from all briques.
 ActionSyncBatch: batch record for each sync run.
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, Date, DateTime, Boolean,
-    ForeignKey, Enum as SAEnum, UniqueConstraint, Index,
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    Date,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Enum as SAEnum,
+    UniqueConstraint,
+    Index,
 )
 from sqlalchemy.orm import relationship
 
@@ -18,93 +29,121 @@ class ActionItem(Base, TimestampMixin):
     A unified action persisted from any brique.
     Dedup: unique on (org_id, source_type, source_id, source_key).
     """
+
     __tablename__ = "action_items"
     __table_args__ = (
         UniqueConstraint(
-            "org_id", "source_type", "source_id", "source_key",
+            "org_id",
+            "source_type",
+            "source_id",
+            "source_key",
             name="uq_action_org_source",
         ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(
-        Integer, ForeignKey("organisations.id"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("organisations.id"),
+        nullable=False,
+        index=True,
         comment="Organisation proprietaire",
     )
     site_id = Column(
-        Integer, ForeignKey("sites.id"),
-        nullable=True, index=True,
+        Integer,
+        ForeignKey("sites.id"),
+        nullable=True,
+        index=True,
         comment="Site concerne (nullable for org-level actions)",
     )
     source_type = Column(
-        SAEnum(ActionSourceType), nullable=False, index=True,
+        SAEnum(ActionSourceType),
+        nullable=False,
+        index=True,
         comment="Brique source: compliance, consumption, billing, purchase",
     )
     source_id = Column(
-        String(100), nullable=False,
+        String(100),
+        nullable=False,
         comment="ID de l'objet source (ex: finding_id, insight_id)",
     )
     source_key = Column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
         comment="Cle de dedup intra-source (ex: rule_id:0, type:0)",
     )
     title = Column(String(500), nullable=False, comment="Titre de l'action")
     rationale = Column(Text, nullable=True, comment="Justification detaillee")
     priority = Column(
-        Integer, nullable=False, default=3,
+        Integer,
+        nullable=False,
+        default=3,
         comment="Priorite 1 (critique) a 5 (faible)",
     )
     severity = Column(
-        String(20), nullable=True,
+        String(20),
+        nullable=True,
         comment="Severite source: low, medium, high, critical",
     )
     estimated_gain_eur = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Gain financier estime en EUR",
     )
     due_date = Column(Date, nullable=True, comment="Echeance")
     status = Column(
-        SAEnum(ActionStatus), default=ActionStatus.OPEN, nullable=False,
+        SAEnum(ActionStatus),
+        default=ActionStatus.OPEN,
+        nullable=False,
         comment="Statut workflow: open, in_progress, done, blocked, false_positive",
     )
     owner = Column(String(100), nullable=True, comment="Responsable assigne")
     notes = Column(Text, nullable=True, comment="Notes operateur")
     inputs_hash = Column(
-        String(64), nullable=True,
+        String(64),
+        nullable=True,
         comment="SHA-256 du contenu source pour detecter les changements",
     )
 
     # V5.0: Action Center Pro fields
     category = Column(
-        String(50), nullable=True,
+        String(50),
+        nullable=True,
         comment="Category: conformite, energie, maintenance, finance",
     )
     description = Column(Text, nullable=True, comment="Description detaillee")
     realized_gain_eur = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Gain realise en EUR",
     )
     realized_at = Column(Date, nullable=True, comment="Date de constatation du gain realise")
     closed_at = Column(DateTime, nullable=True, comment="Date de fermeture de l'action")
     idempotency_key = Column(
-        String(64), nullable=True, unique=True, index=True,
+        String(64),
+        nullable=True,
+        unique=True,
+        index=True,
         comment="Cle d'idempotence unique",
     )
     co2e_savings_est_kg = Column(
-        Float, nullable=True,
+        Float,
+        nullable=True,
         comment="Economies CO2e estimees en kg (V9 Decarbonation)",
     )
 
     # V49: Closure justification (OPERAT close rules)
     closure_justification = Column(
-        Text, nullable=True,
+        Text,
+        nullable=True,
         comment="Justification de cloture (V49 — requise pour OPERAT si pas de preuve validee)",
     )
 
     # Etape 4: Evidence gate
     evidence_required = Column(
-        Boolean, default=False, nullable=False,
+        Boolean,
+        default=False,
+        nullable=False,
         comment="Preuve requise pour cloturer l'action",
     )
 
@@ -118,20 +157,25 @@ class ActionSyncBatch(Base, TimestampMixin):
     Enregistre un run de synchronisation Action Hub.
     Pattern: ComplianceRunBatch.
     """
+
     __tablename__ = "action_sync_batches"
 
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(
-        Integer, ForeignKey("organisations.id"),
-        nullable=True, index=True,
+        Integer,
+        ForeignKey("organisations.id"),
+        nullable=True,
+        index=True,
         comment="Organisation synchronisee",
     )
     triggered_by = Column(
-        String(100), nullable=True,
+        String(100),
+        nullable=True,
         comment="Declencheur: api, seed, auto",
     )
     inputs_hash = Column(
-        String(64), nullable=True,
+        String(64),
+        nullable=True,
         comment="Hash global des entrees pour idempotence",
     )
     started_at = Column(DateTime, nullable=True)

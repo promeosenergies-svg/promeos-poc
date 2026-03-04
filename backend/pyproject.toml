@@ -12,6 +12,7 @@ ignore = [
   "E402",   # module-import-not-at-top — some files use late imports
   "E701",   # multiple-statements-on-one-line-colon
   "E702",   # multiple-statements-on-one-line-semicolon
+  "E711",   # none-comparison — SQLAlchemy filter uses == None / != None
   "E712",   # true-false-comparison — SQLAlchemy filter pattern
   "E741",   # ambiguous-variable-name
   "F401",   # unused-import — too many to fix safely in one pass

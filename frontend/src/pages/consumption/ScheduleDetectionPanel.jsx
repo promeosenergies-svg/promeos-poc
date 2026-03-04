@@ -81,7 +81,10 @@ export default function ScheduleDetectionPanel({ siteId, onApplied }) {
         </div>
 
         {error && (
-          <div className="rounded bg-red-50 border border-red-200 p-3 mb-3" data-testid="detection-error">
+          <div
+            className="rounded bg-red-50 border border-red-200 p-3 mb-3"
+            data-testid="detection-error"
+          >
             <p className="text-xs text-red-600">{error}</p>
           </div>
         )}
@@ -135,8 +138,12 @@ export default function ScheduleDetectionPanel({ siteId, onApplied }) {
                         data-testid={`compare-row-${k}`}
                       >
                         <td className="px-2 py-1.5 font-medium text-gray-700">{DAY_LABELS[i]}</td>
-                        <td className="px-2 py-1.5 text-gray-600">{intervalsLabel(data.declared?.[k])}</td>
-                        <td className="px-2 py-1.5 text-gray-600">{intervalsLabel(data.detected?.[k])}</td>
+                        <td className="px-2 py-1.5 text-gray-600">
+                          {intervalsLabel(data.declared?.[k])}
+                        </td>
+                        <td className="px-2 py-1.5 text-gray-600">
+                          {intervalsLabel(data.detected?.[k])}
+                        </td>
                         <td className="px-2 py-1.5 text-right">
                           {isMismatch ? (
                             <Badge variant="warn">{diff.delta_minutes}min</Badge>
@@ -153,8 +160,13 @@ export default function ScheduleDetectionPanel({ siteId, onApplied }) {
 
             {/* Evidence details */}
             {data.evidence && (
-              <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 mb-4" data-testid="evidence-details">
-                <div>Couverture : {data.evidence.coverage_days}j / {data.evidence.expected_days}j</div>
+              <div
+                className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 mb-4"
+                data-testid="evidence-details"
+              >
+                <div>
+                  Couverture : {data.evidence.coverage_days}j / {data.evidence.expected_days}j
+                </div>
                 <div>Stabilité : {Math.round(data.evidence.stability_score * 100)}%</div>
                 <div>Séparation : {data.evidence.separation_ratio}x</div>
               </div>
@@ -183,7 +195,8 @@ export default function ScheduleDetectionPanel({ siteId, onApplied }) {
 
         {!data && !error && !loading && (
           <p className="text-xs text-gray-400 text-center py-3">
-            Cliquez sur Détecter pour analyser la courbe de charge et comparer avec les horaires déclarés.
+            Cliquez sur Détecter pour analyser la courbe de charge et comparer avec les horaires
+            déclarés.
           </p>
         )}
       </CardBody>

@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Tests for engine pipeline.
 AC: parser, 20 rules, shadow billing, CSV export, HTML report all work.
 """
+
 import sys
 import os
 import json
@@ -11,28 +12,37 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app.bill_intelligence.parsers.json_parser import (
-    parse_json_file, parse_json_invoice, list_demo_invoices, load_all_demo_invoices,
+    parse_json_file,
+    parse_json_invoice,
+    list_demo_invoices,
+    load_all_demo_invoices,
 )
 from app.bill_intelligence.rules.audit_rules_v0 import run_all_rules, ALL_RULES
 from app.bill_intelligence.engine import (
-    audit_invoice, shadow_billing_l1, full_pipeline,
-    anomalies_to_csv, report_to_html,
+    audit_invoice,
+    shadow_billing_l1,
+    full_pipeline,
+    anomalies_to_csv,
+    report_to_html,
 )
 from app.bill_intelligence.domain import (
-    Invoice, InvoiceComponent, EnergyType, ShadowLevel,
-    ComponentType, AnomalyType, InvoiceStatus,
+    Invoice,
+    InvoiceComponent,
+    EnergyType,
+    ShadowLevel,
+    ComponentType,
+    AnomalyType,
+    InvoiceStatus,
 )
 
 
-DEMO_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data", "invoices", "demo"
-)
+DEMO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "invoices", "demo")
 
 
 # ========================================
 # Parser tests
 # ========================================
+
 
 def test_list_demo_invoices():
     """Demo invoice files exist."""
@@ -69,9 +79,7 @@ def test_parse_json_string():
         "total_ht": 100.0,
         "total_ttc": 120.0,
         "total_tva": 20.0,
-        "components": [
-            {"component_type": "abonnement", "label": "Abo", "amount_ht": 100.0}
-        ],
+        "components": [{"component_type": "abonnement", "label": "Abo", "amount_ht": 100.0}],
     }
     inv = parse_json_invoice(json.dumps(data))
     assert inv.invoice_id == "TEST-001"
@@ -87,6 +95,7 @@ def test_load_all_demo():
 # ========================================
 # Audit rules tests
 # ========================================
+
 
 def test_all_rules_registered():
     """20 audit rules registered."""
@@ -132,6 +141,7 @@ def test_rule_sum_ht():
         ],
     )
     from app.bill_intelligence.rules.audit_rules_v0 import rule_r01_sum_ht
+
     anomalies = rule_r01_sum_ht(inv)
     assert len(anomalies) == 1
     assert anomalies[0].anomaly_type == AnomalyType.ARITHMETIC_ERROR
@@ -148,6 +158,7 @@ def test_rule_ttc():
         total_ttc=125.0,  # Should be 120
     )
     from app.bill_intelligence.rules.audit_rules_v0 import rule_r02_ttc_check
+
     anomalies = rule_r02_ttc_check(inv)
     assert len(anomalies) == 1
 
@@ -160,6 +171,7 @@ def test_rule_empty_invoice():
         supplier="Test",
     )
     from app.bill_intelligence.rules.audit_rules_v0 import rule_r15_empty_invoice
+
     anomalies = rule_r15_empty_invoice(inv)
     assert len(anomalies) == 1
     assert anomalies[0].severity.value == "critical"
@@ -168,6 +180,7 @@ def test_rule_empty_invoice():
 # ========================================
 # Engine pipeline tests
 # ========================================
+
 
 def test_audit_invoice():
     """Audit sets status and shadow level."""
@@ -209,6 +222,7 @@ def test_full_pipeline_error_invoice():
 # ========================================
 # Export tests
 # ========================================
+
 
 def test_anomalies_csv():
     """CSV export produces valid CSV."""

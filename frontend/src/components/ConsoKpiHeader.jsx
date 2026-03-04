@@ -17,14 +17,28 @@ const CONFIDENCE_TOOLTIP = {
   low: 'Basse : < 100 releves — indicatif uniquement',
 };
 
-function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', tooltip, evidenceId, onEvidence }) {
+function KpiTile({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  color = 'text-gray-900',
+  tooltip,
+  evidenceId,
+  onEvidence,
+}) {
   return (
-    <div className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0" title={tooltip}>
+    <div
+      className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0"
+      title={tooltip}
+    >
       <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
         <Icon size={18} className="text-gray-500" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium truncate">{label}</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium truncate">
+          {label}
+        </p>
         <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
         {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
       </div>
@@ -57,9 +71,8 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
   const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
 
   // --- EUR/MWh reel ---
-  const eurMwh = totalEur != null && totalKwh > 0
-    ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100
-    : null;
+  const eurMwh =
+    totalEur != null && totalKwh > 0 ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100 : null;
   const eurMwhLabel = eurMwh != null ? `${eurMwh.toLocaleString('fr-FR')} EUR/MWh` : '—';
 
   // --- CO2e ---
@@ -71,7 +84,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
     if (!tunnel?.envelope) return null;
     const slots = tunnel.envelope.weekday || tunnel.envelope.weekend || [];
     if (!slots.length) return null;
-    return Math.max(...slots.map(s => s.p95 ?? s.p90 ?? 0));
+    return Math.max(...slots.map((s) => s.p95 ?? s.p90 ?? 0));
   })();
   const p95Label = p95 != null ? `${Math.round(p95).toLocaleString('fr-FR')} kW` : '—';
 
@@ -80,20 +93,29 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
     if (!tunnel?.envelope?.weekday) return null;
     const slots = tunnel.envelope.weekday;
     if (slots.length < 24) return null;
-    const nightSlots = slots.filter(s => s.hour < 6 || s.hour >= 22);
-    const daySlots = slots.filter(s => s.hour >= 6 && s.hour < 22);
+    const nightSlots = slots.filter((s) => s.hour < 6 || s.hour >= 22);
+    const daySlots = slots.filter((s) => s.hour >= 6 && s.hour < 22);
     const nightAvg = nightSlots.reduce((s, x) => s + (x.p50 || 0), 0) / (nightSlots.length || 1);
     const dayAvg = daySlots.reduce((s, x) => s + (x.p50 || 0), 0) / (daySlots.length || 1);
     if (dayAvg === 0) return null;
     return Math.round((nightAvg / dayAvg) * 100);
   })();
   const basePctLabel = basePct != null ? `${basePct} %` : '—';
-  const basePctColor = basePct != null
-    ? (basePct > 60 ? 'text-red-600' : basePct > 40 ? 'text-amber-600' : 'text-green-600')
-    : 'text-gray-900';
+  const basePctColor =
+    basePct != null
+      ? basePct > 60
+        ? 'text-red-600'
+        : basePct > 40
+          ? 'text-amber-600'
+          : 'text-green-600'
+      : 'text-gray-900';
 
   const confBadge = confidence
-    ? { high: { label: 'Haute', variant: 'ok' }, medium: { label: 'Moyenne', variant: 'warn' }, low: { label: 'Basse', variant: 'crit' } }[confidence] || null
+    ? {
+        high: { label: 'Haute', variant: 'ok' },
+        medium: { label: 'Moyenne', variant: 'warn' },
+        low: { label: 'Basse', variant: 'crit' },
+      }[confidence] || null
     : null;
   const confTooltip = confidence ? CONFIDENCE_TOOLTIP[confidence] : null;
 
@@ -102,19 +124,63 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-600">KPIs Consommation</h3>
         {confBadge && (
-          <span className="inline-flex items-center gap-1" title={`Comment calcule ? ${confTooltip}`}>
-            <TrustBadge level={confBadge.variant} label={`Confiance ${confBadge.label}`} size="sm" />
+          <span
+            className="inline-flex items-center gap-1"
+            title={`Comment calcule ? ${confTooltip}`}
+          >
+            <TrustBadge
+              level={confBadge.variant}
+              label={`Confiance ${confBadge.label}`}
+              size="sm"
+            />
             <HelpCircle size={12} className="text-gray-400 cursor-help" />
           </span>
         )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} tooltip="Somme des releves sur la periode selectionnee" evidenceId="conso-kwh-total" onEvidence={onEvidence} />
-        <KpiTile icon={Euro} label="EUR total" value={eurLabel} sub={eurSource} tooltip={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`} />
-        <KpiTile icon={TrendingUp} label="EUR/MWh" value={eurMwhLabel} tooltip="Prix moyen = EUR total / MWh total" />
-        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)" evidenceId="conso-co2e" onEvidence={onEvidence} />
-        <KpiTile icon={Activity} label="Pic kW (P95)" value={p95Label} tooltip="95e percentile de puissance sur les creneaux horaires" />
-        <KpiTile icon={Moon} label="Base nocturne" value={basePctLabel} color={basePctColor} tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine" />
+        <KpiTile
+          icon={Zap}
+          label="kWh total"
+          value={kwhLabel}
+          tooltip="Somme des releves sur la periode selectionnee"
+          evidenceId="conso-kwh-total"
+          onEvidence={onEvidence}
+        />
+        <KpiTile
+          icon={Euro}
+          label="EUR total"
+          value={eurLabel}
+          sub={eurSource}
+          tooltip={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`}
+        />
+        <KpiTile
+          icon={TrendingUp}
+          label="EUR/MWh"
+          value={eurMwhLabel}
+          tooltip="Prix moyen = EUR total / MWh total"
+        />
+        <KpiTile
+          icon={Leaf}
+          label="CO2e"
+          value={co2Label}
+          sub="ADEME 2024"
+          tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)"
+          evidenceId="conso-co2e"
+          onEvidence={onEvidence}
+        />
+        <KpiTile
+          icon={Activity}
+          label="Pic kW (P95)"
+          value={p95Label}
+          tooltip="95e percentile de puissance sur les creneaux horaires"
+        />
+        <KpiTile
+          icon={Moon}
+          label="Base nocturne"
+          value={basePctLabel}
+          color={basePctColor}
+          tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine"
+        />
       </div>
     </div>
   );

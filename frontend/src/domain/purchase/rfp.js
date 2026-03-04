@@ -40,8 +40,8 @@ export function generateDecisionNote({
   organizationName = 'Organisation',
 }) {
   const profile = PERSONA_PROFILES[persona] || PERSONA_PROFILES[Persona.DAF];
-  const bestOffer = offers.find(o => o.id === recommendation.bestOfferId);
-  const bestResult = offerResults.find(r => r.offerId === recommendation.bestOfferId);
+  const bestOffer = offers.find((o) => o.id === recommendation.bestOfferId);
+  const bestResult = offerResults.find((r) => r.offerId === recommendation.bestOfferId);
   return {
     title: `Note de Decision — Achat Energie ${energyType}`,
     version: BRIQUE3_VERSION,
@@ -61,14 +61,16 @@ export function generateDecisionNote({
 
     // Recommendation
     recommendation: {
-      bestOffer: bestOffer ? {
-        id: bestOffer.id,
-        supplier: bestOffer.supplierName,
-        structure: bestOffer.structure,
-        priceP50: bestResult?.corridor?.p50?.toFixed(1),
-        tcoP50: bestResult?.corridor?.tcoP50?.toFixed(0),
-        annualCostP50: bestResult?.annualCostP50?.toFixed(0),
-      } : null,
+      bestOffer: bestOffer
+        ? {
+            id: bestOffer.id,
+            supplier: bestOffer.supplierName,
+            structure: bestOffer.structure,
+            priceP50: bestResult?.corridor?.p50?.toFixed(1),
+            tcoP50: bestResult?.corridor?.tcoP50?.toFixed(0),
+            annualCostP50: bestResult?.annualCostP50?.toFixed(0),
+          }
+        : null,
       confidence: recommendation.confidence,
       confidenceReason: recommendation.confidenceReason,
       rationale: recommendation.rationaleBullets,
@@ -76,7 +78,7 @@ export function generateDecisionNote({
     },
 
     // Comparison table
-    comparison: (scoredOffers || []).map(s => ({
+    comparison: (scoredOffers || []).map((s) => ({
       offerId: s.offerId,
       supplier: s.supplierName,
       structure: s.structure,
@@ -146,9 +148,9 @@ export function generateRfpPack({
     },
 
     // Detailed offer sheets
-    offerSheets: offers.map(offer => {
-      const result = offerResults.find(r => r.offerId === offer.id);
-      const scored = scoredOffers?.find(s => s.offerId === offer.id);
+    offerSheets: offers.map((offer) => {
+      const result = offerResults.find((r) => r.offerId === offer.id);
+      const scored = scoredOffers?.find((s) => s.offerId === offer.id);
 
       return {
         offerId: offer.id,
@@ -159,26 +161,31 @@ export function generateRfpPack({
         pricing: formatPricingDetails(offer),
 
         // Corridor
-        corridor: result ? {
-          p10: result.corridor.p10.toFixed(1),
-          p50: result.corridor.p50.toFixed(1),
-          p90: result.corridor.p90.toFixed(1),
-          tcoP50: result.corridor.tcoP50.toFixed(0),
-          annualCostP50: result.annualCostP50.toFixed(0),
-        } : null,
+        corridor: result
+          ? {
+              p10: result.corridor.p10.toFixed(1),
+              p50: result.corridor.p50.toFixed(1),
+              p90: result.corridor.p90.toFixed(1),
+              tcoP50: result.corridor.tcoP50.toFixed(0),
+              annualCostP50: result.annualCostP50.toFixed(0),
+            }
+          : null,
 
         // Risk metrics
-        risk: result ? {
-          volatility: result.volatility.toFixed(0),
-          worstMonthEur: result.worstMonthEur.toFixed(0),
-          probExceedBudget: result.probExceedBudget != null
-            ? (result.probExceedBudget * 100).toFixed(1) + '%'
-            : 'N/A',
-          cvar90: result.cvar90.toFixed(0),
-        } : null,
+        risk: result
+          ? {
+              volatility: result.volatility.toFixed(0),
+              worstMonthEur: result.worstMonthEur.toFixed(0),
+              probExceedBudget:
+                result.probExceedBudget != null
+                  ? (result.probExceedBudget * 100).toFixed(1) + '%'
+                  : 'N/A',
+              cvar90: result.cvar90.toFixed(0),
+            }
+          : null,
 
         // Breakdown
-        breakdown: (offer.breakdown || []).map(b => ({
+        breakdown: (offer.breakdown || []).map((b) => ({
           component: BREAKDOWN_LABELS[b.component] || b.component,
           sharePct: (b.sharePct * 100).toFixed(1) + '%',
           eurPerMwh: b.eurPerMwh != null ? b.eurPerMwh.toFixed(2) : 'est.',
@@ -186,34 +193,41 @@ export function generateRfpPack({
         })),
 
         // Contract terms
-        contract: offer.contractTerms ? {
-          duration: `${offer.contractTerms.durationMonths} mois`,
-          notice: `${offer.contractTerms.noticePeriodDays} jours`,
-          termination: offer.contractTerms.earlyTerminationPenalty,
-          sla: offer.contractTerms.slaLevel,
-          indexation: offer.contractTerms.indexationClause,
-          green: offer.contractTerms.greenCertified ? 'Oui' : 'Non',
-          flags: offer.contractTerms.clauseFlags || [],
-        } : null,
+        contract: offer.contractTerms
+          ? {
+              duration: `${offer.contractTerms.durationMonths} mois`,
+              notice: `${offer.contractTerms.noticePeriodDays} jours`,
+              termination: offer.contractTerms.earlyTerminationPenalty,
+              sla: offer.contractTerms.slaLevel,
+              indexation: offer.contractTerms.indexationClause,
+              green: offer.contractTerms.greenCertified ? 'Oui' : 'Non',
+              flags: offer.contractTerms.clauseFlags || [],
+            }
+          : null,
 
         // Intermediation
-        intermediation: offer.intermediation ? {
-          hasIntermediary: offer.intermediation.hasIntermediary,
-          feeDisclosed: offer.intermediation.feeDisclosed,
-          fee: offer.intermediation.feeEurPerMwh != null
-            ? offer.intermediation.feeEurPerMwh.toFixed(2) + ' EUR/MWh'
-            : 'Non divulgue',
-          passThrough: offer.intermediation.passThroughPolicy,
-        } : null,
+        intermediation: offer.intermediation
+          ? {
+              hasIntermediary: offer.intermediation.hasIntermediary,
+              feeDisclosed: offer.intermediation.feeDisclosed,
+              fee:
+                offer.intermediation.feeEurPerMwh != null
+                  ? offer.intermediation.feeEurPerMwh.toFixed(2) + ' EUR/MWh'
+                  : 'Non divulgue',
+              passThrough: offer.intermediation.passThroughPolicy,
+            }
+          : null,
 
         // Scores
-        scores: scored ? {
-          budgetRisk: scored.scores.budgetRisk,
-          transparency: scored.scores.transparency,
-          contractRisk: scored.scores.contractRisk,
-          dataReadiness: scored.scores.dataReadiness,
-          weightedScore: scored.weightedScore,
-        } : null,
+        scores: scored
+          ? {
+              budgetRisk: scored.scores.budgetRisk,
+              transparency: scored.scores.transparency,
+              contractRisk: scored.scores.contractRisk,
+              dataReadiness: scored.scores.dataReadiness,
+              weightedScore: scored.weightedScore,
+            }
+          : null,
       };
     }),
   };
@@ -229,14 +243,22 @@ export function generateRfpPack({
  */
 export function generateComparisonCsv(scoredOffers, offerResults) {
   const headers = [
-    'Fournisseur', 'Structure', 'Prix P50 (EUR/MWh)', 'TCO P50 (EUR)',
-    'Cout annuel P50 (EUR)', 'Volatilite (EUR)', 'CVaR90 (EUR)',
-    'Score Budget', 'Score Transparence', 'Score Contrat', 'Score Data',
+    'Fournisseur',
+    'Structure',
+    'Prix P50 (EUR/MWh)',
+    'TCO P50 (EUR)',
+    'Cout annuel P50 (EUR)',
+    'Volatilite (EUR)',
+    'CVaR90 (EUR)',
+    'Score Budget',
+    'Score Transparence',
+    'Score Contrat',
+    'Score Data',
     'Score Global',
   ];
 
-  const rows = (scoredOffers || []).map(s => {
-    const result = offerResults.find(r => r.offerId === s.offerId) || s.result;
+  const rows = (scoredOffers || []).map((s) => {
+    const result = offerResults.find((r) => r.offerId === s.offerId) || s.result;
     return [
       s.supplierName,
       s.structure,
@@ -280,7 +302,8 @@ function formatPricingDetails(offer) {
     case OfferStructure.HYBRIDE:
     case OfferStructure.HEURES_SOLAIRES:
       return {
-        type: offer.structure === OfferStructure.HEURES_SOLAIRES ? 'Tarif Heures Solaires' : 'Hybride',
+        type:
+          offer.structure === OfferStructure.HEURES_SOLAIRES ? 'Tarif Heures Solaires' : 'Hybride',
         fixedShare: ((p.fixedSharePct || 0) * 100).toFixed(0) + '%',
         fixedPrice: (p.fixedPriceEurPerMwh ?? 'N/A') + ' EUR/MWh',
         indexedShare: ((p.indexedSharePct || 0) * 100).toFixed(0) + '%',

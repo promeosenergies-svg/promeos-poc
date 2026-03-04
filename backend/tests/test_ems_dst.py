@@ -4,7 +4,9 @@ PROMEOS - EMS DST Bucketization Tests
 Since timestamps are UTC-naive, DST handling verifies correct bucketing
 when real-world data has 23 or 25 hourly readings per calendar day.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -40,17 +42,20 @@ def _seed(db):
 
 
 class TestDST:
-
     def test_23h_day_spring(self, db):
         """Spring forward: only 23 readings for March 30, 2025 (CET→CEST)."""
         m = _seed(db)
         # Simulate 23 readings for that day
         base = datetime(2025, 3, 30)
         for h in range(23):
-            db.add(MeterReading(
-                meter_id=m.id, timestamp=base + timedelta(hours=h),
-                frequency=FrequencyType.HOURLY, value_kwh=1.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=m.id,
+                    timestamp=base + timedelta(hours=h),
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=1.0,
+                )
+            )
         db.flush()
 
         result = query_timeseries(db, [1], None, base, base + timedelta(days=1), "daily", "aggregate", "kwh")
@@ -63,10 +68,14 @@ class TestDST:
         m = _seed(db)
         base = datetime(2025, 10, 26)
         for h in range(25):
-            db.add(MeterReading(
-                meter_id=m.id, timestamp=base + timedelta(hours=h),
-                frequency=FrequencyType.HOURLY, value_kwh=1.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=m.id,
+                    timestamp=base + timedelta(hours=h),
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=1.0,
+                )
+            )
         db.flush()
 
         result = query_timeseries(db, [1], None, base, base + timedelta(days=2), "daily", "aggregate", "kwh")
@@ -79,15 +88,25 @@ class TestDST:
         m = _seed(db)
         base = datetime(2025, 3, 29, 22)  # 22:00 the day before spring forward
         for h in range(8):  # 22:00 - 05:00 next day
-            db.add(MeterReading(
-                meter_id=m.id, timestamp=base + timedelta(hours=h),
-                frequency=FrequencyType.HOURLY, value_kwh=1.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=m.id,
+                    timestamp=base + timedelta(hours=h),
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=1.0,
+                )
+            )
         db.flush()
 
         result = query_timeseries(
-            db, [1], None, base, base + timedelta(hours=8),
-            "hourly", "aggregate", "kwh",
+            db,
+            [1],
+            None,
+            base,
+            base + timedelta(hours=8),
+            "hourly",
+            "aggregate",
+            "kwh",
         )
         assert len(result["series"][0]["data"]) == 8
 
@@ -97,15 +116,25 @@ class TestDST:
         # Seed March + April data
         for d in range(60):
             dt = datetime(2025, 3, 1) + timedelta(days=d)
-            db.add(MeterReading(
-                meter_id=m.id, timestamp=dt,
-                frequency=FrequencyType.DAILY, value_kwh=10.0,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=m.id,
+                    timestamp=dt,
+                    frequency=FrequencyType.DAILY,
+                    value_kwh=10.0,
+                )
+            )
         db.flush()
 
         result = query_timeseries(
-            db, [1], None, datetime(2025, 3, 1), datetime(2025, 5, 1),
-            "monthly", "aggregate", "kwh",
+            db,
+            [1],
+            None,
+            datetime(2025, 3, 1),
+            datetime(2025, 5, 1),
+            "monthly",
+            "aggregate",
+            "kwh",
         )
         assert len(result["series"][0]["data"]) == 2
         buckets = [pt["t"] for pt in result["series"][0]["data"]]

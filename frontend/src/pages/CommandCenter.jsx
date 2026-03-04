@@ -7,21 +7,48 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ArrowRight, Clock, Upload, Scan, RefreshCw,
-  CheckCircle2, ShieldCheck, TrendingDown, Bell,
-  Database, FileText,
+  LayoutDashboard,
+  ArrowRight,
+  Clock,
+  Upload,
+  Scan,
+  RefreshCw,
+  CheckCircle2,
+  ShieldCheck,
+  TrendingDown,
+  Bell,
+  Database,
+  FileText,
 } from 'lucide-react';
-import { Card, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, ScopeSummary } from '../ui';
+import {
+  Card,
+  Button,
+  SkeletonCard,
+  PageShell,
+  MetricCard,
+  StatusDot,
+  EmptyState,
+  ErrorState,
+  ScopeSummary,
+} from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { toActionsList } from '../services/routes';
 import {
-  getComplianceBundle, getActionsSummary, getActionsList,
+  getComplianceBundle,
+  getActionsSummary,
+  getActionsList,
   getNotificationsSummary,
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { getRiskStatus } from '../lib/constants';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { buildWatchlist, buildBriefing, buildOpportunities, buildTodayActions, computeHealthState } from '../models/dashboardEssentials';
+import {
+  buildWatchlist,
+  buildBriefing,
+  buildOpportunities,
+  buildTodayActions,
+  computeHealthState,
+} from '../models/dashboardEssentials';
 import HealthSummary from '../components/HealthSummary';
 import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
@@ -47,7 +74,6 @@ export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
   const actions = isAllClear ? [] : topActions;
   return { kpis: norm, topActions: actions, alertsCount, isAllClear };
 }
-
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -86,22 +112,36 @@ export default function CommandCenter() {
     }
   }, [org.id, selectedSiteId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Raw KPIs from scope
   const rawKpis = useMemo(() => {
     const total = scopedSites.length;
-    const conformes = scopedSites.filter(s => s.statut_conformite === 'conforme').length;
-    const nonConformes = scopedSites.filter(s => s.statut_conformite === 'non_conforme').length;
-    const aRisque = scopedSites.filter(s => s.statut_conformite === 'a_risque').length;
+    const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nonConformes = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
     const risque = scopedSites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
-    const pctConf = total > 0 ? Math.round(conformes / total * 100) : 0;
-    const couvertureDonnees = total > 0
-      ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / total * 100)
-      : 0;
-    const compStatus = nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
+    const pctConf = total > 0 ? Math.round((conformes / total) * 100) : 0;
+    const couvertureDonnees =
+      total > 0
+        ? Math.round((scopedSites.filter((s) => s.conso_kwh_an > 0).length / total) * 100)
+        : 0;
+    const compStatus =
+      nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
     const risqueStatus = getRiskStatus(risque);
-    return { total, conformes, nonConformes, aRisque, risque, pctConf, couvertureDonnees, compStatus, risqueStatus };
+    return {
+      total,
+      conformes,
+      nonConformes,
+      aRisque,
+      risque,
+      pctConf,
+      couvertureDonnees,
+      compStatus,
+      risqueStatus,
+    };
   }, [scopedSites]);
 
   // Top actions — merge compliance + action plan
@@ -109,9 +149,14 @@ export default function CommandCenter() {
     const items = [];
     if (compliance?.sites) {
       const findings = compliance.sites
-        .flatMap(s => (s.findings || []).filter(f => f.status !== 'conforme').map(f => ({
-          ...f, site_nom: s.site_nom,
-        })))
+        .flatMap((s) =>
+          (s.findings || [])
+            .filter((f) => f.status !== 'conforme')
+            .map((f) => ({
+              ...f,
+              site_nom: s.site_nom,
+            }))
+        )
         .slice(0, 5);
       for (const f of findings) {
         items.push({
@@ -135,7 +180,11 @@ export default function CommandCenter() {
       });
     }
     return items
-      .sort((a, b) => (PRIORITY_RANK[b.priorite] || 0) - (PRIORITY_RANK[a.priorite] || 0) || b.impact_eur - a.impact_eur)
+      .sort(
+        (a, b) =>
+          (PRIORITY_RANK[b.priorite] || 0) - (PRIORITY_RANK[a.priorite] || 0) ||
+          b.impact_eur - a.impact_eur
+      )
       .slice(0, 5);
   }, [compliance, actions]);
 
@@ -146,29 +195,52 @@ export default function CommandCenter() {
 
   // Normalized model (no contradictions)
   const { kpis, alertsCount } = useMemo(
-    () => normalizeDashboardModel({ kpis: rawKpis, topActions: rawTopActions, alertsCount: rawAlertsCount }),
-    [rawKpis, rawTopActions, rawAlertsCount],
+    () =>
+      normalizeDashboardModel({
+        kpis: rawKpis,
+        topActions: rawTopActions,
+        alertsCount: rawAlertsCount,
+      }),
+    [rawKpis, rawTopActions, rawAlertsCount]
   );
 
   // Briefing from scope data (pure model — no extra API call)
-  const watchlist    = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
-  const briefing     = useMemo(() => buildBriefing(kpis, watchlist, alertsCount), [kpis, watchlist, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
-  const opportunities = useMemo(() => buildOpportunities(kpis, scopedSites, { isExpert }), [kpis, scopedSites, isExpert]); // eslint-disable-line react-hooks/exhaustive-deps
+  const watchlist = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
+  const briefing = useMemo(
+    () => buildBriefing(kpis, watchlist, alertsCount),
+    [kpis, watchlist, alertsCount]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
+  const opportunities = useMemo(
+    () => buildOpportunities(kpis, scopedSites, { isExpert }),
+    [kpis, scopedSites, isExpert]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
   // Merge watchlist signals + real open actions (rawTopActions) + opportunities
   const todayActions = useMemo(() => {
     const fromModel = buildTodayActions(kpis, watchlist, opportunities);
     // Inject real open actions from the action plan as 'high' priority items
-    const seen = new Set(fromModel.map(a => a.id));
+    const seen = new Set(fromModel.map((a) => a.id));
     const fromActions = rawTopActions
-      .filter(a => !seen.has(a.id))
-      .map(a => ({ id: a.id, label: a.titre, severity: a.priorite || 'medium', path: a.route, cta: a.source_label, type: 'action' }));
+      .filter((a) => !seen.has(a.id))
+      .map((a) => ({
+        id: a.id,
+        label: a.titre,
+        severity: a.priorite || 'medium',
+        path: a.route,
+        cta: a.source_label,
+        type: 'action',
+      }));
     return [...fromModel, ...fromActions].slice(0, 5);
   }, [kpis, watchlist, opportunities, rawTopActions]); // eslint-disable-line react-hooks/exhaustive-deps
-  const healthState  = useMemo(() => computeHealthState({ kpis, watchlist, briefing, consistency: { ok: true }, alertsCount }), [kpis, watchlist, briefing, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  const healthState = useMemo(
+    () => computeHealthState({ kpis, watchlist, briefing, consistency: { ok: true }, alertsCount }),
+    [kpis, watchlist, briefing, alertsCount]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Data coverage (shown in header trust signal)
   const coveragePct = useMemo(() => {
-    return kpis.total > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / kpis.total * 100) : 0;
+    return kpis.total > 0
+      ? Math.round((scopedSites.filter((s) => s.conso_kwh_an > 0).length / kpis.total) * 100)
+      : 0;
   }, [scopedSites, kpis.total]);
 
   const hasSites = scopedSites.length > 0;
@@ -177,7 +249,9 @@ export default function CommandCenter() {
     return (
       <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </PageShell>
     );
@@ -252,7 +326,7 @@ export default function CommandCenter() {
           accent="risque"
           icon={TrendingDown}
           label="Risque financier"
-          value={kpis.risque > 0 ? `${(kpis.risque / 1000).toFixed(0)}k€` : '0€'}
+          value={kpis.risque > 0 ? `${Math.round(kpis.risque / 1000)} k€` : '0 €'}
           sub={`${kpis.nonConformes + kpis.aRisque} sites à risque`}
           status={kpis.risqueStatus}
           onClick={() => navigate(toActionsList())}
@@ -262,7 +336,11 @@ export default function CommandCenter() {
           icon={Bell}
           label="Alertes actives"
           value={alertsCount}
-          sub={alertsSummary ? `dont ${alertsSummary.by_severity?.critical || 0} critiques` : 'Chargement...'}
+          sub={
+            alertsSummary
+              ? `dont ${alertsSummary.by_severity?.critical || 0} critiques`
+              : 'Chargement...'
+          }
           status={alertsCount > 5 ? 'crit' : alertsCount > 0 ? 'warn' : 'ok'}
           onClick={() => navigate('/notifications')}
         />
@@ -289,9 +367,15 @@ export default function CommandCenter() {
               Patrimoine <ArrowRight size={14} />
             </Button>
           </div>
-          {scopedSites.filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque').length === 0 ? (
+          {scopedSites.filter(
+            (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
+          ).length === 0 ? (
             <div className="px-5 py-8">
-              <EmptyState icon={CheckCircle2} title="Tous les sites sont conformes" text="Aucun site ne nécessite d'intervention." />
+              <EmptyState
+                icon={CheckCircle2}
+                title="Tous les sites sont conformes"
+                text="Aucun site ne nécessite d'intervention."
+              />
             </div>
           ) : (
             <Table>
@@ -304,26 +388,39 @@ export default function CommandCenter() {
               </Thead>
               <Tbody>
                 {scopedSites
-                  .filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque')
+                  .filter(
+                    (s) =>
+                      s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
+                  )
                   .sort((a, b) => (b.risque_eur || 0) - (a.risque_eur || 0))
                   .slice(0, 8)
                   .map((site) => (
-                    <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} className="group cursor-pointer hover:bg-blue-50/40">
+                    <Tr
+                      key={site.id}
+                      onClick={() => navigate(`/sites/${site.id}`)}
+                      className="group cursor-pointer hover:bg-blue-50/40"
+                    >
                       <Td>
                         <div className="font-medium text-gray-900">{site.nom}</div>
                         <div className="text-xs text-gray-400">{site.ville}</div>
                       </Td>
                       <Td>
                         <div className="flex items-center gap-1.5">
-                          <StatusDot status={site.statut_conformite === 'non_conforme' ? 'crit' : 'warn'} />
+                          <StatusDot
+                            status={site.statut_conformite === 'non_conforme' ? 'crit' : 'warn'}
+                          />
                           <span className="text-xs text-gray-600">
-                            {site.statut_conformite === 'non_conforme' ? 'Non conforme' : 'À risque'}
+                            {site.statut_conformite === 'non_conforme'
+                              ? 'Non conforme'
+                              : 'À risque'}
                           </span>
                         </div>
                       </Td>
                       <Td className="text-right text-sm font-medium">
                         {site.risque_eur > 0 ? (
-                          <span className="text-amber-700">{(site.risque_eur || 0).toLocaleString('fr-FR')} €</span>
+                          <span className="text-amber-700">
+                            {(site.risque_eur || 0).toLocaleString('fr-FR')} €
+                          </span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}

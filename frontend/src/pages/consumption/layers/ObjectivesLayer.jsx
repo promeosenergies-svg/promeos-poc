@@ -23,14 +23,14 @@ export default function ObjectivesLayer({ targets = [], visible = true, unit = '
   const suffix = UNIT_SUFFIX[unit] || 'kWh';
 
   // Compute average monthly target for reference line
-  const targetsWithValues = targets.filter(t => t.target_kwh != null);
+  const targetsWithValues = targets.filter((t) => t.target_kwh != null);
   const avgMonthlyTarget = targetsWithValues.length
     ? Math.round(targetsWithValues.reduce((s, t) => s + t.target_kwh, 0) / targetsWithValues.length)
     : null;
 
   // Identify future (forecast) months — months with no actual_kwh
   const currentMonth = new Date().getMonth() + 1;
-  const forecastMonths = targets.filter(t => t.month > currentMonth && t.target_kwh != null);
+  const forecastMonths = targets.filter((t) => t.month > currentMonth && t.target_kwh != null);
 
   return (
     <>

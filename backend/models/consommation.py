@@ -2,6 +2,7 @@
 PROMEOS - Modèle Consommation
 Relevés de consommation énergétique (horaires ou journaliers)
 """
+
 from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
@@ -12,6 +13,7 @@ class Consommation(Base, TimestampMixin):
     Relevé de consommation énergétique
     Données horaires ou journalières
     """
+
     __tablename__ = "consommations"
 
     id = Column(Integer, primary_key=True, index=True)

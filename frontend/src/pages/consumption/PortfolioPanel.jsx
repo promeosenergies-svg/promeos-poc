@@ -24,17 +24,19 @@ function computeSiteKPIs(tunnel) {
   const weekday = tunnel.envelope?.weekday || [];
   if (!weekday.length) return null;
 
-  const vals = weekday.map(s => s.p50 ?? 0);
+  const vals = weekday.map((s) => s.p50 ?? 0);
   const total = vals.reduce((a, b) => a + b, 0);
   const peak = Math.max(...vals);
 
   // Night hours 0-6
-  const nightVals = weekday.filter(s => s.hour < 6 || s.hour >= 22).map(s => s.p50 ?? 0);
+  const nightVals = weekday.filter((s) => s.hour < 6 || s.hour >= 22).map((s) => s.p50 ?? 0);
   const nightSum = nightVals.reduce((a, b) => a + b, 0);
   const offHoursPct = total > 0 ? (nightSum / total) * 100 : 0;
 
   // Talon: minimum p10 (base load)
-  const talonVals = weekday.filter(s => s.hour >= 0 && s.hour < 6).map(s => s.p10 ?? s.p50 ?? 0);
+  const talonVals = weekday
+    .filter((s) => s.hour >= 0 && s.hour < 6)
+    .map((s) => s.p10 ?? s.p50 ?? 0);
   const talon = talonVals.length ? Math.min(...talonVals) : 0;
 
   return {
@@ -43,7 +45,7 @@ function computeSiteKPIs(tunnel) {
     off_hours_pct: Math.round(offHoursPct * 10) / 10,
     talon_kw: Math.round(talon * 10) / 10,
     outside_pct: tunnel.outside_pct ?? null,
-    hourly: weekday.map(s => s.p50 ?? 0),
+    hourly: weekday.map((s) => s.p50 ?? 0),
   };
 }
 
@@ -68,11 +70,21 @@ function fmt(v, dec = 0) {
 }
 
 /** Single ranking table for one metric */
-const RankingTable = memo(function RankingTable({ rows, valueKey, valueLabel: _valueLabel, unit: _unit, suffix = '' }) {
-  const sorted = useMemo(() => [...rows]
-    .filter(r => r.kpis?.[valueKey] != null)
-    .sort((a, b) => (b.kpis[valueKey] ?? 0) - (a.kpis[valueKey] ?? 0))
-    .slice(0, 10), [rows, valueKey]);
+const RankingTable = memo(function RankingTable({
+  rows,
+  valueKey,
+  valueLabel: _valueLabel,
+  unit: _unit,
+  suffix = '',
+}) {
+  const sorted = useMemo(
+    () =>
+      [...rows]
+        .filter((r) => r.kpis?.[valueKey] != null)
+        .sort((a, b) => (b.kpis[valueKey] ?? 0) - (a.kpis[valueKey] ?? 0))
+        .slice(0, 10),
+    [rows, valueKey]
+  );
 
   if (!sorted.length) {
     return <p className="text-xs text-gray-400 py-4 text-center">Aucune donnée disponible</p>;
@@ -99,7 +111,8 @@ const RankingTable = memo(function RankingTable({ rows, valueKey, valueLabel: _v
                 />
               </div>
               <span className="text-xs font-semibold text-gray-700 w-16 text-right">
-                {fmt(val, valueKey === 'off_hours_pct' ? 1 : 0)}{suffix}
+                {fmt(val, valueKey === 'off_hours_pct' ? 1 : 0)}
+                {suffix}
               </span>
             </div>
           </div>
@@ -131,7 +144,10 @@ function AggregateChart({ rows, unit }) {
         <XAxis dataKey="hour" tick={{ fontSize: 9 }} interval={3} />
         <YAxis tick={{ fontSize: 9 }} width={36} />
         <Tooltip
-          formatter={(v) => [`${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${unit === 'eur' ? '€' : 'kWh'}`, 'Agrégé']}
+          formatter={(v) => [
+            `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${unit === 'eur' ? '€' : 'kWh'}`,
+            'Agrégé',
+          ]}
         />
         <Bar dataKey="total" fill="#6366f1" radius={[2, 2, 0, 0]} isAnimationActive={false} />
       </BarChart>
@@ -143,11 +159,13 @@ export default function PortfolioPanel({ motor, sites, unit = 'kwh' }) {
   const { data, loading } = motor;
 
   const rows = useMemo(() => {
-    return sites.map((site, idx) => {
-      const tunnel = data.tunnelBySite[site.id];
-      const kpis = computeSiteKPIs(tunnel);
-      return { site, kpis, color: colorForSite(site.id, idx) };
-    }).filter(r => r.kpis != null);
+    return sites
+      .map((site, idx) => {
+        const tunnel = data.tunnelBySite[site.id];
+        const kpis = computeSiteKPIs(tunnel);
+        return { site, kpis, color: colorForSite(site.id, idx) };
+      })
+      .filter((r) => r.kpis != null);
   }, [data.tunnelBySite, sites]);
 
   if (loading && !rows.length) {

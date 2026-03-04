@@ -3,6 +3,7 @@ PROMEOS — Demo Seed: TOU Schedule Generator (V83)
 Creates Time-of-Use (HP/HC) schedules for each site in the pack.
 EDF HC/HP standard tariff windows (semaine + week-end).
 """
+
 import json
 from datetime import date
 
@@ -48,10 +49,14 @@ def generate_tou(db, sites: list, rng=None) -> dict:
 
     for site in sites:
         # Skip if already has an active schedule
-        existing = db.query(TOUSchedule).filter(
-            TOUSchedule.site_id == site.id,
-            TOUSchedule.is_active == True,
-        ).first()
+        existing = (
+            db.query(TOUSchedule)
+            .filter(
+                TOUSchedule.site_id == site.id,
+                TOUSchedule.is_active == True,
+            )
+            .first()
+        )
         if existing:
             continue
 
@@ -59,7 +64,7 @@ def generate_tou(db, sites: list, rng=None) -> dict:
             site_id=site.id,
             name="HC/HP Standard EDF",
             effective_from=date(2023, 1, 1),
-            effective_to=None,      # currently active
+            effective_to=None,  # currently active
             is_active=True,
             windows_json=windows_json,
             source="turpe",

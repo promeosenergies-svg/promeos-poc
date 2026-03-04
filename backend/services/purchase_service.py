@@ -3,6 +3,7 @@ PROMEOS — Achat Energie Service V1
 Estimation conso, profil, scenarios fixe/indexe/spot/reflex_solar, recommandation.
 V74: + RéFlex Solar (blocs horaires, report, effort opérationnel).
 """
+
 import hashlib
 import json as _json
 import logging
@@ -15,8 +16,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import (
-    MeterReading, EnergyInvoice, SiteOperatingSchedule,
-    PurchaseStrategy, Site, EntiteJuridique, Portefeuille,
+    MeterReading,
+    EnergyInvoice,
+    SiteOperatingSchedule,
+    PurchaseStrategy,
+    Site,
+    EntiteJuridique,
+    Portefeuille,
 )
 from services.billing_service import get_reference_price
 
@@ -24,14 +30,14 @@ from services.billing_service import get_reference_price
 DEFAULT_VOLUME_KWH_AN = 500_000
 
 # ── Strategy pricing multipliers (vs reference price) ──
-FIXE_PREMIUM = 1.05          # Fixed = ref * 1.05 (risk premium for budget certainty)
-INDEXE_DISCOUNT = 0.95       # Indexed = ref * 0.95 (slight market exposure discount)
-SPOT_DISCOUNT = 0.88         # Spot = ref * 0.88 (full market exposure, max savings)
+FIXE_PREMIUM = 1.05  # Fixed = ref * 1.05 (risk premium for budget certainty)
+INDEXE_DISCOUNT = 0.95  # Indexed = ref * 0.95 (slight market exposure discount)
+SPOT_DISCOUNT = 0.88  # Spot = ref * 0.88 (full market exposure, max savings)
 
 # ── Profile factor thresholds ──
-PROFILE_FLAT_24_7 = 0.85     # Flat/constant load profile
-PROFILE_PEAK = 1.25          # Peak business hours profile
-PROFILE_DEFAULT = 1.0        # Standard profile
+PROFILE_FLAT_24_7 = 0.85  # Flat/constant load profile
+PROFILE_PEAK = 1.25  # Peak business hours profile
+PROFILE_DEFAULT = 1.0  # Standard profile
 
 
 def estimate_consumption(db: Session, site_id: int) -> dict:
@@ -53,9 +59,7 @@ def estimate_consumption(db: Session, site_id: int) -> dict:
     if meter_sum and meter_sum > 0:
         # Count distinct months covered
         months_covered = (
-            db.query(func.count(func.distinct(
-                func.strftime("%Y-%m", MeterReading.timestamp)
-            )))
+            db.query(func.count(func.distinct(func.strftime("%Y-%m", MeterReading.timestamp))))
             .filter(
                 MeterReading.meter_id == site_id,
                 MeterReading.timestamp >= twelve_months_ago,
@@ -81,9 +85,7 @@ def estimate_consumption(db: Session, site_id: int) -> dict:
     )
     if invoice_sum and invoice_sum > 0:
         invoice_months = (
-            db.query(func.count(func.distinct(
-                func.strftime("%Y-%m", EnergyInvoice.period_start)
-            )))
+            db.query(func.count(func.distinct(func.strftime("%Y-%m", EnergyInvoice.period_start))))
             .filter(
                 EnergyInvoice.site_id == site_id,
                 EnergyInvoice.period_start >= twelve_months_ago.date(),
@@ -110,11 +112,7 @@ def compute_profile_factor(db: Session, site_id: int) -> float:
     Compute profile factor from SiteOperatingSchedule.
     >1 = peak profile (higher spot cost), <1 = flat profile.
     """
-    schedule = (
-        db.query(SiteOperatingSchedule)
-        .filter(SiteOperatingSchedule.site_id == site_id)
-        .first()
-    )
+    schedule = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
     if not schedule:
         return 1.0
 
@@ -128,7 +126,6 @@ def compute_profile_factor(db: Session, site_id: int) -> float:
     return PROFILE_DEFAULT
 
 
-
 # ══════════════════════════════════════
 # V74 — RéFlex Solar: blocs horaires
 # ══════════════════════════════════════
@@ -136,20 +133,20 @@ def compute_profile_factor(db: Session, site_id: int) -> float:
 REFLEX_BLOCS = {
     "solaire_ete_semaine": {"months": [4, 5, 6, 7, 8, 9], "weekday": True, "hours": (13, 16), "price_mult": 0.72},
     "solaire_ete_weekend": {"months": [4, 5, 6, 7, 8, 9], "weekday": False, "hours": (10, 17), "price_mult": 0.68},
-    "pointe_hiver_matin":  {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (8, 10), "price_mult": 1.25},
-    "pointe_hiver_soir":   {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (17, 20), "price_mult": 1.25},
-    "hc":                  {"months": list(range(1, 13)), "weekday": None, "hours": (0, 6), "price_mult": 0.80},
-    "hp":                  {"months": list(range(1, 13)), "weekday": None, "hours": (6, 22), "price_mult": 1.00},
+    "pointe_hiver_matin": {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (8, 10), "price_mult": 1.25},
+    "pointe_hiver_soir": {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (17, 20), "price_mult": 1.25},
+    "hc": {"months": list(range(1, 13)), "weekday": None, "hours": (0, 6), "price_mult": 0.80},
+    "hp": {"months": list(range(1, 13)), "weekday": None, "hours": (6, 22), "price_mult": 1.00},
 }
 
 # Weight of each bloc in total volume (simplified annual distribution)
 REFLEX_BLOC_WEIGHTS = {
     "solaire_ete_semaine": 0.08,
     "solaire_ete_weekend": 0.04,
-    "pointe_hiver_matin":  0.06,
-    "pointe_hiver_soir":   0.06,
-    "hc":                  0.25,
-    "hp":                  0.51,
+    "pointe_hiver_matin": 0.06,
+    "pointe_hiver_soir": 0.06,
+    "hc": 0.25,
+    "hp": 0.51,
 }
 
 
@@ -180,14 +177,16 @@ def compute_reflex_scenario(
         bloc_price = round(ref_price * bloc["price_mult"], 4)
         bloc_cost = round(bloc_price * bloc_kwh, 2)
         total_eur += bloc_cost
-        blocs_detail.append({
-            "bloc": bloc_name,
-            "weight_pct": round(w * 100, 1),
-            "kwh": round(bloc_kwh, 0),
-            "price_eur_kwh": bloc_price,
-            "cost_eur": bloc_cost,
-            "hours": list(bloc["hours"]),
-        })
+        blocs_detail.append(
+            {
+                "bloc": bloc_name,
+                "weight_pct": round(w * 100, 1),
+                "kwh": round(bloc_kwh, 0),
+                "price_eur_kwh": bloc_price,
+                "cost_eur": bloc_cost,
+                "hours": list(bloc["hours"]),
+            }
+        )
 
     avg_price = round(total_eur / volume_kwh_an, 4) if volume_kwh_an > 0 else 0
     total_eur = round(total_eur, 2)
@@ -224,51 +223,64 @@ def compute_scenarios(
     Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
-    logger.info("compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s", site_id, volume_kwh_an, profile_factor, ref_price, price_source)
+    logger.info(
+        "compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s",
+        site_id,
+        volume_kwh_an,
+        profile_factor,
+        ref_price,
+        price_source,
+    )
 
     scenarios = []
 
     # ── Fixe: price = ref * FIXE_PREMIUM (risk premium), low risk ──
     fixe_price = round(ref_price * FIXE_PREMIUM, 4)
     fixe_total = round(fixe_price * volume_kwh_an, 2)
-    scenarios.append({
-        "strategy": PurchaseStrategy.FIXE.value,
-        "price_eur_per_kwh": fixe_price,
-        "total_annual_eur": fixe_total,
-        "risk_score": 15,
-        "p10_eur": fixe_total,
-        "p90_eur": fixe_total,
-        "ref_price": ref_price,
-        "ref_price_source": price_source,
-    })
+    scenarios.append(
+        {
+            "strategy": PurchaseStrategy.FIXE.value,
+            "price_eur_per_kwh": fixe_price,
+            "total_annual_eur": fixe_total,
+            "risk_score": 15,
+            "p10_eur": fixe_total,
+            "p90_eur": fixe_total,
+            "ref_price": ref_price,
+            "ref_price_source": price_source,
+        }
+    )
 
     # ── Indexe: price = ref * INDEXE_DISCOUNT, medium risk ──
     indexe_price = round(ref_price * INDEXE_DISCOUNT, 4)
     indexe_total = round(indexe_price * volume_kwh_an, 2)
-    scenarios.append({
-        "strategy": PurchaseStrategy.INDEXE.value,
-        "price_eur_per_kwh": indexe_price,
-        "total_annual_eur": indexe_total,
-        "risk_score": 45,
-        "p10_eur": round(indexe_total * 0.85, 2),
-        "p90_eur": round(indexe_total * 1.20, 2),
-        "ref_price": ref_price,
-        "ref_price_source": price_source,
-    })
+    scenarios.append(
+        {
+            "strategy": PurchaseStrategy.INDEXE.value,
+            "price_eur_per_kwh": indexe_price,
+            "total_annual_eur": indexe_total,
+            "risk_score": 45,
+            "p10_eur": round(indexe_total * 0.85, 2),
+            "p90_eur": round(indexe_total * 1.20, 2),
+            "ref_price": ref_price,
+            "ref_price_source": price_source,
+        }
+    )
 
     # ── Spot: price = ref * SPOT_DISCOUNT * profile_factor, high risk ──
     spot_price = round(ref_price * SPOT_DISCOUNT * profile_factor, 4)
     spot_total = round(spot_price * volume_kwh_an, 2)
-    scenarios.append({
-        "strategy": PurchaseStrategy.SPOT.value,
-        "price_eur_per_kwh": spot_price,
-        "total_annual_eur": spot_total,
-        "risk_score": 75,
-        "p10_eur": round(spot_total * 0.70, 2),
-        "p90_eur": round(spot_total * 1.45, 2),
-        "ref_price": ref_price,
-        "ref_price_source": price_source,
-    })
+    scenarios.append(
+        {
+            "strategy": PurchaseStrategy.SPOT.value,
+            "price_eur_per_kwh": spot_price,
+            "total_annual_eur": spot_total,
+            "risk_score": 75,
+            "p10_eur": round(spot_total * 0.70, 2),
+            "p90_eur": round(spot_total * 1.45, 2),
+            "ref_price": ref_price,
+            "ref_price_source": price_source,
+        }
+    )
 
     # ── RéFlex Solar: blocs horaires, 2 modes (sans/avec report) ──
     reflex = compute_reflex_scenario(ref_price, volume_kwh_an, profile_factor, price_source, report_pct=report_pct)
@@ -278,9 +290,7 @@ def compute_scenarios(
     current_total = round(ref_price * volume_kwh_an, 2)
     for s in scenarios:
         if current_total > 0:
-            s["savings_vs_current_pct"] = round(
-                (1 - s["total_annual_eur"] / current_total) * 100, 1
-            )
+            s["savings_vs_current_pct"] = round((1 - s["total_annual_eur"] / current_total) * 100, 1)
         else:
             s["savings_vs_current_pct"] = 0
 
@@ -327,14 +337,12 @@ def recommend_scenario(
     # Mark recommended
     best = max(eligible, key=lambda s: s["_score"])
     for s in scenarios:
-        s["is_recommended"] = (s["strategy"] == best["strategy"])
+        s["is_recommended"] = s["strategy"] == best["strategy"]
 
     # Generate reasoning
     strategy_labels = {"fixe": "Prix Fixe", "indexe": "Indexe", "spot": "Spot", "reflex_solar": "ReFlex Solar"}
     reasoning_parts = []
-    reasoning_parts.append(
-        f"Strategie {strategy_labels.get(best['strategy'], best['strategy'])} recommandee"
-    )
+    reasoning_parts.append(f"Strategie {strategy_labels.get(best['strategy'], best['strategy'])} recommandee")
     if best["risk_score"] <= 30:
         reasoning_parts.append("risque tres faible")
     elif best["risk_score"] <= 50:
@@ -350,7 +358,12 @@ def recommend_scenario(
         reasoning_parts.append("compatible offre verte")
 
     best["reasoning"] = " — ".join(reasoning_parts)
-    logger.info("recommend_scenario: best=%s score risk=%s savings=%.1f%%", best["strategy"], best["risk_score"], best.get("savings_vs_current_pct", 0))
+    logger.info(
+        "recommend_scenario: best=%s score risk=%s savings=%.1f%%",
+        best["strategy"],
+        best["risk_score"],
+        best.get("savings_vs_current_pct", 0),
+    )
 
     # Clean internal scores
     for s in scenarios:
@@ -363,27 +376,19 @@ def recommend_scenario(
 # V1.1 — Portfolio / History helpers
 # ══════════════════════════════════════
 
+
 def get_org_site_ids(db: Session, org_id: int) -> list:
     """
     Resolve all active site IDs for an organisation.
     Path: Organisation → EntiteJuridique → Portefeuille → Site.
     """
-    ej_ids = [
-        ej.id for ej in
-        db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()
-    ]
+    ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if not ej_ids:
         return []
-    pf_ids = [
-        p.id for p in
-        db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()
-    ]
+    pf_ids = [p.id for p in db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
     if not pf_ids:
         return []
-    return [
-        s.id for s in
-        db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()
-    ]
+    return [s.id for s in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()]
 
 
 def compute_inputs_hash(
@@ -396,15 +401,18 @@ def compute_inputs_hash(
     green_preference: bool,
 ) -> str:
     """SHA-256 of input parameters for run comparison / idempotency."""
-    payload = _json.dumps({
-        "volume_kwh_an": volume_kwh_an,
-        "profile_factor": profile_factor,
-        "horizon_months": horizon_months,
-        "energy_type": energy_type,
-        "risk_tolerance": risk_tolerance,
-        "budget_priority": budget_priority,
-        "green_preference": green_preference,
-    }, sort_keys=True)
+    payload = _json.dumps(
+        {
+            "volume_kwh_an": volume_kwh_an,
+            "profile_factor": profile_factor,
+            "horizon_months": horizon_months,
+            "energy_type": energy_type,
+            "risk_tolerance": risk_tolerance,
+            "budget_priority": budget_priority,
+            "green_preference": green_preference,
+        },
+        sort_keys=True,
+    )
     return hashlib.sha256(payload.encode()).hexdigest()
 
 

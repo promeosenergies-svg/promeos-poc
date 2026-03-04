@@ -10,6 +10,7 @@ Couverture :
   - Backward compat : anomalies vides, snapshot absent
   - Endpoints HTTP enrichis + assumptions endpoint
 """
+
 import pytest
 from datetime import date
 from fastapi.testclient import TestClient
@@ -19,10 +20,21 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, TypeUsage,
-    DeliveryPointStatus, DeliveryPointEnergyType, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    TypeUsage,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
@@ -36,6 +48,7 @@ from services.patrimoine_impact import (
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def db():
@@ -54,6 +67,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -75,28 +89,41 @@ def _make_org(db, nom, siren=None):
 
 
 def _make_full_site(db, pf, nom="Site", surface=5000.0):
-    site = Site(nom=nom, type=TypeSite.BUREAU, surface_m2=surface,
-                portefeuille_id=pf.id, actif=True)
+    site = Site(nom=nom, type=TypeSite.BUREAU, surface_m2=surface, portefeuille_id=pf.id, actif=True)
     db.add(site)
     db.flush()
     bat = Batiment(site_id=site.id, nom="Bat A", surface_m2=3000.0)
     db.add(bat)
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
-    dp = DeliveryPoint(code="12345678901234", energy_type=DeliveryPointEnergyType.ELEC,
-                       site_id=site.id, status=DeliveryPointStatus.ACTIVE)
+    dp = DeliveryPoint(
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
+    )
     db.add(dp)
     db.flush()
-    db.add(Compteur(site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                    numero_serie="SN-001", actif=True, delivery_point_id=dp.id))
-    db.add(EnergyContract(site_id=site.id, energy_type=BillingEnergyType.ELEC,
-                          supplier_name="EDF", start_date=date(2023, 1, 1),
-                          end_date=date(2025, 12, 31)))
+    db.add(
+        Compteur(
+            site_id=site.id, type=TypeCompteur.ELECTRICITE, numero_serie="SN-001", actif=True, delivery_point_id=dp.id
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
 
 # ── Tests PatrimoineAssumptions ───────────────────────────────────────────────
+
 
 class TestPatrimoineAssumptions:
     def test_defaults_valid(self):
@@ -141,13 +168,19 @@ class TestPatrimoineAssumptions:
 
     def test_to_dict_has_required_keys(self):
         d = DEFAULT_ASSUMPTIONS.to_dict()
-        for key in ("prix_elec_eur_mwh", "prix_gaz_eur_mwh",
-                    "conso_fallback_kwh_an", "horizon_factor",
-                    "conso_fallback_by_usage", "conso_kwh_m2_an_by_usage"):
+        for key in (
+            "prix_elec_eur_mwh",
+            "prix_gaz_eur_mwh",
+            "conso_fallback_kwh_an",
+            "horizon_factor",
+            "conso_fallback_by_usage",
+            "conso_kwh_m2_an_by_usage",
+        ):
             assert key in d
 
 
 # ── Tests compute_priority_score ──────────────────────────────────────────────
+
 
 class TestComputePriorityScore:
     def _anom(self, severity, framework, eur):
@@ -160,7 +193,7 @@ class TestComputePriorityScore:
     def test_high_facturation_big_eur(self):
         a = self._anom("HIGH", "FACTURATION", 60_000)
         score = compute_priority_score(a)
-        assert score == min(100, 25 + 20 + 30)   # 75
+        assert score == min(100, 25 + 20 + 30)  # 75
 
     def test_low_none_zero_eur(self):
         a = self._anom("LOW", "NONE", 0)
@@ -180,7 +213,7 @@ class TestComputePriorityScore:
         # It uses HIGH=25 for CRITICAL path → but test should still work
         # Actually looking at the code: _SEV_BASE = {"CRITICAL":30,"HIGH":25,"MEDIUM":15,"LOW":5}
         score = compute_priority_score(a)
-        assert score == min(100, 30 + 20 + 30)   # 80
+        assert score == min(100, 30 + 20 + 30)  # 80
 
     def test_missing_fields_graceful(self):
         # Anomaly without regulatory_impact or business_impact
@@ -199,6 +232,7 @@ class TestComputePriorityScore:
 
 
 # ── Tests enrich_anomalies_with_impact ────────────────────────────────────────
+
 
 class TestEnrichAnomaliesWithImpact:
     def _base_anomaly(self, code, severity="MEDIUM"):
@@ -265,14 +299,16 @@ class TestEnrichAnomaliesWithImpact:
         assert result[0]["business_impact"]["estimated_risk_eur"] >= 0
 
     def test_surface_mismatch_uses_evidence(self):
-        anomalies = [{
-            **self._base_anomaly("SURFACE_MISMATCH", "MEDIUM"),
-            "evidence": {
-                "surface_site_m2": 10_000,
-                "surface_batiments_sum_m2": 7_000,
-                "ecart_pct": 30.0,
-            },
-        }]
+        anomalies = [
+            {
+                **self._base_anomaly("SURFACE_MISMATCH", "MEDIUM"),
+                "evidence": {
+                    "surface_site_m2": 10_000,
+                    "surface_batiments_sum_m2": 7_000,
+                    "ecart_pct": 30.0,
+                },
+            }
+        ]
         a = DEFAULT_ASSUMPTIONS
         result = enrich_anomalies_with_impact(anomalies, snapshot={}, assumptions=a)
         bi = result[0]["business_impact"]
@@ -297,9 +333,14 @@ class TestEnrichAnomaliesWithImpact:
 
     def test_all_p0_codes_have_meta(self):
         codes = [
-            "SURFACE_MISSING", "SURFACE_MISMATCH", "BUILDING_MISSING",
-            "BUILDING_USAGE_MISSING", "METER_NO_DELIVERY_POINT",
-            "CONTRACT_DATE_INVALID", "CONTRACT_OVERLAP_SITE", "ORPHANS_DETECTED",
+            "SURFACE_MISSING",
+            "SURFACE_MISMATCH",
+            "BUILDING_MISSING",
+            "BUILDING_USAGE_MISSING",
+            "METER_NO_DELIVERY_POINT",
+            "CONTRACT_DATE_INVALID",
+            "CONTRACT_OVERLAP_SITE",
+            "ORPHANS_DETECTED",
         ]
         for code in codes:
             assert code in _IMPACT_META, f"{code} absent de _IMPACT_META"
@@ -307,14 +348,14 @@ class TestEnrichAnomaliesWithImpact:
 
 # ── Tests endpoints HTTP enrichis ────────────────────────────────────────────
 
+
 class TestAnomaliesEndpointsV59:
     def test_site_anomalies_has_regulatory_impact(self, client, db):
         """Endpoint /anomalies retourne regulatory_impact dans les anomalies."""
         DemoState.clear_demo_org()
         org, pf = _make_org(db, "OrgV59Reg")
         # Site sans surface → SURFACE_MISSING
-        site = Site(nom="NoSurf", type=TypeSite.BUREAU, surface_m2=None,
-                    portefeuille_id=pf.id, actif=True)
+        site = Site(nom="NoSurf", type=TypeSite.BUREAU, surface_m2=None, portefeuille_id=pf.id, actif=True)
         db.add(site)
         db.commit()
         DemoState.set_demo_org(org.id)
@@ -347,8 +388,7 @@ class TestAnomaliesEndpointsV59:
         DemoState.clear_demo_org()
         org, pf = _make_org(db, "OrgV59Sort")
         # Crée site avec plusieurs anomalies possibles
-        site = Site(nom="MultiAnom", type=TypeSite.BUREAU, surface_m2=None,
-                    portefeuille_id=pf.id, actif=True)
+        site = Site(nom="MultiAnom", type=TypeSite.BUREAU, surface_m2=None, portefeuille_id=pf.id, actif=True)
         db.add(site)
         db.commit()
         DemoState.set_demo_org(org.id)
@@ -357,9 +397,7 @@ class TestAnomaliesEndpointsV59:
         anomalies = r.json()["anomalies"]
         if len(anomalies) >= 2:
             scores = [a["priority_score"] for a in anomalies]
-            assert scores == sorted(scores, reverse=True), (
-                f"Scores non triés DESC: {scores}"
-            )
+            assert scores == sorted(scores, reverse=True), f"Scores non triés DESC: {scores}"
 
     def test_org_anomalies_has_top_priority_score(self, client, db):
         """Liste org retourne top_priority_score par site."""
@@ -406,10 +444,12 @@ class TestAnomaliesEndpointsV59:
 
 # ── Guard multi-org ───────────────────────────────────────────────────────────
 
+
 class TestMultiOrgGuardV59:
     def test_no_organisation_first_in_impact_service(self):
         """patrimoine_impact.py ne contient pas Organisation).first()."""
         import pathlib
+
         src = pathlib.Path(__file__).parent.parent / "services" / "patrimoine_impact.py"
         content = src.read_text(encoding="utf-8")
         assert "Organisation)" not in content or ".first()" not in content
@@ -417,6 +457,7 @@ class TestMultiOrgGuardV59:
     def test_no_organisation_first_in_assumptions_config(self):
         """patrimoine_assumptions.py ne contient pas Organisation).first()."""
         import pathlib
+
         src = pathlib.Path(__file__).parent.parent / "config" / "patrimoine_assumptions.py"
         content = src.read_text(encoding="utf-8")
         assert "Organisation)" not in content or ".first()" not in content

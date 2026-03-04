@@ -12,7 +12,7 @@
 
 import { CO2E_FACTOR_KG_PER_KWH } from './constants';
 
-const EUR_FACTOR  = 0.18;   // €/kWh estimate
+const EUR_FACTOR = 0.18; // €/kWh estimate
 
 function fmt(value, decimals = 0) {
   if (value == null || isNaN(value)) return null;
@@ -24,7 +24,8 @@ function DeltaBadge({ pct }) {
   const pos = pct > 0;
   return (
     <span className={`ml-1 text-[10px] font-medium ${pos ? 'text-red-500' : 'text-green-600'}`}>
-      {pos ? '+' : ''}{pct.toFixed(1)}%
+      {pos ? '+' : ''}
+      {pct.toFixed(1)}%
     </span>
   );
 }
@@ -33,12 +34,12 @@ export default function OverviewRow({ data, unit }) {
   if (!data) return null;
 
   const totalKwh = data.total_kwh ?? null;
-  const avgKwh   = data.avg_kwh   ?? null;
-  const peakKw   = data.peak_kw   ?? null;
-  const talonKw  = data.talon_kw  ?? null;
+  const avgKwh = data.avg_kwh ?? null;
+  const peakKw = data.peak_kw ?? null;
+  const talonKw = data.talon_kw ?? null;
   const offHours = data.off_hours_pct ?? null;
-  const co2e     = totalKwh != null ? totalKwh * CO2E_FACTOR_KG_PER_KWH : null;
-  const eur      = totalKwh != null ? totalKwh * EUR_FACTOR   : null;
+  const co2e = totalKwh != null ? totalKwh * CO2E_FACTOR_KG_PER_KWH : null;
+  const eur = totalKwh != null ? totalKwh * EUR_FACTOR : null;
 
   const kpis = [
     totalKwh != null && {
@@ -76,7 +77,7 @@ export default function OverviewRow({ data, unit }) {
       className="flex flex-wrap gap-x-5 gap-y-1 px-1 py-2 rounded-lg bg-gray-50 border border-gray-100 text-xs"
       aria-label="Résumé de la période"
     >
-      {kpis.map(k => (
+      {kpis.map((k) => (
         <div key={k.label} className="flex flex-col">
           <span className="text-gray-400">{k.label}</span>
           <span className="font-semibold text-gray-700 whitespace-nowrap">
@@ -99,28 +100,29 @@ export function computeOverviewData(tunnel) {
   const envelope = tunnel.envelope?.weekday || [];
   if (!envelope.length) return null;
 
-  const p50Values = envelope.map(s => s.p50 ?? 0).filter(v => v > 0);
+  const p50Values = envelope.map((s) => s.p50 ?? 0).filter((v) => v > 0);
   const avgP50 = p50Values.length ? p50Values.reduce((a, b) => a + b, 0) / p50Values.length : null;
   const peakKw = p50Values.length ? Math.max(...p50Values) : null;
 
   // Talon: min hourly p50 (off-peak night hours 0-5)
-  const nightSlots = envelope.filter(s => s.hour >= 0 && s.hour < 6);
+  const nightSlots = envelope.filter((s) => s.hour >= 0 && s.hour < 6);
   const talonKw = nightSlots.length
-    ? Math.min(...nightSlots.map(s => s.p50 ?? Infinity).filter(v => v < Infinity))
+    ? Math.min(...nightSlots.map((s) => s.p50 ?? Infinity).filter((v) => v < Infinity))
     : null;
 
   // total_kwh: sum of p50 * 24h per year approximation — use readings if available
-  const totalKwh = tunnel.readings_count && avgP50
-    ? avgP50 * 24 * (tunnel.readings_count / 48) // rough estimate from half-hourly readings
-    : null;
+  const totalKwh =
+    tunnel.readings_count && avgP50
+      ? avgP50 * 24 * (tunnel.readings_count / 48) // rough estimate from half-hourly readings
+      : null;
 
   // avg per day
   const avgKwh = avgP50 ? avgP50 * 24 : null;
 
   // off-hours pct: fraction of consumption outside 8h-20h
-  const daySlots = envelope.filter(s => s.hour >= 8 && s.hour < 20);
+  const daySlots = envelope.filter((s) => s.hour >= 8 && s.hour < 20);
   const nightSum = envelope
-    .filter(s => s.hour < 8 || s.hour >= 20)
+    .filter((s) => s.hour < 8 || s.hour >= 20)
     .reduce((s, slot) => s + (slot.p50 ?? 0), 0);
   const daySum = daySlots.reduce((s, slot) => s + (slot.p50 ?? 0), 0);
   const total = nightSum + daySum;

@@ -11,9 +11,14 @@
  *  7) Toast: provider renders without crash
  */
 import { describe, it, expect } from 'vitest';
-import { EnergyType, SEASONALITY_ELEC, SEASONALITY_GAZ, BREAKDOWN_DEFAULTS_GAZ, BREAKDOWN_DEFAULTS_ELEC } from '../../domain/purchase/types.js';
+import {
+  EnergyType,
+  SEASONALITY_ELEC,
+  SEASONALITY_GAZ,
+  BREAKDOWN_DEFAULTS_GAZ,
+  BREAKDOWN_DEFAULTS_ELEC,
+} from '../../domain/purchase/types.js';
 import { distributeMonthly, getSeasonality } from '../../domain/purchase/assumptions.js';
-
 
 // ── Energy Gate Consistency ──────────────────────────────────────
 
@@ -25,12 +30,12 @@ describe('Energy Gate — domain layer consistency', () => {
 
   it('SEASONALITY_ELEC has 12 months', () => {
     expect(SEASONALITY_ELEC).toHaveLength(12);
-    expect(SEASONALITY_ELEC.every(v => v > 0)).toBe(true);
+    expect(SEASONALITY_ELEC.every((v) => v > 0)).toBe(true);
   });
 
   it('SEASONALITY_GAZ has 12 months', () => {
     expect(SEASONALITY_GAZ).toHaveLength(12);
-    expect(SEASONALITY_GAZ.every(v => v > 0)).toBe(true);
+    expect(SEASONALITY_GAZ.every((v) => v > 0)).toBe(true);
   });
 
   it('GAZ seasonality is more pronounced than ELEC', () => {
@@ -84,7 +89,6 @@ describe('Energy Gate — domain layer consistency', () => {
   });
 });
 
-
 // ── Toast Smoke Tests ─────────────────────────────────────────
 
 describe('Toast — smoke tests', () => {
@@ -114,7 +118,7 @@ describe('Toast — smoke tests', () => {
     recentMessages.set(key, now);
 
     // Same message within 2s should be deduped
-    const isDuplicate = recentMessages.has(key) && (now - recentMessages.get(key) < 2000);
+    const isDuplicate = recentMessages.has(key) && now - recentMessages.get(key) < 2000;
     expect(isDuplicate).toBe(true);
 
     // Different message should not be deduped
@@ -131,7 +135,7 @@ describe('Toast — smoke tests', () => {
     recentMessages.set(key, past);
 
     const now = Date.now();
-    const isDuplicate = recentMessages.has(key) && (now - recentMessages.get(key) < 2000);
+    const isDuplicate = recentMessages.has(key) && now - recentMessages.get(key) < 2000;
     expect(isDuplicate).toBe(false);
   });
 

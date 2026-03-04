@@ -18,9 +18,10 @@ function RailIcon({ mod, isActive, onClick }) {
         onClick={() => onClick(mod.key)}
         className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
-          ${isActive
-            ? `${t.railActiveBg} ring-1 ${t.railActiveRing} ${t.railActiveText}`
-            : 'text-slate-400 hover:bg-slate-100/60 hover:text-slate-600'
+          ${
+            isActive
+              ? `${t.railActiveBg} ring-1 ${t.railActiveRing} ${t.railActiveText}`
+              : 'text-slate-400 hover:bg-slate-100/60 hover:text-slate-600'
           }`}
         aria-label={mod.label}
         aria-current={isActive ? 'true' : undefined}
@@ -35,9 +36,7 @@ function RailIcon({ mod, isActive, onClick }) {
 export default function NavRail({ activeModule, onSelectModule }) {
   const { isExpert } = useExpertMode();
 
-  const visibleModules = isExpert
-    ? NAV_MODULES
-    : NAV_MODULES.filter((m) => !m.expertOnly);
+  const visibleModules = isExpert ? NAV_MODULES : NAV_MODULES.filter((m) => !m.expertOnly);
 
   return (
     <div

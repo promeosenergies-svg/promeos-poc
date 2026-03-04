@@ -13,6 +13,7 @@ V1.1 changes:
 - Robust statistics (median+MAD for pointe, linreg for derive)
 - Recommended actions per insight
 """
+
 import json
 import math
 import random
@@ -23,8 +24,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import (
-    Site, Meter, MeterReading, ConsumptionInsight,
-    Organisation, Portefeuille, EntiteJuridique,
+    Site,
+    Meter,
+    MeterReading,
+    ConsumptionInsight,
+    Organisation,
+    Portefeuille,
+    EntiteJuridique,
 )
 from models.energy_models import FrequencyType
 
@@ -35,6 +41,7 @@ DEFAULT_PRICE_REF_KWH = 0.18
 # ========================================
 # Helpers
 # ========================================
+
 
 def _median(values: List[float]) -> float:
     """Calculate median of a sorted or unsorted list."""
@@ -69,18 +76,21 @@ def _linear_slope(values: List[float]) -> float:
 def _get_price_ref(db: Session, site_id: int) -> float:
     """Get site-specific price ref or fallback."""
     from routes.site_config import get_site_price_ref
+
     return get_site_price_ref(db, site_id)
 
 
 def _get_schedule_params(db: Session, site_id: int) -> dict:
     """Get site-specific schedule or defaults."""
     from routes.site_config import get_site_schedule_params
+
     return get_site_schedule_params(db, site_id)
 
 
 # ========================================
 # Recommended actions templates
 # ========================================
+
 
 def _actions_hors_horaires(metrics: dict, price_ref: float) -> list:
     """Generate recommended actions for off-hours consumption."""
@@ -200,9 +210,8 @@ ACTIONS_GENERATORS = {
 # Demo conso seed
 # ========================================
 
-def generate_demo_consumption(
-    db: Session, site_id: int, days: int = 30, anomaly: bool = True
-) -> dict:
+
+def generate_demo_consumption(db: Session, site_id: int, days: int = 30, anomaly: bool = True) -> dict:
     """Generate synthetic hourly consumption data for a site.
 
     Creates a Meter + MeterReadings with patterns:
@@ -286,13 +295,15 @@ def generate_demo_consumption(
         noise = random.gauss(0, 0.05)
         kwh = max(0, power * (1 + noise) * drift_factor)
 
-        readings.append(MeterReading(
-            meter_id=meter.id,
-            timestamp=ts,
-            frequency=FrequencyType.HOURLY,
-            value_kwh=round(kwh, 2),
-            quality_score=0.95,
-        ))
+        readings.append(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=round(kwh, 2),
+                quality_score=0.95,
+            )
+        )
 
         ts += timedelta(hours=1)
 
@@ -309,9 +320,7 @@ def generate_demo_consumption(
     }
 
 
-def generate_demo_gas_consumption(
-    db: Session, site_id: int, days: int = 90, anomaly: bool = True
-) -> dict:
+def generate_demo_gas_consumption(db: Session, site_id: int, days: int = 90, anomaly: bool = True) -> dict:
     """Generate synthetic daily gas consumption data for a site.
 
     Creates a gas Meter + MeterReadings with seasonal heating pattern:
@@ -328,11 +337,7 @@ def generate_demo_gas_consumption(
         return {"error": "Site not found"}
 
     # Gas meter (per site, separate from electricity)
-    existing = (
-        db.query(Meter)
-        .filter(Meter.site_id == site_id, Meter.energy_vector == EnergyVector.GAS)
-        .first()
-    )
+    existing = db.query(Meter).filter(Meter.site_id == site_id, Meter.energy_vector == EnergyVector.GAS).first()
     if existing:
         meter = existing
     else:
@@ -381,13 +386,15 @@ def generate_demo_gas_consumption(
         noise = random.gauss(0, 0.07)  # ±7% noise
         kwh = max(0, base_kwh_day * seasonal * anomaly_factor * (1 + noise))
 
-        readings.append(MeterReading(
-            meter_id=meter.id,
-            timestamp=ts,
-            frequency=FrequencyType.DAILY,
-            value_kwh=round(kwh, 1),
-            quality_score=0.92,
-        ))
+        readings.append(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.DAILY,
+                value_kwh=round(kwh, 1),
+                quality_score=0.92,
+            )
+        )
 
     db.bulk_save_objects(readings)
     db.commit()
@@ -405,6 +412,7 @@ def generate_demo_gas_consumption(
 # ========================================
 # Diagnostic calculations (V1.1 — robust)
 # ========================================
+
 
 def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReading]:
     """Get last N days of hourly readings for a meter."""
@@ -455,7 +463,7 @@ def _detect_hors_horaires(
             off_readings.append(r.value_kwh)
             continue
 
-        is_biz = (weekday in open_days and biz_start <= hour < biz_end)
+        is_biz = weekday in open_days and biz_start <= hour < biz_end
         if is_biz:
             biz_kwh += r.value_kwh
         else:
@@ -679,7 +687,7 @@ def _detect_data_gaps(readings: List[MeterReading]) -> Optional[dict]:
     max_gap_hours = 0
 
     for i in range(1, len(readings)):
-        delta = (readings[i].timestamp - readings[i-1].timestamp).total_seconds() / 3600
+        delta = (readings[i].timestamp - readings[i - 1].timestamp).total_seconds() / 3600
         if delta > 1.5:
             gap_hours = int(delta)
             gaps += 1
@@ -711,9 +719,12 @@ def _detect_data_gaps(readings: List[MeterReading]) -> Optional[dict]:
 # Main diagnostic + persistence
 # ========================================
 
+
 def run_diagnostic(
-    db: Session, site_id: int,
-    biz_start: int = None, biz_end: int = None,
+    db: Session,
+    site_id: int,
+    biz_start: int = None,
+    biz_end: int = None,
     days: int = 30,
 ) -> List[ConsumptionInsight]:
     """Run all V1.1 diagnostics for a site and persist ConsumptionInsight rows.
@@ -798,8 +809,8 @@ def run_diagnostic(
 def run_diagnostic_org(db: Session, org_id: int, days: int = 30) -> dict:
     """Run diagnostics for all sites of an organisation."""
     site_ids = [
-        row[0] for row in
-        db.query(Site.id)
+        row[0]
+        for row in db.query(Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -828,8 +839,8 @@ def run_diagnostic_org(db: Session, org_id: int, days: int = 30) -> dict:
 def get_insights_summary(db: Session, org_id: int) -> dict:
     """Aggregate consumption insights for an org."""
     site_ids = [
-        row[0] for row in
-        db.query(Site.id)
+        row[0]
+        for row in db.query(Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -846,11 +857,7 @@ def get_insights_summary(db: Session, org_id: int) -> dict:
             "insights": [],
         }
 
-    all_insights = (
-        db.query(ConsumptionInsight)
-        .filter(ConsumptionInsight.site_id.in_(site_ids))
-        .all()
-    )
+    all_insights = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id.in_(site_ids)).all()
 
     by_type = {}
     total_loss_kwh = 0
@@ -865,21 +872,23 @@ def get_insights_summary(db: Session, org_id: int) -> dict:
         sites_with.add(ci.site_id)
 
         site = db.query(Site).filter(Site.id == ci.site_id).first()
-        insight_list.append({
-            "id": ci.id,
-            "site_id": ci.site_id,
-            "site_nom": site.nom if site else "?",
-            "type": ci.type,
-            "severity": ci.severity,
-            "message": ci.message,
-            "estimated_loss_kwh": ci.estimated_loss_kwh,
-            "estimated_loss_eur": ci.estimated_loss_eur,
-            "recommended_actions": json.loads(ci.recommended_actions_json) if ci.recommended_actions_json else [],
-            "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
-            "period_start": ci.period_start.isoformat() if ci.period_start else None,
-            "period_end": ci.period_end.isoformat() if ci.period_end else None,
-            "insight_status": ci.insight_status.value if ci.insight_status else "open",
-        })
+        insight_list.append(
+            {
+                "id": ci.id,
+                "site_id": ci.site_id,
+                "site_nom": site.nom if site else "?",
+                "type": ci.type,
+                "severity": ci.severity,
+                "message": ci.message,
+                "estimated_loss_kwh": ci.estimated_loss_kwh,
+                "estimated_loss_eur": ci.estimated_loss_eur,
+                "recommended_actions": json.loads(ci.recommended_actions_json) if ci.recommended_actions_json else [],
+                "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
+                "period_start": ci.period_start.isoformat() if ci.period_start else None,
+                "period_end": ci.period_end.isoformat() if ci.period_end else None,
+                "insight_status": ci.insight_status.value if ci.insight_status else "open",
+            }
+        )
 
     sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     insight_list.sort(key=lambda x: (sev_order.get(x["severity"], 0), x["estimated_loss_eur"] or 0), reverse=True)

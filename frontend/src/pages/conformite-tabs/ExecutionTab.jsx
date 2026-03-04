@@ -4,27 +4,41 @@
  */
 import { useState } from 'react';
 import {
-  ChevronRight, Plus, ExternalLink, CheckCircle,
-  UserCheck, CheckCircle2, Eye, FileText, ClipboardList,
+  ChevronRight,
+  Plus,
+  ExternalLink,
+  CheckCircle,
+  UserCheck,
+  CheckCircle2,
+  Eye,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState } from '../../ui';
+import { Button, EmptyState } from '../../ui';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
 import {
-  REG_LABELS, WORKFLOW_LABELS, RULE_LABELS,
-  RULE_NEXT_STEPS, RULE_EXPECTED_PROOFS,
+  REG_LABELS,
+  WORKFLOW_LABELS,
+  RULE_LABELS,
+  RULE_NEXT_STEPS,
+  RULE_EXPECTED_PROOFS,
 } from '../../domain/compliance/complianceLabels.fr';
 
 const WORKFLOW_CONFIG = {
-  open:           { label: WORKFLOW_LABELS.open,           color: 'bg-red-50 text-red-700' },
-  ack:            { label: WORKFLOW_LABELS.ack,            color: 'bg-amber-50 text-amber-700' },
-  resolved:       { label: WORKFLOW_LABELS.resolved,       color: 'bg-green-50 text-green-700' },
+  open: { label: WORKFLOW_LABELS.open, color: 'bg-red-50 text-red-700' },
+  ack: { label: WORKFLOW_LABELS.ack, color: 'bg-amber-50 text-amber-700' },
+  resolved: { label: WORKFLOW_LABELS.resolved, color: 'bg-green-50 text-green-700' },
   false_positive: { label: WORKFLOW_LABELS.false_positive, color: 'bg-gray-100 text-gray-500' },
 };
 
 function WorkflowBadge({ status }) {
   const cfg = WORKFLOW_CONFIG[status] || WORKFLOW_CONFIG.open;
-  return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cfg.color}`}>{cfg.label}</span>;
+  return (
+    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cfg.color}`}>
+      {cfg.label}
+    </span>
+  );
 }
 
 function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }) {
@@ -37,15 +51,20 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
   return (
     <div className="border border-gray-200 rounded-lg hover:bg-gray-50/50 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${finding.status === 'NOK' ? 'bg-red-500' : finding.status === 'UNKNOWN' ? 'bg-blue-400' : 'bg-amber-500'}`} />
+        <span
+          className={`w-2.5 h-2.5 rounded-full shrink-0 ${finding.status === 'NOK' ? 'bg-red-500' : finding.status === 'UNKNOWN' ? 'bg-blue-400' : 'bg-amber-500'}`}
+        />
         <button onClick={() => setExpanded(!expanded)} className="flex-1 min-w-0 text-left">
           <p className="text-sm font-medium text-gray-900 truncate">
-            {finding.site_nom} — {ruleInfo?.title_fr || REG_LABELS[finding.regulation] || finding.regulation}
+            {finding.site_nom} —{' '}
+            {ruleInfo?.title_fr || REG_LABELS[finding.regulation] || finding.regulation}
           </p>
           <p className="text-xs text-gray-500 truncate">
             {ruleInfo?.why_fr || finding.evidence || 'Non conforme'}
           </p>
-          {isExpert && <p className="text-[10px] text-gray-400 font-mono mt-0.5">{finding.rule_id}</p>}
+          {isExpert && (
+            <p className="text-[10px] text-gray-400 font-mono mt-0.5">{finding.rule_id}</p>
+          )}
         </button>
         {isExpert ? (
           <>
@@ -73,13 +92,17 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
                 <CheckCircle2 size={12} /> Résolu
               </button>
             )}
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-medium shrink-0">Recommandation</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-medium shrink-0">
+              Recommandation
+            </span>
           </>
         ) : (
           <>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-              finding.status === 'NOK' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-            }`}>
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                finding.status === 'NOK' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+              }`}
+            >
               {finding.status === 'NOK' ? WORKFLOW_LABELS.open : WORKFLOW_LABELS.ack}
             </span>
             <button
@@ -105,7 +128,12 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
               <div>
                 <p className="text-xs font-semibold text-gray-600 mb-1">Prochaines étapes</p>
                 <ul className="text-xs text-gray-600 space-y-0.5">
-                  {nextSteps.map((step, i) => <li key={i} className="flex items-start gap-1"><ChevronRight size={10} className="shrink-0 mt-0.5 text-blue-400" />{step}</li>)}
+                  {nextSteps.map((step, i) => (
+                    <li key={i} className="flex items-start gap-1">
+                      <ChevronRight size={10} className="shrink-0 mt-0.5 text-blue-400" />
+                      {step}
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -113,7 +141,12 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
               <div>
                 <p className="text-xs font-semibold text-gray-600 mb-1">Preuves attendues</p>
                 <ul className="text-xs text-gray-600 space-y-0.5">
-                  {expectedProofs.map((proof, i) => <li key={i} className="flex items-start gap-1"><FileText size={10} className="shrink-0 mt-0.5 text-indigo-400" />{proof}</li>)}
+                  {expectedProofs.map((proof, i) => (
+                    <li key={i} className="flex items-start gap-1">
+                      <FileText size={10} className="shrink-0 mt-0.5 text-indigo-400" />
+                      {proof}
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -136,8 +169,13 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
 }
 
 export default function ExecutionTab({
-  actionableFindings, emptyReason, handleWorkflowAction,
-  handleCreateFromFinding, setAuditFindingId, openActionDrawer, navigate,
+  actionableFindings,
+  emptyReason,
+  handleWorkflowAction,
+  handleCreateFromFinding,
+  setAuditFindingId,
+  openActionDrawer,
+  navigate,
 }) {
   return (
     <div className="space-y-4">
@@ -159,13 +197,15 @@ export default function ExecutionTab({
         <EmptyState
           icon={CheckCircle}
           title="Aucune action en attente"
-          text={emptyReason === 'ALL_COMPLIANT'
-            ? 'Toutes les obligations sont conformes. Aucune action requise.'
-            : 'Lancez une évaluation pour identifier les actions nécessaires.'}
+          text={
+            emptyReason === 'ALL_COMPLIANT'
+              ? 'Toutes les obligations sont conformes. Aucune action requise.'
+              : 'Lancez une évaluation pour identifier les actions nécessaires.'
+          }
         />
       ) : (
         <div className="space-y-2">
-          {actionableFindings.map(f => (
+          {actionableFindings.map((f) => (
             <ActionRow
               key={f.id}
               finding={f}
@@ -180,7 +220,10 @@ export default function ExecutionTab({
       <Button
         variant="secondary"
         size="sm"
-        onClick={() => { navigate('/plan-actions'); track('conformite_goto_plan_actions'); }}
+        onClick={() => {
+          navigate('/plan-actions');
+          track('conformite_goto_plan_actions');
+        }}
       >
         <ExternalLink size={14} /> Voir le plan d'actions complet
       </Button>

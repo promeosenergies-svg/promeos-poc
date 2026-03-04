@@ -2,6 +2,7 @@
 PROMEOS Referentiel — CRE-specific metadata extractor.
 Parses CRE deliberation pages for structured metadata.
 """
+
 import re
 from typing import Optional
 
@@ -19,25 +20,20 @@ def extract_cre_metadata(html_content: str) -> dict:
     result: dict = {}
 
     # Deliberation number: "N° 2025-xxx" patterns
-    num_match = re.search(
-        r"(?:N[°o]\s*|numero[:\s]*)(\d{4}-\d{2,4})",
-        html_content, re.IGNORECASE
-    )
+    num_match = re.search(r"(?:N[°o]\s*|numero[:\s]*)(\d{4}-\d{2,4})", html_content, re.IGNORECASE)
     if num_match:
         result["deliberation_number"] = num_match.group(1)
 
     # Date du document
-    date_doc_match = re.search(
-        r"Date\s+du\s+document\s*[:\s]*(\d{1,2}\s+\w+\s+\d{4})",
-        html_content, re.IGNORECASE
-    )
+    date_doc_match = re.search(r"Date\s+du\s+document\s*[:\s]*(\d{1,2}\s+\w+\s+\d{4})", html_content, re.IGNORECASE)
     if date_doc_match:
         result["date_document"] = _normalize_french_date(date_doc_match.group(1))
 
     # Date de mise en ligne
     date_mel_match = re.search(
         r"(?:Date\s+de\s+mise\s+en\s+ligne|Mise\s+en\s+ligne)\s*[:\s]*(\d{1,2}\s+\w+\s+\d{4})",
-        html_content, re.IGNORECASE
+        html_content,
+        re.IGNORECASE,
     )
     if date_mel_match:
         result["date_mise_en_ligne"] = _normalize_french_date(date_mel_match.group(1))
@@ -45,8 +41,7 @@ def extract_cre_metadata(html_content: str) -> dict:
     # Fallback: date from meta tags or breadcrumb
     if "date_document" not in result:
         iso_match = re.search(
-            r'(?:date|datePublished|article:published_time)["\s:=]+(\d{4}-\d{2}-\d{2})',
-            html_content, re.IGNORECASE
+            r'(?:date|datePublished|article:published_time)["\s:=]+(\d{4}-\d{2}-\d{2})', html_content, re.IGNORECASE
         )
         if iso_match:
             result["date_document"] = iso_match.group(1)
@@ -76,10 +71,7 @@ def extract_cre_metadata(html_content: str) -> dict:
         result["energy_detected"] = "unknown"
 
     # PDF link
-    pdf_match = re.search(
-        r'href="([^"]+\.pdf[^"]*)"',
-        html_content, re.IGNORECASE
-    )
+    pdf_match = re.search(r'href="([^"]+\.pdf[^"]*)"', html_content, re.IGNORECASE)
     if pdf_match:
         pdf_url = pdf_match.group(1)
         if not pdf_url.startswith("http"):
@@ -90,10 +82,21 @@ def extract_cre_metadata(html_content: str) -> dict:
 
 
 FRENCH_MONTHS = {
-    "janvier": "01", "février": "02", "fevrier": "02", "mars": "03",
-    "avril": "04", "mai": "05", "juin": "06", "juillet": "07",
-    "août": "08", "aout": "08", "septembre": "09", "octobre": "10",
-    "novembre": "11", "décembre": "12", "decembre": "12",
+    "janvier": "01",
+    "février": "02",
+    "fevrier": "02",
+    "mars": "03",
+    "avril": "04",
+    "mai": "05",
+    "juin": "06",
+    "juillet": "07",
+    "août": "08",
+    "aout": "08",
+    "septembre": "09",
+    "octobre": "10",
+    "novembre": "11",
+    "décembre": "12",
+    "decembre": "12",
 }
 
 

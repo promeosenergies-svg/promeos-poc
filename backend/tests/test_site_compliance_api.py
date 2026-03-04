@@ -1,8 +1,10 @@
 """
 PROMEOS - Contract tests for GET /api/sites/{id}/compliance
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -13,9 +15,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Obligation, Organisation, EntiteJuridique, Portefeuille,
-    Evidence, StatutConformite, TypeObligation, TypeSite,
-    TypeEvidence, StatutEvidence,
+    Base,
+    Site,
+    Obligation,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Evidence,
+    StatutConformite,
+    TypeObligation,
+    TypeSite,
+    TypeEvidence,
+    StatutEvidence,
 )
 from database import get_db
 from main import app
@@ -24,6 +35,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -47,6 +59,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -69,36 +82,48 @@ def _seed(db):
     db.refresh(pf)
 
     site = Site(
-        nom="Site Test", type=TypeSite.MAGASIN, portefeuille_id=pf.id,
-        surface_m2=2000, actif=True,
+        nom="Site Test",
+        type=TypeSite.MAGASIN,
+        portefeuille_id=pf.id,
+        surface_m2=2000,
+        actif=True,
     )
     db.add(site)
     db.commit()
     db.refresh(site)
 
     ob1 = Obligation(
-        site_id=site.id, type=TypeObligation.DECRET_TERTIAIRE,
-        statut=StatutConformite.NON_CONFORME, avancement_pct=25.0,
+        site_id=site.id,
+        type=TypeObligation.DECRET_TERTIAIRE,
+        statut=StatutConformite.NON_CONFORME,
+        avancement_pct=25.0,
         echeance=date(2030, 12, 31),
     )
     ob2 = Obligation(
-        site_id=site.id, type=TypeObligation.BACS,
-        statut=StatutConformite.CONFORME, avancement_pct=100.0,
+        site_id=site.id,
+        type=TypeObligation.BACS,
+        statut=StatutConformite.CONFORME,
+        avancement_pct=100.0,
         echeance=date(2025, 1, 1),
     )
     ev1 = Evidence(
-        site_id=site.id, type=TypeEvidence.AUDIT,
-        statut=StatutEvidence.VALIDE, note="Audit OK",
+        site_id=site.id,
+        type=TypeEvidence.AUDIT,
+        statut=StatutEvidence.VALIDE,
+        note="Audit OK",
     )
     ev2 = Evidence(
-        site_id=site.id, type=TypeEvidence.RAPPORT,
-        statut=StatutEvidence.MANQUANT, note="Rapport annuel - Document non fourni",
+        site_id=site.id,
+        type=TypeEvidence.RAPPORT,
+        statut=StatutEvidence.MANQUANT,
+        note="Rapport annuel - Document non fourni",
     )
     db.add_all([ob1, ob2, ev1, ev2])
     db.commit()
 
     # Recompute snapshot so site fields are set
     from services.compliance_engine import recompute_site
+
     recompute_site(db, site.id)
 
     return site
@@ -107,6 +132,7 @@ def _seed(db):
 # ========================================
 # Contract tests
 # ========================================
+
 
 class TestSiteComplianceEndpoint:
     def test_returns_200_with_correct_shape(self, client, db_session):

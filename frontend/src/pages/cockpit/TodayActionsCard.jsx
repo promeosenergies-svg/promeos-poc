@@ -8,17 +8,24 @@
  *   onNavigate {fn}           — navigate(path)
  *   title      {string}       — card heading (default "À traiter aujourd'hui")
  */
-import { ArrowRight, CheckCircle2, AlertCircle, AlertTriangle, Info, Lightbulb } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Lightbulb,
+} from 'lucide-react';
 import { SEVERITY_TINT } from '../../ui/colorTokens';
 
 // ── Severity icon map ─────────────────────────────────────────────────────────
 
 const SEV_ICONS = {
   critical: AlertCircle,
-  high:     AlertTriangle,
-  warn:     AlertTriangle,
-  medium:   Info,
-  info:     Lightbulb,
+  high: AlertTriangle,
+  warn: AlertTriangle,
+  medium: Info,
+  info: Lightbulb,
 };
 
 // ── Action row ────────────────────────────────────────────────────────────────
@@ -45,13 +52,13 @@ function ActionItem({ action, index, onNavigate }) {
       {/* Label */}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-800 leading-snug truncate">{action.label}</p>
-        {action.cta && (
-          <p className="text-xs text-gray-400 mt-0.5">{action.cta}</p>
-        )}
+        {action.cta && <p className="text-xs text-gray-400 mt-0.5">{action.cta}</p>}
       </div>
 
       {/* Severity chip */}
-      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}>
+      <span
+        className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}
+      >
         {sev.label}
       </span>
 
@@ -65,7 +72,7 @@ function ActionItem({ action, index, onNavigate }) {
 export default function TodayActionsCard({
   actions = [],
   onNavigate,
-  title = 'À traiter aujourd\'hui',
+  title = "À traiter aujourd'hui",
 }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -73,7 +80,9 @@ export default function TodayActionsCard({
       <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
         {actions.length > 0 && (
-          <span className="text-xs text-gray-400">{actions.length} élément{actions.length > 1 ? 's' : ''}</span>
+          <span className="text-xs text-gray-400">
+            {actions.length} élément{actions.length > 1 ? 's' : ''}
+          </span>
         )}
       </div>
 

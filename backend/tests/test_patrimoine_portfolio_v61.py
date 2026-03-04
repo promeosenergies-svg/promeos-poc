@@ -10,6 +10,7 @@ Couverture :
   - framework_breakdown : anomalies_count présent dans chaque item
   - backward compat : champs V60 toujours présents
 """
+
 import pytest
 from datetime import date
 from fastapi.testclient import TestClient
@@ -19,16 +20,28 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, TypeUsage,
-    DeliveryPointStatus, DeliveryPointEnergyType, BillingEnergyType,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    TypeUsage,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def db():
@@ -47,6 +60,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -54,6 +68,7 @@ def client(db):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_org(db, nom):
     org = Organisation(nom=nom, actif=True)
@@ -72,8 +87,11 @@ def _make_org(db, nom):
 def _make_site_with_surface_mismatch(db, pf, nom="Site Mismatch"):
     """SURFACE_MISMATCH garantie → completude_score dégradé, risk > 0."""
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        surface_m2=5000.0, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        surface_m2=5000.0,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -82,20 +100,31 @@ def _make_site_with_surface_mismatch(db, pf, nom="Site Mismatch"):
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="12345678901234", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="12345678901234",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
@@ -103,8 +132,11 @@ def _make_site_with_surface_mismatch(db, pf, nom="Site Mismatch"):
 def _make_clean_site(db, pf, nom="Site Clean"):
     """Site sans anomalie : score = 100, healthy."""
     site = Site(
-        nom=nom, type=TypeSite.BUREAU,
-        surface_m2=1000.0, portefeuille_id=pf.id, actif=True,
+        nom=nom,
+        type=TypeSite.BUREAU,
+        surface_m2=1000.0,
+        portefeuille_id=pf.id,
+        actif=True,
     )
     db.add(site)
     db.flush()
@@ -113,25 +145,37 @@ def _make_clean_site(db, pf, nom="Site Clean"):
     db.flush()
     db.add(Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX))
     dp = DeliveryPoint(
-        code="99999999999999", energy_type=DeliveryPointEnergyType.ELEC,
-        site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+        code="99999999999999",
+        energy_type=DeliveryPointEnergyType.ELEC,
+        site_id=site.id,
+        status=DeliveryPointStatus.ACTIVE,
     )
     db.add(dp)
     db.flush()
-    db.add(Compteur(
-        site_id=site.id, type=TypeCompteur.ELECTRICITE,
-        numero_serie=f"SN-C{site.id}", actif=True, delivery_point_id=dp.id,
-    ))
-    db.add(EnergyContract(
-        site_id=site.id, energy_type=BillingEnergyType.ELEC,
-        supplier_name="Engie",
-        start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
-    ))
+    db.add(
+        Compteur(
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie=f"SN-C{site.id}",
+            actif=True,
+            delivery_point_id=dp.id,
+        )
+    )
+    db.add(
+        EnergyContract(
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="Engie",
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+    )
     db.commit()
     return site
 
 
 # ── Tests sites_health ────────────────────────────────────────────────────────
+
 
 class TestPortfolioSitesHealth:
     def test_sites_health_present_in_response(self, client, db):
@@ -212,6 +256,7 @@ class TestPortfolioSitesHealth:
 
 # ── Tests trend ───────────────────────────────────────────────────────────────
 
+
 class TestPortfolioTrend:
     def test_trend_field_present(self, client, db):
         """trend est présent dans la réponse (V61)."""
@@ -236,6 +281,7 @@ class TestPortfolioTrend:
 
 # ── Tests backward compat V60 ─────────────────────────────────────────────────
 
+
 class TestBackwardCompatV60:
     def test_v60_fields_still_present(self, client, db):
         """Tous les champs V60 toujours présents après V61."""
@@ -243,8 +289,13 @@ class TestBackwardCompatV60:
         _make_site_with_surface_mismatch(db, pf)
         data = client.get("/api/patrimoine/portfolio-summary").json()
         for field in (
-            "scope", "total_estimated_risk_eur", "sites_count",
-            "sites_at_risk", "framework_breakdown", "top_sites", "computed_at",
+            "scope",
+            "total_estimated_risk_eur",
+            "sites_count",
+            "sites_at_risk",
+            "framework_breakdown",
+            "top_sites",
+            "computed_at",
         ):
             assert field in data, f"Champ V60 manquant : {field}"
 

@@ -20,10 +20,10 @@ describe('logger.js source guards', () => {
   });
 
   it('has debug, info, warn, error methods', () => {
-    expect(src).toContain("debug:");
-    expect(src).toContain("info:");
-    expect(src).toContain("warn:");
-    expect(src).toContain("error:");
+    expect(src).toContain('debug:');
+    expect(src).toContain('info:');
+    expect(src).toContain('warn:');
+    expect(src).toContain('error:');
   });
 
   it('bridges to Sentry for error/warn', () => {

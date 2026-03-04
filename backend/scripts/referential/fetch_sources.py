@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Source fetcher.
 Downloads HTML sources, creates snapshots with metadata + hashes.
 """
+
 import hashlib
 import json
 import os
@@ -41,11 +42,14 @@ def _fetch_url(url: str) -> tuple[int, str, str]:
     last_error: Optional[Exception] = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "text/html,application/xhtml+xml,*/*",
-                "Accept-Language": "fr-FR,fr;q=0.9",
-            })
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept": "text/html,application/xhtml+xml,*/*",
+                    "Accept-Language": "fr-FR,fr;q=0.9",
+                },
+            )
             with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
                 status = resp.status
                 content_type = resp.headers.get("Content-Type", "")
@@ -57,7 +61,7 @@ def _fetch_url(url: str) -> tuple[int, str, str]:
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as e:
             last_error = e
             if attempt < MAX_RETRIES:
-                wait = BACKOFF_BASE ** attempt
+                wait = BACKOFF_BASE**attempt
                 print(f"    [RETRY {attempt}/{MAX_RETRIES}] {url} — {e} — waiting {wait:.0f}s")
                 time.sleep(wait)
     raise last_error  # type: ignore
@@ -143,10 +147,7 @@ def fetch_source(source: dict, today: str, dry_run: bool = False) -> dict:
 
     (snapshot_dir / "raw.html").write_text(body, encoding="utf-8")
     (snapshot_dir / "extracted.md").write_text(md_content, encoding="utf-8")
-    (snapshot_dir / "metadata.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
+    (snapshot_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
 
     result["status"] = "ok"
     result["snapshot_path"] = str(snapshot_dir)
@@ -154,8 +155,9 @@ def fetch_source(source: dict, today: str, dry_run: bool = False) -> dict:
     return result
 
 
-def fetch_all(sources: list[dict], since: Optional[str] = None, until: Optional[str] = None,
-              dry_run: bool = False) -> list[dict]:
+def fetch_all(
+    sources: list[dict], since: Optional[str] = None, until: Optional[str] = None, dry_run: bool = False
+) -> list[dict]:
     """
     Fetch all sources. Filter by date window if provided.
     Rate-limits requests per domain.
@@ -172,12 +174,12 @@ def fetch_all(sources: list[dict], since: Optional[str] = None, until: Optional[
         is_baseline = source.get("baseline", False)
         if date_hint and since and not is_baseline:
             if date_hint < since:
-                print(f"  [{i+1}/{len(sources)}] SKIP {source_id} (before window: {date_hint} < {since})")
+                print(f"  [{i + 1}/{len(sources)}] SKIP {source_id} (before window: {date_hint} < {since})")
                 results.append({"source_id": source_id, "status": "skipped_before_window"})
                 continue
         if date_hint and until:
             if date_hint > until:
-                print(f"  [{i+1}/{len(sources)}] SKIP {source_id} (after window: {date_hint} > {until})")
+                print(f"  [{i + 1}/{len(sources)}] SKIP {source_id} (after window: {date_hint} > {until})")
                 results.append({"source_id": source_id, "status": "skipped_after_window"})
                 continue
 
@@ -188,7 +190,7 @@ def fetch_all(sources: list[dict], since: Optional[str] = None, until: Optional[
             time.sleep(RATE_LIMIT_S)
         last_domain = domain
 
-        print(f"  [{i+1}/{len(sources)}] {'DRY ' if dry_run else ''}FETCH {source_id}")
+        print(f"  [{i + 1}/{len(sources)}] {'DRY ' if dry_run else ''}FETCH {source_id}")
         result = fetch_source(source, today, dry_run=dry_run)
         results.append(result)
 

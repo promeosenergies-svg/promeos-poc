@@ -5,8 +5,10 @@ GET /api/demo/manifest: source de verite org/portfolios/sites/compteurs.
 Tests the manifest logic directly (without importing routes module which
 has heavy transitive deps like bcrypt).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -22,7 +24,8 @@ from services.demo_state import DemoState
 @pytest.fixture
 def db_session():
     engine = create_engine(
-        "sqlite:///:memory:", echo=False,
+        "sqlite:///:memory:",
+        echo=False,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
@@ -43,6 +46,7 @@ def reset_demo_state():
 def _seed(db, pack="helios", size="S"):
     """Run SeedOrchestrator and return result."""
     from services.demo_seed import SeedOrchestrator
+
     orch = SeedOrchestrator(db)
     return orch.seed(pack=pack, size=size, rng_seed=42, days=30)
 
@@ -59,9 +63,7 @@ def _get_manifest(db):
     if not org:
         raise HTTPException(status_code=404, detail="Org not found in DB")
 
-    entites = db.query(EntiteJuridique).filter(
-        EntiteJuridique.organisation_id == org.id
-    ).all()
+    entites = db.query(EntiteJuridique).filter(EntiteJuridique.organisation_id == org.id).all()
 
     portefeuilles = []
     total_sites = 0
@@ -69,25 +71,24 @@ def _get_manifest(db):
     all_site_ids = []
 
     for ej in entites:
-        for p in db.query(Portefeuille).filter(
-            Portefeuille.entite_juridique_id == ej.id
-        ).all():
+        for p in db.query(Portefeuille).filter(Portefeuille.entite_juridique_id == ej.id).all():
             sites = db.query(Site).filter(Site.portefeuille_id == p.id).all()
             compteurs_count = (
-                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count()
-                if sites else 0
+                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count() if sites else 0
             )
             total_sites += len(sites)
             total_compteurs += compteurs_count
             site_ids = [s.id for s in sites]
             all_site_ids.extend(site_ids)
-            portefeuilles.append({
-                "id": p.id,
-                "nom": p.nom,
-                "entite_juridique_id": ej.id,
-                "sites_count": len(sites),
-                "site_ids": site_ids,
-            })
+            portefeuilles.append(
+                {
+                    "id": p.id,
+                    "nom": p.nom,
+                    "entite_juridique_id": ej.id,
+                    "sites_count": len(sites),
+                    "site_ids": site_ids,
+                }
+            )
 
     return {
         "org_id": org.id,

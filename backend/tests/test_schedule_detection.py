@@ -9,8 +9,10 @@ Covers:
   - Confidence scoring (coverage, stability, separation)
   - API endpoints: /activity/detected, /activity/compare, /activity/apply_detected
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -33,6 +35,7 @@ from main import app
 # ═══════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════
+
 
 @pytest.fixture
 def db():
@@ -61,15 +64,20 @@ def site_with_meter(db):
     db.add(ptf)
     db.flush()
     site = Site(
-        nom="Bureau Test", type=TypeSite.BUREAU,
-        portefeuille_id=ptf.id, adresse="1 rue Test",
-        surface_m2=500, actif=True,
+        nom="Bureau Test",
+        type=TypeSite.BUREAU,
+        portefeuille_id=ptf.id,
+        adresse="1 rue Test",
+        surface_m2=500,
+        actif=True,
     )
     db.add(site)
     db.flush()
     meter = Meter(
-        meter_id="PRM-TEST-001", name="Compteur principal",
-        energy_vector=EnergyVector.ELECTRICITY, site_id=site.id,
+        meter_id="PRM-TEST-001",
+        name="Compteur principal",
+        energy_vector=EnergyVector.ELECTRICITY,
+        site_id=site.id,
         is_active=True,
     )
     db.add(meter)
@@ -102,13 +110,15 @@ def _generate_office_load(db, meter, days=60, step_min=15):
 
         value = baseload + (activity if is_active else 0.0)
 
-        readings.append(MeterReading(
-            meter_id=meter.id,
-            timestamp=t,
-            frequency=FrequencyType.MIN_15 if step_min == 15 else FrequencyType.HOURLY,
-            value_kwh=value,
-            is_estimated=False,
-        ))
+        readings.append(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=t,
+                frequency=FrequencyType.MIN_15 if step_min == 15 else FrequencyType.HOURLY,
+                value_kwh=value,
+                is_estimated=False,
+            )
+        )
 
         t += timedelta(minutes=step_min)
 
@@ -124,6 +134,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -132,6 +143,7 @@ def client(db):
 # ═══════════════════════════════════════════════
 # A. Unit tests: detection algorithm
 # ═══════════════════════════════════════════════
+
 
 class TestDetectSchedule:
     """Tests for detect_schedule on synthetic data."""
@@ -142,6 +154,7 @@ class TestDetectSchedule:
         _generate_office_load(db, meter, days=60, step_min=15)
 
         from services.schedule_detection_service import detect_schedule
+
         result = detect_schedule(db, site.id, window_days=60)
 
         assert result["site_id"] == site.id
@@ -164,6 +177,7 @@ class TestDetectSchedule:
         _generate_office_load(db, meter, days=60, step_min=15)
 
         from services.schedule_detection_service import detect_schedule
+
         result = detect_schedule(db, site.id, window_days=60)
         sched = result["detected_schedule"]
 
@@ -177,6 +191,7 @@ class TestDetectSchedule:
         _generate_office_load(db, meter, days=60, step_min=15)
 
         from services.schedule_detection_service import detect_schedule
+
         result = detect_schedule(db, site.id, window_days=60)
 
         assert result["confidence"] >= 0.5, f"Confidence {result['confidence']} should be >= 0.5"
@@ -188,6 +203,7 @@ class TestDetectSchedule:
         _generate_office_load(db, meter, days=60, step_min=15)
 
         from services.schedule_detection_service import detect_schedule
+
         result = detect_schedule(db, site.id, window_days=60)
         ev = result["evidence"]
 
@@ -204,6 +220,7 @@ class TestDetectSchedule:
         _generate_office_load(db, meter, days=3, step_min=15)
 
         from services.schedule_detection_service import detect_schedule
+
         with pytest.raises(ValueError, match="insuffisantes"):
             detect_schedule(db, site.id, window_days=60)
 
@@ -212,11 +229,13 @@ class TestDetectSchedule:
 # B. Unit tests: compare_schedules
 # ═══════════════════════════════════════════════
 
+
 class TestCompareSchedules:
     """Tests for compare_schedules function."""
 
     def test_identical_schedules(self):
         from services.schedule_detection_service import compare_schedules
+
         sched = {
             "0": [{"start": "08:00", "end": "18:00"}],
             "1": [{"start": "08:00", "end": "18:00"}],
@@ -233,6 +252,7 @@ class TestCompareSchedules:
 
     def test_mismatch_different_hours(self):
         from services.schedule_detection_service import compare_schedules
+
         declared = {"0": [{"start": "08:00", "end": "18:00"}], "1": [], "2": [], "3": [], "4": [], "5": [], "6": []}
         detected = {"0": [{"start": "06:00", "end": "20:00"}], "1": [], "2": [], "3": [], "4": [], "5": [], "6": []}
         result = compare_schedules(declared, detected)
@@ -242,10 +262,16 @@ class TestCompareSchedules:
 
     def test_mismatch_different_interval_count(self):
         from services.schedule_detection_service import compare_schedules
+
         declared = {"0": [{"start": "08:00", "end": "18:00"}], "1": [], "2": [], "3": [], "4": [], "5": [], "6": []}
         detected = {
             "0": [{"start": "08:00", "end": "12:00"}, {"start": "14:00", "end": "18:00"}],
-            "1": [], "2": [], "3": [], "4": [], "5": [], "6": [],
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+            "6": [],
         }
         result = compare_schedules(declared, detected)
         assert result["global_status"] == "MISMATCH"
@@ -255,6 +281,7 @@ class TestCompareSchedules:
 
     def test_small_delta_ok(self):
         from services.schedule_detection_service import compare_schedules
+
         declared = {"0": [{"start": "08:00", "end": "18:00"}], "1": [], "2": [], "3": [], "4": [], "5": [], "6": []}
         detected = {"0": [{"start": "08:00", "end": "18:30"}], "1": [], "2": [], "3": [], "4": [], "5": [], "6": []}
         result = compare_schedules(declared, detected)
@@ -265,6 +292,7 @@ class TestCompareSchedules:
 # ═══════════════════════════════════════════════
 # C. API endpoint tests
 # ═══════════════════════════════════════════════
+
 
 class TestDetectionAPI:
     """Tests for the 3 detection endpoints."""
@@ -316,9 +344,7 @@ class TestDetectionAPI:
         assert "confidence" in data
 
         # Verify saved in DB
-        sched = db.query(SiteOperatingSchedule).filter(
-            SiteOperatingSchedule.site_id == site.id
-        ).first()
+        sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site.id).first()
         assert sched is not None
         assert sched.intervals_json is not None
         intervals = json.loads(sched.intervals_json)
@@ -332,8 +358,11 @@ class TestDetectionAPI:
 
         # Create initial schedule
         sched = SiteOperatingSchedule(
-            site_id=site.id, timezone="Europe/Paris",
-            open_days="0,1,2,3,4", open_time="09:00", close_time="17:00",
+            site_id=site.id,
+            timezone="Europe/Paris",
+            open_days="0,1,2,3,4",
+            open_time="09:00",
+            close_time="17:00",
         )
         db.add(sched)
         db.commit()
@@ -342,15 +371,11 @@ class TestDetectionAPI:
         assert resp.status_code == 200
 
         # Should still be exactly 1 schedule
-        count = db.query(SiteOperatingSchedule).filter(
-            SiteOperatingSchedule.site_id == site.id
-        ).count()
+        count = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site.id).count()
         assert count == 1
 
         # Verify it was updated
-        updated = db.query(SiteOperatingSchedule).filter(
-            SiteOperatingSchedule.site_id == site.id
-        ).first()
+        updated = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site.id).first()
         assert updated.intervals_json is not None
 
     def test_apply_detected_insufficient_data(self, db, client, site_with_meter):
@@ -365,11 +390,13 @@ class TestDetectionAPI:
 # D. Helper unit tests
 # ═══════════════════════════════════════════════
 
+
 class TestHelpers:
     """Tests for internal helper functions."""
 
     def test_quantile(self):
         from services.schedule_detection_service import _quantile
+
         assert _quantile([1, 2, 3, 4, 5], 0.5) == 3.0
         assert _quantile([1, 2, 3, 4, 5], 0.0) == 1.0
         assert _quantile([1, 2, 3, 4, 5], 1.0) == 5.0
@@ -377,6 +404,7 @@ class TestHelpers:
 
     def test_minutes_to_hhmm(self):
         from services.schedule_detection_service import _minutes_to_hhmm
+
         assert _minutes_to_hhmm(0) == "00:00"
         assert _minutes_to_hhmm(480) == "08:00"
         assert _minutes_to_hhmm(1080) == "18:00"
@@ -384,6 +412,7 @@ class TestHelpers:
 
     def test_hhmm_to_min(self):
         from services.schedule_detection_service import _hhmm_to_min
+
         assert _hhmm_to_min("08:00") == 480
         assert _hhmm_to_min("18:00") == 1080
         assert _hhmm_to_min("00:00") == 0
@@ -392,6 +421,7 @@ class TestHelpers:
         """No schedule → default Mon-Fri 08:00-19:00."""
         site, _ = site_with_meter
         from services.schedule_detection_service import get_declared_intervals
+
         result = get_declared_intervals(db, site.id)
         assert len(result["0"]) == 1
         assert result["0"][0]["start"] == "08:00"

@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 10.1: Audit Report PDF
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -13,10 +15,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
-    ActionItem, ActionSyncBatch,
-    ActionSourceType, ActionStatus, InsightStatus,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
+    ActionItem,
+    ActionSyncBatch,
+    ActionSourceType,
+    ActionStatus,
+    InsightStatus,
     TypeSite,
 )
 from database import get_db
@@ -44,6 +55,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -75,8 +87,9 @@ def _create_org_site(db_session, site_name="Site Test"):
     return org, site
 
 
-def _create_compliance_finding(db_session, site_id, rule_id="TEST_RULE", status="NOK",
-                                severity="high", actions_json=None):
+def _create_compliance_finding(
+    db_session, site_id, rule_id="TEST_RULE", status="NOK", severity="high", actions_json=None
+):
     f = ComplianceFinding(
         site_id=site_id,
         regulation="test_regulation",
@@ -99,9 +112,11 @@ def _create_consumption_insight(db_session, site_id, loss_eur=5000):
         severity="medium",
         message="Consommation hors horaires detectee",
         estimated_loss_eur=loss_eur,
-        recommended_actions_json=json.dumps([
-            {"title": "Programmer arret CVC", "rationale": "CVC actif la nuit", "expected_gain_eur": 3000},
-        ]),
+        recommended_actions_json=json.dumps(
+            [
+                {"title": "Programmer arret CVC", "rationale": "CVC actif la nuit", "expected_gain_eur": 3000},
+            ]
+        ),
     )
     db_session.add(ins)
     db_session.flush()
@@ -150,6 +165,7 @@ def _seed_full_demo(db_session):
 
     # Sync actions
     from services.action_hub_service import sync_actions
+
     db_session.commit()
     sync_actions(db_session, org.id, triggered_by="test")
 
@@ -159,6 +175,7 @@ def _seed_full_demo(db_session):
 # ========================================
 # Test Audit JSON
 # ========================================
+
 
 class TestAuditJSON:
     def test_audit_json_returns_data(self, client, db_session):
@@ -234,6 +251,7 @@ class TestAuditJSON:
 # Test Audit PDF
 # ========================================
 
+
 class TestAuditPDF:
     def test_pdf_returns_bytes(self, client, db_session):
         """GET /api/reports/audit.pdf should return application/pdf."""
@@ -275,10 +293,12 @@ class TestAuditPDF:
 # Test Build Report Data (service)
 # ========================================
 
+
 class TestBuildReportData:
     def test_build_data_empty_org(self, db_session):
         """build_audit_report_data with no org returns error."""
         from services.audit_report_service import build_audit_report_data
+
         data = build_audit_report_data(db_session, org_id=99999)
         assert "error" in data
 
@@ -288,6 +308,7 @@ class TestBuildReportData:
         db_session.commit()
 
         from services.audit_report_service import build_audit_report_data
+
         data = build_audit_report_data(db_session, org_id=org.id)
         assert "error" not in data
         assert data["organisation"]["total_sites"] > 0
@@ -300,6 +321,7 @@ class TestBuildReportData:
         db_session.commit()
 
         from services.audit_report_service import build_audit_report_data, render_audit_pdf
+
         data = build_audit_report_data(db_session, org_id=org.id)
         pdf_bytes = render_audit_pdf(data)
 
@@ -310,14 +332,17 @@ class TestBuildReportData:
     def test_confidence_high(self, db_session):
         """Confidence should be high with sufficient data."""
         from services.audit_report_service import _compute_confidence
+
         assert _compute_confidence(10, 5, 5) == "high"
 
     def test_confidence_low(self, db_session):
         """Confidence should be low with little data."""
         from services.audit_report_service import _compute_confidence
+
         assert _compute_confidence(0, 0, 0) == "low"
 
     def test_confidence_medium(self, db_session):
         """Confidence should be medium with moderate data."""
         from services.audit_report_service import _compute_confidence
+
         assert _compute_confidence(10, 5, 0) == "medium"

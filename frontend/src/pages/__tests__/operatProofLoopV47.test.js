@@ -117,7 +117,7 @@ describe('ActionDetailDrawer — Preuves OPERAT (V47)', () => {
     expect(code).toContain('Fiche EFA');
   });
 
-  it('contient la bannière d\'aide FR sur clôturabilité', () => {
+  it("contient la bannière d'aide FR sur clôturabilité", () => {
     expect(code).toContain('considérée clôturable');
     expect(code).toContain('justification');
   });
@@ -170,8 +170,8 @@ describe('KBExplorerPage — Retour Action (V47)', () => {
     expect(code).toContain('action_id:');
   });
 
-  it('affiche le bouton Retour à l\'action', () => {
-    expect(code).toContain('Retour à l\'action');
+  it("affiche le bouton Retour à l'action", () => {
+    expect(code).toContain("Retour à l'action");
     expect(code).toContain('btn-return-action');
   });
 

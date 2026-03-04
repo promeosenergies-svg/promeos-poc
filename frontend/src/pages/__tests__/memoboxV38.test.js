@@ -17,8 +17,7 @@ import {
 } from '../../models/proofLinkModel.js';
 
 // ── Helper: read source file ────────────────────────────────────────────────
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. buildProofLink

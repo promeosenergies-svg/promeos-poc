@@ -2,8 +2,10 @@
 PROMEOS - Tests DIAMANT: Patrimoine Wizard (staging pipeline, quality gate, activation, N-N links).
 ~25 tests covering: N-N links, staging pipeline, quality rules, corrections, activation, demo, lineage.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import io
@@ -15,28 +17,53 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille, Compteur,
-    OrgEntiteLink, PortfolioEntiteLink,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
-    TypeSite, TypeCompteur, EnergyVector,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Compteur,
+    OrgEntiteLink,
+    PortfolioEntiteLink,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
 )
 from database import get_db
 from main import app
 from services.patrimoine_service import (
-    create_staging_batch, import_csv_to_staging, import_invoices_to_staging,
-    get_staging_summary, run_quality_gate, apply_fix, activate_batch,
-    get_diff_plan, compute_content_hash, abandon_batch,
+    create_staging_batch,
+    import_csv_to_staging,
+    import_invoices_to_staging,
+    get_staging_summary,
+    run_quality_gate,
+    apply_fix,
+    activate_batch,
+    get_diff_plan,
+    compute_content_hash,
+    abandon_batch,
 )
 from services.quality_rules import (
-    check_duplicate_sites, check_duplicate_meters, check_orphan_meters,
-    check_incomplete_sites, check_missing_entity, run_all_rules,
+    check_duplicate_sites,
+    check_duplicate_meters,
+    check_orphan_meters,
+    check_incomplete_sites,
+    check_missing_entity,
+    run_all_rules,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -59,6 +86,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -84,26 +112,46 @@ def _create_org(db_session):
 def _create_batch_with_data(db_session, org_id=None):
     """Create a staging batch with 2 sites and 3 compteurs."""
     batch = create_staging_batch(
-        db_session, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db_session,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
 
-    s1 = StagingSite(batch_id=batch.id, row_number=2, nom="Site Alpha",
-                     adresse="10 rue de la Paix", code_postal="75001", ville="Paris",
-                     surface_m2=1200)
-    s2 = StagingSite(batch_id=batch.id, row_number=3, nom="Site Beta",
-                     adresse="20 avenue des Champs", code_postal="75008", ville="Paris",
-                     surface_m2=800)
+    s1 = StagingSite(
+        batch_id=batch.id,
+        row_number=2,
+        nom="Site Alpha",
+        adresse="10 rue de la Paix",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=1200,
+    )
+    s2 = StagingSite(
+        batch_id=batch.id,
+        row_number=3,
+        nom="Site Beta",
+        adresse="20 avenue des Champs",
+        code_postal="75008",
+        ville="Paris",
+        surface_m2=800,
+    )
     db_session.add_all([s1, s2])
     db_session.flush()
 
-    c1 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id,
-                         numero_serie="PRM-001", meter_id="12345678901234",
-                         type_compteur="electricite", puissance_kw=60)
-    c2 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id,
-                         numero_serie="PRM-002", type_compteur="gaz")
-    c3 = StagingCompteur(batch_id=batch.id, staging_site_id=s2.id,
-                         numero_serie="PRM-003", type_compteur="electricite", puissance_kw=36)
+    c1 = StagingCompteur(
+        batch_id=batch.id,
+        staging_site_id=s1.id,
+        numero_serie="PRM-001",
+        meter_id="12345678901234",
+        type_compteur="electricite",
+        puissance_kw=60,
+    )
+    c2 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id, numero_serie="PRM-002", type_compteur="gaz")
+    c3 = StagingCompteur(
+        batch_id=batch.id, staging_site_id=s2.id, numero_serie="PRM-003", type_compteur="electricite", puissance_kw=36
+    )
     db_session.add_all([c1, c2, c3])
     db_session.flush()
 
@@ -114,11 +162,11 @@ def _create_batch_with_data(db_session, org_id=None):
 # TestNNLinks (4 tests)
 # ========================================
 
+
 class TestNNLinks:
     def test_create_org_entite_link(self, db_session):
         org, ej, _ = _create_org(db_session)
-        link = OrgEntiteLink(organisation_id=org.id, entite_juridique_id=ej.id,
-                             role="proprietaire", confidence=1.0)
+        link = OrgEntiteLink(organisation_id=org.id, entite_juridique_id=ej.id, role="proprietaire", confidence=1.0)
         db_session.add(link)
         db_session.flush()
         assert link.id is not None
@@ -144,11 +192,15 @@ class TestNNLinks:
 
     def test_nn_link_with_role_and_dates(self, db_session):
         from datetime import date
+
         org, ej, _ = _create_org(db_session)
         link = OrgEntiteLink(
-            organisation_id=org.id, entite_juridique_id=ej.id,
-            role="locataire", confidence=0.8,
-            start_date=date(2024, 1, 1), end_date=date(2025, 12, 31),
+            organisation_id=org.id,
+            entite_juridique_id=ej.id,
+            role="locataire",
+            confidence=0.8,
+            start_date=date(2024, 1, 1),
+            end_date=date(2025, 12, 31),
             source_ref="contrat-2024-001",
         )
         db_session.add(link)
@@ -161,19 +213,26 @@ class TestNNLinks:
 # TestStagingPipeline (6 tests)
 # ========================================
 
+
 class TestStagingPipeline:
     def test_create_batch(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         assert batch.id is not None
         assert batch.status == StagingStatus.DRAFT
 
     def test_import_csv_to_staging(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         csv_content = (
             "nom,adresse,code_postal,ville,surface_m2,type,numero_serie,type_compteur,puissance_kw\n"
@@ -223,8 +282,11 @@ class TestStagingPipeline:
 
     def test_abandoned_batch(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         result = abandon_batch(db_session, batch.id)
         assert result["applied"] is True
@@ -235,11 +297,15 @@ class TestStagingPipeline:
 # TestQualityRules (5 tests)
 # ========================================
 
+
 class TestQualityRules:
     def test_duplicate_site_detected(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         # Two sites at same address
         s1 = StagingSite(batch_id=batch.id, nom="Bureau A", adresse="10 rue de la Paix", code_postal="75001")
@@ -253,8 +319,11 @@ class TestQualityRules:
 
     def test_duplicate_meter_detected(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         s1 = StagingSite(batch_id=batch.id, nom="Site X")
         db_session.add(s1)
@@ -272,8 +341,11 @@ class TestQualityRules:
 
     def test_orphan_meter_detected(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         # Compteur without site
         c = StagingCompteur(batch_id=batch.id, numero_serie="PRM-ORPHAN")
@@ -286,8 +358,11 @@ class TestQualityRules:
 
     def test_incomplete_site_warning(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         s = StagingSite(batch_id=batch.id, nom="Missing Address")
         db_session.add(s)
@@ -309,6 +384,7 @@ class TestQualityRules:
 # TestQualityFixes (3 tests)
 # ========================================
 
+
 class TestQualityFixes:
     def test_skip_row(self, db_session):
         batch, sites, _ = _create_batch_with_data(db_session)
@@ -319,15 +395,20 @@ class TestQualityFixes:
     def test_merge_sites(self, db_session):
         org, ej, pf = _create_org(db_session)
         # Create an existing real site
-        real_site = Site(portefeuille_id=pf.id, nom="Existing", type=TypeSite.BUREAU,
-                         surface_m2=1000, actif=True)
+        real_site = Site(portefeuille_id=pf.id, nom="Existing", type=TypeSite.BUREAU, surface_m2=1000, actif=True)
         db_session.add(real_site)
         db_session.flush()
 
         batch, sites, compteurs = _create_batch_with_data(db_session, org.id)
-        result = apply_fix(db_session, batch.id, "merge_sites", {
-            "staging_site_id": sites[0].id, "target_site_id": real_site.id,
-        })
+        result = apply_fix(
+            db_session,
+            batch.id,
+            "merge_sites",
+            {
+                "staging_site_id": sites[0].id,
+                "target_site_id": real_site.id,
+            },
+        )
         assert result["applied"] is True
         assert sites[0].skip is True
         assert sites[0].target_site_id == real_site.id
@@ -335,10 +416,15 @@ class TestQualityFixes:
     def test_remap_compteur(self, db_session):
         batch, sites, compteurs = _create_batch_with_data(db_session)
         # Remap c3 (on site beta) to site alpha
-        result = apply_fix(db_session, batch.id, "remap", {
-            "staging_compteur_id": compteurs[2].id,
-            "target_staging_site_id": sites[0].id,
-        })
+        result = apply_fix(
+            db_session,
+            batch.id,
+            "remap",
+            {
+                "staging_compteur_id": compteurs[2].id,
+                "target_staging_site_id": sites[0].id,
+            },
+        )
         assert result["applied"] is True
         assert compteurs[2].staging_site_id == sites[0].id
 
@@ -347,9 +433,11 @@ class TestQualityFixes:
 # TestDemoLoad (3 tests)
 # ========================================
 
+
 class TestDemoLoad:
     def test_demo_load_creates_data(self, db_session):
         from scripts.seed_data import seed_patrimoine_demo
+
         # Need a minimal base for onboarding_service dependencies
         result = seed_patrimoine_demo(db_session)
         db_session.commit()
@@ -359,6 +447,7 @@ class TestDemoLoad:
 
     def test_demo_load_idempotent(self, db_session):
         from scripts.seed_data import seed_patrimoine_demo
+
         seed_patrimoine_demo(db_session)
         db_session.commit()
 
@@ -367,6 +456,7 @@ class TestDemoLoad:
 
     def test_demo_data_has_nn_links(self, db_session):
         from scripts.seed_data import seed_patrimoine_demo
+
         seed_patrimoine_demo(db_session)
         db_session.commit()
 
@@ -380,6 +470,7 @@ class TestDemoLoad:
 # ========================================
 # TestIncrementalSync (2 tests)
 # ========================================
+
 
 class TestIncrementalSync:
     def test_diff_plan_detects_new(self, db_session):
@@ -396,8 +487,14 @@ class TestIncrementalSync:
         org, ej, pf = _create_org(db_session)
 
         # Create an existing site matching staging
-        existing = Site(portefeuille_id=pf.id, nom="Site Alpha", type=TypeSite.BUREAU,
-                        code_postal="75001", surface_m2=1200, actif=True)
+        existing = Site(
+            portefeuille_id=pf.id,
+            nom="Site Alpha",
+            type=TypeSite.BUREAU,
+            code_postal="75001",
+            surface_m2=1200,
+            actif=True,
+        )
         db_session.add(existing)
         db_session.flush()
 
@@ -412,6 +509,7 @@ class TestIncrementalSync:
 # ========================================
 # TestLineage (2 tests)
 # ========================================
+
 
 class TestLineage:
     def test_activated_site_has_lineage(self, db_session):
@@ -443,6 +541,7 @@ class TestLineage:
 # TestContentHash (1 test)
 # ========================================
 
+
 class TestContentHash:
     def test_compute_content_hash(self):
         content = b"nom,adresse\nSite A,10 rue"
@@ -455,16 +554,26 @@ class TestContentHash:
 # TestInvoiceImport (1 test)
 # ========================================
 
+
 class TestInvoiceImport:
     def test_import_invoices_to_staging(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.INVOICE, mode="assiste",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.INVOICE,
+            mode="assiste",
         )
         metadata = {
             "invoices": [
-                {"site_name": "Bureau Paris", "meter_id": "PRM111", "address": "10 rue test",
-                 "postal_code": "75001", "city": "Paris", "energy_type": "electricite"},
+                {
+                    "site_name": "Bureau Paris",
+                    "meter_id": "PRM111",
+                    "address": "10 rue test",
+                    "postal_code": "75001",
+                    "city": "Paris",
+                    "energy_type": "electricite",
+                },
                 {"site_name": "Bureau Paris", "meter_id": "PRM222", "energy_type": "gaz"},
                 {"site_name": "Hotel Nice", "meter_id": "PRM333"},
             ]
@@ -477,6 +586,7 @@ class TestInvoiceImport:
 # ========================================
 # TestAPIEndpoints (2 tests)
 # ========================================
+
 
 class TestAPIEndpoints:
     def test_staging_import_endpoint(self, client, db_session):

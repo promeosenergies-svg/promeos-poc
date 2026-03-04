@@ -2,6 +2,7 @@
 PROMEOS - Classification automatique NAF → TypeSite
 Mapping des codes NAF (nomenclature INSEE) vers les segments B2B PROMEOS.
 """
+
 from models.enums import TypeSite
 
 
@@ -43,10 +44,10 @@ _NAF_PREFIX_MAP = {
 # Sous-codes NAF specifiques pour affiner le mapping
 _NAF_SPECIFIC_MAP = {
     "68.20A": TypeSite.LOGEMENT_SOCIAL,  # Location de logements (bailleurs sociaux)
-    "68.20B": TypeSite.COPROPRIETE,       # Location de terrains et autres biens immo
-    "68.31Z": TypeSite.COPROPRIETE,       # Agences immobilieres
-    "68.32A": TypeSite.COPROPRIETE,       # Administration d'immeubles et syndics
-    "68.32B": TypeSite.COPROPRIETE,       # Supports juridiques de programmes
+    "68.20B": TypeSite.COPROPRIETE,  # Location de terrains et autres biens immo
+    "68.31Z": TypeSite.COPROPRIETE,  # Agences immobilieres
+    "68.32A": TypeSite.COPROPRIETE,  # Administration d'immeubles et syndics
+    "68.32B": TypeSite.COPROPRIETE,  # Supports juridiques de programmes
 }
 
 

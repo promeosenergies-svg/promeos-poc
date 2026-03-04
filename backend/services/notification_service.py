@@ -2,6 +2,7 @@
 PROMEOS — Notification Service (Sprint 10.2)
 Build alerts from 5 briques and sync them idempotently.
 """
+
 import hashlib
 import json
 from datetime import date, datetime, timedelta, timezone
@@ -10,12 +11,22 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Organisation, Site, EntiteJuridique, Portefeuille,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
+    Organisation,
+    Site,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
     EnergyContract,
-    ActionItem, ActionStatus,
-    NotificationEvent, NotificationBatch, NotificationPreference,
-    NotificationSeverity, NotificationStatus, NotificationSourceType,
+    ActionItem,
+    ActionStatus,
+    NotificationEvent,
+    NotificationBatch,
+    NotificationPreference,
+    NotificationSeverity,
+    NotificationStatus,
+    NotificationSourceType,
     InsightStatus,
 )
 
@@ -24,30 +35,16 @@ from models import (
 # Helpers
 # ========================================
 
+
 def _get_site_ids(db: Session, org_id: int) -> list:
     """Resolve site IDs for an organisation."""
-    ej_ids = [
-        row[0] for row in
-        db.query(EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+    ej_ids = [row[0] for row in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if not ej_ids:
         return []
-    pf_ids = [
-        row[0] for row in
-        db.query(Portefeuille.id)
-        .filter(Portefeuille.entite_juridique_id.in_(ej_ids))
-        .all()
-    ]
+    pf_ids = [row[0] for row in db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
     if not pf_ids:
         return []
-    return [
-        row[0] for row in
-        db.query(Site.id)
-        .filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True)
-        .all()
-    ]
+    return [row[0] for row in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()]
 
 
 def _hash_inputs(*parts) -> str:
@@ -58,11 +55,7 @@ def _hash_inputs(*parts) -> str:
 
 def _get_thresholds(db: Session, org_id: int) -> dict:
     """Get org preferences or defaults."""
-    pref = (
-        db.query(NotificationPreference)
-        .filter(NotificationPreference.org_id == org_id)
-        .first()
-    )
+    pref = db.query(NotificationPreference).filter(NotificationPreference.org_id == org_id).first()
     defaults = {"critical_due_days": 30, "warn_due_days": 60}
     if pref and pref.thresholds_json:
         try:
@@ -82,6 +75,7 @@ def _site_nom(db: Session, site_id: Optional[int]) -> str:
 # ========================================
 # Build notifications from each brique
 # ========================================
+
 
 def build_from_compliance(db: Session, org_id: int, site_ids: list, thresholds: dict) -> List[dict]:
     """NOK findings → CRITICAL/WARN alerts. Deadline proximity boosts severity."""
@@ -122,26 +116,30 @@ def build_from_compliance(db: Session, org_id: int, site_ids: list, thresholds: 
         if f.status == "UNKNOWN":
             title = f"Donnees manquantes pour {f.rule_id}"
 
-        alerts.append({
-            "org_id": org_id,
-            "site_id": f.site_id,
-            "source_type": NotificationSourceType.COMPLIANCE,
-            "source_id": str(f.id),
-            "source_key": f"finding:{f.id}",
-            "severity": severity,
-            "title": title[:500],
-            "message": f.evidence or f"Site: {site_name}",
-            "due_date": f.deadline,
-            "estimated_impact_eur": None,
-            "deeplink_path": f"/conformite?site_id={f.site_id}" if f.site_id else "/conformite",
-            "evidence_json": json.dumps({
-                "rule_id": f.rule_id,
-                "regulation": f.regulation,
-                "finding_status": f.status,
-                "severity": f.severity,
-            }),
-            "_hash_parts": (title, f.severity, str(f.deadline), str(f.id)),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": f.site_id,
+                "source_type": NotificationSourceType.COMPLIANCE,
+                "source_id": str(f.id),
+                "source_key": f"finding:{f.id}",
+                "severity": severity,
+                "title": title[:500],
+                "message": f.evidence or f"Site: {site_name}",
+                "due_date": f.deadline,
+                "estimated_impact_eur": None,
+                "deeplink_path": f"/conformite?site_id={f.site_id}" if f.site_id else "/conformite",
+                "evidence_json": json.dumps(
+                    {
+                        "rule_id": f.rule_id,
+                        "regulation": f.regulation,
+                        "finding_status": f.status,
+                        "severity": f.severity,
+                    }
+                ),
+                "_hash_parts": (title, f.severity, str(f.deadline), str(f.id)),
+            }
+        )
 
     return alerts
 
@@ -170,25 +168,29 @@ def build_from_billing(db: Session, org_id: int, site_ids: list, thresholds: dic
             severity = NotificationSeverity.INFO
 
         site_name = _site_nom(db, ins.site_id)
-        alerts.append({
-            "org_id": org_id,
-            "site_id": ins.site_id,
-            "source_type": NotificationSourceType.BILLING,
-            "source_id": str(ins.id),
-            "source_key": f"billing_insight:{ins.id}",
-            "severity": severity,
-            "title": f"Anomalie facturation: {ins.type} ({site_name})"[:500],
-            "message": ins.message,
-            "due_date": None,
-            "estimated_impact_eur": loss,
-            "deeplink_path": f"/bill-intel?site_id={ins.site_id}" if ins.site_id else "/bill-intel",
-            "evidence_json": json.dumps({
-                "type": ins.type,
-                "loss_eur": loss,
-                "severity": ins.severity,
-            }),
-            "_hash_parts": (ins.type, str(ins.id), str(loss)),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": ins.site_id,
+                "source_type": NotificationSourceType.BILLING,
+                "source_id": str(ins.id),
+                "source_key": f"billing_insight:{ins.id}",
+                "severity": severity,
+                "title": f"Anomalie facturation: {ins.type} ({site_name})"[:500],
+                "message": ins.message,
+                "due_date": None,
+                "estimated_impact_eur": loss,
+                "deeplink_path": f"/bill-intel?site_id={ins.site_id}" if ins.site_id else "/bill-intel",
+                "evidence_json": json.dumps(
+                    {
+                        "type": ins.type,
+                        "loss_eur": loss,
+                        "severity": ins.severity,
+                    }
+                ),
+                "_hash_parts": (ins.type, str(ins.id), str(loss)),
+            }
+        )
 
     return alerts
 
@@ -221,36 +223,36 @@ def build_from_purchase(db: Session, org_id: int, site_ids: list, thresholds: di
 
         site_name = _site_nom(db, c.site_id)
         title = f"Renouvellement contrat {c.supplier_name} — {site_name} (J-{days_left})"
-        alerts.append({
-            "org_id": org_id,
-            "site_id": c.site_id,
-            "source_type": NotificationSourceType.PURCHASE,
-            "source_id": str(c.id),
-            "source_key": f"contract_renewal:{c.id}",
-            "severity": severity,
-            "title": title[:500],
-            "message": f"Echeance le {c.end_date.strftime('%d/%m/%Y')} — {c.supplier_name}",
-            "due_date": c.end_date,
-            "estimated_impact_eur": None,
-            "deeplink_path": f"/achat-energie?site_id={c.site_id}" if c.site_id else "/achat-energie",
-            "evidence_json": json.dumps({
-                "supplier": c.supplier_name,
-                "end_date": c.end_date.isoformat(),
-                "days_remaining": days_left,
-            }),
-            "_hash_parts": (str(c.id), c.supplier_name, c.end_date.isoformat()),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": c.site_id,
+                "source_type": NotificationSourceType.PURCHASE,
+                "source_id": str(c.id),
+                "source_key": f"contract_renewal:{c.id}",
+                "severity": severity,
+                "title": title[:500],
+                "message": f"Echeance le {c.end_date.strftime('%d/%m/%Y')} — {c.supplier_name}",
+                "due_date": c.end_date,
+                "estimated_impact_eur": None,
+                "deeplink_path": f"/achat-energie?site_id={c.site_id}" if c.site_id else "/achat-energie",
+                "evidence_json": json.dumps(
+                    {
+                        "supplier": c.supplier_name,
+                        "end_date": c.end_date.isoformat(),
+                        "days_remaining": days_left,
+                    }
+                ),
+                "_hash_parts": (str(c.id), c.supplier_name, c.end_date.isoformat()),
+            }
+        )
 
     return alerts
 
 
 def build_from_consumption(db: Session, org_id: int, site_ids: list, thresholds: dict) -> List[dict]:
     """Strong drifts + data gaps → WARN/CRITICAL."""
-    insights = (
-        db.query(ConsumptionInsight)
-        .filter(ConsumptionInsight.site_id.in_(site_ids))
-        .all()
-    )
+    insights = db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id.in_(site_ids)).all()
 
     alerts = []
     for ins in insights:
@@ -270,25 +272,29 @@ def build_from_consumption(db: Session, org_id: int, site_ids: list, thresholds:
         else:
             continue  # Minor
 
-        alerts.append({
-            "org_id": org_id,
-            "site_id": ins.site_id,
-            "source_type": NotificationSourceType.CONSUMPTION,
-            "source_id": str(ins.id),
-            "source_key": f"conso_insight:{ins.id}",
-            "severity": severity,
-            "title": title[:500],
-            "message": ins.message,
-            "due_date": None,
-            "estimated_impact_eur": loss if loss > 0 else None,
-            "deeplink_path": f"/diagnostic-conso?site_id={ins.site_id}" if ins.site_id else "/diagnostic-conso",
-            "evidence_json": json.dumps({
-                "type": ins.type,
-                "severity": ins.severity,
-                "loss_eur": loss,
-            }),
-            "_hash_parts": (ins.type, str(ins.id), str(loss)),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": ins.site_id,
+                "source_type": NotificationSourceType.CONSUMPTION,
+                "source_id": str(ins.id),
+                "source_key": f"conso_insight:{ins.id}",
+                "severity": severity,
+                "title": title[:500],
+                "message": ins.message,
+                "due_date": None,
+                "estimated_impact_eur": loss if loss > 0 else None,
+                "deeplink_path": f"/diagnostic-conso?site_id={ins.site_id}" if ins.site_id else "/diagnostic-conso",
+                "evidence_json": json.dumps(
+                    {
+                        "type": ins.type,
+                        "severity": ins.severity,
+                        "loss_eur": loss,
+                    }
+                ),
+                "_hash_parts": (ins.type, str(ins.id), str(loss)),
+            }
+        )
 
     return alerts
 
@@ -324,46 +330,54 @@ def build_from_actions(db: Session, org_id: int, thresholds: dict) -> List[dict]
     for a in overdue:
         days_overdue = (today - a.due_date).days
         severity = NotificationSeverity.CRITICAL if days_overdue > 14 else NotificationSeverity.WARN
-        alerts.append({
-            "org_id": org_id,
-            "site_id": a.site_id,
-            "source_type": NotificationSourceType.ACTION_HUB,
-            "source_id": str(a.id),
-            "source_key": f"action_overdue:{a.id}",
-            "severity": severity,
-            "title": f"Action en retard (J+{days_overdue}): {a.title}"[:500],
-            "message": f"Echeance depassee: {a.due_date.strftime('%d/%m/%Y')}",
-            "due_date": a.due_date,
-            "estimated_impact_eur": a.estimated_gain_eur,
-            "deeplink_path": "/actions",
-            "evidence_json": json.dumps({
-                "action_id": a.id,
-                "days_overdue": days_overdue,
-                "status": a.status.value,
-            }),
-            "_hash_parts": (str(a.id), "overdue", str(days_overdue)),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": a.site_id,
+                "source_type": NotificationSourceType.ACTION_HUB,
+                "source_id": str(a.id),
+                "source_key": f"action_overdue:{a.id}",
+                "severity": severity,
+                "title": f"Action en retard (J+{days_overdue}): {a.title}"[:500],
+                "message": f"Echeance depassee: {a.due_date.strftime('%d/%m/%Y')}",
+                "due_date": a.due_date,
+                "estimated_impact_eur": a.estimated_gain_eur,
+                "deeplink_path": "/actions",
+                "evidence_json": json.dumps(
+                    {
+                        "action_id": a.id,
+                        "days_overdue": days_overdue,
+                        "status": a.status.value,
+                    }
+                ),
+                "_hash_parts": (str(a.id), "overdue", str(days_overdue)),
+            }
+        )
 
     for a in blocked:
-        alerts.append({
-            "org_id": org_id,
-            "site_id": a.site_id,
-            "source_type": NotificationSourceType.ACTION_HUB,
-            "source_id": str(a.id),
-            "source_key": f"action_blocked:{a.id}",
-            "severity": NotificationSeverity.WARN,
-            "title": f"Action bloquee: {a.title}"[:500],
-            "message": a.notes or "Action en statut bloque",
-            "due_date": a.due_date,
-            "estimated_impact_eur": a.estimated_gain_eur,
-            "deeplink_path": "/actions",
-            "evidence_json": json.dumps({
-                "action_id": a.id,
-                "status": "blocked",
-                "owner": a.owner,
-            }),
-            "_hash_parts": (str(a.id), "blocked"),
-        })
+        alerts.append(
+            {
+                "org_id": org_id,
+                "site_id": a.site_id,
+                "source_type": NotificationSourceType.ACTION_HUB,
+                "source_id": str(a.id),
+                "source_key": f"action_blocked:{a.id}",
+                "severity": NotificationSeverity.WARN,
+                "title": f"Action bloquee: {a.title}"[:500],
+                "message": a.notes or "Action en statut bloque",
+                "due_date": a.due_date,
+                "estimated_impact_eur": a.estimated_gain_eur,
+                "deeplink_path": "/actions",
+                "evidence_json": json.dumps(
+                    {
+                        "action_id": a.id,
+                        "status": "blocked",
+                        "owner": a.owner,
+                    }
+                ),
+                "_hash_parts": (str(a.id), "blocked"),
+            }
+        )
 
     return alerts
 
@@ -371,6 +385,7 @@ def build_from_actions(db: Session, org_id: int, thresholds: dict) -> List[dict]
 # ========================================
 # Main sync function
 # ========================================
+
 
 def sync_notifications(db: Session, org_id: int, triggered_by: str = "api") -> dict:
     """

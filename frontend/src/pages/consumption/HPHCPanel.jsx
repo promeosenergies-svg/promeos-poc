@@ -42,7 +42,9 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
     }
   }, [siteId, days, initialBreakdown, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (loading) return <SkeletonCard rows={4} />;
 
@@ -55,7 +57,9 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-800">Ratio HP / HC</h3>
-          {breakdown && <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />}
+          {breakdown && (
+            <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />
+          )}
         </div>
       </div>
 
@@ -65,14 +69,22 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
           <Card>
             <CardBody>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm text-gray-600">Calendrier : {breakdown.calendar_name || schedule?.name || 'Par defaut'}</span>
+                <span className="text-sm text-gray-600">
+                  Calendrier : {breakdown.calendar_name || schedule?.name || 'Par defaut'}
+                </span>
                 {schedule?.source && <Badge variant="info">{schedule.source}</Badge>}
               </div>
               <div className="w-full h-8 rounded-full overflow-hidden flex">
-                <div className="bg-red-400 flex items-center justify-center" style={{ width: `${hpPct}%` }}>
+                <div
+                  className="bg-red-400 flex items-center justify-center"
+                  style={{ width: `${hpPct}%` }}
+                >
                   <span className="text-xs font-bold text-white">{hpPct}% HP</span>
                 </div>
-                <div className="bg-blue-400 flex items-center justify-center" style={{ width: `${hcPct}%` }}>
+                <div
+                  className="bg-blue-400 flex items-center justify-center"
+                  style={{ width: `${hcPct}%` }}
+                >
                   <span className="text-xs font-bold text-white">{hcPct}% HC</span>
                 </div>
               </div>
@@ -84,29 +96,42 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HP</p>
-                <p className="text-lg font-bold text-red-600">{breakdown.hp_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{breakdown.hp_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-red-600">
+                  {breakdown.hp_kwh.toLocaleString()} kWh
+                </p>
+                <p className="text-xs text-gray-400">
+                  {breakdown.hp_cost_eur.toLocaleString()} EUR
+                </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HC</p>
-                <p className="text-lg font-bold text-blue-600">{breakdown.hc_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{breakdown.hc_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-blue-600">
+                  {breakdown.hc_kwh.toLocaleString()} kWh
+                </p>
+                <p className="text-xs text-gray-400">
+                  {breakdown.hc_cost_eur.toLocaleString()} EUR
+                </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Total</p>
-                <p className="text-lg font-bold text-gray-800">{breakdown.total_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{breakdown.total_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-gray-800">
+                  {breakdown.total_kwh.toLocaleString()} kWh
+                </p>
+                <p className="text-xs text-gray-400">
+                  {breakdown.total_cost_eur.toLocaleString()} EUR
+                </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Prix HP/HC</p>
                 <p className="text-sm font-semibold text-gray-700">
-                  {breakdown.opportunity?.price_hp || '—'} / {breakdown.opportunity?.price_hc || '—'} EUR/kWh
+                  {breakdown.opportunity?.price_hp || '—'} /{' '}
+                  {breakdown.opportunity?.price_hc || '—'} EUR/kWh
                 </p>
               </CardBody>
             </Card>
@@ -118,13 +143,17 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
               <CardBody className="py-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold text-green-700">Opportunite de report HP → HC</p>
+                    <p className="text-xs font-semibold text-green-700">
+                      Opportunite de report HP → HC
+                    </p>
                     <p className="text-sm text-green-800 mt-0.5">
                       ~{breakdown.opportunity.shiftable_kwh.toLocaleString()} kWh reportables
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-green-700">{breakdown.opportunity.savings_eur} EUR</p>
+                    <p className="text-lg font-bold text-green-700">
+                      {breakdown.opportunity.savings_eur} EUR
+                    </p>
                     <p className="text-xs text-green-600">economies potentielles</p>
                   </div>
                 </div>
@@ -136,7 +165,9 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
           {breakdown.heatmap?.length > 0 && (
             <Card>
               <CardBody>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Carte thermique HP/HC (7j x 24h)</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                  Carte thermique HP/HC (7j x 24h)
+                </h4>
                 <HeatmapChart data={breakdown.heatmap} />
               </CardBody>
             </Card>
@@ -164,11 +195,15 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                         <td className="px-3 py-1.5">{w.start}</td>
                         <td className="px-3 py-1.5">{w.end}</td>
                         <td className="px-3 py-1.5">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${w.period === 'HP' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${w.period === 'HP' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}
+                          >
                             {w.period}
                           </span>
                         </td>
-                        <td className="px-3 py-1.5 text-right">{w.price_eur_kwh ? `${w.price_eur_kwh} EUR` : '—'}</td>
+                        <td className="px-3 py-1.5 text-right">
+                          {w.price_eur_kwh ? `${w.price_eur_kwh} EUR` : '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

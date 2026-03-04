@@ -6,8 +6,10 @@ Setup: 2 orgs (Alpha, Bravo), each with EJ → Portefeuille → Site.
 Alpha has invoices and insights; Bravo has none.
 All tests use X-Org-Id header to simulate org context.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -17,9 +19,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    Site, TypeSite, EnergyInvoice, EnergyContract,
-    BillingInsight, BillingInvoiceStatus, InsightStatus, BillingImportBatch,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    TypeSite,
+    EnergyInvoice,
+    EnergyContract,
+    BillingInsight,
+    BillingInvoiceStatus,
+    InsightStatus,
+    BillingImportBatch,
 )
 from models.billing_models import BillingEnergyType
 from database import get_db
@@ -29,6 +40,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -51,6 +63,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -69,24 +82,34 @@ def _create_two_orgs_with_billing(db):
     db.add(pf_a)
     db.flush()
     site_a = Site(
-        portefeuille_id=pf_a.id, nom="Site Alpha", type=TypeSite.BUREAU,
-        adresse="1 rue Alpha", code_postal="75001", ville="Paris",
-        surface_m2=500, actif=True,
+        portefeuille_id=pf_a.id,
+        nom="Site Alpha",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Alpha",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=500,
+        actif=True,
     )
     db.add(site_a)
     db.flush()
 
     # Alpha's invoice + insight
     inv_a = EnergyInvoice(
-        site_id=site_a.id, invoice_number="FA-ALPHA-001",
-        total_eur=1200.0, energy_kwh=5000.0,
-        status=BillingInvoiceStatus.ANOMALY, source="csv",
+        site_id=site_a.id,
+        invoice_number="FA-ALPHA-001",
+        total_eur=1200.0,
+        energy_kwh=5000.0,
+        status=BillingInvoiceStatus.ANOMALY,
+        source="csv",
     )
     db.add(inv_a)
     db.flush()
     insight_a = BillingInsight(
-        site_id=site_a.id, invoice_id=inv_a.id,
-        type="shadow_gap", severity="high",
+        site_id=site_a.id,
+        invoice_id=inv_a.id,
+        type="shadow_gap",
+        severity="high",
         message="Ecart alpha test",
         insight_status=InsightStatus.OPEN,
     )
@@ -103,17 +126,26 @@ def _create_two_orgs_with_billing(db):
     db.add(pf_b)
     db.flush()
     site_b = Site(
-        portefeuille_id=pf_b.id, nom="Site Bravo", type=TypeSite.BUREAU,
-        adresse="2 rue Bravo", code_postal="69001", ville="Lyon",
-        surface_m2=400, actif=True,
+        portefeuille_id=pf_b.id,
+        nom="Site Bravo",
+        type=TypeSite.BUREAU,
+        adresse="2 rue Bravo",
+        code_postal="69001",
+        ville="Lyon",
+        surface_m2=400,
+        actif=True,
     )
     db.add(site_b)
     db.flush()
 
     db.commit()
     return {
-        "org_a": org_a, "site_a": site_a, "inv_a": inv_a, "insight_a": insight_a,
-        "org_b": org_b, "site_b": site_b,
+        "org_a": org_a,
+        "site_a": site_a,
+        "inv_a": inv_a,
+        "insight_a": insight_a,
+        "org_b": org_b,
+        "site_b": site_b,
     }
 
 
@@ -125,8 +157,8 @@ def _h(org_id: int) -> dict:
 # Tests
 # ========================================
 
-class TestBillingOrgScoping:
 
+class TestBillingOrgScoping:
     def test_invoices_only_return_own_org(self, client, db):
         """GET /invoices scoped to org_a returns Alpha's invoices only."""
         d = _create_two_orgs_with_billing(db)

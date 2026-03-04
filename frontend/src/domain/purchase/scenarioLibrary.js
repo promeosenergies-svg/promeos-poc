@@ -18,7 +18,7 @@ import { SCENARIO_PRESETS, DEFAULT_MARKET } from './assumptions.js';
 export function createRng(seed) {
   let state = seed | 0;
   return function next() {
-    state = (state + 0x6D2B79F5) | 0;
+    state = (state + 0x6d2b79f5) | 0;
     let t = Math.imul(state ^ (state >>> 15), 1 | state);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -65,7 +65,7 @@ export function generateTrajectory({ horizonMonths, preset, basePrice, rng }) {
     // Jump diffusion (Poisson-like shock)
     if (rng() < config.shockProb * dt) {
       const shockDir = rng() > 0.5 ? 1 : -1;
-      price *= (1 + shockDir * config.shockMagnitude * rng());
+      price *= 1 + shockDir * config.shockMagnitude * rng();
     }
 
     // Floor at 10 €/MWh (market doesn't go negative in practice)
@@ -85,7 +85,13 @@ export function generateTrajectory({ horizonMonths, preset, basePrice, rng }) {
  * @param {number} params.seed
  * @returns {{ trajectories: number[][], meanTrajectory: number[] }}
  */
-export function generateMonteCarloTrajectories({ horizonMonths, preset, basePrice, iterations, seed }) {
+export function generateMonteCarloTrajectories({
+  horizonMonths,
+  preset,
+  basePrice,
+  iterations,
+  seed,
+}) {
   const n = Math.min(iterations, 200); // hard cap
   const rng = createRng(seed);
   const trajectories = [];

@@ -6,15 +6,34 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
-  Building2, Search, Download, Star,
-  Plus, Upload, MapPin, ChevronRight,
-  ShieldCheck, AlertTriangle, BadgeEuro, Zap,
-  ExternalLink, Eye, Lightbulb,
-  X, ArrowUpDown,
+  Building2,
+  Search,
+  Download,
+  Star,
+  Plus,
+  Upload,
+  MapPin,
+  ChevronRight,
+  ShieldCheck,
+  AlertTriangle,
+  BadgeEuro,
+  Zap,
+  ExternalLink,
+  Eye,
+  Lightbulb,
+  X,
+  ArrowUpDown,
 } from 'lucide-react';
 import {
-  Card, Badge, Button, EmptyState,
-  PageShell, KpiCardCompact, Drawer, Tabs, Tooltip,
+  Card,
+  Badge,
+  Button,
+  EmptyState,
+  PageShell,
+  KpiCardCompact,
+  Drawer,
+  Tabs,
+  Tooltip,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -30,30 +49,47 @@ import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import { getPatrimoineAnomalies, getPortfolioReconciliation } from '../services/api';
 import { track } from '../services/tracker';
-import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
+import {
+  fmtEur,
+  fmtEurFull,
+  fmtArea,
+  fmtAreaCompact,
+  fmtKwh,
+  fmtDateFR,
+  pl,
+} from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-const ROW_HEIGHT = 52;   // px — fixed row height for virtual scroll
-const OVERSCAN = 10;     // extra rows above/below viewport
+const ROW_HEIGHT = 52; // px — fixed row height for virtual scroll
+const OVERSCAN = 10; // extra rows above/below viewport
 
 const USAGE_OPTIONS = [
   { value: '', label: 'Usage' },
-  { value: 'bureau', label: 'Bureau' }, { value: 'commerce', label: 'Commerce' },
-  { value: 'entrepot', label: 'Entrepot' }, { value: 'hotel', label: 'Hotel' },
-  { value: 'sante', label: 'Sante' }, { value: 'enseignement', label: 'Enseignement' },
-  { value: 'copropriete', label: 'Copropriete' }, { value: 'collectivite', label: 'Collectivite' },
+  { value: 'bureau', label: 'Bureau' },
+  { value: 'commerce', label: 'Commerce' },
+  { value: 'entrepot', label: 'Entrepot' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'sante', label: 'Sante' },
+  { value: 'enseignement', label: 'Enseignement' },
+  { value: 'copropriete', label: 'Copropriete' },
+  { value: 'collectivite', label: 'Collectivite' },
 ];
 
 const STATUT_OPTIONS = [
   { value: '', label: 'Statut' },
-  { value: 'conforme', label: 'Conforme' }, { value: 'non_conforme', label: 'Non conforme' },
-  { value: 'a_risque', label: 'À risque' }, { value: 'a_evaluer', label: 'À évaluer' },
+  { value: 'conforme', label: 'Conforme' },
+  { value: 'non_conforme', label: 'Non conforme' },
+  { value: 'a_risque', label: 'À risque' },
+  { value: 'a_evaluer', label: 'À évaluer' },
 ];
 
 // Built from centralized STATUS_CONFIG — single source of truth
-const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
+const _sb = (k) => {
+  const { variant, label } = getStatusBadgeProps(k);
+  return { status: variant, label };
+};
 const STATUT_BADGE = {
   conforme: _sb('conforme'),
   non_conforme: _sb('non_conforme'),
@@ -74,7 +110,13 @@ const USAGE_COLOR = {
 
 const PRESET_VIEWS = [
   { id: 'risk', label: 'Risque (Top)', sort: 'risque_eur', dir: 'desc', filter: {} },
-  { id: 'nc', label: 'Non conformes', sort: 'risque_eur', dir: 'desc', filter: { statut: 'non_conforme' } },
+  {
+    id: 'nc',
+    label: 'Non conformes',
+    sort: 'risque_eur',
+    dir: 'desc',
+    filter: { statut: 'non_conforme' },
+  },
   { id: 'eval', label: 'À évaluer', sort: 'nom', dir: 'asc', filter: { statut: 'a_evaluer' } },
 ];
 
@@ -106,13 +148,17 @@ export default function Patrimoine() {
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
 
   // V63 — Heatmap enrichie (anomalies par site, Promise.all, guard stale)
-  const [hmTiles, setHmTiles]     = useState([]);
+  const [hmTiles, setHmTiles] = useState([]);
   const [hmLoading, setHmLoading] = useState(false);
-  const [hmError, setHmError]     = useState(null);
-  const hmFetchIdRef              = useRef(0);
+  const [hmError, setHmError] = useState(null);
+  const hmFetchIdRef = useRef(0);
 
   const [favorites, setFavorites] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]')); } catch { return new Set(); }
+    try {
+      return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]'));
+    } catch {
+      return new Set();
+    }
   });
 
   // V96 — Reconciliation badge per site
@@ -121,24 +167,32 @@ export default function Patrimoine() {
     getPortfolioReconciliation()
       .then((data) => {
         const m = {};
-        (data.sites || []).forEach(s => { m[s.site_id] = s; });
+        (data.sites || []).forEach((s) => {
+          m[s.site_id] = s;
+        });
         setReconMap(m);
       })
       .catch(() => {});
   }, []);
 
   // URL param helper — merges params, removes empty values
-  const setParams = useCallback((patch) => {
-    setSp(prev => {
-      const next = new URLSearchParams(prev);
-      Object.entries(patch).forEach(([k, v]) => {
-        if (v === '' || v === null || v === false || v === undefined) next.delete(k);
-        else next.set(k, String(v));
-      });
-      return next;
-    }, { replace: true });
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [setSp]);
+  const setParams = useCallback(
+    (patch) => {
+      setSp(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          Object.entries(patch).forEach(([k, v]) => {
+            if (v === '' || v === null || v === false || v === undefined) next.delete(k);
+            else next.set(k, String(v));
+          });
+          return next;
+        },
+        { replace: true }
+      );
+      scrollRef.current?.scrollTo({ top: 0 });
+    },
+    [setSp]
+  );
 
   // Keyboard shortcut: "/" to focus search
   useEffect(() => {
@@ -155,7 +209,7 @@ export default function Patrimoine() {
   // V65 — Auto-ouvrir drawer depuis AnomaliesPage (location.state)
   useEffect(() => {
     if (!location.state?.openSiteId) return;
-    const site = scopedSites.find(s => s.id === location.state.openSiteId);
+    const site = scopedSites.find((s) => s.id === location.state.openSiteId);
     if (site) {
       setDrawerSite(site);
       setDrawerInitialTab(location.state.openTab || 'anomalies');
@@ -180,68 +234,71 @@ export default function Patrimoine() {
     const SEV_ORDER_MAP = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 
     Promise.all(
-      sitesToFetch.map(site =>
+      sitesToFetch.map((site) =>
         getPatrimoineAnomalies(site.id)
-          .then(data => ({ site, data, ok: true }))
+          .then((data) => ({ site, data, ok: true }))
           .catch(() => ({ site, data: null, ok: false }))
       )
-    ).then(results => {
-      if (hmFetchIdRef.current !== fetchId) return;  // réponse périmée
-      const tiles = results.map(({ site, data, ok }) => {
-        const anomalies = ok && data ? (data.anomalies ?? []) : [];
+    )
+      .then((results) => {
+        if (hmFetchIdRef.current !== fetchId) return; // réponse périmée
+        const tiles = results.map(({ site, data, ok }) => {
+          const anomalies = ok && data ? (data.anomalies ?? []) : [];
 
-        // Mode framework dominant
-        const fwCounts = {};
-        for (const a of anomalies) {
-          const fw = a.regulatory_impact?.framework ?? 'NONE';
-          if (fw !== 'NONE') fwCounts[fw] = (fwCounts[fw] ?? 0) + 1;
-        }
-        const dominant_framework = Object.keys(fwCounts).length > 0
-          ? Object.entries(fwCounts).sort((a, b) => b[1] - a[1])[0][0]
-          : null;
+          // Mode framework dominant
+          const fwCounts = {};
+          for (const a of anomalies) {
+            const fw = a.regulatory_impact?.framework ?? 'NONE';
+            if (fw !== 'NONE') fwCounts[fw] = (fwCounts[fw] ?? 0) + 1;
+          }
+          const dominant_framework =
+            Object.keys(fwCounts).length > 0
+              ? Object.entries(fwCounts).sort((a, b) => b[1] - a[1])[0][0]
+              : null;
 
-        // Sévérité max
-        const max_severity = anomalies.reduce((mx, a) => {
-          const o   = SEV_ORDER_MAP[a.severity] ?? 0;
-          const mxo = SEV_ORDER_MAP[mx]         ?? 0;
-          return o > mxo ? a.severity : mx;
-        }, null);
+          // Sévérité max
+          const max_severity = anomalies.reduce((mx, a) => {
+            const o = SEV_ORDER_MAP[a.severity] ?? 0;
+            const mxo = SEV_ORDER_MAP[mx] ?? 0;
+            return o > mxo ? a.severity : mx;
+          }, null);
 
-        return {
-          site_id:          site.id,
-          site_nom:         site.nom,
-          total_risk_eur:   ok && data ? data.total_estimated_risk_eur : (site.risque_eur ?? 0),
-          anomalies_count:  ok && data ? data.nb_anomalies             : (site.anomalies_count ?? 0),
-          max_severity,
-          dominant_framework,
-          completude_score: ok && data ? data.completude_score : 0,
-          top_anomalies: anomalies.slice(0, 2).map(a => ({
-            code:     a.code,
-            severity: a.severity,
-            title_fr: a.title_fr,
-          })),
-        };
+          return {
+            site_id: site.id,
+            site_nom: site.nom,
+            total_risk_eur: ok && data ? data.total_estimated_risk_eur : (site.risque_eur ?? 0),
+            anomalies_count: ok && data ? data.nb_anomalies : (site.anomalies_count ?? 0),
+            max_severity,
+            dominant_framework,
+            completude_score: ok && data ? data.completude_score : 0,
+            top_anomalies: anomalies.slice(0, 2).map((a) => ({
+              code: a.code,
+              severity: a.severity,
+              title_fr: a.title_fr,
+            })),
+          };
+        });
+        setHmTiles(tiles);
+        setHmLoading(false);
+      })
+      .catch(() => {
+        if (hmFetchIdRef.current !== fetchId) return;
+        setHmError('Impossible de charger la heatmap.');
+        setHmLoading(false);
       });
-      setHmTiles(tiles);
-      setHmLoading(false);
-    }).catch(() => {
-      if (hmFetchIdRef.current !== fetchId) return;
-      setHmError('Impossible de charger la heatmap.');
-      setHmLoading(false);
-    });
   }, [scopedSites]);
 
   /* ─── Computed data ─── */
 
   const stats = useMemo(() => {
     const t = scopedSites.length;
-    const conformes = scopedSites.filter(s => s.statut_conformite === 'conforme').length;
-    const nc = scopedSites.filter(s => s.statut_conformite === 'non_conforme').length;
-    const aRisque = scopedSites.filter(s => s.statut_conformite === 'a_risque').length;
+    const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nc = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
     const risque = scopedSites.reduce((a, s) => a + (s.risque_eur || 0), 0);
     const surface = scopedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
     const anomalies = scopedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
-    const withAno = scopedSites.filter(s => (s.anomalies_count || 0) > 0).length;
+    const withAno = scopedSites.filter((s) => (s.anomalies_count || 0) > 0).length;
     return { total: t, conformes, nc, aRisque, risque, surface, anomalies, withAno };
   }, [scopedSites]);
 
@@ -249,21 +306,25 @@ export default function Patrimoine() {
     let r = [...scopedSites];
     if (search) {
       const q = search.toLowerCase();
-      r = r.filter(s =>
-        s.nom.toLowerCase().includes(q) ||
-        s.ville.toLowerCase().includes(q) ||
-        (s.adresse || '').toLowerCase().includes(q) ||
-        (s.code_postal || '').includes(q)
+      r = r.filter(
+        (s) =>
+          s.nom.toLowerCase().includes(q) ||
+          s.ville.toLowerCase().includes(q) ||
+          (s.adresse || '').toLowerCase().includes(q) ||
+          (s.code_postal || '').includes(q)
       );
     }
-    if (filterUsage) r = r.filter(s => s.usage === filterUsage);
-    if (filterStatut) r = r.filter(s => s.statut_conformite === filterStatut);
-    if (filterAnomalies) r = r.filter(s => (s.anomalies_count || 0) > 0);
+    if (filterUsage) r = r.filter((s) => s.usage === filterUsage);
+    if (filterStatut) r = r.filter((s) => s.statut_conformite === filterStatut);
+    if (filterAnomalies) r = r.filter((s) => (s.anomalies_count || 0) > 0);
     if (sortCol) {
       r.sort((a, b) => {
-        const va = a[sortCol] ?? 0, vb = b[sortCol] ?? 0;
+        const va = a[sortCol] ?? 0,
+          vb = b[sortCol] ?? 0;
         if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
-        return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+        return sortDir === 'asc'
+          ? String(va).localeCompare(String(vb))
+          : String(vb).localeCompare(String(va));
       });
     }
     return r;
@@ -281,14 +342,15 @@ export default function Patrimoine() {
 
   const virtualItems = virtualizer.getVirtualItems();
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
-  const paddingBottom = virtualItems.length > 0
-    ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
-    : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+      : 0;
   const colCount = isExpert ? 11 : 10;
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
-    const sites = scopedSites.filter(s => selected.has(s.id));
+    const sites = scopedSites.filter((s) => selected.has(s.id));
     return { count: sites.length, risque: sites.reduce((a, s) => a + (s.risque_eur || 0), 0) };
   }, [selected, scopedSites]);
 
@@ -321,10 +383,14 @@ export default function Patrimoine() {
   }
 
   function toggleSelect(id) {
-    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
   }
   function toggleSelectAll() {
-    setSelected(selected.size === filtered.length ? new Set() : new Set(filtered.map(s => s.id)));
+    setSelected(selected.size === filtered.length ? new Set() : new Set(filtered.map((s) => s.id)));
   }
 
   function exportCsv() {
@@ -337,7 +403,9 @@ export default function Patrimoine() {
 
   function toggleFavorites() {
     const n = new Set(favorites);
-    for (const id of selected) { n.has(id) ? n.delete(id) : n.add(id); }
+    for (const id of selected) {
+      n.has(id) ? n.delete(id) : n.add(id);
+    }
     setFavorites(n);
     localStorage.setItem('promeos_fav_sites', JSON.stringify([...n]));
     setSelected(new Set());
@@ -350,27 +418,46 @@ export default function Patrimoine() {
   }, []);
 
   // V60 — ouvre le drawer sur l'onglet Anomalies (depuis PatrimoinePortfolioHealthBar)
-  const openDrawerOnAnomalies = useCallback((site_id) => {
-    const site = scopedSites.find(s => s.id === site_id);
-    if (site) {
-      setDrawerSite(site);
-      setDrawerInitialTab('anomalies');
-      track('portfolio_top_site_click', { site_id });
-    } else {
-      navigate(`/sites/${site_id}`);
-    }
-  }, [scopedSites, navigate]);
-  const openActionFromDrawer = useCallback((siteName, siteId) => {
-    setDrawerSite(null);
-    openActionDrawer({ prefill: { site: siteName }, siteId: siteId || null, sourceType: 'patrimoine' });
-  }, [openActionDrawer]);
+  const openDrawerOnAnomalies = useCallback(
+    (site_id) => {
+      const site = scopedSites.find((s) => s.id === site_id);
+      if (site) {
+        setDrawerSite(site);
+        setDrawerInitialTab('anomalies');
+        track('portfolio_top_site_click', { site_id });
+      } else {
+        navigate(`/sites/${site_id}`);
+      }
+    },
+    [scopedSites, navigate]
+  );
+  const openActionFromDrawer = useCallback(
+    (siteName, siteId) => {
+      setDrawerSite(null);
+      openActionDrawer({
+        prefill: { site: siteName },
+        siteId: siteId || null,
+        sourceType: 'patrimoine',
+      });
+    },
+    [openActionDrawer]
+  );
 
   const _hasFilters = search || filterUsage || filterStatut || filterAnomalies;
   const activeChips = [];
   if (search) activeChips.push({ label: `"${search}"`, clear: () => setParams({ q: '' }) });
-  if (filterUsage) activeChips.push({ label: USAGE_OPTIONS.find(o => o.value === filterUsage)?.label || filterUsage, clear: () => setParams({ usage: '' }) });
-  if (filterStatut) activeChips.push({ label: STATUT_OPTIONS.find(o => o.value === filterStatut)?.label || filterStatut, clear: () => setParams({ statut: '' }) });
-  if (filterAnomalies) activeChips.push({ label: 'Avec anomalies', clear: () => setParams({ anomalies: '' }) });
+  if (filterUsage)
+    activeChips.push({
+      label: USAGE_OPTIONS.find((o) => o.value === filterUsage)?.label || filterUsage,
+      clear: () => setParams({ usage: '' }),
+    });
+  if (filterStatut)
+    activeChips.push({
+      label: STATUT_OPTIONS.find((o) => o.value === filterStatut)?.label || filterStatut,
+      clear: () => setParams({ statut: '' }),
+    });
+  if (filterAnomalies)
+    activeChips.push({ label: 'Avec anomalies', clear: () => setParams({ anomalies: '' }) });
 
   /* ─── Render ─── */
 
@@ -379,7 +466,10 @@ export default function Patrimoine() {
     return (
       <PageShell icon={Building2} title="Patrimoine" subtitle="Chargement...">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
         <SkeletonTable rows={8} cols={6} />
       </PageShell>
@@ -400,12 +490,23 @@ export default function Patrimoine() {
       subtitle={subtitle}
       actions={
         <>
-          {!isEmptyPatrimoine && <Button variant="secondary" size="sm" onClick={() => openActionDrawer({ sourceType: 'patrimoine' })}><Plus size={14} className="mr-1" />Action</Button>}
-          <Button size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer</Button>
+          {!isEmptyPatrimoine && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openActionDrawer({ sourceType: 'patrimoine' })}
+            >
+              <Plus size={14} className="mr-1" />
+              Action
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowWizard(true)}>
+            <Upload size={14} className="mr-1" />
+            Importer
+          </Button>
         </>
       }
     >
-
       {/* ── Welcome empty state ── */}
       {isEmptyPatrimoine ? (
         <EmptyState
@@ -416,13 +517,13 @@ export default function Patrimoine() {
           onCta={() => setShowWizard(true)}
           actions={
             <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
-              <Zap size={16} className="mr-2" />Demo
+              <Zap size={16} className="mr-2" />
+              Demo
             </Button>
           }
         />
       ) : (
         <div className="space-y-3">
-
           {/* ── Portfolio Health Bar V60 — risque global, top sites, framework ── */}
           <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} orgId={scope.orgId} />
 
@@ -439,32 +540,58 @@ export default function Patrimoine() {
           {/* ── KPI row (compact) ── */}
           <div className="grid grid-cols-4 gap-3">
             <KpiCardCompact
-              icon={Building2} color="bg-blue-600"
-              label="Sites actifs" value={stats.total}
+              icon={Building2}
+              color="bg-blue-600"
+              label="Sites actifs"
+              value={stats.total}
               detail={fmtAreaCompact(stats.surface)}
               active={!filterStatut && !filterAnomalies && !activeView}
               onClick={() => setParams({ statut: '', anomalies: '', view: '' })}
             />
             <KpiCardCompact
-              icon={ShieldCheck} color="bg-emerald-600"
-              label="Conformes" value={stats.conformes}
-              detail={stats.total > 0 ? `${Math.round(stats.conformes / stats.total * 100)}% du parc` : '—'}
+              icon={ShieldCheck}
+              color="bg-emerald-600"
+              label="Conformes"
+              value={stats.conformes}
+              detail={
+                stats.total > 0
+                  ? `${Math.round((stats.conformes / stats.total) * 100)}% du parc`
+                  : '—'
+              }
               active={filterStatut === 'conforme'}
-              onClick={() => setParams({ statut: filterStatut === 'conforme' ? '' : 'conforme', anomalies: '', view: '' })}
+              onClick={() =>
+                setParams({
+                  statut: filterStatut === 'conforme' ? '' : 'conforme',
+                  anomalies: '',
+                  view: '',
+                })
+              }
             />
             <KpiCardCompact
-              icon={AlertTriangle} color="bg-red-600"
-              label="Non conformes" value={stats.nc + stats.aRisque}
+              icon={AlertTriangle}
+              color="bg-red-600"
+              label="Non conformes"
+              value={stats.nc + stats.aRisque}
               detail={`${stats.nc} NC · ${stats.aRisque} à risque`}
               active={filterStatut === 'non_conforme'}
-              onClick={() => setParams({ statut: filterStatut === 'non_conforme' ? '' : 'non_conforme', anomalies: '', view: '' })}
+              onClick={() =>
+                setParams({
+                  statut: filterStatut === 'non_conforme' ? '' : 'non_conforme',
+                  anomalies: '',
+                  view: '',
+                })
+              }
             />
             <KpiCardCompact
-              icon={BadgeEuro} color="bg-amber-600"
-              label="Risque financier" value={fmtEur(stats.risque)}
+              icon={BadgeEuro}
+              color="bg-amber-600"
+              label="Risque financier"
+              value={fmtEur(stats.risque)}
               detail={`${stats.withAno} ${stats.withAno > 1 ? 'sites' : 'site'} avec anomalies`}
               active={filterAnomalies}
-              onClick={() => setParams({ anomalies: filterAnomalies ? '' : '1', statut: '', view: '' })}
+              onClick={() =>
+                setParams({ anomalies: filterAnomalies ? '' : '1', statut: '', view: '' })
+              }
             />
           </div>
 
@@ -479,26 +606,37 @@ export default function Patrimoine() {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search
+                size={15}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 ref={searchRef}
                 type="text"
                 placeholder='Rechercher... (appuyez "/")'
                 value={search}
-                onChange={e => setParams({ q: e.target.value || '' })}
+                onChange={(e) => setParams({ q: e.target.value || '' })}
                 className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               />
             </div>
 
             {/* Filters */}
-            <FilterSelect options={USAGE_OPTIONS} value={filterUsage} onChange={v => setParams({ usage: v, view: '' })} />
-            <FilterSelect options={STATUT_OPTIONS} value={filterStatut} onChange={v => setParams({ statut: v, view: '' })} />
+            <FilterSelect
+              options={USAGE_OPTIONS}
+              value={filterUsage}
+              onChange={(v) => setParams({ usage: v, view: '' })}
+            />
+            <FilterSelect
+              options={STATUT_OPTIONS}
+              value={filterStatut}
+              onChange={(v) => setParams({ statut: v, view: '' })}
+            />
 
             {/* Separator */}
             <div className="w-px h-6 bg-gray-200" />
 
             {/* Preset views */}
-            {PRESET_VIEWS.map(v => (
+            {PRESET_VIEWS.map((v) => (
               <button
                 key={v.id}
                 onClick={() => applyPreset(v)}
@@ -525,14 +663,30 @@ export default function Patrimoine() {
           {/* Active filter chips */}
           {activeChips.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Filtres :</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+                Filtres :
+              </span>
               {activeChips.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                <span
+                  key={c.label}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium"
+                >
                   {c.label}
-                  <button onClick={c.clear} className="hover:text-blue-900" aria-label={`Retirer filtre ${c.label}`}><X size={10} /></button>
+                  <button
+                    onClick={c.clear}
+                    className="hover:text-blue-900"
+                    aria-label={`Retirer filtre ${c.label}`}
+                  >
+                    <X size={10} />
+                  </button>
                 </span>
               ))}
-              <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1">Réinitialiser</button>
+              <button
+                onClick={resetFilters}
+                className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1"
+              >
+                Réinitialiser
+              </button>
               <span className="ml-auto text-xs text-gray-400">{pl(total, 'resultat')}</span>
             </div>
           )}
@@ -543,13 +697,42 @@ export default function Patrimoine() {
               <span className="font-bold">{selectedStats.count}</span>
               <span className="opacity-80">{selectedStats.count > 1 ? 'sites' : 'site'}</span>
               {selectedStats.risque > 0 && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{fmtEur(selectedStats.risque)} de risque</span>
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  {fmtEur(selectedStats.risque)} de risque
+                </span>
               )}
               <div className="flex-1" />
-              <Button size="sm" variant="secondary" onClick={() => openActionDrawer({ sourceType: 'patrimoine' })} className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"><Plus size={13} /> Action</Button>
-              <Button size="sm" variant="secondary" onClick={exportCsv} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Download size={13} /> CSV</Button>
-              <Button size="sm" variant="secondary" onClick={toggleFavorites} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Star size={13} /></Button>
-              <button onClick={() => setSelected(new Set())} className="p-1 rounded hover:bg-white/20" aria-label="Désélectionner tout"><X size={14} /></button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => openActionDrawer({ sourceType: 'patrimoine' })}
+                className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"
+              >
+                <Plus size={13} /> Action
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={exportCsv}
+                className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"
+              >
+                <Download size={13} /> CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={toggleFavorites}
+                className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"
+              >
+                <Star size={13} />
+              </Button>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="p-1 rounded hover:bg-white/20"
+                aria-label="Désélectionner tout"
+              >
+                <X size={14} />
+              </button>
             </div>
           )}
 
@@ -572,72 +755,170 @@ export default function Patrimoine() {
                 <Table compact pinFirst>
                   <Thead sticky>
                     <tr>
-                      <ThCheckbox checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
+                      <ThCheckbox
+                        checked={selected.size === filtered.length && filtered.length > 0}
+                        onChange={toggleSelectAll}
+                      />
                       <Th className="w-10 text-center text-gray-400">#</Th>
-                      <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
+                      <Th
+                        sortable
+                        sorted={sortCol === 'nom' ? sortDir : ''}
+                        onSort={() => handleSort('nom')}
+                        pin
+                      >
+                        Site
+                      </Th>
                       <Th>Usage</Th>
                       <Th>Conformité</Th>
-                      <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque</Th>
-                      <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
-                      {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
-                      <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
+                      <Th
+                        sortable
+                        sorted={sortCol === 'risque_eur' ? sortDir : ''}
+                        onSort={() => handleSort('risque_eur')}
+                        className="text-right"
+                      >
+                        Risque
+                      </Th>
+                      <Th
+                        sortable
+                        sorted={sortCol === 'surface_m2' ? sortDir : ''}
+                        onSort={() => handleSort('surface_m2')}
+                        className="text-right"
+                      >
+                        Surface
+                      </Th>
+                      {isExpert && (
+                        <Th
+                          sortable
+                          sorted={sortCol === 'conso_kwh_an' ? sortDir : ''}
+                          onSort={() => handleSort('conso_kwh_an')}
+                          className="text-right"
+                        >
+                          Conso
+                        </Th>
+                      )}
+                      <Th
+                        sortable
+                        sorted={sortCol === 'anomalies_count' ? sortDir : ''}
+                        onSort={() => handleSort('anomalies_count')}
+                        className="text-right"
+                      >
+                        Anomalies
+                      </Th>
                       <Th className="text-center">Réconc.</Th>
                       <Th className="w-8" />
                     </tr>
                   </Thead>
                   <Tbody>
                     {paddingTop > 0 && (
-                      <tr className="!border-0"><td colSpan={colCount} style={{ height: paddingTop, padding: 0, border: 'none', lineHeight: 0 }} /></tr>
+                      <tr className="!border-0">
+                        <td
+                          colSpan={colCount}
+                          style={{ height: paddingTop, padding: 0, border: 'none', lineHeight: 0 }}
+                        />
+                      </tr>
                     )}
                     {virtualItems.map((vr) => {
                       const site = filtered[vr.index];
                       const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
-                      const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+                      const usageColor =
+                        USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
                       const rank = vr.index + 1;
                       const isFav = favorites.has(site.id);
                       return (
-                        <Tr key={site.id} selected={selected.has(site.id)} className="group" onClick={() => openDrawer(site)}>
-                          <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
-                          <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">{rank}</Td>
+                        <Tr
+                          key={site.id}
+                          selected={selected.has(site.id)}
+                          className="group"
+                          onClick={() => openDrawer(site)}
+                        >
+                          <TdCheckbox
+                            checked={selected.has(site.id)}
+                            onChange={() => toggleSelect(site.id)}
+                          />
+                          <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">
+                            {rank}
+                          </Td>
                           <Td pin>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1">
-                                {isFav && <Star size={11} className="text-amber-400 fill-amber-400 shrink-0" />}
-                                <span className="font-medium text-gray-900 truncate text-sm">{site.nom}</span>
+                                {isFav && (
+                                  <Star
+                                    size={11}
+                                    className="text-amber-400 fill-amber-400 shrink-0"
+                                  />
+                                )}
+                                <span className="font-medium text-gray-900 truncate text-sm">
+                                  {site.nom}
+                                </span>
                               </div>
-                              <div className="text-[11px] text-gray-400 truncate leading-tight">{site.adresse}, {site.code_postal} {site.ville}</div>
+                              <div className="text-[11px] text-gray-400 truncate leading-tight">
+                                {site.adresse}, {site.code_postal} {site.ville}
+                              </div>
                             </div>
                           </Td>
                           <Td>
-                            <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>
+                            <span
+                              className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}
+                            >
                               {site.usage}
                             </span>
                           </Td>
-                          <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
-                          <Td className="text-right tabular-nums">
-                            {site.risque_eur > 0
-                              ? <span className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}>{fmtEur(site.risque_eur)}</span>
-                              : <span className="text-gray-300">—</span>}
+                          <Td>
+                            <Badge status={badge.status}>{badge.label}</Badge>
                           </Td>
-                          <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtArea(site.surface_m2)}</Td>
-                          {isExpert && <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtKwh(site.conso_kwh_an)}</Td>}
+                          <Td className="text-right tabular-nums">
+                            {site.risque_eur > 0 ? (
+                              <span
+                                className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}
+                              >
+                                {fmtEur(site.risque_eur)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </Td>
+                          <Td className="text-right text-sm text-gray-600 tabular-nums">
+                            {fmtArea(site.surface_m2)}
+                          </Td>
+                          {isExpert && (
+                            <Td className="text-right text-sm text-gray-600 tabular-nums">
+                              {fmtKwh(site.conso_kwh_an)}
+                            </Td>
+                          )}
                           <Td className="text-right">
-                            {site.anomalies_count > 0
-                              ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}>
-                                  <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
-                                    site.anomalies_count >= ANOMALY_THRESHOLDS.critical ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                                  }`}>{site.anomalies_count}</span>
-                                </Tooltip>
-                              : <span className="text-gray-300 text-xs">0</span>}
+                            {site.anomalies_count > 0 ? (
+                              <Tooltip
+                                text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}
+                              >
+                                <span
+                                  className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
+                                    site.anomalies_count >= ANOMALY_THRESHOLDS.critical
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-amber-100 text-amber-700'
+                                  }`}
+                                >
+                                  {site.anomalies_count}
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-gray-300 text-xs">0</span>
+                            )}
                           </Td>
                           <Td className="text-center">
                             {(() => {
                               const rc = reconMap[site.id];
                               if (!rc) return <span className="text-gray-300">—</span>;
-                              const dot = rc.status === 'ok' ? 'bg-green-500' : rc.status === 'warn' ? 'bg-amber-400' : 'bg-red-500';
+                              const dot =
+                                rc.status === 'ok'
+                                  ? 'bg-green-500'
+                                  : rc.status === 'warn'
+                                    ? 'bg-amber-400'
+                                    : 'bg-red-500';
                               return (
                                 <Tooltip text={`Réconciliation: ${rc.score}%`}>
-                                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`} />
+                                  <span
+                                    className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`}
+                                  />
                                 </Tooltip>
                               );
                             })()}
@@ -645,7 +926,13 @@ export default function Patrimoine() {
                           <Td>
                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
                               <Tooltip text="Créer action">
-                                <button onClick={(e) => { e.stopPropagation(); openActionFromDrawer(site.nom); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openActionFromDrawer(site.nom);
+                                  }}
+                                  className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600"
+                                >
                                   <Lightbulb size={14} />
                                 </button>
                               </Tooltip>
@@ -656,14 +943,29 @@ export default function Patrimoine() {
                       );
                     })}
                     {paddingBottom > 0 && (
-                      <tr className="!border-0"><td colSpan={colCount} style={{ height: paddingBottom, padding: 0, border: 'none', lineHeight: 0 }} /></tr>
+                      <tr className="!border-0">
+                        <td
+                          colSpan={colCount}
+                          style={{
+                            height: paddingBottom,
+                            padding: 0,
+                            border: 'none',
+                            lineHeight: 0,
+                          }}
+                        />
+                      </tr>
                     )}
                   </Tbody>
                 </Table>
               </div>
               <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-                <span className="text-xs text-gray-400">{pl(total, 'site')} · Tri : {sortCol || 'defaut'} {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}</span>
-                <span className="text-xs text-gray-500">{total} {total > 1 ? 'sites' : 'site'}</span>
+                <span className="text-xs text-gray-400">
+                  {pl(total, 'site')} · Tri : {sortCol || 'defaut'}{' '}
+                  {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {total} {total > 1 ? 'sites' : 'site'}
+                </span>
               </div>
             </Card>
           )}
@@ -671,7 +973,12 @@ export default function Patrimoine() {
       )}
 
       {/* ── Site Detail Drawer (tabbed) ── */}
-      <Drawer open={!!drawerSite} onClose={() => setDrawerSite(null)} title={drawerSite?.nom || 'Site'} wide>
+      <Drawer
+        open={!!drawerSite}
+        onClose={() => setDrawerSite(null)}
+        title={drawerSite?.nom || 'Site'}
+        wide
+      >
         {drawerSite && (
           <SiteDrawerContent
             site={drawerSite}
@@ -690,7 +997,6 @@ export default function Patrimoine() {
   );
 }
 
-
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *  Sub-components
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -700,16 +1006,19 @@ function FilterSelect({ options, value, onChange }) {
   return (
     <select
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       className={`text-xs px-2.5 py-1.5 rounded-lg border bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
         value ? 'border-blue-300 text-blue-700 font-medium' : 'border-gray-200 text-gray-600'
       }`}
     >
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
     </select>
   );
 }
-
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *  SiteDrawer — tabbed, actionable
@@ -722,7 +1031,13 @@ const DRAWER_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resume', orgId = null }) {
+function SiteDrawerContent({
+  site,
+  navigate,
+  onCreateAction,
+  initialTab = 'resume',
+  orgId = null,
+}) {
   const [tab, setTab] = useState(initialTab);
   const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
   const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
@@ -732,15 +1047,23 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
       {/* Header: tags + key metrics */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>{site.usage}</span>
+          <span
+            className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}
+          >
+            {site.usage}
+          </span>
           <Badge status={badge.status}>{badge.label}</Badge>
           {site.anomalies_count > 0 && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-medium">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''}</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-medium">
+              {site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''}
+            </span>
           )}
         </div>
         <div className="flex items-start gap-2 text-sm text-gray-500">
           <MapPin size={13} className="text-gray-400 mt-0.5 shrink-0" />
-          <span>{site.adresse}, {site.code_postal} {site.ville}</span>
+          <span>
+            {site.adresse}, {site.code_postal} {site.ville}
+          </span>
         </div>
         {/* Metric pills */}
         <div className="flex items-center gap-3 mt-3">
@@ -758,22 +1081,39 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
         <div className="space-y-4">
           {/* Conformite block */}
           <DrawerSection title="Conformité">
-            <DrawerRow label="Statut"><Badge status={badge.status}>{badge.label}</Badge></DrawerRow>
+            <DrawerRow label="Statut">
+              <Badge status={badge.status}>{badge.label}</Badge>
+            </DrawerRow>
             <DrawerRow label="Derniere evaluation">{fmtDateFR(site.derniere_evaluation)}</DrawerRow>
             <DrawerRow label="OPERAT">
-              {site.operat_status
-                ? <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                    site.operat_status === 'verified' ? 'bg-green-100 text-green-700' :
-                    site.operat_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                  }`}>{site.operat_status === 'verified' ? 'Vérifié' : site.operat_status === 'submitted' ? 'Soumis' : 'Non démarré'}</span>
-                : '—'}
+              {site.operat_status ? (
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                    site.operat_status === 'verified'
+                      ? 'bg-green-100 text-green-700'
+                      : site.operat_status === 'submitted'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {site.operat_status === 'verified'
+                    ? 'Vérifié'
+                    : site.operat_status === 'submitted'
+                      ? 'Soumis'
+                      : 'Non démarré'}
+                </span>
+              ) : (
+                '—'
+              )}
             </DrawerRow>
           </DrawerSection>
 
           {/* Risk block */}
           <DrawerSection title="Risque">
             <DrawerRow label="Risque estime">{fmtEurFull(site.risque_eur)}</DrawerRow>
-            <DrawerRow label="Anomalies">{site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}</DrawerRow>
+            <DrawerRow label="Anomalies">
+              {site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}
+            </DrawerRow>
           </DrawerSection>
 
           {/* Data block */}
@@ -797,8 +1137,13 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
         <div>
           {site.nb_compteurs > 0 ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">{site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associé{site.nb_compteurs > 1 ? 's' : ''} à ce site.</p>
-              <p className="text-xs text-gray-400">Ouvrez la fiche site pour voir le détail de chaque compteur et ses consommations.</p>
+              <p className="text-sm text-gray-600">
+                {site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associé
+                {site.nb_compteurs > 1 ? 's' : ''} à ce site.
+              </p>
+              <p className="text-xs text-gray-400">
+                Ouvrez la fiche site pour voir le détail de chaque compteur et ses consommations.
+              </p>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-400">
@@ -813,9 +1158,28 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
       {/* Tab: Actions */}
       {tab === 'actions' && (
         <div className="space-y-3">
-          <DrawerActionBtn icon={Eye} color="text-blue-600" title="Voir la fiche site" desc="Details, compteurs, consommations" onClick={() => navigate(`/sites/${site.id}`)} />
-          <DrawerActionBtn icon={ShieldCheck} color="text-green-600" title="Voir la conformité" desc="Décret Tertiaire, BACS, obligations" onClick={() => navigate('/conformite')} />
-          <DrawerActionBtn icon={Lightbulb} color="text-amber-600" title="Créer une action" desc="Correction, amélioration, conformité" onClick={onCreateAction} primary />
+          <DrawerActionBtn
+            icon={Eye}
+            color="text-blue-600"
+            title="Voir la fiche site"
+            desc="Details, compteurs, consommations"
+            onClick={() => navigate(`/sites/${site.id}`)}
+          />
+          <DrawerActionBtn
+            icon={ShieldCheck}
+            color="text-green-600"
+            title="Voir la conformité"
+            desc="Décret Tertiaire, BACS, obligations"
+            onClick={() => navigate('/conformite')}
+          />
+          <DrawerActionBtn
+            icon={Lightbulb}
+            color="text-amber-600"
+            title="Créer une action"
+            desc="Correction, amélioration, conformité"
+            onClick={onCreateAction}
+            primary
+          />
         </div>
       )}
 
@@ -830,7 +1194,10 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
       </div>
 
       <div className="text-[10px] text-gray-400 pt-1">
-        Site #{site.id} · {fmtDateFR(site.derniere_evaluation) !== '—' ? `Maj : ${fmtDateFR(site.derniere_evaluation)}` : 'Pas encore évalué'}
+        Site #{site.id} ·{' '}
+        {fmtDateFR(site.derniere_evaluation) !== '—'
+          ? `Maj : ${fmtDateFR(site.derniere_evaluation)}`
+          : 'Pas encore évalué'}
       </div>
     </div>
   );
@@ -870,7 +1237,9 @@ function DrawerActionBtn({ icon: Icon, color, title, desc, onClick, primary }) {
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition ${
-        primary ? 'border-blue-200 bg-blue-50 hover:bg-blue-100' : 'border-gray-200 hover:bg-gray-50'
+        primary
+          ? 'border-blue-200 bg-blue-50 hover:bg-blue-100'
+          : 'border-gray-200 hover:bg-gray-50'
       }`}
     >
       <Icon size={16} className={`${color} shrink-0`} />
@@ -878,7 +1247,11 @@ function DrawerActionBtn({ icon: Icon, color, title, desc, onClick, primary }) {
         <p className="text-sm font-medium text-gray-800">{title}</p>
         <p className="text-[11px] text-gray-500">{desc}</p>
       </div>
-      {primary ? <ChevronRight size={14} className="text-blue-400" /> : <ExternalLink size={13} className="text-gray-300" />}
+      {primary ? (
+        <ChevronRight size={14} className="text-blue-400" />
+      ) : (
+        <ExternalLink size={13} className="text-gray-300" />
+      )}
     </button>
   );
 }

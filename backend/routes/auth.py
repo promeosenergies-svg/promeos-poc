@@ -5,6 +5,7 @@ POST /api/auth/login, /refresh, /logout, /switch-org
 GET  /api/auth/me
 PUT  /api/auth/password
 """
+
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -15,14 +16,19 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User, UserOrgRole, UserScope, AuditLog, Organisation, UserRole
 from services.iam_service import (
-    verify_password, create_access_token, decode_token,
-    get_permissions_for_role, get_scoped_site_ids, hash_password,
+    verify_password,
+    create_access_token,
+    decode_token,
+    get_permissions_for_role,
+    get_scoped_site_ids,
+    hash_password,
     log_audit,
 )
 from middleware.auth import oauth2_scheme, get_current_user_role, require_permission, DEMO_MODE
 from middleware.rate_limit import check_rate_limit
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -31,6 +37,7 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class LoginRequest(BaseModel):
     email: str
@@ -49,6 +56,7 @@ class SwitchOrgRequest(BaseModel):
 # ========================================
 # Helpers
 # ========================================
+
 
 def _build_login_response(db: Session, user: User, uor: UserOrgRole) -> dict:
     """Build full login response with token, user info, permissions."""
@@ -86,6 +94,7 @@ def _build_login_response(db: Session, user: User, uor: UserOrgRole) -> dict:
 # ========================================
 # Endpoints
 # ========================================
+
 
 @router.post("/login")
 def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
@@ -129,9 +138,7 @@ def refresh_token(token: Optional[str] = Depends(oauth2_scheme), db: Session = D
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-    ).first()
+    uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
     if not uor:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No role for org")
 
@@ -157,9 +164,7 @@ def get_me(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id
-    ).first()
+    uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == org_id).first()
     if not uor:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No role for org")
 
@@ -232,9 +237,7 @@ def switch_org(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    uor = db.query(UserOrgRole).filter(
-        UserOrgRole.user_id == user_id, UserOrgRole.org_id == req.org_id
-    ).first()
+    uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == user_id, UserOrgRole.org_id == req.org_id).first()
     if not uor:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No access to this org")
 
@@ -247,6 +250,7 @@ def switch_org(
 # ========================================
 # Demo mode endpoints
 # ========================================
+
 
 class ImpersonateRequest(BaseModel):
     email: str
@@ -294,7 +298,9 @@ def impersonate(
     if DEMO_MODE:
         logger.warning(
             "[SECURITY] Impersonation in DEMO_MODE: caller_id=%s -> target=%s (%s)",
-            caller_id, target.id, req.email,
+            caller_id,
+            target.id,
+            req.email,
         )
     log_audit(db, caller_id, "impersonate", "user", str(target.id), {"target_email": req.email})
     db.commit()
@@ -310,6 +316,7 @@ def reset_demo(db: Session = Depends(get_db)):
 
     from services.demo_seed import SeedOrchestrator
     from routes.demo import _reset_iam_demo
+
     orch = SeedOrchestrator(db)
     result = orch.reset(mode="soft")
     _reset_iam_demo(db)
@@ -319,6 +326,7 @@ def reset_demo(db: Session = Depends(get_db)):
 # ========================================
 # Audit log endpoints
 # ========================================
+
 
 @router.get("/audit")
 def list_audit_logs(
@@ -332,6 +340,7 @@ def list_audit_logs(
 ):
     """List audit log entries (admin only). Filtrable by action, user_id, resource_type."""
     import json as json_mod
+
     q = db.query(AuditLog).order_by(AuditLog.created_at.desc())
     if action:
         q = q.filter(AuditLog.action == action)
@@ -351,16 +360,18 @@ def list_audit_logs(
             u = db.query(User).filter(User.id == e.user_id).first()
             user_cache[e.user_id] = f"{u.prenom} {u.nom}" if u else "?"
 
-        result.append({
-            "id": e.id,
-            "user_id": e.user_id,
-            "user_name": user_cache.get(e.user_id, "system"),
-            "action": e.action,
-            "resource_type": e.resource_type,
-            "resource_id": e.resource_id,
-            "detail": json_mod.loads(e.detail_json) if e.detail_json else None,
-            "ip_address": e.ip_address,
-            "created_at": e.created_at.isoformat() if e.created_at else None,
-        })
+        result.append(
+            {
+                "id": e.id,
+                "user_id": e.user_id,
+                "user_name": user_cache.get(e.user_id, "system"),
+                "action": e.action,
+                "resource_type": e.resource_type,
+                "resource_id": e.resource_id,
+                "detail": json_mod.loads(e.detail_json) if e.detail_json else None,
+                "ip_address": e.ip_address,
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+        )
 
     return {"total": total, "entries": result}

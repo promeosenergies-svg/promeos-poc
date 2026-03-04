@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Engine
 Pipeline: parse → audit → shadow → reconcile → report.
 """
+
 import csv
 import io
 import json
@@ -9,8 +10,13 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
 from .domain import (
-    Invoice, InvoiceAnomaly, ShadowResult, AuditReport,
-    InvoiceStatus, ShadowLevel, AnomalySeverity,
+    Invoice,
+    InvoiceAnomaly,
+    ShadowResult,
+    AuditReport,
+    InvoiceStatus,
+    ShadowLevel,
+    AnomalySeverity,
 )
 from .rules.audit_rules_v0 import run_all_rules, ALL_RULES
 from .parsers.json_parser import parse_json_file, parse_json_invoice, load_all_demo_invoices
@@ -22,6 +28,7 @@ def _check_l2_availability() -> bool:
     """Check if L2-min RuleCards are available in KB."""
     try:
         from .tariff_bridge import get_l2_rule_card_ids
+
         return len(get_l2_rule_card_ids()) > 0
     except Exception:
         return False
@@ -35,6 +42,7 @@ def _enrich_anomalies_with_citations(anomalies: List[InvoiceAnomaly]) -> List[In
     """
     try:
         from ..kb.citations import get_citations_for_rule
+
         for anom in anomalies:
             if anom.rule_card_id and not anom.citations:
                 try:
@@ -65,8 +73,7 @@ def audit_invoice(invoice: Invoice) -> Invoice:
     if l2_available:
         invoice.shadow_level = ShadowLevel.L1_PARTIAL
         invoice.why_not_higher = (
-            "L2-min: grilles TURPE/CTA presentes dans la KB. "
-            "L2 complet necessite offre fournisseur + contrat."
+            "L2-min: grilles TURPE/CTA presentes dans la KB. L2 complet necessite offre fournisseur + contrat."
         )
     elif anomalies:
         invoice.shadow_level = ShadowLevel.L1_PARTIAL
@@ -114,6 +121,7 @@ def shadow_billing_l1(invoice: Invoice) -> ShadowResult:
 
         # Skip TVA summary lines
         from .domain import ComponentType
+
         if comp.component_type in (ComponentType.TVA_REDUITE, ComponentType.TVA_NORMALE):
             shadow_components.append(shadow_comp)
             continue
@@ -122,6 +130,7 @@ def shadow_billing_l1(invoice: Invoice) -> ShadowResult:
 
         # Recalcul TVA
         from .rules.audit_rules_v0 import COMPONENTS_TVA_REDUITE, TVA_REDUITE, TVA_NORMALE
+
         expected_rate = TVA_REDUITE if comp.component_type in COMPONENTS_TVA_REDUITE else TVA_NORMALE
         shadow_comp["tva_rate_shadow"] = expected_rate
         shadow_tva = round(shadow_ht * expected_rate / 100, 2)
@@ -180,7 +189,8 @@ def full_pipeline(invoice: Invoice) -> AuditReport:
 
     # Estimate savings from TVA errors
     tva_savings = sum(
-        abs(a.difference or 0) for a in invoice.anomalies
+        abs(a.difference or 0)
+        for a in invoice.anomalies
         if a.anomaly_type.value in ("tva_error", "arithmetic_error") and a.difference
     )
 
@@ -213,23 +223,35 @@ def anomalies_to_csv(anomalies: List[Dict[str, Any]], invoice_id: str = "") -> s
     """Export anomalies to CSV string."""
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow([
-        "invoice_id", "anomaly_id", "type", "severity", "message",
-        "component", "expected", "actual", "difference", "rule_card_id",
-    ])
+    writer.writerow(
+        [
+            "invoice_id",
+            "anomaly_id",
+            "type",
+            "severity",
+            "message",
+            "component",
+            "expected",
+            "actual",
+            "difference",
+            "rule_card_id",
+        ]
+    )
     for a in anomalies:
-        writer.writerow([
-            invoice_id,
-            a.get("anomaly_id", ""),
-            a.get("anomaly_type", ""),
-            a.get("severity", ""),
-            a.get("message", ""),
-            a.get("component_type", ""),
-            a.get("expected_value", ""),
-            a.get("actual_value", ""),
-            a.get("difference", ""),
-            a.get("rule_card_id", ""),
-        ])
+        writer.writerow(
+            [
+                invoice_id,
+                a.get("anomaly_id", ""),
+                a.get("anomaly_type", ""),
+                a.get("severity", ""),
+                a.get("message", ""),
+                a.get("component_type", ""),
+                a.get("expected_value", ""),
+                a.get("actual_value", ""),
+                a.get("difference", ""),
+                a.get("rule_card_id", ""),
+            ]
+        )
     return output.getvalue()
 
 
@@ -250,17 +272,27 @@ def _build_kb_evidence_html(anomalies: List[Dict[str, Any]]) -> str:
 
     html_parts = []
     if cited_rules:
-        html_parts.append('<table><tr><th>Regle</th><th>Document</th><th>Section</th><th>Extrait</th><th>Confiance</th></tr>')
+        html_parts.append(
+            "<table><tr><th>Regle</th><th>Document</th><th>Section</th><th>Extrait</th><th>Confiance</th></tr>"
+        )
         for rule_id, cites in cited_rules.items():
             for c in cites:
                 ptr = c.get("pointer", {})
                 section = ptr.get("section") or ptr.get("article") or ptr.get("page") or "-"
-                excerpt = (c.get("excerpt_text", "")[:80] + "...") if len(c.get("excerpt_text", "")) > 80 else c.get("excerpt_text", "")
-                html_parts.append(f'<tr><td style="font-family:monospace">{rule_id}</td><td>{c.get("doc_title","")}</td><td>{section}</td><td style="font-size:0.85em">{excerpt}</td><td>{c.get("confidence","")}</td></tr>')
-        html_parts.append('</table>')
+                excerpt = (
+                    (c.get("excerpt_text", "")[:80] + "...")
+                    if len(c.get("excerpt_text", "")) > 80
+                    else c.get("excerpt_text", "")
+                )
+                html_parts.append(
+                    f'<tr><td style="font-family:monospace">{rule_id}</td><td>{c.get("doc_title", "")}</td><td>{section}</td><td style="font-size:0.85em">{excerpt}</td><td>{c.get("confidence", "")}</td></tr>'
+                )
+        html_parts.append("</table>")
 
     if uncited_rules:
-        html_parts.append(f'<div class="explain">Regles sans citation KB (P5 non verifiable): {", ".join(sorted(uncited_rules))}</div>')
+        html_parts.append(
+            f'<div class="explain">Regles sans citation KB (P5 non verifiable): {", ".join(sorted(uncited_rules))}</div>'
+        )
 
     return "\n".join(html_parts)
 
@@ -283,14 +315,14 @@ def report_to_html(report: AuditReport) -> str:
         color = severity_colors.get(a.get("severity", "info"), "#6b7280")
         anomaly_rows += f"""
         <tr>
-            <td style="color:{color};font-weight:bold">{a.get('severity','').upper()}</td>
-            <td>{a.get('anomaly_type','')}</td>
-            <td>{a.get('message','')}</td>
-            <td>{a.get('component_type','') or '-'}</td>
-            <td>{a.get('expected_value','') or '-'}</td>
-            <td>{a.get('actual_value','') or '-'}</td>
-            <td>{a.get('difference','') or '-'}</td>
-            <td style="font-family:monospace;font-size:0.8em">{a.get('rule_card_id','')}</td>
+            <td style="color:{color};font-weight:bold">{a.get("severity", "").upper()}</td>
+            <td>{a.get("anomaly_type", "")}</td>
+            <td>{a.get("message", "")}</td>
+            <td>{a.get("component_type", "") or "-"}</td>
+            <td>{a.get("expected_value", "") or "-"}</td>
+            <td>{a.get("actual_value", "") or "-"}</td>
+            <td>{a.get("difference", "") or "-"}</td>
+            <td style="font-family:monospace;font-size:0.8em">{a.get("rule_card_id", "")}</td>
         </tr>"""
 
     component_rows = ""
@@ -302,14 +334,14 @@ def report_to_html(report: AuditReport) -> str:
         rules_str = ", ".join(alloc.get("matched_rules", [])) or "-"
         component_rows += f"""
         <tr>
-            <td>{c.get('component_type','')}</td>
-            <td>{c.get('label','')}</td>
-            <td>{c.get('quantity','') or '-'}</td>
-            <td>{c.get('unit','') or '-'}</td>
-            <td>{c.get('unit_price','') or '-'}</td>
-            <td>{c.get('amount_ht','') or '-'}</td>
-            <td>{c.get('tva_rate','') or '-'}%</td>
-            <td>{c.get('tva_amount','') or '-'}</td>
+            <td>{c.get("component_type", "")}</td>
+            <td>{c.get("label", "")}</td>
+            <td>{c.get("quantity", "") or "-"}</td>
+            <td>{c.get("unit", "") or "-"}</td>
+            <td>{c.get("unit_price", "") or "-"}</td>
+            <td>{c.get("amount_ht", "") or "-"}</td>
+            <td>{c.get("tva_rate", "") or "-"}%</td>
+            <td>{c.get("tva_amount", "") or "-"}</td>
             <td style="font-weight:bold">{concept}</td>
             <td>{conf_str}</td>
         </tr>"""
@@ -318,7 +350,7 @@ def report_to_html(report: AuditReport) -> str:
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>PROMEOS Bill Intelligence — Rapport Audit {inv.get('invoice_id','')}</title>
+    <title>PROMEOS Bill Intelligence — Rapport Audit {inv.get("invoice_id", "")}</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f9fafb; }}
         h1 {{ color: #1e40af; border-bottom: 3px solid #1e40af; padding-bottom: 10px; }}
@@ -344,11 +376,11 @@ def report_to_html(report: AuditReport) -> str:
 
     <div class="summary">
         <div class="card">
-            <div class="value">{inv.get('invoice_id','')}</div>
+            <div class="value">{inv.get("invoice_id", "")}</div>
             <div class="label">Facture</div>
         </div>
         <div class="card">
-            <div class="value">{inv.get('total_ttc','N/A')} EUR</div>
+            <div class="value">{inv.get("total_ttc", "N/A")} EUR</div>
             <div class="label">Total TTC</div>
         </div>
         <div class="card">
@@ -364,18 +396,18 @@ def report_to_html(report: AuditReport) -> str:
     <h2>Informations generales</h2>
     <table>
         <tr><th>Champ</th><th>Valeur</th></tr>
-        <tr><td>Fournisseur</td><td>{inv.get('supplier','')}</td></tr>
-        <tr><td>Energie</td><td>{inv.get('energy_type','')}</td></tr>
-        <tr><td>Contrat</td><td>{inv.get('contract_ref','') or '-'}</td></tr>
-        <tr><td>PDL/PCE</td><td>{inv.get('pdl_pce','') or '-'}</td></tr>
-        <tr><td>Periode</td><td>{inv.get('period_start','')} → {inv.get('period_end','')}</td></tr>
-        <tr><td>Consommation</td><td>{inv.get('conso_kwh','') or '-'} kWh</td></tr>
-        <tr><td>Total HT</td><td>{inv.get('total_ht','') or '-'} EUR</td></tr>
-        <tr><td>Total TVA</td><td>{inv.get('total_tva','') or '-'} EUR</td></tr>
-        <tr><td>Total TTC</td><td>{inv.get('total_ttc','') or '-'} EUR</td></tr>
+        <tr><td>Fournisseur</td><td>{inv.get("supplier", "")}</td></tr>
+        <tr><td>Energie</td><td>{inv.get("energy_type", "")}</td></tr>
+        <tr><td>Contrat</td><td>{inv.get("contract_ref", "") or "-"}</td></tr>
+        <tr><td>PDL/PCE</td><td>{inv.get("pdl_pce", "") or "-"}</td></tr>
+        <tr><td>Periode</td><td>{inv.get("period_start", "")} → {inv.get("period_end", "")}</td></tr>
+        <tr><td>Consommation</td><td>{inv.get("conso_kwh", "") or "-"} kWh</td></tr>
+        <tr><td>Total HT</td><td>{inv.get("total_ht", "") or "-"} EUR</td></tr>
+        <tr><td>Total TVA</td><td>{inv.get("total_tva", "") or "-"} EUR</td></tr>
+        <tr><td>Total TTC</td><td>{inv.get("total_ttc", "") or "-"} EUR</td></tr>
     </table>
 
-    <h2>Composantes ({inv.get('nb_components',0)})</h2>
+    <h2>Composantes ({inv.get("nb_components", 0)})</h2>
     <table>
         <tr><th>Type</th><th>Label</th><th>Qty</th><th>Unite</th><th>PU</th><th>HT</th><th>TVA%</th><th>TVA</th><th>Concept</th><th>Conf.</th></tr>
         {component_rows}
@@ -384,31 +416,31 @@ def report_to_html(report: AuditReport) -> str:
     <h2>Allocation par concept</h2>
     <table>
         <tr><th>Concept</th><th>Montant HT (EUR)</th></tr>
-        {''.join(f'<tr><td>{k}</td><td>{v:.2f}</td></tr>' for k, v in sorted(report.concept_allocations.items()))}
+        {"".join(f"<tr><td>{k}</td><td>{v:.2f}</td></tr>" for k, v in sorted(report.concept_allocations.items()))}
     </table>
 
     <h2>Anomalies ({report.total_anomalies})</h2>
-    {'<p>Aucune anomalie detectee.</p>' if not anomalies else ''}
-    {'<table><tr><th>Severite</th><th>Type</th><th>Message</th><th>Composante</th><th>Attendu</th><th>Reel</th><th>Ecart</th><th>Regle</th></tr>' + anomaly_rows + '</table>' if anomalies else ''}
+    {"<p>Aucune anomalie detectee.</p>" if not anomalies else ""}
+    {"<table><tr><th>Severite</th><th>Type</th><th>Message</th><th>Composante</th><th>Attendu</th><th>Reel</th><th>Ecart</th><th>Regle</th></tr>" + anomaly_rows + "</table>" if anomalies else ""}
 
     <h2>Shadow Billing</h2>
     <table>
         <tr><th>Champ</th><th>Facture</th><th>Shadow</th><th>Ecart</th></tr>
-        <tr><td>Total HT</td><td>{inv.get('total_ht','')}</td><td>{shadow.get('shadow_total_ht','')}</td><td>{shadow.get('delta_ht','')}</td></tr>
-        <tr><td>Total TTC</td><td>{inv.get('total_ttc','')}</td><td>{shadow.get('shadow_total_ttc','')}</td><td>{shadow.get('delta_ttc','')}</td></tr>
-        <tr><td>Ecart %</td><td colspan="3">{shadow.get('delta_percent','')}%</td></tr>
+        <tr><td>Total HT</td><td>{inv.get("total_ht", "")}</td><td>{shadow.get("shadow_total_ht", "")}</td><td>{shadow.get("delta_ht", "")}</td></tr>
+        <tr><td>Total TTC</td><td>{inv.get("total_ttc", "")}</td><td>{shadow.get("shadow_total_ttc", "")}</td><td>{shadow.get("delta_ttc", "")}</td></tr>
+        <tr><td>Ecart %</td><td colspan="3">{shadow.get("delta_percent", "")}%</td></tr>
     </table>
 
     <h2>Explications</h2>
-    {''.join(f'<div class="explain">{e}</div>' for e in report.explain_log)}
+    {"".join(f'<div class="explain">{e}</div>' for e in report.explain_log)}
 
-    {f'<h2>Economies potentielles</h2><p style="font-size:1.5em;color:#065f46;font-weight:bold">{report.potential_savings_eur} EUR</p>' if report.potential_savings_eur else ''}
+    {f'<h2>Economies potentielles</h2><p style="font-size:1.5em;color:#065f46;font-weight:bold">{report.potential_savings_eur} EUR</p>' if report.potential_savings_eur else ""}
 
     <h2>KB Evidence (P5)</h2>
     {_build_kb_evidence_html(anomalies)}
 
     <footer>
-        <p>PROMEOS Bill Intelligence v{ENGINE_VERSION} — Genere le {report.generated_at or ''}</p>
+        <p>PROMEOS Bill Intelligence v{ENGINE_VERSION} — Genere le {report.generated_at or ""}</p>
         <p>20 regles d'audit V0 executees — Niveau {report.coverage_level}</p>
     </footer>
 </body>

@@ -2,6 +2,7 @@
 PROMEOS — V99 Contract Renewal Radar Routes
 Grand public endpoints for DAF/Direction Achats.
 """
+
 import hashlib
 from datetime import date, timedelta, datetime, timezone
 from typing import Optional
@@ -20,11 +21,13 @@ router = APIRouter(prefix="/api/contracts", tags=["Contract Radar"])
 
 # ── Schemas ──────────────────────────────────────────────────────────
 
+
 class ScenarioActionCreate(BaseModel):
     scenario: str  # "A", "B", or "C"
 
 
 # ── Endpoints ────────────────────────────────────────────────────────
+
 
 @router.get("/radar")
 def get_contract_radar(
@@ -37,6 +40,7 @@ def get_contract_radar(
 ):
     """Portfolio-level renewal radar for DAF/Direction Achats."""
     from services.contract_radar_service import compute_contract_radar
+
     org_id = _get_org_id(request, auth, db)
     return compute_contract_radar(db, org_id, portfolio_id=portfolio_id, site_id=site_id, horizon_days=days)
 
@@ -50,6 +54,7 @@ def get_purchase_scenarios(
 ):
     """3 simple purchase scenarios for a contract."""
     from services.purchase_scenarios_service import compute_purchase_scenarios
+
     org_id = _get_org_id(request, auth, db)
     _load_contract_with_org_check(db, contract_id, org_id)
     return compute_purchase_scenarios(db, contract_id)
@@ -73,21 +78,15 @@ def create_actions_from_scenario(
     ct = _load_contract_with_org_check(db, contract_id, org_id)
 
     scenario_data = compute_purchase_scenarios(db, contract_id)
-    scenario = next(
-        (s for s in scenario_data["scenarios"] if s["id"] == body.scenario), None
-    )
+    scenario = next((s for s in scenario_data["scenarios"] if s["id"] == body.scenario), None)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scénario non trouvé")
 
     created = []
     for i, action_text in enumerate(scenario["recommended_actions"]):
-        idem_key = hashlib.sha256(
-            f"v99:{contract_id}:{body.scenario}:{i}".encode()
-        ).hexdigest()[:32]
+        idem_key = hashlib.sha256(f"v99:{contract_id}:{body.scenario}:{i}".encode()).hexdigest()[:32]
 
-        existing = db.query(ActionItem).filter(
-            ActionItem.idempotency_key == idem_key
-        ).first()
+        existing = db.query(ActionItem).filter(ActionItem.idempotency_key == idem_key).first()
         if existing:
             created.append({"id": existing.id, "title": existing.title, "status": "existing"})
             continue

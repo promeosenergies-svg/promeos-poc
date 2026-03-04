@@ -2,6 +2,7 @@
 PROMEOS Tests - KB Usages (Archetypes, Rules, Recommendations)
 Tests: KB build from docs, service layer, API endpoints, analytics engine
 """
+
 import pytest
 import json
 import hashlib
@@ -21,15 +22,29 @@ from fastapi.testclient import TestClient
 
 from models.base import Base
 from models import (
-    Site, KBVersion, KBArchetype, KBMappingCode, KBAnomalyRule,
-    KBRecommendation, KBTaxonomy, KBConfidence, KBStatus,
-    Meter, MeterReading, DataImportJob, UsageProfile,
-    Anomaly, Recommendation, FrequencyType, ImportStatus
+    Site,
+    KBVersion,
+    KBArchetype,
+    KBMappingCode,
+    KBAnomalyRule,
+    KBRecommendation,
+    KBTaxonomy,
+    KBConfidence,
+    KBStatus,
+    Meter,
+    MeterReading,
+    DataImportJob,
+    UsageProfile,
+    Anomaly,
+    Recommendation,
+    FrequencyType,
+    ImportStatus,
 )
 from models.enums import TypeSite
 
 
 # ---- Fixtures ----
+
 
 @pytest.fixture(scope="function")
 def test_db():
@@ -46,12 +61,7 @@ def test_db():
 def sample_site(test_db):
     """Create a sample site"""
     site = Site(
-        nom="Bureau Test Paris",
-        type=TypeSite.BUREAU,
-        ville="Paris",
-        surface_m2=1000.0,
-        naf_code="70.10",
-        actif=True
+        nom="Bureau Test Paris", type=TypeSite.BUREAU, ville="Paris", surface_m2=1000.0, naf_code="70.10", actif=True
     )
     test_db.add(site)
     test_db.commit()
@@ -70,7 +80,7 @@ def sample_kb_version(test_db):
         source_sha256="e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22",
         author="PROMEOS Test",
         status=KBStatus.VALIDATED,
-        is_active=True
+        is_active=True,
     )
     test_db.add(version)
     test_db.commit()
@@ -94,7 +104,7 @@ def sample_archetypes(test_db, sample_kb_version):
             kb_version_id=sample_kb_version.id,
             source_section="archetype-bureau",
             confidence=KBConfidence.HIGH,
-            status=KBStatus.VALIDATED
+            status=KBStatus.VALIDATED,
         ),
         KBArchetype(
             code="COMMERCE_ALIMENTAIRE",
@@ -108,7 +118,7 @@ def sample_archetypes(test_db, sample_kb_version):
             kb_version_id=sample_kb_version.id,
             source_section="archetype-commerce",
             confidence=KBConfidence.HIGH,
-            status=KBStatus.VALIDATED
+            status=KBStatus.VALIDATED,
         ),
     ]
     test_db.add_all(archetypes)
@@ -118,9 +128,24 @@ def sample_archetypes(test_db, sample_kb_version):
 
     # Add NAF mappings
     naf_mappings = [
-        KBMappingCode(naf_code="70.10", archetype_id=archetypes[0].id, confidence=KBConfidence.HIGH, kb_version_id=sample_kb_version.id),
-        KBMappingCode(naf_code="69.10", archetype_id=archetypes[0].id, confidence=KBConfidence.HIGH, kb_version_id=sample_kb_version.id),
-        KBMappingCode(naf_code="47.11", archetype_id=archetypes[1].id, confidence=KBConfidence.HIGH, kb_version_id=sample_kb_version.id),
+        KBMappingCode(
+            naf_code="70.10",
+            archetype_id=archetypes[0].id,
+            confidence=KBConfidence.HIGH,
+            kb_version_id=sample_kb_version.id,
+        ),
+        KBMappingCode(
+            naf_code="69.10",
+            archetype_id=archetypes[0].id,
+            confidence=KBConfidence.HIGH,
+            kb_version_id=sample_kb_version.id,
+        ),
+        KBMappingCode(
+            naf_code="47.11",
+            archetype_id=archetypes[1].id,
+            confidence=KBConfidence.HIGH,
+            kb_version_id=sample_kb_version.id,
+        ),
     ]
     test_db.add_all(naf_mappings)
     test_db.commit()
@@ -143,7 +168,7 @@ def sample_rules(test_db, sample_kb_version):
             kb_version_id=sample_kb_version.id,
             source_section="anomalie-base-nuit",
             confidence=KBConfidence.HIGH,
-            status=KBStatus.VALIDATED
+            status=KBStatus.VALIDATED,
         ),
         KBAnomalyRule(
             code="ANOM_WEEKEND_ELEVE",
@@ -156,7 +181,7 @@ def sample_rules(test_db, sample_kb_version):
             kb_version_id=sample_kb_version.id,
             source_section="anomalie-weekend",
             confidence=KBConfidence.HIGH,
-            status=KBStatus.VALIDATED
+            status=KBStatus.VALIDATED,
         ),
     ]
     test_db.add_all(rules)
@@ -185,7 +210,7 @@ def sample_recommendations(test_db, sample_kb_version):
             kb_version_id=sample_kb_version.id,
             source_section="reco-base-nuit",
             confidence=KBConfidence.HIGH,
-            status=KBStatus.VALIDATED
+            status=KBStatus.VALIDATED,
         ),
     ]
     test_db.add_all(recos)
@@ -200,7 +225,7 @@ def sample_meter_with_readings(test_db, sample_site):
         meter_id=f"PRM-{sample_site.id:06d}",
         name="Compteur Principal",
         site_id=sample_site.id,
-        subscribed_power_kva=100.0
+        subscribed_power_kva=100.0,
     )
     test_db.add(meter)
     test_db.commit()
@@ -208,6 +233,7 @@ def sample_meter_with_readings(test_db, sample_site):
 
     import random
     import math
+
     random.seed(42)  # Deterministic for tests
 
     readings = []
@@ -233,13 +259,15 @@ def sample_meter_with_readings(test_db, sample_site):
 
             value = 7.0 * factor * seasonal * random.uniform(0.9, 1.1)
 
-            readings.append(MeterReading(
-                meter_id=meter.id,
-                timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=round(value, 2),
-                is_estimated=False
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=round(value, 2),
+                    is_estimated=False,
+                )
+            )
 
     test_db.bulk_save_objects(readings)
     test_db.commit()
@@ -248,6 +276,7 @@ def sample_meter_with_readings(test_db, sample_site):
 
 
 # ---- Test KB Build from Docs ----
+
 
 class TestKBBuildFromDocs:
     """Test the kb_build_from_docs.py pipeline"""
@@ -260,32 +289,34 @@ class TestKBBuildFromDocs:
     def test_manifest_valid_json(self):
         """Manifest should be valid JSON"""
         manifest_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b/manifest.json"
-        with open(manifest_path, 'r', encoding='utf-8') as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        assert manifest['doc_id'] == 'USAGES_ENERGETIQUES_B2B_v1'
-        assert manifest['version'] == '1.0'
-        assert 'sha256' in manifest
-        assert len(manifest['sha256']) == 64
-        assert 'sections' in manifest
-        assert len(manifest['sections']) >= 4
+        assert manifest["doc_id"] == "USAGES_ENERGETIQUES_B2B_v1"
+        assert manifest["version"] == "1.0"
+        assert "sha256" in manifest
+        assert len(manifest["sha256"]) == 64
+        assert "sections" in manifest
+        assert len(manifest["sections"]) >= 4
 
     def test_source_html_exists(self):
         """Source HTML should exist"""
-        html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b/source/USAGES_ENERGETIQUES_B2B_v1.html"
+        html_path = (
+            Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b/source/USAGES_ENERGETIQUES_B2B_v1.html"
+        )
         assert html_path.exists(), f"HTML source not found: {html_path}"
 
     def test_source_sha256_matches_manifest(self):
         """Source HTML SHA256 should match manifest"""
         manifest_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b/manifest.json"
-        with open(manifest_path, 'r', encoding='utf-8') as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b" / manifest['source_path']
-        with open(html_path, 'rb') as f:
+        html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b" / manifest["source_path"]
+        with open(html_path, "rb") as f:
             computed = hashlib.sha256(f.read()).hexdigest()
 
-        assert computed == manifest['sha256'], "SHA256 mismatch - source may have been tampered with"
+        assert computed == manifest["sha256"], "SHA256 mismatch - source may have been tampered with"
 
     def test_yaml_files_generated(self):
         """KB YAML files should exist in output directory"""
@@ -308,17 +339,18 @@ class TestKBBuildFromDocs:
         if not archetype_files:
             pytest.skip("No archetype YAML files found")
 
-        with open(archetype_files[0], 'r', encoding='utf-8') as f:
+        with open(archetype_files[0], "r", encoding="utf-8") as f:
             item = yaml_lib.safe_load(f)
 
-        assert 'provenance' in item, "Missing 'provenance' field"
-        assert 'source_path' in item['provenance']
-        assert 'source_sha256' in item['provenance']
-        assert 'source_section' in item['provenance']
-        assert item['confidence'] == 'high'
+        assert "provenance" in item, "Missing 'provenance' field"
+        assert "source_path" in item["provenance"]
+        assert "source_sha256" in item["provenance"]
+        assert "source_section" in item["provenance"]
+        assert item["confidence"] == "high"
 
 
 # ---- Test KB Models ----
+
 
 class TestKBModels:
     """Test KB database models"""
@@ -378,17 +410,13 @@ class TestKBModels:
 
 # ---- Test Energy Models ----
 
+
 class TestEnergyModels:
     """Test Energy database models"""
 
     def test_create_meter(self, test_db, sample_site):
         """Should create meter linked to site"""
-        meter = Meter(
-            meter_id="PRM-TEST-001",
-            name="Compteur Test",
-            site_id=sample_site.id,
-            subscribed_power_kva=50.0
-        )
+        meter = Meter(meter_id="PRM-TEST-001", name="Compteur Test", site_id=sample_site.id, subscribed_power_kva=50.0)
         test_db.add(meter)
         test_db.commit()
 
@@ -412,7 +440,7 @@ class TestEnergyModels:
             rows_total=100,
             rows_imported=95,
             rows_skipped=3,
-            rows_errored=2
+            rows_errored=2,
         )
         test_db.add(job)
         test_db.commit()
@@ -424,12 +452,14 @@ class TestEnergyModels:
 
 # ---- Test KB Service ----
 
+
 class TestKBService:
     """Test KB service layer"""
 
     def test_get_archetype_by_code(self, test_db, sample_archetypes):
         """Should find archetype by code"""
         from services.kb_service import KBService
+
         service = KBService(test_db)
         arch = service.get_archetype_by_code("BUREAU_STANDARD")
         assert arch is not None
@@ -438,6 +468,7 @@ class TestKBService:
     def test_get_archetype_by_naf(self, test_db, sample_archetypes):
         """Should find archetype by NAF code"""
         from services.kb_service import KBService
+
         service = KBService(test_db)
         arch = service.get_archetype_by_naf("70.10")
         assert arch is not None
@@ -446,6 +477,7 @@ class TestKBService:
     def test_get_anomaly_rules(self, test_db, sample_rules):
         """Should return all validated rules"""
         from services.kb_service import KBService
+
         service = KBService(test_db)
         rules = service.get_anomaly_rules()
         assert len(rules) == 2
@@ -453,6 +485,7 @@ class TestKBService:
     def test_get_recommendations(self, test_db, sample_recommendations):
         """Should return recommendations sorted by ICE"""
         from services.kb_service import KBService
+
         service = KBService(test_db)
         recos = service.get_recommendations()
         assert len(recos) == 1
@@ -461,26 +494,29 @@ class TestKBService:
 
 # ---- Test Analytics Engine ----
 
+
 class TestAnalyticsEngine:
     """Test KB-driven analytics engine"""
 
     def test_extract_features(self, test_db, sample_meter_with_readings):
         """Should extract features from meter data"""
         from services.analytics_engine import AnalyticsEngine
+
         engine = AnalyticsEngine(test_db)
         features = engine._extract_features(sample_meter_with_readings)
 
         assert features is not None
-        assert features['kwh_total'] > 0
-        assert features['base_nuit_ratio'] > 0
-        assert features['weekend_ratio'] > 0
-        assert features['load_factor'] > 0
-        assert features['seasonality_cv'] >= 0
-        assert features['readings_count'] == 90 * 24
+        assert features["kwh_total"] > 0
+        assert features["base_nuit_ratio"] > 0
+        assert features["weekend_ratio"] > 0
+        assert features["load_factor"] > 0
+        assert features["seasonality_cv"] >= 0
+        assert features["readings_count"] == 90 * 24
 
     def test_retrieve_archetype_by_naf(self, test_db, sample_site, sample_archetypes, sample_meter_with_readings):
         """Should match archetype based on site NAF code"""
         from services.analytics_engine import AnalyticsEngine
+
         engine = AnalyticsEngine(test_db)
         features = engine._extract_features(sample_meter_with_readings)
         arch, score = engine._retrieve_archetype(sample_site, features)
@@ -492,6 +528,7 @@ class TestAnalyticsEngine:
     def test_apply_anomaly_rules(self, test_db, sample_meter_with_readings, sample_rules, sample_archetypes):
         """Should detect anomalies based on KB rules"""
         from services.analytics_engine import AnalyticsEngine
+
         engine = AnalyticsEngine(test_db)
         features = engine._extract_features(sample_meter_with_readings)
         archetype = sample_archetypes[0]
@@ -502,14 +539,16 @@ class TestAnalyticsEngine:
         assert isinstance(anomalies, list)
         # Each anomaly should have KB provenance
         for a in anomalies:
-            assert 'kb_rule_id' in a
-            assert 'explanation' in a
-            assert 'severity' in a
+            assert "kb_rule_id" in a
+            assert "explanation" in a
+            assert "severity" in a
 
-    def test_generate_recommendations(self, test_db, sample_meter_with_readings,
-                                        sample_rules, sample_recommendations, sample_archetypes):
+    def test_generate_recommendations(
+        self, test_db, sample_meter_with_readings, sample_rules, sample_recommendations, sample_archetypes
+    ):
         """Should generate KB-driven recommendations"""
         from services.analytics_engine import AnalyticsEngine
+
         engine = AnalyticsEngine(test_db)
         features = engine._extract_features(sample_meter_with_readings)
         archetype = sample_archetypes[0]
@@ -519,26 +558,36 @@ class TestAnalyticsEngine:
 
         assert isinstance(recos, list)
         for r in recos:
-            assert 'kb_recommendation_id' in r
-            assert 'ice_score' in r
-            assert 'triggered_by' in r
+            assert "kb_recommendation_id" in r
+            assert "ice_score" in r
+            assert "triggered_by" in r
 
-    def test_full_analysis_pipeline(self, test_db, sample_site, sample_meter_with_readings,
-                                     sample_archetypes, sample_rules, sample_recommendations, sample_kb_version):
+    def test_full_analysis_pipeline(
+        self,
+        test_db,
+        sample_site,
+        sample_meter_with_readings,
+        sample_archetypes,
+        sample_rules,
+        sample_recommendations,
+        sample_kb_version,
+    ):
         """Should run complete analysis pipeline"""
         from services.analytics_engine import AnalyticsEngine
+
         engine = AnalyticsEngine(test_db)
         result = engine.analyze(sample_meter_with_readings.id)
 
-        assert result['status'] == 'ok'
-        assert result['meter_id'] == sample_meter_with_readings.meter_id
-        assert result['features'] is not None
-        assert result['archetype'] is not None
-        assert 'anomalies' in result
-        assert 'recommendations' in result
+        assert result["status"] == "ok"
+        assert result["meter_id"] == sample_meter_with_readings.meter_id
+        assert result["features"] is not None
+        assert result["archetype"] is not None
+        assert "anomalies" in result
+        assert "recommendations" in result
 
 
 # ---- Test CSV Import ----
+
 
 class TestCSVImport:
     """Test CSV parsing and import"""
@@ -547,19 +596,15 @@ class TestCSVImport:
         """Should parse CSV with semicolon separator"""
         from routes.energy import _import_csv
 
-        meter = Meter(
-            meter_id="PRM-CSV-TEST",
-            name="Test CSV",
-            site_id=sample_site.id
-        )
+        meter = Meter(meter_id="PRM-CSV-TEST", name="Test CSV", site_id=sample_site.id)
         test_db.add(meter)
         test_db.commit()
 
-        csv_content = b"timestamp;value_kwh\n2025-01-01 00:00:00;12.5\n2025-01-01 01:00:00;11.3\n2025-01-01 02:00:00;10.1\n"
-
-        imported, skipped, errored, date_range = _import_csv(
-            csv_content, meter.id, FrequencyType.HOURLY, test_db
+        csv_content = (
+            b"timestamp;value_kwh\n2025-01-01 00:00:00;12.5\n2025-01-01 01:00:00;11.3\n2025-01-01 02:00:00;10.1\n"
         )
+
+        imported, skipped, errored, date_range = _import_csv(csv_content, meter.id, FrequencyType.HOURLY, test_db)
 
         assert imported == 3
         assert skipped == 0
@@ -570,19 +615,13 @@ class TestCSVImport:
         """Should handle comma as decimal separator"""
         from routes.energy import _import_csv
 
-        meter = Meter(
-            meter_id="PRM-CSV-COMMA",
-            name="Test CSV Comma",
-            site_id=sample_site.id
-        )
+        meter = Meter(meter_id="PRM-CSV-COMMA", name="Test CSV Comma", site_id=sample_site.id)
         test_db.add(meter)
         test_db.commit()
 
-        csv_content = "timestamp;value_kwh\n2025-01-01 00:00;12,5\n2025-01-01 01:00;11,3\n".encode('utf-8')
+        csv_content = "timestamp;value_kwh\n2025-01-01 00:00;12,5\n2025-01-01 01:00;11,3\n".encode("utf-8")
 
-        imported, skipped, errored, _ = _import_csv(
-            csv_content, meter.id, FrequencyType.HOURLY, test_db
-        )
+        imported, skipped, errored, _ = _import_csv(csv_content, meter.id, FrequencyType.HOURLY, test_db)
 
         assert imported == 2
 
@@ -590,19 +629,13 @@ class TestCSVImport:
         """Should handle French date format"""
         from routes.energy import _import_csv
 
-        meter = Meter(
-            meter_id="PRM-CSV-FR",
-            name="Test CSV FR",
-            site_id=sample_site.id
-        )
+        meter = Meter(meter_id="PRM-CSV-FR", name="Test CSV FR", site_id=sample_site.id)
         test_db.add(meter)
         test_db.commit()
 
-        csv_content = "date;kwh\n01/01/2025 00:00;12.5\n01/01/2025 01:00;11.3\n".encode('utf-8')
+        csv_content = "date;kwh\n01/01/2025 00:00;12.5\n01/01/2025 01:00;11.3\n".encode("utf-8")
 
-        imported, skipped, errored, _ = _import_csv(
-            csv_content, meter.id, FrequencyType.HOURLY, test_db
-        )
+        imported, skipped, errored, _ = _import_csv(csv_content, meter.id, FrequencyType.HOURLY, test_db)
 
         assert imported == 2
 

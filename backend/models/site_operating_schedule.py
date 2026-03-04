@@ -2,6 +2,7 @@
 PROMEOS - Modele SiteOperatingSchedule
 Horaires d'exploitation d'un site (pour detection hors_horaires).
 """
+
 from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime, Time
 from sqlalchemy.orm import relationship
 
@@ -14,6 +15,7 @@ class SiteOperatingSchedule(Base, TimestampMixin):
     Utilise par le detecteur hors_horaires pour definir
     les heures normales vs hors-horaires.
     """
+
     __tablename__ = "site_operating_schedules"
 
     id = Column(Integer, primary_key=True, index=True)

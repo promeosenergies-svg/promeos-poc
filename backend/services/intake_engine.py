@@ -3,6 +3,7 @@ PROMEOS - Smart Intake Engine (DIAMANT)
 Question bank, generator, prefill, before/after diff, PDF extractor.
 Deterministe: la conformite vient des regles YAML, jamais de l'IA.
 """
+
 import json
 import re
 from typing import Optional
@@ -10,12 +11,21 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Batiment, Evidence, Portefeuille, EntiteJuridique,
-    TypeEvidence, StatutEvidence, ParkingType, OperatStatus,
+    Site,
+    Batiment,
+    Evidence,
+    Portefeuille,
+    EntiteJuridique,
+    TypeEvidence,
+    StatutEvidence,
+    ParkingType,
+    OperatStatus,
     IntakeFieldOverride,
 )
 from services.compliance_rules import (
-    _eval_decret_tertiaire, _eval_bacs, _eval_aper,
+    _eval_decret_tertiaire,
+    _eval_bacs,
+    _eval_aper,
 )
 from services.onboarding_service import is_tertiaire, estimate_cvc_power
 
@@ -270,6 +280,7 @@ QUESTION_BANK = [
 # Question Generator
 # ========================================
 
+
 def _get_current_value(site: Site, batiments: list, evidences: list, q: dict):
     """Get the current value for a question's field_path."""
     fp = q["field_path"]
@@ -295,16 +306,10 @@ def _get_current_value(site: Site, batiments: list, evidences: list, q: dict):
         return None
 
     if fp == "evidence.attestation_bacs":
-        return any(
-            e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
 
     if fp == "evidence.derogation_bacs":
-        return any(
-            e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-            for e in evidences
-        )
+        return any(e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences)
 
     return None
 
@@ -369,6 +374,7 @@ def generate_questions(db: Session, site_id: int) -> list:
 # Prefill from existing data
 # ========================================
 
+
 def prefill_from_existing(db: Session, site_id: int) -> dict:
     """Auto-suggest values from existing data.
 
@@ -398,6 +404,7 @@ def prefill_from_existing(db: Session, site_id: int) -> dict:
 # Multi-scope override resolution
 # ========================================
 
+
 def resolve_overrides(db: Session, site_id: int) -> dict:
     """Resolve inherited overrides: SITE > ENTITY > ORG.
 
@@ -410,24 +417,24 @@ def resolve_overrides(db: Session, site_id: int) -> dict:
     # Walk hierarchy: site → portefeuille → entite → org
     scopes = [("site", site_id)]
     if site.portefeuille_id:
-        portefeuille = db.query(Portefeuille).filter(
-            Portefeuille.id == site.portefeuille_id
-        ).first()
+        portefeuille = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
         if portefeuille:
             scopes.append(("entity", portefeuille.entite_juridique_id))
-            entite = db.query(EntiteJuridique).filter(
-                EntiteJuridique.id == portefeuille.entite_juridique_id
-            ).first()
+            entite = db.query(EntiteJuridique).filter(EntiteJuridique.id == portefeuille.entite_juridique_id).first()
             if entite:
                 scopes.append(("org", entite.organisation_id))
 
     # Collect overrides at each level (most specific first)
     result = {}
     for scope_type, scope_id in scopes:
-        overrides = db.query(IntakeFieldOverride).filter(
-            IntakeFieldOverride.scope_type == scope_type,
-            IntakeFieldOverride.scope_id == scope_id,
-        ).all()
+        overrides = (
+            db.query(IntakeFieldOverride)
+            .filter(
+                IntakeFieldOverride.scope_type == scope_type,
+                IntakeFieldOverride.scope_id == scope_id,
+            )
+            .all()
+        )
         for ov in overrides:
             if ov.field_path not in result:  # First match wins (site > entity > org)
                 result[ov.field_path] = {
@@ -443,6 +450,7 @@ def resolve_overrides(db: Session, site_id: int) -> dict:
 # Before/After compliance simulation
 # ========================================
 
+
 def _build_site_context(db: Session, site_id: int) -> dict:
     """Build compliance evaluation context dict (same pattern as compliance_rules._get_site_context)."""
     site = db.query(Site).filter(Site.id == site_id).first()
@@ -455,12 +463,10 @@ def _build_site_context(db: Session, site_id: int) -> dict:
     max_cvc = max((b.cvc_power_kw or 0 for b in batiments), default=0)
 
     has_bacs_attestation = any(
-        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in evidences
+        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences
     )
     has_bacs_derogation = any(
-        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in evidences
+        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences
     )
 
     return {
@@ -539,8 +545,14 @@ def compute_before_after(db: Session, site_id: int, proposed: dict) -> dict:
     """
     ctx_before = _build_site_context(db, site_id)
     if not ctx_before:
-        return {"score_before": 0, "score_after": 0, "delta": 0,
-                "unknowns_before": 0, "unknowns_after": 0, "unknowns_resolved": 0}
+        return {
+            "score_before": 0,
+            "score_after": 0,
+            "delta": 0,
+            "unknowns_before": 0,
+            "unknowns_after": 0,
+            "unknowns_resolved": 0,
+        }
 
     # Run evaluators on current state
     findings_before = []
@@ -573,6 +585,7 @@ def compute_before_after(db: Session, site_id: int, proposed: dict) -> dict:
 # ========================================
 # PDF text extraction (simple regex)
 # ========================================
+
 
 def extract_from_pdf_text(text: str) -> dict:
     """Extract field values from PDF text using regex patterns.

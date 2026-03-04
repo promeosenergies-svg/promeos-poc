@@ -13,9 +13,9 @@ import { getMonitoringKpis } from '../services/api';
 // Legacy severity color map — prefer SEVERITY_TINT from ui/colorTokens for new code
 export const SEVERITY_COLOR = {
   critical: 'bg-red-50 text-red-700 ring-1 ring-red-200',
-  high:     'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
-  warning:  'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-  info:     'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+  high: 'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
+  warning: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+  info: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
 };
 
 export function fmtN(v, d = 0) {
@@ -27,12 +27,17 @@ export const PERF_KEYS = ['pmax_kw', 'risk', 'quality', 'off_hours', 'climate'];
 
 function PerfCard({ icon: Icon, iconColor, title, value, sub, onClick }) {
   return (
-    <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all" onClick={onClick}>
+    <Card
+      className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+      onClick={onClick}
+    >
       <CardBody className="py-2.5 px-3">
         <div className="flex items-center gap-2">
           <Icon size={14} className={iconColor} />
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{title}</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+              {title}
+            </p>
             <p className="text-sm font-bold text-slate-800">{value}</p>
             {sub && <p className="text-[10px] text-slate-400 truncate">{sub}</p>}
           </div>
@@ -49,7 +54,7 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
   const [hasData, setHasData] = useState(false);
 
   const isMulti = siteIds && siteIds.length > 1;
-  const targetId = isMulti ? null : (siteId || (siteIds && siteIds[0]));
+  const targetId = isMulti ? null : siteId || (siteIds && siteIds[0]);
 
   useEffect(() => {
     if (!targetId) {
@@ -99,7 +104,9 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-slate-700">Performance Portfolio</p>
-            <p className="text-xs text-slate-400">{siteIds.length} sites — Analyse individuelle requise</p>
+            <p className="text-xs text-slate-400">
+              {siteIds.length} sites — Analyse individuelle requise
+            </p>
           </div>
           <button
             onClick={goToMonitoring}
@@ -122,7 +129,9 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-slate-700">Aucune analyse de performance</p>
-            <p className="text-xs text-slate-400">Lancez une analyse pour obtenir les KPI de risque, qualite et consommation.</p>
+            <p className="text-xs text-slate-400">
+              Lancez une analyse pour obtenir les KPI de risque, qualite et consommation.
+            </p>
           </div>
           <button
             onClick={goToMonitoring}
@@ -155,33 +164,73 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
       />
       <PerfCard
         icon={Shield}
-        iconColor={riskScore >= 60 ? 'text-red-500' : riskScore >= 35 ? 'text-orange-500' : 'text-green-500'}
+        iconColor={
+          riskScore >= 60 ? 'text-red-500' : riskScore >= 35 ? 'text-orange-500' : 'text-green-500'
+        }
         title="Risque"
         value={riskScore != null ? `${fmtN(riskScore)}/100` : '-'}
-        sub={riskScore != null ? (riskScore < 35 ? 'Marge OK' : riskScore < 60 ? 'Surveiller' : 'Critique') : null}
+        sub={
+          riskScore != null
+            ? riskScore < 35
+              ? 'Marge OK'
+              : riskScore < 60
+                ? 'Surveiller'
+                : 'Critique'
+            : null
+        }
         onClick={goToMonitoring}
       />
       <PerfCard
         icon={CheckCircle}
-        iconColor={qualityScore >= 80 ? 'text-green-500' : qualityScore >= 60 ? 'text-yellow-500' : 'text-red-500'}
+        iconColor={
+          qualityScore >= 80
+            ? 'text-green-500'
+            : qualityScore >= 60
+              ? 'text-yellow-500'
+              : 'text-red-500'
+        }
         title="Qualite"
         value={qualityScore != null ? `${fmtN(qualityScore)}/100` : '-'}
-        sub={qualityScore != null ? (qualityScore >= 80 ? 'Excellente' : qualityScore >= 60 ? 'Correcte' : 'Degradee') : null}
+        sub={
+          qualityScore != null
+            ? qualityScore >= 80
+              ? 'Excellente'
+              : qualityScore >= 60
+                ? 'Correcte'
+                : 'Degradee'
+            : null
+        }
         onClick={goToMonitoring}
       />
       <PerfCard
         icon={Clock}
-        iconColor={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'text-green-500' : offHoursRatio <= 0.40 ? 'text-orange-500' : 'text-red-500') : 'text-slate-400'}
+        iconColor={
+          offHoursRatio != null
+            ? offHoursRatio <= 0.2
+              ? 'text-green-500'
+              : offHoursRatio <= 0.4
+                ? 'text-orange-500'
+                : 'text-red-500'
+            : 'text-slate-400'
+        }
         title="Off-Hours"
         value={offHoursRatio != null ? `${fmtN(offHoursRatio * 100)}%` : '-'}
-        sub={schedule ? (schedule.is_24_7 ? '24/7' : `${schedule.open_time}-${schedule.close_time}`) : null}
+        sub={
+          schedule
+            ? schedule.is_24_7
+              ? '24/7'
+              : `${schedule.open_time}-${schedule.close_time}`
+            : null
+        }
         onClick={goToMonitoring}
       />
       <PerfCard
         icon={Thermometer}
         iconColor={climate?.r_squared >= 0.6 ? 'text-blue-500' : 'text-slate-400'}
         title="Climat"
-        value={climate?.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
+        value={
+          climate?.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'
+        }
         sub={climate?.r_squared != null ? `R²: ${climate.r_squared.toFixed(2)}` : null}
         onClick={goToMonitoring}
       />

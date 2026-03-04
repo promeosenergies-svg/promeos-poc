@@ -15,7 +15,9 @@ function loadMode() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (VALID_MODES.includes(raw)) return raw;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return 'classic'; // default
 }
 
@@ -25,13 +27,21 @@ export default function useExplorerMode() {
   const setUiMode = useCallback((mode) => {
     if (!VALID_MODES.includes(mode)) return;
     _setUiMode(mode);
-    try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const toggleUiMode = useCallback(() => {
-    _setUiMode(prev => {
+    _setUiMode((prev) => {
       const next = prev === 'classic' ? 'expert' : 'classic';
-      try { localStorage.setItem(STORAGE_KEY, next); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);

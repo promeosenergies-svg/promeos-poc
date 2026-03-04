@@ -5,7 +5,7 @@
  */
 import { mockSites } from './sites';
 
-const SITE = Object.fromEntries(mockSites.map(s => [s.id, s]));
+const SITE = Object.fromEntries(mockSites.map((s) => [s.id, s]));
 
 export const mockActions = [
   // ── Critical — Conformite ──────────────────────────────────────────────
@@ -22,7 +22,8 @@ export const mockActions = [
     owner: 'J. Dupont',
     due_date: '2026-03-15',
     created_at: '2026-01-15',
-    description: 'Le site Hotel Helios Nice doit declarer ses consommations sur la plateforme OPERAT avant le 30/09/2026.',
+    description:
+      'Le site Hotel Helios Nice doit declarer ses consommations sur la plateforme OPERAT avant le 30/09/2026.',
     comments: [],
   },
   {
@@ -38,7 +39,8 @@ export const mockActions = [
     owner: 'M. Martin',
     due_date: '2026-04-01',
     created_at: '2026-01-20',
-    description: 'Le decret BACS impose une GTB pour les batiments > 70 kW CVC. Lyon est non conforme.',
+    description:
+      'Le decret BACS impose une GTB pour les batiments > 70 kW CVC. Lyon est non conforme.',
     comments: [],
   },
   {
@@ -71,7 +73,7 @@ export const mockActions = [
     owner: 'A. Leroy',
     due_date: '2026-03-25',
     created_at: '2026-01-20',
-    description: 'Le BACS est en cours de mise en conformite. Obtenir l\'attestation GTB classe B.',
+    description: "Le BACS est en cours de mise en conformite. Obtenir l'attestation GTB classe B.",
     comments: [],
   },
   {
@@ -87,7 +89,8 @@ export const mockActions = [
     owner: 'J. Dupont',
     due_date: '2026-03-20',
     created_at: '2026-02-01',
-    description: '58% de la consommation est hors horaires d\'ouverture. Programmer les CVC et eclairage.',
+    description:
+      "58% de la consommation est hors horaires d'ouverture. Programmer les CVC et eclairage.",
     comments: [],
   },
   {
@@ -103,7 +106,8 @@ export const mockActions = [
     owner: 'C. Moreau',
     due_date: '2026-04-15',
     created_at: '2026-02-05',
-    description: 'Talon nocturne a 55% de la puissance mediane. Identifier les equipements en marche permanente.',
+    description:
+      'Talon nocturne a 55% de la puissance mediane. Identifier les equipements en marche permanente.',
     comments: [],
   },
   // ── High — Facture ─────────────────────────────────────────────────────
@@ -120,7 +124,7 @@ export const mockActions = [
     owner: 'M. Martin',
     due_date: '2026-03-12',
     created_at: '2026-02-10',
-    description: 'Ecart de 45% sur le TURPE detecte en juillet 2024. Contester aupres d\'Enedis.',
+    description: "Ecart de 45% sur le TURPE detecte en juillet 2024. Contester aupres d'Enedis.",
     comments: [],
   },
   {
@@ -153,7 +157,7 @@ export const mockActions = [
     owner: 'A. Leroy',
     due_date: '2026-04-01',
     created_at: '2026-02-15',
-    description: 'Derive detectee sur le compteur gaz. Verifier le calibrage et l\'etancheite.',
+    description: "Derive detectee sur le compteur gaz. Verifier le calibrage et l'etancheite.",
     comments: [],
   },
   {
@@ -169,7 +173,8 @@ export const mockActions = [
     owner: 'C. Moreau',
     due_date: '2026-05-01',
     created_at: '2026-02-20',
-    description: 'Un seul compteur pour tout le site. Installer sous-compteurs par zone pour pilotage fin.',
+    description:
+      'Un seul compteur pour tout le site. Installer sous-compteurs par zone pour pilotage fin.',
     comments: [],
   },
   {
@@ -185,7 +190,7 @@ export const mockActions = [
     owner: 'S. Bernard',
     due_date: '2026-02-28',
     created_at: '2026-01-10',
-    description: 'Audit energetique obligatoire tous les 4 ans. Mandater bureau d\'etudes.',
+    description: "Audit energetique obligatoire tous les 4 ans. Mandater bureau d'etudes.",
     comments: [],
   },
   // ── Medium — DPE ───────────────────────────────────────────────────────
@@ -202,7 +207,7 @@ export const mockActions = [
     owner: 'A. Leroy',
     due_date: '2026-02-15',
     created_at: '2026-01-15',
-    description: 'DPE expire. Commander un nouveau DPE aupres d\'un diagnostiqueur certifie.',
+    description: "DPE expire. Commander un nouveau DPE aupres d'un diagnostiqueur certifie.",
     comments: [],
   },
   {
@@ -218,7 +223,7 @@ export const mockActions = [
     owner: 'M. Martin',
     due_date: '2026-04-15',
     created_at: '2026-02-01',
-    description: 'DPE a renouveler pour l\'ecole. Planifier visite diagnostiqueur.',
+    description: "DPE a renouveler pour l'ecole. Planifier visite diagnostiqueur.",
     comments: [],
   },
   // ── Low — Amelioration continue ────────────────────────────────────────
@@ -235,7 +240,7 @@ export const mockActions = [
     owner: '',
     due_date: '2026-06-01',
     created_at: '2026-02-20',
-    description: 'Formation energie pour l\'equipe technique. Bonnes pratiques CVC et eclairage.',
+    description: "Formation energie pour l'equipe technique. Bonnes pratiques CVC et eclairage.",
     comments: [],
   },
   {
@@ -251,11 +256,11 @@ export const mockActions = [
     owner: 'S. Bernard',
     due_date: '2026-07-01',
     created_at: '2026-02-25',
-    description: 'Loi APER : etudier l\'installation d\'ombrières PV sur le parking > 1500 m2.',
+    description: "Loi APER : etudier l'installation d'ombrières PV sur le parking > 1500 m2.",
     comments: [],
   },
 ];
 
 export function getActionsByStatus(status) {
-  return mockActions.filter(a => a.statut === status);
+  return mockActions.filter((a) => a.statut === status);
 }

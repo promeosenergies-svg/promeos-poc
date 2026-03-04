@@ -6,6 +6,7 @@ After each seed-pack, DemoState.set_demo_org() is called so all endpoints
 can resolve the correct org without relying on Organisation.first().
 State resets on server restart — intentional for a stateless POC.
 """
+
 from typing import Optional
 
 

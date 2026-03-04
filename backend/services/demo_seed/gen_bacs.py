@@ -2,6 +2,7 @@
 PROMEOS - Demo Seed: BACS Assets Generator (V87)
 Creates BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection per site.
 """
+
 import json
 import random
 from datetime import date, datetime, timezone
@@ -39,10 +40,12 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
             is_tertiary_non_residential=is_tertiary,
             pc_date=date(rng.randint(1980, 2015), rng.randint(1, 12), 1),
             renewal_events_json="[]",
-            responsible_party_json=json.dumps({
-                "type": "owner",
-                "name": site.nom,
-            }),
+            responsible_party_json=json.dumps(
+                {
+                    "type": "owner",
+                    "name": site.nom,
+                }
+            ),
         )
         db.add(asset)
         db.flush()
@@ -52,32 +55,38 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
         if cvc_kw > 70:
             heating_kw = int(cvc_kw * 0.6)
             cooling_kw = int(cvc_kw * 0.4)
-            db.add(BacsCvcSystem(
-                asset_id=asset.id,
-                system_type=CvcSystemType.HEATING,
-                architecture=CvcArchitecture.CASCADE,
-                units_json=json.dumps([{"label": "Chaudiere gaz", "kw": heating_kw}]),
-                putile_kw_computed=float(heating_kw),
-                engine_version="demo_seed_v87",
-            ))
-            db.add(BacsCvcSystem(
-                asset_id=asset.id,
-                system_type=CvcSystemType.COOLING,
-                architecture=CvcArchitecture.INDEPENDENT,
-                units_json=json.dumps([{"label": "Groupe froid", "kw": cooling_kw}]),
-                putile_kw_computed=float(cooling_kw),
-                engine_version="demo_seed_v87",
-            ))
+            db.add(
+                BacsCvcSystem(
+                    asset_id=asset.id,
+                    system_type=CvcSystemType.HEATING,
+                    architecture=CvcArchitecture.CASCADE,
+                    units_json=json.dumps([{"label": "Chaudiere gaz", "kw": heating_kw}]),
+                    putile_kw_computed=float(heating_kw),
+                    engine_version="demo_seed_v87",
+                )
+            )
+            db.add(
+                BacsCvcSystem(
+                    asset_id=asset.id,
+                    system_type=CvcSystemType.COOLING,
+                    architecture=CvcArchitecture.INDEPENDENT,
+                    units_json=json.dumps([{"label": "Groupe froid", "kw": cooling_kw}]),
+                    putile_kw_computed=float(cooling_kw),
+                    engine_version="demo_seed_v87",
+                )
+            )
             systems_count += 2
         elif cvc_kw > 0:
-            db.add(BacsCvcSystem(
-                asset_id=asset.id,
-                system_type=CvcSystemType.VENTILATION,
-                architecture=CvcArchitecture.INDEPENDENT,
-                units_json=json.dumps([{"label": "CTA", "kw": int(cvc_kw)}]),
-                putile_kw_computed=float(cvc_kw),
-                engine_version="demo_seed_v87",
-            ))
+            db.add(
+                BacsCvcSystem(
+                    asset_id=asset.id,
+                    system_type=CvcSystemType.VENTILATION,
+                    architecture=CvcArchitecture.INDEPENDENT,
+                    units_json=json.dumps([{"label": "CTA", "kw": int(cvc_kw)}]),
+                    putile_kw_computed=float(cvc_kw),
+                    engine_version="demo_seed_v87",
+                )
+            )
             systems_count += 1
 
         # --- BacsAssessment ---
@@ -95,36 +104,39 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
             deadline = None
             trigger = None
 
-        db.add(BacsAssessment(
-            asset_id=asset.id,
-            assessed_at=datetime.now(timezone.utc),
-            threshold_applied=threshold,
-            is_obligated=is_obligated,
-            deadline_date=deadline,
-            trigger_reason=trigger,
-            tri_exemption_possible=not is_obligated or cvc_kw < 150,
-            tri_years=round(rng.uniform(4.0, 14.0), 1),
-            confidence_score=round(rng.uniform(0.72, 0.98), 2),
-            compliance_score=round(rng.uniform(20.0, 90.0), 1),
-            rule_id="BACS_V87_DEMO",
-            engine_version="demo_seed_v87",
-        ))
+        db.add(
+            BacsAssessment(
+                asset_id=asset.id,
+                assessed_at=datetime.now(timezone.utc),
+                threshold_applied=threshold,
+                is_obligated=is_obligated,
+                deadline_date=deadline,
+                trigger_reason=trigger,
+                tri_exemption_possible=not is_obligated or cvc_kw < 150,
+                tri_years=round(rng.uniform(4.0, 14.0), 1),
+                confidence_score=round(rng.uniform(0.72, 0.98), 2),
+                compliance_score=round(rng.uniform(20.0, 90.0), 1),
+                rule_id="BACS_V87_DEMO",
+                engine_version="demo_seed_v87",
+            )
+        )
         assessments_count += 1
 
         # --- BacsInspection (only for obligated sites) ---
         if is_obligated:
             status = rng.choice([InspectionStatus.COMPLETED, InspectionStatus.SCHEDULED])
             insp_date = (
-                date(2024, rng.randint(1, 12), rng.randint(1, 28))
-                if status == InspectionStatus.COMPLETED else None
+                date(2024, rng.randint(1, 12), rng.randint(1, 28)) if status == InspectionStatus.COMPLETED else None
             )
-            db.add(BacsInspection(
-                asset_id=asset.id,
-                inspection_date=insp_date,
-                due_next_date=date(2029, 1, 1),
-                report_ref=f"INSP-BACS-{site.id:04d}-2024",
-                status=status,
-            ))
+            db.add(
+                BacsInspection(
+                    asset_id=asset.id,
+                    inspection_date=insp_date,
+                    due_next_date=date(2029, 1, 1),
+                    report_ref=f"INSP-BACS-{site.id:04d}-2024",
+                    status=status,
+                )
+            )
             inspections_count += 1
 
         db.flush()

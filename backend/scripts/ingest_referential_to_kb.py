@@ -1,7 +1,9 @@
 """Ingest referential snapshots into KB documents."""
+
 import sys
 import os
 import json
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.kb.doc_ingest import ingest_referential_snapshots

@@ -80,12 +80,14 @@ export function aggregateSeries(seriesBySite, mode) {
   });
 
   // Collect all dates across all sites, sorted
-  const allDates = [...new Set(entries.flatMap(([, series]) =>
-    (series || []).map(p => p.date || p.hour || p.t || '')
-  ))].sort();
+  const allDates = [
+    ...new Set(
+      entries.flatMap(([, series]) => (series || []).map((p) => p.date || p.hour || p.t || ''))
+    ),
+  ].sort();
 
   if (mode === 'agrege') {
-    return allDates.map(dateKey => {
+    return allDates.map((dateKey) => {
       let base = null;
       let sum = 0;
       for (const [, byDate] of siteIndexes) {
@@ -100,10 +102,13 @@ export function aggregateSeries(seriesBySite, mode) {
   }
 
   // For superpose / empile / separe: attach per-site keys
-  return allDates.map(dateKey => {
+  return allDates.map((dateKey) => {
     let base = null;
     for (const [, byDate] of siteIndexes) {
-      if (byDate[dateKey]) { base = byDate[dateKey]; break; }
+      if (byDate[dateKey]) {
+        base = byDate[dateKey];
+        break;
+      }
     }
     const merged = { ...(base || { date: dateKey }) };
     for (const [siteId, byDate] of siteIndexes) {
@@ -165,9 +170,9 @@ export function interpretClimateSensitivity(slope, r2) {
 // Sampling interval in minutes for each granularity key (must match backend)
 const GRANULARITY_MINUTES = {
   '30min': 30,
-  'hourly': 60,
-  'daily': 1440,
-  'monthly': 43200,
+  hourly: 60,
+  daily: 1440,
+  monthly: 43200,
 };
 
 /**
@@ -182,17 +187,16 @@ const GRANULARITY_MINUTES = {
  */
 export function getAvailableGranularities(days, samplingMinutes = null) {
   const all = [
-    { key: 'auto',    label: 'Auto' },
-    { key: '30min',   label: '30 min', maxDays: 14 },
-    { key: 'hourly',  label: '1 h',    maxDays: 200 },
-    { key: 'daily',   label: '1 j',    minDays: 7 },
-    { key: 'monthly', label: 'Mois',   minDays: 30 },
+    { key: 'auto', label: 'Auto' },
+    { key: '30min', label: '30 min', maxDays: 14 },
+    { key: 'hourly', label: '1 h', maxDays: 200 },
+    { key: 'daily', label: '1 j', minDays: 7 },
+    { key: 'monthly', label: 'Mois', minDays: 30 },
   ];
   return all.filter((g) => {
     if (g.key === 'auto') return true;
     // Period-based constraint
-    const periodOk =
-      (!g.minDays || days >= g.minDays) && (!g.maxDays || days <= g.maxDays);
+    const periodOk = (!g.minDays || days >= g.minDays) && (!g.maxDays || days <= g.maxDays);
     if (!periodOk) return false;
     // Data-frequency constraint: granularity must not be finer than actual readings
     if (samplingMinutes != null) {

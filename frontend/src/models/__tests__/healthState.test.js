@@ -5,15 +5,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { computeHealthState } from '../dashboardEssentials';
 import {
-  buildBillingWatchlist, computeBillingHealthState, computeHealthTrend,
-  buildSnapshotKey, loadHealthSnapshot, saveHealthSnapshot,
+  buildBillingWatchlist,
+  computeBillingHealthState,
+  computeHealthTrend,
+  buildSnapshotKey,
+  loadHealthSnapshot,
+  saveHealthSnapshot,
 } from '../billingHealthModel';
 
 describe('computeHealthState', () => {
-  const BASE_KPIS = { total: 10, conformes: 10, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 80 };
+  const BASE_KPIS = {
+    total: 10,
+    conformes: 10,
+    nonConformes: 0,
+    aRisque: 0,
+    risqueTotal: 0,
+    couvertureDonnees: 80,
+  };
 
   it('returns GREEN when no issues', () => {
-    const state = computeHealthState({ kpis: BASE_KPIS, watchlist: [], briefing: [], alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: BASE_KPIS,
+      watchlist: [],
+      briefing: [],
+      alertsCount: 0,
+    });
     expect(state.level).toBe('GREEN');
     expect(state.title).toContain('sous contrôle');
     expect(state.reasons).toHaveLength(0);
@@ -21,7 +37,15 @@ describe('computeHealthState', () => {
 
   it('returns RED when nonConformes > 0', () => {
     const kpis = { ...BASE_KPIS, nonConformes: 2, conformes: 8 };
-    const watchlist = [{ id: 'nc', label: '2 sites non conformes', severity: 'critical', path: '/conformite', cta: 'Voir' }];
+    const watchlist = [
+      {
+        id: 'nc',
+        label: '2 sites non conformes',
+        severity: 'critical',
+        path: '/conformite',
+        cta: 'Voir',
+      },
+    ];
     const state = computeHealthState({ kpis, watchlist, alertsCount: 0 });
     expect(state.level).toBe('RED');
     expect(state.reasons.length).toBeGreaterThan(0);
@@ -29,14 +53,18 @@ describe('computeHealthState', () => {
   });
 
   it('returns RED when watchlist has critical item even if kpis clean', () => {
-    const watchlist = [{ id: 'test', label: 'critical issue', severity: 'critical', path: '/', cta: 'Fix' }];
+    const watchlist = [
+      { id: 'test', label: 'critical issue', severity: 'critical', path: '/', cta: 'Fix' },
+    ];
     const state = computeHealthState({ kpis: BASE_KPIS, watchlist, alertsCount: 0 });
     expect(state.level).toBe('RED');
   });
 
   it('returns AMBER when only warnings (aRisque)', () => {
     const kpis = { ...BASE_KPIS, aRisque: 1, conformes: 9 };
-    const watchlist = [{ id: 'ar', label: '1 site à risque', severity: 'high', path: '/actions', cta: 'Plan' }];
+    const watchlist = [
+      { id: 'ar', label: '1 site à risque', severity: 'high', path: '/actions', cta: 'Plan' },
+    ];
     const state = computeHealthState({ kpis, watchlist, alertsCount: 0 });
     expect(state.level).toBe('AMBER');
   });
@@ -44,7 +72,7 @@ describe('computeHealthState', () => {
   it('returns AMBER when alerts > 0 (alerts surface as actionable reasons)', () => {
     const state = computeHealthState({ kpis: BASE_KPIS, watchlist: [], alertsCount: 3 });
     expect(state.level).toBe('AMBER');
-    expect(state.reasons.some(r => r.id === 'alerts-active')).toBe(true);
+    expect(state.reasons.some((r) => r.id === 'alerts-active')).toBe(true);
   });
 
   it('caps reasons at 3 and adds secondaryCta for overflow', () => {
@@ -54,7 +82,11 @@ describe('computeHealthState', () => {
       { id: 'c', label: 'C', severity: 'warn', path: '/' },
       { id: 'd', label: 'D', severity: 'warn', path: '/' },
     ];
-    const state = computeHealthState({ kpis: { ...BASE_KPIS, aRisque: 1 }, watchlist, alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE_KPIS, aRisque: 1 },
+      watchlist,
+      alertsCount: 0,
+    });
     expect(state.reasons).toHaveLength(3);
     expect(state.secondaryCta).toBeDefined();
     expect(state.secondaryCta.label).toMatch(/4 points/);
@@ -65,7 +97,11 @@ describe('computeHealthState', () => {
       { id: 'a', label: 'A', severity: 'warn', path: '/' },
       { id: 'b', label: 'B', severity: 'warn', path: '/' },
     ];
-    const state = computeHealthState({ kpis: { ...BASE_KPIS, aRisque: 1 }, watchlist, alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE_KPIS, aRisque: 1 },
+      watchlist,
+      alertsCount: 0,
+    });
     expect(state.reasons).toHaveLength(2);
     expect(state.secondaryCta).toBeUndefined();
   });
@@ -74,7 +110,7 @@ describe('computeHealthState', () => {
     const consistency = { ok: false, issues: [{ code: 'test', label: 'Data issue' }] };
     const state = computeHealthState({ kpis: BASE_KPIS, consistency, alertsCount: 0 });
     expect(state.level).toBe('AMBER');
-    expect(state.reasons.some(r => r.label === 'Data issue')).toBe(true);
+    expect(state.reasons.some((r) => r.label === 'Data issue')).toBe(true);
   });
 
   it('CORE INVARIANT: GREEN + critical item is impossible', () => {
@@ -108,13 +144,31 @@ describe('computeHealthState', () => {
 describe('buildBillingWatchlist', () => {
   it('groups insights by type and picks highest severity', () => {
     const insights = [
-      { id: 1, type: 'unit_price_high', severity: 'high', insight_status: 'open', estimated_loss_eur: 100 },
-      { id: 2, type: 'unit_price_high', severity: 'critical', insight_status: 'open', estimated_loss_eur: 200 },
-      { id: 3, type: 'shadow_gap', severity: 'medium', insight_status: 'open', estimated_loss_eur: 50 },
+      {
+        id: 1,
+        type: 'unit_price_high',
+        severity: 'high',
+        insight_status: 'open',
+        estimated_loss_eur: 100,
+      },
+      {
+        id: 2,
+        type: 'unit_price_high',
+        severity: 'critical',
+        insight_status: 'open',
+        estimated_loss_eur: 200,
+      },
+      {
+        id: 3,
+        type: 'shadow_gap',
+        severity: 'medium',
+        insight_status: 'open',
+        estimated_loss_eur: 50,
+      },
     ];
     const watchlist = buildBillingWatchlist(insights);
     expect(watchlist).toHaveLength(2);
-    const priceItem = watchlist.find(w => w.id === 'billing-unit_price_high');
+    const priceItem = watchlist.find((w) => w.id === 'billing-unit_price_high');
     expect(priceItem.severity).toBe('critical');
     expect(priceItem.estimatedLoss).toBe(300);
   });
@@ -141,9 +195,19 @@ describe('buildBillingWatchlist', () => {
   });
 
   it('caps watchlist at 5 items and sorts by severity', () => {
-    const types = ['shadow_gap', 'unit_price_high', 'duplicate_invoice', 'missing_period', 'period_too_long', 'negative_kwh'];
+    const types = [
+      'shadow_gap',
+      'unit_price_high',
+      'duplicate_invoice',
+      'missing_period',
+      'period_too_long',
+      'negative_kwh',
+    ];
     const insights = types.map((type, i) => ({
-      id: i, type, severity: i === 0 ? 'critical' : 'medium', insight_status: 'open',
+      id: i,
+      type,
+      severity: i === 0 ? 'critical' : 'medium',
+      insight_status: 'open',
     }));
     const watchlist = buildBillingWatchlist(insights);
     expect(watchlist).toHaveLength(5);
@@ -151,9 +215,7 @@ describe('buildBillingWatchlist', () => {
   });
 
   it('returns empty array when no active insights', () => {
-    const insights = [
-      { id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'resolved' },
-    ];
+    const insights = [{ id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'resolved' }];
     expect(buildBillingWatchlist(insights)).toHaveLength(0);
     expect(buildBillingWatchlist([])).toHaveLength(0);
     expect(buildBillingWatchlist()).toHaveLength(0);
@@ -164,7 +226,13 @@ describe('computeBillingHealthState', () => {
   it('returns RED when critical billing insights exist', () => {
     const summary = { total_invoices: 10, total_estimated_loss_eur: 5000 };
     const insights = [
-      { id: 1, type: 'shadow_gap', severity: 'critical', insight_status: 'open', estimated_loss_eur: 5000 },
+      {
+        id: 1,
+        type: 'shadow_gap',
+        severity: 'critical',
+        insight_status: 'open',
+        estimated_loss_eur: 5000,
+      },
     ];
     const state = computeBillingHealthState(summary, insights);
     expect(state.level).toBe('RED');
@@ -174,9 +242,7 @@ describe('computeBillingHealthState', () => {
 
   it('returns GREEN when no active insights', () => {
     const summary = { total_invoices: 10, total_estimated_loss_eur: 0 };
-    const insights = [
-      { id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'resolved' },
-    ];
+    const insights = [{ id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'resolved' }];
     const state = computeBillingHealthState(summary, insights);
     expect(state.level).toBe('GREEN');
     expect(state.primaryCta.to).toBe('/bill-intel');
@@ -239,18 +305,21 @@ describe('buildSnapshotKey', () => {
   });
 
   it('returns scoped key with orgId and scopeType', () => {
-    expect(buildSnapshotKey('billing', { orgId: 1, scopeType: 'portfolio', scopeId: 2 }))
-      .toBe('promeos.health.billing.org-1.portfolio-2');
+    expect(buildSnapshotKey('billing', { orgId: 1, scopeType: 'portfolio', scopeId: 2 })).toBe(
+      'promeos.health.billing.org-1.portfolio-2'
+    );
   });
 
   it('defaults scopePart to all-sites when no scopeType', () => {
-    expect(buildSnapshotKey('billing', { orgId: 5 }))
-      .toBe('promeos.health.billing.org-5.all-sites');
+    expect(buildSnapshotKey('billing', { orgId: 5 })).toBe(
+      'promeos.health.billing.org-5.all-sites'
+    );
   });
 
   it('handles string orgId', () => {
-    expect(buildSnapshotKey('patrimoine', { orgId: 'demo', scopeType: 'site', scopeId: 42 }))
-      .toBe('promeos.health.patrimoine.org-demo.site-42');
+    expect(buildSnapshotKey('patrimoine', { orgId: 'demo', scopeType: 'site', scopeId: 42 })).toBe(
+      'promeos.health.patrimoine.org-demo.site-42'
+    );
   });
 });
 
@@ -260,10 +329,16 @@ describe('loadHealthSnapshot + saveHealthSnapshot (scoped + retention)', () => {
   const store = {};
   const localStorageMock = {
     getItem: vi.fn((key) => store[key] ?? null),
-    setItem: vi.fn((key, val) => { store[key] = val; }),
-    removeItem: vi.fn((key) => { delete store[key]; }),
+    setItem: vi.fn((key, val) => {
+      store[key] = val;
+    }),
+    removeItem: vi.fn((key) => {
+      delete store[key];
+    }),
     key: vi.fn((i) => Object.keys(store)[i] ?? null),
-    get length() { return Object.keys(store).length; },
+    get length() {
+      return Object.keys(store).length;
+    },
   };
   vi.stubGlobal('localStorage', localStorageMock);
 
@@ -325,7 +400,13 @@ describe('computeBillingHealthState — CTAs V2.2', () => {
 
   it('RED → 2 stable CTAs (anomalies + plan action)', () => {
     const insights = [
-      { id: 1, type: 'shadow_gap', severity: 'critical', insight_status: 'open', estimated_loss_eur: 5000 },
+      {
+        id: 1,
+        type: 'shadow_gap',
+        severity: 'critical',
+        insight_status: 'open',
+        estimated_loss_eur: 5000,
+      },
     ];
     const state = computeBillingHealthState(SUMMARY, insights);
     expect(state.level).toBe('RED');
@@ -337,9 +418,7 @@ describe('computeBillingHealthState — CTAs V2.2', () => {
   });
 
   it('AMBER → 2 stable CTAs (analyser + explorer)', () => {
-    const insights = [
-      { id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'open' },
-    ];
+    const insights = [{ id: 1, type: 'shadow_gap', severity: 'high', insight_status: 'open' }];
     const state = computeBillingHealthState(SUMMARY, insights);
     expect(state.level).toBe('AMBER');
     expect(state.primaryCta.label).toContain('Analyser');
@@ -358,7 +437,10 @@ describe('computeBillingHealthState — CTAs V2.2', () => {
   it('"Voir tout" overflow when > 3 watchlist items', () => {
     const types = ['shadow_gap', 'unit_price_high', 'duplicate_invoice', 'missing_period'];
     const insights = types.map((type, i) => ({
-      id: i, type, severity: 'high', insight_status: 'open',
+      id: i,
+      type,
+      severity: 'high',
+      insight_status: 'open',
     }));
     const state = computeBillingHealthState(SUMMARY, insights);
     expect(state.secondaryCta).toBeDefined();
@@ -385,20 +467,38 @@ describe('SEVERITY_RANK low coherence', () => {
 // ── V2.2: Microcopy FR — no English tech jargon ────────────────────────
 
 describe('Microcopy FR coherence', () => {
-  const BASE_KPIS = { total: 10, conformes: 10, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 80 };
+  const BASE_KPIS = {
+    total: 10,
+    conformes: 10,
+    nonConformes: 0,
+    aRisque: 0,
+    risqueTotal: 0,
+    couvertureDonnees: 80,
+  };
 
   it('AMBER subtitle uses "points" not "signaux"', () => {
     const watchlist = [{ id: 'a', label: 'A', severity: 'warn', path: '/' }];
-    const state = computeHealthState({ kpis: { ...BASE_KPIS, aRisque: 1 }, watchlist, alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE_KPIS, aRisque: 1 },
+      watchlist,
+      alertsCount: 0,
+    });
     expect(state.subtitle).toContain('point');
     expect(state.subtitle).not.toContain('signal');
   });
 
   it('overflow CTA uses "points" not "signaux"', () => {
     const watchlist = Array.from({ length: 5 }, (_, i) => ({
-      id: `w${i}`, label: `W${i}`, severity: 'warn', path: '/',
+      id: `w${i}`,
+      label: `W${i}`,
+      severity: 'warn',
+      path: '/',
     }));
-    const state = computeHealthState({ kpis: { ...BASE_KPIS, aRisque: 1 }, watchlist, alertsCount: 0 });
+    const state = computeHealthState({
+      kpis: { ...BASE_KPIS, aRisque: 1 },
+      watchlist,
+      alertsCount: 0,
+    });
     expect(state.secondaryCta.label).toContain('points');
     expect(state.secondaryCta.label).not.toContain('signaux');
   });

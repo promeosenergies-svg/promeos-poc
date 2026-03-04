@@ -2,6 +2,7 @@
 PROMEOS - V69 CEE Pipeline + M&V Tests
 Tests: create_cee_dossier, kanban step advance, mv_summary, work packages.
 """
+
 import json
 import os
 import pytest
@@ -9,9 +10,18 @@ from datetime import date
 from unittest.mock import MagicMock, patch, PropertyMock
 
 from models import (
-    Site, Batiment, Obligation, Evidence, ActionItem,
-    TypeObligation, StatutConformite, TypeEvidence, StatutEvidence,
-    TypeSite, ActionSourceType, ActionStatus,
+    Site,
+    Batiment,
+    Obligation,
+    Evidence,
+    ActionItem,
+    TypeObligation,
+    StatutConformite,
+    TypeEvidence,
+    StatutEvidence,
+    TypeSite,
+    ActionSourceType,
+    ActionStatus,
 )
 from models.cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
 from models.enums import WorkPackageSize, CeeDossierStep, CeeStatus, MVAlertType
@@ -26,18 +36,29 @@ from services.compliance_engine import (
 
 # ── Helpers ──────────────────────────────────────────────────
 
+
 def _make_site(**kwargs):
     defaults = dict(
-        id=1, nom="Bureau Test", type=TypeSite.BUREAU,
-        tertiaire_area_m2=1500, annual_kwh_total=120000,
-        operat_status="submitted", parking_area_m2=2000,
-        roof_area_m2=800, parking_type=None,
-        is_multi_occupied=False, naf_code=None, surface_m2=None,
+        id=1,
+        nom="Bureau Test",
+        type=TypeSite.BUREAU,
+        tertiaire_area_m2=1500,
+        annual_kwh_total=120000,
+        operat_status="submitted",
+        parking_area_m2=2000,
+        roof_area_m2=800,
+        parking_type=None,
+        is_multi_occupied=False,
+        naf_code=None,
+        surface_m2=None,
         statut_decret_tertiaire=StatutConformite.A_RISQUE,
         statut_bacs=StatutConformite.A_RISQUE,
-        avancement_decret_pct=0.0, anomalie_facture=False,
-        action_recommandee=None, risque_financier_euro=0.0,
-        last_energy_update_at=None, portefeuille_id=1,
+        avancement_decret_pct=0.0,
+        anomalie_facture=False,
+        action_recommandee=None,
+        risque_financier_euro=0.0,
+        last_energy_update_at=None,
+        portefeuille_id=1,
     )
     defaults.update(kwargs)
     site = MagicMock(spec=Site)
@@ -48,10 +69,15 @@ def _make_site(**kwargs):
 
 def _make_work_package(id=1, site_id=1, **kwargs):
     defaults = dict(
-        label="Isolation combles", size=WorkPackageSize.M,
-        capex_eur=25000, savings_eur_year=5000, payback_years=5.0,
-        complexity="medium", cee_status=CeeStatus.A_QUALIFIER,
-        description=None, created_at=None,
+        label="Isolation combles",
+        size=WorkPackageSize.M,
+        capex_eur=25000,
+        savings_eur_year=5000,
+        payback_years=5.0,
+        complexity="medium",
+        cee_status=CeeStatus.A_QUALIFIER,
+        description=None,
+        created_at=None,
     )
     defaults.update(kwargs)
     wp = MagicMock(spec=WorkPackage)
@@ -62,8 +88,7 @@ def _make_work_package(id=1, site_id=1, **kwargs):
     return wp
 
 
-def _make_obligation(site_id=1, type_=TypeObligation.BACS,
-                     statut=StatutConformite.A_RISQUE, echeance=None):
+def _make_obligation(site_id=1, type_=TypeObligation.BACS, statut=StatutConformite.A_RISQUE, echeance=None):
     o = MagicMock(spec=Obligation)
     o.site_id = site_id
     o.type = type_
@@ -75,6 +100,7 @@ def _make_obligation(site_id=1, type_=TypeObligation.BACS,
 # ═══════════════════════════════════════════════
 # Test: CEE Evidence Template
 # ═══════════════════════════════════════════════
+
 
 class TestCeeEvidenceTemplate:
     def test_template_has_7_items(self):
@@ -106,6 +132,7 @@ class TestCeeEvidenceTemplate:
 # Test: create_cee_dossier
 # ═══════════════════════════════════════════════
 
+
 class TestCreateCeeDossier:
     def test_rejects_missing_work_package(self):
         """create_cee_dossier raises ValueError for unknown WP."""
@@ -131,6 +158,7 @@ class TestCreateCeeDossier:
 
         # First query → WorkPackage, second → Site, third → existing dossier
         call_count = [0]
+
         def mock_first():
             call_count[0] += 1
             if call_count[0] == 1:
@@ -139,6 +167,7 @@ class TestCreateCeeDossier:
                 return site
             else:
                 return existing
+
         db.query.return_value.filter.return_value.first.side_effect = mock_first
 
         with pytest.raises(ValueError, match="already exists"):
@@ -148,6 +177,7 @@ class TestCreateCeeDossier:
 # ═══════════════════════════════════════════════
 # Test: advance_cee_step
 # ═══════════════════════════════════════════════
+
 
 class TestAdvanceCeeStep:
     def test_rejects_missing_dossier(self):
@@ -185,6 +215,7 @@ class TestAdvanceCeeStep:
 # ═══════════════════════════════════════════════
 # Test: compute_mv_summary
 # ═══════════════════════════════════════════════
+
 
 class TestMvSummary:
     def test_returns_baseline_from_site(self):
@@ -233,6 +264,7 @@ class TestMvSummary:
         mock_obl_query.filter.return_value.all.return_value = [obl]
 
         call_count = [0]
+
         def mock_query(model):
             call_count[0] += 1
             if call_count[0] == 1:
@@ -241,6 +273,7 @@ class TestMvSummary:
                 return mock_conso_query
             else:
                 return mock_obl_query
+
         db.query.side_effect = mock_query
 
         result = compute_mv_summary(db, site_id=1)
@@ -251,6 +284,7 @@ class TestMvSummary:
 # ═══════════════════════════════════════════════
 # Test: Enum values
 # ═══════════════════════════════════════════════
+
 
 class TestV69Enums:
     def test_work_package_sizes(self):
@@ -276,6 +310,7 @@ class TestV69Enums:
 # ═══════════════════════════════════════════════
 # Test: Model structure
 # ═══════════════════════════════════════════════
+
 
 class TestV69Models:
     def test_work_package_table(self):

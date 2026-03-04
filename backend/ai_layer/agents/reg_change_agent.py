@@ -1,6 +1,7 @@
 """
 PROMEOS AI - Regulatory Change Impact Agent
 """
+
 import json
 from models import AiInsight, InsightType
 from ..client import get_client
@@ -14,7 +15,7 @@ def run(db, event_id: int, **kwargs):
         object_id=event_id,
         insight_type=InsightType.CHANGE_IMPACT,
         content_json=json.dumps({"impact": response}),
-        ai_version=client.model
+        ai_version=client.model,
     )
     db.add(insight)
     db.commit()

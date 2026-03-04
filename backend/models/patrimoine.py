@@ -2,16 +2,30 @@
 PROMEOS — Patrimoine models (DIAMANT)
 N-N link tables + Staging pipeline + Quality findings + DeliveryPoint.
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, Boolean, Date, DateTime,
-    ForeignKey, Enum, UniqueConstraint,
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Enum,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
-    StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus,
-    DeliveryPointStatus, DeliveryPointEnergyType,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    ActivationLogStatus,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
 )
 
 
@@ -19,12 +33,12 @@ from .enums import (
 # N-N Link Tables
 # ========================================
 
+
 class OrgEntiteLink(Base, TimestampMixin):
     """N-N: une organisation peut avoir N entites juridiques, et inversement."""
+
     __tablename__ = "org_entite_links"
-    __table_args__ = (
-        UniqueConstraint("organisation_id", "entite_juridique_id", name="uq_org_entite"),
-    )
+    __table_args__ = (UniqueConstraint("organisation_id", "entite_juridique_id", name="uq_org_entite"),)
 
     id = Column(Integer, primary_key=True)
     organisation_id = Column(Integer, ForeignKey("organisations.id"), nullable=False, index=True)
@@ -38,10 +52,9 @@ class OrgEntiteLink(Base, TimestampMixin):
 
 class PortfolioEntiteLink(Base, TimestampMixin):
     """N-N: un portefeuille peut etre lie a N entites juridiques."""
+
     __tablename__ = "portfolio_entite_links"
-    __table_args__ = (
-        UniqueConstraint("portefeuille_id", "entite_juridique_id", name="uq_portfolio_entite"),
-    )
+    __table_args__ = (UniqueConstraint("portefeuille_id", "entite_juridique_id", name="uq_portfolio_entite"),)
 
     id = Column(Integer, primary_key=True)
     portefeuille_id = Column(Integer, ForeignKey("portefeuilles.id"), nullable=False, index=True)
@@ -53,8 +66,10 @@ class PortfolioEntiteLink(Base, TimestampMixin):
 # Staging Pipeline
 # ========================================
 
+
 class StagingBatch(Base, TimestampMixin):
     """Un batch d'import patrimoine (CSV, Excel, factures, manuel)."""
+
     __tablename__ = "staging_batches"
 
     id = Column(Integer, primary_key=True)
@@ -76,6 +91,7 @@ class StagingBatch(Base, TimestampMixin):
 
 class StagingSite(Base, TimestampMixin):
     """Site en staging (pas encore active en base finale)."""
+
     __tablename__ = "staging_sites"
 
     id = Column(Integer, primary_key=True)
@@ -104,6 +120,7 @@ class StagingSite(Base, TimestampMixin):
 
 class StagingCompteur(Base, TimestampMixin):
     """Compteur en staging."""
+
     __tablename__ = "staging_compteurs"
 
     id = Column(Integer, primary_key=True)
@@ -126,6 +143,7 @@ class StagingCompteur(Base, TimestampMixin):
 
 class QualityFinding(Base, TimestampMixin):
     """Resultat d'une regle de qualite sur un batch staging."""
+
     __tablename__ = "quality_findings"
 
     id = Column(Integer, primary_key=True)
@@ -147,8 +165,10 @@ class QualityFinding(Base, TimestampMixin):
 # Activation audit log
 # ========================================
 
+
 class ActivationLog(Base, TimestampMixin):
     """Audit trail for batch activation attempts."""
+
     __tablename__ = "activation_logs"
 
     id = Column(Integer, primary_key=True)
@@ -167,23 +187,27 @@ class ActivationLog(Base, TimestampMixin):
 # Delivery Point (PRM/PCE)
 # ========================================
 
+
 class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     """Point de livraison energie (PRM elec / PCE gaz).
 
     Entite autonome representant un contrat de raccordement reseau.
     Un DeliveryPoint est lie a un Site et peut etre associe a N Compteurs.
     """
+
     __tablename__ = "delivery_points"
 
     id = Column(Integer, primary_key=True)
     code = Column(String(14), nullable=False, index=True, comment="PRM ou PCE (14 digits)")
     energy_type = Column(
-        Enum(DeliveryPointEnergyType), nullable=True,
+        Enum(DeliveryPointEnergyType),
+        nullable=True,
         comment="elec (PRM) ou gaz (PCE)",
     )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
     status = Column(
-        Enum(DeliveryPointStatus), default=DeliveryPointStatus.ACTIVE,
+        Enum(DeliveryPointStatus),
+        default=DeliveryPointStatus.ACTIVE,
         nullable=False,
     )
 

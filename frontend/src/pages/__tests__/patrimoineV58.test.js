@@ -19,11 +19,11 @@ const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf
 const backend = (rel) =>
   readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
-const API_JS          = src('services/api.js');
-const PATRIMOINE_JSX  = src('pages/Patrimoine.jsx');
+const API_JS = src('services/api.js');
+const PATRIMOINE_JSX = src('pages/Patrimoine.jsx');
 const HEALTH_CARD_JSX = src('components/PatrimoineHealthCard.jsx');
-const SNAPSHOT_PY     = backend('services/patrimoine_snapshot.py');
-const ANOMALIES_PY    = backend('services/patrimoine_anomalies.py');
+const SNAPSHOT_PY = backend('services/patrimoine_snapshot.py');
+const ANOMALIES_PY = backend('services/patrimoine_anomalies.py');
 
 // ── API Wrappers ───────────────────────────────────────────────────────────
 
@@ -76,11 +76,11 @@ describe('PatrimoineHealthCard composant', () => {
     expect(HEALTH_CARD_JSX).toMatch(/useNavigate|navigate/);
   });
 
-  test('gère l\'état loading', () => {
+  test("gère l'état loading", () => {
     expect(HEALTH_CARD_JSX).toMatch(/loading/);
   });
 
-  test('gère l\'état error', () => {
+  test("gère l'état error", () => {
     expect(HEALTH_CARD_JSX).toMatch(/error/);
   });
 
@@ -100,7 +100,7 @@ describe('Intégration PatrimoineHealthCard dans Patrimoine.jsx', () => {
     expect(PATRIMOINE_JSX).toMatch(/import SiteAnomalyPanel/);
   });
 
-  test('utilise SiteAnomalyPanel dans l\'onglet anomalies (V65)', () => {
+  test("utilise SiteAnomalyPanel dans l'onglet anomalies (V65)", () => {
     // V65: replaced PatrimoineHealthCard with SiteAnomalyPanel in the drawer
     expect(PATRIMOINE_JSX).toMatch(/<SiteAnomalyPanel/);
   });
@@ -124,7 +124,7 @@ describe('Codes anomalie P0 dans patrimoine_anomalies.py', () => {
     'ORPHANS_DETECTED',
   ];
 
-  P0_CODES.forEach(code => {
+  P0_CODES.forEach((code) => {
     test(`règle ${code} présente`, () => {
       expect(ANOMALIES_PY).toContain(`"${code}"`);
     });
@@ -134,7 +134,7 @@ describe('Codes anomalie P0 dans patrimoine_anomalies.py', () => {
 // ── Sévérités valides ─────────────────────────────────────────────────────
 
 describe('Sévérités valides dans patrimoine_anomalies.py', () => {
-  ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].forEach(sev => {
+  ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].forEach((sev) => {
     test(`sévérité ${sev} utilisée`, () => {
       expect(ANOMALIES_PY).toContain(`"${sev}"`);
     });
@@ -143,7 +143,7 @@ describe('Sévérités valides dans patrimoine_anomalies.py', () => {
 
 // ── Guard multi-org : pas d'Organisation.first() ──────────────────────────
 
-describe('Guard multi-org V57 — pas d\'Organisation.first()', () => {
+describe("Guard multi-org V57 — pas d'Organisation.first()", () => {
   test('patrimoine_snapshot.py ne contient pas Organisation.first()', () => {
     expect(SNAPSHOT_PY).not.toMatch(/Organisation\s*\)\s*\.first\(\)/);
   });

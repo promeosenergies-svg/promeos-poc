@@ -28,15 +28,18 @@ export function ActionDrawerProvider({ children }) {
     setState({ open: false, payload: null, onSave: null });
   }, []);
 
-  const handleSave = useCallback((result) => {
-    // Idempotency UX: if backend returned existing action
-    if (result?._existed) {
-      setExistingAction(result);
-      toast('Action déjà créée pour cette source', 'info');
-    }
-    state.onSave?.(result);
-    closeDrawer();
-  }, [state.onSave, closeDrawer, toast]);
+  const handleSave = useCallback(
+    (result) => {
+      // Idempotency UX: if backend returned existing action
+      if (result?._existed) {
+        setExistingAction(result);
+        toast('Action déjà créée pour cette source', 'info');
+      }
+      state.onSave?.(result);
+      closeDrawer();
+    },
+    [state.onSave, closeDrawer, toast]
+  );
 
   return (
     <ActionDrawerContext.Provider value={{ openActionDrawer, existingAction }}>

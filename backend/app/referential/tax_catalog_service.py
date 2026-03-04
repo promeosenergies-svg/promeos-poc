@@ -3,6 +3,7 @@ PROMEOS — Tax & Network Cost Catalog Service (V1)
 Versioned lookup of regulatory rates (TURPE, accises, TVA, CTA).
 All rates have: valid_from/valid_to + source + fallback.
 """
+
 import json
 from datetime import date, datetime
 from pathlib import Path

@@ -13,6 +13,7 @@ Exit codes:
     1 = CRITICAL failures (do NOT deploy)
     2 = Warnings only (deploy with caution)
 """
+
 import sys
 import json
 import yaml
@@ -316,6 +317,7 @@ class KBSmokeTest:
         """Check apply engine can be instantiated"""
         try:
             from app.kb.service import KBService
+
             service = KBService()
             self._add("Apply engine load", "PASS", "KBService instantiated")
         except Exception as e:
@@ -325,20 +327,21 @@ class KBSmokeTest:
         """CRITICAL: Verify apply() with allow_drafts=False does not use draft items"""
         try:
             from app.kb.service import KBService
+
             service = KBService()
 
             # Apply with a basic context
-            result = service.apply(
-                site_context={"building_type": "bureau", "surface_m2": 1000},
-                allow_drafts=False
-            )
+            result = service.apply(site_context={"building_type": "bureau", "surface_m2": 1000}, allow_drafts=False)
 
             # Check no draft items in results
             for item in result.get("applicable_items", []):
                 # Items from apply should be validated (confidence != low expected)
                 if item.get("confidence") == "low":
-                    self._add("Apply rejects drafts", "WARN",
-                             f"Item {item['kb_item_id']} has confidence=low in non-draft mode")
+                    self._add(
+                        "Apply rejects drafts",
+                        "WARN",
+                        f"Item {item['kb_item_id']} has confidence=low in non-draft mode",
+                    )
                     return
 
             self._add("Apply rejects drafts", "PASS", "No draft items in apply(allow_drafts=False)")
@@ -364,13 +367,13 @@ class KBSmokeTest:
                 expectations = json.load(f)
 
             from app.kb.service import KBService
+
             service = KBService()
 
             # Check if DB has any items — if empty, golden tests are not meaningful
             db_item_count = service.store.count_items()
             if db_item_count == 0:
-                self._add("Golden tests", "WARN",
-                          "DB has 0 items — run kb_seed_import.py first, then re-run smoke")
+                self._add("Golden tests", "WARN", "DB has 0 items — run kb_seed_import.py first, then re-run smoke")
                 return
 
             failures = []
@@ -441,6 +444,7 @@ class KBSmokeTest:
             return
 
         import csv
+
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -490,6 +494,7 @@ class KBSmokeTest:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="KB smoke test suite")
     parser.add_argument("--verbose", action="store_true", help="Show all test results including PASS")
     args = parser.parse_args()

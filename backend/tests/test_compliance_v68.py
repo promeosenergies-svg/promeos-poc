@@ -2,6 +2,7 @@
 PROMEOS - V68 Compliance Pipeline Tests
 Tests: readiness gate, applicability, scores, deadlines, data trust, snapshots.
 """
+
 import json
 import os
 import pytest
@@ -9,14 +10,26 @@ from datetime import date
 from unittest.mock import MagicMock
 
 from models import (
-    Site, Batiment, Obligation, Evidence, ComplianceFinding,
-    TypeObligation, StatutConformite, TypeEvidence, StatutEvidence,
-    TypeSite, InsightStatus,
+    Site,
+    Batiment,
+    Obligation,
+    Evidence,
+    ComplianceFinding,
+    TypeObligation,
+    StatutConformite,
+    TypeEvidence,
+    StatutEvidence,
+    TypeSite,
+    InsightStatus,
 )
 from services.compliance_engine import (
-    compute_readiness, compute_applicability, compute_scores,
-    compute_deadlines, compute_data_trust,
-    compute_site_compliance_summary, compute_portfolio_compliance_summary,
+    compute_readiness,
+    compute_applicability,
+    compute_scores,
+    compute_deadlines,
+    compute_data_trust,
+    compute_site_compliance_summary,
+    compute_portfolio_compliance_summary,
 )
 
 SNAPSHOTS_DIR = os.path.join(os.path.dirname(__file__), "snapshots")
@@ -25,16 +38,27 @@ os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
 
 # ── Helpers ──────────────────────────────────────────────────
 
+
 def _make_site(**kwargs):
     defaults = dict(
-        id=1, nom="Bureau Test", type=TypeSite.BUREAU,
-        tertiaire_area_m2=None, roof_area_m2=None, parking_area_m2=None,
-        parking_type=None, operat_status=None, annual_kwh_total=None,
-        is_multi_occupied=False, naf_code=None, surface_m2=None,
+        id=1,
+        nom="Bureau Test",
+        type=TypeSite.BUREAU,
+        tertiaire_area_m2=None,
+        roof_area_m2=None,
+        parking_area_m2=None,
+        parking_type=None,
+        operat_status=None,
+        annual_kwh_total=None,
+        is_multi_occupied=False,
+        naf_code=None,
+        surface_m2=None,
         statut_decret_tertiaire=StatutConformite.A_RISQUE,
         statut_bacs=StatutConformite.A_RISQUE,
-        avancement_decret_pct=0.0, anomalie_facture=False,
-        action_recommandee=None, risque_financier_euro=0.0,
+        avancement_decret_pct=0.0,
+        anomalie_facture=False,
+        action_recommandee=None,
+        risque_financier_euro=0.0,
         last_energy_update_at=None,
     )
     defaults.update(kwargs)
@@ -53,8 +77,14 @@ def _make_batiment(site_id=1, cvc_power_kw=None):
     return b
 
 
-def _make_obligation(site_id=1, type_=TypeObligation.BACS, statut=StatutConformite.A_RISQUE,
-                     echeance=None, avancement_pct=50.0, description=""):
+def _make_obligation(
+    site_id=1,
+    type_=TypeObligation.BACS,
+    statut=StatutConformite.A_RISQUE,
+    echeance=None,
+    avancement_pct=50.0,
+    description="",
+):
     o = MagicMock(spec=Obligation)
     o.site_id = site_id
     o.type = type_
@@ -73,8 +103,9 @@ def _make_evidence(site_id=1, type_=TypeEvidence.AUDIT, statut=StatutEvidence.VA
     return e
 
 
-def _make_finding(site_id=1, regulation="bacs", status="NOK", severity="high",
-                  deadline=None, evidence="test", rule_id="TEST"):
+def _make_finding(
+    site_id=1, regulation="bacs", status="NOK", severity="high", deadline=None, evidence="test", rule_id="TEST"
+):
     f = MagicMock(spec=ComplianceFinding)
     f.site_id = site_id
     f.regulation = regulation
@@ -90,6 +121,7 @@ def _make_finding(site_id=1, regulation="bacs", status="NOK", severity="high",
 # Test: compute_readiness
 # ═══════════════════════════════════════════════
 
+
 class TestReadiness:
     def test_blocking_missing_surface(self):
         """Site without tertiaire_area_m2 → BLOCKED gate."""
@@ -102,10 +134,15 @@ class TestReadiness:
     def test_all_filled_ok(self):
         """Site with all fields filled → OK gate."""
         site = _make_site(
-            tertiaire_area_m2=1500, operat_status="submitted",
-            annual_kwh_total=100000, parking_area_m2=2000, roof_area_m2=800,
-            parking_type="outdoor", is_multi_occupied=True,
-            naf_code="7022Z", surface_m2=3000,
+            tertiaire_area_m2=1500,
+            operat_status="submitted",
+            annual_kwh_total=100000,
+            parking_area_m2=2000,
+            roof_area_m2=800,
+            parking_type="outdoor",
+            is_multi_occupied=True,
+            naf_code="7022Z",
+            surface_m2=3000,
         )
         bats = [_make_batiment(cvc_power_kw=300)]
         evs = [
@@ -119,8 +156,11 @@ class TestReadiness:
     def test_warning_when_optional_missing(self):
         """All blocking filled but recommended missing → WARNING."""
         site = _make_site(
-            tertiaire_area_m2=1500, operat_status="submitted",
-            annual_kwh_total=100000, parking_area_m2=2000, roof_area_m2=800,
+            tertiaire_area_m2=1500,
+            operat_status="submitted",
+            annual_kwh_total=100000,
+            parking_area_m2=2000,
+            roof_area_m2=800,
         )
         bats = [_make_batiment(cvc_power_kw=300)]
         result = compute_readiness(site, bats, [])
@@ -139,6 +179,7 @@ class TestReadiness:
 # ═══════════════════════════════════════════════
 # Test: compute_applicability
 # ═══════════════════════════════════════════════
+
 
 class TestApplicability:
     def test_uncertain_when_missing_cvc_power(self):
@@ -174,6 +215,7 @@ class TestApplicability:
 # Test: compute_scores
 # ═══════════════════════════════════════════════
 
+
 class TestScores:
     def test_no_risk_when_conforme(self):
         obs = [_make_obligation(statut=StatutConformite.CONFORME)]
@@ -192,6 +234,7 @@ class TestScores:
 # ═══════════════════════════════════════════════
 # Test: compute_deadlines
 # ═══════════════════════════════════════════════
+
 
 class TestDeadlines:
     def test_sort_30_90_180(self):
@@ -226,6 +269,7 @@ class TestDeadlines:
 # Test: compute_data_trust
 # ═══════════════════════════════════════════════
 
+
 class TestDataTrust:
     def test_stub_when_no_billing(self):
         """When BillingInsight table doesn't exist, return 100 trust."""
@@ -257,15 +301,26 @@ class TestPortfolioMinFixture:
     @pytest.fixture
     def four_sites(self):
         return [
-            _make_site(id=1, nom="Bureau Paris", tertiaire_area_m2=1500, annual_kwh_total=120000,
-                       operat_status="submitted", parking_area_m2=2000, roof_area_m2=800),
-            _make_site(id=2, nom="Entrepot Lyon", tertiaire_area_m2=None,
-                       parking_area_m2=500, roof_area_m2=200),
-            _make_site(id=3, nom="Agence Nantes", tertiaire_area_m2=800,
-                       parking_area_m2=100, roof_area_m2=100),
-            _make_site(id=4, nom="Usine Bordeaux", tertiaire_area_m2=3000,
-                       annual_kwh_total=500000, operat_status="in_progress",
-                       parking_area_m2=3000, roof_area_m2=1500),
+            _make_site(
+                id=1,
+                nom="Bureau Paris",
+                tertiaire_area_m2=1500,
+                annual_kwh_total=120000,
+                operat_status="submitted",
+                parking_area_m2=2000,
+                roof_area_m2=800,
+            ),
+            _make_site(id=2, nom="Entrepot Lyon", tertiaire_area_m2=None, parking_area_m2=500, roof_area_m2=200),
+            _make_site(id=3, nom="Agence Nantes", tertiaire_area_m2=800, parking_area_m2=100, roof_area_m2=100),
+            _make_site(
+                id=4,
+                nom="Usine Bordeaux",
+                tertiaire_area_m2=3000,
+                annual_kwh_total=500000,
+                operat_status="in_progress",
+                parking_area_m2=3000,
+                roof_area_m2=1500,
+            ),
         ]
 
     def test_portfolio_readiness_distribution(self, four_sites):
@@ -287,12 +342,14 @@ class TestPortfolioMinFixture:
         for s in four_sites:
             r = compute_readiness(s, [], [])
             a = compute_applicability(s, [])
-            results.append({
-                "site_id": s.id,
-                "site_nom": s.nom,
-                "readiness": r,
-                "applicability": a,
-            })
+            results.append(
+                {
+                    "site_id": s.id,
+                    "site_nom": s.nom,
+                    "readiness": r,
+                    "applicability": a,
+                }
+            )
 
         snapshot = {"version": "v68", "sites": results}
 

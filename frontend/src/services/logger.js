@@ -13,8 +13,16 @@ function log(level, tag, message, data) {
   fn(`[${tag}] ${message}`, data || '');
 
   // Sentry bridge (error/warn only)
-  if ((level === 'error' || level === 'warn') && typeof window !== 'undefined' && window.__SENTRY__) {
-    try { window.Sentry?.captureMessage(`[${tag}] ${message}`, level); } catch { /* silent */ }
+  if (
+    (level === 'error' || level === 'warn') &&
+    typeof window !== 'undefined' &&
+    window.__SENTRY__
+  ) {
+    try {
+      window.Sentry?.captureMessage(`[${tag}] ${message}`, level);
+    } catch {
+      /* silent */
+    }
   }
 
   return entry;
@@ -22,8 +30,8 @@ function log(level, tag, message, data) {
 
 export const logger = {
   debug: (tag, msg, data) => log('debug', tag, msg, data),
-  info:  (tag, msg, data) => log('info', tag, msg, data),
-  warn:  (tag, msg, data) => log('warn', tag, msg, data),
+  info: (tag, msg, data) => log('info', tag, msg, data),
+  warn: (tag, msg, data) => log('warn', tag, msg, data),
   error: (tag, msg, data) => log('error', tag, msg, data),
 };
 
@@ -36,9 +44,13 @@ export function initSentry() {
   if (!dsn) return;
   // Dynamic import hidden from Rollup static analysis — @sentry/react is optional
   const pkg = '@sentry/' + 'react';
-  import(/* @vite-ignore */ pkg).then(Sentry => {
-    Sentry.init({ dsn, environment: import.meta.env.MODE });
-    window.Sentry = Sentry;
-    window.__SENTRY__ = true;
-  }).catch(() => { /* @sentry/react not installed — silent */ });
+  import(/* @vite-ignore */ pkg)
+    .then((Sentry) => {
+      Sentry.init({ dsn, environment: import.meta.env.MODE });
+      window.Sentry = Sentry;
+      window.__SENTRY__ = true;
+    })
+    .catch(() => {
+      /* @sentry/react not installed — silent */
+    });
 }

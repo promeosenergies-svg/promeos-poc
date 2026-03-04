@@ -5,18 +5,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
-  MapPin, Ruler,
-  BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
-  CheckCircle, XCircle, Download, History, Wrench, Eye, FileText, Sparkles, X,
+  ArrowLeft,
+  ShieldCheck,
+  Zap,
+  BadgeEuro,
+  AlertTriangle,
+  MapPin,
+  Ruler,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  ExternalLink,
+  ClipboardCheck,
+  CheckCircle,
+  XCircle,
+  Download,
+  History,
+  Wrench,
+  Eye,
+  FileText,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import {
-  applyKB, getPatrimoineAnomalies, getSitePaymentInfo, getReconciliation,
-  applyReconciliationFix, getReconciliationHistory, getReconciliationEvidenceCsv,
+  applyKB,
+  getPatrimoineAnomalies,
+  getSitePaymentInfo,
+  getReconciliation,
+  applyReconciliationFix,
+  getReconciliationHistory,
+  getReconciliationEvidenceCsv,
   getReconciliationEvidenceSummary,
 } from '../services/api';
 import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
@@ -27,7 +50,10 @@ import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 
-const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
+const _sb = (k) => {
+  const { variant, label } = getStatusBadgeProps(k);
+  return { status: variant, label };
+};
 const STATUT_BADGE = {
   conforme: _sb('conforme'),
   non_conforme: _sb('non_conforme'),
@@ -64,10 +90,18 @@ function TabResume({ site, onSegmentationClick }) {
     let stale = false;
     setAnomLoading(true);
     getPatrimoineAnomalies(site.id)
-      .then((data) => { if (!stale) setAnomalies(data.anomalies || []); })
-      .catch(() => { if (!stale) setAnomalies([]); })
-      .finally(() => { if (!stale) setAnomLoading(false); });
-    return () => { stale = true; };
+      .then((data) => {
+        if (!stale) setAnomalies(data.anomalies || []);
+      })
+      .catch(() => {
+        if (!stale) setAnomalies([]);
+      })
+      .finally(() => {
+        if (!stale) setAnomLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
   }, [site.id]);
 
   return (
@@ -82,11 +116,15 @@ function TabResume({ site, onSegmentationClick }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-gray-500">Conso annuelle</p>
-                <p className="text-lg font-bold text-blue-700">{((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh</p>
+                <p className="text-lg font-bold text-blue-700">
+                  {((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh
+                </p>
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
-                <p className="text-lg font-bold text-red-700">{(site.risque_eur || 0).toLocaleString()} €</p>
+                <p className="text-lg font-bold text-red-700">
+                  {(site.risque_eur || 0).toLocaleString()} €
+                </p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
                 <p className="text-xs text-gray-500">Anomalies</p>
@@ -106,16 +144,19 @@ function TabResume({ site, onSegmentationClick }) {
         {/* Reco principale */}
         <Card className="border-l-4 border-l-blue-500">
           <CardBody>
-            <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Recommandation principale</p>
+            <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+              Recommandation principale
+            </p>
             <p className="text-sm text-gray-800 font-medium">
               {site.statut_conformite === 'non_conforme'
                 ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
                 : site.statut_conformite === 'a_risque'
                   ? 'Planifier la mise en conformité BACS pour ce site'
-                  : 'Maintenir la surveillance et optimiser la consommation'
-              }
+                  : 'Maintenir la surveillance et optimiser la consommation'}
             </p>
-            <Button size="sm" className="mt-3">Créer une action</Button>
+            <Button size="sm" className="mt-3">
+              Créer une action
+            </Button>
           </CardBody>
         </Card>
       </div>
@@ -128,21 +169,39 @@ function TabResume({ site, onSegmentationClick }) {
             <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
           </div>
           {anomLoading ? (
-            <div className="p-4"><SkeletonCard /></div>
+            <div className="p-4">
+              <SkeletonCard />
+            </div>
           ) : anomalies.length === 0 ? (
-            <EmptyState title="Aucune anomalie" text="Ce site ne présente aucune anomalie détectée." />
+            <EmptyState
+              title="Aucune anomalie"
+              text="Ce site ne présente aucune anomalie détectée."
+            />
           ) : (
             <Table>
               <Thead>
-                <tr><Th>Type</Th><Th>Sévérité</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
+                <tr>
+                  <Th>Type</Th>
+                  <Th>Sévérité</Th>
+                  <Th>Message</Th>
+                  <Th className="text-right">Perte</Th>
+                </tr>
               </Thead>
               <Tbody>
                 {anomalies.map((a, idx) => (
                   <Tr key={a.id || idx}>
-                    <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.anomaly_type}</span></Td>
-                    <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
+                    <Td>
+                      <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                        {a.anomaly_type}
+                      </span>
+                    </Td>
+                    <Td>
+                      <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
+                    </Td>
                     <Td className="text-sm">{a.title_fr}</Td>
-                    <Td className="text-right text-red-600 font-medium">{(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €</Td>
+                    <Td className="text-right text-red-600 font-medium">
+                      {(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>
@@ -165,10 +224,16 @@ function PaymentInfoCard({ siteId }) {
   useEffect(() => {
     let stale = false;
     getSitePaymentInfo(siteId)
-      .then((data) => { if (!stale) setInfo(data); })
-      .catch(e => void // silenced: payment info error:', e))
-      .finally(() => { if (!stale) setLoading(false); });
-    return () => { stale = true; };
+      .then((data) => {
+        if (!stale) setInfo(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
   }, [siteId]);
 
   if (loading) return <SkeletonCard />;
@@ -177,9 +242,18 @@ function PaymentInfoCard({ siteId }) {
     return (
       <Card className="border-l-4 border-l-gray-300">
         <CardBody>
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Paiement & Refacturation</p>
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+            Paiement & Refacturation
+          </p>
           <p className="text-sm text-gray-500">Aucune règle de paiement configurée</p>
-          <Button size="sm" variant="outline" className="mt-2" onClick={() => navPay('/payment-rules')}>Configurer</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            onClick={() => navPay('/payment-rules')}
+          >
+            Configurer
+          </Button>
         </CardBody>
       </Card>
     );
@@ -188,12 +262,26 @@ function PaymentInfoCard({ siteId }) {
   return (
     <Card className="border-l-4 border-l-emerald-500">
       <CardBody>
-        <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Paiement & Refacturation</p>
+        <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
+          Paiement & Refacturation
+        </p>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-gray-500">Facturé :</span> <span className="font-medium">{info.invoice_entity_name || '—'}</span></div>
-          <div><span className="text-gray-500">Payeur :</span> <span className="font-medium">{info.payer_entity_name || '(même)'}</span></div>
-          <div><span className="text-gray-500">Centre de coût :</span> <span className="font-medium">{info.rule?.cost_center || '—'}</span></div>
-          <div><span className="text-gray-500">Source :</span> <Badge status="info">{info.source_level}</Badge></div>
+          <div>
+            <span className="text-gray-500">Facturé :</span>{' '}
+            <span className="font-medium">{info.invoice_entity_name || '—'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Payeur :</span>{' '}
+            <span className="font-medium">{info.payer_entity_name || '(même)'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Centre de coût :</span>{' '}
+            <span className="font-medium">{info.rule?.cost_center || '—'}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Source :</span>{' '}
+            <Badge status="info">{info.source_level}</Badge>
+          </div>
         </div>
       </CardBody>
     </Card>
@@ -214,33 +302,52 @@ function EvidenceSummaryModal({ site, onClose }) {
   useEffect(() => {
     getReconciliationEvidenceSummary(site.id)
       .then(setSummary)
-      .catch(e => void // silenced: evidence summary error:', e))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [site.id]);
 
   const STATUS_LABEL = { ok: 'Conforme', warn: 'Attention', fail: 'À corriger' };
-  const STATUS_COLOR = { ok: 'text-green-700 bg-green-50', warn: 'text-amber-700 bg-amber-50', fail: 'text-red-700 bg-red-50' };
+  const STATUS_COLOR = {
+    ok: 'text-green-700 bg-green-50',
+    warn: 'text-amber-700 bg-amber-50',
+    fail: 'text-red-700 bg-red-50',
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="font-bold text-gray-900">Résumé 1 page — {site.nom}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
         </div>
         {loading ? (
-          <div className="p-6"><SkeletonCard /></div>
+          <div className="p-6">
+            <SkeletonCard />
+          </div>
         ) : !summary ? (
           <div className="p-6 text-sm text-gray-500">Impossible de charger le résumé.</div>
         ) : (
           <div className="p-6 space-y-5 text-sm print:text-xs" id="evidence-summary-print">
             <div className="flex items-center gap-4">
-              <div className={`px-3 py-1 rounded-full font-bold ${STATUS_COLOR[summary.status] || ''}`}>
+              <div
+                className={`px-3 py-1 rounded-full font-bold ${STATUS_COLOR[summary.status] || ''}`}
+              >
                 {STATUS_LABEL[summary.status] || summary.status}
               </div>
               <div className="flex-1">
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className={`h-3 rounded-full ${summary.score >= 80 ? 'bg-green-500' : summary.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`} style={{ width: `${summary.score}%` }} />
+                  <div
+                    className={`h-3 rounded-full ${summary.score >= 80 ? 'bg-green-500' : summary.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`}
+                    style={{ width: `${summary.score}%` }}
+                  />
                 </div>
               </div>
               <span className="font-bold text-gray-700">{summary.score}%</span>
@@ -250,7 +357,13 @@ function EvidenceSummaryModal({ site, onClose }) {
               <h3 className="font-semibold text-gray-800 mb-2">Points clés</h3>
               {summary.key_checks.map((c) => (
                 <div key={c.id} className="flex items-center gap-2 py-1">
-                  {c.status === 'ok' ? <CheckCircle size={14} className="text-green-600" /> : c.status === 'fail' ? <XCircle size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-500" />}
+                  {c.status === 'ok' ? (
+                    <CheckCircle size={14} className="text-green-600" />
+                  ) : c.status === 'fail' ? (
+                    <XCircle size={14} className="text-red-600" />
+                  ) : (
+                    <AlertTriangle size={14} className="text-amber-500" />
+                  )}
                   <span className="font-medium">{c.title}</span>
                   {c.impact && <Badge status="info">{c.impact}</Badge>}
                 </div>
@@ -264,7 +377,11 @@ function EvidenceSummaryModal({ site, onClose }) {
                   <div key={i} className="flex items-center gap-2 py-1 text-gray-600">
                     <Wrench size={12} className="text-blue-500" />
                     <span>{f.action}</span>
-                    {f.applied_at && <span className="text-xs text-gray-400 ml-auto">{new Date(f.applied_at).toLocaleDateString('fr-FR')}</span>}
+                    {f.applied_at && (
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {new Date(f.applied_at).toLocaleDateString('fr-FR')}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -288,8 +405,12 @@ function EvidenceSummaryModal({ site, onClose }) {
           </div>
         )}
         <div className="px-6 py-3 border-t flex justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => window.print()}>Imprimer</Button>
-          <Button size="sm" onClick={onClose}>Fermer</Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            Imprimer
+          </Button>
+          <Button size="sm" onClick={onClose}>
+            Fermer
+          </Button>
         </div>
       </div>
     </div>
@@ -311,25 +432,33 @@ function TabReconciliation({ site }) {
     setLoading(true);
     getReconciliation(site.id)
       .then((data) => setRecon(data))
-      .catch(e => void // silenced: reconciliation error:', e))
+      .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadRecon(); }, [site.id]);
+  useEffect(() => {
+    loadRecon();
+  }, [site.id]);
 
   const handleFix = async (checkId, action) => {
     setFixingAction(action.action);
     const prevScore = recon?.score || 0;
     try {
       await applyReconciliationFix(site.id, { action: action.action, params: action.params || {} });
-      setToast({ type: 'success', message: `Correction appliquée : ${action.label_simple || action.label_fr}` });
+      setToast({
+        type: 'success',
+        message: `Correction appliquée : ${action.label_simple || action.label_fr}`,
+      });
       const fresh = await getReconciliation(site.id);
       setRecon(fresh);
       const gain = fresh.score - prevScore;
       if (gain > 0) setScoreGain(gain);
       setTimeout(() => setScoreGain(null), 4000);
     } catch (e) {
-      setToast({ type: 'error', message: e?.response?.data?.detail || 'Erreur lors de la correction' });
+      setToast({
+        type: 'error',
+        message: e?.response?.data?.detail || 'Erreur lors de la correction',
+      });
     } finally {
       setFixingAction(null);
       setTimeout(() => setToast(null), 4000);
@@ -339,7 +468,12 @@ function TabReconciliation({ site }) {
   const handleNbaFix = async () => {
     const nba = recon?.next_best_action;
     if (!nba) return;
-    await handleFix(nba.check_id, { action: nba.action, params: nba.payload?.params || {}, label_simple: nba.action_label, label_fr: nba.action_label });
+    await handleFix(nba.check_id, {
+      action: nba.action,
+      params: nba.payload?.params || {},
+      label_simple: nba.action_label,
+      label_fr: nba.action_label,
+    });
   };
 
   const handleDownloadCsv = async () => {
@@ -351,19 +485,32 @@ function TabReconciliation({ site }) {
       a.download = `evidence_site_${site.id}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   const loadHistory = async () => {
-    if (history) { setShowHistory(!showHistory); return; }
+    if (history) {
+      setShowHistory(!showHistory);
+      return;
+    }
     try {
       const data = await getReconciliationHistory(site.id);
       setHistory(data.logs || []);
       setShowHistory(true);
-    } catch { setHistory([]); setShowHistory(true); }
+    } catch {
+      setHistory([]);
+      setShowHistory(true);
+    }
   };
 
-  if (loading) return <div className="pt-6"><SkeletonCard /></div>;
+  if (loading)
+    return (
+      <div className="pt-6">
+        <SkeletonCard />
+      </div>
+    );
   if (!recon) return <EmptyState title="Erreur" text="Impossible de charger la réconciliation." />;
 
   const nonOkChecks = (recon.checks || []).filter((c) => c.status !== 'ok');
@@ -373,9 +520,13 @@ function TabReconciliation({ site }) {
     <div className="space-y-4 pt-6">
       {/* Toast */}
       {toast && (
-        <div className={`px-4 py-2 rounded-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+        <div
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+        >
           {toast.message}
-          {scoreGain > 0 && <span className="ml-2 font-bold text-green-700">Score +{scoreGain}</span>}
+          {scoreGain > 0 && (
+            <span className="ml-2 font-bold text-green-700">Score +{scoreGain}</span>
+          )}
         </div>
       )}
 
@@ -420,7 +571,9 @@ function TabReconciliation({ site }) {
             <CardBody>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-2">État du site</p>
               <div className="flex items-center gap-4">
-                <div className={`text-3xl font-bold ${recon.score >= 80 ? 'text-green-600' : recon.score >= 50 ? 'text-amber-500' : 'text-red-600'}`}>
+                <div
+                  className={`text-3xl font-bold ${recon.score >= 80 ? 'text-green-600' : recon.score >= 50 ? 'text-amber-500' : 'text-red-600'}`}
+                >
                   {recon.score}%
                 </div>
                 <div className="flex-1">
@@ -431,8 +584,15 @@ function TabReconciliation({ site }) {
                     />
                   </div>
                 </div>
-                <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-sm px-3 py-1">
-                  {recon.status === 'ok' ? 'Conforme' : recon.status === 'warn' ? 'Attention' : 'À corriger'}
+                <Badge
+                  status={RECON_STATUS_BADGE[recon.status] || 'info'}
+                  className="text-sm px-3 py-1"
+                >
+                  {recon.status === 'ok'
+                    ? 'Conforme'
+                    : recon.status === 'warn'
+                      ? 'Attention'
+                      : 'À corriger'}
                 </Badge>
               </div>
             </CardBody>
@@ -454,10 +614,18 @@ function TabReconciliation({ site }) {
                         <Icon size={20} className={cfg.color + ' mt-0.5 shrink-0'} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900">{check.title_simple || check.label_fr}</p>
-                            {check.impact_label && <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded">{check.impact_label}</span>}
+                            <p className="text-sm font-semibold text-gray-900">
+                              {check.title_simple || check.label_fr}
+                            </p>
+                            {check.impact_label && (
+                              <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded">
+                                {check.impact_label}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">{check.why_it_matters || check.reason_fr}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {check.why_it_matters || check.reason_fr}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -474,10 +642,14 @@ function TabReconciliation({ site }) {
                 <div className="flex items-start gap-3">
                   <Sparkles size={20} className="text-blue-500 mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-xs text-blue-600 uppercase font-semibold">Prochaine action recommandée</p>
+                    <p className="text-xs text-blue-600 uppercase font-semibold">
+                      Prochaine action recommandée
+                    </p>
                     <p className="text-sm font-semibold text-gray-900 mt-1">{nba.action_label}</p>
                     <p className="text-sm text-gray-600 mt-1">{nba.reason}</p>
-                    <p className="text-xs text-green-600 mt-1 font-medium">Score attendu : +{nba.expected_score_gain} points</p>
+                    <p className="text-xs text-green-600 mt-1 font-medium">
+                      Score attendu : +{nba.expected_score_gain} points
+                    </p>
                     <Button
                       size="sm"
                       className="mt-3"
@@ -500,7 +672,9 @@ function TabReconciliation({ site }) {
                   <CheckCircle size={24} className="text-green-600" />
                   <div>
                     <p className="font-semibold text-green-800">Tout est en ordre</p>
-                    <p className="text-sm text-gray-600">Votre site est entièrement réconcilié. Aucune action requise.</p>
+                    <p className="text-sm text-gray-600">
+                      Votre site est entièrement réconcilié. Aucune action requise.
+                    </p>
                   </div>
                 </div>
               </CardBody>
@@ -508,7 +682,10 @@ function TabReconciliation({ site }) {
           )}
 
           {/* Link to expert mode */}
-          <button onClick={() => setMode('expert')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+          <button
+            onClick={() => setMode('expert')}
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+          >
             <Eye size={12} /> Voir détails (mode expert)
           </button>
         </>
@@ -521,8 +698,15 @@ function TabReconciliation({ site }) {
           <Card>
             <CardBody>
               <div className="flex items-center gap-4">
-                <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-base px-3 py-1">
-                  {recon.status === 'ok' ? 'OK' : recon.status === 'warn' ? 'Attention' : 'Incomplet'}
+                <Badge
+                  status={RECON_STATUS_BADGE[recon.status] || 'info'}
+                  className="text-base px-3 py-1"
+                >
+                  {recon.status === 'ok'
+                    ? 'OK'
+                    : recon.status === 'warn'
+                      ? 'Attention'
+                      : 'Incomplet'}
                 </Badge>
                 <div className="flex-1">
                   <div className="w-full bg-gray-200 rounded-full h-3">
@@ -585,7 +769,7 @@ function TabReconciliation({ site }) {
               <div className="px-5 py-3 border-b border-gray-100">
                 <h3 className="font-semibold text-gray-800">Journal des corrections</h3>
               </div>
-              {(!history || history.length === 0) ? (
+              {!history || history.length === 0 ? (
                 <div className="px-5 py-4 text-sm text-gray-500">Aucune correction appliquée</div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -595,11 +779,17 @@ function TabReconciliation({ site }) {
                       <div className="flex-1">
                         <span className="font-medium">{log.action}</span>
                         <span className="text-gray-400 mx-2">—</span>
-                        <Badge status={RECON_STATUS_BADGE[log.status_before] || 'info'}>{log.status_before}</Badge>
+                        <Badge status={RECON_STATUS_BADGE[log.status_before] || 'info'}>
+                          {log.status_before}
+                        </Badge>
                         <span className="mx-1">→</span>
-                        <Badge status={RECON_STATUS_BADGE[log.status_after] || 'info'}>{log.status_after}</Badge>
+                        <Badge status={RECON_STATUS_BADGE[log.status_after] || 'info'}>
+                          {log.status_after}
+                        </Badge>
                       </div>
-                      <span className="text-xs text-gray-400">{log.applied_at ? new Date(log.applied_at).toLocaleString('fr-FR') : ''}</span>
+                      <span className="text-xs text-gray-400">
+                        {log.applied_at ? new Date(log.applied_at).toLocaleString('fr-FR') : ''}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -610,7 +800,9 @@ function TabReconciliation({ site }) {
       )}
 
       {/* Evidence Summary Modal */}
-      {showSummaryModal && <EvidenceSummaryModal site={site} onClose={() => setShowSummaryModal(false)} />}
+      {showSummaryModal && (
+        <EvidenceSummaryModal site={site} onClose={() => setShowSummaryModal(false)} />
+      )}
     </div>
   );
 }
@@ -618,11 +810,7 @@ function TabReconciliation({ site }) {
 function TabStub({ title, text }) {
   return (
     <div className="pt-6">
-      <EmptyState
-        title={title}
-        text={text}
-        ctaLabel="Bientôt disponible"
-      />
+      <EmptyState title={title} text={text} ctaLabel="Bientôt disponible" />
     </div>
   );
 }
@@ -649,7 +837,10 @@ function TabConformite({ site }) {
       },
       allow_drafts: true,
     })
-      .then((data) => { setKbResult(data); setError(false); })
+      .then((data) => {
+        setKbResult(data);
+        setError(false);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [site]);
@@ -660,7 +851,9 @@ function TabConformite({ site }) {
         <Card>
           <CardBody className="text-center py-8">
             <BookOpen size={28} className="text-blue-300 mx-auto mb-2 animate-pulse" />
-            <p className="text-sm text-gray-400">Évaluation réglementaire en cours pour {site.nom}...</p>
+            <p className="text-sm text-gray-400">
+              Évaluation réglementaire en cours pour {site.nom}...
+            </p>
           </CardBody>
         </Card>
       </div>
@@ -682,8 +875,8 @@ function TabConformite({ site }) {
   const items = kbResult.applicable_items || [];
   const missing = kbResult.missing_fields || [];
   const suggestions = kbResult.suggestions || [];
-  const validated = items.filter(i => i.status === 'validated');
-  const drafts = items.filter(i => i.status !== 'validated');
+  const validated = items.filter((i) => i.status === 'validated');
+  const drafts = items.filter((i) => i.status !== 'validated');
 
   return (
     <div className="pt-6 space-y-4">
@@ -697,7 +890,10 @@ function TabConformite({ site }) {
         </div>
         {validated.length > 0 && <Badge status="ok">{validated.length} validees</Badge>}
         {drafts.length > 0 && <Badge status="neutral">{drafts.length} exploration</Badge>}
-        <Link to="/kb" className="ml-auto text-xs text-blue-600 hover:underline flex items-center gap-1">
+        <Link
+          to="/kb"
+          className="ml-auto text-xs text-blue-600 hover:underline flex items-center gap-1"
+        >
           <BookOpen size={12} /> Explorer la KB
         </Link>
       </div>
@@ -708,78 +904,101 @@ function TabConformite({ site }) {
           {validated
             .sort((a, b) => (KB_SEV_ORDER[a.severity] ?? 9) - (KB_SEV_ORDER[b.severity] ?? 9))
             .map((item) => (
-            <Card key={item.id} className="border-l-4 border-l-blue-400">
-              <CardBody className="py-3">
-                <div
-                  className="flex items-start gap-3 cursor-pointer"
-                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <Badge status={SEV_BADGE[item.severity] || 'neutral'}>{item.severity}</Badge>
-                      <Badge status="ok">Valide</Badge>
-                      {item.domain && (
-                        <Badge status="crit">{item.domain}</Badge>
+              <Card key={item.id} className="border-l-4 border-l-blue-400">
+                <CardBody className="py-3">
+                  <div
+                    className="flex items-start gap-3 cursor-pointer"
+                    onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <Badge status={SEV_BADGE[item.severity] || 'neutral'}>
+                          {item.severity}
+                        </Badge>
+                        <Badge status="ok">Valide</Badge>
+                        {item.domain && <Badge status="crit">{item.domain}</Badge>}
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
+                      {expandedId !== item.id && item.summary && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
+                      )}
+                      {item.why && expandedId !== item.id && (
+                        <p className="text-xs text-blue-600 mt-1">{item.why}</p>
                       )}
                     </div>
-                    <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
-                    {expandedId !== item.id && item.summary && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
-                    )}
-                    {item.why && expandedId !== item.id && (
-                      <p className="text-xs text-blue-600 mt-1">{item.why}</p>
-                    )}
+                    <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
+                      {expandedId === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
                   </div>
-                  <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
-                    {expandedId === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
-                </div>
 
-                {expandedId === item.id && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
-                    {item.why && (
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Pourquoi applicable</p>
-                        <p className="text-sm text-gray-700">{item.why}</p>
-                      </div>
-                    )}
-                    {item.logic?.then?.outputs && (
-                      <div className="p-3 bg-amber-50 rounded-lg">
-                        <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Obligations</p>
-                        {item.logic.then.outputs.map((o, i) => (
-                          <div key={i} className="flex items-center gap-2 text-xs text-amber-800 mt-1">
-                            <span className={`w-2 h-2 rounded-full ${o.severity === 'critical' ? 'bg-red-500' : o.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
-                            <span className="font-medium">{o.label}</span>
-                            {o.deadline && <span className="text-amber-600 flex items-center gap-1"><Clock size={11} /> {o.deadline}</span>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {item.sources && item.sources.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 mb-1">Sources</p>
-                        {item.sources.map((src, i) => (
-                          <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                            <ExternalLink size={12} />
-                            <span>{src.label}{src.section ? ` - ${src.section}` : ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {item.tags && (
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(item.tags).map(([cat, values]) =>
-                          Array.isArray(values) && values.map((v) => (
-                            <span key={`${cat}-${v}`} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{cat}:{v}</span>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-          ))}
+                  {expandedId === item.id && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                      {item.why && (
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">
+                            Pourquoi applicable
+                          </p>
+                          <p className="text-sm text-gray-700">{item.why}</p>
+                        </div>
+                      )}
+                      {item.logic?.then?.outputs && (
+                        <div className="p-3 bg-amber-50 rounded-lg">
+                          <p className="text-xs font-semibold text-amber-700 uppercase mb-1">
+                            Obligations
+                          </p>
+                          {item.logic.then.outputs.map((o, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-2 text-xs text-amber-800 mt-1"
+                            >
+                              <span
+                                className={`w-2 h-2 rounded-full ${o.severity === 'critical' ? 'bg-red-500' : o.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`}
+                              />
+                              <span className="font-medium">{o.label}</span>
+                              {o.deadline && (
+                                <span className="text-amber-600 flex items-center gap-1">
+                                  <Clock size={11} /> {o.deadline}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {item.sources && item.sources.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-1">Sources</p>
+                          {item.sources.map((src, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                              <ExternalLink size={12} />
+                              <span>
+                                {src.label}
+                                {src.section ? ` - ${src.section}` : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {item.tags && (
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(item.tags).map(
+                            ([cat, values]) =>
+                              Array.isArray(values) &&
+                              values.map((v) => (
+                                <span
+                                  key={`${cat}-${v}`}
+                                  className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
+                                >
+                                  {cat}:{v}
+                                </span>
+                              ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            ))}
         </div>
       )}
 
@@ -793,7 +1012,9 @@ function TabConformite({ site }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge status="neutral">draft</Badge>
                   {item.domain && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-600">{item.domain}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-600">
+                      {item.domain}
+                    </span>
                   )}
                   <span className="text-sm text-gray-700">{item.title}</span>
                 </div>
@@ -804,7 +1025,9 @@ function TabConformite({ site }) {
             </Card>
           ))}
           {drafts.length > 5 && (
-            <p className="text-xs text-gray-400 text-center">+{drafts.length - 5} autres items en exploration</p>
+            <p className="text-xs text-gray-400 text-center">
+              +{drafts.length - 5} autres items en exploration
+            </p>
           )}
         </div>
       )}
@@ -819,7 +1042,9 @@ function TabConformite({ site }) {
             </div>
             <div className="flex flex-wrap gap-2">
               {missing.map((f) => (
-                <Badge key={f} status="warn">{f}</Badge>
+                <Badge key={f} status="warn">
+                  {f}
+                </Badge>
               ))}
             </div>
             {suggestions.length > 0 && (
@@ -851,7 +1076,7 @@ export default function Site360() {
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
 
-  const site = scopedSites.find(s => String(s.id) === String(id));
+  const site = scopedSites.find((s) => String(s.id) === String(id));
 
   if (sitesLoading) {
     return (
@@ -863,7 +1088,9 @@ export default function Site360() {
           <ArrowLeft size={16} /> Patrimoine
         </button>
         <div className="flex gap-4">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </div>
     );
@@ -899,11 +1126,17 @@ export default function Site360() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900">{site.nom}</h2>
             <Badge status={badge.status}>{badge.label}</Badge>
-            <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{site.usage}</span>
+            <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+              {site.usage}
+            </span>
           </div>
           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-            <span className="flex items-center gap-1"><MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}</span>
-            <span className="flex items-center gap-1"><Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString()} m2</span>
+            <span className="flex items-center gap-1">
+              <MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}
+            </span>
+            <span className="flex items-center gap-1">
+              <Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString()} m2
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -923,24 +1156,46 @@ export default function Site360() {
 
       {/* 3 Mini KPIs */}
       <div className="flex gap-4">
-        <MiniKpi icon={Zap} label="Conso annuelle" value={`${((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh`} color="text-blue-600" />
-        <MiniKpi icon={BadgeEuro} label="Risque €" value={`${(site.risque_eur || 0).toLocaleString()} €`} color="text-red-600" />
-        <MiniKpi icon={AlertTriangle} label="Anomalies" value={`${site.anomalies_count}`} color="text-amber-600" />
+        <MiniKpi
+          icon={Zap}
+          label="Conso annuelle"
+          value={`${((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh`}
+          color="text-blue-600"
+        />
+        <MiniKpi
+          icon={BadgeEuro}
+          label="Risque €"
+          value={`${(site.risque_eur || 0).toLocaleString()} €`}
+          color="text-red-600"
+        />
+        <MiniKpi
+          icon={AlertTriangle}
+          label="Anomalies"
+          value={`${site.anomalies_count}`}
+          color="text-amber-600"
+        />
       </div>
 
       {/* Tabs */}
       <Tabs tabs={TABS} active={activeTab} onChange={handleSetTab} />
 
       {/* Tab content */}
-      {activeTab === 'resume' && <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />}
-      {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
+      {activeTab === 'resume' && (
+        <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />
+      )}
+      {activeTab === 'conso' && (
+        <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />
+      )}
       {activeTab === 'factures' && (
         <div className="space-y-4 pt-6">
           <SiteContractsSummary siteId={site.id} />
           <SiteBillingMini siteId={site.id} />
           <div className="flex justify-end mt-2 gap-2">
-            <Button variant="outline" size="sm"
-              onClick={() => navigate(`/achat-assistant?site_id=${site.id}`)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/achat-assistant?site_id=${site.id}`)}
+            >
               Créer scénario d&apos;achat
             </Button>
             <button
@@ -954,22 +1209,18 @@ export default function Site360() {
       )}
       {activeTab === 'reconciliation' && <TabReconciliation site={site} />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
-      {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />}
+      {activeTab === 'actions' && (
+        <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />
+      )}
 
       {/* BACS Wizard modal */}
-      {showBacs && (
-        <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />
-      )}
+      {showBacs && <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />}
 
       {/* Smart Intake Wizard modal */}
-      {showIntake && (
-        <IntakeWizard siteId={site.id} onClose={() => setShowIntake(false)} />
-      )}
+      {showIntake && <IntakeWizard siteId={site.id} onClose={() => setShowIntake(false)} />}
 
       {/* Segmentation Questionnaire modal */}
-      {showSegModal && (
-        <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />
-      )}
+      {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
     </div>
   );
 }

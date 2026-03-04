@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — FastAPI Router
 Endpoints pour import, audit, shadow billing, rapport.
 """
+
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/api/bill", tags=["Bill Intelligence"])
 # ========================================
 # Pydantic models
 # ========================================
+
 
 class InvoiceImportRequest(BaseModel):
     json_content: str  # raw JSON string
@@ -31,10 +33,12 @@ class BatchAuditRequest(BaseModel):
 # Endpoints
 # ========================================
 
+
 @router.get("/demo/invoices")
 def list_demo_invoices():
     """List available demo invoices."""
     from .parsers.json_parser import list_demo_invoices
+
     files = list_demo_invoices()
     return {"invoices": files, "count": len(files)}
 
@@ -43,6 +47,7 @@ def list_demo_invoices():
 def get_demo_invoice(filename: str):
     """Parse and return a demo invoice."""
     from .parsers.json_parser import parse_json_file
+
     demo_dir = Path(__file__).resolve().parent.parent.parent / "data" / "invoices" / "demo"
     fpath = demo_dir / filename
     if not fpath.exists():
@@ -58,6 +63,7 @@ def get_demo_invoice(filename: str):
 def import_invoice(request: InvoiceImportRequest):
     """Import a JSON invoice and parse it."""
     from .parsers.json_parser import parse_json_invoice
+
     try:
         invoice = parse_json_invoice(request.json_content)
         return {"status": "imported", "invoice": invoice.to_dict()}
@@ -123,16 +129,18 @@ def audit_all_demo():
     for inv in invoices:
         try:
             report = full_pipeline(inv)
-            results.append({
-                "invoice_id": report.invoice_id,
-                "coverage_level": report.coverage_level,
-                "total_anomalies": report.total_anomalies,
-                "critical_anomalies": report.critical_anomalies,
-                "potential_savings_eur": report.potential_savings_eur,
-                "energy_type": inv.energy_type.value,
-                "supplier": inv.supplier,
-                "total_ttc": inv.total_ttc,
-            })
+            results.append(
+                {
+                    "invoice_id": report.invoice_id,
+                    "coverage_level": report.coverage_level,
+                    "total_anomalies": report.total_anomalies,
+                    "critical_anomalies": report.critical_anomalies,
+                    "potential_savings_eur": report.potential_savings_eur,
+                    "energy_type": inv.energy_type.value,
+                    "supplier": inv.supplier,
+                    "total_ttc": inv.total_ttc,
+                }
+            )
         except Exception as e:
             results.append({"invoice_id": inv.invoice_id, "error": str(e)[:200]})
 
@@ -161,6 +169,7 @@ def get_report_html(invoice_id: str):
         for f in demo_dir.glob("*.json"):
             try:
                 from .parsers.json_parser import parse_json_file as pjf
+
                 inv = pjf(str(f))
                 if inv.invoice_id == invoice_id:
                     candidates = [f]
@@ -195,18 +204,20 @@ def export_anomalies_csv():
         inv = audit_invoice(inv)
         for a in inv.anomalies:
             d = a.to_dict()
-            row = ";".join([
-                str(inv.invoice_id),
-                str(d.get("anomaly_id", "")),
-                str(d.get("anomaly_type", "")),
-                str(d.get("severity", "")),
-                str(d.get("message", "")).replace(";", ","),
-                str(d.get("component_type", "") or ""),
-                str(d.get("expected_value", "") or ""),
-                str(d.get("actual_value", "") or ""),
-                str(d.get("difference", "") or ""),
-                str(d.get("rule_card_id", "")),
-            ])
+            row = ";".join(
+                [
+                    str(inv.invoice_id),
+                    str(d.get("anomaly_id", "")),
+                    str(d.get("anomaly_type", "")),
+                    str(d.get("severity", "")),
+                    str(d.get("message", "")).replace(";", ","),
+                    str(d.get("component_type", "") or ""),
+                    str(d.get("expected_value", "") or ""),
+                    str(d.get("actual_value", "") or ""),
+                    str(d.get("difference", "") or ""),
+                    str(d.get("rule_card_id", "")),
+                ]
+            )
             all_csv_parts.append(row)
 
     return PlainTextResponse(
@@ -220,11 +231,9 @@ def export_anomalies_csv():
 def list_audit_rules():
     """List all V0 audit rules."""
     from .rules.audit_rules_v0 import ALL_RULES
+
     return {
-        "rules": [
-            {"id": r[0], "name": r[1], "function": r[2].__name__}
-            for r in ALL_RULES
-        ],
+        "rules": [{"id": r[0], "name": r[1], "function": r[2].__name__} for r in ALL_RULES],
         "count": len(ALL_RULES),
         "engine_version": "0.1.0-poc",
     }
@@ -297,8 +306,10 @@ def get_timeline(
 
     timelines = build_timeline(
         audited,
-        start_year=start_year, start_month=start_month,
-        end_year=end_year, end_month=end_month,
+        start_year=start_year,
+        start_month=start_month,
+        end_year=end_year,
+        end_month=end_month,
     )
 
     total_gaps = sum(len(t.gaps) for t in timelines)
@@ -330,6 +341,7 @@ def get_dashboard():
 def list_pdf_templates():
     """List available PDF parser templates."""
     from .parsers.pdf_parser import list_templates
+
     templates = list_templates()
     return {"templates": templates, "count": len(templates)}
 
@@ -341,6 +353,7 @@ def parse_pdf_text_endpoint(request: InvoiceImportRequest):
     Accepts raw text (as extracted from a PDF) and auto-detects the template.
     """
     from .parsers.pdf_parser import parse_pdf_text
+
     try:
         invoice = parse_pdf_text(request.json_content)
         return {"status": "parsed", "invoice": invoice.to_dict()}

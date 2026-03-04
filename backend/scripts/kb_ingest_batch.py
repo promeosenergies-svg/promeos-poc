@@ -4,6 +4,7 @@ Ingere tous les fichiers HTML d'un dossier via le pipeline KB existant.
 
 Usage: python backend/scripts/kb_ingest_batch.py --input-dir <path>
 """
+
 import sys
 import os
 import re
@@ -43,12 +44,13 @@ def match_file(filename: str) -> tuple:
         if pattern in filename:
             return doc_id, title
     # Fallback: generate from filename
-    clean = re.sub(r'[^a-zA-Z0-9_]', '_', filename.split('.')[0])[:30]
-    return clean.upper(), filename.split('.')[0]
+    clean = re.sub(r"[^a-zA-Z0-9_]", "_", filename.split(".")[0])[:30]
+    return clean.upper(), filename.split(".")[0]
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Batch ingest HTML files into KB")
     parser.add_argument("--input-dir", required=True, help="Directory containing HTML files")
     args = parser.parse_args()
@@ -70,11 +72,11 @@ def main():
 
     for i, html_file in enumerate(html_files, 1):
         doc_id, title = match_file(html_file.name)
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"[{i}/{len(html_files)}] {doc_id}")
         print(f"  File:  {html_file.name}")
         print(f"  Title: {title}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         try:
             report = pipeline.ingest(
@@ -85,18 +87,20 @@ def main():
             )
             if "error" in report:
                 print(f"  ERROR: {report['error']}")
-                results.append((doc_id, title, "ERROR", report['error']))
+                results.append((doc_id, title, "ERROR", report["error"]))
             else:
-                print(f"  OK: {report['nb_sections']} sections, {report['nb_chunks']} chunks, {report['nb_drafts']} drafts")
+                print(
+                    f"  OK: {report['nb_sections']} sections, {report['nb_chunks']} chunks, {report['nb_drafts']} drafts"
+                )
                 results.append((doc_id, title, "OK", report))
         except Exception as e:
             print(f"  EXCEPTION: {e}")
             results.append((doc_id, title, "EXCEPTION", str(e)))
 
     # Summary
-    print(f"\n\n{'='*60}")
+    print(f"\n\n{'=' * 60}")
     print("BATCH INGESTION SUMMARY")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"{'Doc ID':<25} {'Status':<8} {'Sections':>8} {'Chunks':>8} {'Drafts':>8}")
     print("-" * 65)
 
@@ -108,9 +112,9 @@ def main():
     for doc_id, title, status, data in results:
         if status == "OK":
             ok_count += 1
-            s = data['nb_sections']
-            c = data['nb_chunks']
-            d = data['nb_drafts']
+            s = data["nb_sections"]
+            c = data["nb_chunks"]
+            d = data["nb_drafts"]
             total_sections += s
             total_chunks += c
             total_drafts += d

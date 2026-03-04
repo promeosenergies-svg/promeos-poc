@@ -1,7 +1,9 @@
 """
 PROMEOS — Tests V11 C4: Targets V2 (variance decomposition + run-rate)
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,8 +23,9 @@ from main import app
 
 @pytest.fixture
 def db():
-    engine = create_engine("sqlite:///:memory:", echo=False,
-                           connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(bind=engine)
     session = sessionmaker(bind=engine)()
     yield session
@@ -37,8 +40,11 @@ def seeded_db(db):
     db.flush()
 
     meter = Meter(
-        site_id=site.id, meter_id="PRM-TARGETS-V2", name="Compteur Principal",
-        energy_vector=EnergyVector.ELECTRICITY, is_active=True,
+        site_id=site.id,
+        meter_id="PRM-TARGETS-V2",
+        name="Compteur Principal",
+        energy_vector=EnergyVector.ELECTRICITY,
+        is_active=True,
     )
     db.add(meter)
     db.flush()
@@ -47,18 +53,25 @@ def seeded_db(db):
     now = datetime.now(timezone.utc)
     year = now.year
     for i in range(100):
-        db.add(MeterReading(
-            meter_id=meter.id,
-            timestamp=now - timedelta(hours=100 - i),
-            value_kwh=8.0 + (i % 24) * 0.3,
-        ))
+        db.add(
+            MeterReading(
+                meter_id=meter.id,
+                timestamp=now - timedelta(hours=100 - i),
+                value_kwh=8.0 + (i % 24) * 0.3,
+            )
+        )
 
     for m in range(1, 13):
-        db.add(ConsumptionTarget(
-            site_id=site.id, energy_type="electricity",
-            period="monthly", year=year, month=m,
-            target_kwh=5000.0,
-        ))
+        db.add(
+            ConsumptionTarget(
+                site_id=site.id,
+                energy_type="electricity",
+                period="monthly",
+                year=year,
+                month=m,
+                target_kwh=5000.0,
+            )
+        )
 
     db.commit()
     return db, site.id, year
@@ -67,9 +80,13 @@ def seeded_db(db):
 @pytest.fixture
 def client(seeded_db):
     db, _, _ = seeded_db
+
     def _override():
-        try: yield db
-        finally: pass
+        try:
+            yield db
+        finally:
+            pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()

@@ -1,6 +1,7 @@
 """
 PROMEOS - Routes API pour les Alertes
 """
+
 import logging
 from datetime import datetime, timezone
 
@@ -17,6 +18,7 @@ from services.iam_service import log_audit
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/alertes", tags=["Alertes"])
+
 
 @router.get("", response_model=AlerteListResponse)
 def get_alertes(
@@ -40,14 +42,12 @@ def get_alertes(
         query = query.filter(Alerte.severite == severite)
     if resolue is not None:
         query = query.filter(Alerte.resolue == resolue)
-    
+
     total = query.count()
     alertes = query.order_by(Alerte.timestamp.desc()).limit(limit).all()
-    
-    return {
-        "total": total,
-        "alertes": alertes
-    }
+
+    return {"total": total, "alertes": alertes}
+
 
 @router.get("/{alerte_id}", response_model=AlerteResponse)
 def get_alerte(alerte_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
@@ -61,6 +61,7 @@ def get_alerte(alerte_id: int, db: Session = Depends(get_db), auth: Optional[Aut
 
     check_site_access(auth, alerte.site_id)
     return alerte
+
 
 @router.patch("/{alerte_id}/resolve")
 def resolve_alerte(
@@ -84,8 +85,14 @@ def resolve_alerte(
 
     alerte.resolue = True
     alerte.date_resolution = datetime.now(timezone.utc)
-    log_audit(db, auth.user.id if auth else None, "resolve_alert", "alerte", str(alerte_id),
-              ip_address=request.client.host if request.client else None)
+    log_audit(
+        db,
+        auth.user.id if auth else None,
+        "resolve_alert",
+        "alerte",
+        str(alerte_id),
+        ip_address=request.client.host if request.client else None,
+    )
     logger.info("PATCH resolve alert %s (user=%s)", alerte_id, auth.user.id if auth else "anonymous")
     db.commit()
 

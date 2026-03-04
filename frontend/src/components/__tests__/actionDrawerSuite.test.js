@@ -47,7 +47,7 @@ describe('A · CreateActionDrawer — structure', () => {
 
   it('has form fields: titre, type, priorite, due_date, owner, description', () => {
     expect(code).toContain('titre');
-    expect(code).toContain("type");
+    expect(code).toContain('type');
     expect(code).toContain('priorite');
     expect(code).toContain('due_date');
     expect(code).toContain('owner');
@@ -210,7 +210,9 @@ describe('E · Integration wiring', () => {
       try {
         const src = readSrc('pages', page);
         if (src.includes('useActionDrawer')) count++;
-      } catch { /* file may not exist */ }
+      } catch {
+        /* file may not exist */
+      }
     }
     expect(count).toBeGreaterThanOrEqual(10);
   });

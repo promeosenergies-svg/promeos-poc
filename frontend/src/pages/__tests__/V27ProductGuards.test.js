@@ -19,8 +19,7 @@ import {
   checkConsistency,
 } from '../../models/dashboardEssentials';
 
-const readSrc = (relPath) =>
-  readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
+const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── Mock sites factory ──────────────────────────────────────────────────────
 
@@ -128,9 +127,7 @@ describe('INV-3: conformite hierarchy', () => {
   });
 
   it('risque tile = crit if risqueTotal > 50k', () => {
-    const sites = [
-      makeSite({ id: 1, statut_conformite: 'non_conforme', risque_eur: 60000 }),
-    ];
+    const sites = [makeSite({ id: 1, statut_conformite: 'non_conforme', risque_eur: 60000 })];
     const kpis = buildDashboardEssentials(sites).kpis;
     const tiles = buildExecutiveKpis(kpis, sites);
     const risqueTile = tiles.find((t) => t.id === 'risque');
@@ -156,19 +153,13 @@ describe('INV-4: couvertureDonnees formula', () => {
   });
 
   it('0% when no sites have consumption', () => {
-    const sites = [
-      makeSite({ id: 1, conso_kwh_an: 0 }),
-      makeSite({ id: 2, conso_kwh_an: 0 }),
-    ];
+    const sites = [makeSite({ id: 1, conso_kwh_an: 0 }), makeSite({ id: 2, conso_kwh_an: 0 })];
     const result = buildDashboardEssentials(sites);
     expect(result.kpis.couvertureDonnees).toBe(0);
   });
 
   it('100% when all sites have consumption', () => {
-    const sites = [
-      makeSite({ id: 1, conso_kwh_an: 1000 }),
-      makeSite({ id: 2, conso_kwh_an: 500 }),
-    ];
+    const sites = [makeSite({ id: 1, conso_kwh_an: 1000 }), makeSite({ id: 2, conso_kwh_an: 500 })];
     const result = buildDashboardEssentials(sites);
     expect(result.kpis.couvertureDonnees).toBe(100);
   });

@@ -1,6 +1,7 @@
 """
 PROMEOS RegOps - Domain schemas (dataclasses)
 """
+
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Optional

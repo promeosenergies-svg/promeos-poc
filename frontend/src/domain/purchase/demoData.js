@@ -29,7 +29,7 @@ export const DEMO_ORGANIZATIONS = [
             energyType: EnergyType.ELEC,
             consumption: {
               annualKwh: 2400000,
-              monthlyKwh: SEASONALITY_ELEC.map(c => Math.round(2400000 * c / 12)),
+              monthlyKwh: SEASONALITY_ELEC.map((c) => Math.round((2400000 * c) / 12)),
               granularity: 'monthly',
               profileFactor: 1.15,
               seasonality: [...SEASONALITY_ELEC],
@@ -39,13 +39,23 @@ export const DEMO_ORGANIZATIONS = [
               invoiceCount: 24,
               totalEur: 480000,
               totalKwh: 4800000,
-              avgPricePerKwh: 0.10,
+              avgPricePerKwh: 0.1,
               anomalyCount: 2,
               estimatedLossEur: 3200,
             },
             anomalies: [
-              { type: 'DOUBLE_CHARGE', severity: 'high', message: 'Double facturation detectee mois 06/2024', estimatedLossEur: 1800 },
-              { type: 'ESTIMATION_ECART', severity: 'medium', message: 'Ecart estimation > 15% mois 11/2024', estimatedLossEur: 1400 },
+              {
+                type: 'DOUBLE_CHARGE',
+                severity: 'high',
+                message: 'Double facturation detectee mois 06/2024',
+                estimatedLossEur: 1800,
+              },
+              {
+                type: 'ESTIMATION_ECART',
+                severity: 'medium',
+                message: 'Ecart estimation > 15% mois 11/2024',
+                estimatedLossEur: 1400,
+              },
             ],
           },
           {
@@ -57,7 +67,7 @@ export const DEMO_ORGANIZATIONS = [
             energyType: EnergyType.ELEC,
             consumption: {
               annualKwh: 800000,
-              monthlyKwh: SEASONALITY_ELEC.map(c => Math.round(800000 * c / 12)),
+              monthlyKwh: SEASONALITY_ELEC.map((c) => Math.round((800000 * c) / 12)),
               granularity: 'monthly',
               profileFactor: 0.95,
               seasonality: [...SEASONALITY_ELEC],
@@ -97,7 +107,7 @@ export const DEMO_ORGANIZATIONS = [
             energyType: EnergyType.GAZ,
             consumption: {
               annualKwh: 600000,
-              monthlyKwh: SEASONALITY_GAZ.map(c => Math.round(600000 * c / 12)),
+              monthlyKwh: SEASONALITY_GAZ.map((c) => Math.round((600000 * c) / 12)),
               granularity: 'monthly',
               profileFactor: 1.0,
               seasonality: [...SEASONALITY_GAZ],
@@ -112,7 +122,12 @@ export const DEMO_ORGANIZATIONS = [
               estimatedLossEur: 500,
             },
             anomalies: [
-              { type: 'INDEX_MISMATCH', severity: 'medium', message: 'Index PEG different du contrat', estimatedLossEur: 500 },
+              {
+                type: 'INDEX_MISMATCH',
+                severity: 'medium',
+                message: 'Index PEG different du contrat',
+                estimatedLossEur: 500,
+              },
             ],
           },
         ],
@@ -144,7 +159,7 @@ export const DEMO_OFFERS = [
       { component: 'ACHEMINEMENT', sharePct: 0.26, eurPerMwh: 24.7, status: 'KNOWN' },
       { component: 'TAXES_CSPE', sharePct: 0.14, eurPerMwh: 13.3, status: 'KNOWN' },
       { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.85, status: 'KNOWN' },
-      { component: 'TVA', sharePct: 0.10, eurPerMwh: 9.5, status: 'KNOWN' },
+      { component: 'TVA', sharePct: 0.1, eurPerMwh: 9.5, status: 'KNOWN' },
       { component: 'CEE', sharePct: 0.04, eurPerMwh: 3.8, status: 'KNOWN' },
       { component: 'CAPACITE', sharePct: 0.03, eurPerMwh: 2.85, status: 'KNOWN' },
       { component: 'ABONNEMENT', sharePct: 0.02, eurPerMwh: 1.9, status: 'KNOWN' },
@@ -192,7 +207,7 @@ export const DEMO_OFFERS = [
       { component: 'ACHEMINEMENT', sharePct: 0.27, eurPerMwh: 24.3, status: 'KNOWN' },
       { component: 'TAXES_CSPE', sharePct: 0.15, eurPerMwh: 13.5, status: 'KNOWN' },
       { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.7, status: 'KNOWN' },
-      { component: 'TVA', sharePct: 0.10, eurPerMwh: null, status: 'ESTIMATED' },
+      { component: 'TVA', sharePct: 0.1, eurPerMwh: null, status: 'ESTIMATED' },
       { component: 'CEE', sharePct: 0.04, eurPerMwh: 3.6, status: 'KNOWN' },
       { component: 'CAPACITE', sharePct: 0.03, eurPerMwh: 2.7, status: 'KNOWN' },
       { component: 'ABONNEMENT', sharePct: 0.02, eurPerMwh: 1.8, status: 'KNOWN' },
@@ -231,7 +246,7 @@ export const DEMO_OFFERS = [
       spreadEurPerMwh: 3,
       capEurPerMwh: 120,
       floorEurPerMwh: null,
-      fixedSharePct: 0.60,
+      fixedSharePct: 0.6,
       indexedSharePct: 0.25,
       spotSharePct: 0.15,
     },
@@ -240,7 +255,7 @@ export const DEMO_OFFERS = [
       { component: 'ACHEMINEMENT', sharePct: 0.27, eurPerMwh: 24.3, status: 'KNOWN' },
       { component: 'TAXES_CSPE', sharePct: 0.14, eurPerMwh: 12.6, status: 'KNOWN' },
       { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.7, status: 'KNOWN' },
-      { component: 'TVA', sharePct: 0.10, eurPerMwh: null, status: 'ESTIMATED' },
+      { component: 'TVA', sharePct: 0.1, eurPerMwh: null, status: 'ESTIMATED' },
       { component: 'CEE', sharePct: 0.04, eurPerMwh: 3.6, status: 'KNOWN' },
       { component: 'CAPACITE', sharePct: 0.03, eurPerMwh: 2.7, status: 'KNOWN' },
       { component: 'ABONNEMENT', sharePct: 0.02, eurPerMwh: 1.8, status: 'KNOWN' },
@@ -284,11 +299,11 @@ export const DEMO_OFFERS = [
       spotSharePct: 1,
     },
     breakdown: [
-      { component: 'FOURNITURE', sharePct: 0.40, eurPerMwh: null, status: 'UNKNOWN' },
+      { component: 'FOURNITURE', sharePct: 0.4, eurPerMwh: null, status: 'UNKNOWN' },
       { component: 'ACHEMINEMENT', sharePct: 0.25, eurPerMwh: 22.5, status: 'KNOWN' },
       { component: 'TAXES_CSPE', sharePct: 0.14, eurPerMwh: 12.6, status: 'KNOWN' },
       { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.7, status: 'KNOWN' },
-      { component: 'TVA', sharePct: 0.10, eurPerMwh: null, status: 'UNKNOWN' },
+      { component: 'TVA', sharePct: 0.1, eurPerMwh: null, status: 'UNKNOWN' },
     ],
     contractTerms: {
       durationMonths: 12,
@@ -322,20 +337,20 @@ export const DEMO_OFFERS = [
       fixedPriceEurPerMwh: 105,
       indexName: 'Index Proprietaire',
       spreadEurPerMwh: 8,
-      capEurPerMwh: null,    // no cap
+      capEurPerMwh: null, // no cap
       floorEurPerMwh: null,
-      fixedSharePct: 0.30,
-      indexedSharePct: 0.30,
-      spotSharePct: 0.40,    // very high spot share
+      fixedSharePct: 0.3,
+      indexedSharePct: 0.3,
+      spotSharePct: 0.4, // very high spot share
     },
     breakdown: [
       { component: 'FOURNITURE', sharePct: 0.45, eurPerMwh: null, status: 'UNKNOWN' },
-      { component: 'ACHEMINEMENT', sharePct: 0.20, eurPerMwh: null, status: 'UNKNOWN' },
+      { component: 'ACHEMINEMENT', sharePct: 0.2, eurPerMwh: null, status: 'UNKNOWN' },
       // Only 2 components known — should trigger low transparency
     ],
     contractTerms: {
-      durationMonths: 48,        // very long
-      noticePeriodDays: 240,     // very long notice
+      durationMonths: 48, // very long
+      noticePeriodDays: 240, // very long notice
       earlyTerminationPenalty: 'HIGH',
       indexationClause: 'VAGUE',
       slaLevel: 'NONE',
@@ -344,9 +359,9 @@ export const DEMO_OFFERS = [
     },
     intermediation: {
       hasIntermediary: true,
-      feeDisclosed: false,       // undisclosed fee
-      feeEurPerMwh: 8,           // high hidden fee
-      passThroughPolicy: 'UNLIMITED',  // unlimited pass-through
+      feeDisclosed: false, // undisclosed fee
+      feeEurPerMwh: 8, // high hidden fee
+      passThroughPolicy: 'UNLIMITED', // unlimited pass-through
     },
     dataTerms: {
       curvesAccess: false,
@@ -367,19 +382,31 @@ export const DEMO_OFFERS = [
       capEurPerMwh: 110,
       floorEurPerMwh: 45,
       fixedSharePct: 0.55,
-      indexedSharePct: 0.30,
+      indexedSharePct: 0.3,
       spotSharePct: 0.15,
     },
     solarSlots: {
-      summer: { start: '13:00', end: '16:00', days: 'Lun-Ven', weekendStart: '10:00', weekendEnd: '17:00' },
-      winter: { start: '11:00', end: '14:00', days: 'Lun-Ven', weekendStart: '10:00', weekendEnd: '15:00' },
+      summer: {
+        start: '13:00',
+        end: '16:00',
+        days: 'Lun-Ven',
+        weekendStart: '10:00',
+        weekendEnd: '17:00',
+      },
+      winter: {
+        start: '11:00',
+        end: '14:00',
+        days: 'Lun-Ven',
+        weekendStart: '10:00',
+        weekendEnd: '15:00',
+      },
     },
     breakdown: [
       { component: 'FOURNITURE', sharePct: 0.36, eurPerMwh: 31.7, status: 'KNOWN' },
       { component: 'ACHEMINEMENT', sharePct: 0.27, eurPerMwh: 23.8, status: 'KNOWN' },
       { component: 'TAXES_CSPE', sharePct: 0.14, eurPerMwh: 12.3, status: 'KNOWN' },
       { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.6, status: 'KNOWN' },
-      { component: 'TVA', sharePct: 0.10, eurPerMwh: 8.8, status: 'KNOWN' },
+      { component: 'TVA', sharePct: 0.1, eurPerMwh: 8.8, status: 'KNOWN' },
       { component: 'CEE', sharePct: 0.04, eurPerMwh: 3.5, status: 'KNOWN' },
       { component: 'CAPACITE', sharePct: 0.03, eurPerMwh: 2.6, status: 'KNOWN' },
       { component: 'ABONNEMENT', sharePct: 0.02, eurPerMwh: 1.8, status: 'KNOWN' },
@@ -434,8 +461,21 @@ export function aggregateDemoSites(siteIds, org = null) {
     return {
       annualKwh: 0,
       energyType: EnergyType.ELEC,
-      consumption: { annualKwh: 0, granularity: 'monthly', profileFactor: 1, seasonality: [...SEASONALITY_ELEC], source: 'DEMO' },
-      billing: { invoiceCount: 0, totalEur: 0, totalKwh: 0, avgPricePerKwh: 0, anomalyCount: 0, estimatedLossEur: 0 },
+      consumption: {
+        annualKwh: 0,
+        granularity: 'monthly',
+        profileFactor: 1,
+        seasonality: [...SEASONALITY_ELEC],
+        source: 'DEMO',
+      },
+      billing: {
+        invoiceCount: 0,
+        totalEur: 0,
+        totalKwh: 0,
+        avgPricePerKwh: 0,
+        anomalyCount: 0,
+        estimatedLossEur: 0,
+      },
       anomalies: [],
     };
   }
@@ -453,7 +493,7 @@ export function aggregateDemoSites(siteIds, org = null) {
   };
   billing.avgPricePerKwh = billing.totalKwh > 0 ? billing.totalEur / billing.totalKwh : 0;
 
-  const anomalies = sites.flatMap(s => s.anomalies || []);
+  const anomalies = sites.flatMap((s) => s.anomalies || []);
 
   return {
     annualKwh,

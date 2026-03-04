@@ -28,7 +28,9 @@ describe('A · Label Tarif Heures Solaires visible (mode normal)', () => {
 
   it('label is NOT gated by isExpert', () => {
     // The label should be in the STRATEGY_META constant, outside any isExpert condition
-    const match = code.match(/const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 
@@ -131,11 +133,15 @@ describe('D · Grand-public subtitle', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('STRATEGY_META desc contains the new subtitle', () => {
-    expect(code).toContain("Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.");
+    expect(code).toContain(
+      'Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.'
+    );
   });
 
   it('subtitle is in reflex_solar desc field', () => {
-    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Payez moins quand le soleil brille/);
+    const match = code.match(
+      /reflex_solar:\s*\{[\s\S]*?desc:\s*["']Payez moins quand le soleil brille/
+    );
     expect(match).not.toBeNull();
   });
 });
@@ -147,7 +153,9 @@ describe('E · Action prefill scenario_label', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('reflex CTA prefills scenario_label=Tarif Heures Solaires', () => {
-    const match = code.match(/cta-create-action-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /cta-create-action-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 
@@ -161,12 +169,16 @@ describe('E · Action prefill scenario_label', () => {
   });
 
   it('top-list gain action has scenario_label', () => {
-    const match = code.match(/Tarif Heures Solaires — gain[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /Tarif Heures Solaires — gain[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 
   it('campaign CTA includes scenario_label', () => {
-    const match = code.match(/cta-campaign-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /cta-campaign-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 

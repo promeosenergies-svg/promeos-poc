@@ -38,7 +38,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import useFloatingPortalPosition from '../../hooks/useFloatingPortalPosition';
-import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, LayoutGrid } from 'lucide-react';
+import {
+  X,
+  Zap,
+  Flame,
+  Save,
+  RotateCcw,
+  Link,
+  ChevronDown,
+  Trash2,
+  Plus,
+  LayoutGrid,
+} from 'lucide-react';
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
@@ -51,10 +62,10 @@ const ENERGY_OPTIONS = [
 
 // Quick period pills — 'ytd' is a sentinel computed to Jan-1 → today
 const PERIOD_PILLS = [
-  { value: 7,     label: '7 j' },
-  { value: 30,    label: '30 j' },
-  { value: 90,    label: '90 j' },
-  { value: 365,   label: '12 m' },
+  { value: 7, label: '7 j' },
+  { value: 30, label: '30 j' },
+  { value: 90, label: '90 j' },
+  { value: 365, label: '12 m' },
   { value: 'ytd', label: 'YTD' },
 ];
 
@@ -65,15 +76,15 @@ const MODE_ORDER = ['agrege', 'superpose', 'empile', 'separe'];
 const UNIT_ORDER = ['kwh', 'kw', 'eur'];
 
 const MODE_TOOLTIPS = {
-  agrege:   'Somme de tous les sites sur une seule courbe.',
-  superpose:'Courbe de chaque site superposée, même axe Y.',
-  empile:   'Courbe de chaque site empilée (aires cumulées).',
-  separe:   'Un sous-graphique par site, axe indépendant.',
+  agrege: 'Somme de tous les sites sur une seule courbe.',
+  superpose: 'Courbe de chaque site superposée, même axe Y.',
+  empile: 'Courbe de chaque site empilée (aires cumulées).',
+  separe: 'Un sous-graphique par site, axe indépendant.',
 };
 
 const UNIT_TOOLTIPS = {
   kwh: 'Énergie consommée en kilowatt-heure.',
-  kw:  'Puissance instantanée en kilowatt.',
+  kw: 'Puissance instantanée en kilowatt.',
   eur: 'Coût estimé en euros (tarif réglementé).',
 };
 
@@ -100,14 +111,18 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
     portalRef: dropRef,
   });
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // Outside-click closes the dropdown (checks both anchor and portaled div)
   useEffect(() => {
     function handler(e) {
       if (
-        dropRef.current && !dropRef.current.contains(e.target) &&
-        anchorRef?.current && !anchorRef.current.contains(e.target)
+        dropRef.current &&
+        !dropRef.current.contains(e.target) &&
+        anchorRef?.current &&
+        !anchorRef.current.contains(e.target)
       ) {
         onClose();
       }
@@ -117,8 +132,7 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
   }, [onClose, anchorRef]);
 
   const available = sites.filter(
-    s => !selectedIds.includes(s.id) &&
-      s.nom.toLowerCase().includes(query.toLowerCase())
+    (s) => !selectedIds.includes(s.id) && s.nom.toLowerCase().includes(query.toLowerCase())
   );
 
   return createPortal(
@@ -132,7 +146,7 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
         <input
           ref={inputRef}
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un site..."
           className="w-full text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
@@ -146,7 +160,10 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
           return (
             <button
               key={s.id}
-              onClick={() => { onAdd(s.id); onClose(); }}
+              onClick={() => {
+                onAdd(s.id);
+                onClose();
+              }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 text-left"
             >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -156,7 +173,7 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
         })}
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }
 
@@ -164,7 +181,7 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
 function ModePills({ mode, setMode, isPortfolioMode, availableModes, showTooltips = false }) {
   return (
     <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-      {availableModes.map(m => (
+      {availableModes.map((m) => (
         <button
           key={m}
           onClick={() => setMode(m)}
@@ -179,9 +196,7 @@ function ModePills({ mode, setMode, isPortfolioMode, availableModes, showTooltip
           title={isPortfolioMode && m !== 'agrege' ? 'Non disponible en mode Portfolio' : undefined}
         >
           {MODE_LABELS[m]}
-          {showTooltips && MODE_TOOLTIPS[m] && (
-            <InfoTip content={MODE_TOOLTIPS[m]} />
-          )}
+          {showTooltips && MODE_TOOLTIPS[m] && <InfoTip content={MODE_TOOLTIPS[m]} />}
         </button>
       ))}
     </div>
@@ -192,7 +207,7 @@ function ModePills({ mode, setMode, isPortfolioMode, availableModes, showTooltip
 function UnitPills({ unit, setUnit, showTooltips = false }) {
   return (
     <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-      {UNIT_ORDER.map(u => (
+      {UNIT_ORDER.map((u) => (
         <button
           key={u}
           onClick={() => setUnit(u)}
@@ -201,9 +216,7 @@ function UnitPills({ unit, setUnit, showTooltips = false }) {
           }`}
         >
           {UNIT_LABELS[u]}
-          {showTooltips && UNIT_TOOLTIPS[u] && (
-            <InfoTip content={UNIT_TOOLTIPS[u]} />
-          )}
+          {showTooltips && UNIT_TOOLTIPS[u] && <InfoTip content={UNIT_TOOLTIPS[u]} />}
         </button>
       ))}
     </div>
@@ -215,7 +228,7 @@ function ResumeContexte({ days, gran, nSites, availability }) {
   const meters = availability?.meters_count ?? null;
   const source = availability?.source ?? null;
   const quality = availability?.readings_count
-    ? Math.min(100, Math.round(availability.readings_count / 500 * 100))
+    ? Math.min(100, Math.round((availability.readings_count / 500) * 100))
     : null;
 
   const parts = [
@@ -281,7 +294,7 @@ export default function StickyFilterBar({
   // Granularity selector (V21-C + V22-B)
   granularity = 'auto',
   setGranularity,
-  samplingMinutes = null,  // V22-B: actual meter reading interval for intersection
+  samplingMinutes = null, // V22-B: actual meter reading interval for intersection
 }) {
   const isClassic = uiMode === 'classic';
 
@@ -307,8 +320,10 @@ export default function StickyFilterBar({
     if (!showPresets) return;
     const handler = (e) => {
       if (
-        presetsDropRef.current && !presetsDropRef.current.contains(e.target) &&
-        presetsBtnRef.current && !presetsBtnRef.current.contains(e.target)
+        presetsDropRef.current &&
+        !presetsDropRef.current.contains(e.target) &&
+        presetsBtnRef.current &&
+        !presetsBtnRef.current.contains(e.target)
       ) {
         setShowPresets(false);
       }
@@ -319,11 +334,15 @@ export default function StickyFilterBar({
 
   const gran = computeGranularity(days);
   const confidence = availability?.has_data
-    ? (availability.readings_count > 1000 ? 'high' : availability.readings_count > 200 ? 'medium' : 'low')
+    ? availability.readings_count > 1000
+      ? 'high'
+      : availability.readings_count > 200
+        ? 'medium'
+        : 'low'
     : null;
 
   // Resolve effective selected site IDs (multi or single legacy)
-  const effectiveSiteIds = siteIds.length > 0 ? siteIds : (siteId ? [siteId] : []);
+  const effectiveSiteIds = siteIds.length > 0 ? siteIds : siteId ? [siteId] : [];
   // V19: always multi-mode when setSiteIds is provided (even with 0 or 1 sites)
   const isMultiMode = Boolean(setSiteIds);
 
@@ -335,7 +354,7 @@ export default function StickyFilterBar({
     if (effectiveSiteIds.includes(id)) {
       // Don't remove last remaining site
       if (effectiveSiteIds.length > 1) {
-        setSiteIds(effectiveSiteIds.filter(s => s !== id));
+        setSiteIds(effectiveSiteIds.filter((s) => s !== id));
       }
     } else if (!isPortfolioMode && effectiveSiteIds.length < MAX_SITES) {
       setSiteIds([...effectiveSiteIds, id]);
@@ -344,7 +363,7 @@ export default function StickyFilterBar({
 
   // Determine which period pill is active
   const isCustomRange = !!(startDate || endDate);
-  const activePill = isCustomRange ? 'custom' : (days === 'ytd' ? 'ytd' : days);
+  const activePill = isCustomRange ? 'custom' : days === 'ytd' ? 'ytd' : days;
 
   const handlePillClick = (value) => {
     if (value === 'ytd') {
@@ -369,7 +388,11 @@ export default function StickyFilterBar({
 
   const handleCopyLink = () => {
     if (onCopyLink) onCopyLink();
-    else { try { navigator.clipboard.writeText(window.location.href); } catch {} }
+    else {
+      try {
+        navigator.clipboard.writeText(window.location.href);
+      } catch {}
+    }
   };
 
   // Modes available in current context
@@ -380,18 +403,19 @@ export default function StickyFilterBar({
 
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-2.5 md:-mx-6 md:px-6 space-y-2">
-
       {/* Row 1: Site chips (selected only) + add button + Portfolio toggle + Energy + Period + Gran + Trust */}
       <div className="flex items-center gap-3 flex-wrap">
-
         {/* V19: Site section — ALWAYS visible when setSiteIds is provided */}
         {setSiteIds && !isPortfolioMode && (
           <div className="flex items-center gap-1.5">
             {effectiveSiteIds.length > 0 ? (
               /* Selected site chips */
-              <div className="flex gap-1.5 overflow-x-auto max-w-xs" style={{ scrollbarWidth: 'thin' }}>
+              <div
+                className="flex gap-1.5 overflow-x-auto max-w-xs"
+                style={{ scrollbarWidth: 'thin' }}
+              >
                 {effectiveSiteIds.map((id, idx) => {
-                  const site = sites.find(s => s.id === id);
+                  const site = sites.find((s) => s.id === id);
                   const color = colorForSite(id, idx);
                   return (
                     <button
@@ -399,7 +423,11 @@ export default function StickyFilterBar({
                       onClick={() => toggleSite(id)}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-white border-transparent shrink-0 transition"
                       style={{ backgroundColor: color, borderColor: color }}
-                      title={effectiveSiteIds.length > 1 ? `Retirer ${site?.nom || id}` : site?.nom || String(id)}
+                      title={
+                        effectiveSiteIds.length > 1
+                          ? `Retirer ${site?.nom || id}`
+                          : site?.nom || String(id)
+                      }
                     >
                       <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
                       <span className="max-w-[120px] truncate">{site?.nom || id}</span>
@@ -422,7 +450,7 @@ export default function StickyFilterBar({
               <div ref={addRef}>
                 <button
                   data-testid="sticky-sitesearch-trigger"
-                  onClick={() => setShowAddSite(v => !v)}
+                  onClick={() => setShowAddSite((v) => !v)}
                   className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
                   title="Ajouter un site"
                 >
@@ -433,7 +461,9 @@ export default function StickyFilterBar({
                     anchorRef={addRef}
                     sites={sites}
                     selectedIds={effectiveSiteIds}
-                    onAdd={(id) => { toggleSite(id); }}
+                    onAdd={(id) => {
+                      toggleSite(id);
+                    }}
                     onClose={() => setShowAddSite(false)}
                   />
                 )}
@@ -462,7 +492,11 @@ export default function StickyFilterBar({
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
               }`}
-              title={isPortfolioMode ? 'Quitter le mode Portfolio' : 'Passer en mode Portfolio (tous les sites)'}
+              title={
+                isPortfolioMode
+                  ? 'Quitter le mode Portfolio'
+                  : 'Passer en mode Portfolio (tous les sites)'
+              }
             >
               <LayoutGrid size={11} />
               Portfolio
@@ -475,16 +509,22 @@ export default function StickyFilterBar({
         {!setSiteIds && sites.length > 1 && (
           <select
             value={siteId || effectiveSiteIds[0] || ''}
-            onChange={(e) => setSiteId ? setSiteId(Number(e.target.value)) : toggleSite(Number(e.target.value))}
+            onChange={(e) =>
+              setSiteId ? setSiteId(Number(e.target.value)) : toggleSite(Number(e.target.value))
+            }
             className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white font-medium"
           >
-            {sites.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
+            {sites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nom}
+              </option>
+            ))}
           </select>
         )}
 
         {/* Energy toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-          {ENERGY_OPTIONS.map(opt => {
+          {ENERGY_OPTIONS.map((opt) => {
             const Icon = opt.icon;
             const disabled = availableTypes && !availableTypes.includes(opt.value);
             return (
@@ -509,7 +549,7 @@ export default function StickyFilterBar({
 
         {/* Period pills — 7j / 30j / 90j / 12m / YTD */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-          {PERIOD_PILLS.map(pill => (
+          {PERIOD_PILLS.map((pill) => (
             <button
               key={pill.value}
               onClick={() => handlePillClick(pill.value)}
@@ -524,7 +564,7 @@ export default function StickyFilterBar({
           ))}
           {/* Custom date range pill */}
           <button
-            onClick={() => setShowCustomDates(v => !v)}
+            onClick={() => setShowCustomDates((v) => !v)}
             className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
               isCustomRange || showCustomDates
                 ? 'bg-white text-blue-700 shadow-sm'
@@ -617,29 +657,25 @@ export default function StickyFilterBar({
               showTooltips={isClassic}
             />
           )}
-          {setUnit && (
-            <UnitPills
-              unit={unit}
-              setUnit={setUnit}
-              showTooltips={isClassic}
-            />
-          )}
+          {setUnit && <UnitPills unit={unit} setUnit={setUnit} showTooltips={isClassic} />}
         </div>
       )}
 
       {/* Row 3: Actions (Enregistrer / Effacer / Copier le lien / Presets) */}
       {(onSave || onReset || onCopyLink) && (
         <div className="flex items-center gap-2 flex-wrap">
-
           {/* Save preset */}
-          {onSave && (
-            showSaveInput ? (
+          {onSave &&
+            (showSaveInput ? (
               <div className="flex items-center gap-1.5">
                 <input
                   type="text"
                   value={presetName}
                   onChange={(e) => setPresetName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setShowSaveInput(false); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') setShowSaveInput(false);
+                  }}
                   placeholder="Nom du preset..."
                   autoFocus
                   className="text-xs border border-blue-300 rounded-md px-2 py-1 bg-white w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -666,8 +702,7 @@ export default function StickyFilterBar({
                 <Save size={12} />
                 Enregistrer
               </button>
-            )
-          )}
+            ))}
 
           {/* Presets dropdown */}
           {savedPresets.length > 0 && onLoadPreset && (
@@ -675,42 +710,52 @@ export default function StickyFilterBar({
               <button
                 ref={presetsBtnRef}
                 data-testid="sticky-presets-trigger"
-                onClick={() => setShowPresets(v => !v)}
+                onClick={() => setShowPresets((v) => !v)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
               >
                 Presets ({savedPresets.length})
                 <ChevronDown size={11} />
               </button>
-              {showPresets && createPortal(
-                <div
-                  ref={presetsDropRef}
-                  data-testid="sticky-presets-panel"
-                  className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
-                  style={presetsStyle}
-                >
-                  {savedPresets.map(p => (
-                    <div key={p.name} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group">
-                      <button
-                        onClick={() => { onLoadPreset(p.name); setShowPresets(false); }}
-                        className="flex-1 text-left text-xs font-medium text-gray-700 truncate"
-                        title={p.name}
+              {showPresets &&
+                createPortal(
+                  <div
+                    ref={presetsDropRef}
+                    data-testid="sticky-presets-panel"
+                    className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
+                    style={presetsStyle}
+                  >
+                    {savedPresets.map((p) => (
+                      <div
+                        key={p.name}
+                        className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group"
                       >
-                        {p.name}
-                      </button>
-                      {onDeletePreset && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onDeletePreset(p.name); }}
-                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
-                          title="Supprimer"
+                          onClick={() => {
+                            onLoadPreset(p.name);
+                            setShowPresets(false);
+                          }}
+                          className="flex-1 text-left text-xs font-medium text-gray-700 truncate"
+                          title={p.name}
                         >
-                          <Trash2 size={11} />
+                          {p.name}
                         </button>
-                      )}
-                    </div>
-                  ))}
-                </div>,
-                document.body,
-              )}
+                        {onDeletePreset && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeletePreset(p.name);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
+                            title="Supprimer"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>,
+                  document.body
+                )}
             </div>
           )}
 

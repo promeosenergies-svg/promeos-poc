@@ -28,7 +28,7 @@ import { Line } from 'recharts';
 export function enrichWithSignature(data = [], valueKey = 'kwh', window = 7) {
   return data.map((point, i) => {
     const slice = data.slice(Math.max(0, i - window + 1), i + 1);
-    const vals = slice.map(p => p[valueKey]).filter(v => v != null);
+    const vals = slice.map((p) => p[valueKey]).filter((v) => v != null);
     const avg = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
     return { ...point, signature: avg != null ? +avg.toFixed(2) : null };
   });

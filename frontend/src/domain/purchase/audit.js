@@ -46,7 +46,7 @@ export function appendDecision({
       offerCount: offerResults?.length || 0,
       bestOfferId: recommendation?.bestOfferId || null,
       confidence: recommendation?.confidence || null,
-      offerResults: (offerResults || []).map(r => ({
+      offerResults: (offerResults || []).map((r) => ({
         offerId: r.offerId,
         supplierName: r.supplierName,
         structure: r.structure,
@@ -57,14 +57,16 @@ export function appendDecision({
       })),
     },
     scores: sanitizeForAudit(scores),
-    recommendation: recommendation ? {
-      bestOfferId: recommendation.bestOfferId,
-      confidence: recommendation.confidence,
-      confidenceReason: recommendation.confidenceReason,
-      rationaleBullets: recommendation.rationaleBullets,
-      tradeoffs: recommendation.tradeoffs,
-      missingData: recommendation.missingDataToImproveConfidence,
-    } : null,
+    recommendation: recommendation
+      ? {
+          bestOfferId: recommendation.bestOfferId,
+          confidence: recommendation.confidence,
+          confidenceReason: recommendation.confidenceReason,
+          rationaleBullets: recommendation.rationaleBullets,
+          tradeoffs: recommendation.tradeoffs,
+          missingData: recommendation.missingDataToImproveConfidence,
+        }
+      : null,
     limits: [
       ...limits,
       `Version moteur: ${BRIQUE3_VERSION}`,
@@ -119,7 +121,7 @@ export function getRecentDecisions(n = 10) {
  */
 export function getDecisionById(decisionId) {
   const log = getAuditLog();
-  return log.find(r => r.decisionId === decisionId) || null;
+  return log.find((r) => r.decisionId === decisionId) || null;
 }
 
 // ── Export ──────────────────────────────────────────────────────────
@@ -130,7 +132,7 @@ export function getDecisionById(decisionId) {
  */
 export function exportAsJsonl() {
   const log = getAuditLog();
-  return log.map(r => JSON.stringify(r)).join('\n');
+  return log.map((r) => JSON.stringify(r)).join('\n');
 }
 
 /**
@@ -188,12 +190,14 @@ function sanitizeForAudit(obj) {
   if (!obj) return null;
   try {
     // Deep clone and remove circular refs / functions
-    return JSON.parse(JSON.stringify(obj, (key, value) => {
-      if (key === '_scoredOffers') return undefined; // strip large internal data
-      if (key === 'distribution') return undefined; // strip MC distribution arrays
-      if (typeof value === 'function') return undefined;
-      return value;
-    }));
+    return JSON.parse(
+      JSON.stringify(obj, (key, value) => {
+        if (key === '_scoredOffers') return undefined; // strip large internal data
+        if (key === 'distribution') return undefined; // strip MC distribution arrays
+        if (typeof value === 'function') return undefined;
+        return value;
+      })
+    );
   } catch {
     return null;
   }

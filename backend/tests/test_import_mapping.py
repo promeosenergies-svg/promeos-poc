@@ -3,8 +3,10 @@ PROMEOS - Tests VNext: import_mapping + template endpoints + autofix + staging A
 Covers: column synonyms, normalization, delimiter/encoding detection, template download,
 rows/issues/bulk-fix/autofix/result/export API endpoints.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import io
@@ -20,28 +22,50 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Compteur, Organisation, EntiteJuridique, Portefeuille,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
-    TypeSite, TypeCompteur, DeliveryPoint, DeliveryPointEnergyType,
+    Base,
+    Site,
+    Compteur,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    TypeSite,
+    TypeCompteur,
+    DeliveryPoint,
+    DeliveryPointEnergyType,
     not_deleted,
 )
 from database import get_db
 from main import app
 from services.patrimoine_service import (
-    create_staging_batch, import_csv_to_staging,
-    get_staging_summary, run_quality_gate, activate_batch,
+    create_staging_batch,
+    import_csv_to_staging,
+    get_staging_summary,
+    run_quality_gate,
+    activate_batch,
 )
 from services.import_mapping import (
-    CANONICAL_COLUMNS, normalize_column_name, map_headers,
-    detect_delimiter, detect_encoding, normalize_rows,
-    generate_csv_template, generate_xlsx_template,
+    CANONICAL_COLUMNS,
+    normalize_column_name,
+    map_headers,
+    detect_delimiter,
+    detect_encoding,
+    normalize_rows,
+    generate_csv_template,
+    generate_xlsx_template,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -64,6 +88,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -84,25 +109,45 @@ def _create_org(db_session):
 
 def _create_batch_with_data(db_session, org_id=None):
     batch = create_staging_batch(
-        db_session, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db_session,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
-    s1 = StagingSite(batch_id=batch.id, row_number=2, nom="Site Alpha",
-                     adresse="10 rue de la Paix", code_postal="75001", ville="Paris",
-                     surface_m2=1200)
-    s2 = StagingSite(batch_id=batch.id, row_number=3, nom="Site Beta",
-                     adresse="20 avenue des Champs", code_postal="75008", ville="Paris",
-                     surface_m2=800)
+    s1 = StagingSite(
+        batch_id=batch.id,
+        row_number=2,
+        nom="Site Alpha",
+        adresse="10 rue de la Paix",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=1200,
+    )
+    s2 = StagingSite(
+        batch_id=batch.id,
+        row_number=3,
+        nom="Site Beta",
+        adresse="20 avenue des Champs",
+        code_postal="75008",
+        ville="Paris",
+        surface_m2=800,
+    )
     db_session.add_all([s1, s2])
     db_session.flush()
 
-    c1 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id,
-                         numero_serie="PRM-001", meter_id="12345678901234",
-                         type_compteur="electricite", puissance_kw=60)
-    c2 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id,
-                         numero_serie="PRM-002", type_compteur="gaz")
-    c3 = StagingCompteur(batch_id=batch.id, staging_site_id=s2.id,
-                         numero_serie="PRM-003", type_compteur="electricite", puissance_kw=36)
+    c1 = StagingCompteur(
+        batch_id=batch.id,
+        staging_site_id=s1.id,
+        numero_serie="PRM-001",
+        meter_id="12345678901234",
+        type_compteur="electricite",
+        puissance_kw=60,
+    )
+    c2 = StagingCompteur(batch_id=batch.id, staging_site_id=s1.id, numero_serie="PRM-002", type_compteur="gaz")
+    c3 = StagingCompteur(
+        batch_id=batch.id, staging_site_id=s2.id, numero_serie="PRM-003", type_compteur="electricite", puissance_kw=36
+    )
     db_session.add_all([c1, c2, c3])
     db_session.flush()
     return batch, [s1, s2], [c1, c2, c3]
@@ -111,6 +156,7 @@ def _create_batch_with_data(db_session, org_id=None):
 # ========================================
 # TestNormalizeColumnName (7 tests)
 # ========================================
+
 
 class TestNormalizeColumnName:
     """Column synonym detection and normalization."""
@@ -155,14 +201,14 @@ class TestNormalizeColumnName:
 # TestMapHeaders (4 tests)
 # ========================================
 
+
 class TestMapHeaders:
     """Header mapping from raw CSV/Excel headers to canonical keys."""
 
     def test_perfect_headers(self):
         headers = ["nom", "adresse", "code_postal", "ville"]
         mapping, warnings = map_headers(headers)
-        assert mapping == {"nom": "nom", "adresse": "adresse",
-                           "code_postal": "code_postal", "ville": "ville"}
+        assert mapping == {"nom": "nom", "adresse": "adresse", "code_postal": "code_postal", "ville": "ville"}
         assert len(warnings) == 0
 
     def test_synonym_headers(self):
@@ -191,6 +237,7 @@ class TestMapHeaders:
 # TestDetectDelimiter (3 tests)
 # ========================================
 
+
 class TestDetectDelimiter:
     def test_semicolon(self):
         assert detect_delimiter("nom;adresse;ville") == ";"
@@ -205,6 +252,7 @@ class TestDetectDelimiter:
 # ========================================
 # TestDetectEncoding (3 tests)
 # ========================================
+
 
 class TestDetectEncoding:
     def test_utf8(self):
@@ -222,6 +270,7 @@ class TestDetectEncoding:
 # ========================================
 # TestNormalizeRows (4 tests)
 # ========================================
+
 
 class TestNormalizeRows:
     """Value normalization in parsed rows."""
@@ -259,6 +308,7 @@ class TestNormalizeRows:
 # TestGenerateTemplate (4 tests)
 # ========================================
 
+
 class TestGenerateTemplate:
     """CSV and Excel template generation."""
 
@@ -283,6 +333,7 @@ class TestGenerateTemplate:
     def test_xlsx_template_has_patrimoine_sheet(self):
         content = generate_xlsx_template()
         from openpyxl import load_workbook
+
         wb = load_workbook(io.BytesIO(content))
         assert "Patrimoine" in wb.sheetnames
 
@@ -290,6 +341,7 @@ class TestGenerateTemplate:
     def test_xlsx_template_has_aide_sheet(self):
         content = generate_xlsx_template()
         from openpyxl import load_workbook
+
         wb = load_workbook(io.BytesIO(content))
         assert "Aide" in wb.sheetnames
         ws = wb["Aide"]
@@ -300,6 +352,7 @@ class TestGenerateTemplate:
 # ========================================
 # TestTemplateEndpoints (4 tests)
 # ========================================
+
 
 class TestTemplateEndpoints:
     """API endpoints: template download + columns metadata."""
@@ -340,6 +393,7 @@ class TestTemplateEndpoints:
 # ========================================
 # TestStagingRowsEndpoint (4 tests)
 # ========================================
+
 
 class TestStagingRowsEndpoint:
     """GET /staging/{id}/rows — paginated, searchable."""
@@ -400,6 +454,7 @@ class TestStagingRowsEndpoint:
 # TestStagingIssuesEndpoint (3 tests)
 # ========================================
 
+
 class TestStagingIssuesEndpoint:
     """GET /staging/{id}/issues — severity filter."""
 
@@ -431,10 +486,12 @@ class TestStagingIssuesEndpoint:
         db_session.commit()
 
         batch, sites, _ = _create_batch_with_data(db_session, org.id)
-        f1 = QualityFinding(batch_id=batch.id, staging_site_id=sites[0].id,
-                            rule_id="dup", severity=QualityRuleSeverity.BLOCKING)
-        f2 = QualityFinding(batch_id=batch.id, staging_site_id=sites[1].id,
-                            rule_id="incomplete", severity=QualityRuleSeverity.WARNING)
+        f1 = QualityFinding(
+            batch_id=batch.id, staging_site_id=sites[0].id, rule_id="dup", severity=QualityRuleSeverity.BLOCKING
+        )
+        f2 = QualityFinding(
+            batch_id=batch.id, staging_site_id=sites[1].id, rule_id="incomplete", severity=QualityRuleSeverity.WARNING
+        )
         db_session.add_all([f1, f2])
         db_session.commit()
 
@@ -455,6 +512,7 @@ class TestStagingIssuesEndpoint:
 # ========================================
 # TestBulkFixEndpoint (2 tests)
 # ========================================
+
 
 class TestBulkFixEndpoint:
     """PUT /staging/{id}/fix/bulk — batch corrections."""
@@ -502,6 +560,7 @@ class TestBulkFixEndpoint:
 # TestAutofix (4 tests)
 # ========================================
 
+
 class TestAutofix:
     """POST /staging/{id}/autofix — safe auto-corrections."""
 
@@ -511,11 +570,13 @@ class TestAutofix:
         db_session.commit()
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        s = StagingSite(batch_id=batch.id, row_number=2, nom="  Site Spaces  ",
-                        ville="  Paris  ")
+        s = StagingSite(batch_id=batch.id, row_number=2, nom="  Site Spaces  ", ville="  Paris  ")
         db_session.add(s)
         db_session.commit()
 
@@ -535,11 +596,13 @@ class TestAutofix:
         db_session.commit()
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        s = StagingSite(batch_id=batch.id, row_number=2, nom="Site CP",
-                        code_postal="1234")
+        s = StagingSite(batch_id=batch.id, row_number=2, nom="Site CP", code_postal="1234")
         db_session.add(s)
         db_session.commit()
 
@@ -555,15 +618,17 @@ class TestAutofix:
         db_session.commit()
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         s = StagingSite(batch_id=batch.id, row_number=2, nom="Site Norm")
         db_session.add(s)
         db_session.flush()
 
-        c = StagingCompteur(batch_id=batch.id, staging_site_id=s.id,
-                            numero_serie="CPT-NORM", type_compteur="Elec")
+        c = StagingCompteur(batch_id=batch.id, staging_site_id=s.id, numero_serie="CPT-NORM", type_compteur="Elec")
         db_session.add(c)
         db_session.commit()
 
@@ -579,8 +644,11 @@ class TestAutofix:
         db_session.commit()
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         s = StagingSite(batch_id=batch.id, row_number=2, nom="Site Empty")
         db_session.add(s)
@@ -600,6 +668,7 @@ class TestAutofix:
 # ========================================
 # TestStagingResultEndpoint (2 tests)
 # ========================================
+
 
 class TestStagingResultEndpoint:
     """GET /staging/{id}/result — post-activation summary."""
@@ -631,6 +700,7 @@ class TestStagingResultEndpoint:
 # ========================================
 # TestExportReportEndpoint (2 tests)
 # ========================================
+
 
 class TestExportReportEndpoint:
     """GET /staging/{id}/export/report.csv — CSV export."""
@@ -665,13 +735,17 @@ class TestExportReportEndpoint:
 # TestCSVImportWithSynonyms (3 tests)
 # ========================================
 
+
 class TestCSVImportWithSynonyms:
     """End-to-end: CSV with synonym columns → staging correctly populated."""
 
     def test_delivery_code_column_maps_to_meter_id(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
         csv_content = (
             "nom,adresse,code_postal,ville,delivery_code,type_compteur\n"
@@ -682,26 +756,34 @@ class TestCSVImportWithSynonyms:
         assert result["sites_count"] == 1
         assert result["compteurs_count"] == 1
 
-        cpt = db_session.query(StagingCompteur).filter(
-            StagingCompteur.batch_id == batch.id,
-        ).first()
+        cpt = (
+            db_session.query(StagingCompteur)
+            .filter(
+                StagingCompteur.batch_id == batch.id,
+            )
+            .first()
+        )
         assert cpt.meter_id == "12345678901234"
 
     def test_energy_type_infers_type_compteur(self, db_session):
         batch = create_staging_batch(
-            db_session, org_id=None, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=None,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        csv_content = (
-            "nom,numero_serie,energy_type\n"
-            "Site A,CPT-001,elec\n"
-            "Site B,CPT-002,gaz\n"
-        ).encode("utf-8")
+        csv_content = ("nom,numero_serie,energy_type\nSite A,CPT-001,elec\nSite B,CPT-002,gaz\n").encode("utf-8")
 
         import_csv_to_staging(db_session, batch.id, csv_content)
-        compteurs = db_session.query(StagingCompteur).filter(
-            StagingCompteur.batch_id == batch.id,
-        ).order_by(StagingCompteur.id).all()
+        compteurs = (
+            db_session.query(StagingCompteur)
+            .filter(
+                StagingCompteur.batch_id == batch.id,
+            )
+            .order_by(StagingCompteur.id)
+            .all()
+        )
 
         assert compteurs[0].type_compteur == "electricite"
         assert compteurs[1].type_compteur == "gaz"
@@ -726,6 +808,7 @@ class TestCSVImportWithSynonyms:
 # TestActivationIdempotent (2 tests)
 # ========================================
 
+
 class TestActivationIdempotent:
     """Validate → Activate twice = no duplicates."""
 
@@ -748,17 +831,25 @@ class TestActivationIdempotent:
         org, ej, pf = _create_org(db_session)
 
         batch = create_staging_batch(
-            db_session, org_id=org.id, user_id=None,
-            source_type=ImportSourceType.CSV, mode="import",
+            db_session,
+            org_id=org.id,
+            user_id=None,
+            source_type=ImportSourceType.CSV,
+            mode="import",
         )
-        ss = StagingSite(batch_id=batch.id, row_number=2, nom="DP Site",
-                         adresse="1 rue DP", code_postal="75001", ville="Paris")
+        ss = StagingSite(
+            batch_id=batch.id, row_number=2, nom="DP Site", adresse="1 rue DP", code_postal="75001", ville="Paris"
+        )
         db_session.add(ss)
         db_session.flush()
 
-        sc = StagingCompteur(batch_id=batch.id, staging_site_id=ss.id,
-                             numero_serie="DP-001", meter_id="98765432109876",
-                             type_compteur="electricite")
+        sc = StagingCompteur(
+            batch_id=batch.id,
+            staging_site_id=ss.id,
+            numero_serie="DP-001",
+            meter_id="98765432109876",
+            type_compteur="electricite",
+        )
         db_session.add(sc)
         db_session.flush()
 
@@ -767,21 +858,30 @@ class TestActivationIdempotent:
 
         assert result["delivery_points_created"] >= 1
 
-        dp = db_session.query(DeliveryPoint).filter(
-            DeliveryPoint.code == "98765432109876",
-        ).first()
+        dp = (
+            db_session.query(DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == "98765432109876",
+            )
+            .first()
+        )
         assert dp is not None
         assert dp.energy_type == DeliveryPointEnergyType.ELEC
 
-        cpt = db_session.query(Compteur).filter(
-            Compteur.meter_id == "98765432109876",
-        ).first()
+        cpt = (
+            db_session.query(Compteur)
+            .filter(
+                Compteur.meter_id == "98765432109876",
+            )
+            .first()
+        )
         assert cpt.delivery_point_id == dp.id
 
 
 # ========================================
 # TestImportMappingEndpoint (2 tests)
 # ========================================
+
 
 class TestImportMappingEndpoint:
     """POST /staging/import returns mapping info for CSV files."""

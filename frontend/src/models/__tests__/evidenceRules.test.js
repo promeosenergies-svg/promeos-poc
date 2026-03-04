@@ -217,7 +217,7 @@ describe('Idempotency UX source guards', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/components/CreateActionDrawer.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('_existed');
     expect(src).toContain('status');
@@ -228,7 +228,7 @@ describe('Idempotency UX source guards', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/contexts/ActionDrawerContext.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('existingAction');
     expect(src).toContain('_existed');
@@ -242,7 +242,7 @@ describe('Source tracing source guards', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/components/ActionDetailDrawer.jsx',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('buildSourceDeepLink');
     expect(src).toContain('SOURCE_LABELS_FR');
@@ -253,7 +253,7 @@ describe('Source tracing source guards', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/backend/services/action_close_rules.py',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('EVIDENCE_REQUIRED');
     expect(src).toContain('JUSTIFICATION_TOO_SHORT');
@@ -264,7 +264,7 @@ describe('Source tracing source guards', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/backend/routes/actions.py',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain('source_label');
     expect(src).toContain('source_deeplink');

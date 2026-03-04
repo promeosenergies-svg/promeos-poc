@@ -2,6 +2,7 @@
 PROMEOS — V99 Purchase Scenarios Service (Grand Public)
 3 simple deterministic scenarios per contract. No AI.
 """
+
 from sqlalchemy.orm import Session
 
 from models import EnergyContract
@@ -113,6 +114,7 @@ def _estimate_annual_volume(db: Session, site_id: int) -> float | None:
     """Estimate annual kWh from recent invoices, or None if no data."""
     from sqlalchemy import func
     from datetime import date, timedelta
+
     one_year_ago = date.today() - timedelta(days=365)
     total = (
         db.query(func.sum(EnergyInvoice.energy_kwh))
@@ -150,26 +152,28 @@ def compute_purchase_scenarios(db: Session, contract_id: int) -> dict:
     scenarios = []
     for scenario_id in ("A", "B", "C"):
         tmpl = SCENARIO_TEMPLATES[scenario_id]
-        is_current = (scenario_id == current_scenario_id)
+        is_current = scenario_id == current_scenario_id
 
         # Estimate annual cost if we have price and volume
         estimate_eur = None
         if price_ref and annual_kwh:
             estimate_eur = round(price_ref * tmpl["price_factor"] * annual_kwh, 0)
 
-        scenarios.append({
-            "id": tmpl["id"],
-            "label": tmpl["label"],
-            "description": tmpl["description"],
-            "risk_level": tmpl["risk_level"],
-            "risk_label": tmpl["risk_label"],
-            "prerequis": tmpl["prerequis"],
-            "avantages": tmpl["avantages"],
-            "inconvenients": tmpl["inconvenients"],
-            "recommended_actions": tmpl["action_templates"],
-            "estimate_eur": estimate_eur,
-            "is_current": is_current,
-        })
+        scenarios.append(
+            {
+                "id": tmpl["id"],
+                "label": tmpl["label"],
+                "description": tmpl["description"],
+                "risk_level": tmpl["risk_level"],
+                "risk_label": tmpl["risk_label"],
+                "prerequis": tmpl["prerequis"],
+                "avantages": tmpl["avantages"],
+                "inconvenients": tmpl["inconvenients"],
+                "recommended_actions": tmpl["action_templates"],
+                "estimate_eur": estimate_eur,
+                "is_current": is_current,
+            }
+        )
 
     return {
         "contract_id": contract_id,

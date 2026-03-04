@@ -42,7 +42,7 @@ function computeConfidence(scoredOffers, consumption, billing) {
 
   // Score differentiation
   if (scoredOffers.length > 1) {
-    const scores = scoredOffers.map(s => s.weightedScore);
+    const scores = scoredOffers.map((s) => s.weightedScore);
     const spread = Math.max(...scores) - Math.min(...scores);
     if (spread < 5) {
       confidenceScore -= 15;
@@ -51,7 +51,9 @@ function computeConfidence(scoredOffers, consumption, billing) {
   }
 
   // Breakdown completeness
-  const avgBreakdown = scoredOffers.reduce((sum, s) => sum + (s.scores.transparency.score0to100 || 0), 0) / (scoredOffers.length || 1);
+  const avgBreakdown =
+    scoredOffers.reduce((sum, s) => sum + (s.scores.transparency.score0to100 || 0), 0) /
+    (scoredOffers.length || 1);
   if (avgBreakdown < 50) {
     confidenceScore -= 15;
     missingData.push('Decompositions tarifaires completes');
@@ -85,9 +87,9 @@ function personaWeightedScore(scores, persona) {
   const w = profile.weights;
   return Math.round(
     scores.budgetRisk.score0to100 * w.budgetRisk +
-    scores.transparency.score0to100 * w.transparency +
-    scores.contractRisk.score0to100 * w.contractRisk +
-    scores.dataReadiness.score0to100 * w.dataReadiness
+      scores.transparency.score0to100 * w.transparency +
+      scores.contractRisk.score0to100 * w.contractRisk +
+      scores.dataReadiness.score0to100 * w.dataReadiness
   );
 }
 
@@ -105,34 +107,44 @@ function personaWeightedScore(scores, persona) {
  * @param {import('./types.js').Anomaly[]} [params.anomalies]
  * @returns {import('./types.js').Recommendation}
  */
-export function recommend({ offerResults, offers, persona, budgetEur, consumption, billing, anomalies = [] }) {
+export function recommend({
+  offerResults,
+  offers,
+  persona,
+  budgetEur,
+  consumption,
+  billing,
+  anomalies = [],
+}) {
   const profile = PERSONA_PROFILES[persona] || PERSONA_PROFILES[Persona.DAF];
 
   // Score each offer
-  const scoredOffers = offerResults.map(result => {
-    const offer = offers.find(o => o.id === result.offerId);
-    if (!offer) return null;
+  const scoredOffers = offerResults
+    .map((result) => {
+      const offer = offers.find((o) => o.id === result.offerId);
+      if (!offer) return null;
 
-    const scores = scoreOffer({
-      offerResult: result,
-      offer,
-      budgetEur,
-      anomalies,
-      consumption,
-      billing,
-    });
+      const scores = scoreOffer({
+        offerResult: result,
+        offer,
+        budgetEur,
+        anomalies,
+        consumption,
+        billing,
+      });
 
-    const weightedScore = personaWeightedScore(scores, persona);
+      const weightedScore = personaWeightedScore(scores, persona);
 
-    return {
-      offerId: offer.id,
-      supplierName: offer.supplierName,
-      structure: offer.structure,
-      scores,
-      weightedScore,
-      result,
-    };
-  }).filter(Boolean);
+      return {
+        offerId: offer.id,
+        supplierName: offer.supplierName,
+        structure: offer.structure,
+        scores,
+        weightedScore,
+        result,
+      };
+    })
+    .filter(Boolean);
 
   if (scoredOffers.length === 0) {
     return {
@@ -151,19 +163,27 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
   const best = scoredOffers[0];
 
   // Confidence
-  const { confidence, reason: confidenceReason, missingData } = computeConfidence(scoredOffers, consumption, billing);
+  const {
+    confidence,
+    reason: confidenceReason,
+    missingData,
+  } = computeConfidence(scoredOffers, consumption, billing);
 
   // Rationale bullets (max 5)
   const rationaleBullets = [];
 
   // Price
   const bestPrice = best.result.corridor?.p50 ?? 0;
-  rationaleBullets.push(`Prix moyen P50: ${isFinite(bestPrice) ? bestPrice.toFixed(1) : '—'} EUR/MWh — meilleur compromis ${profile.label}`);
+  rationaleBullets.push(
+    `Prix moyen P50: ${isFinite(bestPrice) ? bestPrice.toFixed(1) : '—'} EUR/MWh — meilleur compromis ${profile.label}`
+  );
 
   // Corridor width
   const corridorWidth = (best.result.corridor?.p90 ?? 0) - (best.result.corridor?.p10 ?? 0);
   if (corridorWidth < 30) {
-    rationaleBullets.push(`Corridor serre (P10-P90: ${corridorWidth.toFixed(0)} EUR/MWh) = bonne visibilite budgetaire`);
+    rationaleBullets.push(
+      `Corridor serre (P10-P90: ${corridorWidth.toFixed(0)} EUR/MWh) = bonne visibilite budgetaire`
+    );
   }
 
   // Budget risk
@@ -194,7 +214,10 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
   if (best.scores.contractRisk.level !== 'GREEN' && best.scores.contractRisk.reasons?.length > 0) {
     tradeoffs.push('Risque contractuel a negocier: ' + best.scores.contractRisk.reasons[0]);
   }
-  if (best.scores.dataReadiness.level !== 'GREEN' && best.scores.dataReadiness.reasons?.length > 0) {
+  if (
+    best.scores.dataReadiness.level !== 'GREEN' &&
+    best.scores.dataReadiness.reasons?.length > 0
+  ) {
     tradeoffs.push('Donnees incompletes: ' + best.scores.dataReadiness.reasons[0]);
   }
 
@@ -212,9 +235,8 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
     if (other.scores.transparency.score0to100 < best.scores.transparency.score0to100 - 10) {
       reasons.push('Transparence inferieure');
     }
-    whyNotOthers[other.offerId] = reasons.length > 0
-      ? reasons.join(' ; ')
-      : `Score global inferieur de ${diff} pts`;
+    whyNotOthers[other.offerId] =
+      reasons.length > 0 ? reasons.join(' ; ') : `Score global inferieur de ${diff} pts`;
   }
 
   return {

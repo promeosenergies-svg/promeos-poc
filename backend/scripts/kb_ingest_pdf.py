@@ -16,6 +16,7 @@ Usage:
       --title "Arrete du 10 avril 2024" --source-org "JORF" --doc-type arrete \
       --published-date 2024-04-10
 """
+
 import sys
 import os
 import argparse
@@ -31,9 +32,19 @@ def _slugify(name: str) -> str:
     """Generate a doc_id from a filename."""
     slug = name.lower().replace(" ", "-").replace("_", "-")
     # Remove accents (basic)
-    for a, b in [("é", "e"), ("è", "e"), ("ê", "e"), ("à", "a"), ("â", "a"),
-                 ("ô", "o"), ("û", "u"), ("ù", "u"), ("î", "i"), ("ï", "i"),
-                 ("ç", "c")]:
+    for a, b in [
+        ("é", "e"),
+        ("è", "e"),
+        ("ê", "e"),
+        ("à", "a"),
+        ("â", "a"),
+        ("ô", "o"),
+        ("û", "u"),
+        ("ù", "u"),
+        ("î", "i"),
+        ("ï", "i"),
+        ("ç", "c"),
+    ]:
         slug = slug.replace(a, b)
     # Keep only alphanumeric + hyphens
     slug = "".join(c if c.isalnum() or c == "-" else "-" for c in slug)
@@ -81,7 +92,7 @@ def ingest_directory(
     results = []
     for pdf in pdf_files:
         doc_id = _slugify(pdf.stem)
-        print(f"  [{len(results)+1}/{len(pdf_files)}] {pdf.name} -> {doc_id}")
+        print(f"  [{len(results) + 1}/{len(pdf_files)}] {pdf.name} -> {doc_id}")
         result = ingest_single(pdf, doc_id=doc_id, source_org=source_org, doc_type=doc_type)
         results.append(result)
         status = result.get("status", "?")
@@ -112,7 +123,9 @@ Exemples:
     parser.add_argument("--doc-id", help="ID unique du document (auto-genere si dossier)")
     parser.add_argument("--title", help="Titre du document (auto-detecte si absent)")
     parser.add_argument("--source-org", default="unknown", help="Organisation source (CRE, JORF, ADEME...)")
-    parser.add_argument("--doc-type", default="reglementaire", help="Type de document (reglementaire, deliberation, arrete, guide)")
+    parser.add_argument(
+        "--doc-type", default="reglementaire", help="Type de document (reglementaire, deliberation, arrete, guide)"
+    )
     parser.add_argument("--published-date", help="Date de publication (YYYY-MM-DD)")
 
     args = parser.parse_args()
@@ -184,7 +197,9 @@ Exemples:
     print()
     print("Prochaines etapes:")
     print("  1. Verifier les chunks: python scripts/kb_build_index.py")
-    print("  2. Rechercher: python -c \"from app.kb.doc_ingest import search_doc_chunks; print(search_doc_chunks('decret'))\"")
+    print(
+        "  2. Rechercher: python -c \"from app.kb.doc_ingest import search_doc_chunks; print(search_doc_chunks('decret'))\""
+    )
     print("  3. Creer des KB items YAML a partir des chunks: docs/kb/drafts/")
     print()
 

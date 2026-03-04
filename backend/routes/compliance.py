@@ -4,6 +4,7 @@ Endpoint to trigger recomputation of site conformity snapshots.
 + Sprint 4: summary, sites findings, rules-based recompute.
 + Sprint 9: OPS workflow (findings PATCH, batches, findings list).
 """
+
 import json
 from typing import Optional
 
@@ -13,8 +14,13 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Organisation, ComplianceFinding, ComplianceRunBatch, InsightStatus,
-    Site, Portefeuille, EntiteJuridique,
+    Organisation,
+    ComplianceFinding,
+    ComplianceRunBatch,
+    InsightStatus,
+    Site,
+    Portefeuille,
+    EntiteJuridique,
 )
 from services.compliance_engine import (
     recompute_site,
@@ -46,6 +52,7 @@ router = APIRouter(prefix="/api/compliance", tags=["Compliance"])
 # Schemas (Sprint 9)
 # ========================================
 
+
 class FindingPatch(BaseModel):
     status: Optional[str] = None
     owner: Optional[str] = None
@@ -55,6 +62,7 @@ class FindingPatch(BaseModel):
 # ========================================
 # Existing endpoints
 # ========================================
+
 
 @router.post("/recompute")
 def recompute_compliance(
@@ -128,8 +136,7 @@ def compliance_sites(
     Per-site findings list with scope filtering.
     """
     org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-    return get_sites_findings(db, org_id, regulation, status, severity,
-                              entity_id=entity_id, site_id=site_id)
+    return get_sites_findings(db, org_id, regulation, status, severity, entity_id=entity_id, site_id=site_id)
 
 
 @router.get("/bundle")
@@ -153,10 +160,14 @@ def compliance_bundle(
     """
     org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     return get_compliance_bundle(
-        db, org_id,
-        entity_id=entity_id, site_id=site_id,
+        db,
+        org_id,
+        entity_id=entity_id,
+        site_id=site_id,
         portefeuille_id=portefeuille_id,
-        regulation=regulation, status=status, severity=severity,
+        regulation=regulation,
+        status=status,
+        severity=severity,
     )
 
 
@@ -193,10 +204,7 @@ def list_rules():
             "version": p["version"],
             "description": p["description"],
             "rules_count": len(p["rules"]),
-            "rules": [
-                {"id": r["id"], "label": r["label"], "severity": r.get("severity")}
-                for r in p["rules"]
-            ],
+            "rules": [{"id": r["id"], "label": r["label"], "severity": r.get("severity")} for r in p["rules"]],
         }
         for p in packs
     ]
@@ -226,8 +234,8 @@ def list_findings(
     org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     site_ids = [
-        row[0] for row in
-        db.query(Site.id)
+        row[0]
+        for row in db.query(Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -261,22 +269,24 @@ def list_findings(
             site = db.query(Site).filter(Site.id == f.site_id).first()
             site_names[f.site_id] = site.nom if site else "?"
         actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
-        result.append({
-            "id": f.id,
-            "site_id": f.site_id,
-            "site_nom": site_names[f.site_id],
-            "regulation": f.regulation,
-            "rule_id": f.rule_id,
-            "status": f.status,
-            "severity": f.severity,
-            "deadline": f.deadline.isoformat() if f.deadline else None,
-            "evidence": f.evidence,
-            "actions": actions,
-            "insight_status": f.insight_status.value if f.insight_status else "open",
-            "owner": f.owner,
-            "notes": f.notes,
-            "run_batch_id": f.run_batch_id,
-        })
+        result.append(
+            {
+                "id": f.id,
+                "site_id": f.site_id,
+                "site_nom": site_names[f.site_id],
+                "regulation": f.regulation,
+                "rule_id": f.rule_id,
+                "status": f.status,
+                "severity": f.severity,
+                "deadline": f.deadline.isoformat() if f.deadline else None,
+                "evidence": f.evidence,
+                "actions": actions,
+                "insight_status": f.insight_status.value if f.insight_status else "open",
+                "owner": f.owner,
+                "notes": f.notes,
+                "run_batch_id": f.run_batch_id,
+            }
+        )
 
     return result
 

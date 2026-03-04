@@ -107,13 +107,14 @@ function ruleTargetOverBudget({ primaryProgression } = {}) {
  */
 function ruleGasLeakSuspect({ primaryWeather } = {}) {
   if (!primaryWeather?.alerts?.length) return null;
-  const leak = primaryWeather.alerts.find(a => a.type === 'probable_leak');
+  const leak = primaryWeather.alerts.find((a) => a.type === 'probable_leak');
   if (!leak) return null;
   return {
     id: 'gas_leak_suspect',
     label: 'Fuite gaz probable',
     severity: 'crit',
-    detail: leak.message || 'Consommation de base estivale anormalement elevee. Verifiez l\'installation.',
+    detail:
+      leak.message || "Consommation de base estivale anormalement elevee. Verifiez l'installation.",
   };
 }
 
@@ -122,12 +123,13 @@ function ruleGasLeakSuspect({ primaryWeather } = {}) {
  */
 function ruleLowConfidence({ primaryTunnel, primaryHphc, primaryGas } = {}) {
   const panels = [primaryTunnel, primaryHphc, primaryGas].filter(Boolean);
-  const hasLow = panels.some(p => p.confidence === 'low');
+  const hasLow = panels.some((p) => p.confidence === 'low');
   if (!hasLow) return null;
   return {
     id: 'low_confidence',
     label: 'Donnees insuffisantes',
     severity: 'info',
-    detail: 'Un ou plusieurs panneaux disposent de peu de releves. Les analyses peuvent etre moins fiables.',
+    detail:
+      'Un ou plusieurs panneaux disposent de peu de releves. Les analyses peuvent etre moins fiables.',
   };
 }

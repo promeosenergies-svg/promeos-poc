@@ -43,14 +43,17 @@ export default function ConnectorsPage() {
 
   const handleTest = async (connectorName) => {
     try {
-      setTestResults(prev => ({ ...prev, [connectorName]: { loading: true } }));
+      setTestResults((prev) => ({ ...prev, [connectorName]: { loading: true } }));
       const result = await testConnector(connectorName);
-      setTestResults(prev => ({ ...prev, [connectorName]: result }));
+      setTestResults((prev) => ({ ...prev, [connectorName]: result }));
       if (result?.status === 'ok') {
         toast(`${connectorName}: connexion OK`, 'success');
       }
     } catch (error) {
-      setTestResults(prev => ({ ...prev, [connectorName]: { status: 'error', message: error.message } }));
+      setTestResults((prev) => ({
+        ...prev,
+        [connectorName]: { status: 'error', message: error.message },
+      }));
       toast(`${connectorName}: echec du test`, 'error');
     }
   };
@@ -59,13 +62,20 @@ export default function ConnectorsPage() {
     if (!syncModal || !syncForm.objectId) return;
     const connectorName = syncModal;
     try {
-      setSyncResults(prev => ({ ...prev, [connectorName]: { loading: true } }));
+      setSyncResults((prev) => ({ ...prev, [connectorName]: { loading: true } }));
       setSyncModal(null);
-      const result = await syncConnector(connectorName, syncForm.objectType, parseInt(syncForm.objectId));
-      setSyncResults(prev => ({ ...prev, [connectorName]: result }));
-      toast(`${connectorName}: ${result.datapoints_created || 0} datapoints synchronises`, 'success');
+      const result = await syncConnector(
+        connectorName,
+        syncForm.objectType,
+        parseInt(syncForm.objectId)
+      );
+      setSyncResults((prev) => ({ ...prev, [connectorName]: result }));
+      toast(
+        `${connectorName}: ${result.datapoints_created || 0} datapoints synchronises`,
+        'success'
+      );
     } catch (error) {
-      setSyncResults(prev => ({ ...prev, [connectorName]: { error: error.message } }));
+      setSyncResults((prev) => ({ ...prev, [connectorName]: { error: error.message } }));
       toast(`Erreur de synchronisation ${connectorName}`, 'error');
     }
   };
@@ -82,7 +92,9 @@ export default function ConnectorsPage() {
     return (
       <PageShell icon={Link2} title="Connexions" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </PageShell>
     );
@@ -120,9 +132,13 @@ export default function ConnectorsPage() {
 
                 <div className="mb-4">
                   {connector.requires_auth ? (
-                    <Badge status="warning"><Lock size={10} className="mr-1" /> Auth requise</Badge>
+                    <Badge status="warning">
+                      <Lock size={10} className="mr-1" /> Auth requise
+                    </Badge>
                   ) : (
-                    <Badge status="ok"><Globe size={10} className="mr-1" /> Public</Badge>
+                    <Badge status="ok">
+                      <Globe size={10} className="mr-1" /> Public
+                    </Badge>
                   )}
                 </div>
 
@@ -133,11 +149,12 @@ export default function ConnectorsPage() {
                 )}
 
                 {syncResults[connector.name] && !syncResults[connector.name].loading && (
-                  <div className={`text-xs mb-3 rounded-lg px-3 py-2 ${syncResults[connector.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                  <div
+                    className={`text-xs mb-3 rounded-lg px-3 py-2 ${syncResults[connector.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                  >
                     {syncResults[connector.name].error
                       ? `Erreur: ${syncResults[connector.name].error}`
-                      : `${syncResults[connector.name].datapoints_created || 0} datapoints crees`
-                    }
+                      : `${syncResults[connector.name].datapoints_created || 0} datapoints crees`}
                   </div>
                 )}
 
@@ -152,7 +169,10 @@ export default function ConnectorsPage() {
                   </Button>
                   <Button
                     className="flex-1 text-sm"
-                    onClick={() => { setSyncModal(connector.name); setSyncForm({ objectType: 'site', objectId: '' }); }}
+                    onClick={() => {
+                      setSyncModal(connector.name);
+                      setSyncForm({ objectType: 'site', objectId: '' });
+                    }}
                     disabled={syncResults[connector.name]?.loading}
                   >
                     <RefreshCw size={14} className="mr-1" /> Sync
@@ -169,33 +189,52 @@ export default function ConnectorsPage() {
         <CardBody>
           <h3 className="text-sm font-semibold text-blue-800 mb-2">A propos des Connecteurs</h3>
           <ul className="text-sm text-gray-700 space-y-1.5">
-            <li><strong>RTE eCO2mix:</strong> Intensite CO2 du reseau electrique francais (API publique)</li>
-            <li><strong>PVGIS:</strong> Estimations de production photovoltaique (EU JRC, API publique)</li>
-            <li><strong>Enedis DataConnect:</strong> Donnees de consommation des compteurs Linky (OAuth requis)</li>
-            <li><strong>Meteo-France:</strong> Donnees meteorologiques historiques (API key requis)</li>
+            <li>
+              <strong>RTE eCO2mix:</strong> Intensite CO2 du reseau electrique francais (API
+              publique)
+            </li>
+            <li>
+              <strong>PVGIS:</strong> Estimations de production photovoltaique (EU JRC, API
+              publique)
+            </li>
+            <li>
+              <strong>Enedis DataConnect:</strong> Donnees de consommation des compteurs Linky
+              (OAuth requis)
+            </li>
+            <li>
+              <strong>Meteo-France:</strong> Donnees meteorologiques historiques (API key requis)
+            </li>
           </ul>
         </CardBody>
       </Card>
 
       {/* Sync Modal — replaces native prompt() */}
-      <Modal open={!!syncModal} onClose={() => setSyncModal(null)} title={`Synchroniser — ${syncModal}`}>
+      <Modal
+        open={!!syncModal}
+        onClose={() => setSyncModal(null)}
+        title={`Synchroniser — ${syncModal}`}
+      >
         <div className="space-y-4">
           <Select
             label="Type d'objet"
             value={syncForm.objectType}
-            onChange={(e) => setSyncForm(prev => ({ ...prev, objectType: e.target.value }))}
+            onChange={(e) => setSyncForm((prev) => ({ ...prev, objectType: e.target.value }))}
             options={SYNC_OBJECT_TYPES}
           />
           <Input
             label="ID de l'objet"
             type="number"
             value={syncForm.objectId}
-            onChange={(e) => setSyncForm(prev => ({ ...prev, objectId: e.target.value }))}
+            onChange={(e) => setSyncForm((prev) => ({ ...prev, objectId: e.target.value }))}
             placeholder="Ex: 1"
           />
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setSyncModal(null)}>Annuler</Button>
-            <Button onClick={handleSyncSubmit} disabled={!syncForm.objectId}>Synchroniser</Button>
+            <Button variant="secondary" onClick={() => setSyncModal(null)}>
+              Annuler
+            </Button>
+            <Button onClick={handleSyncSubmit} disabled={!syncForm.objectId}>
+              Synchroniser
+            </Button>
           </div>
         </div>
       </Modal>

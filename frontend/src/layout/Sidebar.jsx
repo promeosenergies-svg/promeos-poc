@@ -16,8 +16,11 @@ const PINS_KEY = 'promeos_sidebar_pins';
 const MAX_PINS = 5;
 
 function loadJSON(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) || fallback; }
-  catch { return fallback; }
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch {
+    return fallback;
+  }
 }
 function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
@@ -27,10 +30,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   /* ── Active module (derived from route) ── */
-  const activeModule = useMemo(
-    () => resolveModule(location.pathname),
-    [location.pathname],
-  );
+  const activeModule = useMemo(() => resolveModule(location.pathname), [location.pathname]);
 
   /* ── Module override: user clicks rail icon ── */
   const [overrideModule, setOverrideModule] = useState(null);
@@ -52,7 +52,9 @@ export default function Sidebar() {
     setPins((prev) => {
       const next = prev.includes(path)
         ? prev.filter((p) => p !== path)
-        : prev.length < MAX_PINS ? [...prev, path] : prev;
+        : prev.length < MAX_PINS
+          ? [...prev, path]
+          : prev;
       saveJSON(PINS_KEY, next);
       return next;
     });
@@ -79,7 +81,7 @@ export default function Sidebar() {
 
   const badges = useMemo(
     () => ({ alerts: alertBadge, monitoring: monitoringBadge }),
-    [alertBadge, monitoringBadge],
+    [alertBadge, monitoringBadge]
   );
 
   /* ── Track recents on route change (V2: with label + module) ── */
@@ -87,15 +89,13 @@ export default function Sidebar() {
     const path = location.pathname;
     // Match against nav items OR dynamic patterns
     const navItem = ALL_NAV_ITEMS.find((item) => path === item.to);
-    const isNavRoute = navItem || ALL_NAV_ITEMS.some((item) =>
-      path.startsWith(item.to + '/')
-    );
+    const isNavRoute = navItem || ALL_NAV_ITEMS.some((item) => path.startsWith(item.to + '/'));
     if (isNavRoute || matchRouteToModule(path).pattern) {
-      const { moduleId, moduleLabel } = matchRouteToModule(path);
+      const { moduleId } = matchRouteToModule(path);
       // Build label: use nav item label, or derive from last path segment
       const parts = path.split('/').filter(Boolean);
-      const label = navItem?.label
-        || resolveBreadcrumbLabel(parts[parts.length - 1], parts[parts.length - 2]);
+      const label =
+        navItem?.label || resolveBreadcrumbLabel(parts[parts.length - 1], parts[parts.length - 2]);
       addRecent(path, { label, module: moduleId });
     }
   }, [location.pathname]);
@@ -110,16 +110,8 @@ export default function Sidebar() {
     // z-[250]  Toasts          (always on top — ToastProvider.jsx)
     // ─────────────────────────────────────────────────────────────────────────
     <aside className="flex h-screen sticky top-0 z-30 shrink-0" aria-label="Navigation principale">
-      <NavRail
-        activeModule={displayModule}
-        onSelectModule={handleSelectModule}
-      />
-      <NavPanel
-        activeModule={displayModule}
-        pins={pins}
-        onTogglePin={togglePin}
-        badges={badges}
-      />
+      <NavRail activeModule={displayModule} onSelectModule={handleSelectModule} />
+      <NavPanel activeModule={displayModule} pins={pins} onTogglePin={togglePin} badges={badges} />
     </aside>
   );
 }

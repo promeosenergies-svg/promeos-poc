@@ -3,9 +3,7 @@
  * Covers: tint helper API, module/severity disambiguation, KPI_ACCENTS, SEVERITY_TINT.
  */
 import { describe, it, expect } from 'vitest';
-import {
-  KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS, tint,
-} from '../colorTokens';
+import { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS, tint } from '../colorTokens';
 import { NAV_MODULES, TINT_PALETTE } from '../../layout/NavRegistry';
 
 /* ── tint.module ── */
@@ -121,7 +119,7 @@ describe('module vs severity disambiguation', () => {
   });
 
   it('module tint keys (cockpit..admin) do not overlap severity keys (critical..neutral)', () => {
-    const moduleKeys = new Set(NAV_MODULES.map(m => m.key));
+    const moduleKeys = new Set(NAV_MODULES.map((m) => m.key));
     const severityKeys = new Set(Object.keys(SEVERITY_TINT));
     for (const k of moduleKeys) {
       expect(severityKeys.has(k)).toBe(false);

@@ -2,6 +2,7 @@
 PROMEOS - Compliance Rules Evaluator
 Charge les packs YAML et produit des ComplianceFinding persistants.
 """
+
 import json
 import logging
 import os
@@ -16,11 +17,25 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 from models import (
-    Site, Batiment, Obligation, Evidence, ComplianceFinding, Organisation,
-    Portefeuille, EntiteJuridique, ComplianceRunBatch,
-    StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
-    OperatStatus, ParkingType, InsightStatus,
-    BacsAsset, BacsCvcSystem, BacsAssessment,
+    Site,
+    Batiment,
+    Obligation,
+    Evidence,
+    ComplianceFinding,
+    Organisation,
+    Portefeuille,
+    EntiteJuridique,
+    ComplianceRunBatch,
+    StatutConformite,
+    TypeObligation,
+    TypeEvidence,
+    StatutEvidence,
+    OperatStatus,
+    ParkingType,
+    InsightStatus,
+    BacsAsset,
+    BacsCvcSystem,
+    BacsAssessment,
 )
 
 RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rules")
@@ -53,6 +68,7 @@ def load_all_packs() -> List[dict]:
 # Evaluation helpers
 # ========================================
 
+
 def _get_site_context(db: Session, site: Site) -> dict:
     """Build evaluation context dict from site + related data."""
     batiments = db.query(Batiment).filter(Batiment.site_id == site.id).all()
@@ -62,19 +78,14 @@ def _get_site_context(db: Session, site: Site) -> dict:
     max_cvc = max((b.cvc_power_kw or 0 for b in batiments), default=0)
 
     has_bacs_attestation = any(
-        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in evidences
+        e.type == TypeEvidence.ATTESTATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences
     )
     has_bacs_derogation = any(
-        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE
-        for e in evidences
+        e.type == TypeEvidence.DEROGATION_BACS and e.statut == StatutEvidence.VALIDE for e in evidences
     )
 
     decret_obls = [o for o in obligations if o.type == TypeObligation.DECRET_TERTIAIRE]
-    avg_avancement = (
-        sum(o.avancement_pct for o in decret_obls) / len(decret_obls)
-        if decret_obls else 0
-    )
+    avg_avancement = sum(o.avancement_pct for o in decret_obls) / len(decret_obls) if decret_obls else 0
 
     return {
         "tertiaire_area_m2": site.tertiaire_area_m2,
@@ -95,6 +106,7 @@ def _get_site_context(db: Session, site: Site) -> dict:
 # Per-pack evaluators
 # ========================================
 
+
 def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
     """Evaluate Decret Tertiaire rules."""
     pack = _load_pack("decret_tertiaire_operat_v1.yaml")
@@ -107,16 +119,13 @@ def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
         if rid == "DT_SCOPE":
             area = ctx.get("tertiaire_area_m2")
             if area is None:
-                finding.update(status="UNKNOWN", severity=rule["severity"],
-                               evidence=rule.get("when_unknown", ""))
+                finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
             elif area < 1000:
-                finding.update(status="OUT_OF_SCOPE",
-                               evidence=rule.get("when_out_of_scope", ""))
+                finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
                 findings.append(finding)
                 return findings  # Out of scope → skip remaining rules
             else:
-                finding.update(status="OK",
-                               evidence=f"Surface tertiaire {area} m2 >= 1000 m2")
+                finding.update(status="OK", evidence=f"Surface tertiaire {area} m2 >= 1000 m2")
 
         elif rid == "DT_OPERAT":
             status = ctx.get("operat_status")
@@ -124,7 +133,8 @@ def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence=f"OPERAT: {status.value}")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
@@ -133,11 +143,11 @@ def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
         elif rid == "DT_TRAJECTORY_2030":
             pct = ctx.get("avancement_pct", 0)
             if pct >= 40:
-                finding.update(status="OK",
-                               evidence=f"Avancement {pct}% >= 40%")
+                finding.update(status="OK", evidence=f"Avancement {pct}% >= 40%")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=f"Avancement {pct}% < 40% — {rule.get('when_nok', '')}",
                     action=rule.get("action"),
@@ -146,11 +156,11 @@ def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
         elif rid == "DT_TRAJECTORY_2040":
             pct = ctx.get("avancement_pct", 0)
             if pct >= 50:
-                finding.update(status="OK",
-                               evidence=f"Avancement {pct}% >= 50%")
+                finding.update(status="OK", evidence=f"Avancement {pct}% >= 50%")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=f"Avancement {pct}% < 50% — {rule.get('when_nok', '')}",
                     action=rule.get("action"),
@@ -159,11 +169,11 @@ def _eval_decret_tertiaire(ctx: dict) -> List[dict]:
         elif rid == "DT_ENERGY_DATA":
             kwh = ctx.get("annual_kwh_total")
             if kwh is not None:
-                finding.update(status="OK",
-                               evidence=f"Consommation: {kwh} kWh/an")
+                finding.update(status="OK", evidence=f"Consommation: {kwh} kWh/an")
             else:
                 finding.update(
-                    status="UNKNOWN", severity=rule["severity"],
+                    status="UNKNOWN",
+                    severity=rule["severity"],
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
                 )
@@ -188,24 +198,19 @@ def _eval_bacs(ctx: dict) -> List[dict]:
 
         if rid == "BACS_POWER":
             if cvc is None or cvc == 0:
-                finding.update(status="UNKNOWN", severity=rule["severity"],
-                               evidence=rule.get("when_unknown", ""))
+                finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
             elif cvc <= 70:
-                finding.update(status="OUT_OF_SCOPE",
-                               evidence=rule.get("when_out_of_scope", ""))
+                finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
                 findings.append(finding)
                 return findings  # Out of scope
             else:
-                finding.update(status="OK",
-                               evidence=f"CVC {cvc} kW > 70 kW — assujetti BACS")
+                finding.update(status="OK", evidence=f"CVC {cvc} kW > 70 kW — assujetti BACS")
 
         elif rid == "BACS_DEROGATION":
             if has_derog:
-                finding.update(status="OK",
-                               evidence=rule.get("when_ok", "Derogation BACS accordee"))
+                finding.update(status="OK", evidence=rule.get("when_ok", "Derogation BACS accordee"))
             else:
-                finding.update(status="OK",
-                               evidence="Pas de derogation — evaluation standard")
+                finding.update(status="OK", evidence="Pas de derogation — evaluation standard")
 
         elif rid == "BACS_HIGH_DEADLINE":
             if cvc <= 290:
@@ -214,7 +219,8 @@ def _eval_bacs(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence="Attestation ou derogation BACS presente")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
@@ -227,7 +233,8 @@ def _eval_bacs(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence="Attestation ou derogation BACS presente")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
@@ -240,7 +247,8 @@ def _eval_bacs(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence="Derogation BACS (attestation non requise)")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
                 )
@@ -262,15 +270,14 @@ def _eval_aper(ctx: dict) -> List[dict]:
         if rid == "APER_PARKING":
             area = ctx.get("parking_area_m2")
             if area is None:
-                finding.update(status="UNKNOWN", severity=rule["severity"],
-                               evidence=rule.get("when_unknown", ""))
+                finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
             elif area < 1500:
-                finding.update(status="OUT_OF_SCOPE",
-                               evidence=rule.get("when_out_of_scope", ""))
+                finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
             else:
                 # Parking >= 1500 without ENR = NOK
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     deadline=rule.get("deadline"),
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
@@ -279,14 +286,13 @@ def _eval_aper(ctx: dict) -> List[dict]:
         elif rid == "APER_TOITURE":
             area = ctx.get("roof_area_m2")
             if area is None:
-                finding.update(status="UNKNOWN", severity=rule["severity"],
-                               evidence=rule.get("when_unknown", ""))
+                finding.update(status="UNKNOWN", severity=rule["severity"], evidence=rule.get("when_unknown", ""))
             elif area < 500:
-                finding.update(status="OUT_OF_SCOPE",
-                               evidence=rule.get("when_out_of_scope", ""))
+                finding.update(status="OUT_OF_SCOPE", evidence=rule.get("when_out_of_scope", ""))
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
                 )
@@ -299,7 +305,8 @@ def _eval_aper(ctx: dict) -> List[dict]:
                 finding.update(status="OK", evidence="Parking exterieur — ombieres possibles")
             else:
                 finding.update(
-                    status="NOK", severity=rule["severity"],
+                    status="NOK",
+                    severity=rule["severity"],
                     evidence=rule.get("when_nok", ""),
                     action=rule.get("action"),
                 )
@@ -319,6 +326,7 @@ _SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 def _compute_engine_version() -> str:
     """Compute deterministic version hash from rule pack configs."""
     import hashlib
+
     combined = ""
     for fname in ["decret_tertiaire_operat_v1.yaml", "decret_bacs_v1.yaml", "loi_aper_v1.yaml"]:
         pack = _load_pack(fname)
@@ -349,10 +357,10 @@ def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[C
     db.flush()  # Flush delete before re-insert to avoid identity map conflicts
 
     # Build inputs_json from context (site data used for evaluation)
-    inputs_snapshot = json.dumps({
-        k: str(v) if v is not None and not isinstance(v, (int, float, bool)) else v
-        for k, v in ctx.items()
-    }, default=str)
+    inputs_snapshot = json.dumps(
+        {k: str(v) if v is not None and not isinstance(v, (int, float, bool)) else v for k, v in ctx.items()},
+        default=str,
+    )
 
     # Persist new findings
     result = []
@@ -409,8 +417,8 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
 
     # Get all site IDs for the org
     site_ids = [
-        row[0] for row in
-        db.query(Site.id)
+        row[0]
+        for row in db.query(Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -446,8 +454,9 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     }
 
 
-def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None,
-                      site_id: int = None, portefeuille_id: int = None) -> list:
+def _resolve_site_ids(
+    db: Session, org_id: int, entity_id: int = None, site_id: int = None, portefeuille_id: int = None
+) -> list:
     """Resolve site IDs from scope filters (site > portefeuille > entity > org)."""
     if site_id:
         return [site_id]
@@ -463,8 +472,9 @@ def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None,
     return [row[0] for row in q.all()]
 
 
-def get_summary(db: Session, org_id: int, entity_id: int = None,
-                site_id: int = None, portefeuille_id: int = None) -> dict:
+def get_summary(
+    db: Session, org_id: int, entity_id: int = None, site_id: int = None, portefeuille_id: int = None
+) -> dict:
     """Aggregate compliance findings for an org/entity/portefeuille/site into a summary."""
     site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
 
@@ -481,11 +491,7 @@ def get_summary(db: Session, org_id: int, entity_id: int = None,
     if not site_ids:
         return {**_empty, "empty_reason": "NO_SITES"}
 
-    all_findings = (
-        db.query(ComplianceFinding)
-        .filter(ComplianceFinding.site_id.in_(site_ids))
-        .all()
-    )
+    all_findings = db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
 
     # Per-site worst status
     site_worst = {}
@@ -527,14 +533,16 @@ def get_summary(db: Session, org_id: int, entity_id: int = None,
         seen_rules.add(f.rule_id)
         actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
         if actions:
-            top_actions.append({
-                "regulation": f.regulation,
-                "rule_id": f.rule_id,
-                "severity": f.severity,
-                "deadline": f.deadline.isoformat() if f.deadline else None,
-                "action": actions[0],
-                "nb_sites": sum(1 for ff in nok_findings if ff.rule_id == f.rule_id),
-            })
+            top_actions.append(
+                {
+                    "regulation": f.regulation,
+                    "rule_id": f.rule_id,
+                    "severity": f.severity,
+                    "deadline": f.deadline.isoformat() if f.deadline else None,
+                    "action": actions[0],
+                    "nb_sites": sum(1 for ff in nok_findings if ff.rule_id == f.rule_id),
+                }
+            )
         if len(top_actions) >= 5:
             break
 
@@ -557,10 +565,16 @@ def get_summary(db: Session, org_id: int, entity_id: int = None,
     return result
 
 
-def get_sites_findings(db: Session, org_id: int, regulation: str = None,
-                       status: str = None, severity: str = None,
-                       entity_id: int = None, site_id: int = None,
-                       portefeuille_id: int = None) -> List[dict]:
+def get_sites_findings(
+    db: Session,
+    org_id: int,
+    regulation: str = None,
+    status: str = None,
+    severity: str = None,
+    entity_id: int = None,
+    site_id: int = None,
+    portefeuille_id: int = None,
+) -> List[dict]:
     """Return per-site findings list with filters."""
     site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
 
@@ -589,16 +603,18 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
                 "findings": [],
             }
         actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
-        sites_map[f.site_id]["findings"].append({
-            "id": f.id,
-            "regulation": f.regulation,
-            "rule_id": f.rule_id,
-            "status": f.status,
-            "severity": f.severity,
-            "deadline": f.deadline.isoformat() if f.deadline else None,
-            "evidence": f.evidence,
-            "actions": actions,
-        })
+        sites_map[f.site_id]["findings"].append(
+            {
+                "id": f.id,
+                "regulation": f.regulation,
+                "rule_id": f.rule_id,
+                "status": f.status,
+                "severity": f.severity,
+                "deadline": f.deadline.isoformat() if f.deadline else None,
+                "evidence": f.evidence,
+                "actions": actions,
+            }
+        )
 
     return list(sites_map.values())
 
@@ -607,9 +623,11 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
 # BACS v2 enrichment (per-site assessment data)
 # ---------------------------------------------------------------------------
 
+
 def _enrich_bacs_meta(db: Session, site_ids: list) -> dict:
     """Fetch BACS v2 assessment data for sites that have BacsAssets."""
     from services.bacs_engine import compute_putile
+
     meta = {}
     assets = db.query(BacsAsset).filter(BacsAsset.site_id.in_(site_ids)).all()
     for asset in assets:
@@ -668,15 +686,19 @@ def get_compliance_bundle(
 ) -> dict:
     """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
     from datetime import datetime as _dt
+
     trace_id = str(uuid.uuid4())[:12]
     try:
-        site_ids_resolved = _resolve_site_ids(db, org_id, entity_id, site_id,
-                                              portefeuille_id=portefeuille_id)
-        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id,
-                              portefeuille_id=portefeuille_id)
+        site_ids_resolved = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
+        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id, portefeuille_id=portefeuille_id)
         sites = get_sites_findings(
-            db, org_id, regulation, status, severity,
-            entity_id=entity_id, site_id=site_id,
+            db,
+            org_id,
+            regulation,
+            status,
+            severity,
+            entity_id=entity_id,
+            site_id=site_id,
             portefeuille_id=portefeuille_id,
         )
         bacs_meta = _enrich_bacs_meta(db, site_ids_resolved) if site_ids_resolved else {}
@@ -686,12 +708,22 @@ def get_compliance_bundle(
         is_schema = "no such column" in msg or "no such table" in msg
         code = "DB_SCHEMA_MISMATCH" if is_schema else "DATA_BLOCKED"
         return {
-            "scope": {"org_id": org_id, "entity_id": entity_id,
-                      "site_id": site_id, "portefeuille_id": portefeuille_id,
-                      "site_count": 0},
-            "summary": {"total_sites": 0, "sites_ok": 0, "sites_nok": 0,
-                         "sites_unknown": 0, "pct_ok": 0,
-                         "findings_by_regulation": {}, "top_actions": []},
+            "scope": {
+                "org_id": org_id,
+                "entity_id": entity_id,
+                "site_id": site_id,
+                "portefeuille_id": portefeuille_id,
+                "site_count": 0,
+            },
+            "summary": {
+                "total_sites": 0,
+                "sites_ok": 0,
+                "sites_nok": 0,
+                "sites_unknown": 0,
+                "pct_ok": 0,
+                "findings_by_regulation": {},
+                "top_actions": [],
+            },
             "sites": [],
             "bacs_v2": {},
             "meta": {

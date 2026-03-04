@@ -4,34 +4,40 @@ PROMEOS — Bill Intelligence Seed Demo (V68)
 3 trous + 2 partiels + 3 anomalies contrôlées.
 Idempotent via source tag "seed_36m".
 """
+
 import calendar
 from datetime import date
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine,
-    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    Site,
+    EnergyContract,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
 )
 
 # ── Constantes seed ──
-SOURCE_TAG     = "seed_36m"
-START_YEAR     = 2023
-START_MONTH    = 1
-MONTHS_COUNT   = 36   # Jan 2023 → Déc 2025
-KWH_ELEC       = 9000
-KWH_GAZ        = 6000
-PRICE_REF_ELEC = 0.18   # EUR/kWh all-in (TTC / kWh dans ce modèle simplifié)
-PRICE_REF_GAZ  = 0.09
+SOURCE_TAG = "seed_36m"
+START_YEAR = 2023
+START_MONTH = 1
+MONTHS_COUNT = 36  # Jan 2023 → Déc 2025
+KWH_ELEC = 9000
+KWH_GAZ = 6000
+PRICE_REF_ELEC = 0.18  # EUR/kWh all-in (TTC / kWh dans ce modèle simplifié)
+PRICE_REF_GAZ = 0.09
 
 # Montants ligne "normaux" pour 9000 kWh elec (total = 1620)
-ELEC_ENERGY_AMT  = 1020.0   # fourniture
-ELEC_NETWORK_AMT = 400.0    # réseau (attendu TURPE ≈ 407.70 → delta < 2%)
-ELEC_TAX_AMT     = 200.0    # taxes (attendu CSPE ≈ 202.50 → delta < 1%)
+ELEC_ENERGY_AMT = 1020.0  # fourniture
+ELEC_NETWORK_AMT = 400.0  # réseau (attendu TURPE ≈ 407.70 → delta < 2%)
+ELEC_TAX_AMT = 200.0  # taxes (attendu CSPE ≈ 202.50 → delta < 1%)
 
 # Montants ligne "normaux" pour 6000 kWh gaz (total = 540)
-GAZ_ENERGY_AMT  = 192.0     # fourniture
-GAZ_NETWORK_AMT = 220.0     # réseau (attendu ATRD+ATRT ≈ 222 → delta < 1%)
-GAZ_TAX_AMT     = 128.0     # taxes (attendu TICGN ≈ 130.20 → delta < 2%)
+GAZ_ENERGY_AMT = 192.0  # fourniture
+GAZ_NETWORK_AMT = 220.0  # réseau (attendu ATRD+ATRT ≈ 222 → delta < 1%)
+GAZ_TAX_AMT = 128.0  # taxes (attendu TICGN ≈ 130.20 → delta < 2%)
 
 # ── Trous contrôlés ──
 GAPS_SITE_A = {
@@ -39,17 +45,17 @@ GAPS_SITE_A = {
     (2024, 9): "missing",
 }
 PARTIALS_SITE_A = {
-    (2023, 6): 15,   # 15 jours → couverture partielle
-    (2024, 1): 20,   # 20 jours/31 → couverture partielle
+    (2023, 6): 15,  # 15 jours → couverture partielle
+    (2024, 1): 20,  # 20 jours/31 → couverture partielle
 }
 GAPS_SITE_B = {
     (2025, 2): "missing",
 }
 
 # ── Anomalies contrôlées ──
-ANOMALY_SHADOW_GAP    = (2024, 7)   # R1 : total_eur = shadow × 1.45
+ANOMALY_SHADOW_GAP = (2024, 7)  # R1 : total_eur = shadow × 1.45
 ANOMALY_RESEAU_MISMATCH = (2024, 11)  # R13: NETWORK line = TURPE × 2.3
-ANOMALY_TAXES_MISMATCH  = (2025, 1)   # R14: TAX line = CSPE × 1.08
+ANOMALY_TAXES_MISMATCH = (2025, 1)  # R14: TAX line = CSPE × 1.08
 
 
 def _iter_months(start_year: int, start_month: int, count: int):
@@ -117,14 +123,21 @@ def _add_elec_invoice(db: Session, site_id: int, contract_id: int, y: int, m: in
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY,  "Consommation elec",  KWH_ELEC, "kWh", round(energy_line / KWH_ELEC, 4), energy_line),
-        (InvoiceLineType.NETWORK, "Acheminement TURPE",     None,  None,  None, network_line),
-        (InvoiceLineType.TAX,     "CSPE / Accise elec",     None,  None,  None, tax_line),
+        (InvoiceLineType.ENERGY, "Consommation elec", KWH_ELEC, "kWh", round(energy_line / KWH_ELEC, 4), energy_line),
+        (InvoiceLineType.NETWORK, "Acheminement TURPE", None, None, None, network_line),
+        (InvoiceLineType.TAX, "CSPE / Accise elec", None, None, None, tax_line),
     ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=inv.id,
+                line_type=lt,
+                label=label,
+                qty=qty,
+                unit=unit,
+                unit_price=up,
+                amount_eur=amt,
+            )
+        )
 
 
 def _add_gaz_invoice(db: Session, site_id: int, contract_id: int, y: int, m: int) -> None:
@@ -157,14 +170,28 @@ def _add_gaz_invoice(db: Session, site_id: int, contract_id: int, y: int, m: int
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY,  "Terme variable gaz",    KWH_GAZ, "kWh", round(GAZ_ENERGY_AMT / KWH_GAZ, 4), GAZ_ENERGY_AMT),
+        (
+            InvoiceLineType.ENERGY,
+            "Terme variable gaz",
+            KWH_GAZ,
+            "kWh",
+            round(GAZ_ENERGY_AMT / KWH_GAZ, 4),
+            GAZ_ENERGY_AMT,
+        ),
         (InvoiceLineType.NETWORK, "Acheminement gaz (ATRD+ATRT)", None, None, None, GAZ_NETWORK_AMT),
-        (InvoiceLineType.TAX,     "TICGN",                  None,  None,  None, GAZ_TAX_AMT),
+        (InvoiceLineType.TAX, "TICGN", None, None, None, GAZ_TAX_AMT),
     ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
+        db.add(
+            EnergyInvoiceLine(
+                invoice_id=inv.id,
+                line_type=lt,
+                label=label,
+                qty=qty,
+                unit=unit,
+                unit_price=up,
+                amount_eur=amt,
+            )
+        )
 
 
 def seed_billing_demo(db: Session) -> dict:
@@ -176,9 +203,7 @@ def seed_billing_demo(db: Session) -> dict:
     Idempotent via source="seed_36m".
     """
     # Idempotency check
-    existing = db.query(EnergyInvoice).filter(
-        EnergyInvoice.source == SOURCE_TAG
-    ).count()
+    existing = db.query(EnergyInvoice).filter(EnergyInvoice.source == SOURCE_TAG).count()
     if existing > 0:
         return {"skipped": True, "reason": "already seeded (seed_36m)", "existing": existing}
 
@@ -225,14 +250,22 @@ def seed_billing_demo(db: Session) -> dict:
     db.commit()
 
     # Compter
-    n_elec = db.query(EnergyInvoice).filter(
-        EnergyInvoice.site_id == site_a.id,
-        EnergyInvoice.source == SOURCE_TAG,
-    ).count()
-    n_gaz = db.query(EnergyInvoice).filter(
-        EnergyInvoice.site_id == site_b.id,
-        EnergyInvoice.source == SOURCE_TAG,
-    ).count()
+    n_elec = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id == site_a.id,
+            EnergyInvoice.source == SOURCE_TAG,
+        )
+        .count()
+    )
+    n_gaz = (
+        db.query(EnergyInvoice)
+        .filter(
+            EnergyInvoice.site_id == site_b.id,
+            EnergyInvoice.source == SOURCE_TAG,
+        )
+        .count()
+    )
 
     return {
         "contracts_created": 2,

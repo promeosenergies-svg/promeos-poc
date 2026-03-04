@@ -14,6 +14,7 @@ Rules:
     - File is moved from drafts/ to items/ (same subdomain folder)
     - If validation fails, promotion is REFUSED
 """
+
 import sys
 import shutil
 import yaml
@@ -175,14 +176,17 @@ def promote_item(yaml_path: Path, target_confidence: str = None, dry_run: bool =
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Promote KB items from draft to validated")
     parser.add_argument("path", help="YAML file or directory to promote")
-    parser.add_argument("--confidence", choices=["medium", "high"], default=None,
-                        help="Target confidence level (default: upgrade low->medium)")
-    parser.add_argument("--batch", action="store_true",
-                        help="Promote all YAML files in directory")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Validate only, don't move files")
+    parser.add_argument(
+        "--confidence",
+        choices=["medium", "high"],
+        default=None,
+        help="Target confidence level (default: upgrade low->medium)",
+    )
+    parser.add_argument("--batch", action="store_true", help="Promote all YAML files in directory")
+    parser.add_argument("--dry-run", action="store_true", help="Validate only, don't move files")
     args = parser.parse_args()
 
     target = Path(args.path)
@@ -213,12 +217,12 @@ def main():
                 else:
                     failed += 1
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Batch promotion complete:")
         print(f"  [OK]      {success} promoted")
         print(f"  [SKIP]    {skipped} already validated")
         print(f"  [REFUSED] {failed} failed validation")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         if failed > 0:
             sys.exit(1)

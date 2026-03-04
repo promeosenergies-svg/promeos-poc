@@ -1,6 +1,7 @@
 """
 PROMEOS Watchers - Generic RSS watcher (stdlib only, no feedparser)
 """
+
 import hashlib
 import re
 import unicodedata
@@ -57,9 +58,7 @@ class RSSWatcher(Watcher):
                 content_hash = hashlib.sha256(content.encode()).hexdigest()
 
                 # Check if already exists
-                existing = db.query(RegSourceEvent).filter(
-                    RegSourceEvent.content_hash == content_hash
-                ).first()
+                existing = db.query(RegSourceEvent).filter(RegSourceEvent.content_hash == content_hash).first()
 
                 if existing:
                     continue  # Skip duplicates
@@ -77,9 +76,7 @@ class RSSWatcher(Watcher):
                         pass
 
                 # Compute normalized dedup key
-                dedup_key = _normalize_dedup_key(
-                    title, pub_date_str or "", self.name
-                )
+                dedup_key = _normalize_dedup_key(title, pub_date_str or "", self.name)
 
                 event = RegSourceEvent(
                     source_name=self.name,

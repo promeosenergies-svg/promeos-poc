@@ -2,6 +2,7 @@
 PROMEOS - EMS Weather Service
 Demo weather provider with deterministic generation + DB cache.
 """
+
 import math
 import random
 from datetime import datetime, timedelta, date as date_type
@@ -139,15 +140,17 @@ def get_weather_multi(
     for d in sorted(all_data.keys()):
         entry = all_data[d]
         avgs = entry["avgs"]
-        days.append({
-            "date": d,
-            "temp_avg_c": round(sum(avgs) / len(avgs), 1),
-            "temp_min_c": round(sum(entry["mins"]) / len(entry["mins"]), 1),
-            "temp_max_c": round(sum(entry["maxs"]) / len(entry["maxs"]), 1),
-            "envelope_min_c": round(min(avgs), 1),
-            "envelope_max_c": round(max(avgs), 1),
-            "source": "demo_avg" if len(site_ids) > 1 else "demo",
-        })
+        days.append(
+            {
+                "date": d,
+                "temp_avg_c": round(sum(avgs) / len(avgs), 1),
+                "temp_min_c": round(sum(entry["mins"]) / len(entry["mins"]), 1),
+                "temp_max_c": round(sum(entry["maxs"]) / len(entry["maxs"]), 1),
+                "envelope_min_c": round(min(avgs), 1),
+                "envelope_max_c": round(max(avgs), 1),
+                "source": "demo_avg" if len(site_ids) > 1 else "demo",
+            }
+        )
 
     return {
         "days": days,

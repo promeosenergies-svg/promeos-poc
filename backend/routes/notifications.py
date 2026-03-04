@@ -2,6 +2,7 @@
 PROMEOS — Notifications Routes (Sprint 10.2)
 6 endpoints: sync, list, summary, patch, preferences, batches.
 """
+
 import json
 from typing import Optional
 
@@ -12,8 +13,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import (
     Organisation,
-    NotificationEvent, NotificationBatch, NotificationPreference,
-    NotificationSeverity, NotificationStatus, NotificationSourceType,
+    NotificationEvent,
+    NotificationBatch,
+    NotificationPreference,
+    NotificationSeverity,
+    NotificationStatus,
+    NotificationSourceType,
 )
 from services.notification_service import sync_notifications, _count_summary
 from middleware.auth import get_optional_auth, AuthContext
@@ -26,6 +31,7 @@ router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 # ========================================
 # Schemas
 # ========================================
+
 
 class NotifPatch(BaseModel):
     status: Optional[str] = None
@@ -40,6 +46,7 @@ class PreferencePatch(BaseModel):
 # ========================================
 # Helpers
 # ========================================
+
 
 def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
     """Delegate to centralized resolve_org_id (DEMO_MODE-aware)."""
@@ -68,6 +75,7 @@ def _serialize_event(e: NotificationEvent) -> dict:
 # ========================================
 # Endpoints
 # ========================================
+
 
 @router.post("/sync")
 def sync_notifs(
@@ -117,10 +125,14 @@ def list_notifs(
     if site_id is not None:
         q = q.filter(NotificationEvent.site_id == site_id)
 
-    events = q.order_by(
-        NotificationEvent.severity.desc(),
-        NotificationEvent.created_at.desc(),
-    ).limit(500).all()
+    events = (
+        q.order_by(
+            NotificationEvent.severity.desc(),
+            NotificationEvent.created_at.desc(),
+        )
+        .limit(500)
+        .all()
+    )
 
     return [_serialize_event(e) for e in events]
 

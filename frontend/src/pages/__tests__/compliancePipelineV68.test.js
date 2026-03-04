@@ -149,11 +149,11 @@ describe('D · App.jsx route registration', () => {
   const code = readSrc('App.jsx');
 
   it('lazy-loads CompliancePipelinePage', () => {
-    expect(code).toContain("CompliancePipelinePage");
+    expect(code).toContain('CompliancePipelinePage');
   });
 
   it('lazy-loads SiteCompliancePage', () => {
-    expect(code).toContain("SiteCompliancePage");
+    expect(code).toContain('SiteCompliancePage');
   });
 
   it('registers /compliance/pipeline route', () => {
@@ -165,7 +165,7 @@ describe('D · App.jsx route registration', () => {
   });
 
   it('/compliance root redirects to /conformite (V92)', () => {
-    const line = code.split('\n').find(l => l.includes('path="/compliance"'));
+    const line = code.split('\n').find((l) => l.includes('path="/compliance"'));
     expect(line).toBeDefined();
     expect(line).toContain('Navigate');
     expect(line).toContain('/conformite');

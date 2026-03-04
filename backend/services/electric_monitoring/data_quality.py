@@ -10,6 +10,7 @@ Quality checks:
 - Outliers (statistical anomalies)
 - Completeness (% of expected readings present)
 """
+
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from collections import Counter
@@ -25,10 +26,13 @@ class DataQualityEngine:
     WEIGHT_NEGATIVES = 0.15
     WEIGHT_OUTLIERS = 0.10
 
-    def compute(self, readings: List[Dict[str, Any]],
-                interval_minutes: int = 60,
-                period_start: Optional[datetime] = None,
-                period_end: Optional[datetime] = None) -> Dict[str, Any]:
+    def compute(
+        self,
+        readings: List[Dict[str, Any]],
+        interval_minutes: int = 60,
+        period_start: Optional[datetime] = None,
+        period_end: Optional[datetime] = None,
+    ) -> Dict[str, Any]:
         """
         Compute data quality score.
 
@@ -61,12 +65,14 @@ class DataQualityEngine:
         score_completeness = completeness_pct  # 0-100
 
         if completeness_pct < 95:
-            issues.append({
-                "type": "incomplete_data",
-                "severity": "warning" if completeness_pct > 80 else "high",
-                "detail": f"Completeness {completeness_pct:.1f}%: {len(readings)}/{expected_readings} readings",
-                "value": round(completeness_pct, 1)
-            })
+            issues.append(
+                {
+                    "type": "incomplete_data",
+                    "severity": "warning" if completeness_pct > 80 else "high",
+                    "detail": f"Completeness {completeness_pct:.1f}%: {len(readings)}/{expected_readings} readings",
+                    "value": round(completeness_pct, 1),
+                }
+            )
 
         # --- 2. Gaps ---
         gap_count = 0
@@ -85,11 +91,13 @@ class DataQualityEngine:
                 gap_total_hours += gap_hours
                 max_gap_hours = max(max_gap_hours, gap_hours)
                 if len(gaps_list) < 20:
-                    gaps_list.append({
-                        "start": timestamps[i - 1].isoformat(),
-                        "end": timestamps[i].isoformat(),
-                        "duration_hours": round(gap_hours, 1)
-                    })
+                    gaps_list.append(
+                        {
+                            "start": timestamps[i - 1].isoformat(),
+                            "end": timestamps[i].isoformat(),
+                            "duration_hours": round(gap_hours, 1),
+                        }
+                    )
 
         # Score: 0 gaps = 100, 1 gap per day on average = 0
         total_days = max(1, total_span_minutes / (24 * 60))
@@ -97,12 +105,14 @@ class DataQualityEngine:
         score_gaps = max(0, 100 - gaps_per_day * 50)
 
         if gap_count > 0:
-            issues.append({
-                "type": "gaps",
-                "severity": "high" if max_gap_hours > 24 else "warning",
-                "detail": f"{gap_count} gaps detected, total {gap_total_hours:.1f}h, max {max_gap_hours:.1f}h",
-                "value": gap_count
-            })
+            issues.append(
+                {
+                    "type": "gaps",
+                    "severity": "high" if max_gap_hours > 24 else "warning",
+                    "detail": f"{gap_count} gaps detected, total {gap_total_hours:.1f}h, max {max_gap_hours:.1f}h",
+                    "value": gap_count,
+                }
+            )
 
         # --- 3. Duplicates ---
         ts_counter = Counter(ts.isoformat() for ts in timestamps)
@@ -113,13 +123,15 @@ class DataQualityEngine:
         score_duplicates = max(0, 100 - duplicate_rate * 5000)  # 2% duplicates = 0
 
         if duplicate_count > 0:
-            issues.append({
-                "type": "duplicates",
-                "severity": "warning",
-                "detail": f"{duplicate_count} duplicate timestamps found",
-                "value": duplicate_count,
-                "examples": duplicate_timestamps[:10]
-            })
+            issues.append(
+                {
+                    "type": "duplicates",
+                    "severity": "warning",
+                    "detail": f"{duplicate_count} duplicate timestamps found",
+                    "value": duplicate_count,
+                    "examples": duplicate_timestamps[:10],
+                }
+            )
 
         # --- 4. DST collisions ---
         dst_collisions = 0
@@ -136,12 +148,14 @@ class DataQualityEngine:
                 spring_gaps += 1
 
         if dst_collisions > 0 or spring_gaps > 0:
-            issues.append({
-                "type": "dst_collision",
-                "severity": "info",
-                "detail": f"DST issues: {dst_collisions} backward jumps, {spring_gaps} spring-forward gaps",
-                "value": dst_collisions + spring_gaps
-            })
+            issues.append(
+                {
+                    "type": "dst_collision",
+                    "severity": "info",
+                    "detail": f"DST issues: {dst_collisions} backward jumps, {spring_gaps} spring-forward gaps",
+                    "value": dst_collisions + spring_gaps,
+                }
+            )
 
         # --- 5. Negatives ---
         negative_count = sum(1 for v in values if v < 0)
@@ -149,12 +163,14 @@ class DataQualityEngine:
         score_negatives = max(0, 100 - negative_rate * 10000)  # 1% negatives = 0
 
         if negative_count > 0:
-            issues.append({
-                "type": "negative_values",
-                "severity": "high",
-                "detail": f"{negative_count} negative readings detected",
-                "value": negative_count
-            })
+            issues.append(
+                {
+                    "type": "negative_values",
+                    "severity": "high",
+                    "detail": f"{negative_count} negative readings detected",
+                    "value": negative_count,
+                }
+            )
 
         # --- 6. Outliers (IQR method) ---
         sorted_vals = sorted(v for v in values if v >= 0)
@@ -174,20 +190,22 @@ class DataQualityEngine:
         score_outliers = max(0, 100 - outlier_rate * 2000)  # 5% outliers = 0
 
         if outlier_count > 0:
-            issues.append({
-                "type": "outliers",
-                "severity": "warning",
-                "detail": f"{outlier_count} statistical outliers (IQR x3)",
-                "value": outlier_count
-            })
+            issues.append(
+                {
+                    "type": "outliers",
+                    "severity": "warning",
+                    "detail": f"{outlier_count} statistical outliers (IQR x3)",
+                    "value": outlier_count,
+                }
+            )
 
         # --- Weighted total ---
         quality_score = (
-            score_completeness * self.WEIGHT_COMPLETENESS +
-            score_gaps * self.WEIGHT_GAPS +
-            score_duplicates * self.WEIGHT_DUPLICATES +
-            score_negatives * self.WEIGHT_NEGATIVES +
-            score_outliers * self.WEIGHT_OUTLIERS
+            score_completeness * self.WEIGHT_COMPLETENESS
+            + score_gaps * self.WEIGHT_GAPS
+            + score_duplicates * self.WEIGHT_DUPLICATES
+            + score_negatives * self.WEIGHT_NEGATIVES
+            + score_outliers * self.WEIGHT_OUTLIERS
         )
         quality_score = round(min(100, max(0, quality_score)), 1)
 

@@ -7,28 +7,33 @@ import { isSilentUrl, normalizePathFromAxiosConfig } from '../api';
 
 describe('normalizePathFromAxiosConfig', () => {
   it('joins baseURL + relative url', () => {
-    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: '/demo/status-pack' }))
-      .toBe('/api/demo/status-pack');
+    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: '/demo/status-pack' })).toBe(
+      '/api/demo/status-pack'
+    );
   });
 
   it('handles missing leading slash on url', () => {
-    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: 'demo/status-pack' }))
-      .toBe('/api/demo/status-pack');
+    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: 'demo/status-pack' })).toBe(
+      '/api/demo/status-pack'
+    );
   });
 
   it('strips protocol and host from absolute URL', () => {
-    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack' }))
-      .toBe('/api/demo/status-pack');
+    expect(
+      normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack' })
+    ).toBe('/api/demo/status-pack');
   });
 
   it('strips querystring and hash', () => {
-    expect(normalizePathFromAxiosConfig({ url: '/demo/status-pack?x=1#foo' }))
-      .toBe('/demo/status-pack');
+    expect(normalizePathFromAxiosConfig({ url: '/demo/status-pack?x=1#foo' })).toBe(
+      '/demo/status-pack'
+    );
   });
 
   it('strips querystring from absolute URL', () => {
-    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack?x=1' }))
-      .toBe('/api/demo/status-pack');
+    expect(
+      normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack?x=1' })
+    ).toBe('/api/demo/status-pack');
   });
 
   it('handles null/undefined config', () => {
@@ -41,8 +46,12 @@ describe('normalizePathFromAxiosConfig', () => {
   });
 
   it('does not prepend baseURL to absolute url', () => {
-    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: 'http://localhost:8001/demo/status-pack' }))
-      .toBe('/demo/status-pack');
+    expect(
+      normalizePathFromAxiosConfig({
+        baseURL: '/api',
+        url: 'http://localhost:8001/demo/status-pack',
+      })
+    ).toBe('/demo/status-pack');
   });
 });
 

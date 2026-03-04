@@ -10,6 +10,7 @@ Niveaux de shadow billing :
 
 Chaque facture porte son niveau + "why_not_higher".
 """
+
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
@@ -19,6 +20,7 @@ from typing import Optional, List, Dict, Any
 # ========================================
 # Enums
 # ========================================
+
 
 class EnergyType(str, Enum):
     ELEC = "elec"
@@ -42,6 +44,7 @@ class ShadowLevel(str, Enum):
 
 class ComponentType(str, Enum):
     """Types de composantes d'une facture energie."""
+
     # Abonnement / fixe
     ABONNEMENT = "abonnement"
     # Consommation
@@ -79,19 +82,21 @@ class ComponentType(str, Enum):
 
 class BillingConcept(str, Enum):
     """Concepts de facturation energie (famille de postes)."""
-    FOURNITURE = "fourniture"           # Energie (HP, HC, base, pointe...)
-    ACHEMINEMENT = "acheminement"       # TURPE / ATRD (fixe + variable)
-    TAXES_CONTRIBUTIONS = "taxes"       # Accise, CTA, CEE
-    TVA = "tva"                         # TVA reduite + normale
-    ABONNEMENT = "abonnement"           # Abonnement / prime fixe
-    CAPACITE = "capacite"               # Depassement, reactive, puissance
-    AJUSTEMENT = "ajustement"           # Prorata, regularisation, remise
-    PENALITE = "penalite"              # Penalites contractuelles
-    AUTRE = "autre"                     # Non identifie
+
+    FOURNITURE = "fourniture"  # Energie (HP, HC, base, pointe...)
+    ACHEMINEMENT = "acheminement"  # TURPE / ATRD (fixe + variable)
+    TAXES_CONTRIBUTIONS = "taxes"  # Accise, CTA, CEE
+    TVA = "tva"  # TVA reduite + normale
+    ABONNEMENT = "abonnement"  # Abonnement / prime fixe
+    CAPACITE = "capacite"  # Depassement, reactive, puissance
+    AJUSTEMENT = "ajustement"  # Prorata, regularisation, remise
+    PENALITE = "penalite"  # Penalites contractuelles
+    AUTRE = "autre"  # Non identifie
 
 
 class AnomalyType(str, Enum):
     """Types d'anomalies detectees par l'audit."""
+
     ARITHMETIC_ERROR = "arithmetic_error"
     TVA_ERROR = "tva_error"
     PRORATA_ERROR = "prorata_error"
@@ -121,11 +126,13 @@ class AnomalySeverity(str, Enum):
 # Dataclasses
 # ========================================
 
+
 @dataclass
 class ConceptAllocation:
     """Allocation d'une composante a un concept de facturation."""
-    concept_id: str                    # BillingConcept value
-    confidence: float = 1.0            # 0.0-1.0
+
+    concept_id: str  # BillingConcept value
+    confidence: float = 1.0  # 0.0-1.0
     matched_rules: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -139,6 +146,7 @@ class ConceptAllocation:
 @dataclass
 class InvoiceComponent:
     """Une ligne/composante d'une facture."""
+
     component_type: ComponentType
     label: str
     quantity: Optional[float] = None
@@ -157,6 +165,7 @@ class InvoiceComponent:
 @dataclass
 class Invoice:
     """Facture energie canonique."""
+
     invoice_id: str
     energy_type: EnergyType
     supplier: str
@@ -252,6 +261,7 @@ class Invoice:
 @dataclass
 class InvoiceAnomaly:
     """Anomalie detectee lors de l'audit d'une facture."""
+
     anomaly_id: str
     anomaly_type: AnomalyType
     severity: AnomalySeverity
@@ -283,6 +293,7 @@ class InvoiceAnomaly:
 @dataclass
 class ShadowResult:
     """Resultat d'un shadow billing."""
+
     invoice_id: str
     shadow_level: ShadowLevel
     shadow_total_ht: Optional[float] = None
@@ -318,6 +329,7 @@ class ShadowResult:
 @dataclass
 class AuditReport:
     """Rapport d'audit complet pour une facture."""
+
     invoice_id: str
     invoice: Dict[str, Any] = field(default_factory=dict)
     shadow: Optional[Dict[str, Any]] = None

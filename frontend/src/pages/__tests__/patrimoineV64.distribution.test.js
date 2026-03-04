@@ -15,8 +15,8 @@ import { computeRiskBuckets } from '../../components/PatrimoineRiskDistributionB
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
 
-const DIST_JSX      = src('components/PatrimoineRiskDistributionBar.jsx');
-const HEATMAP_JSX   = src('components/PatrimoineHeatmap.jsx');
+const DIST_JSX = src('components/PatrimoineRiskDistributionBar.jsx');
+const HEATMAP_JSX = src('components/PatrimoineHeatmap.jsx');
 const PATRIMOINE_JSX = src('pages/Patrimoine.jsx');
 
 // ── 1. Empty ─────────────────────────────────────────────────────────────

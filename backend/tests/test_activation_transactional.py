@@ -2,8 +2,10 @@
 PROMEOS - Tests Activation Transactionnelle
 Covers: atomic rollback, partial failure, idempotence, activation log.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from unittest.mock import patch
@@ -13,19 +15,33 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Compteur, Organisation, EntiteJuridique, Portefeuille,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    ActivationLog, ActivationLogStatus,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    Base,
+    Site,
+    Compteur,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    ActivationLog,
+    ActivationLogStatus,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
 )
 from services.patrimoine_service import (
-    create_staging_batch, run_quality_gate, activate_batch,
+    create_staging_batch,
+    run_quality_gate,
+    activate_batch,
 )
 
 
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -60,13 +76,17 @@ def _create_org(db_session):
 def _create_batch_with_sites(db_session, org_id, sites_data):
     """Create staging batch with multiple sites + compteurs."""
     batch = create_staging_batch(
-        db_session, org_id=org_id, user_id=None,
-        source_type=ImportSourceType.CSV, mode="import",
+        db_session,
+        org_id=org_id,
+        user_id=None,
+        source_type=ImportSourceType.CSV,
+        mode="import",
     )
 
     for i, site in enumerate(sites_data, start=1):
         ss = StagingSite(
-            batch_id=batch.id, row_number=i + 1,
+            batch_id=batch.id,
+            row_number=i + 1,
             nom=site["nom"],
             adresse=site.get("adresse", "1 rue Test"),
             code_postal=site.get("code_postal", "75001"),
@@ -78,7 +98,8 @@ def _create_batch_with_sites(db_session, org_id, sites_data):
 
         for j, meter in enumerate(site.get("meters", []), start=1):
             sc = StagingCompteur(
-                batch_id=batch.id, staging_site_id=ss.id,
+                batch_id=batch.id,
+                staging_site_id=ss.id,
                 row_number=(i * 10) + j,
                 numero_serie=meter.get("serie", f"SERIE-{i}-{j}"),
                 meter_id=meter.get("meter_id"),
@@ -94,16 +115,21 @@ def _create_batch_with_sites(db_session, org_id, sites_data):
 # Tests
 # ========================================
 
+
 class TestCrashDuringActivationRollback:
     """Crash during entity creation → full rollback, no partial data."""
 
     def test_crash_during_activation_rollback(self, db_session):
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Site A", "meters": [{"meter_id": "11111111111111"}]},
-            {"nom": "Site B", "meters": [{"meter_id": "22222222222222"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Site A", "meters": [{"meter_id": "11111111111111"}]},
+                {"nom": "Site B", "meters": [{"meter_id": "22222222222222"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -112,7 +138,9 @@ class TestCrashDuringActivationRollback:
 
         # Patch create_site_from_data to fail on the 2nd call
         call_count = {"n": 0}
-        original_create = __import__("services.onboarding_service", fromlist=["create_site_from_data"]).create_site_from_data
+        original_create = __import__(
+            "services.onboarding_service", fromlist=["create_site_from_data"]
+        ).create_site_from_data
 
         def failing_create(*args, **kwargs):
             call_count["n"] += 1
@@ -136,9 +164,13 @@ class TestCrashDuringActivationRollback:
         """Even on crash, ActivationLog is created with FAILED status."""
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Site Crash", "meters": [{"meter_id": "33333333333333"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Site Crash", "meters": [{"meter_id": "33333333333333"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -150,9 +182,13 @@ class TestCrashDuringActivationRollback:
                 activate_batch(db_session, batch.id, pf.id)
 
         # ActivationLog should exist with FAILED status
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-        ).first()
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+            )
+            .first()
+        )
         assert log is not None
         assert log.status == ActivationLogStatus.FAILED
         assert "DB explosion" in log.error_message
@@ -166,24 +202,32 @@ class TestDuplicateMeterActivationBlocked:
 
         # Create existing active compteur
         existing_site = Site(
-            nom="Existing", type="bureau",
-            portefeuille_id=pf.id, actif=True,
+            nom="Existing",
+            type="bureau",
+            portefeuille_id=pf.id,
+            actif=True,
         )
         db_session.add(existing_site)
         db_session.flush()
 
         existing_cpt = Compteur(
-            site_id=existing_site.id, type="electricite",
-            numero_serie="EXIST-001", meter_id="44444444444444",
+            site_id=existing_site.id,
+            type="electricite",
+            numero_serie="EXIST-001",
+            meter_id="44444444444444",
             actif=True,
         )
         db_session.add(existing_cpt)
         db_session.flush()
 
         # Staging batch with colliding meter_id
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "New Site", "meters": [{"meter_id": "44444444444444"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "New Site", "meters": [{"meter_id": "44444444444444"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -192,10 +236,14 @@ class TestDuplicateMeterActivationBlocked:
             activate_batch(db_session, batch.id, pf.id)
 
         # No activation log with SUCCESS
-        success_log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-            ActivationLog.status == ActivationLogStatus.SUCCESS,
-        ).first()
+        success_log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+                ActivationLog.status == ActivationLogStatus.SUCCESS,
+            )
+            .first()
+        )
         assert success_log is None
 
 
@@ -206,11 +254,15 @@ class TestPartialFailureNoEntityPersisted:
         org, ej, pf = _create_org(db_session)
 
         # 3 sites — make provision_site fail on the 3rd
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Site 1", "meters": [{"meter_id": "55555555555551"}]},
-            {"nom": "Site 2", "meters": [{"meter_id": "55555555555552"}]},
-            {"nom": "Site 3", "meters": [{"meter_id": "55555555555553"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Site 1", "meters": [{"meter_id": "55555555555551"}]},
+                {"nom": "Site 2", "meters": [{"meter_id": "55555555555552"}]},
+                {"nom": "Site 3", "meters": [{"meter_id": "55555555555553"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -240,9 +292,13 @@ class TestIdempotentRerun:
     def test_idempotent_rerun_no_duplicate(self, db_session):
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Unique Site", "meters": [{"meter_id": "66666666666666"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Unique Site", "meters": [{"meter_id": "66666666666666"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -271,18 +327,26 @@ class TestActivationLogCreated:
     def test_activation_log_on_success(self, db_session):
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Log Site", "meters": [{"meter_id": "77777777777777"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Log Site", "meters": [{"meter_id": "77777777777777"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
         result = activate_batch(db_session, batch.id, pf.id)
 
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-            ActivationLog.status == ActivationLogStatus.SUCCESS,
-        ).first()
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+                ActivationLog.status == ActivationLogStatus.SUCCESS,
+            )
+            .first()
+        )
 
         assert log is not None
         assert log.started_at is not None
@@ -295,9 +359,13 @@ class TestActivationLogCreated:
     def test_activation_log_on_failure(self, db_session):
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Fail Site", "meters": [{"meter_id": "88888888888888"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Fail Site", "meters": [{"meter_id": "88888888888888"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -308,10 +376,14 @@ class TestActivationLogCreated:
             with pytest.raises(ValueError, match="Activation failed"):
                 activate_batch(db_session, batch.id, pf.id)
 
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-            ActivationLog.status == ActivationLogStatus.FAILED,
-        ).first()
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+                ActivationLog.status == ActivationLogStatus.FAILED,
+            )
+            .first()
+        )
 
         assert log is not None
         assert log.error_message is not None
@@ -322,17 +394,25 @@ class TestActivationLogCreated:
         """Activation hash is deterministic for same batch content."""
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Hash Site", "meters": [{"meter_id": "99999999999998"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Hash Site", "meters": [{"meter_id": "99999999999998"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
         result = activate_batch(db_session, batch.id, pf.id)
 
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.id == result["activation_log_id"],
-        ).first()
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.id == result["activation_log_id"],
+            )
+            .first()
+        )
 
         assert log.activation_hash is not None
         assert len(log.activation_hash) == 64  # SHA-256 hex
@@ -349,11 +429,15 @@ class TestActivationAtomicityRollback:
         """Crash mid-activation → batch stays VALIDATED, log is FAILED, 0 entities."""
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Atom Site A", "meters": [{"meter_id": "10000000000001"}]},
-            {"nom": "Atom Site B", "meters": [{"meter_id": "10000000000002"}]},
-            {"nom": "Atom Site C", "meters": [{"meter_id": "10000000000003"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Atom Site A", "meters": [{"meter_id": "10000000000001"}]},
+                {"nom": "Atom Site B", "meters": [{"meter_id": "10000000000002"}]},
+                {"nom": "Atom Site C", "meters": [{"meter_id": "10000000000003"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -383,25 +467,23 @@ class TestActivationAtomicityRollback:
 
         # 1. Re-read batch from DB (not in-memory cache)
         db_session.expire(batch)
-        assert batch.status != StagingStatus.APPLIED, (
-            "CRITICAL: batch.status leaked to APPLIED despite rollback"
-        )
-        assert batch.status == StagingStatus.VALIDATED, (
-            "batch.status should stay VALIDATED after failed activation"
-        )
+        assert batch.status != StagingStatus.APPLIED, "CRITICAL: batch.status leaked to APPLIED despite rollback"
+        assert batch.status == StagingStatus.VALIDATED, "batch.status should stay VALIDATED after failed activation"
 
         # 2. Zero entities created — full rollback
         assert db_session.query(Site).count() == sites_before
         assert db_session.query(Compteur).count() == compteurs_before
 
         # 3. ActivationLog exists with FAILED (not SUCCESS, not STARTED)
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-        ).first()
-        assert log is not None
-        assert log.status == ActivationLogStatus.FAILED, (
-            f"log.status should be FAILED, got {log.status}"
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+            )
+            .first()
         )
+        assert log is not None
+        assert log.status == ActivationLogStatus.FAILED, f"log.status should be FAILED, got {log.status}"
         assert log.error_message is not None
         assert "mid-activation crash" in log.error_message
 
@@ -423,10 +505,14 @@ class TestActivationAtomicityRollback:
         """Crash after 1st site → log.sites_created must be 0 (not stale from savepoint)."""
         org, ej, pf = _create_org(db_session)
 
-        batch = _create_batch_with_sites(db_session, org.id, [
-            {"nom": "Counter A", "meters": [{"meter_id": "10000000000010"}]},
-            {"nom": "Counter B", "meters": [{"meter_id": "10000000000011"}]},
-        ])
+        batch = _create_batch_with_sites(
+            db_session,
+            org.id,
+            [
+                {"nom": "Counter A", "meters": [{"meter_id": "10000000000010"}]},
+                {"nom": "Counter B", "meters": [{"meter_id": "10000000000011"}]},
+            ],
+        )
 
         run_quality_gate(db_session, batch.id)
 
@@ -446,9 +532,14 @@ class TestActivationAtomicityRollback:
                 activate_batch(db_session, batch.id, pf.id)
 
         # Re-read log from DB to get actual persisted values
-        log = db_session.query(ActivationLog).filter(
-            ActivationLog.batch_id == batch.id,
-        ).order_by(ActivationLog.id.desc()).first()
+        log = (
+            db_session.query(ActivationLog)
+            .filter(
+                ActivationLog.batch_id == batch.id,
+            )
+            .order_by(ActivationLog.id.desc())
+            .first()
+        )
 
         assert log.status == ActivationLogStatus.FAILED
         # Key invariant: counters must be 0, NOT the partial count from inside the savepoint

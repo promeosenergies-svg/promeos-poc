@@ -9,12 +9,27 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScope } from '../../contexts/ScopeContext';
 import {
-  Building2, AlertTriangle, FileText, Plus,
-  Loader2, ArrowRight, ShieldAlert, MapPin, HelpCircle, X,
-  Check, Filter,
+  Building2,
+  AlertTriangle,
+  FileText,
+  Plus,
+  Loader2,
+  ArrowRight,
+  ShieldAlert,
+  MapPin,
+  HelpCircle,
+  X,
+  Check,
+  Filter,
 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge, KpiCard, Drawer } from '../../ui';
-import { getTertiaireDashboard, getTertiaireEfas, getTertiaireSiteSignals } from '../../services/api';
+import {
+  getTertiaireDashboard,
+  getTertiaireEfas,
+  getTertiaireSiteSignals,
+} from '../../services/api';
+import ExportOperatModal from '../../components/ExportOperatModal';
 
 const STATUS_LABELS = {
   active: 'Active',
@@ -61,6 +76,9 @@ export default function TertiaireDashboardPage() {
   // V43: Drawer state
   const [whySite, setWhySite] = useState(null);
 
+  // V113: Export OPERAT modal
+  const [showExportModal, setShowExportModal] = useState(false);
+
   // V43: Filter state
   const [signalFilter, setSignalFilter] = useState(null); // null = all
   const [uncoveredOnly, setUncoveredOnly] = useState(false);
@@ -82,7 +100,9 @@ export default function TertiaireDashboardPage() {
         setLoading(false);
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [selectedSiteId]);
 
   useEffect(() => {
@@ -97,12 +117,14 @@ export default function TertiaireDashboardPage() {
     if (signalFilter || uncoveredOnly || missingFieldFilter) {
       if (signalFilter) sites = sites.filter((s) => s.signal === signalFilter);
       if (uncoveredOnly) sites = sites.filter((s) => !s.is_covered);
-      if (missingFieldFilter) sites = sites.filter((s) => s.missing_fields?.includes(missingFieldFilter));
+      if (missingFieldFilter)
+        sites = sites.filter((s) => s.missing_fields?.includes(missingFieldFilter));
     } else {
       // Default: show only actionable sites (assujetti probable uncovered + incomplete à vérifier)
-      sites = sites.filter((s) =>
-        (s.signal === 'assujetti_probable' && !s.is_covered) ||
-        (s.signal === 'a_verifier' && !s.data_complete)
+      sites = sites.filter(
+        (s) =>
+          (s.signal === 'assujetti_probable' && !s.is_covered) ||
+          (s.signal === 'a_verifier' && !s.data_complete)
       );
     }
     return sites;
@@ -121,27 +143,29 @@ export default function TertiaireDashboardPage() {
     );
   }
 
-  const kpis = dashboard || { total_efa: 0, active: 0, draft: 0, closed: 0, open_issues: 0, critical_issues: 0 };
+  const kpis = dashboard || {
+    total_efa: 0,
+    active: 0,
+    draft: 0,
+    closed: 0,
+    open_issues: 0,
+    critical_issues: 0,
+  };
 
   return (
     <PageShell
       title="Décret tertiaire / OPERAT"
       subtitle={`${kpis.total_efa} EFA enregistrée${kpis.total_efa > 1 ? 's' : ''}`}
+      actions={
+        <Button size="sm" variant="secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} className="mr-1" /> Export OPERAT
+        </Button>
+      }
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          label="EFA actives"
-          value={kpis.active}
-          icon={Building2}
-          accent="emerald"
-        />
-        <KpiCard
-          label="EFA brouillon"
-          value={kpis.draft}
-          icon={FileText}
-          accent="slate"
-        />
+        <KpiCard label="EFA actives" value={kpis.active} icon={Building2} accent="emerald" />
+        <KpiCard label="EFA brouillon" value={kpis.draft} icon={FileText} accent="slate" />
         <KpiCard
           label="Anomalies ouvertes"
           value={kpis.open_issues}
@@ -166,7 +190,8 @@ export default function TertiaireDashboardPage() {
             </h3>
             {siteSignals.total_sites > 0 && (
               <span className="text-xs text-gray-400">
-                {siteSignals.total_sites} site{siteSignals.total_sites > 1 ? 's' : ''} analysé{siteSignals.total_sites > 1 ? 's' : ''}
+                {siteSignals.total_sites} site{siteSignals.total_sites > 1 ? 's' : ''} analysé
+                {siteSignals.total_sites > 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -204,31 +229,36 @@ export default function TertiaireDashboardPage() {
               Sans EFA
             </button>
             {/* Missing field filters */}
-            {siteSignals.top_missing_fields && Object.keys(siteSignals.top_missing_fields).length > 0 && (
-              <>
-                <span className="text-gray-300">|</span>
-                {Object.entries(siteSignals.top_missing_fields).map(([field, count]) => {
-                  const active = missingFieldFilter === field;
-                  return (
-                    <button
-                      key={field}
-                      onClick={() => setMissingFieldFilter(active ? null : field)}
-                      data-testid={`filter-missing-${field}`}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                        active
-                          ? 'bg-red-600 text-white'
-                          : 'bg-red-50 text-red-600 hover:bg-red-100'
-                      }`}
-                    >
-                      {MISSING_FIELD_LABELS[field] || field} ({count})
-                    </button>
-                  );
-                })}
-              </>
-            )}
+            {siteSignals.top_missing_fields &&
+              Object.keys(siteSignals.top_missing_fields).length > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  {Object.entries(siteSignals.top_missing_fields).map(([field, count]) => {
+                    const active = missingFieldFilter === field;
+                    return (
+                      <button
+                        key={field}
+                        onClick={() => setMissingFieldFilter(active ? null : field)}
+                        data-testid={`filter-missing-${field}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                          active
+                            ? 'bg-red-600 text-white'
+                            : 'bg-red-50 text-red-600 hover:bg-red-100'
+                        }`}
+                      >
+                        {MISSING_FIELD_LABELS[field] || field} ({count})
+                      </button>
+                    );
+                  })}
+                </>
+              )}
             {hasActiveFilters && (
               <button
-                onClick={() => { setSignalFilter(null); setUncoveredOnly(false); setMissingFieldFilter(null); }}
+                onClick={() => {
+                  setSignalFilter(null);
+                  setUncoveredOnly(false);
+                  setMissingFieldFilter(null);
+                }}
                 className="text-xs text-gray-400 hover:text-gray-600 underline"
               >
                 Réinitialiser
@@ -239,66 +269,85 @@ export default function TertiaireDashboardPage() {
           {/* Site cards */}
           <div className="space-y-2">
             {filteredSites.map((site) => (
-                <div
-                  key={site.site_id}
-                  className={`flex items-center justify-between rounded-lg border p-3 ${
-                    site.signal === 'assujetti_probable'
-                      ? 'border-amber-200 bg-amber-50/50'
-                      : site.signal === 'a_verifier'
-                        ? 'border-blue-200 bg-blue-50/30'
-                        : 'border-gray-200 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <MapPin size={16} className={
-                      site.signal === 'assujetti_probable' ? 'text-amber-500 shrink-0'
-                        : site.signal === 'a_verifier' ? 'text-blue-400 shrink-0'
+              <div
+                key={site.site_id}
+                className={`flex items-center justify-between rounded-lg border p-3 ${
+                  site.signal === 'assujetti_probable'
+                    ? 'border-amber-200 bg-amber-50/50'
+                    : site.signal === 'a_verifier'
+                      ? 'border-blue-200 bg-blue-50/30'
+                      : 'border-gray-200 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <MapPin
+                    size={16}
+                    className={
+                      site.signal === 'assujetti_probable'
+                        ? 'text-amber-500 shrink-0'
+                        : site.signal === 'a_verifier'
+                          ? 'text-blue-400 shrink-0'
                           : 'text-gray-400 shrink-0'
-                    } />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">{site.site_nom}</p>
-                        <Badge status={SIGNAL_BADGE_VARIANTS[site.signal]} className="text-[10px] shrink-0">
-                          {SIGNAL_LABELS[site.signal]}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {site.surface_tertiaire_m2 ? `${Math.round(site.surface_tertiaire_m2).toLocaleString('fr-FR')} m²` : 'Surface non renseignée'}
-                        {site.ville ? ` · ${site.ville}` : ''}
-                        {' · '}{site.nb_batiments} bâtiment{site.nb_batiments > 1 ? 's' : ''}
-                      </p>
-                      {/* V43: missing fields inline */}
-                      {site.missing_fields && site.missing_fields.length > 0 && (
-                        <p className="text-[10px] text-red-500 mt-0.5">
-                          Données manquantes : {site.missing_fields.map((f) => MISSING_FIELD_LABELS[f] || f).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {/* V43: Why button */}
-                    <button
-                      onClick={() => setWhySite(site)}
-                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                      aria-label="Pourquoi ce classement ?"
-                      data-testid={`why-btn-${site.site_id}`}
-                    >
-                      <HelpCircle size={16} className="text-gray-400" />
-                    </button>
-                    {site.recommended_cta && (
-                      <Button
-                        size="xs"
-                        variant="secondary"
-                        onClick={() => navigate(site.recommended_cta.to || `/conformite/tertiaire/wizard?site_id=${site.site_id}`)}
+                    }
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-gray-900 truncate">{site.site_nom}</p>
+                      <Badge
+                        status={SIGNAL_BADGE_VARIANTS[site.signal]}
+                        className="text-[10px] shrink-0"
                       >
-                        {site.recommended_cta.label_fr} <ArrowRight size={12} />
-                      </Button>
+                        {SIGNAL_LABELS[site.signal]}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {site.surface_tertiaire_m2
+                        ? `${Math.round(site.surface_tertiaire_m2).toLocaleString('fr-FR')} m²`
+                        : 'Surface non renseignée'}
+                      {site.ville ? ` · ${site.ville}` : ''}
+                      {' · '}
+                      {site.nb_batiments} bâtiment{site.nb_batiments > 1 ? 's' : ''}
+                    </p>
+                    {/* V43: missing fields inline */}
+                    {site.missing_fields && site.missing_fields.length > 0 && (
+                      <p className="text-[10px] text-red-500 mt-0.5">
+                        Données manquantes :{' '}
+                        {site.missing_fields.map((f) => MISSING_FIELD_LABELS[f] || f).join(', ')}
+                      </p>
                     )}
                   </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* V43: Why button */}
+                  <button
+                    onClick={() => setWhySite(site)}
+                    className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                    aria-label="Pourquoi ce classement ?"
+                    data-testid={`why-btn-${site.site_id}`}
+                  >
+                    <HelpCircle size={16} className="text-gray-400" />
+                  </button>
+                  {site.recommended_cta && (
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      onClick={() =>
+                        navigate(
+                          site.recommended_cta.to ||
+                            `/conformite/tertiaire/wizard?site_id=${site.site_id}`
+                        )
+                      }
+                    >
+                      {site.recommended_cta.label_fr} <ArrowRight size={12} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
             {filteredSites.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-4">Aucun site ne correspond aux filtres sélectionnés.</p>
+              <p className="text-sm text-gray-400 text-center py-4">
+                Aucun site ne correspond aux filtres sélectionnés.
+              </p>
             )}
           </div>
         </div>
@@ -306,7 +355,10 @@ export default function TertiaireDashboardPage() {
 
       {/* Actions rapides */}
       <div className="flex items-center gap-3 mt-6">
-        <Button data-testid="btn-nouvelle-efa" onClick={() => navigate('/conformite/tertiaire/wizard')}>
+        <Button
+          data-testid="btn-nouvelle-efa"
+          onClick={() => navigate('/conformite/tertiaire/wizard')}
+        >
           <Plus size={16} /> Nouvelle EFA
         </Button>
         <Button variant="secondary" onClick={() => navigate('/conformite/tertiaire/anomalies')}>
@@ -324,10 +376,13 @@ export default function TertiaireDashboardPage() {
             <CardBody className="text-center py-8">
               <Building2 size={32} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm text-gray-500">Aucune EFA enregistrée</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Créez votre première EFA via l'assistant
-              </p>
-              <Button size="sm" className="mt-4" data-testid="btn-creer-efa-empty" onClick={() => navigate('/conformite/tertiaire/wizard')}>
+              <p className="text-xs text-gray-400 mt-1">Créez votre première EFA via l'assistant</p>
+              <Button
+                size="sm"
+                className="mt-4"
+                data-testid="btn-creer-efa-empty"
+                onClick={() => navigate('/conformite/tertiaire/wizard')}
+              >
                 Créer une EFA
               </Button>
             </CardBody>
@@ -365,11 +420,7 @@ export default function TertiaireDashboardPage() {
       </div>
 
       {/* V43: Drawer "Pourquoi ce classement ?" */}
-      <Drawer
-        open={!!whySite}
-        onClose={() => setWhySite(null)}
-        title="Pourquoi ce classement ?"
-      >
+      <Drawer open={!!whySite} onClose={() => setWhySite(null)} title="Pourquoi ce classement ?">
         {whySite && (
           <div className="space-y-5" data-testid="why-drawer-content">
             {/* Site name + signal badge */}
@@ -392,15 +443,20 @@ export default function TertiaireDashboardPage() {
                 <div className="space-y-1.5" data-testid="why-rules">
                   {whySite.rules_applied.map((rule, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm">
-                      {rule.ok
-                        ? <Check size={14} className="text-green-500 shrink-0 mt-0.5" />
-                        : <X size={14} className="text-red-400 shrink-0 mt-0.5" />
-                      }
+                      {rule.ok ? (
+                        <Check size={14} className="text-green-500 shrink-0 mt-0.5" />
+                      ) : (
+                        <X size={14} className="text-red-400 shrink-0 mt-0.5" />
+                      )}
                       <span className={rule.ok ? 'text-gray-700' : 'text-gray-500'}>
                         {rule.label_fr}
                         {rule.value != null && (
                           <span className="text-gray-400 ml-1">
-                            ({typeof rule.value === 'number' ? rule.value.toLocaleString('fr-FR') : rule.value})
+                            (
+                            {typeof rule.value === 'number'
+                              ? rule.value.toLocaleString('fr-FR')
+                              : rule.value}
+                            )
                           </span>
                         )}
                       </span>
@@ -446,7 +502,9 @@ export default function TertiaireDashboardPage() {
                   variant="secondary"
                   onClick={() => {
                     setWhySite(null);
-                    navigate(whySite.recommended_cta?.to || `/patrimoine?site_id=${whySite.site_id}`);
+                    navigate(
+                      whySite.recommended_cta?.to || `/patrimoine?site_id=${whySite.site_id}`
+                    );
                   }}
                 >
                   Compléter le patrimoine <ArrowRight size={14} />
@@ -470,13 +528,16 @@ export default function TertiaireDashboardPage() {
             {/* Disclaimer */}
             <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
               <p className="text-xs text-gray-500" data-testid="why-disclaimer">
-                Heuristique V1 — à confirmer par analyse réglementaire.
-                Les règles ci-dessus sont dérivées automatiquement des données patrimoniales renseignées.
+                Heuristique V1 — à confirmer par analyse réglementaire. Les règles ci-dessus sont
+                dérivées automatiquement des données patrimoniales renseignées.
               </p>
             </div>
           </div>
         )}
       </Drawer>
+
+      {/* V113: Export OPERAT modal */}
+      <ExportOperatModal open={showExportModal} onClose={() => setShowExportModal(false)} />
     </PageShell>
   );
 }

@@ -16,7 +16,10 @@ function src(relPath) {
 }
 
 function backendSrc(relPath) {
-  return fs.readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', relPath), 'utf-8');
+  return fs.readFileSync(
+    path.resolve(__dirname, '..', '..', '..', '..', 'backend', relPath),
+    'utf-8'
+  );
 }
 
 /** Simulate the prefill payload that ConformitePage builds for an obligation. */
@@ -24,7 +27,12 @@ function buildConformitePrefill(obligation) {
   return {
     titre: `Mise en conformité ${obligation.regulation}`,
     type: 'conformite',
-    priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
+    priorite:
+      obligation.severity === 'critical'
+        ? 'critical'
+        : obligation.severity === 'high'
+          ? 'high'
+          : 'medium',
     description: obligation.quoi_faire,
     obligation_code: obligation.code,
   };
@@ -144,12 +152,21 @@ describe('Action Engine — idempotency keys', () => {
 
 describe('Action Engine — FR labels', () => {
   it('conformite prefill title is FR', () => {
-    const pf = buildConformitePrefill({ regulation: 'DPE', severity: 'high', quoi_faire: 'X', code: 'dpe-1' });
+    const pf = buildConformitePrefill({
+      regulation: 'DPE',
+      severity: 'high',
+      quoi_faire: 'X',
+      code: 'dpe-1',
+    });
     expect(pf.titre).toMatch(/Mise en conformité/);
   });
 
   it('readiness prefill uses French labels', () => {
-    const pf = buildReadinessPrefill({ id: 'factures-ko', label: 'Moins de 3 mois de factures', severity: 'critical' });
+    const pf = buildReadinessPrefill({
+      id: 'factures-ko',
+      label: 'Moins de 3 mois de factures',
+      severity: 'critical',
+    });
     expect(pf.titre).toMatch(/factures/i);
   });
 });
@@ -207,9 +224,10 @@ describe('Action Engine — source guards', () => {
 
 describe('Action Engine — Drawer migration guard', () => {
   const pagesDir = path.resolve(__dirname, '..', '..', 'pages');
-  const pageFiles = fs.readdirSync(pagesDir)
-    .filter(f => f.endsWith('.jsx') || f.endsWith('.tsx'))
-    .filter(f => !f.startsWith('__'));
+  const pageFiles = fs
+    .readdirSync(pagesDir)
+    .filter((f) => f.endsWith('.jsx') || f.endsWith('.tsx'))
+    .filter((f) => !f.startsWith('__'));
 
   it('no page imports CreateActionModal directly (all use useActionDrawer)', () => {
     const offenders = [];

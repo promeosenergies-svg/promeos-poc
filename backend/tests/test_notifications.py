@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint 10.2: Notifications & Alert Center V1
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -14,13 +16,28 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
     EnergyContract,
-    ActionItem, ActionSyncBatch, ActionStatus, ActionSourceType,
-    NotificationEvent, NotificationBatch, NotificationPreference,
-    NotificationSeverity, NotificationStatus, NotificationSourceType,
-    InsightStatus, TypeSite, BillingEnergyType,
+    ActionItem,
+    ActionSyncBatch,
+    ActionStatus,
+    ActionSourceType,
+    NotificationEvent,
+    NotificationBatch,
+    NotificationPreference,
+    NotificationSeverity,
+    NotificationStatus,
+    NotificationSourceType,
+    InsightStatus,
+    TypeSite,
+    BillingEnergyType,
 )
 from database import get_db
 from main import app
@@ -48,6 +65,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -177,6 +195,7 @@ def _seed_full_demo(db_session):
 # Test: Sync idempotent
 # ========================================
 
+
 class TestSyncIdempotent:
     def test_double_sync_no_duplicates(self, db_session):
         org, site = _seed_full_demo(db_session)
@@ -187,9 +206,7 @@ class TestSyncIdempotent:
         assert r2["created"] == 0, "Second sync should not create new events"
         assert r2["skipped"] > 0, "Second sync should skip identical events"
 
-        total = db_session.query(NotificationEvent).filter(
-            NotificationEvent.org_id == org.id
-        ).count()
+        total = db_session.query(NotificationEvent).filter(NotificationEvent.org_id == org.id).count()
         assert total == r1["created"], f"Total events should match first sync created count"
 
     def test_batch_created(self, db_session):
@@ -197,9 +214,7 @@ class TestSyncIdempotent:
 
         sync_notifications(db_session, org.id, "test")
 
-        batches = db_session.query(NotificationBatch).filter(
-            NotificationBatch.org_id == org.id
-        ).all()
+        batches = db_session.query(NotificationBatch).filter(NotificationBatch.org_id == org.id).all()
         assert len(batches) >= 1
         assert batches[0].created_count > 0
 
@@ -207,6 +222,7 @@ class TestSyncIdempotent:
 # ========================================
 # Test: Severity mapping
 # ========================================
+
 
 class TestSeverityMapping:
     def test_compliance_nok_high_is_critical(self, db_session):
@@ -216,9 +232,11 @@ class TestSeverityMapping:
 
         sync_notifications(db_session, org.id, "test")
 
-        events = db_session.query(NotificationEvent).filter(
-            NotificationEvent.source_type == NotificationSourceType.COMPLIANCE
-        ).all()
+        events = (
+            db_session.query(NotificationEvent)
+            .filter(NotificationEvent.source_type == NotificationSourceType.COMPLIANCE)
+            .all()
+        )
         assert len(events) >= 1
         assert events[0].severity == NotificationSeverity.CRITICAL
 
@@ -229,9 +247,11 @@ class TestSeverityMapping:
 
         sync_notifications(db_session, org.id, "test")
 
-        events = db_session.query(NotificationEvent).filter(
-            NotificationEvent.source_type == NotificationSourceType.PURCHASE
-        ).all()
+        events = (
+            db_session.query(NotificationEvent)
+            .filter(NotificationEvent.source_type == NotificationSourceType.PURCHASE)
+            .all()
+        )
         assert len(events) >= 1
         assert events[0].severity == NotificationSeverity.CRITICAL
 
@@ -242,9 +262,11 @@ class TestSeverityMapping:
 
         sync_notifications(db_session, org.id, "test")
 
-        events = db_session.query(NotificationEvent).filter(
-            NotificationEvent.source_type == NotificationSourceType.PURCHASE
-        ).all()
+        events = (
+            db_session.query(NotificationEvent)
+            .filter(NotificationEvent.source_type == NotificationSourceType.PURCHASE)
+            .all()
+        )
         assert len(events) >= 1
         assert events[0].severity == NotificationSeverity.WARN
 
@@ -252,6 +274,7 @@ class TestSeverityMapping:
 # ========================================
 # Test: PATCH status (READ/DISMISSED)
 # ========================================
+
 
 class TestPatchStatus:
     def test_patch_read(self, client, db_session):
@@ -301,6 +324,7 @@ class TestPatchStatus:
 # Test: Preserve workflow on resync
 # ========================================
 
+
 class TestPreserveWorkflow:
     def test_resync_preserves_read_status(self, db_session):
         org, site = _seed_full_demo(db_session)
@@ -321,6 +345,7 @@ class TestPreserveWorkflow:
 # ========================================
 # Test: Dashboard 2min includes alerts
 # ========================================
+
 
 class TestDashboard2MinAlerts:
     def test_alerts_in_2min(self, client, db_session):
@@ -351,6 +376,7 @@ class TestDashboard2MinAlerts:
 # ========================================
 # Test: Filter endpoints
 # ========================================
+
 
 class TestFilterEndpoints:
     def test_list_all(self, client, db_session):
@@ -414,6 +440,7 @@ class TestFilterEndpoints:
 # Test: Sync API endpoint
 # ========================================
 
+
 class TestSyncEndpoint:
     def test_sync_via_api(self, client, db_session):
         org, site = _seed_full_demo(db_session)
@@ -438,6 +465,7 @@ class TestSyncEndpoint:
 # Test: Preferences
 # ========================================
 
+
 class TestPreferences:
     def test_get_default_preferences(self, client, db_session):
         _create_org_site(db_session)
@@ -453,11 +481,14 @@ class TestPreferences:
         _create_org_site(db_session)
         db_session.commit()
 
-        r = client.put("/api/notifications/preferences", json={
-            "enable_badges": False,
-            "snooze_days": 7,
-            "thresholds_json": json.dumps({"critical_due_days": 15, "warn_due_days": 45}),
-        })
+        r = client.put(
+            "/api/notifications/preferences",
+            json={
+                "enable_badges": False,
+                "snooze_days": 7,
+                "thresholds_json": json.dumps({"critical_due_days": 15, "warn_due_days": 45}),
+            },
+        )
         assert r.status_code == 200
         assert r.json()["status"] == "updated"
 

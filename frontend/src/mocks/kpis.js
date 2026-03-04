@@ -4,9 +4,9 @@
 import { mockSites } from './sites';
 
 const total = mockSites.length;
-const conformes = mockSites.filter(s => s.statut_conformite === 'conforme').length;
-const nonConformes = mockSites.filter(s => s.statut_conformite === 'non_conforme').length;
-const aRisque = mockSites.filter(s => s.statut_conformite === 'a_risque').length;
+const conformes = mockSites.filter((s) => s.statut_conformite === 'conforme').length;
+const nonConformes = mockSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+const aRisque = mockSites.filter((s) => s.statut_conformite === 'a_risque').length;
 const totalRisque = mockSites.reduce((sum, s) => sum + s.risque_eur, 0);
 const totalAnomalies = mockSites.reduce((sum, s) => sum + s.anomalies_count, 0);
 
@@ -18,7 +18,7 @@ export const mockKpis = {
     conformes,
     non_conformes: nonConformes,
     a_risque: aRisque,
-    pct_conforme: Math.round(conformes / total * 100),
+    pct_conforme: Math.round((conformes / total) * 100),
   },
   risque_financier: {
     total_eur: totalRisque,
@@ -26,9 +26,9 @@ export const mockKpis = {
     penalites_eur: Math.round(totalRisque * 0.65),
   },
   action_prioritaire: {
-    texte: `Declarer vos consommations sur OPERAT pour ${mockSites.filter(s => s.operat_status && s.operat_status !== 'SUBMITTED').length} sites`,
+    texte: `Declarer vos consommations sur OPERAT pour ${mockSites.filter((s) => s.operat_status && s.operat_status !== 'SUBMITTED').length} sites`,
     priorite: 'critical',
-    nb_sites: mockSites.filter(s => s.operat_status && s.operat_status !== 'SUBMITTED').length,
+    nb_sites: mockSites.filter((s) => s.operat_status && s.operat_status !== 'SUBMITTED').length,
     reglementation: 'decret_tertiaire',
   },
   anomalies: {
@@ -37,18 +37,53 @@ export const mockKpis = {
   },
 };
 
-const SITE = Object.fromEntries(mockSites.map(s => [s.id, s]));
+const SITE = Object.fromEntries(mockSites.map((s) => [s.id, s]));
 
 export const mockTodos = [
-  { id: 1, texte: 'Declarer consommations OPERAT', priorite: 'critical', echeance: '2026-03-15', site: SITE[4].nom, site_id: 4 },
-  { id: 2, texte: 'Installer GTB batiment principal', priorite: 'critical', echeance: '2026-03-20', site: SITE[2].nom, site_id: 2 },
-  { id: 3, texte: 'Corriger non-conformite Decret Tertiaire', priorite: 'critical', echeance: '2026-03-10', site: SITE[3].nom, site_id: 3 },
-  { id: 4, texte: 'Attestation BACS a obtenir', priorite: 'high', echeance: '2026-03-25', site: SITE[5].nom, site_id: 5 },
-  { id: 5, texte: 'Verifier compteur gaz (derive detectee)', priorite: 'medium', echeance: '2026-04-01', site: SITE[1].nom, site_id: 1 },
+  {
+    id: 1,
+    texte: 'Declarer consommations OPERAT',
+    priorite: 'critical',
+    echeance: '2026-03-15',
+    site: SITE[4].nom,
+    site_id: 4,
+  },
+  {
+    id: 2,
+    texte: 'Installer GTB batiment principal',
+    priorite: 'critical',
+    echeance: '2026-03-20',
+    site: SITE[2].nom,
+    site_id: 2,
+  },
+  {
+    id: 3,
+    texte: 'Corriger non-conformite Decret Tertiaire',
+    priorite: 'critical',
+    echeance: '2026-03-10',
+    site: SITE[3].nom,
+    site_id: 3,
+  },
+  {
+    id: 4,
+    texte: 'Attestation BACS a obtenir',
+    priorite: 'high',
+    echeance: '2026-03-25',
+    site: SITE[5].nom,
+    site_id: 5,
+  },
+  {
+    id: 5,
+    texte: 'Verifier compteur gaz (derive detectee)',
+    priorite: 'medium',
+    echeance: '2026-04-01',
+    site: SITE[1].nom,
+    site_id: 1,
+  },
 ];
 
 export const mockTopAnomalies = mockSites
-  .filter(s => s.anomalies_count > 2)
+  .filter((s) => s.anomalies_count > 2)
   .sort((a, b) => b.risque_eur - a.risque_eur)
   .slice(0, 10)
   .map((s, i) => ({
@@ -57,10 +92,11 @@ export const mockTopAnomalies = mockSites
     site_id: s.id,
     type: ['hors_horaires', 'derive', 'base_load', 'pointe'][i % 4],
     severity: i < 3 ? 'critical' : i < 6 ? 'high' : 'medium',
-    message: i < 3
-      ? `${s.nom}: 58% conso hors horaires`
-      : i < 6
-        ? `${s.nom}: derive +12% sur 30j`
-        : `${s.nom}: talon eleve (55% de la mediane)`,
+    message:
+      i < 3
+        ? `${s.nom}: 58% conso hors horaires`
+        : i < 6
+          ? `${s.nom}: derive +12% sur 30j`
+          : `${s.nom}: talon eleve (55% de la mediane)`,
     perte_eur: Math.round(s.risque_eur * 0.3),
   }));

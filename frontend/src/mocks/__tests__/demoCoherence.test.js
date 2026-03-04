@@ -9,8 +9,8 @@ import { mockKpis, mockTodos, mockTopAnomalies } from '../kpis';
 import { mockActions } from '../actions';
 import { mockObligations, getObligationScore } from '../obligations';
 
-const SITE_IDS = new Set(mockSites.map(s => s.id));
-const SITE_NOMS = new Set(mockSites.map(s => s.nom));
+const SITE_IDS = new Set(mockSites.map((s) => s.id));
+const SITE_NOMS = new Set(mockSites.map((s) => s.nom));
 
 // ── Site invariants ─────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ describe('mockSites — invariants', () => {
   });
 
   it('covers all 4 statut_conformite values', () => {
-    const statuts = new Set(mockSites.map(s => s.statut_conformite));
+    const statuts = new Set(mockSites.map((s) => s.statut_conformite));
     expect(statuts).toContain('conforme');
     expect(statuts).toContain('non_conforme');
     expect(statuts).toContain('en_cours');
@@ -45,7 +45,7 @@ describe('mockSites — invariants', () => {
   });
 
   it('portefeuille_id covers 3 portfolios', () => {
-    const pfs = new Set(mockSites.map(s => s.portefeuille_id));
+    const pfs = new Set(mockSites.map((s) => s.portefeuille_id));
     expect(pfs.size).toBe(3);
   });
 });
@@ -54,8 +54,8 @@ describe('mockSites — invariants', () => {
 
 describe('mockKpis — coherence with sites', () => {
   it('conformite counts match mockSites', () => {
-    const conformes = mockSites.filter(s => s.statut_conformite === 'conforme').length;
-    const nonConformes = mockSites.filter(s => s.statut_conformite === 'non_conforme').length;
+    const conformes = mockSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nonConformes = mockSites.filter((s) => s.statut_conformite === 'non_conforme').length;
     expect(mockKpis.conformite.conformes).toBe(conformes);
     expect(mockKpis.conformite.non_conformes).toBe(nonConformes);
     expect(mockKpis.conformite.total_sites).toBe(mockSites.length);
@@ -93,7 +93,7 @@ describe('mockTodos — coherence with sites', () => {
 
   it('site_id and site name are consistent', () => {
     for (const todo of mockTodos) {
-      const site = mockSites.find(s => s.id === todo.site_id);
+      const site = mockSites.find((s) => s.id === todo.site_id);
       expect(site).toBeDefined();
       expect(site.nom).toBe(todo.site);
     }
@@ -117,7 +117,7 @@ describe('mockTopAnomalies — coherence with sites', () => {
 
   it('anomaly site_nom matches actual site name', () => {
     for (const a of mockTopAnomalies) {
-      const site = mockSites.find(s => s.id === a.site_id);
+      const site = mockSites.find((s) => s.id === a.site_id);
       expect(site).toBeDefined();
       expect(a.site_nom).toBe(site.nom);
     }
@@ -135,7 +135,7 @@ describe('mockActions — coherence with sites', () => {
 
   it('action site_nom matches actual site name', () => {
     for (const a of mockActions) {
-      const site = mockSites.find(s => s.id === a.site_id);
+      const site = mockSites.find((s) => s.id === a.site_id);
       expect(site).toBeDefined();
       expect(a.site_nom).toBe(site.nom);
     }
@@ -145,13 +145,13 @@ describe('mockActions — coherence with sites', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/actions.js',
-      'utf-8',
+      'utf-8'
     );
     expect(src).not.toContain('Math.random');
   });
 
   it('actions cover all 4 types', () => {
-    const types = new Set(mockActions.map(a => a.type));
+    const types = new Set(mockActions.map((a) => a.type));
     expect(types).toContain('conformite');
     expect(types).toContain('conso');
     expect(types).toContain('facture');
@@ -159,7 +159,7 @@ describe('mockActions — coherence with sites', () => {
   });
 
   it('actions cover all 4 statuts', () => {
-    const statuts = new Set(mockActions.map(a => a.statut));
+    const statuts = new Set(mockActions.map((a) => a.statut));
     expect(statuts).toContain('backlog');
     expect(statuts).toContain('planned');
     expect(statuts).toContain('in_progress');
@@ -167,7 +167,7 @@ describe('mockActions — coherence with sites', () => {
   });
 
   it('actions cover all 4 priorities', () => {
-    const prios = new Set(mockActions.map(a => a.priorite));
+    const prios = new Set(mockActions.map((a) => a.priorite));
     expect(prios).toContain('critical');
     expect(prios).toContain('high');
     expect(prios).toContain('medium');
@@ -176,12 +176,12 @@ describe('mockActions — coherence with sites', () => {
 
   it('all 5 sites have at least 1 action', () => {
     for (const siteId of SITE_IDS) {
-      expect(mockActions.some(a => a.site_id === siteId)).toBe(true);
+      expect(mockActions.some((a) => a.site_id === siteId)).toBe(true);
     }
   });
 
   it('action IDs are unique', () => {
-    const ids = new Set(mockActions.map(a => a.id));
+    const ids = new Set(mockActions.map((a) => a.id));
     expect(ids.size).toBe(mockActions.length);
   });
 });
@@ -262,7 +262,7 @@ describe('Single source of truth — all mocks derive from sites.js', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/kpis.js',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain("from './sites'");
   });
@@ -271,7 +271,7 @@ describe('Single source of truth — all mocks derive from sites.js', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/actions.js',
-      'utf-8',
+      'utf-8'
     );
     expect(src).toContain("from './sites'");
   });
@@ -282,7 +282,7 @@ describe('Single source of truth — all mocks derive from sites.js', () => {
     for (const f of files) {
       const src = fs.readFileSync(
         `c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/${f}`,
-        'utf-8',
+        'utf-8'
       );
       expect(src).not.toContain('Math.random');
     }
@@ -294,7 +294,7 @@ describe('Single source of truth — all mocks derive from sites.js', () => {
     for (const f of files) {
       const src = fs.readFileSync(
         `c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/${f}`,
-        'utf-8',
+        'utf-8'
       );
       expect(src).not.toContain('Date.now()');
     }
@@ -304,7 +304,7 @@ describe('Single source of truth — all mocks derive from sites.js', () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/kpis.js',
-      'utf-8',
+      'utf-8'
     );
     // Todos should use SITE[id].nom pattern, not hardcoded strings
     expect(src).toMatch(/SITE\[\d+\]\.nom/);

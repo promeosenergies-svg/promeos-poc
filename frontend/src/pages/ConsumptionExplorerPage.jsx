@@ -7,9 +7,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Activity, Target, Clock, Flame, BarChart3,
-  AlertTriangle, X, Zap, Database, Wifi, Info,
-  Grid3x3, Cloud, Lightbulb,
+  Activity,
+  Target,
+  Clock,
+  Flame,
+  BarChart3,
+  AlertTriangle,
+  X,
+  Zap,
+  Database,
+  Wifi,
+  Info,
+  Grid3x3,
+  Cloud,
+  Lightbulb,
 } from 'lucide-react';
 import { Badge, Button, EmptyState, EvidenceDrawer as GenericEvidenceDrawer } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -45,9 +56,9 @@ import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
 
 const TAB_CONFIG = [
   { key: 'timeseries', label: 'Consommation', icon: BarChart3, desc: 'Série temporelle' },
-  { key: 'insights',   label: 'Insights',     icon: Lightbulb, desc: 'P05 / P95 / anomalies' },
-  { key: 'signature',  label: 'Signature',    icon: Grid3x3, desc: 'Empreinte horaire-hebdo' },
-  { key: 'meteo',      label: 'Météo',        icon: Cloud, desc: 'Influence climatique' },
+  { key: 'insights', label: 'Insights', icon: Lightbulb, desc: 'P05 / P95 / anomalies' },
+  { key: 'signature', label: 'Signature', icon: Grid3x3, desc: 'Empreinte horaire-hebdo' },
+  { key: 'meteo', label: 'Météo', icon: Cloud, desc: 'Influence climatique' },
   { key: 'tunnel', label: 'Tunnel', icon: Activity, desc: 'Enveloppe P10-P90' },
   { key: 'targets', label: 'Objectifs', icon: Target, desc: 'Budgets & progression' },
   { key: 'hphc', label: 'HP/HC', icon: Clock, desc: 'Grille tarifaire' },
@@ -56,38 +67,37 @@ const TAB_CONFIG = [
 
 // ENERGY_OPTIONS + PERIOD_OPTIONS moved to StickyFilterBar
 
-
 const REASON_CONFIG = {
   no_site: {
     icon: AlertTriangle,
     title: 'Site introuvable',
-    text: 'Le site sélectionné n\'existe pas ou a été supprimé. Vérifiez votre sélection.',
+    text: "Le site sélectionné n'existe pas ou a été supprimé. Vérifiez votre sélection.",
     ctaLabel: null,
   },
   no_meter: {
     icon: Wifi,
     title: 'Aucun compteur configure',
-    text: 'Ce site n\'a pas encore de compteur rattache. Connectez Enedis / GRDF ou ajoutez un compteur manuellement.',
+    text: "Ce site n'a pas encore de compteur rattache. Connectez Enedis / GRDF ou ajoutez un compteur manuellement.",
     ctaLabel: 'Connecter un compteur',
     ctaPath: '/connectors',
   },
   no_readings: {
     icon: Database,
     title: 'Compteur present, aucun releve',
-    text: 'Un compteur est configure mais aucune donnee de consommation n\'a ete importee.',
+    text: "Un compteur est configure mais aucune donnee de consommation n'a ete importee.",
     ctaLabel: 'Importer des données',
     ctaPath: '/consommations/import',
   },
   insufficient_readings: {
     icon: BarChart3,
     title: 'Données insuffisantes',
-    text: 'Moins de 48 relevés disponibles. L\'analyse nécessite davantage de données pour être fiable.',
+    text: "Moins de 48 relevés disponibles. L'analyse nécessite davantage de données pour être fiable.",
     ctaLabel: 'Importer des données',
     ctaPath: '/consommations/import',
   },
   wrong_energy_type: {
     icon: Zap,
-    title: 'Pas de données pour ce type d\'énergie',
+    title: "Pas de données pour ce type d'énergie",
     text: null, // dynamic
     ctaLabel: null,
   },
@@ -97,7 +107,14 @@ const REASON_CONFIG = {
 // Smart Empty State
 // ========================================
 
-function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy, isExpert, onGenerateDemo }) {
+function SmartEmptyState({
+  reasons,
+  energyTypes,
+  onNavigate,
+  onSwitchEnergy,
+  isExpert,
+  onGenerateDemo,
+}) {
   if (!reasons?.length) {
     return (
       <EmptyState
@@ -127,9 +144,7 @@ function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy, isE
       <p className="text-sm text-gray-500 mb-6 max-w-md">{text}</p>
       <div className="flex items-center gap-3">
         {config.ctaLabel && config.ctaPath && (
-          <Button onClick={() => onNavigate(config.ctaPath)}>
-            {config.ctaLabel}
-          </Button>
+          <Button onClick={() => onNavigate(config.ctaPath)}>{config.ctaLabel}</Button>
         )}
         {primary === 'wrong_energy_type' && energyTypes?.length > 0 && (
           <Button onClick={() => onSwitchEnergy(energyTypes[0])}>
@@ -143,15 +158,15 @@ function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy, isE
         )}
       </div>
       {reasons.length > 1 && (
-        <p className="text-xs text-gray-400 mt-4">
-          Diagnostics : {reasons.join(', ')}
-        </p>
+        <p className="text-xs text-gray-400 mt-4">Diagnostics : {reasons.join(', ')}</p>
       )}
       {isExpert && reasons?.length > 0 && (
         <div className="mt-4 bg-gray-50 rounded-lg p-3 text-left text-xs max-w-md">
           <p className="font-semibold text-gray-500">Debug</p>
           <p className="text-gray-400 mt-1">Reasons: {reasons.join(', ')}</p>
-          {energyTypes?.length > 0 && <p className="text-gray-400">Energy types: {energyTypes.join(', ')}</p>}
+          {energyTypes?.length > 0 && (
+            <p className="text-gray-400">Energy types: {energyTypes.join(', ')}</p>
+          )}
         </div>
       )}
     </div>
@@ -179,7 +194,6 @@ function AvailabilitySkeleton() {
 // FilterBar + ContextBanner extracted to consumption/StickyFilterBar + consumption/ContextBanner
 // TunnelPanel, TargetsPanel, HPHCPanel, GasPanel extracted to consumption/ (V23-H)
 
-
 // Main Page
 // ========================================
 
@@ -201,8 +215,12 @@ export default function ConsumptionExplorerPage() {
 
   // Stable key for org-sites set (changes when org switches or sites load)
   const orgSiteIdsKey = useMemo(
-    () => sites.map(s => s.id).sort().join(','),
-    [sites],
+    () =>
+      sites
+        .map((s) => s.id)
+        .sort()
+        .join(','),
+    [sites]
   );
 
   // ── Resolve initial site IDs from URL or scope ─────────────────────────
@@ -224,7 +242,11 @@ export default function ConsumptionExplorerPage() {
 
   const {
     state: { siteIds, energyType, days, mode, unit, layers },
-    setSiteIds, setEnergyType, setDays, setMode, setUnit,
+    setSiteIds,
+    setEnergyType,
+    setDays,
+    setMode,
+    setUnit,
     mergedAvailability,
     primarySiteId,
     primaryAvailability,
@@ -241,7 +263,7 @@ export default function ConsumptionExplorerPage() {
     setIsPortfolioMode(next);
     if (next) {
       // Select all available sites when entering portfolio mode
-      const allIds = sites.map(s => s.id);
+      const allIds = sites.map((s) => s.id);
       setSiteIds(allIds);
       setMode('agrege'); // only agrege is valid in portfolio
     } else {
@@ -313,7 +335,7 @@ export default function ConsumptionExplorerPage() {
   //             (c) selectedSiteId changes → force-sync to new selection
   useEffect(() => {
     if (!orgSites.length) return; // Sites not yet loaded — wait
-    const orgSiteIdsSet = new Set(orgSites.map(s => s.id));
+    const orgSiteIdsSet = new Set(orgSites.map((s) => s.id));
 
     // Detect explicit scope switch: user changed site in scope switcher
     const scopeChanged = selectedSiteId !== prevSelectedSiteIdRef.current;
@@ -325,9 +347,9 @@ export default function ConsumptionExplorerPage() {
       return;
     }
 
-    setSiteIds(prev => {
+    setSiteIds((prev) => {
       // Keep IDs that exist in the current org
-      const valid = prev.filter(id => orgSiteIdsSet.has(Number(id)));
+      const valid = prev.filter((id) => orgSiteIdsSet.has(Number(id)));
       if (valid.length > 0) {
         // Already valid — return prev ref if no IDs were dropped (avoids re-render)
         return valid.length === prev.length ? prev : valid;
@@ -337,9 +359,7 @@ export default function ConsumptionExplorerPage() {
         return [Number(selectedSiteId)];
       }
       // "Tous les sites": select all if N ≤ 5, else just first
-      return orgSites.length <= 5
-        ? orgSites.map(s => s.id)
-        : [orgSites[0].id];
+      return orgSites.length <= 5 ? orgSites.map((s) => s.id) : [orgSites[0].id];
     });
   }, [orgSiteIdsKey, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -353,7 +373,15 @@ export default function ConsumptionExplorerPage() {
     setUnit('kwh');
     setStartDate(null);
     setEndDate(null);
-    setUrlParams({ sites: firstSiteId ? [firstSiteId] : [], energy: 'electricity', days: 30, mode: 'agrege', unit: 'kwh', start: null, end: null });
+    setUrlParams({
+      sites: firstSiteId ? [firstSiteId] : [],
+      energy: 'electricity',
+      days: 30,
+      mode: 'agrege',
+      unit: 'kwh',
+      start: null,
+      end: null,
+    });
   }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── V21-C: Granularity override (user-selectable pills) ─────────────────
@@ -371,8 +399,11 @@ export default function ConsumptionExplorerPage() {
     if (!siteIds.length) return;
     try {
       const ev = energyType === 'gas' ? 'gas' : 'electricity';
-      await fetch(`/api/ems/demo/generate_timeseries?site_id=${siteIds[0]}&days=90&energy_vector=${ev}`, { method: 'POST' });
-      setRefreshKey(k => k + 1); // force TimeseriesPanel to remount → fresh fetch
+      await fetch(
+        `/api/ems/demo/generate_timeseries?site_id=${siteIds[0]}&days=90&energy_vector=${ev}`,
+        { method: 'POST' }
+      );
+      setRefreshKey((k) => k + 1); // force TimeseriesPanel to remount → fresh fetch
     } catch (e) {
       toast('Erreur generation demo', 'error');
     }
@@ -382,17 +413,20 @@ export default function ConsumptionExplorerPage() {
   // ── Presets (V11.1-C) ──────────────────────────────────────────────────
   const { presets, savePreset, loadPreset, deletePreset } = useExplorerPresets();
 
-  const handleSavePreset = useCallback((name) => {
-    savePreset(name, {
-      siteIds,
-      energy: energyType,
-      days,
-      mode,
-      unit,
-      startDate,
-      endDate,
-    });
-  }, [siteIds, energyType, days, mode, unit, startDate, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleSavePreset = useCallback(
+    (name) => {
+      savePreset(name, {
+        siteIds,
+        energy: energyType,
+        days,
+        mode,
+        unit,
+        startDate,
+        endDate,
+      });
+    },
+    [siteIds, energyType, days, mode, unit, startDate, endDate]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLoadPreset = useCallback((name) => {
     const state = loadPreset(name);
@@ -407,12 +441,20 @@ export default function ConsumptionExplorerPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Navigation helpers ─────────────────────────────────────────────────
-  const handleNavigate = useCallback((path) => { navigate(path); }, [navigate]);
-  const handleSwitchEnergy = useCallback((type) => {
-    setEnergyType(type);
-    if (type === 'gas') switchTab('gas');
-    else if (activeTab === 'gas') switchTab('timeseries'); // V19: only leave gas tab when on it
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleNavigate = useCallback(
+    (path) => {
+      navigate(path);
+    },
+    [navigate]
+  );
+  const handleSwitchEnergy = useCallback(
+    (type) => {
+      setEnergyType(type);
+      if (type === 'gas') switchTab('gas');
+      else if (activeTab === 'gas') switchTab('timeseries'); // V19: only leave gas tab when on it
+    },
+    [activeTab]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const availability = mergedAvailability || primaryAvailability;
   const hasData = availability?.has_data === true;
@@ -426,7 +468,8 @@ export default function ConsumptionExplorerPage() {
         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
           <Info size={14} className="text-blue-500 shrink-0" />
           <span className="text-blue-700">
-            Vous explorez <strong>{scopeLabel}</strong>. La multi-selection est disponible via le selecteur de sites ci-dessous.
+            Vous explorez <strong>{scopeLabel}</strong>. La multi-selection est disponible via le
+            selecteur de sites ci-dessous.
           </span>
         </div>
       )}
@@ -436,7 +479,11 @@ export default function ConsumptionExplorerPage() {
         <button
           onClick={toggleUiMode}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
-          title={isClassic ? 'Passer en mode Expert (contrôles avancés)' : 'Passer en mode Classique (vue standard)'}
+          title={
+            isClassic
+              ? 'Passer en mode Expert (contrôles avancés)'
+              : 'Passer en mode Classique (vue standard)'
+          }
         >
           {isClassic ? '⚙ Mode Expert' : '← Mode Classique'}
         </button>
@@ -467,7 +514,11 @@ export default function ConsumptionExplorerPage() {
         isPortfolioMode={isPortfolioMode}
         onTogglePortfolio={sites.length > 1 ? handleTogglePortfolio : undefined}
         onReset={handleReset}
-        onCopyLink={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
+        onCopyLink={() => {
+          try {
+            navigator.clipboard.writeText(window.location.href);
+          } catch {}
+        }}
         onSave={handleSavePreset}
         savedPresets={presets}
         onLoadPreset={handleLoadPreset}
@@ -484,7 +535,8 @@ export default function ConsumptionExplorerPage() {
           <Info size={14} className="shrink-0 mt-0.5 text-indigo-500" />
           <span className="flex-1">
             <strong>Mode Portfolio</strong> — vue agrégée multi-sites (mode Agrégé uniquement).
-            Chaque site contribue à l&apos;enveloppe globale. Pour comparer des sites individuellement, quittez le Portfolio.
+            Chaque site contribue à l&apos;enveloppe globale. Pour comparer des sites
+            individuellement, quittez le Portfolio.
           </span>
           <button
             onClick={() => setPortfolioBannerDismissed(true)}
@@ -530,10 +582,7 @@ export default function ConsumptionExplorerPage() {
         <>
           {/* OverviewRow (aggregate) */}
           {motor.primaryTunnel && (
-            <OverviewRow
-              data={computeOverviewData(motor.primaryTunnel)}
-              unit={unit}
-            />
+            <OverviewRow data={computeOverviewData(motor.primaryTunnel)} unit={unit} />
           )}
           <PortfolioPanel motor={motor} sites={sites} unit={unit} />
         </>
@@ -544,10 +593,7 @@ export default function ConsumptionExplorerPage() {
         <>
           {/* OverviewRow — only when real data is ready */}
           {showContent && motor.primaryTunnel && (
-            <OverviewRow
-              data={computeOverviewData(motor.primaryTunnel)}
-              unit={unit}
-            />
+            <OverviewRow data={computeOverviewData(motor.primaryTunnel)} unit={unit} />
           )}
 
           {isClassic ? (
@@ -567,7 +613,7 @@ export default function ConsumptionExplorerPage() {
                 granularityOverride={granularity === 'auto' ? null : granularity}
                 onNavigate={handleNavigate}
                 onExtendPeriod={() => setDays(365)}
-                onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+                onSelectAll={sites.length ? () => setSiteIds(sites.map((s) => s.id)) : undefined}
                 onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
                 onMeta={handleMeta}
               />
@@ -588,7 +634,7 @@ export default function ConsumptionExplorerPage() {
             <>
               {/* Tab bar — always visible regardless of data state */}
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                {TAB_CONFIG.map(tab => {
+                {TAB_CONFIG.map((tab) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.key;
                   if (nonApplicableTabs(energyType).has(tab.key)) return null;
@@ -597,12 +643,18 @@ export default function ConsumptionExplorerPage() {
                       key={tab.key}
                       onClick={() => switchTab(tab.key)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
-                        active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                        active
+                          ? 'bg-white text-blue-700 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
                       <Icon size={16} />
                       <span>{tab.label}</span>
-                      {tab.key === 'gas' && <Badge variant="warn" className="text-[10px] px-1 py-0">Beta</Badge>}
+                      {tab.key === 'gas' && (
+                        <Badge variant="warn" className="text-[10px] px-1 py-0">
+                          Beta
+                        </Badge>
+                      )}
                     </button>
                   );
                 })}
@@ -611,13 +663,17 @@ export default function ConsumptionExplorerPage() {
               {/* InsightsStrip — only when data ready */}
               {showContent && (
                 <InsightsStrip
-                  insights={computeInsights({
-                    primaryTunnel: motor.primaryTunnel,
-                    primaryHphc: motor.primaryHphc,
-                    primaryGas: motor.primaryGas,
-                    primaryWeather: motor.primaryWeather,
-                    primaryProgression: motor.primaryProgression,
-                  }, mode, unit)}
+                  insights={computeInsights(
+                    {
+                      primaryTunnel: motor.primaryTunnel,
+                      primaryHphc: motor.primaryHphc,
+                      primaryGas: motor.primaryGas,
+                      primaryWeather: motor.primaryWeather,
+                      primaryProgression: motor.primaryProgression,
+                    },
+                    mode,
+                    unit
+                  )}
                 />
               )}
 
@@ -639,7 +695,9 @@ export default function ConsumptionExplorerPage() {
                     granularityOverride={granularity === 'auto' ? null : granularity}
                     onNavigate={handleNavigate}
                     onExtendPeriod={() => setDays(365)}
-                    onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+                    onSelectAll={
+                      sites.length ? () => setSiteIds(sites.map((s) => s.id)) : undefined
+                    }
                     onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
                     onMeta={handleMeta}
                   />
@@ -688,7 +746,12 @@ export default function ConsumptionExplorerPage() {
                   />
                 )}
                 {activeTab === 'hphc' && showContent && (
-                  <HPHCPanel siteId={siteId} days={days} toast={toast} initialBreakdown={motor.primaryHphc} />
+                  <HPHCPanel
+                    siteId={siteId}
+                    days={days}
+                    toast={toast}
+                    initialBreakdown={motor.primaryHphc}
+                  />
                 )}
                 {activeTab === 'gas' && showContent && (
                   <GasPanel
@@ -714,8 +777,8 @@ export default function ConsumptionExplorerPage() {
           </div>
           <h3 className="text-base font-semibold text-gray-700 mb-1">Trop de sites sélectionnés</h3>
           <p className="text-sm text-gray-500 mb-4 max-w-sm">
-            Le mode comparatif supporte jusqu'à {MAX_SITES} sites simultanément.
-            Passez en mode Portfolio pour visualiser tous vos sites.
+            Le mode comparatif supporte jusqu'à {MAX_SITES} sites simultanément. Passez en mode
+            Portfolio pour visualiser tous vos sites.
           </p>
           <button
             onClick={handleTogglePortfolio}

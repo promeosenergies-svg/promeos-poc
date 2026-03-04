@@ -8,6 +8,7 @@ An OPERAT action cannot be closed (status → done) unless:
 
 This module is the single source of truth for closability.
 """
+
 from sqlalchemy.orm import Session
 
 from models import ActionItem, ActionSourceType
@@ -15,22 +16,22 @@ from models import ActionItem, ActionSourceType
 
 # ── Detection ────────────────────────────────────────────────────────────────
 
+
 def is_operat_action(action: ActionItem) -> bool:
     """True if the action originates from an OPERAT insight."""
     if not action:
         return False
-    return (
-        action.source_type == ActionSourceType.INSIGHT
-        and (action.source_id or "").startswith("operat:")
-    )
+    return action.source_type == ActionSourceType.INSIGHT and (action.source_id or "").startswith("operat:")
 
 
 # ── Proof check ──────────────────────────────────────────────────────────────
+
 
 def _count_valid_proofs(action_id: int) -> int:
     """Count KB docs linked to this action with status validated or decisional."""
     try:
         from app.kb.store import KBStore
+
         kb = KBStore()
         result = kb.list_action_proofs(action_id)
         summary = result.get("summary", {})
@@ -40,6 +41,7 @@ def _count_valid_proofs(action_id: int) -> int:
 
 
 # ── Closability check ────────────────────────────────────────────────────────
+
 
 def check_closable(action: ActionItem, closure_justification: str = None, evidence_count: int = 0) -> dict:
     """
@@ -55,7 +57,7 @@ def check_closable(action: ActionItem, closure_justification: str = None, eviden
     """
     if not is_operat_action(action):
         # Generic evidence_required gate (non-OPERAT actions)
-        if getattr(action, 'evidence_required', False):
+        if getattr(action, "evidence_required", False):
             justification = closure_justification or action.closure_justification or ""
             has_justification = len(justification.strip()) >= 10
             if evidence_count == 0 and not has_justification:
@@ -105,10 +107,7 @@ def check_closable(action: ActionItem, closure_justification: str = None, eviden
     code = None
     if not closable:
         code = "EVIDENCE_REQUIRED"
-        reason = (
-            "Action OPERAT : preuve validée ou justification (≥ 10 caractères) "
-            "requise pour clôturer."
-        )
+        reason = "Action OPERAT : preuve validée ou justification (≥ 10 caractères) requise pour clôturer."
 
     return {
         "closable": closable,

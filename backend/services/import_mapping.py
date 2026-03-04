@@ -4,6 +4,7 @@ Column synonym detection, normalization, auto-detect delimiter/encoding.
 FR/EN column synonym resolution for CSV/Excel import.
 Maps user-provided headers to canonical column names used by the staging pipeline.
 """
+
 import io
 import csv
 import re
@@ -32,12 +33,28 @@ CANONICAL_COLUMNS = [
 
 # Set of all canonical column keys (used by patrimoine CRUD + staging pipeline)
 CANONICAL_COLUMN_KEYS = {
-    "nom", "adresse", "code_postal", "ville", "surface_m2", "type",
-    "naf_code", "siret", "numero_serie", "meter_id", "type_compteur",
-    "puissance_kw", "region", "nombre_employes",
+    "nom",
+    "adresse",
+    "code_postal",
+    "ville",
+    "surface_m2",
+    "type",
+    "naf_code",
+    "siret",
+    "numero_serie",
+    "meter_id",
+    "type_compteur",
+    "puissance_kw",
+    "region",
+    "nombre_employes",
     # Contract columns
-    "fournisseur", "energie", "prix_kwh", "date_debut", "date_fin",
-    "preavis_jours", "abonnement_mensuel",
+    "fournisseur",
+    "energie",
+    "prix_kwh",
+    "date_debut",
+    "date_fin",
+    "preavis_jours",
+    "abonnement_mensuel",
 }
 
 # ========================================
@@ -49,7 +66,17 @@ _SYNONYMS = {
     # Site fields
     "nom": ["nom", "name", "site_name", "nom_site", "site", "designation", "libelle", "label", "intitule"],
     "adresse": ["adresse", "address", "addr", "rue", "street", "adresse_site", "adresse_postale"],
-    "code_postal": ["code_postal", "cp", "postal_code", "zip", "zipcode", "zip_code", "code_post", "codepostal", "code"],
+    "code_postal": [
+        "code_postal",
+        "cp",
+        "postal_code",
+        "zip",
+        "zipcode",
+        "zip_code",
+        "code_post",
+        "codepostal",
+        "code",
+    ],
     "ville": ["ville", "city", "commune", "localite", "town"],
     "region": ["region", "departement", "dept"],
     "surface_m2": ["surface_m2", "surface", "area", "superficie", "m2", "surface_totale", "area_m2", "sup_m2"],
@@ -60,15 +87,50 @@ _SYNONYMS = {
     "nombre_employes": ["nombre_employes", "employes", "effectif", "nb_employes", "employees", "headcount"],
     # Meter / delivery point fields
     "energy_type": ["energy_type", "energie", "energy", "type_energie", "fluide", "fluid", "vecteur"],
-    "delivery_code": ["delivery_code", "meter_id", "prm", "pdl", "pce", "point_livraison",
-                       "code_prm", "code_pdl", "code_pce", "num_prm", "num_pdl", "num_pce",
-                       "prm_pdl", "prm_pce", "numero_pdl", "numero_prm",
-                       "point_de_livraison", "pdl_pce", "identifiant_compteur"],
-    "numero_serie": ["numero_serie", "serial", "serial_number", "n_serie", "num_serie",
-                      "compteur", "num_compteur", "numero_compteur", "no_serie"],
+    "delivery_code": [
+        "delivery_code",
+        "meter_id",
+        "prm",
+        "pdl",
+        "pce",
+        "point_livraison",
+        "code_prm",
+        "code_pdl",
+        "code_pce",
+        "num_prm",
+        "num_pdl",
+        "num_pce",
+        "prm_pdl",
+        "prm_pce",
+        "numero_pdl",
+        "numero_prm",
+        "point_de_livraison",
+        "pdl_pce",
+        "identifiant_compteur",
+    ],
+    "numero_serie": [
+        "numero_serie",
+        "serial",
+        "serial_number",
+        "n_serie",
+        "num_serie",
+        "compteur",
+        "num_compteur",
+        "numero_compteur",
+        "no_serie",
+    ],
     "type_compteur": ["type_compteur", "meter_type", "type_meter", "compteur_type"],
-    "puissance_kw": ["puissance_kw", "puissance", "power", "power_kw", "kw", "kva",
-                      "puissance_souscrite", "subscribed_power", "puissance_souscrite_kw"],
+    "puissance_kw": [
+        "puissance_kw",
+        "puissance",
+        "power",
+        "power_kw",
+        "kw",
+        "kva",
+        "puissance_souscrite",
+        "subscribed_power",
+        "puissance_souscrite_kw",
+    ],
     # Contract-related synonyms
     "fournisseur": ["fournisseur", "supplier", "supplier_name", "nom_fournisseur", "prestataire"],
     "prix_kwh": ["prix_kwh", "prix_eur_kwh", "prix_unitaire", "tarif", "tarif_kwh", "price", "unit_price"],
@@ -97,46 +159,82 @@ for _canonical, _syn_list in _SYNONYMS.items():
 
 _TYPE_SITE_SYNONYMS: Dict[str, str] = {
     # bureau
-    "bureau": "bureau", "bureaux": "bureau", "office": "bureau", "tertiaire": "bureau",
+    "bureau": "bureau",
+    "bureaux": "bureau",
+    "office": "bureau",
+    "tertiaire": "bureau",
     # commerce
-    "commerce": "commerce", "magasin": "magasin", "boutique": "commerce",
-    "retail": "commerce", "supermarche": "commerce", "hypermarche": "commerce",
+    "commerce": "commerce",
+    "magasin": "magasin",
+    "boutique": "commerce",
+    "retail": "commerce",
+    "supermarche": "commerce",
+    "hypermarche": "commerce",
     # entrepot
-    "entrepot": "entrepot", "logistique": "entrepot", "warehouse": "entrepot",
-    "stockage": "entrepot", "depot": "entrepot",
+    "entrepot": "entrepot",
+    "logistique": "entrepot",
+    "warehouse": "entrepot",
+    "stockage": "entrepot",
+    "depot": "entrepot",
     # usine
-    "usine": "usine", "industrie": "usine", "production": "usine",
-    "factory": "usine", "industriel": "usine",
+    "usine": "usine",
+    "industrie": "usine",
+    "production": "usine",
+    "factory": "usine",
+    "industriel": "usine",
     # hotel
-    "hotel": "hotel", "hotellerie": "hotel", "hebergement": "hotel",
+    "hotel": "hotel",
+    "hotellerie": "hotel",
+    "hebergement": "hotel",
     # sante
-    "sante": "sante", "hopital": "sante", "clinique": "sante",
-    "ehpad": "sante", "medico_social": "sante",
+    "sante": "sante",
+    "hopital": "sante",
+    "clinique": "sante",
+    "ehpad": "sante",
+    "medico_social": "sante",
     # enseignement
-    "enseignement": "enseignement", "ecole": "enseignement", "lycee": "enseignement",
-    "college": "enseignement", "universite": "enseignement", "education": "enseignement",
+    "enseignement": "enseignement",
+    "ecole": "enseignement",
+    "lycee": "enseignement",
+    "college": "enseignement",
+    "universite": "enseignement",
+    "education": "enseignement",
     # copropriete
-    "copropriete": "copropriete", "copro": "copropriete", "syndic": "copropriete",
-    "residence": "copropriete", "immeuble": "copropriete",
+    "copropriete": "copropriete",
+    "copro": "copropriete",
+    "syndic": "copropriete",
+    "residence": "copropriete",
+    "immeuble": "copropriete",
     # collectivite
-    "collectivite": "collectivite", "mairie": "collectivite",
-    "administration": "collectivite", "public": "collectivite",
+    "collectivite": "collectivite",
+    "mairie": "collectivite",
+    "administration": "collectivite",
+    "public": "collectivite",
     # logement social
-    "logement_social": "logement_social", "hlm": "logement_social",
-    "social": "logement_social", "bailleur": "logement_social",
+    "logement_social": "logement_social",
+    "hlm": "logement_social",
+    "social": "logement_social",
+    "bailleur": "logement_social",
 }
 
 _TYPE_COMPTEUR_SYNONYMS: Dict[str, str] = {
-    "electricite": "electricite", "elec": "electricite", "electricity": "electricite",
-    "electrique": "electricite", "courant": "electricite",
-    "gaz": "gaz", "gas": "gaz", "naturel": "gaz",
-    "eau": "eau", "water": "eau",
+    "electricite": "electricite",
+    "elec": "electricite",
+    "electricity": "electricite",
+    "electrique": "electricite",
+    "courant": "electricite",
+    "gaz": "gaz",
+    "gas": "gaz",
+    "naturel": "gaz",
+    "eau": "eau",
+    "water": "eau",
 }
 
 
 # ========================================
 # Column name normalization (v9 advanced)
 # ========================================
+
 
 def normalize_column_name(raw: str) -> str:
     """Normalize a raw column header to canonical form.
@@ -150,9 +248,20 @@ def normalize_column_name(raw: str) -> str:
     cleaned = raw.strip().strip("\ufeff").lower()
     cleaned = re.sub(r"[\s\-]+", "_", cleaned)
     # Simple accent removal
-    for a, b in [("é", "e"), ("è", "e"), ("ê", "e"), ("ë", "e"),
-                 ("à", "a"), ("â", "a"), ("ù", "u"), ("û", "u"),
-                 ("ô", "o"), ("î", "i"), ("ï", "i"), ("ç", "c")]:
+    for a, b in [
+        ("é", "e"),
+        ("è", "e"),
+        ("ê", "e"),
+        ("ë", "e"),
+        ("à", "a"),
+        ("â", "a"),
+        ("ù", "u"),
+        ("û", "u"),
+        ("ô", "o"),
+        ("î", "i"),
+        ("ï", "i"),
+        ("ç", "c"),
+    ]:
         cleaned = cleaned.replace(a, b)
     # Remove trailing/leading underscores
     cleaned = cleaned.strip("_")
@@ -163,6 +272,7 @@ def normalize_column_name(raw: str) -> str:
 # ========================================
 # Encoding & delimiter detection (v9)
 # ========================================
+
 
 def detect_delimiter(first_line: str) -> str:
     """Auto-detect CSV delimiter from first line."""
@@ -191,6 +301,7 @@ def detect_encoding(raw_bytes: bytes) -> str:
 # Header mapping (v9 template-aware)
 # ========================================
 
+
 def map_headers(raw_headers: List[str]) -> Tuple[dict, List[dict]]:
     """Map raw CSV/Excel headers to canonical columns.
 
@@ -206,18 +317,22 @@ def map_headers(raw_headers: List[str]) -> Tuple[dict, List[dict]]:
         canonical = normalize_column_name(raw)
         if canonical in {col["key"] for col in CANONICAL_COLUMNS} or canonical in CANONICAL_COLUMN_KEYS:
             if canonical in used_canonical:
-                warnings.append({
-                    "header": raw,
-                    "message": f"Duplicate mapping to '{canonical}' — column ignored",
-                })
+                warnings.append(
+                    {
+                        "header": raw,
+                        "message": f"Duplicate mapping to '{canonical}' — column ignored",
+                    }
+                )
             else:
                 mapping[raw] = canonical
                 used_canonical.add(canonical)
         else:
-            warnings.append({
-                "header": raw,
-                "message": f"Column '{raw}' not recognized — will be ignored",
-            })
+            warnings.append(
+                {
+                    "header": raw,
+                    "message": f"Column '{raw}' not recognized — will be ignored",
+                }
+            )
 
     return mapping, warnings
 
@@ -307,6 +422,7 @@ def _normalize_compteur_type(raw: str) -> str:
 # Template generation (v9)
 # ========================================
 
+
 def generate_csv_template() -> bytes:
     """Generate official CSV import template with headers + example row."""
     output = io.StringIO()
@@ -355,12 +471,20 @@ def generate_xlsx_template() -> bytes:
 
     # Second example row
     examples_2 = {
-        "nom": "Ecole Voltaire", "adresse": "12 avenue Victor Hugo",
-        "code_postal": "69003", "ville": "Lyon", "surface_m2": "800",
-        "type": "enseignement", "naf_code": "85.20Z", "siren": "217500016",
-        "siret": "21750001600015", "energy_type": "elec",
-        "delivery_code": "98765432109876", "numero_serie": "CPT-002",
-        "type_compteur": "electricite", "puissance_kw": "24",
+        "nom": "Ecole Voltaire",
+        "adresse": "12 avenue Victor Hugo",
+        "code_postal": "69003",
+        "ville": "Lyon",
+        "surface_m2": "800",
+        "type": "enseignement",
+        "naf_code": "85.20Z",
+        "siren": "217500016",
+        "siret": "21750001600015",
+        "energy_type": "elec",
+        "delivery_code": "98765432109876",
+        "numero_serie": "CPT-002",
+        "type_compteur": "electricite",
+        "puissance_kw": "24",
     }
     for col_idx, col_def in enumerate(CANONICAL_COLUMNS, start=1):
         cell = ws.cell(row=3, column=col_idx, value=examples_2.get(col_def["key"], ""))
@@ -411,6 +535,7 @@ def generate_xlsx_template() -> bytes:
 # ========================================
 # Public API (WORLD CLASS patrimoine)
 # ========================================
+
 
 def normalize_header(raw_header: str) -> Optional[str]:
     """Map a single raw column header to its canonical name.

@@ -2,6 +2,7 @@
 PROMEOS — Action Hub Service (Sprint 10)
 Synchronise les actions des 4 briques vers ActionItem (persiste, idempotent).
 """
+
 import hashlib
 import json
 from datetime import date, datetime, timezone
@@ -10,10 +11,18 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, Organisation, EntiteJuridique, Portefeuille,
-    ComplianceFinding, ConsumptionInsight, BillingInsight,
-    ActionItem, ActionSyncBatch,
-    ActionSourceType, ActionStatus, InsightStatus,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    ComplianceFinding,
+    ConsumptionInsight,
+    BillingInsight,
+    ActionItem,
+    ActionSyncBatch,
+    ActionSourceType,
+    ActionStatus,
+    InsightStatus,
 )
 from services.purchase_actions_engine import compute_purchase_actions
 
@@ -22,30 +31,16 @@ from services.purchase_actions_engine import compute_purchase_actions
 # Helpers
 # ========================================
 
+
 def _get_site_ids(db: Session, org_id: int) -> list:
     """Resolve site IDs for an organisation."""
-    ej_ids = [
-        row[0] for row in
-        db.query(EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+    ej_ids = [row[0] for row in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if not ej_ids:
         return []
-    pf_ids = [
-        row[0] for row in
-        db.query(Portefeuille.id)
-        .filter(Portefeuille.entite_juridique_id.in_(ej_ids))
-        .all()
-    ]
+    pf_ids = [row[0] for row in db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
     if not pf_ids:
         return []
-    return [
-        row[0] for row in
-        db.query(Site.id)
-        .filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True)
-        .all()
-    ]
+    return [row[0] for row in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()]
 
 
 def _hash_inputs(*parts) -> str:
@@ -80,6 +75,7 @@ def compute_priority(severity: Optional[str], gain: Optional[float], deadline: O
 # Build actions from each brique
 # ========================================
 
+
 def build_actions_from_compliance(db: Session, org_id: int, site_ids: list) -> List[dict]:
     """Extract actions from ComplianceFinding NOK rows."""
     findings = (
@@ -107,19 +103,21 @@ def build_actions_from_compliance(db: Session, org_id: int, site_ids: list) -> L
 
         for idx, rec in enumerate(raw_actions):
             title = rec if isinstance(rec, str) else str(rec)
-            actions.append({
-                "org_id": org_id,
-                "site_id": f.site_id,
-                "source_type": ActionSourceType.COMPLIANCE,
-                "source_id": str(f.id),
-                "source_key": f"{f.rule_id}:{idx}",
-                "title": title[:500],
-                "rationale": f.evidence,
-                "severity": f.severity,
-                "estimated_gain_eur": None,
-                "due_date": f.deadline,
-                "_hash_parts": (title, f.severity, str(f.deadline)),
-            })
+            actions.append(
+                {
+                    "org_id": org_id,
+                    "site_id": f.site_id,
+                    "source_type": ActionSourceType.COMPLIANCE,
+                    "source_id": str(f.id),
+                    "source_key": f"{f.rule_id}:{idx}",
+                    "title": title[:500],
+                    "rationale": f.evidence,
+                    "severity": f.severity,
+                    "estimated_gain_eur": None,
+                    "due_date": f.deadline,
+                    "_hash_parts": (title, f.severity, str(f.deadline)),
+                }
+            )
 
     return actions
 
@@ -153,19 +151,21 @@ def build_actions_from_consumption(db: Session, org_id: int, site_ids: list) -> 
                 rec = {"title": rec}
             title = rec.get("title", ins.message)
             gain = rec.get("expected_gain_eur", ins.estimated_loss_eur)
-            actions.append({
-                "org_id": org_id,
-                "site_id": ins.site_id,
-                "source_type": ActionSourceType.CONSUMPTION,
-                "source_id": str(ins.id),
-                "source_key": f"{ins.type}:{idx}",
-                "title": title[:500],
-                "rationale": rec.get("rationale", ins.message),
-                "severity": ins.severity,
-                "estimated_gain_eur": gain,
-                "due_date": None,
-                "_hash_parts": (title, ins.severity, str(gain)),
-            })
+            actions.append(
+                {
+                    "org_id": org_id,
+                    "site_id": ins.site_id,
+                    "source_type": ActionSourceType.CONSUMPTION,
+                    "source_id": str(ins.id),
+                    "source_key": f"{ins.type}:{idx}",
+                    "title": title[:500],
+                    "rationale": rec.get("rationale", ins.message),
+                    "severity": ins.severity,
+                    "estimated_gain_eur": gain,
+                    "due_date": None,
+                    "_hash_parts": (title, ins.severity, str(gain)),
+                }
+            )
 
     return actions
 
@@ -198,19 +198,21 @@ def build_actions_from_billing(db: Session, org_id: int, site_ids: list) -> List
                 title = rec
             else:
                 title = rec.get("title", ins.message)
-            actions.append({
-                "org_id": org_id,
-                "site_id": ins.site_id,
-                "source_type": ActionSourceType.BILLING,
-                "source_id": str(ins.id),
-                "source_key": f"{ins.type}:{idx}",
-                "title": title[:500],
-                "rationale": ins.message,
-                "severity": ins.severity,
-                "estimated_gain_eur": ins.estimated_loss_eur,
-                "due_date": None,
-                "_hash_parts": (title, ins.severity, str(ins.estimated_loss_eur)),
-            })
+            actions.append(
+                {
+                    "org_id": org_id,
+                    "site_id": ins.site_id,
+                    "source_type": ActionSourceType.BILLING,
+                    "source_id": str(ins.id),
+                    "source_key": f"{ins.type}:{idx}",
+                    "title": title[:500],
+                    "rationale": ins.message,
+                    "severity": ins.severity,
+                    "estimated_gain_eur": ins.estimated_loss_eur,
+                    "due_date": None,
+                    "_hash_parts": (title, ins.severity, str(ins.estimated_loss_eur)),
+                }
+            )
 
     return actions
 
@@ -229,19 +231,21 @@ def build_actions_from_purchase(db: Session, org_id: int) -> List[dict]:
         severity = severity_map.get(act.get("severity", "blue"), "low")
         contract_id = act.get("contract_id", "auto")
         title = act.get("label", "Action achat energie")
-        actions.append({
-            "org_id": org_id,
-            "site_id": act.get("site_id"),
-            "source_type": ActionSourceType.PURCHASE,
-            "source_id": f"purchase_{act.get('type', 'unknown')}",
-            "source_key": f"{act.get('type', 'unknown')}:{contract_id}",
-            "title": title[:500],
-            "rationale": title,
-            "severity": severity,
-            "estimated_gain_eur": None,
-            "due_date": None,
-            "_hash_parts": (title, severity, str(contract_id)),
-        })
+        actions.append(
+            {
+                "org_id": org_id,
+                "site_id": act.get("site_id"),
+                "source_type": ActionSourceType.PURCHASE,
+                "source_id": f"purchase_{act.get('type', 'unknown')}",
+                "source_key": f"{act.get('type', 'unknown')}:{contract_id}",
+                "title": title[:500],
+                "rationale": title,
+                "severity": severity,
+                "estimated_gain_eur": None,
+                "due_date": None,
+                "_hash_parts": (title, severity, str(contract_id)),
+            }
+        )
 
     return actions
 
@@ -249,6 +253,7 @@ def build_actions_from_purchase(db: Session, org_id: int) -> List[dict]:
 # ========================================
 # Main sync function
 # ========================================
+
 
 def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
     """
@@ -338,9 +343,7 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
             existing.severity = act["severity"]
             existing.estimated_gain_eur = act["estimated_gain_eur"]
             existing.due_date = act["due_date"]
-            existing.priority = compute_priority(
-                act["severity"], act["estimated_gain_eur"], act["due_date"]
-            )
+            existing.priority = compute_priority(act["severity"], act["estimated_gain_eur"], act["due_date"])
             existing.inputs_hash = inputs_hash
             # status, owner, notes are PRESERVED
             batch.updated_count += 1

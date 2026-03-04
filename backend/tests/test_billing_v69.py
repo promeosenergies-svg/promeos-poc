@@ -3,8 +3,10 @@ PROMEOS — V69 Meta Version + Coverage Summary Tests
 Couvre: GET /api/meta/version — sha + branch.
         GET /api/billing/coverage-summary — smoke (empty DB → 200 + keys).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,6 +23,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -43,6 +46,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -51,6 +55,7 @@ def client(db):
 # ========================================
 # Tests GET /api/meta/version
 # ========================================
+
 
 def test_meta_version_returns_sha(client):
     """GET /api/meta/version retourne sha + branch + build_time."""
@@ -77,6 +82,7 @@ def test_meta_version_sha_nonempty(client):
 # Tests GET /api/billing/coverage-summary
 # ========================================
 
+
 def test_coverage_summary_empty_db(client, db):
     """GET /api/billing/coverage-summary retourne 200 même sans factures."""
     org = Organisation(nom="OrgCov", type_client="bureau", actif=True, siren="600099001")
@@ -94,6 +100,7 @@ def test_coverage_summary_empty_db(client, db):
 # ========================================
 # Tests GET /api/billing/periods
 # ========================================
+
 
 def test_periods_empty_db(client, db):
     """GET /api/billing/periods retourne 200 + liste vide sans factures."""
@@ -125,6 +132,7 @@ def test_missing_periods_empty_db(client, db):
 # ========================================
 # Tests route registration (V67 critical)
 # ========================================
+
 
 def test_v67_billing_routes_registered():
     """Critical V67 routes must be present in app.routes."""

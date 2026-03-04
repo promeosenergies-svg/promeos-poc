@@ -46,10 +46,16 @@ function InsightBadge({ insight, onDismiss }) {
   // ESC to close + click-outside
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
     const onClick = (e) => {
-      if (popupRef.current && !popupRef.current.contains(e.target) &&
-          badgeRef.current && !badgeRef.current.contains(e.target)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(e.target) &&
+        badgeRef.current &&
+        !badgeRef.current.contains(e.target)
+      ) {
         close();
       }
     };
@@ -66,7 +72,7 @@ function InsightBadge({ insight, onDismiss }) {
       const r = badgeRef.current.getBoundingClientRect();
       setCoords({ top: r.bottom + 4, left: r.left });
     }
-    setExpanded(v => !v);
+    setExpanded((v) => !v);
   };
 
   return (
@@ -85,22 +91,28 @@ function InsightBadge({ insight, onDismiss }) {
       </button>
 
       {/* Detail popup on click — portaled to escape overflow/stacking clipping */}
-      {expanded && insight.detail && coords && createPortal(
-        <div
-          ref={popupRef}
-          className="fixed z-[120] bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64"
-          style={{ top: coords.top, left: coords.left }}
-        >
-          {insight.detail}
-          <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+      {expanded &&
+        insight.detail &&
+        coords &&
+        createPortal(
+          <div
+            ref={popupRef}
+            className="fixed z-[120] bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64"
+            style={{ top: coords.top, left: coords.left }}
           >
-            <X size={12} />
-          </button>
-        </div>,
-        document.body,
-      )}
+            {insight.detail}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(false);
+              }}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={12} />
+            </button>
+          </div>,
+          document.body
+        )}
 
       {/* Dismiss */}
       {onDismiss && (
@@ -119,10 +131,10 @@ function InsightBadge({ insight, onDismiss }) {
 export default function InsightsStrip({ insights = [] }) {
   const [dismissed, setDismissed] = useState(new Set());
 
-  const visible = insights.filter(i => !dismissed.has(i.id));
+  const visible = insights.filter((i) => !dismissed.has(i.id));
   if (!visible.length) return null;
 
-  const dismiss = (id) => setDismissed(prev => new Set([...prev, id]));
+  const dismiss = (id) => setDismissed((prev) => new Set([...prev, id]));
 
   const MAX_VISIBLE = 4;
   const shown = visible.slice(0, MAX_VISIBLE);
@@ -131,7 +143,7 @@ export default function InsightsStrip({ insights = [] }) {
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
       <span className="text-xs font-semibold text-gray-500 shrink-0">Insights :</span>
-      {shown.map(insight => (
+      {shown.map((insight) => (
         <InsightBadge key={insight.id} insight={insight} onDismiss={dismiss} />
       ))}
       {overflow > 0 && (

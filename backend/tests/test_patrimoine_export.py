@@ -2,8 +2,10 @@
 PROMEOS — Tests Export CSV + Pagination (PR3 Phase 3)
 Tests for: GET /api/patrimoine/sites/export.csv, enhanced list_sites pagination.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -13,8 +15,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    TypeSite, StatutConformite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    TypeSite,
+    StatutConformite,
 )
 from database import get_db
 from main import app
@@ -23,6 +30,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -45,6 +53,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -68,10 +77,14 @@ def _seed_sites(db, pf, count=10):
     sites = []
     for i in range(count):
         site = Site(
-            nom=f"Site {i+1}", type=TypeSite.BUREAU,
-            adresse=f"{i+1} rue Test", code_postal="75001",
+            nom=f"Site {i + 1}",
+            type=TypeSite.BUREAU,
+            adresse=f"{i + 1} rue Test",
+            code_postal="75001",
             ville="Paris" if i % 2 == 0 else "Lyon",
-            surface_m2=1000 + i * 100, portefeuille_id=pf.id, actif=True,
+            surface_m2=1000 + i * 100,
+            portefeuille_id=pf.id,
+            actif=True,
             statut_decret_tertiaire=StatutConformite.CONFORME,
             risque_financier_euro=i * 500.0,
             anomalie_facture=(i % 3 == 0),
@@ -86,8 +99,8 @@ def _seed_sites(db, pf, count=10):
 # CSV Export Tests
 # ========================================
 
-class TestExportCSV:
 
+class TestExportCSV:
     def test_export_csv_200(self, client, db):
         """CSV export returns 200 with correct content-type."""
         org, _, pf = _create_org(db)
@@ -107,7 +120,7 @@ class TestExportCSV:
         db.commit()
 
         resp = client.get("/api/patrimoine/sites/export.csv")
-        assert resp.content[:3] == b'\xef\xbb\xbf'  # UTF-8 BOM
+        assert resp.content[:3] == b"\xef\xbb\xbf"  # UTF-8 BOM
 
     def test_export_csv_columns(self, client, db):
         """CSV header row contains expected columns."""
@@ -116,21 +129,21 @@ class TestExportCSV:
         db.commit()
 
         resp = client.get("/api/patrimoine/sites/export.csv")
-        text = resp.text.lstrip('\ufeff')
-        first_line = text.split('\n')[0]
-        assert 'nom' in first_line
-        assert 'ville' in first_line
-        assert 'surface_m2' in first_line
-        assert 'risque_financier_euro' in first_line
-        assert 'statut_conformite' in first_line
+        text = resp.text.lstrip("\ufeff")
+        first_line = text.split("\n")[0]
+        assert "nom" in first_line
+        assert "ville" in first_line
+        assert "surface_m2" in first_line
+        assert "risque_financier_euro" in first_line
+        assert "statut_conformite" in first_line
 
 
 # ========================================
 # Pagination Tests
 # ========================================
 
-class TestPagination:
 
+class TestPagination:
     def test_page_param(self, client, db):
         """GET /api/patrimoine/sites?page=1&page_size=5 returns paginated results."""
         org, _, pf = _create_org(db)
@@ -161,9 +174,10 @@ class TestPagination:
 # Database Config Tests
 # ========================================
 
-class TestDatabaseConfig:
 
+class TestDatabaseConfig:
     def test_sqlite_url_default(self):
         """Default DATABASE_URL uses SQLite."""
         from database.connection import DATABASE_URL
+
         assert "sqlite" in DATABASE_URL

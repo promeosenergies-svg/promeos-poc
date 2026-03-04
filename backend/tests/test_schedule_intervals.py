@@ -12,8 +12,10 @@ Covers:
   - Legacy open_time/close_time still works
   - intervals_json stored and returned
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -32,6 +34,7 @@ from routes.site_config import validate_intervals, _parse_hhmm
 # ═══════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════
+
 
 @pytest.fixture
 def db():
@@ -54,6 +57,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -61,23 +65,33 @@ def client(db):
 
 def _create_site(db):
     org = Organisation(nom="Sched Test Corp", type_client="bureau", actif=True)
-    db.add(org); db.flush()
+    db.add(org)
+    db.flush()
     ej = EntiteJuridique(organisation_id=org.id, nom="EJ", siren="999777555")
-    db.add(ej); db.flush()
+    db.add(ej)
+    db.flush()
     pf = Portefeuille(entite_juridique_id=ej.id, nom="PF")
-    db.add(pf); db.flush()
+    db.add(pf)
+    db.flush()
     site = Site(
-        nom="Site Sched Test", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=500, portefeuille_id=pf.id,
+        nom="Site Sched Test",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=500,
+        portefeuille_id=pf.id,
     )
-    db.add(site); db.flush(); db.commit()
+    db.add(site)
+    db.flush()
+    db.commit()
     return site
 
 
 # ═══════════════════════════════════════════════
 # A. Pure validation: validate_intervals
 # ═══════════════════════════════════════════════
+
 
 class TestValidateIntervals:
     """Pure function tests for validate_intervals."""
@@ -87,18 +101,22 @@ class TestValidateIntervals:
         assert validate_intervals(intervals) == []
 
     def test_valid_multi_interval(self):
-        intervals = {"0": [
-            {"start": "08:00", "end": "12:00"},
-            {"start": "13:00", "end": "18:00"},
-        ]}
+        intervals = {
+            "0": [
+                {"start": "08:00", "end": "12:00"},
+                {"start": "13:00", "end": "18:00"},
+            ]
+        }
         assert validate_intervals(intervals) == []
 
     def test_valid_adjacent_intervals(self):
         """Adjacent intervals (end == next start) must be allowed."""
-        intervals = {"0": [
-            {"start": "08:00", "end": "12:00"},
-            {"start": "12:00", "end": "18:00"},
-        ]}
+        intervals = {
+            "0": [
+                {"start": "08:00", "end": "12:00"},
+                {"start": "12:00", "end": "18:00"},
+            ]
+        }
         assert validate_intervals(intervals) == []
 
     def test_valid_empty_day(self):
@@ -107,10 +125,12 @@ class TestValidateIntervals:
         assert validate_intervals(intervals) == []
 
     def test_overlap_detected(self):
-        intervals = {"0": [
-            {"start": "08:00", "end": "14:00"},
-            {"start": "11:00", "end": "18:00"},
-        ]}
+        intervals = {
+            "0": [
+                {"start": "08:00", "end": "14:00"},
+                {"start": "11:00", "end": "18:00"},
+            ]
+        }
         errs = validate_intervals(intervals)
         assert len(errs) == 1
         assert errs[0]["code"] == "overlap"
@@ -189,6 +209,7 @@ class TestParseHHMM:
 # B. API endpoint: PUT /api/site/{id}/schedule
 # ═══════════════════════════════════════════════
 
+
 class TestScheduleAPI:
     """HTTP tests for schedule endpoint with intervals_json."""
 
@@ -217,10 +238,12 @@ class TestScheduleAPI:
     def test_put_overlap_422(self, client, db):
         """Overlapping intervals → 422."""
         site = _create_site(db)
-        intervals = {"0": [
-            {"start": "08:00", "end": "14:00"},
-            {"start": "11:00", "end": "18:00"},
-        ]}
+        intervals = {
+            "0": [
+                {"start": "08:00", "end": "14:00"},
+                {"start": "11:00", "end": "18:00"},
+            ]
+        }
         payload = {
             "open_days": "0,1,2,3,4",
             "open_time": "08:00",
@@ -312,10 +335,12 @@ class TestScheduleAPI:
     def test_put_adjacent_intervals_200(self, client, db):
         """Adjacent intervals (end == next start) → 200 OK."""
         site = _create_site(db)
-        intervals = {"0": [
-            {"start": "08:00", "end": "12:00"},
-            {"start": "12:00", "end": "18:00"},
-        ]}
+        intervals = {
+            "0": [
+                {"start": "08:00", "end": "12:00"},
+                {"start": "12:00", "end": "18:00"},
+            ]
+        }
         payload = {
             "open_days": "0",
             "open_time": "08:00",
@@ -336,8 +361,8 @@ class TestScheduleAPI:
         }
         payload = {
             "open_days": "0,1,2,3,4",  # will be overridden
-            "open_time": "08:00",       # will be overridden
-            "close_time": "19:00",      # will be overridden
+            "open_time": "08:00",  # will be overridden
+            "close_time": "19:00",  # will be overridden
             "is_24_7": False,
             "timezone": "Europe/Paris",
             "intervals_json": json.dumps(intervals),

@@ -22,7 +22,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
 
   const { hour, dayType } = slot;
   const envelope = tunnelData?.envelope?.[dayType] || [];
-  const point = envelope.find(s => s.hour === hour) || {};
+  const point = envelope.find((s) => s.hour === hour) || {};
   const drawerTitle = `Analyse — ${hour}h (${dayType === 'weekday' ? 'Semaine' : 'Week-end'})`;
 
   return (
@@ -33,14 +33,16 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
 
       {/* Tabs */}
       <div className="flex border-b border-gray-100 -mx-6 px-6 mb-4">
-        {TABS.map(t => {
+        {TABS.map((t) => {
           const Icon = t.icon;
           return (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
-                tab === t.key ? 'text-blue-700 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'
+                tab === t.key
+                  ? 'text-blue-700 border-b-2 border-blue-500'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Icon size={14} />
@@ -75,7 +77,8 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
             <div className="bg-amber-50 rounded-lg p-3">
               <p className="text-xs font-medium text-amber-700">Bande normale</p>
               <p className="text-sm text-amber-800 mt-1">
-                Entre {point.p10 ?? '—'} et {point.p90 ?? '—'} {tunnelData?.unit || 'kW'} — {point.count ?? 0} observations a cette heure.
+                Entre {point.p10 ?? '—'} et {point.p90 ?? '—'} {tunnelData?.unit || 'kW'} —{' '}
+                {point.count ?? 0} observations a cette heure.
               </p>
             </div>
           </>
@@ -86,13 +89,15 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Methode</p>
               <p className="text-sm text-gray-700">
-                Enveloppe quantile par creneau horaire. Les bandes P10-P90 definissent
-                la plage de consommation "normale" basee sur {tunnelData?.days || 90} jours d'historique.
+                Enveloppe quantile par creneau horaire. Les bandes P10-P90 definissent la plage de
+                consommation "normale" basee sur {tunnelData?.days || 90} jours d'historique.
               </p>
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Mode</p>
-              <Badge status="info">{tunnelData?.mode === 'power' ? 'Puissance (kW)' : 'Energie (kWh)'}</Badge>
+              <Badge status="info">
+                {tunnelData?.mode === 'power' ? 'Puissance (kW)' : 'Energie (kWh)'}
+              </Badge>
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Confiance</p>
@@ -103,7 +108,9 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Reference</p>
-              <p className="text-sm text-gray-600">{tunnelData?.reference_band_method || 'percentile_hourly'}</p>
+              <p className="text-sm text-gray-600">
+                {tunnelData?.reference_band_method || 'percentile_hourly'}
+              </p>
             </div>
           </div>
         )}
@@ -111,17 +118,20 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
         {tab === 'actions' && (
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              Si la consommation a {hour}h est regulierement hors bande, creez une action corrective.
+              Si la consommation a {hour}h est regulierement hors bande, creez une action
+              corrective.
             </p>
             <Button
-              onClick={() => onCreateAction?.({
-                sourceType: 'tunnel_anomaly',
-                hour,
-                dayType,
-                p10: point.p10,
-                p90: point.p90,
-                p50: point.p50,
-              })}
+              onClick={() =>
+                onCreateAction?.({
+                  sourceType: 'tunnel_anomaly',
+                  hour,
+                  dayType,
+                  p10: point.p10,
+                  p90: point.p90,
+                  p50: point.p50,
+                })
+              }
               className="w-full"
             >
               <Zap size={14} className="mr-1.5" />

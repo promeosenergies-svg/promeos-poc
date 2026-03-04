@@ -7,6 +7,7 @@ Couverture :
 - Endpoints /sites/{id}/anomalies et /anomalies (org list)
 - Scoping org (403 cross-org)
 """
+
 import pytest
 from datetime import date, datetime
 from fastapi.testclient import TestClient
@@ -16,11 +17,22 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Batiment, Usage,
-    Compteur, DeliveryPoint, EnergyContract,
-    TypeSite, TypeCompteur, EnergyVector,
-    DeliveryPointStatus, DeliveryPointEnergyType,
-    BillingEnergyType, TypeUsage,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Batiment,
+    Usage,
+    Compteur,
+    DeliveryPoint,
+    EnergyContract,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
+    DeliveryPointStatus,
+    DeliveryPointEnergyType,
+    BillingEnergyType,
+    TypeUsage,
 )
 from database import get_db
 from main import app
@@ -28,6 +40,7 @@ from services.demo_state import DemoState
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def db():
@@ -46,6 +59,7 @@ def db():
 def client(db):
     def _override():
         yield db
+
     app.dependency_overrides[get_db] = _override
     with TestClient(app) as c:
         yield c
@@ -72,10 +86,12 @@ def _make_org_site(db, nom="TestOrg"):
 
 # ── Règle 1 : SURFACE_MISSING ─────────────────────────────────────────────────
 
+
 class TestSurfaceMissing:
     def test_no_surface_no_batiments(self, db):
         """Site sans surface ni bâtiments → SURFACE_MISSING HIGH."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoSurf1")
         site.surface_m2 = None
         db.commit()
@@ -89,6 +105,7 @@ class TestSurfaceMissing:
     def test_with_surface_no_anomaly(self, db):
         """Site avec surface_m2 > 0 et pas de bâtiments → pas SURFACE_MISSING."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "WithSurf")
         site.surface_m2 = 1000.0
         db.commit()
@@ -100,6 +117,7 @@ class TestSurfaceMissing:
     def test_batiments_zero_surface(self, db):
         """Bâtiments présents mais surface_m2 à 0 → SURFACE_MISSING."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, pf, site = _make_org_site(db, "ZeroSurf")
         bat = Batiment(site_id=site.id, nom="Bat0", surface_m2=0.0)
         db.add(bat)
@@ -112,10 +130,12 @@ class TestSurfaceMissing:
 
 # ── Règle 2 : SURFACE_MISMATCH ────────────────────────────────────────────────
 
+
 class TestSurfaceMismatch:
     def test_mismatch_beyond_tolerance(self, db):
         """Écart > 5 % entre site.surface_m2 et ∑ bâtiments → SURFACE_MISMATCH."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "Mismatch1")
         site.surface_m2 = 1000.0
         db.commit()
@@ -132,6 +152,7 @@ class TestSurfaceMismatch:
     def test_no_mismatch_within_tolerance(self, db):
         """Écart ≤ 5 % → pas SURFACE_MISMATCH."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoMismatch")
         site.surface_m2 = 1000.0
         db.commit()
@@ -146,10 +167,12 @@ class TestSurfaceMismatch:
 
 # ── Règle 3 : BUILDING_MISSING ────────────────────────────────────────────────
 
+
 class TestBuildingMissing:
     def test_no_buildings(self, db):
         """Site sans bâtiment → BUILDING_MISSING MEDIUM."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoBat")
         site.surface_m2 = 500.0
         db.commit()
@@ -163,6 +186,7 @@ class TestBuildingMissing:
     def test_with_building_no_anomaly(self, db):
         """Site avec bâtiment → pas BUILDING_MISSING."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "WithBat")
         site.surface_m2 = 500.0
         db.commit()
@@ -177,10 +201,12 @@ class TestBuildingMissing:
 
 # ── Règle 4 : BUILDING_USAGE_MISSING ─────────────────────────────────────────
 
+
 class TestBuildingUsageMissing:
     def test_batiment_without_usage(self, db):
         """Bâtiment sans usage → BUILDING_USAGE_MISSING LOW."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoUsage")
         site.surface_m2 = 1000.0
         db.commit()
@@ -197,6 +223,7 @@ class TestBuildingUsageMissing:
     def test_batiment_with_usage_no_anomaly(self, db):
         """Bâtiment avec usage → pas BUILDING_USAGE_MISSING."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "WithUsage")
         site.surface_m2 = 1000.0
         db.commit()
@@ -214,16 +241,21 @@ class TestBuildingUsageMissing:
 
 # ── Règle 5 : METER_NO_DELIVERY_POINT ────────────────────────────────────────
 
+
 class TestMeterNoDeliveryPoint:
     def test_compteur_without_dp(self, db):
         """Compteur sans delivery_point_id → METER_NO_DELIVERY_POINT MEDIUM."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoDP")
         site.surface_m2 = 1000.0
         db.commit()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-NODP", actif=True, delivery_point_id=None,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-NODP",
+            actif=True,
+            delivery_point_id=None,
         )
         db.add(cpt)
         db.commit()
@@ -237,18 +269,24 @@ class TestMeterNoDeliveryPoint:
     def test_compteur_with_dp_no_anomaly(self, db):
         """Compteur avec delivery_point_id → pas METER_NO_DELIVERY_POINT."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "WithDP")
         site.surface_m2 = 1000.0
         db.commit()
         dp = DeliveryPoint(
-            code="98765432109876", energy_type=DeliveryPointEnergyType.ELEC,
-            site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+            code="98765432109876",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            site_id=site.id,
+            status=DeliveryPointStatus.ACTIVE,
         )
         db.add(dp)
         db.flush()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-WITHDP", actif=True, delivery_point_id=dp.id,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-WITHDP",
+            actif=True,
+            delivery_point_id=dp.id,
         )
         db.add(cpt)
         db.commit()
@@ -260,17 +298,21 @@ class TestMeterNoDeliveryPoint:
 
 # ── Règle 6 : CONTRACT_DATE_INVALID ──────────────────────────────────────────
 
+
 class TestContractDateInvalid:
     def test_start_after_end(self, db):
         """start_date >= end_date → CONTRACT_DATE_INVALID HIGH."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "BadDates")
         site.surface_m2 = 1000.0
         db.commit()
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF Bad",
-            start_date=date(2024, 12, 31), end_date=date(2024, 1, 1),
+            start_date=date(2024, 12, 31),
+            end_date=date(2024, 1, 1),
         )
         db.add(contract)
         db.commit()
@@ -284,13 +326,16 @@ class TestContractDateInvalid:
     def test_valid_dates_no_anomaly(self, db):
         """Dates valides → pas CONTRACT_DATE_INVALID."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "GoodDates")
         site.surface_m2 = 1000.0
         db.commit()
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF Good",
-            start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         db.add(contract)
         db.commit()
@@ -302,13 +347,16 @@ class TestContractDateInvalid:
     def test_null_dates_no_anomaly(self, db):
         """Dates nulles → pas CONTRACT_DATE_INVALID (on ne peut pas comparer)."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NullDates")
         site.surface_m2 = 1000.0
         db.commit()
         contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF Null",
-            start_date=None, end_date=None,
+            start_date=None,
+            end_date=None,
         )
         db.add(contract)
         db.commit()
@@ -320,22 +368,28 @@ class TestContractDateInvalid:
 
 # ── Règle 7 : CONTRACT_OVERLAP_SITE ──────────────────────────────────────────
 
+
 class TestContractOverlap:
     def test_overlapping_contracts(self, db):
         """Deux contrats qui se chevauchent sur la même énergie → CONTRACT_OVERLAP_SITE HIGH."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "Overlap")
         site.surface_m2 = 1000.0
         db.commit()
         c1 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF A",
-            start_date=date(2023, 1, 1), end_date=date(2024, 6, 30),
+            start_date=date(2023, 1, 1),
+            end_date=date(2024, 6, 30),
         )
         c2 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="Engie B",
-            start_date=date(2024, 1, 1), end_date=date(2025, 12, 31),
+            start_date=date(2024, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         db.add_all([c1, c2])
         db.commit()
@@ -349,18 +403,23 @@ class TestContractOverlap:
     def test_non_overlapping_contracts(self, db):
         """Contrats consécutifs sans chevauchement → pas CONTRACT_OVERLAP_SITE."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NoOverlap")
         site.surface_m2 = 1000.0
         db.commit()
         c1 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF C",
-            start_date=date(2022, 1, 1), end_date=date(2023, 12, 31),
+            start_date=date(2022, 1, 1),
+            end_date=date(2023, 12, 31),
         )
         c2 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="Engie D",
-            start_date=date(2024, 1, 1), end_date=date(2025, 12, 31),
+            start_date=date(2024, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         db.add_all([c1, c2])
         db.commit()
@@ -372,18 +431,23 @@ class TestContractOverlap:
     def test_different_energy_no_overlap_anomaly(self, db):
         """Chevauchement sur énergies différentes → pas CONTRACT_OVERLAP_SITE."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "DiffEnergy")
         site.surface_m2 = 1000.0
         db.commit()
         c1 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            site_id=site.id,
+            energy_type=BillingEnergyType.ELEC,
             supplier_name="EDF E",
-            start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         c2 = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.GAZ,
+            site_id=site.id,
+            energy_type=BillingEnergyType.GAZ,
             supplier_name="Engie F",
-            start_date=date(2023, 1, 1), end_date=date(2025, 12, 31),
+            start_date=date(2023, 1, 1),
+            end_date=date(2025, 12, 31),
         )
         db.add_all([c1, c2])
         db.commit()
@@ -395,16 +459,20 @@ class TestContractOverlap:
 
 # ── Règle 8 : ORPHANS_DETECTED ───────────────────────────────────────────────
 
+
 class TestOrphansDetected:
     def test_archived_site_with_active_children(self, db):
         """Site archivé (actif=False) avec compteurs actifs → ORPHANS_DETECTED CRITICAL."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, pf, site = _make_org_site(db, "Archived")
         site.actif = False
         db.commit()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-ORPHAN", actif=True,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-ORPHAN",
+            actif=True,
         )
         db.add(cpt)
         db.commit()
@@ -418,6 +486,7 @@ class TestOrphansDetected:
     def test_active_site_no_orphan_anomaly(self, db):
         """Site actif → pas ORPHANS_DETECTED."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "Active2")
         site.surface_m2 = 500.0
         db.commit()
@@ -429,10 +498,12 @@ class TestOrphansDetected:
 
 # ── Score de complétude (D7) ──────────────────────────────────────────────────
 
+
 class TestCompletudeScore:
     def test_perfect_score_no_anomalies(self, db):
         """Site complet → score 100."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "Perfect")
         site.surface_m2 = 1000.0
         db.commit()
@@ -442,14 +513,19 @@ class TestCompletudeScore:
         usage = Usage(batiment_id=bat.id, type=TypeUsage.BUREAUX)
         db.add(usage)
         dp = DeliveryPoint(
-            code="11111111111111", energy_type=DeliveryPointEnergyType.ELEC,
-            site_id=site.id, status=DeliveryPointStatus.ACTIVE,
+            code="11111111111111",
+            energy_type=DeliveryPointEnergyType.ELEC,
+            site_id=site.id,
+            status=DeliveryPointStatus.ACTIVE,
         )
         db.add(dp)
         db.flush()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-PERF", actif=True, delivery_point_id=dp.id,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-PERF",
+            actif=True,
+            delivery_point_id=dp.id,
         )
         db.add(cpt)
         db.commit()
@@ -461,13 +537,17 @@ class TestCompletudeScore:
     def test_score_decreases_with_anomalies(self, db):
         """Score diminue avec les anomalies : CRITICAL -30, HIGH -15."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, pf, site = _make_org_site(db, "DecrScore")
         site.surface_m2 = None
         site.actif = False  # ORPHANS_DETECTED CRITICAL (-30) if children
         db.commit()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-DECR", actif=True, delivery_point_id=None,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-DECR",
+            actif=True,
+            delivery_point_id=None,
         )
         db.add(cpt)
         db.commit()
@@ -481,6 +561,7 @@ class TestCompletudeScore:
     def test_score_capped_at_zero(self, db):
         """Score ne peut pas être négatif."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "NegScore")
         site.surface_m2 = None
         site.actif = False
@@ -488,8 +569,10 @@ class TestCompletudeScore:
         # Ajouter beaucoup d'anomalies
         for i in range(5):
             cpt = Compteur(
-                site_id=site.id, type=TypeCompteur.ELECTRICITE,
-                numero_serie=f"SN-NEG-{i}", actif=True,
+                site_id=site.id,
+                type=TypeCompteur.ELECTRICITE,
+                numero_serie=f"SN-NEG-{i}",
+                actif=True,
             )
             db.add(cpt)
         db.commit()
@@ -500,13 +583,16 @@ class TestCompletudeScore:
     def test_anomalies_sorted_critical_first(self, db):
         """Anomalies triées CRITICAL > HIGH > MEDIUM > LOW."""
         from services.patrimoine_anomalies import compute_site_anomalies
+
         _, _, site = _make_org_site(db, "SortOrder")
         site.surface_m2 = None
         site.actif = False
         db.commit()
         cpt = Compteur(
-            site_id=site.id, type=TypeCompteur.ELECTRICITE,
-            numero_serie="SN-SORT", actif=True,
+            site_id=site.id,
+            type=TypeCompteur.ELECTRICITE,
+            numero_serie="SN-SORT",
+            actif=True,
         )
         db.add(cpt)
         db.commit()
@@ -519,6 +605,7 @@ class TestCompletudeScore:
 
 
 # ── Endpoints HTTP ────────────────────────────────────────────────────────────
+
 
 class TestAnomaliesEndpoints:
     def test_site_anomalies_endpoint_200(self, client, db):
@@ -620,6 +707,7 @@ class TestAnomaliesEndpoints:
         """Guard : les services patrimoine n'utilisent pas Organisation.first()."""
         import re
         import pathlib
+
         for fname in ["patrimoine_snapshot.py", "patrimoine_anomalies.py"]:
             path = pathlib.Path(__file__).parent.parent / "services" / fname
             content = path.read_text(encoding="utf-8")

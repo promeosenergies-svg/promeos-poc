@@ -9,6 +9,7 @@ GET /api/demo/packs - Liste des packs disponibles
 GET /api/demo/manifest - Source de verite: org, portefeuilles, sites, compteurs
 GET /api/demo/templates, GET /api/demo/templates/{template_id}
 """
+
 import hashlib
 import json
 import random
@@ -23,8 +24,14 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import require_admin
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, Compteur,
-    TypeSite, TypeCompteur, EnergyVector,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Compteur,
+    TypeSite,
+    TypeCompteur,
+    EnergyVector,
 )
 from services.demo_state import DemoState
 from services.onboarding_service import provision_site
@@ -36,6 +43,7 @@ _seed_lock = threading.Lock()
 
 
 # --- Pydantic models for new endpoints ---
+
 
 class SeedPackRequest(BaseModel):
     pack: str = "helios"
@@ -51,6 +59,7 @@ class ResetPackRequest(BaseModel):
 
 
 # --- Mode toggle ---
+
 
 @router.post("/enable")
 def enable_demo():
@@ -71,10 +80,12 @@ def get_demo_status():
 
 # --- Pack-based endpoints ---
 
+
 @router.get("/packs")
 def list_demo_packs():
     """Liste des packs demo disponibles."""
     from services.demo_seed.packs import list_packs
+
     return {"packs": list_packs()}
 
 
@@ -103,8 +114,10 @@ def seed_demo_pack(
             orch.reset(mode="hard")
 
         result = orch.seed(
-            pack=request.pack, size=request.size,
-            rng_seed=request.rng_seed, days=request.days,
+            pack=request.pack,
+            size=request.size,
+            rng_seed=request.rng_seed,
+            days=request.days,
         )
 
         if result.get("error"):
@@ -114,7 +127,7 @@ def seed_demo_pack(
                     "message": result["error"],
                     "available_packs": result.get("available", []),
                     "hint": "Si le pack existe dans packs.py mais n'est pas trouve, "
-                            "redemarrez le backend: uvicorn main:app --reload",
+                    "redemarrez le backend: uvicorn main:app --reload",
                 },
             )
 
@@ -127,14 +140,17 @@ def seed_demo_pack(
 
 def _compute_checksum(result: dict) -> str:
     """SHA-256 checksum over deterministic seed result fields."""
-    payload = json.dumps({
-        "pack": result.get("pack"),
-        "size": result.get("size"),
-        "org_id": result.get("org_id"),
-        "sites_count": result.get("sites_count"),
-        "meters_count": result.get("meters_count"),
-        "readings_count": result.get("readings_count"),
-    }, sort_keys=True)
+    payload = json.dumps(
+        {
+            "pack": result.get("pack"),
+            "size": result.get("size"),
+            "org_id": result.get("org_id"),
+            "sites_count": result.get("sites_count"),
+            "meters_count": result.get("meters_count"),
+            "readings_count": result.get("readings_count"),
+        },
+        sort_keys=True,
+    )
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
@@ -147,6 +163,7 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
     Returns sites_count scoped to the seeded org.
     """
     from services.demo_seed import SeedOrchestrator
+
     ctx = DemoState.get_demo_context()
     org_id = ctx.get("org_id")
 
@@ -177,6 +194,7 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
             result["default_site_name"] = ctx.get("default_site_name")
         else:
             from models import Portefeuille, EntiteJuridique
+
             first_site = (
                 db.query(Site)
                 .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
@@ -208,9 +226,7 @@ def get_demo_manifest(db: Session = Depends(get_db)):
     if not org:
         raise HTTPException(status_code=404, detail="Org not found in DB")
 
-    entites = db.query(EntiteJuridique).filter(
-        EntiteJuridique.organisation_id == org.id
-    ).all()
+    entites = db.query(EntiteJuridique).filter(EntiteJuridique.organisation_id == org.id).all()
 
     portefeuilles = []
     total_sites = 0
@@ -218,25 +234,24 @@ def get_demo_manifest(db: Session = Depends(get_db)):
     all_site_ids = []
 
     for ej in entites:
-        for p in db.query(Portefeuille).filter(
-            Portefeuille.entite_juridique_id == ej.id
-        ).all():
+        for p in db.query(Portefeuille).filter(Portefeuille.entite_juridique_id == ej.id).all():
             sites = db.query(Site).filter(Site.portefeuille_id == p.id).all()
             compteurs_count = (
-                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count()
-                if sites else 0
+                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count() if sites else 0
             )
             total_sites += len(sites)
             total_compteurs += compteurs_count
             site_ids = [s.id for s in sites]
             all_site_ids.extend(site_ids)
-            portefeuilles.append({
-                "id": p.id,
-                "nom": p.nom,
-                "entite_juridique_id": ej.id,
-                "sites_count": len(sites),
-                "site_ids": site_ids,
-            })
+            portefeuilles.append(
+                {
+                    "id": p.id,
+                    "nom": p.nom,
+                    "entite_juridique_id": ej.id,
+                    "sites_count": len(sites),
+                    "site_ids": site_ids,
+                }
+            )
 
     return {
         "org_id": org.id,
@@ -253,6 +268,7 @@ def get_demo_manifest(db: Session = Depends(get_db)):
 def _reset_iam_demo(db):
     """Delete @atlas.demo users and their roles, then re-seed IAM."""
     from models import User, UserOrgRole
+
     demo_users = db.query(User).filter(User.email.like("%@atlas.demo")).all()
     for u in demo_users:
         db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
@@ -262,6 +278,7 @@ def _reset_iam_demo(db):
     org = db.query(Organisation).first()
     if org:
         from scripts.seed_data import seed_iam_demo
+
         seed_iam_demo(db, org)
 
 
@@ -274,12 +291,10 @@ def reset_demo_pack(
     """Reset des donnees demo. Admin-only.
     mode=soft (demo only) ou hard (tout). Also resets IAM demo users."""
     if request.mode == "hard" and not request.confirm:
-        raise HTTPException(
-            status_code=400,
-            detail="Hard reset requires confirm=true. This will delete ALL data."
-        )
+        raise HTTPException(status_code=400, detail="Hard reset requires confirm=true. This will delete ALL data.")
 
     from services.demo_seed import SeedOrchestrator
+
     orch = SeedOrchestrator(db)
     result = orch.reset(mode=request.mode)
 
@@ -288,6 +303,7 @@ def reset_demo_pack(
 
     # V62 — invalider le cache trend portfolio (les snapshots ne sont plus valides)
     from services.patrimoine_portfolio_cache import clear_all as _clear_portfolio_cache
+
     _clear_portfolio_cache()
 
     return result
@@ -310,8 +326,7 @@ def seed_demo(db: Session = Depends(get_db)):
     existing = db.query(Organisation).first()
     if existing:
         raise HTTPException(
-            status_code=409,
-            detail=f"Organisation '{existing.nom}' existe deja. Supprimez d'abord l'existante."
+            status_code=409, detail=f"Organisation '{existing.nom}' existe deja. Supprimez d'abord l'existante."
         )
 
     # Organisation
@@ -346,11 +361,13 @@ def seed_demo(db: Session = Depends(get_db)):
         db.flush()
 
         # 2 compteurs par site (elec + gaz)
-        for i, (tc, ev) in enumerate([(TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY), (TypeCompteur.GAZ, EnergyVector.GAS)]):
+        for i, (tc, ev) in enumerate(
+            [(TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY), (TypeCompteur.GAZ, EnergyVector.GAS)]
+        ):
             c = Compteur(
                 site_id=site.id,
                 type=tc,
-                numero_serie=f"DEMO-{site.id}-{i+1:02d}",
+                numero_serie=f"DEMO-{site.id}-{i + 1:02d}",
                 puissance_souscrite_kw=random.randint(50, 300) if tc == TypeCompteur.ELECTRICITE else None,
                 meter_id=f"{random.randint(10000000000000, 99999999999999)}",
                 energy_vector=ev,
@@ -359,12 +376,14 @@ def seed_demo(db: Session = Depends(get_db)):
             db.add(c)
 
         prov = provision_site(db, site)
-        sites_created.append({
-            "id": site.id,
-            "nom": site.nom,
-            "type": site.type.value,
-            **prov,
-        })
+        sites_created.append(
+            {
+                "id": site.id,
+                "nom": site.nom,
+                "type": site.type.value,
+                **prov,
+            }
+        )
 
     db.commit()
 
@@ -385,6 +404,7 @@ def seed_demo(db: Session = Depends(get_db)):
 def get_templates():
     """Liste des profils demo disponibles."""
     from services.demo_templates import get_all_templates
+
     return {"templates": get_all_templates()}
 
 
@@ -392,6 +412,7 @@ def get_templates():
 def get_template_detail(template_id: str):
     """Detail d'un profil demo."""
     from services.demo_templates import get_template
+
     tpl = get_template(template_id)
     if not tpl:
         raise HTTPException(status_code=404, detail="Template non trouve")

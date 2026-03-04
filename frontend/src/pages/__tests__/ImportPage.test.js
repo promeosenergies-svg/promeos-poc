@@ -51,7 +51,9 @@ describe('ImportPage: status-pack 404 is silent', () => {
     };
     const cfg = error.config;
     const isSilent = cfg.silent || isSilentUrl(cfg);
-    if (!isSilent) { toastFn(error.response.statusText, 'error'); }
+    if (!isSilent) {
+      toastFn(error.response.statusText, 'error');
+    }
     expect(toastFn).not.toHaveBeenCalled();
   });
 
@@ -63,7 +65,9 @@ describe('ImportPage: status-pack 404 is silent', () => {
     };
     const cfg = error.config;
     const isSilent = cfg.silent || isSilentUrl(cfg);
-    if (!isSilent) { toastFn(error.response.statusText, 'error'); }
+    if (!isSilent) {
+      toastFn(error.response.statusText, 'error');
+    }
     expect(toastFn).toHaveBeenCalledWith('Not Found', 'error');
   });
 });
@@ -238,8 +242,8 @@ describe('ImportPage: seed error toast format', () => {
 // ── Toast message wording (V11.1 UX spec) ────────────────────────────────
 
 describe('ImportPage: toast message wording', () => {
-  it('seed success toast: Démo chargée — contexte appliqué à toute l\'application.', () => {
-    const msg = 'Démo chargée — contexte appliqué à toute l\'application.';
+  it("seed success toast: Démo chargée — contexte appliqué à toute l'application.", () => {
+    const msg = "Démo chargée — contexte appliqué à toute l'application.";
     expect(msg).toContain('Démo chargée');
     expect(msg).toContain('contexte appliqué');
   });
@@ -257,7 +261,7 @@ describe('ImportPage: toast message wording', () => {
   });
 
   it('seed and replay toasts are distinct', () => {
-    const seedMsg = 'Démo chargée — contexte appliqué à toute l\'application.';
+    const seedMsg = "Démo chargée — contexte appliqué à toute l'application.";
     const replayMsg = 'Démo relancée — contexte mis à jour.';
     const resetMsg = 'Démo réinitialisée — retour à un contexte neutre.';
     expect(seedMsg).not.toBe(replayMsg);
@@ -270,11 +274,7 @@ describe('ImportPage: toast message wording', () => {
 
 describe('ImportPage: syncInProgress mismatch logic', () => {
   function computeSyncInProgress(packStatus, scope) {
-    return !!(
-      packStatus?.org_id &&
-      scope?.orgId &&
-      packStatus.org_id !== scope.orgId
-    );
+    return !!(packStatus?.org_id && scope?.orgId && packStatus.org_id !== scope.orgId);
   }
 
   it('no mismatch when org_ids match', () => {
@@ -413,13 +413,27 @@ describe('Demo Pack regression: optimistic packStatus after seed', () => {
   });
 
   it('packStatus.pack equals the seeded pack key', () => {
-    const res = { org_id: 99, org_nom: 'Groupe HELIOS', pack: 'helios', size: 'S', total_rows: 5000 };
+    const res = {
+      org_id: 99,
+      org_nom: 'Groupe HELIOS',
+      pack: 'helios',
+      size: 'S',
+      total_rows: 5000,
+    };
     const { packStatus } = simulatePerformSeed(res);
     expect(packStatus.pack).toBe('helios');
   });
 
   it('applyDemoScope is called exactly once per seed (not twice)', () => {
-    const res = { org_id: 10, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', total_rows: 50000, default_site_id: 1, default_site_name: 'Site 1' };
+    const res = {
+      org_id: 10,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      total_rows: 50000,
+      default_site_id: 1,
+      default_site_name: 'Site 1',
+    };
     const { applyDemoScope } = simulatePerformSeed(res, false);
     // applyDemoScope must be called exactly once (from performSeed, NOT from refreshStatus)
     expect(applyDemoScope).toHaveBeenCalledOnce();
@@ -503,7 +517,7 @@ describe('Demo Pack regression: refreshStatus catch must not overwrite optimisti
 describe('scopeLabel derivation (ScopeContext)', () => {
   function deriveScopeLabel(siteId, scopedSites) {
     if (!siteId) return 'Tous les sites';
-    const site = scopedSites.find(s => s.id === siteId);
+    const site = scopedSites.find((s) => s.id === siteId);
     return site ? `Site\u00a0: ${site.nom}` : 'Tous les sites';
   }
 

@@ -19,11 +19,11 @@ const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf
 const backend = (rel) =>
   readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
 
-const API_JS           = src('services/api.js');
-const HEALTH_CARD_JSX  = src('components/PatrimoineHealthCard.jsx');
-const ASSUMPTIONS_PY   = backend('config/patrimoine_assumptions.py');
-const IMPACT_PY        = backend('services/patrimoine_impact.py');
-const ROUTES_PY        = backend('routes/patrimoine.py');
+const API_JS = src('services/api.js');
+const HEALTH_CARD_JSX = src('components/PatrimoineHealthCard.jsx');
+const ASSUMPTIONS_PY = backend('config/patrimoine_assumptions.py');
+const IMPACT_PY = backend('services/patrimoine_impact.py');
+const ROUTES_PY = backend('routes/patrimoine.py');
 
 // ── API wrappers V59 ───────────────────────────────────────────────────────
 
@@ -102,14 +102,14 @@ describe('patrimoine_impact.py — structure', () => {
 
 describe('patrimoine_impact.py — frameworks réglementaires', () => {
   const FRAMEWORKS = [
-    ['SURFACE_MISSING',          'DECRET_TERTIAIRE'],
-    ['SURFACE_MISMATCH',         'DECRET_TERTIAIRE'],
-    ['BUILDING_MISSING',         'DECRET_TERTIAIRE'],
-    ['BUILDING_USAGE_MISSING',   'DECRET_TERTIAIRE'],
-    ['METER_NO_DELIVERY_POINT',  'FACTURATION'],
-    ['CONTRACT_DATE_INVALID',    'FACTURATION'],
-    ['CONTRACT_OVERLAP_SITE',    'FACTURATION'],
-    ['ORPHANS_DETECTED',         'NONE'],
+    ['SURFACE_MISSING', 'DECRET_TERTIAIRE'],
+    ['SURFACE_MISMATCH', 'DECRET_TERTIAIRE'],
+    ['BUILDING_MISSING', 'DECRET_TERTIAIRE'],
+    ['BUILDING_USAGE_MISSING', 'DECRET_TERTIAIRE'],
+    ['METER_NO_DELIVERY_POINT', 'FACTURATION'],
+    ['CONTRACT_DATE_INVALID', 'FACTURATION'],
+    ['CONTRACT_OVERLAP_SITE', 'FACTURATION'],
+    ['ORPHANS_DETECTED', 'NONE'],
   ];
 
   FRAMEWORKS.forEach(([code, framework]) => {
@@ -294,9 +294,7 @@ describe('Guard multi-org V59', () => {
 
   test('enrich_anomalies_with_impact sans accès DB', () => {
     // La fonction ne doit pas importer Session ou db
-    const fnMatch = IMPACT_PY.match(
-      /def enrich_anomalies_with_impact[\s\S]*?^def /m
-    );
+    const fnMatch = IMPACT_PY.match(/def enrich_anomalies_with_impact[\s\S]*?^def /m);
     if (fnMatch) {
       const fnBody = fnMatch[0];
       expect(fnBody).not.toMatch(/Session|get_db|db\.query/);

@@ -2,15 +2,24 @@
 PROMEOS - Routes API pour l'Energie (Import & Analysis)
 Import CSV/XLSX/JSON consumption data, run KB-driven analytics
 """
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
 from models import (
-    Site, Meter, MeterReading, DataImportJob, UsageProfile,
-    Anomaly as AnomalyModel, Recommendation as RecommendationModel,
-    ImportStatus, FrequencyType, AnomalySeverity, RecommendationStatus
+    Site,
+    Meter,
+    MeterReading,
+    DataImportJob,
+    UsageProfile,
+    Anomaly as AnomalyModel,
+    Recommendation as RecommendationModel,
+    ImportStatus,
+    FrequencyType,
+    AnomalySeverity,
+    RecommendationStatus,
 )
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
@@ -25,6 +34,7 @@ router = APIRouter(prefix="/api/energy", tags=["Energy"])
 
 
 # --- Pydantic models ---
+
 
 class MeterCreate(BaseModel):
     meter_id: str
@@ -87,6 +97,7 @@ class DemoDataRequest(BaseModel):
 
 # --- Meter endpoints ---
 
+
 @router.post("/meters", response_model=MeterResponse)
 def create_meter(
     meter: MeterCreate,
@@ -110,7 +121,7 @@ def create_meter(
         name=meter.name,
         site_id=meter.site_id,
         subscribed_power_kva=meter.subscribed_power_kva,
-        tariff_type=meter.tariff_type
+        tariff_type=meter.tariff_type,
     )
     db.add(new_meter)
     db.commit()
@@ -123,7 +134,7 @@ def create_meter(
         site_id=new_meter.site_id,
         energy_vector=new_meter.energy_vector.value,
         subscribed_power_kva=new_meter.subscribed_power_kva,
-        readings_count=0
+        readings_count=0,
     )
 
 
@@ -144,20 +155,23 @@ def list_meters(
     result = []
     for m in meters:
         count = db.query(MeterReading).filter_by(meter_id=m.id).count()
-        result.append(MeterResponse(
-            id=m.id,
-            meter_id=m.meter_id,
-            name=m.name,
-            site_id=m.site_id,
-            energy_vector=m.energy_vector.value,
-            subscribed_power_kva=m.subscribed_power_kva,
-            readings_count=count
-        ))
+        result.append(
+            MeterResponse(
+                id=m.id,
+                meter_id=m.meter_id,
+                name=m.name,
+                site_id=m.site_id,
+                energy_vector=m.energy_vector.value,
+                subscribed_power_kva=m.subscribed_power_kva,
+                readings_count=count,
+            )
+        )
 
     return result
 
 
 # --- Import endpoints ---
+
 
 @router.post("/import/upload")
 async def upload_consumption_data(
@@ -176,9 +190,9 @@ async def upload_consumption_data(
 
     # Determine format
     filename = file.filename or "unknown"
-    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
-    if ext not in ('csv', 'xlsx', 'json'):
+    if ext not in ("csv", "xlsx", "json"):
         raise HTTPException(status_code=400, detail=f"Unsupported format: {ext}. Use CSV, XLSX, or JSON")
 
     # Read file content
@@ -186,10 +200,7 @@ async def upload_consumption_data(
     file_hash = hashlib.sha256(content).hexdigest()
 
     # Check for duplicate imports
-    existing_job = db.query(DataImportJob).filter_by(
-        file_hash=file_hash,
-        status=ImportStatus.COMPLETED
-    ).first()
+    existing_job = db.query(DataImportJob).filter_by(file_hash=file_hash, status=ImportStatus.COMPLETED).first()
     if existing_job:
         raise HTTPException(status_code=409, detail=f"This file was already imported (job #{existing_job.id})")
 
@@ -216,7 +227,7 @@ async def upload_consumption_data(
         file_hash=file_hash,
         site_id=meter.site_id,
         meter_id=meter.id,
-        started_at=datetime.now(timezone.utc)
+        started_at=datetime.now(timezone.utc),
     )
     db.add(job)
     db.commit()
@@ -224,14 +235,10 @@ async def upload_consumption_data(
 
     # Parse and import
     try:
-        if ext == 'csv':
-            rows_imported, rows_skipped, rows_errored, date_range = _import_csv(
-                content, meter.id, freq_type, db
-            )
-        elif ext == 'json':
-            rows_imported, rows_skipped, rows_errored, date_range = _import_json(
-                content, meter.id, freq_type, db
-            )
+        if ext == "csv":
+            rows_imported, rows_skipped, rows_errored, date_range = _import_csv(content, meter.id, freq_type, db)
+        elif ext == "json":
+            rows_imported, rows_skipped, rows_errored, date_range = _import_json(content, meter.id, freq_type, db)
         else:
             raise HTTPException(status_code=400, detail="XLSX support requires openpyxl - use CSV or JSON")
 
@@ -255,7 +262,7 @@ async def upload_consumption_data(
             "date_range": {
                 "start": date_range[0].isoformat() if date_range and date_range[0] else None,
                 "end": date_range[1].isoformat() if date_range and date_range[1] else None,
-            }
+            },
         }
 
     except Exception as e:
@@ -267,10 +274,7 @@ async def upload_consumption_data(
 
 
 @router.get("/import/jobs", response_model=List[ImportJobResponse])
-def list_import_jobs(
-    meter_id: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
+def list_import_jobs(meter_id: Optional[str] = None, db: Session = Depends(get_db)):
     """List import jobs"""
     query = db.query(DataImportJob).order_by(DataImportJob.created_at.desc())
 
@@ -281,23 +285,27 @@ def list_import_jobs(
 
     jobs = query.limit(50).all()
 
-    return [ImportJobResponse(
-        id=j.id,
-        status=j.status.value,
-        filename=j.filename,
-        file_format=j.file_format,
-        rows_total=j.rows_total,
-        rows_imported=j.rows_imported,
-        rows_skipped=j.rows_skipped,
-        rows_errored=j.rows_errored,
-        date_start=j.date_start.isoformat() if j.date_start else None,
-        date_end=j.date_end.isoformat() if j.date_end else None,
-        error_message=j.error_message,
-        created_at=j.created_at.isoformat() if j.created_at else None
-    ) for j in jobs]
+    return [
+        ImportJobResponse(
+            id=j.id,
+            status=j.status.value,
+            filename=j.filename,
+            file_format=j.file_format,
+            rows_total=j.rows_total,
+            rows_imported=j.rows_imported,
+            rows_skipped=j.rows_skipped,
+            rows_errored=j.rows_errored,
+            date_start=j.date_start.isoformat() if j.date_start else None,
+            date_end=j.date_end.isoformat() if j.date_end else None,
+            error_message=j.error_message,
+            created_at=j.created_at.isoformat() if j.created_at else None,
+        )
+        for j in jobs
+    ]
 
 
 # --- Analysis endpoints ---
+
 
 @router.post("/analysis/run")
 def run_analysis(
@@ -337,21 +345,21 @@ def get_analysis_summary(
     check_site_access(auth, meter.site_id)
 
     # Get latest profile
-    profile = db.query(UsageProfile).filter_by(
-        meter_id=meter.id
-    ).order_by(UsageProfile.created_at.desc()).first()
+    profile = db.query(UsageProfile).filter_by(meter_id=meter.id).order_by(UsageProfile.created_at.desc()).first()
 
     # Get anomalies
-    anomalies = db.query(AnomalyModel).filter_by(
-        meter_id=meter.id, is_active=True
-    ).order_by(AnomalyModel.severity.desc()).all()
+    anomalies = (
+        db.query(AnomalyModel).filter_by(meter_id=meter.id, is_active=True).order_by(AnomalyModel.severity.desc()).all()
+    )
 
     # Get recommendations
-    recommendations = db.query(RecommendationModel).filter_by(
-        meter_id=meter.id
-    ).filter(RecommendationModel.status != RecommendationStatus.DISMISSED).order_by(
-        RecommendationModel.ice_score.desc()
-    ).all()
+    recommendations = (
+        db.query(RecommendationModel)
+        .filter_by(meter_id=meter.id)
+        .filter(RecommendationModel.status != RecommendationStatus.DISMISSED)
+        .order_by(RecommendationModel.ice_score.desc())
+        .all()
+    )
 
     site = db.query(Site).filter_by(id=meter.site_id).first()
 
@@ -365,25 +373,32 @@ def get_analysis_summary(
         kwh_m2_year=profile.features_json.get("kwh_m2_year") if profile and profile.features_json else None,
         anomalies_count=len(anomalies),
         recommendations_count=len(recommendations),
-        top_anomalies=[{
-            "code": a.anomaly_code,
-            "title": a.title,
-            "severity": a.severity.value,
-            "confidence": a.confidence,
-            "measured": a.measured_value,
-            "threshold": a.threshold_value,
-        } for a in anomalies[:5]],
-        top_recommendations=[{
-            "code": r.recommendation_code,
-            "title": r.title,
-            "ice_score": r.ice_score,
-            "savings_pct": r.estimated_savings_pct,
-            "status": r.status.value,
-        } for r in recommendations[:5]]
+        top_anomalies=[
+            {
+                "code": a.anomaly_code,
+                "title": a.title,
+                "severity": a.severity.value,
+                "confidence": a.confidence,
+                "measured": a.measured_value,
+                "threshold": a.threshold_value,
+            }
+            for a in anomalies[:5]
+        ],
+        top_recommendations=[
+            {
+                "code": r.recommendation_code,
+                "title": r.title,
+                "ice_score": r.ice_score,
+                "savings_pct": r.estimated_savings_pct,
+                "status": r.status.value,
+            }
+            for r in recommendations[:5]
+        ],
     )
 
 
 # --- Demo endpoints ---
+
 
 @router.post("/demo/generate")
 def generate_demo_data(
@@ -405,10 +420,7 @@ def generate_demo_data(
     meter = db.query(Meter).filter_by(meter_id=meter_id_str).first()
     if not meter:
         meter = Meter(
-            meter_id=meter_id_str,
-            name=request.meter_name,
-            site_id=request.site_id,
-            subscribed_power_kva=100.0
+            meter_id=meter_id_str, name=request.meter_name, site_id=request.site_id, subscribed_power_kva=100.0
         )
         db.add(meter)
         db.commit()
@@ -421,24 +433,32 @@ def generate_demo_data(
     # Archetype-based generation profiles
     profiles = {
         "BUREAU_STANDARD": {
-            "base_kwh": 7.0, "day_multiplier": 4.0,
-            "weekend_ratio": 0.3, "seasonal_amplitude": 0.20,
-            "night_base": 0.12
+            "base_kwh": 7.0,
+            "day_multiplier": 4.0,
+            "weekend_ratio": 0.3,
+            "seasonal_amplitude": 0.20,
+            "night_base": 0.12,
         },
         "COMMERCE_ALIMENTAIRE": {
-            "base_kwh": 20.0, "day_multiplier": 1.5,
-            "weekend_ratio": 0.9, "seasonal_amplitude": 0.15,
-            "night_base": 0.60
+            "base_kwh": 20.0,
+            "day_multiplier": 1.5,
+            "weekend_ratio": 0.9,
+            "seasonal_amplitude": 0.15,
+            "night_base": 0.60,
         },
         "RESTAURATION_SERVICE": {
-            "base_kwh": 10.0, "day_multiplier": 3.0,
-            "weekend_ratio": 0.7, "seasonal_amplitude": 0.15,
-            "night_base": 0.15
+            "base_kwh": 10.0,
+            "day_multiplier": 3.0,
+            "weekend_ratio": 0.7,
+            "seasonal_amplitude": 0.15,
+            "night_base": 0.15,
         },
         "INDUSTRIE_LEGERE": {
-            "base_kwh": 15.0, "day_multiplier": 3.5,
-            "weekend_ratio": 0.2, "seasonal_amplitude": 0.10,
-            "night_base": 0.10
+            "base_kwh": 15.0,
+            "day_multiplier": 3.5,
+            "weekend_ratio": 0.2,
+            "seasonal_amplitude": 0.10,
+            "night_base": 0.10,
         },
     }
 
@@ -451,7 +471,7 @@ def generate_demo_data(
     total_kwh = 0.0
 
     for day_offset in range(request.days):
-        dt = start.replace(hour=0, minute=0, second=0) + __import__('datetime').timedelta(days=day_offset)
+        dt = start.replace(hour=0, minute=0, second=0) + __import__("datetime").timedelta(days=day_offset)
         day_of_week = dt.weekday()  # 0=Monday
         is_weekend = day_of_week >= 5
         month = dt.month
@@ -476,13 +496,15 @@ def generate_demo_data(
             value *= random.uniform(0.85, 1.15)  # Noise
             value = max(0.1, value)
 
-            readings.append(MeterReading(
-                meter_id=meter.id,
-                timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=round(value, 2),
-                is_estimated=False
-            ))
+            readings.append(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=round(value, 2),
+                    is_estimated=False,
+                )
+            )
             total_kwh += value
 
     # Bulk insert
@@ -495,16 +517,17 @@ def generate_demo_data(
         "readings_generated": len(readings),
         "total_kwh": round(total_kwh, 1),
         "period": f"{start.date()} - {(start + __import__('datetime').timedelta(days=request.days)).date()}",
-        "archetype": request.archetype
+        "archetype": request.archetype,
     }
 
 
 # --- Helper functions ---
 
+
 def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Session):
     """Parse CSV and import readings"""
-    text = content.decode('utf-8-sig')  # Handle BOM
-    reader = csv.DictReader(io.StringIO(text), delimiter=';')
+    text = content.decode("utf-8-sig")  # Handle BOM
+    reader = csv.DictReader(io.StringIO(text), delimiter=";")
 
     rows_imported = 0
     rows_skipped = 0
@@ -517,8 +540,8 @@ def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Ses
     for row in reader:
         try:
             # Flexible column name detection
-            ts_str = row.get('timestamp') or row.get('date') or row.get('horodatage') or row.get('Date')
-            val_str = row.get('value_kwh') or row.get('kwh') or row.get('valeur') or row.get('Valeur')
+            ts_str = row.get("timestamp") or row.get("date") or row.get("horodatage") or row.get("Date")
+            val_str = row.get("value_kwh") or row.get("kwh") or row.get("valeur") or row.get("Valeur")
 
             if not ts_str or not val_str:
                 rows_skipped += 1
@@ -531,20 +554,18 @@ def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Ses
                 continue
 
             # Parse value
-            val_str = val_str.strip().replace(',', '.')
+            val_str = val_str.strip().replace(",", ".")
             value = float(val_str)
 
             if value < 0:
                 rows_errored += 1
                 continue
 
-            batch.append(MeterReading(
-                meter_id=meter_id,
-                timestamp=ts,
-                frequency=frequency,
-                value_kwh=round(value, 3),
-                is_estimated=False
-            ))
+            batch.append(
+                MeterReading(
+                    meter_id=meter_id, timestamp=ts, frequency=frequency, value_kwh=round(value, 3), is_estimated=False
+                )
+            )
 
             if min_date is None or ts < min_date:
                 min_date = ts
@@ -572,10 +593,10 @@ def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Ses
 
 def _import_json(content: bytes, meter_id: int, frequency: FrequencyType, db: Session):
     """Parse JSON and import readings"""
-    data = json.loads(content.decode('utf-8'))
+    data = json.loads(content.decode("utf-8"))
 
     if isinstance(data, dict):
-        readings_list = data.get('readings', data.get('data', []))
+        readings_list = data.get("readings", data.get("data", []))
     else:
         readings_list = data
 
@@ -589,8 +610,8 @@ def _import_json(content: bytes, meter_id: int, frequency: FrequencyType, db: Se
 
     for item in readings_list:
         try:
-            ts_str = item.get('timestamp') or item.get('date') or item.get('horodatage')
-            value = item.get('value_kwh') or item.get('kwh') or item.get('valeur')
+            ts_str = item.get("timestamp") or item.get("date") or item.get("horodatage")
+            value = item.get("value_kwh") or item.get("kwh") or item.get("valeur")
 
             if not ts_str or value is None:
                 rows_skipped += 1
@@ -606,13 +627,11 @@ def _import_json(content: bytes, meter_id: int, frequency: FrequencyType, db: Se
                 rows_errored += 1
                 continue
 
-            batch.append(MeterReading(
-                meter_id=meter_id,
-                timestamp=ts,
-                frequency=frequency,
-                value_kwh=round(value, 3),
-                is_estimated=False
-            ))
+            batch.append(
+                MeterReading(
+                    meter_id=meter_id, timestamp=ts, frequency=frequency, value_kwh=round(value, 3), is_estimated=False
+                )
+            )
 
             if min_date is None or ts < min_date:
                 min_date = ts

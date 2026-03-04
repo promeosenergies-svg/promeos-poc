@@ -14,15 +14,17 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 
 const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
-const backend = (rel) => readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
-const backendExists = (rel) => existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
+const backend = (rel) =>
+  readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf8');
+const backendExists = (rel) =>
+  existsSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel));
 
 const PAYMENT_PAGE = src('pages/PaymentRulesPage.jsx');
-const SITE360       = src('pages/Site360.jsx');
-const PATRIMOINE    = src('pages/Patrimoine.jsx');
-const API_JS        = src('services/api.js');
-const NAV_REG       = src('layout/NavRegistry.js');
-const APP_JSX       = src('App.jsx');
+const SITE360 = src('pages/Site360.jsx');
+const PATRIMOINE = src('pages/Patrimoine.jsx');
+const API_JS = src('services/api.js');
+const NAV_REG = src('layout/NavRegistry.js');
+const APP_JSX = src('App.jsx');
 const CONTRACTS_CMP = src('components/SiteContractsSummary.jsx');
 
 // ── A. PaymentRulesPage ────────────────────────────────────────────────
@@ -88,12 +90,24 @@ describe('C. Patrimoine badge', () => {
 // ── D. api.js V96 functions ─────────────────────────────────────────────
 
 describe('D. api.js V96', () => {
-  test('getPaymentRules', () => { expect(API_JS).toMatch(/getPaymentRules/); });
-  test('getSitePaymentInfo', () => { expect(API_JS).toMatch(/getSitePaymentInfo/); });
-  test('getReconciliation', () => { expect(API_JS).toMatch(/getReconciliation/); });
-  test('getPortfolioReconciliation', () => { expect(API_JS).toMatch(/getPortfolioReconciliation/); });
-  test('getPatrimoineContracts', () => { expect(API_JS).toMatch(/getPatrimoineContracts/); });
-  test('applyPaymentRulesBulk', () => { expect(API_JS).toMatch(/applyPaymentRulesBulk/); });
+  test('getPaymentRules', () => {
+    expect(API_JS).toMatch(/getPaymentRules/);
+  });
+  test('getSitePaymentInfo', () => {
+    expect(API_JS).toMatch(/getSitePaymentInfo/);
+  });
+  test('getReconciliation', () => {
+    expect(API_JS).toMatch(/getReconciliation/);
+  });
+  test('getPortfolioReconciliation', () => {
+    expect(API_JS).toMatch(/getPortfolioReconciliation/);
+  });
+  test('getPatrimoineContracts', () => {
+    expect(API_JS).toMatch(/getPatrimoineContracts/);
+  });
+  test('applyPaymentRulesBulk', () => {
+    expect(API_JS).toMatch(/applyPaymentRulesBulk/);
+  });
 });
 
 // ── E. NavRegistry + App.jsx wiring ─────────────────────────────────────

@@ -4,14 +4,25 @@
  *         computeInsights (6 rules)
  */
 import { describe, it, expect } from 'vitest';
-import { aggregateSeries, convertUnit, colorForSite, interpretClimateSensitivity } from '../consumption/helpers';
+import {
+  aggregateSeries,
+  convertUnit,
+  colorForSite,
+  interpretClimateSensitivity,
+} from '../consumption/helpers';
 import { computeInsights } from '../consumption/insightRules';
 
 // ── aggregateSeries ───────────────────────────────────────────────────────
 
 describe('aggregateSeries', () => {
-  const siteA = [{ date: 'd1', kwh: 100 }, { date: 'd2', kwh: 200 }];
-  const siteB = [{ date: 'd1', kwh: 50 }, { date: 'd2', kwh: 150 }];
+  const siteA = [
+    { date: 'd1', kwh: 100 },
+    { date: 'd2', kwh: 200 },
+  ];
+  const siteB = [
+    { date: 'd1', kwh: 50 },
+    { date: 'd2', kwh: 150 },
+  ];
 
   it('empty input => empty array', () => {
     expect(aggregateSeries({}, 'agrege')).toEqual([]);
@@ -52,20 +63,23 @@ describe('aggregateSeries', () => {
     const onlyD3 = [{ date: 'd3', kwh: 99 }];
     const result = aggregateSeries({ s1: siteA, s2: onlyD3 }, 'agrege');
     expect(result).toHaveLength(3); // d1, d2, d3
-    expect(result.find(r => r.date === 'd1').kwh).toBe(100);
-    expect(result.find(r => r.date === 'd3').kwh).toBe(99);
+    expect(result.find((r) => r.date === 'd1').kwh).toBe(100);
+    expect(result.find((r) => r.date === 'd3').kwh).toBe(99);
   });
 
   it('superpose: aligns by date with gaps', () => {
     const short = [{ date: 'd2', kwh: 77 }]; // only d2
     const result = aggregateSeries({ s1: siteA, s2: short }, 'superpose');
     expect(result).toHaveLength(2);
-    expect(result.find(r => r.date === 'd1').kwh_s2).toBeNull();
-    expect(result.find(r => r.date === 'd2').kwh_s2).toBe(77);
+    expect(result.find((r) => r.date === 'd1').kwh_s2).toBeNull();
+    expect(result.find((r) => r.date === 'd2').kwh_s2).toBe(77);
   });
 
   it('agrege: uses p50 fallback when kwh missing', () => {
-    const p50Data = [{ date: 'd1', p50: 30 }, { date: 'd2', p50: 40 }];
+    const p50Data = [
+      { date: 'd1', p50: 30 },
+      { date: 'd2', p50: 40 },
+    ];
     const result = aggregateSeries({ s1: siteA, s2: p50Data }, 'agrege');
     expect(result[0].kwh).toBe(130); // 100 + 30
     expect(result[1].kwh).toBe(240); // 200 + 40
@@ -112,7 +126,7 @@ describe('colorForSite', () => {
   });
 
   it('different indices get different colors (first 5)', () => {
-    const colors = [0, 1, 2, 3, 4].map(i => colorForSite('s', i));
+    const colors = [0, 1, 2, 3, 4].map((i) => colorForSite('s', i));
     expect(new Set(colors).size).toBe(5);
   });
 });
@@ -142,61 +156,65 @@ describe('computeInsights', () => {
 
   it('ruleOutsideBandHigh: outside_pct > 15 => warn', () => {
     const insights = computeInsights({ primaryTunnel: { outside_pct: 25, confidence: 'high' } });
-    expect(insights.find(i => i.id === 'outside_band_high')).toBeTruthy();
-    expect(insights.find(i => i.id === 'outside_band_high').severity).toBe('warn');
+    expect(insights.find((i) => i.id === 'outside_band_high')).toBeTruthy();
+    expect(insights.find((i) => i.id === 'outside_band_high').severity).toBe('warn');
   });
 
   it('ruleOutsideBandHigh: outside_pct > 30 => crit', () => {
     const insights = computeInsights({ primaryTunnel: { outside_pct: 35, confidence: 'high' } });
-    expect(insights.find(i => i.id === 'outside_band_high').severity).toBe('crit');
+    expect(insights.find((i) => i.id === 'outside_band_high').severity).toBe('crit');
   });
 
   it('ruleOutsideBandHigh: outside_pct <= 15 => no insight', () => {
     const insights = computeInsights({ primaryTunnel: { outside_pct: 10, confidence: 'high' } });
-    expect(insights.find(i => i.id === 'outside_band_high')).toBeUndefined();
+    expect(insights.find((i) => i.id === 'outside_band_high')).toBeUndefined();
   });
 
   it('ruleBaseLoadDrift: base_drift_pct > 10 => warn', () => {
-    const insights = computeInsights({ primaryWeather: { drift: { base_drift_pct: 15 }, alerts: [] } });
-    expect(insights.find(i => i.id === 'base_load_drift')).toBeTruthy();
+    const insights = computeInsights({
+      primaryWeather: { drift: { base_drift_pct: 15 }, alerts: [] },
+    });
+    expect(insights.find((i) => i.id === 'base_load_drift')).toBeTruthy();
   });
 
   it('ruleBaseLoadDrift: drift < 10 => no insight', () => {
-    const insights = computeInsights({ primaryWeather: { drift: { base_drift_pct: 5 }, alerts: [] } });
-    expect(insights.find(i => i.id === 'base_load_drift')).toBeUndefined();
+    const insights = computeInsights({
+      primaryWeather: { drift: { base_drift_pct: 5 }, alerts: [] },
+    });
+    expect(insights.find((i) => i.id === 'base_load_drift')).toBeUndefined();
   });
 
   it('ruleHpRatioHigh: hp_ratio > 0.7 => info', () => {
     const insights = computeInsights({ primaryHphc: { hp_ratio: 0.75, confidence: 'high' } });
-    expect(insights.find(i => i.id === 'hp_ratio_high')).toBeTruthy();
-    expect(insights.find(i => i.id === 'hp_ratio_high').severity).toBe('info');
+    expect(insights.find((i) => i.id === 'hp_ratio_high')).toBeTruthy();
+    expect(insights.find((i) => i.id === 'hp_ratio_high').severity).toBe('info');
   });
 
   it('ruleTargetOverBudget: progress > 110 => warn', () => {
     const insights = computeInsights({
-      primaryProgression: { progress_pct: 120, run_rate_kwh: 5000 }
+      primaryProgression: { progress_pct: 120, run_rate_kwh: 5000 },
     });
-    expect(insights.find(i => i.id === 'target_over_budget')).toBeTruthy();
+    expect(insights.find((i) => i.id === 'target_over_budget')).toBeTruthy();
   });
 
   it('ruleGasLeakSuspect: probable_leak alert => crit', () => {
     const insights = computeInsights({
-      primaryWeather: { alerts: [{ type: 'probable_leak', message: 'test' }], drift: null }
+      primaryWeather: { alerts: [{ type: 'probable_leak', message: 'test' }], drift: null },
     });
-    expect(insights.find(i => i.id === 'gas_leak_suspect').severity).toBe('crit');
+    expect(insights.find((i) => i.id === 'gas_leak_suspect').severity).toBe('crit');
   });
 
   it('ruleLowConfidence: any panel has low confidence => info', () => {
     const insights = computeInsights({ primaryTunnel: { outside_pct: 5, confidence: 'low' } });
-    expect(insights.find(i => i.id === 'low_confidence')).toBeTruthy();
-    expect(insights.find(i => i.id === 'low_confidence').severity).toBe('info');
+    expect(insights.find((i) => i.id === 'low_confidence')).toBeTruthy();
+    expect(insights.find((i) => i.id === 'low_confidence').severity).toBe('info');
   });
 
   it('insights sorted: crit before warn before info', () => {
     const insights = computeInsights({
-      primaryTunnel: { outside_pct: 35, confidence: 'low' },  // crit + info
+      primaryTunnel: { outside_pct: 35, confidence: 'low' }, // crit + info
     });
-    const severities = insights.map(i => i.severity);
+    const severities = insights.map((i) => i.severity);
     const critIdx = severities.indexOf('crit');
     const infoIdx = severities.indexOf('info');
     if (critIdx >= 0 && infoIdx >= 0) {

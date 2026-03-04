@@ -41,7 +41,7 @@ function Dashboard({ onUpgradeClick }) {
   }, [fetchAlertes]);
 
   const orgName = org?.nom;
-  const sitesActifs = orgSites.filter(s => s.actif).length;
+  const sitesActifs = orgSites.filter((s) => s.actif).length;
 
   // Etat erreur
   if (error && !loading) {
@@ -73,18 +73,11 @@ function Dashboard({ onUpgradeClick }) {
       icon={Flame}
       title={orgName ? `${orgName} — Tableau de bord` : 'PROMEOS — Tableau de bord'}
       subtitle="Gestion énergétique multi-sites"
-      actions={
-        <Badge status="warning">Historique — utiliser Centre de Commande</Badge>
-      }
+      actions={<Badge status="warning">Historique — utiliser Centre de Commande</Badge>}
     >
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KpiCard
-          icon={Building2}
-          title="Sites total"
-          value={sitesCount}
-          color="bg-blue-600"
-        />
+        <KpiCard icon={Building2} title="Sites total" value={sitesCount} color="bg-blue-600" />
         <KpiCard
           icon={TrendingUp}
           title="Sites actifs"
@@ -129,14 +122,17 @@ function Dashboard({ onUpgradeClick }) {
                 {orgSites.slice(0, 10).map((site) => (
                   <Tr key={site.id}>
                     <Td className="font-medium">{site.nom}</Td>
-                    <Td><Badge status="info">{site.type}</Badge></Td>
+                    <Td>
+                      <Badge status="info">{site.type}</Badge>
+                    </Td>
                     <Td>{site.ville}</Td>
                     <Td className="text-gray-500 text-sm">{site.region}</Td>
                     <Td>
-                      {site.actif
-                        ? <Badge status="success">Actif</Badge>
-                        : <Badge status="neutral">Inactif</Badge>
-                      }
+                      {site.actif ? (
+                        <Badge status="success">Actif</Badge>
+                      ) : (
+                        <Badge status="neutral">Inactif</Badge>
+                      )}
                     </Td>
                   </Tr>
                 ))}
@@ -167,9 +163,11 @@ function Dashboard({ onUpgradeClick }) {
                   </div>
                   <Badge
                     status={
-                      alerte.severite === 'critical' ? 'danger'
-                        : alerte.severite === 'warning' ? 'warning'
-                        : 'info'
+                      alerte.severite === 'critical'
+                        ? 'danger'
+                        : alerte.severite === 'warning'
+                          ? 'warning'
+                          : 'info'
                     }
                   >
                     {alerte.severite}

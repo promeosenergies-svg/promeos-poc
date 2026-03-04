@@ -29,7 +29,7 @@ describe('ErrorBoundary source guards', () => {
     expect(src).toMatch(/onClick.*setState.*hasError:\s*false/);
   });
 
-  it('has a Retour a l\'accueil button that navigates home', () => {
+  it("has a Retour a l'accueil button that navigates home", () => {
     expect(src).toContain("Retour a l'accueil");
     expect(src).toContain("window.location.assign('/')");
   });

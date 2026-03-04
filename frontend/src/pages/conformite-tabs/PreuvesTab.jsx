@@ -3,17 +3,15 @@
  * Tab "Preuves & Rapports" with ProofSection per obligation.
  */
 import { FileText, Upload, FolderOpen } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../../ui';
-import {
-  STATUT_LABELS,
-} from '../../domain/compliance/complianceLabels.fr';
+import { Card, CardBody, Badge, EmptyState, TrustBadge } from '../../ui';
+import { STATUT_LABELS } from '../../domain/compliance/complianceLabels.fr';
 
 const STATUT_CONFIG = {
-  non_conforme:  { label: STATUT_LABELS.non_conforme,  border: 'border-red-200' },
-  a_risque:      { label: STATUT_LABELS.a_risque,      border: 'border-amber-200' },
-  a_qualifier:   { label: STATUT_LABELS.a_qualifier,   border: 'border-blue-200' },
-  conforme:      { label: STATUT_LABELS.conforme,      border: 'border-green-200' },
-  hors_perimetre:{ label: STATUT_LABELS.hors_perimetre,border: 'border-gray-200' },
+  non_conforme: { label: STATUT_LABELS.non_conforme, border: 'border-red-200' },
+  a_risque: { label: STATUT_LABELS.a_risque, border: 'border-amber-200' },
+  a_qualifier: { label: STATUT_LABELS.a_qualifier, border: 'border-blue-200' },
+  conforme: { label: STATUT_LABELS.conforme, border: 'border-green-200' },
+  hors_perimetre: { label: STATUT_LABELS.hors_perimetre, border: 'border-gray-200' },
 };
 
 function ProofSection({ obligation, files, onUpload }) {
@@ -25,16 +23,31 @@ function ProofSection({ obligation, files, onUpload }) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h4 className="text-sm font-semibold text-gray-900">{obligation.regulation}</h4>
-            <p className="text-xs text-gray-500">{obligation.sites_concernes} site(s) concerné(s)</p>
+            <p className="text-xs text-gray-500">
+              {obligation.sites_concernes} site(s) concerné(s)
+            </p>
           </div>
-          <Badge status={obligation.statut === 'conforme' ? 'ok' : obligation.statut === 'non_conforme' ? 'crit' : obligation.statut === 'a_qualifier' ? 'info' : 'warn'}>
+          <Badge
+            status={
+              obligation.statut === 'conforme'
+                ? 'ok'
+                : obligation.statut === 'non_conforme'
+                  ? 'crit'
+                  : obligation.statut === 'a_qualifier'
+                    ? 'info'
+                    : 'warn'
+            }
+          >
             {cfg.label}
           </Badge>
         </div>
         {files.length > 0 && (
           <div className="space-y-1 mb-3">
             {files.map((f, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded">
+              <div
+                key={i}
+                className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded"
+              >
                 <FileText size={14} className="text-indigo-500 shrink-0" />
                 <span className="truncate flex-1">{f.name}</span>
                 <span className="text-xs text-gray-400 whitespace-nowrap">{f.date}</span>
@@ -59,7 +72,14 @@ function ProofSection({ obligation, files, onUpload }) {
         <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
           <Upload size={14} />
           Ajouter un fichier
-          <input type="file" className="sr-only" onChange={(e) => { if (e.target.files[0]) onUpload(obligation.id, e.target.files[0]); e.target.value = ''; }} />
+          <input
+            type="file"
+            className="sr-only"
+            onChange={(e) => {
+              if (e.target.files[0]) onUpload(obligation.id, e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
         </label>
       </CardBody>
     </Card>
@@ -71,7 +91,9 @@ export default function PreuvesTab({ obligations, proofFiles, handleUploadProof 
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <FolderOpen size={16} className="text-indigo-600" />
-        <h3 className="text-sm font-semibold text-gray-700">Preuves par obligation ({obligations.length})</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          Preuves par obligation ({obligations.length})
+        </h3>
       </div>
 
       {obligations.length === 0 ? (
@@ -82,7 +104,7 @@ export default function PreuvesTab({ obligations, proofFiles, handleUploadProof 
         />
       ) : (
         <>
-          {obligations.map(o => (
+          {obligations.map((o) => (
             <ProofSection
               key={o.id}
               obligation={o}
@@ -93,7 +115,11 @@ export default function PreuvesTab({ obligations, proofFiles, handleUploadProof 
         </>
       )}
 
-      <TrustBadge source="Preuves locales" period="Téléversement local (non enregistré)" confidence="low" />
+      <TrustBadge
+        source="Preuves locales"
+        period="Téléversement local (non enregistré)"
+        confidence="low"
+      />
     </div>
   );
 }

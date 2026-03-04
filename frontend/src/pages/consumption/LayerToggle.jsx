@@ -23,7 +23,7 @@ export default function LayerToggle({ layers = {}, onToggle }) {
   return (
     <div className="flex flex-col gap-1.5 min-w-[130px]">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Calques</p>
-      {LAYER_ORDER.map(key => {
+      {LAYER_ORDER.map((key) => {
         const Icon = LAYER_ICONS[key] || Activity;
         const active = !!layers[key];
         return (
@@ -39,7 +39,9 @@ export default function LayerToggle({ layers = {}, onToggle }) {
             <Icon size={12} className="shrink-0" />
             <span className="flex-1">{LAYER_LABELS[key]}</span>
             {/* Toggle indicator */}
-            <span className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-blue-500' : 'bg-gray-200'}`} />
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-blue-500' : 'bg-gray-200'}`}
+            />
           </button>
         );
       })}

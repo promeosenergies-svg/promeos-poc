@@ -55,7 +55,11 @@ function PermCell({ value }) {
     return <X size={16} className="text-gray-300 mx-auto" />;
   }
   if (value === '__all__') {
-    return <span className="text-xs font-semibold text-green-700 bg-green-50 px-1.5 py-0.5 rounded">ALL</span>;
+    return (
+      <span className="text-xs font-semibold text-green-700 bg-green-50 px-1.5 py-0.5 rounded">
+        ALL
+      </span>
+    );
   }
   if (Array.isArray(value)) {
     if (value.length === 0) return <X size={16} className="text-gray-300 mx-auto" />;
@@ -89,7 +93,11 @@ export default function AdminRolesPage() {
   if (!hasPermission('admin')) {
     return (
       <PageShell icon={Shield} title="Rôles & Permissions">
-        <EmptyState icon={Shield} title="Accès refusé" text="Vous n'avez pas les droits d'administration." />
+        <EmptyState
+          icon={Shield}
+          title="Accès refusé"
+          text="Vous n'avez pas les droits d'administration."
+        />
       </PageShell>
     );
   }
@@ -114,9 +122,14 @@ export default function AdminRolesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600 sticky left-0 bg-gray-50">Role</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600 sticky left-0 bg-gray-50">
+                Role
+              </th>
               {permKeys.map((k) => (
-                <th key={k} className="text-center px-3 py-3 font-semibold text-gray-600 min-w-[100px]">
+                <th
+                  key={k}
+                  className="text-center px-3 py-3 font-semibold text-gray-600 min-w-[100px]"
+                >
                   {PERM_LABELS[k]}
                 </th>
               ))}
@@ -126,7 +139,9 @@ export default function AdminRolesPage() {
             {roles.map((r) => (
               <tr key={r.role} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3 sticky left-0 bg-white">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[r.role] || 'bg-gray-100 text-gray-700'}`}>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[r.role] || 'bg-gray-100 text-gray-700'}`}
+                  >
                     {ROLE_LABELS[r.role] || r.role}
                   </span>
                 </td>
@@ -142,7 +157,8 @@ export default function AdminRolesPage() {
       </div>
 
       <p className="mt-4 text-xs text-gray-400">
-        Les rôles système sont fixes et ne peuvent pas être modifiés. Le périmètre d'accès (scope) est configuré par utilisateur via les Assignments.
+        Les rôles système sont fixes et ne peuvent pas être modifiés. Le périmètre d'accès (scope)
+        est configuré par utilisateur via les Assignments.
       </p>
     </PageShell>
   );

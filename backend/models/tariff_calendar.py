@@ -2,12 +2,14 @@
 PROMEOS — TariffCalendar model (system-level reference tariff schedules)
 Separate from TOUSchedule (user/site-level). Used for TURPE versioning & simulation.
 """
+
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text
 from .base import Base, TimestampMixin
 
 
 class TariffCalendar(Base, TimestampMixin):
     """Reference tariff calendar (TURPE, etc.) — system-level, not site-specific."""
+
     __tablename__ = "tariff_calendars"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

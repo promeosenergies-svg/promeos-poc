@@ -11,7 +11,9 @@ const MAX_EVENTS = 200;
 function loadEvents() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function persistEvents(events) {

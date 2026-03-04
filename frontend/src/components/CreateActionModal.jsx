@@ -29,12 +29,23 @@ const STATUT_OPTIONS = [
   { value: 'in_progress', label: 'En cours' },
 ];
 
-export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null, siteId = null, sourceType = 'manual', sourceId = null, idempotencyKey = null }) {
+export default function CreateActionModal({
+  open,
+  onClose,
+  onSave,
+  defaultSite = '',
+  defaultType = 'conformite',
+  prefill = null,
+  siteId = null,
+  sourceType = 'manual',
+  sourceId = null,
+  idempotencyKey = null,
+}) {
   const [saving, setSaving] = useState(false);
   const { orgSites, selectedSiteId: scopeSiteId } = useScope();
 
   const siteOptions = useMemo(() => {
-    const opts = (orgSites || []).map(s => ({ value: String(s.id), label: s.nom }));
+    const opts = (orgSites || []).map((s) => ({ value: String(s.id), label: s.nom }));
     if (!opts.length) return [{ value: '', label: 'Aucun site' }];
     return [{ value: '', label: 'Sélectionner un site…' }, ...opts];
   }, [orgSites]);
@@ -64,8 +75,16 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
   useEffect(() => {
     if (open) {
       setForm({
-        titre: '', type: defaultType, site: resolvedDefaultSite, impact_eur: '', effort: '',
-        priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '',
+        titre: '',
+        type: defaultType,
+        site: resolvedDefaultSite,
+        impact_eur: '',
+        effort: '',
+        priorite: 'high',
+        statut: 'backlog',
+        owner: '',
+        due_date: '',
+        description: '',
         ...(prefill || {}),
       });
     }
@@ -115,7 +134,18 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
     } finally {
       setSaving(false);
     }
-    setForm({ titre: '', type: defaultType, site: resolvedDefaultSite, impact_eur: '', effort: '', priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '' });
+    setForm({
+      titre: '',
+      type: defaultType,
+      site: resolvedDefaultSite,
+      impact_eur: '',
+      effort: '',
+      priorite: 'high',
+      statut: 'backlog',
+      owner: '',
+      due_date: '',
+      description: '',
+    });
     onClose();
   }
 
@@ -130,19 +160,60 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
           required
         />
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Type" options={TYPE_OPTIONS} value={form.type} onChange={(e) => handleChange('type', e.target.value)} />
-          <Select label="Priorité" options={PRIORITE_OPTIONS} value={form.priorite} onChange={(e) => handleChange('priorite', e.target.value)} />
+          <Select
+            label="Type"
+            options={TYPE_OPTIONS}
+            value={form.type}
+            onChange={(e) => handleChange('type', e.target.value)}
+          />
+          <Select
+            label="Priorité"
+            options={PRIORITE_OPTIONS}
+            value={form.priorite}
+            onChange={(e) => handleChange('priorite', e.target.value)}
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Site concerné" options={siteOptions} value={form.site} onChange={(e) => handleChange('site', e.target.value)} />
-          <Select label="Statut" options={STATUT_OPTIONS} value={form.statut} onChange={(e) => handleChange('statut', e.target.value)} />
+          <Select
+            label="Site concerné"
+            options={siteOptions}
+            value={form.site}
+            onChange={(e) => handleChange('site', e.target.value)}
+          />
+          <Select
+            label="Statut"
+            options={STATUT_OPTIONS}
+            value={form.statut}
+            onChange={(e) => handleChange('statut', e.target.value)}
+          />
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <Input label="Impact EUR" type="number" placeholder="5000" value={form.impact_eur} onChange={(e) => handleChange('impact_eur', e.target.value)} />
-          <Input label="Effort (j/h)" placeholder="2j" value={form.effort} onChange={(e) => handleChange('effort', e.target.value)} />
-          <Input label="Échéance" type="date" value={form.due_date} onChange={(e) => handleChange('due_date', e.target.value)} />
+          <Input
+            label="Impact EUR"
+            type="number"
+            placeholder="5000"
+            value={form.impact_eur}
+            onChange={(e) => handleChange('impact_eur', e.target.value)}
+          />
+          <Input
+            label="Effort (j/h)"
+            placeholder="2j"
+            value={form.effort}
+            onChange={(e) => handleChange('effort', e.target.value)}
+          />
+          <Input
+            label="Échéance"
+            type="date"
+            value={form.due_date}
+            onChange={(e) => handleChange('due_date', e.target.value)}
+          />
         </div>
-        <Input label="Responsable" placeholder="Jean Dupont" value={form.owner} onChange={(e) => handleChange('owner', e.target.value)} />
+        <Input
+          label="Responsable"
+          placeholder="Jean Dupont"
+          value={form.owner}
+          onChange={(e) => handleChange('owner', e.target.value)}
+        />
         {form.obligation_code && (
           <div className="p-3 bg-blue-50 rounded-lg">
             <p className="text-xs font-semibold text-blue-600 uppercase mb-0.5">Obligation liée</p>
@@ -161,8 +232,12 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
           />
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>Annuler</Button>
-          <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : 'Créer l\'action'}</Button>
+          <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? 'Enregistrement...' : "Créer l'action"}
+          </Button>
         </div>
       </form>
     </Modal>

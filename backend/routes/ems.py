@@ -2,6 +2,7 @@
 PROMEOS - EMS Consumption Explorer Routes
 Timeseries, weather, energy signature, saved views, collections, demo data.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -23,10 +24,12 @@ class TimeseriesDataPoint(BaseModel):
     quality: Optional[float] = None
     estimated_pct: Optional[float] = None
 
+
 class TimeseriesSeries(BaseModel):
     key: str
     label: str
     data: List[TimeseriesDataPoint]
+
 
 class TimeseriesMeta(BaseModel):
     granularity: str
@@ -39,12 +42,14 @@ class TimeseriesMeta(BaseModel):
     available_granularities: Optional[List[str]] = None
     valid_count: Optional[int] = None
 
+
 class TimeseriesAvailability(BaseModel):
     key: str
     expected_points: Optional[int] = None
     actual_points: Optional[int] = None
     coverage_pct: Optional[float] = None
     gaps: List = []
+
 
 class TimeseriesResponse(BaseModel):
     series: List[TimeseriesSeries]
@@ -110,10 +115,7 @@ def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
     # 1. Try NAF mapping via KBMappingCode → KBArchetype
     if site.naf_code:
         mapping = (
-            db.query(KBMappingCode)
-            .filter_by(naf_code=site.naf_code)
-            .order_by(KBMappingCode.priority.desc())
-            .first()
+            db.query(KBMappingCode).filter_by(naf_code=site.naf_code).order_by(KBMappingCode.priority.desc()).first()
         )
         if mapping and mapping.archetype:
             arch = mapping.archetype
@@ -197,13 +199,12 @@ def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
 
     # Determine peer group: same site type
     peer_site_ids = [
-        r[0] for r in db.query(Site.id)
-        .filter(Site.type == site.type, Site.id != site_id, Site.actif == True)
-        .all()
+        r[0] for r in db.query(Site.id).filter(Site.type == site.type, Site.id != site_id, Site.actif == True).all()
     ]
 
     # Collect peer KPIs from latest snapshots (batch query, not N+1)
     from sqlalchemy import func
+
     latest_snap_ids = (
         db.query(func.max(MonitoringSnapshot.id))
         .filter(MonitoringSnapshot.site_id.in_(peer_site_ids))
@@ -215,7 +216,13 @@ def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
     peer_kpis_list = [s.kpis_json for s in peer_snaps if s.kpis_json]
 
     if len(peer_kpis_list) < 3:
-        return {"site_id": site_id, "insufficient": True, "peer_count": len(peer_kpis_list), "benchmarks": {}, "source": "demo"}
+        return {
+            "site_id": site_id,
+            "insufficient": True,
+            "peer_count": len(peer_kpis_list),
+            "benchmarks": {},
+            "source": "demo",
+        }
 
     benchmark_keys = ["pbase_kw", "off_hours_ratio", "load_factor", "pmax_kw", "p95_kw"]
     benchmarks = build_benchmark(target_kpis, peer_kpis_list, benchmark_keys)
@@ -241,6 +248,7 @@ def schedule_suggest(
 ):
     """Suggest operating schedule from actual consumption data."""
     from services.ems.schedule_suggest_service import suggest_schedule_from_consumption
+
     try:
         return suggest_schedule_from_consumption(db, site_id, days)
     except Exception as e:
@@ -263,7 +271,10 @@ def get_timeseries(
     db: Session = Depends(get_db),
 ):
     from services.ems.timeseries_service import (
-        query_timeseries, suggest_granularity, validate_cap_points, VALID_GRANULARITIES,
+        query_timeseries,
+        suggest_granularity,
+        validate_cap_points,
+        VALID_GRANULARITIES,
     )
 
     parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
@@ -284,16 +295,26 @@ def get_timeseries(
 
     ok, suggested, estimated = validate_cap_points(dt_from, dt_to, granularity)
     if not ok:
-        raise HTTPException(400, detail={
-            "error": "too_many_points",
-            "estimated": estimated,
-            "cap": 5000,
-            "suggested_granularity": suggested,
-        })
+        raise HTTPException(
+            400,
+            detail={
+                "error": "too_many_points",
+                "estimated": estimated,
+                "cap": 5000,
+                "suggested_granularity": suggested,
+            },
+        )
 
     return query_timeseries(
-        db, parsed_site_ids, parsed_meter_ids,
-        dt_from, dt_to, granularity, mode, metric, energy_vector,
+        db,
+        parsed_site_ids,
+        parsed_meter_ids,
+        dt_from,
+        dt_to,
+        granularity,
+        mode,
+        metric,
+        energy_vector,
     )
 
 
@@ -303,6 +324,7 @@ def suggest_timeseries_granularity(
     date_to: str = Query(...),
 ):
     from services.ems.timeseries_service import suggest_granularity
+
     dt_from = datetime.fromisoformat(date_from)
     dt_to = datetime.fromisoformat(date_to)
     recommended = suggest_granularity(dt_from, dt_to)
@@ -322,6 +344,7 @@ def get_weather_data(
 ):
     from services.ems.weather_service import get_weather, get_weather_multi
     from datetime import date as date_cls
+
     df = date_cls.fromisoformat(date_from)
     dt = date_cls.fromisoformat(date_to)
 
@@ -358,10 +381,14 @@ def run_energy_signature(
 
     # Get daily consumption
     ts_data = query_timeseries(
-        db, [site_id], parsed_meter_ids,
+        db,
+        [site_id],
+        parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
         datetime.combine(dt_to, datetime.min.time()),
-        "daily", "aggregate", "kwh",
+        "daily",
+        "aggregate",
+        "kwh",
     )
 
     if not ts_data["series"] or not ts_data["series"][0]["data"]:
@@ -412,10 +439,14 @@ def run_portfolio_signature(
 
     # Get aggregated daily consumption across all sites
     ts_data = query_timeseries(
-        db, parsed_site_ids, parsed_meter_ids,
+        db,
+        parsed_site_ids,
+        parsed_meter_ids,
         datetime.combine(df, datetime.min.time()),
         datetime.combine(dt_to, datetime.min.time()),
-        "daily", "aggregate", "kwh",
+        "daily",
+        "aggregate",
+        "kwh",
     )
 
     if not ts_data["series"] or not ts_data["series"][0]["data"]:
@@ -451,6 +482,7 @@ def list_views(
     db: Session = Depends(get_db),
 ):
     from models.ems_models import EmsSavedView
+
     q = db.query(EmsSavedView)
     if user_id is not None:
         # User's own views + shared views (user_id=null)
@@ -469,6 +501,7 @@ def create_view(
     db: Session = Depends(get_db),
 ):
     from models.ems_models import EmsSavedView
+
     view = EmsSavedView(name=name, config_json=config_json, user_id=user_id)
     db.add(view)
     db.flush()
@@ -479,6 +512,7 @@ def create_view(
 @router.get("/views/{view_id}")
 def get_view(view_id: int, db: Session = Depends(get_db)):
     from models.ems_models import EmsSavedView
+
     view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
     if not view:
         raise HTTPException(404, "View not found")
@@ -493,6 +527,7 @@ def update_view(
     db: Session = Depends(get_db),
 ):
     from models.ems_models import EmsSavedView
+
     view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
     if not view:
         raise HTTPException(404, "View not found")
@@ -508,6 +543,7 @@ def update_view(
 @router.delete("/views/{view_id}")
 def delete_view(view_id: int, db: Session = Depends(get_db)):
     from models.ems_models import EmsSavedView
+
     view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
     if not view:
         raise HTTPException(404, "View not found")
@@ -523,10 +559,16 @@ def delete_view(view_id: int, db: Session = Depends(get_db)):
 @router.get("/collections")
 def list_collections(db: Session = Depends(get_db)):
     from models.ems_models import EmsCollection
+
     cols = db.query(EmsCollection).order_by(EmsCollection.is_favorite.desc(), EmsCollection.id).all()
     return [
-        {"id": c.id, "name": c.name, "scope_type": c.scope_type,
-         "site_ids": json.loads(c.site_ids_json), "is_favorite": bool(c.is_favorite)}
+        {
+            "id": c.id,
+            "name": c.name,
+            "scope_type": c.scope_type,
+            "site_ids": json.loads(c.site_ids_json),
+            "is_favorite": bool(c.is_favorite),
+        }
         for c in cols
     ]
 
@@ -540,9 +582,11 @@ def create_collection(
     db: Session = Depends(get_db),
 ):
     from models.ems_models import EmsCollection
+
     parsed_ids = [int(x) for x in site_ids.split(",") if x.strip()]
     col = EmsCollection(
-        name=name, scope_type=scope_type,
+        name=name,
+        scope_type=scope_type,
         site_ids_json=json.dumps(parsed_ids),
         is_favorite=1 if is_favorite else 0,
     )
@@ -561,6 +605,7 @@ def update_collection(
     db: Session = Depends(get_db),
 ):
     from models.ems_models import EmsCollection
+
     col = db.query(EmsCollection).filter(EmsCollection.id == col_id).first()
     if not col:
         raise HTTPException(404, "Collection not found")
@@ -578,6 +623,7 @@ def update_collection(
 @router.delete("/collections/{col_id}")
 def delete_collection(col_id: int, db: Session = Depends(get_db)):
     from models.ems_models import EmsCollection
+
     col = db.query(EmsCollection).filter(EmsCollection.id == col_id).first()
     if not col:
         raise HTTPException(404, "Collection not found")
@@ -608,18 +654,21 @@ def generate_ems_demo(
     rng = _random.Random(seed)
 
     # Check idempotence: if demo readings exist and not force, skip
-    existing = db.query(MeterReading).join(Meter).filter(
-        Meter.meter_id.like("EMS-DEMO-%")
-    ).count()
+    existing = db.query(MeterReading).join(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).count()
     if existing > 0 and not force:
-        return {"status": "skipped", "message": f"{existing} demo readings already exist. Use force=true to regenerate."}
+        return {
+            "status": "skipped",
+            "message": f"{existing} demo readings already exist. Use force=true to regenerate.",
+        }
 
     # If force, purge old demo data
     if force and existing > 0:
         demo_meters = db.query(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).all()
         for dm in demo_meters:
             db.query(MeterReading).filter(MeterReading.meter_id == dm.id).delete()
-            db.query(EmsWeatherCache).filter(EmsWeatherCache.site_id == dm.site_id, EmsWeatherCache.source == "demo_ems").delete()
+            db.query(EmsWeatherCache).filter(
+                EmsWeatherCache.site_id == dm.site_id, EmsWeatherCache.source == "demo_ems"
+            ).delete()
         db.flush()
 
     # Resolve sites from scope (use first N available)
@@ -629,26 +678,122 @@ def generate_ems_demo(
 
     # Site profiles (realistic B2B french energy)
     PROFILES = [
-        {"archetype": "bureau", "base_kw": 8, "day_mult": 4.5, "wknd": 0.25, "season": 0.22, "night": 0.10, "heating_coeff": 0.4},
-        {"archetype": "bureau", "base_kw": 6, "day_mult": 3.5, "wknd": 0.30, "season": 0.18, "night": 0.12, "heating_coeff": 0.3},
-        {"archetype": "bureau", "base_kw": 10, "day_mult": 5.0, "wknd": 0.20, "season": 0.25, "night": 0.08, "heating_coeff": 0.5},
-        {"archetype": "bureau", "base_kw": 7, "day_mult": 4.0, "wknd": 0.28, "season": 0.20, "night": 0.11, "heating_coeff": 0.35},
-        {"archetype": "bureau", "base_kw": 9, "day_mult": 4.8, "wknd": 0.22, "season": 0.24, "night": 0.09, "heating_coeff": 0.45},
-        {"archetype": "retail", "base_kw": 18, "day_mult": 1.8, "wknd": 0.85, "season": 0.12, "night": 0.55, "heating_coeff": 0.15},
-        {"archetype": "retail", "base_kw": 22, "day_mult": 1.6, "wknd": 0.90, "season": 0.14, "night": 0.60, "heating_coeff": 0.12},
-        {"archetype": "retail", "base_kw": 15, "day_mult": 2.0, "wknd": 0.80, "season": 0.10, "night": 0.50, "heating_coeff": 0.18},
-        {"archetype": "logistique", "base_kw": 12, "day_mult": 3.0, "wknd": 0.15, "season": 0.08, "night": 0.05, "heating_coeff": 0.10},
-        {"archetype": "logistique", "base_kw": 14, "day_mult": 2.8, "wknd": 0.12, "season": 0.06, "night": 0.04, "heating_coeff": 0.08},
-        {"archetype": "datacenter", "base_kw": 50, "day_mult": 1.1, "wknd": 0.98, "season": 0.08, "night": 0.95, "heating_coeff": -0.2},
-        {"archetype": "process", "base_kw": 25, "day_mult": 2.5, "wknd": 0.40, "season": 0.05, "night": 0.20, "heating_coeff": 0.05},
+        {
+            "archetype": "bureau",
+            "base_kw": 8,
+            "day_mult": 4.5,
+            "wknd": 0.25,
+            "season": 0.22,
+            "night": 0.10,
+            "heating_coeff": 0.4,
+        },
+        {
+            "archetype": "bureau",
+            "base_kw": 6,
+            "day_mult": 3.5,
+            "wknd": 0.30,
+            "season": 0.18,
+            "night": 0.12,
+            "heating_coeff": 0.3,
+        },
+        {
+            "archetype": "bureau",
+            "base_kw": 10,
+            "day_mult": 5.0,
+            "wknd": 0.20,
+            "season": 0.25,
+            "night": 0.08,
+            "heating_coeff": 0.5,
+        },
+        {
+            "archetype": "bureau",
+            "base_kw": 7,
+            "day_mult": 4.0,
+            "wknd": 0.28,
+            "season": 0.20,
+            "night": 0.11,
+            "heating_coeff": 0.35,
+        },
+        {
+            "archetype": "bureau",
+            "base_kw": 9,
+            "day_mult": 4.8,
+            "wknd": 0.22,
+            "season": 0.24,
+            "night": 0.09,
+            "heating_coeff": 0.45,
+        },
+        {
+            "archetype": "retail",
+            "base_kw": 18,
+            "day_mult": 1.8,
+            "wknd": 0.85,
+            "season": 0.12,
+            "night": 0.55,
+            "heating_coeff": 0.15,
+        },
+        {
+            "archetype": "retail",
+            "base_kw": 22,
+            "day_mult": 1.6,
+            "wknd": 0.90,
+            "season": 0.14,
+            "night": 0.60,
+            "heating_coeff": 0.12,
+        },
+        {
+            "archetype": "retail",
+            "base_kw": 15,
+            "day_mult": 2.0,
+            "wknd": 0.80,
+            "season": 0.10,
+            "night": 0.50,
+            "heating_coeff": 0.18,
+        },
+        {
+            "archetype": "logistique",
+            "base_kw": 12,
+            "day_mult": 3.0,
+            "wknd": 0.15,
+            "season": 0.08,
+            "night": 0.05,
+            "heating_coeff": 0.10,
+        },
+        {
+            "archetype": "logistique",
+            "base_kw": 14,
+            "day_mult": 2.8,
+            "wknd": 0.12,
+            "season": 0.06,
+            "night": 0.04,
+            "heating_coeff": 0.08,
+        },
+        {
+            "archetype": "datacenter",
+            "base_kw": 50,
+            "day_mult": 1.1,
+            "wknd": 0.98,
+            "season": 0.08,
+            "night": 0.95,
+            "heating_coeff": -0.2,
+        },
+        {
+            "archetype": "process",
+            "base_kw": 25,
+            "day_mult": 2.5,
+            "wknd": 0.40,
+            "season": 0.05,
+            "night": 0.20,
+            "heating_coeff": 0.05,
+        },
     ]
 
     # Anomaly injection targets
     ANOMALIES = {
-        0: "high_night_base",   # Bureau with elevated night consumption
-        5: "morning_peaks",     # Retail with recurring morning peaks
-        8: "progressive_drift", # Logistique with progressive drift over months
-        3: "profile_rupture",   # Bureau with schedule change mid-year
+        0: "high_night_base",  # Bureau with elevated night consumption
+        5: "morning_peaks",  # Retail with recurring morning peaks
+        8: "progressive_drift",  # Logistique with progressive drift over months
+        3: "profile_rupture",  # Bureau with schedule change mid-year
     }
 
     now = datetime.now(timezone.utc)
@@ -677,7 +822,7 @@ def generate_ems_demo(
         site_rng = _random.Random(seed * 1000 + site.id)
 
         for day_offset in range(days):
-            dt_day = start_date + __import__('datetime').timedelta(days=day_offset)
+            dt_day = start_date + __import__("datetime").timedelta(days=day_offset)
             dow = dt_day.weekday()
             is_wknd = dow >= 5
             month = dt_day.month
@@ -722,14 +867,16 @@ def generate_ems_demo(
                         value *= 2.0
 
                 value = max(0.1, value)
-                readings.append(MeterReading(
-                    meter_id=meter.id,
-                    timestamp=ts,
-                    frequency=FrequencyType.HOURLY,
-                    value_kwh=round(value, 2),
-                    is_estimated=False,
-                    quality_score=site_rng.uniform(0.85, 1.0),
-                ))
+                readings.append(
+                    MeterReading(
+                        meter_id=meter.id,
+                        timestamp=ts,
+                        frequency=FrequencyType.HOURLY,
+                        value_kwh=round(value, 2),
+                        is_estimated=False,
+                        quality_score=site_rng.uniform(0.85, 1.0),
+                    )
+                )
 
             # Weather cache for this site/day
             weather_entry = EmsWeatherCache(
@@ -755,12 +902,15 @@ def generate_ems_demo(
         db.flush()
 
         total_readings += len(meter_readings)
-        site_reports.append({
-            "site_id": site.id, "site_nom": site.nom,
-            "archetype": profile["archetype"],
-            "readings": len(meter_readings),
-            "anomaly": anomaly_type,
-        })
+        site_reports.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "archetype": profile["archetype"],
+                "readings": len(meter_readings),
+                "anomaly": anomaly_type,
+            }
+        )
 
     db.commit()
 
@@ -799,9 +949,11 @@ def generate_timeseries_demo(
     """
     if energy_vector == "gas":
         from services.consumption_diagnostic import generate_demo_gas_consumption
+
         result = generate_demo_gas_consumption(db, site_id, days=days, anomaly=anomaly)
     else:
         from services.consumption_diagnostic import generate_demo_consumption
+
         result = generate_demo_consumption(db, site_id, days=days, anomaly=anomaly)
 
     if "error" in result:
@@ -828,10 +980,11 @@ def purge_ems_demo(db: Session = Depends(get_db)):
     deleted_weather = 0
     for dm in demo_meters:
         deleted_readings += db.query(MeterReading).filter(MeterReading.meter_id == dm.id).delete()
-        deleted_weather += db.query(EmsWeatherCache).filter(
-            EmsWeatherCache.site_id == dm.site_id,
-            EmsWeatherCache.source == "demo_ems"
-        ).delete()
+        deleted_weather += (
+            db.query(EmsWeatherCache)
+            .filter(EmsWeatherCache.site_id == dm.site_id, EmsWeatherCache.source == "demo_ems")
+            .delete()
+        )
         db.delete(dm)
 
     db.flush()
@@ -850,25 +1003,33 @@ def purge_ems_demo(db: Session = Depends(get_db)):
 REFERENCE_PROFILES = {
     # famille → puissance_class → hourly profile (24 values, kWh)
     "habitat": {
-        "0-6":   [0.3]*6 + [0.8,1.2,1.5,1.0,0.7,0.5,0.6,0.8,1.0,1.2,1.5,1.8,2.0,1.8,1.3,0.8,0.5,0.4],
-        "6-9":   [0.5]*6 + [1.2,2.0,2.5,1.8,1.2,0.8,1.0,1.4,1.8,2.2,2.8,3.5,3.8,3.2,2.2,1.4,0.8,0.6],
-        "9-12":  [0.8]*6 + [1.8,3.0,3.8,2.8,1.8,1.2,1.5,2.2,2.8,3.5,4.2,5.0,5.5,4.8,3.5,2.0,1.2,0.9],
-        "12-36": [1.2]*6 + [2.5,4.5,5.5,4.0,2.8,2.0,2.5,3.5,4.5,5.5,6.5,7.5,8.0,7.0,5.0,3.2,2.0,1.5],
-        ">36":   [2.0]*6 + [4.0,7.0,8.5,6.5,4.5,3.2,4.0,5.5,7.0,8.5,10.0,12.0,12.5,11.0,8.0,5.0,3.0,2.2],
+        "0-6": [0.3] * 6 + [0.8, 1.2, 1.5, 1.0, 0.7, 0.5, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0, 1.8, 1.3, 0.8, 0.5, 0.4],
+        "6-9": [0.5] * 6 + [1.2, 2.0, 2.5, 1.8, 1.2, 0.8, 1.0, 1.4, 1.8, 2.2, 2.8, 3.5, 3.8, 3.2, 2.2, 1.4, 0.8, 0.6],
+        "9-12": [0.8] * 6 + [1.8, 3.0, 3.8, 2.8, 1.8, 1.2, 1.5, 2.2, 2.8, 3.5, 4.2, 5.0, 5.5, 4.8, 3.5, 2.0, 1.2, 0.9],
+        "12-36": [1.2] * 6 + [2.5, 4.5, 5.5, 4.0, 2.8, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.0, 7.0, 5.0, 3.2, 2.0, 1.5],
+        ">36": [2.0] * 6
+        + [4.0, 7.0, 8.5, 6.5, 4.5, 3.2, 4.0, 5.5, 7.0, 8.5, 10.0, 12.0, 12.5, 11.0, 8.0, 5.0, 3.0, 2.2],
     },
     "petit_tertiaire": {
-        "0-6":   [0.2]*6 + [0.5,1.5,2.5,3.0,3.2,3.0,2.8,3.0,3.2,3.0,2.5,1.5,0.5,0.3,0.2,0.2,0.2,0.2],
-        "6-9":   [0.3]*6 + [0.8,2.5,4.0,5.0,5.5,5.0,4.5,5.0,5.5,5.0,4.0,2.5,0.8,0.5,0.3,0.3,0.3,0.3],
-        "9-12":  [0.5]*6 + [1.2,3.5,6.0,7.5,8.0,7.5,6.8,7.5,8.0,7.5,6.0,3.5,1.2,0.8,0.5,0.5,0.5,0.5],
-        "12-36": [0.8]*6 + [2.0,5.5,9.0,11.0,12.0,11.5,10.0,11.5,12.0,11.0,9.0,5.5,2.0,1.2,0.8,0.8,0.8,0.8],
-        ">36":   [1.5]*6 + [3.5,9.0,14.0,17.0,18.0,17.5,16.0,17.5,18.0,17.0,14.0,9.0,3.5,2.0,1.5,1.5,1.5,1.5],
+        "0-6": [0.2] * 6 + [0.5, 1.5, 2.5, 3.0, 3.2, 3.0, 2.8, 3.0, 3.2, 3.0, 2.5, 1.5, 0.5, 0.3, 0.2, 0.2, 0.2, 0.2],
+        "6-9": [0.3] * 6 + [0.8, 2.5, 4.0, 5.0, 5.5, 5.0, 4.5, 5.0, 5.5, 5.0, 4.0, 2.5, 0.8, 0.5, 0.3, 0.3, 0.3, 0.3],
+        "9-12": [0.5] * 6 + [1.2, 3.5, 6.0, 7.5, 8.0, 7.5, 6.8, 7.5, 8.0, 7.5, 6.0, 3.5, 1.2, 0.8, 0.5, 0.5, 0.5, 0.5],
+        "12-36": [0.8] * 6
+        + [2.0, 5.5, 9.0, 11.0, 12.0, 11.5, 10.0, 11.5, 12.0, 11.0, 9.0, 5.5, 2.0, 1.2, 0.8, 0.8, 0.8, 0.8],
+        ">36": [1.5] * 6
+        + [3.5, 9.0, 14.0, 17.0, 18.0, 17.5, 16.0, 17.5, 18.0, 17.0, 14.0, 9.0, 3.5, 2.0, 1.5, 1.5, 1.5, 1.5],
     },
     "entreprise": {
-        "0-6":   [1.0]*6 + [2.0,5.0,8.0,10.0,11.0,11.5,11.0,11.5,11.0,10.0,8.0,5.0,2.0,1.5,1.2,1.0,1.0,1.0],
-        "6-9":   [1.5]*6 + [3.0,7.5,12.0,15.0,16.5,17.0,16.0,17.0,16.5,15.0,12.0,7.5,3.0,2.0,1.8,1.5,1.5,1.5],
-        "9-12":  [2.5]*6 + [5.0,12.0,19.0,24.0,26.0,27.0,25.5,27.0,26.0,24.0,19.0,12.0,5.0,3.5,2.8,2.5,2.5,2.5],
-        "12-36": [4.0]*6 + [8.0,18.0,28.0,35.0,38.0,40.0,38.0,40.0,38.0,35.0,28.0,18.0,8.0,5.0,4.5,4.0,4.0,4.0],
-        ">36":   [6.0]*6 + [12.0,28.0,42.0,52.0,56.0,58.0,55.0,58.0,56.0,52.0,42.0,28.0,12.0,8.0,6.5,6.0,6.0,6.0],
+        "0-6": [1.0] * 6
+        + [2.0, 5.0, 8.0, 10.0, 11.0, 11.5, 11.0, 11.5, 11.0, 10.0, 8.0, 5.0, 2.0, 1.5, 1.2, 1.0, 1.0, 1.0],
+        "6-9": [1.5] * 6
+        + [3.0, 7.5, 12.0, 15.0, 16.5, 17.0, 16.0, 17.0, 16.5, 15.0, 12.0, 7.5, 3.0, 2.0, 1.8, 1.5, 1.5, 1.5],
+        "9-12": [2.5] * 6
+        + [5.0, 12.0, 19.0, 24.0, 26.0, 27.0, 25.5, 27.0, 26.0, 24.0, 19.0, 12.0, 5.0, 3.5, 2.8, 2.5, 2.5, 2.5],
+        "12-36": [4.0] * 6
+        + [8.0, 18.0, 28.0, 35.0, 38.0, 40.0, 38.0, 40.0, 38.0, 35.0, 28.0, 18.0, 8.0, 5.0, 4.5, 4.0, 4.0, 4.0],
+        ">36": [6.0] * 6
+        + [12.0, 28.0, 42.0, 52.0, 56.0, 58.0, 55.0, 58.0, 56.0, 52.0, 42.0, 28.0, 12.0, 8.0, 6.5, 6.0, 6.0, 6.0],
     },
 }
 
@@ -909,10 +1070,12 @@ def get_reference_profile(
             if is_weekend:
                 factor = 1.1 if famille == "habitat" else 0.4
                 base_kwh = base_kwh * factor
-            ref_series.append({
-                "t": f"{current.isoformat()} {hour:02d}:00:00",
-                "v": round(base_kwh, 2),
-            })
+            ref_series.append(
+                {
+                    "t": f"{current.isoformat()} {hour:02d}:00:00",
+                    "v": round(base_kwh, 2),
+                }
+            )
         current += timedelta(days=1)
 
     # Aggregate to daily if requested
@@ -927,11 +1090,14 @@ def get_reference_profile(
     kpi = None
     try:
         ts_data = query_timeseries(
-            db, [site_id], None,
+            db,
+            [site_id],
+            None,
             datetime.combine(df, datetime.min.time()),
             datetime.combine(dt_to, datetime.min.time()),
             granularity if granularity != "hourly" else "daily",
-            "aggregate", "kwh",
+            "aggregate",
+            "kwh",
         )
         if ts_data["series"] and ts_data["series"][0]["data"]:
             actual_total = sum(p["v"] for p in ts_data["series"][0]["data"] if p.get("v"))
@@ -1003,10 +1169,12 @@ def get_weather_hourly(
             # Sinusoidal: min at 5h UTC, max at 15h UTC
             phase = (h - 5) / 24 * 2 * math.pi
             temp = t_avg + (t_max - t_min) / 2 * math.sin(phase)
-            hours.append({
-                "t": f"{day_str}T{h:02d}:00:00Z",
-                "temp_c": round(temp, 1),
-            })
+            hours.append(
+                {
+                    "t": f"{day_str}T{h:02d}:00:00Z",
+                    "temp_c": round(temp, 1),
+                }
+            )
         current += timedelta(days=1)
 
     return {

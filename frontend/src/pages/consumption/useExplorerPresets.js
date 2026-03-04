@@ -55,7 +55,7 @@ export default function useExplorerPresets() {
   const savePreset = (name, state) => {
     if (!name?.trim()) return;
     // Remove existing entry with same name (overwrite)
-    const filtered = presets.filter(p => p.name !== name);
+    const filtered = presets.filter((p) => p.name !== name);
     const entry = { name, state, savedAt: new Date().toISOString() };
     // Append new entry, trim to MAX_PRESETS keeping most recent
     const next = [...filtered, entry].slice(-MAX_PRESETS);
@@ -68,7 +68,7 @@ export default function useExplorerPresets() {
    * @returns {object|null}
    */
   const loadPreset = (name) => {
-    return presets.find(p => p.name === name)?.state ?? null;
+    return presets.find((p) => p.name === name)?.state ?? null;
   };
 
   /**
@@ -76,7 +76,7 @@ export default function useExplorerPresets() {
    * @param {string} name
    */
   const deletePreset = (name) => {
-    persist(presets.filter(p => p.name !== name));
+    persist(presets.filter((p) => p.name !== name));
   };
 
   return { presets, savePreset, loadPreset, deletePreset };

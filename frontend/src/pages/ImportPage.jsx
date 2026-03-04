@@ -4,8 +4,27 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2, RefreshCw } from 'lucide-react';
-import { importSitesStandalone, seedDemoPack, getDemoPackStatus, getDemoPacks, resetDemoPack, clearApiCache } from '../services/api';
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  Download,
+  Trash2,
+  Database,
+  Package,
+  RotateCcw,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react';
+import {
+  importSitesStandalone,
+  seedDemoPack,
+  getDemoPackStatus,
+  getDemoPacks,
+  resetDemoPack,
+  clearApiCache,
+} from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -33,7 +52,7 @@ function ImportPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [statusError, setStatusError] = useState(false);
 
-  const packDef = demoPacks.find(p => p.key === selectedPack);
+  const packDef = demoPacks.find((p) => p.key === selectedPack);
   const totalRows = packStatus?.total_rows || 0;
 
   // Mismatch: backend has a loaded pack for a different org than current scope
@@ -46,7 +65,8 @@ function ImportPage() {
   const refreshStatus = () => {
     getDemoPackStatus()
       .then((s) => {
-        setPackStatus(s); setStatusError(false);
+        setPackStatus(s);
+        setStatusError(false);
         // Auto-sync scope is handled by the syncInProgress useEffect below.
         // Do NOT call applyDemoScope here — it triggers setApiSites([]) and
         // can cause a race that empties orgSites right after a successful seed.
@@ -58,16 +78,18 @@ function ImportPage() {
       });
   };
 
-  useEffect(() => { refreshStatus(); }, []);
+  useEffect(() => {
+    refreshStatus();
+  }, []);
 
   // Fetch available packs from backend — single source of truth
   useEffect(() => {
     getDemoPacks()
-      .then(data => {
+      .then((data) => {
         const packs = data?.packs || [];
         setDemoPacks(packs);
         // Auto-select default pack (or first available)
-        const def = packs.find(p => p.is_default) || packs[0];
+        const def = packs.find((p) => p.is_default) || packs[0];
         if (def && !selectedPack) setSelectedPack(def.key);
       })
       .catch(() => {
@@ -97,17 +119,15 @@ function ImportPage() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target.result;
-      const lines = text.split('\n').filter(l => l.trim());
+      const lines = text.split('\n').filter((l) => l.trim());
       if (lines.length === 0) {
         setError('Fichier vide ou illisible');
         toast('Fichier vide ou illisible', 'error');
         return;
       }
       const delimiter = lines[0].includes(';') ? ';' : ',';
-      const headers = lines[0].split(delimiter).map(h => h.trim());
-      const rows = lines.slice(1, 6).map(line =>
-        line.split(delimiter).map(c => c.trim())
-      );
+      const headers = lines[0].split(delimiter).map((h) => h.trim());
+      const rows = lines.slice(1, 6).map((line) => line.split(delimiter).map((c) => c.trim()));
       setPreview({ headers, rows, total: lines.length - 1 });
     };
     reader.onerror = () => {
@@ -124,10 +144,13 @@ function ImportPage() {
     try {
       const res = await importSitesStandalone(file);
       setResult(res);
-      toast(`${res.imported} site${res.imported > 1 ? 's' : ''} importe${res.imported > 1 ? 's' : ''} avec succes`, 'success');
+      toast(
+        `${res.imported} site${res.imported > 1 ? 's' : ''} importe${res.imported > 1 ? 's' : ''} avec succes`,
+        'success'
+      );
     } catch (err) {
       setError(err.response?.data?.detail || err.message);
-      toast('Erreur lors de l\'import', 'error');
+      toast("Erreur lors de l'import", 'error');
     }
     setLoading(false);
   };
@@ -178,12 +201,13 @@ function ImportPage() {
       const status = err.response?.status;
       const raw = err.response?.data?.detail;
       // Backend may return {message, available_packs} or a plain string
-      const detail = typeof raw === 'object' ? raw.message : (raw || err.message || 'Erreur inconnue');
+      const detail =
+        typeof raw === 'object' ? raw.message : raw || err.message || 'Erreur inconnue';
       toast(
         status
           ? `Echec du chargement (HTTP\u00a0${status}) — ${detail}`
           : `Echec du chargement — ${detail}`,
-        'error',
+        'error'
       );
     }
     setPackLoading(false);
@@ -191,11 +215,10 @@ function ImportPage() {
 
   /** First load or switching packs */
   const handleSeedPack = () =>
-    performSeed('Démo chargée — contexte appliqué à toute l\'application.');
+    performSeed("Démo chargée — contexte appliqué à toute l'application.");
 
   /** Re-seed the same pack (reset + replay) */
-  const handleReplay = () =>
-    performSeed('Démo relancée — contexte mis à jour.');
+  const handleReplay = () => performSeed('Démo relancée — contexte mis à jour.');
 
   const handleResetPack = async () => {
     setShowResetModal(false);
@@ -259,11 +282,14 @@ function ImportPage() {
             )}
           </div>
           <p className="text-sm text-indigo-700 mb-4">
-            Charger un jeu de données complet : sites, compteurs, relevés 90j, météo, conformité, monitoring, factures, actions, achat.
+            Charger un jeu de données complet : sites, compteurs, relevés 90j, météo, conformité,
+            monitoring, factures, actions, achat.
           </p>
 
           {statusError && (
-            <p className="text-xs text-amber-600 mb-2">Statut demo indisponible — reset manuel possible.</p>
+            <p className="text-xs text-amber-600 mb-2">
+              Statut demo indisponible — reset manuel possible.
+            </p>
           )}
 
           {/* Status row — always visible for clarity */}
@@ -302,7 +328,7 @@ function ImportPage() {
 
           {/* Pack selector — from backend registry */}
           <div className="flex flex-wrap gap-3 mb-4">
-            {demoPacks.map(p => {
+            {demoPacks.map((p) => {
               const isLoaded = packStatus?.pack === p.key;
               const isSelected = selectedPack === p.key;
               return (
@@ -317,9 +343,7 @@ function ImportPage() {
                 >
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-gray-800 text-sm">{p.label}</p>
-                    {isLoaded && (
-                      <Badge status="success">Chargé</Badge>
-                    )}
+                    {isLoaded && <Badge status="success">Chargé</Badge>}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
                 </button>
@@ -330,39 +354,64 @@ function ImportPage() {
           {/* Size selector + actions */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
-              {packDef && packDef.sizes.map(sz => (
-                <button
-                  key={sz}
-                  onClick={() => setSelectedSize(sz)}
-                  className={`px-3 py-1.5 rounded-md text-sm transition ${
-                    selectedSize === sz
-                      ? 'bg-indigo-600 text-white font-medium'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {sz}
-                </button>
-              ))}
+              {packDef &&
+                packDef.sizes.map((sz) => (
+                  <button
+                    key={sz}
+                    onClick={() => setSelectedSize(sz)}
+                    className={`px-3 py-1.5 rounded-md text-sm transition ${
+                      selectedSize === sz
+                        ? 'bg-indigo-600 text-white font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {sz}
+                  </button>
+                ))}
             </div>
 
-            <Button onClick={handleSeedPack} disabled={packLoading || resetLoading || !selectedPack}>
+            <Button
+              onClick={handleSeedPack}
+              disabled={packLoading || resetLoading || !selectedPack}
+            >
               {packLoading ? (
-                <><Loader2 size={14} className="mr-1.5 animate-spin" />Chargement...</>
+                <>
+                  <Loader2 size={14} className="mr-1.5 animate-spin" />
+                  Chargement...
+                </>
               ) : (
-                <><Database size={14} className="mr-1.5" />Charger la démo</>
+                <>
+                  <Database size={14} className="mr-1.5" />
+                  Charger la démo
+                </>
               )}
             </Button>
 
-            <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading || packLoading}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowResetModal(true)}
+              disabled={resetLoading || packLoading}
+            >
               {resetLoading ? (
-                <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
+                <>
+                  <Loader2 size={14} className="mr-1.5 animate-spin" />
+                  Reset...
+                </>
               ) : (
-                <><RotateCcw size={14} className="mr-1.5" />Reset</>
+                <>
+                  <RotateCcw size={14} className="mr-1.5" />
+                  Reset
+                </>
               )}
             </Button>
 
-            <Button variant="secondary" onClick={handleReplay} disabled={packLoading || resetLoading || !selectedPack}>
-              <RefreshCw size={14} className="mr-1.5" />Reset + relancer
+            <Button
+              variant="secondary"
+              onClick={handleReplay}
+              disabled={packLoading || resetLoading || !selectedPack}
+            >
+              <RefreshCw size={14} className="mr-1.5" />
+              Reset + relancer
             </Button>
           </div>
 
@@ -381,23 +430,33 @@ function ImportPage() {
                   <p className="text-gray-500">Sites</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.readings_count?.toLocaleString('fr-FR')}</p>
+                  <p className="font-bold text-gray-800">
+                    {packResult.readings_count?.toLocaleString('fr-FR')}
+                  </p>
                   <p className="text-gray-500">Releves</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.monitoring?.alerts_count || 0}</p>
+                  <p className="font-bold text-gray-800">
+                    {packResult.monitoring?.alerts_count || 0}
+                  </p>
                   <p className="text-gray-500">Alertes</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.billing?.invoices_count || 0}</p>
+                  <p className="font-bold text-gray-800">
+                    {packResult.billing?.invoices_count || 0}
+                  </p>
                   <p className="text-gray-500">Factures</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.actions?.actions_count || 0}</p>
+                  <p className="font-bold text-gray-800">
+                    {packResult.actions?.actions_count || 0}
+                  </p>
                   <p className="text-gray-500">Actions</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.compliance?.findings_count || 0}</p>
+                  <p className="font-bold text-gray-800">
+                    {packResult.compliance?.findings_count || 0}
+                  </p>
                   <p className="text-gray-500">Findings</p>
                 </div>
               </div>
@@ -426,14 +485,22 @@ function ImportPage() {
             <Upload size={40} className="mx-auto text-gray-400 mb-3" />
             <p className="text-gray-600 font-medium">Cliquer pour selectionner un fichier CSV</p>
             <p className="text-sm text-gray-400 mt-1">ou glissez-deposez ici</p>
-            <p className="text-xs text-gray-400 mt-2">Format: nom, adresse, code_postal, ville, surface_m2, type, naf_code</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Format: nom, adresse, code_postal, ville, surface_m2, type, naf_code
+            </p>
           </>
         ) : (
           <div className="flex items-center justify-center gap-3">
             <FileText size={24} className="text-blue-500" />
             <span className="font-medium text-gray-700">{file.name}</span>
             <span className="text-sm text-gray-400">({(file.size / 1024).toFixed(1)} Ko)</span>
-            <button onClick={(e) => { e.stopPropagation(); clearFile(); }} className="ml-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                clearFile();
+              }}
+              className="ml-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+            >
               <Trash2 size={16} />
             </button>
           </div>
@@ -468,12 +535,16 @@ function ImportPage() {
               </Table>
             </div>
             {preview.total > 5 && (
-              <p className="text-xs text-gray-400 mt-2">... et {preview.total - 5} ligne(s) de plus</p>
+              <p className="text-xs text-gray-400 mt-2">
+                ... et {preview.total - 5} ligne(s) de plus
+              </p>
             )}
             <div className="mt-4">
               <Button onClick={handleImport} disabled={loading}>
                 <Upload size={14} className="mr-1.5" />
-                {loading ? 'Importation en cours...' : `Importer ${preview.total} site${preview.total > 1 ? 's' : ''}`}
+                {loading
+                  ? 'Importation en cours...'
+                  : `Importer ${preview.total} site${preview.total > 1 ? 's' : ''}`}
               </Button>
             </div>
           </CardBody>
@@ -505,8 +576,14 @@ function ImportPage() {
                 <p className="text-sm text-green-600">sites importes</p>
               </div>
               <div className={`rounded-lg p-4 ${result.errors > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
-                <p className={`text-2xl font-bold ${result.errors > 0 ? 'text-red-700' : 'text-gray-400'}`}>{result.errors}</p>
-                <p className={`text-sm ${result.errors > 0 ? 'text-red-600' : 'text-gray-400'}`}>erreurs</p>
+                <p
+                  className={`text-2xl font-bold ${result.errors > 0 ? 'text-red-700' : 'text-gray-400'}`}
+                >
+                  {result.errors}
+                </p>
+                <p className={`text-sm ${result.errors > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                  erreurs
+                </p>
               </div>
             </div>
 
@@ -524,7 +601,9 @@ function ImportPage() {
                   {result.sites.map((s) => (
                     <Tr key={s.id}>
                       <Td className="font-medium">{s.nom}</Td>
-                      <Td><Badge status="info">{s.type}</Badge></Td>
+                      <Td>
+                        <Badge status="info">{s.type}</Badge>
+                      </Td>
                       <Td>{s.cvc_power_kw} kW</Td>
                       <Td>{s.obligations}</Td>
                     </Tr>
@@ -537,13 +616,17 @@ function ImportPage() {
               <div className="mt-4">
                 <h3 className="font-medium text-red-700 mb-2">Erreurs</h3>
                 {result.error_details.map((e, i) => (
-                  <p key={i} className="text-sm text-red-600">Ligne {e.row}: {e.error}</p>
+                  <p key={i} className="text-sm text-red-600">
+                    Ligne {e.row}: {e.error}
+                  </p>
                 ))}
               </div>
             )}
 
             <div className="mt-4">
-              <Button variant="secondary" onClick={clearFile}>Nouvel import</Button>
+              <Button variant="secondary" onClick={clearFile}>
+                Nouvel import
+              </Button>
             </div>
           </CardBody>
         </Card>
@@ -559,17 +642,25 @@ function ImportPage() {
       )}
 
       {/* Confirmation modal for hard reset */}
-      <Modal open={showResetModal} onClose={() => setShowResetModal(false)} title="Confirmer la suppression">
+      <Modal
+        open={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        title="Confirmer la suppression"
+      >
         <p className="text-sm text-gray-600 mb-2">
-          Cette action va supprimer <strong>toutes les données démo</strong> (sites, compteurs, relevés, factures, alertes, actions).
+          Cette action va supprimer <strong>toutes les données démo</strong> (sites, compteurs,
+          relevés, factures, alertes, actions).
         </p>
         <p className="text-sm text-red-600 mb-4">
           Les données importées manuellement ne seront pas affectées (reset soft).
         </p>
         <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setShowResetModal(false)}>Annuler</Button>
+          <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+            Annuler
+          </Button>
           <Button onClick={handleResetPack}>
-            <Trash2 size={14} className="mr-1.5" />Confirmer la suppression
+            <Trash2 size={14} className="mr-1.5" />
+            Confirmer la suppression
           </Button>
         </div>
       </Modal>

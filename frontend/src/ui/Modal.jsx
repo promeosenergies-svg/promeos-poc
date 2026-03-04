@@ -10,12 +10,16 @@ export default function Modal({ open, onClose, title, children, wide }) {
       document.body.style.overflow = 'hidden';
       // Auto-focus the modal container for keyboard nav
       requestAnimationFrame(() => ref.current?.focus());
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [open]);
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape' && open) onClose(); }
+    function onKey(e) {
+      if (e.key === 'Escape' && open) onClose();
+    }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
@@ -41,7 +45,12 @@ export default function Modal({ open, onClose, title, children, wide }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
       <div
         ref={ref}

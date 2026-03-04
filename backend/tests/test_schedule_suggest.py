@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests Sprint V4.9: Schedule Suggest Service
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timedelta, timezone
@@ -121,10 +123,14 @@ class TestScheduleSuggest:
         now = datetime.now(timezone.utc)
         for i in range(100):
             ts = now - timedelta(hours=100 - i)
-            db.add(MeterReading(
-                meter_id=meter.id, timestamp=ts,
-                frequency=FrequencyType.HOURLY, value_kwh=30,
-            ))
+            db.add(
+                MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=30,
+                )
+            )
         db.commit()
 
         result = suggest_schedule_from_consumption(db, site.id)

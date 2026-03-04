@@ -2,6 +2,7 @@
 PROMEOS - TOU Service (HP/HC Schedule Management)
 CRUD + versioned TOU schedules + HP/HC ratio calculation.
 """
+
 import json
 from datetime import datetime, date, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
@@ -281,9 +282,15 @@ def _classify_period(ts: datetime, windows: List[Dict]) -> str:
 def _empty_hp_hc(site_id: int) -> Dict:
     return {
         "site_id": site_id,
-        "hp_kwh": 0, "hc_kwh": 0, "total_kwh": 0,
-        "hp_ratio": 0, "hp_cost_eur": 0, "hc_cost_eur": 0, "total_cost_eur": 0,
-        "schedule_name": "N/A", "confidence": "low",
+        "hp_kwh": 0,
+        "hc_kwh": 0,
+        "total_kwh": 0,
+        "hp_ratio": 0,
+        "hp_cost_eur": 0,
+        "hc_cost_eur": 0,
+        "total_cost_eur": 0,
+        "schedule_name": "N/A",
+        "confidence": "low",
     }
 
 
@@ -305,6 +312,7 @@ def compute_hphc_breakdown_v2(
     # Resolve windows
     if calendar_id:
         from models.tariff_calendar import TariffCalendar
+
         cal = db.query(TariffCalendar).filter(TariffCalendar.id == calendar_id).first()
         if cal:
             windows = json.loads(cal.ruleset_json) if cal.ruleset_json else DEFAULT_WINDOWS
@@ -337,11 +345,15 @@ def compute_hphc_breakdown_v2(
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+        )
+        .all()
+    )
 
     if not meters:
         return _empty_hphc_v2(site_id, cal_name)
@@ -390,12 +402,15 @@ def compute_hphc_breakdown_v2(
         for hour in range(24):
             cell = heatmap_data.get((dow, hour), {"sum_kwh": 0, "count": 0, "period": "HC"})
             avg = cell["sum_kwh"] / max(cell["count"], 1)
-            heatmap.append({
-                "day": dow, "day_label": DAY_LABELS[dow],
-                "hour": hour,
-                "avg_kwh": round(avg, 2),
-                "period": cell["period"],
-            })
+            heatmap.append(
+                {
+                    "day": dow,
+                    "day_label": DAY_LABELS[dow],
+                    "hour": hour,
+                    "avg_kwh": round(avg, 2),
+                    "period": cell["period"],
+                }
+            )
 
     # Opportunity: ~15% of HP kWh shiftable
     shiftable_kwh = round(hp_kwh * 0.15, 1)
@@ -441,13 +456,24 @@ def compute_hphc_breakdown_v2(
 def _empty_hphc_v2(site_id, cal_name):
     DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
     return {
-        "site_id": site_id, "calendar_name": cal_name, "days": 0,
-        "hp_kwh": 0, "hc_kwh": 0, "total_kwh": 0, "hp_ratio": 0,
-        "hp_cost_eur": 0, "hc_cost_eur": 0, "total_cost_eur": 0,
-        "heatmap": [{"day": d, "day_label": DAY_LABELS[d], "hour": h, "avg_kwh": 0, "period": "HC"}
-                    for d in range(7) for h in range(24)],
+        "site_id": site_id,
+        "calendar_name": cal_name,
+        "days": 0,
+        "hp_kwh": 0,
+        "hc_kwh": 0,
+        "total_kwh": 0,
+        "hp_ratio": 0,
+        "hp_cost_eur": 0,
+        "hc_cost_eur": 0,
+        "total_cost_eur": 0,
+        "heatmap": [
+            {"day": d, "day_label": DAY_LABELS[d], "hour": h, "avg_kwh": 0, "period": "HC"}
+            for d in range(7)
+            for h in range(24)
+        ],
         "opportunity": {"shiftable_kwh": 0, "savings_eur": 0, "price_hp": 0.18, "price_hc": 0.13},
-        "confidence": "low", "readings_count": 0,
+        "confidence": "low",
+        "readings_count": 0,
     }
 
 

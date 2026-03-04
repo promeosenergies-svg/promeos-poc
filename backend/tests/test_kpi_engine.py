@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Test KPI Engine
 Tests for weekend/night ratios, hourly profiles, monthly breakdown.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -104,10 +106,7 @@ class TestMonthlyBreakdown:
     def test_monthly_keys(self, engine):
         # 90 days crossing 3 months
         start = datetime(2025, 1, 1)
-        readings = [
-            {"timestamp": start + timedelta(hours=i), "value_kwh": 10.0}
-            for i in range(90 * 24)
-        ]
+        readings = [{"timestamp": start + timedelta(hours=i), "value_kwh": 10.0} for i in range(90 * 24)]
         kpis = engine.compute(readings, interval_minutes=60)
         monthly = kpis["monthly_kwh"]
         assert "2025-01" in monthly
@@ -116,10 +115,7 @@ class TestMonthlyBreakdown:
 
     def test_monthly_sums_match_total(self, engine):
         start = datetime(2025, 1, 1)
-        readings = [
-            {"timestamp": start + timedelta(hours=i), "value_kwh": 10.0}
-            for i in range(48)
-        ]
+        readings = [{"timestamp": start + timedelta(hours=i), "value_kwh": 10.0} for i in range(48)]
         kpis = engine.compute(readings, interval_minutes=60)
         monthly_sum = sum(kpis["monthly_kwh"].values())
         assert abs(monthly_sum - kpis["total_kwh"]) < 0.01
@@ -130,10 +126,7 @@ class TestBaseLoad:
         # P10 should be close to the lowest values
         values = [5.0] * 80 + [50.0] * 20  # 80% at 5, 20% at 50
         start = datetime(2025, 1, 6)
-        readings = [
-            {"timestamp": start + timedelta(hours=i), "value_kwh": v}
-            for i, v in enumerate(values)
-        ]
+        readings = [{"timestamp": start + timedelta(hours=i), "value_kwh": v} for i, v in enumerate(values)]
         kpis = engine.compute(readings, interval_minutes=60)
         assert kpis["pbase_kw"] == 5.0
 
@@ -149,11 +142,25 @@ class TestKPICompleteness:
         readings = _make_week_readings()
         kpis = engine.compute(readings, interval_minutes=60)
         expected_keys = [
-            "pmax_kw", "p95_kw", "p99_kw", "pmean_kw", "pbase_kw", "pbase_night_kw",
-            "load_factor", "peak_to_average", "weekend_ratio", "night_ratio",
-            "total_kwh", "readings_count", "interval_minutes",
-            "ramp_rate_max_kw_h", "weekday_profile_kw", "weekend_profile_kw",
-            "monthly_kwh", "off_hours_kwh", "off_hours_ratio",
+            "pmax_kw",
+            "p95_kw",
+            "p99_kw",
+            "pmean_kw",
+            "pbase_kw",
+            "pbase_night_kw",
+            "load_factor",
+            "peak_to_average",
+            "weekend_ratio",
+            "night_ratio",
+            "total_kwh",
+            "readings_count",
+            "interval_minutes",
+            "ramp_rate_max_kw_h",
+            "weekday_profile_kw",
+            "weekend_profile_kw",
+            "monthly_kwh",
+            "off_hours_kwh",
+            "off_hours_ratio",
         ]
         for key in expected_keys:
             assert key in kpis, f"Missing KPI key: {key}"
@@ -182,9 +189,11 @@ class TestOffHours:
         """Without schedule, defaults to Mon-Fri 08-19."""
         readings = _make_week_readings(base_day=30, base_night=5, base_weekend=5)
         kpis_no_sched = engine.compute(readings, interval_minutes=60, schedule=None)
-        kpis_default = engine.compute(readings, interval_minutes=60,
-                                      schedule={"open_days": "0,1,2,3,4", "open_time": "08:00",
-                                                "close_time": "19:00", "is_24_7": False})
+        kpis_default = engine.compute(
+            readings,
+            interval_minutes=60,
+            schedule={"open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False},
+        )
         assert abs(kpis_no_sched["off_hours_ratio"] - kpis_default["off_hours_ratio"]) < 0.01
 
     def test_weekend_only_schedule(self, engine):

@@ -3,6 +3,7 @@ PROMEOS - Modele AiInsight
 Stockage des sorties IA (explications, suggestions, analyses).
 IA ne modifie JAMAIS le statut/score deterministe.
 """
+
 from sqlalchemy import Column, Integer, String, Text, Enum
 from .base import Base, TimestampMixin
 from .enums import InsightType

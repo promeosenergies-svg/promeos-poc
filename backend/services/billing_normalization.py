@@ -4,6 +4,7 @@ InvoiceNormalized Pydantic schema + normalize_invoice() helper.
 Calcule ht/tva/fournisseur/energie à la volée depuis lignes + contrat.
 Pas de migration DB — view layer uniquement.
 """
+
 from __future__ import annotations
 
 import json
@@ -17,17 +18,17 @@ class InvoiceNormalized(BaseModel):
     id: int
     org_id: int
     site_id: int
-    fournisseur: Optional[str]       # EnergyContract.supplier_name
-    energie: Optional[str]           # "ELEC" | "GAZ"
+    fournisseur: Optional[str]  # EnergyContract.supplier_name
+    energie: Optional[str]  # "ELEC" | "GAZ"
     period_start: Optional[date]
     period_end: Optional[date]
     issue_date: Optional[date]
-    month_key: Optional[str]         # YYYY-MM dérivé de period_start (ou issue_date)
-    ttc: Optional[float]             # = total_eur
-    ht: Optional[float]              # sum(ENERGY + NETWORK lines)
-    tva: Optional[float]             # sum(TAX lines)
-    ht_fourniture: Optional[float]   # sum(ENERGY lines)
-    ht_reseau: Optional[float]       # sum(NETWORK lines)
+    month_key: Optional[str]  # YYYY-MM dérivé de period_start (ou issue_date)
+    ttc: Optional[float]  # = total_eur
+    ht: Optional[float]  # sum(ENERGY + NETWORK lines)
+    tva: Optional[float]  # sum(TAX lines)
+    ht_fourniture: Optional[float]  # sum(ENERGY lines)
+    ht_reseau: Optional[float]  # sum(NETWORK lines)
     kwh: Optional[float]
     invoice_number: str
     status: str
@@ -39,15 +40,9 @@ def normalize_invoice(inv, lines: list, contract, org_id: int) -> InvoiceNormali
     Construit InvoiceNormalized depuis un EnergyInvoice + ses lignes + contrat.
     org_id doit être résolu en amont via _resolve_invoice_org_id ou effective_org_id.
     """
-    ht_fourniture = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "energy"
-    )
-    ht_reseau = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "network"
-    )
-    tva = sum(
-        l.amount_eur or 0 for l in lines if l.line_type.value == "tax"
-    )
+    ht_fourniture = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "energy")
+    ht_reseau = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "network")
+    tva = sum(l.amount_eur or 0 for l in lines if l.line_type.value == "tax")
 
     month_key = None
     if inv.period_start:

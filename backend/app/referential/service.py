@@ -2,6 +2,7 @@
 PROMEOS Referentiel — Service layer for Bill Intelligence integration.
 Provides source traceability for tariff/tax calculations.
 """
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,21 +36,22 @@ def get_sources_for_calc(tags: list[str]) -> list[dict]:
         source_tags = set(data.get("tags", []))
         if source_tags.intersection(tags):
             latest = data.get("latest", {})
-            results.append({
-                "source_id": source_id,
-                "url": data.get("url"),
-                "sha256_raw": latest.get("sha256_raw"),
-                "snapshot_date": latest.get("date"),
-                "authority": data.get("authority"),
-                "regulation": data.get("regulation"),
-                "ref": f"{source_id}@{latest.get('sha256_raw', 'unknown')[:12]}",
-            })
+            results.append(
+                {
+                    "source_id": source_id,
+                    "url": data.get("url"),
+                    "sha256_raw": latest.get("sha256_raw"),
+                    "snapshot_date": latest.get("date"),
+                    "authority": data.get("authority"),
+                    "regulation": data.get("regulation"),
+                    "ref": f"{source_id}@{latest.get('sha256_raw', 'unknown')[:12]}",
+                }
+            )
 
     return results
 
 
-def build_calc_trace(calc_id: str, tags: list[str], amount: float,
-                     details: Optional[dict] = None) -> dict:
+def build_calc_trace(calc_id: str, tags: list[str], amount: float, details: Optional[dict] = None) -> dict:
     """
     Build an audit trace for a tariff/tax calculation.
     Links the calculated amount to its regulatory sources.

@@ -2,14 +2,20 @@
 PROMEOS - Routes API Cockpit & Portefeuilles
 Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
 from database import get_db
 from models import (
-    Organisation, Portefeuille, EntiteJuridique, Site, Alerte,
-    StatutConformite, not_deleted,
+    Organisation,
+    Portefeuille,
+    EntiteJuridique,
+    Site,
+    Alerte,
+    StatutConformite,
+    not_deleted,
 )
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
@@ -52,47 +58,50 @@ def get_cockpit(
     sites_actifs = q_sites.filter(Site.actif == True).count()
 
     # Stats conformite (compare to enum, not string)
-    sites_tertiaire_ko = _sites_for_org(db, effective_org_id).filter(
-        Site.statut_decret_tertiaire.in_([
-            StatutConformite.NON_CONFORME,
-            StatutConformite.A_RISQUE,
-        ])
-    ).count()
+    sites_tertiaire_ko = (
+        _sites_for_org(db, effective_org_id)
+        .filter(
+            Site.statut_decret_tertiaire.in_(
+                [
+                    StatutConformite.NON_CONFORME,
+                    StatutConformite.A_RISQUE,
+                ]
+            )
+        )
+        .count()
+    )
 
-    sites_bacs_ko = _sites_for_org(db, effective_org_id).filter(
-        Site.statut_bacs.in_([
-            StatutConformite.NON_CONFORME,
-            StatutConformite.A_RISQUE,
-        ])
-    ).count()
+    sites_bacs_ko = (
+        _sites_for_org(db, effective_org_id)
+        .filter(
+            Site.statut_bacs.in_(
+                [
+                    StatutConformite.NON_CONFORME,
+                    StatutConformite.A_RISQUE,
+                ]
+            )
+        )
+        .count()
+    )
 
     # Risque financier total
     risque_total = (
-        _sites_for_org(db, effective_org_id)
-        .with_entities(func.sum(Site.risque_financier_euro))
-        .scalar() or 0
+        _sites_for_org(db, effective_org_id).with_entities(func.sum(Site.risque_financier_euro)).scalar() or 0
     )
 
     # Avancement moyen decret tertiaire
     avg_avancement = (
-        _sites_for_org(db, effective_org_id)
-        .with_entities(func.avg(Site.avancement_decret_pct))
-        .scalar() or 0
+        _sites_for_org(db, effective_org_id).with_entities(func.avg(Site.avancement_decret_pct)).scalar() or 0
     )
 
     # Alertes actives — scoped to org's sites
     site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
     alertes_actives = (
-        db.query(Alerte)
-        .filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids))
-        .count()
-    ) if site_ids else 0
+        (db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count()) if site_ids else 0
+    )
 
     return {
-        "organisation": {
-            "nom": org.nom,
-            "type_client": org.type_client
-        },
+        "organisation": {"nom": org.nom, "type_client": org.type_client},
         "stats": {
             "total_sites": total_sites,
             "sites_actifs": sites_actifs,
@@ -100,9 +109,9 @@ def get_cockpit(
             "risque_financier_euro": round(risque_total, 2),
             "sites_tertiaire_ko": sites_tertiaire_ko,
             "sites_bacs_ko": sites_bacs_ko,
-            "alertes_actives": alertes_actives
+            "alertes_actives": alertes_actives,
         },
-        "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)"
+        "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
     }
 
 
@@ -129,23 +138,19 @@ def get_portefeuilles(
     # Single query for all site counts (fixes N+1)
     ptf_ids = [p.id for p in portefeuilles]
     count_rows = (
-        not_deleted(db.query(Site.portefeuille_id, func.count(Site.id)), Site)
-        .filter(Site.portefeuille_id.in_(ptf_ids))
-        .group_by(Site.portefeuille_id)
-        .all()
-    ) if ptf_ids else []
+        (
+            not_deleted(db.query(Site.portefeuille_id, func.count(Site.id)), Site)
+            .filter(Site.portefeuille_id.in_(ptf_ids))
+            .group_by(Site.portefeuille_id)
+            .all()
+        )
+        if ptf_ids
+        else []
+    )
     count_map = {pid: cnt for pid, cnt in count_rows}
 
     result = []
     for p in portefeuilles:
-        result.append({
-            "id": p.id,
-            "nom": p.nom,
-            "description": p.description,
-            "nb_sites": count_map.get(p.id, 0)
-        })
+        result.append({"id": p.id, "nom": p.nom, "description": p.description, "nb_sites": count_map.get(p.id, 0)})
 
-    return {
-        "portefeuilles": result,
-        "total": len(result)
-    }
+    return {"portefeuilles": result, "total": len(result)}

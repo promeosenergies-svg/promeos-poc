@@ -1,8 +1,10 @@
 """
 PROMEOS - Tests for the Compliance Engine
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -11,9 +13,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models import (
-    Base, Site, Obligation, Organisation, EntiteJuridique, Portefeuille,
-    Evidence, StatutConformite, TypeObligation, TypeSite,
-    TypeEvidence, StatutEvidence,
+    Base,
+    Site,
+    Obligation,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Evidence,
+    StatutConformite,
+    TypeObligation,
+    TypeSite,
+    TypeEvidence,
+    StatutEvidence,
 )
 from services.compliance_engine import (
     worst_status,
@@ -37,6 +48,7 @@ from services.compliance_engine import (
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db_session():
@@ -82,29 +94,31 @@ def _seed_hierarchy(db):
     db.commit()
     db.refresh(org)
 
-    entite = EntiteJuridique(
-        organisation_id=org.id, nom="Test SAS", siren="123456789"
-    )
+    entite = EntiteJuridique(organisation_id=org.id, nom="Test SAS", siren="123456789")
     db.add(entite)
     db.commit()
     db.refresh(entite)
 
-    pf = Portefeuille(
-        entite_juridique_id=entite.id, nom="PF Test", description="Test"
-    )
+    pf = Portefeuille(entite_juridique_id=entite.id, nom="PF Test", description="Test")
     db.add(pf)
     db.commit()
     db.refresh(pf)
 
     site1 = Site(
-        nom="Site A", type=TypeSite.MAGASIN, portefeuille_id=pf.id,
-        surface_m2=2000, actif=True,
+        nom="Site A",
+        type=TypeSite.MAGASIN,
+        portefeuille_id=pf.id,
+        surface_m2=2000,
+        actif=True,
         statut_decret_tertiaire=StatutConformite.CONFORME,
         statut_bacs=StatutConformite.CONFORME,
     )
     site2 = Site(
-        nom="Site B", type=TypeSite.BUREAU, portefeuille_id=pf.id,
-        surface_m2=3000, actif=True,
+        nom="Site B",
+        type=TypeSite.BUREAU,
+        portefeuille_id=pf.id,
+        surface_m2=3000,
+        actif=True,
         statut_decret_tertiaire=StatutConformite.CONFORME,
         statut_bacs=StatutConformite.CONFORME,
     )
@@ -115,27 +129,35 @@ def _seed_hierarchy(db):
 
     # Site1: decret NON_CONFORME + bacs CONFORME
     ob1 = Obligation(
-        site_id=site1.id, type=TypeObligation.DECRET_TERTIAIRE,
-        statut=StatutConformite.NON_CONFORME, avancement_pct=30.0,
+        site_id=site1.id,
+        type=TypeObligation.DECRET_TERTIAIRE,
+        statut=StatutConformite.NON_CONFORME,
+        avancement_pct=30.0,
         echeance=date(2030, 12, 31),
     )
     ob2 = Obligation(
-        site_id=site1.id, type=TypeObligation.BACS,
-        statut=StatutConformite.CONFORME, avancement_pct=100.0,
+        site_id=site1.id,
+        type=TypeObligation.BACS,
+        statut=StatutConformite.CONFORME,
+        avancement_pct=100.0,
         echeance=date(2025, 1, 1),
     )
     # Site2: decret CONFORME
     ob3 = Obligation(
-        site_id=site2.id, type=TypeObligation.DECRET_TERTIAIRE,
-        statut=StatutConformite.CONFORME, avancement_pct=90.0,
+        site_id=site2.id,
+        type=TypeObligation.DECRET_TERTIAIRE,
+        statut=StatutConformite.CONFORME,
+        avancement_pct=90.0,
         echeance=date(2030, 12, 31),
     )
     db.add_all([ob1, ob2, ob3])
 
     # Site1: valid attestation BACS
     ev1 = Evidence(
-        site_id=site1.id, type=TypeEvidence.ATTESTATION_BACS,
-        statut=StatutEvidence.VALIDE, note="GTB OK",
+        site_id=site1.id,
+        type=TypeEvidence.ATTESTATION_BACS,
+        statut=StatutEvidence.VALIDE,
+        note="GTB OK",
     )
     db.add(ev1)
     db.commit()
@@ -146,6 +168,7 @@ def _seed_hierarchy(db):
 # ========================================
 # Tests: worst_status
 # ========================================
+
 
 class TestWorstStatus:
     def test_empty_list(self):
@@ -196,6 +219,7 @@ class TestWorstStatus:
 # Tests: average_avancement
 # ========================================
 
+
 class TestAverageAvancement:
     def test_empty_list(self):
         assert average_avancement([]) == 0.0
@@ -222,6 +246,7 @@ class TestAverageAvancement:
 # ========================================
 # Tests: compute_risque_financier
 # ========================================
+
 
 class TestComputeRisqueFinancier:
     def test_no_obligations(self):
@@ -263,6 +288,7 @@ class TestComputeRisqueFinancier:
 # Tests: compute_action_recommandee
 # ========================================
 
+
 class TestComputeActionRecommandee:
     def test_no_obligations(self):
         assert compute_action_recommandee([]) is None
@@ -299,6 +325,7 @@ class TestComputeActionRecommandee:
 # Tests: bacs_deadline_for_power
 # ========================================
 
+
 class TestBacsDeadlineForPower:
     def test_above_290(self):
         assert bacs_deadline_for_power(350.0) == BACS_DEADLINE_290
@@ -321,6 +348,7 @@ class TestBacsDeadlineForPower:
 # ========================================
 # Tests: compute_bacs_statut
 # ========================================
+
 
 class TestComputeBacsStatut:
     def test_valid_attestation_gives_conforme(self):
@@ -364,6 +392,7 @@ class TestComputeBacsStatut:
 # Tests: compute_site_snapshot
 # ========================================
 
+
 class TestComputeSiteSnapshot:
     def test_no_obligations_defaults(self):
         snapshot = compute_site_snapshot([])
@@ -375,10 +404,10 @@ class TestComputeSiteSnapshot:
 
     def test_all_conforme(self):
         obs = [
-            _make_obligation(ob_type=TypeObligation.DECRET_TERTIAIRE,
-                             statut=StatutConformite.CONFORME, avancement_pct=85.0),
-            _make_obligation(ob_type=TypeObligation.BACS,
-                             statut=StatutConformite.CONFORME, avancement_pct=100.0),
+            _make_obligation(
+                ob_type=TypeObligation.DECRET_TERTIAIRE, statut=StatutConformite.CONFORME, avancement_pct=85.0
+            ),
+            _make_obligation(ob_type=TypeObligation.BACS, statut=StatutConformite.CONFORME, avancement_pct=100.0),
         ]
         snapshot = compute_site_snapshot(obs)
         assert snapshot["statut_decret_tertiaire"] == StatutConformite.CONFORME
@@ -388,10 +417,12 @@ class TestComputeSiteSnapshot:
 
     def test_mixed_picks_worst(self):
         obs = [
-            _make_obligation(ob_type=TypeObligation.DECRET_TERTIAIRE,
-                             statut=StatutConformite.CONFORME, avancement_pct=80.0),
-            _make_obligation(ob_type=TypeObligation.DECRET_TERTIAIRE,
-                             statut=StatutConformite.NON_CONFORME, avancement_pct=20.0),
+            _make_obligation(
+                ob_type=TypeObligation.DECRET_TERTIAIRE, statut=StatutConformite.CONFORME, avancement_pct=80.0
+            ),
+            _make_obligation(
+                ob_type=TypeObligation.DECRET_TERTIAIRE, statut=StatutConformite.NON_CONFORME, avancement_pct=20.0
+            ),
         ]
         snapshot = compute_site_snapshot(obs)
         assert snapshot["statut_decret_tertiaire"] == StatutConformite.NON_CONFORME
@@ -400,8 +431,7 @@ class TestComputeSiteSnapshot:
 
     def test_only_bacs(self):
         obs = [
-            _make_obligation(ob_type=TypeObligation.BACS,
-                             statut=StatutConformite.NON_CONFORME, avancement_pct=30.0),
+            _make_obligation(ob_type=TypeObligation.BACS, statut=StatutConformite.NON_CONFORME, avancement_pct=30.0),
         ]
         snapshot = compute_site_snapshot(obs)
         assert snapshot["statut_decret_tertiaire"] == StatutConformite.A_RISQUE
@@ -412,9 +442,12 @@ class TestComputeSiteSnapshot:
     def test_bacs_recomputed_from_evidences(self):
         """When evidences passed, BACS statut is recomputed from them."""
         obs = [
-            _make_obligation(ob_type=TypeObligation.BACS,
-                             statut=StatutConformite.A_RISQUE, avancement_pct=50.0,
-                             echeance=date(2025, 1, 1)),
+            _make_obligation(
+                ob_type=TypeObligation.BACS,
+                statut=StatutConformite.A_RISQUE,
+                avancement_pct=50.0,
+                echeance=date(2025, 1, 1),
+            ),
         ]
         evs = [_make_evidence(ev_type=TypeEvidence.ATTESTATION_BACS, statut=StatutEvidence.VALIDE)]
         snapshot = compute_site_snapshot(obs, evidences=evs)
@@ -422,9 +455,12 @@ class TestComputeSiteSnapshot:
 
     def test_bacs_non_conforme_when_deadline_passed_no_evidence(self):
         obs = [
-            _make_obligation(ob_type=TypeObligation.BACS,
-                             statut=StatutConformite.A_RISQUE, avancement_pct=50.0,
-                             echeance=date(2025, 1, 1)),
+            _make_obligation(
+                ob_type=TypeObligation.BACS,
+                statut=StatutConformite.A_RISQUE,
+                avancement_pct=50.0,
+                echeance=date(2025, 1, 1),
+            ),
         ]
         snapshot = compute_site_snapshot(obs, evidences=[])
         assert snapshot["statut_bacs"] == StatutConformite.NON_CONFORME
@@ -432,8 +468,7 @@ class TestComputeSiteSnapshot:
     def test_without_evidences_keeps_original_statut(self):
         """When evidences=None (legacy), BACS statut stays as-is."""
         obs = [
-            _make_obligation(ob_type=TypeObligation.BACS,
-                             statut=StatutConformite.CONFORME, avancement_pct=100.0),
+            _make_obligation(ob_type=TypeObligation.BACS, statut=StatutConformite.CONFORME, avancement_pct=100.0),
         ]
         snapshot = compute_site_snapshot(obs)  # no evidences
         assert snapshot["statut_bacs"] == StatutConformite.CONFORME
@@ -442,6 +477,7 @@ class TestComputeSiteSnapshot:
 # ========================================
 # Tests: Database persistence
 # ========================================
+
 
 class TestRecomputeSite:
     def test_updates_site(self, db_session):

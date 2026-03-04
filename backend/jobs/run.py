@@ -2,6 +2,7 @@
 PROMEOS Jobs - CLI pour executer le worker
 Usage: python -m jobs.run --once|--watch|--drain
 """
+
 import sys
 import time
 import argparse

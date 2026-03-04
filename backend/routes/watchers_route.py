@@ -2,6 +2,7 @@
 PROMEOS Routes - Watchers endpoints
 Pipeline: NEW -> REVIEWED -> APPLIED | DISMISSED
 """
+
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -30,10 +31,7 @@ def trigger_watcher(name: str, db: Session = Depends(get_db)):
     """Declenche un watcher."""
     try:
         events = run_watcher(name, db)
-        return {
-            "watcher": name,
-            "new_events": len(events)
-        }
+        return {"watcher": name, "new_events": len(events)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,7 +42,7 @@ def list_events(
     reviewed: bool = Query(None),
     status: str = Query(None),
     limit: int = Query(50, le=200),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Liste les evenements reglementaires avec filtre status."""
     query = db.query(RegSourceEvent)
@@ -86,7 +84,7 @@ def list_events(
             }
             for e in events
         ],
-        "total": len(events)
+        "total": len(events),
     }
 
 

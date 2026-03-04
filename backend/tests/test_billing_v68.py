@@ -2,8 +2,10 @@
 PROMEOS — V68 Billing Unified Tests
 Couvre: InvoiceNormalized, Shadow V2, R13/R14, Seed 36 mois, endpoint /invoices/normalized.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -14,9 +16,18 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille,
-    Site, TypeSite, EnergyInvoice, EnergyInvoiceLine,
-    EnergyContract, BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    TypeSite,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    EnergyContract,
+    BillingEnergyType,
+    InvoiceLineType,
+    BillingInvoiceStatus,
 )
 from database import get_db
 from main import app
@@ -25,6 +36,7 @@ from main import app
 # ========================================
 # Fixtures
 # ========================================
+
 
 @pytest.fixture
 def db():
@@ -47,6 +59,7 @@ def client(db):
             yield db
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -54,37 +67,56 @@ def client(db):
 
 def _make_org_site(db, nom="OrgTest", siren="600000001"):
     org = Organisation(nom=nom, type_client="bureau", actif=True, siren=siren)
-    db.add(org); db.flush()
+    db.add(org)
+    db.flush()
     ej = EntiteJuridique(organisation_id=org.id, nom=f"EJ {nom}", siren=siren)
-    db.add(ej); db.flush()
+    db.add(ej)
+    db.flush()
     pf = Portefeuille(entite_juridique_id=ej.id, nom=f"PF {nom}")
-    db.add(pf); db.flush()
+    db.add(pf)
+    db.flush()
     site = Site(
-        portefeuille_id=pf.id, nom=f"Site {nom}", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=200, actif=True,
+        portefeuille_id=pf.id,
+        nom=f"Site {nom}",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=200,
+        actif=True,
     )
-    db.add(site); db.commit()
+    db.add(site)
+    db.commit()
     return org, site
 
 
-def _make_contract(db, site_id, energy_type=BillingEnergyType.ELEC,
-                   supplier="EDF Test", price_ref=0.18):
+def _make_contract(db, site_id, energy_type=BillingEnergyType.ELEC, supplier="EDF Test", price_ref=0.18):
     c = EnergyContract(
-        site_id=site_id, energy_type=energy_type,
-        supplier_name=supplier, price_ref_eur_per_kwh=price_ref,
+        site_id=site_id,
+        energy_type=energy_type,
+        supplier_name=supplier,
+        price_ref_eur_per_kwh=price_ref,
     )
-    db.add(c); db.flush()
+    db.add(c)
+    db.flush()
     return c
 
 
-def _make_invoice_with_lines(db, site_id, contract_id=None,
-                              period_start=date(2024, 1, 1),
-                              period_end=date(2024, 1, 31),
-                              total_eur=1620.0, kwh=9000,
-                              energy_amt=1020.0, network_amt=400.0, tax_amt=200.0,
-                              number=None):
+def _make_invoice_with_lines(
+    db,
+    site_id,
+    contract_id=None,
+    period_start=date(2024, 1, 1),
+    period_end=date(2024, 1, 31),
+    total_eur=1620.0,
+    kwh=9000,
+    energy_amt=1020.0,
+    network_amt=400.0,
+    tax_amt=200.0,
+    number=None,
+):
     import random
+
     inv = EnergyInvoice(
         site_id=site_id,
         contract_id=contract_id,
@@ -97,13 +129,15 @@ def _make_invoice_with_lines(db, site_id, contract_id=None,
         status=BillingInvoiceStatus.IMPORTED,
         source="test",
     )
-    db.add(inv); db.flush()
-    db.add(EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.ENERGY,
-                              label="Energie", amount_eur=energy_amt))
-    db.add(EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.NETWORK,
-                              label="Réseau", amount_eur=network_amt))
-    db.add(EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.TAX,
-                              label="Taxes", amount_eur=tax_amt))
+    db.add(inv)
+    db.flush()
+    db.add(
+        EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.ENERGY, label="Energie", amount_eur=energy_amt)
+    )
+    db.add(
+        EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.NETWORK, label="Réseau", amount_eur=network_amt)
+    )
+    db.add(EnergyInvoiceLine(invoice_id=inv.id, line_type=InvoiceLineType.TAX, label="Taxes", amount_eur=tax_amt))
     db.flush()
     return inv
 
@@ -116,19 +150,20 @@ def _h(org_id):
 # TestInvoiceNormalized
 # ========================================
 
-class TestInvoiceNormalized:
 
+class TestInvoiceNormalized:
     def test_normalize_with_lines(self, db):
         """ht/tva/fournisseur/energie calculés correctement."""
         from services.billing_normalization import normalize_invoice
+
         org, site = _make_org_site(db, "OrgNorm", "600001001")
         contract = _make_contract(db, site.id, supplier="EDF ENR", price_ref=0.18)
-        inv = _make_invoice_with_lines(db, site.id, contract.id,
-                                       energy_amt=1020.0, network_amt=400.0, tax_amt=200.0,
-                                       total_eur=1620.0, kwh=9000)
+        inv = _make_invoice_with_lines(
+            db, site.id, contract.id, energy_amt=1020.0, network_amt=400.0, tax_amt=200.0, total_eur=1620.0, kwh=9000
+        )
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = normalize_invoice(inv, lines, contract, org.id)
-        assert result.ht == 1420.0          # 1020 + 400
+        assert result.ht == 1420.0  # 1020 + 400
         assert result.tva == 200.0
         assert result.ht_fourniture == 1020.0
         assert result.ht_reseau == 400.0
@@ -140,6 +175,7 @@ class TestInvoiceNormalized:
     def test_normalize_no_contract(self, db):
         """Fournisseur=None, energie=None si pas de contrat."""
         from services.billing_normalization import normalize_invoice
+
         org, site = _make_org_site(db, "OrgNoContract", "600001002")
         inv = _make_invoice_with_lines(db, site.id)
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
@@ -151,9 +187,9 @@ class TestInvoiceNormalized:
     def test_normalize_month_key_from_period(self, db):
         """month_key dérivé de period_start."""
         from services.billing_normalization import normalize_invoice
+
         org, site = _make_org_site(db, "OrgMK1", "600001003")
-        inv = _make_invoice_with_lines(db, site.id, period_start=date(2024, 3, 1),
-                                       period_end=date(2024, 3, 31))
+        inv = _make_invoice_with_lines(db, site.id, period_start=date(2024, 3, 1), period_end=date(2024, 3, 31))
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = normalize_invoice(inv, lines, None, org.id)
         assert result.month_key == "2024-03"
@@ -161,14 +197,20 @@ class TestInvoiceNormalized:
     def test_normalize_month_key_fallback(self, db):
         """month_key utilise issue_date si period_start absent."""
         from services.billing_normalization import normalize_invoice
+
         org, site = _make_org_site(db, "OrgMK2", "600001004")
         inv = EnergyInvoice(
-            site_id=site.id, invoice_number="INV-MK-001",
-            period_start=None, period_end=None,
+            site_id=site.id,
+            invoice_number="INV-MK-001",
+            period_start=None,
+            period_end=None,
             issue_date=date(2024, 5, 10),
-            total_eur=100.0, status=BillingInvoiceStatus.IMPORTED, source="test",
+            total_eur=100.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
         )
-        db.add(inv); db.flush()
+        db.add(inv)
+        db.flush()
         result = normalize_invoice(inv, [], None, org.id)
         assert result.month_key == "2024-05"
 
@@ -204,24 +246,28 @@ class TestInvoiceNormalized:
 # TestShadowBillingV2
 # ========================================
 
-class TestShadowBillingV2:
 
+class TestShadowBillingV2:
     def _fake_inv(self, kwh=9000, total_eur=1620.0):
         class Inv:
             pass
+
         Inv.energy_kwh = kwh
         Inv.total_eur = total_eur
         return Inv()
 
     def _fake_contract(self, energy_type="elec", price_ref=0.18):
         """energy_type must use lowercase enum value: 'elec' or 'gaz'."""
+
         class C:
             pass
+
         c = C()
         c.price_ref_eur_per_kwh = price_ref
 
         class ET:
             value = energy_type
+
         c.energy_type = ET()
         return c
 
@@ -229,13 +275,16 @@ class TestShadowBillingV2:
         """line_type values must use lowercase enum values: 'energy', 'network', 'tax'."""
         lines = []
         for lt_val, amt in [("energy", energy), ("network", network), ("tax", tax)]:
+
             class L:
                 pass
+
             l = L()
             l.amount_eur = amt
 
             class LT:
                 value = lt_val
+
             l.line_type = LT()
             lines.append(l)
         return lines
@@ -243,6 +292,7 @@ class TestShadowBillingV2:
     def test_shadow_v2_elec_components(self):
         """TURPE + CSPE + TVA calculés correctement pour elec."""
         from services.billing_shadow_v2 import shadow_billing_v2, TURPE_EUR_KWH_ELEC, CSPE_EUR_KWH_ELEC
+
         inv = self._fake_inv(kwh=9000, total_eur=1620.0)
         contract = self._fake_contract("elec", 0.18)
         lines = self._fake_lines(1020.0, 400.0, 200.0)
@@ -256,6 +306,7 @@ class TestShadowBillingV2:
     def test_shadow_v2_gaz_components(self):
         """ATRD + ATRT + TICGN calculés correctement pour gaz."""
         from services.billing_shadow_v2 import shadow_billing_v2, ATRD_EUR_KWH_GAZ, ATRT_EUR_KWH_GAZ, TICGN_EUR_KWH_GAZ
+
         inv = self._fake_inv(kwh=6000, total_eur=540.0)
         contract = self._fake_contract("gaz", 0.09)
         lines = self._fake_lines(192.0, 220.0, 128.0)
@@ -267,6 +318,7 @@ class TestShadowBillingV2:
     def test_shadow_v2_delta_reseau_above_threshold(self):
         """delta_reseau significatif quand NETWORK ligne inflée × 2.3."""
         from services.billing_shadow_v2 import shadow_billing_v2, TURPE_EUR_KWH_ELEC
+
         inv = self._fake_inv(kwh=9000, total_eur=2600.0)
         contract = self._fake_contract("elec", 0.18)
         inflated_network = round(9000 * TURPE_EUR_KWH_ELEC * 2.3, 2)
@@ -278,6 +330,7 @@ class TestShadowBillingV2:
     def test_shadow_v2_delta_taxes_above_threshold(self):
         """delta_taxes > 5% quand TAX ligne = CSPE × 1.08."""
         from services.billing_shadow_v2 import shadow_billing_v2, CSPE_EUR_KWH_ELEC
+
         inv = self._fake_inv(kwh=9000, total_eur=1639.0)
         contract = self._fake_contract("elec", 0.18)
         inflated_tax = round(9000 * CSPE_EUR_KWH_ELEC * 1.08, 2)
@@ -289,6 +342,7 @@ class TestShadowBillingV2:
     def test_shadow_v2_no_anomaly_within_threshold(self):
         """Pas d'anomalie réseau/taxes dans les seuils normaux."""
         from services.billing_shadow_v2 import shadow_billing_v2, TURPE_EUR_KWH_ELEC, CSPE_EUR_KWH_ELEC
+
         inv = self._fake_inv(kwh=9000, total_eur=1620.0)
         contract = self._fake_contract("elec", 0.18)
         # Normal lines (within 2% of expected)
@@ -308,21 +362,27 @@ class TestShadowBillingV2:
 # TestR13R14
 # ========================================
 
-class TestR13R14:
 
-    def _make_full_invoice(self, db, site_id, contract_id,
-                           energy_amt, network_amt, tax_amt, total_eur, kwh=9000):
+class TestR13R14:
+    def _make_full_invoice(self, db, site_id, contract_id, energy_amt, network_amt, tax_amt, total_eur, kwh=9000):
         inv = EnergyInvoice(
-            site_id=site_id, contract_id=contract_id,
+            site_id=site_id,
+            contract_id=contract_id,
             invoice_number=f"R13R14-{network_amt:.0f}",
-            period_start=date(2024, 4, 1), period_end=date(2024, 4, 30),
-            total_eur=total_eur, energy_kwh=kwh,
-            status=BillingInvoiceStatus.IMPORTED, source="test",
+            period_start=date(2024, 4, 1),
+            period_end=date(2024, 4, 30),
+            total_eur=total_eur,
+            energy_kwh=kwh,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
         )
-        db.add(inv); db.flush()
-        for lt, lbl, amt in [(InvoiceLineType.ENERGY, "Energie", energy_amt),
-                             (InvoiceLineType.NETWORK, "Réseau", network_amt),
-                             (InvoiceLineType.TAX, "Taxes", tax_amt)]:
+        db.add(inv)
+        db.flush()
+        for lt, lbl, amt in [
+            (InvoiceLineType.ENERGY, "Energie", energy_amt),
+            (InvoiceLineType.NETWORK, "Réseau", network_amt),
+            (InvoiceLineType.TAX, "Taxes", tax_amt),
+        ]:
             db.add(EnergyInvoiceLine(invoice_id=inv.id, line_type=lt, label=lbl, amount_eur=amt))
         db.flush()
         return inv
@@ -331,13 +391,14 @@ class TestR13R14:
         """R13 HIGH quand réseau > 20% au-dessus attendu."""
         from services.billing_service import _rule_reseau_mismatch
         from services.billing_shadow_v2 import TURPE_EUR_KWH_ELEC
+
         org, site = _make_org_site(db, "OrgR13H", "600003001")
         contract = _make_contract(db, site.id)
         inflated_network = round(9000 * TURPE_EUR_KWH_ELEC * 2.3, 2)
         total = round(1020 + inflated_network + 200, 2)
-        inv = self._make_full_invoice(db, site.id, contract.id,
-                                      energy_amt=1020, network_amt=inflated_network,
-                                      tax_amt=200, total_eur=total)
+        inv = self._make_full_invoice(
+            db, site.id, contract.id, energy_amt=1020, network_amt=inflated_network, tax_amt=200, total_eur=total
+        )
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = _rule_reseau_mismatch(inv, contract, lines)
         assert result is not None
@@ -348,14 +409,15 @@ class TestR13R14:
         """R13 MEDIUM quand réseau entre 10% et 20% au-dessus attendu."""
         from services.billing_service import _rule_reseau_mismatch
         from services.billing_shadow_v2 import TURPE_EUR_KWH_ELEC
+
         org, site = _make_org_site(db, "OrgR13M", "600003002")
         contract = _make_contract(db, site.id)
         # 15% above expected
         network = round(9000 * TURPE_EUR_KWH_ELEC * 1.15, 2)
         total = round(1020 + network + 200, 2)
-        inv = self._make_full_invoice(db, site.id, contract.id,
-                                      energy_amt=1020, network_amt=network,
-                                      tax_amt=200, total_eur=total)
+        inv = self._make_full_invoice(
+            db, site.id, contract.id, energy_amt=1020, network_amt=network, tax_amt=200, total_eur=total
+        )
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = _rule_reseau_mismatch(inv, contract, lines)
         assert result is not None
@@ -365,14 +427,15 @@ class TestR13R14:
         """R13 = None quand réseau dans seuil (< 10%)."""
         from services.billing_service import _rule_reseau_mismatch
         from services.billing_shadow_v2 import TURPE_EUR_KWH_ELEC
+
         org, site = _make_org_site(db, "OrgR13N", "600003003")
         contract = _make_contract(db, site.id)
         # 2% above expected (normal)
         network = round(9000 * TURPE_EUR_KWH_ELEC * 1.02, 2)
         total = round(1020 + network + 200, 2)
-        inv = self._make_full_invoice(db, site.id, contract.id,
-                                      energy_amt=1020, network_amt=network,
-                                      tax_amt=200, total_eur=total)
+        inv = self._make_full_invoice(
+            db, site.id, contract.id, energy_amt=1020, network_amt=network, tax_amt=200, total_eur=total
+        )
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = _rule_reseau_mismatch(inv, contract, lines)
         assert result is None
@@ -381,14 +444,15 @@ class TestR13R14:
         """R14 MEDIUM quand taxes > 5% au-dessus attendu."""
         from services.billing_service import _rule_taxes_mismatch
         from services.billing_shadow_v2 import CSPE_EUR_KWH_ELEC
+
         org, site = _make_org_site(db, "OrgR14M", "600003004")
         contract = _make_contract(db, site.id)
         # 8% above expected CSPE
         tax = round(9000 * CSPE_EUR_KWH_ELEC * 1.08, 2)
         total = round(1020 + 400 + tax, 2)
-        inv = self._make_full_invoice(db, site.id, contract.id,
-                                      energy_amt=1020, network_amt=400,
-                                      tax_amt=tax, total_eur=total)
+        inv = self._make_full_invoice(
+            db, site.id, contract.id, energy_amt=1020, network_amt=400, tax_amt=tax, total_eur=total
+        )
         lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
         result = _rule_taxes_mismatch(inv, contract, lines)
         assert result is not None
@@ -400,11 +464,12 @@ class TestR13R14:
 # TestSeedAndCoverage
 # ========================================
 
-class TestSeedAndCoverage:
 
+class TestSeedAndCoverage:
     def test_seed_creates_expected_invoices(self, db):
         """Seed 36 mois crée ~67 factures (36 elec - 3 gaps + 36 gaz - 1 gap = 68)."""
         from services.billing_seed import seed_billing_demo
+
         # Need 2+ sites
         _, site_a = _make_org_site(db, "SeedOrg", "600004001")
         _, site_b = _make_org_site(db, "SeedOrg2", "600004002")
@@ -416,6 +481,7 @@ class TestSeedAndCoverage:
     def test_seed_is_idempotent(self, db):
         """Appeler seed_billing_demo deux fois → skip au second appel."""
         from services.billing_seed import seed_billing_demo
+
         _make_org_site(db, "SeedIdmp1", "600004010")
         _make_org_site(db, "SeedIdmp2", "600004011")
         r1 = seed_billing_demo(db)
@@ -426,30 +492,44 @@ class TestSeedAndCoverage:
     def test_seed_has_controlled_gaps(self, db):
         """2023-03 et 2024-09 manquants pour site_a."""
         from services.billing_seed import seed_billing_demo, SOURCE_TAG
+
         _make_org_site(db, "SeedGap1", "600004020")
         _make_org_site(db, "SeedGap2", "600004021")
         seed_billing_demo(db)
-        gap_mar = db.query(EnergyInvoice).filter(
-            EnergyInvoice.source == SOURCE_TAG,
-            EnergyInvoice.invoice_number == "EDF-2023-03",
-        ).count()
-        gap_sep = db.query(EnergyInvoice).filter(
-            EnergyInvoice.source == SOURCE_TAG,
-            EnergyInvoice.invoice_number == "EDF-2024-09",
-        ).count()
+        gap_mar = (
+            db.query(EnergyInvoice)
+            .filter(
+                EnergyInvoice.source == SOURCE_TAG,
+                EnergyInvoice.invoice_number == "EDF-2023-03",
+            )
+            .count()
+        )
+        gap_sep = (
+            db.query(EnergyInvoice)
+            .filter(
+                EnergyInvoice.source == SOURCE_TAG,
+                EnergyInvoice.invoice_number == "EDF-2024-09",
+            )
+            .count()
+        )
         assert gap_mar == 0
         assert gap_sep == 0
 
     def test_seed_has_partial_months(self, db):
         """2023-06 → facture partielle (period_end = 15)."""
         from services.billing_seed import seed_billing_demo, SOURCE_TAG
+
         _make_org_site(db, "SeedPart1", "600004030")
         _make_org_site(db, "SeedPart2", "600004031")
         seed_billing_demo(db)
-        inv = db.query(EnergyInvoice).filter(
-            EnergyInvoice.source == SOURCE_TAG,
-            EnergyInvoice.invoice_number == "EDF-2023-06",
-        ).first()
+        inv = (
+            db.query(EnergyInvoice)
+            .filter(
+                EnergyInvoice.source == SOURCE_TAG,
+                EnergyInvoice.invoice_number == "EDF-2023-06",
+            )
+            .first()
+        )
         assert inv is not None
         assert inv.period_end.day == 15
 
@@ -467,31 +547,41 @@ class TestSeedAndCoverage:
 # TestPDFImportDoD — 3 smoke tests E2E
 # ========================================
 
+
 class TestPDFImportDoD:
     """DoD P0 smoke tests — vérifie le flux PDF import complet."""
 
     def _fake_invoice_domain(self):
         """Construit un faux Invoice domain avec 2 composantes (CONSO_BASE + TURPE_FIXE)."""
         from app.bill_intelligence.domain import (
-            Invoice, InvoiceComponent, InvoiceStatus,
-            EnergyType, ComponentType,
+            Invoice,
+            InvoiceComponent,
+            InvoiceStatus,
+            EnergyType,
+            ComponentType,
         )
         from datetime import date
+
         comp1 = InvoiceComponent(
             component_type=ComponentType.CONSO_BASE,
             label="Energie base",
-            quantity=4500.0, unit="kWh", unit_price=0.18,
-            amount_ht=810.0, tva_rate=20.0,
+            quantity=4500.0,
+            unit="kWh",
+            unit_price=0.18,
+            amount_ht=810.0,
+            tva_rate=20.0,
         )
         comp2 = InvoiceComponent(
             component_type=ComponentType.TURPE_FIXE,
             label="TURPE gestion",
-            amount_ht=150.0, tva_rate=5.5,
+            amount_ht=150.0,
+            tva_rate=5.5,
         )
         comp3 = InvoiceComponent(
             component_type=ComponentType.ACCISE,
             label="Accise electricite",
-            amount_ht=101.25, tva_rate=20.0,
+            amount_ht=101.25,
+            tva_rate=20.0,
         )
         return Invoice(
             invoice_id="TEST-2024-01",
@@ -512,6 +602,7 @@ class TestPDFImportDoD:
     def test_pdf_import_creates_invoice_lines(self, client, db):
         """P0-1 : POST /billing/import-pdf crée des EnergyInvoiceLine depuis les composantes."""
         from unittest.mock import patch, MagicMock
+
         org, site = _make_org_site(db, "OrgPDF1", "600006001")
         fake_domain = self._fake_invoice_domain()
 
@@ -532,9 +623,7 @@ class TestPDFImportDoD:
         invoice_id = data["invoice_id"]
 
         # Vérifier que les lignes ont été créées (P0-1)
-        lines = db.query(EnergyInvoiceLine).filter(
-            EnergyInvoiceLine.invoice_id == invoice_id
-        ).all()
+        lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == invoice_id).all()
         assert len(lines) == 3, f"Attendu 3 lignes, eu {len(lines)}"
 
         line_types = {l.line_type for l in lines}
@@ -571,6 +660,7 @@ class TestPDFImportDoD:
     def test_pdf_import_kb_updated_flag(self, client, db):
         """P0-5 : POST /billing/import-pdf retourne kb_updated=True si run_audit=True."""
         from unittest.mock import patch
+
         org, site = _make_org_site(db, "OrgPDF3", "600006003")
         fake_domain = self._fake_invoice_domain()
 
@@ -597,8 +687,8 @@ class TestPDFImportDoD:
 # TestTimelineAllSites
 # ========================================
 
-class TestTimelineAllSites:
 
+class TestTimelineAllSites:
     def test_billing_periods_no_site_id_returns_data(self, client, db):
         """GET /billing/periods sans site_id retourne des périodes quand des factures existent."""
         org, site = _make_org_site(db, "OrgTimeline1", "600007001")

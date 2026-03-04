@@ -1,6 +1,7 @@
 """
 PROMEOS V42 — Tests: Site Signals + Auto-qualification
 """
+
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Ensure all tables exist (sites, batiments, etc.) for signal tests
 from database import engine
 from models.base import Base
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -18,12 +20,14 @@ Base.metadata.create_all(bind=engine)
 # 1. Site Signals endpoint
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSiteSignalsEndpoint:
     """GET /api/tertiaire/site-signals returns site qualification."""
 
     def test_site_signals_returns_200(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         resp = client.get("/api/tertiaire/site-signals")
         assert resp.status_code == 200
@@ -37,6 +41,7 @@ class TestSiteSignalsEndpoint:
     def test_site_signals_shape(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         for site in data["sites"]:
@@ -52,6 +57,7 @@ class TestSiteSignalsEndpoint:
     def test_counts_sum_matches_total(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         total = sum(data["counts"].values())
@@ -60,6 +66,7 @@ class TestSiteSignalsEndpoint:
     def test_uncovered_probable_lte_assujetti_probable(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         data = client.get("/api/tertiaire/site-signals").json()
         assert data["uncovered_probable"] <= data["counts"]["assujetti_probable"]
@@ -69,12 +76,14 @@ class TestSiteSignalsEndpoint:
 # 2. OpenAPI
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestOpenAPISignals:
     """Verify /api/tertiaire/site-signals appears in OpenAPI schema."""
 
     def test_openapi_contains_site_signals(self):
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         resp = client.get("/openapi.json")
         paths = resp.json()["paths"]
@@ -84,6 +93,7 @@ class TestOpenAPISignals:
         """V50.1: OpenAPI 200 schema must be an object ref, not empty/string."""
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         oa = client.get("/openapi.json").json()
         path_info = oa["paths"]["/api/tertiaire/site-signals"]["get"]
@@ -103,10 +113,13 @@ class TestOpenAPISignals:
         """V50.1: site item in OpenAPI must expose 'signal' field."""
         from main import app
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         oa = client.get("/openapi.json").json()
         # Walk: SiteSignalsResponse → sites → items → SiteSignalItem
-        ref = oa["paths"]["/api/tertiaire/site-signals"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        ref = oa["paths"]["/api/tertiaire/site-signals"]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]["$ref"]
         resp_model = oa["components"]["schemas"][ref.split("/")[-1]]
         sites_prop = resp_model["properties"]["sites"]
         item_ref = sites_prop["items"]["$ref"]
@@ -120,17 +133,18 @@ class TestOpenAPISignals:
 # 3. Source guards
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSourceGuardsV42:
     """Verify V42 code in route + service."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
-        self.route_code = (
-            Path(__file__).resolve().parent.parent / "routes" / "tertiaire.py"
-        ).read_text(encoding="utf-8")
-        self.service_code = (
-            Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py"
-        ).read_text(encoding="utf-8")
+        self.route_code = (Path(__file__).resolve().parent.parent / "routes" / "tertiaire.py").read_text(
+            encoding="utf-8"
+        )
+        self.service_code = (Path(__file__).resolve().parent.parent / "services" / "tertiaire_service.py").read_text(
+            encoding="utf-8"
+        )
 
     def test_compute_site_signals_exists(self):
         assert "def compute_site_signals" in self.service_code

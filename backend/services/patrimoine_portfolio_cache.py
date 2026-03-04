@@ -35,6 +35,7 @@ _cache: Dict[int, Dict[str, Any]] = {}
 
 # ── API publique ──────────────────────────────────────────────────────────────
 
+
 def get_prev_snapshot(org_id: int) -> Optional[Dict[str, Any]]:
     """Retourne le snapshot précédent pour l'org, ou None s'il n'existe pas."""
     if org_id is None:

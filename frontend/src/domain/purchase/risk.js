@@ -63,7 +63,8 @@ export function computeOfferMonthlyPrices(offer, spotTrajectory) {
       case OfferStructure.HEURES_SOLAIRES: {
         const fixedPart = (pricing.fixedSharePct || 0) * (pricing.fixedPriceEurPerMwh ?? 0);
         let indexedPrice = spot + (pricing.spreadEurPerMwh || 0);
-        if (pricing.capEurPerMwh != null) indexedPrice = Math.min(indexedPrice, pricing.capEurPerMwh);
+        if (pricing.capEurPerMwh != null)
+          indexedPrice = Math.min(indexedPrice, pricing.capEurPerMwh);
         const indexedPart = (pricing.indexedSharePct || 0) * indexedPrice;
         const spotPart = (pricing.spotSharePct || 0) * spot;
         prices[m] = fixedPart + indexedPart + spotPart;
@@ -112,7 +113,11 @@ export function computeTco(monthlyPrices, monthlyKwh) {
 export function monteCarloOffer({ offer, monthlyKwh, horizonMonths, preset, iterations, seed }) {
   const basePrice = DEFAULT_MARKET.baseSpotEurPerMwh;
   const { trajectories } = generateMonteCarloTrajectories({
-    horizonMonths, preset, basePrice, iterations, seed,
+    horizonMonths,
+    preset,
+    basePrice,
+    iterations,
+    seed,
   });
 
   // Extend monthlyKwh to horizon (repeat annual cycle)
@@ -123,13 +128,13 @@ export function monteCarloOffer({ offer, monthlyKwh, horizonMonths, preset, iter
   }
 
   // Compute TCO distribution
-  const tcoSamples = trajectories.map(traj => {
+  const tcoSamples = trajectories.map((traj) => {
     const monthlyPrices = computeOfferMonthlyPrices(offer, traj);
     return computeTco(monthlyPrices, extendedKwh);
   });
 
   // Compute avg price distribution (€/MWh weighted by consumption)
-  const avgPriceSamples = trajectories.map(traj => {
+  const avgPriceSamples = trajectories.map((traj) => {
     const monthlyPrices = computeOfferMonthlyPrices(offer, traj);
     let weightedSum = 0;
     let totalKwh = 0;
@@ -145,13 +150,13 @@ export function monteCarloOffer({ offer, monthlyKwh, horizonMonths, preset, iter
   const sortedPrice = [...avgPriceSamples].sort((a, b) => a - b);
 
   return {
-    p10: percentile(sortedPrice, 0.10),
-    p50: percentile(sortedPrice, 0.50),
-    p90: percentile(sortedPrice, 0.90),
+    p10: percentile(sortedPrice, 0.1),
+    p50: percentile(sortedPrice, 0.5),
+    p90: percentile(sortedPrice, 0.9),
     mean: sortedPrice.reduce((a, b) => a + b, 0) / sortedPrice.length,
-    tcoP10: percentile(sortedTco, 0.10),
-    tcoP50: percentile(sortedTco, 0.50),
-    tcoP90: percentile(sortedTco, 0.90),
+    tcoP10: percentile(sortedTco, 0.1),
+    tcoP50: percentile(sortedTco, 0.5),
+    tcoP90: percentile(sortedTco, 0.9),
     distribution: tcoSamples,
   };
 }
@@ -168,7 +173,11 @@ export function monteCarloOffer({ offer, monthlyKwh, horizonMonths, preset, iter
 export function computeWorstMonth(offer, monthlyKwh, horizonMonths, preset, seed) {
   const basePrice = DEFAULT_MARKET.baseSpotEurPerMwh;
   const { trajectories } = generateMonteCarloTrajectories({
-    horizonMonths, preset, basePrice, iterations: 50, seed,
+    horizonMonths,
+    preset,
+    basePrice,
+    iterations: 50,
+    seed,
   });
 
   let worstCost = 0;
@@ -197,7 +206,7 @@ export function computeWorstMonth(offer, monthlyKwh, horizonMonths, preset, seed
  */
 export function probExceedBudget(tcoDistribution, budgetEur) {
   if (!budgetEur || tcoDistribution.length === 0) return 0;
-  const exceeding = tcoDistribution.filter(t => t > budgetEur).length;
+  const exceeding = tcoDistribution.filter((t) => t > budgetEur).length;
   return exceeding / tcoDistribution.length;
 }
 
@@ -207,7 +216,7 @@ export function probExceedBudget(tcoDistribution, budgetEur) {
  * @returns {number}
  */
 export function cvar90(distribution) {
-  const valid = distribution.filter(v => isFinite(v));
+  const valid = distribution.filter((v) => isFinite(v));
   if (valid.length === 0) return 0;
   const sorted = [...valid].sort((a, b) => a - b);
   const cutoff = Math.ceil(sorted.length * 0.9);
@@ -222,7 +231,7 @@ export function cvar90(distribution) {
  * @returns {number}
  */
 export function volatilityProxy(distribution) {
-  const valid = distribution.filter(v => isFinite(v));
+  const valid = distribution.filter((v) => isFinite(v));
   if (valid.length < 2) return 0;
   const mean = valid.reduce((a, b) => a + b, 0) / valid.length;
   const variance = valid.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (valid.length - 1);

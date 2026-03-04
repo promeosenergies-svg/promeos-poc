@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Test Power Calculations
 Tests for P = E / (interval/60), percentile, load factor, peak-to-average.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -21,8 +23,7 @@ def _make_readings(values, start=None, interval_minutes=60):
     if start is None:
         start = datetime(2025, 1, 1, 0, 0)
     return [
-        {"timestamp": start + timedelta(minutes=i * interval_minutes), "value_kwh": v}
-        for i, v in enumerate(values)
+        {"timestamp": start + timedelta(minutes=i * interval_minutes), "value_kwh": v} for i, v in enumerate(values)
     ]
 
 

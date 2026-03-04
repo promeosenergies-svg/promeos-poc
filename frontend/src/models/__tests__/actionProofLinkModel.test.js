@@ -135,7 +135,11 @@ describe('isActionClosable', () => {
   const action = { id: 1, status: 'in_progress', notes: '' };
 
   it('closable si preuve validée côté EFA', () => {
-    const r = isActionClosable(action, { validated_count: 1, deposited_count: 1, expected_count: 2 });
+    const r = isActionClosable(action, {
+      validated_count: 1,
+      deposited_count: 1,
+      expected_count: 2,
+    });
     expect(r.closable).toBe(true);
     expect(r.raisons).toHaveLength(0);
   });
@@ -154,12 +158,12 @@ describe('isActionClosable', () => {
     const r = isActionClosable(action, { validated_count: 0, deposited_count: 0 }, 0);
     expect(r.closable).toBe(false);
     expect(r.raisons.length).toBeGreaterThan(0);
-    expect(r.raisons.some(r => r.includes('preuve'))).toBe(true);
+    expect(r.raisons.some((r) => r.includes('preuve'))).toBe(true);
   });
 
   it('raisons FR contiennent le conseil [justifié]', () => {
     const r = isActionClosable(action, null, 0);
-    expect(r.raisons.some(r => r.includes('[justifié]'))).toBe(true);
+    expect(r.raisons.some((r) => r.includes('[justifié]'))).toBe(true);
   });
 
   it('déjà terminée = closable', () => {

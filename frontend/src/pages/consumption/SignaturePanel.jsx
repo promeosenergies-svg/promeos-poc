@@ -14,8 +14,13 @@
  */
 import { useState, useMemo } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
 } from 'recharts';
 import useEmsTimeseries from './useEmsTimeseries';
 import HeatmapChart from './HeatmapChart';
@@ -144,7 +149,8 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
           Donnees insuffisantes pour la signature
         </h3>
         <p className="text-sm text-gray-500 max-w-xs">
-          La signature horaire necessite au moins 48 heures de donnees. Importez ou generez des donnees pour ce site.
+          La signature horaire necessite au moins 48 heures de donnees. Importez ou generez des
+          donnees pour ce site.
         </p>
       </div>
     );
@@ -153,7 +159,8 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
   const totalPoints = meta?.n_points || heatmapData.length;
 
   // Most recent month from drillDownData for deep-link
-  const drillMonth = drillDownData.length > 0 ? drillDownData[drillDownData.length - 1].rawDate : null;
+  const drillMonth =
+    drillDownData.length > 0 ? drillDownData[drillDownData.length - 1].rawDate : null;
 
   return (
     <div className="space-y-3">
@@ -161,32 +168,36 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Signature de consommation</h3>
-          <p className="text-xs text-gray-500">Moyenne kWh par creneau horaire ({days} derniers jours)</p>
+          <p className="text-xs text-gray-500">
+            Moyenne kWh par creneau horaire ({days} derniers jours)
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* P1-2: Day filter pills — FR labels */}
-          {['all', 'weekday', 'weekend'].map(f => (
+          {['all', 'weekday', 'weekend'].map((f) => (
             <button
               key={f}
-              onClick={() => { setDayFilter(f); setDrillDown(null); }}
+              onClick={() => {
+                setDayFilter(f);
+                setDrillDown(null);
+              }}
               className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                dayFilter === f ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                dayFilter === f
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {f === 'all' ? 'Semaine typique' : f === 'weekday' ? 'Jours ouvres' : 'Week-ends'}
             </button>
           ))}
-          <span className="text-xs text-gray-400 ml-2">{totalPoints.toLocaleString('fr-FR')} pts</span>
+          <span className="text-xs text-gray-400 ml-2">
+            {totalPoints.toLocaleString('fr-FR')} pts
+          </span>
         </div>
       </div>
 
       {/* Heatmap — now clickable */}
-      <HeatmapChart
-        data={heatmapData}
-        unit="kWh"
-        filter={dayFilter}
-        onCellClick={setDrillDown}
-      />
+      <HeatmapChart data={heatmapData} unit="kWh" filter={dayFilter} onCellClick={setDrillDown} />
 
       {/* Drill-down chart for selected cell */}
       {drillDown && drillDownData.length > 0 && (
@@ -206,14 +217,29 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={drillDownData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={40} />
-                <YAxis tick={{ fontSize: 10 }} label={{ value: 'kWh', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 9 }}
+                  angle={-30}
+                  textAnchor="end"
+                  height={40}
+                />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  label={{
+                    value: 'kWh',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 10 },
+                  }}
+                />
                 <RTooltip />
                 <Area type="monotone" dataKey="kwh" stroke="#3b82f6" fill="#dbeafe" name="kWh" />
               </AreaChart>
             </ResponsiveContainer>
             <p className="text-[10px] text-gray-400 mt-1">
-              {drillDownData.length} points sur {days} jours pour {drillDown.dayLabel} a {drillDown.hour}h
+              {drillDownData.length} points sur {days} jours pour {drillDown.dayLabel} a{' '}
+              {drillDown.hour}h
             </p>
 
             {/* P1.1: Cross-brique CTAs */}
@@ -247,8 +273,8 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
 
       {/* Legend note */}
       <p className="text-[11px] text-gray-400">
-        HP = Heures Pleines (lun-ven 6h-22h) · HC = Heures Creuses (nuits + week-ends)
-        · Intensite = consommation moyenne par creneau
+        HP = Heures Pleines (lun-ven 6h-22h) · HC = Heures Creuses (nuits + week-ends) · Intensite =
+        consommation moyenne par creneau
       </p>
     </div>
   );

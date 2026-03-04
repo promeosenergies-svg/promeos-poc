@@ -37,11 +37,11 @@ describe('A · Route helpers toPurchase + toPurchaseAssistant', () => {
   });
 
   it('toPurchase supports filter param', () => {
-    expect(code).toContain("opts.filter");
+    expect(code).toContain('opts.filter');
   });
 
   it('toPurchase supports tab param', () => {
-    expect(code).toContain("opts.tab");
+    expect(code).toContain('opts.tab');
   });
 
   it('toPurchaseAssistant returns /achat-assistant', () => {
@@ -76,7 +76,6 @@ describe('B · No hardcoded /achat-energie in models/cockpit', () => {
     expect(code).toContain("toPurchase({ filter: 'missing' })");
     expect(code).not.toContain("navigate('/achat-energie");
   });
-
 });
 
 // ============================================================

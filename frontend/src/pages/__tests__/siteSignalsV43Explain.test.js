@@ -6,14 +6,10 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 const backendSrc = (rel) =>
-  fs.readFileSync(
-    path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel),
-    'utf-8',
-  );
+  fs.readFileSync(path.resolve(__dirname, '..', '..', '..', '..', 'backend', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. Dashboard — Why drawer source guards

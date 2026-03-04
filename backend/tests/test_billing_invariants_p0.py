@@ -3,8 +3,10 @@ PROMEOS — V100 Billing Invariants P0
 10 structural invariants + 2 e2e shadow tests + catalog tests.
 All tests are pure / deterministic (no DB needed).
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import math
@@ -17,6 +19,7 @@ from services.billing_shadow_v2 import shadow_billing_v2, _safe_rate, _FALLBACK
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def _make_invoice(kwh=1000, total_eur=250.0, period_start=None, period_end=None, site_id=1, energy_kwh=None):
     return SimpleNamespace(
@@ -60,11 +63,19 @@ def _make_lines(fourniture=180.0, reseau=45.3, taxes=22.5):
     ]
 
 
-def _run_shadow(kwh=1000, price_ref=0.18, energy_type="elec", total_eur=250.0,
-                period_start=None, period_end=None, fixed_fee=None,
-                fourniture=180.0, reseau=45.3, taxes=22.5):
-    inv = _make_invoice(kwh=kwh, total_eur=total_eur,
-                        period_start=period_start, period_end=period_end)
+def _run_shadow(
+    kwh=1000,
+    price_ref=0.18,
+    energy_type="elec",
+    total_eur=250.0,
+    period_start=None,
+    period_end=None,
+    fixed_fee=None,
+    fourniture=180.0,
+    reseau=45.3,
+    taxes=22.5,
+):
+    inv = _make_invoice(kwh=kwh, total_eur=total_eur, period_start=period_start, period_end=period_end)
     contract = _make_contract(energy_type=energy_type, price_ref=price_ref, fixed_fee=fixed_fee)
     lines = _make_lines(fourniture=fourniture, reseau=reseau, taxes=taxes)
     return shadow_billing_v2(inv, lines, contract)
@@ -73,6 +84,7 @@ def _run_shadow(kwh=1000, price_ref=0.18, energy_type="elec", total_eur=250.0,
 # ========================================================================
 # A. 10 Structural Invariants
 # ========================================================================
+
 
 class TestInvariant01_TotalEqualsSumComponents:
     """INV-01: expected_ttc == sum(component.ttc)."""
@@ -94,7 +106,9 @@ class TestInvariant02_HtPlusTvaEqualsTtc:
     def test_all_components(self):
         r = _run_shadow()
         for c in r["components"]:
-            assert abs(c["ht"] + c["tva"] - c["ttc"]) < 0.02, f"Component {c['code']}: {c['ht']} + {c['tva']} != {c['ttc']}"
+            assert abs(c["ht"] + c["tva"] - c["ttc"]) < 0.02, (
+                f"Component {c['code']}: {c['ht']} + {c['tva']} != {c['ttc']}"
+            )
 
     def test_totals(self):
         r = _run_shadow()
@@ -119,10 +133,21 @@ class TestInvariant04_NoNaN:
 
     def test_no_nan_basic(self):
         r = _run_shadow()
-        for key in ["expected_fourniture_ht", "expected_reseau_ht", "expected_taxes_ht",
-                     "expected_abo_ht", "expected_tva", "expected_ttc",
-                     "delta_fourniture", "delta_reseau", "delta_taxes",
-                     "delta_ttc", "delta_pct", "kwh", "price_ref"]:
+        for key in [
+            "expected_fourniture_ht",
+            "expected_reseau_ht",
+            "expected_taxes_ht",
+            "expected_abo_ht",
+            "expected_tva",
+            "expected_ttc",
+            "delta_fourniture",
+            "delta_reseau",
+            "delta_taxes",
+            "delta_ttc",
+            "delta_pct",
+            "kwh",
+            "price_ref",
+        ]:
             assert not math.isnan(r[key]), f"{key} is NaN"
             assert not math.isinf(r[key]), f"{key} is Inf"
 
@@ -232,13 +257,19 @@ class TestInvariant10_ZeroKwhNoCrash:
 # B. 2 End-to-end Shadow Tests
 # ========================================================================
 
+
 class TestE2E_ShadowElec:
     """E2E-1: Full shadow billing for a typical 1000 kWh elec invoice."""
 
     def test_full_breakdown(self):
-        r = _run_shadow(kwh=1000, price_ref=0.18, energy_type="elec",
-                        total_eur=300.0, period_start=date(2025, 1, 1),
-                        period_end=date(2025, 1, 31))
+        r = _run_shadow(
+            kwh=1000,
+            price_ref=0.18,
+            energy_type="elec",
+            total_eur=300.0,
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
+        )
 
         # Fourniture: 1000 × 0.18 = 180.00
         assert r["expected_fourniture_ht"] == 180.0
@@ -275,9 +306,14 @@ class TestE2E_ShadowGaz:
     """E2E-2: Full shadow billing for a typical 2000 kWh gaz invoice."""
 
     def test_full_breakdown(self):
-        r = _run_shadow(kwh=2000, price_ref=0.09, energy_type="gaz",
-                        total_eur=250.0, period_start=date(2025, 2, 1),
-                        period_end=date(2025, 2, 28))
+        r = _run_shadow(
+            kwh=2000,
+            price_ref=0.09,
+            energy_type="gaz",
+            total_eur=250.0,
+            period_start=date(2025, 2, 1),
+            period_end=date(2025, 2, 28),
+        )
 
         # Fourniture: 2000 × 0.09 = 180.00
         assert r["expected_fourniture_ht"] == 180.0
@@ -303,33 +339,39 @@ class TestE2E_ShadowGaz:
 # C. Tax Catalog Tests
 # ========================================================================
 
+
 class TestCatalogLookup:
     """Catalog service: date-based lookup."""
 
     def test_get_entry_by_code(self):
         from app.referential.tax_catalog_service import get_entry
+
         entry = get_entry("TVA_NORMALE")
         assert entry is not None
         assert entry["rate"] == 0.20
 
     def test_get_rate(self):
         from app.referential.tax_catalog_service import get_rate
+
         assert get_rate("TVA_NORMALE") == 0.20
         assert get_rate("TVA_REDUITE") == 0.055
 
     def test_get_rate_unknown_raises(self):
         from app.referential.tax_catalog_service import get_rate
+
         with pytest.raises(KeyError):
             get_rate("UNKNOWN_CODE_XYZ")
 
     def test_lookup_at_date(self):
         from app.referential.tax_catalog_service import get_entry
+
         entry = get_entry("TURPE_ENERGIE_C5_BT", at_date=date(2025, 6, 1))
         assert entry is not None
         assert entry["rate"] == 0.0453
 
     def test_catalog_version(self):
         from app.referential.tax_catalog_service import get_catalog_version
+
         v = get_catalog_version()
         assert v != "unknown"
         assert "2025" in v
@@ -340,6 +382,7 @@ class TestCatalogFallback:
 
     def test_trace_includes_source(self):
         from app.referential.tax_catalog_service import trace
+
         t = trace("ACCISE_ELEC")
         assert t["code"] == "ACCISE_ELEC"
         assert t["used_rate"] == 0.02250
@@ -362,6 +405,7 @@ class TestCatalogReload:
 
     def test_reload_returns_catalog(self):
         from app.referential.tax_catalog_service import reload_catalog
+
         catalog = reload_catalog()
         assert "version" in catalog
         assert "entries" in catalog
@@ -372,12 +416,14 @@ class TestCatalogReload:
 # D. Billing Service Guards
 # ========================================================================
 
+
 class TestBillingServiceGuards:
     """Guards added to billing_service.py rules."""
 
     def test_r8_guard_source_has_abs(self):
         """R8: denominator uses abs() to handle negative total_eur."""
         import pathlib
+
         src = (pathlib.Path(__file__).parent.parent / "services" / "billing_service.py").read_text(encoding="utf-8")
         # Find the R8 function and check for abs()
         assert "abs(invoice.total_eur)" in src
@@ -385,12 +431,14 @@ class TestBillingServiceGuards:
     def test_r11_guard_has_minimum_threshold(self):
         """R11: tolerance includes minimum 5€ absolute threshold."""
         import pathlib
+
         src = (pathlib.Path(__file__).parent.parent / "services" / "billing_service.py").read_text(encoding="utf-8")
         assert "delta > 5.0" in src
 
     def test_r11_guard_has_abs_denominator(self):
         """R11: denominator uses abs() for negative invoice amounts."""
         import pathlib
+
         src = (pathlib.Path(__file__).parent.parent / "services" / "billing_service.py").read_text(encoding="utf-8")
         assert "abs(invoice.total_eur)" in src
 
@@ -399,15 +447,29 @@ class TestBillingServiceGuards:
 # E. Shadow V2 Backward Compatibility
 # ========================================================================
 
+
 class TestBackwardCompatibility:
     """Shadow V2 result must contain all old keys for R13/R14."""
 
     REQUIRED_KEYS = [
-        "expected_fourniture_ht", "expected_reseau_ht", "expected_taxes_ht",
-        "expected_tva", "expected_ttc",
-        "actual_fourniture_ht", "actual_reseau_ht", "actual_taxes_ht", "actual_ttc",
-        "delta_fourniture", "delta_reseau", "delta_taxes", "delta_ttc", "delta_pct",
-        "energy_type", "kwh", "price_ref", "method",
+        "expected_fourniture_ht",
+        "expected_reseau_ht",
+        "expected_taxes_ht",
+        "expected_tva",
+        "expected_ttc",
+        "actual_fourniture_ht",
+        "actual_reseau_ht",
+        "actual_taxes_ht",
+        "actual_ttc",
+        "delta_fourniture",
+        "delta_reseau",
+        "delta_taxes",
+        "delta_ttc",
+        "delta_pct",
+        "energy_type",
+        "kwh",
+        "price_ref",
+        "method",
     ]
 
     def test_all_old_keys_present(self):

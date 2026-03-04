@@ -6,6 +6,7 @@ Usage:
     orchestrator = MonitoringOrchestrator(db)
     result = orchestrator.run(site_id=1, meter_id=1)
 """
+
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
@@ -31,9 +32,14 @@ class MonitoringOrchestrator:
         self.alert_engine = AlertEngine()
         self.climate_engine = ClimateEngine()
 
-    def run(self, site_id: int, meter_id: Optional[int] = None,
-            days: int = 90, interval_minutes: int = 60,
-            persist: bool = True) -> Dict[str, Any]:
+    def run(
+        self,
+        site_id: int,
+        meter_id: Optional[int] = None,
+        days: int = 90,
+        interval_minutes: int = 60,
+        persist: bool = True,
+    ) -> Dict[str, Any]:
         """
         Run the full monitoring pipeline.
 
@@ -80,8 +86,7 @@ class MonitoringOrchestrator:
             "total_alerts": sum(r.get("alert_count", 0) for r in results),
         }
 
-    def _run_for_meter(self, meter, site, days: int,
-                       interval_minutes: int, persist: bool) -> Dict[str, Any]:
+    def _run_for_meter(self, meter, site, days: int, interval_minutes: int, persist: bool) -> Dict[str, Any]:
         """Run pipeline for a single meter."""
         from models import MeterReading, MonitoringSnapshot, MonitoringAlert, AlertStatus, AlertSeverity
 
@@ -92,25 +97,35 @@ class MonitoringOrchestrator:
         # 1. Fetch readings — filter by frequency (prefer finest: 15min > hourly)
         #    Exclude MONTHLY/DAILY readings that would corrupt power calculations
         from models import FrequencyType
+
         best_freq = None
         for freq in [FrequencyType.MIN_15, FrequencyType.HOURLY]:
-            count = self.db.query(MeterReading).filter(
-                MeterReading.meter_id == meter.id,
-                MeterReading.frequency == freq,
-                MeterReading.timestamp >= period_start,
-                MeterReading.timestamp <= period_end,
-            ).count()
+            count = (
+                self.db.query(MeterReading)
+                .filter(
+                    MeterReading.meter_id == meter.id,
+                    MeterReading.frequency == freq,
+                    MeterReading.timestamp >= period_start,
+                    MeterReading.timestamp <= period_end,
+                )
+                .count()
+            )
             if count >= 48:  # at least 2 days of data
                 best_freq = freq
                 break
 
         freq_filter = [best_freq] if best_freq else [FrequencyType.MIN_15, FrequencyType.HOURLY]
-        readings_orm = self.db.query(MeterReading).filter(
-            MeterReading.meter_id == meter.id,
-            MeterReading.frequency.in_(freq_filter),
-            MeterReading.timestamp >= period_start,
-            MeterReading.timestamp <= period_end,
-        ).order_by(MeterReading.timestamp).all()
+        readings_orm = (
+            self.db.query(MeterReading)
+            .filter(
+                MeterReading.meter_id == meter.id,
+                MeterReading.frequency.in_(freq_filter),
+                MeterReading.timestamp >= period_start,
+                MeterReading.timestamp <= period_end,
+            )
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         # Auto-detect interval from best frequency
         if best_freq == FrequencyType.MIN_15:
@@ -118,10 +133,7 @@ class MonitoringOrchestrator:
         elif best_freq == FrequencyType.HOURLY:
             interval_minutes = 60
 
-        readings = [
-            {"timestamp": r.timestamp, "value_kwh": r.value_kwh}
-            for r in readings_orm
-        ]
+        readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
 
         if not readings:
             return {
@@ -138,10 +150,8 @@ class MonitoringOrchestrator:
         if self.db:
             try:
                 from services.ems.weather_service import get_weather
-                weather_data = get_weather(
-                    self.db, meter.site_id,
-                    period_start.date(), period_end.date()
-                )
+
+                weather_data = get_weather(self.db, meter.site_id, period_start.date(), period_end.date())
             except Exception:
                 weather_data = []
 
@@ -150,9 +160,8 @@ class MonitoringOrchestrator:
         if self.db:
             try:
                 from models import SiteOperatingSchedule
-                sched = self.db.query(SiteOperatingSchedule).filter_by(
-                    site_id=meter.site_id
-                ).first()
+
+                sched = self.db.query(SiteOperatingSchedule).filter_by(site_id=meter.site_id).first()
                 if sched:
                     schedule = {
                         "open_days": sched.open_days,
@@ -168,16 +177,13 @@ class MonitoringOrchestrator:
 
         # 3. Data quality
         quality = self.quality_engine.compute(
-            readings, interval_minutes,
-            period_start=period_start, period_end=period_end
+            readings, interval_minutes, period_start=period_start, period_end=period_end
         )
 
         # 4. Power risk
         sub_power = meter.subscribed_power_kva or 0
         power_risk = self.power_engine.compute(
-            kpis, readings,
-            subscribed_power_kva=sub_power,
-            interval_minutes=interval_minutes
+            kpis, readings, subscribed_power_kva=sub_power, interval_minutes=interval_minutes
         )
 
         # 4b. Climate analysis
@@ -188,25 +194,18 @@ class MonitoringOrchestrator:
 
         # 6. Generate alerts
         alerts = self.alert_engine.evaluate(
-            kpis, power_risk, quality,
-            previous_kpis=previous_kpis,
-            site_id=meter.site_id,
-            meter_id=meter.id
+            kpis, power_risk, quality, previous_kpis=previous_kpis, site_id=meter.site_id, meter_id=meter.id
         )
 
         # 6b. Climate alerts
-        climate_alerts = self.alert_engine.evaluate_climate(
-            climate, site_id=meter.site_id, meter_id=meter.id
-        )
+        climate_alerts = self.alert_engine.evaluate_climate(climate, site_id=meter.site_id, meter_id=meter.id)
         alerts.extend(climate_alerts)
 
         snapshot_id = None
 
         # 7. Persist
         if persist:
-            snapshot_id = self._persist_snapshot(
-                meter, period_start, period_end, kpis, quality, power_risk
-            )
+            snapshot_id = self._persist_snapshot(meter, period_start, period_end, kpis, quality, power_risk)
             self._persist_alerts(alerts, snapshot_id)
 
         return {
@@ -224,26 +223,29 @@ class MonitoringOrchestrator:
             "snapshot_id": snapshot_id,
         }
 
-    def _get_previous_kpis(self, meter_id: int, current_start: datetime,
-                           days: int) -> Optional[Dict]:
+    def _get_previous_kpis(self, meter_id: int, current_start: datetime, days: int) -> Optional[Dict]:
         """Fetch KPIs from the previous equivalent period."""
         from models import MonitoringSnapshot
 
         prev_end = current_start
         prev_start = current_start - timedelta(days=days)
 
-        prev_snapshot = self.db.query(MonitoringSnapshot).filter(
-            MonitoringSnapshot.meter_id == meter_id,
-            MonitoringSnapshot.period_start >= prev_start,
-            MonitoringSnapshot.period_end <= prev_end
-        ).order_by(MonitoringSnapshot.created_at.desc()).first()
+        prev_snapshot = (
+            self.db.query(MonitoringSnapshot)
+            .filter(
+                MonitoringSnapshot.meter_id == meter_id,
+                MonitoringSnapshot.period_start >= prev_start,
+                MonitoringSnapshot.period_end <= prev_end,
+            )
+            .order_by(MonitoringSnapshot.created_at.desc())
+            .first()
+        )
 
         if prev_snapshot and prev_snapshot.kpis_json:
             return prev_snapshot.kpis_json
         return None
 
-    def _persist_snapshot(self, meter, period_start, period_end,
-                          kpis, quality, power_risk) -> int:
+    def _persist_snapshot(self, meter, period_start, period_end, kpis, quality, power_risk) -> int:
         """Save monitoring snapshot to DB."""
         from models import MonitoringSnapshot
 
@@ -294,12 +296,15 @@ class MonitoringOrchestrator:
 
         self.db.commit()
 
-    def run_standalone(self, readings: List[Dict[str, Any]],
-                       interval_minutes: int = 60,
-                       subscribed_power_kva: float = 0,
-                       previous_kpis: Optional[Dict] = None,
-                       weather_data: Optional[List[Dict]] = None,
-                       schedule: Optional[Dict] = None) -> Dict[str, Any]:
+    def run_standalone(
+        self,
+        readings: List[Dict[str, Any]],
+        interval_minutes: int = 60,
+        subscribed_power_kva: float = 0,
+        previous_kpis: Optional[Dict] = None,
+        weather_data: Optional[List[Dict]] = None,
+        schedule: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
         """
         Run pipeline without DB (for testing / stateless use).
 
@@ -320,17 +325,10 @@ class MonitoringOrchestrator:
         kpis = self.kpi_engine.compute(readings, interval_minutes, schedule=schedule)
         quality = self.quality_engine.compute(readings, interval_minutes)
         power_risk = self.power_engine.compute(
-            kpis, readings,
-            subscribed_power_kva=subscribed_power_kva,
-            interval_minutes=interval_minutes
+            kpis, readings, subscribed_power_kva=subscribed_power_kva, interval_minutes=interval_minutes
         )
-        climate = self.climate_engine.compute(
-            readings, weather_data or [], interval_minutes
-        )
-        alerts = self.alert_engine.evaluate(
-            kpis, power_risk, quality,
-            previous_kpis=previous_kpis
-        )
+        climate = self.climate_engine.compute(readings, weather_data or [], interval_minutes)
+        alerts = self.alert_engine.evaluate(kpis, power_risk, quality, previous_kpis=previous_kpis)
         climate_alerts = self.alert_engine.evaluate_climate(climate)
         alerts.extend(climate_alerts)
 

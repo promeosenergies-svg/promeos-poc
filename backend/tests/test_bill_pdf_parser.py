@@ -2,6 +2,7 @@
 PROMEOS Bill Intelligence — Tests for PDF parser templates.
 AC: parse 1 template elec + 1 template gaz from extracted text.
 """
+
 import sys
 import os
 
@@ -9,17 +10,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from app.bill_intelligence.parsers.pdf_parser import (
-    parse_pdf_text, parse_edf_elec, parse_engie_gaz,
-    detect_template, list_templates, _find_float, _find_date,
+    parse_pdf_text,
+    parse_edf_elec,
+    parse_engie_gaz,
+    detect_template,
+    list_templates,
+    _find_float,
+    _find_date,
     extract_text_from_pdf,
 )
 from app.bill_intelligence.domain import EnergyType, InvoiceStatus, ComponentType
 
 
-PDF_DEMO_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data", "invoices", "pdf_demo"
-)
+PDF_DEMO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "invoices", "pdf_demo")
 
 EDF_TEXT = open(os.path.join(PDF_DEMO_DIR, "edf_elec_sample.txt"), encoding="utf-8").read()
 ENGIE_TEXT = open(os.path.join(PDF_DEMO_DIR, "engie_gaz_sample.txt"), encoding="utf-8").read()
@@ -28,6 +31,7 @@ ENGIE_TEXT = open(os.path.join(PDF_DEMO_DIR, "engie_gaz_sample.txt"), encoding="
 # ========================================
 # Template detection tests
 # ========================================
+
 
 def test_detect_edf_template():
     """EDF template detected from text."""
@@ -64,6 +68,7 @@ def test_list_templates():
 # Regex helper tests
 # ========================================
 
+
 def test_find_float_comma():
     """Float extraction with French comma."""
     val = _find_float("Total HT : 2772,41 EUR", r"Total\s+HT\s*:\s*([\d\s,.]+)\s*EUR")
@@ -88,6 +93,7 @@ def test_find_date():
 # ========================================
 # EDF Elec parser tests
 # ========================================
+
 
 def test_parse_edf_invoice_id():
     """EDF invoice ID extracted."""
@@ -171,6 +177,7 @@ def test_parse_edf_confidence():
 # Engie Gaz parser tests
 # ========================================
 
+
 def test_parse_engie_invoice_id():
     """Engie invoice ID extracted."""
     inv = parse_engie_gaz(ENGIE_TEXT)
@@ -217,6 +224,7 @@ def test_parse_engie_confidence():
 # Auto-detect parser tests
 # ========================================
 
+
 def test_auto_detect_edf():
     """Auto-detect parses EDF text correctly."""
     inv = parse_pdf_text(EDF_TEXT)
@@ -240,6 +248,7 @@ def test_auto_detect_unknown_raises():
 # ========================================
 # Text extraction fallback
 # ========================================
+
 
 def test_extract_text_from_txt_file():
     """extract_text_from_pdf works on .txt demo files."""

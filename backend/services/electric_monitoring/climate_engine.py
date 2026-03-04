@@ -5,6 +5,7 @@ Aggregates hourly readings to daily kWh, then runs regression against daily avg 
 Slope unit: (kWh/j)/°C — energy per day per degree Celsius.
 Delegates to signature_service.run_signature() for the actual regression.
 """
+
 from collections import defaultdict
 from datetime import datetime
 from typing import List, Dict, Any, Optional

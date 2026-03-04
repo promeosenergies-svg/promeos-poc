@@ -18,16 +18,22 @@ import { computeHealthState } from './dashboardEssentials';
 // Zero tech jargon — every label must be understandable by a CFO.
 
 const BILLING_REASON_LABELS = {
-  shadow_gap:         (n) => `${n} écart${n > 1 ? 's' : ''} détecté${n > 1 ? 's' : ''} entre factures et consommation réelle`,
-  unit_price_high:    (n) => `${n} écart${n > 1 ? 's' : ''} de prix détecté${n > 1 ? 's' : ''} sur vos factures`,
-  duplicate_invoice:  (n) => `${n} doublon${n > 1 ? 's' : ''} de facture${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''}`,
-  missing_period:     (n) => `${n} période${n > 1 ? 's' : ''} de facturation manquante${n > 1 ? 's' : ''}`,
-  period_too_long:    (n) => `${n} facture${n > 1 ? 's' : ''} avec une période anormalement longue`,
-  negative_kwh:       (n) => `${n} facture${n > 1 ? 's' : ''} avec consommation négative`,
-  zero_amount:        (n) => `${n} facture${n > 1 ? 's' : ''} à montant zéro`,
+  shadow_gap: (n) =>
+    `${n} écart${n > 1 ? 's' : ''} détecté${n > 1 ? 's' : ''} entre factures et consommation réelle`,
+  unit_price_high: (n) =>
+    `${n} écart${n > 1 ? 's' : ''} de prix détecté${n > 1 ? 's' : ''} sur vos factures`,
+  duplicate_invoice: (n) =>
+    `${n} doublon${n > 1 ? 's' : ''} de facture${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''}`,
+  missing_period: (n) =>
+    `${n} période${n > 1 ? 's' : ''} de facturation manquante${n > 1 ? 's' : ''}`,
+  period_too_long: (n) => `${n} facture${n > 1 ? 's' : ''} avec une période anormalement longue`,
+  negative_kwh: (n) => `${n} facture${n > 1 ? 's' : ''} avec consommation négative`,
+  zero_amount: (n) => `${n} facture${n > 1 ? 's' : ''} à montant zéro`,
   lines_sum_mismatch: (n) => `${n} écart${n > 1 ? 's' : ''} entre le détail et le total facture`,
-  consumption_spike:  (n) => `${n} pic${n > 1 ? 's' : ''} de consommation inhabituel${n > 1 ? 's' : ''}`,
-  price_drift:        (n) => `${n} dérive${n > 1 ? 's' : ''} de prix détectée${n > 1 ? 's' : ''} dans le temps`,
+  consumption_spike: (n) =>
+    `${n} pic${n > 1 ? 's' : ''} de consommation inhabituel${n > 1 ? 's' : ''}`,
+  price_drift: (n) =>
+    `${n} dérive${n > 1 ? 's' : ''} de prix détectée${n > 1 ? 's' : ''} dans le temps`,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -61,7 +67,9 @@ export function buildBillingWatchlist(insights = []) {
   const items = [];
   for (const [type, group] of groups) {
     const highestSeverity = group.reduce((best, ins) => {
-      return (SEVERITY_RANK[ins.severity] ?? 99) < (SEVERITY_RANK[best] ?? 99) ? ins.severity : best;
+      return (SEVERITY_RANK[ins.severity] ?? 99) < (SEVERITY_RANK[best] ?? 99)
+        ? ins.severity
+        : best;
     }, 'low');
 
     const labelFn = BILLING_REASON_LABELS[type];
@@ -97,13 +105,13 @@ export function buildBillingWatchlist(insights = []) {
 export function computeBillingHealthState(summary, insights = []) {
   const watchlist = buildBillingWatchlist(insights);
   const active = insights.filter(isActiveInsight);
-  const critCount = active.filter(i => i.severity === 'critical').length;
+  const critCount = active.filter((i) => i.severity === 'critical').length;
 
   const kpis = {
     total: summary?.total_invoices || 0,
     conformes: (summary?.total_invoices || 0) - critCount,
     nonConformes: critCount,
-    aRisque: active.filter(i => i.severity === 'high').length,
+    aRisque: active.filter((i) => i.severity === 'high').length,
     risqueTotal: summary?.total_estimated_loss_eur || 0,
     couvertureDonnees: 100,
   };
@@ -113,7 +121,7 @@ export function computeBillingHealthState(summary, insights = []) {
     watchlist,
     briefing: [],
     consistency: { ok: true },
-    alertsCount: active.filter(i => i.severity === 'medium').length,
+    alertsCount: active.filter((i) => i.severity === 'medium').length,
   });
 
   // Stable billing CTAs — 2 per level, + "Voir tout" overflow
@@ -158,9 +166,8 @@ export function buildSnapshotKey(domain, scope) {
   const base = `${TREND_STORAGE_PREFIX}${domain}`;
   if (!scope || !scope.orgId) return base;
   const orgPart = `org-${scope.orgId}`;
-  const scopePart = scope.scopeType && scope.scopeId
-    ? `${scope.scopeType}-${scope.scopeId}`
-    : 'all-sites';
+  const scopePart =
+    scope.scopeType && scope.scopeId ? `${scope.scopeType}-${scope.scopeId}` : 'all-sites';
   return `${base}.${orgPart}.${scopePart}`;
 }
 
@@ -211,12 +218,14 @@ export function loadHealthSnapshot(domain, scope) {
     if (!raw) return null;
     const snapshot = JSON.parse(raw);
     // Enforce retention: ignore snapshots older than 14 days
-    if (snapshot.timestamp && (Date.now() - snapshot.timestamp) > SNAPSHOT_RETENTION_MS) {
+    if (snapshot.timestamp && Date.now() - snapshot.timestamp > SNAPSHOT_RETENTION_MS) {
       localStorage.removeItem(key);
       return null;
     }
     return snapshot;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -230,14 +239,19 @@ export function loadHealthSnapshot(domain, scope) {
 export function saveHealthSnapshot(domain, state, scope) {
   try {
     const key = buildSnapshotKey(domain, scope);
-    localStorage.setItem(key, JSON.stringify({
-      level: state.level,
-      reasonsCount: state.reasons?.length || 0,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        level: state.level,
+        reasonsCount: state.reasons?.length || 0,
+        timestamp: Date.now(),
+      })
+    );
     // Purge expired snapshots for this domain
     _purgeExpiredSnapshots(domain);
-  } catch { /* ignore quota errors */ }
+  } catch {
+    /* ignore quota errors */
+  }
 }
 
 /**
@@ -259,7 +273,7 @@ function _purgeExpiredSnapshots(domain) {
   for (const k of keys) {
     try {
       const snap = JSON.parse(localStorage.getItem(k));
-      if (snap?.timestamp && (now - snap.timestamp) > SNAPSHOT_RETENTION_MS) {
+      if (snap?.timestamp && now - snap.timestamp > SNAPSHOT_RETENTION_MS) {
         localStorage.removeItem(k);
       } else {
         valid.push({ key: k, timestamp: snap?.timestamp || 0 });

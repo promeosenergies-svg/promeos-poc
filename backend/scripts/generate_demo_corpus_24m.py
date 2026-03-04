@@ -4,16 +4,14 @@ Generate 24-month demo invoice corpus for PROMEOS Bill Intelligence.
 Site 1: EDF elec + Engie gaz
 Site 2: TotalEnergies elec only (some months missing = gaps)
 """
+
 import json
 import os
 import random
 from datetime import date, timedelta
 from calendar import monthrange
 
-DEMO_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data", "invoices", "demo"
-)
+DEMO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "invoices", "demo")
 
 random.seed(42)  # Reproducible
 
@@ -24,9 +22,19 @@ def month_range(year: int, month: int):
     return date(year, month, 1), date(year, month, days)
 
 
-def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
-                          puissance_kva=120, base_conso=18000,
-                          abo_price=145.92, introduce_error=False):
+def generate_elec_invoice(
+    site_id,
+    supplier,
+    pdl,
+    contract,
+    year,
+    month,
+    idx,
+    puissance_kva=120,
+    base_conso=18000,
+    abo_price=145.92,
+    introduce_error=False,
+):
     """Generate a realistic electricity invoice."""
     p_start, p_end = month_range(year, month)
     inv_date = p_end + timedelta(days=15)
@@ -55,7 +63,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "abonnement",
             "label": f"Abonnement Option Base C5 - {puissance_kva} kVA",
-            "quantity": 1, "unit": "mois",
+            "quantity": 1,
+            "unit": "mois",
             "unit_price": abo_price,
             "amount_ht": abo_price,
             "tva_rate": 5.5 if not introduce_error else 20.0,
@@ -64,7 +73,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "conso_hp",
             "label": "Energie heures pleines",
-            "quantity": conso_hp, "unit": "kWh",
+            "quantity": conso_hp,
+            "unit": "kWh",
             "unit_price": hp_price,
             "amount_ht": round(conso_hp * hp_price, 2),
             "tva_rate": 20.0,
@@ -73,7 +83,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "conso_hc",
             "label": "Energie heures creuses",
-            "quantity": conso_hc, "unit": "kWh",
+            "quantity": conso_hc,
+            "unit": "kWh",
             "unit_price": hc_price,
             "amount_ht": round(conso_hc * hc_price, 2),
             "tva_rate": 20.0,
@@ -82,7 +93,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "turpe_fixe",
             "label": "TURPE - Composante de gestion",
-            "quantity": 1, "unit": "mois",
+            "quantity": 1,
+            "unit": "mois",
             "unit_price": 18.48,
             "amount_ht": 18.48,
             "tva_rate": 5.5,
@@ -91,7 +103,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "turpe_puissance",
             "label": "TURPE - Composante de soutirage fixe",
-            "quantity": puissance_kva, "unit": "kVA",
+            "quantity": puissance_kva,
+            "unit": "kVA",
             "unit_price": 4.56,
             "amount_ht": round(puissance_kva * 4.56, 2),
             "tva_rate": 20.0,
@@ -100,7 +113,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "cta",
             "label": "Contribution Tarifaire d'Acheminement",
-            "quantity": 1, "unit": "forfait",
+            "quantity": 1,
+            "unit": "forfait",
             "amount_ht": 63.36,
             "tva_rate": 5.5,
             "tva_amount": round(63.36 * 0.055, 2),
@@ -108,7 +122,8 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
         {
             "component_type": "accise",
             "label": "Accise sur l'electricite (ex-CSPE/TICFE)",
-            "quantity": conso, "unit": "kWh",
+            "quantity": conso,
+            "unit": "kWh",
             "unit_price": 0.02121,
             "amount_ht": round(conso * 0.02121, 2),
             "tva_rate": 20.0,
@@ -122,37 +137,29 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
     total_ttc = round(total_ht + total_tva, 2)
 
     # Add TVA recap lines
-    tva_reduite_base = sum(
-        c["amount_ht"] for c in components
-        if c["tva_rate"] == 5.5
-    )
-    tva_normale_base = sum(
-        c["amount_ht"] for c in components
-        if c["tva_rate"] == 20.0
-    )
-    tva_reduite_amount = round(sum(
-        c["tva_amount"] for c in components
-        if c["tva_rate"] == 5.5
-    ), 2)
-    tva_normale_amount = round(sum(
-        c["tva_amount"] for c in components
-        if c["tva_rate"] == 20.0
-    ), 2)
+    tva_reduite_base = sum(c["amount_ht"] for c in components if c["tva_rate"] == 5.5)
+    tva_normale_base = sum(c["amount_ht"] for c in components if c["tva_rate"] == 20.0)
+    tva_reduite_amount = round(sum(c["tva_amount"] for c in components if c["tva_rate"] == 5.5), 2)
+    tva_normale_amount = round(sum(c["tva_amount"] for c in components if c["tva_rate"] == 20.0), 2)
 
-    components.append({
-        "component_type": "tva_reduite",
-        "label": "TVA 5,5% (abonnement + CTA + TURPE gestion)",
-        "amount_ht": round(tva_reduite_base, 2),
-        "tva_rate": 5.5,
-        "tva_amount": tva_reduite_amount,
-    })
-    components.append({
-        "component_type": "tva_normale",
-        "label": "TVA 20% (consommation + TURPE soutirage + accise)",
-        "amount_ht": round(tva_normale_base, 2),
-        "tva_rate": 20.0,
-        "tva_amount": tva_normale_amount,
-    })
+    components.append(
+        {
+            "component_type": "tva_reduite",
+            "label": "TVA 5,5% (abonnement + CTA + TURPE gestion)",
+            "amount_ht": round(tva_reduite_base, 2),
+            "tva_rate": 5.5,
+            "tva_amount": tva_reduite_amount,
+        }
+    )
+    components.append(
+        {
+            "component_type": "tva_normale",
+            "label": "TVA 20% (consommation + TURPE soutirage + accise)",
+            "amount_ht": round(tva_normale_base, 2),
+            "tva_rate": 20.0,
+            "tva_amount": tva_normale_amount,
+        }
+    )
 
     invoice_id = f"DEMO-ELEC-{site_id:03d}-{year}{month:02d}"
 
@@ -178,8 +185,7 @@ def generate_elec_invoice(site_id, supplier, pdl, contract, year, month, idx,
     }
 
 
-def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
-                         base_conso=25000, abo_price=38.50):
+def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx, base_conso=25000, abo_price=38.50):
     """Generate a realistic gas invoice."""
     p_start, p_end = month_range(year, month)
     inv_date = p_end + timedelta(days=20)
@@ -204,7 +210,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "abonnement",
             "label": "Abonnement distribution gaz T2",
-            "quantity": 1, "unit": "mois",
+            "quantity": 1,
+            "unit": "mois",
             "unit_price": abo_price,
             "amount_ht": abo_price,
             "tva_rate": 5.5,
@@ -213,7 +220,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "terme_variable",
             "label": "Molecule gaz naturel",
-            "quantity": conso, "unit": "kWh",
+            "quantity": conso,
+            "unit": "kWh",
             "unit_price": molecule_price,
             "amount_ht": round(conso * molecule_price, 2),
             "tva_rate": 20.0,
@@ -222,7 +230,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "terme_fixe",
             "label": "ATRD7 - Part fixe distribution GRDF",
-            "quantity": 1, "unit": "mois",
+            "quantity": 1,
+            "unit": "mois",
             "unit_price": 52.80,
             "amount_ht": 52.80,
             "tva_rate": 5.5,
@@ -231,7 +240,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "turpe_energie",
             "label": "ATRD7 - Part proportionnelle distribution",
-            "quantity": conso, "unit": "kWh",
+            "quantity": conso,
+            "unit": "kWh",
             "unit_price": 0.0062,
             "amount_ht": round(conso * 0.0062, 2),
             "tva_rate": 20.0,
@@ -240,7 +250,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "cta",
             "label": "CTA (Contribution Tarifaire d'Acheminement)",
-            "quantity": 1, "unit": "forfait",
+            "quantity": 1,
+            "unit": "forfait",
             "amount_ht": 14.87,
             "tva_rate": 5.5,
             "tva_amount": round(14.87 * 0.055, 2),
@@ -248,7 +259,8 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
         {
             "component_type": "accise",
             "label": "Accise sur le gaz naturel (ex-TICGN)",
-            "quantity": conso, "unit": "kWh",
+            "quantity": conso,
+            "unit": "kWh",
             "unit_price": 0.008,
             "amount_ht": round(conso * 0.008, 2),
             "tva_rate": 20.0,
@@ -266,20 +278,24 @@ def generate_gaz_invoice(site_id, supplier, pce, contract, year, month, idx,
     tva_reduite_amount = round(sum(c["tva_amount"] for c in components if c["tva_rate"] == 5.5), 2)
     tva_normale_amount = round(sum(c["tva_amount"] for c in components if c["tva_rate"] == 20.0), 2)
 
-    components.append({
-        "component_type": "tva_reduite",
-        "label": "TVA 5,5%",
-        "amount_ht": round(tva_reduite_base, 2),
-        "tva_rate": 5.5,
-        "tva_amount": tva_reduite_amount,
-    })
-    components.append({
-        "component_type": "tva_normale",
-        "label": "TVA 20%",
-        "amount_ht": round(tva_normale_base, 2),
-        "tva_rate": 20.0,
-        "tva_amount": tva_normale_amount,
-    })
+    components.append(
+        {
+            "component_type": "tva_reduite",
+            "label": "TVA 5,5%",
+            "amount_ht": round(tva_reduite_base, 2),
+            "tva_rate": 5.5,
+            "tva_amount": tva_reduite_amount,
+        }
+    )
+    components.append(
+        {
+            "component_type": "tva_normale",
+            "label": "TVA 20%",
+            "amount_ht": round(tva_normale_base, 2),
+            "tva_rate": 20.0,
+            "tva_amount": tva_normale_amount,
+        }
+    )
 
     invoice_id = f"DEMO-GAZ-{site_id:03d}-{year}{month:02d}"
 
@@ -317,9 +333,13 @@ def main():
 
             # Elec site 1
             inv = generate_elec_invoice(
-                site_id=1, supplier="EDF Entreprises",
-                pdl="30001234567890", contract="CTR-EDF-DEMO-001",
-                year=year, month=month, idx=idx,
+                site_id=1,
+                supplier="EDF Entreprises",
+                pdl="30001234567890",
+                contract="CTR-EDF-DEMO-001",
+                year=year,
+                month=month,
+                idx=idx,
             )
             fname = f"facture_elec_site1_{year}_{month:02d}.json"
             with open(os.path.join(DEMO_DIR, fname), "w", encoding="utf-8") as f:
@@ -328,9 +348,13 @@ def main():
 
             # Gaz site 1
             inv = generate_gaz_invoice(
-                site_id=1, supplier="Engie Entreprises",
-                pce="GI000789012345", contract="CTR-ENGIE-DEMO-001",
-                year=year, month=month, idx=idx,
+                site_id=1,
+                supplier="Engie Entreprises",
+                pce="GI000789012345",
+                contract="CTR-ENGIE-DEMO-001",
+                year=year,
+                month=month,
+                idx=idx,
             )
             fname = f"facture_gaz_site1_{year}_{month:02d}.json"
             with open(os.path.join(DEMO_DIR, fname), "w", encoding="utf-8") as f:
@@ -346,13 +370,18 @@ def main():
             idx = (year - 2023) * 12 + month
 
             # Introduce a TVA error on 2024-06
-            error = (year == 2024 and month == 6)
+            error = year == 2024 and month == 6
 
             inv = generate_elec_invoice(
-                site_id=2, supplier="TotalEnergies",
-                pdl="30009876543210", contract="CTR-TE-DEMO-001",
-                year=year, month=month, idx=idx,
-                puissance_kva=80, base_conso=12000,
+                site_id=2,
+                supplier="TotalEnergies",
+                pdl="30009876543210",
+                contract="CTR-TE-DEMO-001",
+                year=year,
+                month=month,
+                idx=idx,
+                puissance_kva=80,
+                base_conso=12000,
                 abo_price=98.40,
                 introduce_error=error,
             )

@@ -4,8 +4,21 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createRng, generateMonteCarloTrajectories } from '../scenarioLibrary.js';
-import { computeOfferMonthlyPrices, computeTco, monteCarloOffer, volatilityProxy, cvar90, probExceedBudget } from '../risk.js';
-import { runEngine, clearEngineCache, normalizeHybridShares, validateBreakdown, fillBreakdownDefaults } from '../engine.js';
+import {
+  computeOfferMonthlyPrices,
+  computeTco,
+  monteCarloOffer,
+  volatilityProxy,
+  cvar90,
+  probExceedBudget,
+} from '../risk.js';
+import {
+  runEngine,
+  clearEngineCache,
+  normalizeHybridShares,
+  validateBreakdown,
+  fillBreakdownDefaults,
+} from '../engine.js';
 import { scoreBudgetRisk, scoreTransparency, scoreContractRisk, scoreOffer } from '../scoring.js';
 import { recommend } from '../recommend.js';
 import { distributeMonthly } from '../assumptions.js';
@@ -14,11 +27,11 @@ import { DEMO_OFFERS, aggregateDemoSites } from '../demoData.js';
 
 // ── Helpers ────────────────────────────────────────────────────────
 
-const FIXED_OFFER = DEMO_OFFERS[0];   // EDF Fixe
+const FIXED_OFFER = DEMO_OFFERS[0]; // EDF Fixe
 const INDEXED_OFFER = DEMO_OFFERS[1]; // Engie Indexe
-const HYBRID_OFFER = DEMO_OFFERS[2];  // TotalEnergies Hybride
-const SPOT_OFFER = DEMO_OFFERS[3];    // Alpiq Spot
-const DIRTY_OFFER = DEMO_OFFERS[4];   // Courtier Opaque
+const HYBRID_OFFER = DEMO_OFFERS[2]; // TotalEnergies Hybride
+const SPOT_OFFER = DEMO_OFFERS[3]; // Alpiq Spot
+const DIRTY_OFFER = DEMO_OFFERS[4]; // Courtier Opaque
 
 const BASE_PARAMS = {
   annualKwh: 2400000,
@@ -64,24 +77,33 @@ describe('Seeded PRNG', () => {
 describe('Monte Carlo Trajectories', () => {
   it('respects max 200 iterations cap', () => {
     const { trajectories } = generateMonteCarloTrajectories({
-      horizonMonths: 12, preset: ScenarioPreset.STABLE,
-      basePrice: 85, iterations: 500, seed: 42,
+      horizonMonths: 12,
+      preset: ScenarioPreset.STABLE,
+      basePrice: 85,
+      iterations: 500,
+      seed: 42,
     });
     expect(trajectories.length).toBeLessThanOrEqual(200);
   });
 
   it('generates correct horizon length', () => {
     const { trajectories } = generateMonteCarloTrajectories({
-      horizonMonths: 36, preset: ScenarioPreset.STABLE,
-      basePrice: 85, iterations: 10, seed: 42,
+      horizonMonths: 36,
+      preset: ScenarioPreset.STABLE,
+      basePrice: 85,
+      iterations: 10,
+      seed: 42,
     });
     expect(trajectories[0].length).toBe(36);
   });
 
   it('all prices >= 10 EUR/MWh (floor)', () => {
     const { trajectories } = generateMonteCarloTrajectories({
-      horizonMonths: 24, preset: ScenarioPreset.VOLATILE,
-      basePrice: 85, iterations: 100, seed: 42,
+      horizonMonths: 24,
+      preset: ScenarioPreset.VOLATILE,
+      basePrice: 85,
+      iterations: 100,
+      seed: 42,
     });
     for (const traj of trajectories) {
       for (const price of traj) {
@@ -92,8 +114,11 @@ describe('Monte Carlo Trajectories', () => {
 
   it('mean trajectory is the average of all trajectories', () => {
     const { trajectories, meanTrajectory } = generateMonteCarloTrajectories({
-      horizonMonths: 12, preset: ScenarioPreset.STABLE,
-      basePrice: 85, iterations: 50, seed: 42,
+      horizonMonths: 12,
+      preset: ScenarioPreset.STABLE,
+      basePrice: 85,
+      iterations: 50,
+      seed: 42,
     });
     for (let m = 0; m < 12; m++) {
       const expected = trajectories.reduce((sum, t) => sum + t[m], 0) / trajectories.length;
@@ -108,8 +133,12 @@ describe('Corridor Invariants', () => {
   it('P10 <= P50 <= P90 for FIXE', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: FIXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: FIXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.p10).toBeLessThanOrEqual(corridor.p50);
     expect(corridor.p50).toBeLessThanOrEqual(corridor.p90);
@@ -118,8 +147,12 @@ describe('Corridor Invariants', () => {
   it('P10 <= P50 <= P90 for INDEXE', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: INDEXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: INDEXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.p10).toBeLessThanOrEqual(corridor.p50);
     expect(corridor.p50).toBeLessThanOrEqual(corridor.p90);
@@ -128,8 +161,12 @@ describe('Corridor Invariants', () => {
   it('P10 <= P50 <= P90 for HYBRIDE', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: HYBRID_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: HYBRID_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.p10).toBeLessThanOrEqual(corridor.p50);
     expect(corridor.p50).toBeLessThanOrEqual(corridor.p90);
@@ -138,8 +175,12 @@ describe('Corridor Invariants', () => {
   it('P10 <= P50 <= P90 for SPOT', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: SPOT_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: SPOT_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.p10).toBeLessThanOrEqual(corridor.p50);
     expect(corridor.p50).toBeLessThanOrEqual(corridor.p90);
@@ -148,8 +189,12 @@ describe('Corridor Invariants', () => {
   it('TCO P10 <= TCO P50 <= TCO P90', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: INDEXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.VOLATILE, iterations: 100, seed: 42,
+      offer: INDEXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.VOLATILE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.tcoP10).toBeLessThanOrEqual(corridor.tcoP50);
     expect(corridor.tcoP50).toBeLessThanOrEqual(corridor.tcoP90);
@@ -158,8 +203,12 @@ describe('Corridor Invariants', () => {
   it('TCO > 0 when kWh > 0', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: FIXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: FIXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     expect(corridor.tcoP50).toBeGreaterThan(0);
   });
@@ -167,8 +216,12 @@ describe('Corridor Invariants', () => {
   it('FIXE has zero or near-zero corridor width', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const corridor = monteCarloOffer({
-      offer: FIXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 100, seed: 42,
+      offer: FIXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 100,
+      seed: 42,
     });
     // Fixed offers should have identical P10/P50/P90 since price doesn't vary
     expect(corridor.p10).toBeCloseTo(corridor.p90, 0);
@@ -177,12 +230,20 @@ describe('Corridor Invariants', () => {
   it('SPOT has wider corridor than FIXE', () => {
     const monthlyKwh = distributeMonthly(2400000, EnergyType.ELEC);
     const fixedCorridor = monteCarloOffer({
-      offer: FIXED_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.VOLATILE, iterations: 100, seed: 42,
+      offer: FIXED_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.VOLATILE,
+      iterations: 100,
+      seed: 42,
     });
     const spotCorridor = monteCarloOffer({
-      offer: SPOT_OFFER, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.VOLATILE, iterations: 100, seed: 42,
+      offer: SPOT_OFFER,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.VOLATILE,
+      iterations: 100,
+      seed: 42,
     });
     const fixedWidth = fixedCorridor.p90 - fixedCorridor.p10;
     const spotWidth = spotCorridor.p90 - spotCorridor.p10;
@@ -220,7 +281,7 @@ describe('Offer Monthly Prices', () => {
   it('HYBRIDE blends shares correctly', () => {
     const prices = computeOfferMonthlyPrices(HYBRID_OFFER, spotTrajectory);
     for (let m = 0; m < prices.length; m++) {
-      const fixedPart = 0.60 * 92;
+      const fixedPart = 0.6 * 92;
       let indexedPrice = spotTrajectory[m] + 3;
       indexedPrice = Math.min(indexedPrice, 120);
       const indexedPart = 0.25 * indexedPrice;
@@ -342,15 +403,19 @@ describe('Scoring', () => {
 
   function makeOfferResult(offer) {
     const corridor = monteCarloOffer({
-      offer, monthlyKwh, horizonMonths: 24,
-      preset: ScenarioPreset.STABLE, iterations: 50, seed: 42,
+      offer,
+      monthlyKwh,
+      horizonMonths: 24,
+      preset: ScenarioPreset.STABLE,
+      iterations: 50,
+      seed: 42,
     });
     return {
       offerId: offer.id,
       supplierName: offer.supplierName,
       structure: offer.structure,
       corridor,
-      tcoEurPerMwh: corridor.tcoP50 / (2400000 * 2 / 1000),
+      tcoEurPerMwh: corridor.tcoP50 / ((2400000 * 2) / 1000),
       annualCostP50: corridor.tcoP50 / 2,
       volatility: volatilityProxy(corridor.distribution),
       cvar90: cvar90(corridor.distribution),
@@ -363,8 +428,11 @@ describe('Scoring', () => {
   it('all scores in [0, 100]', () => {
     const result = makeOfferResult(DIRTY_OFFER);
     const scores = scoreOffer({
-      offerResult: result, offer: DIRTY_OFFER,
-      budgetEur: 500000, anomalies: [], consumption: { source: 'DEMO', granularity: 'monthly' },
+      offerResult: result,
+      offer: DIRTY_OFFER,
+      budgetEur: 500000,
+      anomalies: [],
+      consumption: { source: 'DEMO', granularity: 'monthly' },
     });
     expect(scores.budgetRisk.score0to100).toBeGreaterThanOrEqual(0);
     expect(scores.budgetRisk.score0to100).toBeLessThanOrEqual(100);
@@ -389,8 +457,18 @@ describe('Scoring', () => {
   it('FIXE offer has better budget risk than SPOT', () => {
     const fixedResult = makeOfferResult(FIXED_OFFER);
     const spotResult = makeOfferResult(SPOT_OFFER);
-    const fixedScore = scoreBudgetRisk({ offerResult: fixedResult, offer: FIXED_OFFER, budgetEur: 500000, anomalies: [] });
-    const spotScore = scoreBudgetRisk({ offerResult: spotResult, offer: SPOT_OFFER, budgetEur: 500000, anomalies: [] });
+    const fixedScore = scoreBudgetRisk({
+      offerResult: fixedResult,
+      offer: FIXED_OFFER,
+      budgetEur: 500000,
+      anomalies: [],
+    });
+    const spotScore = scoreBudgetRisk({
+      offerResult: spotResult,
+      offer: SPOT_OFFER,
+      budgetEur: 500000,
+      anomalies: [],
+    });
     expect(fixedScore.score0to100).toBeGreaterThan(spotScore.score0to100);
   });
 
@@ -447,7 +525,12 @@ describe('Engine', () => {
     const badHybrid = {
       ...HYBRID_OFFER,
       id: 'test-hybrid-bad',
-      pricing: { ...HYBRID_OFFER.pricing, fixedSharePct: 0.5, indexedSharePct: 0.5, spotSharePct: 0.5 },
+      pricing: {
+        ...HYBRID_OFFER.pricing,
+        fixedSharePct: 0.5,
+        indexedSharePct: 0.5,
+        spotSharePct: 0.5,
+      },
     };
     const { results } = runEngine({ ...BASE_PARAMS, offers: [badHybrid] });
     expect(results[0].hybridNormalized).toBe(true);
@@ -510,7 +593,7 @@ describe('Recommend', () => {
       budgetEur: BASE_PARAMS.budgetEur,
       consumption: { source: 'DEMO', granularity: 'monthly' },
     });
-    const nonBest = DEMO_OFFERS.slice(0, 3).filter(o => o.id !== rec.bestOfferId);
+    const nonBest = DEMO_OFFERS.slice(0, 3).filter((o) => o.id !== rec.bestOfferId);
     for (const offer of nonBest) {
       expect(rec.whyNotOthers[offer.id]).toBeTruthy();
     }
@@ -534,13 +617,17 @@ describe('Recommend', () => {
     const { results } = runEngine({ ...BASE_PARAMS, offers });
 
     const recDG = recommend({
-      offerResults: results, offers,
-      persona: Persona.DG, budgetEur: 500000,
+      offerResults: results,
+      offers,
+      persona: Persona.DG,
+      budgetEur: 500000,
       consumption: { source: 'DEMO', granularity: 'monthly' },
     });
     const recEnergy = recommend({
-      offerResults: results, offers,
-      persona: Persona.RESP_ENERGIE, budgetEur: 500000,
+      offerResults: results,
+      offers,
+      persona: Persona.RESP_ENERGIE,
+      budgetEur: 500000,
       consumption: { source: 'DEMO', granularity: 'monthly' },
     });
     // At least the _scoredOffers order might differ

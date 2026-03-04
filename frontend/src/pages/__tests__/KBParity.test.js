@@ -109,7 +109,9 @@ describe('KB API — response shape', () => {
 
 describe('KB page — error handling logic', () => {
   it('kbError is null when stats resolves successfully', async () => {
-    mockGet.mockResolvedValue({ data: { total_items: 10, by_status: { validated: 10, draft: 0 }, by_domain: {} } });
+    mockGet.mockResolvedValue({
+      data: { total_items: 10, by_status: { validated: 10, draft: 0 }, by_domain: {} },
+    });
 
     let kbError = null;
     try {
@@ -141,7 +143,7 @@ describe('KB page — error handling logic', () => {
     // Empty object should return 0 without error
     const stats = { by_domain: {} };
     const domainKeys = ['reglementaire', 'usages', 'acc', 'facturation', 'flex'];
-    domainKeys.forEach(key => {
+    domainKeys.forEach((key) => {
       const count = stats.by_domain?.[key] || 0;
       expect(count).toBe(0);
     });

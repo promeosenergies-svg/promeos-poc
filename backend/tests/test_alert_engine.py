@@ -2,8 +2,10 @@
 PROMEOS Electric Monitoring - Test Alert Engine
 Tests all 12 Tier-1 alert rules and lifecycle.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -191,8 +193,14 @@ class TestAlert10DonneesManquantes:
 
     def test_incomplete_data_triggers(self, alert_engine):
         kpis = KPIEngine().compute([], interval_minutes=60)
-        quality = {"completeness_pct": 50, "gap_count": 10, "max_gap_hours": 48,
-                   "duplicate_count": 0, "dst_collisions": 0, "negative_count": 0}
+        quality = {
+            "completeness_pct": 50,
+            "gap_count": 10,
+            "max_gap_hours": 48,
+            "duplicate_count": 0,
+            "dst_collisions": 0,
+            "negative_count": 0,
+        }
         power_risk = {"ratio_p95_psub": 0, "depassement_count": 0}
         alerts = alert_engine.evaluate(kpis, power_risk, quality)
         types = [a["alert_type"] for a in alerts]
@@ -207,8 +215,14 @@ class TestAlert11DoublonsDST:
         assert "DOUBLONS_DST" not in types
 
     def test_duplicates_trigger(self, alert_engine):
-        quality = {"completeness_pct": 100, "gap_count": 0, "max_gap_hours": 0,
-                   "duplicate_count": 5, "dst_collisions": 1, "negative_count": 0}
+        quality = {
+            "completeness_pct": 100,
+            "gap_count": 0,
+            "max_gap_hours": 0,
+            "duplicate_count": 5,
+            "dst_collisions": 1,
+            "negative_count": 0,
+        }
         kpis = KPIEngine().compute(_make_readings("office"), interval_minutes=60)
         power_risk = {"ratio_p95_psub": 0, "depassement_count": 0}
         alerts = alert_engine.evaluate(kpis, power_risk, quality)
@@ -218,8 +232,14 @@ class TestAlert11DoublonsDST:
 
 class TestAlert12ValeursNegatives:
     def test_no_negatives_no_alert(self, alert_engine):
-        quality = {"completeness_pct": 100, "gap_count": 0, "max_gap_hours": 0,
-                   "duplicate_count": 0, "dst_collisions": 0, "negative_count": 0}
+        quality = {
+            "completeness_pct": 100,
+            "gap_count": 0,
+            "max_gap_hours": 0,
+            "duplicate_count": 0,
+            "dst_collisions": 0,
+            "negative_count": 0,
+        }
         kpis = KPIEngine().compute(_make_readings("office"), interval_minutes=60)
         power_risk = {"ratio_p95_psub": 0, "depassement_count": 0}
         alerts = alert_engine.evaluate(kpis, power_risk, quality)
@@ -227,8 +247,14 @@ class TestAlert12ValeursNegatives:
         assert "VALEURS_NEGATIVES" not in types
 
     def test_negatives_trigger(self, alert_engine):
-        quality = {"completeness_pct": 100, "gap_count": 0, "max_gap_hours": 0,
-                   "duplicate_count": 0, "dst_collisions": 0, "negative_count": 3}
+        quality = {
+            "completeness_pct": 100,
+            "gap_count": 0,
+            "max_gap_hours": 0,
+            "duplicate_count": 0,
+            "dst_collisions": 0,
+            "negative_count": 3,
+        }
         kpis = KPIEngine().compute(_make_readings("office"), interval_minutes=60)
         power_risk = {"ratio_p95_psub": 0, "depassement_count": 0}
         alerts = alert_engine.evaluate(kpis, power_risk, quality)

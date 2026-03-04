@@ -57,33 +57,41 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   // Volatility
   const vol = offerResult.volatility || 0;
   const tcoP50 = offerResult.corridor?.tcoP50 || 0;
-  const relVol = (tcoP50 > 0 && isFinite(vol)) ? vol / tcoP50 : 0;
-  if (relVol > 0.20) {
+  const relVol = tcoP50 > 0 && isFinite(vol) ? vol / tcoP50 : 0;
+  if (relVol > 0.2) {
     score -= 15;
     reasons.push(`Volatilite elevee (${(relVol * 100).toFixed(0)}% du TCO)`);
     evs.push(evidence('BR04', 'relativeVolatility', relVol));
-  } else if (relVol > 0.10) {
+  } else if (relVol > 0.1) {
     score -= 8;
     reasons.push(`Volatilite moderee (${(relVol * 100).toFixed(0)}% du TCO)`);
   }
 
   // Cap absent on indexed/spot
-  if ((offer.structure === OfferStructure.INDEXE || offer.structure === OfferStructure.HYBRIDE)
-    && offer.pricing.capEurPerMwh == null) {
+  if (
+    (offer.structure === OfferStructure.INDEXE || offer.structure === OfferStructure.HYBRIDE) &&
+    offer.pricing.capEurPerMwh == null
+  ) {
     score -= 10;
     reasons.push('Pas de cap (plafond) de prix');
     evs.push(evidence('BR05', 'capEurPerMwh', null));
   }
 
   // Budget exceedance
-  if (budgetEur != null && offerResult.probExceedBudget != null && offerResult.probExceedBudget > 0.2) {
+  if (
+    budgetEur != null &&
+    offerResult.probExceedBudget != null &&
+    offerResult.probExceedBudget > 0.2
+  ) {
     score -= 15;
-    reasons.push(`Probabilite de depasser le budget: ${(offerResult.probExceedBudget * 100).toFixed(0)}%`);
+    reasons.push(
+      `Probabilite de depasser le budget: ${(offerResult.probExceedBudget * 100).toFixed(0)}%`
+    );
     evs.push(evidence('BR06', 'probExceedBudget', offerResult.probExceedBudget));
   }
 
   // B2 anomalies
-  const highAnomalies = anomalies.filter(a => a.severity === 'high' || a.severity === 'critical');
+  const highAnomalies = anomalies.filter((a) => a.severity === 'high' || a.severity === 'critical');
   if (highAnomalies.length > 0) {
     score -= Math.min(highAnomalies.length * 5, 15);
     reasons.push(`${highAnomalies.length} anomalie(s) facturation critique(s) (B2)`);
@@ -109,7 +117,7 @@ export function scoreTransparency({ offer }) {
 
   // Breakdown completeness
   const breakdown = offer.breakdown || [];
-  const knownCount = breakdown.filter(b => b.status === 'KNOWN').length;
+  const knownCount = breakdown.filter((b) => b.status === 'KNOWN').length;
   if (knownCount < 7) {
     score -= (7 - knownCount) * 10;
     reasons.push(`Decomposition incomplete: ${knownCount}/8 composantes connues`);
@@ -125,7 +133,7 @@ export function scoreTransparency({ offer }) {
     }
     if (!offer.intermediation.feeDisclosed) {
       score -= 15;
-      reasons.push('Frais d\'intermediation non divulgues');
+      reasons.push("Frais d'intermediation non divulgues");
       evs.push(evidence('TR03', 'feeDisclosed', false));
     }
     if (offer.intermediation.hasIntermediary && offer.intermediation.feeEurPerMwh > 5) {
@@ -138,11 +146,11 @@ export function scoreTransparency({ offer }) {
   // Indexation clause clarity
   if (offer.contractTerms?.indexationClause === 'VAGUE') {
     score -= 15;
-    reasons.push('Clause d\'indexation floue');
+    reasons.push("Clause d'indexation floue");
     evs.push(evidence('TR05', 'indexationClause', 'VAGUE'));
   } else if (offer.contractTerms?.indexationClause === 'ABSENT') {
     score -= 10;
-    reasons.push('Pas de clause d\'indexation explicite');
+    reasons.push("Pas de clause d'indexation explicite");
     evs.push(evidence('TR06', 'indexationClause', 'ABSENT'));
   }
 
@@ -229,7 +237,7 @@ export function scoreDataReadiness({ offer, consumption, billing }) {
   // Curves access
   if (!dataTerms.curvesAccess) {
     score -= 15;
-    reasons.push('Pas d\'acces aux courbes de charge');
+    reasons.push("Pas d'acces aux courbes de charge");
     evs.push(evidence('DR01', 'curvesAccess', false));
   }
 
@@ -291,10 +299,10 @@ export function scoreOffer(params) {
 
   // Weighted overall (equal by default — persona weighting done in recommend.js)
   const overall = Math.round(
-    budgetRisk.score0to100 * 0.30 +
-    transparency.score0to100 * 0.25 +
-    contractRisk.score0to100 * 0.25 +
-    dataReadiness.score0to100 * 0.20
+    budgetRisk.score0to100 * 0.3 +
+      transparency.score0to100 * 0.25 +
+      contractRisk.score0to100 * 0.25 +
+      dataReadiness.score0to100 * 0.2
   );
 
   return { budgetRisk, transparency, contractRisk, dataReadiness, overall };

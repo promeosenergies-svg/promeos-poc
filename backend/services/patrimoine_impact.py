@@ -18,6 +18,7 @@ Formules priority_score :
   €      = bucket    (>50k=30, 10-50k=20, 1-10k=10, sinon=0)
   score  = clamp(0, 100, base + réglem + €)
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -121,16 +122,16 @@ _IMPACT_META: Dict[str, Dict[str, Any]] = {
 
 _SEV_BASE: Dict[str, int] = {
     "CRITICAL": 30,
-    "HIGH":     25,
-    "MEDIUM":   15,
-    "LOW":       5,
+    "HIGH": 25,
+    "MEDIUM": 15,
+    "LOW": 5,
 }
 
 _FRAMEWORK_WEIGHT: Dict[str, int] = {
     "DECRET_TERTIAIRE": 20,
-    "FACTURATION":      20,
-    "BACS":             10,
-    "NONE":              0,
+    "FACTURATION": 20,
+    "BACS": 10,
+    "NONE": 0,
 }
 
 
@@ -164,6 +165,7 @@ def compute_priority_score(anomaly: Dict[str, Any]) -> int:
 
 
 # ── Calculateurs d'impact business par code ───────────────────────────────────
+
 
 def _calc_surface_missing(
     anomaly: Dict[str, Any],
@@ -213,8 +215,7 @@ def _calc_surface_mismatch(
         "estimated_risk_eur": round(risk_eur, 0),
         "confidence": 0.5,
         "explanation_fr": (
-            f"Écart : {surface_diff:.0f} m² × {conso_m2:.0f} kWh/m²/an × "
-            f"{a.prix_elec_eur_kwh:.4f} €/kWh."
+            f"Écart : {surface_diff:.0f} m² × {conso_m2:.0f} kWh/m²/an × {a.prix_elec_eur_kwh:.4f} €/kWh."
         ),
     }
 
@@ -272,8 +273,8 @@ def _calc_zero(business_type: str, confidence: float) -> Dict[str, Any]:
 # ── Dispatch table ────────────────────────────────────────────────────────────
 
 _CALC_DISPATCH = {
-    "SURFACE_MISSING":       _calc_surface_missing,
-    "SURFACE_MISMATCH":      _calc_surface_mismatch,
+    "SURFACE_MISSING": _calc_surface_missing,
+    "SURFACE_MISMATCH": _calc_surface_mismatch,
     "METER_NO_DELIVERY_POINT": _calc_meter_no_dp,
     "CONTRACT_OVERLAP_SITE": _calc_contract_overlap,
 }
@@ -296,6 +297,7 @@ def _compute_business_impact(
 
 
 # ── Fonction principale ───────────────────────────────────────────────────────
+
 
 def enrich_anomalies_with_impact(
     anomalies: List[Dict[str, Any]],
@@ -329,8 +331,8 @@ def enrich_anomalies_with_impact(
         meta = _IMPACT_META.get(code, {})
 
         regulatory_impact = {
-            "framework":      meta.get("framework", "NONE"),
-            "risk_level":     meta.get("risk_level", anomaly.get("severity", "LOW")),
+            "framework": meta.get("framework", "NONE"),
+            "risk_level": meta.get("risk_level", anomaly.get("severity", "LOW")),
             "explanation_fr": meta.get("explanation_fr", ""),
         }
         business_impact = _compute_business_impact(anomaly, snapshot, assumptions, meta)
@@ -338,7 +340,7 @@ def enrich_anomalies_with_impact(
         enriched_anomaly = {
             **anomaly,
             "regulatory_impact": regulatory_impact,
-            "business_impact":   business_impact,
+            "business_impact": business_impact,
         }
         # Priority score calculé après enrichissement (dépend des nouveaux champs)
         enriched_anomaly["priority_score"] = compute_priority_score(enriched_anomaly)

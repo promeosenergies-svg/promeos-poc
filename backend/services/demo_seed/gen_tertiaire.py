@@ -3,18 +3,28 @@ PROMEOS V39 - Demo Seed: Tertiaire / OPERAT Generator
 Creates EFA, buildings, responsibilities, perimeter events, quality issues,
 and declaration stubs from the existing seeded sites.
 """
+
 import random
 from datetime import date, timedelta
 
 from models import Batiment
 from models.tertiaire import (
-    TertiaireEfa, TertiaireEfaBuilding, TertiaireResponsibility,
-    TertiairePerimeterEvent, TertiaireDeclaration, TertiaireProofArtifact,
-    TertiaireDataQualityIssue, TertiaireEfaLink,
+    TertiaireEfa,
+    TertiaireEfaBuilding,
+    TertiaireResponsibility,
+    TertiairePerimeterEvent,
+    TertiaireDeclaration,
+    TertiaireProofArtifact,
+    TertiaireDataQualityIssue,
+    TertiaireEfaLink,
 )
 from models.enums import (
-    EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
-    DataQualityIssueSeverity, DataQualityIssueStatus,
+    EfaStatut,
+    EfaRole,
+    DeclarationStatus,
+    PerimeterEventType,
+    DataQualityIssueSeverity,
+    DataQualityIssueStatus,
 )
 
 # Realistic French entity names
@@ -27,16 +37,29 @@ _RESPONSABLES = [
 ]
 
 _USAGE_LABELS = [
-    "Bureaux", "Commerce", "Enseignement", "Sante", "Hotellerie",
-    "Logistique", "Restauration", "Services publics",
+    "Bureaux",
+    "Commerce",
+    "Enseignement",
+    "Sante",
+    "Hotellerie",
+    "Logistique",
+    "Restauration",
+    "Services publics",
 ]
 
 _EFA_NAMES = [
-    "EFA Bureaux Haussmann", "EFA Tour Montparnasse Est", "EFA Centre Hospitalier Nord",
-    "EFA Groupe Scolaire Jules Ferry", "EFA Hotel Mercure Gare",
-    "EFA Residence Services Seniors", "EFA Centre Commercial Rivoli",
-    "EFA Entrepot Logistique Sud", "EFA Mairie Annexe", "EFA Clinique Pasteur",
-    "EFA Campus Universitaire", "EFA Immeuble Grand Siecle",
+    "EFA Bureaux Haussmann",
+    "EFA Tour Montparnasse Est",
+    "EFA Centre Hospitalier Nord",
+    "EFA Groupe Scolaire Jules Ferry",
+    "EFA Hotel Mercure Gare",
+    "EFA Residence Services Seniors",
+    "EFA Centre Commercial Rivoli",
+    "EFA Entrepot Logistique Sud",
+    "EFA Mairie Annexe",
+    "EFA Clinique Pasteur",
+    "EFA Campus Universitaire",
+    "EFA Immeuble Grand Siecle",
 ]
 
 _EVENT_DESCRIPTIONS = [
@@ -95,8 +118,7 @@ _QUALITY_ISSUES = [
 ]
 
 
-def generate_tertiaire(db, org, sites: list, rng: random.Random,
-                       buildings_map: dict = None) -> dict:
+def generate_tertiaire(db, org, sites: list, rng: random.Random, buildings_map: dict = None) -> dict:
     """
     Generate EFA + sub-entities for demo.
     Creates 1 EFA per site (for sites with tertiaire_area_m2 >= 1000),
@@ -114,7 +136,7 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random,
     efa_objects = []
 
     for idx, site in enumerate(sites):
-        tertiaire_area = getattr(site, 'tertiaire_area_m2', 0) or 0
+        tertiaire_area = getattr(site, "tertiaire_area_m2", 0) or 0
         if tertiaire_area < 1000:
             continue
 
@@ -214,89 +236,118 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random,
         if idx % 6 == 5:
             # No buildings → TERTIAIRE_NO_BUILDING
             issue_def = _QUALITY_ISSUES[0]
-            db.add(TertiaireDataQualityIssue(
-                efa_id=efa.id, year=year, code=issue_def["code"],
-                severity=issue_def["severity"],
-                message_fr=issue_def["message_fr"],
-                impact_fr=issue_def["impact_fr"],
-                action_fr=issue_def["action_fr"],
-                status=DataQualityIssueStatus.OPEN,
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=efa.id,
+                    year=year,
+                    code=issue_def["code"],
+                    severity=issue_def["severity"],
+                    message_fr=issue_def["message_fr"],
+                    impact_fr=issue_def["impact_fr"],
+                    action_fr=issue_def["action_fr"],
+                    status=DataQualityIssueStatus.OPEN,
+                )
+            )
             issues_created += 1
 
         if idx % 7 == 0:
             # Missing surface
             issue_def = _QUALITY_ISSUES[1]
-            db.add(TertiaireDataQualityIssue(
-                efa_id=efa.id, year=year, code=issue_def["code"],
-                severity=issue_def["severity"],
-                message_fr=issue_def["message_fr"],
-                impact_fr=issue_def["impact_fr"],
-                action_fr=issue_def["action_fr"],
-                status=DataQualityIssueStatus.OPEN,
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=efa.id,
+                    year=year,
+                    code=issue_def["code"],
+                    severity=issue_def["severity"],
+                    message_fr=issue_def["message_fr"],
+                    impact_fr=issue_def["impact_fr"],
+                    action_fr=issue_def["action_fr"],
+                    status=DataQualityIssueStatus.OPEN,
+                )
+            )
             issues_created += 1
 
         if idx % 5 == 4:
             # No responsibility
             issue_def = _QUALITY_ISSUES[3]
-            db.add(TertiaireDataQualityIssue(
-                efa_id=efa.id, year=year, code=issue_def["code"],
-                severity=issue_def["severity"],
-                message_fr=issue_def["message_fr"],
-                impact_fr=issue_def["impact_fr"],
-                action_fr=issue_def["action_fr"],
-                status=DataQualityIssueStatus.OPEN,
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=efa.id,
+                    year=year,
+                    code=issue_def["code"],
+                    severity=issue_def["severity"],
+                    message_fr=issue_def["message_fr"],
+                    impact_fr=issue_def["impact_fr"],
+                    action_fr=issue_def["action_fr"],
+                    status=DataQualityIssueStatus.OPEN,
+                )
+            )
             issues_created += 1
 
         if not has_reporting:
             issue_def = _QUALITY_ISSUES[4]
-            db.add(TertiaireDataQualityIssue(
-                efa_id=efa.id, year=year, code=issue_def["code"],
-                severity=issue_def["severity"],
-                message_fr=issue_def["message_fr"],
-                impact_fr=issue_def["impact_fr"],
-                action_fr=issue_def["action_fr"],
-                status=DataQualityIssueStatus.OPEN,
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=efa.id,
+                    year=year,
+                    code=issue_def["code"],
+                    severity=issue_def["severity"],
+                    message_fr=issue_def["message_fr"],
+                    impact_fr=issue_def["impact_fr"],
+                    action_fr=issue_def["action_fr"],
+                    status=DataQualityIssueStatus.OPEN,
+                )
+            )
             issues_created += 1
 
         # Also add some already-resolved issues for realism
         if rng.random() < 0.3:
             issue_def = rng.choice(_QUALITY_ISSUES[1:])
-            db.add(TertiaireDataQualityIssue(
-                efa_id=efa.id, year=year - 1, code=issue_def["code"],
-                severity=issue_def["severity"],
-                message_fr=issue_def["message_fr"],
-                impact_fr=issue_def["impact_fr"],
-                action_fr=issue_def["action_fr"],
-                status=DataQualityIssueStatus.RESOLVED,
-            ))
+            db.add(
+                TertiaireDataQualityIssue(
+                    efa_id=efa.id,
+                    year=year - 1,
+                    code=issue_def["code"],
+                    severity=issue_def["severity"],
+                    message_fr=issue_def["message_fr"],
+                    impact_fr=issue_def["impact_fr"],
+                    action_fr=issue_def["action_fr"],
+                    status=DataQualityIssueStatus.RESOLVED,
+                )
+            )
             issues_created += 1
 
         # Declarations — active EFAs get a draft or prechecked declaration
         if statut == EfaStatut.ACTIVE:
             decl_status = rng.choice([DeclarationStatus.DRAFT, DeclarationStatus.PRECHECKED])
-            db.add(TertiaireDeclaration(
-                efa_id=efa.id, year=year,
-                status=decl_status,
-            ))
+            db.add(
+                TertiaireDeclaration(
+                    efa_id=efa.id,
+                    year=year,
+                    status=decl_status,
+                )
+            )
             declarations_created += 1
 
         # Proof artifacts — ~30% of EFAs have a proof
         if rng.random() < 0.3:
-            proof_type = rng.choice([
-                "Attestation OPERAT", "Dossier de modulation",
-                "Audit energetique", "Plan de sobriete",
-            ])
-            db.add(TertiaireProofArtifact(
-                efa_id=efa.id,
-                type=proof_type,
-                owner_role=role,
-                valid_from=date(year - 1, 1, 1),
-                valid_to=date(year, 12, 31),
-            ))
+            proof_type = rng.choice(
+                [
+                    "Attestation OPERAT",
+                    "Dossier de modulation",
+                    "Audit energetique",
+                    "Plan de sobriete",
+                ]
+            )
+            db.add(
+                TertiaireProofArtifact(
+                    efa_id=efa.id,
+                    type=proof_type,
+                    owner_role=role,
+                    valid_from=date(year - 1, 1, 1),
+                    valid_to=date(year, 12, 31),
+                )
+            )
             proofs_created += 1
 
     # EFA Links — create a few links between EFAs (turnover, scission)
@@ -306,11 +357,13 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random,
             (efa_objects[2], efa_objects[3], "turnover"),
         ]
         for child, parent, reason in link_pairs:
-            db.add(TertiaireEfaLink(
-                child_efa_id=child.id,
-                parent_efa_id=parent.id,
-                reason=reason,
-            ))
+            db.add(
+                TertiaireEfaLink(
+                    child_efa_id=child.id,
+                    parent_efa_id=parent.id,
+                    reason=reason,
+                )
+            )
             links_created += 1
 
     db.flush()

@@ -13,32 +13,32 @@ const LABELS = Object.fromEntries(
 // Segment-level overrides not covered by NavRegistry
 Object.assign(LABELS, {
   '': 'Tableau de bord',
-  'sites': 'Site',
-  'compliance': 'Conformité',
-  'status': 'Statut',
-  'login': 'Connexion',
-  'explorer': 'Explorer',
-  'portfolio': 'Portefeuille',
-  'wizard': 'Assistant',
-  'tertiaire': 'Tertiaire / OPERAT',
-  'efa': 'EFA',
-  'new': 'Nouveau',
+  sites: 'Site',
+  compliance: 'Conformité',
+  status: 'Statut',
+  login: 'Connexion',
+  explorer: 'Explorer',
+  portfolio: 'Portefeuille',
+  wizard: 'Assistant',
+  tertiaire: 'Tertiaire / OPERAT',
+  efa: 'EFA',
+  new: 'Nouveau',
   // Aliases for redirect paths
-  'factures': 'Facturation',
-  'facturation': 'Facturation',
+  factures: 'Facturation',
+  facturation: 'Facturation',
   'plan-action': "Plan d'actions",
   'plan-actions': "Plan d'actions",
-  'diagnostic': 'Diagnostic',
-  'achats': 'Achats énergie',
-  'purchase': 'Achats énergie',
-  'referentiels': 'Mémobox',
-  'synthese': 'Vue exécutive',
-  'executive': 'Vue exécutive',
-  'dashboard': 'Tableau de bord',
-  'conso': 'Consommations',
-  'imports': 'Imports',
-  'connexions': 'Connexions',
-  'alertes': 'Alertes',
+  diagnostic: 'Diagnostic',
+  achats: 'Achats énergie',
+  purchase: 'Achats énergie',
+  referentiels: 'Mémobox',
+  synthese: 'Vue exécutive',
+  executive: 'Vue exécutive',
+  dashboard: 'Tableau de bord',
+  conso: 'Consommations',
+  imports: 'Imports',
+  connexions: 'Connexions',
+  alertes: 'Alertes',
 });
 
 /**
@@ -49,10 +49,10 @@ Object.assign(LABELS, {
  * e.g. /sites/42 → "Site #42", /actions/7 → "Action #7"
  */
 const DYNAMIC_CONTEXT = {
-  'sites':      'Site',
-  'actions':    'Action',
-  'efa':        'EFA',
-  'compliance': 'Conformité',
+  sites: 'Site',
+  actions: 'Action',
+  efa: 'EFA',
+  compliance: 'Conformité',
 };
 
 /** Check if a segment looks like a dynamic ID (numeric or UUID-like) */
@@ -97,7 +97,12 @@ export default function Breadcrumb() {
         <span key={c.to} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
           {i < crumbs.length - 1 ? (
-            <Link to={c.to} className="hover:text-blue-600 hover:underline underline-offset-2 transition">{c.label}</Link>
+            <Link
+              to={c.to}
+              className="hover:text-blue-600 hover:underline underline-offset-2 transition"
+            >
+              {c.label}
+            </Link>
           ) : (
             <span className="text-gray-800 font-medium">{c.label}</span>
           )}

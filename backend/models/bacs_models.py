@@ -2,15 +2,27 @@
 PROMEOS - Modeles BACS Expert (Decret n°2020-887)
 4 modeles: BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
 """
+
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, Date, DateTime, Boolean,
-    ForeignKey, Enum as SAEnum,
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    Date,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
 from .enums import (
-    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
+    CvcSystemType,
+    CvcArchitecture,
+    BacsTriggerReason,
+    InspectionStatus,
 )
 
 
@@ -19,6 +31,7 @@ class BacsAsset(Base, TimestampMixin):
     Actif BACS lie a un site.
     Porte les donnees d'eligibilite: tertiaire, date PC, renouvellement, responsable.
     """
+
     __tablename__ = "bacs_assets"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -86,6 +99,7 @@ class BacsCvcSystem(Base, TimestampMixin):
     Type (chauffage/clim/ventilation) + architecture (cascade/reseau/independant)
     + unites kW → sert au calcul Putile.
     """
+
     __tablename__ = "bacs_cvc_systems"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -137,6 +151,7 @@ class BacsAssessment(Base, TimestampMixin):
     Evaluation BACS cachee pour un actif.
     Resultat du moteur: obligation, seuil, echeance, TRI, score.
     """
+
     __tablename__ = "bacs_assessments"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -215,6 +230,7 @@ class BacsInspection(Base, TimestampMixin):
     Suivi des inspections quinquennales BACS.
     Periodicite max 5 ans, tracking statut + rapport.
     """
+
     __tablename__ = "bacs_inspections"
 
     id = Column(Integer, primary_key=True, index=True)

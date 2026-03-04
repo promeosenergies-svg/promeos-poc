@@ -1,6 +1,7 @@
 """
 PROMEOS AI - RegOps Explainer (2-min site brief)
 """
+
 import json
 from datetime import datetime
 from models import Site, AiInsight, InsightType
@@ -30,7 +31,7 @@ Brief de 2 minutes sur le statut reglementaire du site."""
 
     response = client.complete(
         system_prompt="Tu es un expert en reglementation energetique francaise. Fournis un brief concis.",
-        user_prompt=user_prompt
+        user_prompt=user_prompt,
     )
 
     # Create AiInsight
@@ -38,15 +39,17 @@ Brief de 2 minutes sur le statut reglementaire du site."""
         object_type="site",
         object_id=site_id,
         insight_type=InsightType.EXPLAIN,
-        content_json=json.dumps({
-            "brief": response,
-            "sources_used": ["site_data"],
-            "assumptions": ["Stub mode AI"],
-            "confidence": "low",
-            "needs_human_review": True
-        }),
+        content_json=json.dumps(
+            {
+                "brief": response,
+                "sources_used": ["site_data"],
+                "assumptions": ["Stub mode AI"],
+                "confidence": "low",
+                "needs_human_review": True,
+            }
+        ),
         ai_version=client.model,
-        sources_used_json=json.dumps(["site"])
+        sources_used_json=json.dumps(["site"]),
     )
     db.add(insight)
     db.commit()

@@ -1,6 +1,7 @@
 """
 PROMEOS - Routes API pour les Compteurs
 """
+
 import random
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -59,11 +60,12 @@ def create_compteur(req: CompteurCreateRequest, db: Session = Depends(get_db)):
         "puissance_souscrite_kw": c.puissance_souscrite_kw,
     }
 
+
 @router.get("", response_model=List[CompteurResponse])
 def get_compteurs(
     site_id: Optional[int] = Query(None, description="Filtrer par site"),
     type: Optional[str] = Query(None, description="Filtrer par type (electricite, gaz, eau)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Liste les compteurs avec filtres
@@ -78,14 +80,15 @@ def get_compteurs(
     compteurs = query.all()
     return compteurs
 
+
 @router.get("/{compteur_id}", response_model=CompteurResponse)
 def get_compteur(compteur_id: int, db: Session = Depends(get_db)):
     """
     Récupère un compteur spécifique
     """
     compteur = not_deleted(db.query(Compteur), Compteur).filter(Compteur.id == compteur_id).first()
-    
+
     if not compteur:
         raise HTTPException(status_code=404, detail="Compteur non trouvé")
-    
+
     return compteur

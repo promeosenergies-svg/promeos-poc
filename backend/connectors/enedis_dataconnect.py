@@ -1,6 +1,7 @@
 """
 PROMEOS Connectors - Enedis Data Connect (STUB - requires OAuth)
 """
+
 import os
 from .base import Connector
 
@@ -17,7 +18,7 @@ class EnedisDataConnectConnector(Connector):
             return {
                 "status": "stub",
                 "message": "Stub mode: definir ENEDIS_CLIENT_ID/SECRET pour activer",
-                "doc": "https://data-connect.enedis.fr/"
+                "doc": "https://data-connect.enedis.fr/",
             }
         return {"status": "ok", "message": "Client ID present (non teste)"}
 

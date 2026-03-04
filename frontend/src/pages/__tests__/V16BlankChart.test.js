@@ -51,19 +51,19 @@ describe('normalizeId (V16-D)', () => {
 describe('filteredInsights: normalizeId prevents type mismatch (V16-D)', () => {
   const insights = [
     { id: 1, site_id: 5, type: 'hors_horaires', estimated_loss_kwh: 100, estimated_loss_eur: 15 },
-    { id: 2, site_id: 5, type: 'base_load',     estimated_loss_kwh: 50,  estimated_loss_eur: 7 },
-    { id: 3, site_id: 7, type: 'pointe',         estimated_loss_kwh: 80,  estimated_loss_eur: 12 },
+    { id: 2, site_id: 5, type: 'base_load', estimated_loss_kwh: 50, estimated_loss_eur: 7 },
+    { id: 3, site_id: 7, type: 'pointe', estimated_loss_kwh: 80, estimated_loss_eur: 12 },
   ];
 
   function filterBySelectedSiteId(insights, selectedSiteId) {
     if (!selectedSiteId) return insights;
-    return insights.filter(i => normalizeId(i.site_id) === normalizeId(selectedSiteId));
+    return insights.filter((i) => normalizeId(i.site_id) === normalizeId(selectedSiteId));
   }
 
   it('site_id=5 (number) matches selectedSiteId=5 (number)', () => {
     const result = filterBySelectedSiteId(insights, 5);
     expect(result).toHaveLength(2);
-    expect(result.every(i => i.site_id === 5)).toBe(true);
+    expect(result.every((i) => i.site_id === 5)).toBe(true);
   });
 
   it('site_id=5 (number) matches selectedSiteId="5" (string) — key fix', () => {
@@ -102,8 +102,8 @@ describe('computeSummaryFromInsights', () => {
   it('counts correctly for mixed types', () => {
     const insights = [
       { site_id: 5, type: 'hors_horaires', estimated_loss_kwh: 100, estimated_loss_eur: 15 },
-      { site_id: 5, type: 'base_load',     estimated_loss_kwh: 50,  estimated_loss_eur: 7 },
-      { site_id: 7, type: 'hors_horaires', estimated_loss_kwh: 80,  estimated_loss_eur: 12 },
+      { site_id: 5, type: 'base_load', estimated_loss_kwh: 50, estimated_loss_eur: 7 },
+      { site_id: 7, type: 'hors_horaires', estimated_loss_kwh: 80, estimated_loss_eur: 12 },
     ];
     const s = computeSummaryFromInsights(insights);
     expect(s.total_insights).toBe(3);
@@ -188,7 +188,9 @@ describe('TimeseriesPanel state machine (V16-A guarantee)', () => {
   }
 
   it('siteIds=[] → empty:no_site_selected (never blank)', () => {
-    expect(resolveState({ siteIds: [], status: 'loading', validPoints: 0 })).toBe('empty:no_site_selected');
+    expect(resolveState({ siteIds: [], status: 'loading', validPoints: 0 })).toBe(
+      'empty:no_site_selected'
+    );
   });
 
   it('siteIds set + status=loading → loading (skeleton)', () => {
@@ -237,13 +239,11 @@ describe('TimeseriesPanel state machine (V16-A guarantee)', () => {
 describe('hasMismatch logic (V16-D)', () => {
   function computeHasMismatch(insights, selectedSiteId) {
     const isSiteScoped = Boolean(selectedSiteId);
-    const uniqueSiteIds = new Set(insights.map(i => i.site_id));
+    const uniqueSiteIds = new Set(insights.map((i) => i.site_id));
     return isSiteScoped && uniqueSiteIds.size > 1;
   }
 
-  const multiSiteInsights = [
-    { site_id: 1 }, { site_id: 2 }, { site_id: 3 },
-  ];
+  const multiSiteInsights = [{ site_id: 1 }, { site_id: 2 }, { site_id: 3 }];
 
   it('no selectedSiteId → hasMismatch = false', () => {
     expect(computeHasMismatch(multiSiteInsights, null)).toBe(false);

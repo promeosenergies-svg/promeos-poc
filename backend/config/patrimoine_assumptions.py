@@ -6,6 +6,7 @@ Toutes les valeurs sont des defaults prudents B2B France.
 
 Modifiables sans réécriture : instancier PatrimoineAssumptions(prix_elec_eur_mwh=140) etc.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -24,27 +25,27 @@ CONSO_FALLBACK_GLOBAL_KWH_AN: float = 300_000.0
 
 #: Consommation annuelle par usage (kWh/an)
 CONSO_FALLBACK_BY_USAGE: Dict[str, float] = {
-    "bureaux":     250_000.0,
-    "bureau":      250_000.0,   # alias
-    "commerce":    350_000.0,
-    "logistique":  180_000.0,
-    "entrepot":    180_000.0,   # alias
-    "industrie":   500_000.0,
-    "hotellerie":  400_000.0,
-    "sante":       300_000.0,
+    "bureaux": 250_000.0,
+    "bureau": 250_000.0,  # alias
+    "commerce": 350_000.0,
+    "logistique": 180_000.0,
+    "entrepot": 180_000.0,  # alias
+    "industrie": 500_000.0,
+    "hotellerie": 400_000.0,
+    "sante": 300_000.0,
     "enseignement": 200_000.0,
 }
 
 #: Consommation par m² par usage (kWh/m²/an) pour SURFACE_MISMATCH
 CONSO_KWH_M2_AN_BY_USAGE: Dict[str, float] = {
-    "bureaux":     250.0,
-    "bureau":      250.0,
-    "commerce":    350.0,
-    "logistique":   80.0,
-    "entrepot":     80.0,
-    "industrie":   200.0,
-    "hotellerie":  300.0,
-    "sante":       250.0,
+    "bureaux": 250.0,
+    "bureau": 250.0,
+    "commerce": 350.0,
+    "logistique": 80.0,
+    "entrepot": 80.0,
+    "industrie": 200.0,
+    "hotellerie": 300.0,
+    "sante": 250.0,
     "enseignement": 150.0,
 }
 
@@ -60,6 +61,7 @@ SURFACE_MISMATCH_TOLERANCE_PCT: float = 5.0
 
 # ── Dataclass ─────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class PatrimoineAssumptions:
     """
@@ -71,15 +73,12 @@ class PatrimoineAssumptions:
         # Override partiel
         a = PatrimoineAssumptions(prix_elec_eur_mwh=140)
     """
+
     prix_elec_eur_mwh: float = PRIX_ELEC_EUR_MWH_DEFAULT
     prix_gaz_eur_mwh: float = PRIX_GAZ_EUR_MWH_DEFAULT
     conso_fallback_kwh_an: float = CONSO_FALLBACK_GLOBAL_KWH_AN
-    conso_fallback_by_usage: Dict[str, float] = field(
-        default_factory=lambda: dict(CONSO_FALLBACK_BY_USAGE)
-    )
-    conso_kwh_m2_an_by_usage: Dict[str, float] = field(
-        default_factory=lambda: dict(CONSO_KWH_M2_AN_BY_USAGE)
-    )
+    conso_fallback_by_usage: Dict[str, float] = field(default_factory=lambda: dict(CONSO_FALLBACK_BY_USAGE))
+    conso_kwh_m2_an_by_usage: Dict[str, float] = field(default_factory=lambda: dict(CONSO_KWH_M2_AN_BY_USAGE))
     conso_kwh_m2_an_default: float = CONSO_KWH_M2_AN_DEFAULT
     horizon_factor: float = HORIZON_FACTOR
     surface_mismatch_tolerance_pct: float = SURFACE_MISMATCH_TOLERANCE_PCT

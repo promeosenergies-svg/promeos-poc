@@ -3,6 +3,7 @@ PROMEOS - Routes Segmentation B2B
 V100: profile enrichi (missing_questions, recommendations, segment_label) + recompute.
 V101: next-best-step, action creation from recommendations.
 """
+
 import json
 import hashlib
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -33,12 +34,15 @@ router = APIRouter(prefix="/api/segmentation", tags=["Segmentation"])
 # Schemas
 # ========================================
 
+
 class AnswersRequest(BaseModel):
     answers: Dict[str, str]
+
 
 class FromRecommendationRequest(BaseModel):
     portfolio_id: Optional[int] = None
     recommendation_key: str
+
 
 class FromNextStepRequest(BaseModel):
     portfolio_id: Optional[int] = None
@@ -47,6 +51,7 @@ class FromNextStepRequest(BaseModel):
 # ========================================
 # GET /api/segmentation/questions
 # ========================================
+
 
 @router.get("/questions")
 def list_questions():
@@ -57,6 +62,7 @@ def list_questions():
 # ========================================
 # POST /api/segmentation/answers
 # ========================================
+
 
 @router.post("/answers")
 def submit_answers(
@@ -74,6 +80,7 @@ def submit_answers(
     compliance_sites = 0
     try:
         from services.compliance_rules import evaluate_organisation
+
         eval_result = evaluate_organisation(db, org_id)
         compliance_sites = eval_result.get("sites_evaluated", 0)
     except Exception:
@@ -96,6 +103,7 @@ def submit_answers(
 # ========================================
 # GET /api/segmentation/profile
 # ========================================
+
 
 @router.get("/profile")
 def get_profile(
@@ -147,6 +155,7 @@ def get_profile(
 # POST /api/segmentation/recompute
 # ========================================
 
+
 @router.post("/recompute")
 def recompute_segmentation(
     request: Request,
@@ -173,6 +182,7 @@ def recompute_segmentation(
 # V101: GET /api/segmentation/next-step
 # ========================================
 
+
 @router.get("/next-step")
 def get_next_step(
     request: Request,
@@ -196,8 +206,7 @@ def get_next_step(
         },
         "next_best_step": next_step,
         "top_recommendations": [
-            {"key": r["key"], "label": r["label"], "priority": r.get("priority", "medium")}
-            for r in recs[:2]
+            {"key": r["key"], "label": r["label"], "priority": r.get("priority", "medium")} for r in recs[:2]
         ],
     }
 
@@ -228,13 +237,9 @@ def create_action_from_recommendation(
         raise HTTPException(status_code=404, detail=f"Recommendation inconnue: {req.recommendation_key}")
 
     # Idempotency
-    idem_key = hashlib.sha256(
-        f"v101:seg:rec:{org_id}:{req.recommendation_key}".encode()
-    ).hexdigest()[:32]
+    idem_key = hashlib.sha256(f"v101:seg:rec:{org_id}:{req.recommendation_key}".encode()).hexdigest()[:32]
 
-    existing = db.query(ActionItem).filter(
-        ActionItem.idempotency_key == idem_key
-    ).first()
+    existing = db.query(ActionItem).filter(ActionItem.idempotency_key == idem_key).first()
     if existing:
         return {
             "id": existing.id,
@@ -276,6 +281,7 @@ def create_action_from_recommendation(
 # V101: POST /api/segmentation/actions/from-next-step
 # ========================================
 
+
 @router.post("/actions/from-next-step")
 def create_action_from_next_step(
     req: FromNextStepRequest,
@@ -287,13 +293,9 @@ def create_action_from_next_step(
     org_id = resolve_org_id(request, auth, db)
     next_step = compute_next_best_step(db, org_id, req.portfolio_id)
 
-    idem_key = hashlib.sha256(
-        f"v101:seg:nbs:{org_id}:{next_step['key']}".encode()
-    ).hexdigest()[:32]
+    idem_key = hashlib.sha256(f"v101:seg:nbs:{org_id}:{next_step['key']}".encode()).hexdigest()[:32]
 
-    existing = db.query(ActionItem).filter(
-        ActionItem.idempotency_key == idem_key
-    ).first()
+    existing = db.query(ActionItem).filter(ActionItem.idempotency_key == idem_key).first()
     if existing:
         return {
             "id": existing.id,

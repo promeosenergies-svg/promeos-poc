@@ -31,7 +31,7 @@ export const mockSites = [
     derniere_evaluation: '2026-01-15',
     adresse: 'Avenue des Champs-Élysées, Paris',
     latitude: 48.8738,
-    longitude: 2.2950,
+    longitude: 2.295,
   },
   {
     id: 2,
@@ -58,8 +58,8 @@ export const mockSites = [
     operat_status: 'IN_PROGRESS',
     derniere_evaluation: '2026-01-15',
     adresse: 'Rue de la République, Lyon',
-    latitude: 45.7580,
-    longitude: 4.8320,
+    latitude: 45.758,
+    longitude: 4.832,
   },
   {
     id: 3,
@@ -86,8 +86,8 @@ export const mockSites = [
     operat_status: null,
     derniere_evaluation: '2026-01-15',
     adresse: 'Zone Industrielle, Toulouse',
-    latitude: 43.5780,
-    longitude: 1.4020,
+    latitude: 43.578,
+    longitude: 1.402,
   },
   {
     id: 4,
@@ -114,8 +114,8 @@ export const mockSites = [
     operat_status: 'NOT_STARTED',
     derniere_evaluation: '2026-01-15',
     adresse: 'Promenade des Anglais, Nice',
-    latitude: 43.7050,
-    longitude: 7.2650,
+    latitude: 43.705,
+    longitude: 7.265,
   },
   {
     id: 5,
@@ -142,8 +142,8 @@ export const mockSites = [
     operat_status: 'IN_PROGRESS',
     derniere_evaluation: '2026-01-15',
     adresse: 'Rue Jules Ferry, Marseille',
-    latitude: 43.2950,
-    longitude: 5.3950,
+    latitude: 43.295,
+    longitude: 5.395,
   },
 ];
 

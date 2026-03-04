@@ -12,6 +12,7 @@ Algorithm:
 Inputs: MeterReading (15min / 30min / hourly)
 Output: { detected_schedule, confidence, evidence }
 """
+
 import json
 import logging
 import math
@@ -75,11 +76,15 @@ def _minutes_to_hhmm(m: int) -> str:
 
 def _fetch_readings(db: Session, site_id: int, days: int):
     """Fetch sub-daily readings for a site."""
-    meters = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-    ).all()
+    meters = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+        )
+        .all()
+    )
     if not meters:
         return [], 60  # no meters
 
@@ -90,11 +95,13 @@ def _fetch_readings(db: Session, site_id: int, days: int):
         .filter(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= cutoff,
-            MeterReading.frequency.in_([
-                FrequencyType.MIN_15,
-                FrequencyType.MIN_30,
-                FrequencyType.HOURLY,
-            ]),
+            MeterReading.frequency.in_(
+                [
+                    FrequencyType.MIN_15,
+                    FrequencyType.MIN_30,
+                    FrequencyType.HOURLY,
+                ]
+            ),
         )
         .order_by(MeterReading.timestamp)
         .all()
@@ -134,9 +141,7 @@ def detect_schedule(db: Session, site_id: int, window_days: int = DEFAULT_WINDOW
         by_date[d].append((minute_of_day, r.value_kwh))
 
     if len(by_date) < MIN_DAYS:
-        raise ValueError(
-            f"Donnees insuffisantes: {len(by_date)} jours (minimum {MIN_DAYS})"
-        )
+        raise ValueError(f"Donnees insuffisantes: {len(by_date)} jours (minimum {MIN_DAYS})")
 
     # Per-day baseload + activity series
     # Keyed by (dow, minute_of_day) → list of activity values
@@ -194,8 +199,13 @@ def detect_schedule(db: Session, site_id: int, window_days: int = DEFAULT_WINDOW
 
     # ── D) Confidence ──
     evidence = _compute_confidence(
-        by_date, day_counts, dow_profiles, window_days, step_min,
-        all_active_activities, all_inactive_activities,
+        by_date,
+        day_counts,
+        dow_profiles,
+        window_days,
+        step_min,
+        all_active_activities,
+        all_inactive_activities,
     )
 
     return {
@@ -248,18 +258,24 @@ def _slots_to_intervals(active_slots: list, step_min: int) -> list:
         start_m = max(0, iv["start"])
         end_m = min(24 * 60 - 1, iv["end"])
         if start_m < end_m:
-            result.append({
-                "start": _minutes_to_hhmm(start_m),
-                "end": _minutes_to_hhmm(end_m),
-            })
+            result.append(
+                {
+                    "start": _minutes_to_hhmm(start_m),
+                    "end": _minutes_to_hhmm(end_m),
+                }
+            )
 
     return result
 
 
 def _compute_confidence(
-    by_date: dict, day_counts: dict, dow_profiles: dict,
-    window_days: int, step_min: int,
-    active_acts: list, inactive_acts: list,
+    by_date: dict,
+    day_counts: dict,
+    dow_profiles: dict,
+    window_days: int,
+    step_min: int,
+    active_acts: list,
+    inactive_acts: list,
 ) -> dict:
     """Compute confidence score and breakdown."""
     # Coverage: actual days / expected days
@@ -304,9 +320,7 @@ def _compute_confidence(
     separation_score = min(1.0, separation / 5.0)  # ratio 5 = perfect
 
     # Final confidence
-    confidence = max(0.0, min(1.0,
-        0.4 * coverage + 0.3 * stability_score + 0.3 * separation_score
-    ))
+    confidence = max(0.0, min(1.0, 0.4 * coverage + 0.3 * stability_score + 0.3 * separation_score))
     confidence = round(confidence, 2)
 
     if confidence >= 0.7:
@@ -380,9 +394,7 @@ def _hhmm_to_min(t: str) -> int:
 
 def get_declared_intervals(db: Session, site_id: int) -> dict:
     """Get declared schedule as intervals dict. Legacy fallback if no intervals_json."""
-    sched = db.query(SiteOperatingSchedule).filter(
-        SiteOperatingSchedule.site_id == site_id
-    ).first()
+    sched = db.query(SiteOperatingSchedule).filter(SiteOperatingSchedule.site_id == site_id).first()
 
     if sched and sched.intervals_json:
         try:

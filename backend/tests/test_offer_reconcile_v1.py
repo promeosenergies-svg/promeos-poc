@@ -2,8 +2,10 @@
 PROMEOS — V2 Offer ↔ Invoice Reconciliation Tests
 Tests: reconcile_offer_vs_shadow (pure, no DB), endpoint source guards.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -20,6 +22,7 @@ from types import SimpleNamespace
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def _make_invoice(kwh=1000, total_eur=250.0):
     return SimpleNamespace(
@@ -64,6 +67,7 @@ def _shadow(kwh=1000, price=0.18, energy_type="elec"):
 # A. reconcile_offer_vs_shadow (Pure, no DB)
 # ========================================================================
 
+
 class TestReconcileVsShadow:
     """Reconcile offer vs shadow result without DB."""
 
@@ -95,9 +99,7 @@ class TestReconcileVsShadow:
             price_ref_eur_per_kwh=0.18,
             shadow_result=shadow,
         )
-        fourniture_delta = next(
-            d for d in result["delta"]["by_component"] if d["code"] == "fourniture"
-        )
+        fourniture_delta = next(d for d in result["delta"]["by_component"] if d["code"] == "fourniture")
         assert fourniture_delta["delta_ht"] > 0  # FIXE is more expensive
 
     def test_spot_fourniture_is_lower(self):
@@ -112,9 +114,7 @@ class TestReconcileVsShadow:
             price_ref_eur_per_kwh=0.18,
             shadow_result=shadow,
         )
-        fourniture_delta = next(
-            d for d in result["delta"]["by_component"] if d["code"] == "fourniture"
-        )
+        fourniture_delta = next(d for d in result["delta"]["by_component"] if d["code"] == "fourniture")
         assert fourniture_delta["delta_ht"] < 0  # SPOT is cheaper
 
     def test_network_delta_zero(self):
@@ -129,9 +129,7 @@ class TestReconcileVsShadow:
             price_ref_eur_per_kwh=0.18,
             shadow_result=shadow,
         )
-        reseau_delta = next(
-            d for d in result["delta"]["by_component"] if d["code"] == "reseau"
-        )
+        reseau_delta = next(d for d in result["delta"]["by_component"] if d["code"] == "reseau")
         assert abs(reseau_delta["delta_ht"]) < 0.01
 
     def test_explanations_non_empty(self):
@@ -162,6 +160,7 @@ class TestReconcileVsShadow:
 # ========================================================================
 # B. Component Deltas Helper
 # ========================================================================
+
 
 class TestComponentDeltas:
     """_compute_component_deltas produces correct output."""
@@ -196,6 +195,7 @@ class TestComponentDeltas:
 # C. Explanations Builder
 # ========================================================================
 
+
 class TestExplanations:
     """_build_explanations produces useful text."""
 
@@ -205,7 +205,8 @@ class TestExplanations:
             delta_totals={"ttc": 50.0},
             missing_data=[],
             strategy="fixe",
-            shadow={}, offer={},
+            shadow={},
+            offer={},
         )
         assert any("plus" in e for e in explanations)
 
@@ -215,7 +216,8 @@ class TestExplanations:
             delta_totals={"ttc": -30.0},
             missing_data=[],
             strategy="spot",
-            shadow={}, offer={},
+            shadow={},
+            offer={},
         )
         assert any("économiserait" in e for e in explanations)
 
@@ -225,7 +227,8 @@ class TestExplanations:
             delta_totals={"ttc": 0},
             missing_data=["price_ref_eur_per_kwh", "contract"],
             strategy="fixe",
-            shadow={}, offer={},
+            shadow={},
+            offer={},
         )
         assert any("défaut" in e for e in explanations)
 
@@ -234,12 +237,14 @@ class TestExplanations:
 # D. Endpoint Source Guards
 # ========================================================================
 
+
 class TestEndpointSourceGuards:
     """Verify endpoints exist in purchase route source."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
         import pathlib
+
         self.src = (pathlib.Path(__file__).parent.parent / "routes" / "purchase.py").read_text(encoding="utf-8")
 
     def test_has_quote_offer_endpoint(self):
@@ -268,13 +273,17 @@ class TestEndpointSourceGuards:
 # E. Offer Pricing Service Source Guards
 # ========================================================================
 
+
 class TestOfferPricingSourceGuards:
     """Verify offer_pricing_v1.py has expected structure."""
 
     @pytest.fixture(autouse=True)
     def _load_source(self):
         import pathlib
-        self.src = (pathlib.Path(__file__).parent.parent / "services" / "offer_pricing_v1.py").read_text(encoding="utf-8")
+
+        self.src = (pathlib.Path(__file__).parent.parent / "services" / "offer_pricing_v1.py").read_text(
+            encoding="utf-8"
+        )
 
     def test_has_compute_offer_quote(self):
         assert "def compute_offer_quote" in self.src

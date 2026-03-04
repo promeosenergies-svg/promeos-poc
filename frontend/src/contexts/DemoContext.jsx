@@ -8,8 +8,8 @@ export function DemoProvider({ children }) {
 
   useEffect(() => {
     fetch('/api/demo/status')
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         setDemoEnabled(data.demo_enabled);
         setLoading(false);
       })

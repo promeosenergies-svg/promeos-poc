@@ -35,11 +35,16 @@ function ArchetypeCard({ archetype, nafCode }) {
         </div>
         <p className="text-sm font-medium">{archetype.title}</p>
         <p className="text-xs text-gray-500 mt-1">
-          Benchmark : {archetype.kwh_m2_min}–{archetype.kwh_m2_max} kWh/m² (moy. {archetype.kwh_m2_avg})
+          Benchmark : {archetype.kwh_m2_min}–{archetype.kwh_m2_max} kWh/m² (moy.{' '}
+          {archetype.kwh_m2_avg})
         </p>
         {archetype.segment_tags?.length > 0 && (
           <div className="flex gap-1 mt-2 flex-wrap">
-            {archetype.segment_tags.map((t) => <Badge key={t} variant="neutral">{t}</Badge>)}
+            {archetype.segment_tags.map((t) => (
+              <Badge key={t} variant="neutral">
+                {t}
+              </Badge>
+            ))}
           </div>
         )}
       </CardBody>
@@ -113,7 +118,9 @@ function AnomalyList({ insights }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-700">{ins.message || ins.type}</p>
                 {ins.estimated_loss_eur != null && (
-                  <p className="text-xs text-gray-400 mt-0.5">Perte estimée : {ins.estimated_loss_eur} €</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Perte estimée : {ins.estimated_loss_eur} €
+                  </p>
                 )}
               </div>
             </div>
@@ -132,7 +139,9 @@ function WeekendActiveAlert({ weekendActive }) {
       <div className="flex items-center gap-2 mb-1">
         <Calendar className="w-4 h-4 text-amber-600" />
         <span className="text-sm font-semibold text-amber-700">Activité weekend détectée</span>
-        <Badge variant={weekendActive.severity === 'high' ? 'crit' : 'warn'}>{weekendActive.severity}</Badge>
+        <Badge variant={weekendActive.severity === 'high' ? 'crit' : 'warn'}>
+          {weekendActive.severity}
+        </Badge>
       </div>
       <p className="text-xs text-amber-600">{weekendActive.message}</p>
     </div>
@@ -140,16 +149,19 @@ function WeekendActiveAlert({ weekendActive }) {
 }
 
 export default function HorairesAnomaliesTab({ activity, anomalies, siteId, loading, onRefresh }) {
-  if (loading) return <Card><CardBody><div className="h-64 animate-pulse bg-gray-100 rounded" /></CardBody></Card>;
+  if (loading)
+    return (
+      <Card>
+        <CardBody>
+          <div className="h-64 animate-pulse bg-gray-100 rounded" />
+        </CardBody>
+      </Card>
+    );
 
   return (
     <div className="space-y-6">
       {/* Horaires — maintenant éditables */}
-      <ScheduleEditor
-        schedule={activity?.schedule}
-        siteId={siteId}
-        onSaved={onRefresh}
-      />
+      <ScheduleEditor schedule={activity?.schedule} siteId={siteId} onSaved={onRefresh} />
 
       {/* Détection automatique — comparaison déclaré vs courbe de charge */}
       <ScheduleDetectionPanel siteId={siteId} onApplied={onRefresh} />

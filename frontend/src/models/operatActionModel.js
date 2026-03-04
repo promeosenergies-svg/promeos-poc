@@ -98,7 +98,9 @@ export function buildOperatActionPayload({ efa, issue, year, kb_open_url, proof_
   if (issue.action_fr) {
     bullets.push(`Prochaine étape : ${issue.action_fr}`);
   } else if (issue.proof_required) {
-    bullets.push(`Prochaine étape : Déposer la preuve "${issue.proof_required.label_fr || 'requise'}" dans la Mémobox`);
+    bullets.push(
+      `Prochaine étape : Déposer la preuve "${issue.proof_required.label_fr || 'requise'}" dans la Mémobox`
+    );
   } else {
     bullets.push('Prochaine étape : Corriger les données EFA et relancer les contrôles');
   }
@@ -113,7 +115,9 @@ export function buildOperatActionPayload({ efa, issue, year, kb_open_url, proof_
     `Fiche EFA : ${efaUrl}`,
     kb_open_url ? `Preuve Mémobox : ${kb_open_url}` : null,
     `Anomalies : ${anomaliesUrl}`,
-  ].filter(Boolean).join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return {
     title: titleFr,

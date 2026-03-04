@@ -2,7 +2,9 @@
 PROMEOS - EMS Collections CRUD Tests
 12 tests covering create, list, update, delete, favorite, site_ids, edge cases.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -39,12 +41,15 @@ def env():
 
 
 class TestCollectionsCRUD:
-
     def test_create_collection_201(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Bureaux IDF", "site_ids": "1,2,3",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Bureaux IDF",
+                "site_ids": "1,2,3",
+            },
+        )
         assert r.status_code == 201
         data = r.json()
         assert data["name"] == "Bureaux IDF"
@@ -71,9 +76,14 @@ class TestCollectionsCRUD:
 
     def test_create_with_scope_type(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Portfolio", "site_ids": "1,2", "scope_type": "portfolio",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Portfolio",
+                "site_ids": "1,2",
+                "scope_type": "portfolio",
+            },
+        )
         assert r.status_code == 201
         # Verify via list
         cols = client.get("/api/ems/collections").json()
@@ -81,9 +91,14 @@ class TestCollectionsCRUD:
 
     def test_create_favorite(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Favoris", "site_ids": "1", "is_favorite": True,
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Favoris",
+                "site_ids": "1",
+                "is_favorite": True,
+            },
+        )
         assert r.status_code == 201
 
         cols = client.get("/api/ems/collections").json()
@@ -92,12 +107,22 @@ class TestCollectionsCRUD:
     def test_favorite_sorted_first(self, env):
         """Favorites should appear before non-favorites in listing."""
         client, db = env
-        client.post("/api/ems/collections", params={
-            "name": "Normal", "site_ids": "1", "is_favorite": False,
-        })
-        client.post("/api/ems/collections", params={
-            "name": "Star", "site_ids": "2", "is_favorite": True,
-        })
+        client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Normal",
+                "site_ids": "1",
+                "is_favorite": False,
+            },
+        )
+        client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Star",
+                "site_ids": "2",
+                "is_favorite": True,
+            },
+        )
 
         cols = client.get("/api/ems/collections").json()
         assert cols[0]["name"] == "Star"
@@ -105,9 +130,13 @@ class TestCollectionsCRUD:
 
     def test_update_name(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Old", "site_ids": "1,2",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Old",
+                "site_ids": "1,2",
+            },
+        )
         col_id = r.json()["id"]
 
         r2 = client.put(f"/api/ems/collections/{col_id}", params={"name": "New Name"})
@@ -116,9 +145,13 @@ class TestCollectionsCRUD:
 
     def test_update_site_ids(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Sites", "site_ids": "1,2,3",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Sites",
+                "site_ids": "1,2,3",
+            },
+        )
         col_id = r.json()["id"]
 
         client.put(f"/api/ems/collections/{col_id}", params={"site_ids": "4,5"})
@@ -129,9 +162,13 @@ class TestCollectionsCRUD:
 
     def test_update_favorite_flag(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "Toggle", "site_ids": "1",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "Toggle",
+                "site_ids": "1",
+            },
+        )
         col_id = r.json()["id"]
 
         client.put(f"/api/ems/collections/{col_id}", params={"is_favorite": True})
@@ -140,9 +177,13 @@ class TestCollectionsCRUD:
 
     def test_delete(self, env):
         client, db = env
-        r = client.post("/api/ems/collections", params={
-            "name": "To Delete", "site_ids": "1",
-        })
+        r = client.post(
+            "/api/ems/collections",
+            params={
+                "name": "To Delete",
+                "site_ids": "1",
+            },
+        )
         col_id = r.json()["id"]
 
         r2 = client.delete(f"/api/ems/collections/{col_id}")

@@ -9,7 +9,9 @@ export default function Select({ label, options = [], className = '', ...props }
         {...props}
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
     </div>

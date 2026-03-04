@@ -2,6 +2,7 @@
 PROMEOS - Benchmark Utility
 Percentile computation for peer-group KPI comparison.
 """
+
 from typing import List, Dict, Optional
 import math
 

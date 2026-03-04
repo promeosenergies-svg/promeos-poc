@@ -29,7 +29,7 @@ const OFF_SCREEN = Object.freeze({ top: -9999, left: -9999 });
 
 function _computePos(triggerEl, portalEl, placement, offset, pad) {
   const tr = triggerEl.getBoundingClientRect();
-  const pw = portalEl.offsetWidth  || 200; // fallback if portal hasn't laid out yet
+  const pw = portalEl.offsetWidth || 200; // fallback if portal hasn't laid out yet
   const ph = portalEl.offsetHeight || 40;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -38,15 +38,15 @@ function _computePos(triggerEl, portalEl, placement, offset, pad) {
 
   switch (placement) {
     case 'bottom-end':
-      top  = tr.bottom + offset;
+      top = tr.bottom + offset;
       left = tr.right - pw;
       break;
     case 'top-start':
-      top  = tr.top - ph - offset;
+      top = tr.top - ph - offset;
       left = tr.left;
       break;
     default: // 'bottom-start'
-      top  = tr.bottom + offset;
+      top = tr.bottom + offset;
       left = tr.left;
   }
 
@@ -59,7 +59,7 @@ function _computePos(triggerEl, portalEl, placement, offset, pad) {
 
   // Clamp to viewport
   return {
-    top:  Math.max(pad, Math.min(top,  vh - ph - pad)),
+    top: Math.max(pad, Math.min(top, vh - ph - pad)),
     left: Math.max(pad, Math.min(left, vw - pw - pad)),
   };
 }

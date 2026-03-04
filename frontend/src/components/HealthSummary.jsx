@@ -58,7 +58,10 @@ function ReasonRow({ reason, onNavigate, onCreateAction }) {
       </button>
       {onCreateAction && (
         <button
-          onClick={(e) => { e.stopPropagation(); onCreateAction(reason); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateAction(reason);
+          }}
           className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition shrink-0"
           title="Créer une action"
         >
@@ -69,7 +72,13 @@ function ReasonRow({ reason, onNavigate, onCreateAction }) {
   );
 }
 
-export default function HealthSummary({ healthState, onNavigate, onCreateAction, compact = false, trend }) {
+export default function HealthSummary({
+  healthState,
+  onNavigate,
+  onCreateAction,
+  compact = false,
+  trend,
+}) {
   if (!healthState) return null;
 
   const cfg = LEVEL_CONFIG[healthState.level] || LEVEL_CONFIG.GREEN;
@@ -80,16 +89,20 @@ export default function HealthSummary({ healthState, onNavigate, onCreateAction,
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-8 h-8 rounded-lg ${cfg.iconBg} flex items-center justify-center shrink-0`}>
+          <div
+            className={`w-8 h-8 rounded-lg ${cfg.iconBg} flex items-center justify-center shrink-0`}
+          >
             <Icon size={16} className={cfg.iconText} />
           </div>
           <div className="min-w-0">
             <p className={`text-sm font-semibold ${cfg.titleText}`}>{healthState.title}</p>
             <p className={`text-xs ${cfg.subtitleText} leading-snug`}>{healthState.subtitle}</p>
             {trend && trend.direction !== 'stable' && (
-              <span className={`inline-flex items-center gap-1 text-[11px] font-medium mt-0.5 ${
-                trend.direction === 'improving' ? 'text-emerald-600' : 'text-red-600'
-              }`}>
+              <span
+                className={`inline-flex items-center gap-1 text-[11px] font-medium mt-0.5 ${
+                  trend.direction === 'improving' ? 'text-emerald-600' : 'text-red-600'
+                }`}
+              >
                 {trend.direction === 'improving' ? '↓' : '↑'} {trend.label}
               </span>
             )}
@@ -120,7 +133,12 @@ export default function HealthSummary({ healthState, onNavigate, onCreateAction,
       {!compact && healthState.level !== 'GREEN' && healthState.reasons.length > 0 && (
         <div className="border-t border-black/5 px-1 py-1">
           {healthState.reasons.map((reason) => (
-            <ReasonRow key={reason.id} reason={reason} onNavigate={onNavigate} onCreateAction={onCreateAction} />
+            <ReasonRow
+              key={reason.id}
+              reason={reason}
+              onNavigate={onNavigate}
+              onCreateAction={onCreateAction}
+            />
           ))}
         </div>
       )}

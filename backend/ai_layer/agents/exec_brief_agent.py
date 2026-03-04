@@ -1,6 +1,7 @@
 """
 PROMEOS AI - Executive Brief Agent (portfolio narrative)
 """
+
 import json
 from models import AiInsight, InsightType
 from ..client import get_client
@@ -14,7 +15,7 @@ def run(db, org_id: int = 1, **kwargs):
         object_id=org_id,
         insight_type=InsightType.EXEC_BRIEF,
         content_json=json.dumps({"brief": response}),
-        ai_version=client.model
+        ai_version=client.model,
     )
     db.add(insight)
     db.commit()

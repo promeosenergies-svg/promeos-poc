@@ -11,7 +11,9 @@ export default function ErrorState({ title = 'Erreur', message, onRetry, debug, 
       {message && <p className="text-sm text-gray-500 mb-6 max-w-md">{message}</p>}
       <div className="flex items-center gap-3">
         {onRetry && (
-          <Button variant="secondary" onClick={onRetry}>Reessayer</Button>
+          <Button variant="secondary" onClick={onRetry}>
+            Reessayer
+          </Button>
         )}
         {actions}
       </div>

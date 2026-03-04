@@ -30,9 +30,27 @@ function makeKpis(overrides = {}) {
 
 function _makeWatchlist() {
   return [
-    { id: 'non_conformes', label: '2 sites non conformes', severity: 'critical', path: '/conformite', cta: 'Voir conformité' },
-    { id: 'a_risque', label: '1 site à risque', severity: 'high', path: '/actions', cta: "Plan d'action" },
-    { id: 'no_conso_data', label: 'Données manquantes', severity: 'warn', path: '/consommations/import', cta: 'Importer' },
+    {
+      id: 'non_conformes',
+      label: '2 sites non conformes',
+      severity: 'critical',
+      path: '/conformite',
+      cta: 'Voir conformité',
+    },
+    {
+      id: 'a_risque',
+      label: '1 site à risque',
+      severity: 'high',
+      path: '/actions',
+      cta: "Plan d'action",
+    },
+    {
+      id: 'no_conso_data',
+      label: 'Données manquantes',
+      severity: 'warn',
+      path: '/consommations/import',
+      cta: 'Importer',
+    },
   ];
 }
 
@@ -65,10 +83,12 @@ describe('buildTodayActions', () => {
   });
 
   it('deduplicates items with the same id across watchlist and opportunities', () => {
-    const watchlist = [{ id: 'shared_id', label: 'In watchlist', severity: 'warn', path: '/a', cta: 'A' }];
+    const watchlist = [
+      { id: 'shared_id', label: 'In watchlist', severity: 'warn', path: '/a', cta: 'A' },
+    ];
     const opportunities = [{ id: 'shared_id', label: 'Also in opps', path: '/b', cta: 'B' }];
     const result = buildTodayActions(makeKpis(), watchlist, opportunities);
-    const matchingItems = result.filter(r => r.id === 'shared_id');
+    const matchingItems = result.filter((r) => r.id === 'shared_id');
     expect(matchingItems).toHaveLength(1);
     // Watchlist item takes priority (processed first)
     expect(matchingItems[0].label).toBe('In watchlist');
@@ -76,7 +96,11 @@ describe('buildTodayActions', () => {
 
   it('caps result at 5 items maximum', () => {
     const watchlist = Array.from({ length: 8 }, (_, i) => ({
-      id: `item_${i}`, label: `Item ${i}`, severity: 'warn', path: '/x', cta: 'X',
+      id: `item_${i}`,
+      label: `Item ${i}`,
+      severity: 'warn',
+      path: '/x',
+      cta: 'X',
     }));
     const result = buildTodayActions(makeKpis(), watchlist, []);
     expect(result).toHaveLength(5);
@@ -86,14 +110,16 @@ describe('buildTodayActions', () => {
     const watchlist = [{ id: 'wl_1', label: 'Watchlist', severity: 'high', path: '/a', cta: 'A' }];
     const opps = [{ id: 'opp_1', label: 'Opportunity', path: '/b', cta: 'B' }];
     const result = buildTodayActions(makeKpis(), watchlist, opps);
-    const oppItem = result.find(r => r.id === 'opp_1');
+    const oppItem = result.find((r) => r.id === 'opp_1');
     expect(oppItem).toBeDefined();
     expect(oppItem.severity).toBe('info');
     expect(oppItem.type).toBe('opportunity');
   });
 
   it('watchlist item type is "watchlist"', () => {
-    const watchlist = [{ id: 'wl_1', label: 'Watchlist item', severity: 'critical', path: '/a', cta: 'A' }];
+    const watchlist = [
+      { id: 'wl_1', label: 'Watchlist item', severity: 'critical', path: '/a', cta: 'A' },
+    ];
     const result = buildTodayActions(makeKpis(), watchlist, []);
     expect(result[0].type).toBe('watchlist');
   });
@@ -108,22 +134,36 @@ describe('buildExecutiveSummary', () => {
   });
 
   it('returns warn bullet for total=0 (no sites)', () => {
-    const kpis = makeKpis({ total: 0, conformes: 0, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 0 });
+    const kpis = makeKpis({
+      total: 0,
+      conformes: 0,
+      nonConformes: 0,
+      aRisque: 0,
+      risqueTotal: 0,
+      couvertureDonnees: 0,
+    });
     const result = buildExecutiveSummary(kpis, {});
     expect(result[0].type).toBe('warn');
     expect(result[0].id).toBe('no_sites');
   });
 
   it('returns positive bullet when 100% conforme and coverage >= 80%', () => {
-    const kpis = makeKpis({ total: 5, conformes: 5, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 90 });
+    const kpis = makeKpis({
+      total: 5,
+      conformes: 5,
+      nonConformes: 0,
+      aRisque: 0,
+      risqueTotal: 0,
+      couvertureDonnees: 90,
+    });
     const result = buildExecutiveSummary(kpis, {});
-    const positive = result.find(b => b.type === 'positive' && b.id === 'conforme_ok');
+    const positive = result.find((b) => b.type === 'positive' && b.id === 'conforme_ok');
     expect(positive).toBeDefined();
   });
 
   it('returns negative bullet for nonConformes > 0', () => {
     const result = buildExecutiveSummary(makeKpis({ nonConformes: 3 }), {});
-    const neg = result.find(b => b.id === 'non_conformes_exec');
+    const neg = result.find((b) => b.id === 'non_conformes_exec');
     expect(neg).toBeDefined();
     expect(neg.type).toBe('negative');
     expect(neg.label).toContain('3 sites');
@@ -132,15 +172,22 @@ describe('buildExecutiveSummary', () => {
   it('returns opportunity bullet when coverage < 80%', () => {
     const kpis = makeKpis({ couvertureDonnees: 50, nonConformes: 0, aRisque: 0 });
     const result = buildExecutiveSummary(kpis, {});
-    const opp = result.find(b => b.id === 'coverage_exec');
+    const opp = result.find((b) => b.id === 'coverage_exec');
     expect(opp).toBeDefined();
     expect(opp.type).toBe('opportunity');
   });
 
   it('returns "all_ok_exec" bullet when fully conforme with good coverage', () => {
-    const kpis = makeKpis({ total: 5, conformes: 5, nonConformes: 0, aRisque: 0, couvertureDonnees: 100, risqueTotal: 0 });
+    const kpis = makeKpis({
+      total: 5,
+      conformes: 5,
+      nonConformes: 0,
+      aRisque: 0,
+      couvertureDonnees: 100,
+      risqueTotal: 0,
+    });
     const result = buildExecutiveSummary(kpis, { worst: [], best: [] });
-    const allOk = result.find(b => b.id === 'all_ok_exec');
+    const allOk = result.find((b) => b.id === 'all_ok_exec');
     expect(allOk).toBeDefined();
     expect(allOk.type).toBe('positive');
   });
@@ -181,7 +228,14 @@ describe('buildExecutiveKpis', () => {
   });
 
   it('returns "—" values for total=0 (empty portfolio)', () => {
-    const kpis = makeKpis({ total: 0, conformes: 0, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 0 });
+    const kpis = makeKpis({
+      total: 0,
+      conformes: 0,
+      nonConformes: 0,
+      aRisque: 0,
+      risqueTotal: 0,
+      couvertureDonnees: 0,
+    });
     const result = buildExecutiveKpis(kpis, []);
     expect(result[0].value).toBe('—');
     expect(result[2].value).toBe('—'); // maturite
