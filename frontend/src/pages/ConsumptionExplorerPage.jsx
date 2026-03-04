@@ -256,6 +256,10 @@ export default function ConsumptionExplorerPage() {
     loading,
   } = motor;
 
+  // ── User-initiated period flag (issue #23) ────────────────────────────
+  // Prevents auto-calibration from overwriting a period the user explicitly chose.
+  const userPickedDaysRef = useRef(false);
+
   // ── Portfolio mode (V12-A): all sites, aggregated view ────────────────
   const [isPortfolioMode, setIsPortfolioMode] = useState(false);
   const [portfolioBannerDismissed, setPortfolioBannerDismissed] = useState(false);
@@ -319,7 +323,8 @@ export default function ConsumptionExplorerPage() {
   // ── Auto-calibrate period from availability ────────────────────────────
   useEffect(() => {
     const avail = primaryAvailability;
-    if (avail?.has_data && avail.first_ts && avail.last_ts) {
+    // Only auto-calibrate when the user hasn't explicitly picked a period
+    if (!userPickedDaysRef.current && avail?.has_data && avail.first_ts && avail.last_ts) {
       const autoDays = computeAutoRange(avail.first_ts, avail.last_ts);
       if (autoDays !== days) setDays(autoDays);
     }
@@ -328,6 +333,11 @@ export default function ConsumptionExplorerPage() {
       setActiveTab('gas');
     }
   }, [primaryAvailability]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Reset user-picked flag on site change so auto-calibration resumes ──
+  useEffect(() => {
+    userPickedDaysRef.current = false;
+  }, [siteIds]);
 
   // ── Track previous selectedSiteId to detect explicit scope changes ────────
   const prevSelectedSiteIdRef = useRef(selectedSiteId);
@@ -450,6 +460,14 @@ export default function ConsumptionExplorerPage() {
     },
     [navigate]
   );
+  const handleDaysChange = useCallback(
+    (d) => {
+      userPickedDaysRef.current = true;
+      setDays(d);
+    },
+    [setDays],
+  );
+
   const handleSwitchEnergy = useCallback(
     (type) => {
       setEnergyType(type);
@@ -504,7 +522,7 @@ export default function ConsumptionExplorerPage() {
         setEnergyType={setEnergyType}
         availableTypes={availability?.energy_types}
         days={days}
-        setDays={setDays}
+        setDays={handleDaysChange}
         startDate={startDate}
         setStartDate={setStartDate}
         endDate={endDate}
