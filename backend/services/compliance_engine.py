@@ -83,9 +83,10 @@ def average_avancement(obligations: List[Obligation]) -> float:
 
 
 def compute_risque_financier(obligations: List[Obligation]) -> float:
-    """Calculate financial risk: BASE_PENALTY_EURO * count(non_conforme)."""
+    """Calculate financial risk: NON_CONFORME = 100% penalty, A_RISQUE = 50% penalty."""
     non_conforme_count = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
-    return round(BASE_PENALTY_EURO * non_conforme_count, 2)
+    a_risque_count = sum(1 for o in obligations if o.statut == StatutConformite.A_RISQUE)
+    return round(BASE_PENALTY_EURO * non_conforme_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2)
 
 
 def compute_action_recommandee(obligations: List[Obligation]) -> Optional[str]:
@@ -174,9 +175,12 @@ def compute_site_snapshot(
 
     worst_bacs = _worst_from_statuts(bacs_resolved)
 
-    # Count non-conforme across both dimensions
+    # Count non-conforme + a_risque across both dimensions
     non_conforme_count = sum(1 for o in decret if o.statut == StatutConformite.NON_CONFORME) + sum(
         1 for s in bacs_resolved if s == StatutConformite.NON_CONFORME
+    )
+    a_risque_count = sum(1 for o in decret if o.statut == StatutConformite.A_RISQUE) + sum(
+        1 for s in bacs_resolved if s == StatutConformite.A_RISQUE
     )
 
     # Build resolved obligation pairs for action recommendation
@@ -194,7 +198,7 @@ def compute_site_snapshot(
         "avancement_decret_pct": average_avancement(decret),
         "statut_bacs": worst_bacs or StatutConformite.A_RISQUE,
         "action_recommandee": action,
-        "risque_financier_euro": round(BASE_PENALTY_EURO * non_conforme_count, 2),
+        "risque_financier_euro": round(BASE_PENALTY_EURO * non_conforme_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2),
     }
 
 
@@ -420,17 +424,22 @@ def compute_scores(
     unknown_findings = sum(1 for f in findings if f.status == "UNKNOWN")
     nok_findings = sum(1 for f in findings if f.status == "NOK")
 
-    # reg_risk: 0-100 (higher = worse)
-    reg_risk = min(100, nok_count * 30 + a_risque_count * 15 + nok_findings * 10)
+    # compliance_risk_score: 0-100 (0=aucun risque, 100=risque max)
+    compliance_risk_score = min(100, nok_count * 30 + a_risque_count * 15 + nok_findings * 10)
+
+    # compliance_score: 0-100 (higher=better, coherent with RegOps)
+    compliance_score = 100 - compliance_risk_score
 
     # evidence_risk: based on unknown findings (data gaps)
     evidence_risk = min(100, unknown_findings * 20 + a_risque_count * 10)
 
-    # financial_opportunity: penalty avoidance (EUR)
-    financial_opportunity = round(BASE_PENALTY_EURO * nok_count, 2)
+    # financial_opportunity: penalty avoidance (EUR) — NON_CONFORME=100%, A_RISQUE=50%
+    financial_opportunity = round(BASE_PENALTY_EURO * nok_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2)
 
     return {
-        "reg_risk": reg_risk,
+        "reg_risk": compliance_risk_score,  # backward compat
+        "compliance_risk_score": compliance_risk_score,
+        "compliance_score": compliance_score,
         "evidence_risk": evidence_risk,
         "financial_opportunity_eur": financial_opportunity,
     }
@@ -692,7 +701,9 @@ def compute_portfolio_compliance_summary(
                 "site_nom": site.nom,
                 "gate_status": gate,
                 "completeness_pct": readiness["completeness_pct"],
-                "reg_risk": scores["reg_risk"],
+                "reg_risk": scores["compliance_risk_score"],
+                "compliance_risk_score": scores["compliance_risk_score"],
+                "compliance_score": scores["compliance_score"],
                 "financial_opportunity_eur": scores["financial_opportunity_eur"],
                 "applicability": {k: v["applicable"] for k, v in applicability.items()},
             }

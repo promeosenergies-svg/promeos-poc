@@ -1303,8 +1303,8 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
         <KpiCard
           label="Meilleur P50"
           value={
-            scoredOffers.length > 0
-              ? `${Math.min(...scoredOffers.map((s) => s.corridor?.p50 ?? Infinity)).toFixed(1)} EUR/MWh`
+            scoredOffers.length > 0 && scoredOffers.some((s) => s.corridor?.p50 != null)
+              ? `${Math.min(...scoredOffers.filter((s) => s.corridor?.p50 != null).map((s) => s.corridor.p50)).toFixed(1)} EUR/MWh`
               : '—'
           }
           icon={<TrendingUp size={18} />}

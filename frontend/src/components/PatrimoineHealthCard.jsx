@@ -22,6 +22,7 @@ import {
   Euro,
 } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
+import { fmtEur } from '../utils/format';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
 
@@ -80,8 +81,7 @@ function scoreTextColor(score) {
 
 function fmtEurRisk(eur) {
   if (!eur || eur <= 0) return null;
-  if (eur >= 1000) return `~${(eur / 1000).toFixed(0)} k€`;
-  return `~${eur.toFixed(0)} €`;
+  return fmtEur(eur);
 }
 
 function fmtConfidence(confidence) {

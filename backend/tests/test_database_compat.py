@@ -91,7 +91,9 @@ def test_insert_or_ignore_has_dialect_check():
     # gen_weather._insert_weather_ignore checks dialect
     src_weather = inspect.getsource(gen_weather._insert_weather_ignore)
     assert "dialect" in src_weather, "gen_weather must check dialect"
+    assert "ON CONFLICT" in src_weather, "gen_weather must have PostgreSQL ON CONFLICT"
 
     # gen_readings._bulk_insert_ignore checks dialect
     src_readings = inspect.getsource(gen_readings._bulk_insert_ignore)
     assert "dialect" in src_readings, "gen_readings must check dialect"
+    assert "ON CONFLICT" in src_readings, "gen_readings must have PostgreSQL ON CONFLICT"

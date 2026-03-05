@@ -32,6 +32,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { getPatrimoinePortfolioSummary, seedDemoPack, clearApiCache } from '../services/api';
+import { fmtEur } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
@@ -52,9 +53,7 @@ const FRAMEWORK_CHIP_COLOR = {
 
 function fmtRisk(eur) {
   if (!eur || eur <= 0) return '0 €';
-  if (eur >= 1_000_000) return `~${(eur / 1_000_000).toFixed(1)} M€`;
-  if (eur >= 1_000) return `~${(eur / 1_000).toFixed(0)} k€`;
-  return `~${Math.round(eur)} €`;
+  return fmtEur(eur);
 }
 
 /* ── Sous-composants ─────────────────────────────────────────────────────── */

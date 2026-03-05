@@ -267,9 +267,9 @@ class TestComputeRisqueFinancier:
         ]
         assert compute_risque_financier(obs) == BASE_PENALTY_EURO * 2
 
-    def test_a_risque_not_counted(self):
+    def test_a_risque_half_penalty(self):
         obs = [_make_obligation(statut=StatutConformite.A_RISQUE)]
-        assert compute_risque_financier(obs) == 0.0
+        assert compute_risque_financier(obs) == BASE_PENALTY_EURO * 0.5
 
     def test_mixed(self):
         obs = [
@@ -277,7 +277,16 @@ class TestComputeRisqueFinancier:
             _make_obligation(statut=StatutConformite.A_RISQUE),
             _make_obligation(statut=StatutConformite.NON_CONFORME),
         ]
-        assert compute_risque_financier(obs) == BASE_PENALTY_EURO
+        assert compute_risque_financier(obs) == BASE_PENALTY_EURO + BASE_PENALTY_EURO * 0.5
+
+    def test_2_nok_1_a_risque_gives_18750(self):
+        """2 NON_CONFORME + 1 A_RISQUE = 2*7500 + 1*3750 = 18750€."""
+        obs = [
+            _make_obligation(statut=StatutConformite.NON_CONFORME),
+            _make_obligation(statut=StatutConformite.NON_CONFORME),
+            _make_obligation(statut=StatutConformite.A_RISQUE),
+        ]
+        assert compute_risque_financier(obs) == 18750.0
 
     def test_derogation_not_counted(self):
         obs = [_make_obligation(statut=StatutConformite.DEROGATION)]

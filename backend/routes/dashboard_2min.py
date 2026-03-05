@@ -12,6 +12,7 @@ from sqlalchemy import func
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
+from services.kpi_service import KpiService, KpiScope
 from models import (
     Portefeuille,
     EntiteJuridique,
@@ -130,8 +131,8 @@ def get_dashboard_2min(
             "non_conformes": 0,
         }
 
-    # Risque financier — scoped to org's sites
-    risque_total = _sites_for_org_query(db, org.id).with_entities(func.sum(Site.risque_financier_euro)).scalar() or 0
+    # Risque financier — via KpiService (centralized)
+    risque_total = KpiService(db).get_financial_risk_eur(KpiScope(org_id=org.id)).value
     pertes_conso = (
         (
             db.query(func.sum(ConsumptionInsight.estimated_loss_eur))

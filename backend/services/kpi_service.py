@@ -211,6 +211,57 @@ class KpiService:
         _set_cached(key, result)
         return result
 
+    def get_compliance_status_counts(self, scope: KpiScope) -> dict:
+        """Nombre de sites par statut conformité tertiaire."""
+        key = _cache_key("status_counts", scope)
+        cached = _get_cached(key)
+        if cached:
+            return cached
+
+        from models import StatutConformite
+
+        sites_q = _sites_query(self.db, scope)
+        total = sites_q.count()
+        conformes = sites_q.filter(Site.statut_decret_tertiaire == StatutConformite.CONFORME).count()
+        a_risque = sites_q.filter(Site.statut_decret_tertiaire == StatutConformite.A_RISQUE).count()
+        non_conformes = sites_q.filter(Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME).count()
+
+        result = KpiResult(
+            value=float(total),
+            unit="sites",
+            source="Site.statut_decret_tertiaire breakdown",
+            formula=f"conformes={conformes}, a_risque={a_risque}, non_conformes={non_conformes}",
+            confidence="high",
+            scope_description=_scope_desc(scope),
+        )
+        # Store extra data in a wrapper
+        result._counts = {
+            "total": total,
+            "conformes": conformes,
+            "a_risque": a_risque,
+            "non_conformes": non_conformes,
+        }
+        _set_cached(key, result)
+        return result
+
+    def get_summary(self, scope: KpiScope) -> dict:
+        """All KPIs in one call — reduces N requests from frontend/routes."""
+        risk = self.get_financial_risk_eur(scope)
+        avancement = self.get_avancement_decret_pct(scope)
+        compliance = self.get_compliance_score(scope)
+        sites = self.get_total_sites(scope)
+        surface = self.get_total_surface_m2(scope)
+        status_counts = self.get_compliance_status_counts(scope)
+
+        return {
+            "risque_financier_euro": risk.value,
+            "avancement_decret_pct": avancement.value,
+            "compliance_score_pct": compliance.value,
+            "total_sites": int(sites.value),
+            "total_surface_m2": surface.value,
+            "status_counts": status_counts._counts,
+        }
+
     def get_total_surface_m2(self, scope: KpiScope) -> KpiResult:
         """Surface totale en m²."""
         key = _cache_key("surface", scope)

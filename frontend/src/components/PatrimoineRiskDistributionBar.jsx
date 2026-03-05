@@ -8,14 +8,13 @@
  * Cas spécial N < 8 : top1 critique, next2 à surveiller, reste OK.
  */
 import React from 'react';
+import { fmtEur } from '../utils/format';
 
 /* ── Utilitaire formatage ── */
 
 function fmtK(n) {
   if (!n || n <= 0) return '0 €';
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} M€`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)} k€`;
-  return `${Math.round(n)} €`;
+  return fmtEur(n);
 }
 
 /* ── Calcul des buckets ── */

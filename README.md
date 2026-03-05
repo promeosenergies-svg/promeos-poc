@@ -95,7 +95,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Full App Audit (1 critical fix, 70+ accent corrections, 35+ files, 6-axis audit) | Stable -- V117+ |
 > | Playbook Hardening (audit V117, PostgreSQL+Alembic, rate-limiting FR, CORS configurable, AI client live+fallback, KPI service centralisé, AsyncState, useApiCache, E2E golden spec) | Stable -- V117+ |
 > | Cartographie Codebase (379 endpoints, 98 modeles, 55+ pages, 52 modeles seedes, KPI coherence audit, micro-copy FR audit) | Stable -- V117+ |
-> | Suite de tests automatisés | **4 492 frontend + 2 840+ backend, 0 régression** |
+> | KPI Coherence Fixes (A_RISQUE 50% penalty, compliance_score higher=better, Infinity guard, fmtEur centralise, _fmtEurSimple supprime) | Stable -- V118 |
+> | Webhook & Digest (WebhookSubscription, DigestPreference, HMAC-SHA256, dispatch+build_digest, 7 endpoints, 10 tests) | Stable -- V118 |
+> | Suite de tests automatisés | **4 494 frontend + 2 850+ backend, 0 régression** |
 
 > **Disclaimer**
 >

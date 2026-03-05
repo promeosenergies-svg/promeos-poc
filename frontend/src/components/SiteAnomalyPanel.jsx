@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, ShieldCheck, AlertCircle, Info, Euro, RefreshCw } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
+import { fmtEur } from '../utils/format';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 /* ── Constantes locales ── */
@@ -88,8 +89,7 @@ function ScoreGauge({ score }) {
 
 function fmtEurRisk(eur) {
   if (!eur || eur <= 0) return null;
-  if (eur >= 1000) return `~${(eur / 1000).toFixed(0)} k€`;
-  return `~${eur.toFixed(0)} €`;
+  return fmtEur(eur);
 }
 
 /* ── Composant principal ── */

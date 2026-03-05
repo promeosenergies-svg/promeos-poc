@@ -7,6 +7,8 @@
  *   computeRecommendation(impact, kpis)      → { titre, bullets, cta, ctaPath }
  */
 
+import { fmtEur } from '../utils/format';
+
 // ── Taux heuristique V1 pour l'opportunité optimisation ─────────────────────
 const OPTIM_RATE_V1 = 0.01; // 1% du montant facturé total
 
@@ -84,7 +86,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
       titre: `Priorité : réduire le risque conformité`,
       bullets: [
         `${sitesCount} site${sitesCount > 1 ? 's' : ''} non conforme${sitesCount > 1 ? 's' : ''} ou à risque`,
-        `Risque financier estimé : ${_fmtEurSimple(risqueConformite)}`,
+        `Risque financier estimé : ${_fmtEur0(risqueConformite)}`,
         'Échéance Décret Tertiaire — actions correctives recommandées',
       ],
       cta: 'Voir les sites à risque',
@@ -98,7 +100,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
       key: 'facture',
       titre: `Priorité : corriger les anomalies facture`,
       bullets: [
-        `Surcoût détecté : ${_fmtEurSimple(surcoutFacture)}`,
+        `Surcoût détecté : ${_fmtEur0(surcoutFacture)}`,
         'Anomalies identifiées par le moteur de shadow billing',
         'Vérifiez les écarts prix, volumes et doublons',
       ],
@@ -112,7 +114,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
     key: 'optimisation',
     titre: `Priorité : lancer l'optimisation énergétique`,
     bullets: [
-      `Économie potentielle estimée : ${_fmtEurSimple(opportuniteOptim)}`,
+      `Économie potentielle estimée : ${_fmtEur0(opportuniteOptim)}`,
       'Basé sur 1 % du montant facturé total (heuristique V1)',
       'Identifiez les sites énergivores et les surconsommations',
     ],
@@ -123,11 +125,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
 
 // ── Helpers internes ─────────────────────────────────────────────────────────
 
-function _fmtEurSimple(v) {
-  if (v == null || v === 0) return '0 €';
-  const n = Number(v);
-  if (Math.abs(n) >= 1_000_000)
-    return `${(n / 1_000_000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M€`;
-  if (Math.abs(n) >= 1_000) return `${Math.round(n / 1_000).toLocaleString('fr-FR')} k€`;
-  return `${n.toLocaleString('fr-FR')} €`;
+/** fmtEur retourne '—' pour 0 ; ici on veut '0 €' dans les bullets recommandation. */
+function _fmtEur0(v) {
+  return v ? fmtEur(v) : '0 €';
 }

@@ -970,5 +970,29 @@ def _bulk_insert_ignore(db, readings: list):
         chunk_size = 500
         for i in range(0, len(params), chunk_size):
             db.execute(stmt, params[i : i + chunk_size])
+    elif dialect == "postgresql":
+        from sqlalchemy import text
+
+        stmt = text(
+            "INSERT INTO meter_reading "
+            "(meter_id, timestamp, frequency, value_kwh, is_estimated, quality_score, created_at) "
+            "VALUES (:meter_id, :ts, :freq, :kwh, :est, :qs, :cat) "
+            "ON CONFLICT (meter_id, timestamp) DO NOTHING"
+        )
+        params = [
+            {
+                "meter_id": r.meter_id,
+                "ts": r.timestamp.isoformat() if r.timestamp else None,
+                "freq": r.frequency.name if hasattr(r.frequency, "name") else str(r.frequency),
+                "kwh": r.value_kwh,
+                "est": r.is_estimated,
+                "qs": getattr(r, "quality_score", None) or 1.0,
+                "cat": r.created_at.isoformat() if r.created_at else datetime.now(timezone.utc).isoformat(),
+            }
+            for r in readings
+        ]
+        chunk_size = 500
+        for i in range(0, len(params), chunk_size):
+            db.execute(stmt, params[i : i + chunk_size])
     else:
         db.bulk_save_objects(readings)

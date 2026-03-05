@@ -174,3 +174,50 @@ class NotificationPreference(Base, TimestampMixin):
 
     # Relations
     organisation = relationship("Organisation", backref="notification_preference")
+
+
+class WebhookSubscription(Base, TimestampMixin):
+    """Webhook subscription for external notification delivery (V2)."""
+
+    __tablename__ = "webhook_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(
+        Integer,
+        ForeignKey("organisations.id"),
+        nullable=False,
+        index=True,
+    )
+    url = Column(String(1000), nullable=False, comment="Target URL for POST")
+    secret = Column(String(200), nullable=True, comment="HMAC-SHA256 signing secret")
+    active = Column(Boolean, default=True, comment="Enable/disable webhook")
+    events_filter = Column(
+        Text,
+        nullable=True,
+        comment='JSON array of source_types to filter (null = all)',
+    )
+    last_triggered_at = Column(DateTime, nullable=True)
+    failure_count = Column(Integer, default=0, comment="Consecutive failures")
+
+    organisation = relationship("Organisation", backref="webhook_subscriptions")
+
+
+class DigestPreference(Base, TimestampMixin):
+    """Per-org digest email scheduling (V2)."""
+
+    __tablename__ = "digest_preferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(
+        Integer,
+        ForeignKey("organisations.id"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    enabled = Column(Boolean, default=False)
+    frequency = Column(String(20), default="daily", comment="daily | weekly")
+    recipient_emails = Column(Text, nullable=True, comment="Comma-separated emails")
+    last_sent_at = Column(DateTime, nullable=True)
+
+    organisation = relationship("Organisation", backref="digest_preference")

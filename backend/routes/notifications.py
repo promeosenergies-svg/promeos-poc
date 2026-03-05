@@ -19,8 +19,11 @@ from models import (
     NotificationSeverity,
     NotificationStatus,
     NotificationSourceType,
+    WebhookSubscription,
+    DigestPreference,
 )
 from services.notification_service import sync_notifications, _count_summary
+from services.webhook_service import dispatch_webhooks, build_digest
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import apply_scope_filter
 from services.scope_utils import resolve_org_id
@@ -269,3 +272,133 @@ def list_batches(
         }
         for b in batches
     ]
+
+
+# ── Webhooks (V2) ──────────────────────────────────────────────
+
+
+class WebhookCreate(BaseModel):
+    url: str
+    secret: Optional[str] = None
+    events_filter: Optional[list[str]] = None
+
+
+@router.get("/webhooks")
+def list_webhooks(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    oid = _resolve_org(request, auth, db, org_id)
+    subs = db.query(WebhookSubscription).filter(WebhookSubscription.org_id == oid).all()
+    return [
+        {
+            "id": s.id,
+            "url": s.url,
+            "active": s.active,
+            "events_filter": json.loads(s.events_filter) if s.events_filter else None,
+            "failure_count": s.failure_count,
+            "last_triggered_at": s.last_triggered_at.isoformat() if s.last_triggered_at else None,
+        }
+        for s in subs
+    ]
+
+
+@router.post("/webhooks")
+def create_webhook(
+    body: WebhookCreate,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    oid = _resolve_org(request, auth, db, org_id)
+    sub = WebhookSubscription(
+        org_id=oid,
+        url=body.url,
+        secret=body.secret,
+        events_filter=json.dumps(body.events_filter) if body.events_filter else None,
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+    return {"id": sub.id, "url": sub.url, "active": sub.active}
+
+
+@router.delete("/webhooks/{webhook_id}")
+def delete_webhook(
+    webhook_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    sub = db.get(WebhookSubscription, webhook_id)
+    if not sub:
+        raise HTTPException(status_code=404, detail="Webhook non trouve")
+    db.delete(sub)
+    db.commit()
+    return {"deleted": True}
+
+
+# ── Digest (V2) ────────────────────────────────────────────────
+
+
+class DigestUpdate(BaseModel):
+    enabled: bool = False
+    frequency: str = "daily"
+    recipient_emails: Optional[str] = None
+
+
+@router.get("/digest")
+def get_digest_pref(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    oid = _resolve_org(request, auth, db, org_id)
+    pref = db.query(DigestPreference).filter(DigestPreference.org_id == oid).first()
+    if not pref:
+        return {"enabled": False, "frequency": "daily", "recipient_emails": None}
+    return {
+        "enabled": pref.enabled,
+        "frequency": pref.frequency,
+        "recipient_emails": pref.recipient_emails,
+        "last_sent_at": pref.last_sent_at.isoformat() if pref.last_sent_at else None,
+    }
+
+
+@router.put("/digest")
+def update_digest_pref(
+    body: DigestUpdate,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    oid = _resolve_org(request, auth, db, org_id)
+    pref = db.query(DigestPreference).filter(DigestPreference.org_id == oid).first()
+    if not pref:
+        pref = DigestPreference(org_id=oid)
+        db.add(pref)
+    pref.enabled = body.enabled
+    pref.frequency = body.frequency
+    pref.recipient_emails = body.recipient_emails
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/digest/preview")
+def preview_digest(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Preview digest content without marking as sent."""
+    oid = _resolve_org(request, auth, db, org_id)
+    digest = build_digest(db, oid)
+    if not digest:
+        return {"message": "Aucune alerte nouvelle pour le digest"}
+    return digest

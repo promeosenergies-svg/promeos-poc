@@ -7,6 +7,8 @@ SQLite supports ALTER TABLE ADD COLUMN for nullable columns.
 import logging
 from sqlalchemy import inspect, text
 
+from services.compliance_engine import BASE_PENALTY_EURO
+
 logger = logging.getLogger(__name__)
 
 # Columns to add for SoftDeleteMixin on patrimony tables
@@ -772,11 +774,13 @@ def _backfill_site_risque_financier(engine):
 
     with engine.begin() as conn:
         # Get sites with risque_financier_euro = 0 (or NULL) that have non-conforme/a_risque obligations
+        penalty = BASE_PENALTY_EURO
+        half_penalty = BASE_PENALTY_EURO * 0.5
         rows = conn.execute(
-            text("""
+            text(f"""
             SELECT s.id,
-                   COALESCE(SUM(CASE WHEN o.statut IN ('NON_CONFORME', 'non_conforme') THEN 7500.0 ELSE 0 END), 0)
-                   + COALESCE(SUM(CASE WHEN o.statut IN ('A_RISQUE', 'a_risque') THEN 3750.0 ELSE 0 END), 0)
+                   COALESCE(SUM(CASE WHEN o.statut IN ('NON_CONFORME', 'non_conforme') THEN {penalty} ELSE 0 END), 0)
+                   + COALESCE(SUM(CASE WHEN o.statut IN ('A_RISQUE', 'a_risque') THEN {half_penalty} ELSE 0 END), 0)
                    AS risque
             FROM sites s
             LEFT JOIN obligations o ON o.site_id = s.id

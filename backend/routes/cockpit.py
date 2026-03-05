@@ -19,6 +19,7 @@ from models import (
 )
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
+from services.kpi_service import KpiService, KpiScope
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
@@ -84,15 +85,11 @@ def get_cockpit(
         .count()
     )
 
-    # Risque financier total
-    risque_total = (
-        _sites_for_org(db, effective_org_id).with_entities(func.sum(Site.risque_financier_euro)).scalar() or 0
-    )
-
-    # Avancement moyen decret tertiaire
-    avg_avancement = (
-        _sites_for_org(db, effective_org_id).with_entities(func.avg(Site.avancement_decret_pct)).scalar() or 0
-    )
+    # Risque financier + avancement via KpiService (centralized)
+    kpi = KpiService(db)
+    _scope = KpiScope(org_id=effective_org_id)
+    risque_total = kpi.get_financial_risk_eur(_scope).value
+    avg_avancement = kpi.get_avancement_decret_pct(_scope).value
 
     # Alertes actives — scoped to org's sites
     site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]

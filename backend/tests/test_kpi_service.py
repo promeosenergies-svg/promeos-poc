@@ -107,6 +107,34 @@ class TestKpiServiceAvancement:
         assert abs(result.value - 80.0) < 0.1  # (80 + 60 + 100) / 3 = 80
 
 
+class TestKpiServiceStatusCounts:
+    def test_status_counts(self, db):
+        svc = KpiService(db)
+        result = svc.get_compliance_status_counts(KpiScope(org_id=1))
+        counts = result._counts
+        assert counts["conformes"] == 2
+        assert counts["non_conformes"] == 1
+        assert counts["a_risque"] == 0
+        assert counts["total"] == 3
+
+    def test_status_counts_empty_org(self, db):
+        svc = KpiService(db)
+        result = svc.get_compliance_status_counts(KpiScope(org_id=999))
+        assert result._counts["total"] == 0
+
+
+class TestKpiServiceSummary:
+    def test_summary_all_fields(self, db):
+        svc = KpiService(db)
+        summary = svc.get_summary(KpiScope(org_id=1))
+        assert summary["risque_financier_euro"] == 15000.0
+        assert abs(summary["avancement_decret_pct"] - 80.0) < 0.1
+        assert abs(summary["compliance_score_pct"] - 66.7) < 0.1
+        assert summary["total_sites"] == 3
+        assert summary["total_surface_m2"] == 3500.0
+        assert summary["status_counts"]["conformes"] == 2
+
+
 class TestKpiCaching:
     def test_same_result_on_second_call(self, db):
         """Cache should return same result."""

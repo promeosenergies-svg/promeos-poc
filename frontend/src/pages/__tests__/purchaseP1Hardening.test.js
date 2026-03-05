@@ -148,3 +148,23 @@ describe('Toast — smoke tests', () => {
     }
   });
 });
+
+// ── Infinity Guard Tests ──────────────────────────────────────
+
+describe('PurchaseAssistantPage — Infinity guard', () => {
+  it('no Infinity keyword in PurchaseAssistantPage source', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../PurchaseAssistantPage.jsx'), 'utf-8');
+    expect(src).not.toContain('Infinity');
+  });
+
+  it('Math.min uses filtered array (no empty spread)', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../PurchaseAssistantPage.jsx'), 'utf-8');
+    // The guard filters null p50 before Math.min
+    expect(src).toContain('.filter(');
+    expect(src).toContain('p50 != null');
+  });
+});

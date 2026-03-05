@@ -230,6 +230,35 @@ class TestScores:
         assert result["reg_risk"] >= 30
         assert result["financial_opportunity_eur"] == 7500.0
 
+    def test_a_risque_half_penalty(self):
+        """A_RISQUE = 50% penalty (3750€)."""
+        obs = [_make_obligation(statut=StatutConformite.A_RISQUE)]
+        result = compute_scores(obs, [])
+        assert result["financial_opportunity_eur"] == 3750.0
+
+    def test_mixed_nok_and_a_risque(self):
+        """2 NON_CONFORME + 1 A_RISQUE = 2*7500 + 1*3750 = 18750€."""
+        obs = [
+            _make_obligation(statut=StatutConformite.NON_CONFORME),
+            _make_obligation(statut=StatutConformite.NON_CONFORME),
+            _make_obligation(statut=StatutConformite.A_RISQUE),
+        ]
+        result = compute_scores(obs, [])
+        assert result["financial_opportunity_eur"] == 18750.0
+
+    def test_compliance_score_higher_is_better(self):
+        """compliance_score = 100 - compliance_risk_score (higher=better)."""
+        obs_conforme = [_make_obligation(statut=StatutConformite.CONFORME)]
+        result_ok = compute_scores(obs_conforme, [])
+        assert result_ok["compliance_score"] == 100
+        assert result_ok["compliance_risk_score"] == 0
+
+        obs_nok = [_make_obligation(statut=StatutConformite.NON_CONFORME)]
+        result_bad = compute_scores(obs_nok, [])
+        assert result_bad["compliance_score"] < 100  # worse than conforme
+        assert result_bad["compliance_score"] == 100 - result_bad["compliance_risk_score"]
+        assert result_bad["compliance_risk_score"] >= 30
+
 
 # ═══════════════════════════════════════════════
 # Test: compute_deadlines
