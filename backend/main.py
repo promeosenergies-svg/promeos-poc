@@ -78,16 +78,20 @@ app = FastAPI(
 # Request context middleware (request_id + timing) — must be added before CORS
 app.add_middleware(RequestContextMiddleware)
 
-# Configuration CORS — restrict origins in production
-_CORS_ORIGINS = os.environ.get(
-    "PROMEOS_CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173",
-).split(",")
+# Configuration CORS — restrict origins in production, wildcard in demo mode
+_DEMO_MODE = os.environ.get("DEMO_MODE", "true").lower() in ("true", "1", "yes")
+if _DEMO_MODE:
+    _CORS_ORIGINS = ["*"]
+else:
+    _CORS_ORIGINS = os.environ.get(
+        "PROMEOS_CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173",
+    ).split(",")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=not _DEMO_MODE,  # credentials not supported with wildcard
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Request-Id", "X-Response-Time"],

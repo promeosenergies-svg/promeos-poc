@@ -41,6 +41,7 @@ from services.billing_service import (
     BILLING_RULES,
 )
 from middleware.auth import get_optional_auth, require_admin, AuthContext
+from middleware.rate_limit import check_rate_limit
 from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
@@ -295,6 +296,7 @@ def import_invoices_csv(
     Expected columns: site_id,invoice_number,period_start,period_end,issue_date,total_eur,energy_kwh,source
     Optional line columns: line_type,line_label,line_qty,line_unit,line_unit_price,line_amount_eur
     """
+    check_rate_limit(request, key_prefix="billing_import", max_requests=20, window_seconds=60)
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     fname = (file.filename or "").lower()
@@ -1007,6 +1009,7 @@ async def import_invoice_pdf(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Upload PDF facture → parse EDF/Engie templates → normalise → stocke → audit."""
+    check_rate_limit(request, key_prefix="billing_import", max_requests=20, window_seconds=60)
     from app.bill_intelligence.parsers.pdf_parser import parse_pdf_bytes
 
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)

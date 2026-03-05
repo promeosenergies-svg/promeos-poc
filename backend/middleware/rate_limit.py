@@ -47,9 +47,11 @@ def check_rate_limit(
 
     if len(bucket) >= max_requests:
         _logger.warning("Rate limit exceeded: %s (%d/%d in %.0fs)", key, len(bucket), max_requests, window_seconds)
+        retry_after = int(window_seconds - (time.monotonic() - bucket[0])) if bucket else int(window_seconds)
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Too many requests. Max {max_requests} per {int(window_seconds)}s.",
+            detail=f"Trop de requêtes. Réessayez dans {max(1, retry_after)} secondes.",
+            headers={"Retry-After": str(max(1, retry_after))},
         )
 
     bucket.append(time.monotonic())

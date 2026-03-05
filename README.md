@@ -93,12 +93,16 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | V117 Anomaly↔Action linking (create/link/dismiss/statuses, deep-link filters, idempotency) | Stable -- V117 |
 > | Marché UX Polish (contextual recents, Raccourcis header, no dots, responsive clamp, compact density) | Stable -- V117 |
 > | Full App Audit (1 critical fix, 70+ accent corrections, 35+ files, 6-axis audit) | Stable -- V117+ |
-> | Suite de tests automatisés | **4 481 frontend + 2 800+ backend, 0 régression** |
+> | Playbook Hardening (audit V117, PostgreSQL+Alembic, rate-limiting FR, CORS configurable, AI client live+fallback, KPI service centralisé, AsyncState, useApiCache, E2E golden spec) | Stable -- V117+ |
+> | Cartographie Codebase (379 endpoints, 98 modeles, 55+ pages, 52 modeles seedes, KPI coherence audit, micro-copy FR audit) | Stable -- V117+ |
+> | Suite de tests automatisés | **4 492 frontend + 2 840+ backend, 0 régression** |
 
 > **Disclaimer**
 >
 > Ce depot est un **proof-of-concept** (POC). Il n'est pas prevu pour la production :
-> pas de rate-limiting, SQLite en mono-fichier, CORS ouvert.
+> SQLite par defaut (PostgreSQL supporte via `DATABASE_URL` + Alembic migrations).
+> Rate-limiting en memoire (sliding window par IP, endpoints sensibles proteges).
+> CORS configurable (`PROMEOS_CORS_ORIGINS` en production, wildcard en mode demo).
 > Authentification IAM implementee (JWT + scopes hierarchiques + 11 roles metier).
 > Les donnees de demo sont synthetiques (5 sites HELIOS, 10 personas IAM).
 
@@ -107,8 +111,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (V71), moteur Achat Energie (4 strategies incluant Tarif Heures Solaires avec 6 blocs horaires, effort score, report_pct, green bonus V74-V75).
-- **Frontend React 18 + Tailwind + Vite** avec 22+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
+- **Backend FastAPI** avec 379 endpoints (43 route files), 98 modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (V71), moteur Achat Energie (4 strategies incluant Tarif Heures Solaires avec 6 blocs horaires, effort score, report_pct, green bonus V74-V75).
+- **Frontend React 18 + Tailwind + Vite** avec 55+ pages (101 JSX, 20+ redirects) : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
 - **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
 - **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
 - **Demo World-Class V107-V108** : Meteo realiste par ville (normales Meteo-France, AR(1) phi=0.7, 12 villes), consommation calibree ADEME (170 kWh/m2 bureau, 280 hotel, 120 entrepot, 110 ecole), gaz correle DJU, 365 jours 15-min avec cycling CVC, anomalies diversifiees (5 types par site), 30 usages, 30 snapshots monitoring mensuels, 20 notifications multi-sources, 5 grilles TOU HP/HC, 8 regles de paiement, 4 traces reconciliation. **65 tests, seed 41s.**
@@ -124,7 +128,7 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 - **Contract Radar V99** : tableau de bord renouvellements contrats (scoring risque, timeline echeances, 4 statuts contrat, alertes expiration 90j), endpoint `/api/contracts-radar/dashboard`, 12 tests.
 - **Offer Pricing V100** : moteur pricing offres fournisseurs (comparaison grilles tarifaires, simulation gain/perte, reconciliation factures/offres), endpoint `/api/offer-pricing/*`, 8 tests.
 - **Segmentation V101** : Next Best Step moteur d'action deterministe (cascade priorite : confidence < 50 → questions, contrats expirants → renouvellement, reconciliation fail → debloquer), creation actions depuis recommandations (idempotent, SHA-256), 3 endpoints (`/api/segmentation/next-step`, `/actions/from-recommendation`, `/actions/from-next-step`), SegmentationWidget V101 (Next Step card + top 2 recs + CTA modal/route), onboarding pilote (PatrimoineWizard → recomputeSegmentation, ContractRadarPage nudge banner). 17 tests V101 + 8 bug fixes V100.
-- **3 975 frontend + 2 400+ backend = 6 375+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **4 492 frontend + 2 840+ backend = 7 332+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -800,9 +804,7 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
 
 - Multi-tenancy full (IAM multi-org presente mais pas de tenancy isolation DB)
 - Connecteurs Enedis (OAuth DataConnect), Meteo-France (cle API requise)
-- Base de donnees PostgreSQL (SQLite uniquement)
 - CI/CD (fichiers GitHub Actions presents mais vides)
-- Rate limiting / throttling
 - Import de donnees reelles (releves compteurs Enedis)
 - Notifications (email, webhook)
 
@@ -867,7 +869,7 @@ taskkill /PID <PID> /F
 
 - Verifier que le backend tourne sur `localhost:8001`.
 - Le proxy Vite redirige `/api/*` vers le backend (configure dans `frontend/vite.config.js`).
-- CORS est ouvert dans le POC (`allow_origins=["*"]` dans `backend/main.py`).
+- CORS est configurable (`PROMEOS_CORS_ORIGINS` en production, wildcard `["*"]` en mode demo).
 
 ### La DB est vide / pas de sites
 
@@ -897,7 +899,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2400+ passed`.
+Resultat attendu : `2840+ passed`.
 
 ### Tests IAM uniquement
 
@@ -932,9 +934,9 @@ MIT
 Ce projet est un **proof-of-concept** destine a la demonstration technique.
 Il ne doit pas etre deploye en production sans :
 - Desactivation du mode demo (`PROMEOS_DEMO_MODE=false`) et definition d'un JWT secret fort
-- Migration vers une base de donnees robuste (PostgreSQL)
+- Migration vers PostgreSQL (`DATABASE_URL` + Alembic migrations deja supportes)
 - Audit de securite complet
-- Suppression du mode CORS ouvert
+- Verification de la configuration CORS (`PROMEOS_CORS_ORIGINS`)
 - HTTPS obligatoire (le JWT transite en clair)
 
 Les donnees incluses sont 100% synthetiques.

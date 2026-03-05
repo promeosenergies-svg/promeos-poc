@@ -8,11 +8,12 @@ import os
 import shutil
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from database import get_db, engine
 from models import Base
+from middleware.rate_limit import check_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/api/dev", tags=["Dev Tools"])
 
 
 @router.post("/reset_db")
-def reset_db(db: Session = Depends(get_db)):
+def reset_db(request: Request, db: Session = Depends(get_db)):
     """
     POST /api/dev/reset_db
 
@@ -32,6 +33,7 @@ def reset_db(db: Session = Depends(get_db)):
     Returns status + backup path.
     Only available in DEMO_MODE.
     """
+    check_rate_limit(request, key_prefix="reset_db", max_requests=2, window_seconds=60)
     if not DEMO_MODE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
