@@ -76,10 +76,14 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     is_elec = (contract.energy_type.value == "elec") if contract else True
 
     # ── Reference price ──────────────────────────────────────────────
+    has_contract_price = contract and contract.price_ref_eur_per_kwh
     price_ref = (
         contract.price_ref_eur_per_kwh
-        if (contract and contract.price_ref_eur_per_kwh)
+        if has_contract_price
         else _safe_rate("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ")
+    )
+    price_source = (
+        f"contract:{contract.id}" if has_contract_price else "catalog_default"
     )
 
     # ── Prorata factor (days in period / 30) ─────────────────────────
@@ -149,6 +153,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
             "qty": kwh,
             "unit_rate": round(price_ref, 4),
             "unit": "EUR/kWh",
+            "source": price_source,
         },
         {
             "code": "reseau",
@@ -191,6 +196,55 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         "ttc": round(exp_ttc, 2),
     }
 
+    # ── Catalog audit trace ────────────────────────────────────────────
+    at_date = getattr(invoice, "period_start", None)
+    catalog_trace = [
+        _safe_trace("TURPE_ENERGIE_C5_BT" if is_elec else "ATRD_GAZ", at_date),
+        _safe_trace("ACCISE_ELEC" if is_elec else "ACCISE_GAZ", at_date),
+        _safe_trace("TVA_NORMALE", at_date),
+        _safe_trace("TVA_REDUITE", at_date),
+    ]
+    if is_elec:
+        catalog_trace.append(_safe_trace("TURPE_GESTION_C5_BT", at_date))
+    # Filter out empty traces (catalog unavailable)
+    catalog_trace = [t for t in catalog_trace if t]
+
+    # ── Diagnostics ─────────────────────────────────────────────────
+    has_lines = len(lines) > 0
+    line_types = {l.line_type.value for l in lines} if has_lines else set()
+    missing_fields = []
+    if exp_reseau > 0 and act_reseau == 0 and "network" not in line_types:
+        missing_fields.append("network_lines")
+    if exp_taxes > 0 and act_taxes == 0 and "tax" not in line_types:
+        missing_fields.append("tax_lines")
+    if act_fourniture == 0 and "energy" not in line_types and has_lines:
+        missing_fields.append("energy_lines")
+
+    assumptions = []
+    if has_contract_price:
+        cid = getattr(contract, "id", "?")
+        assumptions.append(f"Prix fourniture : contrat #{cid}")
+    else:
+        assumptions.append("Prix fourniture : catalogue POC (pas de contrat)")
+    if is_elec:
+        assumptions.append("Réseau : TURPE C5 BT (profil simplifié)")
+    else:
+        assumptions.append("Réseau : ATRD+ATRT (profil simplifié)")
+
+    # Confidence: high if contract+lines, medium if one, low if neither
+    if has_contract_price and has_lines and len(line_types) >= 2:
+        confidence = "high"
+    elif has_contract_price or (has_lines and len(line_types) >= 2):
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    diagnostics = {
+        "missing_fields": missing_fields,
+        "assumptions": assumptions,
+        "confidence": confidence,
+    }
+
     # ── Backward-compatible flat fields + structured breakdown ───────
     return {
         # Flat fields (backward compat for R13/R14)
@@ -216,7 +270,11 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         "prorata_factor": round(prorata_factor, 4),
         "days_in_period": days_in_period,
         "method": "shadow_v2_catalog",
+        "price_source": price_source,
         # Structured (new)
         "components": components,
         "totals": totals,
+        # Phase 2: audit trail + diagnostics
+        "catalog_trace": catalog_trace,
+        "diagnostics": diagnostics,
     }

@@ -147,6 +147,7 @@ export default function BillIntelPage() {
   const csvInputRef = useRef(null);
   const pdfInputRef = useRef(null);
   const [dossierSource, setDossierSource] = useState(null);
+  const [dossierInsightDetail, setDossierInsightDetail] = useState(null);
 
   async function fetchData() {
     setLoading(true);
@@ -696,13 +697,16 @@ export default function BillIntelPage() {
                       Comprendre l'écart
                     </button>
                     <button
-                      onClick={() =>
+                      onClick={() => {
                         setDossierSource({
                           sourceType: 'billing',
                           sourceId: String(insight.id),
                           label: insight.message,
-                        })
-                      }
+                        });
+                        getInsightDetail(insight.id)
+                          .then(setDossierInsightDetail)
+                          .catch(() => setDossierInsightDetail(null));
+                      }}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
                         text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors whitespace-nowrap"
                       title="Exporter le dossier"
@@ -869,10 +873,11 @@ export default function BillIntelPage() {
       {/* Dossier print view (Étape 5) */}
       <DossierPrintView
         open={!!dossierSource}
-        onClose={() => setDossierSource(null)}
+        onClose={() => { setDossierSource(null); setDossierInsightDetail(null); }}
         sourceType={dossierSource?.sourceType}
         sourceId={dossierSource?.sourceId}
         sourceLabel={dossierSource?.label}
+        insightDetail={dossierInsightDetail}
       />
     </PageShell>
   );

@@ -293,6 +293,90 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             </div>
           )}
 
+          {/* Top contributeurs à l'écart */}
+          {m.top_contributors?.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                Principaux contributeurs à l'écart
+              </h4>
+              <div className="space-y-2">
+                {m.top_contributors.map((c) => {
+                  const pct = Math.abs(c.pct_of_total || 0);
+                  const isPositive = c.delta_eur > 0;
+                  return (
+                    <div key={c.code} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-800">{c.label}</span>
+                        <span className={`text-sm font-bold ${isPositive ? 'text-red-600' : 'text-green-600'}`}>
+                          {isPositive ? '+' : ''}{fmt(c.delta_eur)} €
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                        <div
+                          className={`h-1.5 rounded-full ${isPositive ? 'bg-red-400' : 'bg-green-400'}`}
+                          style={{ width: `${Math.min(pct, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {c.explanation_fr} ({Math.abs(c.pct_of_total)}% de l'écart)
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Données & hypothèses */}
+          {m.diagnostics && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                Données &amp; hypothèses
+              </h4>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge
+                  status={
+                    m.diagnostics.confidence === 'high'
+                      ? 'ok'
+                      : m.diagnostics.confidence === 'medium'
+                        ? 'info'
+                        : 'warn'
+                  }
+                >
+                  Confiance :{' '}
+                  {m.diagnostics.confidence === 'high'
+                    ? 'Élevée'
+                    : m.diagnostics.confidence === 'medium'
+                      ? 'Moyenne'
+                      : 'Basse'}
+                </Badge>
+              </div>
+              {m.diagnostics.assumptions?.length > 0 && (
+                <ul className="space-y-1 mb-2">
+                  {m.diagnostics.assumptions.map((a, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0" />
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {m.diagnostics.missing_fields?.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  <p className="text-xs font-semibold text-amber-700 mb-1">Données manquantes</p>
+                  <ul className="space-y-0.5">
+                    {m.diagnostics.missing_fields.map((f, i) => (
+                      <li key={i} className="text-xs text-amber-600 flex items-center gap-1.5">
+                        <AlertTriangle size={10} className="shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Écart détecté (types sans breakdown V2) */}
           {!hasBreakdown && detail.estimated_loss_eur > 0 && (
             <div>
@@ -311,6 +395,19 @@ export default function InsightDrawer({ open, onClose, insightId }) {
               {m.price_ref != null && <p>Prix ref : {m.price_ref} €/kWh</p>}
               {m.kwh != null && <p>kWh : {m.kwh.toLocaleString()}</p>}
               {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
+              {m.price_source && <p>Source prix : {m.price_source}</p>}
+              {m.catalog_trace?.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-semibold text-gray-600">
+                    Catalogue v{m.catalog_trace[0]?.catalog_version || '?'}
+                  </p>
+                  {m.catalog_trace.map((t, i) => (
+                    <p key={i}>
+                      {t.code} : {t.used_rate} {t.unit || ''} ({t.source || '?'}, {t.valid_from || '?'})
+                    </p>
+                  ))}
+                </div>
+              )}
               {detail.recommended_actions?.length > 0 && (
                 <div>
                   <p className="font-semibold text-gray-600 mt-2">Actions recommandées</p>

@@ -201,6 +201,10 @@ def _rule_shadow_gap(
 
                 v2 = shadow_billing_v2(invoice, lines, contract)
                 metrics.update(v2)
+                # Phase 2: top contributors explainability
+                from services.billing_explainability import compute_contributors
+
+                metrics["top_contributors"] = compute_contributors(metrics)
             except Exception as exc:
                 import logging
 
