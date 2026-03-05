@@ -293,9 +293,9 @@ class TestPurchaseAPI:
         assert data["horizon_months"] == 36
 
     def test_put_get_preferences(self, client, db_session):
-        # PUT
+        # PUT (org_id required when no auth)
         resp = client.put(
-            "/api/purchase/preferences",
+            "/api/purchase/preferences?org_id=1",
             json={
                 "risk_tolerance": "low",
                 "budget_priority": 0.3,
@@ -305,7 +305,7 @@ class TestPurchaseAPI:
         assert resp.status_code == 200
         assert resp.json()["status"] == "created"
         # GET
-        resp = client.get("/api/purchase/preferences")
+        resp = client.get("/api/purchase/preferences?org_id=1")
         assert resp.status_code == 200
         data = resp.json()
         assert data["risk_tolerance"] == "low"
