@@ -65,3 +65,4 @@ exclude = ["venv/", "alembic/", "app/", "scripts/"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-x -q --tb=short"
+markers = ["fast: tests rapides pour le cycle dev (< 2 min)"]

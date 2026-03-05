@@ -13,6 +13,8 @@ import json
 import pytest
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
+
+pytestmark = pytest.mark.fast
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool

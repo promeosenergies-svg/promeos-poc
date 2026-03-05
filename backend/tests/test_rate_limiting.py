@@ -6,6 +6,8 @@ import time
 import pytest
 from middleware.rate_limit import check_rate_limit, _buckets
 
+pytestmark = pytest.mark.fast
+
 
 class FakeClient:
     host = "127.0.0.1"

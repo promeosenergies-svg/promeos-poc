@@ -5,6 +5,9 @@ Source-guard: verify CORS setup in main.py.
 import inspect
 import re
 import os
+import pytest
+
+pytestmark = pytest.mark.fast
 
 
 def _read_main_source():

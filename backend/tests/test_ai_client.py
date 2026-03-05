@@ -8,6 +8,8 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
+pytestmark = pytest.mark.fast
+
 
 class TestAIClientStubMode:
     """Without AI_API_KEY, client should return stubs."""

@@ -5,6 +5,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+pytestmark = pytest.mark.fast
+
 from models.base import Base
 from models import Organisation, EntiteJuridique, Portefeuille, Site, StatutConformite
 from services.kpi_service import KpiService, KpiScope, KpiResult, _cache

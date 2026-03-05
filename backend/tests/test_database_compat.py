@@ -5,6 +5,8 @@ Playbook 1.1: Verify PostgreSQL-ready database configuration.
 import os
 import pytest
 
+pytestmark = pytest.mark.fast
+
 
 def test_dialect_detected_sqlite():
     """Default DATABASE_URL should produce SQLite dialect."""
