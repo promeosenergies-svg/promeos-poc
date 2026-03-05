@@ -104,16 +104,17 @@ class TestTimeseriesContract:
 
     def test_stack_two_series(self, env):
         client, db = env
-        site = _seed_site(db)
-        m1 = _seed_meter(db, site.id, "M1")
-        m2 = _seed_meter(db, site.id, "M2")
+        site1 = _seed_site(db, "Site A")
+        site2 = _seed_site(db, "Site B")
+        m1 = _seed_meter(db, site1.id, "M1")
+        m2 = _seed_meter(db, site2.id, "M2")
         _seed_readings(db, m1.id, days=3, kwh=10)
         _seed_readings(db, m2.id, days=3, kwh=5)
 
         r = client.get(
             "/api/ems/timeseries",
             params={
-                "site_ids": str(site.id),
+                "site_ids": f"{site1.id},{site2.id}",
                 "date_from": "2025-01-01",
                 "date_to": "2025-01-04",
                 "granularity": "daily",
@@ -121,7 +122,10 @@ class TestTimeseriesContract:
             },
         )
         assert r.status_code == 200
-        assert len(r.json()["series"]) == 2
+        series = r.json()["series"]
+        assert len(series) == 2
+        keys = {s["key"] for s in series}
+        assert keys == {f"site_{site1.id}", f"site_{site2.id}"}
 
     def test_split_max_8_plus_others(self, env):
         client, db = env
