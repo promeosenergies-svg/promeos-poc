@@ -51,7 +51,7 @@ function ruleOutsideBandHigh({ primaryTunnel } = {}) {
     id: 'outside_band_high',
     label: `${pct}% hors bande tunnel`,
     severity: pct > 30 ? 'crit' : 'warn',
-    detail: `${pct}% des releves sont hors de l'enveloppe P10-P90 sur la periode analysee.`,
+    detail: `${pct}% des relevés sont hors de l'enveloppe P10-P90 sur la période analysée.`,
   };
 }
 
@@ -80,7 +80,7 @@ function ruleHpRatioHigh({ primaryHphc } = {}) {
   const pct = Math.round(ratio * 100);
   return {
     id: 'hp_ratio_high',
-    label: `Ratio HP eleve (${pct}%)`,
+    label: `Ratio HP élevé (${pct}%)`,
     severity: ratio > 0.85 ? 'warn' : 'info',
     detail: `${pct}% de la consommation electrique est en Heures Pleines. Un report vers HC pourrait reduire la facture.`,
   };
@@ -130,6 +130,6 @@ function ruleLowConfidence({ primaryTunnel, primaryHphc, primaryGas } = {}) {
     label: 'Donnees insuffisantes',
     severity: 'info',
     detail:
-      'Un ou plusieurs panneaux disposent de peu de releves. Les analyses peuvent etre moins fiables.',
+      'Un ou plusieurs panneaux disposent de peu de relevés. Les analyses peuvent etre moins fiables.',
   };
 }

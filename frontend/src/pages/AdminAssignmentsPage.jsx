@@ -136,7 +136,7 @@ function WizardExpress({ users, roles, onDone }) {
       {step === 2 && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
-            Perimetre d'acces pour{' '}
+            Périmètre d'accès pour{' '}
             <strong>
               {selectedUser?.prenom} {selectedUser?.nom}
             </strong>

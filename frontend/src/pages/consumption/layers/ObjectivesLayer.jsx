@@ -73,7 +73,7 @@ export default function ObjectivesLayer({ targets = [], visible = true, unit = '
           stroke="#a78bfa"
           fill="#ddd6fe"
           fillOpacity={0.3}
-          name="Prevision"
+          name="Prévision"
           strokeDasharray="4 2"
         />
       )}

@@ -444,7 +444,7 @@ function FlexTab({ siteId }) {
       <div className="flex items-center gap-4">
         <FlexScoreRing score={flex.flex_potential_score} />
         <div>
-          <p className="text-sm font-semibold text-gray-800">Potentiel flexibilite</p>
+          <p className="text-sm font-semibold text-gray-800">Potentiel flexibilité</p>
           <p className="text-xs text-gray-500">
             Score {flex.flex_potential_score}/100
             {flex.inputs_used?.insights_count > 0 &&

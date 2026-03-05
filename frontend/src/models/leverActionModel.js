@@ -2,7 +2,7 @@
  * PROMEOS — Lever → Action Mapping V34 (logique pure, aucun import React)
  *
  * Transforme un levier V33 en payload ActionCreate compatible avec POST /actions.
- * Genere un deep-link vers le Command Center si creation directe non souhaitee.
+ * Génère un deep-link vers le Command Center si création directe non souhaitée.
  *
  * Exports:
  *   buildActionPayload(lever)      → ActionCreate-compatible payload
@@ -17,12 +17,12 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'high',
     rationale: [
-      'Sites non conformes identifies dans le perimetre actif',
-      'Risque financier reglementaire (Decret Tertiaire / BACS)',
-      'Action corrective recommandee avant prochaine echeance',
+      'Sites non conformes identifiés dans le périmètre actif',
+      'Risque financier réglementaire (Décret Tertiaire / BACS)',
+      'Action corrective recommandée avant prochaine échéance',
     ],
-    proof_expected: 'Attestation de mise en conformite ou plan de remediation',
-    proof_owner: 'Responsable conformite site',
+    proof_expected: 'Attestation de mise en conformité ou plan de remédiation',
+    proof_owner: 'Responsable conformité site',
     due_days: 90,
     priority: 1,
   },
@@ -30,12 +30,12 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'medium',
     rationale: [
-      'Sites a risque identifies — non-conformite probable',
-      'Evaluation preventive recommandee',
-      'Risque financier potentiel a quantifier',
+      'Sites à risque identifiés — non-conformité probable',
+      'Évaluation préventive recommandée',
+      'Risque financier potentiel à quantifier',
     ],
-    proof_expected: "Rapport d'evaluation conformite",
-    proof_owner: 'Responsable energie',
+    proof_expected: "Rapport d'évaluation conformité",
+    proof_owner: 'Responsable énergie',
     due_days: 120,
     priority: 2,
   },
@@ -43,12 +43,12 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'high',
     rationale: [
-      "Anomalies facture detectees par le moteur d'audit",
-      'Surcout identifie — recuperation possible',
-      'Verification des ecarts prix, volumes et doublons',
+      "Anomalies facture détectées par le moteur d'audit",
+      'Surcoût identifié — récupération possible',
+      'Vérification des écarts prix, volumes et doublons',
     ],
-    proof_expected: 'Factures corrigees ou avoir fournisseur',
-    proof_owner: 'Responsable achat energie',
+    proof_expected: 'Factures corrigées ou avoir fournisseur',
+    proof_owner: 'Responsable achat énergie',
     due_days: 60,
     priority: 1,
   },
@@ -56,12 +56,12 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'medium',
     rationale: [
-      'Surcout facture detecte sans detail anomalie',
-      'Audit facture approfondi recommande',
-      'Potentiel de recuperation a confirmer',
+      'Surcoût facturé détecté sans détail anomalie',
+      'Audit facture approfondi recommandé',
+      'Potentiel de récupération à confirmer',
     ],
     proof_expected: "Rapport d'audit facture",
-    proof_owner: 'Responsable achat energie',
+    proof_owner: 'Responsable achat énergie',
     due_days: 90,
     priority: 2,
   },
@@ -69,26 +69,26 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'low',
     rationale: [
-      "Potentiel d'optimisation energetique identifie (heuristique V1)",
-      'Analyse des sites energivores recommandee',
-      'Objectif: reduire la facture totale de 1% minimum',
+      "Potentiel d'optimisation énergétique identifié (heuristique V1)",
+      'Analyse des sites énergivores recommandée',
+      'Objectif: réduire la facture totale de 1% minimum',
     ],
-    proof_expected: "Plan d'optimisation energetique",
+    proof_expected: "Plan d'optimisation énergétique",
     proof_owner: 'Energy Manager',
     due_days: 180,
     priority: 3,
   },
-  // V36 — Achat d'energie
+  // V36 — Achat d'énergie
   'lev-achat-renew': {
     source_type: 'lever_engine',
     severity: 'high',
     rationale: [
-      'Contrats energie arrivent a echeance dans les 90 prochains jours',
-      'Risque de reconduction tacite a des conditions defavorables',
-      'Negociation anticipee recommandee pour optimiser les conditions',
+      'Contrats énergie arrivent à échéance dans les 90 prochains jours',
+      'Risque de reconduction tacite à des conditions défavorables',
+      'Négociation anticipée recommandée pour optimiser les conditions',
     ],
-    proof_expected: 'Contrat de fourniture actuel / avenants / echeancier',
-    proof_owner: 'Direction des achats ou responsable energie',
+    proof_expected: 'Contrat de fourniture actuel / avenants / échéancier',
+    proof_owner: 'Direction des achats ou responsable énergie',
     due_days: 30,
     priority: 1,
   },
@@ -96,9 +96,9 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'medium',
     rationale: [
-      'Sites identifies sans information contractuelle dans le referentiel',
-      "Impossible d'evaluer l'exposition ou les echeances sans ces donnees",
-      'Prerequis pour activer le suivi renouvellement et les alertes',
+      'Sites identifiés sans information contractuelle dans le référentiel',
+      "Impossible d'évaluer l'exposition ou les échéances sans ces données",
+      'Prérequis pour activer le suivi renouvellement et les alertes',
     ],
     proof_expected: 'Contrat ou attestation fournisseur par site',
     proof_owner: 'Direction des achats ou gestionnaire patrimoine',
@@ -110,12 +110,12 @@ export const LEVER_ACTION_TEMPLATES = {
     source_type: 'lever_engine',
     severity: 'high',
     rationale: [
-      'Anomalies detectees sur les EFA (Entites Fonctionnelles Assujetties) au Decret tertiaire',
-      'Donnees manquantes ou incoherences bloquant la declaration OPERAT',
-      'Correction prioritaire avant echeance de declaration',
+      'Anomalies détectées sur les EFA (Entités Fonctionnelles Assujetties) au Décret tertiaire',
+      'Données manquantes ou incohérences bloquant la déclaration OPERAT',
+      'Correction prioritaire avant échéance de déclaration',
     ],
     proof_expected: 'Attestation OPERAT, dossier de modulation, ou justificatif de surface',
-    proof_owner: 'Responsable conformite ou Energy Manager',
+    proof_owner: 'Responsable conformité ou Energy Manager',
     due_days: 90,
     priority: 1,
   },
@@ -146,17 +146,17 @@ export const LEVER_ACTION_TEMPLATES = {
     due_days: 90,
     priority: 2,
   },
-  // V37 — Activation donnees
+  // V37 — Activation données
   'lev-data-cover': {
     source_type: 'lever_engine',
     severity: 'low',
     rationale: [
-      'Couverture donnees incomplete \u2014 certaines briques non activees',
-      'Completez les donnees manquantes pour debloquer les recommandations',
-      'Chaque brique activee ameliore la precision des analyses',
+      'Couverture données incomplète \u2014 certaines briques non activées',
+      'Complétez les données manquantes pour débloquer les recommandations',
+      'Chaque brique activée améliore la précision des analyses',
     ],
-    proof_expected: 'Donnees importees (patrimoine, factures, contrats, consommations)',
-    proof_owner: 'Gestionnaire de donnees ou Energy Manager',
+    proof_expected: 'Données importées (patrimoine, factures, contrats, consommations)',
+    proof_owner: 'Gestionnaire de données ou Energy Manager',
     due_days: 60,
     priority: 3,
   },
@@ -167,15 +167,15 @@ export const LEVER_ACTION_TEMPLATES = {
 const _FALLBACK = {
   source_type: 'lever_engine',
   severity: 'medium',
-  rationale: ['Levier identifie par le moteur PROMEOS'],
-  proof_expected: 'A qualifier',
-  proof_owner: 'A qualifier',
+  rationale: ['Levier identifié par le moteur PROMEOS'],
+  proof_expected: 'À qualifier',
+  proof_owner: 'À qualifier',
   due_days: 90,
   priority: 3,
 };
 
 /**
- * Construit un payload compatible ActionCreate a partir d'un levier.
+ * Construit un payload compatible ActionCreate à partir d'un levier.
  *
  * @param {import('./leverEngineModel').Lever} lever
  * @returns {{ title: string, source_type: string, source_id: string, severity: string,

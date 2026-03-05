@@ -77,13 +77,14 @@ def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime)
 
 
 def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
-    """Base nocturne %: ratio night (22h-6h) vs day (6h-22h) avg kWh.
+    """Base nocturne %: part de la conso nuit (22h-6h) dans la conso totale.
     Fenêtre 22h-06h = standard tertiaire France (bureaux fermés).
+    Résultat en % (0-100). Théorique si plat = 33% (8h/24h).
     """
     from sqlalchemy import extract
 
-    night_avg = (
-        db.query(func.avg(MeterReading.value_kwh))
+    night_kwh = (
+        db.query(func.sum(MeterReading.value_kwh))
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
             Meter.site_id == site_id,
@@ -95,23 +96,21 @@ def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetim
         .scalar()
     )
 
-    day_avg = (
-        db.query(func.avg(MeterReading.value_kwh))
+    total_kwh = (
+        db.query(func.sum(MeterReading.value_kwh))
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
             Meter.site_id == site_id,
             Meter.energy_vector == EnergyVector.ELECTRICITY,
             MeterReading.timestamp >= dt_from,
             MeterReading.timestamp < dt_to,
-            extract("hour", MeterReading.timestamp) >= 6,
-            extract("hour", MeterReading.timestamp) < 22,
         )
         .scalar()
     )
 
-    if not day_avg or day_avg == 0:
+    if not total_kwh or total_kwh == 0:
         return None
-    return round((night_avg or 0) / day_avg * 100)
+    return round((night_kwh or 0) / total_kwh * 100)
 
 
 def _confidence_for_readings(n_readings: int, days: int, frequency: str = "hourly") -> str:

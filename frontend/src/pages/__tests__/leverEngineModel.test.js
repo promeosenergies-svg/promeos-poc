@@ -102,7 +102,7 @@ describe('computeActionableLevers — billing only', () => {
     });
 
     expect(result.leversByType.facturation).toBe(1);
-    expect(result.topLevers.find((l) => l.type === 'facturation').label).toContain('surcout');
+    expect(result.topLevers.find((l) => l.type === 'facturation').label).toContain('surcoût');
   });
 
   it('genere un levier optimisation quand total_eur > 0', () => {

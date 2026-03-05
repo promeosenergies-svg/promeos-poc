@@ -537,6 +537,8 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [filterStatut, setFilterStatut] = useState('');
+  const filterActionId = searchParams.get('action_id');
+  const filterLinkedAnomaly = searchParams.get('linked_anomaly');
   const [filterType, setFilterType] = useState(() => {
     const src = searchParams.get('source');
     if (src === 'operat') return 'operat';
@@ -639,6 +641,21 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
   const filtered = useMemo(() => {
     let result = [...actions];
 
+    // Deep-link filters (from anomaly → action navigation)
+    if (filterActionId) {
+      result = result.filter((a) => String(a.id) === filterActionId);
+      return result;
+    }
+    if (filterLinkedAnomaly) {
+      result = result.filter(
+        (a) =>
+          a._backend?.anomaly_links?.some(
+            (l) => `${l.anomaly_source}:${l.anomaly_ref}:${l.site_id}` === filterLinkedAnomaly
+          )
+      );
+      return result;
+    }
+
     // Quick views
     if (quickView === 'overdue') result = result.filter(isOverdue);
     else if (quickView === 'high_impact') result = result.filter((a) => a.impact_eur >= 10000);
@@ -679,7 +696,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       result.sort(defaultSort);
     }
     return result;
-  }, [actions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery]);
+  }, [actions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery, filterActionId, filterLinkedAnomaly]);
 
   const total = filtered.length;
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);

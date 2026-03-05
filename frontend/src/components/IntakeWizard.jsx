@@ -198,11 +198,11 @@ export default function IntakeWizard({ siteId, onClose }) {
             <div className="space-y-6">
               <div className="text-center">
                 <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Completer les donnees reglementaires
+                  Compléter les données réglementaires
                 </h4>
                 <p className="text-sm text-gray-500">
-                  Repondez a quelques questions pour ameliorer votre score de conformite. Les
-                  resultats sont determines par les regles reglementaires, pas par l'IA.
+                  Répondez à quelques questions pour améliorer votre score de conformité. Les
+                  résultats sont déterminés par les règles réglementaires, pas par l'IA.
                 </p>
               </div>
 
@@ -218,7 +218,7 @@ export default function IntakeWizard({ siteId, onClose }) {
                   />
                   <div className="font-medium text-gray-900">Wizard</div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Repondez etape par etape (max 8 questions)
+                    Répondez étape par étape (max 8 questions)
                   </div>
                   <div className="text-xs text-blue-600 mt-2">~3 min</div>
                 </button>
@@ -297,7 +297,7 @@ export default function IntakeWizard({ siteId, onClose }) {
                   <CheckCircle2 size={40} className="mx-auto mb-3 text-green-400" />
                   <p className="font-medium text-gray-600">Aucune question a completer</p>
                   <p className="text-sm">
-                    Toutes les donnees reglementaires sont deja renseignees.
+                    Toutes les données réglementaires sont déjà renseignées.
                   </p>
                 </div>
               ) : (
@@ -370,7 +370,7 @@ export default function IntakeWizard({ siteId, onClose }) {
               <div className="text-sm text-gray-500">
                 {result.mode === 'demo'
                   ? `${result.answers_count} champ(s) rempli(s) en mode demo`
-                  : `${result.fields_applied} champ(s) applique(s)`}
+                  : `${result.fields_applied} champ(s) appliqué(s)`}
               </div>
             </div>
           )}
@@ -393,7 +393,7 @@ export default function IntakeWizard({ siteId, onClose }) {
               disabled={currentQ === 0}
               className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40"
             >
-              <ChevronLeft size={16} /> Precedent
+              <ChevronLeft size={16} /> Précédent
             </button>
           )}
 
@@ -435,7 +435,7 @@ export default function IntakeWizard({ siteId, onClose }) {
                 disabled={loading}
                 className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-60"
               >
-                <Check size={16} /> Appliquer ({answeredCount} reponse{answeredCount > 1 ? 's' : ''}
+                <Check size={16} /> Appliquer ({answeredCount} réponse{answeredCount > 1 ? 's' : ''}
                 )
               </button>
             )}

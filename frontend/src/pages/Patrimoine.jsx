@@ -1084,7 +1084,7 @@ function SiteDrawerContent({
             <DrawerRow label="Statut">
               <Badge status={badge.status}>{badge.label}</Badge>
             </DrawerRow>
-            <DrawerRow label="Derniere evaluation">{fmtDateFR(site.derniere_evaluation)}</DrawerRow>
+            <DrawerRow label="Dernière évaluation">{fmtDateFR(site.derniere_evaluation)}</DrawerRow>
             <DrawerRow label="OPERAT">
               {site.operat_status ? (
                 <span

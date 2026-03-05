@@ -123,7 +123,7 @@ export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { selectedSiteId: scopeSiteId } = useScope();
+  const { selectedSiteId: scopeSiteId, scope } = useScope();
   const [searchParams] = useSearchParams();
   const anomaliesRef = useRef(null);
 

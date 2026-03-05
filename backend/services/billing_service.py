@@ -222,7 +222,7 @@ def _rule_shadow_gap(
 def _rule_unit_price_high(
     invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
 ) -> Optional[Dict]:
-    """R2: Prix unitaire anormalement eleve (> 0.30 EUR/kWh elec, > 0.15 EUR/kWh gaz)."""
+    """R2: Prix unitaire anormalement élevé (> 0.30 EUR/kWh elec, > 0.15 EUR/kWh gaz)."""
     if not invoice.energy_kwh or invoice.energy_kwh <= 0 or not invoice.total_eur:
         return None
     unit_price = invoice.total_eur / invoice.energy_kwh
@@ -231,7 +231,7 @@ def _rule_unit_price_high(
         return {
             "type": "unit_price_high",
             "severity": "high",
-            "message": f"Prix unitaire eleve: {unit_price:.4f} EUR/kWh (seuil: {threshold})",
+            "message": f"Prix unitaire élevé : {unit_price:.4f} EUR/kWh (seuil : {threshold})",
             "metrics": {
                 "unit_price": round(unit_price, 4),
                 "threshold": threshold,
@@ -248,7 +248,7 @@ def _rule_unit_price_high(
 def _rule_duplicate_invoice(
     invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None
 ) -> Optional[Dict]:
-    """R3: Doublon de facture (meme site, meme periode, meme montant)."""
+    """R3: Doublon de facture (même site, même période, même montant)."""
     if db is None or not invoice.period_start or not invoice.period_end:
         return None
     dupes = (
@@ -266,7 +266,7 @@ def _rule_duplicate_invoice(
         return {
             "type": "duplicate_invoice",
             "severity": "critical",
-            "message": f"Facture en doublon ({dupes} autre(s) avec meme periode et montant)",
+            "message": f"Facture en doublon ({dupes} autre(s) avec même période et montant)",
             "metrics": {
                 "duplicates_count": dupes,
                 "inputs": _build_inputs(invoice),

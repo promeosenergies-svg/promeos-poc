@@ -107,7 +107,7 @@ export const mockActions = [
     due_date: '2026-04-15',
     created_at: '2026-02-05',
     description:
-      'Talon nocturne a 55% de la puissance mediane. Identifier les equipements en marche permanente.',
+      'Talon nocturne a 55% de la puissance médiane. Identifier les equipements en marche permanente.',
     comments: [],
   },
   // ── High — Facture ─────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ export const mockActions = [
     owner: 'A. Leroy',
     due_date: '2026-04-01',
     created_at: '2026-02-15',
-    description: "Derive detectee sur le compteur gaz. Verifier le calibrage et l'etancheite.",
+    description: "Derive detectee sur le compteur gaz. Verifier le calibrage et l'étanchéité.",
     comments: [],
   },
   {

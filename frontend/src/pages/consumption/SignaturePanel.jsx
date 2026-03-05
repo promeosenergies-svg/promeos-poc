@@ -149,7 +149,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
           Donnees insuffisantes pour la signature
         </h3>
         <p className="text-sm text-gray-500 max-w-xs">
-          La signature horaire necessite au moins 48 heures de donnees. Importez ou generez des
+          La signature horaire nécessite au moins 48 heures de données. Importez ou generez des
           donnees pour ce site.
         </p>
       </div>

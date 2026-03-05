@@ -636,3 +636,28 @@ class ReconciliationStatus(str, enum.Enum):
     OK = "ok"
     WARN = "warn"
     FAIL = "fail"
+
+
+# ========================================
+# Enums Anomaly-Action Link
+# ========================================
+
+
+class AnomalyStatus(str, enum.Enum):
+    """Statut workflow d'une anomalie cross-domain."""
+
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    DISMISSED = "dismissed"
+    LINKED = "linked"
+    RESOLVED = "resolved"
+
+
+class DismissReason(str, enum.Enum):
+    """Motif d'ignorance d'une anomalie."""
+
+    FALSE_POSITIVE = "false_positive"
+    KNOWN_ISSUE = "known_issue"
+    OUT_OF_SCOPE = "out_of_scope"
+    DUPLICATE = "duplicate"
+    OTHER = "other"

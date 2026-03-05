@@ -71,7 +71,7 @@ function DataStatusBadge({ status, coveragePct }) {
     return (
       <span
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700"
-        title={`Couverture ${coveragePct}% — Donnees completes`}
+        title={`Couverture ${coveragePct}% — Données complètes`}
       >
         {coveragePct}%
       </span>
@@ -336,7 +336,7 @@ export default function ConsumptionPortfolioPage() {
         {cov && (
           <div
             className="flex items-center gap-1.5 shrink-0"
-            title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est elevee, plus les KPIs sont fiables."
+            title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est élevée, plus les KPIs sont fiables."
           >
             <span
               className={`text-sm font-semibold ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}
@@ -712,7 +712,7 @@ export default function ConsumptionPortfolioPage() {
                       P95 kW <InfoTip content="95e percentile des relevés kWh (proxy puissance). Utile pour détecter les dépassements de puissance souscrite." size={10} />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
-                      Base nuit <InfoTip content="Ratio conso nocturne (22h-6h) / conso diurne (6h-22h) × 100. Un % élevé signale un talon (chauffage, serveurs)." size={10} />
+                      Base nuit <InfoTip content="Part de la conso nocturne (22h-6h) dans la conso totale. Théorique si plat = 33%. Un % élevé signale un talon (chauffage, serveurs)." size={10} />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
                       Diag.

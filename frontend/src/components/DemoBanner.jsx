@@ -50,7 +50,7 @@ const DemoBanner = ({ onUpgradeClick }) => {
       <div className="flex items-center gap-3">
         <Sparkles size={20} />
         <span className="font-medium text-sm">
-          Mode Demo actif — Donnees HELIOS
+          Mode Demo actif — Données HELIOS
           {org?.nom ? ` (${org.nom}, ${sitesCount} sites)` : ''}
         </span>
       </div>

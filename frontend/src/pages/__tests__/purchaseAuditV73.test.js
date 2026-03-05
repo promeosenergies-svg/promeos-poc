@@ -176,7 +176,7 @@ describe('H · Breadcrumb label for achat-assistant', () => {
   const navCode = readSrc('layout', 'NavRegistry.js');
 
   it('has label for achat-assistant in NavRegistry (source of truth for Breadcrumb)', () => {
-    expect(navCode).toMatch(/achat-assistant.*Assistant Achat/s);
+    expect(navCode).toMatch(/achat-assistant.*Assistant d'achat/s);
   });
 });
 

@@ -44,7 +44,7 @@ describe('buildActionPayload', () => {
     expect(payload.idempotency_key).toBe('lever-lev-conf-nc');
     expect(payload.rationale).toContain('non conformes');
     expect(payload.due_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(payload._meta.proof_expected).toContain('conformite');
+    expect(payload._meta.proof_expected).toContain('conformité');
   });
 
   it('genere un payload facturation (anomalies)', () => {
@@ -91,7 +91,7 @@ describe('buildActionPayload', () => {
     expect(payload).not.toBeNull();
     expect(payload.severity).toBe('medium');
     expect(payload.priority).toBe(3);
-    expect(payload._meta.proof_expected).toBe('A qualifier');
+    expect(payload._meta.proof_expected).toBe('À qualifier');
   });
 
   it('due_date est dans le futur (>= 60 jours)', () => {

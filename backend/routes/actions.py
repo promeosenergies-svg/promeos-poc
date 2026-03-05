@@ -25,6 +25,9 @@ from models import (
     ActionEvent,
     ActionComment,
     ActionEvidence,
+    AnomalyActionLink,
+    AnomalyDismissal,
+    DismissReason,
 )
 from services.action_hub_service import sync_actions, compute_priority
 from services.action_close_rules import is_operat_action, check_closable
@@ -1006,9 +1009,301 @@ def get_action_detail(
     evidence_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
     events_count = db.query(ActionEvent).filter(ActionEvent.action_id == action_id).count()
 
+    # Include linked anomalies
+    links = (
+        db.query(AnomalyActionLink)
+        .filter(AnomalyActionLink.action_id == action_id)
+        .all()
+    )
+
     return {
         **_serialize_action(action),
         "comments_count": comments_count,
         "evidence_count": evidence_count,
         "events_count": events_count,
+        "anomaly_links": [
+            {
+                "id": lk.id,
+                "anomaly_source": lk.anomaly_source,
+                "anomaly_ref": lk.anomaly_ref,
+                "site_id": lk.site_id,
+                "link_reason": lk.link_reason,
+                "created_at": lk.created_at.isoformat() if lk.created_at else None,
+            }
+            for lk in links
+        ],
     }
+
+
+# ========================================
+# V117: Anomaly ↔ Action Link
+# ========================================
+
+
+class AnomalyLinkCreate(BaseModel):
+    """Create action from anomaly + link them."""
+
+    anomaly_source: str = Field(..., description="patrimoine, billing, monitoring")
+    anomaly_ref: str = Field(..., description="Anomaly code or insight ID")
+    site_id: Optional[int] = None
+    action_id: Optional[int] = Field(None, description="Link to existing action")
+    # Fields for creating a new action (if action_id is None)
+    title: Optional[str] = None
+    severity: Optional[str] = None
+    estimated_gain_eur: Optional[float] = None
+    due_date: Optional[str] = None
+    owner: Optional[str] = None
+    notes: Optional[str] = None
+    link_reason: Optional[str] = None
+    idempotency_key: Optional[str] = None
+
+
+@router.post("/anomaly-links")
+def create_anomaly_action_link(
+    request: Request,
+    data: AnomalyLinkCreate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    POST /api/actions/anomaly-links
+    Create an action from an anomaly (or link to existing) + create explicit link.
+    Returns the action + link.
+    """
+    oid = _resolve_org(request, auth, db)
+    actor = auth.email if auth else "system"
+
+    action_id = data.action_id
+
+    if action_id is None:
+        # Check idempotency first
+        if data.idempotency_key:
+            existing = (
+                db.query(ActionItem)
+                .filter(ActionItem.idempotency_key == data.idempotency_key)
+                .first()
+            )
+            if existing:
+                action_id = existing.id
+                # Check if link already exists
+                existing_link = (
+                    db.query(AnomalyActionLink)
+                    .filter(
+                        AnomalyActionLink.anomaly_source == data.anomaly_source,
+                        AnomalyActionLink.anomaly_ref == data.anomaly_ref,
+                        AnomalyActionLink.site_id == data.site_id,
+                        AnomalyActionLink.action_id == action_id,
+                    )
+                    .first()
+                )
+                if existing_link:
+                    return {
+                        "status": "existing",
+                        "action": _serialize_action(existing),
+                        "link_id": existing_link.id,
+                    }
+
+        if action_id is None:
+            # Create new action
+            action = ActionItem(
+                org_id=oid,
+                site_id=data.site_id,
+                source_type=ActionSourceType.INSIGHT,
+                source_id=data.anomaly_ref,
+                source_key=f"{data.anomaly_source}:{data.anomaly_ref}:{data.site_id or 0}",
+                title=data.title or f"Action pour anomalie {data.anomaly_ref}",
+                severity=data.severity or "medium",
+                estimated_gain_eur=data.estimated_gain_eur,
+                due_date=dt_date.fromisoformat(data.due_date) if data.due_date else None,
+                owner=data.owner,
+                notes=data.notes,
+                status=ActionStatus.OPEN,
+                priority=compute_priority(
+                    data.severity or "medium",
+                    data.estimated_gain_eur or 0,
+                    dt_date.fromisoformat(data.due_date) if data.due_date else None,
+                ),
+                idempotency_key=data.idempotency_key,
+            )
+            db.add(action)
+            db.flush()
+            action_id = action.id
+            _create_event(db, action_id, "created", actor=actor)
+
+    # Create link (idempotent)
+    existing_link = (
+        db.query(AnomalyActionLink)
+        .filter(
+            AnomalyActionLink.anomaly_source == data.anomaly_source,
+            AnomalyActionLink.anomaly_ref == data.anomaly_ref,
+            AnomalyActionLink.site_id == data.site_id,
+            AnomalyActionLink.action_id == action_id,
+        )
+        .first()
+    )
+    if not existing_link:
+        link = AnomalyActionLink(
+            anomaly_source=data.anomaly_source,
+            anomaly_ref=data.anomaly_ref,
+            site_id=data.site_id,
+            action_id=action_id,
+            link_reason=data.link_reason,
+            created_by=actor,
+        )
+        db.add(link)
+        _create_event(
+            db, action_id, "anomaly_linked", actor=actor,
+            new_value=f"{data.anomaly_source}:{data.anomaly_ref}",
+        )
+        db.commit()
+        link_id = link.id
+        status = "created"
+    else:
+        db.commit()
+        link_id = existing_link.id
+        status = "existing"
+
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    return {
+        "status": status,
+        "action": _serialize_action(action),
+        "link_id": link_id,
+    }
+
+
+class AnomalyDismissCreate(BaseModel):
+    """Dismiss an anomaly with a required reason."""
+
+    anomaly_source: str
+    anomaly_ref: str
+    site_id: Optional[int] = None
+    reason_code: str = Field(..., description="false_positive, known_issue, out_of_scope, duplicate, other")
+    reason_text: Optional[str] = None
+
+
+@router.post("/anomaly-dismiss")
+def dismiss_anomaly(
+    data: AnomalyDismissCreate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    POST /api/actions/anomaly-dismiss
+    Dismiss an anomaly with required reason_code.
+    """
+    actor = auth.email if auth else "system"
+
+    # Validate reason_code
+    try:
+        reason = DismissReason(data.reason_code)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail=f"reason_code invalide: {data.reason_code}. Valeurs: {[r.value for r in DismissReason]}",
+        )
+
+    # Upsert dismissal (idempotent)
+    existing = (
+        db.query(AnomalyDismissal)
+        .filter(
+            AnomalyDismissal.anomaly_source == data.anomaly_source,
+            AnomalyDismissal.anomaly_ref == data.anomaly_ref,
+            AnomalyDismissal.site_id == data.site_id,
+        )
+        .first()
+    )
+    if existing:
+        existing.reason_code = reason
+        existing.reason_text = data.reason_text
+        existing.dismissed_by = actor
+        existing.dismissed_at = datetime.now(timezone.utc)
+        db.commit()
+        return {"status": "updated", "id": existing.id}
+
+    dismissal = AnomalyDismissal(
+        anomaly_source=data.anomaly_source,
+        anomaly_ref=data.anomaly_ref,
+        site_id=data.site_id,
+        reason_code=reason,
+        reason_text=data.reason_text,
+        dismissed_by=actor,
+    )
+    db.add(dismissal)
+    db.commit()
+    return {"status": "created", "id": dismissal.id}
+
+
+class AnomalyStatusQuery(BaseModel):
+    """Query statuses for a batch of anomalies."""
+
+    anomalies: list = Field(..., description="List of {anomaly_source, anomaly_ref, site_id}")
+
+
+@router.post("/anomaly-statuses")
+def get_anomaly_statuses(
+    data: AnomalyStatusQuery,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/actions/anomaly-statuses
+    Batch query: for each anomaly, return linked actions + dismissal status.
+    """
+    results = []
+    for anom in data.anomalies:
+        source = anom.get("anomaly_source", "")
+        ref = anom.get("anomaly_ref", "")
+        site_id = anom.get("site_id")
+
+        # Find linked actions
+        links = (
+            db.query(AnomalyActionLink)
+            .filter(
+                AnomalyActionLink.anomaly_source == source,
+                AnomalyActionLink.anomaly_ref == ref,
+                AnomalyActionLink.site_id == site_id,
+            )
+            .all()
+        )
+
+        linked_actions = []
+        for lk in links:
+            action = db.query(ActionItem).filter(ActionItem.id == lk.action_id).first()
+            if action:
+                linked_actions.append({
+                    "id": action.id,
+                    "title": action.title,
+                    "status": action.status.value if action.status else None,
+                })
+
+        # Check dismissal
+        dismissal = (
+            db.query(AnomalyDismissal)
+            .filter(
+                AnomalyDismissal.anomaly_source == source,
+                AnomalyDismissal.anomaly_ref == ref,
+                AnomalyDismissal.site_id == site_id,
+            )
+            .first()
+        )
+
+        status = "open"
+        if dismissal:
+            status = "dismissed"
+        elif linked_actions:
+            all_done = all(a["status"] == "done" for a in linked_actions)
+            status = "resolved" if all_done else "linked"
+
+        results.append({
+            "anomaly_source": source,
+            "anomaly_ref": ref,
+            "site_id": site_id,
+            "status": status,
+            "linked_actions": linked_actions,
+            "dismissal": {
+                "reason_code": dismissal.reason_code.value if dismissal else None,
+                "reason_text": dismissal.reason_text if dismissal else None,
+                "dismissed_by": dismissal.dismissed_by if dismissal else None,
+            } if dismissal else None,
+        })
+
+    return {"statuses": results}

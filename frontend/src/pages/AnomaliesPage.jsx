@@ -3,14 +3,15 @@
  * Hub unique : onglet "Anomalies" (cross-sites) + onglet "Plan d'actions" (ActionsPage).
  * Route : /anomalies   — ?tab=actions pour le plan d'actions.
  */
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle, MoreHorizontal, Link2, Ban } from 'lucide-react';
 import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
-import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
+import { getPatrimoineAnomalies, getBillingAnomaliesScoped, getAnomalyStatuses, dismissAnomaly } from '../services/api';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
+import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
 import { buildAnomalyEvidence } from './anomalyEvidence';
 
@@ -55,10 +56,16 @@ export default function AnomaliesPage() {
   const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
+  const { toast } = useToast();
+
   const [anomalies, setAnomalies] = useState([]); // flat [{...anomaly, site_id, site_nom}]
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fetchIdRef = useRef(0);
+
+  // V117: Anomaly statuses (linked/dismissed)
+  const [anomalyStatuses, setAnomalyStatuses] = useState({}); // key: "source:ref:siteId" → status obj
+  const [dismissMenuOpen, setDismissMenuOpen] = useState(null); // anomaly key or null
 
   // Evidence drawer
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -156,12 +163,68 @@ export default function AnomaliesPage() {
     return { total, critiques, risque };
   }, [filtered]);
 
+  /* ── V117: Fetch anomaly statuses when anomalies change ── */
+  useEffect(() => {
+    if (anomalies.length === 0) return;
+    const batch = anomalies.map((a) => ({
+      anomaly_source: a._isBilling ? 'billing' : 'patrimoine',
+      anomaly_ref: a.code || a.id,
+      site_id: a.site_id,
+    }));
+    getAnomalyStatuses(batch)
+      .then((res) => {
+        const map = {};
+        for (const s of res.statuses || []) {
+          const key = `${s.anomaly_source}:${s.anomaly_ref}:${s.site_id}`;
+          map[key] = s;
+        }
+        setAnomalyStatuses(map);
+      })
+      .catch(() => {}); // non-bloquant
+  }, [anomalies]);
+
+  const getAnomalyKey = useCallback(
+    (anom) => `${anom._isBilling ? 'billing' : 'patrimoine'}:${anom.code || anom.id}:${anom.site_id}`,
+    [],
+  );
+
   /* ── Helpers ── */
-  function openSite(siteId, isBilling = false) {
-    if (isBilling) {
+  function openTarget(anom) {
+    if (anom._isBilling) {
       navigate('/bill-intel');
+    } else if (anom.regulatory_impact?.framework === 'BACS') {
+      navigate('/conformite', { state: { tab: 'bacs' } });
+    } else if (anom.code?.startsWith('MISSING_') || anom.code?.startsWith('LOW_')) {
+      navigate('/patrimoine', { state: { openSiteId: anom.site_id, openTab: 'donnees' } });
     } else {
-      navigate('/patrimoine', { state: { openSiteId: siteId, openTab: 'anomalies' } });
+      navigate('/patrimoine', { state: { openSiteId: anom.site_id, openTab: 'anomalies' } });
+    }
+  }
+
+  function getOpenLabel(anom) {
+    if (anom._isBilling) return 'Ouvrir facture';
+    if (anom.regulatory_impact?.framework === 'BACS') return 'Ouvrir BACS';
+    if (anom.code?.startsWith('MISSING_') || anom.code?.startsWith('LOW_')) return 'Corriger donnée';
+    return 'Ouvrir fiche';
+  }
+
+  async function handleDismiss(anom, reasonCode) {
+    try {
+      await dismissAnomaly({
+        anomaly_source: anom._isBilling ? 'billing' : 'patrimoine',
+        anomaly_ref: anom.code || anom.id,
+        site_id: anom.site_id,
+        reason_code: reasonCode,
+      });
+      const key = getAnomalyKey(anom);
+      setAnomalyStatuses((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], status: 'dismissed' },
+      }));
+      setDismissMenuOpen(null);
+      toast('Anomalie ignorée', 'success');
+    } catch {
+      toast("Erreur lors de l'ignorance", 'error');
     }
   }
 
@@ -397,47 +460,117 @@ export default function AnomaliesPage() {
                   </div>
 
                   {/* CTAs */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Tooltip text="Ouvrir la fiche site (onglet Anomalies)">
-                      <button
-                        type="button"
-                        onClick={() => openSite(anom.site_id, anom._isBilling)}
-                        className="flex items-center gap-1 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 hover:bg-blue-100 transition"
-                      >
-                        Ouvrir site <ChevronRight size={11} />
-                      </button>
-                    </Tooltip>
-                    <Tooltip text="Créer une action pour cette anomalie">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openActionDrawer({
-                            prefill: { titre: anom.title_fr, type: 'anomalie' },
-                            siteId: anom.site_id,
-                            sourceType: 'anomaly',
-                            sourceId: anom.code,
-                            idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
-                          })
-                        }
-                        className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
-                      >
-                        Créer action
-                      </button>
-                    </Tooltip>
-                    <Tooltip text="Comprendre cette anomalie">
-                      <button
-                        type="button"
-                        data-testid="pourquoi-btn"
-                        onClick={() => {
-                          setEvidenceData(buildAnomalyEvidence(anom));
-                          setEvidenceOpen(true);
-                        }}
-                        className="flex items-center gap-0.5 text-[11px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-2 py-1 hover:bg-purple-100 transition"
-                      >
-                        <HelpCircle size={11} /> Pourquoi ?
-                      </button>
-                    </Tooltip>
-                  </div>
+                  {(() => {
+                    const key = getAnomalyKey(anom);
+                    const st = anomalyStatuses[key];
+                    const isDismissed = st?.status === 'dismissed';
+                    const isLinked = st?.status === 'linked' || st?.status === 'resolved';
+                    const linkedCount = st?.linked_actions?.length || 0;
+
+                    return (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Status badge */}
+                        {isDismissed && (
+                          <span className="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                            <Ban size={9} className="inline mr-0.5" />Ignorée
+                          </span>
+                        )}
+                        {isLinked && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/anomalies?tab=actions`)}
+                            className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 hover:bg-emerald-100 transition"
+                          >
+                            <Link2 size={9} /> Voir action{linkedCount > 1 ? `s (${linkedCount})` : ''}
+                          </button>
+                        )}
+
+                        {/* Context-aware open button */}
+                        {!isDismissed && (
+                          <Tooltip text={`Ouvrir : ${getOpenLabel(anom)}`}>
+                            <button
+                              type="button"
+                              onClick={() => openTarget(anom)}
+                              className="flex items-center gap-1 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 hover:bg-blue-100 transition"
+                            >
+                              {getOpenLabel(anom)} <ChevronRight size={11} />
+                            </button>
+                          </Tooltip>
+                        )}
+
+                        {/* Create / link action */}
+                        {!isDismissed && (
+                          <Tooltip text={isLinked ? 'Créer une autre action' : 'Créer une action pour cette anomalie'}>
+                            <button
+                              type="button"
+                              data-testid="creer-action-btn"
+                              onClick={() =>
+                                openActionDrawer({
+                                  prefill: { titre: anom.title_fr, type: 'anomalie' },
+                                  siteId: anom.site_id,
+                                  sourceType: 'anomaly',
+                                  sourceId: anom.code,
+                                  idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
+                                })
+                              }
+                              className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
+                            >
+                              {isLinked ? '+ Action' : 'Créer action'}
+                            </button>
+                          </Tooltip>
+                        )}
+
+                        {/* Pourquoi */}
+                        <Tooltip text="Comprendre cette anomalie">
+                          <button
+                            type="button"
+                            data-testid="pourquoi-btn"
+                            onClick={() => {
+                              setEvidenceData(buildAnomalyEvidence(anom));
+                              setEvidenceOpen(true);
+                            }}
+                            className="flex items-center gap-0.5 text-[11px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-2 py-1 hover:bg-purple-100 transition"
+                          >
+                            <HelpCircle size={11} /> Pourquoi ?
+                          </button>
+                        </Tooltip>
+
+                        {/* Overflow menu: Ignorer */}
+                        {!isDismissed && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setDismissMenuOpen(dismissMenuOpen === key ? null : key)}
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded transition"
+                              aria-label="Plus d'options"
+                            >
+                              <MoreHorizontal size={14} />
+                            </button>
+                            {dismissMenuOpen === key && (
+                              <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-48">
+                                <p className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase">Ignorer (motif requis)</p>
+                                {[
+                                  { code: 'false_positive', label: 'Faux positif' },
+                                  { code: 'known_issue', label: 'Problème connu' },
+                                  { code: 'out_of_scope', label: 'Hors périmètre' },
+                                  { code: 'duplicate', label: 'Doublon' },
+                                ].map((reason) => (
+                                  <button
+                                    key={reason.code}
+                                    type="button"
+                                    onClick={() => handleDismiss(anom, reason.code)}
+                                    className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                                  >
+                                    {reason.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

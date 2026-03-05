@@ -936,6 +936,14 @@ export const getActionProofs = (actionId) =>
 export const linkProofToAction = (actionId, kbDocId) =>
   api.post(`/actions/${actionId}/proofs/${kbDocId}`).then((r) => r.data);
 
+// V117: Anomaly ↔ Action Link
+export const createAnomalyActionLink = (data) =>
+  api.post('/actions/anomaly-links', data).then((r) => r.data);
+export const dismissAnomaly = (data) =>
+  api.post('/actions/anomaly-dismiss', data).then((r) => r.data);
+export const getAnomalyStatuses = (anomalies) =>
+  api.post('/actions/anomaly-statuses', { anomalies }).then((r) => r.data);
+
 // V49: Action closeability check
 export const checkActionCloseability = (actionId) =>
   api.get(`/actions/${actionId}/closeability`).then((r) => r.data);

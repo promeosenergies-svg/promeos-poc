@@ -196,7 +196,7 @@ export const NAV_MODULES = [
     tint: 'amber',
     expertOnly: true,
     order: 4,
-    desc: 'Factures et achats énergie',
+    desc: 'Factures & achats',
   },
   {
     key: 'admin',
@@ -352,7 +352,8 @@ export const QUICK_ACTIONS = [
   },
   {
     key: 'achats',
-    label: 'Achats énergie',
+    label: 'Achats',
+    longLabel: "Achats d'énergie & scénarios",
     icon: ShoppingCart,
     to: '/achat-energie',
     keywords: ['achat', 'purchase', 'marche', 'contrat'],
@@ -380,10 +381,11 @@ export const QUICK_ACTIONS = [
   },
   {
     key: 'factures',
-    label: 'Anomalies facture',
+    label: 'Anomalies',
+    longLabel: 'Anomalies de facturation',
     icon: Receipt,
     to: '/bill-intel',
-    keywords: ['facture', 'anomalie', 'surfacturation', 'billing'],
+    keywords: ['facture', 'anomalie', 'surfacturation', 'billing', 'anomalies'],
   },
   {
     key: 'corriger',
@@ -496,55 +498,79 @@ export const NAV_SECTIONS = [
     ],
   },
   {
-    key: 'marche',
+    key: 'marche-facturation',
     module: 'marche',
-    label: 'Marché & Factures',
+    label: 'Facturation',
     expertOnly: true,
     order: 4,
     items: [
       {
-        to: '/bill-intel',
-        icon: Receipt,
-        label: 'Factures & anomalies',
-        keywords: ['factures', 'billing', 'invoices', 'anomalies'],
-      },
-      {
         to: '/billing',
         icon: CalendarRange,
-        label: 'Timeline & couverture',
-        keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'],
-        indent: true,
+        label: 'Historique',
+        longLabel: 'Historique (timeline & couverture)',
+        keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes', 'historique'],
       },
-      // V116: Paiement & Réconciliation masqués — pas prêts pour le POC
+      {
+        to: '/bill-intel',
+        icon: Receipt,
+        label: 'Anomalies',
+        longLabel: 'Anomalies de facturation',
+        keywords: ['factures', 'billing', 'invoices', 'anomalies', 'surfacturation'],
+      },
+      // V116: Paiements & Réconciliation masqués — pas prêts pour le POC
       // {
       //   to: '/payment-rules',
       //   icon: BadgeEuro,
-      //   label: 'Paiement & Refacturation',
+      //   label: 'Paiements',
+      //   longLabel: 'Paiements & refacturation',
       //   keywords: ['paiement', 'payeur', 'facture', 'refacturation', 'cost center'],
       // },
       // {
       //   to: '/portfolio-reconciliation',
       //   icon: ShieldCheck,
       //   label: 'Réconciliation',
+      //   longLabel: 'Réconciliation (Enedis / fournisseurs)',
       //   keywords: ['reconciliation', 'triage', 'resolution', 'evidence'],
       // },
-      {
-        to: '/renouvellements',
-        icon: CalendarRange,
-        label: 'Renouvellements',
-        keywords: ['renouvellements', 'contrats', 'echeances', 'radar', 'achats'],
-      },
+    ],
+  },
+  {
+    key: 'marche-achats',
+    module: 'marche',
+    label: 'Achats',
+    expertOnly: true,
+    order: 5,
+    items: [
       {
         to: '/achat-energie',
         icon: ShoppingCart,
-        label: 'Achats énergie',
-        keywords: ['achat', 'purchase', 'scenarios', 'strategie'],
+        label: 'Achats',
+        longLabel: "Achats d'énergie & scénarios",
+        keywords: ['achat', 'purchase', 'scenarios', 'strategie', 'energie'],
       },
       {
         to: '/achat-assistant',
         icon: Target,
-        label: 'Assistant Achat',
-        keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'],
+        label: "Assistant d'achat",
+        longLabel: "Assistant d'achat (reco & arbitrages)",
+        keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor', 'achat'],
+      },
+    ],
+  },
+  {
+    key: 'marche-contrats',
+    module: 'marche',
+    label: 'Contrats',
+    expertOnly: true,
+    order: 6,
+    items: [
+      {
+        to: '/renouvellements',
+        icon: CalendarRange,
+        label: 'Renouvellements',
+        longLabel: 'Renouvellements & échéances',
+        keywords: ['renouvellements', 'contrats', 'echeances', 'radar'],
       },
     ],
   },
@@ -553,7 +579,7 @@ export const NAV_SECTIONS = [
     module: 'admin',
     label: 'Référentiels',
     expertOnly: true,
-    order: 5,
+    order: 7,
     items: [
       {
         to: '/patrimoine',
@@ -588,7 +614,7 @@ export const NAV_SECTIONS = [
     module: 'admin',
     label: 'Administration',
     expertOnly: true,
-    order: 6,
+    order: 8,
     items: [
       {
         to: '/admin/users',

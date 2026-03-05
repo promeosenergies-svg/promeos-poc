@@ -177,7 +177,7 @@ export default function ExportNoteDecision({ data, onClose }) {
           )}
 
           <div className="section">
-            <div className="section-title">Comparaison des scenarios</div>
+            <div className="section-title">Comparaison des scénarios</div>
             <table>
               <thead>
                 <tr>

@@ -79,7 +79,7 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <UserCheck size={18} className="text-blue-600" />
-            <h2 className="font-bold text-gray-900">Affinez votre profil energie</h2>
+            <h2 className="font-bold text-gray-900">Affinez votre profil énergie</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
             <X size={18} className="text-gray-400" />
@@ -93,7 +93,7 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
           ) : loadError ? (
             <div className="py-6 text-center">
               <p className="text-sm text-red-600">
-                Impossible de charger le questionnaire. Verifiez votre connexion.
+                Impossible de charger le questionnaire. Vérifiez votre connexion.
               </p>
               <button onClick={onClose} className="mt-3 text-xs text-blue-600 hover:underline">
                 Fermer
@@ -118,7 +118,7 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
           ) : (
             <>
               <p className="text-sm text-gray-500">
-                Repondez a quelques questions pour ameliorer la precision de vos recommandations.
+                Répondez à quelques questions pour améliorer la précision de vos recommandations.
               </p>
               {questions.map((q, idx) => (
                 <div key={q.id} className="space-y-2">

@@ -51,9 +51,9 @@ describe('V114 Nav Refactor guard-rails', () => {
     expect(ROUTE_MODULE_MAP['/actions']).toBe('operations');
   });
 
-  it('Marche does NOT contain payment-rules and portfolio-reconciliation (hidden for POC)', () => {
-    const marche = NAV_SECTIONS.find((s) => s.key === 'marche');
-    const routes = marche.items.map((i) => i.to);
+  it('Marche facturation does NOT contain payment-rules and portfolio-reconciliation (hidden for POC)', () => {
+    const facturation = NAV_SECTIONS.find((s) => s.key === 'marche-facturation');
+    const routes = facturation.items.map((i) => i.to);
     expect(routes).not.toContain('/payment-rules');
     expect(routes).not.toContain('/portfolio-reconciliation');
   });

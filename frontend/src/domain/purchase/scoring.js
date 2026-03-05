@@ -49,7 +49,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
     const penalty = Math.round(spotShare * 25);
     score -= penalty;
     if (spotShare > 0.3) {
-      reasons.push(`Hybride avec ${Math.round(spotShare * 100)}% spot = risque eleve`);
+      reasons.push(`Hybride avec ${Math.round(spotShare * 100)}% spot = risque élevé`);
       evs.push(evidence('BR03', 'spotSharePct', spotShare));
     }
   }
@@ -60,7 +60,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   const relVol = tcoP50 > 0 && isFinite(vol) ? vol / tcoP50 : 0;
   if (relVol > 0.2) {
     score -= 15;
-    reasons.push(`Volatilite elevee (${(relVol * 100).toFixed(0)}% du TCO)`);
+    reasons.push(`Volatilité élevée (${(relVol * 100).toFixed(0)}% du TCO)`);
     evs.push(evidence('BR04', 'relativeVolatility', relVol));
   } else if (relVol > 0.1) {
     score -= 8;
@@ -138,7 +138,7 @@ export function scoreTransparency({ offer }) {
     }
     if (offer.intermediation.hasIntermediary && offer.intermediation.feeEurPerMwh > 5) {
       score -= 10;
-      reasons.push(`Frais intermediaire eleves: ${offer.intermediation.feeEurPerMwh} EUR/MWh`);
+      reasons.push(`Frais intermédiaires élevés: ${offer.intermediation.feeEurPerMwh} EUR/MWh`);
       evs.push(evidence('TR04', 'feeEurPerMwh', offer.intermediation.feeEurPerMwh));
     }
   }
@@ -175,7 +175,7 @@ export function scoreContractRisk({ offer }) {
   // Early termination
   if (terms.earlyTerminationPenalty === 'HIGH') {
     score -= 20;
-    reasons.push('Penalite de resiliation elevee');
+    reasons.push('Pénalité de résiliation élevée');
     evs.push(evidence('CR01', 'earlyTerminationPenalty', 'HIGH'));
   } else if (terms.earlyTerminationPenalty === 'MODERATE') {
     score -= 10;

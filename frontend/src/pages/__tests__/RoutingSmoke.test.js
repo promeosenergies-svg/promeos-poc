@@ -15,6 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   NAV_SECTIONS,
+  NAV_MODULES,
   ROUTE_MODULE_MAP,
   resolveModule,
   ALL_NAV_ITEMS,
@@ -67,14 +68,14 @@ describe('NavRegistry — labels FR avec accents', () => {
     expect(item?.label).not.toBe('Vue executive');
   });
 
-  it('section Marché a l\'accent sur le "e"', () => {
-    const section = NAV_SECTIONS.find((s) => s.key === 'marche');
-    expect(section?.label).toBe('Marché & Factures');
+  it('module Marché a l\'accent sur le "e"', () => {
+    const mod = NAV_MODULES.find((m) => m.key === 'marche');
+    expect(mod?.label).toBe('Marché');
   });
 
-  it('"Achats énergie" a l\'accent sur le "e"', () => {
+  it('"Achats d\'énergie" via longLabel a les accents', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie');
-    expect(item?.label).toBe('Achats énergie');
+    expect(item?.longLabel).toBe("Achats d'énergie & scénarios");
   });
 });
 

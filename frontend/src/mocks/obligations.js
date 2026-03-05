@@ -15,7 +15,7 @@ export const mockObligations = [
     id: 1,
     regulation: 'Decret Tertiaire',
     code: 'DT',
-    description: 'Reduire la consommation energetique des batiments tertiaires > 1000 m2',
+    description: 'Reduire la consommation energetique des bâtiments tertiaires > 1000 m2',
     pourquoi:
       'Vos sites tertiaires depassent 1000 m2 de surface — vous etes soumis au Decret Tertiaire (loi ELAN).',
     quoi_faire:
@@ -36,9 +36,9 @@ export const mockObligations = [
     id: 2,
     regulation: 'BACS',
     code: 'BACS',
-    description: "Systemes d'automatisation et de controle des batiments (GTB/GTC)",
+    description: "Systèmes d'automatisation et de contrôle des bâtiments (GTB/GTC)",
     pourquoi:
-      'Vos batiments possedent une puissance CVC > 70 kW — le decret BACS vous impose un systeme de GTB.',
+      'Vos bâtiments possèdent une puissance CVC > 70 kW — le decret BACS vous impose un systeme de GTB.',
     quoi_faire:
       'Installer un systeme GTB conforme a la norme EN 15232 classe B minimum, ou obtenir une attestation de derogation.',
     echeance: '2025-01-01',

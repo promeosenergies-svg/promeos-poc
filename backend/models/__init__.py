@@ -68,6 +68,8 @@ from .enums import (
     ContractIndexation,
     ContractStatus,
     ReconciliationStatus,
+    AnomalyStatus,
+    DismissReason,
 )
 
 # Hierarchie organisation
@@ -139,7 +141,7 @@ from .purchase_models import (
 from .action_item import ActionItem, ActionSyncBatch
 
 # Action Detail (Sprint V5.0)
-from .action_detail_models import ActionEvent, ActionComment, ActionEvidence
+from .action_detail_models import ActionEvent, ActionComment, ActionEvidence, AnomalyActionLink, AnomalyDismissal
 
 # Notifications (Sprint 10.2)
 from .notification import NotificationEvent, NotificationBatch, NotificationPreference
@@ -325,6 +327,8 @@ __all__ = [
     "ActionEvent",
     "ActionComment",
     "ActionEvidence",
+    "AnomalyActionLink",
+    "AnomalyDismissal",
     # Notifications (Sprint 10.2)
     "NotificationEvent",
     "NotificationBatch",
@@ -409,6 +413,11 @@ __all__ = [
     "ContractIndexation",
     "ContractStatus",
     "ReconciliationStatus",
+    # V117: Anomaly-Action Link
+    "AnomalyStatus",
+    "DismissReason",
+    "AnomalyActionLink",
+    "AnomalyDismissal",
     # V97: Reconciliation Fix Log
     "ReconciliationFixLog",
     # V113: Energy Copilot

@@ -28,18 +28,20 @@ const BADGE_STYLES = {
 };
 
 /* ── Panel Link (premium active/hover) ── */
-function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin, tint, indent }) {
+function PanelLink({ to, icon: Icon, label, longLabel, badge, badgeKey, pinned, onTogglePin, tint, indent }) {
   const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
   const badgeStyle = badgeKey
     ? BADGE_STYLES[badgeKey] || BADGE_STYLES._default
     : BADGE_STYLES._default;
+  const tipText = longLabel || label;
 
   return (
     <NavLink
       to={to}
       end={to === '/'}
+      aria-label={tipText}
       className={({ isActive }) =>
-        `group/link flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-all duration-150 relative px-2.5${indent ? ' ml-4' : ''}
+        `group/link flex items-center gap-2 h-8 rounded-lg text-[13px] leading-5 transition-all duration-150 relative py-1 px-2.5${indent ? ' ml-4' : ''}
         ${
           isActive
             ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
@@ -51,13 +53,13 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
       {({ isActive }) => (
         <>
           <Icon
-            size={15}
+            size={14}
             className={`shrink-0 transition-colors duration-150 ${isActive ? t.icon : 'text-slate-400'}`}
           />
           <span className="flex-1 truncate">{label}</span>
           {badge > 0 && (
             <span
-              className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-full min-w-[18px] text-center ${badgeStyle}`}
+              className={`ml-auto px-1 py-px text-[9px] font-semibold rounded-full min-w-[16px] text-center ${badgeStyle}`}
             >
               {badge > 99 ? '99+' : badge}
             </span>
@@ -75,9 +77,9 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
                   ? 'text-amber-500 opacity-100'
                   : 'text-slate-300 opacity-0 group-hover/link:opacity-100 hover:text-amber-400'
               }`}
-              aria-label={pinned ? `Desepingler ${label}` : `Epingler ${label}`}
+              aria-label={pinned ? `Désépingler ${label}` : `Épingler ${label}`}
             >
-              <Star size={11} fill={pinned ? 'currentColor' : 'none'} />
+              <Star size={10} fill={pinned ? 'currentColor' : 'none'} />
             </button>
           )}
         </>
@@ -86,9 +88,8 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
   );
 }
 
-/* ── Section Header (premium) ── */
-function SectionHeader({ label, isOpen, onToggle, tint }) {
-  const dotClass = TINT_PALETTE[tint]?.dot || 'bg-slate-400';
+/* ── Section Header (premium — no dot, clean chevron + label) ── */
+function SectionHeader({ label, isOpen, onToggle }) {
   return (
     <button
       onClick={onToggle}
@@ -97,12 +98,11 @@ function SectionHeader({ label, isOpen, onToggle, tint }) {
         hover:bg-slate-50/60 transition-colors duration-150"
       aria-expanded={isOpen}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${dotClass} mr-2 shrink-0`} />
       <ChevronDown
         size={11}
-        className={`text-slate-400 transition-transform duration-150 mr-1 ${isOpen ? '' : '-rotate-90'}`}
+        className={`text-slate-400 transition-transform duration-150 mr-1.5 ${isOpen ? '' : '-rotate-90'}`}
       />
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-150">
+      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-150 line-clamp-2">
         {label}
       </span>
     </button>
@@ -155,39 +155,33 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     return pins.map((path) => allModuleItems.find((item) => item.to === path)).filter(Boolean);
   }, [pins, allModuleItems]);
 
-  /* ── Recents (cross-module, exclude pins + items already visible in sections) ── */
+  /* ── Recents (filtered by current module only — no cross-module pollution) ── */
   const recentItems = useMemo(() => {
     const recents = getRecents();
     const visiblePaths = new Set(allModuleItems.map((i) => i.to));
-    const seen = new Set(); // dedup guard
+    const seen = new Set();
     return recents
-      .filter(
-        (r) =>
-          !pins.includes(r.path) &&
-          !visiblePaths.has(r.path) &&
-          !seen.has(r.path) &&
-          (seen.add(r.path), true)
-      )
+      .filter((r) => {
+        if (pins.includes(r.path) || visiblePaths.has(r.path) || seen.has(r.path)) return false;
+        seen.add(r.path);
+        const recentModule = r.module || matchRouteToModule(r.path).moduleId;
+        return recentModule === activeModule;
+      })
       .map((r) => {
-        // Try static nav item first
         const navItem = ALL_NAV_ITEMS.find((item) => item.to === r.path);
-        if (navItem) {
-          return { ...navItem, _recentModule: r.module || navItem.module };
-        }
-        // Dynamic route: build a synthetic item from stored metadata
+        if (navItem) return { ...navItem };
         const { moduleId } = matchRouteToModule(r.path);
-        const mod = NAV_MODULES.find((m) => m.key === moduleId);
+        const m = NAV_MODULES.find((mod) => mod.key === moduleId);
         return {
           to: r.path,
           label: r.label || r.path,
-          icon: mod?.icon || NAV_MODULES[0].icon,
+          icon: m?.icon || NAV_MODULES[0].icon,
           module: moduleId,
-          _recentModule: r.module || moduleId,
         };
       })
       .filter(Boolean)
       .slice(0, 3);
-  }, [allModuleItems, pins, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allModuleItems, pins, activeModule, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Section toggle ── */
   const toggleSection = useCallback((key) => {
@@ -220,7 +214,8 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
   return (
     <div
-      className="flex flex-col w-52 h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0"
+      className="flex flex-col h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0"
+      style={{ width: 'clamp(248px, 18vw, 300px)' }}
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >
@@ -229,25 +224,35 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         className={`px-4 pt-4 pb-3 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}
       >
         <div className="flex items-center gap-2">
-          <mod.icon size={18} className={t.icon} />
+          <mod.icon size={16} className={t.icon} />
           <h2 className="text-sm font-semibold text-slate-800">{mod.label}</h2>
         </div>
         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{mod.desc}</p>
       </div>
 
-      {/* Quick actions — subtle tinted pills */}
+      {/* Quick actions — Raccourcis */}
       {moduleQuickActions.length > 0 && (
         <div className="px-3 py-2 border-b border-slate-200/40">
+          <p className="px-0.5 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Raccourcis
+          </p>
           <div className="flex flex-wrap gap-1">
             {moduleQuickActions.map((action) => (
               <NavLink
                 key={action.key}
                 to={action.to}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
-                  text-slate-500 hover:text-slate-700 transition-all duration-150
-                  ${t.softBg} hover:ring-1 ${t.pillRing}`}
+                aria-label={action.longLabel || action.label}
+                className={({ isActive }) =>
+                  `flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
+                  transition-all duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
+                  ${isActive
+                    ? `${t.pillBg} ${t.pillText} ring-1 ${t.pillRing}`
+                    : `text-slate-500 hover:text-slate-700 ${t.softBg} hover:ring-1 ${t.pillRing}`
+                  }`
+                }
               >
-                <action.icon size={12} className={`${t.icon} shrink-0`} />
+                <action.icon size={11} className={`${t.icon} shrink-0`} />
                 <span className="truncate">{action.label}</span>
               </NavLink>
             ))}
@@ -261,7 +266,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         {pinnedItems.length > 0 && (
           <div className="pb-2 mb-1 border-b border-slate-200/40">
             <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Star size={9} className="text-amber-400" fill="currentColor" /> Epingles
+              <Star size={8} className="text-amber-400" fill="currentColor" /> Epingles
             </p>
             {pinnedItems.map((item) => (
               <PanelLink
@@ -276,37 +281,22 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           </div>
         )}
 
-        {/* Recents — with cross-module badge */}
+        {/* Recents (same module only) */}
         {recentItems.length > 0 && (
           <div className="pb-2 mb-1 border-b border-slate-200/40">
             <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Clock size={9} className="text-slate-400" /> Récents
+              <Clock size={8} className="text-slate-400" /> Récents
             </p>
-            {recentItems.map((item) => {
-              const isCrossModule = item._recentModule && item._recentModule !== activeModule;
-              const crossMod = isCrossModule
-                ? NAV_MODULES.find((m) => m.key === item._recentModule)
-                : null;
-              return (
-                <div key={`recent-${item.to}`} className="relative">
-                  <PanelLink
-                    {...item}
-                    badge={0}
-                    pinned={pins.includes(item.to)}
-                    onTogglePin={onTogglePin}
-                    tint={tint}
-                  />
-                  {crossMod && (
-                    <span
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-slate-100 text-slate-500 pointer-events-none"
-                      title={crossMod.label}
-                    >
-                      {crossMod.label}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+            {recentItems.map((item) => (
+              <PanelLink
+                key={`recent-${item.to}`}
+                {...item}
+                badge={0}
+                pinned={pins.includes(item.to)}
+                onTogglePin={onTogglePin}
+                tint={tint}
+              />
+            ))}
           </div>
         )}
 
@@ -322,7 +312,6 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
                   label={section.label}
                   isOpen={isOpen}
                   onToggle={() => toggleSection(section.key)}
-                  tint={sectionTint}
                 />
               )}
               {isOpen && (

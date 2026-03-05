@@ -120,7 +120,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <UserCheck size={18} className="text-blue-600" />
-          <h3 className="text-sm font-semibold text-gray-700">Profil energie</h3>
+          <h3 className="text-sm font-semibold text-gray-700">Profil énergie</h3>
         </div>
         <button
           onClick={() => (onSegmentationClick ? onSegmentationClick() : navigate('/segmentation'))}

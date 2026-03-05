@@ -853,25 +853,29 @@ describe('deepLink.js — deepLinkWithContext (V70)', () => {
 });
 
 // ============================================================
-// Y. NavRegistry — Timeline sous Facturation (V70)
+// Y. NavRegistry — Facturation group (V70 → Premium)
 // ============================================================
-describe('NavRegistry — Timeline sous Facturation (V70)', () => {
+describe('NavRegistry — Facturation group (V70 → Premium)', () => {
   const code = readSrc('layout', 'NavRegistry.js');
 
-  it('Factures & anomalies appears before Timeline & couverture', () => {
-    const idxFactures = code.indexOf('Factures & anomalies');
-    const idxTimeline = code.indexOf('Timeline & couverture');
-    expect(idxFactures).toBeGreaterThan(-1);
-    expect(idxTimeline).toBeGreaterThan(-1);
-    expect(idxFactures).toBeLessThan(idxTimeline);
+  it('Historique (/billing) appears before Anomalies (/bill-intel) in facturation section', () => {
+    // Search within the facturation section (after marche-facturation key) to avoid matching QUICK_ACTIONS
+    const sectionStart = code.indexOf("key: 'marche-facturation'");
+    expect(sectionStart).toBeGreaterThan(-1);
+    const sectionCode = code.slice(sectionStart);
+    const idxHistorique = sectionCode.indexOf("label: 'Historique'");
+    const idxAnomalies = sectionCode.indexOf("label: 'Anomalies'");
+    expect(idxHistorique).toBeGreaterThan(-1);
+    expect(idxAnomalies).toBeGreaterThan(-1);
+    expect(idxHistorique).toBeLessThan(idxAnomalies);
   });
 
-  it('Timeline has indent: true', () => {
-    expect(code).toMatch(/\/billing[\s\S]{0,200}indent:\s*true/);
+  it('/billing has longLabel with timeline & couverture', () => {
+    expect(code).toMatch(/\/billing[\s\S]{0,300}timeline & couverture/);
   });
 
-  it('bill-intel label is Factures & anomalies', () => {
-    expect(code).toMatch(/\/bill-intel[\s\S]{0,150}Factures & anomalies/);
+  it('/bill-intel label is Anomalies with longLabel "Anomalies de facturation"', () => {
+    expect(code).toMatch(/\/bill-intel[\s\S]{0,200}Anomalies de facturation/);
   });
 });
 

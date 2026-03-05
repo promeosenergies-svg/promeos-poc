@@ -97,6 +97,6 @@ export const mockTopAnomalies = mockSites
         ? `${s.nom}: 58% conso hors horaires`
         : i < 6
           ? `${s.nom}: derive +12% sur 30j`
-          : `${s.nom}: talon eleve (55% de la mediane)`,
+          : `${s.nom}: talon élevé (55% de la médiane)`,
     perte_eur: Math.round(s.risque_eur * 0.3),
   }));

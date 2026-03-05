@@ -132,8 +132,9 @@ describe('D. AnomaliesPage.jsx — cross-site action center', () => {
     expect(code).toMatch(/useScope/);
   });
 
-  it('has "Ouvrir site" CTA', () => {
-    expect(code).toMatch(/Ouvrir site/);
+  it('has context-aware "Ouvrir" CTAs (V117)', () => {
+    expect(code).toMatch(/Ouvrir facture/);
+    expect(code).toMatch(/Ouvrir fiche/);
   });
 
   it('has "Créer action" CTA', () => {

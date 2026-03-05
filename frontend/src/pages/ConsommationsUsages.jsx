@@ -374,7 +374,7 @@ function interpretBaseNuit(ratio) {
     return {
       label: 'A surveiller',
       color: 'text-amber-700 bg-amber-50',
-      tip: 'Talon nuit 15-30 % — verifier les equipements allumes la nuit',
+      tip: 'Talon nuit 15-30 % — vérifier les équipements allumés la nuit',
     };
   return {
     label: 'Trop eleve',
@@ -421,7 +421,7 @@ function interpretLoadFactor(lf) {
   return {
     label: 'Saturation',
     color: 'text-red-700 bg-red-50',
-    tip: 'Facteur de charge > 30 % — charge quasi-constante, verifier les pics de puissance',
+    tip: 'Facteur de charge > 30 % — charge quasi-constante, vérifier les pics de puissance',
   };
 }
 
@@ -538,7 +538,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                     onClick={() => navigate('/consommations/kb')}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition"
                   >
-                    <Database size={12} /> Verifier la KB
+                    <Database size={12} /> Vérifier la KB
                   </button>
                   <button
                     onClick={() => navigate('/patrimoine')}

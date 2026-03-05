@@ -12,9 +12,9 @@ import { TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 
 const CONFIDENCE_TOOLTIP = {
-  high: 'Haute : > 500 releves, donnees homogenes',
-  medium: 'Moyenne : entre 100 et 500 releves',
-  low: 'Basse : < 100 releves — indicatif uniquement',
+  high: 'Haute : > 500 relevés, données homogènes',
+  medium: 'Moyenne : entre 100 et 500 relevés',
+  low: 'Basse : < 100 relevés — indicatif uniquement',
 };
 
 function KpiTile({

@@ -35,7 +35,7 @@ const RULE_ICONS = {
 };
 
 const STATUS_CONFIG = {
-  proposed: { label: 'A valider', variant: 'warn', icon: AlertTriangle },
+  proposed: { label: 'À valider', variant: 'warn', icon: AlertTriangle },
   validated: { label: 'Valide', variant: 'ok', icon: CheckCircle },
   rejected: { label: 'Rejete', variant: 'neutral', icon: XCircle },
   converted: { label: 'Converti', variant: 'ok', icon: CheckCircle },
@@ -234,7 +234,7 @@ export default function EnergyCopilotPage() {
         <Card>
           <CardBody className="text-center">
             <p className="text-2xl font-bold text-amber-600">{proposedCount}</p>
-            <p className="text-xs text-gray-500">A valider</p>
+            <p className="text-xs text-gray-500">À valider</p>
           </CardBody>
         </Card>
         <Card>

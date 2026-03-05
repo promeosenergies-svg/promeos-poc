@@ -711,7 +711,7 @@ const UpgradeWizard = ({ onClose }) => {
             className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
           >
             <ChevronLeft size={16} />
-            {step > 0 && step < 4 ? 'Precedent' : 'Fermer'}
+            {step > 0 && step < 4 ? 'Précédent' : 'Fermer'}
           </button>
 
           <div className="flex items-center gap-2">

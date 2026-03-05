@@ -124,7 +124,7 @@ export function computeActionableLevers({
     levers.push({
       type: 'facturation',
       actionKey: 'lev-fact-loss',
-      label: 'Recuperer le surcout facture detecte',
+      label: 'Récupérer le surcoût facture détecté',
       impactEur: effectiveLoss,
       ctaPath: '/bill-intel',
       proofLinks: biProofs,

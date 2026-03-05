@@ -175,7 +175,7 @@ export default function TargetsPanel({
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Prevision</p>
+              <p className="text-xs text-gray-500">Prévision</p>
               <p
                 className={`text-sm font-semibold ${progression.forecast_vs_target_pct > 0 ? 'text-red-600' : 'text-green-600'}`}
               >

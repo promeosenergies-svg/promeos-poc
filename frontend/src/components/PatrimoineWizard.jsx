@@ -556,7 +556,7 @@ const PatrimoineWizard = ({ onClose }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Apercu de l'import</h3>
               <p className="text-sm text-gray-500 mb-3">
-                Donnees importees dans la zone de staging.
+                Données importées dans la zone de staging.
               </p>
               <div className="grid grid-cols-4 gap-3 mb-4">
                 <StatCard label="Sites" value={summary.sites} icon={Building2} color="indigo" />
@@ -694,7 +694,7 @@ const PatrimoineWizard = ({ onClose }) => {
               )}
               <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-xl p-3">
                 <p className="text-sm text-indigo-700">
-                  Cliquez "Lancer la validation" pour executer le quality gate sur ces donnees.
+                  Cliquez "Lancer la validation" pour exécuter le quality gate sur ces données.
                 </p>
               </div>
             </div>
@@ -966,7 +966,7 @@ const PatrimoineWizard = ({ onClose }) => {
             onClick={() => (step > 0 && step < 5 ? setStep(step - 1) : requestClose())}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm transition"
           >
-            <ChevronLeft size={16} /> {step > 0 && step < 5 ? 'Precedent' : 'Fermer'}
+            <ChevronLeft size={16} /> {step > 0 && step < 5 ? 'Précédent' : 'Fermer'}
           </button>
           <div className="flex items-center gap-2">
             {step === 3 && (
@@ -1016,7 +1016,7 @@ const PatrimoineWizard = ({ onClose }) => {
               <h3 className="text-lg font-bold text-gray-900">Quitter l'import ?</h3>
             </div>
             <p className="text-sm text-gray-600 mb-5">
-              L'import est en cours. Si vous quittez, les donnees non activees seront perdues.
+              L'import est en cours. Si vous quittez, les données non activées seront perdues.
             </p>
             <div className="flex justify-end gap-2">
               <button

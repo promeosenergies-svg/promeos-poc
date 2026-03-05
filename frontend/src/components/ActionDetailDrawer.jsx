@@ -91,7 +91,7 @@ const STATUS_PILL = {
 const STATUS_WORKFLOW = [
   { value: 'open', label: 'Ouverte' },
   { value: 'in_progress', label: 'En cours' },
-  { value: 'blocked', label: 'Bloquee' },
+  { value: 'blocked', label: 'Bloquée' },
   { value: 'done', label: 'Terminee' },
   { value: 'false_positive', label: 'Faux positif' },
 ];

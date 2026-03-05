@@ -84,8 +84,8 @@ describe('MODULE_TINTS', () => {
 
 /* ── Section definitions ── */
 describe('NAV_SECTIONS', () => {
-  it('has exactly 6 sections', () => {
-    expect(NAV_SECTIONS).toHaveLength(6);
+  it('has exactly 8 sections', () => {
+    expect(NAV_SECTIONS).toHaveLength(8);
   });
 
   it('sections have correct labels and order', () => {
@@ -94,15 +94,17 @@ describe('NAV_SECTIONS', () => {
       'Piloter',
       'Exécuter',
       'Analyser',
-      'Marché & Factures',
+      'Facturation',
+      'Achats',
+      'Contrats',
       'Référentiels',
       'Administration',
     ]);
   });
 
-  it('order field is sequential 1-6', () => {
+  it('order field is sequential 1-8', () => {
     const orders = NAV_SECTIONS.map((s) => s.order);
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
   it('each section has a unique key', () => {
@@ -134,9 +136,15 @@ describe('Expert filtering', () => {
     expect(normalSections.map((s) => s.key)).toEqual(['cockpit', 'operations', 'analyse']);
   });
 
-  it('expert mode adds 3 sections', () => {
-    expect(expertSections).toHaveLength(3);
-    expect(expertSections.map((s) => s.key)).toEqual(['marche', 'donnees', 'iam']);
+  it('expert mode adds 5 sections', () => {
+    expect(expertSections).toHaveLength(5);
+    expect(expertSections.map((s) => s.key)).toEqual([
+      'marche-facturation',
+      'marche-achats',
+      'marche-contrats',
+      'donnees',
+      'iam',
+    ]);
   });
 
   it('normal mode shows ~7 items (excluding expertOnly items)', () => {

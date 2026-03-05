@@ -83,7 +83,7 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
     {
       key: 'consommation',
       label: 'Donnees de consommation',
-      description: 'Consommation energetique par site (kWh/an)',
+      description: 'Consommation énergétique par site (kWh/an)',
       available: (kpis.couvertureDonnees ?? 0) > 0,
       coverage: kpis.couvertureDonnees ?? 0,
       detail: (kpis.couvertureDonnees ?? 0) > 0 ? `${kpis.couvertureDonnees}% des sites` : null,

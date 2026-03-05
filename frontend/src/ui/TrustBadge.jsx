@@ -1,5 +1,5 @@
 const CONFIDENCE = {
-  high: { label: 'Confiance elevee', color: 'bg-green-50 text-green-700', dot: 'bg-green-500' },
+  high: { label: 'Confiance élevée', color: 'bg-green-50 text-green-700', dot: 'bg-green-500' },
   medium: { label: 'Confiance moyenne', color: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
   low: { label: 'Estimation', color: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' },
 };

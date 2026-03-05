@@ -140,9 +140,9 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
               <p>Suggestions :</p>
               <ul className="list-disc list-inside space-y-0.5">
-                <li>Verifier la programmation CVC a {hour}h</li>
+                <li>Vérifier la programmation CVC à {hour}h</li>
                 <li>Comparer avec les horaires d'occupation</li>
-                <li>Identifier les equipements actifs hors plage</li>
+                <li>Identifier les équipements actifs hors plage</li>
               </ul>
             </div>
           </div>

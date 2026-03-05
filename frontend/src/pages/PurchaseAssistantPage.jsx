@@ -1333,7 +1333,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
               <th className="px-4 py-3 text-right">P90</th>
               <th className="px-4 py-3 text-right">TCO P50</th>
               <th className="px-4 py-3 text-right">Cout/an</th>
-              <th className="px-4 py-3 text-right">Volatilite</th>
+              <th className="px-4 py-3 text-right">Volatilité</th>
               <th className="px-4 py-3 text-right">CVaR90</th>
               <th className="px-4 py-3 text-right">P(Budget)</th>
               <th className="px-4 py-3 text-center">Score</th>

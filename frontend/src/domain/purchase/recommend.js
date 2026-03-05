@@ -195,7 +195,7 @@ export function recommend({
   if (best.scores.transparency.level === 'GREEN') {
     rationaleBullets.push('Transparence tarifaire satisfaisante');
   } else if (best.scores.transparency.level === 'RED') {
-    rationaleBullets.push('Attention: transparence insuffisante — verifier la decomposition');
+    rationaleBullets.push('Attention: transparence insuffisante — vérifier la decomposition');
   }
 
   // Persona-specific

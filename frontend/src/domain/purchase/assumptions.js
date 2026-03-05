@@ -38,7 +38,7 @@ export const SCENARIO_PRESETS = {
   },
   [ScenarioPreset.DEFENSIVE]: {
     label: 'Defensif',
-    description: 'Scenario prudent : hausse moderee + volatilite elevee',
+    description: 'Scénario prudent : hausse moderee + volatilité élevée',
     driftAnnual: 0.08,
     volMultiplier: 1.2,
     shockProb: 0.05,

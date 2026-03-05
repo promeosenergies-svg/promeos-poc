@@ -220,7 +220,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
           {/* ═══ PAGE 2: Detail par site ═══ */}
           <div className="page-num">Page 2</div>
           <div className="section">
-            <div className="section-title">Detail des scenarios par site</div>
+            <div className="section-title">Détail des scénarios par site</div>
           </div>
 
           {(sites || []).map((site) => (
