@@ -32,6 +32,8 @@ import {
   EmptyState,
   ScopeSummary,
   EvidenceDrawer,
+  Explain,
+  GLOSSARY,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -60,6 +62,7 @@ import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 import DataActivationPanel from './cockpit/DataActivationPanel';
 import DataQualityWidget from './cockpit/DataQualityWidget';
+import DemoSpotlight from '../components/onboarding/DemoSpotlight';
 import {
   READINESS_WEIGHTS,
   ACTIONS_SCORE,
@@ -294,13 +297,17 @@ const Cockpit = () => {
       <HealthSummary healthState={healthState} onNavigate={navigate} />
 
       {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
-      <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} />
+      <div data-tour="step-1">
+        <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} isExpert={isExpert} />
+      </div>
 
       {/* ── Impact & Décision ── */}
       <ImpactDecisionPanel kpis={kpis} />
 
       {/* ── Briefing du jour ── */}
-      <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+      <div data-tour="step-2">
+        <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+      </div>
 
       {/* ── Avertissement cohérence données ── */}
       {!consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
@@ -308,7 +315,9 @@ const Cockpit = () => {
       {/* ── Qualite des donnees V113 ── */}
       <DataQualityWidget />
 
-      <WatchlistCard watchlist={watchlist} consistency={consistency} onNavigate={navigate} />
+      <div data-tour="step-3">
+        <WatchlistCard watchlist={watchlist} consistency={consistency} onNavigate={navigate} />
+      </div>
 
       {isExpert && opportunities.length > 0 && (
         <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
@@ -347,7 +356,7 @@ const Cockpit = () => {
                 </p>
                 {kpis.risqueTotal > 0 && (
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Risque estimé : {Math.round(kpis.risqueTotal / 1000)} k€
+                    <Explain term="risque_financier">Risque estimé</Explain> : {Math.round(kpis.risqueTotal / 1000)} k€
                   </p>
                 )}
               </div>
@@ -375,6 +384,11 @@ const Cockpit = () => {
                     {getStatusInfo(singleSite.statut_conformite).label}
                   </span>
                 </div>
+                {isExpert && (
+                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
+                    Source : compliance_engine v2 · Confiance : moyenne
+                  </p>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -390,6 +404,11 @@ const Cockpit = () => {
                     ? `${singleSite.risque_eur.toLocaleString('fr-FR')} €`
                     : 'Aucun'}
                 </p>
+                {isExpert && (
+                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
+                    Source : compliance_engine v2 · Confiance : moyenne
+                  </p>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -405,6 +424,11 @@ const Cockpit = () => {
                     ? `${singleSite.conso_kwh_an.toLocaleString('fr-FR')} kWh/an`
                     : 'Non renseignée'}
                 </p>
+                {isExpert && (
+                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
+                    Source : factures importées · Confiance : variable
+                  </p>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -428,7 +452,7 @@ const Cockpit = () => {
       {!isSingleSite && (
         <Card>
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold text-gray-800">Sites ({filteredSites.length})</h3>
+            <h3 className="text-lg font-semibold text-gray-800"><Explain term="distribution_sites">Sites</Explain> ({filteredSites.length})</h3>
             <div className="relative w-64">
               <Search
                 size={14}
@@ -493,7 +517,7 @@ const Cockpit = () => {
                       sorted={siteSort.col === 'statut_conformite' ? siteSort.dir : ''}
                       onSort={() => handleSiteSort('statut_conformite')}
                     >
-                      Conformité
+                      <Explain term="statut_conformite">Conformité</Explain>
                     </Th>
                     <Th
                       sortable
@@ -613,7 +637,7 @@ const Cockpit = () => {
                 {kpis.readinessScore}%
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Score global périmètre</p>
+            <p className="text-xs text-gray-400 mt-2"><Explain term="effort_score">Score global périmètre</Explain></p>
           </div>
 
           <div className="space-y-4">
@@ -675,6 +699,9 @@ const Cockpit = () => {
         onClose={() => setEvidenceOpen(null)}
         evidence={evidenceOpen ? evidenceMap[evidenceOpen] : null}
       />
+
+      {/* ── Onboarding spotlight (C.2b) ── */}
+      <DemoSpotlight />
     </PageShell>
   );
 };

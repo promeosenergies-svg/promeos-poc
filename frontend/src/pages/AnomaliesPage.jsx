@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle, MoreHorizontal, Link2, Ban } from 'lucide-react';
-import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer, ActiveFiltersBar } from '../ui';
+import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer, ActiveFiltersBar, Explain } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped, getAnomalyStatuses, dismissAnomaly } from '../services/api';
@@ -244,7 +244,7 @@ export default function AnomaliesPage() {
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
-          text="Importez votre patrimoine ou chargez les données de démonstration HELIOS pour voir les anomalies. Pourquoi c'est important : le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données."
+          text={<>Importez votre <Explain term="patrimoine">patrimoine</Explain> ou chargez les données de démonstration HELIOS pour voir les <Explain term="anomalie">anomalies</Explain>. Pourquoi c'est important : le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données.</>}
           ctaLabel="Importer mon patrimoine"
           onCta={() => navigate('/import')}
           actions={
@@ -262,7 +262,7 @@ export default function AnomaliesPage() {
 
   const subtitle = loading
     ? 'Chargement des anomalies...'
-    : `${kpis.total} anomalie${kpis.total > 1 ? 's' : ''} · ${kpis.critiques} critique${kpis.critiques > 1 ? 's' : ''} · ${fmtEur(kpis.risque)} de risque estimé`;
+    : <>{kpis.total} <Explain term="anomalie">anomalie{kpis.total > 1 ? 's' : ''}</Explain> · {kpis.critiques} critique{kpis.critiques > 1 ? 's' : ''} · {fmtEur(kpis.risque)} de risque estimé</>;
 
   return (
     <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle={activeTab === 'anomalies' ? subtitle : undefined}>
@@ -292,7 +292,7 @@ export default function AnomaliesPage() {
           <KpiCard
             icon={AlertTriangle}
             color="bg-blue-600"
-            label="Anomalies totales"
+            label={<><Explain term="anomalie">Anomalies</Explain> totales</>}
             value={kpis.total}
             loading={loading}
           />
@@ -414,7 +414,7 @@ export default function AnomaliesPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-gray-400">
             <Search size={28} className="mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-600">Aucune anomalie ne correspond</p>
+            <p className="text-sm font-medium text-gray-600">Aucune <Explain term="anomalie">anomalie</Explain> ne correspond</p>
             {hasFilters && (
               <button onClick={resetFilters} className="mt-2 text-xs text-blue-600 hover:underline">
                 Réinitialiser les filtres

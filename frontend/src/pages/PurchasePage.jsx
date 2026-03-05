@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell, Badge } from '../ui';
+import { PageShell, Badge, Explain, GLOSSARY } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
@@ -481,7 +481,7 @@ export default function PurchasePage() {
               <Tooltip text={dataConfidence.tooltipFR}>
                 <span className="inline-flex items-center gap-1" data-testid="purchase-confidence">
                   <Badge status={dataConfidence.badgeStatus}>
-                    Confiance : {dataConfidence.label}
+                    <Explain term="data_confidence">Confiance : {dataConfidence.label}</Explain>
                   </Badge>
                 </span>
               </Tooltip>
@@ -755,7 +755,7 @@ export default function PurchasePage() {
                     <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
                       <Sun size={14} /> Décalage heures pleines → solaire
                       <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">
-                        TARIF HEURES SOLAIRES
+                        <Explain term="ths_adoption">TARIF HEURES SOLAIRES</Explain>
                       </span>
                     </label>
                     <button
@@ -1041,7 +1041,7 @@ export default function PurchasePage() {
                                     data-testid="reflex-effort-badge"
                                     className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}
                                   >
-                                    <Settings2 size={10} /> Effort {s.effort_score}/100
+                                    <Settings2 size={10} /> <Explain term="effort_score">Effort {s.effort_score}/100</Explain>
                                   </span>
                                 )}
                               </div>

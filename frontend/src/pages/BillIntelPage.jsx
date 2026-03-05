@@ -16,7 +16,7 @@ import {
   getSites,
   getInsightDetail,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import {
@@ -35,6 +35,7 @@ import {
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
+import { getKpiMessage } from '../services/kpiMessaging';
 import InsightDrawer from '../components/InsightDrawer';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
@@ -422,7 +423,7 @@ export default function BillIntelPage() {
     <PageShell
       icon={FileText}
       title="Facturation"
-      subtitle="Shadow billing, TURPE/ATRD/ATRT, écarts & anomalies"
+      subtitle={<><Explain term="shadow_billing">Shadow billing</Explain>, <Explain term="turpe">TURPE</Explain>/<Explain term="atrd">ATRD</Explain>/ATRT, écarts & <Explain term="anomalie">anomalies</Explain></>}
       actions={
         <>
           {siteFilter && (
@@ -558,7 +559,7 @@ export default function BillIntelPage() {
       )}
 
       {/* Summary cards */}
-      {summary && (
+      {summary && (<>
         <div className="grid grid-cols-5 gap-4">
           <SummaryCard
             icon={FileText}
@@ -574,13 +575,13 @@ export default function BillIntelPage() {
           />
           <SummaryCard
             icon={Zap}
-            label="Total kWh"
+            label={<>Total <Explain term="kwh">kWh</Explain></>}
             value={`${Math.round(summary.total_kwh).toLocaleString('fr-FR')}`}
             color="purple"
           />
           <SummaryCard
             icon={AlertTriangle}
-            label="Anomalies"
+            label={<Explain term="anomalie">Anomalies</Explain>}
             value={summary.total_insights}
             color="red"
           />
@@ -590,6 +591,28 @@ export default function BillIntelPage() {
             value={`${Math.round(activeLoss)} €`}
             color="orange"
           />
+        </div>
+        {(() => {
+          const msg = getKpiMessage('anomalies', summary.total_insights, { totalLoss: activeLoss });
+          if (!msg) return null;
+          return (
+            <p className={`col-span-5 text-xs px-1 ${
+              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+            }`} data-testid="kpi-message-anomalies">
+              {isExpert ? msg.expert : msg.simple}
+            </p>
+          );
+        })()}
+      </>)}
+      {isExpert && summary && (
+        <div className="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2">
+          <span>Source : PROMEOS Bill Intel v2</span>
+          <span>·</span>
+          <span>Couverture : {summary.coverage_months || '?'} mois</span>
+          <span>·</span>
+          <span>Dernière maj : {summary.last_updated || new Date().toLocaleDateString('fr-FR')}</span>
+          <span>·</span>
+          <span>Moteur : {summary.engine_version || 'rules_v2'}</span>
         </div>
       )}
 
@@ -619,7 +642,7 @@ export default function BillIntelPage() {
         <div ref={anomaliesRef}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">
-              Anomalies détectées ({insights.length})
+              <Explain term="anomalie">Anomalies</Explain> détectées ({insights.length})
             </h3>
             <div className="flex items-center gap-1">
               {INSIGHT_FILTER_OPTIONS.map((opt) => (
@@ -656,11 +679,24 @@ export default function BillIntelPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">
-                          {TYPE_LABELS[insight.type] || insight.type}
+                          {['shadow_gap','unit_price_high','duplicate_invoice','consumption_spike','price_drift'].includes(insight.type)
+                            ? <Explain term={insight.type}>{TYPE_LABELS[insight.type]}</Explain>
+                            : insight.type === 'ttc_coherence'
+                              ? <>Cohérence <Explain term="ttc">TTC</Explain></>
+                              : insight.type === 'reseau_mismatch'
+                                ? <>Écart réseau / <Explain term="turpe">TURPE</Explain></>
+                                : insight.type === 'taxes_mismatch'
+                                  ? <>Écart taxes / <Explain term="accise">accise</Explain></>
+                                  : insight.type === 'negative_kwh'
+                                    ? <><Explain term="kwh">kWh</Explain> négatifs</>
+                                    : (TYPE_LABELS[insight.type] || insight.type)}
                         </span>
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
                           {SEVERITY_LABELS[insight.severity] || insight.severity}
                         </Badge>
+                        {isExpert && (
+                          <span className="text-[10px] font-mono text-gray-400">#{insight.id}</span>
+                        )}
                         <span
                           className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${INSIGHT_STATUS_COLORS[istatus] || INSIGHT_STATUS_COLORS.open}`}
                         >
@@ -818,7 +854,7 @@ export default function BillIntelPage() {
                       Total EUR
                     </th>
                     <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
-                      kWh
+                      <Explain term="kwh">kWh</Explain>
                     </th>
                     <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
                       Statut
@@ -826,6 +862,16 @@ export default function BillIntelPage() {
                     <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
                       Source
                     </th>
+                    {isExpert && (
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                        €/kWh
+                      </th>
+                    )}
+                    {isExpert && (
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                        Type énergie
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -853,6 +899,16 @@ export default function BillIntelPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-gray-500">{inv.source || '-'}</td>
+                      {isExpert && (
+                        <td className="px-4 py-2.5 text-right font-mono text-xs">
+                          {(inv.total_eur && inv.energy_kwh) ? (inv.total_eur / inv.energy_kwh).toFixed(4) : '-'}
+                        </td>
+                      )}
+                      {isExpert && (
+                        <td className="px-4 py-2.5 text-gray-500">
+                          {inv.energy_type || '-'}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

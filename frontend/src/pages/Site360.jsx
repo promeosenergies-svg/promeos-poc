@@ -28,7 +28,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge, Explain } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
@@ -128,7 +128,7 @@ function TabResume({ site, onSegmentationClick }) {
                 </p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
-                <p className="text-xs text-gray-500">Anomalies</p>
+                <p className="text-xs text-gray-500"><Explain term="anomalie">Anomalies</Explain></p>
                 <p className="text-lg font-bold text-amber-700">{site.anomalies_count}</p>
               </div>
               <div className="p-3 bg-green-50 rounded-lg">
@@ -167,7 +167,7 @@ function TabResume({ site, onSegmentationClick }) {
         {/* Anomalies list */}
         <Card>
           <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
+            <h3 className="font-semibold text-gray-800"><Explain term="anomalie">Anomalies</Explain> détectées</h3>
           </div>
           {anomLoading ? (
             <div className="p-4">
@@ -1119,7 +1119,7 @@ export default function Site360() {
         onClick={() => navigate('/patrimoine')}
         className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition"
       >
-        <ArrowLeft size={16} /> Patrimoine
+        <ArrowLeft size={16} /> <Explain term="patrimoine">Patrimoine</Explain>
       </button>
 
       <div className="flex items-start justify-between">
@@ -1143,7 +1143,7 @@ export default function Site360() {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setShowBacs(true)}>
             <ShieldCheck size={14} className="mr-1" />
-            Évaluer BACS
+            Évaluer <Explain term="decret_bacs">BACS</Explain>
           </Button>
           <Button variant="outline" onClick={() => setShowIntake(true)}>
             <ClipboardCheck size={14} className="mr-1" />

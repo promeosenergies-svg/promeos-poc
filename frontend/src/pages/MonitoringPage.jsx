@@ -58,12 +58,15 @@ import {
   Drawer,
   Tabs,
   Tooltip,
+  Explain,
+  GLOSSARY,
 } from '../ui';
 import { SkeletonCard } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import { getKpiMessage } from '../services/kpiMessaging';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR } from '../utils/format';
 import {
@@ -423,7 +426,7 @@ const CONFIDENCE_DOT = {
   low: 'bg-red-400',
 };
 
-function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick, confidence }) {
+function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick, confidence, message }) {
   const st = STATUS_BADGES[status] || STATUS_BADGES.ok;
   const confTip = confidence
     ? `Confiance: ${confidence.level === 'high' ? 'Forte' : confidence.level === 'medium' ? 'Moyenne' : 'Faible'}${confidence.reason ? ' — ' + confidence.reason : ''}`
@@ -455,6 +458,7 @@ function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClic
                 : 'Faible'}
           </div>
         )}
+        {message}
       </div>
     </Tooltip>
   );
@@ -478,6 +482,7 @@ function ExecutiveSummary({
   onConfidenceDetail,
   navigate,
   siteId,
+  isExpert,
 }) {
   // Top risk: highest EUR impact open alert
   const topAlert = alerts
@@ -525,11 +530,14 @@ function ExecutiveSummary({
             { label: 'Créer action', action: () => onCreateAction(topAlert) },
           ]
         : [],
+      expertDetail: topAlert
+        ? `id=#${topAlert.id} · type=${topAlert.alert_type} · sev=${topAlert.severity} · kwh=${topAlert.estimated_impact_kwh || '-'}`
+        : null,
     },
     {
       icon: Zap,
       iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
-      title: 'Gaspillage estimé',
+      title: <Explain term="gaspillage_estime">Gaspillage estimé</Explain>,
       value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non détecté',
       sub:
         wasteAlerts.length > 0
@@ -542,6 +550,9 @@ function ExecutiveSummary({
               { label: 'Créer action', action: () => onCreateAction(wasteAlerts[0]) },
             ]
           : [],
+      expertDetail: wasteAlerts.length > 0
+        ? `alertes=${wasteAlerts.length} · types=${[...new Set(wasteAlerts.map(a => a.alert_type))].join(',')} · kwh_total=${fmtNum(totalWasteKwh, 0)}`
+        : null,
     },
     {
       icon: Database,
@@ -550,6 +561,7 @@ function ExecutiveSummary({
       value: confOk ? 'OK' : 'À confirmer',
       sub: qualityConf?.reason || 'Données suffisantes',
       ctas: [{ label: 'Comprendre', action: onConfidenceDetail }],
+      expertDetail: `level=${qualityConf?.level || '-'} · pct=${qualityConf?.pct ?? '-'}% · reason=${qualityConf?.reason || 'N/A'}`,
     },
     {
       icon: Leaf,
@@ -573,6 +585,9 @@ function ExecutiveSummary({
               },
             ]
           : [],
+      expertDetail: emissions?.factor
+        ? `factor=${emissions.factor.kgco2e_per_kwh} kgCO₂e/kWh · src=${emissions.factor.source_label || '-'} · quality=${emissions.factor.quality || '-'}`
+        : null,
     },
     {
       icon: Sun,
@@ -603,6 +618,9 @@ function ExecutiveSummary({
             ]
           : []),
       ],
+      expertDetail: offHoursRatio != null
+        ? `ratio=${fmtNum(offHoursRatio * 100)}% · kwh_90j=${offHoursKwh ?? '-'} · est=${offHoursEst.eur} EUR/an · prix=${offHoursEst.price} EUR/kWh`
+        : null,
     },
   ];
 
@@ -632,6 +650,11 @@ function ExecutiveSummary({
                         {cta.label} <ExternalLink size={10} />
                       </button>
                     ))}
+                  </div>
+                )}
+                {isExpert && c.expertDetail && (
+                  <div className="text-[10px] text-gray-400 font-mono mt-1">
+                    {c.expertDetail}
                   </div>
                 )}
               </div>
@@ -2034,7 +2057,7 @@ export default function MonitoringPage() {
                   }}
                 >
                   <Database size={12} />
-                  Confiance données :{' '}
+                  <Explain term="data_confidence">Confiance données</Explain> :{' '}
                   {qualityConf.level === 'high'
                     ? 'Forte'
                     : qualityConf.level === 'medium'
@@ -2065,6 +2088,7 @@ export default function MonitoringPage() {
               emissions={emissions}
               navigate={navigate}
               siteId={siteId}
+              isExpert={isExpert}
               onOpenExplorer={() => handleOpenExplorer(null)}
               onCreateAction={(a) => {
                 if (a) handleCreateAction(a);
@@ -2261,10 +2285,21 @@ export default function MonitoringPage() {
                       : 'bg-red-500'
                 }
                 confidence={qualityConf}
+                message={(() => {
+                  const msg = getKpiMessage('data_quality_score', qualityScore);
+                  if (!msg) return null;
+                  return (
+                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
+                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+                    }`} data-testid="kpi-message-data-quality">
+                      {isExpert ? msg.expert : msg.simple}
+                    </p>
+                  );
+                })()}
               />
               <StatusKpiCard
                 icon={Clock}
-                title="Hors Horaires"
+                title={<Explain term="off_hours_ratio">Hors Horaires</Explain>}
                 value={offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}
                 sub={
                   schedule
@@ -2294,6 +2329,17 @@ export default function MonitoringPage() {
                 }
                 confidence={qualityConf}
                 onClick={() => setShowOffHoursDrawer(true)}
+                message={(() => {
+                  const msg = getKpiMessage('off_hours_ratio', offHoursRatio);
+                  if (!msg) return null;
+                  return (
+                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
+                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+                    }`} data-testid="kpi-message-off-hours">
+                      {isExpert ? msg.expert : msg.simple}
+                    </p>
+                  );
+                })()}
               />
               <StatusKpiCard
                 icon={Leaf}
@@ -2334,6 +2380,41 @@ export default function MonitoringPage() {
                 />
               )}
             </div>
+
+            {/* Expert: KPI technical details */}
+            {isExpert && kpis && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 -mt-2">
+                <div className="text-[10px] text-gray-400 font-mono">
+                  Pmax: src={kpis.source || 'engine'} · period={kpis.period || '-'}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono">
+                  LF seuils: ok≥{lfThresholds.ok}% warn≥{lfThresholds.warn}% · arch={archetype}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono">
+                  Qualité: raw={qualityScore ?? 'null'} · conf={qualityConf?.pct ?? '-'}% · {qualityConf?.level || '-'}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono">
+                  Risque: raw={riskScore ?? 'null'} · status={riskStatus}
+                  {climate?.r_squared != null ? ` · R²=${fmtNum(climate.r_squared, 3)}` : ''}
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono">
+                  HH: ratio={offHoursRatio ?? 'null'} · kwh={offHoursKwh ?? 'null'}
+                  · prix={offHoursEstimate.price} EUR/kWh ({offHoursEstimate.mode || 'est.'})
+                </div>
+                <div className="text-[10px] text-gray-400 font-mono">
+                  CO₂e: factor={emissions.factor?.kgco2e_per_kwh ?? '-'} · src={emissions.factor?.source_label || '-'}
+                </div>
+                {climate && (
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    Climat: slope={climate.slope_kw_per_c ?? '-'} · Tb={climate.balance_point_c ?? '-'}°C
+                    · n={climate.n_points ?? '-'}pts · label={climate.label || '-'}
+                  </div>
+                )}
+                <div className="text-[10px] text-gray-400 font-mono">
+                  Site ID: {siteId} · snap_count={snapshots.length} · alerts_total={alerts.length}
+                </div>
+              </div>
+            )}
 
             {/* Compare deltas row */}
             {compareKpis?.kpis && (
@@ -2396,6 +2477,19 @@ export default function MonitoringPage() {
                     weekdayProfile={weekdayProfile}
                     weekendProfile={weekendProfile}
                   />
+                  {isExpert && weekdayProfile && (
+                    <details className="mt-3">
+                      <summary className="text-[10px] text-gray-400 font-mono cursor-pointer hover:text-gray-600">
+                        Données brutes (24h)
+                      </summary>
+                      <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed overflow-x-auto">
+                        <div>Semaine: [{weekdayProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]</div>
+                        {weekendProfile && (
+                          <div>Weekend: [{weekendProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]</div>
+                        )}
+                      </div>
+                    </details>
+                  )}
                 </CardBody>
               </Card>
 
@@ -2409,6 +2503,18 @@ export default function MonitoringPage() {
                     </span>
                   </h2>
                   <HeatmapGrid data={heatmapData} />
+                  {isExpert && heatmapData && (
+                    <details className="mt-3">
+                      <summary className="text-[10px] text-gray-400 font-mono cursor-pointer hover:text-gray-600">
+                        Données brutes (7x24)
+                      </summary>
+                      <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed overflow-x-auto max-h-32 overflow-y-auto">
+                        {heatmapData.map((row, d) => (
+                          <div key={d}>{DAYS_FR[d]}: [{row.map((v) => fmtNum(v, 1)).join(', ')}]</div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </CardBody>
               </Card>
 
@@ -2422,6 +2528,28 @@ export default function MonitoringPage() {
                     </span>
                   </h2>
                   <ClimateScatter climate={climate} />
+                  {isExpert && climate?.scatter && climate.scatter.length > 0 && (
+                    <details className="mt-3">
+                      <summary className="text-[10px] text-gray-400 font-mono cursor-pointer hover:text-gray-600">
+                        Données brutes ({climate.scatter.length} points)
+                      </summary>
+                      <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed max-h-32 overflow-y-auto">
+                        <div className="flex gap-4 font-semibold mb-0.5">
+                          <span className="w-16">T (°C)</span>
+                          <span className="w-20">kWh/j</span>
+                        </div>
+                        {climate.scatter.slice(0, 50).map((pt, i) => (
+                          <div key={i} className="flex gap-4">
+                            <span className="w-16">{fmtNum(pt.T, 1)}</span>
+                            <span className="w-20">{fmtNum(pt.kwh, 1)}</span>
+                          </div>
+                        ))}
+                        {climate.scatter.length > 50 && (
+                          <div className="text-gray-300 mt-1">… +{climate.scatter.length - 50} points</div>
+                        )}
+                      </div>
+                    </details>
+                  )}
                 </CardBody>
               </Card>
 
@@ -2435,15 +2563,27 @@ export default function MonitoringPage() {
                     </span>
                   </h2>
                   {weekdayBarData ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={weekdayBarData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} />
-                        <YAxis tick={{ fontSize: 11 }} unit=" kW" />
-                        <RTooltip formatter={(v) => [`${v} kW`, 'Puissance']} />
-                        <Bar dataKey="kw" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Puissance" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={weekdayBarData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} />
+                          <YAxis tick={{ fontSize: 11 }} unit=" kW" />
+                          <RTooltip formatter={(v) => [`${v} kW`, 'Puissance']} />
+                          <Bar dataKey="kw" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Puissance" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                      {isExpert && (
+                        <details className="mt-3">
+                          <summary className="text-[10px] text-gray-400 font-mono cursor-pointer hover:text-gray-600">
+                            Données brutes (24h)
+                          </summary>
+                          <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed overflow-x-auto">
+                            [{weekdayBarData.map((d) => `${d.hour}:${d.kw}`).join(' · ')}]
+                          </div>
+                        </details>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-12">
                       <BarChart3 size={32} className="mx-auto text-gray-200 mb-2" />
@@ -2541,11 +2681,14 @@ export default function MonitoringPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b text-left text-gray-500">
+                          {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">ID</th>}
                           <th className="pb-2 pr-4">Statut</th>
                           <th className="pb-2 pr-4">Type</th>
-                          <th className="pb-2 pr-4">Sévérité</th>
+                          <th className="pb-2 pr-4"><Explain term="severite">Sévérité</Explain></th>
                           <th className="pb-2 pr-4">Explication</th>
                           <th className="pb-2 pr-4 text-right">Impact (EUR)</th>
+                          {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">Compteur</th>}
+                          {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">kWh brut</th>}
                           <th className="pb-2">Actions</th>
                         </tr>
                       </thead>
@@ -2558,6 +2701,11 @@ export default function MonitoringPage() {
                               className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                               onClick={() => openInsightDrawer(a)}
                             >
+                              {isExpert && (
+                                <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono">
+                                  #{a.id}{a._count > 1 ? ` (+${a._ids?.slice(1).join(',')})` : ''}
+                                </td>
+                              )}
                               <td className="py-3 pr-4">
                                 <Badge status={stCfg.badge}>{stCfg.label}</Badge>
                               </td>
@@ -2595,6 +2743,16 @@ export default function MonitoringPage() {
                                   '-'
                                 )}
                               </td>
+                              {isExpert && (
+                                <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono">
+                                  {a.meter_id || '-'}{a._meters && a._meters.size > 1 ? ` (+${a._meters.size - 1})` : ''}
+                                </td>
+                              )}
+                              {isExpert && (
+                                <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono text-right">
+                                  {a._totalKwh > 0 ? `${fmtNum(a._totalKwh, 1)} kWh` : a.estimated_impact_kwh > 0 ? `${fmtNum(a.estimated_impact_kwh, 1)} kWh` : '-'}
+                                </td>
+                              )}
                               <td className="py-3">
                                 <div
                                   className="flex items-center gap-1"

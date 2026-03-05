@@ -23,8 +23,8 @@ describe('A. Tax labels — no CSPE/TICGN on ELEC', () => {
 
   it('has energy_type check for dynamic tax label', () => {
     expect(drawer).toMatch(/energy_type/);
-    expect(drawer).toMatch(/Accise électricité/);
-    expect(drawer).toMatch(/Accise gaz \(TICGN\)/);
+    expect(drawer).toMatch(/Accise.*électricité/s);
+    expect(drawer).toMatch(/Accise.*gaz.*TICGN/s);
   });
 
   it('taxes_mismatch label says "accise" not "CSPE"', () => {
@@ -33,7 +33,7 @@ describe('A. Tax labels — no CSPE/TICGN on ELEC', () => {
   });
 
   it('CAUSE_LABELS taxes_mismatch uses "accise"', () => {
-    expect(drawer).toMatch(/taxes\/accise/);
+    expect(drawer).toMatch(/taxes.*accise/s);
   });
 });
 
@@ -42,7 +42,7 @@ describe('B. TVA — never "— €" when TTC is calculated', () => {
   const drawer = src('src/components/InsightDrawer.jsx');
 
   it('has "TVA non disponible" fallback', () => {
-    expect(drawer).toMatch(/TVA non disponible/);
+    expect(drawer).toMatch(/TVA.*non disponible/s);
   });
 
   it('checks actual_ttc before showing TVA fallback', () => {

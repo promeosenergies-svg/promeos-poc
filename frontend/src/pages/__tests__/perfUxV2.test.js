@@ -66,8 +66,9 @@ describe('B · No forbidden English labels', () => {
       const violations = lines.filter((line, _i) => {
         const lower = line.toLowerCase();
         if (!lower.includes(term.toLowerCase())) return false;
-        // Allow in const/comment/tooltip/import lines
+        // Allow in const/comment/tooltip/import lines and data-testid attributes
         if (line.match(/^\s*(\/\/|\/\*|\*|const |import |export |\/\*\*)/)) return false;
+        if (line.includes('data-testid')) return false;
         // Allow in variable names or object keys (snake_case constant mappings)
         if (line.match(/^\s+\w+:\s*'/)) return false;
         // Allow in bare string literals inside arrays (e.g. 'weekend_anomaly',)

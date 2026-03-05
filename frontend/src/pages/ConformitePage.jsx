@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database } from 'lucide-react';
-import { Button, PageShell, Drawer, ActiveFiltersBar } from '../ui';
+import { Button, PageShell, Drawer, ActiveFiltersBar, Explain, GLOSSARY } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
@@ -293,7 +293,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
   }, [findingId]);
 
   return (
-    <Drawer open={!!findingId} onClose={onClose} title={DRAWER_LABELS.finding_title} wide>
+    <Drawer open={!!findingId} onClose={onClose} title={<Explain term="finding">{DRAWER_LABELS.finding_title}</Explain>} wide>
       {loading ? (
         <div className="py-12 text-center text-gray-400">{DRAWER_LABELS.loading}</div>
       ) : !detail ? (
@@ -323,7 +323,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
                 </span>
               </div>
               <div>
-                <span className="text-gray-500">{DRAWER_LABELS.severity} :</span>{' '}
+                <span className="text-gray-500"><Explain term="severite">{DRAWER_LABELS.severity}</Explain> :</span>{' '}
                 <span className="font-medium">
                   {SEVERITY_LABELS[detail.severity] || detail.severity}
                 </span>
@@ -808,7 +808,7 @@ export default function ConformitePage() {
   return (
     <PageShell
       icon={ShieldCheck}
-      title="Conformité réglementaire"
+      title={<><Explain term="statut_conformite">Conformité</Explain> réglementaire</>}
       subtitle={scopeLabel}
       actions={
         <>
@@ -832,7 +832,7 @@ export default function ConformitePage() {
           />
           {bundle?.meta?.generated_at && (
             <span className="text-[10px] font-mono text-gray-400">
-              Synthèse : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+              <Explain term="report_pct">Synthèse</Explain> : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
             </span>
           )}
         </div>

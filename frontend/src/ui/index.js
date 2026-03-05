@@ -44,3 +44,7 @@ export { default as EvidenceDrawer } from './EvidenceDrawer';
 
 // Design System V8 — ActiveFiltersBar (A.4)
 export { default as ActiveFiltersBar } from './ActiveFiltersBar';
+
+// Design System V9 — Glossaire & Explain (C.1)
+export { default as Explain } from './Explain';
+export { GLOSSARY } from './glossary';

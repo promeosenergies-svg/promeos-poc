@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getAlertes } from '../services/api';
 import { Flame, Building2, AlertTriangle, TrendingUp } from 'lucide-react';
-import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState } from '../ui';
+import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState, Explain, GLOSSARY } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -72,7 +72,7 @@ function Dashboard({ onUpgradeClick }) {
     <PageShell
       icon={Flame}
       title={orgName ? `${orgName} — Tableau de bord` : 'PROMEOS — Tableau de bord'}
-      subtitle="Gestion énergétique multi-sites"
+      subtitle={<>Gestion énergétique <Explain term="patrimoine">multi-sites</Explain></>}
       actions={<Badge status="warning">Historique — utiliser Centre de Commande</Badge>}
     >
       {/* KPI Cards */}
@@ -107,7 +107,7 @@ function Dashboard({ onUpgradeClick }) {
       {sitesCount > 0 && (
         <Card>
           <CardBody>
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Sites PROMEOS</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4"><Explain term="worst_sites">Sites</Explain> PROMEOS</h2>
             <Table>
               <Thead>
                 <Tr>

@@ -97,7 +97,12 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Cartographie Codebase (379 endpoints, 98 modeles, 55+ pages, 52 modeles seedes, KPI coherence audit, micro-copy FR audit) | Stable -- V117+ |
 > | KPI Coherence Fixes (A_RISQUE 50% penalty, compliance_score higher=better, Infinity guard, fmtEur centralise, _fmtEurSimple supprime) | Stable -- V118 |
 > | Webhook & Digest (WebhookSubscription, DigestPreference, HMAC-SHA256, dispatch+build_digest, 7 endpoints, 10 tests) | Stable -- V118 |
-> | Suite de tests automatisés | **4 494 frontend + 2 850+ backend, 0 régression** |
+> | A3+A4 Formatters universels + Audit Filtres (safe() guard, fmtKw/fmtNum/fmtPct, ActiveFiltersBar, migration 20 fichiers) | Stable -- A3+A4 |
+> | C.1 Glossaire & Explain (GLOSSARY centralisé, Explain tooltip portal, intégration BillIntel/Monitoring) | Stable -- C.1 |
+> | C.2b DemoSpotlight onboarding (3 étapes Cockpit, localStorage persist, overlay portal) | Stable -- C.2b |
+> | C.4 KPI Messaging intelligent (getKpiMessage, messages contextuels simple/expert, severity, CTA) | Stable -- C.4 |
+> | Cockpit UX++ (KPI messaging inline, spotlight tour, expert mode toggle) | Stable -- C.1-C.4 |
+> | Suite de tests automatisés | **4 771 frontend + 2 850+ backend, 0 régression** |
 
 > **Disclaimer**
 >
@@ -130,7 +135,11 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 - **Contract Radar V99** : tableau de bord renouvellements contrats (scoring risque, timeline echeances, 4 statuts contrat, alertes expiration 90j), endpoint `/api/contracts-radar/dashboard`, 12 tests.
 - **Offer Pricing V100** : moteur pricing offres fournisseurs (comparaison grilles tarifaires, simulation gain/perte, reconciliation factures/offres), endpoint `/api/offer-pricing/*`, 8 tests.
 - **Segmentation V101** : Next Best Step moteur d'action deterministe (cascade priorite : confidence < 50 → questions, contrats expirants → renouvellement, reconciliation fail → debloquer), creation actions depuis recommandations (idempotent, SHA-256), 3 endpoints (`/api/segmentation/next-step`, `/actions/from-recommendation`, `/actions/from-next-step`), SegmentationWidget V101 (Next Step card + top 2 recs + CTA modal/route), onboarding pilote (PatrimoineWizard → recomputeSegmentation, ContractRadarPage nudge banner). 17 tests V101 + 8 bug fixes V100.
-- **4 492 frontend + 2 840+ backend = 7 332+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **A3+A4 Formatters + Filtres** : `_safe()` guard anti-null/NaN/Infinity sur format.js, 6 nouveaux exports (fmtKw, fmtNum, fmtPct, fmtDateLong, fmtDateRange), migration 20 fichiers, `ActiveFiltersBar.jsx` composant reutilisable (chips, compteur, reset), integre sur 3 pages. 108 tests.
+- **C.1 Glossaire & Explain** : `GLOSSARY` centralise (30+ termes energie/facturation : TURPE, ATRD, accise, CSPE, CTA, shadow billing...), composant `<Explain term="turpe"/>` tooltip portal avec position auto, integre BillIntel + MonitoringPage. Tests source-guard.
+- **C.2b DemoSpotlight** : onboarding overlay 3 etapes sur Cockpit (KPIs executifs, Briefing du jour, Watchlist), `data-tour` attributes, localStorage persist, portal overlay. Tests source-guard.
+- **C.4 KPI Messaging intelligent** : `getKpiMessage(kpiId, value, ctx)` → messages contextuels simple/expert + severity + CTA recommandee, handlers pour conformite/risque/maturite/couverture, integration ExecutiveKpiRow avec `rawValue` + `messageCtx`. Tests source-guard.
+- **4 771 frontend + 2 850+ backend = 7 621+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
