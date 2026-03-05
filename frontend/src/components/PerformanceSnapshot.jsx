@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle, Zap, Clock, Thermometer, TrendingUp, PlayCircle } from 'lucide-react';
 import { Card, CardBody } from '../ui';
 import { getMonitoringKpis } from '../services/api';
+import { fmtNum } from '../utils/format';
 
 // Legacy severity color map — prefer SEVERITY_TINT from ui/colorTokens for new code
 export const SEVERITY_COLOR = {
@@ -19,8 +20,8 @@ export const SEVERITY_COLOR = {
 };
 
 export function fmtN(v, d = 0) {
-  if (v == null || isNaN(v)) return '-';
-  return Number(v).toLocaleString('fr-FR', { maximumFractionDigits: d });
+  const r = fmtNum(v, d);
+  return r === '—' ? '-' : r;
 }
 
 export const PERF_KEYS = ['pmax_kw', 'risk', 'quality', 'off_hours', 'climate'];
@@ -229,9 +230,9 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
         iconColor={climate?.r_squared >= 0.6 ? 'text-blue-500' : 'text-slate-400'}
         title="Climat"
         value={
-          climate?.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'
+          climate?.slope_kw_per_c != null ? `${fmtNum(climate.slope_kw_per_c, 1)} (kWh/j)/°C` : '-'
         }
-        sub={climate?.r_squared != null ? `R²: ${climate.r_squared.toFixed(2)}` : null}
+        sub={climate?.r_squared != null ? `R²: ${fmtNum(climate.r_squared, 2)}` : null}
         onClick={goToMonitoring}
       />
     </div>

@@ -124,11 +124,16 @@ export default function AdminAuditLogPage() {
   const totalPages = Math.ceil(total / limit);
 
   const filtered = searchText
-    ? entries.filter((e) =>
-        `${e.action} ${e.user_name || ''} ${e.resource_type || ''} ${e.resource_id || ''}`
-          .toLowerCase()
-          .includes(searchText.toLowerCase())
-      )
+    ? entries.filter((e) => {
+        const detailStr = e.detail
+          ? typeof e.detail === 'string'
+            ? e.detail
+            : JSON.stringify(e.detail)
+          : '';
+        const haystack =
+          `${e.action} ${e.user_name || ''} ${e.user_email || ''} ${e.resource_type || ''} ${e.resource_id || ''} ${detailStr}`.toLowerCase();
+        return haystack.includes(searchText.toLowerCase());
+      })
     : entries;
 
   return (

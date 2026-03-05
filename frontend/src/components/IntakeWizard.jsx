@@ -23,6 +23,7 @@ import {
   completeIntake,
   intakeDemoAutofill,
 } from '../services/api';
+import { fmtNum } from '../utils/format';
 
 const SEVERITY_COLORS = {
   critical: 'bg-red-100 text-red-700',
@@ -35,7 +36,7 @@ const SEVERITY_COLORS = {
 function ScoreBadge({ score, size = 'md' }) {
   const color = score >= 70 ? 'text-green-600' : score >= 40 ? 'text-amber-600' : 'text-red-600';
   const sz = size === 'lg' ? 'text-3xl' : 'text-lg';
-  return <span className={`font-bold ${color} ${sz}`}>{score?.toFixed(0) ?? '—'}%</span>;
+  return <span className={`font-bold ${color} ${sz}`}>{fmtNum(score, 0) === '—' ? '—' : `${fmtNum(score, 0)}%`}</span>;
 }
 
 function DeltaBadge({ delta }) {
@@ -44,7 +45,7 @@ function DeltaBadge({ delta }) {
   return (
     <span className={`text-sm font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}>
       {positive ? '+' : ''}
-      {delta.toFixed(1)}%
+      {fmtNum(delta, 1)}%
     </span>
   );
 }

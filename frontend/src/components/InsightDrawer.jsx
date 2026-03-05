@@ -10,6 +10,7 @@ import { Badge } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { getInsightDetail } from '../services/api';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { fmtEurFull, fmtNum } from '../utils/format';
 
 const TYPE_LABELS = {
   shadow_gap: 'Écart shadow billing',
@@ -43,8 +44,7 @@ const SEVERITY_BADGE = {
 };
 
 function fmt(v) {
-  if (v == null) return '—';
-  return Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+  return fmtNum(v, 2);
 }
 
 const CAUSE_LABELS = {
@@ -53,7 +53,7 @@ const CAUSE_LABELS = {
       ? `L'écart entre le montant facturé (${fmt(m.actual_ttc)} €) et le shadow billing (${fmt(m.expected_ttc)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`
       : `L'écart entre le montant facturé (${fmt(m.actual_total_eur)} €) et le shadow billing (${fmt(m.shadow_total_eur)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`,
   unit_price_high: (m) =>
-    `Le prix unitaire (${m.unit_price?.toFixed(4) || '?'} €/kWh) dépasse le seuil de ${m.threshold || 0.3} €/kWh pour ce type d'énergie.`,
+    `Le prix unitaire (${fmtNum(m.unit_price, 4) === '—' ? '?' : fmtNum(m.unit_price, 4)} €/kWh) dépasse le seuil de ${m.threshold || 0.3} €/kWh pour ce type d'énergie.`,
   duplicate_invoice: () => `Cette facture est un doublon (même site, même période, même montant).`,
   missing_period: () =>
     `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
@@ -66,9 +66,9 @@ const CAUSE_LABELS = {
   lines_sum_mismatch: (m) =>
     `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
   consumption_spike: (m) =>
-    `La consommation (${m.kwh?.toLocaleString('fr-FR') || '?'} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
+    `La consommation (${fmtNum(m.kwh, 0) === '—' ? '?' : fmtNum(m.kwh, 0)} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
   price_drift: (m) =>
-    `Le prix unitaire a dérivé de ${m.drift_pct?.toFixed(1) || '?'}% par rapport à la période précédente.`,
+    `Le prix unitaire a dérivé de ${fmtNum(m.drift_pct, 1) === '—' ? '?' : fmtNum(m.drift_pct, 1)}% par rapport à la période précédente.`,
   reseau_mismatch: (m) =>
     `L'écart réseau/TURPE (${fmt(m.delta_reseau)} €) dépasse le seuil de 10%.`,
   taxes_mismatch: (m) => `L'écart taxes/accise (${fmt(m.delta_taxes)} €) dépasse le seuil de 5%.`,
@@ -174,7 +174,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                 </Badge>
                 {detail.estimated_loss_eur > 0 && (
                   <span className="text-sm font-bold text-red-600">
-                    {detail.estimated_loss_eur.toLocaleString('fr-FR')} €
+                    {fmtNum(detail.estimated_loss_eur, 0)} €
                   </span>
                 )}
               </div>
@@ -283,7 +283,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                       {m.delta_pct != null && (
                         <span className="ml-1 text-xs font-normal">
                           ({m.delta_pct > 0 ? '+' : ''}
-                          {m.delta_pct.toFixed(1)}%)
+                          {fmtNum(m.delta_pct, 1)}%)
                         </span>
                       )}
                     </td>
@@ -393,7 +393,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
               {m.method && <p>Méthode : {m.method}</p>}
               {m.energy_type && <p>Énergie : {m.energy_type}</p>}
               {m.price_ref != null && <p>Prix ref : {m.price_ref} €/kWh</p>}
-              {m.kwh != null && <p>kWh : {m.kwh.toLocaleString('fr-FR')}</p>}
+              {m.kwh != null && <p>kWh : {fmtNum(m.kwh, 0)}</p>}
               {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
               {m.price_source && <p>Source prix : {m.price_source}</p>}
               {m.catalog_trace?.length > 0 && (

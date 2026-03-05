@@ -39,6 +39,7 @@ import {
   Tabs,
   TrustBadge,
   PageShell,
+  ActiveFiltersBar,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -1114,6 +1115,19 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
           </div>
         </div>
       </div>
+
+      {/* ActiveFiltersBar */}
+      <ActiveFiltersBar
+        filters={[
+          ...(filterStatut ? [{ key: 'statut', label: 'Statut', value: STATUT_LABELS[filterStatut] || filterStatut, onRemove: () => { setFilterStatut(''); setPage(1); } }] : []),
+          ...(filterType ? [{ key: 'type', label: 'Type', value: ACTION_TYPE_LABELS[filterType] || filterType, onRemove: () => { setFilterType(''); setPage(1); } }] : []),
+          ...(searchQuery.trim() ? [{ key: 'search', label: 'Recherche', value: searchQuery, onRemove: () => { setSearchQuery(''); setPage(1); } }] : []),
+          ...(quickView ? [{ key: 'quickView', label: 'Vue rapide', value: QUICK_VIEWS.find(q => q.id === quickView)?.label || quickView, onRemove: () => { setQuickView(''); setPage(1); } }] : []),
+        ]}
+        total={actions.length}
+        filtered={filtered.length}
+        onReset={resetAllFilters}
+      />
 
       {/* Filtered impact summary */}
       {(filterStatut || filterType || quickView || searchQuery.trim()) && total > 0 && (

@@ -63,19 +63,19 @@ describe('Cockpit null-safety (V56)', () => {
 
 // ── 3. Site360 null-safety ─────────────────────────────────
 
-describe('Site360 toLocaleString null-safety (V56)', () => {
+describe('Site360 null-safety — centralized formatters (V56+A3)', () => {
   const src = readPage('Site360.jsx');
 
-  it('guards risque_eur.toLocaleString with || 0', () => {
-    expect(src).toContain("(site.risque_eur || 0).toLocaleString('fr-FR')");
+  it('uses fmtEurFull for risque_eur (centralized guard)', () => {
+    expect(src).toContain('fmtEurFull(site.risque_eur)');
   });
 
-  it('guards surface_m2.toLocaleString with || 0', () => {
-    expect(src).toContain("(site.surface_m2 || 0).toLocaleString('fr-FR')");
+  it('uses fmtArea for surface_m2 (centralized guard)', () => {
+    expect(src).toContain('fmtArea(site.surface_m2)');
   });
 
-  it('guards estimated_risk_eur.toLocaleString with || 0', () => {
-    expect(src).toContain("(a.business_impact?.estimated_risk_eur || 0).toLocaleString('fr-FR')");
+  it('uses fmtEurFull for estimated_risk_eur (centralized guard)', () => {
+    expect(src).toContain('fmtEurFull(a.business_impact?.estimated_risk_eur)');
   });
 
   it('guards conso_kwh_an division with || 0', () => {

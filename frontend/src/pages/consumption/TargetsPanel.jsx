@@ -8,6 +8,7 @@ import { Bar } from 'recharts';
 import { Card, CardBody, Button } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
+import { fmtNum } from '../../utils/format';
 import {
   getConsumptionTargets,
   createConsumptionTarget,
@@ -308,10 +309,11 @@ export default function TargetsPanel({
               </thead>
               <tbody>
                 {targets.map((t) => {
-                  const delta =
+                  const deltaRaw =
                     t.actual_kwh != null && t.target_kwh
-                      ? (((t.actual_kwh - t.target_kwh) / t.target_kwh) * 100).toFixed(1)
+                      ? ((t.actual_kwh - t.target_kwh) / t.target_kwh) * 100
                       : null;
+                  const delta = deltaRaw != null ? fmtNum(deltaRaw, 1) : null;
                   return (
                     <tr key={t.id} className="border-t hover:bg-gray-50">
                       <td className="px-4 py-2">
@@ -324,9 +326,9 @@ export default function TargetsPanel({
                         {t.actual_kwh?.toLocaleString('fr-FR') || '—'}
                       </td>
                       <td
-                        className={`px-4 py-2 text-right font-medium ${delta && parseFloat(delta) > 0 ? 'text-red-600' : 'text-green-600'}`}
+                        className={`px-4 py-2 text-right font-medium ${deltaRaw != null && deltaRaw > 0 ? 'text-red-600' : 'text-green-600'}`}
                       >
-                        {delta ? `${delta > 0 ? '+' : ''}${delta}%` : '—'}
+                        {delta ? `${deltaRaw > 0 ? '+' : ''}${delta}%` : '—'}
                       </td>
                       <td className="px-4 py-2 text-center">
                         <button

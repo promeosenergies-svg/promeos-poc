@@ -5,8 +5,9 @@
 import { useState, useEffect } from 'react';
 import { BadgeEuro, TrendingUp, ArrowRight } from 'lucide-react';
 import { getROISummary } from '../services/api';
+import { fmtNum, fmtPct } from '../utils/format';
 
-const fmtEur = (v) => (v != null ? `${Math.round(v).toLocaleString('fr-FR')} EUR` : '— EUR');
+const fmtEur = (v) => (v != null ? `${fmtNum(Math.round(v), 0)} EUR` : '— EUR');
 
 export default function ROISummaryBar() {
   const [roi, setRoi] = useState(null);
@@ -20,7 +21,7 @@ export default function ROISummaryBar() {
   if (!roi || (roi.total_estimated_eur === 0 && roi.total_realized_eur === 0)) return null;
 
   const noRealized = roi.total_realized_eur === 0;
-  const ratio = noRealized ? '—' : roi.roi_ratio != null ? `${(roi.roi_ratio * 100).toFixed(0)}%` : '—';
+  const ratio = noRealized ? '—' : roi.roi_ratio != null ? fmtPct(roi.roi_ratio, true, 0) : '—';
   const isPositive = roi.roi_ratio != null && roi.roi_ratio >= 1 && !noRealized;
 
   return (

@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Clock, ShieldCheck, AlertTriangle, TrendingUp, Thermometer, Activity } from 'lucide-react';
 import { Card, CardBody, Badge } from '../ui';
 import { getBacsOpsPanel } from '../services/api';
+import { fmtNum } from '../utils/format';
 
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i}h`);
@@ -41,7 +42,7 @@ function MonthlyChart({ data }) {
           <div
             className="w-full bg-blue-400 rounded-t transition-all duration-300 hover:bg-blue-500 min-h-[2px]"
             style={{ height: `${(d.kwh / maxKwh) * 100}%` }}
-            title={`${d.month}: ${d.kwh.toLocaleString('fr-FR')} kWh`}
+            title={`${d.month}: ${fmtNum(d.kwh, 0)} kWh`}
           />
           <span className="text-[9px] text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">
             {d.month}

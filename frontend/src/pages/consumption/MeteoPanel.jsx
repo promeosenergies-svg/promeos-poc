@@ -33,6 +33,7 @@ import {
 import { Cloud, Thermometer } from 'lucide-react';
 import useEmsTimeseries from './useEmsTimeseries';
 import { getEmsWeatherHourly } from '../../services/api';
+import { fmtNum } from '../../utils/format';
 
 // ── Synthetic temperature (deterministic, no external API) ────────────────────
 
@@ -260,7 +261,7 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             style={correlationStyle}
           >
             {correlationLabel} · r={correlation >= 0 ? '+' : ''}
-            {correlation.toFixed(2)}
+            {fmtNum(correlation, 2)}
             <span className="text-[10px] font-normal opacity-75">({correlationDir})</span>
           </span>
         </div>
@@ -347,10 +348,10 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
         <div className="text-[11px] text-slate-500 leading-relaxed">
           <span className="font-medium text-slate-600">
             {absCorr > 0.5
-              ? `Dépendance climatique forte (r=${correlation.toFixed(2)}) — la consommation est très sensible à la température.`
+              ? `Dépendance climatique forte (r=${fmtNum(correlation, 2)}) — la consommation est très sensible à la température.`
               : absCorr > 0.2
-                ? `Dépendance climatique modérée (r=${correlation.toFixed(2)}) — influence partielle de la température.`
-                : `Faible corrélation (r=${correlation.toFixed(2)}) — la consommation semble peu liée à la température.`}
+                ? `Dépendance climatique modérée (r=${fmtNum(correlation, 2)}) — influence partielle de la température.`
+                : `Faible corrélation (r=${fmtNum(correlation, 2)}) — la consommation semble peu liée à la température.`}
           </span>
           <br />
           Source : {utcWeather ? 'météo réelle UTC' : 'modèle saisonnier synthétique'}

@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database } from 'lucide-react';
-import { Button, PageShell, Drawer } from '../ui';
+import { Button, PageShell, Drawer, ActiveFiltersBar } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
@@ -863,6 +863,32 @@ export default function ConformitePage() {
           track('conformite_tab', { tab });
         }}
       />
+
+      {/* Active Filters Bar (obligations tab) */}
+      {activeTab === 'obligations' && (
+        <ActiveFiltersBar
+          filters={[
+            statusFilter && {
+              key: 'status',
+              label: 'Statut',
+              value: STATUT_LABELS[statusFilter] || statusFilter,
+              onRemove: () => setStatusFilter(null),
+            },
+            searchQuery.trim() && {
+              key: 'search',
+              label: 'Recherche',
+              value: searchQuery,
+              onRemove: () => setSearchQuery(''),
+            },
+          ].filter(Boolean)}
+          total={obligations.length}
+          filtered={sortedObligations.length}
+          onReset={() => {
+            setStatusFilter(null);
+            setSearchQuery('');
+          }}
+        />
+      )}
 
       {/* ======================== Tab: Obligations ======================== */}
       {activeTab === 'obligations' && (

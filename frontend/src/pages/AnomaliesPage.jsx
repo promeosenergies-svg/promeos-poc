@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle, MoreHorizontal, Link2, Ban } from 'lucide-react';
-import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer } from '../ui';
+import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer, ActiveFiltersBar } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped, getAnomalyStatuses, dismissAnomaly } from '../services/api';
@@ -14,6 +14,7 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
 import { buildAnomalyEvidence } from './anomalyEvidence';
+import { fmtEur } from '../utils/format';
 
 const ActionsPageInline = lazy(() => import('./ActionsPage'));
 
@@ -40,12 +41,7 @@ const FW_COLOR = {
   BACS: 'bg-teal-50 text-teal-700',
 };
 
-function fmtEur(n) {
-  if (!n || n <= 0) return '—';
-  if (n >= 1_000_000) return `~${(n / 1_000_000).toFixed(1)} M€`;
-  if (n >= 1_000) return `~${Math.round(n / 1_000)} k€`;
-  return `~${Math.round(n)} €`;
-}
+/* fmtEur imported from ../utils/format */
 
 /* ── Page ── */
 
@@ -387,6 +383,19 @@ export default function AnomaliesPage() {
             <InfoTip content="Les anomalies sont triées par impact financier (risque EUR) décroissant, puis par score de priorité. Le score combine la sévérité, le risque réglementaire et l'impact métier." position="bottom" />
           </span>
         </div>
+
+        {/* ── Active filters bar ── */}
+        <ActiveFiltersBar
+          filters={[
+            filters.fw && { key: 'fw', label: 'Framework', value: FW_LABEL[filters.fw] ?? filters.fw, onRemove: () => setFilters({ fw: '' }) },
+            filters.sev && { key: 'sev', label: 'Sévérité', value: SEV_LABEL[filters.sev] ?? filters.sev, onRemove: () => setFilters({ sev: '' }) },
+            filters.site && { key: 'site', label: 'Site', value: scopedSites.find((s) => String(s.id) === filters.site)?.nom ?? filters.site, onRemove: () => setFilters({ site: '' }) },
+            filters.q && { key: 'q', label: 'Recherche', value: filters.q, onRemove: () => setFilters({ q: '' }) },
+          ].filter(Boolean)}
+          total={anomalies.length}
+          filtered={filtered.length}
+          onReset={resetFilters}
+        />
 
         {/* ── Erreur ── */}
         {error && (

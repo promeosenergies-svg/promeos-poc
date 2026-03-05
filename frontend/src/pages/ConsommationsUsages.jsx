@@ -24,6 +24,7 @@ import { PageShell, Tooltip } from '../ui';
 import { toConsoExplorer } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
+import { fmtPct, fmtNum } from '../utils/format';
 import {
   getMeters,
   createMeter,
@@ -501,7 +502,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
           </div>
           <div>
             <div className="text-gray-500">Confiance</div>
-            <div className="font-bold">{(matchScore * 100).toFixed(0)}%</div>
+            <div className="font-bold">{fmtPct(matchScore, true, 0)}</div>
           </div>
           <div>
             <div className="text-gray-500">kWh/m2/an</div>
@@ -618,7 +619,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             },
             {
               label: 'Talon nuit',
-              value: `${(baseNuit * 100).toFixed(1)}%`,
+              value: fmtPct(baseNuit, true, 1),
               interp: interpBase,
               formula: KPI_FORMULAS.base_nuit,
               action:
@@ -628,7 +629,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             },
             {
               label: 'Ratio weekend',
-              value: `${(weekendRatio * 100).toFixed(1)}%`,
+              value: fmtPct(weekendRatio, true, 1),
               interp: interpWE,
               formula: KPI_FORMULAS.weekend,
               action:
@@ -642,7 +643,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             },
             {
               label: 'Facteur de charge',
-              value: `${(loadFactor * 100).toFixed(1)}%`,
+              value: fmtPct(loadFactor, true, 1),
               interp: interpLF,
               formula: KPI_FORMULAS.load_factor,
               action:
@@ -791,7 +792,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                       </span>
                     )}
                     <span className="px-2 py-0.5 bg-blue-200 text-blue-800 rounded text-xs font-bold">
-                      ICE: {r.ice_score?.toFixed(3)}
+                      ICE: {fmtNum(r.ice_score, 3)}
                     </span>
                   </div>
                 </div>
@@ -1180,7 +1181,7 @@ export function KBAdminPanel() {
                 )}
                 {r.ice_score != null && (
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">
-                    ICE: {r.ice_score.toFixed(3)}
+                    ICE: {fmtNum(r.ice_score, 3)}
                   </span>
                 )}
               </div>

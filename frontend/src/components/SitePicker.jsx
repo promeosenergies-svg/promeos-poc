@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { Search, X, Star, FolderOpen, ChevronDown, Save, Check } from 'lucide-react';
 import { getEmsCollections, createEmsCollection } from '../services/api';
 import useFloatingPortalPosition from '../hooks/useFloatingPortalPosition';
+import { fmtKwh } from '../utils/format';
 
 const MAX_RECENT = 5;
 const LS_KEY = 'promeos_ems_recent_sites';
@@ -267,7 +268,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
                       </div>
                       {s.conso_kwh_an > 0 && (
                         <span className="text-xs text-gray-400 shrink-0">
-                          {(s.conso_kwh_an / 1000).toFixed(0)}k kWh
+                          {fmtKwh(s.conso_kwh_an)}
                         </span>
                       )}
                     </button>

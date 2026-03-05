@@ -11,6 +11,7 @@
  */
 
 import { CO2E_FACTOR_KG_PER_KWH } from './constants';
+import { fmtNum } from '../../utils/format';
 
 const EUR_FACTOR = 0.18; // €/kWh estimate
 
@@ -25,7 +26,7 @@ function DeltaBadge({ pct }) {
   return (
     <span className={`ml-1 text-[10px] font-medium ${pos ? 'text-red-500' : 'text-green-600'}`}>
       {pos ? '+' : ''}
-      {pct.toFixed(1)}%
+      {fmtNum(pct, 1)}%
     </span>
   );
 }

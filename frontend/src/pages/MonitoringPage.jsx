@@ -213,7 +213,7 @@ export function computeConfidence({ r2, nPoints, coveragePct, reason } = {}) {
   score = Math.max(0, Math.min(100, Math.round(score)));
   const level = score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
   const reasons = [];
-  if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${r2.toFixed(2)})`);
+  if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${fmtNum(r2, 2)})`);
   if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de données`);
   if (coveragePct != null && coveragePct < 60) reasons.push(`Couverture ${coveragePct}%`);
   return { level, pct: score, reason: reasons.join(' · ') || 'Données suffisantes' };
@@ -983,7 +983,7 @@ function ConfidenceDrawer({ open, onClose, qualityConf, qualityScore, climate })
     },
     {
       label: 'R² signature',
-      value: r2 != null ? r2.toFixed(2) : '-',
+      value: r2 != null ? fmtNum(r2, 2) : '-',
       level: r2 >= 0.6 ? 'ok' : r2 >= 0.3 ? 'warn' : 'crit',
     },
     {
@@ -1168,7 +1168,7 @@ function OffHoursDrawer({
             </DrawerSection>
             <DrawerSection title="Extrapolation">
               <DrawerRow label="Période mesurée">90 jours</DrawerRow>
-              <DrawerRow label="Facteur annuel">x {(365 / 90).toFixed(2)}</DrawerRow>
+              <DrawerRow label="Facteur annuel">x {fmtNum(365 / 90, 2)}</DrawerRow>
               <DrawerRow label="kWh annuel estimé">
                 {offHoursKwh > 0 ? fmtNum(offHoursKwh * (365 / 90), 0) : '-'}
               </DrawerRow>
@@ -1301,12 +1301,12 @@ function ClimateScatter({ climate }) {
       </ResponsiveContainer>
       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
         {climate.slope_kw_per_c != null && (
-          <span>Pente: {climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C</span>
+          <span>Pente: {fmtNum(climate.slope_kw_per_c, 1)} (kWh/j)/°C</span>
         )}
         {climate.balance_point_c != null && (
-          <span>Tb: {climate.balance_point_c.toFixed(1)} °C</span>
+          <span>Tb: {fmtNum(climate.balance_point_c, 1)} °C</span>
         )}
-        {climate.r_squared != null && <span>R²: {climate.r_squared.toFixed(2)}</span>}
+        {climate.r_squared != null && <span>R²: {fmtNum(climate.r_squared, 2)}</span>}
         {climate.label && <span>{CLIMATE_LABEL_FR[climate.label] || climate.label}</span>}
         {removed > 0 && (
           <span className="text-orange-400">
@@ -2319,12 +2319,12 @@ export default function MonitoringPage() {
                   title="Sensibilité Climatique"
                   value={
                     climate.slope_kw_per_c != null
-                      ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C`
+                      ? `${fmtNum(climate.slope_kw_per_c, 1)} (kWh/j)/°C`
                       : '-'
                   }
                   sub={
                     climate.slope_kw_per_c != null
-                      ? `R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
+                      ? `R²: ${climate.r_squared != null ? fmtNum(climate.r_squared, 2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
                       : CLIMATE_REASONS[climate.reason] || 'Analyse climatique non disponible'
                   }
                   tooltip={KPI_TOOLTIPS.climate}

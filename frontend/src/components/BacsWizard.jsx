@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '../ui';
 import { createBacsAsset, addCvcSystem, recomputeBacs, getBacsScoreExplain } from '../services/api';
+import { fmtNum, fmtPct } from '../utils/format';
 
 const PHASES = [
   { id: 'eligibilite', label: 'Éligibilité', icon: Building2 },
@@ -219,7 +220,7 @@ function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
       <div className="p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700">Puissance utile (Putile)</span>
-          <span className="text-lg font-bold text-gray-900">{totalKw.toFixed(0)} kW</span>
+          <span className="text-lg font-bold text-gray-900">{fmtNum(totalKw, 0)} kW</span>
         </div>
         <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
           <div
@@ -433,13 +434,13 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
             <p
               className={`text-sm font-bold ${(a.compliance_score || 0) >= 50 ? 'text-green-600' : 'text-red-600'}`}
             >
-              {a.compliance_score?.toFixed(0) ?? '—'}%
+              {fmtNum(a.compliance_score, 0) === '—' ? '—' : `${fmtNum(a.compliance_score, 0)}%`}
             </p>
           </div>
           <div className="p-3 bg-gray-50 rounded-lg text-center">
             <p className="text-xs text-gray-500">Confiance</p>
             <p className="text-sm font-bold text-gray-800">
-              {((a.confidence_score || 0) * 100).toFixed(0)}%
+              {fmtPct(a.confidence_score || 0, true, 0)}
             </p>
           </div>
         </div>

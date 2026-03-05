@@ -23,6 +23,7 @@ import {
   Pagination,
   Tabs,
   Drawer,
+  ActiveFiltersBar,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -320,6 +321,38 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
+
+      {/* Active Filters Bar */}
+      <ActiveFiltersBar
+        filters={[
+          searchQuery.trim() && {
+            key: 'search',
+            label: 'Recherche',
+            value: searchQuery,
+            onRemove: () => { setSearchQuery(''); setPage(1); },
+          },
+          triageTab !== 'all' && {
+            key: 'triage',
+            label: 'Statut',
+            value: TRIAGE_TABS.find((t) => t.id === triageTab)?.label || triageTab,
+            onRemove: () => { setTriageTab('all'); setPage(1); },
+          },
+          filterSource && {
+            key: 'source',
+            label: 'Source',
+            value: SOURCE_LABELS[filterSource] || filterSource,
+            onRemove: () => { setFilterSource(''); setPage(1); },
+          },
+        ].filter(Boolean)}
+        total={events.length}
+        filtered={totalFiltered}
+        onReset={() => {
+          setSearchQuery('');
+          setTriageTab('all');
+          setFilterSource('');
+          setPage(1);
+        }}
+      />
 
       {/* Events Table */}
       {totalFiltered === 0 ? (

@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Zap, Activity, AlertTriangle, BarChart3 } from 'lucide-react';
 import useEmsTimeseries from './useEmsTimeseries';
+import { fmtPct } from '../../utils/format';
 
 // ── Pure statistical helpers (exported for tests) ───────────────────────────
 
@@ -282,7 +283,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
         <div className="flex justify-between mt-1">
           <span className="text-[10px] text-gray-400">Talon</span>
           <span className="text-[10px] font-medium text-gray-600">
-            Facteur {(kpis.load_factor * 100).toFixed(1)} %
+            Facteur {fmtPct(kpis.load_factor, true, 1)}
           </span>
           <span className="text-[10px] text-gray-400">Pic</span>
         </div>

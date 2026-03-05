@@ -49,6 +49,7 @@ import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
+import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 
 const _sb = (k) => {
   const { variant, label } = getStatusBadgeProps(k);
@@ -117,13 +118,13 @@ function TabResume({ site, onSegmentationClick }) {
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-gray-500">Conso annuelle</p>
                 <p className="text-lg font-bold text-blue-700">
-                  {((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh
+                  {fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
                 </p>
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
                 <p className="text-lg font-bold text-red-700">
-                  {(site.risque_eur || 0).toLocaleString('fr-FR')} €
+                  {fmtEurFull(site.risque_eur)}
                 </p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
@@ -200,7 +201,7 @@ function TabResume({ site, onSegmentationClick }) {
                     </Td>
                     <Td className="text-sm">{a.title_fr}</Td>
                     <Td className="text-right text-red-600 font-medium">
-                      {(a.business_impact?.estimated_risk_eur || 0).toLocaleString('fr-FR')} €
+                      {fmtEurFull(a.business_impact?.estimated_risk_eur)}
                     </Td>
                   </Tr>
                 ))}
@@ -1135,7 +1136,7 @@ export default function Site360() {
               <MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}
             </span>
             <span className="flex items-center gap-1">
-              <Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString('fr-FR')} m2
+              <Ruler size={14} /> {fmtArea(site.surface_m2)}
             </span>
           </div>
         </div>
@@ -1159,13 +1160,13 @@ export default function Site360() {
         <MiniKpi
           icon={Zap}
           label="Conso annuelle"
-          value={`${((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh`}
+          value={fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
           color="text-blue-600"
         />
         <MiniKpi
           icon={BadgeEuro}
           label="Risque €"
-          value={`${(site.risque_eur || 0).toLocaleString('fr-FR')} €`}
+          value={fmtEurFull(site.risque_eur)}
           color="text-red-600"
         />
         <MiniKpi

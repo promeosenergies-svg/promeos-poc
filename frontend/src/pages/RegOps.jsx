@@ -11,6 +11,7 @@ import {
   getAiDataQuality,
 } from '../services/api';
 import { useToast } from '../ui/ToastProvider';
+import { fmtNum } from '../utils/format';
 import {
   REGOPS_STATUS_LABELS,
   REGOPS_SEVERITY_LABELS,
@@ -132,7 +133,7 @@ export default function RegOps() {
               <span
                 className={`text-5xl font-bold ${getComplianceScoreColor(assessment.compliance_score)}`}
               >
-                {assessment.compliance_score.toFixed(1)}
+                {fmtNum(assessment.compliance_score, 1)}
               </span>
               <span className="text-2xl text-gray-400">/100</span>
             </div>

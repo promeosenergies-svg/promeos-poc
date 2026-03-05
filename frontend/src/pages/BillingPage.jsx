@@ -258,12 +258,25 @@ export default function BillingPage() {
     if (timelineSearch.trim()) {
       const q = timelineSearch.trim().toLowerCase();
       result = result.filter(
-        (p) => p.month_key?.toLowerCase().includes(q) || p.pdl_prm?.toLowerCase().includes(q)
+        (p) =>
+          p.month_key?.toLowerCase().includes(q) ||
+          p.pdl_prm?.toLowerCase().includes(q) ||
+          p.site_name?.toLowerCase().includes(q) ||
+          p.invoice_number?.toLowerCase().includes(q) ||
+          p.missing_reason?.toLowerCase().includes(q)
       );
     }
 
     // Sort
-    if (sortMode === 'priority_missing') {
+    if (sortMode === 'date_desc') {
+      result.sort((a, b) => (b.month_key || '').localeCompare(a.month_key || ''));
+    } else if (sortMode === 'date_asc') {
+      result.sort((a, b) => (a.month_key || '').localeCompare(b.month_key || ''));
+    } else if (sortMode === 'amount_desc') {
+      result.sort((a, b) => (b.total_amount ?? 0) - (a.total_amount ?? 0));
+    } else if (sortMode === 'amount_asc') {
+      result.sort((a, b) => (a.total_amount ?? 0) - (b.total_amount ?? 0));
+    } else if (sortMode === 'priority_missing') {
       const order = { missing: 0, partial: 1, covered: 2 };
       result.sort((a, b) => {
         const diff = (order[a.coverage_status] ?? 3) - (order[b.coverage_status] ?? 3);
@@ -543,7 +556,7 @@ export default function BillingPage() {
           <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Mois ou PDL..."
+            placeholder="Mois, PDL, site..."
             value={timelineSearch}
             onChange={(e) => setTimelineSearch(e.target.value)}
             className="text-xs border border-gray-200 rounded-lg pl-6 pr-2 py-1.5 bg-white text-gray-700 w-36"
@@ -555,6 +568,9 @@ export default function BillingPage() {
           onChange={(e) => setSortMode(e.target.value)}
         >
           <option value="date_desc">Date desc</option>
+          <option value="date_asc">Date asc</option>
+          <option value="amount_desc">Montant desc</option>
+          <option value="amount_asc">Montant asc</option>
           <option value="priority_missing">Priorité manquants</option>
         </select>
       </div>

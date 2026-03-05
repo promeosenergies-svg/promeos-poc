@@ -13,6 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
+import { fmtNum, fmtPct } from '../../utils/format';
 
 const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -62,7 +63,7 @@ const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
               <div
                 key={`${d}-${h}`}
                 className={`w-7 h-5 rounded-sm ${intensityColor(val, grid.maxVal)}`}
-                title={`${DAY_LABELS[d]} ${h}h — ${val.toFixed(1)} kWh`}
+                title={`${DAY_LABELS[d]} ${h}h — ${fmtNum(val, 1)} kWh`}
               />
             ))}
           </>
@@ -170,7 +171,7 @@ export default function ProfileHeatmapTab({ profile, loading }) {
         />
         <KpiCard
           label="Load Factor"
-          value={`${((load_factor ?? 0) * 100).toFixed(1)}`}
+          value={fmtNum((load_factor ?? 0) * 100, 1)}
           suffix="%"
           detail="Talon / Pointe"
         />

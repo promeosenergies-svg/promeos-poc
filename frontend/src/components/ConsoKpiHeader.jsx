@@ -10,6 +10,7 @@
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-react';
 import { TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
+import { fmtNum } from '../utils/format';
 
 const CONFIDENCE_TOOLTIP = {
   high: 'Haute : > 500 relevés, données homogènes',
@@ -63,21 +64,21 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
   // then tunnel.total_kwh (not returned by current tunnel service)
   // then progression.ytd_actual_kwh (YTD targets — may be null if no targets configured)
   const totalKwh = hphc?.total_kwh ?? tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
-  const kwhLabel = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : '—';
+  const kwhLabel = totalKwh != null ? fmtNum(Math.round(totalKwh), 0, 'kWh') : '—';
 
   // --- EUR total (from hphc or progression) ---
   const totalEur = hphc?.total_cost_eur ?? null;
-  const eurLabel = totalEur != null ? `${Math.round(totalEur).toLocaleString('fr-FR')} EUR` : '—';
+  const eurLabel = totalEur != null ? fmtNum(Math.round(totalEur), 0, 'EUR') : '—';
   const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
 
   // --- EUR/MWh reel ---
   const eurMwh =
     totalEur != null && totalKwh > 0 ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100 : null;
-  const eurMwhLabel = eurMwh != null ? `${eurMwh.toLocaleString('fr-FR')} EUR/MWh` : '—';
+  const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, 'EUR/MWh') : '—';
 
   // --- CO2e ---
   const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
-  const co2Label = co2Kg != null ? `${co2Kg.toLocaleString('fr-FR')} kg` : '—';
+  const co2Label = co2Kg != null ? fmtNum(co2Kg, 0, 'kg') : '—';
 
   // --- Pic kW (P95 from tunnel envelope) ---
   const p95 = (() => {
@@ -86,7 +87,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
     if (!slots.length) return null;
     return Math.max(...slots.map((s) => s.p95 ?? s.p90 ?? 0));
   })();
-  const p95Label = p95 != null ? `${Math.round(p95).toLocaleString('fr-FR')} kW` : '—';
+  const p95Label = p95 != null ? fmtNum(Math.round(p95), 0, 'kW') : '—';
 
   // --- Base nocturne % (ratio of night hours P50 vs overall P50) ---
   const basePct = (() => {

@@ -75,6 +75,7 @@ import {
   aggregateDemoSites,
   getAllDemoSites,
 } from '../domain/purchase/index.js';
+import { fmtNum, fmtPct } from '../utils/format';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -571,7 +572,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                           {site.city} — {site.usage}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
+                          {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
                           {site.surfaceM2.toLocaleString('fr-FR')} m2
                         </div>
                       </button>
@@ -607,7 +608,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                     {site.city} — {site.usage}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
+                    {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
                     {(site.surfaceM2 || 0).toLocaleString('fr-FR')} m2
                   </div>
                 </button>
@@ -647,7 +648,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard
           label="Volume annuel"
-          value={`${((sitesData.annualKwh || 0) / 1000).toFixed(0)} MWh`}
+          value={`${fmtNum((sitesData.annualKwh || 0) / 1000, 0)} MWh`}
           sublabel={isDemo ? 'Source: demo' : 'Source: patrimoine'}
           icon={<BarChart3 size={18} />}
         />
@@ -1304,7 +1305,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
           label="Meilleur P50"
           value={
             scoredOffers.length > 0 && scoredOffers.some((s) => s.corridor?.p50 != null)
-              ? `${Math.min(...scoredOffers.filter((s) => s.corridor?.p50 != null).map((s) => s.corridor.p50)).toFixed(1)} EUR/MWh`
+              ? `${fmtNum(Math.min(...scoredOffers.filter((s) => s.corridor?.p50 != null).map((s) => s.corridor.p50)), 1)} EUR/MWh`
               : '—'
           }
           icon={<TrendingUp size={18} />}
@@ -1356,13 +1357,13 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.corridor?.p10?.toFixed(1) ?? '—'}
+                    {fmtNum(s.corridor?.p10, 1)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold">
-                    {s.corridor?.p50?.toFixed(1) ?? '—'}
+                    {fmtNum(s.corridor?.p50, 1)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.corridor?.p90?.toFixed(1) ?? '—'}
+                    {fmtNum(s.corridor?.p90, 1)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.corridor?.tcoP50 != null
@@ -1379,7 +1380,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                     {s.cvar90 != null ? Math.round(s.cvar90).toLocaleString('fr-FR') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.probExceedBudget != null ? `${(s.probExceedBudget * 100).toFixed(0)}%` : '—'}
+                    {s.probExceedBudget != null ? fmtPct(s.probExceedBudget, true, 0) : '—'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
@@ -1520,9 +1521,9 @@ function StepScoring({ scoredOffers, recommendation }) {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-gray-500">{(b.sharePct * 100).toFixed(1)}%</span>
+                    <span className="text-gray-500">{fmtPct(b.sharePct, true, 1)}</span>
                     <span className="text-gray-700 font-medium w-20 text-right">
-                      {b.eurPerMwh != null ? `${b.eurPerMwh.toFixed(2)} EUR/MWh` : 'est.'}
+                      {b.eurPerMwh != null ? `${fmtNum(b.eurPerMwh, 2)} EUR/MWh` : 'est.'}
                     </span>
                     <Badge
                       variant={
@@ -1667,7 +1668,7 @@ function StepDecision({
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-gray-900">
-                {bestScored.corridor.p50.toFixed(1)}{' '}
+                {fmtNum(bestScored.corridor.p50, 1)}{' '}
                 <span className="text-sm font-normal text-gray-500">EUR/MWh</span>
               </div>
               <div className="text-sm text-gray-500">

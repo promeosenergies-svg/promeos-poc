@@ -8,6 +8,7 @@ import { Paperclip, Lock } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Button, Input, Select } from '../ui';
 import { track } from '../services/tracker';
+import { fmtNum } from '../utils/format';
 import { createAction, getActionTemplates } from '../services/api';
 import { computeEvidenceRequirement } from '../models/evidenceRules';
 import { useScope } from '../contexts/ScopeContext';
@@ -233,7 +234,7 @@ export default function CreateActionDrawer({
               {templates.map((t) => (
                 <option key={t.code} value={t.code}>
                   [{t.category}] {t.title}
-                  {t.estimated_gain_eur ? ` (${t.estimated_gain_eur.toLocaleString('fr-FR')} EUR)` : ''}
+                  {t.estimated_gain_eur ? ` (${fmtNum(t.estimated_gain_eur, 0)} EUR)` : ''}
                 </option>
               ))}
             </select>

@@ -29,6 +29,7 @@ import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
+import { fmtNum } from '../utils/format';
 
 function ImportPage() {
   const [file, setFile] = useState(null);
@@ -493,7 +494,7 @@ function ImportPage() {
           <div className="flex items-center justify-center gap-3">
             <FileText size={24} className="text-blue-500" />
             <span className="font-medium text-gray-700">{file.name}</span>
-            <span className="text-sm text-gray-400">({(file.size / 1024).toFixed(1)} Ko)</span>
+            <span className="text-sm text-gray-400">({fmtNum(file.size / 1024, 1)} Ko)</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();

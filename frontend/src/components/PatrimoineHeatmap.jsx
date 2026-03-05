@@ -20,6 +20,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Search, Upload, ChevronDown, X, LayoutGrid } from 'lucide-react';
+import { fmtEur } from '../utils/format';
 
 /* ── Constantes ─────────────────────────────────────────────────────────── */
 
@@ -76,9 +77,7 @@ const SORT_OPTIONS = [
 
 function fmtRisk(eur) {
   if (!eur || eur <= 0) return '0 €';
-  if (eur >= 1_000_000) return `~${(eur / 1_000_000).toFixed(1)} M€`;
-  if (eur >= 1_000) return `~${(eur / 1_000).toFixed(0)} k€`;
-  return `~${Math.round(eur)} €`;
+  return fmtEur(eur);
 }
 
 /**

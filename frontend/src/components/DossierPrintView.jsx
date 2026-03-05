@@ -10,6 +10,7 @@ import { Badge, Button } from '../ui';
 import { buildDossier, STATUS_LABELS_FR, PRIORITY_LABELS_FR } from '../models/dossierModel';
 import { SOURCE_LABELS_FR } from '../models/evidenceRules';
 import { getActionsList, getActionEvidence } from '../services/api';
+import { fmtNum } from '../utils/format';
 
 const STATUS_DOT = {
   open: 'bg-gray-400',
@@ -23,8 +24,7 @@ const STATUS_DOT = {
  * @param {{ open, onClose, sourceType, sourceId, sourceLabel?, siteLabel?, orgLabel?, period? }} props
  */
 function fmtEur(v) {
-  if (v == null) return '—';
-  return Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+  return fmtNum(v, 2);
 }
 
 export default function DossierPrintView({

@@ -5,6 +5,7 @@
  */
 import { useRef } from 'react';
 import { Printer, X } from 'lucide-react';
+import { fmtNum } from '../utils/format';
 
 const STRATEGY_LABELS = {
   fixe: 'Prix Fixe',
@@ -135,7 +136,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
               </div>
               <div className="kpi">
                 <div className="kpi-val" style={{ color: '#2563eb' }}>
-                  {Math.round(portfolio.total_annual_cost_eur || 0).toLocaleString('fr-FR')}
+                  {fmtNum(Math.round(portfolio.total_annual_cost_eur || 0), 0)}
                 </div>
                 <div className="kpi-lbl">Cout annuel (EUR)</div>
               </div>
@@ -156,7 +157,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
             <p>
               Ce pack presente l'analyse comparative de{' '}
               <strong>{portfolio.sites_count} sites</strong> electricite pour un volume total de{' '}
-              <strong>{Math.round(totalVolume).toLocaleString('fr-FR')} kWh/an</strong>. Le risque moyen
+              <strong>{fmtNum(Math.round(totalVolume), 0)} kWh/an</strong>. Le risque moyen
               pondere du portefeuille est de <strong>{portfolio.weighted_risk_score}/100</strong>{' '}
               avec un potentiel d'economies de{' '}
               <strong>{Math.abs(portfolio.weighted_savings_pct)}%</strong> par rapport aux tarifs
@@ -187,12 +188,12 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                     <tr key={site.site_id} className="reco">
                       <td>{site.site_nom || `Site ${site.site_id}`}</td>
                       <td style={{ textAlign: 'right' }}>
-                        {Math.round(site.volume_kwh_an || 0).toLocaleString('fr-FR')}
+                        {fmtNum(Math.round(site.volume_kwh_an || 0), 0)}
                       </td>
                       <td>{STRATEGY_LABELS[reco.strategy] || reco.strategy}</td>
                       <td style={{ textAlign: 'right' }}>{reco.price_eur_per_kwh?.toFixed(4)}</td>
                       <td style={{ textAlign: 'right' }}>
-                        {Math.round(reco.total_annual_eur).toLocaleString('fr-FR')} EUR
+                        {fmtNum(Math.round(reco.total_annual_eur), 0)} EUR
                       </td>
                       <td
                         style={{
@@ -228,7 +229,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
               <div style={{ fontWeight: 700, fontSize: '10pt', color: '#1e3a5f', marginBottom: 4 }}>
                 {site.site_nom || `Site ${site.site_id}`}
                 <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: 8, fontSize: '9pt' }}>
-                  {Math.round(site.volume_kwh_an || 0).toLocaleString('fr-FR')} kWh/an
+                  {fmtNum(Math.round(site.volume_kwh_an || 0), 0)} kWh/an
                 </span>
               </div>
               <table>
@@ -253,7 +254,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                         </td>
                         <td style={{ textAlign: 'right' }}>{s.price_eur_per_kwh?.toFixed(4)}</td>
                         <td style={{ textAlign: 'right' }}>
-                          {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR
+                          {fmtNum(Math.round(s.total_annual_eur), 0)} EUR
                         </td>
                         <td
                           style={{
@@ -269,7 +270,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                         </td>
                         <td style={{ textAlign: 'right', fontSize: '8pt', color: '#6b7280' }}>
                           {s.p10_eur != null
-                            ? `${Math.round(s.p10_eur).toLocaleString('fr-FR')} — ${Math.round(s.p90_eur).toLocaleString('fr-FR')}`
+                            ? `${fmtNum(Math.round(s.p10_eur), 0)} — ${fmtNum(Math.round(s.p90_eur), 0)}`
                             : '—'}
                         </td>
                       </tr>
