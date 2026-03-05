@@ -174,7 +174,7 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random, buildings_map: 
         if real_bat_ids:
             # ── Helios: link to real Batiment records ────────────────
             for bat_id in real_bat_ids:
-                bat = db.query(Batiment).get(bat_id)
+                bat = db.get(Batiment, bat_id)
                 usage = _USAGE_LABELS[rng.randint(0, len(_USAGE_LABELS) - 1)]
                 building = TertiaireEfaBuilding(
                     efa_id=efa.id,

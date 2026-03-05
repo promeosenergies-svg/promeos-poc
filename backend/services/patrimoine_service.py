@@ -94,7 +94,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
 
     Returns: {sites_count, compteurs_count, parse_errors}
     """
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
@@ -224,7 +224,7 @@ def import_invoices_to_staging(db: Session, batch_id: int, metadata: dict) -> di
     metadata format: {"invoices": [{"site_name": ..., "meter_id": ..., "address": ..., ...}]}
     Returns: {sites_detected, compteurs_detected}
     """
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
@@ -364,7 +364,7 @@ def compute_quality_grade(score: float) -> dict:
 
 def get_staging_summary(db: Session, batch_id: int) -> dict:
     """Returns summary stats for a staging batch."""
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
@@ -434,7 +434,7 @@ def run_quality_gate(db: Session, batch_id: int) -> list:
 
     Returns list of findings dicts.
     """
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
@@ -840,7 +840,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
 
     for ss in staging_sites:
         if ss.target_site_id:
-            site = db.query(Site).get(ss.target_site_id)
+            site = db.get(Site, ss.target_site_id)
         else:
             target_pf = ss.target_portefeuille_id or portefeuille_id
             site = create_site_from_data(
@@ -939,7 +939,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
     Idempotent: returns cached result if batch already activated.
     Audited: creates ActivationLog entry for every attempt.
     """
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
@@ -1050,7 +1050,7 @@ def get_diff_plan(db: Session, portfolio_id: int, staging_batch_id: int) -> dict
     """
     from models import Portefeuille
 
-    pf = db.query(Portefeuille).get(portfolio_id)
+    pf = db.get(Portefeuille, portfolio_id)
     if not pf:
         raise ValueError(f"Portefeuille {portfolio_id} not found")
 
@@ -1150,7 +1150,7 @@ def compute_content_hash(content: bytes) -> str:
 
 def abandon_batch(db: Session, batch_id: int) -> dict:
     """Mark a batch as abandoned (user cancelled)."""
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 

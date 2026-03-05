@@ -40,7 +40,7 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
     # 1. Portefeuille-level rules (default payer = first entite of portefeuille)
     for pf in portefeuilles:
         # Find the entite that owns this portefeuille
-        invoice_ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+        invoice_ej = db.get(EntiteJuridique, pf.entite_juridique_id)
         if not invoice_ej:
             continue
 
@@ -76,7 +76,7 @@ def generate_payment_rules(db, org, sites: list, rng: random.Random) -> dict:
         cost_center = cc_pattern.format(idx=idx + 1)
 
         # Find the invoice entity (via portefeuille → entite_juridique)
-        pf = db.query(Portefeuille).get(site.portefeuille_id)
+        pf = db.get(Portefeuille, site.portefeuille_id)
         if not pf:
             continue
         invoice_ej_id = pf.entite_juridique_id

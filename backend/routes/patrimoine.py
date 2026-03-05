@@ -212,20 +212,20 @@ def _check_site_belongs_to_org(db: Session, site: Site, org_id: int):
     """Verify site belongs to org via portfolio→EJ chain. Fail-closed: raises 403 on any break."""
     if not site.portefeuille_id:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
-    pf = db.query(Portefeuille).get(site.portefeuille_id)
+    pf = db.get(Portefeuille,site.portefeuille_id)
     if not pf:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
-    ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+    ej = db.get(EntiteJuridique,pf.entite_juridique_id)
     if not ej or ej.organisation_id != org_id:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
 
 
 def _check_portfolio_belongs_to_org(db: Session, portfolio_id: int, org_id: int):
     """Verify portfolio belongs to org. Raises 403 if mismatch."""
-    pf = db.query(Portefeuille).get(portfolio_id)
+    pf = db.get(Portefeuille,portfolio_id)
     if not pf:
         raise HTTPException(status_code=404, detail=f"Portefeuille {portfolio_id} non trouvé")
-    ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+    ej = db.get(EntiteJuridique,pf.entite_juridique_id)
     if not ej or ej.organisation_id != org_id:
         raise HTTPException(status_code=403, detail="Portefeuille hors périmètre")
     return pf
@@ -453,7 +453,7 @@ def staging_summary(
 ):
     """Get staging batch summary stats."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     try:
         return get_staging_summary(db, batch_id)
@@ -474,7 +474,7 @@ def staging_rows(
 ):
     """List staging rows (sites + linked compteurs) with pagination & search."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
 
     query = db.query(StagingSite).filter(StagingSite.batch_id == batch_id)
@@ -587,7 +587,7 @@ def staging_issues(
 ):
     """List quality findings (issues) for a batch, optionally filtered."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
 
     query = db.query(QualityFinding).filter(QualityFinding.batch_id == batch_id)
@@ -632,7 +632,7 @@ def staging_validate(
 ):
     """Run quality gate on staging batch."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     try:
         findings = run_quality_gate(db, batch_id)
@@ -659,7 +659,7 @@ def staging_fix(
 ):
     """Apply a correction to staging data."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     result = apply_fix(db, batch_id, body.fix_type, body.params)
     db.commit()
@@ -676,7 +676,7 @@ def staging_fix_bulk(
 ):
     """Apply multiple corrections in a single transaction."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     results = []
     for fix in body.fixes:
@@ -707,7 +707,7 @@ def staging_autofix(
     - Skip orphan compteurs without meter_id and without numero_serie
     """
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
 
     fixes_applied = 0
@@ -786,7 +786,7 @@ def staging_abandon(
 ):
     """Abandon a staging batch."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     try:
         result = abandon_batch(db, batch_id)
@@ -811,7 +811,7 @@ def staging_activate(
 ):
     """Activate a validated staging batch → create real entities."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
     _check_portfolio_belongs_to_org(db, body.portefeuille_id, org_id)
     try:
@@ -831,7 +831,7 @@ def staging_result(
 ):
     """Get activation result for a batch (post-activation)."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
 
     summary = get_staging_summary(db, batch_id)
@@ -885,7 +885,7 @@ def staging_export_report(
 ):
     """Export batch report as CSV: all rows + issues + status."""
     org_id = _get_org_id(request, auth, db)
-    batch = db.query(StagingBatch).get(batch_id)
+    batch = db.get(StagingBatch, batch_id)
     _check_batch_org(batch, org_id)
 
     sites = (
@@ -2530,8 +2530,8 @@ def get_site_payment_info(
         return {"resolved": False, "rule": None, "source_level": None}
 
     # Load entity names
-    inv_ej = db.query(EntiteJuridique).get(pr.invoice_entity_id)
-    pay_ej = db.query(EntiteJuridique).get(pr.payer_entity_id) if pr.payer_entity_id else None
+    inv_ej = db.get(EntiteJuridique,pr.invoice_entity_id)
+    pay_ej = db.get(EntiteJuridique,pr.payer_entity_id) if pr.payer_entity_id else None
 
     return {
         "resolved": True,

@@ -215,7 +215,7 @@ class TestImportIsolation:
         )
         assert resp.status_code == 200
         batch_id = resp.json()["batch_id"]
-        batch = db.query(StagingBatch).get(batch_id)
+        batch = db.get(StagingBatch, batch_id)
         assert batch.org_id == data["org_a"].id
 
     def test_import_cross_org_batch_not_reused(self, client, db):

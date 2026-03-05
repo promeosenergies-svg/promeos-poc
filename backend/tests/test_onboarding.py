@@ -192,7 +192,7 @@ class TestOnboardingService:
         )
         db_session.commit()
         assert len(result["portefeuille_ids"]) == 1
-        pf = db_session.query(Portefeuille).get(result["default_portefeuille_id"])
+        pf = db_session.get(Portefeuille, result["default_portefeuille_id"])
         assert pf.nom == "Principal"
 
     def test_create_site_from_data_with_type(self, db_session):

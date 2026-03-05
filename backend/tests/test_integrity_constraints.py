@@ -596,7 +596,7 @@ class TestDeliveryPointDeleteCascadesCompteur:
 
         # Verify compteur still exists but FK is NULL
         db.expire_all()
-        cpt_after = db.query(Compteur).get(cpt_id)
+        cpt_after = db.get(Compteur,cpt_id)
         assert cpt_after is not None, "Compteur should still exist"
         assert cpt_after.delivery_point_id is None, "FK should be NULL after DP deletion"
 
@@ -614,5 +614,5 @@ class TestDeliveryPointDeleteCascadesCompteur:
         db.commit()
 
         db.expire_all()
-        cpt_after = db.query(Compteur).get(cpt.id)
+        cpt_after = db.get(Compteur,cpt.id)
         assert cpt_after.delivery_point_id == dp.id, "Soft delete should keep FK intact"
