@@ -90,7 +90,7 @@ function DataStatusBadge({ status, coveragePct }) {
   return (
     <span
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400"
-      title="Aucune donnee sur cette periode"
+      title="Aucune donnée sur cette période"
     >
       —
     </span>
@@ -612,10 +612,10 @@ export default function ConsumptionPortfolioPage() {
             >
               <BarChart3 size={40} className="text-gray-300 mb-4" />
               <p className="text-sm text-gray-500 mb-1">
-                Aucune donnee de consommation disponible sur la periode selectionnee.
+                Aucune donnée de consommation disponible sur la période sélectionnée.
               </p>
               <p className="text-xs text-gray-400 mb-4">
-                Importez vos releves ou changez la periode pour voir vos sites.
+                Importez vos relevés ou changez la période pour voir vos sites.
               </p>
               <div className="flex items-center gap-3">
                 <button
@@ -731,7 +731,7 @@ export default function ConsumptionPortfolioPage() {
                       onClick={() => handleRowClick(row)}
                       title={
                         row.data_status === 'none'
-                          ? 'Aucune donnee — cliquez pour importer'
+                          ? 'Aucune donnée — cliquez pour importer'
                           : 'Cliquez pour explorer ce site'
                       }
                     >

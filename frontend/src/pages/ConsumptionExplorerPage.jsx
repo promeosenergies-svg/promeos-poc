@@ -76,15 +76,15 @@ const REASON_CONFIG = {
   },
   no_meter: {
     icon: Wifi,
-    title: 'Aucun compteur configure',
-    text: "Ce site n'a pas encore de compteur rattache. Connectez Enedis / GRDF ou ajoutez un compteur manuellement.",
+    title: 'Aucun compteur configuré',
+    text: "Ce site n'a pas encore de compteur rattaché. Connectez Enedis / GRDF ou ajoutez un compteur manuellement.",
     ctaLabel: 'Connecter un compteur',
     ctaPath: '/connectors',
   },
   no_readings: {
     icon: Database,
-    title: 'Compteur present, aucun releve',
-    text: "Un compteur est configure mais aucune donnee de consommation n'a ete importee.",
+    title: 'Compteur présent, aucun relevé',
+    text: "Un compteur est configuré mais aucune donnée de consommation n'a été importée.",
     ctaLabel: 'Importer des données',
     ctaPath: '/consommations/import',
   },
@@ -119,7 +119,7 @@ function SmartEmptyState({
     return (
       <EmptyState
         icon={BarChart3}
-        title="Aucune donnee disponible"
+        title="Aucune donnée disponible"
         text="Vérifiez la configuration du site ou importez des données."
       />
     );

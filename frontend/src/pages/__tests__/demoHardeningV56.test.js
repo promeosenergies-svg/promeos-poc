@@ -67,15 +67,15 @@ describe('Site360 toLocaleString null-safety (V56)', () => {
   const src = readPage('Site360.jsx');
 
   it('guards risque_eur.toLocaleString with || 0', () => {
-    expect(src).toContain('(site.risque_eur || 0).toLocaleString()');
+    expect(src).toContain("(site.risque_eur || 0).toLocaleString('fr-FR')");
   });
 
   it('guards surface_m2.toLocaleString with || 0', () => {
-    expect(src).toContain('(site.surface_m2 || 0).toLocaleString()');
+    expect(src).toContain("(site.surface_m2 || 0).toLocaleString('fr-FR')");
   });
 
   it('guards estimated_risk_eur.toLocaleString with || 0', () => {
-    expect(src).toContain('(a.business_impact?.estimated_risk_eur || 0).toLocaleString()');
+    expect(src).toContain("(a.business_impact?.estimated_risk_eur || 0).toLocaleString('fr-FR')");
   });
 
   it('guards conso_kwh_an division with || 0', () => {

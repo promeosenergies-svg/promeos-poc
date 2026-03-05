@@ -131,8 +131,8 @@ describe('MODE_MAP (useEmsTimeseries)', () => {
     expect(MODE_MAP.empile).toBe('stack');
   });
 
-  it('separe → split', () => {
-    expect(MODE_MAP.separe).toBe('split');
+  it('separe → overlay (site_<id> keys, displayed separately)', () => {
+    expect(MODE_MAP.separe).toBe('overlay');
   });
 
   it('has exactly 4 modes', () => {

@@ -157,13 +157,13 @@ export default function TargetsPanel({
             <div>
               <p className="text-xs text-gray-500">Objectif annuel</p>
               <p className="text-sm font-semibold">
-                {(progression.yearly_target_kwh || 0).toLocaleString()} kWh
+                {(progression.yearly_target_kwh || 0).toLocaleString('fr-FR')} kWh
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Reel YTD</p>
               <p className="text-sm font-semibold">
-                {(progression.ytd_actual_kwh || 0).toLocaleString()} kWh
+                {(progression.ytd_actual_kwh || 0).toLocaleString('fr-FR')} kWh
               </p>
             </div>
             <div>
@@ -171,7 +171,7 @@ export default function TargetsPanel({
               <p
                 className={`text-sm font-semibold ${(progression.run_rate_kwh || 0) > (progression.yearly_target_kwh || 0) ? 'text-red-600' : 'text-green-600'}`}
               >
-                {(progression.run_rate_kwh || 0).toLocaleString()} kWh
+                {(progression.run_rate_kwh || 0).toLocaleString('fr-FR')} kWh
               </p>
             </div>
             <div>
@@ -205,7 +205,7 @@ export default function TargetsPanel({
                     />
                     <span className="text-gray-700 flex-1">{cause.label}</span>
                     <span className="font-semibold text-gray-800">
-                      {(cause.estimated_loss_kwh || 0).toLocaleString()} kWh/an
+                      {(cause.estimated_loss_kwh || 0).toLocaleString('fr-FR')} kWh/an
                     </span>
                   </div>
                 ))}
@@ -318,10 +318,10 @@ export default function TargetsPanel({
                         {t.month ? MONTH_NAMES[t.month - 1] : 'Annuel'} {t.year}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {t.target_kwh?.toLocaleString() || '—'}
+                        {t.target_kwh?.toLocaleString('fr-FR') || '—'}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {t.actual_kwh?.toLocaleString() || '—'}
+                        {t.actual_kwh?.toLocaleString('fr-FR') || '—'}
                       </td>
                       <td
                         className={`px-4 py-2 text-right font-medium ${delta && parseFloat(delta) > 0 ? 'text-red-600' : 'text-green-600'}`}

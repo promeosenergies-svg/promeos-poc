@@ -40,7 +40,7 @@ export default class PurchaseErrorBoundary extends Component {
             onClick={this.handleRetry}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition"
           >
-            <RefreshCw size={14} /> Reessayer
+            <RefreshCw size={14} /> Réessayer
           </button>
           {import.meta.env.DEV && this.state.errorInfo && (
             <details className="mt-4 text-left bg-red-100 rounded-lg p-4 text-xs text-red-800 max-h-40 overflow-auto">

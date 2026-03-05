@@ -28,7 +28,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
   return (
     <Drawer open={!!slot} onClose={onClose} title={drawerTitle}>
       <p className="text-xs text-gray-500 -mt-2 mb-3">
-        {tunnelData?.readings_count?.toLocaleString()} releves • {tunnelData?.unit || 'kW'}
+        {tunnelData?.readings_count?.toLocaleString('fr-FR')} releves • {tunnelData?.unit || 'kW'}
       </p>
 
       {/* Tabs */}

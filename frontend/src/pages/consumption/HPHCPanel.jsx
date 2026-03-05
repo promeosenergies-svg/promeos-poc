@@ -97,10 +97,10 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HP</p>
                 <p className="text-lg font-bold text-red-600">
-                  {breakdown.hp_kwh.toLocaleString()} kWh
+                  {breakdown.hp_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.hp_cost_eur.toLocaleString()} EUR
+                  {breakdown.hp_cost_eur.toLocaleString('fr-FR')} EUR
                 </p>
               </CardBody>
             </Card>
@@ -108,10 +108,10 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HC</p>
                 <p className="text-lg font-bold text-blue-600">
-                  {breakdown.hc_kwh.toLocaleString()} kWh
+                  {breakdown.hc_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.hc_cost_eur.toLocaleString()} EUR
+                  {breakdown.hc_cost_eur.toLocaleString('fr-FR')} EUR
                 </p>
               </CardBody>
             </Card>
@@ -119,10 +119,10 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Total</p>
                 <p className="text-lg font-bold text-gray-800">
-                  {breakdown.total_kwh.toLocaleString()} kWh
+                  {breakdown.total_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.total_cost_eur.toLocaleString()} EUR
+                  {breakdown.total_cost_eur.toLocaleString('fr-FR')} EUR
                 </p>
               </CardBody>
             </Card>
@@ -144,17 +144,17 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold text-green-700">
-                      Opportunite de report HP → HC
+                      Opportunité de report HP → HC
                     </p>
                     <p className="text-sm text-green-800 mt-0.5">
-                      ~{breakdown.opportunity.shiftable_kwh.toLocaleString()} kWh reportables
+                      ~{breakdown.opportunity.shiftable_kwh.toLocaleString('fr-FR')} kWh reportables
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-green-700">
                       {breakdown.opportunity.savings_eur} EUR
                     </p>
-                    <p className="text-xs text-green-600">economies potentielles</p>
+                    <p className="text-xs text-green-600">économies potentielles</p>
                   </div>
                 </div>
               </CardBody>
@@ -215,7 +215,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
       ) : (
         <EmptyState
           icon={Clock}
-          title="Aucune donnee HP/HC"
+          title="Aucune donnée HP/HC"
           text="Importez des relevés électricité pour voir la répartition HP/HC."
         />
       )}

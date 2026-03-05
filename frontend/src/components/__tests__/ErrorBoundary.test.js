@@ -23,14 +23,14 @@ describe('ErrorBoundary source guards', () => {
     expect(src).toContain('orgId,');
   });
 
-  it('has a Reessayer (retry) button that resets error without navigating', () => {
-    expect(src).toContain('Reessayer');
+  it('has a Réessayer (retry) button that resets error without navigating', () => {
+    expect(src).toContain('Réessayer');
     // Retry resets state without changing window.location
     expect(src).toMatch(/onClick.*setState.*hasError:\s*false/);
   });
 
-  it("has a Retour a l'accueil button that navigates home", () => {
-    expect(src).toContain("Retour a l'accueil");
+  it("has a Retour à l'accueil button that navigates home", () => {
+    expect(src).toContain("Retour à l'accueil");
     expect(src).toContain("window.location.assign('/')");
   });
 });

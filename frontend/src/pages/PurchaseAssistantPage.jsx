@@ -572,7 +572,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
                           {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
-                          {site.surfaceM2.toLocaleString()} m2
+                          {site.surfaceM2.toLocaleString('fr-FR')} m2
                         </div>
                       </button>
                     );
@@ -608,7 +608,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
-                    {(site.surfaceM2 || 0).toLocaleString()} m2
+                    {(site.surfaceM2 || 0).toLocaleString('fr-FR')} m2
                   </div>
                 </button>
               );
@@ -734,7 +734,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
             {sitesData.anomalies.slice(0, 3).map((a, i) => (
               <li key={i} className="text-xs text-amber-600">
                 {a.message}{' '}
-                {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString()} EUR)`}
+                {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString('fr-FR')} EUR)`}
               </li>
             ))}
           </ul>
@@ -1366,17 +1366,17 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.corridor?.tcoP50 != null
-                      ? Math.round(s.corridor.tcoP50).toLocaleString()
+                      ? Math.round(s.corridor.tcoP50).toLocaleString('fr-FR')
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.annualCostP50 != null ? Math.round(s.annualCostP50).toLocaleString() : '—'}
+                    {s.annualCostP50 != null ? Math.round(s.annualCostP50).toLocaleString('fr-FR') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.volatility != null ? Math.round(s.volatility).toLocaleString() : '—'}
+                    {s.volatility != null ? Math.round(s.volatility).toLocaleString('fr-FR') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.cvar90 != null ? Math.round(s.cvar90).toLocaleString() : '—'}
+                    {s.cvar90 != null ? Math.round(s.cvar90).toLocaleString('fr-FR') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.probExceedBudget != null ? `${(s.probExceedBudget * 100).toFixed(0)}%` : '—'}
@@ -1671,7 +1671,7 @@ function StepDecision({
                 <span className="text-sm font-normal text-gray-500">EUR/MWh</span>
               </div>
               <div className="text-sm text-gray-500">
-                {Math.round(bestScored.annualCostP50).toLocaleString()} EUR/an
+                {Math.round(bestScored.annualCostP50).toLocaleString('fr-FR')} EUR/an
               </div>
             </div>
           </div>

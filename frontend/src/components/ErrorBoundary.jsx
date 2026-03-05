@@ -44,7 +44,7 @@ export default class ErrorBoundary extends Component {
               onClick={() => this.setState({ hasError: false, error: null })}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
             >
-              Reessayer
+              Réessayer
             </button>
             <button
               onClick={() => {
@@ -53,7 +53,7 @@ export default class ErrorBoundary extends Component {
               }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
             >
-              Retour a l'accueil
+              Retour à l'accueil
             </button>
           </div>
         </div>

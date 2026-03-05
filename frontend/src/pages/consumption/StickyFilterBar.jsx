@@ -602,7 +602,7 @@ export default function StickyFilterBar({
         {confidence && (
           <div className="ml-auto">
             <TrustBadge
-              source={`${(availability.readings_count || 0).toLocaleString()} relevés`}
+              source={`${(availability.readings_count || 0).toLocaleString('fr-FR')} relevés`}
               confidence={confidence}
             />
           </div>

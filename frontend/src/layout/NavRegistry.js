@@ -28,7 +28,6 @@ import {
   Database,
   ScanLine,
   AlertTriangle,
-  BadgeEuro,
   Sparkles,
   Rocket,
 } from 'lucide-react';
@@ -516,18 +515,19 @@ export const NAV_SECTIONS = [
         keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'],
         indent: true,
       },
-      {
-        to: '/payment-rules',
-        icon: BadgeEuro,
-        label: 'Paiement & Refacturation',
-        keywords: ['paiement', 'payeur', 'facture', 'refacturation', 'cost center'],
-      },
-      {
-        to: '/portfolio-reconciliation',
-        icon: ShieldCheck,
-        label: 'Réconciliation',
-        keywords: ['reconciliation', 'triage', 'resolution', 'evidence'],
-      },
+      // V116: Paiement & Réconciliation masqués — pas prêts pour le POC
+      // {
+      //   to: '/payment-rules',
+      //   icon: BadgeEuro,
+      //   label: 'Paiement & Refacturation',
+      //   keywords: ['paiement', 'payeur', 'facture', 'refacturation', 'cost center'],
+      // },
+      // {
+      //   to: '/portfolio-reconciliation',
+      //   icon: ShieldCheck,
+      //   label: 'Réconciliation',
+      //   keywords: ['reconciliation', 'triage', 'resolution', 'evidence'],
+      // },
       {
         to: '/renouvellements',
         icon: CalendarRange,

@@ -27,10 +27,10 @@ export const TYPO = {
 // ── Labels FR — etats communs ───────────────────────────────────────
 export const LABELS_FR = {
   loading: 'Chargement...',
-  noData: 'Aucune donnee',
+  noData: 'Aucune donnée',
   error: 'Erreur de chargement',
-  retry: 'Reessayer',
-  noResults: 'Aucun resultat',
+  retry: 'Réessayer',
+  noResults: 'Aucun résultat',
   import: 'Importer',
   export: 'Exporter',
   sites: 'Sites',

@@ -71,7 +71,7 @@ function ActionCard({ action, onValidate, onReject, loading }) {
           <div className="flex gap-4 text-xs">
             {action.estimated_savings_kwh && (
               <span className="text-emerald-600 font-medium">
-                -{action.estimated_savings_kwh.toLocaleString()} kWh
+                -{action.estimated_savings_kwh.toLocaleString('fr-FR')} kWh
               </span>
             )}
             {action.estimated_savings_eur && (
@@ -103,7 +103,7 @@ function ActionCard({ action, onValidate, onReject, loading }) {
                   <div key={k} className="flex justify-between">
                     <span>{k.replace(/_/g, ' ')}</span>
                     <span className="font-medium text-gray-700">
-                      {typeof v === 'number' ? v.toLocaleString() : String(v)}
+                      {typeof v === 'number' ? v.toLocaleString('fr-FR') : String(v)}
                     </span>
                   </div>
                 ))}
@@ -246,7 +246,7 @@ export default function EnergyCopilotPage() {
         <Card>
           <CardBody className="text-center">
             <p className="text-2xl font-bold text-emerald-600">
-              {totalSavings > 0 ? `${Math.round(totalSavings).toLocaleString()} EUR` : '-'}
+              {totalSavings > 0 ? `${Math.round(totalSavings).toLocaleString('fr-FR')} EUR` : '-'}
             </p>
             <p className="text-xs text-gray-500">Economies potentielles</p>
           </CardBody>

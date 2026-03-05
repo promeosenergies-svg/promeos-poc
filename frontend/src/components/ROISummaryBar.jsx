@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { BadgeEuro, TrendingUp, ArrowRight } from 'lucide-react';
 import { getROISummary } from '../services/api';
 
-const fmtEur = (v) => (v != null ? `${Math.round(v).toLocaleString()} EUR` : '— EUR');
+const fmtEur = (v) => (v != null ? `${Math.round(v).toLocaleString('fr-FR')} EUR` : '— EUR');
 
 export default function ROISummaryBar() {
   const [roi, setRoi] = useState(null);

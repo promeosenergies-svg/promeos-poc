@@ -1,0 +1,199 @@
+{
+  "invoice_meta": {
+    "supplier": "ENGIE",
+    "invoice_id": "20040920158",
+    "pdl": "24592764036833",
+    "invoice_date": "2026-02-10",
+    "period_start": "2026-01-08",
+    "period_end": "2026-02-07",
+    "segment": "C5",
+    "puissance_kva": 9,
+    "client": "SUENO",
+    "source_file": "ENGIE_BrYyty1.pdf"
+  },
+  "totals": {
+    "supply_ht": 132.52,
+    "network_ht": 57.01,
+    "taxes_ht": 23.88,
+    "htva": 213.41,
+    "vat_breakdown": [
+      {
+        "rate": 20.0,
+        "base": 213.41,
+        "amount": 42.68
+      }
+    ],
+    "ttc": 256.09
+  },
+  "lines": [
+    {
+      "category": "SUPPLY",
+      "subtype": "ABONNEMENT",
+      "label_source": "Abonnement",
+      "tax_code": null,
+      "period_start": "2026-01-08",
+      "period_end": "2026-02-07",
+      "qty": null,
+      "unit": null,
+      "unit_price": null,
+      "amount_ht": 13.76,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "SUPPLY",
+      "subtype": "GARANTIES_ORIGINE",
+      "label_source": "Garanties d'Origine",
+      "tax_code": null,
+      "period_start": "2026-01-08",
+      "period_end": "2026-02-07",
+      "qty": 717.0,
+      "unit": "kWh",
+      "unit_price": 0.00026,
+      "amount_ht": 0.19,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "SUPPLY",
+      "subtype": "OBLIGATIONS_ENV",
+      "label_source": "Obligations",
+      "tax_code": null,
+      "period_start": "2026-01-08",
+      "period_end": "2026-02-07",
+      "qty": 717.0,
+      "unit": "kWh",
+      "unit_price": 0.00996,
+      "amount_ht": 7.14,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "SUPPLY",
+      "subtype": "CONSO",
+      "label_source": "Consommation",
+      "tax_code": null,
+      "period_start": "2026-01-08",
+      "period_end": "2026-02-07",
+      "qty": 717.0,
+      "unit": "kWh",
+      "unit_price": 0.15541,
+      "amount_ht": 111.43,
+      "vat_rate": null
+    },
+    {
+      "category": "NETWORK",
+      "subtype": "ABONNEMENT",
+      "label_source": "Abonnement",
+      "tax_code": null,
+      "period_start": "2026-01-08",
+      "period_end": "2026-01-31",
+      "qty": null,
+      "unit": null,
+      "unit_price": null,
+      "amount_ht": 8.53,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "NETWORK",
+      "subtype": "ABONNEMENT",
+      "label_source": "Abonnement",
+      "tax_code": null,
+      "period_start": "2026-02-01",
+      "period_end": "2026-02-07",
+      "qty": null,
+      "unit": null,
+      "unit_price": null,
+      "amount_ht": 2.49,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "NETWORK",
+      "subtype": "CONSO_HP",
+      "label_source": "Heures pleines saison haute",
+      "tax_code": null,
+      "period_start": null,
+      "period_end": null,
+      "qty": 498.0,
+      "unit": "kWh",
+      "unit_price": 0.0749,
+      "amount_ht": 37.3,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "NETWORK",
+      "subtype": "CONSO_HC",
+      "label_source": "Heures creuses saison haute",
+      "tax_code": null,
+      "period_start": null,
+      "period_end": null,
+      "qty": 219.0,
+      "unit": "kWh",
+      "unit_price": 0.0397,
+      "amount_ht": 8.69,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "TAX",
+      "subtype": "CTA",
+      "label_source": "Contribution tarifaire d'acheminement (8,53 € x 0,2193)",
+      "tax_code": "CTA",
+      "period_start": null,
+      "period_end": null,
+      "qty": 8.53,
+      "unit": "EUR",
+      "unit_price": 0.2193,
+      "amount_ht": 1.87,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "TAX",
+      "subtype": "CTA",
+      "label_source": "Contribution tarifaire d'acheminement (2,49 € x 0,1500)",
+      "tax_code": "CTA",
+      "period_start": null,
+      "period_end": null,
+      "qty": 2.49,
+      "unit": "EUR",
+      "unit_price": 0.15,
+      "amount_ht": 0.37,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "TAX",
+      "subtype": "TCFE",
+      "label_source": "Taxes locales - part communale (³)",
+      "tax_code": "TCFE",
+      "period_start": null,
+      "period_end": null,
+      "qty": null,
+      "unit": null,
+      "unit_price": null,
+      "amount_ht": 0.0,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "TAX",
+      "subtype": "ACCISE_ELEC",
+      "label_source": "Contrib. service public élec du 08/01/26 au 31/01/26",
+      "tax_code": "ACCISE_ELEC",
+      "period_start": "2026-01-08",
+      "period_end": "2026-01-31",
+      "qty": 554.0,
+      "unit": "kWh",
+      "unit_price": 0.02998,
+      "amount_ht": 16.61,
+      "vat_rate": 20.0
+    },
+    {
+      "category": "TAX",
+      "subtype": "ACCISE_ELEC",
+      "label_source": "Contrib. service public élec du 01/02/26 au 07/02/26",
+      "tax_code": "ACCISE_ELEC",
+      "period_start": "2026-02-01",
+      "period_end": "2026-02-07",
+      "qty": 163.0,
+      "unit": "kWh",
+      "unit_price": 0.03085,
+      "amount_ht": 5.03,
+      "vat_rate": 20.0
+    }
+  ]
+}

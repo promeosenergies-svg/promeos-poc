@@ -269,7 +269,7 @@ function KanbanBoard({
                     <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                    <span>{a.impact_eur.toLocaleString()} EUR</span>
+                    <span>{a.impact_eur.toLocaleString('fr-FR')} EUR</span>
                     <span>{a.owner || 'Non assigné'}</span>
                   </div>
                   {isOverdue(a) && (
@@ -335,7 +335,7 @@ function GroupedTableView({
             <span className="text-sm font-semibold text-gray-800">{key}</span>
             <span className="text-xs text-gray-400">{items.length} action(s)</span>
             <span className="ml-auto text-xs font-medium text-gray-500">
-              {items.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+              {items.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} EUR
             </span>
           </button>
           {!collapsed.has(key) && (
@@ -367,7 +367,7 @@ function GroupedTableView({
                         </Badge>
                       </Td>
                       <Td className="text-right font-medium">
-                        {a.impact_eur.toLocaleString()} EUR
+                        {a.impact_eur.toLocaleString('fr-FR')} EUR
                       </Td>
                       <Td
                         className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
@@ -511,7 +511,7 @@ function WeekView({ actions, onCardClick }) {
                     </div>
                     {a.impact_eur > 0 && (
                       <span className="text-sm font-bold text-red-600 shrink-0">
-                        {a.impact_eur.toLocaleString()} €
+                        {a.impact_eur.toLocaleString('fr-FR')} €
                       </span>
                     )}
                   </div>
@@ -1105,7 +1105,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
           <span className="font-semibold text-gray-900">{total} action(s)</span>
           <span className="text-gray-400">&middot;</span>
           <span className="font-bold text-red-600">
-            {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+            {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} EUR
           </span>
           <span className="text-gray-400 text-xs">d'impact</span>
           <button
@@ -1220,9 +1220,9 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                         {PRIORITY_LABEL[a.priorite] || a.priorite}
                       </Badge>
                     </Td>
-                    <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
+                    <Td className="text-right font-medium">{a.impact_eur.toLocaleString('fr-FR')} EUR</Td>
                     <Td className="text-right text-emerald-600 text-sm">
-                      {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString()} kg` : '—'}
+                      {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString('fr-FR')} kg` : '—'}
                     </Td>
                     <Td
                       className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
@@ -1292,7 +1292,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                 {actions
                   .filter((a) => selected.has(a.id))
                   .reduce((s, a) => s + a.impact_eur, 0)
-                  .toLocaleString()}{' '}
+                  .toLocaleString('fr-FR')}{' '}
                 EUR
               </span>
               <span className="ml-1 text-xs text-gray-400">d'impact total</span>
@@ -1384,7 +1384,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
     <PageShell
       icon={ListChecks}
       title="Plan d'actions"
-      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString()} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString('fr-FR')} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>

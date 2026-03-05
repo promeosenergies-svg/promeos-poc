@@ -126,7 +126,7 @@ export default function ExportNoteDecision({ data, onClose }) {
             </div>
             <div className="meta-item">
               <div className="meta-label">Volume</div>
-              <div>{Math.round(data.volume_kwh_an || 0).toLocaleString()} kWh/an</div>
+              <div>{Math.round(data.volume_kwh_an || 0).toLocaleString('fr-FR')} kWh/an</div>
             </div>
             <div className="meta-item">
               <div className="meta-label">Horizon</div>
@@ -151,7 +151,7 @@ export default function ExportNoteDecision({ data, onClose }) {
                   </div>
                   <div className="kpi-box">
                     <div className="kpi-value" style={{ color: '#16a34a' }}>
-                      {Math.round(reco.total_annual_eur || 0).toLocaleString()}
+                      {Math.round(reco.total_annual_eur || 0).toLocaleString('fr-FR')}
                     </div>
                     <div className="kpi-label">EUR/an</div>
                   </div>
@@ -198,7 +198,7 @@ export default function ExportNoteDecision({ data, onClose }) {
                     </td>
                     <td style={{ textAlign: 'right' }}>{s.price_eur_per_kwh?.toFixed(4)}</td>
                     <td style={{ textAlign: 'right' }}>
-                      {Math.round(s.total_annual_eur).toLocaleString()}
+                      {Math.round(s.total_annual_eur).toLocaleString('fr-FR')}
                     </td>
                     <td
                       style={{
@@ -234,7 +234,7 @@ export default function ExportNoteDecision({ data, onClose }) {
                     </td>
                     <td style={{ textAlign: 'right', fontSize: '9pt', color: '#6b7280' }}>
                       {s.p10_eur != null
-                        ? `${Math.round(s.p10_eur).toLocaleString()} — ${Math.round(s.p90_eur).toLocaleString()}`
+                        ? `${Math.round(s.p10_eur).toLocaleString('fr-FR')} — ${Math.round(s.p90_eur).toLocaleString('fr-FR')}`
                         : '—'}
                     </td>
                   </tr>

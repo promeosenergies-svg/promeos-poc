@@ -14,6 +14,7 @@ import {
   resolveBillingInsight,
   importInvoicesPdf,
   getSites,
+  getInsightDetail,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
 import Tooltip from '../ui/Tooltip';
@@ -46,6 +47,8 @@ import {
   saveHealthSnapshot,
   isActiveInsight,
 } from '../models/billingHealthModel';
+
+const VALID_STATUSES = ['open', 'ack', 'resolved', 'false_positive'];
 
 const SEVERITY_BADGE = {
   critical: 'crit',
@@ -120,11 +123,14 @@ export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { scope } = useScope();
+  const { selectedSiteId: scopeSiteId } = useScope();
   const [searchParams] = useSearchParams();
+  const anomaliesRef = useRef(null);
 
-  // Deep-link params: ?site_id=X&month=YYYY-MM
-  const [siteFilter, setSiteFilter] = useState(searchParams.get('site_id') || '');
+  // Deep-link params: ?site_id=X&month=YYYY-MM — init from scope global
+  const [siteFilter, setSiteFilter] = useState(
+    searchParams.get('site_id') || (scopeSiteId ? String(scopeSiteId) : '')
+  );
   const [monthFilter, setMonthFilter] = useState(searchParams.get('month') || '');
 
   const [summary, setSummary] = useState(null);
@@ -186,6 +192,11 @@ export default function BillIntelPage() {
   useEffect(() => {
     fetchData();
   }, [insightFilter, siteFilter]);
+
+  // Sync scope global → local siteFilter
+  useEffect(() => {
+    setSiteFilter(scopeSiteId ? String(scopeSiteId) : '');
+  }, [scopeSiteId]);
 
   useEffect(() => {
     getSites({ limit: 200 })
@@ -534,7 +545,13 @@ export default function BillIntelPage() {
       {billingHealth && (
         <HealthSummary
           healthState={billingHealth}
-          onNavigate={navigate}
+          onNavigate={(path) => {
+            if (path === '/bill-intel') {
+              anomaliesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+              navigate(path);
+            }
+          }}
           compact
           trend={billingTrend}
         />
@@ -552,13 +569,13 @@ export default function BillIntelPage() {
           <SummaryCard
             icon={DollarSign}
             label="Total €"
-            value={`${Math.round(summary.total_eur).toLocaleString()} €`}
+            value={`${Math.round(summary.total_eur).toLocaleString('fr-FR')} €`}
             color="indigo"
           />
           <SummaryCard
             icon={Zap}
             label="Total kWh"
-            value={`${Math.round(summary.total_kwh).toLocaleString()}`}
+            value={`${Math.round(summary.total_kwh).toLocaleString('fr-FR')}`}
             color="purple"
           />
           <SummaryCard
@@ -599,7 +616,7 @@ export default function BillIntelPage() {
 
       {/* Insights with workflow filter */}
       {insights.length > 0 || insightFilter !== 'all' ? (
-        <div>
+        <div ref={anomaliesRef}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">
               Anomalies détectées ({insights.length})
@@ -622,7 +639,6 @@ export default function BillIntelPage() {
           </div>
           <div className="space-y-2">
             {insights.map((insight) => {
-              const VALID_STATUSES = ['open', 'ack', 'resolved', 'false_positive'];
               const istatus = VALID_STATUSES.includes(insight.insight_status) ? insight.insight_status : 'open';
               return (
                 <Card key={insight.id} className="border-l-4 border-l-red-300">
@@ -658,7 +674,7 @@ export default function BillIntelPage() {
                     </div>
                     {insight.estimated_loss_eur > 0 && (
                       <span className="text-sm font-bold text-red-600 whitespace-nowrap">
-                        {insight.estimated_loss_eur.toLocaleString()} €
+                        {insight.estimated_loss_eur.toLocaleString('fr-FR')} €
                       </span>
                     )}
                     {istatus !== 'resolved' && istatus !== 'false_positive' && (
@@ -824,10 +840,10 @@ export default function BillIntelPage() {
                           : inv.period_start || '-'}
                       </td>
                       <td className="px-4 py-2.5 text-right font-medium">
-                        {inv.total_eur ? `${inv.total_eur.toLocaleString()} €` : '-'}
+                        {inv.total_eur ? `${inv.total_eur.toLocaleString('fr-FR')} €` : '-'}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        {inv.energy_kwh ? inv.energy_kwh.toLocaleString() : '-'}
+                        {inv.energy_kwh ? inv.energy_kwh.toLocaleString('fr-FR') : '-'}
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <span

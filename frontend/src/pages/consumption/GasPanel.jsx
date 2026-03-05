@@ -104,7 +104,7 @@ export default function GasPanel({
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Total</p>
             <p className="text-xl font-bold text-gray-800">
-              {gas.total_kwh.toLocaleString()} kWh PCS
+              {gas.total_kwh.toLocaleString('fr-FR')} kWh PCS
             </p>
           </CardBody>
         </Card>
@@ -112,7 +112,7 @@ export default function GasPanel({
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Moy. journaliere</p>
             <p className="text-xl font-bold text-gray-800">
-              {gas.avg_daily_kwh.toLocaleString()} kWh PCS
+              {gas.avg_daily_kwh.toLocaleString('fr-FR')} kWh PCS
             </p>
           </CardBody>
         </Card>

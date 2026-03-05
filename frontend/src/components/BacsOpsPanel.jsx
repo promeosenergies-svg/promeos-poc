@@ -41,7 +41,7 @@ function MonthlyChart({ data }) {
           <div
             className="w-full bg-blue-400 rounded-t transition-all duration-300 hover:bg-blue-500 min-h-[2px]"
             style={{ height: `${(d.kwh / maxKwh) * 100}%` }}
-            title={`${d.month}: ${d.kwh.toLocaleString()} kWh`}
+            title={`${d.month}: ${d.kwh.toLocaleString('fr-FR')} kWh`}
           />
           <span className="text-[9px] text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">
             {d.month}

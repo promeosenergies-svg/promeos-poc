@@ -530,7 +530,7 @@ const Cockpit = () => {
                           <div className="text-xs text-gray-400">{site.usage}</div>
                         </Td>
                         <Td>{site.ville}</Td>
-                        <Td>{site.surface_m2?.toLocaleString()} m2</Td>
+                        <Td>{site.surface_m2?.toLocaleString('fr-FR')} m2</Td>
                         <Td>
                           <div className="flex items-center gap-1.5">
                             <StatusDot status={si.dot} />
@@ -548,7 +548,7 @@ const Cockpit = () => {
                         </Td>
                         {isExpert && (
                           <Td className="text-right text-gray-600">
-                            {site.conso_kwh_an > 0 ? site.conso_kwh_an.toLocaleString() : '-'}
+                            {site.conso_kwh_an > 0 ? site.conso_kwh_an.toLocaleString('fr-FR') : '-'}
                           </Td>
                         )}
                         <Td className="text-right">

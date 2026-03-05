@@ -485,7 +485,7 @@ function FlexTab({ siteId }) {
               )}
               {lever.estimate_kwh_year && (
                 <span className="text-[10px] text-gray-500 bg-white/60 px-1.5 py-0.5 rounded">
-                  ~{lever.estimate_kwh_year.toLocaleString()} kWh/an
+                  ~{lever.estimate_kwh_year.toLocaleString('fr-FR')} kWh/an
                 </span>
               )}
             </div>

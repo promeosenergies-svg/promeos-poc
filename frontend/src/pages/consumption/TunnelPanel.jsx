@@ -56,7 +56,7 @@ export default function TunnelPanel({
     return (
       <EmptyState
         icon={Activity}
-        title="Aucune donnee de consommation"
+        title="Aucune donnée de consommation"
         text="Importez des relevés ou générez des données démo pour voir l'enveloppe tunnel."
       />
     );
@@ -98,9 +98,9 @@ export default function TunnelPanel({
       <div className="grid grid-cols-3 gap-3">
         <Card>
           <CardBody className="py-3 px-4 text-center">
-            <p className="text-xs text-gray-500">Releves</p>
+            <p className="text-xs text-gray-500">Relevés</p>
             <p className="text-xl font-bold text-gray-800">
-              {tunnel.readings_count.toLocaleString()}
+              {tunnel.readings_count.toLocaleString('fr-FR')}
             </p>
           </CardBody>
         </Card>

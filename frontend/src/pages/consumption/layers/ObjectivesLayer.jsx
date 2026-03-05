@@ -42,7 +42,7 @@ export default function ObjectivesLayer({ targets = [], visible = true, unit = '
           strokeDasharray="6 3"
           strokeWidth={1.5}
           label={{
-            value: `Obj. moy. ${avgMonthlyTarget.toLocaleString()} ${suffix}`,
+            value: `Obj. moy. ${avgMonthlyTarget.toLocaleString('fr-FR')} ${suffix}`,
             position: 'insideTopRight',
             style: { fontSize: 10, fill: '#8b5cf6' },
           }}
@@ -58,7 +58,7 @@ export default function ObjectivesLayer({ targets = [], visible = true, unit = '
           strokeDasharray="3 3"
           strokeWidth={1}
           label={{
-            value: `${t.target_kwh.toLocaleString()}`,
+            value: `${t.target_kwh.toLocaleString('fr-FR')}`,
             position: 'top',
             style: { fontSize: 9, fill: '#8b5cf6' },
           }}

@@ -94,7 +94,7 @@ export default function CommandPalette({ open, onClose }) {
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-2">
           {results.length === 0 && (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">Aucun resultat</p>
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">Aucun résultat</p>
           )}
           {results.map((item, idx) => {
             const Icon = item.icon;

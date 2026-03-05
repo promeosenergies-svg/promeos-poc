@@ -87,7 +87,10 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V113 Demo-Ready Patch (cause_code→CTA routing, OPERAT validation, copilot idempotence+AuditLog+priority_score, template ROI fields, onboarding TTFV+DQ gating, reject reason, error toasts, 13 new tests) | Stable -- V113.1 |
 > | V113 QA Audit (0 build errors, 0 lint errors, risk format k€, 3 error states, prettier+ruff format, CI quality-gate.yml, 4 docs) | Stable -- V113.2 |
 > | V113 Nav Integration (ConformitePage ?tab= deep-link, DQ CTA→Conformite, copilot source filter, "Anomalies" rename, 3 CommandPalette entries, orphan route mapping) | Stable -- V113.3 |
-> | Suite de tests automatises | **4 330 frontend + 2 795 backend, 0 regression** |
+> | V114b Centre d'actions UX Polish + Phase 1 ELEC Trust Gate (dynamic tax labels, TVA fallback, KPI active-only, status guard, 26 tests) | Stable -- V114b |
+> | Phase 2 ELEC Shadow Versionne (catalog trace, price_source, diagnostics, explainability top 3 contributeurs, dossier opposable, 40 tests) | Stable -- V116 |
+> | Audit App (50 issues: accents FR, toLocaleString('fr-FR'), duplicate EnergyVector, port .env, scope filter sync, menu POC-ready) | Stable -- V116.1 |
+> | Suite de tests automatises | **4 432 frontend + 2 800+ backend, 0 regression** |
 
 > **Disclaimer**
 >

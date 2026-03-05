@@ -126,6 +126,7 @@ class EnergyVector(str, enum.Enum):
     ELECTRICITY = "electricity"
     GAS = "gas"
     HEAT = "heat"
+    WATER = "water"
     OTHER = "other"
 
 

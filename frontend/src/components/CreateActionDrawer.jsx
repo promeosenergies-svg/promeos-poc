@@ -233,7 +233,7 @@ export default function CreateActionDrawer({
               {templates.map((t) => (
                 <option key={t.code} value={t.code}>
                   [{t.category}] {t.title}
-                  {t.estimated_gain_eur ? ` (${t.estimated_gain_eur.toLocaleString()} EUR)` : ''}
+                  {t.estimated_gain_eur ? ` (${t.estimated_gain_eur.toLocaleString('fr-FR')} EUR)` : ''}
                 </option>
               ))}
             </select>

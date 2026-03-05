@@ -321,7 +321,7 @@ export function ImportWizard() {
               <CheckCircle size={18} /> Import réussi
             </div>
             <p>
-              <strong>Lignes importees:</strong> {importResult.rows_imported?.toLocaleString()}
+              <strong>Lignes importees:</strong> {importResult.rows_imported?.toLocaleString('fr-FR')}
             </p>
             {importResult.rows_skipped > 0 && (
               <p>

@@ -21,16 +21,7 @@ from datetime import datetime
 import enum
 
 from .base import Base
-
-
-class EnergyVector(str, enum.Enum):
-    """Energy type"""
-
-    ELECTRICITY = "electricity"
-    GAS = "gas"
-    HEAT = "heat"
-    WATER = "water"
-    OTHER = "other"
+from .enums import EnergyVector
 
 
 class FrequencyType(str, enum.Enum):

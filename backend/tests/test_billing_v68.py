@@ -263,7 +263,9 @@ class TestShadowBillingV2:
             pass
 
         c = C()
+        c.id = 1
         c.price_ref_eur_per_kwh = price_ref
+        c.fixed_fee_eur_per_month = 0
 
         class ET:
             value = energy_type

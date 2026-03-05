@@ -66,7 +66,7 @@ const CAUSE_LABELS = {
   lines_sum_mismatch: (m) =>
     `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
   consumption_spike: (m) =>
-    `La consommation (${m.kwh?.toLocaleString() || '?'} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
+    `La consommation (${m.kwh?.toLocaleString('fr-FR') || '?'} kWh) dépasse ${m.threshold_ratio || 2}× la moyenne des 6 derniers mois.`,
   price_drift: (m) =>
     `Le prix unitaire a dérivé de ${m.drift_pct?.toFixed(1) || '?'}% par rapport à la période précédente.`,
   reseau_mismatch: (m) =>
@@ -174,7 +174,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                 </Badge>
                 {detail.estimated_loss_eur > 0 && (
                   <span className="text-sm font-bold text-red-600">
-                    {detail.estimated_loss_eur.toLocaleString()} €
+                    {detail.estimated_loss_eur.toLocaleString('fr-FR')} €
                   </span>
                 )}
               </div>
@@ -393,7 +393,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
               {m.method && <p>Méthode : {m.method}</p>}
               {m.energy_type && <p>Énergie : {m.energy_type}</p>}
               {m.price_ref != null && <p>Prix ref : {m.price_ref} €/kWh</p>}
-              {m.kwh != null && <p>kWh : {m.kwh.toLocaleString()}</p>}
+              {m.kwh != null && <p>kWh : {m.kwh.toLocaleString('fr-FR')}</p>}
               {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
               {m.price_source && <p>Source prix : {m.price_source}</p>}
               {m.catalog_trace?.length > 0 && (

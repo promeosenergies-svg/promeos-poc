@@ -433,7 +433,7 @@ function ImportPage() {
                   <p className="font-bold text-gray-800">
                     {packResult.readings_count?.toLocaleString('fr-FR')}
                   </p>
-                  <p className="text-gray-500">Releves</p>
+                  <p className="text-gray-500">Relevés</p>
                 </div>
                 <div className="bg-white rounded p-2 text-center">
                   <p className="font-bold text-gray-800">

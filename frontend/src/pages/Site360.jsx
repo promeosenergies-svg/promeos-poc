@@ -123,7 +123,7 @@ function TabResume({ site, onSegmentationClick }) {
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
                 <p className="text-lg font-bold text-red-700">
-                  {(site.risque_eur || 0).toLocaleString()} €
+                  {(site.risque_eur || 0).toLocaleString('fr-FR')} €
                 </p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
@@ -200,7 +200,7 @@ function TabResume({ site, onSegmentationClick }) {
                     </Td>
                     <Td className="text-sm">{a.title_fr}</Td>
                     <Td className="text-right text-red-600 font-medium">
-                      {(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €
+                      {(a.business_impact?.estimated_risk_eur || 0).toLocaleString('fr-FR')} €
                     </Td>
                   </Tr>
                 ))}
@@ -1135,7 +1135,7 @@ export default function Site360() {
               <MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}
             </span>
             <span className="flex items-center gap-1">
-              <Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString()} m2
+              <Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString('fr-FR')} m2
             </span>
           </div>
         </div>
@@ -1165,7 +1165,7 @@ export default function Site360() {
         <MiniKpi
           icon={BadgeEuro}
           label="Risque €"
-          value={`${(site.risque_eur || 0).toLocaleString()} €`}
+          value={`${(site.risque_eur || 0).toLocaleString('fr-FR')} €`}
           color="text-red-600"
         />
         <MiniKpi

@@ -268,7 +268,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
       )}
 
       {drillDown && drillDownData.length === 0 && (
-        <p className="text-xs text-gray-400 text-center py-4">Aucune donnee pour ce creneau.</p>
+        <p className="text-xs text-gray-400 text-center py-4">Aucune donnée pour ce créneau.</p>
       )}
 
       {/* Legend note */}

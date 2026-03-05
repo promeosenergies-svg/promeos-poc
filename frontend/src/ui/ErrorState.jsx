@@ -12,7 +12,7 @@ export default function ErrorState({ title = 'Erreur', message, onRetry, debug, 
       <div className="flex items-center gap-3">
         {onRetry && (
           <Button variant="secondary" onClick={onRetry}>
-            Reessayer
+            Réessayer
           </Button>
         )}
         {actions}

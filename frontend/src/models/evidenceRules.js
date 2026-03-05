@@ -79,6 +79,8 @@ export const SOURCE_LABELS_FR = {
   manual: 'Manuelle',
   insight: 'Diagnostic',
   lever_engine: 'Levier',
+  copilot: 'Copilot',
+  segmentation: 'Segmentation',
 };
 
 // ── Source Deep Links ───────────────────────────────────────────────────────

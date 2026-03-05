@@ -8,7 +8,7 @@ export default function Pagination({ page, pageSize, total, onChange }) {
   return (
     <div className="flex items-center justify-between px-4 py-3 text-sm">
       <span className="text-gray-500">
-        {total > 0 ? `${from}\u2013${to} sur ${total}` : 'Aucun resultat'}
+        {total > 0 ? `${from}\u2013${to} sur ${total}` : 'Aucun résultat'}
       </span>
       <div className="flex items-center gap-1">
         <button

@@ -146,9 +146,11 @@ class TestShadowV2EnergyType:
             site_id = 1
 
         class FakeContract:
+            id = 1
             energy_type = BillingEnergyType.ELEC
             price_ref_eur_per_kwh = 0.15
             turpe_annual_eur = 500
+            fixed_fee_eur_per_month = 10
 
         class FakeLine:
             line_type = InvoiceLineType.ENERGY

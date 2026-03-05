@@ -1084,7 +1084,7 @@ describe('BG · Portfolio V1.3 guided empty state', () => {
   it('shows contextual message based on hasActiveFilters', () => {
     expect(code).toMatch(/hasActiveFilters/);
     expect(code).toMatch(/reinitialiser les filtres/i);
-    expect(code).toMatch(/Importez vos releves|Importez des donnees/);
+    expect(code).toMatch(/Importez vos relevés|Importez des données/);
   });
 });
 
@@ -1137,7 +1137,7 @@ describe('BJ · Portfolio empty state Cas A vs Cas B', () => {
 
   it('has Cas A empty state with data-empty="no-data"', () => {
     expect(code).toMatch(/data-empty="no-data"/);
-    expect(code).toMatch(/Aucune donnee de consommation disponible/);
+    expect(code).toMatch(/Aucune donnée de consommation disponible/);
   });
 
   it('has Cas B empty state with data-empty="filters"', () => {

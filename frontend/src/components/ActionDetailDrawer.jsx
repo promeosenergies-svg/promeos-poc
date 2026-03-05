@@ -827,7 +827,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   <p className="text-xs text-gray-500 mb-1">Gain estime</p>
                   <p className="text-xl font-bold text-red-700">
                     {d.estimated_gain_eur != null
-                      ? `${d.estimated_gain_eur.toLocaleString()} EUR`
+                      ? `${d.estimated_gain_eur.toLocaleString('fr-FR')} EUR`
                       : '—'}
                   </p>
                 </div>
@@ -863,7 +863,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       title="Cliquer pour modifier"
                     >
                       {d.realized_gain_eur != null
-                        ? `${d.realized_gain_eur.toLocaleString()} EUR`
+                        ? `${d.realized_gain_eur.toLocaleString('fr-FR')} EUR`
                         : '— (cliquer pour saisir)'}
                     </p>
                   )}
@@ -879,7 +879,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       : 'bg-amber-50 text-amber-700'
                   }`}
                 >
-                  Delta : {(d.realized_gain_eur - d.estimated_gain_eur).toLocaleString()} EUR (
+                  Delta : {(d.realized_gain_eur - d.estimated_gain_eur).toLocaleString('fr-FR')} EUR (
                   {d.estimated_gain_eur > 0
                     ? `${((d.realized_gain_eur / d.estimated_gain_eur) * 100).toFixed(0)}% du gain estime`
                     : '—'}
@@ -892,7 +892,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div className="p-3 bg-emerald-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">CO₂e evite (estimation)</p>
                   <p className="text-lg font-bold text-emerald-700">
-                    {Math.round(d.co2e_savings_est_kg).toLocaleString()} kgCO₂e
+                    {Math.round(d.co2e_savings_est_kg).toLocaleString('fr-FR')} kgCO₂e
                     {d.co2e_savings_est_kg >= 1000 && (
                       <span className="text-sm font-normal text-emerald-500 ml-1">
                         ({(d.co2e_savings_est_kg / 1000).toFixed(1)} t)
