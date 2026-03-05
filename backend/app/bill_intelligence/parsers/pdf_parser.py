@@ -38,7 +38,7 @@ class PDFTemplate:
 
     def match(self, text: str) -> bool:
         """Check if this template matches the given text."""
-        return bool(re.search(self.supplier_pattern, text, re.IGNORECASE))
+        return bool(re.search(self.supplier_pattern, text, re.IGNORECASE | re.DOTALL))
 
 
 # ========================================
@@ -278,18 +278,24 @@ def _extract_elec_components(text: str) -> List[InvoiceComponent]:
                 label="CTA",
                 amount_ht=cta,
                 tva_rate=5.5,
+                metadata={"tax_code": "CTA"},
             )
         )
 
-    # Accise / CSPE / TICFE
-    accise = _find_float(text, r"(?:Accise|CSPE|TICFE)[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
+    # Accise / CSPE / TICFE / Contrib. service public élec (ENGIE label for ACCISE_ELEC)
+    accise = _find_float(text, r"(?:Accise|CSPE|TICFE|Contrib\.?\s*(?:service\s+public|aux\s+charges))[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
     if accise:
+        # Detect label_source for traceability
+        label_source = "Accise sur l'electricite"
+        if re.search(r"Contrib\.?\s*(?:service\s+public|aux\s+charges)", text, re.IGNORECASE):
+            label_source = "Contrib. service public elec"
         components.append(
             InvoiceComponent(
                 component_type=ComponentType.ACCISE,
-                label="Accise sur l'electricite",
+                label=label_source,
                 amount_ht=accise,
                 tva_rate=20.0,
+                metadata={"tax_code": "ACCISE_ELEC"},
             )
         )
 
@@ -415,6 +421,7 @@ def _extract_gaz_components(text: str) -> List[InvoiceComponent]:
                 label="CTA",
                 amount_ht=cta,
                 tva_rate=5.5,
+                metadata={"tax_code": "CTA"},
             )
         )
 
@@ -427,10 +434,75 @@ def _extract_gaz_components(text: str) -> List[InvoiceComponent]:
                 label="Accise sur le gaz naturel",
                 amount_ht=accise,
                 tva_rate=20.0,
+                metadata={"tax_code": "ACCISE_GAZ"},
             )
         )
 
     return components
+
+
+# ========================================
+# Engie Electricity Template
+# ========================================
+
+
+def parse_engie_elec(text: str, source_file: Optional[str] = None) -> Invoice:
+    """
+    Parse Engie electricity invoice from extracted text.
+    Handles ENGIE Pro PDF layout for electricity (C5, C4, C3 segments).
+    """
+    invoice_id = _find_str(text, r"N[°\u00b0]+\s*(\d+)")
+    if not invoice_id:
+        invoice_id = _find_str(text, r"(?:N[°o]\s*(?:de\s*)?facture|Ref\.?\s*facture)\s*[:\s]*(\S+)")
+    if not invoice_id:
+        invoice_id = f"PDF-ELEC-ENGIE-{hashlib.md5(text[:200].encode()).hexdigest()[:8].upper()}"
+
+    contract_ref = _find_str(text, r"(?:Ref\.?\s*contrat|N[°o]\s*contrat)\s*[:\s]*(\S+)")
+    pdl = _find_str(text, r"(?:PDL|Point\s+de\s+livraison)\s*[:\s]*(\d{14})")
+
+    invoice_date = _find_date(text, r"(?:Date\s+(?:de\s+)?facture|Emise?\s+le|facture du)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
+    due_date = _find_date(text, r"(?:Date\s+(?:d['\u2019])?echeance|[AÀ]\s*payer\s+avant|pr[eé]lev[eé]\s+le)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
+    period_start = _find_date(text, r"(?:Periode|Du|Consommation\s+du|Abonnement\s+du)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
+    period_end = _find_date(text, r"(?:au|Periode.*?au)\s*(\d{2}/\d{2}/\d{4})")
+
+    total_ht = _find_float(text, r"(?:Total\s+HT|total\s+hors\s+toutes\s+taxes|Montant\s+HT)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
+    total_tva = _find_float(text, r"(?:Total\s+TVA|Montant\s+TVA)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
+    total_ttc = _find_float(text, r"(?:total\s+TTC|Montant\s+TTC|Net\s+[àa]\s+payer)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
+
+    # ENGIE-specific: HTVA (hors toutes taxes + taxes)
+    htva = _find_float(text, r"total\s+HTVA\s*\n?\s*([\d\s,.]+)\s*(?:EUR|€)")
+    if htva and not total_ht:
+        total_ht = htva
+
+    conso = _find_float(text, r"(?:Consommation|Conso\.?)\s*[:\s]*([\d\s,.]+)\s*kWh")
+    puissance = _find_float(text, r"(?:Puissance\s+souscrite)\s+(\d+)\s*kVA")
+
+    components = _extract_elec_components(text)
+
+    input_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+    return Invoice(
+        invoice_id=invoice_id,
+        energy_type=EnergyType.ELEC,
+        supplier="Engie Entreprises",
+        contract_ref=contract_ref,
+        pdl_pce=pdl,
+        invoice_date=invoice_date,
+        due_date=due_date,
+        period_start=period_start,
+        period_end=period_end,
+        total_ht=total_ht,
+        total_tva=total_tva,
+        total_ttc=total_ttc,
+        conso_kwh=conso,
+        puissance_souscrite_kva=puissance,
+        components=components,
+        status=InvoiceStatus.PARSED,
+        source_file=source_file,
+        source_format="pdf",
+        parsing_confidence=_compute_confidence(total_ht, total_ttc, components),
+        input_hash=input_hash,
+    )
 
 
 # ========================================
@@ -481,6 +553,14 @@ TEMPLATES = [
         energy_type=EnergyType.ELEC,
         description="EDF Entreprises - Facture electricite",
     ),
+    # ENGIE elec — must be checked BEFORE engie_gaz: if text contains
+    # "Electricite" section markers it's elec, otherwise fall through to gaz.
+    PDFTemplate(
+        template_id="engie_elec_v1",
+        supplier_pattern=r"(?:Engie|GDF\s+Suez).*(?:[Ee]lectricit|Point de livraison)",
+        energy_type=EnergyType.ELEC,
+        description="Engie Entreprises - Facture electricite",
+    ),
     PDFTemplate(
         template_id="engie_gaz_v1",
         supplier_pattern=r"Engie|GDF\s+Suez",
@@ -508,6 +588,8 @@ def parse_pdf_text(text: str, source_file: Optional[str] = None) -> Invoice:
 
     if template.template_id == "edf_elec_v1":
         return parse_edf_elec(text, source_file)
+    elif template.template_id == "engie_elec_v1":
+        return parse_engie_elec(text, source_file)
     elif template.template_id == "engie_gaz_v1":
         return parse_engie_gaz(text, source_file)
     else:

@@ -25,7 +25,7 @@ const TYPE_LABELS = {
   ttc_coherence: 'Cohérence TTC',
   contract_expiry: 'Contrat expiré',
   reseau_mismatch: 'Écart réseau / TURPE',
-  taxes_mismatch: 'Écart taxes / CSPE',
+  taxes_mismatch: 'Écart taxes / accise',
 };
 
 const SEVERITY_LABELS = {
@@ -71,15 +71,24 @@ const CAUSE_LABELS = {
     `Le prix unitaire a dérivé de ${m.drift_pct?.toFixed(1) || '?'}% par rapport à la période précédente.`,
   reseau_mismatch: (m) =>
     `L'écart réseau/TURPE (${fmt(m.delta_reseau)} €) dépasse le seuil de 10%.`,
-  taxes_mismatch: (m) => `L'écart taxes/CSPE (${fmt(m.delta_taxes)} €) dépasse le seuil de 5%.`,
+  taxes_mismatch: (m) => `L'écart taxes/accise (${fmt(m.delta_taxes)} €) dépasse le seuil de 5%.`,
 };
 
-const BREAKDOWN_ROWS = [
-  { key: 'fourniture', label: 'Énergie (fourniture)' },
-  { key: 'reseau', label: 'Réseau (TURPE)' },
-  { key: 'taxes', label: 'Taxes (CSPE/TICGN)' },
-  { key: 'tva', label: 'TVA' },
-];
+function getBreakdownRows(energyType) {
+  const et = (energyType || '').toUpperCase();
+  const taxLabel =
+    et === 'ELEC'
+      ? 'Accise électricité'
+      : et === 'GAZ'
+        ? 'Accise gaz (TICGN)'
+        : 'Taxes & contributions';
+  return [
+    { key: 'fourniture', label: 'Énergie (fourniture)' },
+    { key: 'reseau', label: 'Réseau (TURPE)' },
+    { key: 'taxes', label: taxLabel },
+    { key: 'tva', label: 'TVA' },
+  ];
+}
 
 export default function InsightDrawer({ open, onClose, insightId }) {
   const { isExpert } = useExpertMode();
@@ -229,11 +238,24 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {BREAKDOWN_ROWS.map((row) => {
+                  {getBreakdownRows(m.energy_type).map((row) => {
                     const actual = m[`actual_${row.key}_ht`] ?? m[`actual_${row.key}`];
                     const expected = m[`expected_${row.key}_ht`] ?? m[`expected_${row.key}`];
                     const delta = m[`delta_${row.key}`];
-                    if (actual == null && expected == null) return null;
+                    // TVA fallback: show "non disponible" when TTC exists but TVA is null
+                    if (actual == null && expected == null) {
+                      if (row.key === 'tva' && m.actual_ttc != null) {
+                        return (
+                          <tr key={row.key} className="border-b border-gray-100">
+                            <td className="py-2 text-gray-700">{row.label}</td>
+                            <td colSpan={3} className="py-2 text-right text-xs text-gray-400 italic">
+                              TVA non disponible
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return null;
+                    }
                     return (
                       <tr key={row.key} className="border-b border-gray-100">
                         <td className="py-2 text-gray-700">{row.label}</td>

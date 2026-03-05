@@ -58,9 +58,10 @@ def test_detect_unknown_template():
 def test_list_templates():
     """Templates are listed."""
     templates = list_templates()
-    assert len(templates) == 2
+    assert len(templates) == 3
     ids = [t["template_id"] for t in templates]
     assert "edf_elec_v1" in ids
+    assert "engie_elec_v1" in ids
     assert "engie_gaz_v1" in ids
 
 

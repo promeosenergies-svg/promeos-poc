@@ -44,6 +44,7 @@ import {
   computeHealthTrend,
   loadHealthSnapshot,
   saveHealthSnapshot,
+  isActiveInsight,
 } from '../models/billingHealthModel';
 
 const SEVERITY_BADGE = {
@@ -64,6 +65,10 @@ const TYPE_LABELS = {
   lines_sum_mismatch: 'Écart lignes/total',
   consumption_spike: 'Pic de consommation',
   price_drift: 'Dérive de prix',
+  ttc_coherence: 'Cohérence TTC',
+  contract_expiry: 'Contrat expiré',
+  reseau_mismatch: 'Écart réseau / TURPE',
+  taxes_mismatch: 'Écart taxes / accise',
 };
 
 const STATUS_COLORS = {
@@ -234,6 +239,11 @@ export default function BillIntelPage() {
     if (!summary) return null;
     return computeBillingHealthState(summary, allInsights);
   }, [summary, allInsights]);
+
+  const activeLoss = useMemo(
+    () => allInsights.filter(isActiveInsight).reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
+    [allInsights]
+  );
 
   const [billingTrend, setBillingTrend] = useState(null);
   const snapshotScope = useMemo(
@@ -559,7 +569,7 @@ export default function BillIntelPage() {
           <SummaryCard
             icon={TrendingUp}
             label="Pertes estimées"
-            value={`${Math.round(summary.total_estimated_loss_eur)} €`}
+            value={`${Math.round(activeLoss)} €`}
             color="orange"
           />
         </div>
@@ -611,7 +621,8 @@ export default function BillIntelPage() {
           </div>
           <div className="space-y-2">
             {insights.map((insight) => {
-              const istatus = insight.insight_status || 'open';
+              const VALID_STATUSES = ['open', 'ack', 'resolved', 'false_positive'];
+              const istatus = VALID_STATUSES.includes(insight.insight_status) ? insight.insight_status : 'open';
               return (
                 <Card key={insight.id} className="border-l-4 border-l-red-300">
                   <CardBody className="flex items-center gap-4">

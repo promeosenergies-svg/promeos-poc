@@ -4,13 +4,15 @@
  * Route : /anomalies   — ?tab=actions pour le plan d'actions.
  */
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload } from 'lucide-react';
-import { PageShell, EmptyState, Tooltip } from '../ui';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle } from 'lucide-react';
+import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
+import useAnomalyFilters from './useAnomalyFilters';
+import { buildAnomalyEvidence } from './anomalyEvidence';
 
 const ActionsPageInline = lazy(() => import('./ActionsPage'));
 
@@ -48,8 +50,8 @@ function fmtEur(n) {
 
 export default function AnomaliesPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'anomalies';
+  const { filters, hasFilters, setFilters, resetFilters } = useAnomalyFilters();
+  const activeTab = filters.tab;
   const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
@@ -58,11 +60,9 @@ export default function AnomaliesPage() {
   const [error, setError] = useState(null);
   const fetchIdRef = useRef(0);
 
-  // Filtres
-  const [filterFw, setFilterFw] = useState('');
-  const [filterSev, setFilterSev] = useState('');
-  const [filterSite, setFilterSite] = useState('');
-  const [search, setSearch] = useState('');
+  // Evidence drawer
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceData, setEvidenceData] = useState(null);
 
   /* ── Fetch anomalies ── */
   useEffect(() => {
@@ -129,11 +129,11 @@ export default function AnomaliesPage() {
   /* ── Filtrage + tri ── */
   const filtered = useMemo(() => {
     let r = [...anomalies];
-    if (filterFw) r = r.filter((a) => a.regulatory_impact?.framework === filterFw);
-    if (filterSev) r = r.filter((a) => a.severity === filterSev);
-    if (filterSite) r = r.filter((a) => String(a.site_id) === filterSite);
-    if (search) {
-      const q = search.toLowerCase();
+    if (filters.fw) r = r.filter((a) => a.regulatory_impact?.framework === filters.fw);
+    if (filters.sev) r = r.filter((a) => a.severity === filters.sev);
+    if (filters.site) r = r.filter((a) => String(a.site_id) === filters.site);
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
       r = r.filter(
         (a) => a.title_fr?.toLowerCase().includes(q) || a.site_nom?.toLowerCase().includes(q)
       );
@@ -146,7 +146,7 @@ export default function AnomaliesPage() {
       return (b.priority_score ?? 0) - (a.priority_score ?? 0);
     });
     return r;
-  }, [anomalies, filterFw, filterSev, filterSite, search]);
+  }, [anomalies, filters.fw, filters.sev, filters.site, filters.q]);
 
   /* ── KPIs (reflètent les filtres actifs) ── */
   const kpis = useMemo(() => {
@@ -157,15 +157,6 @@ export default function AnomaliesPage() {
   }, [filtered]);
 
   /* ── Helpers ── */
-  const hasFilters = filterFw || filterSev || filterSite || search;
-
-  function resetFilters() {
-    setFilterFw('');
-    setFilterSev('');
-    setFilterSite('');
-    setSearch('');
-  }
-
   function openSite(siteId, isBilling = false) {
     if (isBilling) {
       navigate('/bill-intel');
@@ -219,7 +210,7 @@ export default function AnomaliesPage() {
       <Tabs
         tabs={CENTRE_TABS}
         active={activeTab}
-        onChange={(tab) => setSearchParams({ tab }, { replace: true })}
+        onChange={(tab) => setFilters({ tab })}
         moduleKey="operations"
       />
 
@@ -273,16 +264,16 @@ export default function AnomaliesPage() {
             <input
               type="text"
               placeholder="Rechercher une anomalie ou un site..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={filters.q}
+              onChange={(e) => setFilters({ q: e.target.value })}
               className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
 
           {/* Framework */}
           <QuickSelect
-            value={filterFw}
-            onChange={setFilterFw}
+            value={filters.fw}
+            onChange={(v) => setFilters({ fw: v })}
             options={[
               { value: '', label: 'Framework' },
               { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
@@ -293,8 +284,8 @@ export default function AnomaliesPage() {
 
           {/* Sévérité */}
           <QuickSelect
-            value={filterSev}
-            onChange={setFilterSev}
+            value={filters.sev}
+            onChange={(v) => setFilters({ sev: v })}
             options={[
               { value: '', label: 'Sévérité' },
               { value: 'CRITICAL', label: 'Critique' },
@@ -306,8 +297,8 @@ export default function AnomaliesPage() {
 
           {/* Site */}
           <QuickSelect
-            value={filterSite}
-            onChange={setFilterSite}
+            value={filters.site}
+            onChange={(v) => setFilters({ site: v })}
             options={[
               { value: '', label: 'Tous les sites' },
               ...scopedSites
@@ -325,6 +316,13 @@ export default function AnomaliesPage() {
               <X size={12} /> Réinitialiser
             </button>
           )}
+
+          {/* Smart sort indicator */}
+          <span className="ml-auto flex items-center gap-1 text-[11px] text-gray-400 font-medium select-none">
+            <ArrowDownWideNarrow size={12} />
+            Tri intelligent actif
+            <InfoTip content="Les anomalies sont triées par impact financier (risque EUR) décroissant, puis par score de priorité. Le score combine la sévérité, le risque réglementaire et l'impact métier." position="bottom" />
+          </span>
         </div>
 
         {/* ── Erreur ── */}
@@ -426,6 +424,19 @@ export default function AnomaliesPage() {
                         Créer action
                       </button>
                     </Tooltip>
+                    <Tooltip text="Comprendre cette anomalie">
+                      <button
+                        type="button"
+                        data-testid="pourquoi-btn"
+                        onClick={() => {
+                          setEvidenceData(buildAnomalyEvidence(anom));
+                          setEvidenceOpen(true);
+                        }}
+                        className="flex items-center gap-0.5 text-[11px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-2 py-1 hover:bg-purple-100 transition"
+                      >
+                        <HelpCircle size={11} /> Pourquoi ?
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               );
@@ -442,6 +453,7 @@ export default function AnomaliesPage() {
       )}
 
       {/* Action Drawer — managed by ActionDrawerContext */}
+      <EvidenceDrawer open={evidenceOpen} onClose={() => setEvidenceOpen(false)} evidence={evidenceData} />
     </PageShell>
   );
 }

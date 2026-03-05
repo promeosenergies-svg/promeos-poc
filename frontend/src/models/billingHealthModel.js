@@ -38,7 +38,7 @@ const BILLING_REASON_LABELS = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function isActiveInsight(i) {
+export function isActiveInsight(i) {
   return !i.insight_status || i.insight_status === 'open' || i.insight_status === 'ack';
 }
 

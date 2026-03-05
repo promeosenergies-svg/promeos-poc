@@ -956,6 +956,8 @@ def list_billing_rules():
 
 # ComponentType.value (lowercase) → InvoiceLineType mapping for P0-1
 _COMPONENT_TO_LINE_TYPE = {
+    # Abonnement — fourniture (subscription part of energy supply)
+    "abonnement": InvoiceLineType.ENERGY,
     # Energie / fourniture
     "conso_hp": InvoiceLineType.ENERGY,
     "conso_hc": InvoiceLineType.ENERGY,
@@ -971,12 +973,20 @@ _COMPONENT_TO_LINE_TYPE = {
     "turpe_puissance": InvoiceLineType.NETWORK,
     "turpe_energie": InvoiceLineType.NETWORK,
     "terme_fixe": InvoiceLineType.NETWORK,
+    # Capacité / dépassement
+    "depassement_puissance": InvoiceLineType.NETWORK,
+    "reactive": InvoiceLineType.NETWORK,
     # Taxes / contributions
     "cta": InvoiceLineType.TAX,
     "accise": InvoiceLineType.TAX,
     "tva_reduite": InvoiceLineType.TAX,
     "tva_normale": InvoiceLineType.TAX,
     "cee": InvoiceLineType.TAX,
+    # Ajustements
+    "regularisation": InvoiceLineType.OTHER,
+    "prorata": InvoiceLineType.OTHER,
+    "remise": InvoiceLineType.OTHER,
+    "penalite": InvoiceLineType.OTHER,
 }
 
 
@@ -1044,6 +1054,9 @@ async def import_invoice_pdf(
     # P0-1: créer les lignes EnergyInvoiceLine depuis les composantes PDF
     for comp in getattr(invoice_domain, "components", None) or []:
         line_type = _component_to_line_type(comp.component_type)
+        # Preserve tax_code and other metadata from parsed components
+        comp_meta = getattr(comp, "metadata", None) or {}
+        meta_str = json.dumps(comp_meta) if comp_meta else None
         db.add(
             EnergyInvoiceLine(
                 invoice_id=db_invoice.id,
@@ -1057,6 +1070,7 @@ async def import_invoice_pdf(
                     if getattr(comp, "amount_ht", None) is not None
                     else getattr(comp, "amount_ttc", None)
                 ),
+                meta_json=meta_str,
             )
         )
 

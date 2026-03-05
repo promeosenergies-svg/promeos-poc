@@ -105,15 +105,15 @@ class TestTOUSchedule:
 
 
 class TestNotifications:
-    """V83: 8 NotificationEvent entries with varied types and statuses."""
+    """V83+V108: 20 NotificationEvent entries with varied types and statuses."""
 
     def test_notifications_count(self, seeded_db):
-        """Exactly 8 NotificationEvent created."""
+        """20 NotificationEvent created (expanded in V108)."""
         db, _ = seeded_db
         from models.notification import NotificationEvent
 
         count = db.query(NotificationEvent).count()
-        assert count == 8, f"Expected 8 notifications, got {count}"
+        assert count == 20, f"Expected 20 notifications, got {count}"
 
     def test_notifications_have_new_status(self, seeded_db):
         """At least some notifications are NEW (unread)."""
@@ -171,7 +171,7 @@ class TestNotifications:
         """Seed result includes notifications key with created count."""
         _, result = seeded_db
         assert "notifications" in result
-        assert result["notifications"]["notifications_created"] == 8
+        assert result["notifications"]["notifications_created"] == 20
 
 
 # ═══════════════════════════════════════════════
