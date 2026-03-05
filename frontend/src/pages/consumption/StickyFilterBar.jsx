@@ -3,10 +3,11 @@
  * Unified sticky bar supporting Classic and Expert UI modes.
  *
  * Classic mode (default):
- *   Row 1 : Sites (chips + add) • Énergie • Période • Granularité
- *   Row 2 : Mode pills (Agrège/Superpose/Empile/Sépare) • Unité pills (kWh/kW/EUR)
- *   Row 3 : Actions (Enregistrer / Effacer / Copier le lien / Presets)
- *   Row 4 : Résumé contexte (toujours visible)
+ *   Row 1 : Sites (chips + add) • Portfolio toggle  [Who]
+ *   Row 2 : Énergie • Période • Granularité • TrustBadge  [What & When]
+ *   Row 3 : Mode pills (Agrège/Superpose/Empile/Sépare) • Unité pills (kWh/kW/EUR)  [How]
+ *   Row 4 : Actions (Enregistrer / Effacer / Copier le lien / Presets)
+ *   Row 5 : Résumé contexte (toujours visible)
  *   [opt]  : Plage de dates personnalisée (collapsible)
  *
  * Expert mode:
@@ -403,7 +404,7 @@ export default function StickyFilterBar({
 
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-2.5 md:-mx-6 md:px-6 space-y-2">
-      {/* Row 1: Site chips (selected only) + add button + Portfolio toggle + Energy + Period + Gran + Trust */}
+      {/* Row 1: Site chips + Portfolio toggle — "Who" (stable, independent of config) */}
       <div className="flex items-center gap-3 flex-wrap">
         {/* V19: Site section — ALWAYS visible when setSiteIds is provided */}
         {setSiteIds && !isPortfolioMode && (
@@ -518,7 +519,10 @@ export default function StickyFilterBar({
             ))}
           </select>
         )}
+      </div>
 
+      {/* Row 2: Energy · Period · Granularité · TrustBadge — "What & When" (never reflows when sites change) */}
+      <div className="flex items-center gap-3 flex-wrap">
         {/* Energy toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
           {ENERGY_OPTIONS.map((opt) => {
