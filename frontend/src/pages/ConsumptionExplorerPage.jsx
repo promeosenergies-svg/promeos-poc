@@ -253,9 +253,59 @@ export default function ConsumptionExplorerPage() {
     mergedAvailability,
     primarySiteId,
     primaryAvailability,
-    data: { availabilityBySite },
+    data: { availabilityBySite, tunnelBySite, hphcBySite, progressionBySite },
     loading,
   } = motor;
+
+  // ── Multi-site KPI aggregation (issue #38) ────────────────────────────
+  // Aggregate hphc, tunnel, and progression across all selected sites so
+  // ConsoKpiHeader shows totals rather than only the primary site.
+  const aggregatedHphc = useMemo(() => {
+    const entries = siteIds.map((sid) => hphcBySite[sid]).filter(Boolean);
+    if (!entries.length) return null;
+    if (entries.length === 1) return entries[0];
+    return {
+      ...entries[0],
+      total_kwh: entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0),
+      total_cost_eur: entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0),
+    };
+  }, [siteIds, hphcBySite]);
+
+  const aggregatedTunnel = useMemo(() => {
+    const entries = siteIds.map((sid) => tunnelBySite[sid]).filter(Boolean);
+    if (!entries.length) return null;
+    if (entries.length === 1) return entries[0];
+    const sumSlots = (arrays) => {
+      if (!arrays.length) return null;
+      return arrays[0].map((slot, i) => ({
+        ...slot,
+        p10: arrays.reduce((s, arr) => s + (arr[i]?.p10 ?? 0), 0),
+        p50: arrays.reduce((s, arr) => s + (arr[i]?.p50 ?? 0), 0),
+        p90: arrays.reduce((s, arr) => s + (arr[i]?.p90 ?? 0), 0),
+        p95: arrays.reduce((s, arr) => s + (arr[i]?.p95 ?? 0), 0),
+      }));
+    };
+    const weekdayArrays = entries.map((t) => t.envelope?.weekday).filter(Boolean);
+    const weekendArrays = entries.map((t) => t.envelope?.weekend).filter(Boolean);
+    return {
+      ...entries[0],
+      total_kwh: entries.reduce((s, t) => s + (t.total_kwh ?? 0), 0),
+      envelope: {
+        weekday: sumSlots(weekdayArrays),
+        weekend: sumSlots(weekendArrays),
+      },
+    };
+  }, [siteIds, tunnelBySite]);
+
+  const aggregatedProgression = useMemo(() => {
+    const entries = siteIds.map((sid) => progressionBySite[sid]).filter(Boolean);
+    if (!entries.length) return null;
+    if (entries.length === 1) return entries[0];
+    return {
+      ...entries[0],
+      ytd_actual_kwh: entries.reduce((s, p) => s + (p.ytd_actual_kwh ?? 0), 0),
+    };
+  }, [siteIds, progressionBySite]);
 
   // ── User-initiated period flag (issue #23) ────────────────────────────
   // Prevents auto-calibration from overwriting a period the user explicitly chose.
@@ -580,9 +630,9 @@ export default function ConsumptionExplorerPage() {
       {/* KPI Header — 6 KPIs respecting scope global */}
       {showContent && (
         <ConsoKpiHeader
-          tunnel={motor.primaryTunnel}
-          hphc={motor.primaryHphc}
-          progression={motor.primaryProgression}
+          tunnel={aggregatedTunnel}
+          hphc={aggregatedHphc}
+          progression={aggregatedProgression}
           confidence={availability?.confidence}
           onEvidence={setEvidenceKpiOpen}
         />
