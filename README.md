@@ -1,10 +1,10 @@
 # PROMEOS POC
 
-Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usages, veille, en un seul outil.
+Pilotage réglementaire et énergétique multi-sites B2B France — conformité, usages, veille, en un seul outil.
 
 ---
 
-## Table des matieres
+## Table des matières
 
 1. [TL;DR](#tldr)
 2. [Probleme client](#probleme-client)
@@ -90,7 +90,10 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V114b Centre d'actions UX Polish + Phase 1 ELEC Trust Gate (dynamic tax labels, TVA fallback, KPI active-only, status guard, 26 tests) | Stable -- V114b |
 > | Phase 2 ELEC Shadow Versionne (catalog trace, price_source, diagnostics, explainability top 3 contributeurs, dossier opposable, 40 tests) | Stable -- V116 |
 > | Audit App (50 issues: accents FR, toLocaleString('fr-FR'), duplicate EnergyVector, port .env, scope filter sync, menu POC-ready) | Stable -- V116.1 |
-> | Suite de tests automatises | **4 432 frontend + 2 800+ backend, 0 regression** |
+> | V117 Anomaly↔Action linking (create/link/dismiss/statuses, deep-link filters, idempotency) | Stable -- V117 |
+> | Marché UX Polish (contextual recents, Raccourcis header, no dots, responsive clamp, compact density) | Stable -- V117 |
+> | Full App Audit (1 critical fix, 70+ accent corrections, 35+ files, 6-axis audit) | Stable -- V117+ |
+> | Suite de tests automatisés | **4 481 frontend + 2 800+ backend, 0 régression** |
 
 > **Disclaimer**
 >
