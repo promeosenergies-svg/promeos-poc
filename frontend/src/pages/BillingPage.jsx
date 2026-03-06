@@ -20,6 +20,7 @@ import {
   getBillingPeriods,
   getCoverageSummary,
   getMissingPeriods,
+  getBillingCompareMonthly,
   importInvoicesCsv,
   importInvoicesPdf,
 } from '../services/api';
@@ -28,6 +29,7 @@ import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
 import BillingTimeline from '../components/BillingTimeline';
+import BillingCompareChart from '../components/BillingCompareChart';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
@@ -65,6 +67,7 @@ export default function BillingPage() {
   const [periodsTotal, setPeriodsTotal] = useState(0);
   const [periodsOffset, setPeriodsOffset] = useState(0);
   const [missingPeriods, setMissingPeriods] = useState([]);
+  const [compareData, setCompareData] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -199,6 +202,17 @@ export default function BillingPage() {
         } catch (err) {
           if (isExpert) console.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
           setMissingPeriods([]);
+        }
+      }
+
+      // Non-bloquant : compare-monthly N vs N-1
+      if (offset === 0) {
+        try {
+          const cmp = await getBillingCompareMonthly(params);
+          setCompareData(cmp);
+        } catch (err) {
+          if (isExpert) console.warn('[BillingPage] compare-monthly failed (non-bloquant):', err);
+          setCompareData(null);
         }
       }
     },
@@ -461,6 +475,22 @@ export default function BillingPage() {
                 </p>
               );
             })()}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Comparaison N vs N-1 */}
+      {compareData && (
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-gray-700 mb-3">
+              Comparaison mensuelle {compareData.current_year} vs {compareData.previous_year}
+            </h2>
+            <BillingCompareChart
+              data={compareData}
+              currentYear={compareData.current_year}
+              previousYear={compareData.previous_year}
+            />
           </CardBody>
         </Card>
       )}

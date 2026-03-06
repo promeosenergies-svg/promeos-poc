@@ -845,6 +845,9 @@ export const getMissingPeriods = (params = {}) =>
 export const getNormalizedInvoices = (params = {}) =>
   api.get('/billing/invoices/normalized', { params }).then((r) => r.data);
 
+export const getBillingCompareMonthly = (params = {}) =>
+  api.get('/billing/compare-monthly', { params }).then((r) => r.data);
+
 // ========================================
 // ACHAT ENERGIE
 // ========================================

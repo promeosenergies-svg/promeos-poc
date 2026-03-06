@@ -1453,6 +1453,99 @@ def _parse_date(val: Optional[str]) -> Optional[date]:
         return None
 
 
+_MONTH_LABELS_FR = [
+    "", "Janv", "Fév", "Mars", "Avr", "Mai", "Juin",
+    "Juil", "Août", "Sept", "Oct", "Nov", "Déc",
+]
+
+
+@router.get("/compare-monthly")
+def compare_monthly(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    year: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Comparaison mensuelle N vs N-1.
+    Agrège total_eur et energy_kwh par mois pour l'année courante et l'année précédente.
+    """
+    from datetime import datetime as dt
+
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    site_ids = _get_org_site_ids(db, effective_org_id)
+
+    current_year = year or dt.now().year
+    prev_year = current_year - 1
+
+    # Fetch invoices for both years (positive amounts only — no avoirs)
+    if not site_ids:
+        invoices = []
+    else:
+        invoices = (
+            db.query(EnergyInvoice)
+            .filter(
+                EnergyInvoice.site_id.in_(site_ids),
+                EnergyInvoice.period_start.isnot(None),
+                EnergyInvoice.total_eur > 0,
+            )
+            .all()
+        )
+
+    # Aggregate by month
+    buckets = {}  # { (year, month): { total_eur, energy_kwh, count } }
+    for inv in invoices:
+        ps = inv.period_start
+        y, m = ps.year, ps.month
+        if y not in (current_year, prev_year):
+            continue
+        key = (y, m)
+        if key not in buckets:
+            buckets[key] = {"total_eur": 0.0, "energy_kwh": 0.0, "count": 0}
+        buckets[key]["total_eur"] += inv.total_eur or 0
+        buckets[key]["energy_kwh"] += inv.energy_kwh or 0
+        buckets[key]["count"] += 1
+
+    # Build response: 12 months
+    months = []
+    for m in range(1, 13):
+        curr = buckets.get((current_year, m))
+        prev = buckets.get((prev_year, m))
+        curr_eur = round(curr["total_eur"], 2) if curr else None
+        prev_eur = round(prev["total_eur"], 2) if prev else None
+        curr_kwh = round(curr["energy_kwh"], 2) if curr else None
+        prev_kwh = round(prev["energy_kwh"], 2) if prev else None
+
+        delta_eur = None
+        delta_pct = None
+        if curr_eur is not None and prev_eur is not None and prev_eur > 0:
+            delta_eur = round(curr_eur - prev_eur, 2)
+            delta_pct = round((curr_eur - prev_eur) / prev_eur * 100, 1)
+
+        months.append({
+            "month": m,
+            "label": _MONTH_LABELS_FR[m],
+            "current_eur": curr_eur,
+            "previous_eur": prev_eur,
+            "current_kwh": curr_kwh,
+            "previous_kwh": prev_kwh,
+            "delta_eur": delta_eur,
+            "delta_pct": delta_pct,
+        })
+
+    total_current = sum(x["current_eur"] for x in months if x["current_eur"] is not None)
+    total_previous = sum(x["previous_eur"] for x in months if x["previous_eur"] is not None)
+
+    return {
+        "current_year": current_year,
+        "previous_year": prev_year,
+        "months": months,
+        "total_current_eur": round(total_current, 2),
+        "total_previous_eur": round(total_previous, 2),
+    }
+
+
 def _parse_float(val: Optional[str]) -> Optional[float]:
     """Parse float from string, handling comma as decimal sep."""
     if not val or not val.strip():
