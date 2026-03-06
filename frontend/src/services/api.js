@@ -1461,6 +1461,14 @@ export const applyDetectedSchedule = (siteId, windowDays = 56) =>
 export const getPortfolioBehaviorSummary = (days = 30) =>
   _cachedGet('/consumption-context/portfolio/summary', { params: { days } }).then((r) => r.data);
 
+// A.1: Unified Consumption
+export const getConsumptionUnifiedSite = (siteId, start, end, source = 'reconciled') =>
+  api.get(`/consumption-unified/site/${siteId}`, { params: { start, end, source } }).then((r) => r.data);
+export const getConsumptionUnifiedPortfolio = (start, end, source = 'reconciled') =>
+  api.get('/consumption-unified/portfolio', { params: { start, end, source } }).then((r) => r.data);
+export const getConsumptionReconcile = (siteId, start, end) =>
+  api.get(`/consumption-unified/reconcile/${siteId}`, { params: { start, end } }).then((r) => r.data);
+
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>
   api

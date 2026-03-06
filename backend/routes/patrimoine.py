@@ -1377,15 +1377,28 @@ def get_site_detail(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Get a site with compteurs and contracts count."""
+    """Get a site with compteurs, contracts count, and consumption source."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
     compteurs_count = db.query(Compteur).filter(Compteur.site_id == site_id, Compteur.actif.is_(True)).count()
     contracts_count = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).count()
+
+    # A.1: Consumption source info
+    consumption_source = None
+    try:
+        from services.consumption_unified_service import get_consumption_summary
+        from datetime import timedelta
+        today = date.today()
+        conso = get_consumption_summary(db, site_id, today - timedelta(days=365), today)
+        consumption_source = conso["source_used"]
+    except Exception:
+        pass
+
     return {
         **_serialize_site(site),
         "compteurs_count": compteurs_count,
         "contracts_count": contracts_count,
+        "consumption_source": consumption_source,
     }
 
 

@@ -486,11 +486,23 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
         .all()
     )
 
+    # A.1: unified consumption for source tracking
+    from services.consumption_unified_service import get_consumption_summary
+    from datetime import date as _date
+    today = _date.today()
+    conso_start = today - timedelta(days=days)
+
     rows = []
     for site in sites:
         try:
             anomalies = get_anomalies_and_score(db, site.id, days)
             profile = get_consumption_profile(db, site.id, days)
+            # A.1: get consumption source info
+            try:
+                conso_unified = get_consumption_summary(db, site.id, conso_start, today)
+                consumption_source = conso_unified["source_used"]
+            except Exception:
+                consumption_source = None
             rows.append(
                 {
                     "site_id": site.id,
@@ -500,6 +512,7 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
                     "offhours_pct": (anomalies.get("kpis") or {}).get("offhours_pct", 0),
                     "baseload_kw": profile.get("baseload_kw", 0),
                     "total_kwh": profile.get("total_kwh", 0),
+                    "consumption_source": consumption_source,
                     "insights_count": len(anomalies.get("insights") or []),
                     "weekend_active": (anomalies.get("weekend_active") or {}).get("detected", False),
                 }

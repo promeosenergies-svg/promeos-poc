@@ -20,6 +20,7 @@ from models import (
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 from services.kpi_service import KpiService, KpiScope
+from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
@@ -102,6 +103,20 @@ def get_cockpit(
         (db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count()) if site_ids else 0
     )
 
+    # A.1: Unified consumption for portfolio KPI
+    from datetime import date, timedelta
+    today = date.today()
+    conso_start = today - timedelta(days=365)
+    try:
+        conso_portfolio = get_portfolio_consumption(db, effective_org_id, conso_start, today)
+        conso_kwh = conso_portfolio["total_kwh"]
+        conso_confidence = conso_portfolio["confidence"]
+        conso_sites_with_data = conso_portfolio["sites_with_data"]
+    except Exception:
+        conso_kwh = 0
+        conso_confidence = "none"
+        conso_sites_with_data = 0
+
     return {
         "organisation": {"nom": org.nom, "type_client": org.type_client},
         "stats": {
@@ -114,6 +129,9 @@ def get_cockpit(
             "alertes_actives": alertes_actives,
             "compliance_score": compliance_score_unified,
             "compliance_confidence": compliance_confidence,
+            "conso_kwh_total": round(conso_kwh, 2),
+            "conso_confidence": conso_confidence,
+            "conso_sites_with_data": conso_sites_with_data,
         },
         "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
     }

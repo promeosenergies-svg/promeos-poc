@@ -10,6 +10,7 @@ import { Shield, CheckCircle, Zap, Clock, Thermometer, TrendingUp, PlayCircle } 
 import { Card, CardBody } from '../ui';
 import { getMonitoringKpis } from '../services/api';
 import { fmtNum } from '../utils/format';
+import ConsoSourceBadge from './ConsoSourceBadge';
 
 // Legacy severity color map — prefer SEVERITY_TINT from ui/colorTokens for new code
 export const SEVERITY_COLOR = {
@@ -160,7 +161,14 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
         iconColor="text-amber-500"
         title="Pmax"
         value={kpis.pmax_kw != null ? `${fmtN(kpis.pmax_kw)} kW` : '-'}
-        sub={kpis.p95_kw != null ? `P95: ${fmtN(kpis.p95_kw)} kW` : null}
+        sub={
+          kpis.pmax_kw != null ? (
+            <span className="flex items-center gap-1">
+              {kpis.p95_kw != null && `P95: ${fmtN(kpis.p95_kw)} kW`}
+              <ConsoSourceBadge source="metered" />
+            </span>
+          ) : null
+        }
         onClick={goToMonitoring}
       />
       <PerfCard

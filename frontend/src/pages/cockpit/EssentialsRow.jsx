@@ -13,6 +13,7 @@ import { Database, Zap, Building2 } from 'lucide-react';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { tint } from '../../ui/colorTokens';
 import { formatPercentFR } from '../../utils/format';
+import ConsoSourceBadge from '../../components/ConsoSourceBadge';
 
 // ── Mini metric card ─────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ function ProgressRing({ score }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, onNavigate }) {
+export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, onNavigate, consoSource }) {
   const { couvertureDonnees = 0, readinessScore = 0, total = 0 } = kpis;
 
   const totalConsoMWh = Math.round(sites.reduce((s, x) => s + (x.conso_kwh_an || 0), 0) / 1000);
@@ -114,8 +115,9 @@ export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, o
               <p className="text-lg font-bold text-gray-900 leading-tight">
                 {totalConsoMWh.toLocaleString('fr-FR')} MWh/an
               </p>
-              <p className="text-xs text-gray-500 truncate mt-0.5">
+              <p className="text-xs text-gray-500 truncate mt-0.5 flex items-center gap-1">
                 {sitesWithConso} site{sitesWithConso > 1 ? 's' : ''} couverts
+                <ConsoSourceBadge source={consoSource} />
               </p>
             </>
           ) : (

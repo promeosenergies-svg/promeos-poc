@@ -45,6 +45,7 @@ from .operat import router as operat_router
 from .copilot import router as copilot_router
 from .action_templates import router as action_templates_router
 from .onboarding_stepper import router as onboarding_stepper_router
+from .consumption_unified import router as consumption_unified_router
 
 __all__ = [
     "sites_router",
@@ -90,4 +91,5 @@ __all__ = [
     "copilot_router",
     "action_templates_router",
     "onboarding_stepper_router",
+    "consumption_unified_router",
 ]

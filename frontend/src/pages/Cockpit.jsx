@@ -99,6 +99,8 @@ const Cockpit = () => {
 
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
+  // A.1: Consumption source tracking
+  const [consoSource, setConsoSource] = useState(null);
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -123,6 +125,21 @@ const Cockpit = () => {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setComplianceApi(data))
       .catch(() => setComplianceApi(null));
+  }, [org?.id]);
+
+  // A.1: Fetch consumption source from cockpit API (conso_confidence)
+  useEffect(() => {
+    if (!org?.id) return;
+    fetch(`/api/cockpit`, {
+      headers: { 'X-Org-Id': String(org.id) },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const conf = data?.stats?.conso_confidence;
+        if (conf && conf !== 'none') setConsoSource('metered');
+        else setConsoSource(null);
+      })
+      .catch(() => setConsoSource(null));
   }, [org?.id]);
 
   const kpis = useMemo(() => {
@@ -353,6 +370,7 @@ const Cockpit = () => {
         sites={scopedSites}
         onOpenMaturite={() => setShowMaturiteModal(true)}
         onNavigate={navigate}
+        consoSource={consoSource}
       />
 
       {/* ── Risque résiduel : plan d'action ── */}

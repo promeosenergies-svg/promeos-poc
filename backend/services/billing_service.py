@@ -431,7 +431,8 @@ def _rule_consumption_spike(
                 "delta_calculated_ratio": ratio,
                 "inputs": _build_inputs(invoice),
                 "confidence": "medium",
-                "assumptions": ["Moyenne 6 mois glissants", "Seuil: ×2"],
+                "consumption_source": "billed",
+                "assumptions": ["Moyenne 6 mois glissants", "Seuil: ×2", "Source: factures (billed)"],
                 "cross_link": {
                     "module": "diagnostic-conso",
                     "site_id": invoice.site_id,
