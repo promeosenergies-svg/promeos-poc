@@ -142,6 +142,7 @@ export default function ExplorerChart({
   siteIds = [],
   siteColors = {},
   siteLabels = {},
+  aggregateLabel = 'Agrégé',
   height = 300,
   onSlotClick,
   showBrush = true,
@@ -228,7 +229,7 @@ export default function ExplorerChart({
               stroke="#3b82f6"
               fill="#93c5fd"
               fillOpacity={0.3}
-              name="Agrégé"
+              name={aggregateLabel}
             />
           )}
 
