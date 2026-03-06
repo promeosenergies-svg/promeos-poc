@@ -18,7 +18,7 @@ from .packs import list_packs
 def main():
     parser = argparse.ArgumentParser(description="PROMEOS Demo Seed CLI")
     parser.add_argument(
-        "--pack", default="helios", choices=["helios", "tertiaire"], help="Pack to seed (default: helios)"
+        "--pack", default="helios", choices=["helios", "tertiaire", "meridian"], help="Pack to seed (default: helios)"
     )
     parser.add_argument("--size", default="S", choices=["S", "M"], help="Size: S (small) or M (medium)")
     parser.add_argument("--seed", type=int, default=42, help="RNG seed for deterministic output")

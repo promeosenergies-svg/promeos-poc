@@ -464,7 +464,7 @@ class TestV11API:
     def test_renewals_endpoint(self, client, db_session):
         """GET /renewals returns contracts with urgency."""
         org, site_a, site_b = self._seed_contracts(db_session)
-        resp = client.get("/api/purchase/renewals")
+        resp = client.get(f"/api/purchase/renewals?org_id={org.id}")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] >= 2
@@ -511,7 +511,7 @@ class TestV11API:
         org, site_a, site_b = self._seed_contracts(db_session)
         # Compute scenarios to create draft recommendations
         client.post(f"/api/purchase/compute/{site_a.id}")
-        resp = client.get("/api/purchase/actions")
+        resp = client.get(f"/api/purchase/actions?org_id={org.id}")
         assert resp.status_code == 200
         data = resp.json()
         assert "total_actions" in data

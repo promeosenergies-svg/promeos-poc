@@ -613,6 +613,7 @@ def get_sites_findings(
                 "deadline": f.deadline.isoformat() if f.deadline else None,
                 "evidence": f.evidence,
                 "actions": actions,
+                "category": "incentive" if "cee" in (f.regulation or "").lower() else "obligation",
             }
         )
 

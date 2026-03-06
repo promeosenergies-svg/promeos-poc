@@ -244,6 +244,12 @@ export const GLOSSARY = {
       "Comparaison automatique entre la consommation mesurée et la consommation facturée. Un écart supérieur à 10 % déclenche une alerte.",
     long: "Formule : |metered_kwh − billed_kwh| / metered_kwh × 100. Unité : %. Source : Service unifié PROMEOS.",
   },
+  reconciliation_auto: {
+    term: 'Rapprochement automatique à l\'import',
+    short:
+      "Après chaque import de facture (CSV, PDF), PROMEOS compare automatiquement la consommation compteur et facturée. Un écart > 10 % génère une alerte de type reconciliation_mismatch.",
+    long: "Déclenché automatiquement après import-csv, import-pdf et audit-all. Idempotent : pas de doublon pour la même période/site. Seuils : medium > 10 %, high > 20 %.",
+  },
   data_quality_score: {
     term: 'Score qualité données',
     short:
@@ -255,5 +261,11 @@ export const GLOSSARY = {
     short:
       "Indicateur de récence des données de consommation. À jour (< 48h), Récent (2-7j), En retard (7-30j), Périmées (> 30j).",
     long: "Calculé depuis la date la plus récente entre le dernier relevé compteur et la dernière facture importée. Si > 30 jours, les KPIs sont grisés et un bandeau invite à importer des données.",
+  },
+  emissions_co2: {
+    term: 'Émissions CO₂',
+    short:
+      "Émissions de gaz à effet de serre calculées à partir de la consommation et du facteur d'émission ADEME par vecteur énergétique (électricité : 0,057 kgCO₂e/kWh, gaz : 0,227 kgCO₂e/kWh).",
+    long: "Formule : kWh × facteur ADEME (différencié par vecteur). Unité : kgCO₂e ou tCO₂e. Source : ADEME Base Carbone 2024.",
   },
 };

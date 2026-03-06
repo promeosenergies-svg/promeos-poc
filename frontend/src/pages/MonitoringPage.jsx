@@ -2273,6 +2273,17 @@ export default function MonitoringPage() {
                 tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par défaut — choisissez un profil pour des seuils adaptés.' : ''}\n${benchmarkTip('load_factor')}`}
                 status={lfStatus}
                 color="bg-indigo-500"
+                message={(() => {
+                  const msg = getKpiMessage('load_factor', kpiData.load_factor != null ? kpiData.load_factor * 100 : null, { archetype: archetypeLabel });
+                  if (!msg) return null;
+                  return (
+                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
+                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+                    }`} data-testid="kpi-message-load-factor">
+                      {isExpert ? msg.expert : msg.simple}
+                    </p>
+                  );
+                })()}
               />
               <StatusKpiCard
                 icon={Shield}

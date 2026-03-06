@@ -18,6 +18,7 @@ import {
   RULE_LABELS,
 } from '../domain/compliance/complianceLabels.fr';
 import { getComplianceScoreColor as _getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+import { Coins } from 'lucide-react';
 
 export default function RegOps() {
   const { id } = useParams();
@@ -181,61 +182,103 @@ export default function RegOps() {
       {/* Audit Panel (Deterministic) */}
       {activeTab === 'audit' && (
         <div className="space-y-6">
-          {/* Findings */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Constats Réglementaires</h2>
-            {assessment.findings && assessment.findings.length > 0 ? (
-              <div className="space-y-4">
-                {assessment.findings.map((finding, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-800">
-                          {RULE_LABELS[finding.rule_id]?.title_fr || finding.regulation}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {RULE_LABELS[finding.rule_id]?.why_fr || finding.rule_id}
+          {/* Obligations réglementaires */}
+          <div className="bg-white rounded-lg shadow-md p-6" data-section="obligations">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Obligations réglementaires</h2>
+            {(() => {
+              const obligationFindings = (assessment.findings || []).filter(f => f.category !== 'incentive');
+              return obligationFindings.length > 0 ? (
+                <div className="space-y-4">
+                  {obligationFindings.map((finding, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold text-gray-800">
+                            {RULE_LABELS[finding.rule_id]?.title_fr || finding.regulation}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {RULE_LABELS[finding.rule_id]?.why_fr || finding.rule_id}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <span
+                            className={`px-3 py-1 rounded text-xs font-semibold ${getSeverityBadgeColor(finding.severity)}`}
+                          >
+                            {REGOPS_SEVERITY_LABELS[finding.severity] || finding.severity}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(finding.status)}`}
+                          >
+                            {REGOPS_STATUS_LABELS[finding.status] || finding.status}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-gray-700 mb-2">{finding.explanation}</p>
+                      {finding.legal_deadline && (
+                        <p className="text-sm text-orange-600">
+                          ⚠️ Échéance légale:{' '}
+                          {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
                         </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <span
-                          className={`px-3 py-1 rounded text-xs font-semibold ${getSeverityBadgeColor(finding.severity)}`}
-                        >
-                          {REGOPS_SEVERITY_LABELS[finding.severity] || finding.severity}
-                        </span>
-                        <span
-                          className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(finding.status)}`}
-                        >
-                          {REGOPS_STATUS_LABELS[finding.status] || finding.status}
-                        </span>
-                      </div>
+                      )}
+                      {finding.inputs_used && finding.inputs_used.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="text-sm text-gray-600 cursor-pointer">
+                            Données utilisées
+                          </summary>
+                          <ul className="text-xs text-gray-500 mt-1 ml-4 list-disc">
+                            {finding.inputs_used.map((input, i) => (
+                              <li key={i}>{input}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                     </div>
-                    <p className="text-gray-700 mb-2">{finding.explanation}</p>
-                    {finding.legal_deadline && (
-                      <p className="text-sm text-orange-600">
-                        ⚠️ Échéance légale:{' '}
-                        {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
-                      </p>
-                    )}
-                    {finding.inputs_used && finding.inputs_used.length > 0 && (
-                      <details className="mt-2">
-                        <summary className="text-sm text-gray-600 cursor-pointer">
-                          Données utilisées
-                        </summary>
-                        <ul className="text-xs text-gray-500 mt-1 ml-4 list-disc">
-                          {finding.inputs_used.map((input, i) => (
-                            <li key={i}>{input}</li>
-                          ))}
-                        </ul>
-                      </details>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">Aucun constat réglementaire</p>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">Aucun constat réglementaire</p>
+              );
+            })()}
           </div>
+
+          {/* Financements & opportunités (CEE) */}
+          {(() => {
+            const incentiveFindings = (assessment.findings || []).filter(f => f.category === 'incentive');
+            if (incentiveFindings.length === 0) return null;
+            return (
+              <div className="bg-white rounded-lg shadow-md p-6" data-section="incentives">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Coins size={20} className="text-amber-500" />
+                  Financements & opportunités
+                </h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation réglementaire.
+                </p>
+                <div className="space-y-4">
+                  {incentiveFindings.map((finding, idx) => (
+                    <div key={idx} className="border border-amber-200 bg-amber-50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold text-gray-800">
+                            {RULE_LABELS[finding.rule_id]?.title_fr || finding.regulation}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {RULE_LABELS[finding.rule_id]?.why_fr || finding.rule_id}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="px-3 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
+                            Éligible CEE
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-gray-700 mb-2">{finding.explanation}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Actions */}
           <div className="bg-white rounded-lg shadow-md p-6">

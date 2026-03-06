@@ -18,10 +18,11 @@ from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
 from services.billing_service import get_reference_price, DEFAULT_PRICE_ELEC
+from config.emission_factors import get_emission_factor
 
 router = APIRouter(prefix="/api/portfolio/consumption", tags=["Portfolio Consumption"])
 
-CO2E_FACTOR = 0.052  # kgCO2e/kWh ADEME 2024
+CO2E_FACTOR = get_emission_factor("ELEC")  # ADEME Base Carbone 2024
 
 # Expected readings per day by meter frequency
 READINGS_PER_DAY = {

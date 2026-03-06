@@ -14,7 +14,7 @@ from models import Site, Batiment, Obligation, Evidence, RegAssessment, RegStatu
 from .schemas import Finding, Action, SiteSummary
 from .completeness import check_required_inputs
 from .versioning import compute_deterministic_version, compute_data_version
-from .scoring import compute_regops_score
+from .scoring import compute_regops_score  # kept for score_explain detail only
 from .rules import tertiaire_operat, bacs, aper, cee_p6
 
 
@@ -91,16 +91,15 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
         if status_severity.get(f.status, 0) > status_severity.get(worst_status, 0):
             worst_status = f.status
 
-    # Compute compliance score via scoring module (hardened: dedup + clamp + profile)
+    # Compute compliance score via unified A.2 service (single source of truth)
+    from services.compliance_score_service import compute_site_compliance_score
+    a2_result = compute_site_compliance_score(db, site_id)
+    compliance_score = a2_result.score
+    confidence_score = round(a2_result.frameworks_evaluated / a2_result.frameworks_total * 100, 1)
+
     scoring = regs.get("scoring", {})
     severity_weights = scoring.get("severity_weights", {})
     confidence_weights = scoring.get("confidence_weights", {})
-
-    total_required = sum(len(regs.get(r, {}).get("required_inputs", [])) for r in ["tertiaire_operat", "bacs", "aper"])
-    dq_coverage = ((total_required - len(missing_data)) / max(1, total_required)) * 100.0
-
-    score_result = compute_regops_score(all_findings, dq_coverage)
-    compliance_score = score_result.score
 
     # Next deadline
     deadlines = [f.legal_deadline for f in all_findings if f.legal_deadline]
@@ -144,13 +143,13 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
         site_id=site_id,
         global_status=worst_status,
         compliance_score=compliance_score,
-        confidence_score=score_result.confidence_score,
+        confidence_score=confidence_score,
         next_deadline=next_deadline,
         findings=all_findings,
         actions=actions,
         missing_data=missing_data,
         deterministic_version=deterministic_version,
-        scoring_profile_id=score_result.profile_id,
+        scoring_profile_id="compliance_score_service_a2",
     )
 
 
@@ -197,6 +196,7 @@ def persist_assessment(db: Session, summary: SiteSummary):
                 "confidence": f.confidence,
                 "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
                 "explanation": f.explanation,
+                "category": getattr(f, "category", "obligation"),
             }
             for f in summary.findings
         ]

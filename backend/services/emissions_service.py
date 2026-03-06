@@ -13,8 +13,9 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 
-# Default fallback factor: France electricity mix (ADEME 2024 approx)
-DEFAULT_FACTOR_KGCO2E = 0.052
+# Default fallback factor: from ADEME Base Carbone 2024 config (single source)
+from config.emission_factors import get_emission_factor as _config_factor
+DEFAULT_FACTOR_KGCO2E = _config_factor("ELEC")
 
 
 def get_emission_factor(

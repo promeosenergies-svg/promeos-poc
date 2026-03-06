@@ -1469,6 +1469,10 @@ export const getConsumptionUnifiedPortfolio = (start, end, source = 'reconciled'
 export const getConsumptionReconcile = (siteId, start, end) =>
   api.get(`/consumption-unified/reconcile/${siteId}`, { params: { start, end } }).then((r) => r.data);
 
+// Step 9 B3: Reconcile-all (compteur/facture tous sites)
+export const postBillingReconcileAll = (months = 12) =>
+  api.post('/billing/reconcile-all', null, { params: { months } }).then((r) => r.data);
+
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>
   api

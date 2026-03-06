@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database } from 'lucide-react';
+import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database, Coins } from 'lucide-react';
 import { Button, PageShell, Drawer, ActiveFiltersBar, Explain, GLOSSARY } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
@@ -210,6 +210,8 @@ export function sitesToObligations(sitesData, _summary) {
 
   for (const site of sitesData) {
     for (const f of site.findings) {
+      // CEE = incentive, not obligation — skip here
+      if (f.category === 'incentive' || (f.regulation || '').toLowerCase().includes('cee')) continue;
       const reg = f.regulation;
       if (!byReg[reg]) {
         byReg[reg] = {
@@ -282,6 +284,22 @@ export function sitesToObligations(sitesData, _summary) {
     preuve: 'Attestation ou rapport de conformité',
     impact_eur: 0,
   }));
+}
+
+/**
+ * Extract CEE/incentive findings from sitesData (separated from obligations).
+ */
+export function sitesToIncentives(sitesData) {
+  if (!sitesData || !sitesData.length) return [];
+  const items = [];
+  for (const site of sitesData) {
+    for (const f of site.findings) {
+      if (f.category === 'incentive' || (f.regulation || '').toLowerCase().includes('cee')) {
+        items.push({ ...f, site_nom: site.site_nom, site_id: site.site_id });
+      }
+    }
+  }
+  return items;
 }
 
 function FindingAuditDrawer({ findingId, onClose }) {
@@ -537,6 +555,11 @@ export default function ConformitePage() {
     if (!sitesData.length || !summary) return [];
     return sitesToObligations(sitesData, summary);
   }, [sitesData, summary]);
+
+  const incentives = useMemo(() => {
+    if (!sitesData.length) return [];
+    return sitesToIncentives(sitesData);
+  }, [sitesData]);
 
   const complianceHealth = useMemo(() => {
     if (!bundle || !sitesData.length) return null;
@@ -1003,6 +1026,33 @@ export default function ConformitePage() {
               : undefined
           }
         />
+      )}
+
+      {/* Financements mobilisables (CEE) — visible on obligations tab */}
+      {activeTab === 'obligations' && incentives.length > 0 && (
+        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-6" data-section="incentives">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Coins size={18} className="text-amber-500" />
+            Financements mobilisables
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation réglementaire.
+          </p>
+          <div className="space-y-3">
+            {incentives.map((f, idx) => (
+              <div key={idx} className="bg-white border border-amber-100 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-1">
+                  <h4 className="font-medium text-gray-800">{f.rule_id || f.regulation}</h4>
+                  <span className="px-3 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
+                    Éligible CEE
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600">{f.evidence || f.explanation || ''}</p>
+                {f.site_nom && <p className="text-xs text-gray-400 mt-1">Site : {f.site_nom}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ======================== Tab: Donnees & Qualite ======================== */}

@@ -248,7 +248,7 @@ class TestEmissionsEndpoints:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "created"
-        assert data["kgco2e_per_kwh"] == 0.052
+        assert data["kgco2e_per_kwh"] == 0.0569  # ADEME Base Carbone 2024
 
     def test_seed_idempotent(self, client, db):
         client.post("/api/monitoring/emission-factors/seed")
@@ -289,7 +289,7 @@ class TestEmissionsEndpoints:
         assert resp.status_code == 200
         data = resp.json()
         assert data["total_co2e_kg"] > 0
-        assert data["factor"]["kgco2e_per_kwh"] == 0.052
+        assert data["factor"]["kgco2e_per_kwh"] == 0.0569  # ADEME Base Carbone 2024
         assert "annualized_co2e_tonnes" in data
 
     def test_get_emissions_no_snapshot(self, client, db):

@@ -10,6 +10,7 @@ from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
 from regops.data_quality_specs import DATA_QUALITY_SPECS
 from models import RegAssessment, Site, not_deleted
+from services.compliance_score_service import compute_site_compliance_score, compute_portfolio_compliance
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
 
@@ -34,6 +35,7 @@ def get_site_assessment(site_id: int, db: Session = Depends(get_db)):
                     "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
                     "explanation": f.explanation,
                     "missing_inputs": f.missing_inputs,
+                    "category": getattr(f, "category", "obligation"),
                 }
                 for f in summary.findings
             ],
@@ -106,62 +108,45 @@ def get_score_explain(
     if scope_type != "site":
         raise HTTPException(status_code=400, detail="Only scope_type=site supported")
 
+    # Use unified A.2 score as source of truth
+    a2_result = compute_site_compliance_score(db, scope_id)
+
+    # Also run engine for findings-level detail (actions, missing data)
     try:
         summary = evaluate_site(db, scope_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Recompute with full penalties for detailed breakdown
-    total_required = 7  # tertiaire(3) + bacs(1) + aper(3)
-    missing_count = len(summary.missing_data)
-    dq_coverage = max(0.0, ((total_required - missing_count) / max(1, total_required)) * 100.0)
-
-    score_result = compute_regops_score(summary.findings, dq_coverage)
-    profile = load_scoring_profile()
-
-    # how_to_improve: top 5 penalties by amount
+    # how_to_improve from findings
     how_to_improve = []
-    sorted_penalties = sorted(score_result.penalties, key=lambda p: p.amount, reverse=True)
-    for p in sorted_penalties[:5]:
+    for a in summary.actions[:5]:
         how_to_improve.append(
             {
-                "action": f"Resolve {p.rule_id}",
-                "potential_gain": round(p.amount, 2),
-                "regulation": p.regulation,
+                "action": a.label,
+                "potential_gain": round(a.priority_score, 2),
+                "regulation": a.action_code.split("_")[0] if "_" in a.action_code else a.action_code,
             }
         )
 
     return {
         "scope": {"type": scope_type, "id": scope_id},
-        "score": score_result.score,
-        "confidence_score": score_result.confidence_score,
-        "scoring_profile": {
-            "id": profile.get("id"),
-            "version": profile.get("version"),
-            "regulation_weights": profile.get("regulation_weights", {}),
-        },
-        "penalties": [
+        "score": a2_result.score,
+        "confidence": a2_result.confidence,
+        "formula": a2_result.formula,
+        "breakdown": [
             {
-                "regulation": p.regulation,
-                "rule_id": p.rule_id,
-                "severity": p.severity,
-                "amount": p.amount,
-                "reason": p.reason,
-                "evidence_refs": p.evidence_refs,
+                "framework": fs.framework,
+                "score": fs.score,
+                "weight": fs.weight,
+                "available": fs.available,
+                "source": fs.source,
             }
-            for p in score_result.penalties
+            for fs in a2_result.breakdown
         ],
-        "suppressed_penalties": [
-            {
-                "regulation": p.regulation,
-                "rule_id": p.rule_id,
-                "severity": p.severity,
-                "suppressed_by": p.suppressed_by,
-            }
-            for p in score_result.suppressed_penalties
-        ],
+        "critical_penalty": a2_result.critical_penalty,
+        "frameworks_evaluated": a2_result.frameworks_evaluated,
+        "frameworks_total": a2_result.frameworks_total,
         "dq_summary": {
-            "coverage_pct": round(dq_coverage, 1),
             "missing_critical": summary.missing_data,
             "missing_optional": [],
         },
@@ -199,8 +184,12 @@ def get_data_quality_specs():
 
 
 @router.get("/dashboard")
-def get_org_dashboard(db: Session = Depends(get_db)):
-    """KPIs org-level."""
+def get_org_dashboard(
+    org_id: int = Query(None),
+    db: Session = Depends(get_db),
+):
+    """KPIs org-level — score from unified A.2 service."""
+    # Status counts from RegAssessment cache (findings-level, fast)
     assessments = db.query(RegAssessment).filter(RegAssessment.object_type == "site").all()
 
     total = len(assessments)
@@ -208,7 +197,13 @@ def get_org_dashboard(db: Session = Depends(get_db)):
     at_risk = sum(1 for a in assessments if "AT_RISK" in str(a.global_status))
     non_compliant = sum(1 for a in assessments if "NON_COMPLIANT" in str(a.global_status))
 
-    avg_score = sum(a.compliance_score for a in assessments) / total if total > 0 else 0
+    # Score from A.2 unified service (single source of truth)
+    if org_id:
+        portfolio = compute_portfolio_compliance(db, org_id)
+        avg_score = portfolio["avg_score"]
+    else:
+        # Fallback: compute from cached assessments (legacy compat)
+        avg_score = sum(a.compliance_score for a in assessments if a.compliance_score) / max(1, total)
 
     return {
         "total_sites": total,

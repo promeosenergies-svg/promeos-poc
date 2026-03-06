@@ -54,12 +54,14 @@ def _seed(db, pack="helios", size="S", rng_seed=42, days=30):
 
 
 class TestPackVisibility:
-    def test_only_helios_visible(self):
+    def test_helios_and_meridian_visible(self):
         from services.demo_seed.packs import list_packs
 
         visible = list_packs(include_hidden=False)
         keys = [p["key"] for p in visible]
-        assert keys == ["helios"]
+        assert "helios" in keys
+        assert "meridian" in keys
+        assert "tertiaire" not in keys
 
     def test_helios_is_default(self):
         from services.demo_seed.packs import list_packs

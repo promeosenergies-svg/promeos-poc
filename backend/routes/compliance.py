@@ -224,6 +224,7 @@ def list_findings(
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     insight_status: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -259,6 +260,10 @@ def list_findings(
             q = q.filter(ComplianceFinding.insight_status == is_val)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut workflow invalide: {insight_status}")
+    if category == "obligation":
+        q = q.filter(~ComplianceFinding.regulation.ilike("%cee%"))
+    elif category == "incentive":
+        q = q.filter(ComplianceFinding.regulation.ilike("%cee%"))
 
     findings = q.all()
 
@@ -286,6 +291,7 @@ def list_findings(
                 "owner": f.owner,
                 "notes": f.notes,
                 "run_batch_id": f.run_batch_id,
+                "category": "incentive" if "cee" in (f.regulation or "").lower() else "obligation",
             }
         )
 

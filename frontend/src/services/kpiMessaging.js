@@ -274,6 +274,99 @@ const HANDLERS = {
     };
   },
 
+  load_factor: (v, ctx) => {
+    const { archetype = 'default' } = ctx;
+    if (v == null || isNaN(v)) {
+      return {
+        simple: 'Facteur de charge non disponible.',
+        expert: 'Load factor non calculable (données insuffisantes).',
+        severity: 'neutral',
+      };
+    }
+    if (v >= 50) {
+      return {
+        simple: 'Bon facteur de charge. Consommation bien lissée.',
+        expert: `LF ${v}% (profil ${archetype}). Pas de pics excessifs.`,
+        severity: 'ok',
+      };
+    }
+    if (v >= 25) {
+      return {
+        simple: 'Facteur de charge moyen. Pics de consommation à surveiller.',
+        expert: `LF ${v}% (profil ${archetype}). Ratio pic/moy élevé, optimisez les appels de puissance.`,
+        severity: 'warn',
+      };
+    }
+    return {
+      simple: 'Facteur de charge faible. Appels de puissance très irréguliers.',
+      expert: `LF ${v}% seulement (profil ${archetype}). Risque de dépassement TURPE. Lissage recommandé.`,
+      severity: 'crit',
+      action: { label: 'Analyser les pics', path: '/monitoring' },
+    };
+  },
+
+  night_ratio: (v) => {
+    if (v == null || isNaN(v)) {
+      return {
+        simple: 'Ratio nuit non disponible.',
+        expert: 'Ratio consommation nocturne non calculable.',
+        severity: 'neutral',
+      };
+    }
+    const pct = Math.round(v * 100);
+    if (pct <= 20) {
+      return {
+        simple: 'Faible consommation nocturne. Bonne maîtrise.',
+        expert: `${pct}% de conso entre 22h-6h. Talon nuit maîtrisé.`,
+        severity: 'ok',
+      };
+    }
+    if (pct <= 40) {
+      return {
+        simple: 'Consommation nocturne significative. Vérifiez les équipements.',
+        expert: `${pct}% de conso nocturne. Vérifiez CVC, éclairage, serveurs.`,
+        severity: 'warn',
+      };
+    }
+    return {
+      simple: 'Consommation nocturne excessive. Équipements probablement non coupés.',
+      expert: `${pct}% de conso nocturne. Talon anormalement élevé. Audit GTC recommandé.`,
+      severity: 'crit',
+      action: { label: 'Voir profil nuit', path: '/monitoring' },
+    };
+  },
+
+  weekend_ratio: (v) => {
+    if (v == null || isNaN(v)) {
+      return {
+        simple: 'Ratio week-end non disponible.',
+        expert: 'Ratio consommation week-end non calculable.',
+        severity: 'neutral',
+      };
+    }
+    const pct = Math.round(v * 100);
+    if (pct <= 15) {
+      return {
+        simple: 'Très faible consommation le week-end. Bonne gestion.',
+        expert: `${pct}% de conso week-end vs semaine. Arrêt efficace.`,
+        severity: 'ok',
+      };
+    }
+    if (pct <= 35) {
+      return {
+        simple: 'Consommation week-end notable. Certains équipements restent actifs.',
+        expert: `${pct}% de conso week-end. Vérifiez programmation GTC et relance lundi.`,
+        severity: 'warn',
+      };
+    }
+    return {
+      simple: 'Consommation week-end excessive. Économies significatives possibles.',
+      expert: `${pct}% de conso week-end. Fonctionnement quasi continu détecté. Programmation horaire défaillante.`,
+      severity: 'crit',
+      action: { label: 'Voir profil week-end', path: '/monitoring' },
+    };
+  },
+
   kwh_m2: (v, ctx) => {
     const { benchmark = 145, usage = 'bureaux' } = ctx;
     if (v == null || isNaN(v)) {

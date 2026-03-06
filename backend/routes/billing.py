@@ -9,7 +9,7 @@ import csv
 import hashlib
 import io
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
@@ -43,6 +43,7 @@ from services.billing_service import (
 from middleware.auth import get_optional_auth, require_admin, AuthContext
 from middleware.rate_limit import check_rate_limit
 from services.scope_utils import resolve_org_id
+from services.billing_reconcile import auto_reconcile_after_import
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 
@@ -438,6 +439,16 @@ def import_invoices_csv(
     db.commit()
     db.refresh(batch)
 
+    # --- Auto-reconciliation compteur/facture (Step 9 B3) ---
+    reconcile_results = []
+    for inv in invoices_created:
+        if inv.period_start and inv.period_end:
+            r = auto_reconcile_after_import(db, inv.site_id, inv.period_start, inv.period_end)
+            if r:
+                reconcile_results.append(r)
+    if reconcile_results:
+        db.commit()
+
     return {
         "status": "ok",
         "batch_id": batch.id,
@@ -445,6 +456,7 @@ def import_invoices_csv(
         "skipped": skipped,
         "errors": errors,
         "error_count": len(errors),
+        "reconciliation": reconcile_results,
     }
 
 
@@ -577,6 +589,7 @@ def audit_all_invoices(
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     invoices = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
     results = []
+    reconcile_results = []
     for inv in invoices:
         r = audit_invoice_full(db, inv.id)
         results.append(
@@ -586,10 +599,56 @@ def audit_all_invoices(
                 "anomalies_count": r.get("anomalies_count", 0),
             }
         )
+        # Auto-reconciliation compteur/facture (Step 9 B3)
+        if inv.period_start and inv.period_end:
+            rc = auto_reconcile_after_import(db, inv.site_id, inv.period_start, inv.period_end)
+            if rc:
+                reconcile_results.append(rc)
+    if reconcile_results:
+        db.commit()
     return {
         "status": "ok",
         "audited": len(results),
         "total_anomalies": sum(r["anomalies_count"] for r in results),
+        "results": results,
+        "reconciliation": reconcile_results,
+    }
+
+
+# ========================================
+# Reconcile-all (Step 9 B3)
+# ========================================
+
+
+@router.post("/reconcile-all")
+def reconcile_all_sites(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    months: int = Query(12, ge=1, le=36),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Reconciliation compteur/facture pour tous les sites de l'org sur N mois."""
+    check_rate_limit(request, key_prefix="billing_reconcile", max_requests=5, window_seconds=60)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    site_ids = _get_org_site_ids(db, effective_org_id)
+
+    end = date.today()
+    start = date(end.year, end.month, 1) - timedelta(days=months * 30)
+
+    results = []
+    for sid in site_ids:
+        r = auto_reconcile_after_import(db, sid, start, end)
+        if r:
+            results.append(r)
+
+    db.commit()
+
+    mismatches = [r for r in results if r.get("status") == "mismatch_created"]
+    return {
+        "status": "ok",
+        "sites_checked": len(site_ids),
+        "mismatches_created": len(mismatches),
         "results": results,
     }
 
@@ -1084,6 +1143,15 @@ async def import_invoice_pdf(
 
     db.commit()
 
+    # --- Auto-reconciliation compteur/facture (Step 9 B3) ---
+    reconcile_result = None
+    if db_invoice.period_start and db_invoice.period_end:
+        reconcile_result = auto_reconcile_after_import(
+            db, site_id, db_invoice.period_start, db_invoice.period_end
+        )
+        if reconcile_result:
+            db.commit()
+
     return {
         "status": "imported",
         "invoice_id": db_invoice.id,
@@ -1092,6 +1160,7 @@ async def import_invoice_pdf(
         "anomalies_count": len(anomalies_list),
         "kb_updated": run_audit,  # P0-5
         "kb_rules_applied": [a.get("rule_id") for a in anomalies_list],  # P0-5
+        "reconciliation": reconcile_result,
     }
 
 

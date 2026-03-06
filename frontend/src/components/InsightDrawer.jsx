@@ -27,6 +27,7 @@ const TYPE_LABELS = {
   contract_expiry: 'Contrat expiré',
   reseau_mismatch: <>Écart réseau / <Explain term="turpe">TURPE</Explain></>,
   taxes_mismatch: <>Écart taxes / <Explain term="accise">accise</Explain></>,
+  reconciliation_mismatch: <><Explain term="reconciliation_auto">Écart compteur / facture</Explain></>,
 };
 
 const SEVERITY_LABELS = {
@@ -72,6 +73,8 @@ const CAUSE_LABELS = {
   reseau_mismatch: (m) =>
     <>L'écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le seuil de 10%.</>,
   taxes_mismatch: (m) => <>L'écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le seuil de 5%.</>,
+  reconciliation_mismatch: () =>
+    <>Écart significatif entre la <Explain term="reconciliation_conso">consommation compteur</Explain> et la consommation facturée. Vérifiez les relevés ou la facture.</>,
 };
 
 function getBreakdownRows(energyType) {

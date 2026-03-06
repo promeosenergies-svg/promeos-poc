@@ -30,6 +30,7 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                     inputs_used=["surface_m2", "cvc_power_kw"],
                     missing_inputs=[],
                     explanation="Opportunite CEE BAT-TH-158 (systeme GTB): economies estimees 35 kWh/m2/an.",
+                    category="incentive",
                 )
             )
 

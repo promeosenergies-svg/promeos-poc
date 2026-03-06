@@ -20,6 +20,7 @@ class Finding:
     inputs_used: list[str]
     missing_inputs: list[str]
     explanation: str
+    category: str = "obligation"  # "obligation" (DT/BACS/APER) or "incentive" (CEE)
 
 
 @dataclass

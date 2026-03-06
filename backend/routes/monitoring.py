@@ -813,11 +813,12 @@ def seed_emission_factors(db: Session = Depends(get_db)):
     if existing:
         return {"status": "already_exists", "id": existing.id}
 
+    from config.emission_factors import get_emission_factor as _cfg_factor
     factor = EmissionFactor(
         energy_type="electricity",
         region="FR",
-        kgco2e_per_kwh=0.052,
-        source_label="Facteur demo POC (base ADEME 2024)",
+        kgco2e_per_kwh=_cfg_factor("ELEC"),
+        source_label="ADEME Base Carbone 2024 — mix moyen FR",
         quality="demo",
     )
     db.add(factor)
