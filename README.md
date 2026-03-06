@@ -106,7 +106,10 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | B.2 Navigation restructurée (5 sections collapsibles, admin footer, breadcrumb section-aware, CommandPalette enrichie) | Stable -- B.2 |
 > | D.1 Data Quality Score 0-100 (4 dimensions, DataQualityBadge sm/md/lg, intégré 4 pages, 55 tests) | Stable -- D.1 |
 > | D.2 Fraîcheur données (FreshnessIndicator fresh/recent/stale/expired, banneau périmées, intégré Site360+Monitoring, 33 tests) | Stable -- D.2 |
-> | Suite de tests automatisés | **4 990 frontend + 2 880+ backend, 0 régression** |
+> | O.4 Multi-org MERIDIAN SAS (3 sites, pack seed, CLI, ScopeContext multi-org, isolation tests) | Stable -- O.4 |
+> | B.4 Billing seed 5 sites HELIOS (Marseille R1+R3, Nice R11+R12+saisonnalité, Toulouse R1+partiel, 86 tests) | Stable -- B.4 |
+> | B.3 Auto-reconciliation compteur/facture à l'import (CSV, PDF, audit-all, reconcile-all endpoint, 40 tests) | Stable -- B.3 |
+> | Suite de tests automatisés | **5 111 frontend + 2 990+ backend, 0 régression** |
 
 > **Disclaimer**
 >
@@ -506,6 +509,7 @@ Champs cles du Site :
 | `POST` | `/api/billing/import-pdf` | Import facture PDF EDF/Engie (pymupdf) |
 | `GET` | `/api/billing/invoices/normalized` | Factures normalisees (ht/tva/fournisseur/energie calcules) |
 | `POST` | `/api/billing/audit-all` | Lancer les 14 regles d'anomalie sur toutes les factures |
+| `POST` | `/api/billing/reconcile-all` | Rapprochement compteur/facture tous sites (N mois) |
 | `GET` | `/api/billing/site/{id}` | Facturation d'un site (factures + insights) |
 | `GET` | `/api/billing/anomalies-scoped` | Anomalies billing au format Patrimoine (FACTURATION) |
 | `GET` | `/api/billing/periods` | Timeline mensuelle paginee (coverage_status, ratio, total_ttc) |
