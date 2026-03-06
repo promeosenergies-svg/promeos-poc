@@ -33,6 +33,7 @@ import {
   Tooltip,
   Tabs,
   SkeletonCard,
+  EmptyState,
 } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { track } from '../services/tracker';
@@ -960,13 +961,11 @@ export default function ConsumptionDiagPage() {
           ))}
         </div>
       ) : !summary || filteredInsights.length === 0 ? (
-        <Card>
-          <CardBody className="text-center py-12">
-            <Zap size={32} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-2">Aucun insight de consommation</p>
-            <p className="text-gray-400 text-sm mb-6">
-              Générez des données démo puis lancez le diagnostic pour détecter les anomalies.
-            </p>
+        <EmptyState
+          icon={Zap}
+          title="Aucun insight de consommation"
+          text="Générez des données démo puis lancez le diagnostic pour détecter les anomalies."
+          actions={
             <div className="flex gap-3 justify-center">
               <Button variant="secondary" onClick={handleSeedDemo} disabled={seeding}>
                 1. Générer conso démo
@@ -975,8 +974,8 @@ export default function ConsumptionDiagPage() {
                 2. Lancer le diagnostic
               </Button>
             </div>
-          </CardBody>
-        </Card>
+          }
+        />
       ) : (
         <>
           {/* À retenir — top 3 key insights */}

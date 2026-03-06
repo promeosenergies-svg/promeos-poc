@@ -18,7 +18,12 @@ from collections import defaultdict
 
 
 class KPIEngine:
-    """Compute expert electricity KPIs from time-series readings."""
+    """Compute expert electricity KPIs from time-series readings.
+
+    Note: total_kwh here is computed from raw meter readings passed in.
+    For aggregated consumption (metered vs billed vs estimated), prefer
+    ``get_consumption_summary()`` from ``services.consumption_unified_service``.
+    """
 
     def compute(
         self, readings: List[Dict[str, Any]], interval_minutes: int = 60, schedule: Optional[Dict[str, Any]] = None
@@ -32,7 +37,7 @@ class KPIEngine:
             schedule: optional operating schedule {open_days, open_time, close_time, is_24_7}
 
         Returns:
-            dict of KPI values
+            dict of KPI values (consumption_source always "metered")
         """
         if not readings:
             return self._empty_kpis()
@@ -123,6 +128,7 @@ class KPIEngine:
             "monthly_kwh": dict(monthly_kwh),
             "off_hours_kwh": round(off_hours_kwh, 2),
             "off_hours_ratio": round(off_hours_ratio, 4),
+            "consumption_source": "metered",
         }
 
     def _compute_off_hours(
@@ -239,4 +245,5 @@ class KPIEngine:
             "monthly_kwh": {},
             "off_hours_kwh": 0,
             "off_hours_ratio": 0,
+            "consumption_source": "metered",
         }

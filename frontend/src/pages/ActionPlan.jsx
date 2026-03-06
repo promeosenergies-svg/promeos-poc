@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
+import { EmptyState } from '../ui';
 import {
   Navigation,
   ShieldCheck,
@@ -9,6 +10,7 @@ import {
   Euro,
   ChevronRight,
   Filter,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const STATUT_BADGE = {
@@ -287,10 +289,11 @@ const ActionPlan = () => {
           </div>
 
           {actions.length === 0 && (
-            <div className="p-8 text-center">
-              <ShieldCheck size={48} className="mx-auto text-green-400 mb-3" />
-              <p className="text-gray-600">Aucune action requise. Votre patrimoine est conforme.</p>
-            </div>
+            <EmptyState
+              icon={ClipboardCheck}
+              title="Aucune action requise"
+              text="Votre patrimoine est conforme. Aucune action corrective n'est nécessaire pour le moment."
+            />
           )}
         </div>
       </div>

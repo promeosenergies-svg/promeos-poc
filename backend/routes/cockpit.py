@@ -4,6 +4,7 @@ Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
@@ -117,24 +118,27 @@ def get_cockpit(
         conso_confidence = "none"
         conso_sites_with_data = 0
 
-    return {
-        "organisation": {"nom": org.nom, "type_client": org.type_client},
-        "stats": {
-            "total_sites": total_sites,
-            "sites_actifs": sites_actifs,
-            "avancement_decret_pct": round(avg_avancement, 1),
-            "risque_financier_euro": round(risque_total, 2),
-            "sites_tertiaire_ko": sites_tertiaire_ko,
-            "sites_bacs_ko": sites_bacs_ko,
-            "alertes_actives": alertes_actives,
-            "compliance_score": compliance_score_unified,
-            "compliance_confidence": compliance_confidence,
-            "conso_kwh_total": round(conso_kwh, 2),
-            "conso_confidence": conso_confidence,
-            "conso_sites_with_data": conso_sites_with_data,
+    return JSONResponse(
+        content={
+            "organisation": {"nom": org.nom, "type_client": org.type_client},
+            "stats": {
+                "total_sites": total_sites,
+                "sites_actifs": sites_actifs,
+                "avancement_decret_pct": round(avg_avancement, 1),
+                "risque_financier_euro": round(risque_total, 2),
+                "sites_tertiaire_ko": sites_tertiaire_ko,
+                "sites_bacs_ko": sites_bacs_ko,
+                "alertes_actives": alertes_actives,
+                "compliance_score": compliance_score_unified,
+                "compliance_confidence": compliance_confidence,
+                "conso_kwh_total": round(conso_kwh, 2),
+                "conso_confidence": conso_confidence,
+                "conso_sites_with_data": conso_sites_with_data,
+            },
+            "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
         },
-        "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
-    }
+        headers={"Cache-Control": "public, max-age=30"},
+    )
 
 
 @router.get("/portefeuilles")

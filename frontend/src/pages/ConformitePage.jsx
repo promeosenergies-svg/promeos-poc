@@ -26,6 +26,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import ErrorState from '../ui/ErrorState';
+import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
 import HealthSummary from '../components/HealthSummary';
 import DossierPrintView from '../components/DossierPrintView';
@@ -765,14 +766,8 @@ export default function ConformitePage() {
   if (loading) {
     return (
       <PageShell icon={ShieldCheck} title="Conformité réglementaire" subtitle="Chargement...">
-        <div className="animate-pulse space-y-4">
-          <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-lg" />
-            ))}
-          </div>
-          <div className="h-40 bg-gray-200 rounded-lg" />
-        </div>
+        <SkeletonKpi count={4} />
+        <SkeletonTable rows={5} cols={4} />
       </PageShell>
     );
   }

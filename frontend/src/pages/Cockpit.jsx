@@ -37,6 +37,7 @@ import {
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
+import ErrorState from '../ui/ErrorState';
 import { KPI_ACCENTS } from '../ui/colorTokens';
 // Cockpit V2 — model + sub-components
 import {
@@ -319,9 +320,15 @@ const Cockpit = () => {
     <PageShell icon={FileText} title="Vue exécutive" subtitle={<ScopeSummary />}>
       {/* ── Error banner ── */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
+              .then((data) => setAlertsCount((data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0)))
+              .catch(() => setAlertsCount(0));
+          }}
+        />
       )}
 
       {/* ── Résumé exécutif (Cockpit V2) ── */}

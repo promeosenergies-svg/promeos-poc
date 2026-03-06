@@ -1071,20 +1071,20 @@ describe('BG · Portfolio V1.3 guided empty state', () => {
     expect(code).toMatch(/hasActiveFilters/);
   });
 
-  it('has "Reinitialiser les filtres" button with RotateCcw icon', () => {
-    expect(code).toMatch(/Reinitialiser les filtres/);
+  it('has "Réinitialiser les filtres" button with RotateCcw icon', () => {
+    expect(code).toMatch(/initialiser les filtres/);
     expect(code).toMatch(/RotateCcw/);
   });
 
-  it('has "Importer des donnees" CTA using toConsoImport', () => {
-    expect(code).toMatch(/Importer des donnees/);
+  it('has "Importer des données" CTA using toConsoImport', () => {
+    expect(code).toMatch(/Importer des donn/);
     expect(code).toMatch(/toConsoImport/);
   });
 
   it('shows contextual message based on hasActiveFilters', () => {
     expect(code).toMatch(/hasActiveFilters/);
-    expect(code).toMatch(/reinitialiser les filtres/i);
-    expect(code).toMatch(/Importez vos relevés|Importez des données/);
+    expect(code).toMatch(/initialiser les filtres/i);
+    expect(code).toMatch(/Importez vos relevés|Importez des données|Importez vos relev/);
   });
 });
 
@@ -1135,23 +1135,21 @@ describe('BI · Portfolio API skipSiteHeader', () => {
 describe('BJ · Portfolio empty state Cas A vs Cas B', () => {
   const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
 
-  it('has Cas A empty state with data-empty="no-data"', () => {
-    expect(code).toMatch(/data-empty="no-data"/);
-    expect(code).toMatch(/Aucune donnée de consommation disponible/);
+  it('has Cas A empty state for no data', () => {
+    expect(code).toMatch(/Aucune donnée de consommation/);
   });
 
-  it('has Cas B empty state with data-empty="filters"', () => {
-    expect(code).toMatch(/data-empty="filters"/);
+  it('has Cas B empty state for filters', () => {
     expect(code).toMatch(/Aucun site ne correspond aux filtres/);
   });
 
   it('Cas A shows import CTA via toConsoImport', () => {
     expect(code).toMatch(/toConsoImport/);
-    expect(code).toMatch(/Importer des donnees/);
+    expect(code).toMatch(/Importer des donn/);
   });
 
   it('Cas B shows reset filters button', () => {
-    expect(code).toMatch(/Reinitialiser les filtres/);
+    expect(code).toMatch(/initialiser les filtres/);
     expect(code).toMatch(/handleResetFilters/);
   });
 

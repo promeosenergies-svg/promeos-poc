@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -77,7 +78,8 @@ def portfolio_consumption_summary(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Source invalide: {source}")
 
-    return get_portfolio_consumption(db, org_id, start, end, src)
+    result = get_portfolio_consumption(db, org_id, start, end, src)
+    return JSONResponse(content=result, headers={"Cache-Control": "public, max-age=30"})
 
 
 @router.get("/reconcile/{site_id}")

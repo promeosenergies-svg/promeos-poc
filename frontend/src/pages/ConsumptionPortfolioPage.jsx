@@ -29,7 +29,7 @@ import {
   HelpCircle,
   Eye,
 } from 'lucide-react';
-import { Card, CardBody, SkeletonCard, KpiCard } from '../ui';
+import { Card, CardBody, SkeletonCard, KpiCard, EmptyState } from '../ui';
 import { useToast } from '../ui';
 import InfoTip from '../ui/InfoTip';
 import { useScope } from '../contexts/ScopeContext';
@@ -606,88 +606,73 @@ export default function ConsumptionPortfolioPage() {
           /* Empty state: Cas A (aucune donnee) vs Cas B (filtres trop restrictifs) */
           (cov?.sites_total || 0) === 0 ? (
             /* Cas A: aucune donnee du tout */
-            <div
-              className="flex flex-col items-center justify-center py-12 text-center"
-              data-empty="no-data"
-            >
-              <BarChart3 size={40} className="text-gray-300 mb-4" />
-              <p className="text-sm text-gray-500 mb-1">
-                Aucune donnée de consommation disponible sur la période sélectionnée.
-              </p>
-              <p className="text-xs text-gray-400 mb-4">
-                Importez vos relevés ou changez la période pour voir vos sites.
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate(toConsoImport())}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-                >
-                  <Upload size={14} />
-                  Importer des donnees
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              icon={BarChart3}
+              title="Aucune donnée de consommation"
+              text="Aucune donnée disponible sur la période sélectionnée. Importez vos relevés ou changez la période pour voir vos sites."
+              ctaLabel="Importer des données"
+              onCta={() => navigate(toConsoImport())}
+            />
           ) : (
             /* Cas B: filtres trop restrictifs */
-            <div
-              className="flex flex-col items-center justify-center py-12 text-center"
-              data-empty="filters"
-            >
-              <Search size={40} className="text-gray-300 mb-4" />
-              <p className="text-sm text-gray-500 mb-1">Aucun site ne correspond aux filtres.</p>
-              <p className="text-xs text-gray-400 mb-2">
-                {cov.sites_total} sites existent mais sont masques par vos criteres.
-              </p>
-              {/* Active filter chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-                {search && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-600">
-                    Recherche : « {search} »
-                  </span>
-                )}
-                {confidenceFilter && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-600">
-                    Confiance :{' '}
-                    {confidenceFilter === 'high'
-                      ? 'Haute'
-                      : confidenceFilter === 'medium'
-                        ? 'Moyenne'
-                        : 'Basse'}
-                  </span>
-                )}
-                {anomalyFilter && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-600">
-                    Anomalies uniquement
-                  </span>
-                )}
-                {actionsFilter && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-green-100 text-green-600">
-                    {actionsFilter === 'with' ? 'Avec actions' : 'Sans action'}
-                  </span>
-                )}
-                {noDataFilter && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-600">
-                    Sans donnees
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleResetFilters}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  <RotateCcw size={14} />
-                  Reinitialiser les filtres
-                </button>
-                <button
-                  onClick={() => navigate(toConsoImport())}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-                >
-                  <Upload size={14} />
-                  Importer des donnees
-                </button>
-              </div>
-            </div>
+            <EmptyState
+              icon={Search}
+              title="Aucun site ne correspond aux filtres"
+              text={`${cov.sites_total} sites existent mais sont masqués par vos critères.`}
+              actions={
+                <div className="space-y-4">
+                  {/* Active filter chips */}
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {search && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-600">
+                        Recherche : « {search} »
+                      </span>
+                    )}
+                    {confidenceFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-600">
+                        Confiance :{' '}
+                        {confidenceFilter === 'high'
+                          ? 'Haute'
+                          : confidenceFilter === 'medium'
+                            ? 'Moyenne'
+                            : 'Basse'}
+                      </span>
+                    )}
+                    {anomalyFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-600">
+                        Anomalies uniquement
+                      </span>
+                    )}
+                    {actionsFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-green-100 text-green-600">
+                        {actionsFilter === 'with' ? 'Avec actions' : 'Sans action'}
+                      </span>
+                    )}
+                    {noDataFilter && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-600">
+                        Sans donnees
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      <RotateCcw size={14} />
+                      Réinitialiser les filtres
+                    </button>
+                    <button
+                      onClick={() => navigate(toConsoImport())}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      <Upload size={14} />
+                      Importer des données
+                    </button>
+                  </div>
+                </div>
+              }
+            />
           )
         ) : (
           <>

@@ -17,6 +17,8 @@ import {
   getInsightDetail,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState, Explain } from '../ui';
+import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
+import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import {
@@ -138,6 +140,7 @@ export default function BillIntelPage() {
   const [insights, setInsights] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [insightFilter, setInsightFilter] = useState('all');
@@ -158,6 +161,7 @@ export default function BillIntelPage() {
 
   async function fetchData() {
     setLoading(true);
+    setLoadError(null);
     try {
       const insightParams = {
         ...(insightFilter !== 'all' && { status: insightFilter }),
@@ -183,7 +187,8 @@ export default function BillIntelPage() {
       }
       setActionMap(newMap);
       setInvoices(inv.invoices || []);
-    } catch {
+    } catch (err) {
+      setLoadError(err?.message || 'Erreur lors du chargement de la facturation');
       toast('Erreur lors du chargement de la facturation', 'error');
     }
     setLoading(false);
@@ -418,6 +423,26 @@ export default function BillIntelPage() {
   }
 
   const hasData = summary && summary.total_invoices > 0;
+
+  if (loading && !summary) {
+    return (
+      <PageShell icon={FileText} title="Facturation" subtitle="Chargement...">
+        <SkeletonKpi count={5} />
+        <SkeletonTable rows={5} cols={6} />
+      </PageShell>
+    );
+  }
+
+  if (loadError && !summary) {
+    return (
+      <PageShell icon={FileText} title="Facturation">
+        <ErrorState
+          message={loadError}
+          onRetry={fetchData}
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell

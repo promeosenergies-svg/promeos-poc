@@ -9,6 +9,7 @@ import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -632,4 +633,5 @@ def get_portfolio_compliance_score(
     from services.compliance_score_service import compute_portfolio_compliance
 
     org_id = resolve_org_id(request, auth, db)
-    return compute_portfolio_compliance(db, org_id)
+    result = compute_portfolio_compliance(db, org_id)
+    return JSONResponse(content=result, headers={"Cache-Control": "public, max-age=30"})

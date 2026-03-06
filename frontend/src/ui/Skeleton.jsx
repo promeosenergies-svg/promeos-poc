@@ -17,6 +17,20 @@ export function SkeletonCard() {
   );
 }
 
+export function SkeletonKpi({ count = 4 }) {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="bg-white rounded-lg border border-gray-200 p-5 animate-pulse">
+          <div className="h-3 bg-gray-200 rounded w-1/3 mb-3" />
+          <div className="h-6 bg-gray-200 rounded w-1/2 mb-2" />
+          <div className="h-3 bg-gray-100 rounded w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonTable({ rows = 5, cols = 4 }) {
   return (
     <div className="animate-pulse">

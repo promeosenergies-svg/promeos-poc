@@ -6,7 +6,7 @@ export { default as Select } from './Select';
 export { default as Tabs } from './Tabs';
 export { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from './Table';
 export { default as Pagination } from './Pagination';
-export { default as Skeleton, SkeletonCard, SkeletonTable } from './Skeleton';
+export { default as Skeleton, SkeletonCard, SkeletonKpi, SkeletonTable } from './Skeleton';
 export { default as EmptyState } from './EmptyState';
 export { default as ErrorState } from './ErrorState';
 export { default as TrustBadge } from './TrustBadge';

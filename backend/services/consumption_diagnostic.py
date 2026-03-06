@@ -415,7 +415,12 @@ def generate_demo_gas_consumption(db: Session, site_id: int, days: int = 90, ano
 
 
 def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReading]:
-    """Get last N days of hourly readings for a meter."""
+    """Get last N days of hourly readings for a meter.
+
+    Note: raw readings are required for diagnostic analysis (drift, peaks, gaps).
+    For aggregated consumption totals, prefer ``get_consumption_summary()``
+    from ``services.consumption_unified_service``.
+    """
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
     return (
         db.query(MeterReading)
@@ -778,9 +783,10 @@ def run_diagnostic(
             loss_kwh = insight_data.get("estimated_loss_kwh", 0) or 0
             loss_eur = round(loss_kwh * price_ref, 0)
 
-            # Add price_ref to metrics for transparency
+            # Add price_ref and consumption_source to metrics for transparency
             metrics = insight_data.get("metrics", {})
             metrics["price_ref_eur_kwh"] = price_ref
+            metrics["consumption_source"] = "metered"
 
             # Generate recommended actions
             gen_fn = ACTIONS_GENERATORS.get(insight_data["type"])

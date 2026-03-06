@@ -5,13 +5,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getAlertes } from '../services/api';
 import { Flame, Building2, AlertTriangle, TrendingUp } from 'lucide-react';
-import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState, Explain, GLOSSARY } from '../ui';
+import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState, Explain, GLOSSARY, Pagination } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+
+const ROWS_PER_PAGE = 25;
 
 function Dashboard({ onUpgradeClick }) {
   const { toast } = useToast();
@@ -21,6 +23,7 @@ function Dashboard({ onUpgradeClick }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [siteScores, setSiteScores] = useState({}); // { site_id: score }
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchAlertes = useCallback(() => {
     setLoading(true);
@@ -128,7 +131,9 @@ function Dashboard({ onUpgradeClick }) {
       {sitesCount > 0 && (
         <Card>
           <CardBody>
-            <h2 className="text-lg font-bold text-gray-900 mb-4"><Explain term="worst_sites">Sites</Explain> PROMEOS</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              <Explain term="worst_sites">Sites</Explain> PROMEOS ({orgSites.length} sites au total)
+            </h2>
             <Table>
               <Thead>
                 <Tr>
@@ -141,7 +146,7 @@ function Dashboard({ onUpgradeClick }) {
                 </Tr>
               </Thead>
               <Tbody>
-                {orgSites.slice(0, 10).map((site) => (
+                {orgSites.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE).map((site) => (
                   <Tr key={site.id}>
                     <Td className="font-medium">{site.nom}</Td>
                     <Td>
@@ -172,6 +177,16 @@ function Dashboard({ onUpgradeClick }) {
                 ))}
               </Tbody>
             </Table>
+            {orgSites.length > ROWS_PER_PAGE && (
+              <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
+                <Pagination
+                  page={currentPage}
+                  pageSize={ROWS_PER_PAGE}
+                  total={orgSites.length}
+                  onChange={setCurrentPage}
+                />
+              </div>
+            )}
           </CardBody>
         </Card>
       )}

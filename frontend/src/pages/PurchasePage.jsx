@@ -20,8 +20,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell, Badge, Explain, GLOSSARY } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
+import { PageShell, Badge, Explain, GLOSSARY, EmptyState } from '../ui';
+import { SkeletonCard, SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
+import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import useDataReadiness from '../hooks/useDataReadiness';
@@ -253,6 +254,7 @@ export default function PurchasePage() {
   });
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [computing, setComputing] = useState(false);
   const [acceptedId, setAcceptedId] = useState(null);
 
@@ -323,6 +325,7 @@ export default function PurchasePage() {
     async (siteId) => {
       if (!siteId) return;
       setLoading(true);
+      setLoadError(null);
       try {
         const [est, assump, prefs, results] = await Promise.all([
           getPurchaseEstimate(siteId),
@@ -344,7 +347,8 @@ export default function PurchasePage() {
         });
         setScenarios(results.scenarios || []);
         setAcceptedId(null);
-      } catch {
+      } catch (err) {
+        setLoadError(err?.message || 'Erreur lors du chargement des données du site');
         toast('Erreur lors du chargement des données du site', 'error');
       }
       setLoading(false);
@@ -468,6 +472,38 @@ export default function PurchasePage() {
     }
     setPortfolioLoading(false);
   };
+
+  if (loading && !estimate && scenarios.length === 0) {
+    return (
+      <PageShell icon={ShoppingCart} title="Achats énergie" subtitle="Chargement...">
+        <SkeletonKpi count={4} />
+        <SkeletonTable rows={5} cols={4} />
+      </PageShell>
+    );
+  }
+
+  if (loadError && !estimate) {
+    return (
+      <PageShell icon={ShoppingCart} title="Achats énergie">
+        <ErrorState
+          message={loadError}
+          onRetry={() => selectedSiteId && loadSiteData(selectedSiteId)}
+        />
+      </PageShell>
+    );
+  }
+
+  if (!selectedSiteId && scopedSites.length === 0) {
+    return (
+      <PageShell icon={ShoppingCart} title="Achats énergie">
+        <EmptyState
+          icon={ShoppingCart}
+          title="Aucun site disponible"
+          text="Ajoutez des sites à votre patrimoine pour simuler des scénarios d'achat."
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PurchaseErrorBoundary>
