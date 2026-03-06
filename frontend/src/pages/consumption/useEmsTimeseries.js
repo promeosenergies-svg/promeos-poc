@@ -111,6 +111,7 @@ export default function useEmsTimeseries({
   unit = 'kwh',
   mode = 'agrege',
   granularityOverride = null, // V21-C: user-selected granularity ('30min'|'hourly'|'daily'|'monthly') or null for auto
+  compareYoy = false, // Step 10 — F1: YoY comparison
 } = {}) {
   const [state, setState] = useState({
     status: 'loading',
@@ -166,6 +167,7 @@ export default function useEmsTimeseries({
           metric: apiMetric,
           energy_vector: energyType,
         };
+        if (compareYoy) params.compare = 'yoy';
 
         // 3. Fetch timeseries
         const result = await getEmsTimeseries(params);
@@ -239,7 +241,7 @@ export default function useEmsTimeseries({
     return () => {
       cancelled = true;
     };
-  }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode, granularityOverride]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode, granularityOverride, compareYoy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;
 }

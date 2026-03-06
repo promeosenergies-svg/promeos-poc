@@ -296,6 +296,9 @@ export default function StickyFilterBar({
   granularity = 'auto',
   setGranularity,
   samplingMinutes = null, // V22-B: actual meter reading interval for intersection
+  // YoY comparison toggle (Step 10 — F1)
+  compareYoy = false,
+  setCompareYoy,
 }) {
   const isClassic = uiMode === 'classic';
 
@@ -600,6 +603,22 @@ export default function StickyFilterBar({
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-medium text-gray-600">
             Granularité&nbsp;: {GRAN_LABELS[gran] || gran}
           </span>
+        )}
+
+        {/* YoY comparison toggle (Step 10 — F1) — single-site only, not portfolio */}
+        {setCompareYoy && effectiveSiteIds.length === 1 && !isPortfolioMode && (
+          <button
+            onClick={() => setCompareYoy(!compareYoy)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors duration-100 ${
+              compareYoy
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            }`}
+            title="Comparer avec la même période l'année précédente (N-1)"
+            data-testid="compare-yoy-toggle"
+          >
+            Comparer N-1
+          </button>
         )}
 
         {/* Data quality badge (right-aligned) */}

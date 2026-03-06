@@ -58,7 +58,19 @@ function KpiTile({
   );
 }
 
-export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, onEvidence }) {
+/** TrendDelta — small N vs N-1 badge shown when compareYoy is active */
+function TrendDelta({ deltaPct }) {
+  if (deltaPct == null) return null;
+  const sign = deltaPct > 0 ? '+' : '';
+  const color = deltaPct > 0 ? 'text-red-600' : deltaPct < 0 ? 'text-green-600' : 'text-gray-500';
+  return (
+    <span className={`text-[10px] font-semibold ${color}`} title={`Variation N vs N-1 : ${sign}${deltaPct}%`}>
+      {sign}{deltaPct}% vs N-1
+    </span>
+  );
+}
+
+export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, onEvidence, compareSummary }) {
   // --- kWh total ---
   // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
   // then tunnel.total_kwh (not returned by current tunnel service)
@@ -143,6 +155,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
           icon={Zap}
           label="kWh total"
           value={kwhLabel}
+          sub={compareSummary?.delta_pct != null ? <TrendDelta deltaPct={compareSummary.delta_pct} /> : undefined}
           tooltip="Somme des releves sur la periode selectionnee"
           evidenceId="conso-kwh-total"
           onEvidence={onEvidence}

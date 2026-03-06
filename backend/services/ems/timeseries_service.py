@@ -114,6 +114,7 @@ def query_timeseries(
     mode: str = "aggregate",
     metric: str = "kwh",
     energy_vector: Optional[str] = None,
+    compare: Optional[str] = None,
 ) -> Dict[str, Any]:
     """SQL-level bucketed timeseries query.
 
@@ -229,6 +230,17 @@ def query_timeseries(
     n_points = max((len(s["data"]) for s in series), default=0)
     expected = estimate_points(date_from, date_to, granularity)
     availability = _compute_availability(series, expected, granularity)
+
+    # YoY comparison: query N-1 period and append _prev series
+    if compare == "yoy":
+        prev_series = _query_yoy_prev(
+            db, meter_ids=meter_id_list, meters=meters, bucket_expr=bucket_expr,
+            date_from=date_from, date_to=date_to,
+            granularity=granularity, mode=mode, metric=metric,
+            energy_vector=energy_vector,
+        )
+        series.extend(prev_series)
+
     return {
         "series": series,
         "meta": _meta(granularity, n_points, len(meters), date_from, date_to, metric, series=series),
@@ -453,3 +465,130 @@ def _compute_availability(series: list, expected_points: int, granularity: str) 
             }
         )
     return result
+
+
+# -------------------------------------------------------------------
+# YoY comparison helpers (Step 10 — F1)
+# -------------------------------------------------------------------
+
+def _shift_timestamp_forward_1y(ts_str: str) -> str:
+    """Shift a timestamp string forward by 1 year for YoY overlay alignment.
+
+    Handles monthly ('YYYY-MM'), daily ('YYYY-MM-DD'), and datetime formats.
+    """
+    if len(ts_str) == 7:  # 'YYYY-MM'
+        parts = ts_str.split("-")
+        return f"{int(parts[0]) + 1}-{parts[1]}"
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        try:
+            shifted = dt.replace(year=dt.year + 1)
+        except ValueError:
+            # Feb 29 → Feb 28
+            shifted = dt.replace(year=dt.year + 1, day=28)
+        if " " in ts_str:
+            return shifted.isoformat(sep=" ")
+        if len(ts_str) == 10:
+            return shifted.strftime("%Y-%m-%d")
+        return shifted.isoformat(sep=" ")
+    except (ValueError, TypeError):
+        return ts_str
+
+
+def _query_yoy_prev(
+    db, meter_ids, meters, bucket_expr,
+    date_from, date_to, granularity, mode, metric, energy_vector,
+):
+    """Query the N-1 period and return _prev series with timestamps shifted +1 year."""
+    try:
+        prev_from = date_from.replace(year=date_from.year - 1)
+        prev_to = date_to.replace(year=date_to.year - 1)
+    except ValueError:
+        prev_from = date_from.replace(year=date_from.year - 1, day=28)
+        prev_to = date_to.replace(year=date_to.year - 1, day=28)
+
+    if mode == "aggregate":
+        raw = [_query_aggregate(db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric,
+                                key="total_prev", label="N-1")]
+    elif mode in ("overlay", "stack"):
+        site_meter_map = {}
+        for m in meters:
+            site_meter_map.setdefault(m.site_id, []).append(m)
+        raw = []
+        for sid in sorted(site_meter_map.keys())[:8]:
+            m_ids = [m.id for m in site_meter_map[sid]]
+            raw.append(_query_aggregate(
+                db, m_ids, bucket_expr, prev_from, prev_to, granularity, metric,
+                key=f"site_{sid}_prev", label=f"Site {sid} (N-1)"
+            ))
+    else:
+        raw = [_query_aggregate(db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric,
+                                key="total_prev", label="N-1")]
+
+    # Shift timestamps +1 year to align with current period
+    for s in raw:
+        for pt in s["data"]:
+            pt["t"] = _shift_timestamp_forward_1y(pt["t"])
+
+    return raw
+
+
+def compare_summary(
+    db: Session,
+    site_ids: List[int],
+    date_from: datetime,
+    date_to: datetime,
+    energy_vector: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Compute N vs N-1 summary totals for KPI delta display."""
+    from sqlalchemy import func as sqla_func
+
+    meter_q = db.query(Meter).filter(Meter.site_id.in_(site_ids), Meter.is_active == True)
+    if energy_vector:
+        try:
+            ev = EnergyVector(energy_vector)
+            meter_q = meter_q.filter(Meter.energy_vector == ev)
+        except ValueError:
+            pass
+    meters = meter_q.all()
+    if not meters:
+        return {"current_kwh": None, "previous_kwh": None, "delta_pct": None}
+
+    meter_ids = [m.id for m in meters]
+
+    def _sum_kwh(mids, dt_from, dt_to):
+        best = _resolve_best_freq(db, mids, dt_from, dt_to, "daily")
+        val = (
+            db.query(sqla_func.sum(MeterReading.value_kwh))
+            .filter(
+                MeterReading.meter_id.in_(mids),
+                MeterReading.timestamp >= dt_from,
+                MeterReading.timestamp < dt_to,
+                MeterReading.frequency.in_(best),
+            )
+            .scalar()
+        )
+        return round(val, 2) if val else None
+
+    current_kwh = _sum_kwh(meter_ids, date_from, date_to)
+
+    try:
+        prev_from = date_from.replace(year=date_from.year - 1)
+        prev_to = date_to.replace(year=date_to.year - 1)
+    except ValueError:
+        prev_from = date_from.replace(year=date_from.year - 1, day=28)
+        prev_to = date_to.replace(year=date_to.year - 1, day=28)
+
+    previous_kwh = _sum_kwh(meter_ids, prev_from, prev_to)
+
+    delta_pct = None
+    if current_kwh is not None and previous_kwh and previous_kwh > 0:
+        delta_pct = round((current_kwh - previous_kwh) / previous_kwh * 100, 1)
+
+    return {
+        "current_kwh": current_kwh,
+        "previous_kwh": previous_kwh,
+        "delta_pct": delta_pct,
+        "period_current": f"{date_from.date().isoformat()} / {date_to.date().isoformat()}",
+        "period_previous": f"{prev_from.date().isoformat()} / {prev_to.date().isoformat()}",
+    }

@@ -1250,6 +1250,8 @@ export const getEmsTimeseriesSuggest = (dateFrom, dateTo) =>
   _cachedGet('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(
     (r) => r.data
   );
+export const getEmsCompareSummary = (params) =>
+  _cachedGet('/ems/timeseries/compare-summary', { params }).then((r) => r.data);
 export const getEmsWeather = (siteId, dateFrom, dateTo) =>
   api
     .get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } })

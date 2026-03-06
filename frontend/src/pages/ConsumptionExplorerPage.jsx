@@ -450,6 +450,35 @@ export default function ConsumptionExplorerPage() {
 
   // ── V21-C: Granularity override (user-selectable pills) ─────────────────
   const [granularity, setGranularity] = useState('auto');
+  // ── Step 10 — F1: YoY comparison toggle ──────────────────────────────────
+  const [compareYoy, setCompareYoy] = useState(false);
+  const [compareSummary, setCompareSummary] = useState(null);
+
+  useEffect(() => {
+    if (!compareYoy || !siteIds.length) {
+      setCompareSummary(null);
+      return;
+    }
+    let cancelled = false;
+    async function fetchSummary() {
+      try {
+        const { getEmsCompareSummary } = await import('../services/api');
+        const dateFrom = startDate || new Date(Date.now() - days * 86400000).toISOString();
+        const dateTo = endDate || new Date().toISOString();
+        const result = await getEmsCompareSummary({
+          site_ids: siteIds.join(','),
+          date_from: dateFrom,
+          date_to: dateTo,
+          energy_vector: energyType,
+        });
+        if (!cancelled) setCompareSummary(result);
+      } catch {
+        if (!cancelled) setCompareSummary(null);
+      }
+    }
+    fetchSummary();
+    return () => { cancelled = true; };
+  }, [compareYoy, siteIds.join(','), days, startDate, endDate, energyType]); // eslint-disable-line react-hooks/exhaustive-deps
   // ── V22-B: Sampling minutes from backend meta (for data-frequency intersection) ──
   const [samplingMinutes, setSamplingMinutes] = useState(null);
   // V26-fix: only update native sampling resolution from auto mode responses;
@@ -603,6 +632,8 @@ export default function ConsumptionExplorerPage() {
         granularity={granularity}
         setGranularity={setGranularity}
         samplingMinutes={samplingMinutes}
+        compareYoy={compareYoy}
+        setCompareYoy={setCompareYoy}
       />
 
       {/* Portfolio info banner — non-blocking, dismissible */}
@@ -635,6 +666,7 @@ export default function ConsumptionExplorerPage() {
           progression={aggregatedProgression}
           confidence={availability?.confidence}
           onEvidence={setEvidenceKpiOpen}
+          compareSummary={compareYoy ? compareSummary : null}
         />
       )}
 
@@ -692,6 +724,7 @@ export default function ConsumptionExplorerPage() {
                 onSelectAll={sites.length ? () => setSiteIds(sites.map((s) => s.id)) : undefined}
                 onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
                 onMeta={handleMeta}
+                compareYoy={compareYoy}
               />
               {/* Benchmark: reference profile comparison (Classic mode) */}
               {showContent && (
@@ -776,6 +809,7 @@ export default function ConsumptionExplorerPage() {
                     }
                     onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
                     onMeta={handleMeta}
+                    compareYoy={compareYoy}
                   />
                 )}
                 {/* Benchmark: reference profile comparison — below timeseries */}

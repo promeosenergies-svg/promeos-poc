@@ -232,10 +232,25 @@ export default function ExplorerChart({
             />
           )}
 
+          {/* YoY _prev series — dashed overlay (Step 10 — F1) */}
+          {stableData.length > 0 && stableData[0]?.total_prev != null && mode === 'agrege' && (
+            <Line
+              type="monotone"
+              dataKey="total_prev"
+              stroke="#94a3b8"
+              strokeDasharray="5 5"
+              strokeOpacity={0.6}
+              dot={false}
+              strokeWidth={1.5}
+              name="N-1"
+            />
+          )}
+
           {mode === 'superpose' &&
             siteIds.map((sid, idx) => {
               const color = siteColors[sid] || colorForSite(sid, idx);
-              return (
+              const hasPrev = stableData.length > 0 && stableData[0]?.[`site_${sid}_prev`] != null;
+              return [
                 <Line
                   key={sid}
                   type="monotone"
@@ -244,8 +259,21 @@ export default function ExplorerChart({
                   dot={false}
                   strokeWidth={2}
                   name={`Site ${idx + 1}`}
-                />
-              );
+                />,
+                hasPrev && (
+                  <Line
+                    key={`${sid}_prev`}
+                    type="monotone"
+                    dataKey={`site_${sid}_prev`}
+                    stroke={color}
+                    strokeDasharray="5 5"
+                    strokeOpacity={0.4}
+                    dot={false}
+                    strokeWidth={1.5}
+                    name={`Site ${idx + 1} (N-1)`}
+                  />
+                ),
+              ];
             })}
 
           {mode === 'empile' &&

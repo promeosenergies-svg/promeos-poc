@@ -268,6 +268,7 @@ def get_timeseries(
     metric: str = Query("kwh"),
     meter_ids: Optional[str] = None,
     energy_vector: Optional[str] = None,
+    compare: Optional[str] = Query(None, description="Comparison mode: 'yoy' for year-over-year"),
     db: Session = Depends(get_db),
 ):
     from services.ems.timeseries_service import (
@@ -315,6 +316,7 @@ def get_timeseries(
         mode,
         metric,
         energy_vector,
+        compare=compare,
     )
 
 
@@ -329,6 +331,23 @@ def suggest_timeseries_granularity(
     dt_to = datetime.fromisoformat(date_to)
     recommended = suggest_granularity(dt_from, dt_to)
     return {"granularity": recommended}
+
+
+@router.get("/timeseries/compare-summary")
+def get_timeseries_compare_summary(
+    site_ids: str = Query(..., description="Comma-separated site IDs"),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    energy_vector: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """N vs N-1 summary totals (kWh + delta %) for KPI cards."""
+    from services.ems.timeseries_service import compare_summary
+
+    parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+    dt_from = datetime.fromisoformat(date_from)
+    dt_to = datetime.fromisoformat(date_to)
+    return compare_summary(db, parsed_site_ids, dt_from, dt_to, energy_vector)
 
 
 # -------------------------------------------------------------------

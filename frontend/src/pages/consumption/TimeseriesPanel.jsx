@@ -271,6 +271,7 @@ export default function TimeseriesPanel({
   onSelectAll,
   onGenerateDemo, // V20-D: optional — triggers demo data generation + refetch
   onMeta, // V22-B: optional — called with meta object when data arrives
+  compareYoy = false, // Step 10 — F1: YoY comparison
 }) {
   const tsState = useEmsTimeseries({
     siteIds,
@@ -281,6 +282,7 @@ export default function TimeseriesPanel({
     unit,
     mode,
     granularityOverride,
+    compareYoy,
   });
 
   const { status, chartData, seriesData, meta, granularity, error, debugInfo } = tsState;
