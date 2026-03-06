@@ -536,7 +536,7 @@ export default function StickyFilterBar({
                 : 'Passer en mode Classique (vue standard)'
             }
           >
-            {isClassic ? '⚙ Mode Expert' : '← Mode Classique'}
+            {isClassic ? 'Passer en mode Expert →' : '← Retour au mode Classique'}
           </button>
         )}
       </div>
