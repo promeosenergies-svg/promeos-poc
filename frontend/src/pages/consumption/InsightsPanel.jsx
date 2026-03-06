@@ -12,6 +12,8 @@ import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Zap, Activity, AlertTriangle, BarChart3 } from 'lucide-react';
 import useEmsTimeseries from './useEmsTimeseries';
 import { fmtPct } from '../../utils/format';
+import { useExpertMode } from '../../contexts/ExpertModeContext';
+import { getKpiLabel } from '../../shared/kpiLabels';
 
 // ── Pure statistical helpers (exported for tests) ───────────────────────────
 
@@ -109,7 +111,7 @@ const uMwh = (energyType) => (energyType === 'gas' ? 'MWh PCS' : 'MWh');
 const KPI_CONFIG = [
   {
     id: 'total_kwh',
-    label: 'Total consommé',
+    labelId: 'total_kwh',
     icon: Zap,
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-500',
@@ -121,7 +123,7 @@ const KPI_CONFIG = [
   },
   {
     id: 'avg_per_day',
-    label: 'Moyenne / jour',
+    labelId: 'avg_per_day',
     icon: Activity,
     iconBg: 'bg-indigo-50',
     iconText: 'text-indigo-500',
@@ -130,7 +132,7 @@ const KPI_CONFIG = [
   },
   {
     id: 'p95',
-    label: 'Pic P95',
+    labelId: 'p95_kw',
     icon: TrendingUp,
     iconBg: 'bg-red-50',
     iconText: 'text-red-500',
@@ -139,7 +141,7 @@ const KPI_CONFIG = [
   },
   {
     id: 'p05',
-    label: 'Talon P05',
+    labelId: 'p05_kw',
     icon: TrendingDown,
     iconBg: 'bg-emerald-50',
     iconText: 'text-emerald-500',
@@ -148,7 +150,7 @@ const KPI_CONFIG = [
   },
   {
     id: 'load_factor',
-    label: 'Facteur de charge',
+    labelId: 'load_factor',
     icon: BarChart3,
     iconBg: 'bg-amber-50',
     iconText: 'text-amber-500',
@@ -162,7 +164,7 @@ const KPI_CONFIG = [
   },
   {
     id: 'anomaly_count',
-    label: 'Anomalies détectées',
+    labelId: 'anomaly_count',
     icon: AlertTriangle,
     iconBg: 'bg-orange-50',
     iconText: 'text-orange-500',
@@ -171,7 +173,7 @@ const KPI_CONFIG = [
   },
 ];
 
-function KpiCard({ config, value, kpis, energyType }) {
+function KpiCard({ config, value, kpis, energyType, isExpert }) {
   const Icon = config.icon;
   return (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-start gap-3 hover:shadow-sm transition-shadow">
@@ -182,7 +184,7 @@ function KpiCard({ config, value, kpis, energyType }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
-          {config.label}
+          {getKpiLabel(config.labelId, isExpert)}
         </p>
         <p className="text-lg font-bold text-gray-900 leading-tight truncate">
           {config.format(value, energyType)}
@@ -196,6 +198,7 @@ function KpiCard({ config, value, kpis, energyType }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function InsightsPanel({ siteIds = [], energyType = 'electricity', days = 90 }) {
+  const { isExpert } = useExpertMode();
   const { status, seriesData } = useEmsTimeseries({
     siteIds,
     energyType,
@@ -267,6 +270,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
             value={kpis[cfg.id]}
             kpis={kpis}
             energyType={energyType}
+            isExpert={isExpert}
           />
         ))}
       </div>
@@ -283,7 +287,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
         <div className="flex justify-between mt-1">
           <span className="text-[10px] text-gray-400">Talon</span>
           <span className="text-[10px] font-medium text-gray-600">
-            Facteur {fmtPct(kpis.load_factor, true, 1)}
+            {getKpiLabel('load_factor', isExpert)} {fmtPct(kpis.load_factor, true, 1)}
           </span>
           <span className="text-[10px] text-gray-400">Pic</span>
         </div>

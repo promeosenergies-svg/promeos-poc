@@ -268,4 +268,10 @@ export const GLOSSARY = {
       "Émissions de gaz à effet de serre calculées à partir de la consommation et du facteur d'émission ADEME par vecteur énergétique (électricité : 0,057 kgCO₂e/kWh, gaz : 0,227 kgCO₂e/kWh).",
     long: "Formule : kWh × facteur ADEME (différencié par vecteur). Unité : kgCO₂e ou tCO₂e. Source : ADEME Base Carbone 2024.",
   },
+  timeline_reglementaire: {
+    term: 'Frise réglementaire',
+    short:
+      "Vue chronologique de toutes les échéances réglementaires applicables au portefeuille (Décret Tertiaire, BACS, APER). Chaque point indique le nombre de sites concernés et le risque financier.",
+    long: "Les échéances proviennent de la configuration réglementaire (regs.yaml) croisée avec les données patrimoniales (surfaces, puissances CVC, parkings). Statuts : échue (rouge), < 12 mois (orange), à planifier (bleu).",
+  },
 };

@@ -30,6 +30,7 @@ import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
 import HealthSummary from '../components/HealthSummary';
 import DossierPrintView from '../components/DossierPrintView';
+import RegulatoryTimeline from '../components/compliance/RegulatoryTimeline';
 import {
   REG_LABELS,
   REG_DESCRIPTIONS,
@@ -48,6 +49,7 @@ import {
   getFindingDetail,
   getIntakeQuestions,
   resetDb,
+  getComplianceTimeline,
 } from '../services/api';
 import {
   getComplianceScoreColor,
@@ -487,6 +489,8 @@ export default function ConformitePage() {
   const [bundle, setBundle] = useState(null);
   const [dossierSource, setDossierSource] = useState(null);
   const [complianceScore, setComplianceScore] = useState(null); // A.2 unified score
+  const [timeline, setTimeline] = useState(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
 
   const loadData = useCallback(() => {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
@@ -541,6 +545,16 @@ export default function ConformitePage() {
       .then((data) => setComplianceScore(data))
       .catch(() => setComplianceScore(null));
   }, [org?.id, scopedSites, sitesLoading]);
+
+  // Step 13: Fetch regulatory timeline
+  useEffect(() => {
+    if (sitesLoading || !org?.id) return;
+    setTimelineLoading(true);
+    getComplianceTimeline()
+      .then((data) => setTimeline(data))
+      .catch(() => setTimeline(null))
+      .finally(() => setTimelineLoading(false));
+  }, [org?.id, sitesLoading]);
 
   // Load intake questions for Donnees tab
   useEffect(() => {
@@ -958,6 +972,13 @@ export default function ConformitePage() {
           </div>
         </div>
       )}
+
+      {/* Step 13: Frise reglementaire */}
+      <RegulatoryTimeline
+        events={timeline?.events || []}
+        today={timeline?.today}
+        loading={timelineLoading}
+      />
 
       {/* Cockpit Tabs */}
       <Tabs

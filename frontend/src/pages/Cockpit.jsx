@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { getNotificationsSummary } from '../services/api';
+import { getNotificationsSummary, getComplianceTimeline } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { toActionsList } from '../services/routes';
 import {
@@ -100,6 +100,7 @@ const Cockpit = () => {
 
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
+  const [nextDeadline, setNextDeadline] = useState(null);
   // A.1: Consumption source tracking
   const [consoSource, setConsoSource] = useState(null);
 
@@ -126,6 +127,14 @@ const Cockpit = () => {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setComplianceApi(data))
       .catch(() => setComplianceApi(null));
+  }, [org?.id]);
+
+  // Step 13: Fetch next regulatory deadline
+  useEffect(() => {
+    if (!org?.id) return;
+    getComplianceTimeline()
+      .then((data) => setNextDeadline(data?.next_deadline || null))
+      .catch(() => setNextDeadline(null));
   }, [org?.id]);
 
   // A.1: Fetch consumption source from cockpit API (conso_confidence)
@@ -344,6 +353,27 @@ const Cockpit = () => {
 
       {/* ── Impact & Décision ── */}
       <ImpactDecisionPanel kpis={kpis} />
+
+      {/* Step 13: Prochaine echeance reglementaire */}
+      {nextDeadline && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition"
+          onClick={() => navigate('/conformite')}
+        >
+          <ShieldCheck size={18} className="text-amber-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-800">
+              Prochaine echeance : {nextDeadline.label}
+            </p>
+            <p className="text-xs text-amber-600">
+              {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''}
+            </p>
+          </div>
+          <span className="text-xs font-medium text-amber-700 hover:underline shrink-0">
+            Voir toutes les echeances
+          </span>
+        </div>
+      )}
 
       {/* ── Briefing du jour ── */}
       <div data-tour="step-2">

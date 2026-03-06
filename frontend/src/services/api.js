@@ -626,6 +626,8 @@ export const getSiteComplianceSummary = (siteId) =>
   api.get(`/compliance/sites/${siteId}/summary`).then((r) => r.data);
 export const getPortfolioComplianceSummary = (params = {}) =>
   api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
+export const getComplianceTimeline = () =>
+  api.get('/compliance/timeline').then((r) => r.data);
 
 // V69: CEE Pipeline + M&V
 export const getSiteWorkPackages = (siteId) =>

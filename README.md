@@ -111,7 +111,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | B.3 Auto-reconciliation compteur/facture à l'import (CSV, PDF, audit-all, reconcile-all endpoint, 40 tests) | Stable -- B.3 |
 > | F.1 Comparaison temporelle N vs N-1 (compare=yoy, _prev dashed series, compare-summary, TrendDelta KPI, toggle single-site, 46 tests) | Stable -- F.1 |
 > | F.2 Période unifiée via URL (usePeriodParams hook, cross-page propagation Explorer↔Monitoring↔Diagnostic, period badges, 24 tests) | Stable -- F.2 |
-> | Suite de tests automatisés | **5 160 frontend + 3 010+ backend, 0 régression** |
+> | F.6 KPI Labels Simple/Expert (kpiLabels.js, getKpiLabel, MonitoringPage+Explorer+InsightsPanel, 15 tests) | Stable -- F.6 |
+> | C.5 Timeline réglementaire visuelle (GET /compliance/timeline, RegulatoryTimeline horizontal+vertical, Cockpit badge, glossaire, 33 tests) | Stable -- C.5 |
+> | Suite de tests automatisés | **5 188 frontend + 3 030+ backend, 0 régression** |
 
 > **Disclaimer**
 >

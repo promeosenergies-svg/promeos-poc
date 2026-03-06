@@ -68,6 +68,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import { getKpiMessage } from '../services/kpiMessaging';
+import { getKpiLabel } from '../shared/kpiLabels';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR } from '../utils/format';
 import {
@@ -2256,7 +2257,7 @@ export default function MonitoringPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
               <StatusKpiCard
                 icon={Zap}
-                title="Pmax / P95"
+                title={getKpiLabel('pmax_kw', isExpert)}
                 value={kpiData.pmax_kw != null ? `${fmtNum(kpiData.pmax_kw)} kW` : '-'}
                 sub={`P95: ${fmtNum(kpiData.p95_kw)} kW${benchmarkLabel('pmax_kw')}`}
                 tooltip={`${KPI_TOOLTIPS.pmax}\n${benchmarkTip('pmax_kw')}`}
@@ -2265,7 +2266,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={TrendingUp}
-                title="Talon / Base"
+                title={getKpiLabel('pbase_kw', isExpert)}
                 value={kpiData.pbase_kw != null ? `${fmtNum(kpiData.pbase_kw)} kW` : '-'}
                 sub={`Nuit: ${fmtNum(kpiData.pbase_night_kw)} kW${benchmarkLabel('pbase_kw')}`}
                 tooltip={`Talon = consommation mini hors périodes d'activité.\n${benchmarkTip('pbase_kw')}`}
@@ -2274,7 +2275,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={Activity}
-                title="Facteur de charge"
+                title={getKpiLabel('load_factor', isExpert)}
                 value={kpiData.load_factor != null ? `${fmtNum(kpiData.load_factor * 100)}%` : '-'}
                 sub={`Pic/Moy: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}${benchmarkLabel('load_factor')}`}
                 tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par défaut — choisissez un profil pour des seuils adaptés.' : ''}\n${benchmarkTip('load_factor')}`}
@@ -2294,7 +2295,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={Shield}
-                title="Risque Puissance"
+                title={getKpiLabel('risk_power_score', isExpert)}
                 value={riskScore != null ? `${riskScore}/100` : '-'}
                 sub={
                   riskScore != null
@@ -2318,7 +2319,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={CheckCircle}
-                title="Qualité Données"
+                title={getKpiLabel('data_quality_score', isExpert)}
                 value={qualityScore != null ? `${qualityScore}/100` : '-'}
                 sub={
                   qualityScore != null
@@ -2353,7 +2354,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={Clock}
-                title={<Explain term="off_hours_ratio">Hors Horaires</Explain>}
+                title={<Explain term="off_hours_ratio">{getKpiLabel('off_hours_ratio', isExpert)}</Explain>}
                 value={offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}
                 sub={
                   schedule
@@ -2397,7 +2398,7 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={Leaf}
-                title="CO₂e"
+                title={getKpiLabel('total_tco2e', isExpert)}
                 value={
                   emissions.annualized_co2e_tonnes != null
                     ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an`
@@ -2416,7 +2417,7 @@ export default function MonitoringPage() {
               {climate && (
                 <StatusKpiCard
                   icon={Thermometer}
-                  title="Sensibilité Climatique"
+                  title={getKpiLabel('climate_sensitivity', isExpert)}
                   value={
                     climate.slope_kw_per_c != null
                       ? `${fmtNum(climate.slope_kw_per_c, 1)} (kWh/j)/°C`

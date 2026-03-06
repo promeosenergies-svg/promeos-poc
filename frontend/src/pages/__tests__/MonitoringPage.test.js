@@ -462,8 +462,8 @@ describe('V9 CO2e: MonitoringPage includes Leaf import and CO2e KPI card', () =>
     expect(src).toMatch(/import\s*\{[^}]*Leaf[^}]*\}\s*from\s*'lucide-react'/);
   });
 
-  it('has CO2e KPI card with title', () => {
-    expect(src).toContain('title="CO₂e"');
+  it('has CO2e KPI card using getKpiLabel', () => {
+    expect(src).toContain("getKpiLabel('total_tco2e'");
   });
 
   it('ExecutiveSummary has Empreinte CO2e card', () => {

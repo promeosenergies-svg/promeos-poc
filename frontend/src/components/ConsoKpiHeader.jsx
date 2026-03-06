@@ -11,6 +11,8 @@ import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-
 import { TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 import { fmtNum } from '../utils/format';
+import { useExpertMode } from '../contexts/ExpertModeContext';
+import { getKpiLabel } from '../shared/kpiLabels';
 
 const CONFIDENCE_TOOLTIP = {
   high: 'Haute : > 500 relevés, données homogènes',
@@ -71,6 +73,7 @@ function TrendDelta({ deltaPct }) {
 }
 
 export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, onEvidence, compareSummary }) {
+  const { isExpert } = useExpertMode();
   // --- kWh total ---
   // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
   // then tunnel.total_kwh (not returned by current tunnel service)
@@ -153,7 +156,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiTile
           icon={Zap}
-          label="kWh total"
+          label={getKpiLabel('total_kwh', isExpert)}
           value={kwhLabel}
           sub={compareSummary?.delta_pct != null ? <TrendDelta deltaPct={compareSummary.delta_pct} /> : undefined}
           tooltip="Somme des releves sur la periode selectionnee"
@@ -175,7 +178,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
         />
         <KpiTile
           icon={Leaf}
-          label="CO2e"
+          label={getKpiLabel('total_kgco2e', isExpert)}
           value={co2Label}
           sub="ADEME 2024"
           tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)"
@@ -184,13 +187,13 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
         />
         <KpiTile
           icon={Activity}
-          label="Pic kW (P95)"
+          label={getKpiLabel('p95_kw', isExpert)}
           value={p95Label}
           tooltip="95e percentile de puissance sur les creneaux horaires"
         />
         <KpiTile
           icon={Moon}
-          label="Base nocturne"
+          label={getKpiLabel('night_ratio', isExpert)}
           value={basePctLabel}
           color={basePctColor}
           tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine"

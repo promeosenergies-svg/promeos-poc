@@ -6,6 +6,7 @@ Endpoint to trigger recomputation of site conformity snapshots.
 """
 
 import json
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -641,3 +642,254 @@ def get_portfolio_compliance_score(
     org_id = resolve_org_id(request, auth, db)
     result = compute_portfolio_compliance(db, org_id)
     return JSONResponse(content=result, headers={"Cache-Control": "public, max-age=30"})
+
+
+# ========================================
+# Step 13 — Timeline reglementaire
+# ========================================
+
+
+def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
+    """
+    Construit la frise chronologique reglementaire a partir de regs.yaml
+    et des sites de l'organisation.
+    """
+    import yaml
+    import os
+
+    # --- Load regs.yaml ---
+    yaml_path = os.path.join(os.path.dirname(__file__), "..", "regops", "config", "regs.yaml")
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        regs = yaml.safe_load(f)
+
+    # --- Query org sites with relevant fields ---
+    sites = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.actif == True)
+        .all()
+    )
+
+    # --- Query existing ComplianceFinding for NOK counts ---
+    findings = (
+        db.query(ComplianceFinding)
+        .filter(ComplianceFinding.site_id.in_([s.id for s in sites]))
+        .all()
+    ) if sites else []
+
+    nok_by_rule = {}
+    for f in findings:
+        if f.status in ("NOK", "non_conforme"):
+            nok_by_rule.setdefault(f.rule_id or f.regulation, set()).add(f.site_id)
+
+    # --- Build events from regs.yaml ---
+    one_year = today + timedelta(days=365)
+    events = []
+
+    # Tertiaire
+    dt_cfg = regs.get("tertiaire_operat", {})
+    dt_deadlines = dt_cfg.get("deadlines", {})
+    dt_penalties = dt_cfg.get("penalties", {})
+    dt_threshold = dt_cfg.get("scope_threshold_m2", 1000)
+    dt_sites = [s for s in sites if (s.tertiaire_area_m2 or 0) >= dt_threshold]
+
+    if dt_deadlines.get("attestation_display"):
+        dl = date.fromisoformat(dt_deadlines["attestation_display"])
+        nok_count = len(nok_by_rule.get("OPERAT_NOT_STARTED", set()) | nok_by_rule.get("tertiaire_operat", set()))
+        events.append({
+            "id": "tertiaire_affichage",
+            "framework": "DECRET_TERTIAIRE",
+            "label": "Attestation d'affichage energetique",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "high",
+            "sites_concerned": len(dt_sites),
+            "sites_non_compliant": min(nok_count, len(dt_sites)),
+            "description": "Tous les batiments tertiaires >= 1000 m\u00B2 doivent afficher leur performance energetique.",
+            "penalty_eur": dt_penalties.get("non_affichage"),
+        })
+
+    if dt_deadlines.get("declaration_2025"):
+        dl = date.fromisoformat(dt_deadlines["declaration_2025"])
+        nok_count = len(nok_by_rule.get("OPERAT_NOT_STARTED", set()) | nok_by_rule.get("tertiaire_operat", set()))
+        events.append({
+            "id": "tertiaire_declaration",
+            "framework": "DECRET_TERTIAIRE",
+            "label": "Declaration OPERAT 2025",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "high",
+            "sites_concerned": len(dt_sites),
+            "sites_non_compliant": min(nok_count, len(dt_sites)),
+            "description": "Declaration des consommations 2025 sur la plateforme OPERAT.",
+            "penalty_eur": dt_penalties.get("non_declaration"),
+        })
+
+    # BACS
+    bacs_cfg = regs.get("bacs", {})
+    bacs_deadlines = bacs_cfg.get("deadlines", {})
+    bacs_penalties = bacs_cfg.get("penalties", {})
+    bacs_thresholds = bacs_cfg.get("thresholds", {})
+
+    # Count sites with BACS assets by CVC power (sum putile from systems)
+    from models.bacs_models import BacsAsset, BacsCvcSystem
+    from sqlalchemy import func as sa_func
+
+    site_power = {}
+    if sites:
+        rows = (
+            db.query(
+                BacsAsset.site_id,
+                sa_func.coalesce(sa_func.sum(BacsCvcSystem.putile_kw_computed), 0),
+            )
+            .outerjoin(BacsCvcSystem, BacsCvcSystem.asset_id == BacsAsset.id)
+            .filter(BacsAsset.site_id.in_([s.id for s in sites]))
+            .group_by(BacsAsset.site_id)
+            .all()
+        )
+        site_power = {r[0]: r[1] for r in rows}
+
+    sites_above_290 = {sid for sid, pw in site_power.items() if pw >= bacs_thresholds.get("high_kw", 290)}
+    sites_70_to_290 = {sid for sid, pw in site_power.items() if bacs_thresholds.get("low_kw", 70) <= pw < bacs_thresholds.get("high_kw", 290)}
+
+    if bacs_deadlines.get("above_290"):
+        dl = date.fromisoformat(bacs_deadlines["above_290"])
+        nok_count = len(nok_by_rule.get("BACS_290KW", set()) | nok_by_rule.get("bacs", set()))
+        events.append({
+            "id": "bacs_290kw",
+            "framework": "BACS",
+            "label": "BACS > 290 kW — obligation GTB/GTC",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "critical",
+            "sites_concerned": len(sites_above_290),
+            "sites_non_compliant": min(nok_count, len(sites_above_290)),
+            "description": "Les batiments avec une puissance CVC > 290 kW doivent etre equipes d'un systeme GTB/GTC.",
+            "penalty_eur": bacs_penalties.get("non_compliance"),
+        })
+
+    if bacs_deadlines.get("above_70"):
+        dl = date.fromisoformat(bacs_deadlines["above_70"])
+        events.append({
+            "id": "bacs_70kw",
+            "framework": "BACS",
+            "label": "BACS 70-290 kW — obligation GTB/GTC",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "medium",
+            "sites_concerned": len(sites_70_to_290),
+            "sites_non_compliant": 0,
+            "description": "Extension de l'obligation GTB/GTC aux batiments avec puissance CVC 70-290 kW.",
+            "penalty_eur": bacs_penalties.get("non_compliance"),
+        })
+
+    # APER
+    aper_cfg = regs.get("aper", {})
+    aper_deadlines = aper_cfg.get("deadlines", {})
+    aper_parking = aper_cfg.get("parking_thresholds", {})
+    aper_roof = aper_cfg.get("roof_threshold_m2", 500)
+
+    sites_parking_large = [s for s in sites if (s.parking_area_m2 or 0) >= aper_parking.get("large_m2", 10000)]
+    sites_parking_medium = [s for s in sites if aper_parking.get("medium_m2", 1500) <= (s.parking_area_m2 or 0) < aper_parking.get("large_m2", 10000)]
+    sites_roof = [s for s in sites if (s.roof_area_m2 or 0) >= aper_roof]
+
+    if aper_deadlines.get("parking_large"):
+        dl = date.fromisoformat(aper_deadlines["parking_large"])
+        events.append({
+            "id": "aper_parking_large",
+            "framework": "APER",
+            "label": "Solarisation parkings > 10 000 m\u00B2",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "medium",
+            "sites_concerned": len(sites_parking_large),
+            "sites_non_compliant": 0,
+            "description": "Les parkings exterieurs > 10 000 m\u00B2 doivent etre equipes d'ombrieres photovoltaiques.",
+            "penalty_eur": None,
+        })
+
+    if aper_deadlines.get("parking_medium"):
+        dl = date.fromisoformat(aper_deadlines["parking_medium"])
+        events.append({
+            "id": "aper_parking_medium",
+            "framework": "APER",
+            "label": "Solarisation parkings 1 500-10 000 m\u00B2",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "medium",
+            "sites_concerned": len(sites_parking_medium),
+            "sites_non_compliant": 0,
+            "description": "Les parkings exterieurs de 1 500 a 10 000 m\u00B2 doivent etre equipes d'ombrieres.",
+            "penalty_eur": None,
+        })
+
+    if aper_deadlines.get("roof"):
+        dl = date.fromisoformat(aper_deadlines["roof"])
+        events.append({
+            "id": "aper_roof",
+            "framework": "APER",
+            "label": "Solarisation toitures > 500 m\u00B2",
+            "deadline": dl.isoformat(),
+            "status": _deadline_status(dl, today, one_year),
+            "severity": "medium",
+            "sites_concerned": len(sites_roof),
+            "sites_non_compliant": 0,
+            "description": "Les toitures > 500 m\u00B2 des batiments neufs ou renoves doivent integrer du photovoltaique.",
+            "penalty_eur": None,
+        })
+
+    # Sort by deadline
+    events.sort(key=lambda e: e["deadline"])
+
+    # Next deadline (future only)
+    next_dl = None
+    for evt in events:
+        dl = date.fromisoformat(evt["deadline"])
+        if dl > today:
+            days_remaining = (dl - today).days
+            next_dl = {
+                "id": evt["id"],
+                "label": evt["label"],
+                "deadline": evt["deadline"],
+                "days_remaining": days_remaining,
+            }
+            break
+
+    # Total penalty exposure
+    total_penalty = sum(e.get("penalty_eur") or 0 for e in events if e["status"] != "passed" or e["sites_non_compliant"] > 0)
+
+    return {
+        "events": events,
+        "today": today.isoformat(),
+        "next_deadline": next_dl,
+        "total_penalty_exposure_eur": total_penalty,
+    }
+
+
+def _deadline_status(deadline: date, today: date, one_year_out: date) -> str:
+    """Determine event status based on deadline vs today."""
+    if deadline < today:
+        return "passed"
+    elif deadline <= one_year_out:
+        return "upcoming"
+    else:
+        return "future"
+
+
+@router.get("/timeline")
+def get_compliance_timeline(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/compliance/timeline
+
+    Frise chronologique reglementaire : evenements tries par date,
+    statuts (passed/upcoming/future), sites concernes, penalites.
+    """
+    org_id = resolve_org_id(request, auth, db)
+    today = date.today()
+    result = _build_timeline_events(db, org_id, today)
+    return JSONResponse(content=result, headers={"Cache-Control": "public, max-age=60"})
