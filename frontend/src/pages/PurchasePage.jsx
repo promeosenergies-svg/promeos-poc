@@ -46,7 +46,9 @@ import {
   getPurchaseHistory,
   seedWowHappy,
   seedWowDirty,
+  getMarketContext,
 } from '../services/api';
+import MarketContextBanner from '../components/purchase/MarketContextBanner';
 import {
   toActionNew,
   toActionsList,
@@ -278,6 +280,12 @@ export default function PurchasePage() {
   const [selectedRun, setSelectedRun] = useState(null);
   const [seedingWow, setSeedingWow] = useState(null); // 'happy' | 'dirty' | null
   const [seedResult, setSeedResult] = useState(null);
+
+  // Step 24: Market context
+  const [marketContext, setMarketContext] = useState(null);
+  useEffect(() => {
+    getMarketContext('ELEC').then(setMarketContext).catch(() => setMarketContext(null));
+  }, []);
 
   // Brique 3: Export state
   const [showNoteDecision, setShowNoteDecision] = useState(false);
@@ -525,6 +533,9 @@ export default function PurchasePage() {
           </span>
         }
       >
+        {/* Step 24: Market context banner */}
+        <MarketContextBanner marketContext={marketContext} isExpert={isExpert} onNavigate={navigate} />
+
         {/* Tab bar */}
         <div className="flex border-b border-gray-200">
           {TABS.map((tab) => (

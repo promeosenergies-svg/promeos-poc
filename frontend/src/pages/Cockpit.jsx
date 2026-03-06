@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { getNotificationsSummary, getComplianceTimeline } from '../services/api';
+import { getNotificationsSummary, getComplianceTimeline, getMarketContext } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
@@ -65,6 +65,7 @@ import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 import DataActivationPanel from './cockpit/DataActivationPanel';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
+import { MarketContextCompact } from '../components/purchase/MarketContextBanner';
 import {
   READINESS_WEIGHTS,
   ACTIONS_SCORE,
@@ -105,6 +106,8 @@ const Cockpit = () => {
   const [totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   // A.1: Consumption source tracking
   const [consoSource, setConsoSource] = useState(null);
+  // Step 24: Market context compact
+  const [marketContext, setMarketContext] = useState(null);
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -144,6 +147,11 @@ const Cockpit = () => {
         setTotalPenaltyExposure(null);
       });
   }, [org?.id]);
+
+  // Step 24: Fetch market context
+  useEffect(() => {
+    getMarketContext('ELEC').then(setMarketContext).catch(() => setMarketContext(null));
+  }, []);
 
   // A.1: Fetch consumption source from cockpit API (conso_confidence)
   useEffect(() => {
@@ -358,6 +366,9 @@ const Cockpit = () => {
       <div data-tour="step-1">
         <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} isExpert={isExpert} />
       </div>
+
+      {/* ── Step 24: Market compact ── */}
+      <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
 
       {/* ── Impact & Décision ── */}
       <ImpactDecisionPanel kpis={kpis} />

@@ -413,6 +413,30 @@ const HANDLERS = {
     };
   },
 
+  // ── Marché / Achat énergie ─────────────────────────────────────────────
+
+  market_spot_price: (v, ctx) => {
+    const { avg12m = null, trendPct = null } = ctx;
+    if (v == null || isNaN(v)) return { simple: 'Prix marché non disponible.', expert: 'Aucune donnée EPEX.', severity: 'neutral' };
+    if (trendPct != null && trendPct < -5) return {
+      simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${Math.abs(trendPct).toFixed(0)}% sous la moyenne. Moment favorable.`,
+      expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ ${trendPct.toFixed(1)}%. Volatilité favorable.`,
+      severity: 'ok',
+      action: { label: 'Simuler un achat', path: '/achat-energie' },
+    };
+    if (trendPct != null && trendPct > 5) return {
+      simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${trendPct.toFixed(0)}% au-dessus de la moyenne. Privilégiez un cap.`,
+      expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ +${trendPct.toFixed(1)}%. Exposition élevée.`,
+      severity: 'warn',
+      action: { label: 'Comparer les stratégies', path: '/achat-energie' },
+    };
+    return {
+      simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — stable par rapport à la moyenne.`,
+      expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Stable (Δ ${trendPct?.toFixed(1) || 0}%).`,
+      severity: 'neutral',
+    };
+  },
+
   kwh_m2: (v, ctx) => {
     const { benchmark = 145, usage = 'bureaux' } = ctx;
     if (v == null || isNaN(v)) {
