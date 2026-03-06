@@ -299,6 +299,8 @@ export default function StickyFilterBar({
   // YoY comparison toggle (Step 10 — F1)
   compareYoy = false,
   setCompareYoy,
+  // UI mode toggle (issue #51 — moved from standalone row)
+  onToggleUiMode,
 }) {
   const isClassic = uiMode === 'classic';
 
@@ -521,6 +523,21 @@ export default function StickyFilterBar({
               </option>
             ))}
           </select>
+        )}
+
+        {/* UI mode toggle — pushed to right side of Row 1 (issue #51) */}
+        {onToggleUiMode && (
+          <button
+            onClick={onToggleUiMode}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
+            title={
+              isClassic
+                ? 'Passer en mode Expert (contrôles avancés)'
+                : 'Passer en mode Classique (vue standard)'
+            }
+          >
+            {isClassic ? '⚙ Mode Expert' : '← Mode Classique'}
+          </button>
         )}
       </div>
 
