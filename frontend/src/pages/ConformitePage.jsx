@@ -48,6 +48,11 @@ import {
   getIntakeQuestions,
   resetDb,
 } from '../services/api';
+import {
+  getComplianceScoreColor,
+  getComplianceScoreStatus,
+  COMPLIANCE_SCORE_THRESHOLDS,
+} from '../lib/constants';
 
 /* ---------- Dev-only badges ---------- */
 
@@ -462,6 +467,7 @@ export default function ConformitePage() {
   const [error, setError] = useState(null);
   const [bundle, setBundle] = useState(null);
   const [dossierSource, setDossierSource] = useState(null);
+  const [complianceScore, setComplianceScore] = useState(null); // A.2 unified score
 
   const loadData = useCallback(() => {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
@@ -503,6 +509,19 @@ export default function ConformitePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // A.2: Fetch unified compliance score
+  useEffect(() => {
+    if (sitesLoading || !org?.id) return;
+    const isSingleSite = scopedSites.length === 1;
+    const url = isSingleSite
+      ? `/api/compliance/sites/${scopedSites[0].id}/score`
+      : `/api/compliance/portfolio/score`;
+    fetch(url, { headers: { 'X-Org-Id': String(org.id) } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setComplianceScore(data))
+      .catch(() => setComplianceScore(null));
+  }, [org?.id, scopedSites, sitesLoading]);
 
   // Load intake questions for Donnees tab
   useEffect(() => {
@@ -851,6 +870,75 @@ export default function ConformitePage() {
       {/* Next Best Action hero card */}
       {nextBestAction && nextBestAction.id !== 'nba-all-good' && (
         <NextBestActionCard action={nextBestAction} onAction={handleNbaAction} />
+      )}
+
+      {/* A.2: Unified compliance score header */}
+      {complianceScore && (
+        <div data-section="compliance-score-header" className="p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-6">
+            {/* Score display */}
+            <div className="text-center min-w-[100px]">
+              <p className="text-xs text-gray-500 mb-1">Score conformité</p>
+              <span className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}>
+                {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
+              </span>
+              <span className="text-lg text-gray-400">/100</span>
+            </div>
+            {/* Breakdown bars */}
+            <div className="flex-1 space-y-2">
+              {(complianceScore.breakdown || []).map((fw) => (
+                <div key={fw.framework} className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 w-32 truncate">
+                    {fw.framework === 'tertiaire_operat' ? 'Décret Tertiaire (45%)' : fw.framework === 'bacs' ? 'BACS (30%)' : 'APER (25%)'}
+                  </span>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${fw.score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : fw.score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${Math.min(100, fw.score)}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}>
+                    {Math.round(fw.score)}
+                  </span>
+                </div>
+              ))}
+              {/* Fallback: show breakdown_avg from portfolio if no breakdown */}
+              {!complianceScore.breakdown && complianceScore.breakdown_avg && (
+                Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => (
+                  <div key={fw} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-32 truncate">
+                      {fw === 'tertiaire_operat' ? 'Décret Tertiaire (45%)' : fw === 'bacs' ? 'BACS (30%)' : 'APER (25%)'}
+                    </span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
+                        style={{ width: `${Math.min(100, score)}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}>
+                      {Math.round(score)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Confidence */}
+            {(complianceScore.confidence || complianceScore.high_confidence_count != null) && (
+              <div className="text-center">
+                <p className="text-xs text-gray-500 mb-1">Confiance</p>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  (complianceScore.confidence === 'high' || (complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6))
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {(complianceScore.confidence === 'high' || (complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6))
+                    ? 'Données fiables'
+                    : 'Données partielles'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Cockpit Tabs */}

@@ -24,6 +24,7 @@ import {
   ACTIONS_SCORE,
   getRiskStatus,
   SEVERITY_RANK,
+  COMPLIANCE_SCORE_THRESHOLDS,
 } from '../lib/constants';
 
 // ── buildWatchlist ──────────────────────────────────────────────────────────
@@ -482,7 +483,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       sub: complianceScore != null
         ? `DT 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
         : `${conformes} sur ${total} site${total !== 1 ? 's' : ''}`,
-      status: pctConf < 40 ? 'crit' : pctConf < 70 ? 'warn' : total > 0 ? 'ok' : 'neutral',
+      status: pctConf < COMPLIANCE_SCORE_THRESHOLDS.warn ? 'crit' : pctConf < COMPLIANCE_SCORE_THRESHOLDS.ok ? 'warn' : total > 0 ? 'ok' : 'neutral',
       path: '/conformite',
       explain: 'compliance_score',
     },

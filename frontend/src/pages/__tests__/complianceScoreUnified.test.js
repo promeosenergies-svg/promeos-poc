@@ -29,12 +29,8 @@ describe('A - dashboardEssentials unified compliance score', () => {
     expect(code).toContain('/100');
   });
 
-  it('uses threshold 40 for crit', () => {
-    expect(code).toContain('< 40');
-  });
-
-  it('uses threshold 70 for warn', () => {
-    expect(code).toContain('< 70');
+  it('uses COMPLIANCE_SCORE_THRESHOLDS for crit/warn (imported from constants)', () => {
+    expect(code).toContain('COMPLIANCE_SCORE_THRESHOLDS');
   });
 
   it('label is Score conformite', () => {

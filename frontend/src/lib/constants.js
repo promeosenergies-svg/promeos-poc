@@ -124,3 +124,46 @@ export const SEV_BADGE = {
   medium: 'info',
   low: 'neutral',
 };
+
+// ── A.2: Unified Compliance Score config ────────────────────────────────────
+
+/** Thresholds for the unified compliance score (0-100). */
+export const COMPLIANCE_SCORE_THRESHOLDS = {
+  /** >= this → 'ok' (green) */
+  ok: 70,
+  /** >= this → 'warn' (amber), below → 'crit' (red) */
+  warn: 40,
+};
+
+/**
+ * Get color class for a compliance score (0-100).
+ * Used by Cockpit, Dashboard, Site360, ConformitePage, RegOps, BacsWizard.
+ */
+export function getComplianceScoreColor(score) {
+  if (score == null || isNaN(score)) return 'text-gray-400';
+  if (score >= COMPLIANCE_SCORE_THRESHOLDS.ok) return 'text-green-600';
+  if (score >= COMPLIANCE_SCORE_THRESHOLDS.warn) return 'text-amber-600';
+  return 'text-red-600';
+}
+
+/**
+ * Get letter grade for a compliance score.
+ */
+export function getComplianceGrade(score) {
+  if (score == null || isNaN(score)) return { letter: '—', color: 'text-gray-400' };
+  if (score >= 90) return { letter: 'A', color: 'text-green-600' };
+  if (score >= 70) return { letter: 'B', color: 'text-green-600' };
+  if (score >= 55) return { letter: 'C', color: 'text-amber-600' };
+  if (score >= 40) return { letter: 'D', color: 'text-amber-600' };
+  return { letter: 'E', color: 'text-red-600' };
+}
+
+/**
+ * Get status string for a compliance score.
+ */
+export function getComplianceScoreStatus(score) {
+  if (score == null || isNaN(score)) return 'neutral';
+  if (score >= COMPLIANCE_SCORE_THRESHOLDS.ok) return 'ok';
+  if (score >= COMPLIANCE_SCORE_THRESHOLDS.warn) return 'warn';
+  return 'crit';
+}

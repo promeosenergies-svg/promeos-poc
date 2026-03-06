@@ -11,6 +11,7 @@ import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
+import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
 
 function Dashboard({ onUpgradeClick }) {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ function Dashboard({ onUpgradeClick }) {
   const [alertesCount, setAlertesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [siteScores, setSiteScores] = useState({}); // { site_id: score }
 
   const fetchAlertes = useCallback(() => {
     setLoading(true);
@@ -39,6 +41,25 @@ function Dashboard({ onUpgradeClick }) {
   useEffect(() => {
     fetchAlertes();
   }, [fetchAlertes]);
+
+  // A.2: Fetch portfolio compliance scores (worst_sites contains per-site scores)
+  useEffect(() => {
+    if (!org?.id) return;
+    fetch(`/api/compliance/portfolio/score`, {
+      headers: { 'X-Org-Id': String(org.id) },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.worst_sites) {
+          const map = {};
+          for (const ws of data.worst_sites) map[ws.site_id] = ws.score;
+          // If avg_score exists, use it as fallback for sites not in worst_sites
+          if (data.avg_score != null) map._avg = data.avg_score;
+          setSiteScores(map);
+        }
+      })
+      .catch(() => setSiteScores({}));
+  }, [org?.id]);
 
   const orgName = org?.nom;
   const sitesActifs = orgSites.filter((s) => s.actif).length;
@@ -115,6 +136,7 @@ function Dashboard({ onUpgradeClick }) {
                   <Th>Type</Th>
                   <Th>Ville</Th>
                   <Th>Region</Th>
+                  <Th>Score conformité</Th>
                   <Th>Statut</Th>
                 </Tr>
               </Thead>
@@ -127,6 +149,18 @@ function Dashboard({ onUpgradeClick }) {
                     </Td>
                     <Td>{site.ville}</Td>
                     <Td className="text-gray-500 text-sm">{site.region}</Td>
+                    <Td>
+                      {(() => {
+                        const s = siteScores[site.id] ?? siteScores._avg;
+                        if (s == null) return <span className="text-gray-400 text-sm">—</span>;
+                        const score = Math.round(s);
+                        return (
+                          <span className={`text-sm font-semibold ${getComplianceScoreColor(score)}`}>
+                            {score}/100
+                          </span>
+                        );
+                      })()}
+                    </Td>
                     <Td>
                       {site.actif ? (
                         <Badge status="success">Actif</Badge>

@@ -42,7 +42,7 @@ import {
   getReconciliationEvidenceCsv,
   getReconciliationEvidenceSummary,
 } from '../services/api';
-import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
+import { getStatusBadgeProps, SEV_BADGE, getComplianceScoreColor, getComplianceGrade, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import SiteBillingMini from '../components/SiteBillingMini';
@@ -1076,8 +1076,18 @@ export default function Site360() {
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
+  const [siteComplianceScore, setSiteComplianceScore] = useState(null); // A.2
 
   const site = scopedSites.find((s) => String(s.id) === String(id));
+
+  // A.2: Fetch site-level unified compliance score
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/compliance/sites/${id}/score`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setSiteComplianceScore(data))
+      .catch(() => setSiteComplianceScore(null));
+  }, [id]);
 
   if (sitesLoading) {
     return (
@@ -1127,6 +1137,16 @@ export default function Site360() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900">{site.nom}</h2>
             <Badge status={badge.status}>{badge.label}</Badge>
+            {siteComplianceScore?.score != null && (() => {
+              const s = Math.round(siteComplianceScore.score);
+              const grade = getComplianceGrade(s);
+              return (
+                <span className="flex items-center gap-1.5" data-testid="compliance-score-badge">
+                  <span className={`text-sm font-bold ${getComplianceScoreColor(s)}`}>{s}/100</span>
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${grade.color} bg-gray-50 border border-gray-200`}>{grade.letter}</span>
+                </span>
+              );
+            })()}
             <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
               {site.usage}
             </span>

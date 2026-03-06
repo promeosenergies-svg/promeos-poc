@@ -17,6 +17,7 @@ import {
   REGOPS_SEVERITY_LABELS,
   RULE_LABELS,
 } from '../domain/compliance/complianceLabels.fr';
+import { getComplianceScoreColor as _getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
 
 export default function RegOps() {
   const { id } = useParams();
@@ -80,12 +81,8 @@ export default function RegOps() {
     return colors[severity] || 'bg-gray-500 text-white';
   };
 
-  const getComplianceScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    if (score >= 40) return 'text-orange-600';
-    return 'text-red-600';
-  };
+  // A.2: use shared thresholds from constants
+  const getComplianceScoreColor = _getComplianceScoreColor;
 
   if (loading) {
     return (
