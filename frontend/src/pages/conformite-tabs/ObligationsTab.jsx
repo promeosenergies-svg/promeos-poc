@@ -21,8 +21,10 @@ import {
   XCircle,
   Eye,
   Printer,
+  Coins,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../../ui';
+import { fmtEur } from '../../utils/format';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
 import { applyKB } from '../../services/api';
@@ -566,6 +568,12 @@ function ObligationCard({
                         <span className="text-xs text-gray-500 hidden sm:inline">
                           {RULE_LABELS[f.rule_id]?.title_fr || f.regulation || 'Non conforme'}
                         </span>
+                        {f.estimated_penalty_eur > 0 && (
+                          <span className="text-xs text-red-600 font-medium flex items-center gap-1 shrink-0">
+                            <Coins size={11} />
+                            {fmtEur(f.estimated_penalty_eur)}
+                          </span>
+                        )}
                         {isExpert && (
                           <span className="text-[10px] text-gray-400 font-mono">{f.rule_id}</span>
                         )}

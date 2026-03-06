@@ -11,7 +11,7 @@ import {
   getAiDataQuality,
 } from '../services/api';
 import { useToast } from '../ui/ToastProvider';
-import { fmtNum } from '../utils/format';
+import { fmtNum, fmtEur } from '../utils/format';
 import {
   REGOPS_STATUS_LABELS,
   REGOPS_SEVERITY_LABELS,
@@ -219,6 +219,17 @@ export default function RegOps() {
                           ⚠️ Échéance légale:{' '}
                           {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
                         </p>
+                      )}
+                      {finding.estimated_penalty_eur != null && finding.estimated_penalty_eur > 0 && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Coins size={14} className="text-red-500" />
+                          <span className="text-sm font-medium text-red-600">
+                            Risque financier : {fmtEur(finding.estimated_penalty_eur)}
+                          </span>
+                          {finding.penalty_basis && (
+                            <span className="text-xs text-gray-400">({finding.penalty_basis})</span>
+                          )}
+                        </div>
                       )}
                       {finding.inputs_used && finding.inputs_used.length > 0 && (
                         <details className="mt-2">

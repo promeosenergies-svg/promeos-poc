@@ -274,4 +274,10 @@ export const GLOSSARY = {
       "Vue chronologique de toutes les échéances réglementaires applicables au portefeuille (Décret Tertiaire, BACS, APER). Chaque point indique le nombre de sites concernés et le risque financier.",
     long: "Les échéances proviennent de la configuration réglementaire (regs.yaml) croisée avec les données patrimoniales (surfaces, puissances CVC, parkings). Statuts : échue (rouge), < 12 mois (orange), à planifier (bleu).",
   },
+  impact_financier: {
+    term: 'Impact financier',
+    short:
+      "Estimation du risque financier en euros associé à chaque constat de non-conformité. Basé sur les pénalités définies réglementairement (regs.yaml) ou sur des estimations conservatrices.",
+    long: "Chaque finding inclut estimated_penalty_eur (montant), penalty_source (regs.yaml ou estimation) et penalty_basis (base de calcul). Pour le Décret Tertiaire : 7 500 EUR/site (non-déclaration) ou 1 500 EUR/site (non-affichage). BACS : 7 500 EUR/site. APER : estimation ~20 EUR/m² parking, ~15 EUR/m² toiture.",
+  },
 };

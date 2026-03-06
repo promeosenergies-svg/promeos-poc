@@ -54,6 +54,11 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
     attestation_deadline = date.fromisoformat(deadlines.get("attestation_display", "2026-07-01"))
     declaration_deadline = date.fromisoformat(deadlines.get("declaration_2025", "2026-09-30"))
 
+    # Penalties from config
+    penalties = config.get("penalties", {})
+    penalty_non_declaration = penalties.get("non_declaration", 7500)
+    penalty_non_affichage = penalties.get("non_affichage", 1500)
+
     # Check OPERAT status
     operat_status = site.operat_status
     if operat_status is None or str(operat_status) == "OperatStatus.NOT_STARTED":
@@ -70,6 +75,9 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                 inputs_used=["operat_status"],
                 missing_inputs=[],
                 explanation=f"Declaration OPERAT non demarree. Echeance: {declaration_deadline.isoformat()}.",
+                estimated_penalty_eur=float(penalty_non_declaration),
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_declaration: {penalty_non_declaration} EUR/site",
             )
         )
 
@@ -88,6 +96,9 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                 inputs_used=[],
                 missing_inputs=["annual_kwh_total"],
                 explanation="Donnees de consommation annuelle manquantes pour trajectoire 2030.",
+                estimated_penalty_eur=float(penalty_non_declaration),
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_declaration: {penalty_non_declaration} EUR/site (risque indirect)",
             )
         )
 
@@ -106,6 +117,9 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                 inputs_used=["is_multi_occupied"],
                 missing_inputs=[],
                 explanation="Site multi-occupant: coordination requise entre occupants pour declaration.",
+                estimated_penalty_eur=float(penalty_non_affichage),
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_affichage: {penalty_non_affichage} EUR/site (risque coordination)",
             )
         )
 

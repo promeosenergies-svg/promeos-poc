@@ -197,6 +197,9 @@ def persist_assessment(db: Session, summary: SiteSummary):
                 "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
                 "explanation": f.explanation,
                 "category": getattr(f, "category", "obligation"),
+                "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
+                "penalty_source": getattr(f, "penalty_source", None),
+                "penalty_basis": getattr(f, "penalty_basis", None),
             }
             for f in summary.findings
         ]

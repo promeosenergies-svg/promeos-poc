@@ -113,7 +113,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | F.2 Période unifiée via URL (usePeriodParams hook, cross-page propagation Explorer↔Monitoring↔Diagnostic, period badges, 24 tests) | Stable -- F.2 |
 > | F.6 KPI Labels Simple/Expert (kpiLabels.js, getKpiLabel, MonitoringPage+Explorer+InsightsPanel, 15 tests) | Stable -- F.6 |
 > | C.5 Timeline réglementaire visuelle (GET /compliance/timeline, RegulatoryTimeline horizontal+vertical, Cockpit badge, glossaire, 33 tests) | Stable -- C.5 |
-> | Suite de tests automatisés | **5 188 frontend + 3 030+ backend, 0 régression** |
+> | C.7 Impact financier EUR systématique (estimated_penalty_eur sur chaque Finding, regs.yaml+estimation, RegOps+ObligationsTab+Cockpit, glossaire, 28 tests) | Stable -- C.7 |
+> | Suite de tests automatisés | **5 201 frontend + 3 045+ backend, 0 régression** |
 
 > **Disclaimer**
 >

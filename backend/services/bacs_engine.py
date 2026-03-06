@@ -469,6 +469,8 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
             status = "AT_RISK"
             severity = "MEDIUM"
 
+    bacs_penalty = 7500.0  # regs.yaml: bacs.penalties.non_compliance
+
     findings.append(
         Finding(
             regulation="BACS",
@@ -486,6 +488,9 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
                 f"(seuil {obligation['threshold']} kW, declencheur: {trigger_label}). "
                 f"Echeance: {deadline.isoformat()}."
             ),
+            estimated_penalty_eur=bacs_penalty,
+            penalty_source="regs.yaml",
+            penalty_basis=f"non_compliance: {int(bacs_penalty)} EUR/site",
         )
     )
 
@@ -522,6 +527,9 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
                 inputs_used=["cout_bacs_eur", "aides_pct", "conso_kwh", "gain_pct", "prix_kwh"],
                 missing_inputs=[],
                 explanation=(f"TRI de {tri_result['tri_years']} ans <= 10 ans: pas d'exemption, GTB/GTC requise."),
+                estimated_penalty_eur=bacs_penalty,
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_compliance: {int(bacs_penalty)} EUR/site",
             )
         )
 
@@ -542,6 +550,9 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
                 explanation=(
                     f"Inspection quinquennale BACS en retard. Echeance: {inspection_sched['next_due'].isoformat()}."
                 ),
+                estimated_penalty_eur=bacs_penalty,
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_compliance: {int(bacs_penalty)} EUR/site (inspection)",
             )
         )
 
@@ -592,7 +603,7 @@ def _compute_confidence(systems, asset, tri_result) -> float:
 
 def _finding_to_dict(f: Finding) -> dict:
     """Serialize Finding to JSON-safe dict."""
-    return {
+    d = {
         "regulation": f.regulation,
         "rule_id": f.rule_id,
         "status": f.status,
@@ -604,7 +615,11 @@ def _finding_to_dict(f: Finding) -> dict:
         "inputs_used": f.inputs_used,
         "missing_inputs": f.missing_inputs,
         "explanation": f.explanation,
+        "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
+        "penalty_source": getattr(f, "penalty_source", None),
+        "penalty_basis": getattr(f, "penalty_basis", None),
     }
+    return d
 
 
 def _parse_json(text: Optional[str]):

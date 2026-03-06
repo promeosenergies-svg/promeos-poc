@@ -38,8 +38,10 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
             medium = thresholds.get("medium_m2", 1500)
             deadlines = config.get("deadlines", {})
 
+            # APER: estimation conservative (20 EUR/m2 non couvert, plafond 20k EUR)
             if parking_area >= large:
                 deadline = date.fromisoformat(deadlines.get("parking_large", "2026-07-01"))
+                est_penalty = min(parking_area * 20.0, 20000.0)
                 findings.append(
                     Finding(
                         regulation="APER",
@@ -53,10 +55,14 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                         inputs_used=["parking_area_m2", "parking_type"],
                         missing_inputs=[],
                         explanation=f"Parking exterieur {int(parking_area)}m2: ombrières PV obligatoires. Echeance: {deadline.isoformat()}.",
+                        estimated_penalty_eur=est_penalty,
+                        penalty_source="estimation",
+                        penalty_basis=f"estimation: ~20 EUR/m2 non couvert, plafond 20k EUR",
                     )
                 )
             elif parking_area >= medium:
                 deadline = date.fromisoformat(deadlines.get("parking_medium", "2028-07-01"))
+                est_penalty = min(parking_area * 20.0, 20000.0)
                 findings.append(
                     Finding(
                         regulation="APER",
@@ -70,6 +76,9 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                         inputs_used=["parking_area_m2", "parking_type"],
                         missing_inputs=[],
                         explanation=f"Parking exterieur {int(parking_area)}m2: ombrières PV requises. Echeance: {deadline.isoformat()}.",
+                        estimated_penalty_eur=est_penalty,
+                        penalty_source="estimation",
+                        penalty_basis=f"estimation: ~20 EUR/m2 non couvert, plafond 20k EUR",
                     )
                 )
 
@@ -77,6 +86,7 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
     roof_area = site.roof_area_m2
     if roof_area and roof_area >= config.get("roof_threshold_m2", 500):
         deadline = date.fromisoformat(config.get("deadlines", {}).get("roof", "2028-01-01"))
+        est_penalty = min(roof_area * 15.0, 15000.0)
         findings.append(
             Finding(
                 regulation="APER",
@@ -90,6 +100,9 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
                 inputs_used=["roof_area_m2"],
                 missing_inputs=[],
                 explanation=f"Toiture {int(roof_area)}m2: PV ou vegetalisation requise. Echeance: {deadline.isoformat()}.",
+                estimated_penalty_eur=est_penalty,
+                penalty_source="estimation",
+                penalty_basis=f"estimation: ~15 EUR/m2 non couvert, plafond 15k EUR",
             )
         )
 

@@ -18,6 +18,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { getNotificationsSummary, getComplianceTimeline } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
+import { fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
 import {
   Button,
@@ -101,6 +102,7 @@ const Cockpit = () => {
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
   const [nextDeadline, setNextDeadline] = useState(null);
+  const [totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   // A.1: Consumption source tracking
   const [consoSource, setConsoSource] = useState(null);
 
@@ -133,8 +135,14 @@ const Cockpit = () => {
   useEffect(() => {
     if (!org?.id) return;
     getComplianceTimeline()
-      .then((data) => setNextDeadline(data?.next_deadline || null))
-      .catch(() => setNextDeadline(null));
+      .then((data) => {
+        setNextDeadline(data?.next_deadline || null);
+        setTotalPenaltyExposure(data?.total_penalty_exposure_eur || null);
+      })
+      .catch(() => {
+        setNextDeadline(null);
+        setTotalPenaltyExposure(null);
+      });
   }, [org?.id]);
 
   // A.1: Fetch consumption source from cockpit API (conso_confidence)
@@ -367,6 +375,11 @@ const Cockpit = () => {
             </p>
             <p className="text-xs text-amber-600">
               {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''}
+              {totalPenaltyExposure > 0 && (
+                <span className="ml-2 text-red-600 font-medium">
+                  Exposition totale : {fmtEur(totalPenaltyExposure)}
+                </span>
+              )}
             </p>
           </div>
           <span className="text-xs font-medium text-amber-700 hover:underline shrink-0">

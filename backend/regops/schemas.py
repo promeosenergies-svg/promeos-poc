@@ -21,6 +21,9 @@ class Finding:
     missing_inputs: list[str]
     explanation: str
     category: str = "obligation"  # "obligation" (DT/BACS/APER) or "incentive" (CEE)
+    estimated_penalty_eur: Optional[float] = None
+    penalty_source: Optional[str] = None   # ex: "regs.yaml", "estimation"
+    penalty_basis: Optional[str] = None    # ex: "non_declaration: 7 500 EUR/site"
 
 
 @dataclass
