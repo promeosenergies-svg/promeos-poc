@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { ALL_NAV_ITEMS } from './NavRegistry';
+import { ALL_NAV_ITEMS, ROUTE_SECTION_MAP, NAV_MAIN_SECTIONS } from './NavRegistry';
 
 // Auto-derive labels from NavRegistry (single source of truth)
 const LABELS = Object.fromEntries(
@@ -79,11 +79,48 @@ export function resolveBreadcrumbLabel(segment, parentSegment) {
   return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
 }
 
+/**
+ * Resolve section label from pathname for breadcrumb prefix.
+ * Tries exact match first, then longest prefix match.
+ */
+function resolveSectionLabel(pathname) {
+  // Exact match
+  if (ROUTE_SECTION_MAP[pathname]) return ROUTE_SECTION_MAP[pathname];
+  // Prefix match (longest first)
+  const sorted = Object.keys(ROUTE_SECTION_MAP).sort((a, b) => b.length - a.length);
+  for (const route of sorted) {
+    if (pathname === route || pathname.startsWith(route + '/')) {
+      return ROUTE_SECTION_MAP[route];
+    }
+  }
+  // Fallback: check NAV_MAIN_SECTIONS for root section
+  if (pathname === '/') return 'TABLEAU DE BORD';
+  return null;
+}
+
+/** Get the first route of a section (for clickable breadcrumb) */
+function getSectionRoute(sectionLabel) {
+  const section = NAV_MAIN_SECTIONS.find((s) => s.label === sectionLabel);
+  return section?.items[0]?.to || '/';
+}
+
 export default function Breadcrumb() {
   const { pathname } = useLocation();
   const parts = pathname.split('/').filter(Boolean);
 
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
+
+  // B.2: Add section crumb (Section > Page > Context)
+  const sectionLabel = resolveSectionLabel(pathname);
+  if (sectionLabel) {
+    const sectionRoute = getSectionRoute(sectionLabel);
+    // Only add section crumb if it's not the same as the page itself
+    const pageLabel = parts.length > 0 ? resolveBreadcrumbLabel(parts[0], null) : null;
+    if (pageLabel !== sectionLabel) {
+      crumbs.push({ label: sectionLabel, to: sectionRoute });
+    }
+  }
+
   let path = '';
   for (let i = 0; i < parts.length; i++) {
     path += '/' + parts[i];

@@ -13,6 +13,9 @@ import {
   QUICK_ACTIONS,
   SECTION_TINTS,
   TINT_PALETTE,
+  NAV_MAIN_SECTIONS,
+  NAV_ADMIN_ITEMS,
+  NAV_ADMIN_ICON,
   getSectionsForModule,
   matchRouteToModule,
 } from './NavRegistry';
@@ -88,8 +91,9 @@ function PanelLink({ to, icon: Icon, label, longLabel, badge, badgeKey, pinned, 
   );
 }
 
-/* ── Section Header (premium — no dot, clean chevron + label) ── */
-function SectionHeader({ label, isOpen, onToggle }) {
+/* ── Section Header (premium — icon + chevron + label) ── */
+function SectionHeader({ label, icon: SectionIcon, isOpen, onToggle, tintColor }) {
+  const t = tintColor ? TINT_PALETTE[tintColor] || TINT_PALETTE.slate : null;
   return (
     <button
       onClick={onToggle}
@@ -102,6 +106,9 @@ function SectionHeader({ label, isOpen, onToggle }) {
         size={11}
         className={`text-slate-400 transition-transform duration-150 mr-1.5 ${isOpen ? '' : '-rotate-90'}`}
       />
+      {SectionIcon && (
+        <SectionIcon size={12} className={`mr-1 shrink-0 ${t ? t.icon : 'text-slate-400'}`} />
+      )}
       <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-150 line-clamp-2">
         {label}
       </span>
@@ -134,7 +141,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     [isAuthenticated, hasPermission]
   );
 
-  /* ── Visible sections for this module ── */
+  /* ── Visible sections for this module (legacy — used by pins/recents) ── */
   const moduleSections = useMemo(() => {
     return getSectionsForModule(activeModule)
       .filter((s) => !s.expertOnly || isExpert)
@@ -147,8 +154,23 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       .filter((s) => s.items.length > 0);
   }, [activeModule, isExpert, filterItems]);
 
+  /* ── B.2: 5 main sections (all visible, collapsible) ── */
+  const mainSections = useMemo(() => {
+    return NAV_MAIN_SECTIONS.map((s) => ({
+      ...s,
+      items: filterItems(
+        s.items.filter((item) => (!item.expertOnly || isExpert) && !item.hidden)
+      ),
+    })).filter((s) => s.items.length > 0);
+  }, [isExpert, filterItems]);
+
+  /* ── Admin items (secondary menu) ── */
+  const adminItems = useMemo(() => {
+    return filterItems(NAV_ADMIN_ITEMS);
+  }, [filterItems]);
+
   /* ── All visible items in this module ── */
-  const allModuleItems = useMemo(() => moduleSections.flatMap((s) => s.items), [moduleSections]);
+  const allModuleItems = useMemo(() => mainSections.flatMap((s) => s.items), [mainSections]);
 
   /* ── Pinned items (only from this module's items) ── */
   const pinnedItems = useMemo(() => {
@@ -191,7 +213,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   /* ── Auto-open section containing active route ── */
   useEffect(() => {
     const currentPath = location.pathname;
-    for (const section of moduleSections) {
+    for (const section of mainSections) {
       const hasActive = section.items.some(
         (item) => currentPath === item.to || currentPath.startsWith(item.to + '/')
       );
@@ -300,20 +322,20 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           </div>
         )}
 
-        {/* Module sections */}
-        {moduleSections.map((section) => {
-          const sectionTint = SECTION_TINTS[section.key] || tint;
+        {/* 5 Main sections (collapsible) */}
+        {mainSections.map((section) => {
+          const sectionTint = section.tint || tint;
           const isOpen = isSectionOpen(section);
 
           return (
             <div key={section.key}>
-              {moduleSections.length > 1 && (
-                <SectionHeader
-                  label={section.label}
-                  isOpen={isOpen}
-                  onToggle={() => toggleSection(section.key)}
-                />
-              )}
+              <SectionHeader
+                label={section.label}
+                icon={section.icon}
+                isOpen={isOpen}
+                onToggle={() => toggleSection(section.key)}
+                tintColor={sectionTint}
+              />
               {isOpen && (
                 <div className="mt-0.5">
                   {section.items.map((item) => (
@@ -332,6 +354,33 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           );
         })}
       </nav>
+
+      {/* Secondary menu — Administration (gear icon) */}
+      {adminItems.length > 0 && (
+        <div className="border-t border-slate-200/50 px-2 py-2">
+          <SectionHeader
+            label="Administration"
+            icon={NAV_ADMIN_ICON}
+            isOpen={!!openSections._admin}
+            onToggle={() => toggleSection('_admin')}
+            tintColor="slate"
+          />
+          {openSections._admin && (
+            <div className="mt-0.5">
+              {adminItems.map((item) => (
+                <PanelLink
+                  key={item.to}
+                  {...item}
+                  badge={0}
+                  pinned={pins.includes(item.to)}
+                  onTogglePin={onTogglePin}
+                  tint="slate"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

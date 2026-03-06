@@ -30,6 +30,12 @@ import {
   AlertTriangle,
   Sparkles,
   Rocket,
+  Settings,
+  Bell,
+  Clipboard,
+  Download,
+  HelpCircle,
+  ToggleRight,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ──
@@ -697,3 +703,120 @@ export function getModuleTint(keyOrPath) {
   const resolved = NAV_MODULES.find((m) => m.key === moduleKey);
   return TINT_PALETTE[resolved?.tint || 'slate'] || TINT_PALETTE.slate;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+ * B.2 — 5 Sections principales (sidebar collapsible)
+ * Regroupement métier des pages en 5 sections visibles.
+ * Admin/IAM dans un menu secondaire (engrenage).
+ * ══════════════════════════════════════════════════════════════════ */
+
+export const NAV_MAIN_SECTIONS = [
+  {
+    key: 'tableau',
+    label: 'Tableau de bord',
+    icon: LayoutDashboard,
+    tint: 'blue',
+    order: 1,
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', keywords: ['dashboard', 'accueil', 'home'] },
+      { to: '/cockpit', icon: FileText, label: 'Vue exécutive', keywords: ['synthese', 'executive', 'cockpit'] },
+      { to: '/notifications', icon: Bell, label: 'Notifications', keywords: ['alertes', 'notifications'] },
+    ],
+  },
+  {
+    key: 'patrimoine',
+    label: 'Patrimoine',
+    icon: Building2,
+    tint: 'slate',
+    order: 2,
+    items: [
+      { to: '/patrimoine', icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
+      { to: '/connectors', icon: Link2, label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
+      { to: '/import', icon: Import, label: 'Imports', keywords: ['import', 'csv', 'upload'] },
+      { to: '/kb', icon: BookOpen, label: 'Mémobox', keywords: ['kb', 'knowledge', 'memobox', 'documents'] },
+      { to: '/segmentation', icon: Users, label: 'Segmentation', keywords: ['segment', 'profil'] },
+      { to: '/watchers', icon: Eye, label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
+    ],
+  },
+  {
+    key: 'conformite',
+    label: 'Conformité',
+    icon: ShieldCheck,
+    tint: 'emerald',
+    order: 3,
+    items: [
+      { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
+      { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa'] },
+      { to: '/compliance/pipeline', icon: ListChecks, label: 'Pipeline conformité', expertOnly: true, keywords: ['pipeline', 'findings'] },
+    ],
+  },
+  {
+    key: 'energie',
+    label: 'Énergie',
+    icon: Zap,
+    tint: 'indigo',
+    order: 4,
+    items: [
+      { to: '/consommations', icon: Zap, label: 'Consommations', keywords: ['conso', 'energie', 'explorer'] },
+      { to: '/monitoring', icon: Activity, label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance', 'performance'] },
+      { to: '/diagnostic-conso', icon: Search, label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic'] },
+      { to: '/usages-horaires', icon: Activity, label: 'Usages & Horaires', expertOnly: true, keywords: ['usages', 'horaires', 'heatmap'] },
+      { to: '/billing', icon: CalendarRange, label: 'Historique factures', expertOnly: true, keywords: ['timeline', 'couverture', 'historique'] },
+      { to: '/bill-intel', icon: Receipt, label: 'Anomalies factures', expertOnly: true, keywords: ['factures', 'billing', 'surfacturation'] },
+      { to: '/achat-energie', icon: ShoppingCart, label: 'Achats', expertOnly: true, keywords: ['achat', 'purchase', 'scenarios'] },
+      { to: '/achat-assistant', icon: Target, label: "Assistant d'achat", expertOnly: true, keywords: ['assistant', 'rfp', 'corridor'] },
+      { to: '/renouvellements', icon: CalendarRange, label: 'Renouvellements', expertOnly: true, keywords: ['renouvellements', 'contrats', 'echeances'] },
+    ],
+  },
+  {
+    key: 'piloter',
+    label: 'Piloter',
+    icon: Target,
+    tint: 'amber',
+    order: 5,
+    items: [
+      { to: '/anomalies', icon: AlertTriangle, label: "Centre d'actions", badgeKey: 'alerts', keywords: ['anomalies', 'actions', 'inbox'] },
+      { to: '/actions', icon: ListChecks, label: 'Plan d\'actions', keywords: ['actions', 'plan', 'todo'] },
+      { to: '/energy-copilot', icon: Sparkles, label: 'Copilot énergie', expertOnly: true, keywords: ['copilot', 'ia', 'recommandations'] },
+    ],
+  },
+];
+
+/** Items du menu secondaire (engrenage) — Administration / IAM */
+export const NAV_ADMIN_ITEMS = [
+  { to: '/admin/users', icon: Lock, label: 'Utilisateurs', requireAdmin: true, keywords: ['users', 'comptes'] },
+  { to: '/admin/roles', icon: ShieldCheck, label: 'Rôles', requireAdmin: true, keywords: ['roles', 'permissions'] },
+  { to: '/admin/assignments', icon: Users, label: 'Affectations', requireAdmin: true, keywords: ['assignments', 'scopes'] },
+  { to: '/admin/audit', icon: FileText, label: "Journal d'audit", requireAdmin: true, keywords: ['audit', 'log', 'historique'] },
+  { to: '/activation', icon: Rocket, label: 'Activation', keywords: ['activation', 'setup'] },
+  { to: '/status', icon: Database, label: 'Statut système', keywords: ['status', 'health'] },
+];
+
+/** Icon for the admin secondary menu */
+export const NAV_ADMIN_ICON = Settings;
+
+/** Route → section label map (for breadcrumb) */
+export const ROUTE_SECTION_MAP = Object.fromEntries(
+  NAV_MAIN_SECTIONS.flatMap((section) =>
+    section.items.map((item) => [item.to, section.label])
+  )
+);
+
+/** Flat list of all main section items (for CommandPalette) */
+export const ALL_MAIN_ITEMS = NAV_MAIN_SECTIONS.flatMap((s) =>
+  s.items.map((item) => ({ ...item, section: s.label, sectionKey: s.key }))
+);
+
+/** 10 actions rapides pour CommandPalette avec raccourcis visuels */
+export const COMMAND_SHORTCUTS = [
+  { key: 'creer-action', label: 'Créer une action', icon: Target, to: '/actions/new', shortcut: 'Ctrl+Shift+A', keywords: ['créer', 'action', 'nouvelle'] },
+  { key: 'importer', label: 'Importer des données', icon: Import, to: '/import', shortcut: 'Ctrl+Shift+I', keywords: ['import', 'csv', 'upload', 'données'] },
+  { key: 'alertes', label: 'Voir les alertes', icon: AlertTriangle, to: '/anomalies', shortcut: 'Ctrl+Shift+L', keywords: ['alertes', 'anomalies', 'actions'] },
+  { key: 'cockpit', label: 'Aller au cockpit', icon: LayoutDashboard, to: '/cockpit', shortcut: 'Ctrl+Shift+C', keywords: ['cockpit', 'executive', 'synthese'] },
+  { key: 'changer-site', label: 'Changer de site', icon: Building2, to: '/patrimoine', shortcut: 'Ctrl+Shift+S', keywords: ['site', 'patrimoine', 'changer'] },
+  { key: 'exporter', label: 'Exporter CSV', icon: Download, to: '/consommations/export', shortcut: 'Ctrl+Shift+E', keywords: ['export', 'csv', 'télécharger'] },
+  { key: 'conformite', label: 'Voir la conformité', icon: ShieldCheck, to: '/conformite', shortcut: 'Ctrl+Shift+F', keywords: ['conformité', 'compliance', 'décret'] },
+  { key: 'factures', label: 'Voir les factures', icon: Receipt, to: '/bill-intel', shortcut: 'Ctrl+Shift+B', keywords: ['factures', 'billing', 'anomalies'] },
+  { key: 'expert', label: 'Mode expert', icon: ToggleRight, to: '#expert-toggle', shortcut: 'Ctrl+Shift+X', keywords: ['expert', 'mode', 'pro', 'avancé'] },
+  { key: 'aide', label: 'Aide', icon: HelpCircle, to: '/onboarding', shortcut: 'F1', keywords: ['aide', 'help', 'documentation', 'onboarding'] },
+];

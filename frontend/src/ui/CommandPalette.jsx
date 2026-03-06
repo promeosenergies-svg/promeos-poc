@@ -1,11 +1,12 @@
 /**
  * PROMEOS Design System — Command Palette
- * Ctrl+K overlay with search, keyboard nav, and quick actions.
+ * Ctrl+K overlay with search, keyboard nav, quick actions, and shortcuts.
+ * B.2: Results grouped by section, 10 actions rapides avec raccourcis visuels.
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, CornerDownLeft } from 'lucide-react';
-import { ALL_NAV_ITEMS, QUICK_ACTIONS } from '../layout/NavRegistry';
+import { ALL_NAV_ITEMS, QUICK_ACTIONS, ALL_MAIN_ITEMS, COMMAND_SHORTCUTS } from '../layout/NavRegistry';
 
 export default function CommandPalette({ open, onClose }) {
   const [query, setQuery] = useState('');
@@ -24,22 +25,34 @@ export default function CommandPalette({ open, onClose }) {
   const results = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) {
-      return [
-        ...ALL_NAV_ITEMS.slice(0, 6).map((item) => ({ type: 'page', ...item })),
-        ...QUICK_ACTIONS.map((a) => ({ type: 'action', ...a })),
-      ];
+      // Default: pages grouped by section + shortcuts
+      const pages = ALL_MAIN_ITEMS.slice(0, 8).map((item) => ({ type: 'page', ...item }));
+      const shortcuts = COMMAND_SHORTCUTS.map((a) => ({ type: 'shortcut', ...a }));
+      return [...pages, ...shortcuts];
     }
-    const pages = ALL_NAV_ITEMS.filter((item) => {
-      const searchable = [item.label, ...(item.keywords || [])].join(' ').toLowerCase();
-      return searchable.includes(q);
-    }).map((item) => ({ type: 'page', ...item }));
 
-    const actions = QUICK_ACTIONS.filter((a) => {
-      const searchable = [a.label, ...(a.keywords || [])].join(' ').toLowerCase();
+    // Search in ALL_MAIN_ITEMS (section-aware) + legacy ALL_NAV_ITEMS + QUICK_ACTIONS + COMMAND_SHORTCUTS
+    const seen = new Set();
+    const matchItem = (item) => {
+      const searchable = [item.label, item.section, ...(item.keywords || [])].filter(Boolean).join(' ').toLowerCase();
       return searchable.includes(q);
-    }).map((a) => ({ type: 'action', ...a }));
+    };
 
-    return [...pages, ...actions];
+    const pages = ALL_MAIN_ITEMS.filter(matchItem).map((item) => {
+      seen.add(item.to);
+      return { type: 'page', ...item };
+    });
+
+    // Add legacy items not in main sections
+    const legacyPages = ALL_NAV_ITEMS.filter((item) => !seen.has(item.to) && matchItem(item)).map((item) => {
+      seen.add(item.to);
+      return { type: 'page', ...item };
+    });
+
+    const actions = QUICK_ACTIONS.filter((a) => !seen.has(a.to) && matchItem(a)).map((a) => ({ type: 'action', ...a }));
+    const shortcuts = COMMAND_SHORTCUTS.filter(matchItem).map((a) => ({ type: 'shortcut', ...a }));
+
+    return [...pages, ...legacyPages, ...actions, ...shortcuts];
   }, [query]);
 
   useEffect(() => {
@@ -47,6 +60,11 @@ export default function CommandPalette({ open, onClose }) {
   }, [query]);
 
   const handleSelect = (item) => {
+    if (item.to === '#expert-toggle') {
+      // Special case: expert mode toggle — just close palette
+      onClose();
+      return;
+    }
     navigate(item.to);
     onClose();
   };
@@ -67,6 +85,9 @@ export default function CommandPalette({ open, onClose }) {
   };
 
   if (!open) return null;
+
+  // Group results by section for display
+  let lastSection = null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh]">
@@ -99,31 +120,55 @@ export default function CommandPalette({ open, onClose }) {
           {results.map((item, idx) => {
             const Icon = item.icon;
             const isSelected = idx === selectedIdx;
+
+            // Section separator for grouped display
+            const showSectionHeader = item.section && item.section !== lastSection && item.type === 'page';
+            if (item.section) lastSection = item.section;
+            const showShortcutHeader = item.type === 'shortcut' && (idx === 0 || results[idx - 1]?.type !== 'shortcut');
+
             return (
-              <button
-                key={item.to + (item.key || '')}
-                onClick={() => handleSelect(item)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition
-                  ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
-              >
-                {Icon && (
-                  <Icon size={16} className={isSelected ? 'text-blue-500' : 'text-gray-400'} />
+              <div key={item.to + (item.key || '') + idx}>
+                {showSectionHeader && (
+                  <p className="px-4 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    {item.section}
+                  </p>
                 )}
-                {!Icon && (
-                  <ArrowRight
-                    size={16}
-                    className={isSelected ? 'text-blue-500' : 'text-gray-400'}
-                  />
+                {showShortcutHeader && (
+                  <p className="px-4 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Actions rapides
+                  </p>
                 )}
-                <span className="flex-1 truncate">{item.label}</span>
-                {item.section && <span className="text-xs text-gray-400">{item.section}</span>}
-                {item.type === 'action' && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded font-medium">
-                    Action
-                  </span>
-                )}
-                {isSelected && <CornerDownLeft size={12} className="text-gray-400" />}
-              </button>
+                <button
+                  onClick={() => handleSelect(item)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition
+                    ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {Icon && (
+                    <Icon size={16} className={isSelected ? 'text-blue-500' : 'text-gray-400'} />
+                  )}
+                  {!Icon && (
+                    <ArrowRight
+                      size={16}
+                      className={isSelected ? 'text-blue-500' : 'text-gray-400'}
+                    />
+                  )}
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {item.shortcut && (
+                    <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-gray-100 rounded border border-gray-200">
+                      {item.shortcut}
+                    </kbd>
+                  )}
+                  {!item.shortcut && item.section && (
+                    <span className="text-xs text-gray-400">{item.section}</span>
+                  )}
+                  {item.type === 'action' && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded font-medium">
+                      Action
+                    </span>
+                  )}
+                  {isSelected && <CornerDownLeft size={12} className="text-gray-400" />}
+                </button>
+              </div>
             );
           })}
         </div>
