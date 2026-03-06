@@ -25,14 +25,10 @@ from models import (
     Portefeuille,
 )
 from services.billing_service import get_reference_price
+from services.purchase_pricing import get_market_context, compute_strategy_price
 
 # Fallback volume if no data found
 DEFAULT_VOLUME_KWH_AN = 500_000
-
-# ── Strategy pricing multipliers (vs reference price) ──
-FIXE_PREMIUM = 1.05  # Fixed = ref * 1.05 (risk premium for budget certainty)
-INDEXE_DISCOUNT = 0.95  # Indexed = ref * 0.95 (slight market exposure discount)
-SPOT_DISCOUNT = 0.88  # Spot = ref * 0.88 (full market exposure, max savings)
 
 # ── Profile factor thresholds ──
 PROFILE_FLAT_24_7 = 0.85  # Flat/constant load profile
@@ -216,75 +212,68 @@ def compute_scenarios(
     profile_factor: float = 1.0,
     energy_type: str = "elec",
     report_pct: float = 0.0,
+    horizon_months: int = 12,
 ) -> list:
     """
     Generate 4 purchase scenarios: Fixe, Indexe, Spot, RéFlex Solar.
+    Uses market-based pricing from purchase_pricing engine.
     report_pct: fraction of HP volume shifted to solaire_ete (0.0–1.0).
     Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
+    market_ctx = get_market_context(db, energy_type.upper())
     logger.info(
-        "compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s",
+        "compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s spot_30d=%.2f",
         site_id,
         volume_kwh_an,
         profile_factor,
         ref_price,
         price_source,
+        market_ctx["spot_avg_30d_eur_mwh"],
     )
 
     scenarios = []
+    strategy_map = {
+        "fixe": PurchaseStrategy.FIXE.value,
+        "indexe": PurchaseStrategy.INDEXE.value,
+        "spot": PurchaseStrategy.SPOT.value,
+        "reflex_solar": PurchaseStrategy.REFLEX_SOLAR.value,
+    }
 
-    # ── Fixe: price = ref * FIXE_PREMIUM (risk premium), low risk ──
-    fixe_price = round(ref_price * FIXE_PREMIUM, 4)
-    fixe_total = round(fixe_price * volume_kwh_an, 2)
-    scenarios.append(
-        {
-            "strategy": PurchaseStrategy.FIXE.value,
-            "price_eur_per_kwh": fixe_price,
-            "total_annual_eur": fixe_total,
-            "risk_score": 15,
-            "p10_eur": fixe_total,
-            "p90_eur": fixe_total,
-            "ref_price": ref_price,
-            "ref_price_source": price_source,
-        }
-    )
-
-    # ── Indexe: price = ref * INDEXE_DISCOUNT, medium risk ──
-    indexe_price = round(ref_price * INDEXE_DISCOUNT, 4)
-    indexe_total = round(indexe_price * volume_kwh_an, 2)
-    scenarios.append(
-        {
-            "strategy": PurchaseStrategy.INDEXE.value,
-            "price_eur_per_kwh": indexe_price,
-            "total_annual_eur": indexe_total,
-            "risk_score": 45,
-            "p10_eur": round(indexe_total * 0.85, 2),
-            "p90_eur": round(indexe_total * 1.20, 2),
-            "ref_price": ref_price,
-            "ref_price_source": price_source,
-        }
-    )
-
-    # ── Spot: price = ref * SPOT_DISCOUNT * profile_factor, high risk ──
-    spot_price = round(ref_price * SPOT_DISCOUNT * profile_factor, 4)
-    spot_total = round(spot_price * volume_kwh_an, 2)
-    scenarios.append(
-        {
-            "strategy": PurchaseStrategy.SPOT.value,
-            "price_eur_per_kwh": spot_price,
-            "total_annual_eur": spot_total,
-            "risk_score": 75,
-            "p10_eur": round(spot_total * 0.70, 2),
-            "p90_eur": round(spot_total * 1.45, 2),
-            "ref_price": ref_price,
-            "ref_price_source": price_source,
-        }
-    )
-
-    # ── RéFlex Solar: blocs horaires, 2 modes (sans/avec report) ──
-    reflex = compute_reflex_scenario(ref_price, volume_kwh_an, profile_factor, price_source, report_pct=report_pct)
-    scenarios.append(reflex)
+    for strategy_key, strategy_enum in strategy_map.items():
+        if strategy_key == "reflex_solar":
+            # RéFlex Solar keeps its detailed blocs horaires model
+            reflex = compute_reflex_scenario(
+                ref_price, volume_kwh_an, profile_factor, price_source, report_pct=report_pct,
+            )
+            # Enrich with market-based pricing metadata
+            ths_pricing = compute_strategy_price(
+                "reflex_solar", market_ctx, profile_factor, horizon_months,
+            )
+            if ths_pricing:
+                reflex["breakdown"] = ths_pricing["breakdown"]
+                reflex["methodology"] = ths_pricing["methodology"]
+                reflex["risk_score"] = ths_pricing["risk_score"]
+                reflex["p10_eur"] = round(ths_pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2)
+                reflex["p90_eur"] = round(ths_pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2)
+            scenarios.append(reflex)
+        else:
+            pricing = compute_strategy_price(
+                strategy_key, market_ctx, profile_factor, horizon_months,
+            )
+            total = round(pricing["price_eur_kwh"] * volume_kwh_an, 2)
+            scenarios.append({
+                "strategy": strategy_enum,
+                "price_eur_per_kwh": pricing["price_eur_kwh"],
+                "total_annual_eur": total,
+                "risk_score": pricing["risk_score"],
+                "p10_eur": round(pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                "p90_eur": round(pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                "ref_price": ref_price,
+                "ref_price_source": price_source,
+                "breakdown": pricing["breakdown"],
+                "methodology": pricing["methodology"],
+            })
 
     # Compute savings vs current (ref_price)
     current_total = round(ref_price * volume_kwh_an, 2)
@@ -293,6 +282,10 @@ def compute_scenarios(
             s["savings_vs_current_pct"] = round((1 - s["total_annual_eur"] / current_total) * 100, 1)
         else:
             s["savings_vs_current_pct"] = 0
+
+    # Attach market context to all scenarios
+    for s in scenarios:
+        s["market_context"] = market_ctx
 
     return scenarios
 

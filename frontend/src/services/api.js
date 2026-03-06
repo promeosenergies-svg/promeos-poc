@@ -855,6 +855,9 @@ export const getBillingCompareMonthly = (params = {}) =>
 export const getMarketPrices = (params = {}) =>
   _cachedGet('/market/prices', { params }).then((r) => r.data);
 
+export const getMarketContext = (energyType = 'ELEC') =>
+  _cachedGet('/market/context', { params: { energy_type: energyType } }).then((r) => r.data);
+
 // ========================================
 // REFERENTIEL TARIFS
 // ========================================

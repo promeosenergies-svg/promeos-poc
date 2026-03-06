@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.market_price import MarketPrice
+from services.purchase_pricing import get_market_context
 
 router = APIRouter(prefix="/api/market", tags=["Market Prices"])
 
@@ -119,3 +120,12 @@ def get_market_prices(
         "prices": prices,
         "stats": stats,
     }
+
+
+@router.get("/context")
+def market_context(
+    energy_type: str = Query("ELEC"),
+    db: Session = Depends(get_db),
+):
+    """Contexte marché synthétique (spot, volatilité, tendance) pour le pricing achat."""
+    return get_market_context(db, energy_type=energy_type)

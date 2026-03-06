@@ -136,6 +136,22 @@ export const GLOSSARY = {
       "Accès Régulé à l'Électricité Nucléaire Historique. Mécanisme permettant aux fournisseurs alternatifs d'acheter de l'électricité nucléaire à prix fixe (42 €/MWh).",
   },
 
+  // ── Pricing achat ────────────────────────────────────────────────────────────
+  forward_price: {
+    term: 'Prix forward (CAL)',
+    short:
+      "Prix à terme sur le marché de gros (produit calendaire). Correspond au spot + prime de terme reflétant le risque de livraison future.",
+    long:
+      "Le prix forward CAL est calculé à partir du spot EPEX moyen 30 jours + une prime de terme (3 % de base + 0,3 % par mois d'horizon, cap 12 %). S'y ajoute la marge fournisseur B2B (~2,5 EUR/MWh). Convention : EUR/MWh.",
+  },
+  spread_fournisseur: {
+    term: 'Spread fournisseur',
+    short:
+      "Écart fixe ajouté par le fournisseur au-dessus de l'index de marché (EPEX Spot). Couvre sa marge, ses coûts de gestion et le risque de contrepartie.",
+    long:
+      "En contrat indexé B2B, le spread typique est de 3 à 6 EUR/MWh selon la taille du portefeuille et la solvabilité du client. PROMEOS utilise 4 EUR/MWh par défaut.",
+  },
+
   // ── Score conformité (A.2) ─────────────────────────────────────────────────
   compliance_score: {
     term: 'Score conformité',
