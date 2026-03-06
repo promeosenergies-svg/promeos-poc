@@ -280,4 +280,10 @@ export const GLOSSARY = {
       "Estimation du risque financier en euros associé à chaque constat de non-conformité. Basé sur les pénalités définies réglementairement (regs.yaml) ou sur des estimations conservatrices.",
     long: "Chaque finding inclut estimated_penalty_eur (montant), penalty_source (regs.yaml ou estimation) et penalty_basis (base de calcul). Pour le Décret Tertiaire : 7 500 EUR/site (non-déclaration) ou 1 500 EUR/site (non-affichage). BACS : 7 500 EUR/site. APER : estimation ~20 EUR/m² parking, ~15 EUR/m² toiture.",
   },
+  prix_marche_epex: {
+    term: 'Prix marché EPEX Spot',
+    short:
+      "Prix de l'électricité sur le marché spot français (EPEX SPOT SE). Reflète l'offre et la demande en temps réel. Utilisé comme référence pour les contrats indexés et spot.",
+    long: "L'EPEX SPOT SE est la bourse européenne de l'électricité. Le prix day-ahead France est la référence pour les contrats indexés. Unité : EUR/MWh. Seed PROMEOS basé sur les tendances observées 2024-2025 (post-crise, normalisation progressive).",
+  },
 };

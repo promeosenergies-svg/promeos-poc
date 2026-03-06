@@ -61,6 +61,7 @@ from routes import (
     action_templates_router,
     onboarding_stepper_router,
     consumption_unified_router,
+    market_router,
 )
 
 # Import KB router
@@ -145,6 +146,7 @@ app.include_router(copilot_router)  # V113 Energy Copilot
 app.include_router(action_templates_router)  # V113 Action Templates
 app.include_router(onboarding_stepper_router)  # V113 Onboarding Stepper
 app.include_router(consumption_unified_router)  # A.1 Unified Consumption (metered/billed/reconciled)
+app.include_router(market_router)  # M.1 Market Prices (EPEX Spot FR)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations

@@ -227,6 +227,9 @@ from .action_template import ActionTemplate
 # Onboarding Progress (V113)
 from .onboarding_progress import OnboardingProgress
 
+# Market Prices (Step 17)
+from .market_price import MarketPrice
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -429,4 +432,6 @@ __all__ = [
     "ActionTemplate",
     # V113: Onboarding Progress
     "OnboardingProgress",
+    # Market Prices (Step 17)
+    "MarketPrice",
 ]

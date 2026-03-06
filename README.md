@@ -116,7 +116,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | C.7 Impact financier EUR systématique (estimated_penalty_eur sur chaque Finding, regs.yaml+estimation, RegOps+ObligationsTab+Cockpit, glossaire, 28 tests) | Stable -- C.7 |
 > | B.6 Messages contextuels billing (3 handlers kpiMessaging billing_total_cost/anomalies/reconciliation, summary phrase BillIntelPage, coverage msg BillingPage, 24 tests) | Stable -- B.6 |
 > | B.7 Comparaison factures N vs N-1 (GET /billing/compare-monthly, BillingCompareChart Recharts BarChart, BillingPage intégré, 21 tests) | Stable -- B.7 |
-> | Suite de tests automatisés | **5 238 frontend + 3 056+ backend, 0 régression** |
+> | M.1 Seed prix marché EPEX Spot FR 24 mois (MarketPrice model, 730j déterministes, get_reference_price cascade market→fallback 0.068, GET /market/prices, glossaire, 20 tests) | Stable -- M.1 |
+> | Suite de tests automatisés | **5 243 frontend + 3 071+ backend, 0 régression** |
 
 > **Disclaimer**
 >

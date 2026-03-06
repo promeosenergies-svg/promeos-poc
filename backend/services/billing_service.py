@@ -40,8 +40,8 @@ from models.enums import ActionSourceType, ActionStatus
 # Price reference resolution (V1.1)
 # ========================================
 
-DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.18"))
-DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.09"))
+DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.068"))
+DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.045"))
 
 
 def get_reference_price(
@@ -54,8 +54,9 @@ def get_reference_price(
     """
     Resolve the reference price for a site, with clear priority:
       1. Active EnergyContract covering the invoice period
-      2. SiteTariffProfile for the site
-      3. Config fallback (0.18 elec, 0.09 gaz)
+      2. MarketPrice moyenne 30 jours (EPEX Spot FR)
+      3. SiteTariffProfile for the site
+      4. Config fallback (0.068 elec, 0.045 gaz)
     Returns: (price_eur_per_kwh, source_label)
     """
     # Priority 1: Active contract
@@ -80,12 +81,35 @@ def get_reference_price(
             # Contract without dates = always valid
             return (c.price_ref_eur_per_kwh, f"contract:{c.id}")
 
-    # Priority 2: SiteTariffProfile
+    # Priority 2: MarketPrice (average over 30 days around period)
+    try:
+        from sqlalchemy import func
+        from models.market_price import MarketPrice
+
+        market_code = "EPEX_SPOT_FR" if energy_type != "gaz" else None
+        if market_code:
+            ref_date = period_end or period_start or date.today()
+            avg_price = (
+                db.query(func.avg(MarketPrice.price_eur_mwh))
+                .filter(
+                    MarketPrice.market == market_code,
+                    MarketPrice.energy_type == "ELEC",
+                    MarketPrice.date >= ref_date - timedelta(days=30),
+                    MarketPrice.date <= ref_date,
+                )
+                .scalar()
+            )
+            if avg_price and avg_price > 0:
+                return (round(avg_price / 1000, 6), "market_epex_spot_30d")
+    except Exception:
+        pass  # MarketPrice table may not exist yet
+
+    # Priority 3: SiteTariffProfile
     tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()
     if tariff and tariff.price_ref_eur_per_kwh:
         return (tariff.price_ref_eur_per_kwh, "site_tariff_profile")
 
-    # Priority 3: Default fallback
+    # Priority 4: Default fallback
     if energy_type == "gaz":
         return (DEFAULT_PRICE_GAZ, "default_gaz")
     return (DEFAULT_PRICE_ELEC, "default_elec")

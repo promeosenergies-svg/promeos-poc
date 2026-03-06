@@ -849,6 +849,13 @@ export const getBillingCompareMonthly = (params = {}) =>
   api.get('/billing/compare-monthly', { params }).then((r) => r.data);
 
 // ========================================
+// MARCHE ENERGIE
+// ========================================
+
+export const getMarketPrices = (params = {}) =>
+  _cachedGet('/market/prices', { params }).then((r) => r.data);
+
+// ========================================
 // ACHAT ENERGIE
 // ========================================
 

@@ -222,7 +222,13 @@ class SeedOrchestrator:
         payment = generate_payment_rules(self.db, master["org"], master["sites"], rng)
         result["payment_rules"] = payment
 
-        # 13. Superuser
+        # 13. Market prices (EPEX Spot FR 24 mois)
+        from .gen_market_prices import generate_market_prices
+
+        market = generate_market_prices(self.db)
+        result["market_prices"] = market
+
+        # 14. Superuser
         self._create_superuser(master["org"])
 
         # 11. Segmentation profile (V101: seeded for demo coherence)
