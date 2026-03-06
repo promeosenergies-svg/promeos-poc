@@ -212,6 +212,52 @@ const HANDLERS = {
     };
   },
 
+  // ── Billing contextual KPIs (Step 15) ──────────────────────────────────
+
+  billing_total_cost: (v, ctx) => {
+    const { previousYearCost = null, sitesCount = 0 } = ctx;
+    if (v == null || isNaN(v)) return { simple: 'Coût total non calculé.', expert: 'Aucune facture importée.', severity: 'neutral' };
+    const formatted = v >= 1000 ? `${(v / 1000).toFixed(0)} k€` : `${v.toFixed(0)} €`;
+    if (previousYearCost && previousYearCost > 0) {
+      const delta = ((v - previousYearCost) / previousYearCost * 100).toFixed(1);
+      const trend = delta > 2 ? 'en hausse' : delta < -2 ? 'en baisse' : 'stable';
+      return {
+        simple: `${formatted} TTC sur la période. Tendance ${trend} (${delta > 0 ? '+' : ''}${delta}%).`,
+        expert: `${formatted} TTC pour ${sitesCount} sites. Δ ${delta}% vs N-1.`,
+        severity: delta > 10 ? 'crit' : delta > 2 ? 'warn' : 'ok',
+      };
+    }
+    return { simple: `${formatted} TTC sur la période.`, expert: `${formatted} TTC pour ${sitesCount} sites.`, severity: 'neutral' };
+  },
+
+  billing_anomalies_count: (v, ctx) => {
+    const { totalLossEur = 0 } = ctx;
+    if (v == null || isNaN(v) || v === 0) return { simple: 'Aucune anomalie détectée. Facturation cohérente.', expert: '0 anomalie. Shadow billing conforme.', severity: 'ok' };
+    const lossFormatted = totalLossEur >= 1000 ? `${(totalLossEur / 1000).toFixed(1)} k€` : `${totalLossEur.toFixed(0)} €`;
+    if (v <= 2) return {
+      simple: `${v} anomalie${v > 1 ? 's' : ''} détectée${v > 1 ? 's' : ''}. Écart estimé : ${lossFormatted}.`,
+      expert: `${v} insight${v > 1 ? 's' : ''} billing. Perte estimée ${lossFormatted} HT.`,
+      severity: 'warn',
+      action: { label: 'Voir les anomalies', path: '/bill-intel' },
+    };
+    return {
+      simple: `${v} anomalies détectées. Écart total estimé : ${lossFormatted}. Vérification urgente.`,
+      expert: `${v} insights billing ouverts. Perte estimée ${lossFormatted} HT. Audit recommandé.`,
+      severity: 'crit',
+      action: { label: 'Traiter les anomalies', path: '/bill-intel' },
+    };
+  },
+
+  billing_reconciliation: (v) => {
+    if (v == null || isNaN(v) || v === 0) return { simple: 'Rapprochement compteur/facture conforme.', expert: 'Tous les sites réconciliés sous le seuil de 10%.', severity: 'ok' };
+    return {
+      simple: `${v} site${v > 1 ? 's' : ''} avec un écart compteur/facture supérieur à 10%.`,
+      expert: `${v} site${v > 1 ? 's' : ''} en alerte réconciliation (delta > 10%).`,
+      severity: v >= 3 ? 'crit' : 'warn',
+      action: { label: 'Voir les écarts', path: '/bill-intel' },
+    };
+  },
+
   // ── Monitoring / Performance KPIs ───────────────────────────────────────
 
   data_quality_score: (v) => {

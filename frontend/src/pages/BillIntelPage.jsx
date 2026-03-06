@@ -583,6 +583,27 @@ export default function BillIntelPage() {
         />
       )}
 
+      {/* Step 15: Summary phrase */}
+      {summary && (() => {
+        const count = summary.total_insights || 0;
+        if (count === 0) {
+          return (
+            <p className="text-sm text-green-700 bg-green-50 rounded-lg px-4 py-2" data-testid="billing-summary-phrase">
+              Toutes les factures sont cohérentes. Aucune action requise.
+            </p>
+          );
+        }
+        const lossStr = activeLoss >= 1000
+          ? `${(activeLoss / 1000).toFixed(1)} k€`
+          : `${Math.round(activeLoss)} €`;
+        return (
+          <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-2" data-testid="billing-summary-phrase">
+            {count} anomalie{count > 1 ? 's' : ''} détectée{count > 1 ? 's' : ''} pour un écart estimé de {lossStr}.
+            {isExpert && ` Shadow billing actif — ${summary.total_invoices} factures analysées.`}
+          </p>
+        );
+      })()}
+
       {/* Summary cards */}
       {summary && (<>
         <div className="grid grid-cols-5 gap-4">
@@ -617,17 +638,31 @@ export default function BillIntelPage() {
             color="orange"
           />
         </div>
-        {(() => {
-          const msg = getKpiMessage('anomalies', summary.total_insights, { totalLoss: activeLoss });
-          if (!msg) return null;
-          return (
-            <p className={`col-span-5 text-xs px-1 ${
-              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-            }`} data-testid="kpi-message-anomalies">
-              {isExpert ? msg.expert : msg.simple}
-            </p>
-          );
-        })()}
+        {/* Step 15: Billing KPI messages */}
+        <div className="flex flex-col gap-1">
+          {(() => {
+            const msg = getKpiMessage('billing_total_cost', summary.total_eur, { sitesCount: sites.length });
+            if (!msg) return null;
+            return (
+              <p className={`text-xs px-1 ${
+                msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+              }`} data-testid="kpi-message-billing-cost">
+                {isExpert ? msg.expert : msg.simple}
+              </p>
+            );
+          })()}
+          {(() => {
+            const msg = getKpiMessage('billing_anomalies_count', summary.total_insights, { totalLossEur: activeLoss });
+            if (!msg) return null;
+            return (
+              <p className={`text-xs px-1 ${
+                msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+              }`} data-testid="kpi-message-billing-anomalies">
+                {isExpert ? msg.expert : msg.simple}
+              </p>
+            );
+          })()}
+        </div>
       </>)}
       {isExpert && summary && (
         <div className="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2">

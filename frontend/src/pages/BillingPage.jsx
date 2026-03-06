@@ -31,6 +31,7 @@ import BillingTimeline from '../components/BillingTimeline';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
+import { getKpiMessage } from '../services/kpiMessaging';
 
 const PAGE_TITLE = 'Timeline & Couverture Facturation';
 
@@ -447,6 +448,19 @@ export default function BillingPage() {
               minMonth={summary?.range?.min_month ?? '—'}
               maxMonth={summary?.range?.max_month ?? '—'}
             />
+            {(() => {
+              const total = summary?.months_total || 0;
+              const ratio = total > 0 ? (summary?.covered ?? 0) / total : null;
+              const msg = getKpiMessage('billing_coverage', ratio);
+              if (!msg) return null;
+              return (
+                <p className={`text-xs mt-2 ${
+                  msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+                }`} data-testid="kpi-message-billing-coverage">
+                  {isExpert ? msg.expert : msg.simple}
+                </p>
+              );
+            })()}
           </CardBody>
         </Card>
       )}
