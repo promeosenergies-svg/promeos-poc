@@ -282,7 +282,6 @@ export default function ConsumptionExplorerPage() {
         p10: arrays.reduce((s, arr) => s + (arr[i]?.p10 ?? 0), 0),
         p50: arrays.reduce((s, arr) => s + (arr[i]?.p50 ?? 0), 0),
         p90: arrays.reduce((s, arr) => s + (arr[i]?.p90 ?? 0), 0),
-        p95: arrays.reduce((s, arr) => s + (arr[i]?.p95 ?? 0), 0),
       }));
     };
     const weekdayArrays = entries.map((t) => t.envelope?.weekday).filter(Boolean);
