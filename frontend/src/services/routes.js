@@ -22,8 +22,11 @@ export function toConsoExplorer(opts = {}) {
     p.set('sites', ids.join(','));
   }
   if (opts.days) p.set('days', String(opts.days));
-  if (opts.date_from) p.set('date_from', opts.date_from);
-  if (opts.date_to) p.set('date_to', opts.date_to);
+  // Step 11: use period_start/period_end for cross-page unified period
+  if (opts.period_start) p.set('period_start', opts.period_start);
+  else if (opts.date_from) p.set('period_start', opts.date_from);
+  if (opts.period_end) p.set('period_end', opts.period_end);
+  else if (opts.date_to) p.set('period_end', opts.date_to);
   if (opts.energy) p.set('energy', opts.energy);
   if (opts.unit) p.set('unit', opts.unit);
   if (opts.mode) p.set('mode', opts.mode);
@@ -39,6 +42,14 @@ export function toConsoExplorer(opts = {}) {
 export function toConsoDiag(opts = {}) {
   const p = new URLSearchParams();
   if (opts.site_id) p.set('site_id', String(opts.site_id));
+  // Step 11: propagate period params
+  if (opts.days) p.set('days', String(opts.days));
+  if (opts.period_start) p.set('period_start', opts.period_start);
+  if (opts.period_end) p.set('period_end', opts.period_end);
+  if (opts.periodQueryString) {
+    const extra = new URLSearchParams(opts.periodQueryString);
+    for (const [k, v] of extra) p.set(k, v);
+  }
   const qs = p.toString();
   return `/diagnostic-conso${qs ? '?' + qs : ''}`;
 }
@@ -208,6 +219,14 @@ export function toUsagesHoraires(opts = {}) {
 export function toMonitoring(opts = {}) {
   const p = new URLSearchParams();
   if (opts.site_id) p.set('site_id', String(opts.site_id));
+  // Step 11: propagate period params
+  if (opts.days) p.set('days', String(opts.days));
+  if (opts.period_start) p.set('period_start', opts.period_start);
+  if (opts.period_end) p.set('period_end', opts.period_end);
+  if (opts.periodQueryString) {
+    const extra = new URLSearchParams(opts.periodQueryString);
+    for (const [k, v] of extra) p.set(k, v);
+  }
   const qs = p.toString();
   return `/monitoring${qs ? '?' + qs : ''}`;
 }

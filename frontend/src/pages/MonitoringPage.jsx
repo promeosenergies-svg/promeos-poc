@@ -96,6 +96,7 @@ import {
 } from '../services/api';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
+import usePeriodParams from '../hooks/usePeriodParams';
 
 // --- Constants ---
 
@@ -1522,6 +1523,9 @@ export default function MonitoringPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const siteId = scope.siteId;
+  // Step 11: unified period from URL (default 90 days for monitoring)
+  const { period, periodQueryString } = usePeriodParams(90);
+  const monitoringDays = period.days;
 
   const [kpis, setKpis] = useState(null);
   const [climate, setClimate] = useState(null);
@@ -1635,7 +1639,7 @@ export default function MonitoringPage() {
     setLoading(true);
     setError(null);
     try {
-      await runMonitoring(siteId, 90);
+      await runMonitoring(siteId, monitoringDays);
       track('monitoring_run', { site_id: siteId });
       await loadAll();
     } catch (e) {
@@ -1649,9 +1653,9 @@ export default function MonitoringPage() {
     setDemoLoading(true);
     setError(null);
     try {
-      await generateMonitoringDemo(siteId, 90, demoProfile);
+      await generateMonitoringDemo(siteId, monitoringDays, demoProfile);
       track('monitoring_demo', { site_id: siteId, profile: demoProfile });
-      await runMonitoring(siteId, 90);
+      await runMonitoring(siteId, monitoringDays);
       await loadAll();
     } catch (e) {
       setError(e?.response?.data?.detail || e.message);
@@ -1711,7 +1715,7 @@ export default function MonitoringPage() {
     if (!siteId) return;
     setSuggestLoading(true);
     try {
-      const result = await getScheduleSuggest(siteId, 90);
+      const result = await getScheduleSuggest(siteId, monitoringDays);
       setScheduleSuggest(result);
       track('schedule_suggest', { site_id: siteId, confidence: result.confidence });
     } catch {
@@ -1736,10 +1740,13 @@ export default function MonitoringPage() {
 
   const handleOpenExplorer = (_alert) => {
     const explorerOpts = { site_id: siteId };
+    // Step 11: propagate period via unified params
     if (kpis?.period) {
       const parts = kpis.period.split(' - ');
-      if (parts[0]) explorerOpts.date_from = parts[0];
-      if (parts[1]) explorerOpts.date_to = parts[1];
+      if (parts[0]) explorerOpts.period_start = parts[0];
+      if (parts[1]) explorerOpts.period_end = parts[1];
+    } else {
+      explorerOpts.days = monitoringDays;
     }
     navigate(toConsoExplorer(explorerOpts));
   };
@@ -1952,7 +1959,7 @@ export default function MonitoringPage() {
     <PageShell
       icon={Activity}
       title="Performance Électrique"
-      subtitle="KPIs, puissance, qualité de données & alertes"
+      subtitle={<>KPIs, puissance, qualité de données & alertes <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
       actions={
         <>
           <select
@@ -1969,7 +1976,7 @@ export default function MonitoringPage() {
           {siteDq && <DataQualityBadge score={siteDq.score} size="sm" />}
           {siteFreshness && <FreshnessIndicator freshness={siteFreshness} size="sm" />}
           <Link
-            to={toConsoExplorer({ site_id: siteId })}
+            to={toConsoExplorer({ site_id: siteId, days: monitoringDays })}
             className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
           >
             <ExternalLink size={14} />

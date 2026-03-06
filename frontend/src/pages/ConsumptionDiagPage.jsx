@@ -41,6 +41,7 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer } from '../services/routes';
+import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
 import { Zap, Info, ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
@@ -729,6 +730,8 @@ export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
+  // Step 11: unified period from URL (default 90 days for diagnostic)
+  const { period, periodQueryString } = usePeriodParams(90);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -857,14 +860,14 @@ export default function ConsumptionDiagPage() {
     [openActionDrawer]
   );
 
-  // Open in Explorer
+  // Open in Explorer — Step 11: use period_start/period_end for unified period
   const handleOpenExplorer = useCallback(
     (insight) => {
       navigate(
         toConsoExplorer({
           site_id: insight.site_id,
-          date_from: insight.period_start ? insight.period_start.slice(0, 10) : undefined,
-          date_to: insight.period_end ? insight.period_end.slice(0, 10) : undefined,
+          period_start: insight.period_start ? insight.period_start.slice(0, 10) : undefined,
+          period_end: insight.period_end ? insight.period_end.slice(0, 10) : undefined,
         })
       );
     },
@@ -913,7 +916,7 @@ export default function ConsumptionDiagPage() {
     <PageShell
       icon={Zap}
       title="Diagnostic"
-      subtitle="Détection automatique : horaires, talon, pointes, dérives"
+      subtitle={<>Détection automatique : horaires, talon, pointes, dérives <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>

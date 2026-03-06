@@ -1187,14 +1187,15 @@ describe('BK · Route registry helpers', () => {
     expect(url).not.toContain('undefined');
   });
 
-  it('toConsoExplorer supports date_from / date_to', () => {
+  it('toConsoExplorer supports date_from / date_to (mapped to period_start/period_end)', () => {
     const url = routes.toConsoExplorer({
       site_id: 1,
       date_from: '2025-01-01',
       date_to: '2025-01-31',
     });
-    expect(url).toContain('date_from=2025-01-01');
-    expect(url).toContain('date_to=2025-01-31');
+    // Step 11: date_from/date_to are mapped to period_start/period_end for unified period
+    expect(url).toContain('period_start=2025-01-01');
+    expect(url).toContain('period_end=2025-01-31');
   });
 
   it('toConsoExplorer supports multi-site array', () => {

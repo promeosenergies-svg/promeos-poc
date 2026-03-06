@@ -38,8 +38,9 @@ export default function useExplorerURL() {
     energy: searchParams.get('energy') || DEFAULTS.energy,
     days: searchParams.has('days') ? Number(searchParams.get('days')) : DEFAULTS.days,
     // Custom date range (overrides days when present)
-    startDate: searchParams.get('start') || null,
-    endDate: searchParams.get('end') || null,
+    // Step 11: also read period_start/period_end and date_from/date_to for cross-page compat
+    startDate: searchParams.get('start') || searchParams.get('period_start') || searchParams.get('date_from') || null,
+    endDate: searchParams.get('end') || searchParams.get('period_end') || searchParams.get('date_to') || null,
     mode: searchParams.get('mode') || DEFAULTS.mode,
     unit: searchParams.get('unit') || DEFAULTS.unit,
     tab: searchParams.get('tab') || DEFAULTS.tab,
