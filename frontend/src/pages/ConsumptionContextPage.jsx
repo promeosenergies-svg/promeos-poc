@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Activity, RefreshCw } from 'lucide-react';
 import { getConsumptionContext, refreshConsumptionDiagnose } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { PageShell, KpiCard, Tabs, Card, CardBody, EmptyState, Badge, Button } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import ProfileHeatmapTab from './consumption/ProfileHeatmapTab';
@@ -26,6 +27,7 @@ function scoreBadge(score) {
 
 export default function ConsumptionContextPage() {
   const { selectedSiteId } = useScope();
+  const { isExpert } = useExpertMode();
   const siteId = selectedSiteId;
   const [sp, setSp] = useSearchParams();
   const tabParam = sp.get('tab') || 'profile';
@@ -145,7 +147,18 @@ export default function ConsumptionContextPage() {
             </CardBody>
           </Card>
         ) : tabParam === 'profile' ? (
-          <ProfileHeatmapTab profile={profileData} loading={loading} />
+          <ProfileHeatmapTab
+            profile={profileData}
+            loading={loading}
+            schedule={activityData?.schedule}
+            stats={{
+              night_ratio: anomalyData?.kpis?.night_ratio ?? null,
+              weekend_ratio: anomalyData?.kpis?.weekend_ratio ?? null,
+              off_hours_ratio: (kpis.offhours_pct != null ? kpis.offhours_pct / 100 : null),
+              avg_kwh: profileData?.total_kwh ?? null,
+            }}
+            isExpert={isExpert}
+          />
         ) : (
           <HorairesAnomaliesTab
             activity={activityData}

@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
 import { fmtNum, fmtPct } from '../../utils/format';
+import HeatmapLegend from './HeatmapLegend';
 
 const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -102,7 +103,7 @@ const DailyProfileChart = memo(function DailyProfileChart({ dailyProfile }) {
   );
 });
 
-export default function ProfileHeatmapTab({ profile, loading }) {
+export default function ProfileHeatmapTab({ profile, loading, schedule, stats, isExpert }) {
   if (loading)
     return (
       <Card>
@@ -140,6 +141,7 @@ export default function ProfileHeatmapTab({ profile, loading }) {
               </Badge>
             )}
           </div>
+          <HeatmapLegend schedule={schedule} stats={stats} isExpert={isExpert} />
           <HeatmapGrid heatmap={heatmap} />
           <p className="text-xs text-gray-400 mt-2">
             {readings_count ?? 0} relevés · {total_kwh ?? 0} kWh total
