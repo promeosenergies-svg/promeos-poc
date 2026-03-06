@@ -215,8 +215,9 @@ describe('buildExecutiveKpis', () => {
     expect(result[1].value).toBe('25 k€');
   });
 
-  it('conformite tile status is "crit" when nonConformes > 0', () => {
-    const kpis = makeKpis({ nonConformes: 2 });
+  it('conformite tile status is "crit" when score < 40 (A.2 thresholds)', () => {
+    // A.2: status based on score thresholds (< 40 → crit), not nonConformes count
+    const kpis = makeKpis({ total: 10, conformes: 1, nonConformes: 8, aRisque: 1 });
     const result = buildExecutiveKpis(kpis, makeSites());
     expect(result[0].status).toBe('crit');
   });

@@ -50,6 +50,11 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     action_recommandee = Column(String, nullable=True)
     risque_financier_euro = Column(Float, default=0.0)  # de risque
 
+    # Score conformité unifié A.2 (snapshot, mis à jour par compliance_score_service)
+    compliance_score_composite = Column(Float, nullable=True, comment="Score 0-100 unifié (DT 45% + BACS 30% + APER 25%)")
+    compliance_score_breakdown_json = Column(String, nullable=True, comment="Détail par framework JSON")
+    compliance_score_confidence = Column(String(10), nullable=True, comment="high/medium/low")
+
     # RegOps business identifiers
     siret = Column(String(14), nullable=True, comment="SIRET du site")
     insee_code = Column(String(5), nullable=True, comment="Code INSEE commune")

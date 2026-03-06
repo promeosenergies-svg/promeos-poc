@@ -588,3 +588,48 @@ def mv_summary_endpoint(
         return compute_mv_summary(db, site_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+# ========================================
+# A.2 — Score conformité unifié
+# ========================================
+
+
+@router.get("/sites/{site_id}/score")
+def get_site_compliance_score(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/compliance/sites/{site_id}/score
+
+    Score conformité unifié 0-100 (A.2).
+    Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%)
+    − pénalité findings critiques (max −20 pts).
+    """
+    from services.compliance_score_service import compute_site_compliance_score
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site non trouvé")
+
+    result = compute_site_compliance_score(db, site_id)
+    return result.to_dict()
+
+
+@router.get("/portfolio/score")
+def get_portfolio_compliance_score(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/compliance/portfolio/score
+
+    Score conformité unifié du portefeuille (A.2).
+    Moyenne pondérée par surface des scores sites.
+    """
+    from services.compliance_score_service import compute_portfolio_compliance
+
+    org_id = resolve_org_id(request, auth, db)
+    return compute_portfolio_compliance(db, org_id)

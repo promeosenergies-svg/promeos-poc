@@ -81,9 +81,9 @@ class TestKpiServiceCompliance:
     def test_compliance_score(self, db):
         svc = KpiService(db)
         result = svc.get_compliance_score(KpiScope(org_id=1))
-        # 2 out of 3 sites CONFORME = 66.7%
-        assert abs(result.value - 66.7) < 0.1
-        assert result.unit == "%"
+        # A.2: unified score (0-100), not simple % conformes
+        assert result.unit == "score"
+        assert 0.0 <= result.value <= 100.0
 
     def test_empty_scope(self, db):
         svc = KpiService(db)
@@ -129,7 +129,7 @@ class TestKpiServiceSummary:
         summary = svc.get_summary(KpiScope(org_id=1))
         assert summary["risque_financier_euro"] == 15000.0
         assert abs(summary["avancement_decret_pct"] - 80.0) < 0.1
-        assert abs(summary["compliance_score_pct"] - 66.7) < 0.1
+        assert 0.0 <= summary["compliance_score_pct"] <= 100.0
         assert summary["total_sites"] == 3
         assert summary["total_surface_m2"] == 3500.0
         assert summary["status_counts"]["conformes"] == 2

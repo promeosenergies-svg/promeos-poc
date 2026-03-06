@@ -30,29 +30,29 @@ const HANDLERS = {
     if (v == null || isNaN(v)) {
       return {
         simple: 'Données insuffisantes pour calculer la conformité.',
-        expert: 'Aucun RegAssessment disponible. Lancez un audit conformité.',
+        expert: 'Score unifié A.2 : Tertiaire 45% + BACS 30% + APER 25%. Aucune évaluation disponible.',
         severity: 'neutral',
         action: { label: 'Lancer un audit', path: '/conformite' },
       };
     }
-    if (v >= 80) {
+    if (v >= 70) {
       return {
-        simple: `Bonne conformité. ${sitesAtRisk > 0 ? `${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} à surveiller.` : 'Continuez ainsi.'}`,
-        expert: `${v}% conforme sur ${totalSites} sites. ${sitesNonConformes} non conformes, ${sitesAtRisk} à risque.`,
+        simple: `Bonne conformité (${v}/100). ${sitesAtRisk > 0 ? `${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} à surveiller.` : 'Continuez ainsi.'}`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes, ${sitesAtRisk} à risque sur ${totalSites} sites.`,
         severity: 'ok',
       };
     }
-    if (v >= 50) {
+    if (v >= 40) {
       return {
-        simple: `Conformité moyenne. ${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} nécessite${sitesAtRisk > 1 ? 'nt' : ''} attention.`,
-        expert: `${v}% conforme. ${sitesNonConformes} sites non conformes sur ${totalSites}. Priorisez les échéances proches.`,
+        simple: `Conformité moyenne (${v}/100). ${sitesAtRisk + sitesNonConformes} site${(sitesAtRisk + sitesNonConformes) > 1 ? 's' : ''} nécessite${(sitesAtRisk + sitesNonConformes) > 1 ? 'nt' : ''} attention.`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes sur ${totalSites}. Priorisez les échéances proches.`,
         severity: 'warn',
         action: { label: 'Voir les sites à risque', path: '/conformite' },
       };
     }
     return {
-      simple: `Conformité faible. Actions urgentes requises sur ${sitesAtRisk || sitesNonConformes} sites.`,
-      expert: `${v}% conforme seulement. ${sitesNonConformes} non conformes sur ${totalSites}. Risque d'amende.`,
+      simple: `Conformité faible (${v}/100). Actions urgentes requises.`,
+      expert: `Score ${v}/100 seulement (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes sur ${totalSites}. Risque d'amende.`,
       severity: 'crit',
       action: { label: 'Plan de mise en conformité', path: '/conformite' },
     };

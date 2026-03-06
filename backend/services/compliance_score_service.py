@@ -1,0 +1,330 @@
+"""
+PROMEOS — A.2: Service de score conformité unifié.
+
+Source unique pour le score conformité 0-100 (higher = better).
+Agrège les 3 obligations réglementaires applicables :
+  - Décret Tertiaire (45%)
+  - BACS (30%)
+  - APER (25%)
+
+Les CEE, qui relèvent du financement, ne sont pas inclus dans le score.
+
+Formule :
+  score = moyenne_ponderee(DT 45% + BACS 30% + APER 25%)
+          − penalite_findings_critiques (max −20 pts)
+
+Confidence :
+  - "high"   : 3/3 frameworks évalués
+  - "medium" : 2/3 frameworks évalués
+  - "low"    : 0-1 framework évalué
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass, field, asdict
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+_logger = logging.getLogger(__name__)
+
+# ── Poids des frameworks (DT + BACS + APER = 100%) ─────────────────────────
+FRAMEWORK_WEIGHTS = {
+    "tertiaire_operat": 0.45,
+    "bacs": 0.30,
+    "aper": 0.25,
+}
+
+# ── Pénalité findings critiques ─────────────────────────────────────────────
+MAX_CRITICAL_PENALTY = 20.0  # pts max
+CRITICAL_PENALTY_PER_FINDING = 5.0  # pts par finding critique
+
+
+@dataclass
+class FrameworkScore:
+    """Score d'un framework réglementaire individuel."""
+    framework: str
+    score: float  # 0-100 (higher = better)
+    weight: float  # poids dans le composite
+    available: bool  # True si RegAssessment existe
+    source: str  # "regops" | "snapshot" | "default"
+
+
+@dataclass
+class ComplianceScoreResult:
+    """Résultat du score conformité unifié."""
+    score: float  # 0-100 composite (higher = better)
+    breakdown: list[FrameworkScore] = field(default_factory=list)
+    critical_penalty: float = 0.0  # pts soustraits pour findings critiques
+    confidence: str = "low"  # "high" | "medium" | "low"
+    frameworks_evaluated: int = 0
+    frameworks_total: int = 3
+    last_computed: Optional[str] = None
+    formula: str = "Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%) − pénalité findings critiques (max −20 pts)"
+
+    def to_dict(self) -> dict:
+        return {
+            "score": self.score,
+            "breakdown": [asdict(f) for f in self.breakdown],
+            "critical_penalty": self.critical_penalty,
+            "confidence": self.confidence,
+            "frameworks_evaluated": self.frameworks_evaluated,
+            "frameworks_total": self.frameworks_total,
+            "last_computed": self.last_computed,
+            "formula": self.formula,
+        }
+
+
+def _status_to_score(status_str: str) -> float:
+    """Convertit un statut enum en score 0-100."""
+    mapping = {
+        "COMPLIANT": 100.0,
+        "CONFORME": 100.0,
+        "AT_RISK": 50.0,
+        "A_RISQUE": 50.0,
+        "NON_COMPLIANT": 0.0,
+        "NON_CONFORME": 0.0,
+        "UNKNOWN": 50.0,
+        "EN_COURS": 50.0,
+        "DEROGATION": 80.0,
+    }
+    return mapping.get(str(status_str).upper().replace(" ", "_"), 50.0)
+
+
+def _count_critical_findings(findings_json: Optional[str]) -> int:
+    """Compte les findings de sévérité critique dans le JSON."""
+    if not findings_json:
+        return 0
+    try:
+        findings = json.loads(findings_json) if isinstance(findings_json, str) else findings_json
+        if isinstance(findings, list):
+            return sum(
+                1 for f in findings
+                if isinstance(f, dict) and str(f.get("severity", "")).lower() == "critical"
+            )
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return 0
+
+
+def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreResult:
+    """
+    Score conformité unifié pour un site.
+
+    Algorithme :
+    1. Récupère RegAssessment pour chaque framework (DT, BACS, APER)
+    2. Pour chaque framework : score du RegAssessment (ou fallback snapshot Site)
+    3. Score composite = weighted_average(DT 45%, BACS 30%, APER 25%)
+    4. Pénalité findings critiques : -5 pts par finding critique (max -20)
+    5. Clamp [0, 100]
+    """
+    from models import RegAssessment, Site
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return ComplianceScoreResult(score=50.0, confidence="low")
+
+    # Récupère les RegAssessments les plus récents par framework
+    assessments = (
+        db.query(RegAssessment)
+        .filter(
+            RegAssessment.object_type == "site",
+            RegAssessment.object_id == site_id,
+            RegAssessment.is_stale == False,
+        )
+        .order_by(RegAssessment.computed_at.desc())
+        .all()
+    )
+
+    # Index par regulation (déterminé depuis findings_json ou deterministic_version)
+    assessment_by_framework: dict[str, RegAssessment] = {}
+    for a in assessments:
+        # Le framework est encodé dans deterministic_version ou findings_json
+        fw = _detect_framework(a)
+        if fw and fw not in assessment_by_framework:
+            assessment_by_framework[fw] = a
+
+    # Construire le breakdown
+    breakdown: list[FrameworkScore] = []
+    weighted_sum = 0.0
+    total_weight = 0.0
+    frameworks_evaluated = 0
+    total_critical_findings = 0
+
+    for fw_key, weight in FRAMEWORK_WEIGHTS.items():
+        ra = assessment_by_framework.get(fw_key)
+
+        if ra and ra.compliance_score is not None:
+            fw_score = max(0.0, min(100.0, ra.compliance_score))
+            source = "regops"
+            available = True
+            frameworks_evaluated += 1
+            total_critical_findings += _count_critical_findings(ra.findings_json)
+        else:
+            # Fallback : snapshot Site (pour DT et BACS)
+            fw_score = _fallback_site_score(site, fw_key)
+            source = "snapshot" if fw_score != 50.0 else "default"
+            available = source == "snapshot"
+            if available:
+                frameworks_evaluated += 1
+
+        breakdown.append(FrameworkScore(
+            framework=fw_key,
+            score=round(fw_score, 1),
+            weight=weight,
+            available=available,
+            source=source,
+        ))
+
+        weighted_sum += fw_score * weight
+        total_weight += weight
+
+    # Score composite
+    raw_score = weighted_sum / total_weight if total_weight > 0 else 50.0
+
+    # Pénalité findings critiques
+    critical_penalty = min(
+        MAX_CRITICAL_PENALTY,
+        total_critical_findings * CRITICAL_PENALTY_PER_FINDING,
+    )
+    final_score = round(max(0.0, min(100.0, raw_score - critical_penalty)), 1)
+
+    # Confidence
+    if frameworks_evaluated >= 3:
+        confidence = "high"
+    elif frameworks_evaluated >= 2:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    last_computed = None
+    if assessments:
+        last_computed = assessments[0].computed_at.isoformat() if assessments[0].computed_at else None
+
+    result = ComplianceScoreResult(
+        score=final_score,
+        breakdown=breakdown,
+        critical_penalty=critical_penalty,
+        confidence=confidence,
+        frameworks_evaluated=frameworks_evaluated,
+        last_computed=last_computed,
+    )
+
+    _logger.info(
+        "compliance_score site=%d: %.1f (confidence=%s, eval=%d/3, penalty=%.1f)",
+        site_id, final_score, confidence, frameworks_evaluated, critical_penalty,
+    )
+
+    return result
+
+
+def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
+    """
+    Score conformité agrégé pour un portefeuille (moyenne pondérée par surface).
+
+    Returns: {
+        avg_score, min_score, max_score,
+        total_sites, high_confidence_count,
+        worst_sites: [{site_id, nom, score, confidence}],
+        breakdown_avg: {tertiaire_operat, bacs, aper},
+    }
+    """
+    from models import Site, Portefeuille, EntiteJuridique
+    from models import not_deleted
+
+    sites = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.actif == True)
+        .all()
+    )
+
+    if not sites:
+        return {
+            "avg_score": 0.0, "min_score": 0.0, "max_score": 0.0,
+            "total_sites": 0, "high_confidence_count": 0,
+            "worst_sites": [], "breakdown_avg": {},
+        }
+
+    results = []
+    for site in sites:
+        r = compute_site_compliance_score(db, site.id)
+        results.append((site, r))
+
+    # Moyenne pondérée par surface (fallback = poids égal)
+    total_weight = 0.0
+    weighted_score = 0.0
+    fw_sums: dict[str, float] = {}
+    fw_counts: dict[str, int] = {}
+
+    for site, r in results:
+        w = site.surface_m2 if site.surface_m2 and site.surface_m2 > 0 else 1000.0
+        total_weight += w
+        weighted_score += r.score * w
+
+        for fs in r.breakdown:
+            fw_sums[fs.framework] = fw_sums.get(fs.framework, 0.0) + fs.score
+            fw_counts[fs.framework] = fw_counts.get(fs.framework, 0) + 1
+
+    avg_score = round(weighted_score / total_weight, 1) if total_weight > 0 else 0.0
+    scores = [r.score for _, r in results]
+
+    worst = sorted(results, key=lambda x: x[1].score)[:5]
+    worst_sites = [
+        {"site_id": s.id, "nom": s.nom, "score": r.score, "confidence": r.confidence}
+        for s, r in worst
+    ]
+
+    breakdown_avg = {
+        fw: round(fw_sums[fw] / fw_counts[fw], 1)
+        for fw in fw_sums
+        if fw_counts.get(fw, 0) > 0
+    }
+
+    high_conf = sum(1 for _, r in results if r.confidence == "high")
+
+    return {
+        "avg_score": avg_score,
+        "min_score": min(scores) if scores else 0.0,
+        "max_score": max(scores) if scores else 0.0,
+        "total_sites": len(sites),
+        "high_confidence_count": high_conf,
+        "worst_sites": worst_sites,
+        "breakdown_avg": breakdown_avg,
+    }
+
+
+def _detect_framework(assessment) -> Optional[str]:
+    """Détecte le framework depuis un RegAssessment."""
+    # Essaie d'identifier via deterministic_version ou findings_json
+    version = assessment.deterministic_version or ""
+    for fw in FRAMEWORK_WEIGHTS:
+        if fw in version.lower():
+            return fw
+
+    # Fallback: premier finding dans findings_json
+    if assessment.findings_json:
+        try:
+            findings = json.loads(assessment.findings_json) if isinstance(assessment.findings_json, str) else assessment.findings_json
+            if isinstance(findings, list) and findings:
+                reg = str(findings[0].get("regulation", "")).lower()
+                for fw in FRAMEWORK_WEIGHTS:
+                    if fw in reg:
+                        return fw
+        except (json.JSONDecodeError, TypeError, IndexError):
+            pass
+
+    return None
+
+
+def _fallback_site_score(site, fw_key: str) -> float:
+    """Fallback score depuis les snapshots Site."""
+    if fw_key == "tertiaire_operat" and site.statut_decret_tertiaire:
+        return _status_to_score(site.statut_decret_tertiaire.value if hasattr(site.statut_decret_tertiaire, 'value') else str(site.statut_decret_tertiaire))
+    if fw_key == "bacs" and site.statut_bacs:
+        return _status_to_score(site.statut_bacs.value if hasattr(site.statut_bacs, 'value') else str(site.statut_bacs))
+    # APER n'a pas de snapshot dédié → score par défaut
+    return 50.0

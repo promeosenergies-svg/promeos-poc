@@ -149,41 +149,56 @@ class KpiService:
         return result
 
     def get_compliance_score(self, scope: KpiScope) -> KpiResult:
-        """Score conformité composite (% sites conformes)."""
+        """Score conformité composite unifié (A.2).
+
+        Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%)
+        − pénalité findings critiques (max −20 pts).
+        CEE exclu (financement, pas conformité).
+        """
         key = _cache_key("compliance_score", scope)
         cached = _get_cached(key)
         if cached:
             return cached
 
-        from models import StatutConformite
+        from services.compliance_score_service import compute_portfolio_compliance
 
-        sites_q = _sites_query(self.db, scope)
-        total = sites_q.count()
-        if total == 0:
+        if scope.site_id:
+            from services.compliance_score_service import compute_site_compliance_score
+            r = compute_site_compliance_score(self.db, scope.site_id)
             result = KpiResult(
-                value=0.0, unit="%", source="No sites in scope",
-                formula="0 (no sites)", confidence="low",
+                value=r.score,
+                unit="score",
+                source="compliance_score_service (unified A.2)",
+                formula=r.formula,
+                confidence=r.confidence,
                 scope_description=_scope_desc(scope),
             )
             _set_cached(key, result)
             return result
 
-        conformes = sites_q.filter(
-            Site.statut_decret_tertiaire == StatutConformite.CONFORME
-        ).count()
+        org_id = scope.org_id
+        if not org_id:
+            result = KpiResult(
+                value=0.0, unit="score", source="No org in scope",
+                formula="0 (no org)", confidence="low",
+                scope_description=_scope_desc(scope),
+            )
+            _set_cached(key, result)
+            return result
 
-        score = round((conformes / total) * 100, 1)
+        portfolio = compute_portfolio_compliance(self.db, org_id)
+        score = portfolio["avg_score"]
 
         result = KpiResult(
             value=score,
-            unit="%",
-            source="Site.statut_decret_tertiaire = CONFORME",
-            formula=f"({conformes}/{total}) * 100",
-            confidence="high" if total >= 3 else "medium",
+            unit="score",
+            source="compliance_score_service (unified A.2, surface-weighted)",
+            formula="Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%) − pénalité findings critiques",
+            confidence="low" if portfolio["total_sites"] == 0 else ("high" if portfolio["high_confidence_count"] > portfolio["total_sites"] * 0.6 else "medium"),
             scope_description=_scope_desc(scope),
         )
 
-        _logger.info("KPI compliance_score: %.1f%% (scope=%s)", result.value, result.scope_description)
+        _logger.info("KPI compliance_score: %.1f (scope=%s)", result.value, result.scope_description)
         _set_cached(key, result)
         return result
 

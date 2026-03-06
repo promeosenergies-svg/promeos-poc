@@ -127,6 +127,15 @@ export const GLOSSARY = {
       "Accès Régulé à l'Électricité Nucléaire Historique. Mécanisme permettant aux fournisseurs alternatifs d'acheter de l'électricité nucléaire à prix fixe (42 €/MWh).",
   },
 
+  // ── Score conformité (A.2) ─────────────────────────────────────────────────
+  compliance_score: {
+    term: 'Score conformité',
+    short:
+      "Score 0-100 mesurant le respect des 3 obligations réglementaires applicables : Décret Tertiaire, BACS et APER. Les CEE, qui relèvent du financement, ne sont pas inclus.",
+    long:
+      "Formule : Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%) − pénalité findings critiques (max −20 pts). Confiance : haute si 3/3 frameworks évalués, moyenne si 2/3, basse si ≤1.",
+  },
+
   // ── KPIs & scoring (C.2b) ──────────────────────────────────────────────────
   risque_financier: {
     term: 'Risque financier',

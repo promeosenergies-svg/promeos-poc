@@ -97,6 +97,9 @@ const Cockpit = () => {
   const [error, setError] = useState(null);
   const sitePageSize = 20;
 
+  // A.2: Unified compliance score from backend
+  const [complianceApi, setComplianceApi] = useState(null);
+
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
     setError(null);
@@ -110,6 +113,17 @@ const Cockpit = () => {
         setError(err?.message || 'Erreur chargement des données');
       });
   }, [org, scopedSites]);
+
+  // A.2: Fetch unified compliance score
+  useEffect(() => {
+    if (!org?.id) return;
+    fetch(`/api/compliance/portfolio/score`, {
+      headers: { 'X-Org-Id': String(org.id) },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setComplianceApi(data))
+      .catch(() => setComplianceApi(null));
+  }, [org?.id]);
 
   const kpis = useMemo(() => {
     const sites = scopedSites;
@@ -154,8 +168,11 @@ const Cockpit = () => {
       actionsActives,
       compStatus,
       risqueStatus,
+      // A.2: unified compliance score from API (null if not yet loaded)
+      compliance_score: complianceApi?.avg_score ?? null,
+      compliance_confidence: complianceApi?.high_confidence_count > (total * 0.6) ? 'high' : complianceApi ? 'medium' : null,
     };
-  }, [scopedSites]);
+  }, [scopedSites, complianceApi]);
 
   const isSingleSite = scopedSites.length === 1;
   const singleSite = isSingleSite ? scopedSites[0] : null;

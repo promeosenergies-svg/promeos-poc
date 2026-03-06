@@ -91,6 +91,11 @@ def get_cockpit(
     risque_total = kpi.get_financial_risk_eur(_scope).value
     avg_avancement = kpi.get_avancement_decret_pct(_scope).value
 
+    # Score conformité unifié A.2
+    compliance_kpi = kpi.get_compliance_score(_scope)
+    compliance_score_unified = compliance_kpi.value
+    compliance_confidence = compliance_kpi.confidence
+
     # Alertes actives — scoped to org's sites
     site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
     alertes_actives = (
@@ -107,6 +112,8 @@ def get_cockpit(
             "sites_tertiaire_ko": sites_tertiaire_ko,
             "sites_bacs_ko": sites_bacs_ko,
             "alertes_actives": alertes_actives,
+            "compliance_score": compliance_score_unified,
+            "compliance_confidence": compliance_confidence,
         },
         "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
     }
