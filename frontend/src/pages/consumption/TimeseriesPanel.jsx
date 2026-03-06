@@ -406,7 +406,9 @@ export default function TimeseriesPanel({
     : siteIds.slice(0, 1);
   // When a single site is displayed in agrege mode, show its name instead of "Agrégé"
   const aggregateLabel =
-    seriesData.length === 1 ? (siteLabels[chartSiteIds[0]] ?? 'Agrégé') : 'Agrégé';
+    seriesData.length === 1
+      ? (_sites.find((s) => s.id === chartSiteIds[0])?.nom ?? siteLabels[chartSiteIds[0]] ?? 'Agrégé')
+      : 'Agrégé';
 
   return (
     <ChartFrame>
