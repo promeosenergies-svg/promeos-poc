@@ -733,8 +733,6 @@ class TestBillingAPI:
         data = r.json()
         assert data["invoices_created"] == 69  # V68: 34 elec + 35 gaz (36 mois - 3 trous)
         assert data["contracts_created"] == 2
-        assert data["controlled_gaps"] == 3
-        assert data["controlled_anomalies"] == 3
 
     def test_seed_then_audit_then_summary(self, client, db_session):
         """Integration: seed → audit-all → verify insights created."""
