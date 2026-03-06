@@ -7,8 +7,9 @@ import { useState, useEffect } from 'react';
 import { Database, ArrowRight, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useScope } from '../../contexts/ScopeContext';
-import { getDataQualityCompleteness } from '../../services/api';
+import { getDataQualityCompleteness, getDataQualityPortfolio } from '../../services/api';
 import { Card, CardBody } from '../../ui';
+import DataQualityBadge from '../../components/DataQualityBadge';
 
 const STATUS_CONFIG = {
   green: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle, label: 'Complet' },
@@ -20,15 +21,19 @@ export default function DataQualityWidget() {
   const { org } = useScope();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [dqPortfolio, setDqPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!org?.id) return;
     setLoading(true);
-    getDataQualityCompleteness(org.id)
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+    Promise.all([
+      getDataQualityCompleteness(org.id).catch(() => null),
+      getDataQualityPortfolio(org.id).catch(() => null),
+    ]).then(([completeness, portfolio]) => {
+      setData(completeness);
+      setDqPortfolio(portfolio);
+    }).finally(() => setLoading(false));
   }, [org?.id]);
 
   if (loading) {
@@ -77,7 +82,10 @@ export default function DataQualityWidget() {
               </p>
             </div>
           </div>
-          <span className={`text-xl font-bold ${coverageColor}`}>{overall_coverage_pct}%</span>
+          <div className="flex items-center gap-3">
+            {dqPortfolio && <DataQualityBadge score={dqPortfolio.avg_score} size="md" />}
+            <span className={`text-xl font-bold ${coverageColor}`}>{overall_coverage_pct}%</span>
+          </div>
         </div>
 
         {/* Progress bar */}

@@ -1568,6 +1568,16 @@ export const getDataQualityCompleteness = (orgId) =>
 export const getDataQualitySite = (siteId) =>
   _cachedGet(`/data-quality/completeness/${siteId}`).then((r) => r.data);
 
+// D.1: Data Quality Score (4 dimensions)
+export const getDataQualityScore = (siteId) =>
+  _cachedGet(`/data-quality/site/${siteId}`).then((r) => r.data);
+export const getDataQualityPortfolio = (orgId) =>
+  _cachedGet('/data-quality/portfolio', { params: { org_id: orgId } }).then((r) => r.data);
+
+// D.2: Data Freshness
+export const getSiteFreshness = (siteId) =>
+  _cachedGet(`/data-quality/freshness/${siteId}`).then((r) => r.data);
+
 // V113: Onboarding Stepper
 export const getOnboardingProgress = (orgId) =>
   _cachedGet('/onboarding-progress', { params: { org_id: orgId } }).then((r) => r.data);

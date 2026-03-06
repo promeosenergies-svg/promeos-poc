@@ -28,9 +28,10 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge, Explain } from '../ui';
+import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge, Explain, PageShell } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
+import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
+import ErrorState from '../ui/ErrorState';
 import { useScope } from '../contexts/ScopeContext';
 import {
   applyKB,
@@ -50,6 +51,9 @@ import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
+import DataQualityBadge from '../components/DataQualityBadge';
+import FreshnessIndicator from '../components/FreshnessIndicator';
+import { getDataQualityScore, getSiteFreshness } from '../services/api';
 
 const _sb = (k) => {
   const { variant, label } = getStatusBadgeProps(k);
@@ -1077,6 +1081,8 @@ export default function Site360() {
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
   const [siteComplianceScore, setSiteComplianceScore] = useState(null); // A.2
+  const [dataQuality, setDataQuality] = useState(null); // D.1
+  const [freshness, setFreshness] = useState(null); // D.2
 
   const site = scopedSites.find((s) => String(s.id) === String(id));
 
@@ -1089,34 +1095,43 @@ export default function Site360() {
       .catch(() => setSiteComplianceScore(null));
   }, [id]);
 
+  // D.1: Fetch site data quality score
+  useEffect(() => {
+    if (!id) return;
+    getDataQualityScore(id)
+      .then(setDataQuality)
+      .catch(() => setDataQuality(null));
+  }, [id]);
+
+  // D.2: Fetch site freshness
+  useEffect(() => {
+    if (!id) return;
+    getSiteFreshness(id)
+      .then(setFreshness)
+      .catch(() => setFreshness(null));
+  }, [id]);
+
   if (sitesLoading) {
     return (
-      <div className="px-6 py-6 space-y-4">
-        <button
-          onClick={() => navigate('/patrimoine')}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition"
-        >
-          <ArrowLeft size={16} /> Patrimoine
-        </button>
+      <PageShell icon={Zap} title="Fiche site" subtitle="Chargement...">
         <div className="flex gap-4">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
-      </div>
+        <SkeletonTable rows={5} cols={4} />
+      </PageShell>
     );
   }
 
   if (!site) {
     return (
-      <div className="px-6 py-6">
-        <EmptyState
-          title="Site introuvable"
-          text={`Aucun site avec l'identifiant ${id} dans votre périmètre.`}
-          ctaLabel="Retour au patrimoine"
-          onCta={() => navigate('/patrimoine')}
+      <PageShell icon={Zap} title="Fiche site">
+        <ErrorState
+          message={`Aucun site avec l'identifiant ${id} dans votre périmètre.`}
+          onRetry={() => navigate('/patrimoine')}
         />
-      </div>
+      </PageShell>
     );
   }
 
@@ -1147,6 +1162,14 @@ export default function Site360() {
                 </span>
               );
             })()}
+            {dataQuality && (
+              <DataQualityBadge
+                score={dataQuality.score}
+                dimensions={dataQuality.dimensions}
+                recommendations={dataQuality.recommendations}
+                size="md"
+              />
+            )}
             <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
               {site.usage}
             </span>
@@ -1158,6 +1181,7 @@ export default function Site360() {
             <span className="flex items-center gap-1">
               <Ruler size={14} /> {fmtArea(site.surface_m2)}
             </span>
+            {freshness && <FreshnessIndicator freshness={freshness} size="sm" />}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1175,8 +1199,40 @@ export default function Site360() {
         </div>
       </div>
 
+      {/* D.1: Bandeau données partielles */}
+      {dataQuality && dataQuality.score < 50 && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg" data-testid="dq-partial-banner">
+          <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+          <span className="text-xs text-amber-800">
+            Données partielles (score {Math.round(dataQuality.score)}/100) — les KPIs peuvent être imprécis.
+          </span>
+          <button
+            onClick={() => setShowIntake(true)}
+            className="ml-auto text-xs font-semibold text-amber-700 hover:text-amber-900"
+          >
+            Compléter les données
+          </button>
+        </div>
+      )}
+
+      {/* D.2: Bandeau données périmées */}
+      {freshness && (freshness.status === 'expired' || freshness.status === 'no_data') && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg" data-testid="freshness-expired-banner">
+          <AlertTriangle size={14} className="text-red-600 shrink-0" />
+          <span className="text-xs text-red-800">
+            Données périmées ({freshness.staleness_days > 900 ? 'aucune donnée' : `${freshness.staleness_days} jours`}) — les KPIs affichés peuvent être obsolètes.
+          </span>
+          <button
+            onClick={() => setShowIntake(true)}
+            className="ml-auto text-xs font-semibold text-red-700 hover:text-red-900"
+          >
+            Importer
+          </button>
+        </div>
+      )}
+
       {/* 3 Mini KPIs */}
-      <div className="flex gap-4">
+      <div className={`flex gap-4${(dataQuality && dataQuality.score < 50) || (freshness && freshness.status === 'expired') ? ' opacity-60' : ''}`}>
         <MiniKpi
           icon={Zap}
           label="Conso annuelle"

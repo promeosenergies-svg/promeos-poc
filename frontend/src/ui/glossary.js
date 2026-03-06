@@ -224,4 +224,36 @@ export const GLOSSARY = {
     short:
       "Évolution progressive du prix unitaire au-delà des variations contractuelles prévues.",
   },
+
+  // ── Consommation unifiée (A.1) ───────────────────────────────────────────
+  conso_metered: {
+    term: 'Consommation mesurée',
+    short:
+      "Consommation calculée à partir des relevés de compteur (télérelève ou index). Source la plus précise quand la couverture dépasse 80 %.",
+    long: "Unité : kWh. Source : Compteur (MeterReading).",
+  },
+  conso_billed: {
+    term: 'Consommation facturée',
+    short:
+      "Consommation déclarée sur les factures fournisseur. Utilisée en fallback quand les relevés compteur sont insuffisants.",
+    long: "Unité : kWh. Source : Factures énergie (EnergyInvoice).",
+  },
+  reconciliation_conso: {
+    term: 'Réconciliation compteur / facture',
+    short:
+      "Comparaison automatique entre la consommation mesurée et la consommation facturée. Un écart supérieur à 10 % déclenche une alerte.",
+    long: "Formule : |metered_kwh − billed_kwh| / metered_kwh × 100. Unité : %. Source : Service unifié PROMEOS.",
+  },
+  data_quality_score: {
+    term: 'Score qualité données',
+    short:
+      "Indicateur 0-100 mesurant la fiabilité des données du site selon 4 axes : complétude, fraîcheur, précision et cohérence compteur/facture.",
+    long: "Formule : Complétude (35%) + Fraîcheur (25%) + Précision (25%) + Cohérence (15%). Unité : points /100. Source : Service Data Quality PROMEOS.",
+  },
+  freshness: {
+    term: 'Fraîcheur des données',
+    short:
+      "Indicateur de récence des données de consommation. À jour (< 48h), Récent (2-7j), En retard (7-30j), Périmées (> 30j).",
+    long: "Calculé depuis la date la plus récente entre le dernier relevé compteur et la dernière facture importée. Si > 30 jours, les KPIs sont grisés et un bandeau invite à importer des données.",
+  },
 };

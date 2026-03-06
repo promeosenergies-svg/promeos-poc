@@ -20,7 +20,7 @@ from models import (
     Portefeuille,
     EntiteJuridique,
 )
-from models.energy_models import EnergyVector
+from models.energy_models import EnergyVector, Anomaly
 
 
 # Expected months of data (trailing 12 months)
@@ -379,4 +379,352 @@ def compute_org_completeness(
         "overall_coverage_pct": overall_coverage,
         "summary": {"green": green, "amber": amber, "red": red, "total": total},
         "rows": all_rows,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════
+# D.1 — Score qualité données 0-100 (4 dimensions pondérées)
+# ══════════════════════════════════════════════════════════════════
+
+# Grade boundaries
+DQ_GRADES = {"A": 85, "B": 70, "C": 50, "D": 30}
+
+# Dimension weights
+DQ_WEIGHTS = {
+    "completeness": 0.35,
+    "freshness": 0.25,
+    "accuracy": 0.25,
+    "consistency": 0.15,
+}
+
+
+def _grade(score: float) -> str:
+    if score >= DQ_GRADES["A"]:
+        return "A"
+    if score >= DQ_GRADES["B"]:
+        return "B"
+    if score >= DQ_GRADES["C"]:
+        return "C"
+    if score >= DQ_GRADES["D"]:
+        return "D"
+    return "F"
+
+
+def _dim_completeness(db: Session, site_id: int, window_start: date, today: date) -> dict:
+    """COMPLETENESS (35%) — months with readings / 12."""
+    meter_ids = [
+        r[0]
+        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    ]
+
+    if meter_ids:
+        month_rows = (
+            db.query(func.strftime("%Y-%m", MeterReading.timestamp))
+            .filter(
+                MeterReading.meter_id.in_(meter_ids),
+                MeterReading.timestamp >= window_start.isoformat(),
+            )
+            .group_by(func.strftime("%Y-%m", MeterReading.timestamp))
+            .all()
+        )
+        months_with_readings = len(month_rows)
+        score = round(min((months_with_readings / 12) * 100, 100), 1)
+        detail = f"{months_with_readings} mois sur 12 avec lectures"
+    else:
+        # No meter readings — check invoices as fallback
+        inv_count = (
+            db.query(func.count(EnergyInvoice.id))
+            .filter(EnergyInvoice.site_id == site_id, EnergyInvoice.period_start >= window_start)
+            .scalar()
+            or 0
+        )
+        if inv_count > 0:
+            score = 40.0
+            detail = f"Pas de compteur — {inv_count} factures disponibles"
+        else:
+            score = 0.0
+            detail = "Aucune donnée de consommation"
+
+    rec = "Importer les relevés de compteur manquants" if score < 70 else None
+    return {"score": score, "weight": DQ_WEIGHTS["completeness"], "detail": detail, "recommendation": rec}
+
+
+def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
+    """FRESHNESS (25%) — recency of last reading."""
+    meter_ids = [
+        r[0]
+        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    ]
+
+    last_ts = None
+    if meter_ids:
+        last_ts = (
+            db.query(func.max(MeterReading.timestamp))
+            .filter(MeterReading.meter_id.in_(meter_ids))
+            .scalar()
+        )
+
+    if last_ts:
+        last_date = last_ts if isinstance(last_ts, date) else (last_ts.date() if hasattr(last_ts, "date") else today)
+        days_since = (today - last_date).days
+        score = round(max(0, 100 - days_since * 2), 1)
+        detail = f"Dernière lecture il y a {days_since} jour{'s' if days_since != 1 else ''}"
+    else:
+        days_since = 999
+        score = 0.0
+        detail = "Aucun relevé de compteur"
+
+    rec = "Mettre à jour les relevés de consommation" if score < 70 else None
+    return {"score": score, "weight": DQ_WEIGHTS["freshness"], "detail": detail, "recommendation": rec}
+
+
+def _dim_accuracy(db: Session, site_id: int, window_start: date) -> dict:
+    """ACCURACY (25%) — anomaly ratio over readings."""
+    meter_ids = [
+        r[0]
+        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    ]
+
+    if not meter_ids:
+        return {"score": 50.0, "weight": DQ_WEIGHTS["accuracy"], "detail": "Pas de compteur — score neutre", "recommendation": None}
+
+    nb_readings = (
+        db.query(func.count(MeterReading.id))
+        .filter(MeterReading.meter_id.in_(meter_ids), MeterReading.timestamp >= window_start.isoformat())
+        .scalar()
+        or 0
+    )
+
+    nb_anomalies = (
+        db.query(func.count(Anomaly.id))
+        .filter(
+            Anomaly.meter_id.in_(meter_ids),
+            Anomaly.detected_at >= window_start.isoformat(),
+            Anomaly.is_active == True,
+        )
+        .scalar()
+        or 0
+    )
+
+    ratio = nb_anomalies / max(nb_readings, 1)
+    score = round(max(0, 100 - ratio * 1000), 1)
+
+    if nb_anomalies > 0:
+        detail = f"{nb_anomalies} anomalie{'s' if nb_anomalies > 1 else ''} détectée{'s' if nb_anomalies > 1 else ''} sur {nb_readings:,} lectures"
+    else:
+        detail = f"Aucune anomalie sur {nb_readings:,} lectures"
+
+    rec = "Vérifier les pics de consommation anormaux" if score < 70 else None
+    return {"score": score, "weight": DQ_WEIGHTS["accuracy"], "detail": detail, "recommendation": rec}
+
+
+def _dim_consistency(db: Session, site_id: int, window_start: date, today: date) -> dict:
+    """CONSISTENCY (15%) — metered vs billed delta."""
+    try:
+        from services.consumption_unified_service import reconcile_metered_billed
+
+        result = reconcile_metered_billed(db, site_id, window_start, today)
+        if result.get("status") == "insufficient_data":
+            return {"score": 50.0, "weight": DQ_WEIGHTS["consistency"], "detail": "Données insuffisantes pour la réconciliation", "recommendation": None}
+
+        delta_pct = abs(result.get("delta_pct", 0))
+        score = round(max(0, 100 - delta_pct * 5), 1)
+        detail = f"Écart compteur/facture : {delta_pct:.1f}%"
+        rec = "Rapprocher les relevés compteur des factures" if score < 70 else None
+        return {"score": score, "weight": DQ_WEIGHTS["consistency"], "detail": detail, "recommendation": rec}
+    except Exception:
+        return {"score": 50.0, "weight": DQ_WEIGHTS["consistency"], "detail": "Réconciliation non disponible", "recommendation": None}
+
+
+def compute_site_data_quality(
+    db: Session,
+    site_id: int,
+    today: Optional[date] = None,
+) -> dict:
+    """
+    Score qualité données 0-100 basé sur 4 dimensions pondérées.
+    Retourne score, grade, dimensions, recommendations.
+    """
+    if today is None:
+        today = date.today()
+
+    window_start = today - timedelta(days=365)
+
+    dims = {
+        "completeness": _dim_completeness(db, site_id, window_start, today),
+        "freshness": _dim_freshness(db, site_id, today),
+        "accuracy": _dim_accuracy(db, site_id, window_start),
+        "consistency": _dim_consistency(db, site_id, window_start, today),
+    }
+
+    global_score = sum(d["score"] * d["weight"] for d in dims.values())
+    global_score = round(min(global_score, 100), 1)
+
+    # Build recommendations for dimensions with score < 70
+    recommendations = []
+    priority_map = {0: "high", 1: "high", 2: "medium", 3: "low"}
+    sorted_dims = sorted(
+        [(k, v) for k, v in dims.items() if v["recommendation"]],
+        key=lambda x: x[1]["score"],
+    )
+    for idx, (dim_key, dim) in enumerate(sorted_dims):
+        cta_map = {
+            "completeness": f"/consommations/import?site_id={site_id}",
+            "freshness": f"/consommations/import?site_id={site_id}",
+            "accuracy": f"/monitoring?site_id={site_id}",
+            "consistency": f"/billing?site_id={site_id}",
+        }
+        recommendations.append({
+            "priority": priority_map.get(idx, "low"),
+            "message": dim["recommendation"],
+            "cta_route": cta_map.get(dim_key, f"/sites/{site_id}"),
+        })
+
+    from datetime import datetime
+
+    return {
+        "site_id": site_id,
+        "score": global_score,
+        "grade": _grade(global_score),
+        "dimensions": dims,
+        "recommendations": recommendations,
+        "computed_at": datetime.utcnow().isoformat(),
+    }
+
+
+def compute_site_freshness(
+    db: Session,
+    site_id: int,
+    today: Optional[date] = None,
+) -> dict:
+    """
+    D.2 — Fraîcheur des données pour un site.
+    Retourne last_reading, last_invoice, staleness_days, status, label_fr, recommendations.
+    Status: "fresh" (<48h), "recent" (2-7j), "stale" (7-30j), "expired" (>30j), "no_data".
+    """
+    if today is None:
+        today = date.today()
+
+    # Last meter reading
+    meter_ids = [
+        r[0]
+        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    ]
+
+    last_reading_date = None
+    if meter_ids:
+        last_ts = (
+            db.query(func.max(MeterReading.timestamp))
+            .filter(MeterReading.meter_id.in_(meter_ids))
+            .scalar()
+        )
+        if last_ts:
+            last_reading_date = last_ts if isinstance(last_ts, date) else (
+                last_ts.date() if hasattr(last_ts, "date") else None
+            )
+
+    # Last invoice
+    last_inv = (
+        db.query(func.max(EnergyInvoice.period_end))
+        .filter(EnergyInvoice.site_id == site_id)
+        .scalar()
+    )
+    last_invoice_date = None
+    if last_inv:
+        last_invoice_date = last_inv if isinstance(last_inv, date) else (
+            last_inv.date() if hasattr(last_inv, "date") else None
+        )
+
+    # Compute staleness from most recent data source
+    most_recent = None
+    if last_reading_date and last_invoice_date:
+        most_recent = max(last_reading_date, last_invoice_date)
+    elif last_reading_date:
+        most_recent = last_reading_date
+    elif last_invoice_date:
+        most_recent = last_invoice_date
+
+    if most_recent is None:
+        staleness_days = 999
+        status = "no_data"
+        label_fr = "Aucune donnée"
+    else:
+        staleness_days = (today - most_recent).days
+        if staleness_days <= 2:
+            status = "fresh"
+            label_fr = "À jour"
+        elif staleness_days <= 7:
+            status = "recent"
+            label_fr = "Récent"
+        elif staleness_days <= 30:
+            status = "stale"
+            label_fr = "En retard"
+        else:
+            status = "expired"
+            label_fr = "Périmées"
+
+    recommendations = []
+    if status == "stale":
+        recommendations.append("Mettre à jour les relevés de consommation")
+    elif status == "expired":
+        recommendations.append("Importer les données récentes — les KPIs sont obsolètes")
+        if not last_reading_date:
+            recommendations.append("Rattacher un compteur communicant pour des données automatiques")
+        if not last_invoice_date:
+            recommendations.append("Importer les dernières factures du fournisseur")
+    elif status == "no_data":
+        recommendations.append("Importer des données de consommation (compteur ou facture)")
+
+    return {
+        "site_id": site_id,
+        "last_reading": last_reading_date.isoformat() if last_reading_date else None,
+        "last_invoice": last_invoice_date.isoformat() if last_invoice_date else None,
+        "staleness_days": staleness_days,
+        "status": status,
+        "label_fr": label_fr,
+        "recommendations": recommendations,
+    }
+
+
+def compute_portfolio_data_quality(
+    db: Session,
+    org_id: int,
+    today: Optional[date] = None,
+) -> dict:
+    """
+    Agrège les scores data quality de tous les sites d'une organisation.
+    """
+    if today is None:
+        today = date.today()
+
+    site_ids = [
+        row[0]
+        for row in db.query(Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.actif == True)
+        .all()
+    ]
+
+    sites = []
+    for sid in site_ids:
+        sq = compute_site_data_quality(db, sid, today)
+        sites.append(sq)
+
+    scores = [s["score"] for s in sites]
+    avg_score = round(sum(scores) / max(len(scores), 1), 1) if scores else 0
+
+    grade_dist = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+    for s in sites:
+        grade_dist[s["grade"]] = grade_dist.get(s["grade"], 0) + 1
+
+    worst = sorted(sites, key=lambda s: s["score"])[:3]
+
+    return {
+        "org_id": org_id,
+        "avg_score": avg_score,
+        "grade": _grade(avg_score),
+        "grade_distribution": grade_dist,
+        "worst_sites": worst,
+        "sites": sites,
     }

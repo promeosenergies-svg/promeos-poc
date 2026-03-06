@@ -125,6 +125,21 @@ export const SEV_BADGE = {
   low: 'neutral',
 };
 
+// ── D.1: Data Quality Score config ──────────────────────────────────────────
+
+/** Grade boundaries for data quality score (0-100). */
+export const DATA_QUALITY_GRADES = { A: 85, B: 70, C: 50, D: 30 };
+
+/** Get grade letter + color for a data quality score. */
+export function getDataQualityGrade(score) {
+  if (score == null || isNaN(score)) return { letter: '—', color: 'text-gray-400', bg: 'bg-gray-100' };
+  if (score >= DATA_QUALITY_GRADES.A) return { letter: 'A', color: 'text-green-600', bg: 'bg-green-100' };
+  if (score >= DATA_QUALITY_GRADES.B) return { letter: 'B', color: 'text-green-600', bg: 'bg-green-100' };
+  if (score >= DATA_QUALITY_GRADES.C) return { letter: 'C', color: 'text-amber-600', bg: 'bg-amber-100' };
+  if (score >= DATA_QUALITY_GRADES.D) return { letter: 'D', color: 'text-red-500', bg: 'bg-red-100' };
+  return { letter: 'F', color: 'text-red-600', bg: 'bg-red-100' };
+}
+
 // ── A.2: Unified Compliance Score config ────────────────────────────────────
 
 /** Thresholds for the unified compliance score (0-100). */

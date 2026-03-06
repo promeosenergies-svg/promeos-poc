@@ -37,6 +37,7 @@ import {
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
+import ErrorState from '../ui/ErrorState';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -58,7 +59,9 @@ import {
   fmtDateFR,
   pl,
 } from '../utils/format';
-import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
+import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps, getDataQualityGrade } from '../lib/constants';
+import DataQualityBadge from '../components/DataQualityBadge';
+import { getDataQualityPortfolio } from '../services/api';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
@@ -174,6 +177,19 @@ export default function Patrimoine() {
       })
       .catch(() => {});
   }, []);
+
+  // D.1 — Data quality scores per site
+  const [dqMap, setDqMap] = useState({});
+  useEffect(() => {
+    if (!org?.id) return;
+    getDataQualityPortfolio(org.id)
+      .then((data) => {
+        const m = {};
+        (data.sites || []).forEach((s) => { m[s.site_id] = s; });
+        setDqMap(m);
+      })
+      .catch(() => {});
+  }, [org?.id]);
 
   // URL param helper — merges params, removes empty values
   const setParams = useCallback(
@@ -346,7 +362,7 @@ export default function Patrimoine() {
     virtualItems.length > 0
       ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
       : 0;
-  const colCount = isExpert ? 11 : 10;
+  const colCount = isExpert ? 12 : 11;
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
@@ -805,6 +821,7 @@ export default function Patrimoine() {
                         Anomalies
                       </Th>
                       <Th className="text-center">Réconc.</Th>
+                      <Th className="text-center">Qualité</Th>
                       <Th className="w-8" />
                     </tr>
                   </Thead>
@@ -922,6 +939,13 @@ export default function Patrimoine() {
                                 </Tooltip>
                               );
                             })()}
+                          </Td>
+                          <Td className="text-center">
+                            {dqMap[site.id] ? (
+                              <DataQualityBadge score={dqMap[site.id].score} size="sm" />
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
                           </Td>
                           <Td>
                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">

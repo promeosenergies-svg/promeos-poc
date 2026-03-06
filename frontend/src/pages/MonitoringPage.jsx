@@ -62,6 +62,7 @@ import {
   GLOSSARY,
 } from '../ui';
 import { SkeletonCard } from '../ui';
+import ErrorState from '../ui/ErrorState';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -90,7 +91,11 @@ import {
   getScheduleSuggest,
   putSiteSchedule,
   getMonitoringKpisCompare,
+  getDataQualityScore,
+  getSiteFreshness,
 } from '../services/api';
+import DataQualityBadge from '../components/DataQualityBadge';
+import FreshnessIndicator from '../components/FreshnessIndicator';
 
 // --- Constants ---
 
@@ -1545,6 +1550,20 @@ export default function MonitoringPage() {
   const [showConfidenceDrawer, setShowConfidenceDrawer] = useState(false);
   const { openActionDrawer } = useActionDrawer();
   const [siteActions, setSiteActions] = useState([]);
+  const [siteDq, setSiteDq] = useState(null);
+  const [siteFreshness, setSiteFreshness] = useState(null);
+
+  // D.1: Fetch site data quality
+  useEffect(() => {
+    if (!siteId) return;
+    getDataQualityScore(siteId).then(setSiteDq).catch(() => setSiteDq(null));
+  }, [siteId]);
+
+  // D.2: Fetch site freshness
+  useEffect(() => {
+    if (!siteId) return;
+    getSiteFreshness(siteId).then(setSiteFreshness).catch(() => setSiteFreshness(null));
+  }, [siteId]);
 
   // --- Data loading ---
 
@@ -1912,6 +1931,21 @@ export default function MonitoringPage() {
     );
   }
 
+  if (error && !kpis) {
+    return (
+      <PageShell
+        icon={Activity}
+        title="Performance Électrique"
+        subtitle="KPIs, puissance, qualité de données & alertes"
+      >
+        <ErrorState
+          message={error || 'Erreur de chargement'}
+          onRetry={loadAll}
+        />
+      </PageShell>
+    );
+  }
+
   const hasData = kpis || alerts.length > 0 || snapshots.length > 0;
 
   return (
@@ -1932,6 +1966,8 @@ export default function MonitoringPage() {
               </option>
             ))}
           </select>
+          {siteDq && <DataQualityBadge score={siteDq.score} size="sm" />}
+          {siteFreshness && <FreshnessIndicator freshness={siteFreshness} size="sm" />}
           <Link
             to={toConsoExplorer({ site_id: siteId })}
             className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
