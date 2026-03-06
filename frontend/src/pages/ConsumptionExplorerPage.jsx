@@ -578,21 +578,6 @@ export default function ConsumptionExplorerPage() {
         </div>
       )}
 
-      {/* UI Mode toggle — persisted in localStorage, never in URL */}
-      <div className="flex justify-end">
-        <button
-          onClick={toggleUiMode}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
-          title={
-            isClassic
-              ? 'Passer en mode Expert (contrôles avancés)'
-              : 'Passer en mode Classique (vue standard)'
-          }
-        >
-          {isClassic ? '⚙ Mode Expert' : '← Mode Classique'}
-        </button>
-      </div>
-
       {/* Unified sticky filter bar */}
       <StickyFilterBar
         uiMode={uiMode}
@@ -633,6 +618,7 @@ export default function ConsumptionExplorerPage() {
         samplingMinutes={samplingMinutes}
         compareYoy={compareYoy}
         setCompareYoy={setCompareYoy}
+        onToggleUiMode={toggleUiMode}
       />
 
       {/* Portfolio info banner — non-blocking, dismissible */}
