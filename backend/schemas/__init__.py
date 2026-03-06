@@ -1,0 +1,1 @@
+"""PROMEOS — Pydantic Schemas"""

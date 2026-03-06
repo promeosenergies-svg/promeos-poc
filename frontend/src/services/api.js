@@ -863,6 +863,46 @@ export const getReferentielTarifs = () =>
   _cachedGet('/referentiel/tarifs').then((r) => r.data);
 
 // ========================================
+// PATRIMOINE CRUD
+// ========================================
+
+export const crudListOrganisations = () =>
+  api.get('/patrimoine/crud/organisations').then((r) => r.data);
+export const crudCreateOrganisation = (data) =>
+  api.post('/patrimoine/crud/organisations', data).then((r) => r.data);
+export const crudUpdateOrganisation = (id, data) =>
+  api.patch(`/patrimoine/crud/organisations/${id}`, data).then((r) => r.data);
+export const crudDeleteOrganisation = (id) =>
+  api.delete(`/patrimoine/crud/organisations/${id}`).then((r) => r.data);
+
+export const crudListEntites = (params = {}) =>
+  api.get('/patrimoine/crud/entites', { params }).then((r) => r.data);
+export const crudCreateEntite = (data) =>
+  api.post('/patrimoine/crud/entites', data).then((r) => r.data);
+export const crudUpdateEntite = (id, data) =>
+  api.patch(`/patrimoine/crud/entites/${id}`, data).then((r) => r.data);
+export const crudDeleteEntite = (id) =>
+  api.delete(`/patrimoine/crud/entites/${id}`).then((r) => r.data);
+
+export const crudListPortefeuilles = (params = {}) =>
+  api.get('/patrimoine/crud/portefeuilles', { params }).then((r) => r.data);
+export const crudCreatePortefeuille = (data) =>
+  api.post('/patrimoine/crud/portefeuilles', data).then((r) => r.data);
+export const crudUpdatePortefeuille = (id, data) =>
+  api.patch(`/patrimoine/crud/portefeuilles/${id}`, data).then((r) => r.data);
+export const crudDeletePortefeuille = (id) =>
+  api.delete(`/patrimoine/crud/portefeuilles/${id}`).then((r) => r.data);
+
+export const crudListSites = (params = {}) =>
+  api.get('/patrimoine/crud/sites', { params }).then((r) => r.data);
+export const crudCreateSite = (data) =>
+  api.post('/patrimoine/crud/sites', data).then((r) => r.data);
+export const crudUpdateSite = (id, data) =>
+  api.patch(`/patrimoine/crud/sites/${id}`, data).then((r) => r.data);
+export const crudDeleteSite = (id) =>
+  api.delete(`/patrimoine/crud/sites/${id}`).then((r) => r.data);
+
+// ========================================
 // ACHAT ENERGIE
 // ========================================
 
