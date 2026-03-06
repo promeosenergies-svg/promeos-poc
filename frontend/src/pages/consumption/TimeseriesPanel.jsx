@@ -425,37 +425,7 @@ export default function TimeseriesPanel({
           siteLabels={siteLabels}
           height={360}
           showBrush
-          summaryData={{
-            points: n_points,
-            series: seriesData.length,
-            meters: n_meters,
-            source: 'EMS',
-            quality: qualityPct,
-          }}
         />
-
-        {/* Granularity + date range info */}
-        {granularity && (
-          <p className="text-xs text-gray-400 text-right">
-            Granularité{'\u00a0'}: {GRAN_LABELS[granularity] || granularity}
-            {meta?.date_from && meta?.date_to && (
-              <span className="ml-2">
-                ·{' '}
-                {new Date(meta.date_from).toLocaleDateString('fr-FR', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: '2-digit',
-                })}{' '}
-                →{' '}
-                {new Date(meta.date_to).toLocaleDateString('fr-FR', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: '2-digit',
-                })}
-              </span>
-            )}
-          </p>
-        )}
       </div>
     </ChartFrame>
   );
