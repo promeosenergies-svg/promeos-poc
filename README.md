@@ -102,7 +102,11 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | C.2b DemoSpotlight onboarding (3 étapes Cockpit, localStorage persist, overlay portal) | Stable -- C.2b |
 > | C.4 KPI Messaging intelligent (getKpiMessage, messages contextuels simple/expert, severity, CTA) | Stable -- C.4 |
 > | Cockpit UX++ (KPI messaging inline, spotlight tour, expert mode toggle) | Stable -- C.1-C.4 |
-> | Suite de tests automatisés | **4 771 frontend + 2 850+ backend, 0 régression** |
+> | B Scalabilité (Cache-Control, EmptyState, Skeleton, useApiWithToast, perf tests) | Stable -- B |
+> | B.2 Navigation restructurée (5 sections collapsibles, admin footer, breadcrumb section-aware, CommandPalette enrichie) | Stable -- B.2 |
+> | D.1 Data Quality Score 0-100 (4 dimensions, DataQualityBadge sm/md/lg, intégré 4 pages, 55 tests) | Stable -- D.1 |
+> | D.2 Fraîcheur données (FreshnessIndicator fresh/recent/stale/expired, banneau périmées, intégré Site360+Monitoring, 33 tests) | Stable -- D.2 |
+> | Suite de tests automatisés | **4 990 frontend + 2 880+ backend, 0 régression** |
 
 > **Disclaimer**
 >
