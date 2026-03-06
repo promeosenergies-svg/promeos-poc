@@ -496,6 +496,69 @@ def check_valid_dates(db: Session, batch_id: int) -> List[dict]:
     return []
 
 
+# ── Step 20: multi-entité / bâtiment rules ──
+
+def check_invalid_siren_entite(db: Session, batch_id: int) -> List[dict]:
+    """Rule: invalid_siren_entite — siren_entite present but not 9 digits."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.siren_entite.isnot(None),
+    ).all()
+    for ss in sites:
+        siren = ss.siren_entite.strip()
+        if not siren.isdigit() or len(siren) != 9:
+            findings.append({
+                "rule_id": "invalid_siren_entite",
+                "severity": QualityRuleSeverity.WARNING,
+                "staging_site_id": ss.id,
+                "evidence_json": f'{{"siren_entite": "{siren}", "row": {ss.row_number}}}',
+                "suggested_action": "Corriger le SIREN entité (9 chiffres)",
+            })
+    return findings
+
+
+def check_orphan_portefeuille(db: Session, batch_id: int) -> List[dict]:
+    """Rule: orphan_portefeuille — portefeuille sans siren_entite → entité par défaut."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.portefeuille_nom.isnot(None),
+        StagingSite.siren_entite.is_(None),
+    ).all()
+    for ss in sites:
+        findings.append({
+            "rule_id": "orphan_portefeuille",
+            "severity": QualityRuleSeverity.INFO,
+            "staging_site_id": ss.id,
+            "evidence_json": f'{{"portefeuille": "{ss.portefeuille_nom}", "row": {ss.row_number}}}',
+            "suggested_action": "Le portefeuille sera rattaché à l'entité par défaut",
+        })
+    return findings
+
+
+def check_batiment_sans_surface(db: Session, batch_id: int) -> List[dict]:
+    """Rule: batiment_sans_surface — batiment_nom present sans surface."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.batiment_nom.isnot(None),
+        StagingSite.batiment_surface_m2.is_(None),
+    ).all()
+    for ss in sites:
+        findings.append({
+            "rule_id": "batiment_sans_surface",
+            "severity": QualityRuleSeverity.INFO,
+            "staging_site_id": ss.id,
+            "evidence_json": f'{{"batiment_nom": "{ss.batiment_nom}", "row": {ss.row_number}}}',
+            "suggested_action": "Ajouter la surface du bâtiment",
+        })
+    return findings
+
+
 # ========================================
 # Rules registry
 # ========================================
@@ -566,6 +629,25 @@ QUALITY_RULES = [
         "label": "Format date invalide",
         "severity": "warning",
         "check": check_valid_dates,
+    },
+    # Step 20: multi-entité / bâtiment
+    {
+        "id": "invalid_siren_entite",
+        "label": "SIREN entité invalide (9 chiffres)",
+        "severity": "warning",
+        "check": check_invalid_siren_entite,
+    },
+    {
+        "id": "orphan_portefeuille",
+        "label": "Portefeuille sans entité (rattaché par défaut)",
+        "severity": "info",
+        "check": check_orphan_portefeuille,
+    },
+    {
+        "id": "batiment_sans_surface",
+        "label": "Bâtiment sans surface",
+        "severity": "info",
+        "check": check_batiment_sans_surface,
     },
 ]
 

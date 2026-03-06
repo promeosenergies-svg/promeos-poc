@@ -30,6 +30,9 @@ from models import (
     ActivationLogStatus,
     DeliveryPoint,
     DeliveryPointEnergyType,
+    EntiteJuridique,
+    Portefeuille,
+    Batiment,
     not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
@@ -141,6 +144,18 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                 # SIRET: accept both "siret" and "siren" columns
                 siret_val = (row.get("siret") or "").strip() or None
 
+                # Multi-entité / bâtiment columns (Step 20)
+                siren_entite_val = (row.get("siren_entite") or "").strip() or None
+                nom_entite_val = (row.get("nom_entite") or "").strip() or None
+                portefeuille_val = (row.get("portefeuille") or "").strip() or None
+                batiment_nom_val = (row.get("batiment_nom") or "").strip() or None
+                bat_surface_raw = (row.get("batiment_surface_m2") or "").strip()
+                bat_surface = float(bat_surface_raw) if bat_surface_raw else None
+                bat_annee_raw = (row.get("batiment_annee_construction") or "").strip()
+                bat_annee = int(bat_annee_raw) if bat_annee_raw else None
+                bat_cvc_raw = (row.get("batiment_cvc_power_kw") or "").strip()
+                bat_cvc = float(bat_cvc_raw) if bat_cvc_raw else None
+
                 ss = StagingSite(
                     batch_id=batch_id,
                     row_number=row_num,
@@ -156,6 +171,14 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     naf_code=(row.get("naf_code") or "").strip() or None,
                     source_type=batch.source_type.value if batch.source_type else None,
                     source_ref=batch.filename,
+                    # Step 20: multi-entité / bâtiment
+                    siren_entite=siren_entite_val,
+                    nom_entite=nom_entite_val,
+                    portefeuille_nom=portefeuille_val,
+                    batiment_nom=batiment_nom_val,
+                    batiment_surface_m2=bat_surface,
+                    batiment_annee_construction=bat_annee,
+                    batiment_cvc_power_kw=bat_cvc,
                 )
                 db.add(ss)
                 db.flush()
@@ -838,14 +861,96 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     total_batiments = 0
     total_obligations = 0
 
+    # Resolve org_id from the default portefeuille (for multi-entity creation)
+    default_pf = db.get(Portefeuille, portefeuille_id)
+    default_entite = db.get(EntiteJuridique, default_pf.entite_juridique_id) if default_pf else None
+    org_id = default_entite.organisation_id if default_entite else (batch.org_id or None)
+
+    # Cache: avoid duplicate entity/portefeuille creation within same batch
+    _entite_cache = {}  # siren → EntiteJuridique
+    _pf_cache = {}  # (entite_id, pf_nom) → Portefeuille
+
     for ss in staging_sites:
         if ss.target_site_id:
             site = db.get(Site, ss.target_site_id)
         else:
-            target_pf = ss.target_portefeuille_id or portefeuille_id
+            # ── Step 20: resolve entité / portefeuille from staging fields ──
+            resolved_pf_id = ss.target_portefeuille_id or portefeuille_id
+
+            if ss.siren_entite and org_id:
+                # Resolve entité juridique by SIREN
+                if ss.siren_entite in _entite_cache:
+                    entite = _entite_cache[ss.siren_entite]
+                else:
+                    entite = (
+                        db.query(EntiteJuridique)
+                        .filter(
+                            EntiteJuridique.siren == ss.siren_entite,
+                            EntiteJuridique.organisation_id == org_id,
+                        )
+                        .first()
+                    )
+                    if not entite:
+                        entite = EntiteJuridique(
+                            organisation_id=org_id,
+                            nom=ss.nom_entite or f"Entité {ss.siren_entite}",
+                            siren=ss.siren_entite,
+                        )
+                        db.add(entite)
+                        db.flush()
+                    _entite_cache[ss.siren_entite] = entite
+
+                # Resolve portefeuille under this entité
+                pf_nom = ss.portefeuille_nom or "Portefeuille principal"
+                pf_key = (entite.id, pf_nom)
+                if pf_key in _pf_cache:
+                    resolved_pf_id = _pf_cache[pf_key].id
+                else:
+                    pf = (
+                        db.query(Portefeuille)
+                        .filter(
+                            Portefeuille.entite_juridique_id == entite.id,
+                            Portefeuille.nom == pf_nom,
+                        )
+                        .first()
+                    )
+                    if not pf:
+                        pf = Portefeuille(
+                            entite_juridique_id=entite.id,
+                            nom=pf_nom,
+                        )
+                        db.add(pf)
+                        db.flush()
+                    _pf_cache[pf_key] = pf
+                    resolved_pf_id = pf.id
+
+            elif ss.portefeuille_nom and default_entite:
+                # Portefeuille sans siren_entite → sous l'entité par défaut
+                pf_key = (default_entite.id, ss.portefeuille_nom)
+                if pf_key in _pf_cache:
+                    resolved_pf_id = _pf_cache[pf_key].id
+                else:
+                    pf = (
+                        db.query(Portefeuille)
+                        .filter(
+                            Portefeuille.entite_juridique_id == default_entite.id,
+                            Portefeuille.nom == ss.portefeuille_nom,
+                        )
+                        .first()
+                    )
+                    if not pf:
+                        pf = Portefeuille(
+                            entite_juridique_id=default_entite.id,
+                            nom=ss.portefeuille_nom,
+                        )
+                        db.add(pf)
+                        db.flush()
+                    _pf_cache[pf_key] = pf
+                    resolved_pf_id = pf.id
+
             site = create_site_from_data(
                 db=db,
-                portefeuille_id=target_pf,
+                portefeuille_id=resolved_pf_id,
                 nom=ss.nom,
                 type_site=ss.type_site,
                 naf_code=ss.naf_code,
@@ -865,6 +970,17 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
             total_batiments += 1
             total_obligations += prov.get("obligations", 0)
             sites_created += 1
+
+            # ── Step 20: create bâtiment if specified ──
+            if ss.batiment_nom or ss.batiment_surface_m2:
+                bat = Batiment(
+                    site_id=site.id,
+                    nom=ss.batiment_nom or "Bâtiment principal",
+                    surface_m2=ss.batiment_surface_m2 or ss.surface_m2 or 0,
+                    annee_construction=ss.batiment_annee_construction,
+                    cvc_power_kw=ss.batiment_cvc_power_kw,
+                )
+                db.add(bat)
 
         staging_compteurs = (
             db.query(StagingCompteur)

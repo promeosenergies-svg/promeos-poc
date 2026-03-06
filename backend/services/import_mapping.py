@@ -29,6 +29,22 @@ CANONICAL_COLUMNS = [
     {"key": "numero_serie", "label": "N° serie compteur", "required": False, "example": "CPT-001"},
     {"key": "type_compteur", "label": "Type compteur", "required": False, "example": "electricite"},
     {"key": "puissance_kw", "label": "Puissance (kW)", "required": False, "example": "36"},
+    # Hiérarchie multi-entité (optionnelles — Step 20)
+    {"key": "siren_entite", "label": "SIREN Entité", "required": False, "example": "123456789",
+     "description": "SIREN de l'entité juridique (9 chiffres). Si fourni, le site est rattaché à cette entité."},
+    {"key": "nom_entite", "label": "Nom Entité", "required": False, "example": "Filiale Nord",
+     "description": "Nom de l'entité juridique. Utilisé avec siren_entite pour créer/réutiliser l'entité."},
+    {"key": "portefeuille", "label": "Portefeuille", "required": False, "example": "Retail IDF",
+     "description": "Nom du portefeuille. Si fourni, le site est rattaché à ce portefeuille."},
+    # Bâtiment (optionnelles — Step 20)
+    {"key": "batiment_nom", "label": "Nom Bâtiment", "required": False, "example": "Tour A",
+     "description": "Nom du bâtiment. Si fourni, un bâtiment est créé et rattaché au site."},
+    {"key": "batiment_surface_m2", "label": "Surface Bâtiment (m²)", "required": False, "example": "800",
+     "description": "Surface du bâtiment en m²."},
+    {"key": "batiment_annee_construction", "label": "Année Construction", "required": False, "example": "1995",
+     "description": "Année de construction du bâtiment."},
+    {"key": "batiment_cvc_power_kw", "label": "Puissance CVC (kW)", "required": False, "example": "120",
+     "description": "Puissance CVC du bâtiment en kW (utile pour BACS)."},
 ]
 
 # Set of all canonical column keys (used by patrimoine CRUD + staging pipeline)
@@ -55,6 +71,14 @@ CANONICAL_COLUMN_KEYS = {
     "date_fin",
     "preavis_jours",
     "abonnement_mensuel",
+    # Multi-entité / bâtiment (Step 20)
+    "siren_entite",
+    "nom_entite",
+    "portefeuille",
+    "batiment_nom",
+    "batiment_surface_m2",
+    "batiment_annee_construction",
+    "batiment_cvc_power_kw",
 }
 
 # ========================================
@@ -138,6 +162,14 @@ _SYNONYMS = {
     "date_fin": ["date_fin", "fin_contrat", "end_date", "echeance", "fin"],
     "preavis_jours": ["preavis_jours", "preavis", "notice_days", "notice_period"],
     "abonnement_mensuel": ["abonnement_mensuel", "abonnement", "fixed_fee", "abo_mensuel"],
+    # Multi-entité / bâtiment (Step 20)
+    "siren_entite": ["siren_entite", "siren_filiale", "siren_entity", "entity_siren"],
+    "nom_entite": ["nom_entite", "entite", "entity_name", "filiale", "nom_filiale"],
+    "portefeuille": ["portefeuille", "portfolio", "groupe_sites", "group"],
+    "batiment_nom": ["batiment_nom", "building_name", "batiment", "building", "nom_batiment"],
+    "batiment_surface_m2": ["batiment_surface_m2", "building_surface", "surface_batiment"],
+    "batiment_annee_construction": ["batiment_annee_construction", "annee_construction", "year_built", "construction_year"],
+    "batiment_cvc_power_kw": ["batiment_cvc_power_kw", "cvc_power", "hvac_power", "puissance_cvc"],
 }
 
 # Build reverse lookup: lowered synonym → canonical key
@@ -384,7 +416,7 @@ def _normalize_value(key: str, value) -> Optional[str]:
         s = s.replace(" ", "").zfill(5)[:5]
     elif key in ("surface_m2", "puissance_kw"):
         s = s.replace(",", ".").replace(" ", "")
-    elif key in ("siren", "siret", "delivery_code", "meter_id"):
+    elif key in ("siren", "siret", "delivery_code", "meter_id", "siren_entite"):
         s = s.replace(" ", "").replace("-", "").replace(".", "")
     elif key == "energy_type":
         s = _normalize_energy_type(s)
