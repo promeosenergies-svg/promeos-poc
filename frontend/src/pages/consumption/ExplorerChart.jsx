@@ -258,7 +258,7 @@ export default function ExplorerChart({
                   stroke={color}
                   dot={false}
                   strokeWidth={2}
-                  name={`Site ${idx + 1}`}
+                  name={siteLabels[sid] ?? `Site ${idx + 1}`}
                 />,
                 hasPrev && (
                   <Line
@@ -270,7 +270,7 @@ export default function ExplorerChart({
                     strokeOpacity={0.4}
                     dot={false}
                     strokeWidth={1.5}
-                    name={`Site ${idx + 1} (N-1)`}
+                    name={`${siteLabels[sid] ?? `Site ${idx + 1}`} (N-1)`}
                   />
                 ),
               ];
@@ -288,7 +288,7 @@ export default function ExplorerChart({
                   stroke={color}
                   fill={color}
                   fillOpacity={0.4}
-                  name={`Site ${idx + 1}`}
+                  name={siteLabels[sid] ?? `Site ${idx + 1}`}
                 />
               );
             })}
