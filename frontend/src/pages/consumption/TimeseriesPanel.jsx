@@ -404,6 +404,11 @@ export default function TimeseriesPanel({
   const chartSiteIds = overlayValueKeys.length
     ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10)).filter((id) => !isNaN(id))
     : siteIds.slice(0, 1);
+  // When a single site is displayed in agrege mode, show its name instead of "Agrégé"
+  const aggregateLabel =
+    siteIds.length === 1
+      ? (_sites.find((s) => s.id === siteIds[0])?.nom ?? siteLabels[siteIds[0]] ?? 'Agrégé')
+      : 'Agrégé';
 
   return (
     <ChartFrame>
@@ -423,6 +428,7 @@ export default function TimeseriesPanel({
           siteIds={chartSiteIds}
           siteColors={effectiveSiteColors}
           siteLabels={siteLabels}
+          aggregateLabel={aggregateLabel}
           height={360}
           showBrush
         />
