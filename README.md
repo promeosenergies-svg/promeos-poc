@@ -109,7 +109,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | O.4 Multi-org MERIDIAN SAS (3 sites, pack seed, CLI, ScopeContext multi-org, isolation tests) | Stable -- O.4 |
 > | B.4 Billing seed 5 sites HELIOS (Marseille R1+R3, Nice R11+R12+saisonnalité, Toulouse R1+partiel, 86 tests) | Stable -- B.4 |
 > | B.3 Auto-reconciliation compteur/facture à l'import (CSV, PDF, audit-all, reconcile-all endpoint, 40 tests) | Stable -- B.3 |
-> | Suite de tests automatisés | **5 111 frontend + 2 990+ backend, 0 régression** |
+> | F.1 Comparaison temporelle N vs N-1 (compare=yoy, _prev dashed series, compare-summary, TrendDelta KPI, toggle single-site, 46 tests) | Stable -- F.1 |
+> | Suite de tests automatisés | **5 136 frontend + 3 010+ backend, 0 régression** |
 
 > **Disclaimer**
 >
@@ -510,6 +511,8 @@ Champs cles du Site :
 | `GET` | `/api/billing/invoices/normalized` | Factures normalisees (ht/tva/fournisseur/energie calcules) |
 | `POST` | `/api/billing/audit-all` | Lancer les 14 regles d'anomalie sur toutes les factures |
 | `POST` | `/api/billing/reconcile-all` | Rapprochement compteur/facture tous sites (N mois) |
+| `GET` | `/api/ems/timeseries?compare=yoy` | Timeseries + series _prev N-1 (timestamps decales +1 an) |
+| `GET` | `/api/ems/timeseries/compare-summary` | Totaux N vs N-1 (current_kwh, previous_kwh, delta_pct) |
 | `GET` | `/api/billing/site/{id}` | Facturation d'un site (factures + insights) |
 | `GET` | `/api/billing/anomalies-scoped` | Anomalies billing au format Patrimoine (FACTURATION) |
 | `GET` | `/api/billing/periods` | Timeline mensuelle paginee (coverage_status, ratio, total_ttc) |
