@@ -28,6 +28,7 @@ import { fmtEur } from '../../utils/format';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { track } from '../../services/tracker';
 import { applyKB } from '../../services/api';
+import { getKpiMessage } from '../../services/kpiMessaging';
 import {
   STATUT_LABELS,
   SEVERITY_LABELS,
@@ -740,6 +741,38 @@ export default function ObligationsTab({
             <p className="text-2xl font-bold text-amber-700">{score.a_risque}</p>
           </CardBody>
         </Card>
+      </div>
+
+      {/* Step 21: KPI contextual messages */}
+      <div className="flex flex-col gap-1" data-testid="kpi-messages-conformite">
+        {(() => {
+          const msg = getKpiMessage('conformite', score.pct, {
+            totalSites: score.total,
+            sitesAtRisk: score.a_risque,
+            sitesNonConformes: score.non_conformes,
+          });
+          if (!msg) return null;
+          return (
+            <p className={`text-xs px-1 ${
+              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+            }`} data-testid="kpi-message-conformite-tab">
+              {isExpert ? msg.expert : msg.simple}
+            </p>
+          );
+        })()}
+        {(() => {
+          const msg = getKpiMessage('risque', score.total_impact_eur || 0, {
+            sitesAtRisk: score.a_risque,
+          });
+          if (!msg) return null;
+          return (
+            <p className={`text-xs px-1 ${
+              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
+            }`} data-testid="kpi-message-risque-tab">
+              {isExpert ? msg.expert : msg.simple}
+            </p>
+          );
+        })()}
       </div>
 
       {/* Filters */}

@@ -6,8 +6,9 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database, Coins } from 'lucide-react';
+import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database, Coins, ArrowRight, CalendarClock } from 'lucide-react';
 import { Button, PageShell, Drawer, ActiveFiltersBar, Explain, GLOSSARY } from '../ui';
+import { getKpiMessage } from '../services/kpiMessaging';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
@@ -465,6 +466,118 @@ function FindingAuditDrawer({ findingId, onClose }) {
   );
 }
 
+/**
+ * ComplianceSummaryBanner — Bandeau contextuel 3 états (vert/rouge/ambre).
+ * Affiche un message actionnable + CTA selon le niveau de conformité.
+ */
+function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navigate }) {
+  const nextDeadline = timeline?.next_deadline || null;
+  const pct = score?.pct ?? 0;
+  const nonConformes = score?.non_conformes ?? 0;
+  const aRisque = score?.a_risque ?? 0;
+  const totalSites = score?.total ?? 0;
+
+  // Determine state: green (>=70 & 0 NC), red (<40 or NC>0), amber (else)
+  let state = 'amber';
+  if (pct >= 70 && nonConformes === 0) state = 'green';
+  else if (pct < 40 || nonConformes > 0) state = 'red';
+
+  const stateConfig = {
+    green: {
+      bg: 'bg-green-50 border-green-200',
+      iconColor: 'text-green-600',
+      textColor: 'text-green-800',
+      subColor: 'text-green-600',
+    },
+    amber: {
+      bg: 'bg-amber-50 border-amber-200',
+      iconColor: 'text-amber-600',
+      textColor: 'text-amber-800',
+      subColor: 'text-amber-600',
+    },
+    red: {
+      bg: 'bg-red-50 border-red-200',
+      iconColor: 'text-red-600',
+      textColor: 'text-red-800',
+      subColor: 'text-red-600',
+    },
+  };
+
+  const cfg = stateConfig[state];
+
+  // kpiMessaging for conformite
+  const conformiteMsg = getKpiMessage('conformite', pct, {
+    totalSites,
+    sitesAtRisk: aRisque,
+    sitesNonConformes: nonConformes,
+  });
+  // kpiMessaging for risque
+  const risqueMsg = getKpiMessage('risque', score?.total_impact_eur ?? 0, {
+    sitesAtRisk: aRisque,
+  });
+
+  return (
+    <div
+      data-testid="compliance-summary-banner"
+      data-state={state}
+      className={`p-4 border rounded-lg ${cfg.bg}`}
+    >
+      <div className="flex items-start gap-3">
+        <ShieldCheck size={20} className={`${cfg.iconColor} mt-0.5 shrink-0`} />
+        <div className="flex-1 min-w-0">
+          {/* Main message from kpiMessaging */}
+          {conformiteMsg && (
+            <p className={`text-sm font-medium ${cfg.textColor}`} data-testid="kpi-message-conformite">
+              {isExpert ? conformiteMsg.expert : conformiteMsg.simple}
+            </p>
+          )}
+          {/* Risque message */}
+          {risqueMsg && risqueMsg.severity !== 'ok' && (
+            <p className={`text-xs mt-1 ${cfg.subColor}`} data-testid="kpi-message-risque">
+              {isExpert ? risqueMsg.expert : risqueMsg.simple}
+            </p>
+          )}
+          {/* Next deadline */}
+          {nextDeadline && (
+            <p className="text-xs mt-1.5 flex items-center gap-1 text-gray-600" data-testid="next-deadline">
+              <CalendarClock size={12} />
+              Prochaine échéance : {nextDeadline.label || nextDeadline.regulation} — {nextDeadline.deadline}
+              {nextDeadline.days_remaining != null && (
+                <span className={nextDeadline.days_remaining <= 30 ? 'font-semibold text-red-600' : ''}>
+                  {' '}(dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''})
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+        {/* CTA buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          {state === 'red' && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => { navigate('/actions'); }}
+              data-testid="cta-plan-action"
+            >
+              Voir le plan d&apos;action <ArrowRight size={14} />
+            </Button>
+          )}
+          {state === 'amber' && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => { navigate('/conformite?tab=execution'); }}
+              data-testid="cta-preparer-echeances"
+            >
+              Préparer les échéances <ArrowRight size={14} />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ConformitePage() {
   const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
@@ -892,6 +1005,17 @@ export default function ConformitePage() {
       {/* Health Summary (compact) */}
       {complianceHealth && (
         <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
+      )}
+
+      {/* Step 21: Compliance Summary Banner — messages actionnables */}
+      {summary && (
+        <ComplianceSummaryBanner
+          score={score}
+          obligations={obligations}
+          timeline={timeline}
+          isExpert={isExpert}
+          navigate={navigate}
+        />
       )}
 
       {/* Guided Mode Bandeau (non-expert only) */}
