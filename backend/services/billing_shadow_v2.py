@@ -19,19 +19,43 @@ CSPE_EUR_KWH_ELEC = 0.0225
 TICGN_EUR_KWH_GAZ = 0.01637
 TVA_RATE_20 = 0.20
 
-# ── Fallback constants (used if catalog unavailable) ──────────────────
-_FALLBACK = {
-    "TURPE_ENERGIE_C5_BT": 0.0453,
-    "TURPE_GESTION_C5_BT": 18.48,
-    "ATRD_GAZ": 0.025,
-    "ATRT_GAZ": 0.012,
-    "ACCISE_ELEC": 0.0225,
-    "ACCISE_GAZ": 0.01637,
-    "TVA_NORMALE": 0.20,
-    "TVA_REDUITE": 0.055,
-    "DEFAULT_PRICE_ELEC": 0.068,
-    "DEFAULT_PRICE_GAZ": 0.045,
-}
+# ── Fallback from YAML referentiel (tarifs_reglementaires.yaml) ───────
+def _load_fallback() -> dict:
+    """Load fallback rates from YAML referentiel, with hardcoded last resort."""
+    try:
+        from config.tarif_loader import (
+            get_turpe_moyen_kwh, get_turpe_gestion_mois,
+            get_atrd_kwh, get_atrt_kwh,
+            get_accise_kwh, get_tva_normale, get_tva_reduite,
+            get_prix_reference,
+        )
+        return {
+            "TURPE_ENERGIE_C5_BT": get_turpe_moyen_kwh("C5_BT"),
+            "TURPE_GESTION_C5_BT": get_turpe_gestion_mois("C5_BT"),
+            "ATRD_GAZ": get_atrd_kwh(),
+            "ATRT_GAZ": get_atrt_kwh(),
+            "ACCISE_ELEC": get_accise_kwh("elec"),
+            "ACCISE_GAZ": get_accise_kwh("gaz"),
+            "TVA_NORMALE": get_tva_normale(),
+            "TVA_REDUITE": get_tva_reduite(),
+            "DEFAULT_PRICE_ELEC": get_prix_reference("elec"),
+            "DEFAULT_PRICE_GAZ": get_prix_reference("gaz"),
+        }
+    except Exception:
+        return {
+            "TURPE_ENERGIE_C5_BT": 0.0453,
+            "TURPE_GESTION_C5_BT": 18.48,
+            "ATRD_GAZ": 0.025,
+            "ATRT_GAZ": 0.012,
+            "ACCISE_ELEC": 0.0225,
+            "ACCISE_GAZ": 0.01637,
+            "TVA_NORMALE": 0.20,
+            "TVA_REDUITE": 0.055,
+            "DEFAULT_PRICE_ELEC": 0.068,
+            "DEFAULT_PRICE_GAZ": 0.045,
+        }
+
+_FALLBACK = _load_fallback()
 
 
 def _safe_rate(code: str, at_date=None) -> float:

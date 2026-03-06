@@ -14,6 +14,8 @@ export const GLOSSARY = {
     term: 'TURPE',
     short:
       "Tarif d'Utilisation des Réseaux Publics d'Électricité. Coût d'acheminement de l'électricité via le réseau, fixé par la CRE.",
+    long:
+      "Le TURPE 7 (depuis fév. 2025) comprend une composante énergie (EUR/kWh, variable selon segment C5/C4/C3) et une composante gestion (EUR/mois, fixe). Les segments : C5 BT ≤36 kVA, C4 BT >36 kVA, C3 HTA. Taux chargés depuis le référentiel tarifs_reglementaires.yaml.",
   },
   atrd: {
     term: 'ATRD',
@@ -24,6 +26,13 @@ export const GLOSSARY = {
     term: 'Accise',
     short:
       "Taxe intérieure sur la consommation d'énergie (ex-TICFE/CSPE pour l'électricité, ex-TICGN pour le gaz).",
+  },
+  accise_electricite: {
+    term: 'Accise électricité (TIEE)',
+    short:
+      "Taxe intérieure sur l'électricité (ex-CSPE/TICFE), rebaptisée TIEE depuis 2022. Taux 2025 : 22,50 EUR/MWh.",
+    long:
+      "L'accise sur l'électricité (TIEE) est fixée par la Loi de finances. Depuis 2025 : 0,02250 EUR/kWh. Elle s'applique sur la consommation totale (kWh). TVA 20 % applicable. Source : Loi de finances 2025 art. 92.",
   },
   cspe: {
     term: 'CSPE',

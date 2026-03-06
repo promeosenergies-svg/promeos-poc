@@ -1,0 +1,94 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# PROMEOS — Référentiel tarifs réglementaires énergie France B2B
+# Version : 2025-02-01  (TURPE 7 + Loi de finances 2025)
+# Source  : CRE, DGEC, CGI
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "2025-02-01"
+description: "Tarifs réglementaires énergie France B2B — TURPE 7, accises 2025, TVA"
+
+# ── TURPE 7 soutirage énergie (composante variable) ──────────────────────────
+turpe:
+  source: "CRE délibération TURPE 7 HTA-BT 2025"
+  valid_from: "2025-02-01"
+  valid_to: null
+  segments:
+    C5_BT:
+      label: "C5 BT ≤36 kVA (résidentiel & petit pro)"
+      energie_eur_kwh: 0.0453
+      gestion_eur_mois: 18.48
+    C4_BT:
+      label: "C4 BT >36 kVA (tertiaire moyen)"
+      energie_eur_kwh: 0.0390
+      gestion_eur_mois: 30.60
+    C3_HTA:
+      label: "C3 HTA (industriel / gros tertiaire)"
+      energie_eur_kwh: 0.0260
+      gestion_eur_mois: 58.44
+
+# ── Accise électricité (ex-CSPE / TIEE) ─────────────────────────────────────
+accise_elec:
+  label: "Accise sur l'électricité (ex-CSPE/TIEE)"
+  rate_eur_kwh: 0.02250
+  source: "Loi de finances 2025 art. 92 (TIEE)"
+  valid_from: "2025-01-01"
+  valid_to: null
+
+# ── Accise gaz (ex-TICGN) ───────────────────────────────────────────────────
+accise_gaz:
+  label: "Accise sur le gaz naturel (ex-TICGN)"
+  rate_eur_kwh: 0.01637
+  source: "Loi de finances 2025 (TICGN)"
+  valid_from: "2025-01-01"
+  valid_to: null
+
+# ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
+cta:
+  elec:
+    taux_pct: 27.04
+    assiette: "turpe_fixe_ht"
+    source: "Arrêté CTA 2025"
+    valid_from: "2025-01-01"
+    valid_to: null
+  gaz:
+    taux_pct: 20.80
+    assiette: "atrd_fixe_ht"
+    source: "Arrêté CTA 2025"
+    valid_from: "2025-01-01"
+    valid_to: null
+
+# ── TICGN (historique, absorbé dans accise_gaz depuis 2025) ─────────────────
+ticgn:
+  rate_eur_kwh: 0.01637
+  source: "Loi de finances 2025"
+  valid_from: "2025-01-01"
+  valid_to: null
+
+# ── ATRD / ATRT gaz ─────────────────────────────────────────────────────────
+atrd_gaz:
+  rate_eur_kwh: 0.025
+  source: "CRE ATRD7 GRDF 2025"
+  valid_from: "2025-07-01"
+  valid_to: null
+
+atrt_gaz:
+  rate_eur_kwh: 0.012
+  source: "CRE ATRT8 2025"
+  valid_from: "2025-01-01"
+  valid_to: null
+
+# ── TVA ──────────────────────────────────────────────────────────────────────
+tva:
+  normale:
+    taux: 0.20
+    source: "CGI art. 278"
+  reduite:
+    taux: 0.055
+    source: "CGI art. 278-0 bis"
+    applicable_a: ["abonnement", "cta", "turpe_fixe"]
+
+# ── Prix de référence par défaut (fallback shadow billing) ──────────────────
+prix_reference:
+  elec_eur_kwh: 0.068
+  gaz_eur_kwh: 0.045
+  source: "PROMEOS POC fallback (EPEX Spot 30j moyen)"

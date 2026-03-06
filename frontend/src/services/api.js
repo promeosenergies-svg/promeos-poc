@@ -856,6 +856,13 @@ export const getMarketPrices = (params = {}) =>
   _cachedGet('/market/prices', { params }).then((r) => r.data);
 
 // ========================================
+// REFERENTIEL TARIFS
+// ========================================
+
+export const getReferentielTarifs = () =>
+  _cachedGet('/referentiel/tarifs').then((r) => r.data);
+
+// ========================================
 // ACHAT ENERGIE
 // ========================================
 

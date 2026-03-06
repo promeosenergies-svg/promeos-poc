@@ -47,6 +47,7 @@ from .action_templates import router as action_templates_router
 from .onboarding_stepper import router as onboarding_stepper_router
 from .consumption_unified import router as consumption_unified_router
 from .market import router as market_router
+from .referentiel import router as referentiel_router
 
 __all__ = [
     "sites_router",
@@ -94,4 +95,5 @@ __all__ = [
     "onboarding_stepper_router",
     "consumption_unified_router",
     "market_router",
+    "referentiel_router",
 ]
