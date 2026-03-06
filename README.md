@@ -110,7 +110,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | B.4 Billing seed 5 sites HELIOS (Marseille R1+R3, Nice R11+R12+saisonnalité, Toulouse R1+partiel, 86 tests) | Stable -- B.4 |
 > | B.3 Auto-reconciliation compteur/facture à l'import (CSV, PDF, audit-all, reconcile-all endpoint, 40 tests) | Stable -- B.3 |
 > | F.1 Comparaison temporelle N vs N-1 (compare=yoy, _prev dashed series, compare-summary, TrendDelta KPI, toggle single-site, 46 tests) | Stable -- F.1 |
-> | Suite de tests automatisés | **5 136 frontend + 3 010+ backend, 0 régression** |
+> | F.2 Période unifiée via URL (usePeriodParams hook, cross-page propagation Explorer↔Monitoring↔Diagnostic, period badges, 24 tests) | Stable -- F.2 |
+> | Suite de tests automatisés | **5 160 frontend + 3 010+ backend, 0 régression** |
 
 > **Disclaimer**
 >
