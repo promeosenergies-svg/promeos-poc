@@ -121,13 +121,13 @@ describe('colorForSite', () => {
     expect(colorForSite('s1', 0)).toMatch(/^#[0-9a-f]{6}$/i);
   });
 
-  it('wraps around after 5 sites', () => {
-    expect(colorForSite('s0', 0)).toBe(colorForSite('s5', 5));
+  it('wraps around after 12 sites', () => {
+    expect(colorForSite('s0', 0)).toBe(colorForSite('s12', 12));
   });
 
-  it('different indices get different colors (first 5)', () => {
-    const colors = [0, 1, 2, 3, 4].map((i) => colorForSite('s', i));
-    expect(new Set(colors).size).toBe(5);
+  it('different indices get different colors (first 12)', () => {
+    const colors = Array.from({ length: 12 }, (_, i) => colorForSite('s', i));
+    expect(new Set(colors).size).toBe(12);
   });
 });
 

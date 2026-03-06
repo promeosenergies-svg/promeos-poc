@@ -157,7 +157,7 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
           <p className="text-xs text-gray-400 text-center py-3">Aucun site disponible</p>
         )}
         {available.map((s, idx) => {
-          const color = colorForSite(s.id, idx);
+          const color = colorForSite(s.id, selectedIds.length + idx);
           return (
             <button
               key={s.id}
