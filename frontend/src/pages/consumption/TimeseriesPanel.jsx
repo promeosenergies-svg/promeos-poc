@@ -401,8 +401,9 @@ export default function TimeseriesPanel({
   // For multi-series, pass empile/separe/superpose through; single-site always agrege
   const MULTI_SITE_MODES = ['superpose', 'empile', 'separe'];
   const chartMode = seriesData.length > 1 && MULTI_SITE_MODES.includes(mode) ? mode : 'agrege';
+  const overlayKeySet = new Set(overlayValueKeys);
   const chartSiteIds = overlayValueKeys.length
-    ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10)).filter((id) => !isNaN(id))
+    ? siteIds.filter((sid) => overlayKeySet.has(`site_${sid}`))
     : siteIds.slice(0, 1);
   // When a single site is displayed in agrege mode, show its name instead of "Agrégé"
   const aggregateLabel =
