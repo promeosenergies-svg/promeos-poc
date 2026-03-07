@@ -33,6 +33,7 @@ from models import (
     EntiteJuridique,
     Portefeuille,
     Batiment,
+    Meter,
     not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
@@ -1009,10 +1010,11 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
                 delivery_points_created += 1
 
             tc_info = _TYPE_COMPTEUR_MAP.get(sc.type_compteur, (TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY))
+            num_serie = sc.numero_serie or f"STG-{sc.id}"
             compteur = Compteur(
                 site_id=site.id,
                 type=tc_info[0],
-                numero_serie=sc.numero_serie or f"STG-{sc.id}",
+                numero_serie=num_serie,
                 meter_id=sc.meter_id,
                 energy_vector=tc_info[1],
                 puissance_souscrite_kw=sc.puissance_kw,
@@ -1022,6 +1024,24 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
                 data_source_ref=f"batch:{batch_id}",
             )
             db.add(compteur)
+
+            # Step 25: dual-write — also create unified Meter (skip if meter_id exists)
+            _meter_id = sc.meter_id or num_serie
+            existing_meter = db.query(Meter).filter(Meter.meter_id == _meter_id).first()
+            if not existing_meter:
+                meter = Meter(
+                    meter_id=_meter_id,
+                    name=f"Compteur {num_serie}",
+                    energy_vector=tc_info[1],
+                    site_id=site.id,
+                    subscribed_power_kva=sc.puissance_kw,
+                    is_active=True,
+                    numero_serie=num_serie,
+                    type_compteur=sc.type_compteur or tc_info[0].value,
+                    delivery_point_id=dp.id if dp else None,
+                    installation_date=now,
+                )
+                db.add(meter)
             compteurs_created += 1
 
     # Mark batch as applied (inside savepoint — rolled back on failure)

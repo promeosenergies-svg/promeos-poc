@@ -46,9 +46,10 @@ import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealt
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
 import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
 import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
+import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
-import { getPatrimoineAnomalies, getPortfolioReconciliation } from '../services/api';
+import { getPatrimoineAnomalies, getPortfolioReconciliation, patrimoineSiteMeters } from '../services/api';
 import { track } from '../services/tracker';
 import {
   fmtEur,
@@ -1048,6 +1049,51 @@ function FilterSelect({ options, value, onChange }) {
  *  SiteDrawer — tabbed, actionable
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+/* ── SiteMetersTab — unified meters list with source badge ── */
+function SiteMetersTab({ siteId, count }) {
+  const [meters, setMeters] = useState(null);
+
+  useEffect(() => {
+    if (siteId) {
+      patrimoineSiteMeters(siteId)
+        .then((data) => setMeters(data.meters || []))
+        .catch(() => setMeters([]));
+    }
+  }, [siteId]);
+
+  if (meters === null) {
+    return <p className="text-sm text-gray-400 animate-pulse py-4">Chargement des compteurs…</p>;
+  }
+
+  if (meters.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-400">
+        <Zap size={28} className="mx-auto mb-2" />
+        <p className="text-sm font-medium text-gray-600">Aucun compteur</p>
+        <p className="text-xs text-gray-400">Ce site n'a pas encore de compteur rattaché.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-gray-600">
+        {meters.length} compteur{meters.length > 1 ? 's' : ''} associé{meters.length > 1 ? 's' : ''} à ce site.
+      </p>
+      {meters.map((m) => (
+        <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+          <Zap size={14} className="text-gray-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{m.name || m.numero_serie || m.meter_id}</p>
+            <p className="text-[11px] text-gray-400">{m.type_compteur || m.energy_vector || '—'}</p>
+          </div>
+          <MeterSourceBadge source={m.source} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const DRAWER_TABS = [
   { id: 'resume', label: 'Résumé' },
   { id: 'anomalies', label: 'Anomalies' },
@@ -1158,25 +1204,7 @@ function SiteDrawerContent({
 
       {/* Tab: Compteurs */}
       {tab === 'compteurs' && (
-        <div>
-          {site.nb_compteurs > 0 ? (
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                {site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associé
-                {site.nb_compteurs > 1 ? 's' : ''} à ce site.
-              </p>
-              <p className="text-xs text-gray-400">
-                Ouvrez la fiche site pour voir le détail de chaque compteur et ses consommations.
-              </p>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-400">
-              <Zap size={28} className="mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-600">Aucun compteur</p>
-              <p className="text-xs text-gray-400">Ce site n'a pas encore de compteur rattaché.</p>
-            </div>
-          )}
-        </div>
+        <SiteMetersTab siteId={site.id} count={site.nb_compteurs} />
       )}
 
       {/* Tab: Actions */}

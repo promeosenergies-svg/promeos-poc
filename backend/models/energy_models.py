@@ -16,7 +16,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
     UniqueConstraint,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 import enum
 
@@ -88,12 +88,32 @@ class Meter(Base):
     is_active = Column(Boolean, nullable=False, default=True)
     notes = Column(Text, nullable=True)
 
+    # Champs unifiés depuis Compteur (Step 25)
+    numero_serie = Column(String(100), nullable=True, index=True)
+    type_compteur = Column(String(50), nullable=True)  # "electricite", "gaz", "eau"
+    marque = Column(String(100), nullable=True)
+    modele = Column(String(100), nullable=True)
+    date_derniere_releve = Column(DateTime, nullable=True)
+
+    # Lien DeliveryPoint (unifié depuis Compteur)
+    delivery_point_id = Column(
+        Integer,
+        ForeignKey("delivery_points.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # Support sous-compteur (préparation Step 26)
+    parent_meter_id = Column(Integer, ForeignKey("meter.id"), nullable=True)
+
     # Audit
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     site = relationship("Site", back_populates="meters")
+    delivery_point = relationship("DeliveryPoint", foreign_keys=[delivery_point_id])
+    sub_meters = relationship("Meter", backref=backref("parent_meter", remote_side="Meter.id"), foreign_keys=[parent_meter_id])
     readings = relationship("MeterReading", back_populates="meter", cascade="all, delete-orphan")
     profiles = relationship("UsageProfile", back_populates="meter", cascade="all, delete-orphan")
     anomalies = relationship("Anomaly", back_populates="meter", cascade="all, delete-orphan")

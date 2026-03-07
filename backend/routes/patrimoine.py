@@ -1378,9 +1378,11 @@ def get_site_detail(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Get a site with compteurs, contracts count, and consumption source."""
+    from services.meter_unified_service import get_site_meters
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
-    compteurs_count = db.query(Compteur).filter(Compteur.site_id == site_id, Compteur.actif.is_(True)).count()
+    unified_meters = get_site_meters(db, site_id)
+    compteurs_count = len(unified_meters)
     contracts_count = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).count()
 
     # A.1: Consumption source info
@@ -1400,6 +1402,20 @@ def get_site_detail(
         "contracts_count": contracts_count,
         "consumption_source": consumption_source,
     }
+
+
+@router.get("/sites/{site_id}/meters")
+def list_site_meters_unified(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Liste unifiée des compteurs d'un site (Meter + Compteur legacy)."""
+    from services.meter_unified_service import get_site_meters
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return {"meters": get_site_meters(db, site_id)}
 
 
 @router.patch("/sites/{site_id}")
@@ -1508,6 +1524,7 @@ def merge_sites(
 def _serialize_compteur(c: Compteur) -> dict:
     return {
         "id": c.id,
+        "source": "compteur",
         "site_id": c.site_id,
         "type": c.type.value if c.type else None,
         "numero_serie": c.numero_serie,

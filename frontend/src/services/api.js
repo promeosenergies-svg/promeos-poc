@@ -1161,6 +1161,8 @@ export const patrimoineSiteMerge = (sourceId, targetId) =>
   api
     .post('/patrimoine/sites/merge', { source_site_id: sourceId, target_site_id: targetId })
     .then((r) => r.data);
+export const patrimoineSiteMeters = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/meters`).then((r) => r.data);
 export const patrimoineCompteurs = (params = {}) =>
   api.get('/patrimoine/compteurs', { params }).then((r) => r.data);
 export const patrimoineCompteurUpdate = (id, data) =>

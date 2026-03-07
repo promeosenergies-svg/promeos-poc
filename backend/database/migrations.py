@@ -60,6 +60,8 @@ def run_migrations(engine):
     _create_reconciliation_fix_logs_table(engine)
     # V100 — Segmentation enrichment
     _migrate_segmentation_v100(engine)
+    # Step 25 — Meter unification (Compteur → Meter)
+    _add_meter_unified_columns(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1009,3 +1011,54 @@ def _migrate_segmentation_v100(engine):
                 )
             )
         logger.info("migration: V100 — created segmentation_answers table")
+
+
+# ========================================
+# Step 25 — Meter unification
+# ========================================
+
+
+def _add_meter_unified_columns(engine):
+    """Step 25: Add columns to meter table for Compteur unification. Idempotent."""
+    insp = inspect(engine)
+    if not insp.has_table("meter"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("meter")}
+
+    columns = [
+        ("numero_serie", "VARCHAR(100)"),
+        ("type_compteur", "VARCHAR(50)"),
+        ("marque", "VARCHAR(100)"),
+        ("modele", "VARCHAR(100)"),
+        ("date_derniere_releve", "DATETIME"),
+        ("delivery_point_id", 'INTEGER REFERENCES "delivery_points"("id")'),
+        ("parent_meter_id", 'INTEGER REFERENCES "meter"("id")'),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in columns:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "meter" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: Step 25 — added meter.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: Step 25 — could not add meter.%s: %s", col_name, e)
+
+        # Indexes
+        for idx_col in ("numero_serie", "delivery_point_id", "parent_meter_id"):
+            idx_name = f"ix_meter_{idx_col}"
+            try:
+                conn.execute(
+                    text(f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "meter" ("{idx_col}")')
+                )
+            except Exception:
+                pass
+
+    if added > 0:
+        logger.info("migration: Step 25 — added %d column(s) to meter", added)
+    else:
+        logger.debug("migration: Step 25 — meter unified columns already present")
