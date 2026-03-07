@@ -120,7 +120,7 @@ function HorizontalTimeline({ events, today }) {
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
   return (
-    <div className="relative w-full overflow-x-auto pb-2">
+    <div className="relative w-full overflow-x-auto pb-2 px-12">
       {/* Axis */}
       <div className="relative h-32 min-w-[600px]">
         {/* Horizontal line */}
