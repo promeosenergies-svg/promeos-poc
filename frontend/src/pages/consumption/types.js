@@ -32,10 +32,10 @@ export const DEFAULT_LAYERS = {
 };
 
 export const MODE_LABELS = {
-  [MODES.AGREGE]: 'Agrege',
-  [MODES.SUPERPOSE]: 'Superpose',
-  [MODES.EMPILE]: 'Empile',
-  [MODES.SEPARE]: 'Separe',
+  [MODES.AGREGE]: 'Agrégé',
+  [MODES.SUPERPOSE]: 'Superposé',
+  [MODES.EMPILE]: 'Empilé',
+  [MODES.SEPARE]: 'Séparé',
 };
 
 export const UNIT_LABELS = {
