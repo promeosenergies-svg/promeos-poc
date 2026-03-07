@@ -91,7 +91,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
   // --- EUR/MWh reel ---
   const eurMwh =
     totalEur != null && totalKwh > 0 ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100 : null;
-  const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, 'EUR/MWh') : '—';
+  const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, '€/MWh') : '—';
 
   // --- CO2e ---
   const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
@@ -167,14 +167,14 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
         />
         <KpiTile
           icon={Euro}
-          label="EUR total"
+          label="Coût total"
           value={eurLabel}
           sub={eurSource}
           tooltip={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`}
         />
         <KpiTile
           icon={TrendingUp}
-          label="Prix unitaire"
+          label="Prix moyen"
           value={eurMwhLabel}
           tooltip="Prix moyen = EUR total / MWh total"
         />
@@ -191,12 +191,14 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
           icon={Activity}
           label={getKpiLabel('p95_kw', isExpert)}
           value={p95Label}
+          sub="P95"
           tooltip="95e percentile de puissance sur les creneaux horaires"
         />
         <KpiTile
           icon={Moon}
           label={getKpiLabel('night_ratio', isExpert)}
           value={basePctLabel}
+          sub="22h-6h"
           color={basePctColor}
           tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine"
         />
