@@ -219,7 +219,18 @@ export default function ExplorerChart({
                 : ['N/A', name]
             }
           />
-          <Legend />
+          <Legend
+            payload={
+              (mode === 'superpose' || mode === 'empile') && siteIds.length > 1
+                ? siteIds.map((sid, idx) => ({
+                    value: siteLabels[sid] ?? `Site ${idx + 1}`,
+                    type: mode === 'empile' ? 'square' : 'line',
+                    color: siteColors[sid] || colorForSite(sid, idx),
+                    id: `site_${sid}`,
+                  }))
+                : undefined
+            }
+          />
 
           {/* Core series by mode */}
           {mode === 'agrege' && (
