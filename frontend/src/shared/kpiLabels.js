@@ -11,8 +11,8 @@ export const KPI_LABELS = {
     unit: 'kW',
   },
   p95_kw: {
-    simple: 'Pic de puissance usuel',
-    expert: 'Puissance P95 (percentile 95)',
+    simple: 'Puissance P95',
+    expert: 'P95 kW',
     unit: 'kW',
   },
   pbase_kw: {

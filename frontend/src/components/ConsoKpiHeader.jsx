@@ -43,7 +43,9 @@ function KpiTile({
           {label}
         </p>
         <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
-        {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
+        <div className="min-h-[1.25rem]">
+          {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
+        </div>
       </div>
       {evidenceId && onEvidence && (
         <button
@@ -172,7 +174,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
         />
         <KpiTile
           icon={TrendingUp}
-          label="EUR/MWh"
+          label="Prix unitaire"
           value={eurMwhLabel}
           tooltip="Prix moyen = EUR total / MWh total"
         />
