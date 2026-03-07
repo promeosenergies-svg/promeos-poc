@@ -122,13 +122,13 @@ function HorizontalTimeline({ events, today }) {
   return (
     <div className="relative w-full overflow-x-auto pb-2 px-12">
       {/* Axis */}
-      <div className="relative h-32 min-w-[600px]">
+      <div className="relative h-40 min-w-[600px]">
         {/* Horizontal line */}
-        <div className="absolute top-16 left-0 right-0 h-0.5 bg-gray-200" />
+        <div className="absolute top-[88px] left-0 right-0 h-0.5 bg-gray-200" />
 
         {/* Today marker */}
         <div
-          className="absolute top-4 h-24 w-px border-l-2 border-dashed border-red-400"
+          className="absolute top-10 h-24 w-px border-l-2 border-dashed border-red-400"
           style={{ left: `${todayPct}%` }}
         >
           <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-red-500 whitespace-nowrap bg-white px-1">
@@ -147,7 +147,7 @@ function HorizontalTimeline({ events, today }) {
             <div
               key={evt.id}
               className="absolute cursor-pointer group"
-              style={{ left: `${leftPct}%`, top: '8px' }}
+              style={{ left: `${leftPct}%`, top: '32px' }}
               onMouseEnter={() => setHoveredId(evt.id)}
               onMouseLeave={() => setHoveredId(null)}
               onClick={() => navigate(`/conformite?framework=${evt.framework.toLowerCase()}`)}
@@ -189,7 +189,7 @@ function HorizontalTimeline({ events, today }) {
               markers.push(
                 <div
                   key={y}
-                  className="absolute top-16 text-[9px] text-gray-300 font-mono"
+                  className="absolute top-[88px] text-[9px] text-gray-300 font-mono"
                   style={{ left: `${pct}%` }}
                 >
                   <div className="w-px h-2 bg-gray-200 mb-0.5" />
