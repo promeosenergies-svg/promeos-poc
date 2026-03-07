@@ -11,8 +11,8 @@ export const KPI_LABELS = {
     unit: 'kW',
   },
   p95_kw: {
-    simple: 'Pic de puissance usuel',
-    expert: 'Puissance P95 (percentile 95)',
+    simple: 'Pointe Puissance',
+    expert: 'Pointe Puissance',
     unit: 'kW',
   },
   pbase_kw: {
@@ -41,8 +41,8 @@ export const KPI_LABELS = {
     unit: 'kWh',
   },
   night_ratio: {
-    simple: 'Part nocturne',
-    expert: 'Ratio nuit (22h-6h)',
+    simple: 'Ratio Nuit',
+    expert: 'Ratio Nuit',
     unit: '%',
   },
   weekend_ratio: {
@@ -61,8 +61,8 @@ export const KPI_LABELS = {
     unit: '/100',
   },
   total_kwh: {
-    simple: 'Consommation totale',
-    expert: 'Consommation totale',
+    simple: 'Conso. totale',
+    expert: 'Conso. totale',
     unit: 'kWh',
   },
   kwh_m2: {
@@ -103,8 +103,8 @@ export const KPI_LABELS = {
   },
   // CO2
   total_kgco2e: {
-    simple: 'Emissions CO\u2082',
-    expert: 'Emissions totales (kgCO\u2082e)',
+    simple: 'Total émissions',
+    expert: 'Total émissions',
     unit: 'kgCO\u2082e',
   },
   total_tco2e: {
