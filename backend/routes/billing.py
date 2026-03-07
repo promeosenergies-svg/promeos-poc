@@ -578,6 +578,29 @@ def audit_invoice_endpoint(
     return result
 
 
+@router.get("/invoices/{invoice_id}/shadow-breakdown")
+def get_shadow_breakdown(
+    invoice_id: int,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Shadow breakdown par composante (fourniture / TURPE / taxes / TVA)."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(
+        EnergyInvoice.id == invoice_id
+    ).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Facture non trouvée ou accès refusé")
+    try:
+        from services.billing_shadow_v2 import compute_shadow_breakdown
+        return compute_shadow_breakdown(db, invoice)
+    except Exception as e:
+        logger.warning("Shadow breakdown failed for invoice %s: %s", invoice_id, str(e)[:200])
+        raise HTTPException(status_code=500, detail="Erreur lors du calcul du shadow breakdown")
+
+
 @router.post("/audit-all")
 def audit_all_invoices(
     request: Request,

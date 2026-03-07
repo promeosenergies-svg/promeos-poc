@@ -302,3 +302,207 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         "catalog_trace": catalog_trace,
         "diagnostics": diagnostics,
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Step 28 — Shadow Breakdown par composante (fourniture / TURPE / taxes / TVA)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _resolve_segment(contract, site=None) -> str:
+    """Résout le segment TURPE depuis la puissance souscrite du contrat/site."""
+    kva = getattr(contract, "subscribed_power_kva", None) or 0
+    if kva > 250:
+        return "C3_HTA"
+    elif kva > 36:
+        return "C4_BT"
+    return "C5_BT"
+
+
+def _component_status(gap_pct):
+    """Statut d'une composante selon l'écart en %."""
+    if gap_pct is None:
+        return "ok"
+    if abs(gap_pct) > 15:
+        return "alert"
+    if abs(gap_pct) > 5:
+        return "warn"
+    return "ok"
+
+
+def _build_breakdown_component(name, label, expected, invoice_val, methodology, detail):
+    """Construit un composant de breakdown avec gap et statut."""
+    gap = (invoice_val - expected) if invoice_val is not None else None
+    gap_pct = (gap / expected * 100) if gap is not None and expected > 0 else None
+    return {
+        "name": name,
+        "label": label,
+        "expected_eur": round(expected, 2),
+        "invoice_eur": round(invoice_val, 2) if invoice_val is not None else None,
+        "gap_eur": round(gap, 2) if gap is not None else None,
+        "gap_pct": round(gap_pct, 1) if gap_pct is not None else None,
+        "status": _component_status(gap_pct),
+        "methodology": methodology,
+        "detail": detail,
+    }
+
+
+def _extract_invoice_component(lines, component_name):
+    """Extrait un montant depuis les InvoiceLines par type/label."""
+    if not lines:
+        return None
+    mapping = {
+        "fourniture": ["energy"],
+        "turpe": ["network"],
+        "taxes": ["tax"],
+    }
+    line_types = mapping.get(component_name, [])
+    total = 0
+    found = False
+    for line in lines:
+        lt = getattr(line, "line_type", None)
+        lt_val = lt.value if hasattr(lt, "value") else str(lt or "")
+        if lt_val in line_types:
+            total += getattr(line, "amount_eur", 0) or 0
+            found = True
+    return total if found else None
+
+
+def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
+    """
+    Calcul shadow décomposé par composante avec écart et statut.
+    Enrichit shadow_billing_v2 avec CTA, segment dynamique, et comparaison
+    par composante (fourniture / TURPE / taxes / TVA).
+
+    Args:
+        db: session SQLAlchemy
+        invoice: EnergyInvoice
+        site: Site (optionnel)
+        contract: EnergyContract (optionnel, résolu depuis invoice si absent)
+
+    Returns:
+        dict avec components[], total_*, confidence, tarif_version, segment
+    """
+    from config.tarif_loader import get_cta_taux, get_tarif_version
+
+    # Résoudre contrat si non fourni
+    if contract is None and invoice.contract_id:
+        try:
+            from models.billing_models import EnergyContract
+            contract = db.query(EnergyContract).filter(
+                EnergyContract.id == invoice.contract_id
+            ).first()
+        except Exception:
+            pass
+
+    # Résoudre site si non fourni
+    if site is None and invoice.site_id:
+        try:
+            from models.energy_models import Site
+            site = db.query(Site).filter(Site.id == invoice.site_id).first()
+        except Exception:
+            pass
+
+    # Lignes de la facture
+    try:
+        from models.billing_models import EnergyInvoiceLine
+        lines = db.query(EnergyInvoiceLine).filter(
+            EnergyInvoiceLine.invoice_id == invoice.id
+        ).all()
+    except Exception:
+        lines = []
+
+    # Appeler shadow_billing_v2 pour le calcul de base
+    v2 = shadow_billing_v2(invoice, lines, contract)
+
+    # Segment TURPE dynamique
+    segment = _resolve_segment(contract, site)
+    is_elec = v2["energy_type"] == "ELEC"
+
+    # ── Enrichir avec CTA ──────────────────────────────────────────────
+    kwh = v2["kwh"]
+    turpe_gestion = _safe_rate("TURPE_GESTION_C5_BT") if is_elec else 0
+    p_start = getattr(invoice, "period_start", None)
+    p_end = getattr(invoice, "period_end", None)
+    if p_start and p_end:
+        period_days = max((p_end - p_start).days, 1)
+    else:
+        period_days = 30
+    prorata = period_days / 365.0
+
+    cta_type = "elec" if is_elec else "gaz"
+    cta_taux = get_cta_taux(cta_type) / 100.0
+    cta_base = turpe_gestion * (period_days / 30.0)  # TURPE fixe proratisé
+    cta_eur = cta_base * cta_taux
+
+    # Accise
+    accise_rate = v2["components"][2]["unit_rate"]  # taxes component rate
+    taxes_energy = kwh * accise_rate
+    taxes_expected = taxes_energy + cta_eur
+
+    # ── Extraire montants facturés par composante ──────────────────────
+    fourniture_invoice = _extract_invoice_component(lines, "fourniture")
+    turpe_invoice = _extract_invoice_component(lines, "turpe")
+    taxes_invoice = _extract_invoice_component(lines, "taxes")
+
+    # TVA : différence TTC - HT si on a le TTC
+    exp_ht = v2["totals"]["ht"]
+    exp_tva = v2["totals"]["tva"]
+    act_ttc = v2["actual_ttc"]
+    act_ht_sum = sum(x for x in [fourniture_invoice, turpe_invoice, taxes_invoice] if x is not None)
+    tva_invoice = (act_ttc - act_ht_sum) if act_ttc and act_ht_sum > 0 else None
+
+    # ── Construire les composantes avec gap/status ─────────────────────
+    price_ref = v2["price_ref"]
+    taxe_label = "Accise élec" if is_elec else "TICGN"
+
+    components = [
+        _build_breakdown_component(
+            "fourniture", "Fourniture d'énergie",
+            v2["expected_fourniture_ht"], fourniture_invoice,
+            f"{kwh:.0f} kWh x {price_ref:.4f} EUR/kWh",
+            {"kwh": kwh, "price_kwh": price_ref, "source": v2["price_source"]},
+        ),
+        _build_breakdown_component(
+            "turpe", "Acheminement (TURPE)",
+            v2["expected_reseau_ht"], turpe_invoice,
+            f"Segment {segment} — {v2['components'][1]['unit_rate']:.4f} EUR/kWh",
+            {"segment": segment, "rate_kwh": v2["components"][1]["unit_rate"]},
+        ),
+        _build_breakdown_component(
+            "taxes", f"Taxes ({taxe_label} + CTA)",
+            round(taxes_expected, 2), taxes_invoice,
+            f"{taxe_label}: {kwh:.0f} kWh x {accise_rate:.4f} EUR/kWh + CTA: {cta_eur:.2f} EUR",
+            {"taxe_energy": round(taxes_energy, 2), "cta": round(cta_eur, 2), "cta_taux_pct": round(cta_taux * 100, 2)},
+        ),
+        _build_breakdown_component(
+            "tva", "TVA",
+            exp_tva, tva_invoice,
+            "TVA 5,5% sur abonnement/CTA + TVA 20% sur consommation",
+            {"tva_reduit": round(v2["components"][3]["tva"], 2), "tva_normal": round(exp_tva - v2["components"][3]["tva"], 2)},
+        ),
+    ]
+
+    total_expected_ht = exp_ht
+    total_invoice_ht = act_ht_sum if act_ht_sum > 0 else (act_ttc or 0)
+
+    try:
+        tarif_version = get_tarif_version()
+    except Exception:
+        tarif_version = "unknown"
+
+    return {
+        "total_expected_ht": round(total_expected_ht, 2),
+        "total_expected_ttc": round(v2["expected_ttc"], 2),
+        "total_invoice_ht": round(total_invoice_ht, 2),
+        "total_invoice_ttc": round(act_ttc, 2) if act_ttc else None,
+        "total_gap_eur": round(total_invoice_ht - total_expected_ht, 2) if total_expected_ht else 0,
+        "total_gap_pct": round((total_invoice_ht - total_expected_ht) / total_expected_ht * 100, 2) if total_expected_ht > 0 else 0,
+        "components": components,
+        "confidence": v2["diagnostics"]["confidence"],
+        "tarif_version": tarif_version,
+        "segment": segment,
+        "energy_type": v2["energy_type"],
+        "kwh": kwh,
+        "days_in_period": period_days,
+    }

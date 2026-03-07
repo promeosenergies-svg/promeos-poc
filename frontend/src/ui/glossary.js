@@ -101,6 +101,13 @@ export const GLOSSARY = {
     short:
       "Recalcul attendu de la facture à partir des données réelles (consommation, contrat, catalogue réglementaire). Permet de détecter les écarts avec le montant facturé.",
   },
+  shadow_breakdown: {
+    term: 'Décomposition shadow',
+    short:
+      "Comparaison composante par composante entre la facture reçue et le montant recalculé par PROMEOS. Fourniture (énergie), acheminement (TURPE), taxes (accise/CTA) et TVA sont vérifiés séparément.",
+    long:
+      "Le shadow breakdown décompose l'écart total en 4 composantes : fourniture d'énergie (kWh × prix contrat), acheminement réseau (TURPE selon segment C5/C4/C3), taxes (accise + CTA), et TVA (5,5 % abo + 20 % conso). Chaque composante a un statut (conforme/attention/alerte) basé sur l'amplitude de l'écart. Source : référentiel TURPE/taxes 2025.",
+  },
   anomalie: {
     term: 'Anomalie',
     short:

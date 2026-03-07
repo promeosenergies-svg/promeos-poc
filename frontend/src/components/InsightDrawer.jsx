@@ -8,8 +8,9 @@ import { AlertTriangle } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Explain } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
-import { getInsightDetail } from '../services/api';
+import { getInsightDetail, getInvoiceShadowBreakdown } from '../services/api';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import ShadowBreakdownCard from './billing/ShadowBreakdownCard';
 import { fmtEurFull, fmtNum } from '../utils/format';
 
 const TYPE_LABELS = {
@@ -98,6 +99,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [breakdown, setBreakdown] = useState(null);
 
   useEffect(() => {
     if (!open || !insightId) {
@@ -107,10 +109,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
     }
     setLoading(true);
     setError(null);
+    setBreakdown(null);
     getInsightDetail(insightId)
       .then((data) => {
         setDetail(data);
         setError(null);
+        if (data?.invoice_id) {
+          getInvoiceShadowBreakdown(data.invoice_id)
+            .then(setBreakdown)
+            .catch(() => setBreakdown(null));
+        }
       })
       .catch((err) => {
         setDetail(null);
@@ -378,6 +386,11 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Shadow Breakdown par composante (Step 28) */}
+          {breakdown && (
+            <ShadowBreakdownCard breakdown={breakdown} />
           )}
 
           {/* Écart détecté (types sans breakdown V2) */}

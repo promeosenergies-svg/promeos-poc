@@ -779,6 +779,8 @@ export const getBillingInsights = (params = {}) =>
   api.get('/billing/insights', { params }).then((r) => r.data);
 export const getInsightDetail = (insightId) =>
   api.get(`/billing/insights/${insightId}`).then((r) => r.data);
+export const getInvoiceShadowBreakdown = (invoiceId) =>
+  api.get(`/billing/invoices/${invoiceId}/shadow-breakdown`).then((r) => r.data);
 export const getBillingInvoices = (params = {}) =>
   api.get('/billing/invoices', { params }).then((r) => r.data);
 export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then((r) => r.data);
