@@ -143,6 +143,13 @@ const SITE_COLORS = [
   '#f59e0b', // amber
   '#8b5cf6', // violet
   '#ef4444', // red
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#f97316', // orange
+  '#6366f1', // indigo
+  '#14b8a6', // teal
+  '#84cc16', // lime
+  '#d946ef', // fuchsia
 ];
 
 /**
