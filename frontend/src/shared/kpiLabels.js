@@ -61,8 +61,8 @@ export const KPI_LABELS = {
     unit: '/100',
   },
   total_kwh: {
-    simple: 'Conso. total',
-    expert: 'Conso. total',
+    simple: 'Conso. totale',
+    expert: 'Conso. totale',
     unit: 'kWh',
   },
   kwh_m2: {
