@@ -219,7 +219,7 @@ export default function ExplorerChart({
                 : ['N/A', name]
             }
           />
-          <Legend />
+          <Legend itemSorter={null} />
 
           {/* Core series by mode */}
           {mode === 'agrege' && (
