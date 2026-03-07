@@ -225,7 +225,10 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
   const isSectionOpen = (section) => {
     if (openSections[section.key] !== undefined) return openSections[section.key];
-    return true;
+    // Default: only open the section containing the current route
+    return section.items.some(
+      (item) => location.pathname === item.to || location.pathname.startsWith(item.to + '/')
+    );
   };
 
   /* ── Quick actions relevant to this module ── */
@@ -252,8 +255,8 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{mod.desc}</p>
       </div>
 
-      {/* Quick actions — Raccourcis */}
-      {moduleQuickActions.length > 0 && (
+      {/* Quick actions — Raccourcis (expert only) */}
+      {isExpert && moduleQuickActions.length > 0 && (
         <div className="px-3 py-2 border-b border-slate-200/40">
           <p className="px-0.5 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
             Raccourcis

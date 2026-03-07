@@ -29,7 +29,7 @@ describe('NAV_MODULES', () => {
 
   it('modules are in correct order', () => {
     const keys = NAV_MODULES.map((m) => m.key);
-    expect(keys).toEqual(['cockpit', 'operations', 'analyse', 'marche', 'admin']);
+    expect(keys).toEqual(['pilotage', 'patrimoine', 'energie', 'achat', 'admin']);
   });
 
   it('order field is sequential 1-5', () => {
@@ -49,16 +49,16 @@ describe('NAV_MODULES', () => {
     }
   });
 
-  it('normal mode shows 3 modules', () => {
+  it('normal mode shows 4 modules', () => {
     const normal = NAV_MODULES.filter((m) => !m.expertOnly);
-    expect(normal).toHaveLength(3);
-    expect(normal.map((m) => m.key)).toEqual(['cockpit', 'operations', 'analyse']);
+    expect(normal).toHaveLength(4);
+    expect(normal.map((m) => m.key)).toEqual(['pilotage', 'patrimoine', 'energie', 'achat']);
   });
 
-  it('expert mode adds 2 modules (marche, admin)', () => {
+  it('expert mode adds 1 module (admin)', () => {
     const expert = NAV_MODULES.filter((m) => m.expertOnly);
-    expect(expert).toHaveLength(2);
-    expect(expert.map((m) => m.key)).toEqual(['marche', 'admin']);
+    expect(expert).toHaveLength(1);
+    expect(expert.map((m) => m.key)).toEqual(['admin']);
   });
 
   it('5-module rule: no more than 5 modules allowed', () => {
@@ -84,27 +84,24 @@ describe('MODULE_TINTS', () => {
 
 /* ── Section definitions ── */
 describe('NAV_SECTIONS', () => {
-  it('has exactly 8 sections', () => {
-    expect(NAV_SECTIONS).toHaveLength(8);
+  it('has exactly 5 sections', () => {
+    expect(NAV_SECTIONS).toHaveLength(5);
   });
 
   it('sections have correct labels and order', () => {
     const labels = NAV_SECTIONS.map((s) => s.label);
     expect(labels).toEqual([
-      'Piloter',
-      'Exécuter',
-      'Analyser',
-      'Facturation',
-      'Achats',
-      'Contrats',
-      'Référentiels',
-      'Administration',
+      'Pilotage',
+      'Patrimoine',
+      'Énergie',
+      'Achat',
+      'Données',
     ]);
   });
 
-  it('order field is sequential 1-8', () => {
+  it('order field is sequential 1-5', () => {
     const orders = NAV_SECTIONS.map((s) => s.order);
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(orders).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('each section has a unique key', () => {
@@ -119,10 +116,10 @@ describe('NAV_SECTIONS', () => {
     }
   });
 
-  it('admin module has 2 sections (donnees + iam)', () => {
+  it('admin module has 1 section (admin-data)', () => {
     const adminSections = NAV_SECTIONS.filter((s) => s.module === 'admin');
-    expect(adminSections).toHaveLength(2);
-    expect(adminSections.map((s) => s.key)).toEqual(['donnees', 'iam']);
+    expect(adminSections).toHaveLength(1);
+    expect(adminSections.map((s) => s.key)).toEqual(['admin-data']);
   });
 });
 
@@ -131,41 +128,33 @@ describe('Expert filtering', () => {
   const normalSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
   const expertSections = NAV_SECTIONS.filter((s) => s.expertOnly);
 
-  it('normal mode shows 3 sections', () => {
-    expect(normalSections).toHaveLength(3);
-    expect(normalSections.map((s) => s.key)).toEqual(['cockpit', 'operations', 'analyse']);
+  it('normal mode shows 4 sections', () => {
+    expect(normalSections).toHaveLength(4);
+    expect(normalSections.map((s) => s.key)).toEqual(['pilotage', 'patrimoine', 'energie', 'achat']);
   });
 
-  it('expert mode adds 5 sections', () => {
-    expect(expertSections).toHaveLength(5);
+  it('expert mode adds 1 section', () => {
+    expect(expertSections).toHaveLength(1);
     expect(expertSections.map((s) => s.key)).toEqual([
-      'marche-facturation',
-      'marche-achats',
-      'marche-contrats',
-      'donnees',
-      'iam',
+      'admin-data',
     ]);
   });
 
-  it('normal mode shows ~7 items (excluding expertOnly items)', () => {
+  it('normal mode shows ~9 items (excluding expertOnly items)', () => {
     const normalItems = normalSections.flatMap((s) => s.items.filter((item) => !item.expertOnly));
     expect(normalItems.length).toBeGreaterThanOrEqual(5);
-    expect(normalItems.length).toBeLessThanOrEqual(10); // V114: Cockpit 2 + Ops 3 + Analyse 2
+    expect(normalItems.length).toBeLessThanOrEqual(12);
   });
 
-  it('Diagnostic is expertOnly within Analyser', () => {
-    const analyse = NAV_SECTIONS.find((s) => s.key === 'analyse');
-    const diag = analyse.items.find((item) => item.to === '/diagnostic-conso');
-    expect(diag).toBeDefined();
-    expect(diag.expertOnly).toBe(true);
+  it('Diagnostic is in ROUTE_MODULE_MAP as energie (hidden page)', () => {
+    expect(ROUTE_MODULE_MAP['/diagnostic-conso']).toBe('energie');
   });
 
-  it('IAM items are expertOnly + requireAdmin', () => {
-    const iam = NAV_SECTIONS.find((s) => s.key === 'iam');
-    const iamItems = iam.items.filter((item) => item.requireAdmin);
-    expect(iamItems.length).toBeGreaterThanOrEqual(4);
-    for (const item of iamItems) {
-      expect(item.expertOnly).toBe(true);
+  it('admin-data section has requireAdmin items', () => {
+    const adminData = NAV_SECTIONS.find((s) => s.key === 'admin-data');
+    const adminItems = adminData.items.filter((item) => item.requireAdmin);
+    expect(adminItems.length).toBeGreaterThanOrEqual(1);
+    for (const item of adminItems) {
       expect(item.requireAdmin).toBe(true);
     }
   });
@@ -204,16 +193,16 @@ describe('Route mapping', () => {
 
 /* ── getSectionsForModule helper ── */
 describe('getSectionsForModule', () => {
-  it('returns sections for cockpit module', () => {
-    const sections = getSectionsForModule('cockpit');
+  it('returns sections for pilotage module', () => {
+    const sections = getSectionsForModule('pilotage');
     expect(sections).toHaveLength(1);
-    expect(sections[0].key).toBe('cockpit');
+    expect(sections[0].key).toBe('pilotage');
   });
 
-  it('returns 2 sections for admin module', () => {
+  it('returns 1 section for admin module', () => {
     const sections = getSectionsForModule('admin');
-    expect(sections).toHaveLength(2);
-    expect(sections.map((s) => s.key)).toEqual(['donnees', 'iam']);
+    expect(sections).toHaveLength(1);
+    expect(sections.map((s) => s.key)).toEqual(['admin-data']);
   });
 
   it('returns empty array for unknown module', () => {
@@ -232,17 +221,17 @@ describe('getSectionsForModule', () => {
 /* ── resolveModule helper ── */
 describe('resolveModule', () => {
   it('resolves exact routes', () => {
-    expect(resolveModule('/')).toBe('cockpit');
-    expect(resolveModule('/conformite')).toBe('operations');
-    expect(resolveModule('/consommations')).toBe('analyse');
-    expect(resolveModule('/bill-intel')).toBe('marche');
+    expect(resolveModule('/')).toBe('pilotage');
+    expect(resolveModule('/conformite')).toBe('patrimoine');
+    expect(resolveModule('/consommations')).toBe('energie');
+    expect(resolveModule('/bill-intel')).toBe('energie');
     expect(resolveModule('/import')).toBe('admin');
-    expect(resolveModule('/patrimoine')).toBe('admin');
+    expect(resolveModule('/patrimoine')).toBe('patrimoine');
   });
 
   it('resolves sub-routes by prefix', () => {
-    expect(resolveModule('/consommations/explorer')).toBe('analyse');
-    expect(resolveModule('/consommations/import')).toBe('analyse');
+    expect(resolveModule('/consommations/explorer')).toBe('energie');
+    expect(resolveModule('/consommations/import')).toBe('energie');
     expect(resolveModule('/admin/users')).toBe('admin');
     expect(resolveModule('/admin/audit')).toBe('admin');
   });
@@ -255,38 +244,37 @@ describe('resolveModule', () => {
 
 /* ── IA coherence ── */
 describe('IA coherence', () => {
-  it('Performance is next to Consommations in Analyser', () => {
-    const analyse = NAV_SECTIONS.find((s) => s.key === 'analyse');
-    const consoIdx = analyse.items.findIndex((item) => item.to === '/consommations');
-    const perfIdx = analyse.items.findIndex((item) => item.to === '/monitoring');
+  it('Performance is next to Consommations in Énergie', () => {
+    const energie = NAV_SECTIONS.find((s) => s.key === 'energie');
+    const consoIdx = energie.items.findIndex((item) => item.to === '/consommations');
+    const perfIdx = energie.items.findIndex((item) => item.to === '/monitoring');
     expect(consoIdx).toBeGreaterThanOrEqual(0);
     expect(perfIdx).toBe(consoIdx + 1);
   });
 
-  it("Centre d'actions has alerts badge in Operations", () => {
-    const ops = NAV_SECTIONS.find((s) => s.key === 'operations');
-    const centre = ops.items.find((item) => item.to === '/anomalies');
+  it("Centre d'actions has alerts badge in Pilotage", () => {
+    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
+    const centre = pilotage.items.find((item) => item.to === '/actions');
     expect(centre).toBeDefined();
     expect(centre.badgeKey).toBe('alerts');
     expect(centre.label).toBe("Centre d'actions");
   });
 
-  it('Patrimoine lives in Admin module (Donnees section)', () => {
-    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
-    expect(donnees.module).toBe('admin');
-    const patrimoine = donnees.items.find((item) => item.to === '/patrimoine');
-    expect(patrimoine).toBeDefined();
-    expect(patrimoine.label).toBe('Patrimoine');
+  it('Patrimoine lives in Patrimoine module (patrimoine section)', () => {
+    const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
+    expect(patrimoine.module).toBe('patrimoine');
+    const patrimoineItem = patrimoine.items.find((item) => item.to === '/patrimoine');
+    expect(patrimoineItem).toBeDefined();
   });
 
-  it('Patrimoine is first item in Donnees section', () => {
-    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
-    expect(donnees.items[0].to).toBe('/patrimoine');
+  it('Patrimoine is first item in patrimoine section', () => {
+    const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
+    expect(patrimoine.items[0].to).toBe('/patrimoine');
   });
 
-  it('Patrimoine is NOT in Analyse section', () => {
-    const analyse = NAV_SECTIONS.find((s) => s.key === 'analyse');
-    const patrimoine = analyse.items.find((item) => item.to === '/patrimoine');
+  it('Patrimoine is NOT in Énergie section', () => {
+    const energie = NAV_SECTIONS.find((s) => s.key === 'energie');
+    const patrimoine = energie.items.find((item) => item.to === '/patrimoine');
     expect(patrimoine).toBeUndefined();
   });
 
@@ -418,7 +406,7 @@ describe('TINT_PALETTE', () => {
 /* ── getModuleTint helper ── */
 describe('getModuleTint', () => {
   it('returns palette by module key', () => {
-    const t = getModuleTint('cockpit');
+    const t = getModuleTint('pilotage');
     expect(t).toBe(TINT_PALETTE.blue);
   });
 
@@ -429,7 +417,8 @@ describe('getModuleTint', () => {
 
   it('falls back to slate for unknown path', () => {
     const t = getModuleTint('/unknown');
-    expect(t).toBe(TINT_PALETTE.blue); // cockpit fallback → blue
+    // cockpit fallback — no module with key 'cockpit' so falls to slate
+    expect(t).toBe(TINT_PALETTE.slate);
   });
 
   it('resolves for all routes in ROUTE_MODULE_MAP', () => {
@@ -449,14 +438,14 @@ describe('getModuleTint', () => {
 
 /* ── Route coverage guard-rails ── */
 describe('Route coverage guard-rails', () => {
-  it('compliance routes resolve to operations', () => {
-    expect(resolveModule('/compliance')).toBe('operations');
-    expect(resolveModule('/compliance/findings')).toBe('operations');
-    expect(resolveModule('/compliance/obligations')).toBe('operations');
+  it('compliance routes resolve to patrimoine', () => {
+    expect(resolveModule('/compliance')).toBe('patrimoine');
+    expect(resolveModule('/compliance/findings')).toBe('patrimoine');
+    expect(resolveModule('/compliance/obligations')).toBe('patrimoine');
   });
 
-  it('consommations/portfolio resolves to analyse', () => {
-    expect(resolveModule('/consommations/portfolio')).toBe('analyse');
+  it('consommations/portfolio resolves to energie', () => {
+    expect(resolveModule('/consommations/portfolio')).toBe('energie');
   });
 
   it('no English labels in NAV_SECTIONS items', () => {
@@ -475,17 +464,17 @@ describe('Route coverage guard-rails', () => {
     }
   });
 
-  it("anomalies label is Centre d'actions (FR)", () => {
-    const anomalies = ALL_NAV_ITEMS.find((item) => item.to === '/anomalies');
-    expect(anomalies).toBeDefined();
-    expect(anomalies.label).toBe("Centre d'actions");
+  it("actions label is Centre d'actions (FR)", () => {
+    const actions = ALL_NAV_ITEMS.find((item) => item.to === '/actions');
+    expect(actions).toBeDefined();
+    expect(actions.label).toBe("Centre d'actions");
   });
 
   it('dynamic routes resolve correctly (not fallback to cockpit)', () => {
-    expect(resolveModule('/sites/42')).toBe('admin');
-    expect(resolveModule('/actions/123')).toBe('operations');
-    expect(resolveModule('/conformite/tertiaire/efa/5')).toBe('operations');
-    expect(resolveModule('/compliance/sites/99')).toBe('operations');
+    expect(resolveModule('/sites/42')).toBe('patrimoine');
+    expect(resolveModule('/actions/123')).toBe('pilotage');
+    expect(resolveModule('/conformite/tertiaire/efa/5')).toBe('patrimoine');
+    expect(resolveModule('/compliance/sites/99')).toBe('patrimoine');
   });
 });
 

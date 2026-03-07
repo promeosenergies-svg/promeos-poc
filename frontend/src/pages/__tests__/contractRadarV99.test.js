@@ -115,8 +115,8 @@ describe('C. NavRegistry + App wiring', () => {
     expect(NAV_REG).toMatch(/\/renouvellements/);
   });
 
-  test('NavRegistry maps to operations module', () => {
-    expect(NAV_REG).toMatch(/renouvellements.*operations|operations.*renouvellements/s);
+  test('NavRegistry maps to achat module', () => {
+    expect(NAV_REG).toMatch(/renouvellements.*achat|achat.*renouvellements/s);
   });
 
   test('NavRegistry has Renouvellements label', () => {

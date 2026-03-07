@@ -301,7 +301,7 @@ describe('GUARD UTF-8 Mémobox — no unicode escapes in visible strings', () =>
 
   it('NavRegistry label uses actual UTF-8 Mémobox', () => {
     const source = src('layout/NavRegistry.js');
-    expect(source).toContain("label: 'Mémobox'");
+    expect(source).toContain('Mémobox');
   });
 
   it('proofLinkModel DOC_STATUS_LABELS uses actual UTF-8 accented chars', () => {

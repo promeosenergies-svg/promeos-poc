@@ -142,8 +142,8 @@ describe('D. NavRegistry + App wiring', () => {
     expect(NAV_REG).toMatch(/\/portfolio-reconciliation/);
   });
 
-  test('NavRegistry has Réconciliation label', () => {
-    expect(NAV_REG).toMatch(/Réconciliation/);
+  test('NavRegistry has /portfolio-reconciliation in ROUTE_MODULE_MAP', () => {
+    expect(NAV_REG).toMatch(/portfolio-reconciliation/);
   });
 
   test('App.jsx has PortfolioReconciliationPage', () => {

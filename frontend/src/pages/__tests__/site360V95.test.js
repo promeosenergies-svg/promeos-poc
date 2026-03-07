@@ -50,9 +50,10 @@ describe('A. Site360 — real anomalies', () => {
 // ── B. Import Legacy + nav hiding ────────────────────────────────────────
 
 describe('B. Import legacy + nav', () => {
-  test('NavRegistry /import item is visible (V114: no longer hidden)', () => {
+  test('NavRegistry /import item is in admin menu (accessible)', () => {
     expect(NAV_REG).toMatch(/to:\s*'\/import'/);
-    expect(NAV_REG).not.toMatch(/to:\s*'\/import'.*hidden:\s*true/s);
+    // /import is in NAV_ADMIN_ITEMS (visible in admin section)
+    expect(NAV_REG).toMatch(/NAV_ADMIN_ITEMS[\s\S]*to:\s*'\/import'/);
   });
 
   test('NavPanel filters hidden items', () => {
@@ -63,9 +64,9 @@ describe('B. Import legacy + nav', () => {
     expect(IMPORT_PAGE).toMatch(/legacy|Legacy/i);
   });
 
-  test('Quick action "Importer" points to /patrimoine', () => {
-    // The quick action key='import' should now point to /patrimoine
-    expect(NAV_REG).toMatch(/key:\s*'import'.*to:\s*'\/patrimoine'/s);
+  test('Quick action "Importer" points to /import', () => {
+    // The quick action key='import' should point to /import
+    expect(NAV_REG).toMatch(/key:\s*'import'.*to:\s*'\/import'/s);
   });
 });
 

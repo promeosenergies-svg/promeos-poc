@@ -858,24 +858,21 @@ describe('deepLink.js — deepLinkWithContext (V70)', () => {
 describe('NavRegistry — Facturation group (V70 → Premium)', () => {
   const code = readSrc('layout', 'NavRegistry.js');
 
-  it('Historique (/billing) appears before Anomalies (/bill-intel) in facturation section', () => {
-    // Search within the facturation section (after marche-facturation key) to avoid matching QUICK_ACTIONS
-    const sectionStart = code.indexOf("key: 'marche-facturation'");
+  it('/billing appears in energie section with Facturation label', () => {
+    // In the new structure, billing is in the energie section
+    const sectionStart = code.indexOf("key: 'energie'");
     expect(sectionStart).toBeGreaterThan(-1);
     const sectionCode = code.slice(sectionStart);
-    const idxHistorique = sectionCode.indexOf("label: 'Historique'");
-    const idxAnomalies = sectionCode.indexOf("label: 'Anomalies'");
-    expect(idxHistorique).toBeGreaterThan(-1);
-    expect(idxAnomalies).toBeGreaterThan(-1);
-    expect(idxHistorique).toBeLessThan(idxAnomalies);
+    const idxFacturation = sectionCode.indexOf("label: 'Facturation'");
+    expect(idxFacturation).toBeGreaterThan(-1);
   });
 
-  it('/billing has longLabel with timeline & couverture', () => {
-    expect(code).toMatch(/\/billing[\s\S]{0,300}timeline & couverture/);
+  it('/billing route is mapped in ROUTE_MODULE_MAP', () => {
+    expect(code).toMatch(/['"]\/billing['"]\s*:\s*['"]energie['"]/);
   });
 
-  it('/bill-intel label is Anomalies with longLabel "Anomalies de facturation"', () => {
-    expect(code).toMatch(/\/bill-intel[\s\S]{0,200}Anomalies de facturation/);
+  it('/bill-intel is mapped to energie in ROUTE_MODULE_MAP', () => {
+    expect(code).toMatch(/['"]\/bill-intel['"]\s*:\s*['"]energie['"]/);
   });
 });
 

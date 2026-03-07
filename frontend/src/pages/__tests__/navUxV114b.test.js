@@ -17,17 +17,15 @@ function src(relPath) {
 }
 
 describe('V114b UX 2-clicks guard-rails', () => {
-  it('1. Import factures: sidebar /bill-intel + QUICK_ACTIONS factures', () => {
-    const facturation = NAV_SECTIONS.find((s) => s.key === 'marche-facturation');
-    expect(facturation.items.find((i) => i.to === '/bill-intel')).toBeDefined();
+  it('1. Import factures: QUICK_ACTIONS factures points to /bill-intel', () => {
     const qa = QUICK_ACTIONS.find((a) => a.key === 'factures');
     expect(qa).toBeDefined();
     expect(qa.to).toBe('/bill-intel');
   });
 
-  it('2. Voir anomalies: sidebar /anomalies in operations', () => {
-    const ops = NAV_SECTIONS.find((s) => s.key === 'operations');
-    const centre = ops.items.find((i) => i.to === '/anomalies');
+  it('2. Voir anomalies: sidebar /actions in pilotage', () => {
+    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
+    const centre = pilotage.items.find((i) => i.to === '/actions');
     expect(centre).toBeDefined();
     expect(centre.label).toBe("Centre d'actions");
   });

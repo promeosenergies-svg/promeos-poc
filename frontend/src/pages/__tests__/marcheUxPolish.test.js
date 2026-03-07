@@ -57,12 +57,14 @@ describe('B. Raccourcis header & harmonized labels', () => {
     expect(qa.longLabel).toBe('Anomalies de facturation');
   });
 
-  it('quick action tiles route to same paths as arbo items', () => {
-    const marcheItems = getSectionsForModule('marche').flatMap((s) => s.items);
+  it('quick action tiles route to valid paths', () => {
     const achatsQa = QUICK_ACTIONS.find((a) => a.key === 'achats');
     const facturesQa = QUICK_ACTIONS.find((a) => a.key === 'factures');
-    expect(marcheItems.find((i) => i.to === achatsQa.to)).toBeDefined();
-    expect(marcheItems.find((i) => i.to === facturesQa.to)).toBeDefined();
+    // achat-energie is in the achat section
+    const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
+    expect(achatItems.find((i) => i.to === achatsQa.to)).toBeDefined();
+    // bill-intel is now accessible via QUICK_ACTIONS (hidden page in energie)
+    expect(facturesQa.to).toBe('/bill-intel');
   });
 });
 

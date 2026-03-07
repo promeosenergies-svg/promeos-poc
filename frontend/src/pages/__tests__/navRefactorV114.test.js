@@ -16,52 +16,51 @@ import {
 } from '../../layout/NavRegistry';
 
 describe('V114 Nav Refactor guard-rails', () => {
-  it('Cockpit has exactly 2 items (Tableau de bord + Vue executive)', () => {
-    const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
-    expect(cockpit.items).toHaveLength(2);
-    expect(cockpit.items.map((i) => i.to)).toEqual(['/', '/cockpit']);
+  it('Pilotage has exactly 3 items (Cockpit + Centre d\'actions + Notifications)', () => {
+    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
+    expect(pilotage.items).toHaveLength(3);
+    expect(pilotage.items.map((i) => i.to)).toEqual(['/cockpit', '/actions', '/notifications']);
   });
 
-  it('Operations has exactly 3 items (Conformite + Tertiaire + Centre d\'actions)', () => {
-    const ops = NAV_SECTIONS.find((s) => s.key === 'operations');
-    expect(ops.items).toHaveLength(3);
-    expect(ops.items.map((i) => i.to)).toEqual([
+  it('Patrimoine has exactly 2 items (Sites & Bâtiments + Conformité)', () => {
+    const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
+    expect(patrimoine.items).toHaveLength(2);
+    expect(patrimoine.items.map((i) => i.to)).toEqual([
+      '/patrimoine',
       '/conformite',
-      '/conformite/tertiaire',
-      '/anomalies',
     ]);
   });
 
-  it("Centre d'actions at /anomalies has alerts badge", () => {
-    const ops = NAV_SECTIONS.find((s) => s.key === 'operations');
-    const centre = ops.items.find((i) => i.to === '/anomalies');
+  it("Centre d'actions at /actions has alerts badge", () => {
+    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
+    const centre = pilotage.items.find((i) => i.to === '/actions');
     expect(centre.label).toBe("Centre d'actions");
     expect(centre.badgeKey).toBe('alerts');
   });
 
-  it('/notifications is NOT in sidebar but IS in ROUTE_MODULE_MAP', () => {
+  it('/notifications IS in sidebar and in ROUTE_MODULE_MAP', () => {
     const inNav = ALL_NAV_ITEMS.find((i) => i.to === '/notifications');
-    expect(inNav).toBeUndefined();
-    expect(ROUTE_MODULE_MAP['/notifications']).toBe('cockpit');
+    expect(inNav).toBeDefined();
+    expect(ROUTE_MODULE_MAP['/notifications']).toBe('pilotage');
   });
 
-  it('/actions is NOT in sidebar but IS in ROUTE_MODULE_MAP', () => {
+  it('/actions IS in sidebar and in ROUTE_MODULE_MAP', () => {
     const inNav = ALL_NAV_ITEMS.find((i) => i.to === '/actions');
-    expect(inNav).toBeUndefined();
-    expect(ROUTE_MODULE_MAP['/actions']).toBe('operations');
+    expect(inNav).toBeDefined();
+    expect(ROUTE_MODULE_MAP['/actions']).toBe('pilotage');
   });
 
-  it('Marche facturation does NOT contain payment-rules and portfolio-reconciliation (hidden for POC)', () => {
-    const facturation = NAV_SECTIONS.find((s) => s.key === 'marche-facturation');
-    const routes = facturation.items.map((i) => i.to);
+  it('Energie section does NOT contain payment-rules and portfolio-reconciliation in nav items', () => {
+    const energie = NAV_SECTIONS.find((s) => s.key === 'energie');
+    const routes = energie.items.map((i) => i.to);
     expect(routes).not.toContain('/payment-rules');
     expect(routes).not.toContain('/portfolio-reconciliation');
   });
 
-  it('Referentiels does NOT contain payment-rules or portfolio-reconciliation', () => {
-    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
-    expect(donnees.label).toBe('Référentiels');
-    const routes = donnees.items.map((i) => i.to);
+  it('Admin-data section does NOT contain payment-rules or portfolio-reconciliation', () => {
+    const adminData = NAV_SECTIONS.find((s) => s.key === 'admin-data');
+    expect(adminData.label).toBe('Données');
+    const routes = adminData.items.map((i) => i.to);
     expect(routes).not.toContain('/payment-rules');
     expect(routes).not.toContain('/portfolio-reconciliation');
   });
@@ -71,8 +70,8 @@ describe('V114 Nav Refactor guard-rails', () => {
   });
 
   it('/import is visible (not hidden)', () => {
-    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
-    const importItem = donnees.items.find((i) => i.to === '/import');
+    const adminData = NAV_SECTIONS.find((s) => s.key === 'admin-data');
+    const importItem = adminData.items.find((i) => i.to === '/import');
     expect(importItem).toBeDefined();
     expect(importItem.hidden).toBeFalsy();
   });

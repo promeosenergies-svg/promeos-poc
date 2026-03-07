@@ -8,28 +8,28 @@ import { NAV_MODULES, TINT_PALETTE } from '../../layout/NavRegistry';
 
 /* ── tint.module ── */
 describe('tint.module', () => {
-  it('returns navActive classes for cockpit (blue)', () => {
-    const classes = tint.module('cockpit').navActive();
+  it('returns navActive classes for pilotage (blue)', () => {
+    const classes = tint.module('pilotage').navActive();
     expect(classes).toContain('bg-blue');
     expect(classes).toContain('text-blue');
     expect(classes).toContain('border-blue');
   });
 
-  it('returns pill classes for marche (amber)', () => {
-    const classes = tint.module('marche').pill();
+  it('returns pill classes for achat (amber)', () => {
+    const classes = tint.module('achat').pill();
     expect(classes).toContain('bg-amber');
     expect(classes).toContain('text-amber');
     expect(classes).toContain('ring-1');
   });
 
   it('returns headerBand gradient', () => {
-    const hb = tint.module('operations').headerBand();
+    const hb = tint.module('patrimoine').headerBand();
     expect(hb).toMatch(/^from-emerald/);
     expect(hb).toContain('to-transparent');
   });
 
   it('returns icon class', () => {
-    expect(tint.module('analyse').icon()).toBe('text-indigo-500');
+    expect(tint.module('energie').icon()).toBe('text-indigo-500');
   });
 
   it('falls back to slate for unknown module', () => {
@@ -38,7 +38,7 @@ describe('tint.module', () => {
   });
 
   it('raw() returns full TINT_PALETTE entry', () => {
-    const raw = tint.module('cockpit').raw();
+    const raw = tint.module('pilotage').raw();
     expect(raw).toBe(TINT_PALETTE.blue);
   });
 
@@ -89,15 +89,15 @@ describe('tint.severity', () => {
 /* ── tint.module — tab recipe ── */
 describe('tint.module — tab recipe', () => {
   it('returns tab object with active and ring', () => {
-    const tab = tint.module('cockpit').tab();
+    const tab = tint.module('pilotage').tab();
     expect(tab).toHaveProperty('active');
     expect(tab).toHaveProperty('ring');
     expect(tab.active).toContain('border-b-2');
     expect(tab.active).toContain('text-blue');
   });
 
-  it('marche tab uses amber', () => {
-    const tab = tint.module('marche').tab();
+  it('achat tab uses amber', () => {
+    const tab = tint.module('achat').tab();
     expect(tab.active).toContain('amber');
   });
 
@@ -113,12 +113,12 @@ describe('tint.module — tab recipe', () => {
 /* ── Module vs Severity Disambiguation ── */
 describe('module vs severity disambiguation', () => {
   it('module amber pill differs from severity amber badge', () => {
-    const moduleAmber = tint.module('marche').pill();
+    const moduleAmber = tint.module('achat').pill();
     const severityAmber = tint.severity('high').badge();
     expect(moduleAmber).not.toBe(severityAmber);
   });
 
-  it('module tint keys (cockpit..admin) do not overlap severity keys (critical..neutral)', () => {
+  it('module tint keys (pilotage..admin) do not overlap severity keys (critical..neutral)', () => {
     const moduleKeys = new Set(NAV_MODULES.map((m) => m.key));
     const severityKeys = new Set(Object.keys(SEVERITY_TINT));
     for (const k of moduleKeys) {
@@ -133,7 +133,7 @@ describe('module vs severity disambiguation', () => {
   });
 
   it('module amber softBg differs from severity warn chipBg', () => {
-    const moduleAmber = tint.module('marche').softBg();
+    const moduleAmber = tint.module('achat').softBg();
     const severityWarn = tint.severity('warn').raw().chipBg;
     expect(moduleAmber).not.toBe(severityWarn);
   });

@@ -20,11 +20,11 @@ describe('B.2 — Navigation structure', () => {
   const navFile = 'layout/NavRegistry.js';
   const src = readSrc('layout', 'NavRegistry.js');
 
-  it('NavRegistry has exactly 5 main sections', () => {
+  it('NavRegistry has exactly 4 main sections', () => {
     const sectionCount = (
-      src.match(/label:\s*["'](Tableau[^"']*|Patrimoine|Conformité|Énergie|Piloter)["']/gi) || []
+      src.match(/label:\s*["'](Pilotage|Patrimoine|Énergie|Achat)["']/gi) || []
     ).length;
-    expect(sectionCount).toBeGreaterThanOrEqual(5);
+    expect(sectionCount).toBeGreaterThanOrEqual(4);
   });
 
   it('exports NAV_MAIN_SECTIONS', () => {
@@ -66,18 +66,17 @@ describe('B.2 — Navigation structure', () => {
     });
   });
 
-  it('Section keys match: tableau, patrimoine, conformite, energie, piloter', () => {
-    expect(src).toMatch(/key:\s*'tableau'/);
+  it('Section keys match: pilotage, patrimoine, energie, achat', () => {
+    expect(src).toMatch(/key:\s*'pilotage'/);
     expect(src).toMatch(/key:\s*'patrimoine'/);
-    expect(src).toMatch(/key:\s*'conformite'/);
     expect(src).toMatch(/key:\s*'energie'/);
-    expect(src).toMatch(/key:\s*'piloter'/);
+    expect(src).toMatch(/key:\s*'achat'/);
   });
 
   it('Each section has an icon', () => {
     // NAV_MAIN_SECTIONS entries have icon: <Component>
-    const iconMatches = src.match(/icon:\s*(LayoutDashboard|Building2|ShieldCheck|Zap|Target)/g) || [];
-    expect(iconMatches.length).toBeGreaterThanOrEqual(5);
+    const iconMatches = src.match(/icon:\s*(LayoutDashboard|Building2|Zap|ShoppingCart)/g) || [];
+    expect(iconMatches.length).toBeGreaterThanOrEqual(4);
   });
 
   it('Admin items include IAM routes', () => {

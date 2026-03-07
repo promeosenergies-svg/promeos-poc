@@ -18,84 +18,76 @@ function src(relPath) {
   return readFileSync(resolve(root, relPath), 'utf-8');
 }
 
-/* ── A. Structure: 3 grouped sections for Marché ── */
-describe('A. Marché grouped sections', () => {
-  const marcheSections = getSectionsForModule('marche');
+/* ── A. Structure: energie + achat modules (previously Marché) ── */
+describe('A. Energie + Achat modules', () => {
+  const energieSections = getSectionsForModule('energie');
+  const achatSections = getSectionsForModule('achat');
 
-  it('Marché module has exactly 3 sections', () => {
-    expect(marcheSections).toHaveLength(3);
+  it('Energie module has exactly 1 section', () => {
+    expect(energieSections).toHaveLength(1);
   });
 
-  it('sections are Facturation, Achats, Contrats in order', () => {
-    expect(marcheSections.map((s) => s.label)).toEqual([
-      'Facturation',
-      'Achats',
-      'Contrats',
-    ]);
+  it('Achat module has exactly 1 section', () => {
+    expect(achatSections).toHaveLength(1);
   });
 
-  it('section keys are marche-facturation, marche-achats, marche-contrats', () => {
-    expect(marcheSections.map((s) => s.key)).toEqual([
-      'marche-facturation',
-      'marche-achats',
-      'marche-contrats',
-    ]);
+  it('Energie section label is Énergie', () => {
+    expect(energieSections[0].label).toBe('Énergie');
   });
 
-  it('Marché module desc is "Factures & achats"', () => {
-    const mod = NAV_MODULES.find((m) => m.key === 'marche');
-    expect(mod.desc).toBe('Factures & achats');
+  it('Achat module desc is "Stratégies d\'achat énergie"', () => {
+    const mod = NAV_MODULES.find((m) => m.key === 'achat');
+    expect(mod.desc).toBe("Stratégies d'achat énergie");
   });
 });
 
-/* ── B. Labels: shortLabel (label) + longLabel ── */
-describe('B. ShortLabel / LongLabel', () => {
-  const allMarcheItems = getSectionsForModule('marche').flatMap((s) => s.items);
+/* ── B. Labels: items now in energie / achat sections ── */
+describe('B. Labels in new modules', () => {
+  const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
+  const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
 
-  it('Historique has longLabel "Historique (timeline & couverture)"', () => {
-    const item = allMarcheItems.find((i) => i.to === '/billing');
-    expect(item.label).toBe('Historique');
-    expect(item.longLabel).toBe('Historique (timeline & couverture)');
+  it('Facturation (/billing) is in energie section', () => {
+    const item = energieItems.find((i) => i.to === '/billing');
+    expect(item).toBeDefined();
+    expect(item.label).toBe('Facturation');
   });
 
-  it('Anomalies has longLabel "Anomalies de facturation"', () => {
-    const item = allMarcheItems.find((i) => i.to === '/bill-intel');
-    expect(item.label).toBe('Anomalies');
-    expect(item.longLabel).toBe('Anomalies de facturation');
+  it('Consommations (/consommations) is in energie section', () => {
+    const item = energieItems.find((i) => i.to === '/consommations');
+    expect(item).toBeDefined();
+    expect(item.label).toBe('Consommations');
   });
 
-  it('Achats has longLabel "Achats d\'énergie & scénarios"', () => {
-    const item = allMarcheItems.find((i) => i.to === '/achat-energie');
-    expect(item.label).toBe('Achats');
-    expect(item.longLabel).toBe("Achats d'énergie & scénarios");
+  it("Stratégies d'achat (/achat-energie) is in achat section", () => {
+    const item = achatItems.find((i) => i.to === '/achat-energie');
+    expect(item).toBeDefined();
+    expect(item.label).toBe("Stratégies d'achat");
   });
 
-  it('Assistant d\'achat has correct apostrophe and longLabel', () => {
-    const item = allMarcheItems.find((i) => i.to === '/achat-assistant');
-    expect(item.label).toBe("Assistant d'achat");
-    expect(item.longLabel).toBe("Assistant d'achat (reco & arbitrages)");
+  it('/achat-assistant is a hidden page (not in main nav)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-assistant');
+    expect(item).toBeUndefined();
   });
 
-  it('Renouvellements has longLabel "Renouvellements & échéances"', () => {
-    const item = allMarcheItems.find((i) => i.to === '/renouvellements');
-    expect(item.label).toBe('Renouvellements');
-    expect(item.longLabel).toBe('Renouvellements & échéances');
+  it('/renouvellements is a hidden page (not in main nav)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/renouvellements');
+    expect(item).toBeUndefined();
   });
 });
 
 /* ── C. No duplicates ── */
 describe('C. No duplicates', () => {
-  const allMarcheItems = getSectionsForModule('marche').flatMap((s) => s.items);
+  const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
 
-  it('"Achats" appears exactly once in marche items', () => {
-    const achatsItems = allMarcheItems.filter(
+  it('/achat-energie appears exactly once in achat items', () => {
+    const achatsItems = achatItems.filter(
       (i) => i.to === '/achat-energie'
     );
     expect(achatsItems).toHaveLength(1);
   });
 
-  it('no duplicate routes across all marche sections', () => {
-    const routes = allMarcheItems.map((i) => i.to);
+  it('no duplicate routes across achat sections', () => {
+    const routes = achatItems.map((i) => i.to);
     expect(new Set(routes).size).toBe(routes.length);
   });
 
@@ -126,22 +118,24 @@ describe('D. Tooltips & aria-label in NavPanel', () => {
   });
 });
 
-/* ── E. Routes preserved ── */
-describe('E. Routes unchanged', () => {
-  const allMarcheItems = getSectionsForModule('marche').flatMap((s) => s.items);
+/* ── E. Routes in new modules ── */
+describe('E. Routes in new modules', () => {
+  const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
+  const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
 
-  it('all expected marche routes are present', () => {
-    const routes = allMarcheItems.map((i) => i.to);
+  it('billing route is in energie section', () => {
+    const routes = energieItems.map((i) => i.to);
     expect(routes).toContain('/billing');
-    expect(routes).toContain('/bill-intel');
-    expect(routes).toContain('/achat-energie');
-    expect(routes).toContain('/achat-assistant');
-    expect(routes).toContain('/renouvellements');
   });
 
-  it('payment-rules and portfolio-reconciliation are NOT present', () => {
-    const routes = allMarcheItems.map((i) => i.to);
-    expect(routes).not.toContain('/payment-rules');
-    expect(routes).not.toContain('/portfolio-reconciliation');
+  it('achat-energie route is in achat section', () => {
+    const routes = achatItems.map((i) => i.to);
+    expect(routes).toContain('/achat-energie');
+  });
+
+  it('payment-rules and portfolio-reconciliation are NOT in nav sections', () => {
+    const allRoutes = ALL_NAV_ITEMS.map((i) => i.to);
+    expect(allRoutes).not.toContain('/payment-rules');
+    expect(allRoutes).not.toContain('/portfolio-reconciliation');
   });
 });

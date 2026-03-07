@@ -164,7 +164,7 @@ describe('F. App.jsx + NavRegistry.js — /billing registered', () => {
     expect(navCode).toMatch(/CalendarRange/);
   });
 
-  it('Timeline facturation label in NavRegistry', () => {
-    expect(navCode).toMatch(/[Tt]imeline/);
+  it('Facturation label in NavRegistry', () => {
+    expect(navCode).toMatch(/Facturation/);
   });
 });

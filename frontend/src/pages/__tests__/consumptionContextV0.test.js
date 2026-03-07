@@ -238,8 +238,8 @@ describe('NavRegistry — usages-horaires entry', () => {
     expect(code).toMatch(/Usages & Horaires/);
   });
 
-  it('maps /usages-horaires to analyse module', () => {
-    expect(code).toMatch(/['"]\/usages-horaires['"]\s*:\s*['"]analyse['"]/);
+  it('maps /usages-horaires to energie module', () => {
+    expect(code).toMatch(/['"]\/usages-horaires['"]\s*:\s*['"]energie['"]/);
   });
 });
 

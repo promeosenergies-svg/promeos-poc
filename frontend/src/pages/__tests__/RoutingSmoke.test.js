@@ -25,16 +25,16 @@ import { normalizeDashboardModel } from '../CommandCenter';
 // ── NavRegistry: routes canoniques ───────────────────────────────────────────
 
 describe('NavRegistry — routes canoniques', () => {
-  it('"Tableau de bord" pointe vers "/"', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Tableau de bord');
-    expect(item).toBeDefined();
-    expect(item.to).toBe('/');
-  });
-
-  it('"Vue exécutive" (avec accent) pointe vers "/cockpit"', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Vue exécutive');
+  it('"Cockpit" pointe vers "/cockpit"', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Cockpit');
     expect(item).toBeDefined();
     expect(item.to).toBe('/cockpit');
+  });
+
+  it('"Centre d\'actions" pointe vers "/actions"', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'actions");
+    expect(item).toBeDefined();
+    expect(item.to).toBe('/actions');
   });
 
   it("/cockpit-2min n'est pas une destination de menu (canonique = /cockpit)", () => {
@@ -42,40 +42,40 @@ describe('NavRegistry — routes canoniques', () => {
     expect(item).toBeUndefined();
   });
 
-  it('/ est dans le module cockpit', () => {
-    expect(ROUTE_MODULE_MAP['/']).toBe('cockpit');
+  it('/ est dans le module pilotage', () => {
+    expect(ROUTE_MODULE_MAP['/']).toBe('pilotage');
   });
 
-  it('/cockpit est dans le module cockpit', () => {
-    expect(ROUTE_MODULE_MAP['/cockpit']).toBe('cockpit');
+  it('/cockpit est dans le module pilotage', () => {
+    expect(ROUTE_MODULE_MAP['/cockpit']).toBe('pilotage');
   });
 
-  it('resolveModule("/") retourne "cockpit"', () => {
-    expect(resolveModule('/')).toBe('cockpit');
+  it('resolveModule("/") retourne "pilotage"', () => {
+    expect(resolveModule('/')).toBe('pilotage');
   });
 
-  it('resolveModule("/cockpit") retourne "cockpit"', () => {
-    expect(resolveModule('/cockpit')).toBe('cockpit');
+  it('resolveModule("/cockpit") retourne "pilotage"', () => {
+    expect(resolveModule('/cockpit')).toBe('pilotage');
   });
 });
 
 // ── Labels français avec accents ─────────────────────────────────────────────
 
 describe('NavRegistry — labels FR avec accents', () => {
-  it('label "Vue exécutive" contient l\'accent sur le "e"', () => {
+  it('label "Cockpit" pour /cockpit', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit');
-    expect(item?.label).toBe('Vue exécutive');
-    expect(item?.label).not.toBe('Vue executive');
+    expect(item?.label).toBe('Cockpit');
   });
 
-  it('module Marché a l\'accent sur le "e"', () => {
-    const mod = NAV_MODULES.find((m) => m.key === 'marche');
-    expect(mod?.label).toBe('Marché');
+  it('module Achat has correct label', () => {
+    const mod = NAV_MODULES.find((m) => m.key === 'achat');
+    expect(mod?.label).toBe('Achat');
   });
 
-  it('"Achats d\'énergie" via longLabel a les accents', () => {
+  it('"Stratégies d\'achat" is in achat section', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie');
-    expect(item?.longLabel).toBe("Achats d'énergie & scénarios");
+    expect(item).toBeDefined();
+    expect(item?.module).toBe('achat');
   });
 });
 

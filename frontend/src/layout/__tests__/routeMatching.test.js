@@ -8,75 +8,75 @@ import { matchRouteToModule, resolveModule, ROUTE_MODULE_MAP, NAV_MODULES } from
 
 /* ── Exact matches ── */
 describe('matchRouteToModule — exact matches', () => {
-  it('/ → cockpit', () => {
+  it('/ → pilotage', () => {
     const r = matchRouteToModule('/');
-    expect(r.moduleId).toBe('cockpit');
-    expect(r.moduleLabel).toBe('Cockpit');
+    expect(r.moduleId).toBe('pilotage');
+    expect(r.moduleLabel).toBe('Pilotage');
     expect(r.pattern).toBe('/');
   });
 
-  it('/conformite → operations', () => {
-    expect(matchRouteToModule('/conformite').moduleId).toBe('operations');
+  it('/conformite → patrimoine', () => {
+    expect(matchRouteToModule('/conformite').moduleId).toBe('patrimoine');
   });
 
-  it('/consommations → analyse', () => {
-    expect(matchRouteToModule('/consommations').moduleId).toBe('analyse');
+  it('/consommations → energie', () => {
+    expect(matchRouteToModule('/consommations').moduleId).toBe('energie');
   });
 
-  it('/bill-intel → marche', () => {
-    expect(matchRouteToModule('/bill-intel').moduleId).toBe('marche');
+  it('/bill-intel → energie', () => {
+    expect(matchRouteToModule('/bill-intel').moduleId).toBe('energie');
   });
 
-  it('/patrimoine → admin', () => {
-    expect(matchRouteToModule('/patrimoine').moduleId).toBe('admin');
+  it('/patrimoine → patrimoine', () => {
+    expect(matchRouteToModule('/patrimoine').moduleId).toBe('patrimoine');
   });
 });
 
 /* ── Dynamic route patterns ── */
 describe('matchRouteToModule — dynamic patterns (10 cases)', () => {
-  it('/sites/42 → admin (pattern /sites/:id)', () => {
+  it('/sites/42 → patrimoine (pattern /sites/:id)', () => {
     const r = matchRouteToModule('/sites/42');
-    expect(r.moduleId).toBe('admin');
+    expect(r.moduleId).toBe('patrimoine');
     expect(r.pattern).toBe('/sites/:id');
   });
 
-  it('/sites/1 → admin', () => {
-    expect(matchRouteToModule('/sites/1').moduleId).toBe('admin');
+  it('/sites/1 → patrimoine', () => {
+    expect(matchRouteToModule('/sites/1').moduleId).toBe('patrimoine');
   });
 
-  it('/sites/999 → admin', () => {
-    expect(matchRouteToModule('/sites/999').moduleId).toBe('admin');
+  it('/sites/999 → patrimoine', () => {
+    expect(matchRouteToModule('/sites/999').moduleId).toBe('patrimoine');
   });
 
-  it('/actions/123 → operations (pattern /actions/:actionId)', () => {
+  it('/actions/123 → pilotage (pattern /actions/:actionId)', () => {
     const r = matchRouteToModule('/actions/123');
-    expect(r.moduleId).toBe('operations');
+    expect(r.moduleId).toBe('pilotage');
     expect(r.pattern).toBe('/actions/:actionId');
   });
 
-  it('/actions/7 → operations', () => {
-    expect(matchRouteToModule('/actions/7').moduleId).toBe('operations');
+  it('/actions/7 → pilotage', () => {
+    expect(matchRouteToModule('/actions/7').moduleId).toBe('pilotage');
   });
 
-  it('/conformite/tertiaire/efa/5 → operations (pattern /conformite/tertiaire/efa/:id)', () => {
+  it('/conformite/tertiaire/efa/5 → patrimoine (pattern /conformite/tertiaire/efa/:id)', () => {
     const r = matchRouteToModule('/conformite/tertiaire/efa/5');
-    expect(r.moduleId).toBe('operations');
+    expect(r.moduleId).toBe('patrimoine');
     expect(r.pattern).toBe('/conformite/tertiaire/efa/:id');
   });
 
-  it('/conformite/tertiaire/efa/99 → operations', () => {
-    expect(matchRouteToModule('/conformite/tertiaire/efa/99').moduleId).toBe('operations');
+  it('/conformite/tertiaire/efa/99 → patrimoine', () => {
+    expect(matchRouteToModule('/conformite/tertiaire/efa/99').moduleId).toBe('patrimoine');
   });
 
-  it('/compliance/sites/42 → operations (pattern /compliance/sites/:siteId)', () => {
+  it('/compliance/sites/42 → patrimoine (pattern /compliance/sites/:siteId)', () => {
     const r = matchRouteToModule('/compliance/sites/42');
-    expect(r.moduleId).toBe('operations');
+    expect(r.moduleId).toBe('patrimoine');
     expect(r.pattern).toBe('/compliance/sites/:siteId');
   });
 
-  it('/actions/new → operations (exact match wins over dynamic)', () => {
+  it('/actions/new → pilotage (exact match wins over dynamic)', () => {
     const r = matchRouteToModule('/actions/new');
-    expect(r.moduleId).toBe('operations');
+    expect(r.moduleId).toBe('pilotage');
     expect(r.pattern).toBe('/actions/new');
   });
 
@@ -104,40 +104,40 @@ describe('matchRouteToModule — best match wins', () => {
     // /conformite/tertiaire/efa/:id has 3 static + 1 dynamic = score 7
     // This should beat a hypothetical /conformite/tertiaire/:x/:y = 2 static + 2 dynamic = score 6
     const r = matchRouteToModule('/conformite/tertiaire/efa/5');
-    expect(r.moduleId).toBe('operations');
+    expect(r.moduleId).toBe('patrimoine');
   });
 });
 
 /* ── Querystring & hash ignored ── */
 describe('matchRouteToModule — ignores querystring and hash', () => {
-  it('/bill-intel?site_id=1&month=2024-01 → marche', () => {
-    expect(matchRouteToModule('/bill-intel?site_id=1&month=2024-01').moduleId).toBe('marche');
+  it('/bill-intel?site_id=1&month=2024-01 → energie', () => {
+    expect(matchRouteToModule('/bill-intel?site_id=1&month=2024-01').moduleId).toBe('energie');
   });
 
-  it('/actions/123?tab=detail → operations', () => {
-    expect(matchRouteToModule('/actions/123?tab=detail').moduleId).toBe('operations');
+  it('/actions/123?tab=detail → pilotage', () => {
+    expect(matchRouteToModule('/actions/123?tab=detail').moduleId).toBe('pilotage');
   });
 
-  it('/patrimoine#filters → admin', () => {
-    expect(matchRouteToModule('/patrimoine#filters').moduleId).toBe('admin');
+  it('/patrimoine#filters → patrimoine', () => {
+    expect(matchRouteToModule('/patrimoine#filters').moduleId).toBe('patrimoine');
   });
 
-  it('/sites/42?from=dashboard#top → admin', () => {
-    expect(matchRouteToModule('/sites/42?from=dashboard#top').moduleId).toBe('admin');
+  it('/sites/42?from=dashboard#top → patrimoine', () => {
+    expect(matchRouteToModule('/sites/42?from=dashboard#top').moduleId).toBe('patrimoine');
   });
 });
 
 /* ── Prefix fallback ── */
 describe('matchRouteToModule — prefix fallback', () => {
-  it('/consommations/explorer → analyse', () => {
-    expect(matchRouteToModule('/consommations/explorer').moduleId).toBe('analyse');
+  it('/consommations/explorer → energie', () => {
+    expect(matchRouteToModule('/consommations/explorer').moduleId).toBe('energie');
   });
 
   it('/admin/roles → admin', () => {
     expect(matchRouteToModule('/admin/roles').moduleId).toBe('admin');
   });
 
-  it('/unknown/deep/path → cockpit (default)', () => {
+  it('/unknown/deep/path → cockpit (default fallback)', () => {
     const r = matchRouteToModule('/unknown/deep/path');
     expect(r.moduleId).toBe('cockpit');
     expect(r.pattern).toBeNull();
@@ -147,15 +147,15 @@ describe('matchRouteToModule — prefix fallback', () => {
 /* ── resolveModule delegates correctly ── */
 describe('resolveModule (uses matchRouteToModule)', () => {
   it('static routes resolve correctly', () => {
-    expect(resolveModule('/')).toBe('cockpit');
-    expect(resolveModule('/conformite')).toBe('operations');
-    expect(resolveModule('/bill-intel')).toBe('marche');
+    expect(resolveModule('/')).toBe('pilotage');
+    expect(resolveModule('/conformite')).toBe('patrimoine');
+    expect(resolveModule('/bill-intel')).toBe('energie');
   });
 
   it('dynamic routes resolve correctly', () => {
-    expect(resolveModule('/sites/42')).toBe('admin');
-    expect(resolveModule('/actions/123')).toBe('operations');
-    expect(resolveModule('/conformite/tertiaire/efa/5')).toBe('operations');
+    expect(resolveModule('/sites/42')).toBe('patrimoine');
+    expect(resolveModule('/actions/123')).toBe('pilotage');
+    expect(resolveModule('/conformite/tertiaire/efa/5')).toBe('patrimoine');
   });
 
   it('unknown routes default to cockpit', () => {
@@ -186,19 +186,19 @@ describe('matchRouteToModule — moduleLabel is always FR', () => {
 /* ── ROUTE_MODULE_MAP integrity with dynamic patterns ── */
 describe('ROUTE_MODULE_MAP — dynamic patterns present', () => {
   it('contains /sites/:id', () => {
-    expect(ROUTE_MODULE_MAP['/sites/:id']).toBe('admin');
+    expect(ROUTE_MODULE_MAP['/sites/:id']).toBe('patrimoine');
   });
 
   it('contains /actions/:actionId', () => {
-    expect(ROUTE_MODULE_MAP['/actions/:actionId']).toBe('operations');
+    expect(ROUTE_MODULE_MAP['/actions/:actionId']).toBe('pilotage');
   });
 
   it('contains /conformite/tertiaire/efa/:id', () => {
-    expect(ROUTE_MODULE_MAP['/conformite/tertiaire/efa/:id']).toBe('operations');
+    expect(ROUTE_MODULE_MAP['/conformite/tertiaire/efa/:id']).toBe('patrimoine');
   });
 
   it('contains /compliance/sites/:siteId', () => {
-    expect(ROUTE_MODULE_MAP['/compliance/sites/:siteId']).toBe('operations');
+    expect(ROUTE_MODULE_MAP['/compliance/sites/:siteId']).toBe('patrimoine');
   });
 
   it('all ROUTE_MODULE_MAP values are valid module keys', () => {

@@ -27,9 +27,9 @@ beforeEach(() => {
 /* ── No duplicate paths ── */
 describe('recents — deduplication', () => {
   it('does not show the same path twice', () => {
-    addRecent('/actions', { label: "Plan d'actions", module: 'operations' });
-    addRecent('/conformite', { label: 'Conformité', module: 'operations' });
-    addRecent('/actions', { label: "Plan d'actions", module: 'operations' }); // re-visit
+    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' });
+    addRecent('/conformite', { label: 'Conformité', module: 'patrimoine' });
+    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' }); // re-visit
     const paths = getRecentPaths();
     expect(paths).toEqual(['/actions', '/conformite']);
     expect(new Set(paths).size).toBe(paths.length);
@@ -45,12 +45,12 @@ describe('recents — deduplication', () => {
 /* ── Cross-module detection ── */
 describe('recents — cross-module badge', () => {
   it('marks correct module for cross-module items', () => {
-    addRecent('/actions', { label: "Plan d'actions", module: 'operations' });
-    addRecent('/patrimoine', { label: 'Patrimoine', module: 'admin' });
+    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' });
+    addRecent('/patrimoine', { label: 'Patrimoine', module: 'patrimoine' });
 
     const recents = getRecents();
-    // If current module is 'cockpit', both should be marked as cross-module
-    const currentModule = 'cockpit';
+    // If current module is 'energie', both should be marked as cross-module
+    const currentModule = 'energie';
     for (const r of recents) {
       const isCross = r.module && r.module !== currentModule;
       expect(isCross).toBe(true);
@@ -58,10 +58,10 @@ describe('recents — cross-module badge', () => {
   });
 
   it('same-module items are not marked as cross-module', () => {
-    addRecent('/conformite', { label: 'Conformité', module: 'operations' });
-    addRecent('/actions', { label: "Plan d'actions", module: 'operations' });
+    addRecent('/conformite', { label: 'Conformité', module: 'patrimoine' });
+    addRecent('/patrimoine', { label: 'Patrimoine', module: 'patrimoine' });
 
-    const currentModule = 'operations';
+    const currentModule = 'patrimoine';
     for (const r of getRecents()) {
       expect(r.module === currentModule).toBe(true);
     }
@@ -71,10 +71,10 @@ describe('recents — cross-module badge', () => {
 /* ── Dynamic routes produce valid module metadata ── */
 describe('recents — dynamic route module resolution', () => {
   const dynamicPaths = [
-    { path: '/sites/42', expectedModule: 'admin' },
-    { path: '/actions/123', expectedModule: 'operations' },
-    { path: '/conformite/tertiaire/efa/5', expectedModule: 'operations' },
-    { path: '/compliance/sites/99', expectedModule: 'operations' },
+    { path: '/sites/42', expectedModule: 'patrimoine' },
+    { path: '/actions/123', expectedModule: 'pilotage' },
+    { path: '/conformite/tertiaire/efa/5', expectedModule: 'patrimoine' },
+    { path: '/compliance/sites/99', expectedModule: 'patrimoine' },
   ];
 
   for (const { path, expectedModule } of dynamicPaths) {

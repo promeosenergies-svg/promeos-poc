@@ -182,8 +182,8 @@ describe('E. App.jsx — routing', () => {
 describe('F. NavRegistry.js — navigation', () => {
   const code = src('src/layout/NavRegistry.js');
 
-  it('/anomalies is mapped to operations module', () => {
-    expect(code).toMatch(/\/anomalies.*operations/);
+  it('/anomalies is mapped to pilotage module', () => {
+    expect(code).toMatch(/\/anomalies.*pilotage/);
   });
 
   it('"Centre d\'actions" label present in nav items', () => {
