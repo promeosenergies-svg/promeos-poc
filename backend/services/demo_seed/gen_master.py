@@ -282,6 +282,24 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     )
                 )
 
+            # Step 26: Sous-compteurs pour Hotel Nice
+            sub_meter_specs = spec.get("sub_meters")
+            if sub_meter_specs:
+                for sm_spec in sub_meter_specs:
+                    sub = Meter(
+                        meter_id=f"SUB-{meter_id_str}-{sm_spec['suffix']}",
+                        name=sm_spec["name"],
+                        site_id=site.id,
+                        parent_meter_id=meter.id,
+                        energy_vector=EnergyVectorModel.ELECTRICITY,
+                        subscribed_power_kva=0,
+                        is_active=True,
+                    )
+                    sub._pct = sm_spec["pct"]  # fraction of parent conso
+                    db.add(sub)
+                    db.flush()
+                    all_meters.append(sub)
+
             # Operating schedule
             profile_name = spec.get("profile", "office")
             sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])

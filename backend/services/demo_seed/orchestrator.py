@@ -134,6 +134,14 @@ class SeedOrchestrator:
             result["readings_count"] = readings_count
             result["readings_frequency"] = "hourly"
 
+        # 3b. Sub-meter readings (Step 26) — proportional to parent
+        from .gen_readings import generate_sub_meter_readings
+
+        sub_days = hourly_days if readings_freq == "monthly" else days
+        sub_count = generate_sub_meter_readings(self.db, master["meters"], sub_days, rng)
+        if sub_count:
+            result["sub_meter_readings_count"] = sub_count
+
         # 4. Compliance
         from .gen_compliance import generate_compliance
 

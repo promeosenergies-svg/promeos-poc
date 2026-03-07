@@ -1163,6 +1163,12 @@ export const patrimoineSiteMerge = (sourceId, targetId) =>
     .then((r) => r.data);
 export const patrimoineSiteMeters = (siteId) =>
   api.get(`/patrimoine/sites/${siteId}/meters`).then((r) => r.data);
+export const getSiteMetersTree = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/meters/tree`).then((r) => r.data);
+export const createSubMeter = (meterId, data) =>
+  api.post(`/patrimoine/meters/${meterId}/sub-meters`, data).then((r) => r.data);
+export const getMeterBreakdown = (meterId, params = {}) =>
+  api.get(`/patrimoine/meters/${meterId}/breakdown`, { params }).then((r) => r.data);
 export const patrimoineCompteurs = (params = {}) =>
   api.get('/patrimoine/compteurs', { params }).then((r) => r.data);
 export const patrimoineCompteurUpdate = (id, data) =>

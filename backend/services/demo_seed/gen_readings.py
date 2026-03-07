@@ -938,6 +938,64 @@ def _gen_15min_meter_readings(
     return readings
 
 
+# ── Sub-meter readings (Step 26) ─────────────────────────────────────────
+
+
+def generate_sub_meter_readings(db, meters: list, days: int, rng: random.Random) -> int:
+    """
+    Generate hourly readings for sub-meters as proportional fractions of parent.
+    Sub-meters have a transient _pct attribute set during seed.
+    """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    start = now - timedelta(days=days)
+    total = 0
+
+    # Build parent_id → list of (sub_meter, pct)
+    sub_map = {}
+    parent_ids = set()
+    for m in meters:
+        pct = getattr(m, "_pct", None)
+        if pct is not None and m.parent_meter_id:
+            sub_map.setdefault(m.parent_meter_id, []).append((m, pct))
+            parent_ids.add(m.parent_meter_id)
+
+    if not sub_map:
+        return 0
+
+    # Read parent readings from DB
+    for parent_id, subs in sub_map.items():
+        parent_readings = (
+            db.query(MeterReading)
+            .filter(
+                MeterReading.meter_id == parent_id,
+                MeterReading.timestamp >= start,
+            )
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
+
+        for sub_meter, pct in subs:
+            readings = []
+            for pr in parent_readings:
+                noise = rng.uniform(0.95, 1.05)
+                value = round(pr.value_kwh * pct * noise, 3)
+                readings.append(
+                    MeterReading(
+                        meter_id=sub_meter.id,
+                        timestamp=pr.timestamp,
+                        frequency=pr.frequency,
+                        value_kwh=max(0.01, value),
+                        is_estimated=False,
+                        quality_score=pr.quality_score or 1.0,
+                    )
+                )
+            _bulk_insert_ignore(db, readings)
+            total += len(readings)
+
+    db.flush()
+    return total
+
+
 # ── Bulk insert helper ───────────────────────────────────────────────────────
 
 

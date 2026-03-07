@@ -1418,6 +1418,79 @@ def list_site_meters_unified(
     return {"meters": get_site_meters(db, site_id)}
 
 
+@router.get("/sites/{site_id}/meters/tree")
+def list_site_meters_tree(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Arbre compteurs avec sous-compteurs (1 niveau)."""
+    from services.meter_unified_service import get_site_meters_tree
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return {"meters": get_site_meters_tree(db, site_id)}
+
+
+class SubMeterCreateRequest(BaseModel):
+    meter_id: Optional[str] = None
+    name: Optional[str] = None
+    numero_serie: Optional[str] = None
+    type_compteur: Optional[str] = None
+    subscribed_power_kva: Optional[float] = None
+
+
+@router.post("/meters/{meter_id}/sub-meters", status_code=201)
+def create_sub_meter_endpoint(
+    meter_id: int,
+    body: SubMeterCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Crée un sous-compteur rattaché à un compteur principal."""
+    from services.meter_unified_service import create_sub_meter
+    try:
+        result = create_sub_meter(db, meter_id, body.model_dump(exclude_unset=True))
+        db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/meters/{meter_id}/sub-meters/{sub_id}")
+def delete_sub_meter_endpoint(
+    meter_id: int,
+    sub_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Supprime un sous-compteur."""
+    from services.meter_unified_service import delete_sub_meter
+    if not delete_sub_meter(db, meter_id, sub_id):
+        raise HTTPException(status_code=404, detail="Sous-compteur non trouvé ou mauvais parent")
+    db.commit()
+    return {"detail": f"Sous-compteur {sub_id} supprimé"}
+
+
+@router.get("/meters/{meter_id}/breakdown")
+def meter_breakdown_endpoint(
+    meter_id: int,
+    request: Request,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Breakdown principal vs sous-compteurs."""
+    from services.meter_unified_service import get_meter_breakdown
+    from datetime import datetime as dt
+    df = dt.fromisoformat(date_from) if date_from else None
+    dto = dt.fromisoformat(date_to) if date_to else None
+    return get_meter_breakdown(db, meter_id, df, dto)
+
+
 @router.patch("/sites/{site_id}")
 def update_site(
     site_id: int,

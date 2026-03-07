@@ -9,6 +9,14 @@
  */
 
 export const GLOSSARY = {
+  // ── Compteurs & sous-compteurs ──────────────────────────────────────────────
+  sous_compteur: {
+    term: 'Sous-compteur',
+    short:
+      "Compteur divisionnaire rattaché à un compteur principal. Mesure la consommation d'une zone ou d'un usage spécifique (ex : climatisation, cuisine).",
+    long:
+      "Un sous-compteur est un compteur secondaire installé en aval du compteur principal. Il permet de ventiler la consommation par zone (étage, local) ou par usage (CVC, éclairage, process). L'écart entre le compteur principal et la somme des sous-compteurs représente les pertes et parties communes.",
+  },
   // ── Composantes de facturation ─────────────────────────────────────────────
   turpe: {
     term: 'TURPE',

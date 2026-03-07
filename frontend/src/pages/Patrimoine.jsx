@@ -23,6 +23,10 @@ import {
   Lightbulb,
   X,
   ArrowUpDown,
+  ChevronDown,
+  PlusCircle,
+  Trash2,
+  PieChart,
 } from 'lucide-react';
 import {
   Card,
@@ -49,7 +53,7 @@ import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
-import { getPatrimoineAnomalies, getPortfolioReconciliation, patrimoineSiteMeters } from '../services/api';
+import { getPatrimoineAnomalies, getPortfolioReconciliation, patrimoineSiteMeters, getSiteMetersTree, createSubMeter, getMeterBreakdown } from '../services/api';
 import { track } from '../services/tracker';
 import {
   fmtEur,
@@ -1049,17 +1053,43 @@ function FilterSelect({ options, value, onChange }) {
  *  SiteDrawer — tabbed, actionable
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* ── SiteMetersTab — unified meters list with source badge ── */
+/* ── SiteMetersTab — tree view with sub-meters (Step 26) ── */
 function SiteMetersTab({ siteId, count }) {
   const [meters, setMeters] = useState(null);
+  const [expanded, setExpanded] = useState({});
+  const [addingTo, setAddingTo] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [breakdown, setBreakdown] = useState({});
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     if (siteId) {
-      patrimoineSiteMeters(siteId)
+      getSiteMetersTree(siteId)
         .then((data) => setMeters(data.meters || []))
         .catch(() => setMeters([]));
     }
   }, [siteId]);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  const toggleExpand = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const handleAddSub = async (parentId) => {
+    if (!newName.trim()) return;
+    try {
+      await createSubMeter(parentId, { name: newName.trim() });
+      setNewName('');
+      setAddingTo(null);
+      reload();
+    } catch { /* silently fail */ }
+  };
+
+  const loadBreakdown = async (meterId) => {
+    if (breakdown[meterId]) return;
+    try {
+      const data = await getMeterBreakdown(meterId);
+      setBreakdown((prev) => ({ ...prev, [meterId]: data }));
+    } catch { /* silently fail */ }
+  };
 
   if (meters === null) {
     return <p className="text-sm text-gray-400 animate-pulse py-4">Chargement des compteurs…</p>;
@@ -1080,16 +1110,79 @@ function SiteMetersTab({ siteId, count }) {
       <p className="text-sm text-gray-600">
         {meters.length} compteur{meters.length > 1 ? 's' : ''} associé{meters.length > 1 ? 's' : ''} à ce site.
       </p>
-      {meters.map((m) => (
-        <div key={m.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
-          <Zap size={14} className="text-gray-400 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{m.name || m.numero_serie || m.meter_id}</p>
-            <p className="text-[11px] text-gray-400">{m.type_compteur || m.energy_vector || '—'}</p>
+      {meters.map((m) => {
+        const hasSubs = m.sub_meters && m.sub_meters.length > 0;
+        const isExpanded = expanded[m.id];
+        const bd = breakdown[m.id];
+
+        return (
+          <div key={m.id} className="rounded-lg border border-gray-100 overflow-hidden">
+            {/* Principal meter row */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50">
+              {hasSubs ? (
+                <button onClick={() => { toggleExpand(m.id); if (!isExpanded) loadBreakdown(m.id); }} className="p-0.5 hover:bg-gray-200 rounded">
+                  {isExpanded ? <ChevronDown size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
+                </button>
+              ) : (
+                <Zap size={14} className="text-gray-400 shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{m.name || m.numero_serie || m.meter_id}</p>
+                <p className="text-[11px] text-gray-400">{m.type_compteur || m.energy_vector || '—'}{hasSubs ? ` · ${m.sub_meters.length} sous-compteur${m.sub_meters.length > 1 ? 's' : ''}` : ''}</p>
+              </div>
+              <MeterSourceBadge source={m.source} />
+              {m.source === 'meter' && (
+                <button onClick={() => setAddingTo(addingTo === m.id ? null : m.id)} title="Ajouter sous-compteur" className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-blue-600">
+                  <PlusCircle size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Sub-meters */}
+            {isExpanded && hasSubs && (
+              <div className="border-t border-gray-100">
+                {m.sub_meters.map((sm) => (
+                  <div key={sm.id} className="flex items-center gap-2 px-3 py-1.5 pl-8 bg-white border-b border-gray-50 last:border-b-0">
+                    <Zap size={12} className="text-blue-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-700 truncate">{sm.name || sm.meter_id}</p>
+                    </div>
+                    {bd && bd.sub_meters && (() => {
+                      const detail = bd.sub_meters.find((d) => d.id === sm.id);
+                      return detail ? (
+                        <span className="text-[10px] text-gray-400">{detail.pct_of_total}%</span>
+                      ) : null;
+                    })()}
+                  </div>
+                ))}
+                {/* Breakdown delta */}
+                {bd && bd.delta_kwh > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 pl-8 bg-amber-50 text-amber-700">
+                    <PieChart size={12} className="shrink-0" />
+                    <span className="text-[11px] font-medium">{bd.delta_label} : {bd.delta_pct}% ({Math.round(bd.delta_kwh).toLocaleString('fr-FR')} kWh)</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Add sub-meter form */}
+            {addingTo === m.id && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border-t border-blue-100">
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Nom du sous-compteur"
+                  className="flex-1 text-xs px-2 py-1 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddSub(m.id)}
+                />
+                <button onClick={() => handleAddSub(m.id)} className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter</button>
+                <button onClick={() => { setAddingTo(null); setNewName(''); }} className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700">Annuler</button>
+              </div>
+            )}
           </div>
-          <MeterSourceBadge source={m.source} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

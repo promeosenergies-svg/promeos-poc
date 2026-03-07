@@ -237,6 +237,11 @@ PACKS = {
                     {"nom": "Batiment hotel", "surface_m2": 4000, "annee": 2000, "cvc_kw": 280},
                 ],
                 "gas": True,
+                "sub_meters": [
+                    {"suffix": "CLIM", "name": "Hôtel — Climatisation", "pct": 0.40},
+                    {"suffix": "CUIS", "name": "Restaurant — Cuisine", "pct": 0.25},
+                    {"suffix": "COMM", "name": "Parties communes", "pct": 0.15},
+                ],
             },
             {
                 "nom": "Ecole Jules Ferry Marseille",
