@@ -134,7 +134,7 @@ export default function Patrimoine() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sp, setSp] = useSearchParams();
-  const { scopedSites, sitesLoading, scope } = useScope();
+  const { scopedSites, sitesLoading, scope, org } = useScope();
   const { isExpert } = useExpertMode();
   const searchRef = useRef(null);
 
