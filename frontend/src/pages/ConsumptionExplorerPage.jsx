@@ -36,7 +36,6 @@ import useExplorerURL from './consumption/useExplorerURL';
 import useExplorerPresets from './consumption/useExplorerPresets';
 import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
-import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
@@ -673,10 +672,6 @@ export default function ConsumptionExplorerPage() {
       {/* Portfolio mode — shown instead of tab panels */}
       {isPortfolioMode && (loading || (availability && hasData) || !loading) && (
         <>
-          {/* OverviewRow (aggregate) */}
-          {motor.primaryTunnel && (
-            <OverviewRow data={computeOverviewData(motor.primaryTunnel)} unit={unit} />
-          )}
           <PortfolioPanel motor={motor} sites={sites} unit={unit} />
         </>
       )}
@@ -684,11 +679,6 @@ export default function ConsumptionExplorerPage() {
       {/* Main content — non-portfolio, within site limit */}
       {!isPortfolioMode && siteIds.length <= MAX_SITES && (
         <>
-          {/* OverviewRow — only when real data is ready */}
-          {showContent && motor.primaryTunnel && (
-            <OverviewRow data={computeOverviewData(motor.primaryTunnel)} unit={unit} />
-          )}
-
           {isClassic ? (
             /* ── Classic mode: TimeseriesPanel ALWAYS rendered (handles own loading/empty/error) ── */
             <>
