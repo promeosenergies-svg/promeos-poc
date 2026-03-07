@@ -75,6 +75,7 @@ export function resolveBreadcrumbLabel(segment, parentSegment) {
     if (ctx) return `${ctx} #${segment}`;
   }
   // Fallback: capitalize segment, replace hyphens
+  if (!segment) return '';
   if (isDynamicSegment(segment)) return `#${segment}`;
   return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
 }
