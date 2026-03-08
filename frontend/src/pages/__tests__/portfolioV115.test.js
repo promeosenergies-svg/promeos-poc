@@ -38,8 +38,9 @@ describe('V115 Portfolio 0-issues guard-rails', () => {
   });
 
   it('4. Table headers Base nuit and Couverture have InfoTip', () => {
-    expect(pageSrc).toMatch(/Base nuit\s*<InfoTip/);
-    expect(pageSrc).toMatch(/Couverture\s*<InfoTip/);
+    // JSX may have {' '} + newline + indentation between text and <InfoTip
+    expect(pageSrc).toMatch(/Base nuit[\s\S]{0,40}<InfoTip/);
+    expect(pageSrc).toMatch(/Couverture[\s\S]{0,40}<InfoTip/);
   });
 
   it('5. "Ou agir" cards have onClick (4 clickable cards)', () => {

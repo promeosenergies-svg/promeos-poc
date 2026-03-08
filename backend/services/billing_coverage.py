@@ -104,12 +104,12 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
 
         for inv in invoices:
             ps, pe = _invoice_period(inv)
-            if ps is None:
+            if ps is None or pe is None:
                 continue  # pas de période utilisable
 
-            # Intersection avec le mois
-            overlap_start = max(ps, ms)
-            overlap_end = min(pe, me)
+            # Intersection avec le mois (ps/pe guaranteed non-None after guard above)
+            overlap_start = max(ps, ms)  # type: ignore[type-var]
+            overlap_end = min(pe, me)  # type: ignore[type-var]
             if overlap_start > overlap_end:
                 continue  # facture hors du mois
 

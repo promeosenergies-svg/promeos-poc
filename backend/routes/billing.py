@@ -1266,7 +1266,7 @@ def get_billing_periods(
     invoices = q.all()
 
     range_start, range_end = compute_range(invoices)
-    if not range_start:
+    if not range_start or not range_end:
         return {"periods": [], "total": 0, "offset": offset, "limit": limit}
 
     # Appliquer filtres month_from / month_to
@@ -1285,7 +1285,7 @@ def get_billing_periods(
             from datetime import date as _date
 
             _, last = _mr(y, m)
-            range_end = min(range_end, _date(y, m, last))
+            range_end = min(range_end, _date(y, m, last))  # type: ignore[type-var]
         except (ValueError, TypeError):
             pass
 
