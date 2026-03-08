@@ -238,11 +238,8 @@ describe('G - dashboardEssentials uses shared thresholds', () => {
   });
 
   it('does NOT hardcode 40 or 70 for conformite status thresholds', () => {
-    // The conformite status line should NOT have literal "< 40" or "< 70"
-    // It should use the constants
-    const statusLine = code
-      .split('\n')
-      .find((l) => l.includes('status:') && l.includes('COMPLIANCE_SCORE_THRESHOLDS'));
-    expect(statusLine).toBeDefined();
+    // The conformite status computation should reference COMPLIANCE_SCORE_THRESHOLDS
+    // (may span multiple lines after formatting)
+    expect(code).toMatch(/status:\s*\n?\s*pctConf\s*<\s*COMPLIANCE_SCORE_THRESHOLDS/);
   });
 });
