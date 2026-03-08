@@ -3,9 +3,9 @@
  * Glass surface. Module-tinted header from TINT_PALETTE.
  * Quick actions, recents, pins, sections with premium hover/active.
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import {
   NAV_MODULES,
   ROUTE_MODULE_MAP,
@@ -26,7 +26,18 @@ const BADGE_STYLES = {
 };
 
 /* ── Panel Link (premium active/hover) ── */
-function PanelLink({ to, icon: Icon, label, longLabel, badge, badgeKey, pinned, onTogglePin, tint, indent }) {
+function PanelLink({
+  to,
+  icon: Icon,
+  label,
+  longLabel,
+  badge,
+  badgeKey,
+  pinned,
+  onTogglePin,
+  tint,
+  indent,
+}) {
   const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
   const badgeStyle = badgeKey
     ? BADGE_STYLES[badgeKey] || BADGE_STYLES._default
@@ -86,37 +97,27 @@ function PanelLink({ to, icon: Icon, label, longLabel, badge, badgeKey, pinned, 
   );
 }
 
-/* ── Section Header (premium — icon + chevron + label) ── */
-function SectionHeader({ label, icon: SectionIcon, isOpen, onToggle, tintColor }) {
+/* ── Section Header (static label — always visible, no toggle) ── */
+function SectionHeader({ label, icon: SectionIcon, tintColor }) {
   const t = tintColor ? TINT_PALETTE[tintColor] || TINT_PALETTE.slate : null;
   return (
-    <button
-      onClick={onToggle}
-      className="flex items-center w-full px-2 py-1 group mt-2 first:mt-0
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md
-        hover:bg-slate-50/60 transition-colors duration-150"
-      aria-expanded={isOpen}
-    >
-      <ChevronDown
-        size={11}
-        className={`text-slate-400 transition-transform duration-150 mr-1.5 ${isOpen ? '' : '-rotate-90'}`}
-      />
+    <div className="flex items-center w-full px-2 py-1 mt-2 first:mt-0">
       {SectionIcon && (
-        <SectionIcon size={12} className={`mr-1 shrink-0 ${t ? t.icon : 'text-slate-400'}`} />
+        <SectionIcon size={12} className={`mr-1.5 shrink-0 ${t ? t.icon : 'text-slate-400'}`} />
       )}
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-150 line-clamp-2">
+      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
         {label}
       </span>
-    </button>
+    </div>
   );
 }
 
 /* ── Main Panel ── */
 export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
-  const location = useLocation();
+  const _location = useLocation();
   const { isExpert } = useExpertMode();
   const { isAuthenticated, hasPermission } = useAuth();
-  const [openSections, setOpenSections] = useState({});
+  // Sections are always open — no toggle state needed
 
   const mod = NAV_MODULES.find((m) => m.key === activeModule) || NAV_MODULES[0];
   const tint = mod.tint;
@@ -162,31 +163,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     return pins.map((path) => allModuleItems.find((item) => item.to === path)).filter(Boolean);
   }, [pins, allModuleItems]);
 
-  /* ── Section toggle ── */
-  const toggleSection = useCallback((key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
-  /* ── Auto-open section containing active route ── */
-  useEffect(() => {
-    const currentPath = location.pathname;
-    for (const section of moduleSections) {
-      const hasActive = section.items.some(
-        (item) => currentPath === item.to || currentPath.startsWith(item.to + '/')
-      );
-      if (hasActive) {
-        setOpenSections((prev) => ({ ...prev, [section.key]: true }));
-      }
-    }
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const isSectionOpen = (section) => {
-    if (openSections[section.key] !== undefined) return openSections[section.key];
-    // Default: only open the section containing the current route
-    return section.items.some(
-      (item) => location.pathname === item.to || location.pathname.startsWith(item.to + '/')
-    );
-  };
+  /* Sections are always visible — no toggle/auto-open needed */
 
   /* ── Quick actions relevant to this module ── */
   const moduleQuickActions = useMemo(() => {
@@ -197,7 +174,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   return (
     <div
       className="flex flex-col h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0"
-      style={{ width: 'clamp(220px, 16vw, 260px)' }}
+      style={{ width: 'clamp(190px, 14vw, 230px)' }}
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >
@@ -228,9 +205,10 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
                   `flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
                   transition-all duration-150
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
-                  ${isActive
-                    ? `${t.pillBg} ${t.pillText} ring-1 ${t.pillRing}`
-                    : `text-slate-500 hover:text-slate-700 ${t.softBg} hover:ring-1 ${t.pillRing}`
+                  ${
+                    isActive
+                      ? `${t.pillBg} ${t.pillText} ring-1 ${t.pillRing}`
+                      : `text-slate-500 hover:text-slate-700 ${t.softBg} hover:ring-1 ${t.pillRing}`
                   }`
                 }
               >
@@ -266,31 +244,22 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
         {/* Main sections — only for active module */}
         {moduleSections.map((section) => {
           const sectionTint = section.tint || tint;
-          const isOpen = isSectionOpen(section);
 
           return (
             <div key={section.key}>
-              <SectionHeader
-                label={section.label}
-                icon={section.icon}
-                isOpen={isOpen}
-                onToggle={() => toggleSection(section.key)}
-                tintColor={sectionTint}
-              />
-              {isOpen && (
-                <div className="mt-0.5">
-                  {section.items.map((item) => (
-                    <PanelLink
-                      key={item.to}
-                      {...item}
-                      badge={item.badgeKey ? badges[item.badgeKey] : 0}
-                      pinned={pins.includes(item.to)}
-                      onTogglePin={onTogglePin}
-                      tint={sectionTint}
-                    />
-                  ))}
-                </div>
-              )}
+              <SectionHeader label={section.label} icon={section.icon} tintColor={sectionTint} />
+              <div className="mt-0.5">
+                {section.items.map((item) => (
+                  <PanelLink
+                    key={item.to}
+                    {...item}
+                    badge={item.badgeKey ? badges[item.badgeKey] : 0}
+                    pinned={pins.includes(item.to)}
+                    onTogglePin={onTogglePin}
+                    tint={sectionTint}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}
@@ -299,27 +268,19 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       {/* Secondary menu — Administration (gear icon) */}
       {adminItems.length > 0 && (
         <div className="border-t border-slate-200/50 px-2 py-2">
-          <SectionHeader
-            label="Administration"
-            icon={NAV_ADMIN_ICON}
-            isOpen={!!openSections._admin}
-            onToggle={() => toggleSection('_admin')}
-            tintColor="slate"
-          />
-          {openSections._admin && (
-            <div className="mt-0.5">
-              {adminItems.map((item) => (
-                <PanelLink
-                  key={item.to}
-                  {...item}
-                  badge={0}
-                  pinned={pins.includes(item.to)}
-                  onTogglePin={onTogglePin}
-                  tint="slate"
-                />
-              ))}
-            </div>
-          )}
+          <SectionHeader label="Administration" icon={NAV_ADMIN_ICON} tintColor="slate" />
+          <div className="mt-0.5">
+            {adminItems.map((item) => (
+              <PanelLink
+                key={item.to}
+                {...item}
+                badge={0}
+                pinned={pins.includes(item.to)}
+                onTogglePin={onTogglePin}
+                tint="slate"
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

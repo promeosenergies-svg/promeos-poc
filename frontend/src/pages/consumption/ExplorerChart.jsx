@@ -88,7 +88,16 @@ function InsufficientDataPlaceholder({ count = 0 }) {
   );
 }
 
-function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, siteLabels = {}, children }) {
+function SepareGrid({
+  siteIds,
+  data,
+  xKey,
+  valueKey: _valueKey,
+  unit,
+  height,
+  siteLabels = {},
+  children,
+}) {
   const colCount = Math.min(siteIds.length, 3);
   return (
     <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>

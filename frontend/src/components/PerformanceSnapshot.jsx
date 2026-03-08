@@ -198,7 +198,7 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
               ? 'text-yellow-500'
               : 'text-red-500'
         }
-        title="Qualite"
+        title="Qualité"
         value={qualityScore != null ? `${fmtN(qualityScore)}/100` : '-'}
         sub={
           qualityScore != null

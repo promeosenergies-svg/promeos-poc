@@ -106,6 +106,96 @@ class PreferenceIn(BaseModel):
 
 
 # ══════════════════════════════════════
+# Scenarios (GET convenience endpoint)
+# ══════════════════════════════════════
+
+
+@router.get("/scenarios")
+def get_scenarios(
+    site_id: int = Query(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/purchase/scenarios?site_id=
+
+    Compute or retrieve scenarios for a site.
+    If results already exist, return the latest run.
+    Otherwise, compute fresh scenarios.
+    """
+    check_site_access(auth, site_id)
+
+    # Try to return existing latest results first
+    assumption = _get_latest_assumption(db, site_id)
+    if assumption:
+        latest = (
+            db.query(PurchaseScenarioResult)
+            .filter(PurchaseScenarioResult.assumption_set_id == assumption.id)
+            .order_by(PurchaseScenarioResult.computed_at.desc())
+            .first()
+        )
+        if latest and latest.run_id:
+            results = (
+                db.query(PurchaseScenarioResult)
+                .filter(
+                    PurchaseScenarioResult.assumption_set_id == assumption.id,
+                    PurchaseScenarioResult.run_id == latest.run_id,
+                )
+                .order_by(PurchaseScenarioResult.risk_score.asc())
+                .all()
+            )
+            if results:
+                return {
+                    "site_id": site_id,
+                    "run_id": latest.run_id,
+                    "scenarios": [
+                        {
+                            "id": r.id,
+                            "strategy": r.strategy.value if r.strategy else None,
+                            "price_eur_per_kwh": r.price_eur_per_kwh,
+                            "total_annual_eur": r.total_annual_eur,
+                            "risk_score": r.risk_score,
+                            "savings_vs_current_pct": r.savings_vs_current_pct,
+                            "p10_eur": r.p10_eur,
+                            "p90_eur": r.p90_eur,
+                            "is_recommended": r.is_recommended,
+                        }
+                        for r in results
+                    ],
+                }
+
+    # No existing results — compute fresh
+    if not assumption:
+        est = estimate_consumption(db, site_id)
+        pf = compute_profile_factor(db, site_id)
+        assumption = PurchaseAssumptionSet(
+            site_id=site_id,
+            energy_type=BillingEnergyType.ELEC,
+            volume_kwh_an=est["volume_kwh_an"],
+            profile_factor=pf,
+            horizon_months=24,
+        )
+        db.add(assumption)
+        db.commit()
+        db.refresh(assumption)
+
+    energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+    scenarios = compute_scenarios(
+        db,
+        site_id,
+        volume_kwh_an=assumption.volume_kwh_an,
+        profile_factor=assumption.profile_factor,
+        energy_type=energy_type_val,
+    )
+    scenarios = recommend_scenario(scenarios, "medium", 0.5, False)
+
+    return {
+        "site_id": site_id,
+        "scenarios": scenarios,
+    }
+
+
+# ══════════════════════════════════════
 # V1 Endpoints (unchanged signatures)
 # ══════════════════════════════════════
 

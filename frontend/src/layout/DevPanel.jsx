@@ -47,7 +47,7 @@ function ScopeTab() {
 function ApiTab() {
   const requests = getLastRequests();
   if (requests.length === 0) {
-    return <p className="text-gray-500 text-[10px]">Aucun appel API enregistre</p>;
+    return <p className="text-gray-500 text-[10px]">Aucun appel API enregistré</p>;
   }
   return (
     <div className="space-y-1 max-h-52 overflow-y-auto">
@@ -107,7 +107,7 @@ function CacheTab() {
   }, []);
 
   if (keys.length === 0) {
-    return <p className="text-gray-500 text-[10px]">Aucune cle promeos_* dans localStorage</p>;
+    return <p className="text-gray-500 text-[10px]">Aucune clé promeos_* dans localStorage</p>;
   }
   return (
     <div className="space-y-1">
@@ -125,7 +125,7 @@ function EnvTab() {
   const rows = [
     ['MODE', import.meta.env.MODE],
     ['VITE_API_URL', import.meta.env.VITE_API_URL || '(default /api)'],
-    ['VITE_SENTRY_DSN', import.meta.env.VITE_SENTRY_DSN ? '***' : '(non defini)'],
+    ['VITE_SENTRY_DSN', import.meta.env.VITE_SENTRY_DSN ? '***' : '(non défini)'],
     ['DEV', String(import.meta.env.DEV)],
   ];
   return (

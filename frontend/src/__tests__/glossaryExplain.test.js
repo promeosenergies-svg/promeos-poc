@@ -29,14 +29,22 @@ describe('A. Glossaire — structure', () => {
     // Vérifier que toutes les entrées ont les deux champs
     const entries = src.match(/^\s{2}\w+:\s*\{/gm);
     const terms = src.match(/term:\s*['"]/g) || [];
-    const shorts = src.match(/short:\s*$/gm) || src.match(/short:\s*'/g) || [];
+    const _shorts = src.match(/short:\s*$/gm) || src.match(/short:\s*'/g) || [];
     // Au moins autant de term que d'entrées
     expect(terms.length).toBeGreaterThanOrEqual(entries.length);
   });
 
   const REQUIRED_KEYS = [
-    'turpe', 'accise', 'tva', 'ttc', 'ht', 'kwh',
-    'shadow_billing', 'anomalie', 'confiance', 'decret_tertiaire',
+    'turpe',
+    'accise',
+    'tva',
+    'ttc',
+    'ht',
+    'kwh',
+    'shadow_billing',
+    'anomalie',
+    'confiance',
+    'decret_tertiaire',
   ];
 
   for (const key of REQUIRED_KEYS) {
@@ -139,9 +147,7 @@ describe('C. Pages clés — intégration Explain', () => {
 describe('D. Qualité — glossaire cohérent', () => {
   it('pas de terme dupliqué dans glossary.js', () => {
     const src = readSrc('ui/glossary.js');
-    const keys = (src.match(/^\s{2}(\w+):\s*\{/gm) || []).map(
-      (m) => m.trim().split(':')[0],
-    );
+    const keys = (src.match(/^\s{2}(\w+):\s*\{/gm) || []).map((m) => m.trim().split(':')[0]);
     const unique = new Set(keys);
     expect(keys.length).toBe(unique.size);
   });

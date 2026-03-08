@@ -30,10 +30,12 @@ export default function DataQualityWidget() {
     Promise.all([
       getDataQualityCompleteness(org.id).catch(() => null),
       getDataQualityPortfolio(org.id).catch(() => null),
-    ]).then(([completeness, portfolio]) => {
-      setData(completeness);
-      setDqPortfolio(portfolio);
-    }).finally(() => setLoading(false));
+    ])
+      .then(([completeness, portfolio]) => {
+        setData(completeness);
+        setDqPortfolio(portfolio);
+      })
+      .finally(() => setLoading(false));
   }, [org?.id]);
 
   if (loading) {
@@ -76,7 +78,7 @@ export default function DataQualityWidget() {
               <Database size={16} className="text-indigo-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Qualite des donnees</p>
+              <p className="text-sm font-semibold text-gray-900">Qualité des données</p>
               <p className="text-[10px] text-gray-400">
                 {sites_count} site{sites_count > 1 ? 's' : ''} analyses
               </p>
@@ -151,7 +153,7 @@ export default function DataQualityWidget() {
           onClick={() => navigate('/conformite?tab=donnees')}
           className="flex items-center gap-1 text-xs text-indigo-600 font-medium hover:text-indigo-800 transition pt-1"
         >
-          Voir le detail <ArrowRight size={12} />
+          Voir le détail <ArrowRight size={12} />
         </button>
       </CardBody>
     </Card>

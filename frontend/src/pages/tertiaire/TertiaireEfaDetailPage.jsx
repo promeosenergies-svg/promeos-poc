@@ -106,10 +106,10 @@ export default function TertiaireEfaDetailPage() {
       .catch(() => setProofsStatus(null));
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEfa();
     fetchProofsStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleRunControls = async () => {

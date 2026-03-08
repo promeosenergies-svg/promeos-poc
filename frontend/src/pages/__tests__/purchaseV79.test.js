@@ -63,8 +63,8 @@ describe('A · Performance KPI card', () => {
     expect(code).toContain("from '../services/routes'");
   });
 
-  it('ExecutiveSummary grid is 5 columns on lg', () => {
-    expect(code).toContain('lg:grid-cols-5');
+  it('ExecutiveSummary grid is 5 columns on xl', () => {
+    expect(code).toContain('xl:grid-cols-5');
   });
 
   it('V79 header comment', () => {

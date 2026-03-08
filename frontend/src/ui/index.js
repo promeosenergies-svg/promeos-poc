@@ -14,7 +14,7 @@ export { default as Modal } from './Modal';
 
 // Design System V1 — Sprint WOW DIAMANT
 export { default as PageShell } from './PageShell';
-export { default as KpiCard, KpiCardCompact } from './KpiCard';
+export { default as KpiCard, KpiCardCompact, KpiCardInline } from './KpiCard';
 export { default as FilterBar } from './FilterBar';
 export { default as Toggle } from './Toggle';
 export { default as Tooltip } from './Tooltip';

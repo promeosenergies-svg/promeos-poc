@@ -12,24 +12,48 @@ import { getInsightDetail, getInvoiceShadowBreakdown } from '../services/api';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import ShadowBreakdownCard from './billing/ShadowBreakdownCard';
-import { fmtEurFull, fmtNum } from '../utils/format';
+import { fmtNum } from '../utils/format';
 
 const TYPE_LABELS = {
-  shadow_gap: <>Écart <Explain term="shadow_billing">shadow billing</Explain></>,
+  shadow_gap: (
+    <>
+      Écart <Explain term="shadow_billing">shadow billing</Explain>
+    </>
+  ),
   unit_price_high: 'Prix unitaire élevé',
   duplicate_invoice: 'Doublon facture',
   missing_period: 'Période manquante',
   period_too_long: 'Période longue',
-  negative_kwh: <><Explain term="kwh">kWh</Explain> négatifs</>,
+  negative_kwh: (
+    <>
+      <Explain term="kwh">kWh</Explain> négatifs
+    </>
+  ),
   zero_amount: 'Montant zéro',
   lines_sum_mismatch: 'Écart lignes/total',
   consumption_spike: 'Pic de consommation',
   price_drift: 'Dérive de prix',
-  ttc_coherence: <>Cohérence <Explain term="ttc">TTC</Explain></>,
+  ttc_coherence: (
+    <>
+      Cohérence <Explain term="ttc">TTC</Explain>
+    </>
+  ),
   contract_expiry: 'Contrat expiré',
-  reseau_mismatch: <>Écart réseau / <Explain term="turpe">TURPE</Explain></>,
-  taxes_mismatch: <>Écart taxes / <Explain term="accise">accise</Explain></>,
-  reconciliation_mismatch: <><Explain term="reconciliation_auto">Écart compteur / facture</Explain></>,
+  reseau_mismatch: (
+    <>
+      Écart réseau / <Explain term="turpe">TURPE</Explain>
+    </>
+  ),
+  taxes_mismatch: (
+    <>
+      Écart taxes / <Explain term="accise">accise</Explain>
+    </>
+  ),
+  reconciliation_mismatch: (
+    <>
+      <Explain term="reconciliation_auto">Écart compteur / facture</Explain>
+    </>
+  ),
 };
 
 const SEVERITY_LABELS = {
@@ -52,11 +76,26 @@ function fmt(v) {
 
 const CAUSE_LABELS = {
   shadow_gap: (m) =>
-    m.expected_ttc != null
-      ? <>L'écart entre le montant facturé ({fmt(m.actual_ttc)} €) et le <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.expected_ttc)} €) dépasse le seuil de {m.threshold_pct || 10}%.</>
-      : <>L'écart entre le montant facturé ({fmt(m.actual_total_eur)} €) et le <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.shadow_total_eur)} €) dépasse le seuil de {m.threshold_pct || 10}%.</>,
-  unit_price_high: (m) =>
-    <>Le prix unitaire ({fmtNum(m.unit_price, 4) === '—' ? '?' : fmtNum(m.unit_price, 4)} <Explain term="eur_kwh">€/kWh</Explain>) dépasse le seuil de {m.threshold || 0.3} <Explain term="eur_kwh">€/kWh</Explain> pour ce type d'énergie.</>,
+    m.expected_ttc != null ? (
+      <>
+        L'écart entre le montant facturé ({fmt(m.actual_ttc)} €) et le{' '}
+        <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.expected_ttc)} €) dépasse le
+        seuil de {m.threshold_pct || 10}%.
+      </>
+    ) : (
+      <>
+        L'écart entre le montant facturé ({fmt(m.actual_total_eur)} €) et le{' '}
+        <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.shadow_total_eur)} €)
+        dépasse le seuil de {m.threshold_pct || 10}%.
+      </>
+    ),
+  unit_price_high: (m) => (
+    <>
+      Le prix unitaire ({fmtNum(m.unit_price, 4) === '—' ? '?' : fmtNum(m.unit_price, 4)}{' '}
+      <Explain term="eur_kwh">€/kWh</Explain>) dépasse le seuil de {m.threshold || 0.3}{' '}
+      <Explain term="eur_kwh">€/kWh</Explain> pour ce type d'énergie.
+    </>
+  ),
   duplicate_invoice: () => `Cette facture est un doublon (même site, même période, même montant).`,
   missing_period: () =>
     `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
@@ -68,28 +107,60 @@ const CAUSE_LABELS = {
     `Le montant facturé est nul — vérifiez s'il s'agit d'un avoir ou d'une erreur.`,
   lines_sum_mismatch: (m) =>
     `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
-  consumption_spike: (m) =>
-    <>La consommation ({fmtNum(m.kwh, 0) === '—' ? '?' : fmtNum(m.kwh, 0)} <Explain term="kwh">kWh</Explain>) dépasse {m.threshold_ratio || 2}× la moyenne des 6 derniers mois.</>,
+  consumption_spike: (m) => (
+    <>
+      La consommation ({fmtNum(m.kwh, 0) === '—' ? '?' : fmtNum(m.kwh, 0)}{' '}
+      <Explain term="kwh">kWh</Explain>) dépasse {m.threshold_ratio || 2}× la moyenne des 6 derniers
+      mois.
+    </>
+  ),
   price_drift: (m) =>
     `Le prix unitaire a dérivé de ${fmtNum(m.drift_pct, 1) === '—' ? '?' : fmtNum(m.drift_pct, 1)}% par rapport à la période précédente.`,
-  reseau_mismatch: (m) =>
-    <>L'écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le seuil de 10%.</>,
-  taxes_mismatch: (m) => <>L'écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le seuil de 5%.</>,
-  reconciliation_mismatch: () =>
-    <>Écart significatif entre la <Explain term="reconciliation_conso">consommation compteur</Explain> et la consommation facturée. Vérifiez les relevés ou la facture.</>,
+  reseau_mismatch: (m) => (
+    <>
+      L'écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le
+      seuil de 10%.
+    </>
+  ),
+  taxes_mismatch: (m) => (
+    <>
+      L'écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le
+      seuil de 5%.
+    </>
+  ),
+  reconciliation_mismatch: () => (
+    <>
+      Écart significatif entre la{' '}
+      <Explain term="reconciliation_conso">consommation compteur</Explain> et la consommation
+      facturée. Vérifiez les relevés ou la facture.
+    </>
+  ),
 };
 
 function getBreakdownRows(energyType) {
   const et = (energyType || '').toUpperCase();
   const taxLabel =
-    et === 'ELEC'
-      ? <><Explain term="accise">Accise</Explain> électricité</>
-      : et === 'GAZ'
-        ? <><Explain term="accise">Accise</Explain> gaz (TICGN)</>
-        : 'Taxes & contributions';
+    et === 'ELEC' ? (
+      <>
+        <Explain term="accise">Accise</Explain> électricité
+      </>
+    ) : et === 'GAZ' ? (
+      <>
+        <Explain term="accise">Accise</Explain> gaz (TICGN)
+      </>
+    ) : (
+      'Taxes & contributions'
+    );
   return [
     { key: 'fourniture', label: 'Énergie (fourniture)' },
-    { key: 'reseau', label: <>Réseau (<Explain term="turpe">TURPE</Explain>)</> },
+    {
+      key: 'reseau',
+      label: (
+        <>
+          Réseau (<Explain term="turpe">TURPE</Explain>)
+        </>
+      ),
+    },
     { key: 'taxes', label: taxLabel },
     { key: 'tva', label: <Explain term="tva">TVA</Explain> },
   ];
@@ -206,7 +277,10 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             {selectedSiteId && orgSites?.length > 0 && (
               <>
                 <span className="text-blue-300">/</span>
-                <span>{orgSites.find((s) => String(s.id) === String(selectedSiteId))?.nom || `Site ${selectedSiteId}`}</span>
+                <span>
+                  {orgSites.find((s) => String(s.id) === String(selectedSiteId))?.nom ||
+                    `Site ${selectedSiteId}`}
+                </span>
               </>
             )}
           </div>
@@ -225,7 +299,9 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           {/* Confiance — inline badge (détails dans section diagnostics ci-dessous) */}
           {m.confidence && !m.diagnostics && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase"><Explain term="confiance">Confiance</Explain> :</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                <Explain term="confiance">Confiance</Explain> :
+              </span>
               <Badge
                 status={
                   m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'
@@ -266,7 +342,10 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                         return (
                           <tr key={row.key} className="border-b border-gray-100">
                             <td className="py-2 text-gray-700">{row.label}</td>
-                            <td colSpan={3} className="py-2 text-right text-xs text-gray-400 italic">
+                            <td
+                              colSpan={3}
+                              className="py-2 text-right text-xs text-gray-400 italic"
+                            >
                               <Explain term="tva">TVA</Explain> non disponible
                             </td>
                           </tr>
@@ -289,7 +368,9 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   })}
                   {/* Total */}
                   <tr className="border-t-2 border-gray-300 font-semibold">
-                    <td className="py-2 text-gray-900">Total <Explain term="ttc">TTC</Explain></td>
+                    <td className="py-2 text-gray-900">
+                      Total <Explain term="ttc">TTC</Explain>
+                    </td>
                     <td className="py-2 text-right">{fmt(m.actual_ttc)} €</td>
                     <td className="py-2 text-right">{fmt(m.expected_ttc)} €</td>
                     <td
@@ -325,8 +406,11 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                     <div key={c.code} className="bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-800">{c.label}</span>
-                        <span className={`text-sm font-bold ${isPositive ? 'text-red-600' : 'text-green-600'}`}>
-                          {isPositive ? '+' : ''}{fmt(c.delta_eur)} €
+                        <span
+                          className={`text-sm font-bold ${isPositive ? 'text-red-600' : 'text-green-600'}`}
+                        >
+                          {isPositive ? '+' : ''}
+                          {fmt(c.delta_eur)} €
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
@@ -349,7 +433,10 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           {m.diagnostics && (
             <details className="group">
               <summary className="flex items-center gap-2 cursor-pointer select-none">
-                <ChevronDown size={14} className="text-gray-400 transition-transform group-open:rotate-180" />
+                <ChevronDown
+                  size={14}
+                  className="text-gray-400 transition-transform group-open:rotate-180"
+                />
                 <h4 className="text-xs font-semibold text-gray-500 uppercase">
                   Données &amp; hypothèses
                 </h4>
@@ -399,9 +486,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           )}
 
           {/* Shadow Breakdown par composante (Step 28) */}
-          {breakdown && (
-            <ShadowBreakdownCard breakdown={breakdown} />
-          )}
+          {breakdown && <ShadowBreakdownCard breakdown={breakdown} />}
 
           {/* Écart détecté (types sans breakdown V2) */}
           {!hasBreakdown && detail.estimated_loss_eur > 0 && (
@@ -418,8 +503,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
               {m.rule_id && <p>Règle : {m.rule_id}</p>}
               {m.method && <p>Méthode : {m.method}</p>}
               {m.energy_type && <p>Énergie : {m.energy_type}</p>}
-              {m.price_ref != null && <p>Prix ref : {m.price_ref} <Explain term="eur_kwh">€/kWh</Explain></p>}
-              {m.kwh != null && <p><Explain term="kwh">kWh</Explain> : {fmtNum(m.kwh, 0)}</p>}
+              {m.price_ref != null && (
+                <p>
+                  Prix ref : {m.price_ref} <Explain term="eur_kwh">€/kWh</Explain>
+                </p>
+              )}
+              {m.kwh != null && (
+                <p>
+                  <Explain term="kwh">kWh</Explain> : {fmtNum(m.kwh, 0)}
+                </p>
+              )}
               {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
               {m.price_source && <p>Source prix : {m.price_source}</p>}
               {m.catalog_trace?.length > 0 && (
@@ -429,7 +522,8 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   </p>
                   {m.catalog_trace.map((t, i) => (
                     <p key={i}>
-                      {t.code} : {t.used_rate} {t.unit || ''} ({t.source || '?'}, {t.valid_from || '?'})
+                      {t.code} : {t.used_rate} {t.unit || ''} ({t.source || '?'},{' '}
+                      {t.valid_from || '?'})
                     </p>
                   ))}
                 </div>

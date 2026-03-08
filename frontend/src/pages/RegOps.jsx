@@ -17,7 +17,10 @@ import {
   REGOPS_SEVERITY_LABELS,
   RULE_LABELS,
 } from '../domain/compliance/complianceLabels.fr';
-import { getComplianceScoreColor as _getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+import {
+  getComplianceScoreColor as _getComplianceScoreColor,
+  COMPLIANCE_SCORE_THRESHOLDS as _COMPLIANCE_SCORE_THRESHOLDS,
+} from '../lib/constants'; // eslint-disable-line no-unused-vars
 import { Coins } from 'lucide-react';
 
 export default function RegOps() {
@@ -186,7 +189,9 @@ export default function RegOps() {
           <div className="bg-white rounded-lg shadow-md p-6" data-section="obligations">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Obligations réglementaires</h2>
             {(() => {
-              const obligationFindings = (assessment.findings || []).filter(f => f.category !== 'incentive');
+              const obligationFindings = (assessment.findings || []).filter(
+                (f) => f.category !== 'incentive'
+              );
               return obligationFindings.length > 0 ? (
                 <div className="space-y-4">
                   {obligationFindings.map((finding, idx) => (
@@ -220,17 +225,20 @@ export default function RegOps() {
                           {new Date(finding.legal_deadline).toLocaleDateString('fr-FR')}
                         </p>
                       )}
-                      {finding.estimated_penalty_eur != null && finding.estimated_penalty_eur > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <Coins size={14} className="text-red-500" />
-                          <span className="text-sm font-medium text-red-600">
-                            Risque financier : {fmtEur(finding.estimated_penalty_eur)}
-                          </span>
-                          {finding.penalty_basis && (
-                            <span className="text-xs text-gray-400">({finding.penalty_basis})</span>
-                          )}
-                        </div>
-                      )}
+                      {finding.estimated_penalty_eur != null &&
+                        finding.estimated_penalty_eur > 0 && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <Coins size={14} className="text-red-500" />
+                            <span className="text-sm font-medium text-red-600">
+                              Risque financier : {fmtEur(finding.estimated_penalty_eur)}
+                            </span>
+                            {finding.penalty_basis && (
+                              <span className="text-xs text-gray-400">
+                                ({finding.penalty_basis})
+                              </span>
+                            )}
+                          </div>
+                        )}
                       {finding.inputs_used && finding.inputs_used.length > 0 && (
                         <details className="mt-2">
                           <summary className="text-sm text-gray-600 cursor-pointer">
@@ -254,7 +262,9 @@ export default function RegOps() {
 
           {/* Financements & opportunités (CEE) */}
           {(() => {
-            const incentiveFindings = (assessment.findings || []).filter(f => f.category === 'incentive');
+            const incentiveFindings = (assessment.findings || []).filter(
+              (f) => f.category === 'incentive'
+            );
             if (incentiveFindings.length === 0) return null;
             return (
               <div className="bg-white rounded-lg shadow-md p-6" data-section="incentives">
@@ -263,7 +273,8 @@ export default function RegOps() {
                   Financements & opportunités
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation réglementaire.
+                  Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une
+                  obligation réglementaire.
                 </p>
                 <div className="space-y-4">
                   {incentiveFindings.map((finding, idx) => (

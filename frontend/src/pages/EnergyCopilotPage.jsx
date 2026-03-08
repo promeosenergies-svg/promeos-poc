@@ -88,7 +88,7 @@ function ActionCard({ action, onValidate, onReject, loading }) {
           className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
         >
           {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {expanded ? 'Masquer' : 'Voir le detail'}
+          {expanded ? 'Masquer' : 'Voir le détail'}
         </button>
 
         {expanded && (

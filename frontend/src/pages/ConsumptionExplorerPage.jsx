@@ -76,7 +76,7 @@ const TABS_SPECIALIST = [
 ];
 
 // Flat list for backward compat (URL deep-linking, panel routing)
-const TAB_CONFIG = [...TABS_ESSENTIAL, ...TABS_ANALYSIS, ...TABS_SPECIALIST];
+const _TAB_CONFIG = [...TABS_ESSENTIAL, ...TABS_ANALYSIS, ...TABS_SPECIALIST];
 
 // ENERGY_OPTIONS + PERIOD_OPTIONS moved to StickyFilterBar
 
@@ -156,7 +156,8 @@ function SmartEmptyState({
       <h3 className="text-lg font-semibold text-gray-700 mb-1">{config.title}</h3>
       <p className="text-sm text-gray-500 mb-4 max-w-md">{text}</p>
       <p className="text-xs text-gray-400 mb-6 max-w-md italic">
-        Pourquoi c&apos;est important : une bonne couverture de données permet de détecter les dérives, optimiser les coûts et fiabiliser les prévisions.
+        Pourquoi c&apos;est important : une bonne couverture de données permet de détecter les
+        dérives, optimiser les coûts et fiabiliser les prévisions.
       </p>
       <div className="flex items-center gap-3">
         {config.ctaLabel && config.ctaPath && (
@@ -227,6 +228,7 @@ export default function ConsumptionExplorerPage() {
   // ── Site list for picker: use full org list (orgSites), not filtered scopedSites ──
   // scopedSites is filtered by scope.siteId, which limits the picker to 1 site when a
   // site is selected. orgSites always returns all sites for the org.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sites = orgSites || [];
 
   // Stable key for org-sites set (changes when org switches or sites load)
@@ -506,17 +508,22 @@ export default function ConsumptionExplorerPage() {
       }
     }
     fetchSummary();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [compareYoy, siteIds.join(','), days, startDate, endDate, energyType]); // eslint-disable-line react-hooks/exhaustive-deps
   // ── V22-B: Sampling minutes from backend meta (for data-frequency intersection) ──
   const [samplingMinutes, setSamplingMinutes] = useState(null);
   // V26-fix: only update native sampling resolution from auto mode responses;
   // forced-granularity responses return the aggregation window, not native resolution.
-  const handleMeta = useCallback((m) => {
-    if (m?.sampling_minutes != null && granularity === 'auto') {
-      setSamplingMinutes(m.sampling_minutes);
-    }
-  }, [granularity]);
+  const handleMeta = useCallback(
+    (m) => {
+      if (m?.sampling_minutes != null && granularity === 'auto') {
+        setSamplingMinutes(m.sampling_minutes);
+      }
+    },
+    [granularity]
+  );
 
   // ── V20-D / V21-F: Demo generation — generates MeterReading data for site, then forces refetch ──
   // Supports energy_vector param (V21-F: gas demo CTA)
@@ -551,8 +558,9 @@ export default function ConsumptionExplorerPage() {
         endDate,
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [siteIds, energyType, days, mode, unit, startDate, endDate]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const handleLoadPreset = useCallback((name) => {
     const state = loadPreset(name);
@@ -564,7 +572,8 @@ export default function ConsumptionExplorerPage() {
     if (state.unit) setUnit(state.unit);
     if (state.startDate !== undefined) setStartDate(state.startDate);
     if (state.endDate !== undefined) setEndDate(state.endDate);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Navigation helpers ─────────────────────────────────────────────────
   const handleNavigate = useCallback(
@@ -578,7 +587,7 @@ export default function ConsumptionExplorerPage() {
       userPickedDaysRef.current = true;
       setDays(d);
     },
-    [setDays],
+    [setDays]
   );
 
   const handleSwitchEnergy = useCallback(
@@ -587,8 +596,9 @@ export default function ConsumptionExplorerPage() {
       if (type === 'gas') switchTab('gas');
       else if (activeTab === 'gas') switchTab('timeseries'); // V19: only leave gas tab when on it
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeTab]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const availability = mergedAvailability || primaryAvailability;
   const hasData = availability?.has_data === true;
@@ -605,7 +615,8 @@ export default function ConsumptionExplorerPage() {
             Explorateur de consommation
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Visualisez et comparez les courbes de consommation de vos sites — par période, énergie et granularité.
+            Visualisez et comparez les courbes de consommation de vos sites — par période, énergie
+            et granularité.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -783,7 +794,7 @@ export default function ConsumptionExplorerPage() {
             <>
               {/* Tab bar — 3 niveaux avec séparateurs visuels */}
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1 items-center flex-wrap">
-                {visibleTabs.map((tab, idx) => {
+                {visibleTabs.map((tab, _idx) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.key;
                   if (nonApplicableTabs(energyType).has(tab.key)) return null;
@@ -820,7 +831,11 @@ export default function ConsumptionExplorerPage() {
                 {!isClassic && (
                   <button
                     onClick={() => setShowAdvanced((v) => !v)}
-                    title={showAdvanced ? 'Masquer les onglets spécialistes' : 'Afficher les onglets spécialistes'}
+                    title={
+                      showAdvanced
+                        ? 'Masquer les onglets spécialistes'
+                        : 'Afficher les onglets spécialistes'
+                    }
                     className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 transition shrink-0"
                   >
                     <ChevronDown

@@ -1,6 +1,6 @@
 /**
  * PROMEOS — EvidenceDrawer (Consumption Explorer)
- * Reusable drawer with 3 tabs: Preuve / Methode / Actions
+ * Reusable drawer with 3 tabs: Preuve / Méthode / Actions
  * Opened when user clicks a zone on Tunnel chart.
  * Uses shared Drawer component for accessibility (role=dialog, aria-modal, focus trap, ESC).
  */
@@ -11,7 +11,7 @@ import Drawer from '../../ui/Drawer';
 
 const TABS = [
   { key: 'evidence', label: 'Preuve', icon: BarChart3 },
-  { key: 'method', label: 'Methode', icon: BookOpen },
+  { key: 'method', label: 'Méthode', icon: BookOpen },
   { key: 'actions', label: 'Actions', icon: Zap },
 ];
 
@@ -28,7 +28,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
   return (
     <Drawer open={!!slot} onClose={onClose} title={drawerTitle}>
       <p className="text-xs text-gray-500 -mt-2 mb-3">
-        {tunnelData?.readings_count?.toLocaleString('fr-FR')} releves • {tunnelData?.unit || 'kW'}
+        {tunnelData?.readings_count?.toLocaleString('fr-FR')} relevés • {tunnelData?.unit || 'kW'}
       </p>
 
       {/* Tabs */}
@@ -70,7 +70,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
                 <p className="text-lg font-bold text-blue-700">{point.p50 ?? '—'}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-xs text-gray-500">Echantillon</p>
+                <p className="text-xs text-gray-500">Échantillon</p>
                 <p className="text-lg font-bold text-gray-700">{point.count ?? '—'}</p>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
               <p className="text-xs font-medium text-amber-700">Bande normale</p>
               <p className="text-sm text-amber-800 mt-1">
                 Entre {point.p10 ?? '—'} et {point.p90 ?? '—'} {tunnelData?.unit || 'kW'} —{' '}
-                {point.count ?? 0} observations a cette heure.
+                {point.count ?? 0} observations à cette heure.
               </p>
             </div>
           </>
@@ -87,10 +87,10 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
         {tab === 'method' && (
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Methode</p>
+              <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Méthode</p>
               <p className="text-sm text-gray-700">
-                Enveloppe quantile par creneau horaire. Les bandes P10-P90 definissent la plage de
-                consommation "normale" basee sur {tunnelData?.days || 90} jours d'historique.
+                Enveloppe quantile par créneau horaire. Les bandes P10-P90 définissent la plage de
+                consommation « normale » basée sur {tunnelData?.days || 90} jours d'historique.
               </p>
             </div>
             <div>

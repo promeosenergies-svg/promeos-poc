@@ -59,7 +59,10 @@ export default function KpiCard({
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wider truncate">
               {resolvedTitle}
             </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1 truncate tabular-nums">
+            <p
+              className="text-2xl font-bold text-gray-900 mt-1 tabular-nums break-words leading-tight"
+              title={typeof value === 'string' ? value : undefined}
+            >
               {value ?? '-'}
             </p>
             {resolvedSub && (
@@ -70,6 +73,41 @@ export default function KpiCard({
         </Wrapper>
       </CardBody>
     </Card>
+  );
+}
+
+/**
+ * KpiCardInline — flat inline variant for secondary KPI displays.
+ * Replaces local KpiCard duplicates in BacsOpsPanel, SiteBillingMini, AnomaliesPage, AperPage.
+ */
+export function KpiCardInline({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  color = 'text-gray-800',
+  iconBg = 'bg-gray-50',
+  loading,
+  unit,
+}) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3">
+      <div className={`p-2 rounded-lg ${iconBg} shrink-0`}>
+        <Icon size={16} className={color} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{label}</p>
+        {loading ? (
+          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse mt-0.5" />
+        ) : (
+          <p className="text-base font-bold text-gray-900 leading-tight break-words">
+            {value}
+            {unit && <span className="text-sm font-normal text-gray-500 ml-1">{unit}</span>}
+          </p>
+        )}
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
   );
 }
 

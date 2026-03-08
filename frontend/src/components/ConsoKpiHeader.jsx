@@ -39,10 +39,15 @@ function KpiTile({
         <Icon size={18} className="text-gray-500" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium whitespace-nowrap">
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium line-clamp-2">
           {label}
         </p>
-        <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
+        <p
+          className={`text-base font-bold ${color} leading-tight break-words`}
+          title={typeof value === 'string' ? value : undefined}
+        >
+          {value ?? '—'}
+        </p>
         <div className="min-h-[1.25rem]">
           {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
         </div>
@@ -68,13 +73,24 @@ function TrendDelta({ deltaPct }) {
   const sign = deltaPct > 0 ? '+' : '';
   const color = deltaPct > 0 ? 'text-red-600' : deltaPct < 0 ? 'text-green-600' : 'text-gray-500';
   return (
-    <span className={`text-[10px] font-semibold ${color}`} title={`Variation N vs N-1 : ${sign}${deltaPct}%`}>
-      {sign}{deltaPct}% vs N-1
+    <span
+      className={`text-[10px] font-semibold ${color}`}
+      title={`Variation N vs N-1 : ${sign}${deltaPct}%`}
+    >
+      {sign}
+      {deltaPct}% vs N-1
     </span>
   );
 }
 
-export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, onEvidence, compareSummary }) {
+export default function ConsoKpiHeader({
+  tunnel,
+  hphc,
+  progression,
+  confidence,
+  onEvidence,
+  compareSummary,
+}) {
   const { isExpert } = useExpertMode();
   // --- kWh total ---
   // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
@@ -95,9 +111,12 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
 
   // --- CO2e ---
   const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
-  const co2Label = co2Kg != null
-    ? co2Kg >= 1000 ? fmtNum(Math.round(co2Kg / 1000), 0, 't CO₂e') : fmtNum(co2Kg, 0, 'kg CO₂e')
-    : '—';
+  const co2Label =
+    co2Kg != null
+      ? co2Kg >= 1000
+        ? fmtNum(Math.round(co2Kg / 1000), 0, 't CO₂e')
+        : fmtNum(co2Kg, 0, 'kg CO₂e')
+      : '—';
 
   // --- Pic kW (P95 from tunnel envelope) ---
   const p95 = (() => {
@@ -157,12 +176,16 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <KpiTile
           icon={Zap}
           label={getKpiLabel('total_kwh', isExpert)}
           value={kwhLabel}
-          sub={compareSummary?.delta_pct != null ? <TrendDelta deltaPct={compareSummary.delta_pct} /> : undefined}
+          sub={
+            compareSummary?.delta_pct != null ? (
+              <TrendDelta deltaPct={compareSummary.delta_pct} />
+            ) : undefined
+          }
           tooltip="Somme des releves sur la periode selectionnee"
           evidenceId="conso-kwh-total"
           onEvidence={onEvidence}
@@ -194,7 +217,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
           label={getKpiLabel('p95_kw', isExpert)}
           value={p95Label}
           sub="P95"
-          tooltip="95e percentile de puissance sur les creneaux horaires"
+          tooltip="95e percentile de puissance sur les créneaux horaires"
         />
         <KpiTile
           icon={Moon}

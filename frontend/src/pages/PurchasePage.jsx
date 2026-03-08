@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell, Badge, Explain, GLOSSARY, EmptyState } from '../ui';
+import { PageShell, Badge, Explain, EmptyState } from '../ui';
 import { SkeletonCard, SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
@@ -286,7 +286,9 @@ export default function PurchasePage() {
   // Step 24: Market context
   const [marketContext, setMarketContext] = useState(null);
   useEffect(() => {
-    getMarketContext('ELEC').then(setMarketContext).catch(() => setMarketContext(null));
+    getMarketContext('ELEC')
+      .then(setMarketContext)
+      .catch(() => setMarketContext(null));
   }, []);
 
   // Brique 3: Export state
@@ -384,6 +386,7 @@ export default function PurchasePage() {
       autoComputedRef.current = true;
       handleCompute();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSiteId, loading, scenarios.length, computing, estimate]);
 
   // V73: Load renewals when tab becomes active — pass orgId + re-fetch on scope change
@@ -552,7 +555,11 @@ export default function PurchasePage() {
         }
       >
         {/* Step 24: Market context banner */}
-        <MarketContextBanner marketContext={marketContext} isExpert={isExpert} onNavigate={navigate} />
+        <MarketContextBanner
+          marketContext={marketContext}
+          isExpert={isExpert}
+          onNavigate={navigate}
+        />
 
         {/* Tab bar */}
         <div className="flex border-b border-gray-200">
@@ -883,9 +890,9 @@ export default function PurchasePage() {
                   <Target size={18} /> Scénarios 2026–2030
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  {scenarios.length} scénarios comparés · Horizon{' '}
-                  {assumptions.horizon_months || 24} mois · Volume{' '}
-                  {Math.round(assumptions.volume_kwh_an).toLocaleString('fr-FR')} kWh/an
+                  {scenarios.length} scénarios comparés · Horizon {assumptions.horizon_months || 24}{' '}
+                  mois · Volume {Math.round(assumptions.volume_kwh_an).toLocaleString('fr-FR')}{' '}
+                  kWh/an
                 </p>
 
                 {/* KPI strip: Budget / Risque / Recommandation */}
@@ -1037,7 +1044,11 @@ export default function PurchasePage() {
                         )}
 
                         {/* V71: "Pourquoi ?" — explication de la stratégie */}
-                        <details className="mb-3 group" data-testid={`scenario-why-${s.strategy}`} open={isReco || undefined}>
+                        <details
+                          className="mb-3 group"
+                          data-testid={`scenario-why-${s.strategy}`}
+                          open={isReco || undefined}
+                        >
                           <summary className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800">
                             <HelpCircle size={12} /> Pourquoi cette stratégie ?
                           </summary>
@@ -1106,7 +1117,10 @@ export default function PurchasePage() {
                                     data-testid="reflex-effort-badge"
                                     className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}
                                   >
-                                    <Settings2 size={10} /> <Explain term="effort_score">Effort {s.effort_score}/100</Explain>
+                                    <Settings2 size={10} />{' '}
+                                    <Explain term="effort_score">
+                                      Effort {s.effort_score}/100
+                                    </Explain>
                                   </span>
                                 )}
                               </div>
@@ -1310,7 +1324,9 @@ export default function PurchasePage() {
                             onClick={() => {
                               const impactEur =
                                 s.savings_vs_current_pct > 0 && s.total_annual_eur
-                                  ? Math.round((s.total_annual_eur * s.savings_vs_current_pct) / 100)
+                                  ? Math.round(
+                                      (s.total_annual_eur * s.savings_vs_current_pct) / 100
+                                    )
                                   : undefined;
                               openActionDrawer({
                                 prefill: {
@@ -1346,13 +1362,15 @@ export default function PurchasePage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       data-testid="cta-creer-action-purchase"
-                      onClick={() => openActionDrawer({
-                        prefill: { titre: 'Renouvellement contrat énergie', type: 'achat' },
-                        siteId: selectedSiteId,
-                        sourceType: 'purchase',
-                        sourceId: `renewal:${selectedSiteId}`,
-                        idempotencyKey: `purchase:renewal:${selectedSiteId}`,
-                      })}
+                      onClick={() =>
+                        openActionDrawer({
+                          prefill: { titre: 'Renouvellement contrat énergie', type: 'achat' },
+                          siteId: selectedSiteId,
+                          sourceType: 'purchase',
+                          sourceId: `renewal:${selectedSiteId}`,
+                          idempotencyKey: `purchase:renewal:${selectedSiteId}`,
+                        })
+                      }
                       className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
                     >
                       <Plus size={14} /> Créer une action
@@ -1468,7 +1486,9 @@ export default function PurchasePage() {
                       Cout annuel total
                     </div>
                     <div className="text-3xl font-bold text-blue-700 mt-1">
-                      {Math.round(portfolioData.portfolio.total_annual_cost_eur).toLocaleString('fr-FR')}{' '}
+                      {Math.round(portfolioData.portfolio.total_annual_cost_eur).toLocaleString(
+                        'fr-FR'
+                      )}{' '}
                       EUR
                     </div>
                   </div>
@@ -1656,7 +1676,7 @@ export default function PurchasePage() {
                             <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
                               <tr>
                                 <th className="px-4 py-3 text-left">Site</th>
-                                <th className="px-4 py-3 text-right">Budget baseline</th>
+                                <th className="px-4 py-3 text-right">Budget de référence</th>
                                 <th className="px-4 py-3 text-right">Tarif Heures Solaires</th>
                                 <th className="px-4 py-3 text-right">Gain</th>
                                 <th className="px-4 py-3 text-right">Risque</th>
@@ -1825,9 +1845,9 @@ export default function PurchasePage() {
                           <th className="px-4 py-3 text-left">Fournisseur</th>
                           <th className="px-4 py-3 text-left">Energie</th>
                           <th className="px-4 py-3 text-left">Fin contrat</th>
-                          <th className="px-4 py-3 text-left">Deadline preavis</th>
+                          <th className="px-4 py-3 text-left">Délai de préavis</th>
                           <th className="px-4 py-3 text-right">Jours restants</th>
-                          <th className="px-4 py-3 text-center">Auto-renew</th>
+                          <th className="px-4 py-3 text-center">Renouvellement auto</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -1940,7 +1960,8 @@ export default function PurchasePage() {
                         )}
                         {run.summary?.recommended_total_eur && (
                           <div className="text-sm font-medium text-gray-700 mt-1">
-                            {Math.round(run.summary.recommended_total_eur).toLocaleString('fr-FR')} EUR/an
+                            {Math.round(run.summary.recommended_total_eur).toLocaleString('fr-FR')}{' '}
+                            EUR/an
                           </div>
                         )}
                       </div>
@@ -1959,8 +1980,8 @@ export default function PurchasePage() {
                               {s.price_eur_per_kwh?.toFixed(4)} EUR/kWh
                             </div>
                             <div className="text-xs text-gray-500">
-                              {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an | Risque:{' '}
-                              {s.risk_score}
+                              {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an |
+                              Risque: {s.risk_score}
                             </div>
                             {s.is_recommended && (
                               <span className="inline-block mt-1 px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">

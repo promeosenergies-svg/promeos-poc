@@ -29,7 +29,7 @@ function MiniCard({ accentKey, icon: Icon, label, value, sub, ctaLabel, onCta, c
       {/* Text */}
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">{label}</p>
-        <p className="text-lg font-bold text-gray-900 leading-tight truncate">{value}</p>
+        <p className="text-lg font-bold text-gray-900 leading-tight break-words">{value}</p>
         {sub && <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>}
       </div>
       {/* CTA */}
@@ -72,7 +72,13 @@ function ProgressRing({ score }) {
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, onNavigate, consoSource }) {
+export default function EssentialsRow({
+  kpis = {},
+  sites = [],
+  onOpenMaturite,
+  onNavigate,
+  consoSource,
+}) {
   const { couvertureDonnees = 0, readinessScore = 0, total = 0 } = kpis;
 
   const totalConsoMWh = Math.round(sites.reduce((s, x) => s + (x.conso_kwh_an || 0), 0) / 1000);

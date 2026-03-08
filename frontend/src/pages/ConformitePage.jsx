@@ -6,8 +6,17 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database, Coins, ArrowRight, CalendarClock } from 'lucide-react';
-import { Button, PageShell, Drawer, ActiveFiltersBar, Explain, GLOSSARY } from '../ui';
+import {
+  ShieldCheck,
+  Plus,
+  RotateCcw,
+  RefreshCw,
+  Database,
+  Coins,
+  ArrowRight,
+  CalendarClock,
+} from 'lucide-react';
+import { Button, PageShell, Drawer, ActiveFiltersBar, Explain } from '../ui';
 import { getKpiMessage } from '../services/kpiMessaging';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
@@ -52,11 +61,7 @@ import {
   resetDb,
   getComplianceTimeline,
 } from '../services/api';
-import {
-  getComplianceScoreColor,
-  getComplianceScoreStatus,
-  COMPLIANCE_SCORE_THRESHOLDS,
-} from '../lib/constants';
+import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
 
 /* ---------- Dev-only badges ---------- */
 
@@ -82,9 +87,7 @@ function DevApiBadge() {
     >
       <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
       {isOk ? 'API : Connectée' : 'API : Hors ligne'}
-      {!isOk && (
-        <span className="ml-1 text-[9px] text-red-500">API indisponible</span>
-      )}
+      {!isOk && <span className="ml-1 text-[9px] text-red-500">API indisponible</span>}
     </span>
   );
 }
@@ -214,7 +217,8 @@ export function sitesToObligations(sitesData, _summary) {
   for (const site of sitesData) {
     for (const f of site.findings) {
       // CEE = incentive, not obligation — skip here
-      if (f.category === 'incentive' || (f.regulation || '').toLowerCase().includes('cee')) continue;
+      if (f.category === 'incentive' || (f.regulation || '').toLowerCase().includes('cee'))
+        continue;
       const reg = f.regulation;
       if (!byReg[reg]) {
         byReg[reg] = {
@@ -320,7 +324,12 @@ function FindingAuditDrawer({ findingId, onClose }) {
   }, [findingId]);
 
   return (
-    <Drawer open={!!findingId} onClose={onClose} title={<Explain term="finding">{DRAWER_LABELS.finding_title}</Explain>} wide>
+    <Drawer
+      open={!!findingId}
+      onClose={onClose}
+      title={<Explain term="finding">{DRAWER_LABELS.finding_title}</Explain>}
+      wide
+    >
       {loading ? (
         <div className="py-12 text-center text-gray-400">{DRAWER_LABELS.loading}</div>
       ) : !detail ? (
@@ -350,7 +359,9 @@ function FindingAuditDrawer({ findingId, onClose }) {
                 </span>
               </div>
               <div>
-                <span className="text-gray-500"><Explain term="severite">{DRAWER_LABELS.severity}</Explain> :</span>{' '}
+                <span className="text-gray-500">
+                  <Explain term="severite">{DRAWER_LABELS.severity}</Explain> :
+                </span>{' '}
                 <span className="font-medium">
                   {SEVERITY_LABELS[detail.severity] || detail.severity}
                 </span>
@@ -470,7 +481,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
  * ComplianceSummaryBanner — Bandeau contextuel 3 états (vert/rouge/ambre).
  * Affiche un message actionnable + CTA selon le niveau de conformité.
  */
-function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navigate }) {
+function ComplianceSummaryBanner({ score, _obligations, timeline, isExpert, navigate }) {
   const nextDeadline = timeline?.next_deadline || null;
   const pct = score?.pct ?? 0;
   const nonConformes = score?.non_conformes ?? 0;
@@ -527,7 +538,10 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
         <div className="flex-1 min-w-0">
           {/* Main message from kpiMessaging */}
           {conformiteMsg && (
-            <p className={`text-sm font-medium ${cfg.textColor}`} data-testid="kpi-message-conformite">
+            <p
+              className={`text-sm font-medium ${cfg.textColor}`}
+              data-testid="kpi-message-conformite"
+            >
               {isExpert ? conformiteMsg.expert : conformiteMsg.simple}
             </p>
           )}
@@ -539,12 +553,20 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
           )}
           {/* Next deadline */}
           {nextDeadline && (
-            <p className="text-xs mt-1.5 flex items-center gap-1 text-gray-600" data-testid="next-deadline">
+            <p
+              className="text-xs mt-1.5 flex items-center gap-1 text-gray-600"
+              data-testid="next-deadline"
+            >
               <CalendarClock size={12} />
-              Prochaine échéance : {nextDeadline.label || nextDeadline.regulation} — {nextDeadline.deadline}
+              Prochaine échéance : {nextDeadline.label || nextDeadline.regulation} —{' '}
+              {nextDeadline.deadline}
               {nextDeadline.days_remaining != null && (
-                <span className={nextDeadline.days_remaining <= 30 ? 'font-semibold text-red-600' : ''}>
-                  {' '}(dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''})
+                <span
+                  className={nextDeadline.days_remaining <= 30 ? 'font-semibold text-red-600' : ''}
+                >
+                  {' '}
+                  (dans {nextDeadline.days_remaining} jour
+                  {nextDeadline.days_remaining > 1 ? 's' : ''})
                 </span>
               )}
             </p>
@@ -556,7 +578,9 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => { navigate('/actions'); }}
+              onClick={() => {
+                navigate('/actions');
+              }}
               data-testid="cta-plan-action"
             >
               Voir le plan d&apos;action <ArrowRight size={14} />
@@ -566,7 +590,9 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => { navigate('/conformite?tab=execution'); }}
+              onClick={() => {
+                navigate('/conformite?tab=execution');
+              }}
               data-testid="cta-preparer-echeances"
             >
               Préparer les échéances <ArrowRight size={14} />
@@ -593,9 +619,7 @@ export default function ConformitePage() {
   const [sitesData, setSitesData] = useState([]);
   const [auditFindingId, setAuditFindingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get('tab') || 'obligations',
-  );
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'obligations');
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
   const [error, setError] = useState(null);
@@ -974,7 +998,11 @@ export default function ConformitePage() {
   return (
     <PageShell
       icon={ShieldCheck}
-      title={<><Explain term="statut_conformite">Conformité</Explain> réglementaire</>}
+      title={
+        <>
+          <Explain term="statut_conformite">Conformité</Explain> réglementaire
+        </>
+      }
       subtitle={scopeLabel}
       actions={
         <>
@@ -998,7 +1026,8 @@ export default function ConformitePage() {
           />
           {bundle?.meta?.generated_at && (
             <span className="text-[10px] font-mono text-gray-400">
-              <Explain term="report_pct">Synthèse</Explain> : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+              <Explain term="report_pct">Synthèse</Explain> :{' '}
+              {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
             </span>
           )}
         </div>
@@ -1032,12 +1061,17 @@ export default function ConformitePage() {
 
       {/* A.2: Unified compliance score header */}
       {complianceScore && (
-        <div data-section="compliance-score-header" className="p-4 bg-white border border-gray-200 rounded-lg">
+        <div
+          data-section="compliance-score-header"
+          className="p-4 bg-white border border-gray-200 rounded-lg"
+        >
           <div className="flex items-center gap-6">
             {/* Score display */}
             <div className="text-center min-w-[100px]">
               <p className="text-xs text-gray-500 mb-1">Score conformité</p>
-              <span className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}>
+              <span
+                className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}
+              >
                 {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
               </span>
               <span className="text-lg text-gray-400">/100</span>
@@ -1045,13 +1079,19 @@ export default function ConformitePage() {
             {/* Breakdown bars */}
             <div className="flex-1 space-y-2">
               {(complianceScore.breakdown || []).map((fw) => {
-                const fwLabel = fw.framework === 'tertiaire_operat' ? 'Décret Tertiaire' : fw.framework === 'bacs' ? 'BACS' : 'APER';
+                const fwLabel =
+                  fw.framework === 'tertiaire_operat'
+                    ? 'Décret Tertiaire'
+                    : fw.framework === 'bacs'
+                      ? 'BACS'
+                      : 'APER';
                 const weightPct = fw.weight != null ? `${Math.round(fw.weight * 100)}%` : '';
                 const isAvailable = fw.available !== false && fw.source !== 'default';
                 return (
                   <div key={fw.framework} className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 w-36 truncate">
-                      {fwLabel}{weightPct && isAvailable ? ` (${weightPct})` : ''}
+                      {fwLabel}
+                      {weightPct && isAvailable ? ` (${weightPct})` : ''}
                     </span>
                     {isAvailable ? (
                       <>
@@ -1061,7 +1101,9 @@ export default function ConformitePage() {
                             style={{ width: `${Math.min(100, fw.score)}%` }}
                           />
                         </div>
-                        <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}>
+                        <span
+                          className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}
+                        >
                           {Math.round(fw.score)}
                         </span>
                       </>
@@ -1072,9 +1114,15 @@ export default function ConformitePage() {
                 );
               })}
               {/* Fallback: show breakdown_avg from portfolio if no breakdown */}
-              {!complianceScore.breakdown && complianceScore.breakdown_avg && (
+              {!complianceScore.breakdown &&
+                complianceScore.breakdown_avg &&
                 Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => {
-                  const fwLabel = fw === 'tertiaire_operat' ? 'Décret Tertiaire' : fw === 'bacs' ? 'BACS' : 'APER';
+                  const fwLabel =
+                    fw === 'tertiaire_operat'
+                      ? 'Décret Tertiaire'
+                      : fw === 'bacs'
+                        ? 'BACS'
+                        : 'APER';
                   return (
                     <div key={fw} className="flex items-center gap-2">
                       <span className="text-xs text-gray-500 w-36 truncate">{fwLabel}</span>
@@ -1084,24 +1132,29 @@ export default function ConformitePage() {
                           style={{ width: `${Math.min(100, score)}%` }}
                         />
                       </div>
-                      <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}>
+                      <span
+                        className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}
+                      >
                         {Math.round(score)}
                       </span>
                     </div>
                   );
-                })
-              )}
+                })}
             </div>
             {/* Confidence */}
             {(complianceScore.confidence || complianceScore.high_confidence_count != null) && (
               <div className="text-center">
                 <p className="text-xs text-gray-500 mb-1">Confiance</p>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  (complianceScore.confidence === 'high' || (complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6))
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {(complianceScore.confidence === 'high' || (complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6))
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    complianceScore.confidence === 'high' ||
+                    complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
+                  {complianceScore.confidence === 'high' ||
+                  complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6
                     ? 'Données fiables'
                     : 'Données partielles'}
                 </span>
@@ -1189,13 +1242,17 @@ export default function ConformitePage() {
 
       {/* Financements mobilisables (CEE) — visible on obligations tab */}
       {activeTab === 'obligations' && incentives.length > 0 && (
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-6" data-section="incentives">
+        <div
+          className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-6"
+          data-section="incentives"
+        >
           <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <Coins size={18} className="text-amber-500" />
             Financements mobilisables
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation réglementaire.
+            Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation
+            réglementaire.
           </p>
           <div className="space-y-3">
             {incentives.map((f, idx) => (

@@ -28,7 +28,7 @@ describe('Step 12 — kpiLabels service', () => {
   });
 
   it('all KPI_LABELS have simple and expert', () => {
-    Object.entries(KPI_LABELS).forEach(([key, val]) => {
+    Object.entries(KPI_LABELS).forEach(([_key, val]) => {
       expect(val.simple).toBeTruthy();
       expect(val.expert).toBeTruthy();
     });
@@ -39,10 +39,17 @@ describe('Step 12 — kpiLabels service', () => {
   });
 
   it('no English in simple labels', () => {
-    const english = ['Load Factor', 'Off-hours', 'Baseload', 'Night ratio',
-                     'Weekend ratio', 'Power', 'Score'];
-    Object.values(KPI_LABELS).forEach(val => {
-      english.forEach(en => {
+    const english = [
+      'Load Factor',
+      'Off-hours',
+      'Baseload',
+      'Night ratio',
+      'Weekend ratio',
+      'Power',
+      'Score',
+    ];
+    Object.values(KPI_LABELS).forEach((val) => {
+      english.forEach((en) => {
         expect(val.simple).not.toBe(en);
       });
     });
@@ -50,7 +57,7 @@ describe('Step 12 — kpiLabels service', () => {
 
   it('simple and expert differ for technical KPIs', () => {
     const technicalIds = ['pmax_kw', 'p95_kw', 'load_factor', 'off_hours_ratio', 'night_ratio'];
-    technicalIds.forEach(id => {
+    technicalIds.forEach((id) => {
       const entry = KPI_LABELS[id];
       expect(entry.simple).not.toBe(entry.expert);
     });

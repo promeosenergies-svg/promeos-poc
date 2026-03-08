@@ -6,12 +6,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
-import {
-  NAV_SECTIONS,
-  NAV_MODULES,
-  ALL_NAV_ITEMS,
-  getSectionsForModule,
-} from '../../layout/NavRegistry';
+import { NAV_MODULES, ALL_NAV_ITEMS, getSectionsForModule } from '../../layout/NavRegistry';
 
 const root = resolve(__dirname, '../../../');
 function src(relPath) {
@@ -80,9 +75,7 @@ describe('C. No duplicates', () => {
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
 
   it('/achat-energie appears exactly once in achat items', () => {
-    const achatsItems = achatItems.filter(
-      (i) => i.to === '/achat-energie'
-    );
+    const achatsItems = achatItems.filter((i) => i.to === '/achat-energie');
     expect(achatsItems).toHaveLength(1);
   });
 
@@ -109,12 +102,12 @@ describe('D. Tooltips & aria-label in NavPanel', () => {
     expect(navPanel).toMatch(/aria-label=\{tipText\}/);
   });
 
-  it('panel width uses responsive clamp (220px–260px)', () => {
-    expect(navPanel).toMatch(/clamp\(220px/);
+  it('panel width uses responsive clamp (190px–230px)', () => {
+    expect(navPanel).toMatch(/clamp\(190px/);
   });
 
-  it('section headers support line-clamp-2', () => {
-    expect(navPanel).toMatch(/line-clamp-2/);
+  it('section headers are always visible (no toggle)', () => {
+    expect(navPanel).not.toMatch(/aria-expanded/);
   });
 });
 

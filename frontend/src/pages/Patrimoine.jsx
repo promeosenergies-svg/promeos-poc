@@ -25,7 +25,6 @@ import {
   ArrowUpDown,
   ChevronDown,
   PlusCircle,
-  Trash2,
   PieChart,
 } from 'lucide-react';
 import {
@@ -41,7 +40,8 @@ import {
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
-import ErrorState from '../ui/ErrorState';
+import { useToast } from '../ui/ToastProvider';
+import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -55,7 +55,14 @@ import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
-import { getPatrimoineAnomalies, getPortfolioReconciliation, patrimoineSiteMeters, getSiteMetersTree, createSubMeter, getMeterBreakdown } from '../services/api';
+import {
+  getPatrimoineAnomalies,
+  getPortfolioReconciliation,
+  patrimoineSiteMeters as _patrimoineSiteMeters,
+  getSiteMetersTree,
+  createSubMeter,
+  getMeterBreakdown,
+} from '../services/api';
 import { track } from '../services/tracker';
 import {
   fmtEur,
@@ -66,7 +73,7 @@ import {
   fmtDateFR,
   pl,
 } from '../utils/format';
-import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps, getDataQualityGrade } from '../lib/constants';
+import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
 import DataQualityBadge from '../components/DataQualityBadge';
 import { getDataQualityPortfolio } from '../services/api';
 
@@ -138,6 +145,7 @@ export default function Patrimoine() {
   const [sp, setSp] = useSearchParams();
   const { scopedSites, sitesLoading, scope, org } = useScope();
   const { isExpert } = useExpertMode();
+  const toast = useToast();
   const searchRef = useRef(null);
 
   // URL-synced state
@@ -194,7 +202,9 @@ export default function Patrimoine() {
     getDataQualityPortfolio(org.id)
       .then((data) => {
         const m = {};
-        (data.sites || []).forEach((s) => { m[s.site_id] = s; });
+        (data.sites || []).forEach((s) => {
+          m[s.site_id] = s;
+        });
         setDqMap(m);
       })
       .catch(() => {});
@@ -445,16 +455,19 @@ export default function Patrimoine() {
   // V60 — ouvre le drawer sur l'onglet Anomalies (depuis PatrimoinePortfolioHealthBar)
   const openDrawerOnAnomalies = useCallback(
     (site_id) => {
-      const site = scopedSites.find((s) => s.id === site_id);
+      // Try exact match first, then coerce to string (handles number/string mismatch)
+      const site = scopedSites.find((s) => s.id === site_id || String(s.id) === String(site_id));
       if (site) {
         setDrawerSite(site);
         setDrawerInitialTab('anomalies');
         track('portfolio_top_site_click', { site_id });
       } else {
-        navigate(`/sites/${site_id}`);
+        toast.warning(
+          `Site #${site_id} non disponible dans le périmètre actuel. Élargissez votre scope.`
+        );
       }
     },
-    [scopedSites, navigate]
+    [scopedSites, toast]
   );
   const openActionFromDrawer = useCallback(
     (siteName, siteId) => {
@@ -684,7 +697,9 @@ export default function Patrimoine() {
             <button
               onClick={() => setViewMode('table')}
               className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition whitespace-nowrap ${
-                viewMode === 'table' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                viewMode === 'table'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Tableau
@@ -692,7 +707,9 @@ export default function Patrimoine() {
             <button
               onClick={() => setViewMode('map')}
               className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition whitespace-nowrap ${
-                viewMode === 'map' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                viewMode === 'map'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Carte
@@ -790,246 +807,253 @@ export default function Patrimoine() {
           )}
 
           {/* ── Table ── */}
-          {viewMode === 'table' && (total === 0 ? (
-            <EmptyState
-              icon={Search}
-              title="Aucun site ne correspond"
-              text="Essayez d'autres critères ou réinitialiser les filtres."
-              ctaLabel="Réinitialiser"
-              onCta={resetFilters}
-            />
-          ) : (
-            <Card id="sites-table" className="flex flex-col">
-              <div
-                ref={scrollRef}
-                className="overflow-auto"
-                style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '400px' }}
-              >
-                <Table compact pinFirst>
-                  <Thead sticky>
-                    <tr>
-                      <ThCheckbox
-                        checked={selected.size === filtered.length && filtered.length > 0}
-                        onChange={toggleSelectAll}
-                      />
-                      <Th className="w-10 text-center text-gray-400">#</Th>
-                      <Th
-                        sortable
-                        sorted={sortCol === 'nom' ? sortDir : ''}
-                        onSort={() => handleSort('nom')}
-                        pin
-                      >
-                        Site
-                      </Th>
-                      <Th>Usage</Th>
-                      <Th>Conformité</Th>
-                      <Th
-                        sortable
-                        sorted={sortCol === 'risque_eur' ? sortDir : ''}
-                        onSort={() => handleSort('risque_eur')}
-                        className="text-right"
-                      >
-                        Risque
-                      </Th>
-                      <Th
-                        sortable
-                        sorted={sortCol === 'surface_m2' ? sortDir : ''}
-                        onSort={() => handleSort('surface_m2')}
-                        className="text-right"
-                      >
-                        Surface
-                      </Th>
-                      {isExpert && (
+          {viewMode === 'table' &&
+            (total === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="Aucun site ne correspond"
+                text="Essayez d'autres critères ou réinitialiser les filtres."
+                ctaLabel="Réinitialiser"
+                onCta={resetFilters}
+              />
+            ) : (
+              <Card id="sites-table" className="flex flex-col">
+                <div
+                  ref={scrollRef}
+                  className="overflow-auto"
+                  style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '400px' }}
+                >
+                  <Table compact pinFirst>
+                    <Thead sticky>
+                      <tr>
+                        <ThCheckbox
+                          checked={selected.size === filtered.length && filtered.length > 0}
+                          onChange={toggleSelectAll}
+                        />
+                        <Th className="w-10 text-center text-gray-400">#</Th>
                         <Th
                           sortable
-                          sorted={sortCol === 'conso_kwh_an' ? sortDir : ''}
-                          onSort={() => handleSort('conso_kwh_an')}
+                          sorted={sortCol === 'nom' ? sortDir : ''}
+                          onSort={() => handleSort('nom')}
+                          pin
+                        >
+                          Site
+                        </Th>
+                        <Th>Usage</Th>
+                        <Th>Conformité</Th>
+                        <Th
+                          sortable
+                          sorted={sortCol === 'risque_eur' ? sortDir : ''}
+                          onSort={() => handleSort('risque_eur')}
                           className="text-right"
                         >
-                          Conso
+                          Risque
                         </Th>
-                      )}
-                      <Th
-                        sortable
-                        sorted={sortCol === 'anomalies_count' ? sortDir : ''}
-                        onSort={() => handleSort('anomalies_count')}
-                        className="text-right"
-                      >
-                        Anomalies
-                      </Th>
-                      <Th className="text-center">Réconc.</Th>
-                      <Th className="text-center">Qualité</Th>
-                      <Th className="w-8" />
-                    </tr>
-                  </Thead>
-                  <Tbody>
-                    {paddingTop > 0 && (
-                      <tr className="!border-0">
-                        <td
-                          colSpan={colCount}
-                          style={{ height: paddingTop, padding: 0, border: 'none', lineHeight: 0 }}
-                        />
-                      </tr>
-                    )}
-                    {virtualItems.map((vr) => {
-                      const site = filtered[vr.index];
-                      const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
-                      const usageColor =
-                        USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
-                      const rank = vr.index + 1;
-                      const isFav = favorites.has(site.id);
-                      return (
-                        <Tr
-                          key={site.id}
-                          selected={selected.has(site.id)}
-                          className="group"
-                          onClick={() => openDrawer(site)}
+                        <Th
+                          sortable
+                          sorted={sortCol === 'surface_m2' ? sortDir : ''}
+                          onSort={() => handleSort('surface_m2')}
+                          className="text-right"
                         >
-                          <TdCheckbox
-                            checked={selected.has(site.id)}
-                            onChange={() => toggleSelect(site.id)}
-                          />
-                          <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">
-                            {rank}
-                          </Td>
-                          <Td pin>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1">
-                                {isFav && (
-                                  <Star
-                                    size={11}
-                                    className="text-amber-400 fill-amber-400 shrink-0"
-                                  />
-                                )}
-                                <span className="font-medium text-gray-900 truncate text-sm">
-                                  {site.nom}
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-gray-400 truncate leading-tight">
-                                {site.adresse}, {site.code_postal} {site.ville}
-                              </div>
-                            </div>
-                          </Td>
-                          <Td>
-                            <span
-                              className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}
-                            >
-                              {site.usage}
-                            </span>
-                          </Td>
-                          <Td>
-                            <Badge status={badge.status}>{badge.label}</Badge>
-                          </Td>
-                          <Td className="text-right tabular-nums">
-                            {site.risque_eur > 0 ? (
-                              <span
-                                className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}
-                              >
-                                {fmtEur(site.risque_eur)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </Td>
-                          <Td className="text-right text-sm text-gray-600 tabular-nums">
-                            {fmtArea(site.surface_m2)}
-                          </Td>
-                          {isExpert && (
-                            <Td className="text-right text-sm text-gray-600 tabular-nums">
-                              {fmtKwh(site.conso_kwh_an)}
-                            </Td>
-                          )}
-                          <Td className="text-right">
-                            {site.anomalies_count > 0 ? (
-                              <Tooltip
-                                text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}
-                              >
-                                <span
-                                  className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
-                                    site.anomalies_count >= ANOMALY_THRESHOLDS.critical
-                                      ? 'bg-red-100 text-red-700'
-                                      : 'bg-amber-100 text-amber-700'
-                                  }`}
-                                >
-                                  {site.anomalies_count}
-                                </span>
-                              </Tooltip>
-                            ) : (
-                              <span className="text-gray-300 text-xs">0</span>
-                            )}
-                          </Td>
-                          <Td className="text-center">
-                            {(() => {
-                              const rc = reconMap[site.id];
-                              if (!rc) return <span className="text-gray-300">—</span>;
-                              const dot =
-                                rc.status === 'ok'
-                                  ? 'bg-green-500'
-                                  : rc.status === 'warn'
-                                    ? 'bg-amber-400'
-                                    : 'bg-red-500';
-                              return (
-                                <Tooltip text={`Réconciliation: ${rc.score}%`}>
-                                  <span
-                                    className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`}
-                                  />
-                                </Tooltip>
-                              );
-                            })()}
-                          </Td>
-                          <Td className="text-center">
-                            {dqMap[site.id] ? (
-                              <DataQualityBadge score={dqMap[site.id].score} size="sm" />
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </Td>
-                          <Td>
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                              <Tooltip text="Créer action">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openActionFromDrawer(site.nom);
-                                  }}
-                                  className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600"
-                                >
-                                  <Lightbulb size={14} />
-                                </button>
-                              </Tooltip>
-                              <ChevronRight size={14} className="text-gray-300" />
-                            </div>
-                          </Td>
-                        </Tr>
-                      );
-                    })}
-                    {paddingBottom > 0 && (
-                      <tr className="!border-0">
-                        <td
-                          colSpan={colCount}
-                          style={{
-                            height: paddingBottom,
-                            padding: 0,
-                            border: 'none',
-                            lineHeight: 0,
-                          }}
-                        />
+                          Surface
+                        </Th>
+                        {isExpert && (
+                          <Th
+                            sortable
+                            sorted={sortCol === 'conso_kwh_an' ? sortDir : ''}
+                            onSort={() => handleSort('conso_kwh_an')}
+                            className="text-right"
+                          >
+                            Conso
+                          </Th>
+                        )}
+                        <Th
+                          sortable
+                          sorted={sortCol === 'anomalies_count' ? sortDir : ''}
+                          onSort={() => handleSort('anomalies_count')}
+                          className="text-right"
+                        >
+                          Anomalies
+                        </Th>
+                        <Th className="text-center">Réconc.</Th>
+                        <Th className="text-center">Qualité</Th>
+                        <Th className="w-8" />
                       </tr>
-                    )}
-                  </Tbody>
-                </Table>
-              </div>
-              <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-                <span className="text-xs text-gray-400">
-                  {pl(total, 'site')} · Tri : {sortCol || 'défaut'}{' '}
-                  {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {total} {total > 1 ? 'sites' : 'site'}
-                </span>
-              </div>
-            </Card>
-          ))}
+                    </Thead>
+                    <Tbody>
+                      {paddingTop > 0 && (
+                        <tr className="!border-0">
+                          <td
+                            colSpan={colCount}
+                            style={{
+                              height: paddingTop,
+                              padding: 0,
+                              border: 'none',
+                              lineHeight: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                      {virtualItems.map((vr) => {
+                        const site = filtered[vr.index];
+                        const badge =
+                          STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+                        const usageColor =
+                          USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+                        const rank = vr.index + 1;
+                        const isFav = favorites.has(site.id);
+                        return (
+                          <Tr
+                            key={site.id}
+                            selected={selected.has(site.id)}
+                            className="group"
+                            onClick={() => openDrawer(site)}
+                          >
+                            <TdCheckbox
+                              checked={selected.has(site.id)}
+                              onChange={() => toggleSelect(site.id)}
+                            />
+                            <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">
+                              {rank}
+                            </Td>
+                            <Td pin>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1">
+                                  {isFav && (
+                                    <Star
+                                      size={11}
+                                      className="text-amber-400 fill-amber-400 shrink-0"
+                                    />
+                                  )}
+                                  <span className="font-medium text-gray-900 truncate text-sm">
+                                    {site.nom}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-gray-400 truncate leading-tight">
+                                  {site.adresse}, {site.code_postal} {site.ville}
+                                </div>
+                              </div>
+                            </Td>
+                            <Td>
+                              <span
+                                className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}
+                              >
+                                {site.usage}
+                              </span>
+                            </Td>
+                            <Td>
+                              <Badge status={badge.status}>{badge.label}</Badge>
+                            </Td>
+                            <Td className="text-right tabular-nums">
+                              {site.risque_eur > 0 ? (
+                                <span
+                                  className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}
+                                >
+                                  {fmtEur(site.risque_eur)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </Td>
+                            <Td className="text-right text-sm text-gray-600 tabular-nums">
+                              {fmtArea(site.surface_m2)}
+                            </Td>
+                            {isExpert && (
+                              <Td className="text-right text-sm text-gray-600 tabular-nums">
+                                {fmtKwh(site.conso_kwh_an)}
+                              </Td>
+                            )}
+                            <Td className="text-right">
+                              {site.anomalies_count > 0 ? (
+                                <Tooltip
+                                  text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}
+                                >
+                                  <span
+                                    className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
+                                      site.anomalies_count >= ANOMALY_THRESHOLDS.critical
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-amber-100 text-amber-700'
+                                    }`}
+                                  >
+                                    {site.anomalies_count}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <span className="text-gray-300 text-xs">0</span>
+                              )}
+                            </Td>
+                            <Td className="text-center">
+                              {(() => {
+                                const rc = reconMap[site.id];
+                                if (!rc) return <span className="text-gray-300">—</span>;
+                                const dot =
+                                  rc.status === 'ok'
+                                    ? 'bg-green-500'
+                                    : rc.status === 'warn'
+                                      ? 'bg-amber-400'
+                                      : 'bg-red-500';
+                                return (
+                                  <Tooltip text={`Réconciliation: ${rc.score}%`}>
+                                    <span
+                                      className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`}
+                                    />
+                                  </Tooltip>
+                                );
+                              })()}
+                            </Td>
+                            <Td className="text-center">
+                              {dqMap[site.id] ? (
+                                <DataQualityBadge score={dqMap[site.id].score} size="sm" />
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </Td>
+                            <Td>
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                                <Tooltip text="Créer action">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openActionFromDrawer(site.nom);
+                                    }}
+                                    className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600"
+                                  >
+                                    <Lightbulb size={14} />
+                                  </button>
+                                </Tooltip>
+                                <ChevronRight size={14} className="text-gray-300" />
+                              </div>
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                      {paddingBottom > 0 && (
+                        <tr className="!border-0">
+                          <td
+                            colSpan={colCount}
+                            style={{
+                              height: paddingBottom,
+                              padding: 0,
+                              border: 'none',
+                              lineHeight: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                    </Tbody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+                  <span className="text-xs text-gray-400">
+                    {pl(total, 'site')} · Tri : {sortCol || 'défaut'}{' '}
+                    {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {total} {total > 1 ? 'sites' : 'site'}
+                  </span>
+                </div>
+              </Card>
+            ))}
         </div>
       )}
 
@@ -1092,7 +1116,7 @@ function FilterSelect({ options, value, onChange }) {
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 /* ── SiteMetersTab — tree view with sub-meters (Step 26) ── */
-function SiteMetersTab({ siteId, count }) {
+function SiteMetersTab({ siteId, count: _count }) {
   const [meters, setMeters] = useState(null);
   const [expanded, setExpanded] = useState({});
   const [addingTo, setAddingTo] = useState(null);
@@ -1107,7 +1131,9 @@ function SiteMetersTab({ siteId, count }) {
     }
   }, [siteId]);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const toggleExpand = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -1118,7 +1144,9 @@ function SiteMetersTab({ siteId, count }) {
       setNewName('');
       setAddingTo(null);
       reload();
-    } catch { /* silently fail */ }
+    } catch {
+      /* silently fail */
+    }
   };
 
   const loadBreakdown = async (meterId) => {
@@ -1126,7 +1154,9 @@ function SiteMetersTab({ siteId, count }) {
     try {
       const data = await getMeterBreakdown(meterId);
       setBreakdown((prev) => ({ ...prev, [meterId]: data }));
-    } catch { /* silently fail */ }
+    } catch {
+      /* silently fail */
+    }
   };
 
   if (meters === null) {
@@ -1146,7 +1176,8 @@ function SiteMetersTab({ siteId, count }) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-gray-600">
-        {meters.length} compteur{meters.length > 1 ? 's' : ''} associé{meters.length > 1 ? 's' : ''} à ce site.
+        {meters.length} compteur{meters.length > 1 ? 's' : ''} associé{meters.length > 1 ? 's' : ''}{' '}
+        à ce site.
       </p>
       {meters.map((m) => {
         const hasSubs = m.sub_meters && m.sub_meters.length > 0;
@@ -1158,19 +1189,40 @@ function SiteMetersTab({ siteId, count }) {
             {/* Principal meter row */}
             <div className="flex items-center gap-2 px-3 py-2 bg-gray-50">
               {hasSubs ? (
-                <button onClick={() => { toggleExpand(m.id); if (!isExpanded) loadBreakdown(m.id); }} className="p-0.5 hover:bg-gray-200 rounded">
-                  {isExpanded ? <ChevronDown size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
+                <button
+                  onClick={() => {
+                    toggleExpand(m.id);
+                    if (!isExpanded) loadBreakdown(m.id);
+                  }}
+                  className="p-0.5 hover:bg-gray-200 rounded"
+                >
+                  {isExpanded ? (
+                    <ChevronDown size={14} className="text-gray-500" />
+                  ) : (
+                    <ChevronRight size={14} className="text-gray-500" />
+                  )}
                 </button>
               ) : (
                 <Zap size={14} className="text-gray-400 shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{m.name || m.numero_serie || m.meter_id}</p>
-                <p className="text-[11px] text-gray-400">{m.type_compteur || m.energy_vector || '—'}{hasSubs ? ` · ${m.sub_meters.length} sous-compteur${m.sub_meters.length > 1 ? 's' : ''}` : ''}</p>
+                <p className="text-sm font-medium text-gray-800 truncate">
+                  {m.name || m.numero_serie || m.meter_id}
+                </p>
+                <p className="text-[11px] text-gray-400">
+                  {m.type_compteur || m.energy_vector || '—'}
+                  {hasSubs
+                    ? ` · ${m.sub_meters.length} sous-compteur${m.sub_meters.length > 1 ? 's' : ''}`
+                    : ''}
+                </p>
               </div>
               <MeterSourceBadge source={m.source} />
               {m.source === 'meter' && (
-                <button onClick={() => setAddingTo(addingTo === m.id ? null : m.id)} title="Ajouter sous-compteur" className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-blue-600">
+                <button
+                  onClick={() => setAddingTo(addingTo === m.id ? null : m.id)}
+                  title="Ajouter sous-compteur"
+                  className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-blue-600"
+                >
                   <PlusCircle size={14} />
                 </button>
               )}
@@ -1180,24 +1232,34 @@ function SiteMetersTab({ siteId, count }) {
             {isExpanded && hasSubs && (
               <div className="border-t border-gray-100">
                 {m.sub_meters.map((sm) => (
-                  <div key={sm.id} className="flex items-center gap-2 px-3 py-1.5 pl-8 bg-white border-b border-gray-50 last:border-b-0">
+                  <div
+                    key={sm.id}
+                    className="flex items-center gap-2 px-3 py-1.5 pl-8 bg-white border-b border-gray-50 last:border-b-0"
+                  >
                     <Zap size={12} className="text-blue-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 truncate">{sm.name || sm.meter_id}</p>
+                      <p className="text-xs font-medium text-gray-700 truncate">
+                        {sm.name || sm.meter_id}
+                      </p>
                     </div>
-                    {bd && bd.sub_meters && (() => {
-                      const detail = bd.sub_meters.find((d) => d.id === sm.id);
-                      return detail ? (
-                        <span className="text-[10px] text-gray-400">{detail.pct_of_total}%</span>
-                      ) : null;
-                    })()}
+                    {bd &&
+                      bd.sub_meters &&
+                      (() => {
+                        const detail = bd.sub_meters.find((d) => d.id === sm.id);
+                        return detail ? (
+                          <span className="text-[10px] text-gray-400">{detail.pct_of_total}%</span>
+                        ) : null;
+                      })()}
                   </div>
                 ))}
                 {/* Breakdown delta */}
                 {bd && bd.delta_kwh > 0 && (
                   <div className="flex items-center gap-2 px-3 py-1.5 pl-8 bg-amber-50 text-amber-700">
                     <PieChart size={12} className="shrink-0" />
-                    <span className="text-[11px] font-medium">{bd.delta_label} : {bd.delta_pct}% ({Math.round(bd.delta_kwh).toLocaleString('fr-FR')} kWh)</span>
+                    <span className="text-[11px] font-medium">
+                      {bd.delta_label} : {bd.delta_pct}% (
+                      {Math.round(bd.delta_kwh).toLocaleString('fr-FR')} kWh)
+                    </span>
                   </div>
                 )}
               </div>
@@ -1214,8 +1276,21 @@ function SiteMetersTab({ siteId, count }) {
                   className="flex-1 text-xs px-2 py-1 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
                   onKeyDown={(e) => e.key === 'Enter' && handleAddSub(m.id)}
                 />
-                <button onClick={() => handleAddSub(m.id)} className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Ajouter</button>
-                <button onClick={() => { setAddingTo(null); setNewName(''); }} className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700">Annuler</button>
+                <button
+                  onClick={() => handleAddSub(m.id)}
+                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Ajouter
+                </button>
+                <button
+                  onClick={() => {
+                    setAddingTo(null);
+                    setNewName('');
+                  }}
+                  className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700"
+                >
+                  Annuler
+                </button>
               </div>
             )}
           </div>
@@ -1334,9 +1409,7 @@ function SiteDrawerContent({
       )}
 
       {/* Tab: Compteurs */}
-      {tab === 'compteurs' && (
-        <SiteMetersTab siteId={site.id} count={site.nb_compteurs} />
-      )}
+      {tab === 'compteurs' && <SiteMetersTab siteId={site.id} count={site.nb_compteurs} />}
 
       {/* Tab: Actions */}
       {tab === 'actions' && (

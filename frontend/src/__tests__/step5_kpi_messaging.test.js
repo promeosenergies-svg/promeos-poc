@@ -65,13 +65,13 @@ describe('Step5 — kpiMessaging handler quality', () => {
 // ── C. Unit tests — getKpiMessage returns correct structure ─────────────────
 
 describe('Step5 — getKpiMessage unit tests', () => {
-  let getKpiMessage, SUPPORTED_KPIS;
+  let getKpiMessage, _SUPPORTED_KPIS;
 
   // Dynamic import to test actual logic
   it('imports successfully', async () => {
     const mod = await import('../services/kpiMessaging.js');
     getKpiMessage = mod.getKpiMessage;
-    SUPPORTED_KPIS = mod.SUPPORTED_KPIS;
+    _SUPPORTED_KPIS = mod.SUPPORTED_KPIS;
     expect(getKpiMessage).toBeDefined();
   });
 
@@ -100,25 +100,25 @@ describe('Step5 — getKpiMessage unit tests', () => {
 
   it('night_ratio(0.10) returns ok', async () => {
     const mod = await import('../services/kpiMessaging.js');
-    const msg = mod.getKpiMessage('night_ratio', 0.10);
+    const msg = mod.getKpiMessage('night_ratio', 0.1);
     expect(msg.severity).toBe('ok');
   });
 
   it('night_ratio(0.50) returns crit', async () => {
     const mod = await import('../services/kpiMessaging.js');
-    const msg = mod.getKpiMessage('night_ratio', 0.50);
+    const msg = mod.getKpiMessage('night_ratio', 0.5);
     expect(msg.severity).toBe('crit');
   });
 
   it('weekend_ratio(0.10) returns ok', async () => {
     const mod = await import('../services/kpiMessaging.js');
-    const msg = mod.getKpiMessage('weekend_ratio', 0.10);
+    const msg = mod.getKpiMessage('weekend_ratio', 0.1);
     expect(msg.severity).toBe('ok');
   });
 
   it('weekend_ratio(0.50) returns crit', async () => {
     const mod = await import('../services/kpiMessaging.js');
-    const msg = mod.getKpiMessage('weekend_ratio', 0.50);
+    const msg = mod.getKpiMessage('weekend_ratio', 0.5);
     expect(msg.severity).toBe('crit');
   });
 

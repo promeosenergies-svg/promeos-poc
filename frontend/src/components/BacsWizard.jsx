@@ -23,7 +23,7 @@ import {
 import { Card, CardBody, Badge, Button } from '../ui';
 import { createBacsAsset, addCvcSystem, recomputeBacs, getBacsScoreExplain } from '../services/api';
 import { fmtNum, fmtPct } from '../utils/format';
-import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+import { getComplianceScoreColor } from '../lib/constants';
 
 const PHASES = [
   { id: 'eligibilite', label: 'Éligibilité', icon: Building2 },
@@ -433,7 +433,14 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
           <div className="p-3 bg-gray-50 rounded-lg text-center">
             <p className="text-xs text-gray-500">Score conformité</p>
             <p className={`text-sm font-bold ${getComplianceScoreColor(a.compliance_score)}`}>
-              {fmtNum(a.compliance_score, 0) === '—' ? '—' : <>{fmtNum(a.compliance_score, 0)}<span className="text-gray-400 font-normal">/100</span></>}
+              {fmtNum(a.compliance_score, 0) === '—' ? (
+                '—'
+              ) : (
+                <>
+                  {fmtNum(a.compliance_score, 0)}
+                  <span className="text-gray-400 font-normal">/100</span>
+                </>
+              )}
             </p>
           </div>
           <div className="p-3 bg-gray-50 rounded-lg text-center">

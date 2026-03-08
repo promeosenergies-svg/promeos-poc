@@ -83,7 +83,7 @@ function InsightBadge({ insight, onDismiss }) {
       <button
         className="flex items-center gap-1.5 text-xs font-medium"
         onClick={handleToggle}
-        title="Voir le detail"
+        title="Voir le détail"
       >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
         <Icon size={12} className="shrink-0" />

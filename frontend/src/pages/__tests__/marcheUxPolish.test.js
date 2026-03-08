@@ -6,10 +6,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
-import {
-  QUICK_ACTIONS,
-  getSectionsForModule,
-} from '../../layout/NavRegistry';
+import { QUICK_ACTIONS, getSectionsForModule } from '../../layout/NavRegistry';
 
 const root = resolve(__dirname, '../../../');
 function src(relPath) {
@@ -78,8 +75,8 @@ describe('C. Group headers — no orange dots', () => {
     expect(navPanel).not.toMatch(/w-1\.5 h-1\.5 rounded-full/);
   });
 
-  it('SectionHeader still has chevron + label', () => {
-    expect(navPanel).toMatch(/ChevronDown/);
+  it('SectionHeader has static label (always visible, no toggle)', () => {
+    expect(navPanel).not.toMatch(/ChevronDown/);
     expect(navPanel).toMatch(/uppercase tracking-wider/);
   });
 });
@@ -88,16 +85,16 @@ describe('C. Group headers — no orange dots', () => {
 describe('D. Micro-details', () => {
   const navPanel = src('src/layout/NavPanel.jsx');
 
-  it('panel width uses responsive clamp (220px–260px)', () => {
-    expect(navPanel).toMatch(/clamp\(220px/);
+  it('panel width uses responsive clamp (190px–230px)', () => {
+    expect(navPanel).toMatch(/clamp\(190px/);
   });
 
   it('PanelLink has aria-label for accessibility', () => {
     expect(navPanel).toMatch(/aria-label=\{tipText\}/);
   });
 
-  it('section headers have line-clamp-2 for long labels', () => {
-    expect(navPanel).toMatch(/line-clamp-2/);
+  it('section headers are always visible (no toggle state)', () => {
+    expect(navPanel).not.toMatch(/openSections\[section\.key\]/);
   });
 
   it('no native title on PanelLink (avoid title natif)', () => {

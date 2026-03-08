@@ -113,6 +113,17 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         else:
             period_end = date(period_start.year, period_start.month + 1, 1) - timedelta(days=1)
 
+        inv_number = f"INV-{site.id:04d}-{period_start.strftime('%Y%m')}"
+
+        # Skip if invoice already exists (avoid IntegrityError on re-seed)
+        existing = (
+            db.query(EnergyInvoice)
+            .filter_by(site_id=site.id, invoice_number=inv_number, period_start=period_start, period_end=period_end)
+            .first()
+        )
+        if existing:
+            continue
+
         # Realistic energy
         annual = site.annual_kwh_total or 500000
         monthly_kwh = round(annual / 12 * rng.uniform(0.8, 1.2), 0)
@@ -130,7 +141,7 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         invoice = EnergyInvoice(
             site_id=site.id,
             contract_id=contract.id,
-            invoice_number=f"INV-{site.id:04d}-{period_start.strftime('%Y%m')}",
+            invoice_number=inv_number,
             period_start=period_start,
             period_end=period_end,
             issue_date=period_end + timedelta(days=rng.randint(5, 20)),

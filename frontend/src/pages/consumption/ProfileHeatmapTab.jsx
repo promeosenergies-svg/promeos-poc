@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Card, CardBody, Badge, KpiCard } from '../../ui';
-import { fmtNum, fmtPct } from '../../utils/format';
+import { fmtNum } from '../../utils/format';
 import HeatmapLegend from './HeatmapLegend';
 
 const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];

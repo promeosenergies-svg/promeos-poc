@@ -9,8 +9,11 @@ import csv
 import hashlib
 import io
 import json
+import logging
 from datetime import date, datetime, timedelta
 from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
 from pydantic import BaseModel, ConfigDict, Field
@@ -588,13 +591,12 @@ def get_shadow_breakdown(
 ):
     """Shadow breakdown par composante (fourniture / TURPE / taxes / TVA)."""
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(
-        EnergyInvoice.id == invoice_id
-    ).first()
+    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(EnergyInvoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Facture non trouvée ou accès refusé")
     try:
         from services.billing_shadow_v2 import compute_shadow_breakdown
+
         return compute_shadow_breakdown(db, invoice)
     except Exception as e:
         logger.warning("Shadow breakdown failed for invoice %s: %s", invoice_id, str(e)[:200])
@@ -1169,9 +1171,7 @@ async def import_invoice_pdf(
     # --- Auto-reconciliation compteur/facture (Step 9 B3) ---
     reconcile_result = None
     if db_invoice.period_start and db_invoice.period_end:
-        reconcile_result = auto_reconcile_after_import(
-            db, site_id, db_invoice.period_start, db_invoice.period_end
-        )
+        reconcile_result = auto_reconcile_after_import(db, site_id, db_invoice.period_start, db_invoice.period_end)
         if reconcile_result:
             db.commit()
 
@@ -1477,8 +1477,19 @@ def _parse_date(val: Optional[str]) -> Optional[date]:
 
 
 _MONTH_LABELS_FR = [
-    "", "Janv", "Fév", "Mars", "Avr", "Mai", "Juin",
-    "Juil", "Août", "Sept", "Oct", "Nov", "Déc",
+    "",
+    "Janv",
+    "Fév",
+    "Mars",
+    "Avr",
+    "Mai",
+    "Juin",
+    "Juil",
+    "Août",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Déc",
 ]
 
 
@@ -1496,10 +1507,22 @@ def compare_monthly(
     """
     from datetime import datetime as dt
 
+    from sqlalchemy import func as sa_func
+
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     site_ids = _get_org_site_ids(db, effective_org_id)
 
-    current_year = year or dt.now().year
+    current_year = year
+    if not current_year and site_ids:
+        # Auto-detect latest year with invoice data
+        latest = (
+            db.query(sa_func.max(sa_func.strftime("%Y", EnergyInvoice.period_start)))
+            .filter(EnergyInvoice.site_id.in_(site_ids), EnergyInvoice.total_eur > 0)
+            .scalar()
+        )
+        current_year = int(latest) if latest else dt.now().year
+    elif not current_year:
+        current_year = dt.now().year
     prev_year = current_year - 1
 
     # Fetch invoices for both years (positive amounts only — no avoirs)
@@ -1546,16 +1569,18 @@ def compare_monthly(
             delta_eur = round(curr_eur - prev_eur, 2)
             delta_pct = round((curr_eur - prev_eur) / prev_eur * 100, 1)
 
-        months.append({
-            "month": m,
-            "label": _MONTH_LABELS_FR[m],
-            "current_eur": curr_eur,
-            "previous_eur": prev_eur,
-            "current_kwh": curr_kwh,
-            "previous_kwh": prev_kwh,
-            "delta_eur": delta_eur,
-            "delta_pct": delta_pct,
-        })
+        months.append(
+            {
+                "month": m,
+                "label": _MONTH_LABELS_FR[m],
+                "current_eur": curr_eur,
+                "previous_eur": prev_eur,
+                "current_kwh": curr_kwh,
+                "previous_kwh": prev_kwh,
+                "delta_eur": delta_eur,
+                "delta_pct": delta_pct,
+            }
+        )
 
     total_current = sum(x["current_eur"] for x in months if x["current_eur"] is not None)
     total_previous = sum(x["previous_eur"] for x in months if x["previous_eur"] is not None)

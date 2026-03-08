@@ -72,7 +72,9 @@ function ImpactKpiTile({
           )}
           <InfoTip content={tooltip} />
         </div>
-        <p className="text-lg font-bold text-gray-900 mt-0.5">{available ? fmtEur(value) : '—'}</p>
+        <p className="text-lg font-bold text-gray-900 mt-0.5 break-words">
+          {available ? fmtEur(value) : '—'}
+        </p>
         {available && subLabel && <p className="text-[11px] text-gray-400 mt-0.5">{subLabel}</p>}
         {!available && (
           <Badge variant="neutral" size="xs">
@@ -131,6 +133,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           : null,
       optimisation: impact.optimAvailable ? 'Estimation 1 % du facturé' : null,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kpis, billingSummary]);
 
   // Loading state
@@ -343,13 +346,20 @@ export default function ImpactDecisionPanel({ kpis }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-1">Aucun levier détecté pour le moment</p>
+          <p className="text-sm text-gray-400 text-center py-1">
+            Aucun levier détecté pour le moment
+          </p>
         )}
       </div>
 
       {/* ── Recommandation prioritaire ── */}
-      <div className="rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-4" data-testid="recommendation-box">
-        <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wide mb-2">Recommandation PROMEOS</p>
+      <div
+        className="rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-4"
+        data-testid="recommendation-box"
+      >
+        <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wide mb-2">
+          Recommandation PROMEOS
+        </p>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900">{reco.titre}</p>

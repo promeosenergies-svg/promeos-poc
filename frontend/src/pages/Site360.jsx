@@ -28,7 +28,17 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge, Explain, PageShell } from '../ui';
+import {
+  Card,
+  CardBody,
+  Badge,
+  Button,
+  Tabs,
+  EmptyState,
+  TrustBadge,
+  Explain,
+  PageShell,
+} from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
@@ -43,7 +53,13 @@ import {
   getReconciliationEvidenceCsv,
   getReconciliationEvidenceSummary,
 } from '../services/api';
-import { getStatusBadgeProps, SEV_BADGE, getComplianceScoreColor, getComplianceGrade, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+import {
+  getStatusBadgeProps,
+  SEV_BADGE,
+  getComplianceScoreColor,
+  getComplianceGrade,
+  COMPLIANCE_SCORE_THRESHOLDS as _COMPLIANCE_SCORE_THRESHOLDS,
+} from '../lib/constants'; // eslint-disable-line no-unused-vars
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import SiteBillingMini from '../components/SiteBillingMini';
@@ -127,12 +143,12 @@ function TabResume({ site, onSegmentationClick }) {
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
-                <p className="text-lg font-bold text-red-700">
-                  {fmtEurFull(site.risque_eur)}
-                </p>
+                <p className="text-lg font-bold text-red-700">{fmtEurFull(site.risque_eur)}</p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
-                <p className="text-xs text-gray-500"><Explain term="anomalie">Anomalies</Explain></p>
+                <p className="text-xs text-gray-500">
+                  <Explain term="anomalie">Anomalies</Explain>
+                </p>
                 <p className="text-lg font-bold text-amber-700">{site.anomalies_count ?? 0}</p>
               </div>
               <div className="p-3 bg-green-50 rounded-lg">
@@ -171,7 +187,9 @@ function TabResume({ site, onSegmentationClick }) {
         {/* Anomalies list */}
         <Card>
           <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800"><Explain term="anomalie">Anomalies</Explain> détectées</h3>
+            <h3 className="font-semibold text-gray-800">
+              <Explain term="anomalie">Anomalies</Explain> détectées
+            </h3>
           </div>
           {anomLoading ? (
             <div className="p-4">
@@ -443,6 +461,7 @@ function TabReconciliation({ site }) {
 
   useEffect(() => {
     loadRecon();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site.id]);
 
   const handleFix = async (checkId, action) => {
@@ -1152,16 +1171,23 @@ export default function Site360() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900">{site.nom}</h2>
             <Badge status={badge.status}>{badge.label}</Badge>
-            {siteComplianceScore?.score != null && (() => {
-              const s = Math.round(siteComplianceScore.score);
-              const grade = getComplianceGrade(s);
-              return (
-                <span className="flex items-center gap-1.5" data-testid="compliance-score-badge">
-                  <span className={`text-sm font-bold ${getComplianceScoreColor(s)}`}>{s}/100</span>
-                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${grade.color} bg-gray-50 border border-gray-200`}>{grade.letter}</span>
-                </span>
-              );
-            })()}
+            {siteComplianceScore?.score != null &&
+              (() => {
+                const s = Math.round(siteComplianceScore.score);
+                const grade = getComplianceGrade(s);
+                return (
+                  <span className="flex items-center gap-1.5" data-testid="compliance-score-badge">
+                    <span className={`text-sm font-bold ${getComplianceScoreColor(s)}`}>
+                      {s}/100
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-1.5 py-0.5 rounded ${grade.color} bg-gray-50 border border-gray-200`}
+                    >
+                      {grade.letter}
+                    </span>
+                  </span>
+                );
+              })()}
             {dataQuality && (
               <DataQualityBadge
                 score={dataQuality.score}
@@ -1201,10 +1227,14 @@ export default function Site360() {
 
       {/* D.1: Bandeau données partielles */}
       {dataQuality && dataQuality.score < 50 && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg" data-testid="dq-partial-banner">
+        <div
+          className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg"
+          data-testid="dq-partial-banner"
+        >
           <AlertTriangle size={14} className="text-amber-600 shrink-0" />
           <span className="text-xs text-amber-800">
-            Données partielles (score {Math.round(dataQuality.score)}/100) — les KPIs peuvent être imprécis.
+            Données partielles (score {Math.round(dataQuality.score)}/100) — les KPIs peuvent être
+            imprécis.
           </span>
           <button
             onClick={() => setShowIntake(true)}
@@ -1217,10 +1247,15 @@ export default function Site360() {
 
       {/* D.2: Bandeau données périmées */}
       {freshness && (freshness.status === 'expired' || freshness.status === 'no_data') && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg" data-testid="freshness-expired-banner">
+        <div
+          className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg"
+          data-testid="freshness-expired-banner"
+        >
           <AlertTriangle size={14} className="text-red-600 shrink-0" />
           <span className="text-xs text-red-800">
-            Données périmées ({freshness.staleness_days > 900 ? 'aucune donnée' : `${freshness.staleness_days} jours`}) — les KPIs affichés peuvent être obsolètes.
+            Données périmées (
+            {freshness.staleness_days > 900 ? 'aucune donnée' : `${freshness.staleness_days} jours`}
+            ) — les KPIs affichés peuvent être obsolètes.
           </span>
           <button
             onClick={() => setShowIntake(true)}
@@ -1232,7 +1267,9 @@ export default function Site360() {
       )}
 
       {/* 3 Mini KPIs */}
-      <div className={`flex gap-4${(dataQuality && dataQuality.score < 50) || (freshness && freshness.status === 'expired') ? ' opacity-60' : ''}`}>
+      <div
+        className={`flex gap-4${(dataQuality && dataQuality.score < 50) || (freshness && freshness.status === 'expired') ? ' opacity-60' : ''}`}
+      >
         <MiniKpi
           icon={Zap}
           label="Conso annuelle"

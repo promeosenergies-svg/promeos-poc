@@ -4,29 +4,12 @@
  */
 import { useState, useEffect } from 'react';
 import { Clock, ShieldCheck, AlertTriangle, TrendingUp, Thermometer, Activity } from 'lucide-react';
-import { Card, CardBody, Badge } from '../ui';
+import { Card, CardBody, KpiCardInline } from '../ui';
 import { getBacsOpsPanel } from '../services/api';
 import { fmtNum } from '../utils/format';
 
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i}h`);
-
-function KpiCard({ icon: Icon, label, value, sub, color = 'text-gray-800' }) {
-  return (
-    <Card>
-      <CardBody className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-gray-50">
-          <Icon size={18} className={color} />
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">{label}</p>
-          <p className={`text-sm font-bold ${color}`}>{value}</p>
-          {sub && <p className="text-xs text-gray-400">{sub}</p>}
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
 
 function MonthlyChart({ data }) {
   if (!data || data.length === 0) {
@@ -136,20 +119,26 @@ export default function BacsOpsPanel({ siteId }) {
     );
   }
 
-  const { kpis, consumption_findings, monthly_consumption, hourly_heatmap, cvc_alerts_stub } = data;
+  const {
+    kpis,
+    consumption_findings,
+    monthly_consumption,
+    hourly_heatmap,
+    cvc_alerts_stub: _cvc_alerts_stub,
+  } = data;
 
   return (
     <div className="space-y-4">
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard
+        <KpiCardInline
           icon={Clock}
           label="Délai conformité"
           value={kpis.compliance_delay_days !== null ? `${kpis.compliance_delay_days}j` : '—'}
           sub={kpis.compliance_delay_days < 0 ? 'En retard' : 'Restants'}
           color={kpis.compliance_delay_days < 0 ? 'text-red-600' : 'text-green-600'}
         />
-        <KpiCard
+        <KpiCardInline
           icon={ShieldCheck}
           label="Prochaine inspection"
           value={
@@ -157,14 +146,14 @@ export default function BacsOpsPanel({ siteId }) {
           }
           color={kpis.inspection_countdown_days < 0 ? 'text-red-600' : 'text-blue-600'}
         />
-        <KpiCard
+        <KpiCardInline
           icon={AlertTriangle}
           label="Alertes CVC"
           value={`${kpis.cvc_alerts_count}`}
           sub="Simulées"
           color={kpis.cvc_alerts_count > 0 ? 'text-amber-600' : 'text-green-600'}
         />
-        <KpiCard
+        <KpiCardInline
           icon={TrendingUp}
           label="Gain vs baseline"
           value={

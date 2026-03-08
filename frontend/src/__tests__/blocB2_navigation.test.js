@@ -2,7 +2,6 @@
  * PROMEOS — Bloc B.2 Navigation Structure — Source Guards
  * Vérifie 5 sections, routes requises, breadcrumb, CommandPalette.
  */
-import fs from 'fs';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -17,13 +16,11 @@ function readSrc(relDir, file) {
 // ── NavRegistry: 5 main sections ──────────────────────────────────────
 
 describe('B.2 — Navigation structure', () => {
-  const navFile = 'layout/NavRegistry.js';
   const src = readSrc('layout', 'NavRegistry.js');
 
   it('NavRegistry has exactly 4 main sections', () => {
-    const sectionCount = (
-      src.match(/label:\s*["'](Pilotage|Patrimoine|Énergie|Achat)["']/gi) || []
-    ).length;
+    const sectionCount = (src.match(/label:\s*["'](Pilotage|Patrimoine|Énergie|Achat)["']/gi) || [])
+      .length;
     expect(sectionCount).toBeGreaterThanOrEqual(4);
   });
 
@@ -46,15 +43,20 @@ describe('B.2 — Navigation structure', () => {
 
   it('exports COMMAND_SHORTCUTS (10 quick actions)', () => {
     expect(src).toContain('export const COMMAND_SHORTCUTS');
-    const shortcuts = (src.match(/key:\s*'/g) || []);
+    const _shortcuts = src.match(/key:\s*'/g) || [];
     // At least 10 shortcuts in COMMAND_SHORTCUTS
     expect(src).toMatch(/COMMAND_SHORTCUTS\s*=\s*\[/);
   });
 
   it('All main pages are in navigation', () => {
     const REQUIRED_ROUTES = [
-      '/cockpit', '/patrimoine', '/conformite', '/billing',
-      '/actions', '/monitoring', '/performance',
+      '/cockpit',
+      '/patrimoine',
+      '/conformite',
+      '/billing',
+      '/actions',
+      '/monitoring',
+      '/performance',
     ];
     REQUIRED_ROUTES.forEach((route) => {
       // /performance is the label for /monitoring — check both

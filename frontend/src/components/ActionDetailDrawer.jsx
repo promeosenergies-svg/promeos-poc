@@ -49,7 +49,7 @@ import {
   PROOF_STATUS_BADGE,
 } from '../models/actionProofLinkModel';
 import { SOURCE_LABELS_FR, buildSourceDeepLink } from '../models/evidenceRules';
-import { fmtEurFull, fmtNum, fmtPct } from '../utils/format';
+import { fmtNum, fmtPct } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
 
 const _STATUS_TO_BE = {
@@ -383,7 +383,10 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     if (!evidenceLabel.trim()) return;
     setSubmittingEvidence(true);
     try {
-      const typePrefix = evidenceType !== 'autre' ? `[${EVIDENCE_TYPE_OPTIONS.find(o => o.value === evidenceType)?.label || evidenceType}] ` : '';
+      const typePrefix =
+        evidenceType !== 'autre'
+          ? `[${EVIDENCE_TYPE_OPTIONS.find((o) => o.value === evidenceType)?.label || evidenceType}] `
+          : '';
       const datePrefix = evidenceDate ? `(${evidenceDate}) ` : '';
       await addActionEvidence(actionId, {
         label: `${typePrefix}${datePrefix}${evidenceLabel.trim()}`,
@@ -533,10 +536,13 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Échéance</p>
-                  <p className={`text-sm flex items-center gap-1 ${
-                    d.due_date && d.status !== 'done' && new Date(d.due_date) < new Date()
-                      ? 'text-red-600 font-semibold' : ''
-                  }`}>
+                  <p
+                    className={`text-sm flex items-center gap-1 ${
+                      d.due_date && d.status !== 'done' && new Date(d.due_date) < new Date()
+                        ? 'text-red-600 font-semibold'
+                        : ''
+                    }`}
+                  >
                     <Clock size={14} /> {d.due_date || '—'}
                     {d.due_date && d.status !== 'done' && new Date(d.due_date) < new Date() && (
                       <span className="ml-1 text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-semibold">
@@ -573,7 +579,6 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                           await patchAction(actionId, { owner: ownerDraft.trim() });
                           setDetail((prev) => ({ ...prev, owner: ownerDraft.trim() }));
                           setEditingOwner(false);
-                          refreshDetail();
                         }}
                         className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                       >
@@ -583,7 +588,10 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   ) : (
                     <p
                       className="text-sm flex items-center gap-1 cursor-pointer group hover:text-blue-600"
-                      onClick={() => { setOwnerDraft(d.owner || ''); setEditingOwner(true); }}
+                      onClick={() => {
+                        setOwnerDraft(d.owner || '');
+                        setEditingOwner(true);
+                      }}
                     >
                       <User size={14} />{' '}
                       {d.owner || <span className="text-gray-400 italic">Non assigné</span>}
@@ -598,9 +606,13 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Créée le</p>
                   <p className="text-sm text-gray-600">
-                    {d.created_at ? new Date(d.created_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric', month: 'long', year: 'numeric'
-                    }) : '—'}
+                    {d.created_at
+                      ? new Date(d.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : '—'}
                   </p>
                 </div>
                 {d.due_date && d.created_at && d.status !== 'done' && (
@@ -624,9 +636,15 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                               style={{ width: `${Math.min(100, pct)}%` }}
                             />
                           </div>
-                          <span className={`text-[10px] font-medium ${
-                            isLate ? 'text-red-600' : pct > 75 ? 'text-amber-600' : 'text-gray-500'
-                          }`}>
+                          <span
+                            className={`text-[10px] font-medium ${
+                              isLate
+                                ? 'text-red-600'
+                                : pct > 75
+                                  ? 'text-amber-600'
+                                  : 'text-gray-500'
+                            }`}
+                          >
                             {isLate ? 'Dépassé' : `${pct}%`}
                           </span>
                         </div>
@@ -889,10 +907,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                     data-testid="close-form"
                   >
                     {closeError && (
-                      <p
-                        className="text-xs text-amber-700 font-medium"
-                        data-testid="close-error"
-                      >
+                      <p className="text-xs text-amber-700 font-medium" data-testid="close-error">
                         {closeError}
                       </p>
                     )}
@@ -903,7 +918,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       </p>
                     )}
                     <label className="text-xs text-gray-600 block">
-                      {(isOperatAction(d) || d.evidence_required)
+                      {isOperatAction(d) || d.evidence_required
                         ? 'Justification de clôture (min. 10 caractères)'
                         : 'Commentaire de clôture (recommandé)'}
                     </label>
@@ -911,7 +926,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       value={closureJustification}
                       onChange={(e) => setClosureJustification(e.target.value)}
                       placeholder={
-                        (isOperatAction(d) || d.evidence_required)
+                        isOperatAction(d) || d.evidence_required
                           ? 'Expliquez pourquoi cette action peut être clôturée...'
                           : 'Résumé de la résolution, résultat obtenu...'
                       }
@@ -924,7 +939,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                         size="sm"
                         onClick={() => handleStatusChange('done')}
                         disabled={
-                          (isOperatAction(d) || d.evidence_required)
+                          isOperatAction(d) || d.evidence_required
                             ? closureJustification.trim().length < 10
                             : false
                         }
@@ -977,9 +992,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div className="p-4 bg-red-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Gain estime</p>
                   <p className="text-xl font-bold text-red-700">
-                    {d.estimated_gain_eur != null
-                      ? `${fmtNum(d.estimated_gain_eur, 0)} EUR`
-                      : '—'}
+                    {d.estimated_gain_eur != null ? `${fmtNum(d.estimated_gain_eur, 0)} EUR` : '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
@@ -1139,7 +1152,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {EVIDENCE_TYPE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
                     ))}
                   </select>
                   <input

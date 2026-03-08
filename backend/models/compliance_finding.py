@@ -88,6 +88,11 @@ class ComplianceFinding(Base, TimestampMixin):
         comment="Batch d'evaluation parent",
     )
 
+    # Penalty fields (Step 14)
+    estimated_penalty_eur = Column(Float, nullable=True, comment="Penalite estimee en EUR")
+    penalty_source = Column(String(100), nullable=True, comment="Source: regs.yaml, estimation, etc.")
+    penalty_basis = Column(String(200), nullable=True, comment="Base de calcul de la penalite")
+
     # Audit fields (inputs/params/evidence used for this finding)
     inputs_json = Column(Text, nullable=True, default="{}", comment="JSON: input data used")
     params_json = Column(Text, nullable=True, default="{}", comment="JSON: thresholds/params applied")

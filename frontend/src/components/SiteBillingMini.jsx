@@ -7,21 +7,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSiteBilling } from '../services/api';
-import { Card, CardBody, Button, EmptyState } from '../ui';
+import { Card, CardBody, Button, EmptyState, KpiCardInline } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { FileText, AlertTriangle, Calendar, ExternalLink } from 'lucide-react';
-
-function KpiCard({ icon: Icon, label, value, color = 'text-gray-700' }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
-      <Icon size={16} className={color} />
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm font-bold text-gray-800">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 export default function SiteBillingMini({ siteId }) {
   const navigate = useNavigate();
@@ -74,14 +62,19 @@ export default function SiteBillingMini({ siteId }) {
     <div className="space-y-4 pt-4">
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <KpiCard icon={FileText} label="Factures" value={invoices.length} color="text-blue-600" />
-        <KpiCard
+        <KpiCardInline
+          icon={FileText}
+          label="Factures"
+          value={invoices.length}
+          color="text-blue-600"
+        />
+        <KpiCardInline
           icon={AlertTriangle}
           label="Anomalies"
           value={openInsights.length}
           color={openInsights.length > 0 ? 'text-red-500' : 'text-green-500'}
         />
-        <KpiCard
+        <KpiCardInline
           icon={Calendar}
           label="Dernière facture"
           value={lastInvoice?.period_end || lastInvoice?.issue_date || '—'}

@@ -4,12 +4,39 @@
  * Route : /anomalies   — ?tab=actions pour le plan d'actions.
  */
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload, ArrowDownWideNarrow, HelpCircle, MoreHorizontal, Link2, Ban } from 'lucide-react';
-import { PageShell, EmptyState, Tooltip, InfoTip, EvidenceDrawer, ActiveFiltersBar, Explain } from '../ui';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Search,
+  X,
+  Euro,
+  ChevronRight,
+  Building2,
+  Upload,
+  ArrowDownWideNarrow,
+  HelpCircle,
+  MoreHorizontal,
+  Link2,
+  Ban,
+} from 'lucide-react';
+import {
+  PageShell,
+  EmptyState,
+  Tooltip,
+  InfoTip,
+  EvidenceDrawer,
+  ActiveFiltersBar,
+  Explain,
+  KpiCardInline,
+} from '../ui';
 import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
-import { getPatrimoineAnomalies, getBillingAnomaliesScoped, getAnomalyStatuses, dismissAnomaly } from '../services/api';
+import {
+  getPatrimoineAnomalies,
+  getBillingAnomaliesScoped,
+  getAnomalyStatuses,
+  dismissAnomaly,
+} from '../services/api';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { useToast } from '../ui/ToastProvider';
 import useAnomalyFilters from './useAnomalyFilters';
@@ -180,8 +207,9 @@ export default function AnomaliesPage() {
   }, [anomalies]);
 
   const getAnomalyKey = useCallback(
-    (anom) => `${anom._isBilling ? 'billing' : 'patrimoine'}:${anom.code || anom.id}:${anom.site_id}`,
-    [],
+    (anom) =>
+      `${anom._isBilling ? 'billing' : 'patrimoine'}:${anom.code || anom.id}:${anom.site_id}`,
+    []
   );
 
   /* ── Helpers ── */
@@ -200,7 +228,8 @@ export default function AnomaliesPage() {
   function getOpenLabel(anom) {
     if (anom._isBilling) return 'Ouvrir facture';
     if (anom.regulatory_impact?.framework === 'BACS') return 'Ouvrir BACS';
-    if (anom.code?.startsWith('MISSING_') || anom.code?.startsWith('LOW_')) return 'Corriger donnée';
+    if (anom.code?.startsWith('MISSING_') || anom.code?.startsWith('LOW_'))
+      return 'Corriger donnée';
     return 'Ouvrir fiche';
   }
 
@@ -244,7 +273,14 @@ export default function AnomaliesPage() {
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
-          text={<>Importez votre <Explain term="patrimoine">patrimoine</Explain> ou chargez les données de démonstration pour voir les <Explain term="anomalie">anomalies</Explain>. Le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données.</>}
+          text={
+            <>
+              Importez votre <Explain term="patrimoine">patrimoine</Explain> ou chargez les données
+              de démonstration pour voir les <Explain term="anomalie">anomalies</Explain>. Le centre
+              d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos
+              données.
+            </>
+          }
           ctaLabel="Importer mon patrimoine"
           onCta={() => navigate('/import')}
           actions={
@@ -260,12 +296,22 @@ export default function AnomaliesPage() {
     );
   }
 
-  const subtitle = loading
-    ? 'Chargement des anomalies...'
-    : <>{kpis.total} <Explain term="anomalie">anomalie{kpis.total > 1 ? 's' : ''}</Explain> · {kpis.critiques} critique{kpis.critiques > 1 ? 's' : ''} · {fmtEur(kpis.risque)} de risque estimé</>;
+  const subtitle = loading ? (
+    'Chargement des anomalies...'
+  ) : (
+    <>
+      {kpis.total} <Explain term="anomalie">anomalie{kpis.total > 1 ? 's' : ''}</Explain> ·{' '}
+      {kpis.critiques} critique{kpis.critiques > 1 ? 's' : ''} · {fmtEur(kpis.risque)} de risque
+      estimé
+    </>
+  );
 
   return (
-    <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle={activeTab === 'anomalies' ? subtitle : undefined}>
+    <PageShell
+      icon={AlertTriangle}
+      title="Centre d'actions"
+      subtitle={activeTab === 'anomalies' ? subtitle : undefined}
+    >
       <Tabs
         tabs={CENTRE_TABS}
         active={activeTab}
@@ -286,339 +332,374 @@ export default function AnomaliesPage() {
           <ActionsPageInline bare />
         </Suspense>
       ) : (
-      <div className="space-y-4">
-        {/* ── KPI row ── */}
-        <div className="grid grid-cols-3 gap-3">
-          <KpiCard
-            icon={AlertTriangle}
-            color="bg-blue-600"
-            label={<><Explain term="anomalie">Anomalies</Explain> totales</>}
-            value={kpis.total}
-            loading={loading}
-          />
-          <KpiCard
-            icon={AlertTriangle}
-            color="bg-red-600"
-            label="Critiques"
-            value={kpis.critiques}
-            loading={loading}
-          />
-          <KpiCard
-            icon={Euro}
-            color="bg-amber-600"
-            label="Risque estimé"
-            value={fmtEur(kpis.risque)}
-            loading={loading}
-          />
-        </div>
-
-        {/* ── Toolbar ── */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Recherche texte */}
-          <div className="relative flex-1 min-w-[180px] max-w-sm">
-            <Search
-              size={14}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+        <div className="space-y-4">
+          {/* ── KPI row ── */}
+          <div className="grid grid-cols-3 gap-3">
+            <KpiCardInline
+              icon={AlertTriangle}
+              iconBg="bg-blue-600"
+              color="text-white"
+              label={
+                <>
+                  <Explain term="anomalie">Anomalies</Explain> totales
+                </>
+              }
+              value={kpis.total}
+              loading={loading}
             />
-            <input
-              type="text"
-              placeholder="Rechercher une anomalie ou un site..."
-              value={filters.q}
-              onChange={(e) => setFilters({ q: e.target.value })}
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            <KpiCardInline
+              icon={AlertTriangle}
+              iconBg="bg-red-600"
+              color="text-white"
+              label="Critiques"
+              value={kpis.critiques}
+              loading={loading}
+            />
+            <KpiCardInline
+              icon={Euro}
+              iconBg="bg-amber-600"
+              color="text-white"
+              label="Risque estimé"
+              value={fmtEur(kpis.risque)}
+              loading={loading}
             />
           </div>
 
-          {/* Framework */}
-          <QuickSelect
-            value={filters.fw}
-            onChange={(v) => setFilters({ fw: v })}
-            options={[
-              { value: '', label: 'Framework' },
-              { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
-              { value: 'FACTURATION', label: 'Facturation' },
-              { value: 'BACS', label: 'BACS' },
-            ]}
-          />
+          {/* ── Toolbar ── */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Recherche texte */}
+            <div className="relative flex-1 min-w-[180px] max-w-sm">
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Rechercher une anomalie ou un site..."
+                value={filters.q}
+                onChange={(e) => setFilters({ q: e.target.value })}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
+            </div>
 
-          {/* Sévérité */}
-          <QuickSelect
-            value={filters.sev}
-            onChange={(v) => setFilters({ sev: v })}
-            options={[
-              { value: '', label: 'Sévérité' },
-              { value: 'CRITICAL', label: 'Critique' },
-              { value: 'HIGH', label: 'Élevé' },
-              { value: 'MEDIUM', label: 'Moyen' },
-              { value: 'LOW', label: 'Faible' },
-            ]}
-          />
+            {/* Framework */}
+            <QuickSelect
+              value={filters.fw}
+              onChange={(v) => setFilters({ fw: v })}
+              options={[
+                { value: '', label: 'Framework' },
+                { value: 'DECRET_TERTIAIRE', label: 'Décret Tertiaire' },
+                { value: 'FACTURATION', label: 'Facturation' },
+                { value: 'BACS', label: 'BACS' },
+              ]}
+            />
 
-          {/* Site */}
-          <QuickSelect
-            value={filters.site}
-            onChange={(v) => setFilters({ site: v })}
-            options={[
-              { value: '', label: 'Tous les sites' },
-              ...scopedSites
-                .slice(0, MAX_SITES)
-                .map((s) => ({ value: String(s.id), label: s.nom })),
-            ]}
-          />
+            {/* Sévérité */}
+            <QuickSelect
+              value={filters.sev}
+              onChange={(v) => setFilters({ sev: v })}
+              options={[
+                { value: '', label: 'Sévérité' },
+                { value: 'CRITICAL', label: 'Critique' },
+                { value: 'HIGH', label: 'Élevé' },
+                { value: 'MEDIUM', label: 'Moyen' },
+                { value: 'LOW', label: 'Faible' },
+              ]}
+            />
 
-          {/* Reset */}
-          {hasFilters && (
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
-            >
-              <X size={12} /> Réinitialiser
-            </button>
-          )}
+            {/* Site */}
+            <QuickSelect
+              value={filters.site}
+              onChange={(v) => setFilters({ site: v })}
+              options={[
+                { value: '', label: 'Tous les sites' },
+                ...scopedSites
+                  .slice(0, MAX_SITES)
+                  .map((s) => ({ value: String(s.id), label: s.nom })),
+              ]}
+            />
 
-          {/* Smart sort indicator */}
-          <span className="ml-auto flex items-center gap-1 text-[11px] text-gray-400 font-medium select-none">
-            <ArrowDownWideNarrow size={12} />
-            Tri intelligent actif
-            <InfoTip content="Les anomalies sont triées par impact financier (risque EUR) décroissant, puis par score de priorité. Le score combine la sévérité, le risque réglementaire et l'impact métier." position="bottom" />
-          </span>
-        </div>
-
-        {/* ── Active filters bar ── */}
-        <ActiveFiltersBar
-          filters={[
-            filters.fw && { key: 'fw', label: 'Framework', value: FW_LABEL[filters.fw] ?? filters.fw, onRemove: () => setFilters({ fw: '' }) },
-            filters.sev && { key: 'sev', label: 'Sévérité', value: SEV_LABEL[filters.sev] ?? filters.sev, onRemove: () => setFilters({ sev: '' }) },
-            filters.site && { key: 'site', label: 'Site', value: scopedSites.find((s) => String(s.id) === filters.site)?.nom ?? filters.site, onRemove: () => setFilters({ site: '' }) },
-            filters.q && { key: 'q', label: 'Recherche', value: filters.q, onRemove: () => setFilters({ q: '' }) },
-          ].filter(Boolean)}
-          total={anomalies.length}
-          filtered={filtered.length}
-          onReset={resetFilters}
-        />
-
-        {/* ── Erreur ── */}
-        {error && (
-          <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
-            <AlertTriangle size={13} className="shrink-0" /> {error}
-          </div>
-        )}
-
-        {/* ── Liste anomalies ── */}
-        {loading ? (
-          <div className="space-y-2 animate-pulse">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded-lg" />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <Search size={28} className="mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-600">Aucune <Explain term="anomalie">anomalie</Explain> ne correspond</p>
+            {/* Reset */}
             {hasFilters && (
-              <button onClick={resetFilters} className="mt-2 text-xs text-blue-600 hover:underline">
-                Réinitialiser les filtres
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+              >
+                <X size={12} /> Réinitialiser
               </button>
             )}
+
+            {/* Smart sort indicator */}
+            <span className="ml-auto flex items-center gap-1 text-[11px] text-gray-400 font-medium select-none">
+              <ArrowDownWideNarrow size={12} />
+              Tri intelligent actif
+              <InfoTip
+                content="Les anomalies sont triées par impact financier (risque EUR) décroissant, puis par score de priorité. Le score combine la sévérité, le risque réglementaire et l'impact métier."
+                position="bottom"
+              />
+            </span>
           </div>
-        ) : (
-          <div className="space-y-1.5">
-            {filtered.map((anom, idx) => {
-              const impactFmt = fmtEur(anom.business_impact?.estimated_risk_eur);
 
-              return (
-                <div
-                  key={`${anom.site_id}-${anom.code}-${idx}`}
-                  className="flex items-start gap-3 px-3 py-2.5 bg-white border border-gray-100 rounded-lg hover:border-gray-200 transition"
+          {/* ── Active filters bar ── */}
+          <ActiveFiltersBar
+            filters={[
+              filters.fw && {
+                key: 'fw',
+                label: 'Framework',
+                value: FW_LABEL[filters.fw] ?? filters.fw,
+                onRemove: () => setFilters({ fw: '' }),
+              },
+              filters.sev && {
+                key: 'sev',
+                label: 'Sévérité',
+                value: SEV_LABEL[filters.sev] ?? filters.sev,
+                onRemove: () => setFilters({ sev: '' }),
+              },
+              filters.site && {
+                key: 'site',
+                label: 'Site',
+                value: scopedSites.find((s) => String(s.id) === filters.site)?.nom ?? filters.site,
+                onRemove: () => setFilters({ site: '' }),
+              },
+              filters.q && {
+                key: 'q',
+                label: 'Recherche',
+                value: filters.q,
+                onRemove: () => setFilters({ q: '' }),
+              },
+            ].filter(Boolean)}
+            total={anomalies.length}
+            filtered={filtered.length}
+            onReset={resetFilters}
+          />
+
+          {/* ── Erreur ── */}
+          {error && (
+            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
+              <AlertTriangle size={13} className="shrink-0" /> {error}
+            </div>
+          )}
+
+          {/* ── Liste anomalies ── */}
+          {loading ? (
+            <div className="space-y-2 animate-pulse">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-10 text-gray-400">
+              <Search size={28} className="mx-auto mb-2" />
+              <p className="text-sm font-medium text-gray-600">
+                Aucune <Explain term="anomalie">anomalie</Explain> ne correspond
+              </p>
+              {hasFilters && (
+                <button
+                  onClick={resetFilters}
+                  className="mt-2 text-xs text-blue-600 hover:underline"
                 >
-                  {/* Infos anomalie */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {/* Site */}
-                      <span className="text-[10px] font-medium text-gray-500 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
-                        {anom.site_nom}
-                      </span>
-                      {/* Severity */}
-                      <span
-                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${SEV_COLOR[anom.severity] ?? 'bg-gray-100 text-gray-600'}`}
-                      >
-                        {SEV_LABEL[anom.severity] ?? anom.severity}
-                      </span>
-                      {/* Framework */}
-                      {anom.regulatory_impact?.framework &&
-                        anom.regulatory_impact.framework !== 'NONE' && (
-                          <span
-                            className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${FW_COLOR[anom.regulatory_impact.framework] ?? 'bg-gray-50 text-gray-600'}`}
-                          >
-                            {FW_LABEL[anom.regulatory_impact.framework] ??
-                              anom.regulatory_impact.framework}
-                          </span>
-                        )}
-                      {/* Titre */}
-                      <span className="text-sm font-medium text-gray-800 truncate">
-                        {anom.title_fr}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {impactFmt !== '—' && (
-                        <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                          <Euro size={9} /> {impactFmt}
+                  Réinitialiser les filtres
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {filtered.map((anom, idx) => {
+                const impactFmt = fmtEur(anom.business_impact?.estimated_risk_eur);
+
+                return (
+                  <div
+                    key={`${anom.site_id}-${anom.code}-${idx}`}
+                    className="flex items-start gap-3 px-3 py-2.5 bg-white border border-gray-100 rounded-lg hover:border-gray-200 transition"
+                  >
+                    {/* Infos anomalie */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Site */}
+                        <span className="text-[10px] font-medium text-gray-500 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
+                          {anom.site_nom}
                         </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* CTAs */}
-                  {(() => {
-                    const key = getAnomalyKey(anom);
-                    const st = anomalyStatuses[key];
-                    const isDismissed = st?.status === 'dismissed';
-                    const isLinked = st?.status === 'linked' || st?.status === 'resolved';
-                    const linkedCount = st?.linked_actions?.length || 0;
-
-                    return (
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* Status badge */}
-                        {isDismissed && (
-                          <span className="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
-                            <Ban size={9} className="inline mr-0.5" />Ignorée
+                        {/* Severity */}
+                        <span
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${SEV_COLOR[anom.severity] ?? 'bg-gray-100 text-gray-600'}`}
+                        >
+                          {SEV_LABEL[anom.severity] ?? anom.severity}
+                        </span>
+                        {/* Framework */}
+                        {anom.regulatory_impact?.framework &&
+                          anom.regulatory_impact.framework !== 'NONE' && (
+                            <span
+                              className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${FW_COLOR[anom.regulatory_impact.framework] ?? 'bg-gray-50 text-gray-600'}`}
+                            >
+                              {FW_LABEL[anom.regulatory_impact.framework] ??
+                                anom.regulatory_impact.framework}
+                            </span>
+                          )}
+                        {/* Titre */}
+                        <span className="text-sm font-medium text-gray-800 truncate">
+                          {anom.title_fr}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {impactFmt !== '—' && (
+                          <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                            <Euro size={9} /> {impactFmt}
                           </span>
-                        )}
-                        {isLinked && (
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/anomalies?tab=actions`)}
-                            className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 hover:bg-emerald-100 transition"
-                          >
-                            <Link2 size={9} /> Voir action{linkedCount > 1 ? `s (${linkedCount})` : ''}
-                          </button>
-                        )}
-
-                        {/* Context-aware open button */}
-                        {!isDismissed && (
-                          <Tooltip text={`Ouvrir : ${getOpenLabel(anom)}`}>
-                            <button
-                              type="button"
-                              onClick={() => openTarget(anom)}
-                              className="flex items-center gap-1 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 hover:bg-blue-100 transition"
-                            >
-                              {getOpenLabel(anom)} <ChevronRight size={11} />
-                            </button>
-                          </Tooltip>
-                        )}
-
-                        {/* Create / link action */}
-                        {!isDismissed && (
-                          <Tooltip text={isLinked ? 'Créer une autre action' : 'Créer une action pour cette anomalie'}>
-                            <button
-                              type="button"
-                              data-testid="creer-action-btn"
-                              onClick={() =>
-                                openActionDrawer({
-                                  prefill: { titre: anom.title_fr, type: 'anomalie' },
-                                  siteId: anom.site_id,
-                                  sourceType: 'anomaly',
-                                  sourceId: anom.code,
-                                  idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
-                                })
-                              }
-                              className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
-                            >
-                              {isLinked ? '+ Action' : 'Créer une action'}
-                            </button>
-                          </Tooltip>
-                        )}
-
-                        {/* Pourquoi */}
-                        <Tooltip text="Comprendre cette anomalie">
-                          <button
-                            type="button"
-                            data-testid="pourquoi-btn"
-                            onClick={() => {
-                              setEvidenceData(buildAnomalyEvidence(anom));
-                              setEvidenceOpen(true);
-                            }}
-                            className="flex items-center gap-0.5 text-[11px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-2 py-1 hover:bg-purple-100 transition"
-                          >
-                            <HelpCircle size={11} /> Pourquoi ?
-                          </button>
-                        </Tooltip>
-
-                        {/* Overflow menu: Ignorer */}
-                        {!isDismissed && (
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setDismissMenuOpen(dismissMenuOpen === key ? null : key)}
-                              className="p-1 text-gray-400 hover:text-gray-600 rounded transition"
-                              aria-label="Plus d'options"
-                            >
-                              <MoreHorizontal size={14} />
-                            </button>
-                            {dismissMenuOpen === key && (
-                              <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-48">
-                                <p className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase">Ignorer (motif requis)</p>
-                                {[
-                                  { code: 'false_positive', label: 'Faux positif' },
-                                  { code: 'known_issue', label: 'Problème connu' },
-                                  { code: 'out_of_scope', label: 'Hors périmètre' },
-                                  { code: 'duplicate', label: 'Doublon' },
-                                ].map((reason) => (
-                                  <button
-                                    key={reason.code}
-                                    type="button"
-                                    onClick={() => handleDismiss(anom, reason.code)}
-                                    className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
-                                  >
-                                    {reason.label}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
                         )}
                       </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
+                    </div>
 
-            <p className="text-[11px] text-gray-400 text-center pt-1">
-              {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
-              {scopedSites.length > MAX_SITES &&
-                ` · ${MAX_SITES} sites analysés sur ${scopedSites.length}`}
-            </p>
-          </div>
-        )}
-      </div>
+                    {/* CTAs */}
+                    {(() => {
+                      const key = getAnomalyKey(anom);
+                      const st = anomalyStatuses[key];
+                      const isDismissed = st?.status === 'dismissed';
+                      const isLinked = st?.status === 'linked' || st?.status === 'resolved';
+                      const linkedCount = st?.linked_actions?.length || 0;
+
+                      return (
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* Status badge */}
+                          {isDismissed && (
+                            <span className="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5">
+                              <Ban size={9} className="inline mr-0.5" />
+                              Ignorée
+                            </span>
+                          )}
+                          {isLinked && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/anomalies?tab=actions`)}
+                              className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 hover:bg-emerald-100 transition"
+                            >
+                              <Link2 size={9} /> Voir action
+                              {linkedCount > 1 ? `s (${linkedCount})` : ''}
+                            </button>
+                          )}
+
+                          {/* Context-aware open button */}
+                          {!isDismissed && (
+                            <Tooltip text={`Ouvrir : ${getOpenLabel(anom)}`}>
+                              <button
+                                type="button"
+                                onClick={() => openTarget(anom)}
+                                className="flex items-center gap-1 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 hover:bg-blue-100 transition"
+                              >
+                                {getOpenLabel(anom)} <ChevronRight size={11} />
+                              </button>
+                            </Tooltip>
+                          )}
+
+                          {/* Create / link action */}
+                          {!isDismissed && (
+                            <Tooltip
+                              text={
+                                isLinked
+                                  ? 'Créer une autre action'
+                                  : 'Créer une action pour cette anomalie'
+                              }
+                            >
+                              <button
+                                type="button"
+                                data-testid="creer-action-btn"
+                                onClick={() =>
+                                  openActionDrawer({
+                                    prefill: { titre: anom.title_fr, type: 'anomalie' },
+                                    siteId: anom.site_id,
+                                    sourceType: 'anomaly',
+                                    sourceId: anom.code,
+                                    idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
+                                  })
+                                }
+                                className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
+                              >
+                                {isLinked ? '+ Action' : 'Créer une action'}
+                              </button>
+                            </Tooltip>
+                          )}
+
+                          {/* Pourquoi */}
+                          <Tooltip text="Comprendre cette anomalie">
+                            <button
+                              type="button"
+                              data-testid="pourquoi-btn"
+                              onClick={() => {
+                                setEvidenceData(buildAnomalyEvidence(anom));
+                                setEvidenceOpen(true);
+                              }}
+                              className="flex items-center gap-0.5 text-[11px] font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded px-2 py-1 hover:bg-purple-100 transition"
+                            >
+                              <HelpCircle size={11} /> Pourquoi ?
+                            </button>
+                          </Tooltip>
+
+                          {/* Overflow menu: Ignorer */}
+                          {!isDismissed && (
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDismissMenuOpen(dismissMenuOpen === key ? null : key)
+                                }
+                                className="p-1 text-gray-400 hover:text-gray-600 rounded transition"
+                                aria-label="Plus d'options"
+                              >
+                                <MoreHorizontal size={14} />
+                              </button>
+                              {dismissMenuOpen === key && (
+                                <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-48">
+                                  <p className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase">
+                                    Ignorer (motif requis)
+                                  </p>
+                                  {[
+                                    { code: 'false_positive', label: 'Faux positif' },
+                                    { code: 'known_issue', label: 'Problème connu' },
+                                    { code: 'out_of_scope', label: 'Hors périmètre' },
+                                    { code: 'duplicate', label: 'Doublon' },
+                                  ].map((reason) => (
+                                    <button
+                                      key={reason.code}
+                                      type="button"
+                                      onClick={() => handleDismiss(anom, reason.code)}
+                                      className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                                    >
+                                      {reason.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })}
+
+              <p className="text-[11px] text-gray-400 text-center pt-1">
+                {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
+                {scopedSites.length > MAX_SITES &&
+                  ` · ${MAX_SITES} sites analysés sur ${scopedSites.length}`}
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Action Drawer — managed by ActionDrawerContext */}
-      <EvidenceDrawer open={evidenceOpen} onClose={() => setEvidenceOpen(false)} evidence={evidenceData} />
+      <EvidenceDrawer
+        open={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        evidence={evidenceData}
+      />
     </PageShell>
   );
 }
 
 /* ── Sous-composants ── */
 
-function KpiCard({ icon: Icon, color, label, value, loading }) {
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3">
-      <div className={`p-2 rounded-lg ${color}`}>
-        <Icon size={16} className="text-white" />
-      </div>
-      <div>
-        <p className="text-[11px] text-gray-400 font-medium">{label}</p>
-        {loading ? (
-          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse mt-0.5" />
-        ) : (
-          <p className="text-lg font-bold text-gray-900 leading-tight">{value}</p>
-        )}
-      </div>
-    </div>
-  );
-}
+// KpiCard replaced by shared KpiCardInline from ui
 
 function QuickSelect({ value, onChange, options }) {
   return (

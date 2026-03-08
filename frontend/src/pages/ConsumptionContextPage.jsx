@@ -3,7 +3,7 @@
  * Usages & Horaires → Profil conso & Anomalies comportementales.
  * 2 tabs: "Profil & Heatmap" | "Horaires & Anomalies"
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Activity, RefreshCw } from 'lucide-react';
 import { getConsumptionContext, refreshConsumptionDiagnose } from '../services/api';
@@ -161,7 +161,7 @@ export default function ConsumptionContextPage() {
             stats={{
               night_ratio: anomalyData?.kpis?.night_ratio ?? null,
               weekend_ratio: anomalyData?.kpis?.weekend_ratio ?? null,
-              off_hours_ratio: (kpis.offhours_pct != null ? kpis.offhours_pct / 100 : null),
+              off_hours_ratio: kpis.offhours_pct != null ? kpis.offhours_pct / 100 : null,
               avg_kwh: profileData?.total_kwh ?? null,
             }}
             isExpert={isExpert}

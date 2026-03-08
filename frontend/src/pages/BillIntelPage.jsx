@@ -3,7 +3,7 @@
  * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
   getBillingSummary,
   getBillingInsights,
@@ -197,9 +197,9 @@ export default function BillIntelPage() {
     setLoading(false);
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insightFilter, siteFilter]);
 
   // Sync scope global → local siteFilter
@@ -256,7 +256,9 @@ export default function BillIntelPage() {
   }, [invoices, periodPreset, monthFilter, invoiceStatusFilter, invoiceSearch]);
 
   // Reset pagination when filters change
-  useEffect(() => { setInvoicePage(0); }, [invoiceSearch, invoiceStatusFilter, periodPreset, monthFilter]);
+  useEffect(() => {
+    setInvoicePage(0);
+  }, [invoiceSearch, invoiceStatusFilter, periodPreset, monthFilter]);
 
   const invoicePageCount = Math.ceil(filteredInvoices.length / INVOICES_PER_PAGE);
   const pagedInvoices = filteredInvoices.slice(
@@ -279,7 +281,10 @@ export default function BillIntelPage() {
   const topInsight = useMemo(() => {
     const active = allInsights.filter(isActiveInsight).filter((i) => i.estimated_loss_eur > 0);
     if (!active.length) return null;
-    return active.reduce((max, i) => (i.estimated_loss_eur > max.estimated_loss_eur ? i : max), active[0]);
+    return active.reduce(
+      (max, i) => (i.estimated_loss_eur > max.estimated_loss_eur ? i : max),
+      active[0]
+    );
   }, [allInsights]);
 
   const [billingTrend, setBillingTrend] = useState(null);
@@ -425,10 +430,7 @@ export default function BillIntelPage() {
   if (loadError && !summary) {
     return (
       <PageShell icon={FileText} title="Facturation">
-        <ErrorState
-          message={loadError}
-          onRetry={fetchData}
-        />
+        <ErrorState message={loadError} onRetry={fetchData} />
       </PageShell>
     );
   }
@@ -568,10 +570,10 @@ export default function BillIntelPage() {
         <div className="flex items-start gap-3">
           <Zap size={16} className="mt-0.5 shrink-0 text-blue-600" />
           <div>
-            <span className="font-semibold">Comment ça marche ?</span>{' '}
-            PROMEOS recalcule le montant attendu de chaque facture à partir de votre consommation réelle,
-            de votre contrat et des tarifs réglementaires (TURPE, accise, TVA).
-            Si l'écart dépasse 10 %, une anomalie est signalée.
+            <span className="font-semibold">Comment ça marche ?</span> PROMEOS recalcule le montant
+            attendu de chaque facture à partir de votre consommation réelle, de votre contrat et des
+            tarifs réglementaires (TURPE, accise, TVA). Si l'écart dépasse 10 %, une anomalie est
+            signalée.
           </div>
         </div>
         {isExpert && (
@@ -583,24 +585,35 @@ export default function BillIntelPage() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 <div>
                   <span className="font-semibold">Données réelles</span>
-                  <p className="text-blue-600">Consommation (kWh) issue des compteurs ou factures importées.</p>
+                  <p className="text-blue-600">
+                    Consommation (kWh) issue des compteurs ou factures importées.
+                  </p>
                 </div>
                 <div>
                   <span className="font-semibold">Données contractuelles</span>
-                  <p className="text-blue-600">Prix fourniture, puissance souscrite, option tarifaire — extraits de votre contrat.</p>
+                  <p className="text-blue-600">
+                    Prix fourniture, puissance souscrite, option tarifaire — extraits de votre
+                    contrat.
+                  </p>
                 </div>
                 <div>
                   <span className="font-semibold">Tarifs réglementaires</span>
-                  <p className="text-blue-600">TURPE (C5 BT), accise électricité, CTA, TVA — catalogue PROMEOS versionné.</p>
+                  <p className="text-blue-600">
+                    TURPE (C5 BT), accise électricité, CTA, TVA — catalogue PROMEOS versionné.
+                  </p>
                 </div>
                 <div>
                   <span className="font-semibold">Valeurs par défaut</span>
-                  <p className="text-blue-600">Si le contrat est absent, un prix moyen marché est utilisé (indiqué « estimé »).</p>
+                  <p className="text-blue-600">
+                    Si le contrat est absent, un prix moyen marché est utilisé (indiqué « estimé »).
+                  </p>
                 </div>
               </div>
               <p className="border-t border-blue-200 pt-1.5">
-                <span className="font-semibold">Couverture :</span> fourniture, réseau (TURPE), taxes (accise + CTA), TVA, abonnement.{' '}
-                <span className="font-semibold">Non couvert :</span> pénalités dépassement, services complémentaires, ajustements rétroactifs.
+                <span className="font-semibold">Couverture :</span> fourniture, réseau (TURPE),
+                taxes (accise + CTA), TVA, abonnement.{' '}
+                <span className="font-semibold">Non couvert :</span> pénalités dépassement, services
+                complémentaires, ajustements rétroactifs.
               </p>
             </div>
           </details>
@@ -624,93 +637,128 @@ export default function BillIntelPage() {
       )}
 
       {/* Step 15: Summary phrase */}
-      {summary && (() => {
-        const count = summary.total_insights || 0;
-        if (count === 0) {
+      {summary &&
+        (() => {
+          const count = summary.total_insights || 0;
+          if (count === 0) {
+            return (
+              <p
+                className="text-sm text-green-700 bg-green-50 rounded-lg px-4 py-2"
+                data-testid="billing-summary-phrase"
+              >
+                Toutes les factures sont cohérentes. Aucune action requise.
+              </p>
+            );
+          }
+          const lossStr =
+            activeLoss >= 1000
+              ? `${(activeLoss / 1000).toFixed(1)} k€`
+              : `${Math.round(activeLoss)} €`;
           return (
-            <p className="text-sm text-green-700 bg-green-50 rounded-lg px-4 py-2" data-testid="billing-summary-phrase">
-              Toutes les factures sont cohérentes. Aucune action requise.
+            <p
+              className="text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-2"
+              data-testid="billing-summary-phrase"
+            >
+              {count} anomalie{count > 1 ? 's' : ''} détectée{count > 1 ? 's' : ''} pour un écart
+              estimé de {lossStr}.
+              {isExpert && ` Shadow billing actif — ${summary.total_invoices} factures analysées.`}
             </p>
           );
-        }
-        const lossStr = activeLoss >= 1000
-          ? `${(activeLoss / 1000).toFixed(1)} k€`
-          : `${Math.round(activeLoss)} €`;
-        return (
-          <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-2" data-testid="billing-summary-phrase">
-            {count} anomalie{count > 1 ? 's' : ''} détectée{count > 1 ? 's' : ''} pour un écart estimé de {lossStr}.
-            {isExpert && ` Shadow billing actif — ${summary.total_invoices} factures analysées.`}
-          </p>
-        );
-      })()}
+        })()}
 
       {/* Summary cards */}
-      {summary && (<>
-        <div className="grid grid-cols-5 gap-4">
-          <SummaryCard
-            icon={FileText}
-            label="Factures"
-            value={summary.total_invoices}
-            color="blue"
-          />
-          <SummaryCard
-            icon={DollarSign}
-            label="Total €"
-            value={`${Math.round(summary.total_eur).toLocaleString('fr-FR')} €`}
-            color="indigo"
-          />
-          <SummaryCard
-            icon={Zap}
-            label={<>Total <Explain term="kwh">kWh</Explain></>}
-            value={`${Math.round(summary.total_kwh).toLocaleString('fr-FR')}`}
-            color="purple"
-          />
-          <SummaryCard
-            icon={AlertTriangle}
-            label={<Explain term="anomalie">Anomalies</Explain>}
-            value={summary.total_insights}
-            color="red"
-          />
-          <SummaryCard
-            icon={TrendingUp}
-            label="Pertes estimées"
-            value={`${Math.round(activeLoss)} €`}
-            color="orange"
-          />
-        </div>
-        {/* Step 15: Billing KPI messages */}
-        <div className="flex flex-col gap-1">
-          {(() => {
-            const msg = getKpiMessage('billing_total_cost', summary.total_eur, { sitesCount: sites.length });
-            if (!msg) return null;
-            return (
-              <p className={`text-xs px-1 ${
-                msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-              }`} data-testid="kpi-message-billing-cost">
-                {isExpert ? msg.expert : msg.simple}
-              </p>
-            );
-          })()}
-          {(() => {
-            const msg = getKpiMessage('billing_anomalies_count', summary.total_insights, { totalLossEur: activeLoss });
-            if (!msg) return null;
-            return (
-              <p className={`text-xs px-1 ${
-                msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-              }`} data-testid="kpi-message-billing-anomalies">
-                {isExpert ? msg.expert : msg.simple}
-              </p>
-            );
-          })()}
-        </div>
-      </>)}
+      {summary && (
+        <>
+          <div className="grid grid-cols-5 gap-4">
+            <SummaryCard
+              icon={FileText}
+              label="Factures"
+              value={summary.total_invoices}
+              color="blue"
+            />
+            <SummaryCard
+              icon={DollarSign}
+              label="Total €"
+              value={`${Math.round(summary.total_eur).toLocaleString('fr-FR')} €`}
+              color="indigo"
+            />
+            <SummaryCard
+              icon={Zap}
+              label={
+                <>
+                  Total <Explain term="kwh">kWh</Explain>
+                </>
+              }
+              value={`${Math.round(summary.total_kwh).toLocaleString('fr-FR')}`}
+              color="purple"
+            />
+            <SummaryCard
+              icon={AlertTriangle}
+              label={<Explain term="anomalie">Anomalies</Explain>}
+              value={summary.total_insights}
+              color="red"
+            />
+            <SummaryCard
+              icon={TrendingUp}
+              label="Pertes estimées"
+              value={`${Math.round(activeLoss)} €`}
+              color="orange"
+            />
+          </div>
+          {/* Step 15: Billing KPI messages */}
+          <div className="flex flex-col gap-1">
+            {(() => {
+              const msg = getKpiMessage('billing_total_cost', summary.total_eur, {
+                sitesCount: sites.length,
+              });
+              if (!msg) return null;
+              return (
+                <p
+                  className={`text-xs px-1 ${
+                    msg.severity === 'crit'
+                      ? 'text-red-600'
+                      : msg.severity === 'warn'
+                        ? 'text-amber-600'
+                        : 'text-gray-500'
+                  }`}
+                  data-testid="kpi-message-billing-cost"
+                >
+                  {isExpert ? msg.expert : msg.simple}
+                </p>
+              );
+            })()}
+            {(() => {
+              const msg = getKpiMessage('billing_anomalies_count', summary.total_insights, {
+                totalLossEur: activeLoss,
+              });
+              if (!msg) return null;
+              return (
+                <p
+                  className={`text-xs px-1 ${
+                    msg.severity === 'crit'
+                      ? 'text-red-600'
+                      : msg.severity === 'warn'
+                        ? 'text-amber-600'
+                        : 'text-gray-500'
+                  }`}
+                  data-testid="kpi-message-billing-anomalies"
+                >
+                  {isExpert ? msg.expert : msg.simple}
+                </p>
+              );
+            })()}
+          </div>
+        </>
+      )}
       {isExpert && summary && (
         <div className="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2">
           <span>Source : PROMEOS Bill Intel v2</span>
           <span>·</span>
           <span>Couverture : {summary.coverage_months || '?'} mois</span>
           <span>·</span>
-          <span>Dernière maj : {summary.last_updated || new Date().toLocaleDateString('fr-FR')}</span>
+          <span>
+            Dernière maj : {summary.last_updated || new Date().toLocaleDateString('fr-FR')}
+          </span>
           <span>·</span>
           <span>Moteur : {summary.engine_version || 'rules_v2'}</span>
         </div>
@@ -748,15 +796,21 @@ export default function BillIntelPage() {
             <AlertTriangle size={20} className="text-red-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-red-500 font-medium uppercase tracking-wide">Anomalie prioritaire</p>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5 truncate">{topInsight.message}</p>
+            <p className="text-xs text-red-500 font-medium uppercase tracking-wide">
+              Anomalie prioritaire
+            </p>
+            <p className="text-sm font-semibold text-gray-900 mt-0.5 truncate">
+              {topInsight.message}
+            </p>
             <p className="text-xs text-gray-500 mt-0.5">
               {TYPE_LABELS[topInsight.type] || topInsight.type}
               {topInsight.site_label && ` · ${topInsight.site_label}`}
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-lg font-bold text-red-600">{topInsight.estimated_loss_eur.toLocaleString('fr-FR')} €</p>
+            <p className="text-lg font-bold text-red-600">
+              {topInsight.estimated_loss_eur.toLocaleString('fr-FR')} €
+            </p>
             <p className="text-xs text-gray-400">écart estimé</p>
           </div>
           <ArrowRight size={16} className="text-red-400 shrink-0" />
@@ -788,7 +842,9 @@ export default function BillIntelPage() {
           </div>
           <div className="space-y-2">
             {insights.map((insight) => {
-              const istatus = VALID_STATUSES.includes(insight.insight_status) ? insight.insight_status : 'open';
+              const istatus = VALID_STATUSES.includes(insight.insight_status)
+                ? insight.insight_status
+                : 'open';
               return (
                 <Card key={insight.id} className="border-l-4 border-l-red-300">
                   <CardBody className="flex items-center gap-4">
@@ -805,17 +861,33 @@ export default function BillIntelPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">
-                          {['shadow_gap','unit_price_high','duplicate_invoice','consumption_spike','price_drift'].includes(insight.type)
-                            ? <Explain term={insight.type}>{TYPE_LABELS[insight.type]}</Explain>
-                            : insight.type === 'ttc_coherence'
-                              ? <>Cohérence <Explain term="ttc">TTC</Explain></>
-                              : insight.type === 'reseau_mismatch'
-                                ? <>Écart réseau / <Explain term="turpe">TURPE</Explain></>
-                                : insight.type === 'taxes_mismatch'
-                                  ? <>Écart taxes / <Explain term="accise">accise</Explain></>
-                                  : insight.type === 'negative_kwh'
-                                    ? <><Explain term="kwh">kWh</Explain> négatifs</>
-                                    : (TYPE_LABELS[insight.type] || insight.type)}
+                          {[
+                            'shadow_gap',
+                            'unit_price_high',
+                            'duplicate_invoice',
+                            'consumption_spike',
+                            'price_drift',
+                          ].includes(insight.type) ? (
+                            <Explain term={insight.type}>{TYPE_LABELS[insight.type]}</Explain>
+                          ) : insight.type === 'ttc_coherence' ? (
+                            <>
+                              Cohérence <Explain term="ttc">TTC</Explain>
+                            </>
+                          ) : insight.type === 'reseau_mismatch' ? (
+                            <>
+                              Écart réseau / <Explain term="turpe">TURPE</Explain>
+                            </>
+                          ) : insight.type === 'taxes_mismatch' ? (
+                            <>
+                              Écart taxes / <Explain term="accise">accise</Explain>
+                            </>
+                          ) : insight.type === 'negative_kwh' ? (
+                            <>
+                              <Explain term="kwh">kWh</Explain> négatifs
+                            </>
+                          ) : (
+                            TYPE_LABELS[insight.type] || insight.type
+                          )}
                         </span>
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
                           {SEVERITY_LABELS[insight.severity] || insight.severity}
@@ -1027,13 +1099,13 @@ export default function BillIntelPage() {
                       <td className="px-4 py-2.5 text-gray-500">{inv.source || '-'}</td>
                       {isExpert && (
                         <td className="px-4 py-2.5 text-right font-mono text-xs">
-                          {(inv.total_eur && inv.energy_kwh) ? (inv.total_eur / inv.energy_kwh).toFixed(4) : '-'}
+                          {inv.total_eur && inv.energy_kwh
+                            ? (inv.total_eur / inv.energy_kwh).toFixed(4)
+                            : '-'}
                         </td>
                       )}
                       {isExpert && (
-                        <td className="px-4 py-2.5 text-gray-500">
-                          {inv.energy_type || '-'}
-                        </td>
+                        <td className="px-4 py-2.5 text-gray-500">{inv.energy_type || '-'}</td>
                       )}
                     </tr>
                   ))}
@@ -1056,7 +1128,9 @@ export default function BillIntelPage() {
                     ←
                   </button>
                   <span className="text-gray-500">
-                    {invoicePage * INVOICES_PER_PAGE + 1}–{Math.min((invoicePage + 1) * INVOICES_PER_PAGE, filteredInvoices.length)} sur {filteredInvoices.length}
+                    {invoicePage * INVOICES_PER_PAGE + 1}–
+                    {Math.min((invoicePage + 1) * INVOICES_PER_PAGE, filteredInvoices.length)} sur{' '}
+                    {filteredInvoices.length}
                   </span>
                   <button
                     onClick={() => setInvoicePage((p) => Math.min(invoicePageCount - 1, p + 1))}
@@ -1092,7 +1166,10 @@ export default function BillIntelPage() {
       {/* Dossier print view (Étape 5) */}
       <DossierPrintView
         open={!!dossierSource}
-        onClose={() => { setDossierSource(null); setDossierInsightDetail(null); }}
+        onClose={() => {
+          setDossierSource(null);
+          setDossierInsightDetail(null);
+        }}
         sourceType={dossierSource?.sourceType}
         sourceId={dossierSource?.sourceId}
         sourceLabel={dossierSource?.label}

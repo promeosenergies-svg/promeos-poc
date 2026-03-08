@@ -38,6 +38,7 @@ export function ActionDrawerProvider({ children }) {
       state.onSave?.(result);
       closeDrawer();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.onSave, closeDrawer, toast]
   );
 

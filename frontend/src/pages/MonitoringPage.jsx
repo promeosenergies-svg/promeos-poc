@@ -59,7 +59,6 @@ import {
   Tabs,
   Tooltip,
   Explain,
-  GLOSSARY,
 } from '../ui';
 import { SkeletonCard } from '../ui';
 import ErrorState from '../ui/ErrorState';
@@ -433,7 +432,18 @@ const CONFIDENCE_DOT = {
   low: 'bg-red-400',
 };
 
-function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick, confidence, message }) {
+function StatusKpiCard({
+  icon,
+  title,
+  value,
+  sub,
+  tooltip,
+  status,
+  color,
+  onClick,
+  confidence,
+  message,
+}) {
   const st = STATUS_BADGES[status] || STATUS_BADGES.ok;
   const confTip = confidence
     ? `Confiance: ${confidence.level === 'high' ? 'Forte' : confidence.level === 'medium' ? 'Moyenne' : 'Faible'}${confidence.reason ? ' — ' + confidence.reason : ''}`
@@ -557,9 +567,10 @@ function ExecutiveSummary({
               { label: 'Créer une action', action: () => onCreateAction(wasteAlerts[0]) },
             ]
           : [],
-      expertDetail: wasteAlerts.length > 0
-        ? `alertes=${wasteAlerts.length} · types=${[...new Set(wasteAlerts.map(a => a.alert_type))].join(',')} · kwh_total=${fmtNum(totalWasteKwh, 0)}`
-        : null,
+      expertDetail:
+        wasteAlerts.length > 0
+          ? `alertes=${wasteAlerts.length} · types=${[...new Set(wasteAlerts.map((a) => a.alert_type))].join(',')} · kwh_total=${fmtNum(totalWasteKwh, 0)}`
+          : null,
     },
     {
       icon: Database,
@@ -625,34 +636,35 @@ function ExecutiveSummary({
             ]
           : []),
       ],
-      expertDetail: offHoursRatio != null
-        ? `ratio=${fmtNum(offHoursRatio * 100)}% · kwh_90j=${offHoursKwh ?? '-'} · est=${offHoursEst.eur} EUR/an · prix=${offHoursEst.price} EUR/kWh`
-        : null,
+      expertDetail:
+        offHoursRatio != null
+          ? `ratio=${fmtNum(offHoursRatio * 100)}% · kwh_90j=${offHoursKwh ?? '-'} · est=${offHoursEst.eur} EUR/an · prix=${offHoursEst.price} EUR/kWh`
+          : null,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mb-4">
       {cards.map((c, i) => (
         <Card key={i} data-testid={c.testId}>
           <CardBody className="p-4">
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg bg-gray-50 ${c.iconColor}`}>
+              <div className={`p-2 rounded-lg bg-gray-50 ${c.iconColor} shrink-0`}>
                 <c.icon size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider line-clamp-2">
                   {c.title}
                 </p>
-                <p className="text-lg font-bold text-gray-800 mt-0.5">{c.value}</p>
+                <p className="text-lg font-bold text-gray-800 mt-0.5 break-words">{c.value}</p>
                 <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.sub}</p>
                 {c.ctas && c.ctas.length > 0 && (
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-x-3 gap-y-1 mt-2 flex-wrap">
                     {c.ctas.map((cta, j) => (
                       <button
                         key={j}
                         onClick={cta.action}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                        className="text-[11px] font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1 whitespace-nowrap"
                       >
                         {cta.label} <ExternalLink size={10} />
                       </button>
@@ -660,9 +672,7 @@ function ExecutiveSummary({
                   </div>
                 )}
                 {isExpert && c.expertDetail && (
-                  <div className="text-[10px] text-gray-400 font-mono mt-1">
-                    {c.expertDetail}
-                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono mt-1">{c.expertDetail}</div>
                 )}
               </div>
             </div>
@@ -1525,7 +1535,7 @@ export default function MonitoringPage() {
   const { toast } = useToast();
   const siteId = scope.siteId;
   // Step 11: unified period from URL (default 90 days for monitoring)
-  const { period, periodQueryString } = usePeriodParams(90);
+  const { period, periodQueryString: _periodQueryString } = usePeriodParams(90);
   const monitoringDays = period.days;
 
   const [kpis, setKpis] = useState(null);
@@ -1561,13 +1571,17 @@ export default function MonitoringPage() {
   // D.1: Fetch site data quality
   useEffect(() => {
     if (!siteId) return;
-    getDataQualityScore(siteId).then(setSiteDq).catch(() => setSiteDq(null));
+    getDataQualityScore(siteId)
+      .then(setSiteDq)
+      .catch(() => setSiteDq(null));
   }, [siteId]);
 
   // D.2: Fetch site freshness
   useEffect(() => {
     if (!siteId) return;
-    getSiteFreshness(siteId).then(setSiteFreshness).catch(() => setSiteFreshness(null));
+    getSiteFreshness(siteId)
+      .then(setSiteFreshness)
+      .catch(() => setSiteFreshness(null));
   }, [siteId]);
 
   // --- Data loading ---
@@ -1936,7 +1950,7 @@ export default function MonitoringPage() {
         title="Performance Électrique"
         subtitle="KPIs, puissance, qualité de données & alertes"
       >
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <SkeletonCard key={i} />
           ))}
@@ -1953,10 +1967,7 @@ export default function MonitoringPage() {
         title="Performance Électrique"
         subtitle="KPIs, puissance, qualité de données & alertes"
       >
-        <ErrorState
-          message={error || 'Erreur de chargement'}
-          onRetry={loadAll}
-        />
+        <ErrorState message={error || 'Erreur de chargement'} onRetry={loadAll} />
       </PageShell>
     );
   }
@@ -1967,7 +1978,15 @@ export default function MonitoringPage() {
     <PageShell
       icon={Activity}
       title="Performance Électrique"
-      subtitle={<>Suivez les KPIs électriques en temps réel : puissance souscrite, qualité de données, alertes automatiques. <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
+      subtitle={
+        <>
+          Suivez les KPIs électriques en temps réel : puissance souscrite, qualité de données,
+          alertes automatiques.{' '}
+          <span className="text-xs text-gray-400 ml-2">
+            Période : {period.start} — {period.end} ({period.days}j)
+          </span>
+        </>
+      }
       actions={
         <>
           <select
@@ -2009,9 +2028,7 @@ export default function MonitoringPage() {
         </>
       }
     >
-      {error && (
-        <ErrorState message={error} onRetry={loadAll} />
-      )}
+      {error && <ErrorState message={error} onRetry={loadAll} />}
 
       {/* Empty state with demo CTA */}
       {!hasData && (
@@ -2240,7 +2257,10 @@ export default function MonitoringPage() {
           {/* ═══ SECTION D — Détails (collapsible in standard mode) ═══ */}
           <details data-section="details" className="mb-6 group" open={isExpert || undefined}>
             <summary className="cursor-pointer list-none flex items-center gap-2 mb-3 select-none">
-              <ChevronDown size={16} className="text-indigo-500 transition-transform group-open:rotate-0 -rotate-90" />
+              <ChevronDown
+                size={16}
+                className="text-indigo-500 transition-transform group-open:rotate-0 -rotate-90"
+              />
               <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
                 <BarChart3 size={16} className="text-indigo-500" />
                 Détails techniques
@@ -2267,7 +2287,7 @@ export default function MonitoringPage() {
             )}
 
             {/* KPI Strip — 4 cols × 2 rows for readability */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
               <StatusKpiCard
                 icon={Zap}
                 title={getKpiLabel('pmax_kw', isExpert)}
@@ -2295,12 +2315,23 @@ export default function MonitoringPage() {
                 status={lfStatus}
                 color="bg-indigo-500"
                 message={(() => {
-                  const msg = getKpiMessage('load_factor', kpiData.load_factor != null ? kpiData.load_factor * 100 : null, { archetype: archetypeLabel });
+                  const msg = getKpiMessage(
+                    'load_factor',
+                    kpiData.load_factor != null ? kpiData.load_factor * 100 : null,
+                    { archetype: archetypeLabel }
+                  );
                   if (!msg) return null;
                   return (
-                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
-                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-                    }`} data-testid="kpi-message-load-factor">
+                    <p
+                      className={`text-[11px] mt-1 px-3 pb-2 ${
+                        msg.severity === 'crit'
+                          ? 'text-red-600'
+                          : msg.severity === 'warn'
+                            ? 'text-amber-600'
+                            : 'text-gray-500'
+                      }`}
+                      data-testid="kpi-message-load-factor"
+                    >
                       {isExpert ? msg.expert : msg.simple}
                     </p>
                   );
@@ -2357,9 +2388,16 @@ export default function MonitoringPage() {
                   const msg = getKpiMessage('data_quality_score', qualityScore);
                   if (!msg) return null;
                   return (
-                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
-                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-                    }`} data-testid="kpi-message-data-quality">
+                    <p
+                      className={`text-[11px] mt-1 px-3 pb-2 ${
+                        msg.severity === 'crit'
+                          ? 'text-red-600'
+                          : msg.severity === 'warn'
+                            ? 'text-amber-600'
+                            : 'text-gray-500'
+                      }`}
+                      data-testid="kpi-message-data-quality"
+                    >
                       {isExpert ? msg.expert : msg.simple}
                     </p>
                   );
@@ -2367,7 +2405,11 @@ export default function MonitoringPage() {
               />
               <StatusKpiCard
                 icon={Clock}
-                title={<Explain term="off_hours_ratio">{getKpiLabel('off_hours_ratio', isExpert)}</Explain>}
+                title={
+                  <Explain term="off_hours_ratio">
+                    {getKpiLabel('off_hours_ratio', isExpert)}
+                  </Explain>
+                }
                 value={offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}
                 sub={
                   schedule
@@ -2401,9 +2443,16 @@ export default function MonitoringPage() {
                   const msg = getKpiMessage('off_hours_ratio', offHoursRatio);
                   if (!msg) return null;
                   return (
-                    <p className={`text-[11px] mt-1 px-3 pb-2 ${
-                      msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-                    }`} data-testid="kpi-message-off-hours">
+                    <p
+                      className={`text-[11px] mt-1 px-3 pb-2 ${
+                        msg.severity === 'crit'
+                          ? 'text-red-600'
+                          : msg.severity === 'warn'
+                            ? 'text-amber-600'
+                            : 'text-gray-500'
+                      }`}
+                      data-testid="kpi-message-off-hours"
+                    >
                       {isExpert ? msg.expert : msg.simple}
                     </p>
                   );
@@ -2463,23 +2512,26 @@ export default function MonitoringPage() {
                     LF seuils: ok≥{lfThresholds.ok}% warn≥{lfThresholds.warn}% · arch={archetype}
                   </div>
                   <div className="text-[10px] text-gray-400 font-mono">
-                    Qualité: raw={qualityScore ?? 'null'} · conf={qualityConf?.pct ?? '-'}% · {qualityConf?.level || '-'}
+                    Qualité: raw={qualityScore ?? 'null'} · conf={qualityConf?.pct ?? '-'}% ·{' '}
+                    {qualityConf?.level || '-'}
                   </div>
                   <div className="text-[10px] text-gray-400 font-mono">
                     Risque: raw={riskScore ?? 'null'} · status={riskStatus}
                     {climate?.r_squared != null ? ` · R²=${fmtNum(climate.r_squared, 3)}` : ''}
                   </div>
                   <div className="text-[10px] text-gray-400 font-mono">
-                    HH: ratio={offHoursRatio ?? 'null'} · kwh={offHoursKwh ?? 'null'}
-                    · prix={offHoursEstimate.price} EUR/kWh ({offHoursEstimate.mode || 'est.'})
+                    HH: ratio={offHoursRatio ?? 'null'} · kwh={offHoursKwh ?? 'null'}· prix=
+                    {offHoursEstimate.price} EUR/kWh ({offHoursEstimate.mode || 'est.'})
                   </div>
                   <div className="text-[10px] text-gray-400 font-mono">
-                    CO₂e: factor={emissions.factor?.kgco2e_per_kwh ?? '-'} · src={emissions.factor?.source_label || '-'}
+                    CO₂e: factor={emissions.factor?.kgco2e_per_kwh ?? '-'} · src=
+                    {emissions.factor?.source_label || '-'}
                   </div>
                   {climate && (
                     <div className="text-[10px] text-gray-400 font-mono">
-                      Climat: slope={climate.slope_kw_per_c ?? '-'} · Tb={climate.balance_point_c ?? '-'}°C
-                      · n={climate.n_points ?? '-'}pts · label={climate.label || '-'}
+                      Climat: slope={climate.slope_kw_per_c ?? '-'} · Tb=
+                      {climate.balance_point_c ?? '-'}°C · n={climate.n_points ?? '-'}pts · label=
+                      {climate.label || '-'}
                     </div>
                   )}
                   <div className="text-[10px] text-gray-400 font-mono">
@@ -2556,9 +2608,15 @@ export default function MonitoringPage() {
                         Données brutes (24h)
                       </summary>
                       <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed overflow-x-auto">
-                        <div>Semaine: [{weekdayProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]</div>
+                        <div>
+                          Semaine: [
+                          {weekdayProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]
+                        </div>
                         {weekendProfile && (
-                          <div>Weekend: [{weekendProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]</div>
+                          <div>
+                            Weekend: [
+                            {weekendProfile.map((v, i) => `${i}h:${fmtNum(v, 1)}`).join(' · ')}]
+                          </div>
                         )}
                       </div>
                     </details>
@@ -2583,7 +2641,9 @@ export default function MonitoringPage() {
                       </summary>
                       <div className="mt-1 text-[10px] text-gray-400 font-mono leading-relaxed overflow-x-auto max-h-32 overflow-y-auto">
                         {heatmapData.map((row, d) => (
-                          <div key={d}>{DAYS_FR[d]}: [{row.map((v) => fmtNum(v, 1)).join(', ')}]</div>
+                          <div key={d}>
+                            {DAYS_FR[d]}: [{row.map((v) => fmtNum(v, 1)).join(', ')}]
+                          </div>
                         ))}
                       </div>
                     </details>
@@ -2618,7 +2678,9 @@ export default function MonitoringPage() {
                           </div>
                         ))}
                         {climate.scatter.length > 50 && (
-                          <div className="text-gray-300 mt-1">… +{climate.scatter.length - 50} points</div>
+                          <div className="text-gray-300 mt-1">
+                            … +{climate.scatter.length - 50} points
+                          </div>
                         )}
                       </div>
                     </details>
@@ -2757,11 +2819,17 @@ export default function MonitoringPage() {
                           {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">ID</th>}
                           <th className="pb-2 pr-4">Statut</th>
                           <th className="pb-2 pr-4">Type</th>
-                          <th className="pb-2 pr-4"><Explain term="severite">Sévérité</Explain></th>
+                          <th className="pb-2 pr-4">
+                            <Explain term="severite">Sévérité</Explain>
+                          </th>
                           <th className="pb-2 pr-4">Explication</th>
                           <th className="pb-2 pr-4 text-right">Impact (EUR)</th>
-                          {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">Compteur</th>}
-                          {isExpert && <th className="pb-2 pr-4 text-[10px] font-mono">kWh brut</th>}
+                          {isExpert && (
+                            <th className="pb-2 pr-4 text-[10px] font-mono">Compteur</th>
+                          )}
+                          {isExpert && (
+                            <th className="pb-2 pr-4 text-[10px] font-mono">kWh brut</th>
+                          )}
                           <th className="pb-2">Actions</th>
                         </tr>
                       </thead>
@@ -2776,7 +2844,8 @@ export default function MonitoringPage() {
                             >
                               {isExpert && (
                                 <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono">
-                                  #{a.id}{a._count > 1 ? ` (+${a._ids?.slice(1).join(',')})` : ''}
+                                  #{a.id}
+                                  {a._count > 1 ? ` (+${a._ids?.slice(1).join(',')})` : ''}
                                 </td>
                               )}
                               <td className="py-3 pr-4">
@@ -2818,12 +2887,19 @@ export default function MonitoringPage() {
                               </td>
                               {isExpert && (
                                 <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono">
-                                  {a.meter_id || '-'}{a._meters && a._meters.size > 1 ? ` (+${a._meters.size - 1})` : ''}
+                                  {a.meter_id || '-'}
+                                  {a._meters && a._meters.size > 1
+                                    ? ` (+${a._meters.size - 1})`
+                                    : ''}
                                 </td>
                               )}
                               {isExpert && (
                                 <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono text-right">
-                                  {a._totalKwh > 0 ? `${fmtNum(a._totalKwh, 1)} kWh` : a.estimated_impact_kwh > 0 ? `${fmtNum(a.estimated_impact_kwh, 1)} kWh` : '-'}
+                                  {a._totalKwh > 0
+                                    ? `${fmtNum(a._totalKwh, 1)} kWh`
+                                    : a.estimated_impact_kwh > 0
+                                      ? `${fmtNum(a.estimated_impact_kwh, 1)} kWh`
+                                      : '-'}
                                 </td>
                               )}
                               <td className="py-3">

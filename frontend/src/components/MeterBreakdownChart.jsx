@@ -3,7 +3,7 @@
  * Donut chart : répartition de la consommation entre sous-compteurs.
  * Affiche le delta (pertes & parties communes) comme tranche distincte.
  */
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 const DELTA_COLOR = '#94a3b8';
@@ -30,7 +30,10 @@ export default function MeterBreakdownChart({ breakdown }) {
   return (
     <div className="w-full" data-testid="meter-breakdown-chart">
       <div className="text-xs text-gray-500 mb-2 text-center">
-        Total principal : <span className="font-medium text-gray-700">{Math.round(total).toLocaleString('fr-FR')} kWh</span>
+        Total principal :{' '}
+        <span className="font-medium text-gray-700">
+          {Math.round(total).toLocaleString('fr-FR')} kWh
+        </span>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
@@ -52,9 +55,7 @@ export default function MeterBreakdownChart({ breakdown }) {
               />
             ))}
           </Pie>
-          <Tooltip
-            formatter={(value) => [`${value.toLocaleString('fr-FR')} kWh`, '']}
-          />
+          <Tooltip formatter={(value) => [`${value.toLocaleString('fr-FR')} kWh`, '']} />
         </PieChart>
       </ResponsiveContainer>
     </div>

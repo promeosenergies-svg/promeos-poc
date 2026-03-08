@@ -130,8 +130,8 @@ describe('D · Portfolio RéFlex table', () => {
     expect(code).toContain('data-testid="reflex-portfolio-table"');
   });
 
-  it('table has Budget baseline column', () => {
-    expect(code).toContain('Budget baseline');
+  it('table has Budget de référence column', () => {
+    expect(code).toContain('Budget de référence');
   });
 
   it('table has Tarif Heures Solaires column', () => {

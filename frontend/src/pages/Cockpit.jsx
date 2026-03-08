@@ -18,7 +18,12 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { getNotificationsSummary, getComplianceTimeline, getMarketContext, getComplianceScoreTrend } from '../services/api';
+import {
+  getNotificationsSummary,
+  getComplianceTimeline,
+  getMarketContext,
+  getComplianceScoreTrend,
+} from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
@@ -36,7 +41,6 @@ import {
   ScopeSummary,
   EvidenceDrawer,
   Explain,
-  GLOSSARY,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -74,7 +78,12 @@ import {
   getRiskStatus,
   getStatusBadgeProps,
 } from '../lib/constants';
-import { evidenceConformite, evidenceRisque, evidenceMaturite, evidenceCouverture } from '../ui/evidence.fixtures';
+import {
+  evidenceConformite,
+  evidenceRisque,
+  evidenceMaturite,
+  evidenceCouverture,
+} from '../ui/evidence.fixtures';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -155,7 +164,9 @@ const Cockpit = () => {
 
   // Step 24: Fetch market context
   useEffect(() => {
-    getMarketContext('ELEC').then(setMarketContext).catch(() => setMarketContext(null));
+    getMarketContext('ELEC')
+      .then(setMarketContext)
+      .catch(() => setMarketContext(null));
   }, []);
 
   // Step 33: Fetch compliance score trend
@@ -226,7 +237,12 @@ const Cockpit = () => {
       risqueStatus,
       // A.2: unified compliance score from API (null if not yet loaded)
       compliance_score: complianceApi?.avg_score ?? null,
-      compliance_confidence: complianceApi?.high_confidence_count > (total * 0.6) ? 'high' : complianceApi ? 'medium' : null,
+      compliance_confidence:
+        complianceApi?.high_confidence_count > total * 0.6
+          ? 'high'
+          : complianceApi
+            ? 'medium'
+            : null,
     };
   }, [scopedSites, complianceApi]);
 
@@ -365,7 +381,9 @@ const Cockpit = () => {
           onRetry={() => {
             setError(null);
             getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
-              .then((data) => setAlertsCount((data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0)))
+              .then((data) =>
+                setAlertsCount((data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0))
+              )
               .catch(() => setAlertsCount(0));
           }}
         />
@@ -388,7 +406,13 @@ const Cockpit = () => {
 
       {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
       <div data-tour="step-1">
-        <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} isExpert={isExpert} scoreTrend={scoreTrend} />
+        <ExecutiveKpiRow
+          kpis={executiveKpis}
+          onNavigate={navigate}
+          onEvidence={setEvidenceOpen}
+          isExpert={isExpert}
+          scoreTrend={scoreTrend}
+        />
       </div>
 
       {/* ── Impact & Décision ── */}
@@ -406,7 +430,8 @@ const Cockpit = () => {
               Prochaine échéance : {nextDeadline.label}
             </p>
             <p className="text-xs text-amber-600">
-              {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''}
+              {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour
+              {nextDeadline.days_remaining > 1 ? 's' : ''}
               {totalPenaltyExposure > 0 && (
                 <span className="ml-2 text-red-600 font-medium">
                   Exposition totale : {fmtEur(totalPenaltyExposure)}
@@ -473,18 +498,24 @@ const Cockpit = () => {
                 </p>
                 {kpis.risqueTotal > 0 && (
                   <p className="text-xs text-gray-500 mt-0.5">
-                    <Explain term="risque_financier">Risque estimé</Explain> : {Math.round(kpis.risqueTotal / 1000)} k€
+                    <Explain term="risque_financier">Risque estimé</Explain> :{' '}
+                    {Math.round(kpis.risqueTotal / 1000)} k€
                   </p>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="primary" onClick={() => openActionDrawer({
-                prefill: { titre: '', type: 'conformite' },
-                sourceType: 'compliance',
-                sourceId: 'cockpit:risk_panel',
-              })}
-              data-testid="cta-cockpit-create-action"
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() =>
+                  openActionDrawer({
+                    prefill: { titre: '', type: 'conformite' },
+                    sourceType: 'compliance',
+                    sourceId: 'cockpit:risk_panel',
+                  })
+                }
+                data-testid="cta-cockpit-create-action"
               >
                 <Plus size={14} /> Créer une action
               </Button>
@@ -580,7 +611,9 @@ const Cockpit = () => {
       {!isSingleSite && (
         <Card>
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold text-gray-800"><Explain term="distribution_sites">Sites</Explain> ({filteredSites.length})</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              <Explain term="distribution_sites">Sites</Explain> ({filteredSites.length})
+            </h3>
             <div className="relative w-64">
               <Search
                 size={14}
@@ -700,7 +733,9 @@ const Cockpit = () => {
                         </Td>
                         {isExpert && (
                           <Td className="text-right text-gray-600">
-                            {site.conso_kwh_an > 0 ? site.conso_kwh_an.toLocaleString('fr-FR') : '-'}
+                            {site.conso_kwh_an > 0
+                              ? site.conso_kwh_an.toLocaleString('fr-FR')
+                              : '-'}
                           </Td>
                         )}
                         <Td className="text-right">
@@ -765,7 +800,9 @@ const Cockpit = () => {
                 {kpis.readinessScore}%
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-2"><Explain term="effort_score">Score global périmètre</Explain></p>
+            <p className="text-xs text-gray-400 mt-2">
+              <Explain term="effort_score">Score global périmètre</Explain>
+            </p>
           </div>
 
           <div className="space-y-4">

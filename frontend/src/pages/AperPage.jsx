@@ -3,38 +3,38 @@
  * Page dédiée Loi APER : sites éligibles, estimation production PV, timeline.
  */
 import { useState, useEffect } from 'react';
-import { Sun, MapPin, Calendar, Zap, Leaf, Euro, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Sun, MapPin, Calendar, Zap, Leaf, Euro, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { Explain } from '../ui';
-import ErrorState from '../ui/ErrorState';
+import { Explain, KpiCardInline } from '../ui';
+import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { getAperDashboard, getAperEstimate } from '../services/api';
 
-const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LABELS = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Avr',
+  'Mai',
+  'Juin',
+  'Jul',
+  'Aou',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const APER_COLORS = {
+  blue: { iconBg: 'bg-blue-50', color: 'text-blue-700' },
+  emerald: { iconBg: 'bg-emerald-50', color: 'text-emerald-700' },
+  amber: { iconBg: 'bg-amber-50', color: 'text-amber-700' },
+  red: { iconBg: 'bg-red-50', color: 'text-red-700' },
+};
 
 function fmt(val) {
   if (val == null) return '--';
   return val.toLocaleString('fr-FR');
-}
-
-function KpiCard({ icon: Icon, label, value, unit, color = 'blue' }) {
-  const colors = {
-    blue: 'bg-blue-50 text-blue-700',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    amber: 'bg-amber-50 text-amber-700',
-    red: 'bg-red-50 text-red-700',
-  };
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[color]}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-lg font-bold text-gray-900">{value} <span className="text-sm font-normal text-gray-500">{unit}</span></p>
-      </div>
-    </div>
-  );
 }
 
 function DeadlineBadge({ deadline }) {
@@ -42,7 +42,12 @@ function DeadlineBadge({ deadline }) {
   const d = new Date(deadline);
   const now = new Date();
   const months = Math.round((d - now) / (1000 * 60 * 60 * 24 * 30));
-  const color = months < 6 ? 'bg-red-50 text-red-700' : months < 18 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700';
+  const color =
+    months < 6
+      ? 'bg-red-50 text-red-700'
+      : months < 18
+        ? 'bg-amber-50 text-amber-700'
+        : 'bg-emerald-50 text-emerald-700';
   return (
     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${color}`}>
       {d.toLocaleDateString('fr-FR')}
@@ -55,7 +60,7 @@ export default function AperPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedSite, setSelectedSite] = useState(null);
+  const [_selectedSite, setSelectedSite] = useState(null);
   const [estimate, setEstimate] = useState(null);
   const [estimating, setEstimating] = useState(false);
 
@@ -94,21 +99,27 @@ export default function AperPage() {
           Les données de solarisation ne sont pas encore disponibles pour votre périmètre.
         </p>
         <p className="text-xs text-gray-400">
-          Importez votre patrimoine immobilier avec les surfaces de parkings et toitures pour activer l'analyse APER.
+          Importez votre patrimoine immobilier avec les surfaces de parkings et toitures pour
+          activer l'analyse APER.
         </p>
       </div>
     );
   }
 
   const allSites = [
-    ...(dashboard?.parking?.sites || []).map((s) => ({ ...s, type: 'Parking', surfaceType: 'parking' })),
+    ...(dashboard?.parking?.sites || []).map((s) => ({
+      ...s,
+      type: 'Parking',
+      surfaceType: 'parking',
+    })),
     ...(dashboard?.roof?.sites || []).map((s) => ({ ...s, type: 'Toiture', surfaceType: 'roof' })),
   ];
 
-  const monthlyData = estimate?.monthly_kwh?.map((kwh, i) => ({
-    month: MONTH_LABELS[i],
-    kwh: kwh,
-  })) || [];
+  const monthlyData =
+    estimate?.monthly_kwh?.map((kwh, i) => ({
+      month: MONTH_LABELS[i],
+      kwh: kwh,
+    })) || [];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -125,40 +136,47 @@ export default function AperPage() {
         </div>
         {dashboard?.total_eligible_sites > 0 && (
           <span className="px-3 py-1 text-sm font-semibold rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-            {dashboard.total_eligible_sites} site{dashboard.total_eligible_sites > 1 ? 's' : ''} éligible{dashboard.total_eligible_sites > 1 ? 's' : ''}
+            {dashboard.total_eligible_sites} site{dashboard.total_eligible_sites > 1 ? 's' : ''}{' '}
+            éligible{dashboard.total_eligible_sites > 1 ? 's' : ''}
           </span>
         )}
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
+        <KpiCardInline
           icon={MapPin}
           label="Sites éligibles"
           value={dashboard?.total_eligible_sites || 0}
           unit="sites"
-          color="blue"
+          {...APER_COLORS.blue}
         />
-        <KpiCard
+        <KpiCardInline
           icon={Sun}
           label="Surface parking"
           value={fmt(dashboard?.parking?.total_surface_m2 || 0)}
-          unit="m2"
-          color="amber"
+          unit="m²"
+          {...APER_COLORS.amber}
         />
-        <KpiCard
+        <KpiCardInline
           icon={Sun}
           label="Surface toiture"
           value={fmt(dashboard?.roof?.total_surface_m2 || 0)}
-          unit="m2"
-          color="emerald"
+          unit="m²"
+          {...APER_COLORS.emerald}
         />
-        <KpiCard
+        <KpiCardInline
           icon={Calendar}
           label="Prochaine échéance"
-          value={dashboard?.next_deadline ? new Date(dashboard.next_deadline).toLocaleDateString('fr-FR') : '--'}
-          unit=""
-          color={dashboard?.next_deadline && new Date(dashboard.next_deadline) < new Date(Date.now() + 180 * 86400000) ? 'red' : 'blue'}
+          value={
+            dashboard?.next_deadline
+              ? new Date(dashboard.next_deadline).toLocaleDateString('fr-FR')
+              : '--'
+          }
+          {...(dashboard?.next_deadline &&
+          new Date(dashboard.next_deadline) < new Date(Date.now() + 180 * 86400000)
+            ? APER_COLORS.red
+            : APER_COLORS.blue)}
         />
       </div>
 
@@ -172,19 +190,34 @@ export default function AperPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Surface (m2)</th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Échéance</th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Site
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                    Type
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                    Surface (m2)
+                  </th>
+                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                    Échéance
+                  </th>
+                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {allSites.map((site, idx) => (
-                  <tr key={`${site.site_id}-${site.surfaceType}-${idx}`} className="hover:bg-gray-50/50">
+                  <tr
+                    key={`${site.site_id}-${site.surfaceType}-${idx}`}
+                    className="hover:bg-gray-50/50"
+                  >
                     <td className="px-4 py-2.5 font-medium text-gray-900">{site.site_nom}</td>
                     <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${site.type === 'Parking' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full ${site.type === 'Parking' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}
+                      >
                         {site.type}
                       </span>
                     </td>
@@ -210,7 +243,9 @@ export default function AperPage() {
         <div className="bg-gray-50 rounded-lg p-8 text-center">
           <Sun className="w-10 h-10 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Aucun site éligible détecté</p>
-          <p className="text-xs text-gray-400 mt-1">Complétez les surfaces parking/toiture dans la fiche site</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Complétez les surfaces parking/toiture dans la fiche site
+          </p>
         </div>
       )}
 
@@ -230,16 +265,42 @@ export default function AperPage() {
               <Explain term="production_pv">Estimation production PV</Explain>
               {' — '}
               <span className="text-gray-900">{estimate.site_nom}</span>
-              <span className="text-xs text-gray-400 ml-2">({estimate.surface_type === 'parking' ? 'Parking' : 'Toiture'})</span>
+              <span className="text-xs text-gray-400 ml-2">
+                ({estimate.surface_type === 'parking' ? 'Parking' : 'Toiture'})
+              </span>
             </h2>
           </div>
 
           {/* KPIs estimation */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4">
-            <KpiCard icon={Zap} label="Puissance crête" value={fmt(estimate.puissance_crete_kwc)} unit="kWc" color="amber" />
-            <KpiCard icon={Sun} label="Production annuelle" value={fmt(estimate.production_annuelle_mwh)} unit="MWh/an" color="amber" />
-            <KpiCard icon={Euro} label="Économies" value={fmt(estimate.economies_annuelles_eur)} unit="EUR/an" color="emerald" />
-            <KpiCard icon={Leaf} label="CO2 évité" value={fmt(estimate.co2_evite_tonnes)} unit="t/an" color="emerald" />
+            <KpiCardInline
+              icon={Zap}
+              label="Puissance crête"
+              value={fmt(estimate.puissance_crete_kwc)}
+              unit="kWc"
+              {...APER_COLORS.amber}
+            />
+            <KpiCardInline
+              icon={Sun}
+              label="Production annuelle"
+              value={fmt(estimate.production_annuelle_mwh)}
+              unit="MWh/an"
+              {...APER_COLORS.amber}
+            />
+            <KpiCardInline
+              icon={Euro}
+              label="Économies"
+              value={fmt(estimate.economies_annuelles_eur)}
+              unit="EUR/an"
+              {...APER_COLORS.emerald}
+            />
+            <KpiCardInline
+              icon={Leaf}
+              label="CO2 évité"
+              value={fmt(estimate.co2_evite_tonnes)}
+              unit="t/an"
+              {...APER_COLORS.emerald}
+            />
           </div>
 
           {/* Graphique barres mensuelles */}

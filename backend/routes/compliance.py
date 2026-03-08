@@ -293,6 +293,9 @@ def list_findings(
                 "notes": f.notes,
                 "run_batch_id": f.run_batch_id,
                 "category": "incentive" if "cee" in (f.regulation or "").lower() else "obligation",
+                "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
+                "penalty_source": getattr(f, "penalty_source", None),
+                "penalty_basis": getattr(f, "penalty_basis", None),
             }
         )
 
@@ -430,6 +433,9 @@ def get_finding_detail(
         "params": json.loads(f.params_json) if f.params_json else {},
         "evidence_refs": json.loads(f.evidence_json) if f.evidence_json else {},
         "engine_version": f.engine_version,
+        "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
+        "penalty_source": getattr(f, "penalty_source", None),
+        "penalty_basis": getattr(f, "penalty_basis", None),
         "created_at": f.created_at.isoformat() if hasattr(f, "created_at") and f.created_at else None,
         "updated_at": f.updated_at.isoformat() if hasattr(f, "updated_at") and f.updated_at else None,
     }
@@ -604,12 +610,14 @@ def mv_summary_endpoint(
 
 
 @router.get("/sites/{site_id}/score")
+@router.get("/site/{site_id}/score")
 def get_site_compliance_score(
     site_id: int,
     db: Session = Depends(get_db),
 ):
     """
     GET /api/compliance/sites/{site_id}/score
+    GET /api/compliance/site/{site_id}/score  (alias)
 
     Score conformité unifié 0-100 (A.2).
     Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%)
@@ -688,10 +696,10 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
 
     # --- Query existing ComplianceFinding for NOK counts ---
     findings = (
-        db.query(ComplianceFinding)
-        .filter(ComplianceFinding.site_id.in_([s.id for s in sites]))
-        .all()
-    ) if sites else []
+        (db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_([s.id for s in sites])).all())
+        if sites
+        else []
+    )
 
     nok_by_rule = {}
     for f in findings:
@@ -712,34 +720,38 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
     if dt_deadlines.get("attestation_display"):
         dl = date.fromisoformat(dt_deadlines["attestation_display"])
         nok_count = len(nok_by_rule.get("OPERAT_NOT_STARTED", set()) | nok_by_rule.get("tertiaire_operat", set()))
-        events.append({
-            "id": "tertiaire_affichage",
-            "framework": "DECRET_TERTIAIRE",
-            "label": "Attestation d'affichage energetique",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "high",
-            "sites_concerned": len(dt_sites),
-            "sites_non_compliant": min(nok_count, len(dt_sites)),
-            "description": "Tous les batiments tertiaires >= 1000 m\u00B2 doivent afficher leur performance energetique.",
-            "penalty_eur": dt_penalties.get("non_affichage"),
-        })
+        events.append(
+            {
+                "id": "tertiaire_affichage",
+                "framework": "DECRET_TERTIAIRE",
+                "label": "Attestation d'affichage energetique",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "high",
+                "sites_concerned": len(dt_sites),
+                "sites_non_compliant": min(nok_count, len(dt_sites)),
+                "description": "Tous les batiments tertiaires >= 1000 m\u00b2 doivent afficher leur performance energetique.",
+                "penalty_eur": dt_penalties.get("non_affichage"),
+            }
+        )
 
     if dt_deadlines.get("declaration_2025"):
         dl = date.fromisoformat(dt_deadlines["declaration_2025"])
         nok_count = len(nok_by_rule.get("OPERAT_NOT_STARTED", set()) | nok_by_rule.get("tertiaire_operat", set()))
-        events.append({
-            "id": "tertiaire_declaration",
-            "framework": "DECRET_TERTIAIRE",
-            "label": "Declaration OPERAT 2025",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "high",
-            "sites_concerned": len(dt_sites),
-            "sites_non_compliant": min(nok_count, len(dt_sites)),
-            "description": "Declaration des consommations 2025 sur la plateforme OPERAT.",
-            "penalty_eur": dt_penalties.get("non_declaration"),
-        })
+        events.append(
+            {
+                "id": "tertiaire_declaration",
+                "framework": "DECRET_TERTIAIRE",
+                "label": "Declaration OPERAT 2025",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "high",
+                "sites_concerned": len(dt_sites),
+                "sites_non_compliant": min(nok_count, len(dt_sites)),
+                "description": "Declaration des consommations 2025 sur la plateforme OPERAT.",
+                "penalty_eur": dt_penalties.get("non_declaration"),
+            }
+        )
 
     # BACS
     bacs_cfg = regs.get("bacs", {})
@@ -766,38 +778,46 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
         site_power = {r[0]: r[1] for r in rows}
 
     sites_above_290 = {sid for sid, pw in site_power.items() if pw >= bacs_thresholds.get("high_kw", 290)}
-    sites_70_to_290 = {sid for sid, pw in site_power.items() if bacs_thresholds.get("low_kw", 70) <= pw < bacs_thresholds.get("high_kw", 290)}
+    sites_70_to_290 = {
+        sid
+        for sid, pw in site_power.items()
+        if bacs_thresholds.get("low_kw", 70) <= pw < bacs_thresholds.get("high_kw", 290)
+    }
 
     if bacs_deadlines.get("above_290"):
         dl = date.fromisoformat(bacs_deadlines["above_290"])
         nok_count = len(nok_by_rule.get("BACS_290KW", set()) | nok_by_rule.get("bacs", set()))
-        events.append({
-            "id": "bacs_290kw",
-            "framework": "BACS",
-            "label": "BACS > 290 kW — obligation GTB/GTC",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "critical",
-            "sites_concerned": len(sites_above_290),
-            "sites_non_compliant": min(nok_count, len(sites_above_290)),
-            "description": "Les batiments avec une puissance CVC > 290 kW doivent etre equipes d'un systeme GTB/GTC.",
-            "penalty_eur": bacs_penalties.get("non_compliance"),
-        })
+        events.append(
+            {
+                "id": "bacs_290kw",
+                "framework": "BACS",
+                "label": "BACS > 290 kW — obligation GTB/GTC",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "critical",
+                "sites_concerned": len(sites_above_290),
+                "sites_non_compliant": min(nok_count, len(sites_above_290)),
+                "description": "Les batiments avec une puissance CVC > 290 kW doivent etre equipes d'un systeme GTB/GTC.",
+                "penalty_eur": bacs_penalties.get("non_compliance"),
+            }
+        )
 
     if bacs_deadlines.get("above_70"):
         dl = date.fromisoformat(bacs_deadlines["above_70"])
-        events.append({
-            "id": "bacs_70kw",
-            "framework": "BACS",
-            "label": "BACS 70-290 kW — obligation GTB/GTC",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "medium",
-            "sites_concerned": len(sites_70_to_290),
-            "sites_non_compliant": 0,
-            "description": "Extension de l'obligation GTB/GTC aux batiments avec puissance CVC 70-290 kW.",
-            "penalty_eur": bacs_penalties.get("non_compliance"),
-        })
+        events.append(
+            {
+                "id": "bacs_70kw",
+                "framework": "BACS",
+                "label": "BACS 70-290 kW — obligation GTB/GTC",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "medium",
+                "sites_concerned": len(sites_70_to_290),
+                "sites_non_compliant": 0,
+                "description": "Extension de l'obligation GTB/GTC aux batiments avec puissance CVC 70-290 kW.",
+                "penalty_eur": bacs_penalties.get("non_compliance"),
+            }
+        )
 
     # APER
     aper_cfg = regs.get("aper", {})
@@ -806,53 +826,63 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
     aper_roof = aper_cfg.get("roof_threshold_m2", 500)
 
     sites_parking_large = [s for s in sites if (s.parking_area_m2 or 0) >= aper_parking.get("large_m2", 10000)]
-    sites_parking_medium = [s for s in sites if aper_parking.get("medium_m2", 1500) <= (s.parking_area_m2 or 0) < aper_parking.get("large_m2", 10000)]
+    sites_parking_medium = [
+        s
+        for s in sites
+        if aper_parking.get("medium_m2", 1500) <= (s.parking_area_m2 or 0) < aper_parking.get("large_m2", 10000)
+    ]
     sites_roof = [s for s in sites if (s.roof_area_m2 or 0) >= aper_roof]
 
     if aper_deadlines.get("parking_large"):
         dl = date.fromisoformat(aper_deadlines["parking_large"])
-        events.append({
-            "id": "aper_parking_large",
-            "framework": "APER",
-            "label": "Solarisation parkings > 10 000 m\u00B2",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "medium",
-            "sites_concerned": len(sites_parking_large),
-            "sites_non_compliant": 0,
-            "description": "Les parkings exterieurs > 10 000 m\u00B2 doivent etre equipes d'ombrieres photovoltaiques.",
-            "penalty_eur": None,
-        })
+        events.append(
+            {
+                "id": "aper_parking_large",
+                "framework": "APER",
+                "label": "Solarisation parkings > 10 000 m\u00b2",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "medium",
+                "sites_concerned": len(sites_parking_large),
+                "sites_non_compliant": 0,
+                "description": "Les parkings exterieurs > 10 000 m\u00b2 doivent etre equipes d'ombrieres photovoltaiques.",
+                "penalty_eur": None,
+            }
+        )
 
     if aper_deadlines.get("parking_medium"):
         dl = date.fromisoformat(aper_deadlines["parking_medium"])
-        events.append({
-            "id": "aper_parking_medium",
-            "framework": "APER",
-            "label": "Solarisation parkings 1 500-10 000 m\u00B2",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "medium",
-            "sites_concerned": len(sites_parking_medium),
-            "sites_non_compliant": 0,
-            "description": "Les parkings exterieurs de 1 500 a 10 000 m\u00B2 doivent etre equipes d'ombrieres.",
-            "penalty_eur": None,
-        })
+        events.append(
+            {
+                "id": "aper_parking_medium",
+                "framework": "APER",
+                "label": "Solarisation parkings 1 500-10 000 m\u00b2",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "medium",
+                "sites_concerned": len(sites_parking_medium),
+                "sites_non_compliant": 0,
+                "description": "Les parkings exterieurs de 1 500 a 10 000 m\u00b2 doivent etre equipes d'ombrieres.",
+                "penalty_eur": None,
+            }
+        )
 
     if aper_deadlines.get("roof"):
         dl = date.fromisoformat(aper_deadlines["roof"])
-        events.append({
-            "id": "aper_roof",
-            "framework": "APER",
-            "label": "Solarisation toitures > 500 m\u00B2",
-            "deadline": dl.isoformat(),
-            "status": _deadline_status(dl, today, one_year),
-            "severity": "medium",
-            "sites_concerned": len(sites_roof),
-            "sites_non_compliant": 0,
-            "description": "Les toitures > 500 m\u00B2 des batiments neufs ou renoves doivent integrer du photovoltaique.",
-            "penalty_eur": None,
-        })
+        events.append(
+            {
+                "id": "aper_roof",
+                "framework": "APER",
+                "label": "Solarisation toitures > 500 m\u00b2",
+                "deadline": dl.isoformat(),
+                "status": _deadline_status(dl, today, one_year),
+                "severity": "medium",
+                "sites_concerned": len(sites_roof),
+                "sites_non_compliant": 0,
+                "description": "Les toitures > 500 m\u00b2 des batiments neufs ou renoves doivent integrer du photovoltaique.",
+                "penalty_eur": None,
+            }
+        )
 
     # Sort by deadline
     events.sort(key=lambda e: e["deadline"])
@@ -872,7 +902,9 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
             break
 
     # Total penalty exposure
-    total_penalty = sum(e.get("penalty_eur") or 0 for e in events if e["status"] != "passed" or e["sites_non_compliant"] > 0)
+    total_penalty = sum(
+        e.get("penalty_eur") or 0 for e in events if e["status"] != "passed" or e["sites_non_compliant"] > 0
+    )
 
     return {
         "events": events,

@@ -10,7 +10,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Clock, Calendar, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Clock, Calendar, ChevronRight } from 'lucide-react';
 import { Explain } from '../../ui';
 
 // --- Helpers ---
@@ -78,7 +78,10 @@ function EventTooltip({ evt }) {
       <p className="text-xs font-semibold text-gray-800 mb-1">{evt.label}</p>
       <p className="text-[11px] text-gray-500 mb-2">{evt.description}</p>
       <div className="flex items-center gap-3 text-[10px] text-gray-400">
-        <span>{evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''} concerne{evt.sites_concerned !== 1 ? 's' : ''}</span>
+        <span>
+          {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''} concerne
+          {evt.sites_concerned !== 1 ? 's' : ''}
+        </span>
         {evt.sites_non_compliant > 0 && (
           <span className="text-red-500 font-semibold">
             {evt.sites_non_compliant} non conforme{evt.sites_non_compliant !== 1 ? 's' : ''}
@@ -108,10 +111,7 @@ function HorizontalTimeline({ events, today }) {
     .toISOString()
     .slice(0, 10);
   const maxDate = new Date(
-    Math.max(
-      new Date(dates[dates.length - 1]),
-      new Date(today).getTime() + 365 * 4 * 86400000
-    )
+    Math.max(new Date(dates[dates.length - 1]), new Date(today).getTime() + 365 * 4 * 86400000)
   )
     .toISOString()
     .slice(0, 10);
@@ -120,7 +120,7 @@ function HorizontalTimeline({ events, today }) {
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
   // Anti-collision: compute stagger levels for events that are too close
-  const MIN_GAP_PCT = 9; // minimum % distance before staggering (wider to prevent overlap)
+  const MIN_GAP_PCT = 14; // minimum % distance before staggering (label is ~100px on ~800px axis ≈ 12%)
   const eventsWithLayout = events
     .map((evt) => ({
       ...evt,
@@ -128,7 +128,7 @@ function HorizontalTimeline({ events, today }) {
     }))
     .sort((a, b) => a.leftPct - b.leftPct);
 
-  // Assign stagger level (0 = above axis, 1 = below axis, 2 = further above, 3 = further below)
+  // Assign stagger level: alternate above/below, with overflow levels further out
   for (let i = 0; i < eventsWithLayout.length; i++) {
     const evt = eventsWithLayout[i];
     let level = 0;
@@ -144,26 +144,33 @@ function HorizontalTimeline({ events, today }) {
 
   const maxLevel = Math.max(0, ...eventsWithLayout.map((e) => e._level));
 
-  // Layout constants per level — more vertical space
-  const AXIS_Y = 120; // px — horizontal line position (was 100)
+  // Layout constants per level — 6 levels for dense timelines
+  const AXIS_Y = 140;
   const levelOffsets = [
-    { labelY: 20, dotY: AXIS_Y - 8 },     // level 0: above axis
-    { labelY: AXIS_Y + 24, dotY: AXIS_Y - 8 }, // level 1: below axis
-    { labelY: -10, dotY: AXIS_Y - 8 },    // level 2: further above
-    { labelY: AXIS_Y + 64, dotY: AXIS_Y - 8 }, // level 3: further below
+    { labelY: 40, dotY: AXIS_Y - 8 }, // level 0: above axis
+    { labelY: AXIS_Y + 20, dotY: AXIS_Y - 8 }, // level 1: below axis
+    { labelY: 2, dotY: AXIS_Y - 8 }, // level 2: further above
+    { labelY: AXIS_Y + 60, dotY: AXIS_Y - 8 }, // level 3: further below
+    { labelY: -20, dotY: AXIS_Y - 8 }, // level 4: top
+    { labelY: AXIS_Y + 100, dotY: AXIS_Y - 8 }, // level 5: bottom
   ];
 
   return (
     <div className="relative w-full overflow-x-auto pb-4 px-12">
       {/* Axis */}
-      <div className="relative min-w-[600px]" style={{ height: `${AXIS_Y + (maxLevel >= 3 ? 120 : maxLevel >= 1 ? 80 : 60)}px` }}>
+      <div
+        className="relative min-w-[700px]"
+        style={{
+          height: `${AXIS_Y + (maxLevel >= 5 ? 160 : maxLevel >= 3 ? 120 : maxLevel >= 1 ? 80 : 60)}px`,
+        }}
+      >
         {/* Horizontal line */}
         <div className="absolute left-0 right-0 h-0.5 bg-gray-200" style={{ top: `${AXIS_Y}px` }} />
 
         {/* Today marker */}
         <div
           className="absolute w-px border-l-2 border-dashed border-red-400"
-          style={{ left: `${todayPct}%`, top: '20px', height: `${AXIS_Y - 10}px` }}
+          style={{ left: `${todayPct}%`, top: '30px', height: `${AXIS_Y - 20}px` }}
         >
           <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-bold text-red-500 whitespace-nowrap bg-white px-1 rounded">
             Aujourd'hui
@@ -176,7 +183,7 @@ function HorizontalTimeline({ events, today }) {
           const isPassedOk = evt.status === 'passed' && evt.sites_non_compliant === 0;
           const dotClass = isPassedOk ? style.dotOk || style.dot : style.dot;
           const layout = levelOffsets[Math.min(evt._level, levelOffsets.length - 1)];
-          const isBelow = evt._level === 1;
+          const isBelow = evt._level % 2 === 1; // odd levels are below axis
 
           return (
             <div
@@ -191,23 +198,27 @@ function HorizontalTimeline({ events, today }) {
               <div
                 className="absolute w-px bg-gray-200 left-0 -translate-x-1/2"
                 style={{
-                  top: isBelow ? `${AXIS_Y + 6}px` : `${layout.labelY + 28}px`,
-                  height: isBelow ? '14px' : `${AXIS_Y - layout.labelY - 34}px`,
+                  top: isBelow ? `${AXIS_Y + 6}px` : `${layout.labelY + 36}px`,
+                  height: isBelow
+                    ? `${layout.labelY - AXIS_Y - 10}px`
+                    : `${Math.max(6, AXIS_Y - layout.labelY - 42)}px`,
                 }}
               />
 
               {/* Label */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 w-28 text-center"
+                className="absolute left-1/2 -translate-x-1/2 w-[90px] text-center"
                 style={{ top: `${layout.labelY}px` }}
               >
                 <span
-                  className={`inline-block px-1 py-0.5 rounded text-[7px] font-bold uppercase text-white mb-0.5 ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
+                  className={`inline-block px-1 py-0.5 rounded text-[6.5px] font-bold uppercase text-white mb-0.5 leading-none ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
                 >
                   {FRAMEWORK_LABELS[evt.framework] || evt.framework}
                 </span>
-                <p className="text-[10px] font-medium text-gray-700 leading-tight line-clamp-2">{evt.label}</p>
-                <p className="text-[9px] text-gray-400">{formatDate(evt.deadline)}</p>
+                <p className="text-[9px] font-medium text-gray-700 leading-tight line-clamp-2">
+                  {evt.label}
+                </p>
+                <p className="text-[8px] text-gray-400">{formatDate(evt.deadline)}</p>
               </div>
 
               {/* Dot on axis */}
@@ -260,7 +271,7 @@ function VerticalTimeline({ events, today }) {
       {events.map((evt) => {
         const style = STATUS_STYLES[evt.status] || STATUS_STYLES.future;
         const isPassedOk = evt.status === 'passed' && evt.sites_non_compliant === 0;
-        const dotClass = isPassedOk ? (style.dotOk || style.dot) : style.dot;
+        const dotClass = isPassedOk ? style.dotOk || style.dot : style.dot;
         const isPast = new Date(evt.deadline) < new Date(today);
 
         return (
@@ -285,14 +296,18 @@ function VerticalTimeline({ events, today }) {
                 {!isPast && ` — dans ${daysBetween(today, evt.deadline)} jours`}
               </p>
               <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
-                <span>{evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''}</span>
+                <span>
+                  {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''}
+                </span>
                 {evt.sites_non_compliant > 0 && (
                   <span className="text-red-500 font-semibold">
                     {evt.sites_non_compliant} non conforme{evt.sites_non_compliant !== 1 ? 's' : ''}
                   </span>
                 )}
                 {evt.penalty_eur != null && (
-                  <span className="text-red-500">{evt.penalty_eur.toLocaleString('fr-FR')} EUR</span>
+                  <span className="text-red-500">
+                    {evt.penalty_eur.toLocaleString('fr-FR')} EUR
+                  </span>
                 )}
               </div>
             </div>
@@ -317,7 +332,12 @@ function TimelineSkeleton() {
 
 // --- Main component ---
 
-export default function RegulatoryTimeline({ events = [], today, loading = false, compact = false }) {
+export default function RegulatoryTimeline({
+  events = [],
+  today,
+  loading = false,
+  compact = false,
+}) {
   if (loading) return <TimelineSkeleton />;
   if (!events.length) {
     return (
@@ -346,7 +366,8 @@ export default function RegulatoryTimeline({ events = [], today, loading = false
             {passedNonCompliant.length > 0 && (
               <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-600 font-medium">
                 <AlertTriangle size={10} />
-                {passedNonCompliant.length} échéance{passedNonCompliant.length > 1 ? 's' : ''} dépassée{passedNonCompliant.length > 1 ? 's' : ''}
+                {passedNonCompliant.length} échéance{passedNonCompliant.length > 1 ? 's' : ''}{' '}
+                dépassée{passedNonCompliant.length > 1 ? 's' : ''}
               </span>
             )}
             {upcoming.length > 0 && (

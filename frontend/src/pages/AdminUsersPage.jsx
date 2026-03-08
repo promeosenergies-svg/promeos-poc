@@ -48,7 +48,8 @@ function EffectiveAccessPanel({ userId, onClose }) {
   }, [userId]);
 
   if (loading) return <div className="p-4 text-sm text-gray-400">Chargement...</div>;
-  if (!data) return <div className="p-4 text-sm text-red-500">Impossible de charger les accès.</div>;
+  if (!data)
+    return <div className="p-4 text-sm text-red-500">Impossible de charger les accès.</div>;
 
   return (
     <div className="bg-blue-50/50 border-t border-blue-100 px-6 py-4">
@@ -155,9 +156,9 @@ export default function AdminUsersPage() {
       .finally(() => setLoading(false));
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = users.filter((u) =>
@@ -192,9 +193,23 @@ export default function AdminUsersPage() {
         <div className="grid grid-cols-4 gap-3">
           {[
             { label: 'Utilisateurs', value: users.length, color: 'text-blue-700 bg-blue-50' },
-            { label: 'Rôles actifs', value: new Set(users.map((u) => u.role)).size, color: 'text-purple-700 bg-purple-50' },
-            { label: 'Actifs ce mois', value: users.filter((u) => u.last_login && new Date(u.last_login) > new Date(Date.now() - 30 * 86400000)).length, color: 'text-green-700 bg-green-50' },
-            { label: 'Sans connexion', value: users.filter((u) => !u.last_login).length, color: 'text-amber-700 bg-amber-50' },
+            {
+              label: 'Rôles actifs',
+              value: new Set(users.map((u) => u.role)).size,
+              color: 'text-purple-700 bg-purple-50',
+            },
+            {
+              label: 'Actifs ce mois',
+              value: users.filter(
+                (u) => u.last_login && new Date(u.last_login) > new Date(Date.now() - 30 * 86400000)
+              ).length,
+              color: 'text-green-700 bg-green-50',
+            },
+            {
+              label: 'Sans connexion',
+              value: users.filter((u) => !u.last_login).length,
+              color: 'text-amber-700 bg-amber-50',
+            },
           ].map((s) => (
             <div key={s.label} className={`rounded-lg px-4 py-3 ${s.color}`}>
               <p className="text-lg font-bold">{s.value}</p>

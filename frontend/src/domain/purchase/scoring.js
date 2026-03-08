@@ -265,7 +265,7 @@ export function scoreDataReadiness({ offer, consumption, billing }) {
   // Consumption source
   if (consumption?.source === 'DEMO' || consumption?.source === 'DEFAULT') {
     score -= 15;
-    reasons.push('Consommation basee sur donnees demo/estimees');
+    reasons.push('Consommation basée sur données démo/estimées');
     evs.push(evidence('DR05', 'consumptionSource', consumption.source, consumption.source));
   }
 

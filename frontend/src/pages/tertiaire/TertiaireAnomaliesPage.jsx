@@ -67,9 +67,9 @@ export default function TertiaireAnomaliesPage() {
       .finally(() => setLoading(false));
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchIssues();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterSeverity, filterStatus]);
 
   const handleStatusChange = async (issueId, newStatus) => {

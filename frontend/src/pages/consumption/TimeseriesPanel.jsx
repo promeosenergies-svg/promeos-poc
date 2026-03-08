@@ -394,8 +394,8 @@ export default function TimeseriesPanel({
   }
 
   // ── Ready: render chart ──
-  const n_points = meta?.n_points ?? chartData.length;
-  const n_meters = meta?.n_meters ?? null;
+  const _n_points = meta?.n_points ?? chartData.length;
+  const _n_meters = meta?.n_meters ?? null;
   const qualityPct = availability?.readings_count
     ? Math.min(100, Math.round((availability.readings_count / 500) * 100))
     : null;
@@ -410,7 +410,9 @@ export default function TimeseriesPanel({
   // When a single site is displayed in agrege mode, show its name instead of "Agrégé"
   const aggregateLabel =
     siteIds.length === 1
-      ? (_sites.find((s) => s.id === siteIds[0])?.nom ?? cleanLabel(siteLabels[siteIds[0]]) ?? 'Agrégé')
+      ? (_sites.find((s) => s.id === siteIds[0])?.nom ??
+        cleanLabel(siteLabels[siteIds[0]]) ??
+        'Agrégé')
       : 'Agrégé';
 
   return (

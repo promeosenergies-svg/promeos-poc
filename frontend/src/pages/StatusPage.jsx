@@ -62,9 +62,9 @@ function StatusPage() {
     setLoading(false);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     runChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const backendOk = status?.health?.ok;

@@ -5,13 +5,16 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getAlertes } from '../services/api';
 import { Flame, Building2, AlertTriangle, TrendingUp } from 'lucide-react';
-import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState, Explain, GLOSSARY, Pagination } from '../ui';
+import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState, Explain, Pagination } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
-import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
+import {
+  getComplianceScoreColor,
+  COMPLIANCE_SCORE_THRESHOLDS as _COMPLIANCE_SCORE_THRESHOLDS,
+} from '../lib/constants'; // eslint-disable-line no-unused-vars
 
 const ROWS_PER_PAGE = 25;
 
@@ -96,7 +99,11 @@ function Dashboard({ onUpgradeClick }) {
     <PageShell
       icon={Flame}
       title={orgName ? `${orgName} — Tableau de bord` : 'PROMEOS — Tableau de bord'}
-      subtitle={<>Gestion énergétique <Explain term="patrimoine">multi-sites</Explain></>}
+      subtitle={
+        <>
+          Gestion énergétique <Explain term="patrimoine">multi-sites</Explain>
+        </>
+      }
       actions={<Badge status="warning">Historique — utiliser Centre de Commande</Badge>}
     >
       {/* KPI Cards */}
@@ -146,35 +153,39 @@ function Dashboard({ onUpgradeClick }) {
                 </Tr>
               </Thead>
               <Tbody>
-                {orgSites.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE).map((site) => (
-                  <Tr key={site.id}>
-                    <Td className="font-medium">{site.nom}</Td>
-                    <Td>
-                      <Badge status="info">{site.type}</Badge>
-                    </Td>
-                    <Td>{site.ville}</Td>
-                    <Td className="text-gray-500 text-sm">{site.region}</Td>
-                    <Td>
-                      {(() => {
-                        const s = siteScores[site.id] ?? siteScores._avg;
-                        if (s == null) return <span className="text-gray-400 text-sm">—</span>;
-                        const score = Math.round(s);
-                        return (
-                          <span className={`text-sm font-semibold ${getComplianceScoreColor(score)}`}>
-                            {score}/100
-                          </span>
-                        );
-                      })()}
-                    </Td>
-                    <Td>
-                      {site.actif ? (
-                        <Badge status="success">Actif</Badge>
-                      ) : (
-                        <Badge status="neutral">Inactif</Badge>
-                      )}
-                    </Td>
-                  </Tr>
-                ))}
+                {orgSites
+                  .slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE)
+                  .map((site) => (
+                    <Tr key={site.id}>
+                      <Td className="font-medium">{site.nom}</Td>
+                      <Td>
+                        <Badge status="info">{site.type}</Badge>
+                      </Td>
+                      <Td>{site.ville}</Td>
+                      <Td className="text-gray-500 text-sm">{site.region}</Td>
+                      <Td>
+                        {(() => {
+                          const s = siteScores[site.id] ?? siteScores._avg;
+                          if (s == null) return <span className="text-gray-400 text-sm">—</span>;
+                          const score = Math.round(s);
+                          return (
+                            <span
+                              className={`text-sm font-semibold ${getComplianceScoreColor(score)}`}
+                            >
+                              {score}/100
+                            </span>
+                          );
+                        })()}
+                      </Td>
+                      <Td>
+                        {site.actif ? (
+                          <Badge status="success">Actif</Badge>
+                        ) : (
+                          <Badge status="neutral">Inactif</Badge>
+                        )}
+                      </Td>
+                    </Tr>
+                  ))}
               </Tbody>
             </Table>
             {orgSites.length > ROWS_PER_PAGE && (
