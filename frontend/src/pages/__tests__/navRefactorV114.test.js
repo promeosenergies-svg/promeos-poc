@@ -31,10 +31,10 @@ describe('V114 Nav Refactor guard-rails', () => {
     ]);
   });
 
-  it("Centre d'actions at /actions has alerts badge", () => {
+  it("Actions & Suivi at /actions has alerts badge", () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((i) => i.to === '/actions');
-    expect(centre.label).toBe("Centre d'actions");
+    expect(centre.label).toBe("Actions & Suivi");
     expect(centre.badgeKey).toBe('alerts');
   });
 

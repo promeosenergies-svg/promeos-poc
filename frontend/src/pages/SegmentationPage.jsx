@@ -14,17 +14,17 @@ import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 
 const TYPO_LABELS = {
-  tertiaire_prive: 'Tertiaire Prive',
+  tertiaire_prive: 'Tertiaire Privé',
   tertiaire_public: 'Tertiaire Public',
   industrie: 'Industrie',
   commerce_retail: 'Commerce / Retail',
-  copropriete_syndic: 'Copropriete / Syndic',
+  copropriete_syndic: 'Copropriété / Syndic',
   bailleur_social: 'Bailleur Social',
-  collectivite: 'Collectivite',
-  hotellerie_restauration: 'Hotellerie / Restauration',
-  sante_medico_social: 'Sante / Medico-social',
+  collectivite: 'Collectivité',
+  hotellerie_restauration: 'Hôtellerie / Restauration',
+  sante_medico_social: 'Santé / Médico-social',
   enseignement: 'Enseignement',
-  mixte: 'Mixte (multi-activites)',
+  mixte: 'Mixte (multi-activités)',
 };
 
 export default function SegmentationPage() {
@@ -69,9 +69,9 @@ export default function SegmentationPage() {
         reasons: result.reasons,
       }));
       setSubmitted(true);
-      toast('Profil mis a jour avec succes', 'success');
+      toast('Profil mis à jour avec succès', 'success');
     } catch {
-      toast('Erreur lors de la mise a jour du profil', 'error');
+      toast('Erreur lors de la mise à jour du profil', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -95,7 +95,7 @@ export default function SegmentationPage() {
     <PageShell
       icon={UserCheck}
       title="Segmentation B2B"
-      subtitle="Affinez votre profil pour des recommandations plus precises"
+      subtitle="Affinez votre profil pour des recommandations plus précises"
     >
       {/* Current profile card */}
       {profile && profile.has_profile && (
@@ -105,7 +105,7 @@ export default function SegmentationPage() {
               <h2 className="text-sm font-semibold text-blue-700">Profil actuel</h2>
               {submitted && (
                 <Badge status="ok">
-                  <CheckCircle size={12} className="mr-1" /> Mis a jour
+                  <CheckCircle size={12} className="mr-1" /> Mis à jour
                 </Badge>
               )}
             </div>
@@ -162,7 +162,7 @@ export default function SegmentationPage() {
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-semibold text-gray-800">Questionnaire</h2>
             <span className="text-sm text-gray-500">
-              {answeredCount}/{questions.length} reponses
+              {answeredCount}/{questions.length} réponses
             </span>
           </div>
           <Progress value={progressPct} max={100} />
@@ -211,12 +211,12 @@ export default function SegmentationPage() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
           {answeredCount === 0
-            ? 'Repondez aux questions pour affiner votre profil.'
-            : `${answeredCount} reponse${answeredCount > 1 ? 's' : ''} sur ${questions.length}`}
+            ? 'Répondez aux questions pour affiner votre profil.'
+            : `${answeredCount} réponse${answeredCount > 1 ? 's' : ''} sur ${questions.length}`}
         </p>
         <Button onClick={handleSubmit} disabled={answeredCount === 0 || submitting}>
           <Send size={14} className="mr-1.5" />
-          {submitting ? 'Envoi...' : 'Mettre a jour le profil'}
+          {submitting ? 'Envoi...' : 'Mettre à jour le profil'}
         </Button>
       </div>
     </PageShell>

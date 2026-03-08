@@ -197,7 +197,7 @@ describe('C · ActionsPage required constructs', () => {
   });
 
   it('has auto-open detail on /actions/:actionId', () => {
-    expect(code).toMatch(/urlActionId.*actions.*length/);
+    expect(code).toMatch(/urlActionId.*(?:enriched)?[Aa]ctions.*length/);
   });
 
   it('has auto-open create on /actions/new', () => {

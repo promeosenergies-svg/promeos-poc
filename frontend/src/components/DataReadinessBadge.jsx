@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, ArrowRight, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
+import { useDemo } from '../contexts/DemoContext';
 import useDataReadiness from '../hooks/useDataReadiness';
 import Badge from '../ui/Badge';
 import {
@@ -36,6 +37,7 @@ const LEVEL_TITLE_COLOR = {
 export default function DataReadinessBadge() {
   const navigate = useNavigate();
   const { org, scope, scopedSites } = useScope();
+  const { demoEnabled } = useDemo();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -96,7 +98,7 @@ export default function DataReadinessBadge() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
-  if (!kpis.total || loading || !readinessState) return null;
+  if (!kpis.total || loading || !readinessState || demoEnabled) return null;
 
   return (
     <div ref={ref} className="relative" data-testid="data-readiness-badge">

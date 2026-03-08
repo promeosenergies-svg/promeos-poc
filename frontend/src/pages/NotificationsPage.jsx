@@ -504,7 +504,10 @@ export default function NotificationsPage() {
             </Tbody>
           </Table>
           {totalFiltered > pageSize && (
-            <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
+            <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+              <span className="text-xs text-gray-400">
+                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalFiltered)} sur {totalFiltered}
+              </span>
               <Pagination
                 page={page}
                 pageSize={pageSize}
@@ -520,7 +523,7 @@ export default function NotificationsPage() {
       <Drawer
         open={!!drawerEvent}
         onClose={() => setDrawerEvent(null)}
-        title="Detail de l'alerte"
+        title="Détail de l'alerte"
         wide
       >
         {drawerEvent && (

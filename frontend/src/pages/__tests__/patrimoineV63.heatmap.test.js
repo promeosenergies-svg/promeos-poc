@@ -9,7 +9,7 @@
  * Vérifications clés :
  *   - PatrimoineHeatmap exporté comme default
  *   - Props tiles/onOpenSite/loading/error gérées
- *   - États loading (skeleton), error, empty (CTA Charger HELIOS)
+ *   - États loading (skeleton), error, empty (CTA Charger la démo)
  *   - getTileColorKey : quantiles + fallback sévérité
  *   - SiteTile rendu avec site_nom, risk, anomalies_count, framework
  *   - Filtres : fwFilter, sevFilter, search, sort
@@ -63,8 +63,8 @@ describe('PatrimoineHeatmap V63 — états UI', () => {
     expect(HEATMAP_JSX).toMatch(/AlertTriangle/);
   });
 
-  test('état empty → CTA "Charger HELIOS"', () => {
-    expect(HEATMAP_JSX).toMatch(/Charger HELIOS/);
+  test('état empty → CTA "Charger la démo"', () => {
+    expect(HEATMAP_JSX).toMatch(/Charger la démo/);
   });
 
   test('état empty → lien vers /import', () => {

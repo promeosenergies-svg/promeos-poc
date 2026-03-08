@@ -129,7 +129,7 @@ export default function ImpactDecisionPanel({ kpis }) {
         ac != null && ac > 0
           ? `${ac} facture${ac > 1 ? 's' : ''} impactée${ac > 1 ? 's' : ''}`
           : null,
-      optimisation: null,
+      optimisation: impact.optimAvailable ? 'Estimation 1 % du facturé' : null,
     };
   }, [kpis, billingSummary]);
 
@@ -153,9 +153,6 @@ export default function ImpactDecisionPanel({ kpis }) {
           Impact & Décision
         </h3>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">
-            V1
-          </span>
           <InfoTip content={TOOLTIPS.executive.calculsV1} />
         </div>
       </div>
@@ -208,7 +205,7 @@ export default function ImpactDecisionPanel({ kpis }) {
         <div className="flex items-center gap-2 mb-3">
           <ShoppingCart size={16} className="text-blue-500 shrink-0" />
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-            Achats d&apos;energie
+            Achats d&apos;énergie
           </h4>
           <InfoTip content={TOOLTIPS.executive.achatsEnergie} />
         </div>
@@ -346,12 +343,13 @@ export default function ImpactDecisionPanel({ kpis }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-1">Aucun levier détecté (V1)</p>
+          <p className="text-sm text-gray-400 text-center py-1">Aucun levier détecté pour le moment</p>
         )}
       </div>
 
       {/* ── Recommandation prioritaire ── */}
-      <div className="rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-4">
+      <div className="rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-4" data-testid="recommendation-box">
+        <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wide mb-2">Recommandation PROMEOS</p>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900">{reco.titre}</p>

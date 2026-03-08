@@ -132,7 +132,7 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
           <div className="flex-1">
             <p className="text-sm font-medium text-slate-700">Aucune analyse de performance</p>
             <p className="text-xs text-slate-400">
-              Lancez une analyse pour obtenir les KPI de risque, qualite et consommation.
+              Lancez une analyse pour obtenir les KPI de risque, qualité et consommation.
             </p>
           </div>
           <button

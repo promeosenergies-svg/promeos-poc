@@ -46,6 +46,8 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
+import SiteCreationWizard from '../components/SiteCreationWizard';
+import SitesMap from '../components/patrimoine/SitesMap';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
 import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
@@ -77,12 +79,12 @@ const USAGE_OPTIONS = [
   { value: '', label: 'Usage' },
   { value: 'bureau', label: 'Bureau' },
   { value: 'commerce', label: 'Commerce' },
-  { value: 'entrepot', label: 'Entrepot' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'sante', label: 'Sante' },
+  { value: 'entrepot', label: 'Entrepôt' },
+  { value: 'hotel', label: 'Hôtel' },
+  { value: 'sante', label: 'Santé' },
   { value: 'enseignement', label: 'Enseignement' },
-  { value: 'copropriete', label: 'Copropriete' },
-  { value: 'collectivite', label: 'Collectivite' },
+  { value: 'copropriete', label: 'Copropriété' },
+  { value: 'collectivite', label: 'Collectivité' },
 ];
 
 const STATUT_OPTIONS = [
@@ -151,7 +153,9 @@ export default function Patrimoine() {
   const [selected, setSelected] = useState(new Set());
   const { openActionDrawer } = useActionDrawer();
   const [showWizard, setShowWizard] = useState(false);
+  const [showSiteWizard, setShowSiteWizard] = useState(sp.get('wizard') === 'open');
   const [showSegModal, setShowSegModal] = useState(false);
+  const [viewMode, setViewMode] = useState('table');
   const [drawerSite, setDrawerSite] = useState(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
 
@@ -521,6 +525,10 @@ export default function Patrimoine() {
               Action
             </Button>
           )}
+          <Button size="sm" variant="secondary" onClick={() => setShowSiteWizard(true)}>
+            <Plus size={14} className="mr-1" />
+            Ajouter un site
+          </Button>
           <Button size="sm" onClick={() => setShowWizard(true)}>
             <Upload size={14} className="mr-1" />
             Importer
@@ -671,6 +679,25 @@ export default function Patrimoine() {
               </button>
             ))}
 
+            {/* View toggle: Tableau / Carte */}
+            <div className="w-px h-6 bg-gray-200" />
+            <button
+              onClick={() => setViewMode('table')}
+              className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition whitespace-nowrap ${
+                viewMode === 'table' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Tableau
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition whitespace-nowrap ${
+                viewMode === 'map' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Carte
+            </button>
+
             {/* Sort indicator */}
             {sortCol && (
               <Tooltip text={`Tri : ${sortCol} ${sortDir}`}>
@@ -708,7 +735,7 @@ export default function Patrimoine() {
               >
                 Réinitialiser
               </button>
-              <span className="ml-auto text-xs text-gray-400">{pl(total, 'resultat')}</span>
+              <span className="ml-auto text-xs text-gray-400">{pl(total, 'résultat')}</span>
             </div>
           )}
 
@@ -757,8 +784,13 @@ export default function Patrimoine() {
             </div>
           )}
 
+          {/* ── Map view ── */}
+          {viewMode === 'map' && (
+            <SitesMap sites={filtered} onSiteClick={(id) => navigate(`/sites/${id}`)} />
+          )}
+
           {/* ── Table ── */}
-          {total === 0 ? (
+          {viewMode === 'table' && (total === 0 ? (
             <EmptyState
               icon={Search}
               title="Aucun site ne correspond"
@@ -989,7 +1021,7 @@ export default function Patrimoine() {
               </div>
               <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
                 <span className="text-xs text-gray-400">
-                  {pl(total, 'site')} · Tri : {sortCol || 'defaut'}{' '}
+                  {pl(total, 'site')} · Tri : {sortCol || 'défaut'}{' '}
                   {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}
                 </span>
                 <span className="text-xs text-gray-500">
@@ -997,7 +1029,7 @@ export default function Patrimoine() {
                 </span>
               </div>
             </Card>
-          )}
+          ))}
         </div>
       )}
 
@@ -1021,6 +1053,12 @@ export default function Patrimoine() {
 
       {/* Action creation handled by ActionDrawerContext */}
       {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
+      {showSiteWizard && (
+        <SiteCreationWizard
+          onClose={() => setShowSiteWizard(false)}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
       {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
     </PageShell>
   );

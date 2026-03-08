@@ -1,22 +1,29 @@
 """
-PROMEOS — A.2: Service de score conformité unifié.
+PROMEOS — A.2: Service de score conformite unifie — SOURCE UNIQUE.
 
-Source unique pour le score conformité 0-100 (higher = better).
-Agrège les 3 obligations réglementaires applicables :
-  - Décret Tertiaire (45%)
+Source unique pour le score conformite 0-100 (higher = better) affiche dans l'UI.
+Agrege les 3 obligations reglementaires applicables :
+  - Decret Tertiaire (45%)
   - BACS (30%)
   - APER (25%)
 
-Les CEE, qui relèvent du financement, ne sont pas inclus dans le score.
+Les CEE, qui relevent du financement, ne sont pas inclus dans le score.
 
 Formule :
   score = moyenne_ponderee(DT 45% + BACS 30% + APER 25%)
-          − penalite_findings_critiques (max −20 pts)
+          - penalite_findings_critiques (max -20 pts)
+
+Grade : A >= 85, B >= 70, C >= 50, D >= 30, F < 30
+Seuils UI : conforme >= 70, a risque >= 40, non conforme < 40
 
 Confidence :
-  - "high"   : 3/3 frameworks évalués
-  - "medium" : 2/3 frameworks évalués
-  - "low"    : 0-1 framework évalué
+  - "high"   : 3/3 frameworks evalues
+  - "medium" : 2/3 frameworks evalues
+  - "low"    : 0-1 framework evalue
+
+Autres scores dans le codebase (ne pas confondre) :
+  - bacs_engine.py : sub-score BACS (composante, pas le score global)
+  - compliance_engine.py : legacy 100-risk_score (non affiche, backward compat)
 """
 
 from __future__ import annotations

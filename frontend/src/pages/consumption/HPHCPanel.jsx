@@ -70,7 +70,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
             <CardBody>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm text-gray-600">
-                  Calendrier : {breakdown.calendar_name || schedule?.name || 'Par defaut'}
+                  Calendrier : {breakdown.calendar_name || schedule?.name || 'Par défaut'}
                 </span>
                 {schedule?.source && <Badge variant="info">{schedule.source}</Badge>}
               </div>
@@ -182,9 +182,9 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="text-left px-3 py-1.5">Jours</th>
-                      <th className="text-left px-3 py-1.5">Debut</th>
+                      <th className="text-left px-3 py-1.5">Début</th>
                       <th className="text-left px-3 py-1.5">Fin</th>
-                      <th className="text-left px-3 py-1.5">Periode</th>
+                      <th className="text-left px-3 py-1.5">Période</th>
                       <th className="text-right px-3 py-1.5">Prix</th>
                     </tr>
                   </thead>

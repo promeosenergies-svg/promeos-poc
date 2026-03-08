@@ -550,7 +550,7 @@ function ObligationCard({
             {obligation.findings && obligation.findings.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                  Findings par site ({obligation.findings.length})
+                  Constats par site ({obligation.findings.length})
                 </p>
                 <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
                   {obligation.findings

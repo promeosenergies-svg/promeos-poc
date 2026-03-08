@@ -65,9 +65,9 @@ const STATUS_TO_FE = {
 };
 
 const TABS = [
-  { id: 'detail', label: 'Detail', icon: Tag },
+  { id: 'detail', label: 'Détail', icon: Tag },
   { id: 'impact', label: 'Impact', icon: BadgeEuro },
-  { id: 'evidence', label: 'Pieces jointes', icon: Paperclip },
+  { id: 'evidence', label: 'Pièces jointes', icon: Paperclip },
   { id: 'comments', label: 'Commentaires', icon: MessageSquare },
   { id: 'history', label: 'Historique', icon: History },
 ];
@@ -93,19 +93,19 @@ const STATUS_WORKFLOW = [
   { value: 'open', label: 'Ouverte' },
   { value: 'in_progress', label: 'En cours' },
   { value: 'blocked', label: 'Bloquée' },
-  { value: 'done', label: 'Terminee' },
+  { value: 'done', label: 'Terminée' },
   { value: 'false_positive', label: 'Faux positif' },
 ];
 
 const EVENT_LABELS = {
-  created: 'Creee',
-  status_change: 'Statut modifie',
-  assigned: 'Assignee',
-  priority_change: 'Priorite modifiee',
-  commented: 'Commentaire ajoute',
-  evidence_added: 'Piece ajoutee',
-  realized_updated: 'ROI mis a jour',
-  field_update: 'Champ modifie',
+  created: 'Créée',
+  status_change: 'Statut modifié',
+  assigned: 'Assignée',
+  priority_change: 'Priorité modifiée',
+  commented: 'Commentaire ajouté',
+  evidence_added: 'Pièce ajoutée',
+  realized_updated: 'ROI mis à jour',
+  field_update: 'Champ modifié',
 };
 
 const EVENT_ICONS = {
@@ -120,7 +120,7 @@ const EVENT_ICONS = {
 };
 
 const SOURCE_LABELS = {
-  compliance: 'Conformite',
+  compliance: 'Conformité',
   consumption: 'Consommation',
   billing: 'Facturation',
   purchase: 'Achats',
@@ -383,7 +383,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       const ev = await getActionEvents(actionId);
       setEvents(ev);
     } catch {
-      toast('Erreur lors de la mise a jour du gain realise', 'error');
+      toast('Erreur lors de la mise à jour du gain réalisé', 'error');
     }
   }
 
@@ -444,7 +444,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Priorite</p>
+                  <p className="text-xs text-gray-500 mb-1">Priorité</p>
                   <Badge status={PRIORITY_BADGE[d.priority] || 'neutral'}>
                     {PRIORITY_LABEL[d.priority] || `P${d.priority}`}
                   </Badge>
@@ -909,7 +909,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
               {d.severity && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Severite source</p>
+                  <p className="text-xs text-gray-500 mb-1">Sévérité source</p>
                   <Badge
                     status={
                       d.severity === 'critical' ? 'crit' : d.severity === 'high' ? 'warn' : 'info'

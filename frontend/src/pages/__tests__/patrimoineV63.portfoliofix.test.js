@@ -29,22 +29,18 @@ const SCOPE_CTX = src('contexts/ScopeContext.jsx');
 
 // ── A. ScopeContext — appel synchrone de setApiScope ─────────────────────
 
-describe('ScopeContext — setApiScope synchrone (anti-race)', () => {
-  test('setApiScope appelé hors useEffect (synchrone dans le render)', () => {
-    // Le correctif ajoute un appel direct à setApiScope dans le corps du composant,
-    // AVANT le useEffect. On vérifie que setApiScope apparaît au moins deux fois
-    // (une fois synchrone, une fois dans le useEffect).
-    const count = (SCOPE_CTX.match(/setApiScope\s*\(/g) || []).length;
-    expect(count).toBeGreaterThanOrEqual(2);
+describe('ScopeContext — setApiScope via useLayoutEffect (anti-race)', () => {
+  test('setApiScope appelé dans useLayoutEffect (synchrone avant child effects)', () => {
+    expect(SCOPE_CTX).toMatch(/useLayoutEffect\s*\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?setApiScope/);
   });
 
-  test('useEffect setApiScope toujours présent pour les changements futurs', () => {
-    expect(SCOPE_CTX).toMatch(/useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?setApiScope/);
+  test('useLayoutEffect importé de react', () => {
+    expect(SCOPE_CTX).toMatch(/useLayoutEffect/);
   });
 
-  test('appel synchrone documenté (commentaire anti-race ou belt-and-suspenders)', () => {
+  test('appel documenté (commentaire anti-race ou synchrone)', () => {
     expect(SCOPE_CTX).toMatch(
-      /synchron|belt-and-suspenders|avant.*child|child.*avant|child.*effect/i
+      /synchron|useLayoutEffect|avant.*child|child.*avant|child.*effect/i
     );
   });
 
@@ -126,7 +122,7 @@ describe('Invariants V60/V61 — régressions', () => {
     expect(HEALTH_BAR).toMatch(/<HealthBar/);
   });
 
-  test('CTA "Charger HELIOS" toujours présent dans état vide', () => {
-    expect(HEALTH_BAR).toMatch(/Charger HELIOS/);
+  test('CTA "Charger la démo" toujours présent dans état vide', () => {
+    expect(HEALTH_BAR).toMatch(/Charger la démo/);
   });
 });

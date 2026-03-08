@@ -142,7 +142,7 @@ export default function InsightsStrip({ insights = [] }) {
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-      <span className="text-xs font-semibold text-gray-500 shrink-0">Insights :</span>
+      <span className="text-xs font-semibold text-gray-500 shrink-0">Analyses :</span>
       {shown.map((insight) => (
         <InsightBadge key={insight.id} insight={insight} onDismiss={dismiss} />
       ))}

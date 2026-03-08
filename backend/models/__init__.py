@@ -230,6 +230,9 @@ from .onboarding_progress import OnboardingProgress
 # Market Prices (Step 17)
 from .market_price import MarketPrice
 
+# Compliance Score History (Step 33)
+from .compliance_score_history import ComplianceScoreHistory
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -434,4 +437,6 @@ __all__ = [
     "OnboardingProgress",
     # Market Prices (Step 17)
     "MarketPrice",
+    # Compliance Score History (Step 33)
+    "ComplianceScoreHistory",
 ]

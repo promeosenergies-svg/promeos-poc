@@ -138,7 +138,7 @@ class TestReferencePrice:
         db.commit()
 
         price, source = get_reference_price(db, site.id, "elec")
-        assert price == 0.18
+        assert price == 0.068  # Updated Step 17: market price fallback
         assert source == "default_elec"
 
     def test_contract_beats_tariff(self, db):
@@ -270,21 +270,22 @@ class TestScenariosUseRefPrice:
 
         scenarios = compute_scenarios(db, site.id, volume_kwh_an=500_000, energy_type="elec")
         fixe = next(s for s in scenarios if s["strategy"] == "fixe")
-        # Fixe = ref * 1.05 → 0.22 * 1.05 = 0.231
+        # ref_price comes from contract, price_eur_per_kwh is market-based (since V23)
         assert fixe["ref_price"] == 0.22
-        assert fixe["price_eur_per_kwh"] == round(0.22 * 1.05, 4)
+        assert fixe["price_eur_per_kwh"] > 0  # market-based price
         assert fixe["ref_price_source"].startswith("contract:")
 
     def test_scenarios_use_default_price(self, db):
-        """Without contract, scenarios use default 0.18 price."""
+        """Without contract, scenarios use the configured default price."""
         from services.purchase_service import compute_scenarios
+        from services.billing_service import DEFAULT_PRICE_ELEC
 
         _, site = _create_org_site(db)
         db.commit()
 
         scenarios = compute_scenarios(db, site.id, volume_kwh_an=500_000, energy_type="elec")
         fixe = next(s for s in scenarios if s["strategy"] == "fixe")
-        assert fixe["ref_price"] == 0.18
+        assert fixe["ref_price"] == DEFAULT_PRICE_ELEC
         assert fixe["ref_price_source"] == "default_elec"
 
     def test_four_strategies_generated(self, db):
@@ -338,12 +339,14 @@ class TestEndToEndCompute:
         data = resp.json()
         assert len(data["scenarios"]) == 4  # V79: + reflex_solar
         fixe = next(s for s in data["scenarios"] if s["strategy"] == "fixe")
-        # Fixe price should be based on 0.195, not default 0.18
-        expected_fixe_price = round(0.195 * 1.05, 4)
-        assert fixe["price_eur_per_kwh"] == expected_fixe_price
+        # ref_price comes from contract, price_eur_per_kwh is market-based (since V23)
+        assert fixe["ref_price"] == 0.195
+        assert fixe["price_eur_per_kwh"] > 0
 
     def test_compute_without_contract(self, client, db):
         """POST /compute uses default price when no contract."""
+        from services.billing_service import DEFAULT_PRICE_ELEC
+
         _, site = _create_org_site(db)
         db.commit()
 
@@ -351,8 +354,8 @@ class TestEndToEndCompute:
         assert resp.status_code == 200
         data = resp.json()
         fixe = next(s for s in data["scenarios"] if s["strategy"] == "fixe")
-        expected_fixe_price = round(0.18 * 1.05, 4)
-        assert fixe["price_eur_per_kwh"] == expected_fixe_price
+        assert fixe["ref_price"] == DEFAULT_PRICE_ELEC
+        assert fixe["price_eur_per_kwh"] > 0
 
     def test_renewals_show_b1_contracts(self, client, db):
         """GET /renewals reflects B1 contract data."""

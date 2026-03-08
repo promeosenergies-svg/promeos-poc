@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useDemo } from '../contexts/DemoContext';
 import { useScope } from '../contexts/ScopeContext';
-import { Sparkles, ArrowRight, CheckCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, RefreshCw, Loader2, ChevronDown } from 'lucide-react';
 import { seedDemoPack, clearApiCache } from '../services/api';
 
 const DemoBanner = ({ onUpgradeClick }) => {
   const { demoEnabled, toggleDemo } = useDemo();
   const { org, sitesCount, portefeuilles, applyDemoScope } = useScope();
   const [reloading, setReloading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const handleReloadHelios = async () => {
     setReloading(true);
@@ -28,7 +29,7 @@ const DemoBanner = ({ onUpgradeClick }) => {
     setReloading(false);
   };
 
-  // Si onboarding reel fait et demo desactivee → bandeau vert avec nom org
+  // Si onboarding réel fait et démo désactivée → bandeau vert avec nom org
   if (!demoEnabled && org?.nom && sitesCount > 0) {
     return (
       <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 flex items-center justify-between">
@@ -45,44 +46,52 @@ const DemoBanner = ({ onUpgradeClick }) => {
 
   if (!demoEnabled) return null;
 
+  // Mode discret : petit badge cliquable au lieu d'une bannière intrusive
   return (
-    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Sparkles size={20} />
-        <span className="font-medium text-sm">
-          Mode Demo actif — Données HELIOS
-          {org?.nom ? ` (${org.nom}, ${sitesCount} sites)` : ''}
-        </span>
-      </div>
-      <div className="flex items-center gap-4">
-        {/* Reload HELIOS */}
-        <button
-          onClick={handleReloadHelios}
-          disabled={reloading}
-          className="flex items-center gap-1.5 bg-white/20 text-white text-xs px-3 py-1.5 rounded hover:bg-white/30 transition disabled:opacity-50"
-        >
-          {reloading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          {reloading ? 'Chargement...' : 'Recharger HELIOS'}
-        </button>
-        {/* Toggle */}
-        <button
-          onClick={toggleDemo}
-          className="flex items-center gap-2 text-sm opacity-80 hover:opacity-100 transition"
-        >
-          <div className="relative w-10 h-5 bg-white/30 rounded-full">
-            <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform translate-x-5" />
-          </div>
-          <span>Demo</span>
-        </button>
-        {/* Upgrade CTA */}
-        <button
-          onClick={onUpgradeClick}
-          className="bg-white text-orange-600 px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-orange-50 transition flex items-center gap-1"
-        >
-          Connecter mes donnees reelles
-          <ArrowRight size={14} />
-        </button>
-      </div>
+    <div className="bg-slate-50 border-b border-slate-200/70 px-6 py-1.5 flex items-center justify-between">
+      <button
+        onClick={() => setExpanded((prev) => !prev)}
+        className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 transition"
+      >
+        <Sparkles size={12} className="text-amber-500" />
+        <span className="font-medium">Environnement de démonstration</span>
+        {org?.nom && (
+          <span className="text-slate-400">
+            — {org.nom}, {sitesCount} site{sitesCount !== 1 ? 's' : ''}
+          </span>
+        )}
+        <ChevronDown size={12} className={`transition ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Actions visibles uniquement quand expanded */}
+      {expanded && (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleReloadHelios}
+            disabled={reloading}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded hover:bg-slate-100 transition disabled:opacity-50"
+          >
+            {reloading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            {reloading ? 'Chargement...' : 'Recharger les données'}
+          </button>
+          <button
+            onClick={toggleDemo}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded hover:bg-slate-100 transition"
+          >
+            <div className="relative w-7 h-3.5 bg-amber-300/60 rounded-full">
+              <div className="absolute top-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 transition-transform translate-x-3.5" />
+            </div>
+            Démo
+          </button>
+          <button
+            onClick={onUpgradeClick}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition flex items-center gap-1"
+          >
+            Connecter mes données réelles
+            <ArrowRight size={12} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

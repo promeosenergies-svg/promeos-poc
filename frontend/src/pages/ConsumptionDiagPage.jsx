@@ -4,7 +4,7 @@
  * Evidence Drawer, prix editable, workflow ACK/Resolve, cross-page nav.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   AreaChart,
   Area,
@@ -40,11 +40,11 @@ import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
-import { toConsoExplorer } from '../services/routes';
+import { toConsoExplorer, toMonitoring } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
-import { Zap, Info, ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
+import { Zap, Info, ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3, Activity } from 'lucide-react';
 
 // ---- Constants ----
 
@@ -192,7 +192,7 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
               }}
             />
             <span className="text-sm text-gray-500">EUR/kWh</span>
-            <Tooltip text="Pertes = kWh excedentaires × prix EUR/kWh" position="bottom">
+            <Tooltip text="Pertes = kWh excédentaires × prix EUR/kWh" position="bottom">
               <Info size={14} className="text-gray-400 cursor-help" />
             </Tooltip>
           </div>
@@ -229,7 +229,7 @@ function SummaryCards({ summary, customPrice }) {
   const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH);
   const cards = [
     {
-      label: 'Insights détectés',
+      label: 'Analyses détectées',
       value: summary.total_insights,
       color: 'text-blue-700',
       bg: 'bg-blue-50',
@@ -357,7 +357,7 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
             onCreateAction(insight);
           }}
           className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"
-          title="Creer une action"
+          title="Créer une action"
         >
           <Zap size={14} />
         </button>
@@ -450,7 +450,7 @@ function FlexTab({ siteId }) {
           <p className="text-xs text-gray-500">
             Score {flex.flex_potential_score}/100
             {flex.inputs_used?.insights_count > 0 &&
-              ` · ${flex.inputs_used.insights_count} insight(s) analyses`}
+              ` · ${flex.inputs_used.insights_count} insight(s) analysés`}
             {flex.inputs_used?.archetype && ` · ${flex.inputs_used.archetype}`}
           </p>
         </div>
@@ -565,15 +565,15 @@ function EvidenceDrawer({
         {/* Tab: Methode */}
         {tab === 'methode' && (
           <div className="space-y-3">
-            <DrawerSection title="Methode de detection">
-              <DrawerRow label="Fenetre">
+            <DrawerSection title="Méthode de détection">
+              <DrawerRow label="Fenêtre">
                 {metrics.window || metrics.schedule_open || '30 jours glissants'}
               </DrawerRow>
               <DrawerRow label="Formule">
                 {metrics.formula ||
-                  `Ecart vs ${insight.type === 'base_load' ? 'talon median' : 'profil horaire'}`}
+                  `Écart vs ${insight.type === 'base_load' ? 'talon médian' : 'profil horaire'}`}
               </DrawerRow>
-              <DrawerRow label="Seuil">{metrics.threshold || '> 2 ecarts-type'}</DrawerRow>
+              <DrawerRow label="Seuil">{metrics.threshold || '> 2 écarts-type'}</DrawerRow>
               <DrawerRow label="Confiance">{metrics.confidence || 'Moyenne'}</DrawerRow>
             </DrawerSection>
             <DrawerSection title="Hypothèses">
@@ -648,7 +648,7 @@ function EvidenceDrawer({
                 onClick={() => onStatusChange(insight.id, 'resolved')}
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 text-sm font-medium text-green-700 hover:bg-green-50 transition"
               >
-                <CheckCircle2 size={14} /> Resolu
+                <CheckCircle2 size={14} /> Résolu
               </button>
             )}
             {(insight.insight_status === 'open' || insight.insight_status === 'ack') && (
@@ -769,7 +769,7 @@ export default function ConsumptionDiagPage() {
     setMessage(null);
     try {
       const r = await seedDemoConsumption();
-      setMessage(`Demo conso generee: ${r.total || r.sites?.length || 0} site(s)`);
+      setMessage(`Démo conso générée : ${r.total || r.sites?.length || 0} site(s)`);
       await load();
     } catch (e) {
       setMessage('Erreur: ' + (e.response?.data?.detail || e.message));
@@ -784,7 +784,7 @@ export default function ConsumptionDiagPage() {
     try {
       const r = await runConsumptionDiagnose();
       setMessage(
-        `Diagnostic termine: ${r.total_insights || 0} insight(s) sur ${r.sites_analyzed || 0} site(s)`
+        `Diagnostic terminé : ${r.total_insights || 0} insight(s) sur ${r.sites_analyzed || 0} site(s)`
       );
       track('diagnostic_run', { insights: r.total_insights });
       await load();
@@ -815,9 +815,9 @@ export default function ConsumptionDiagPage() {
       setDrawerInsight((prev) =>
         prev?.id === insightId ? { ...prev, insight_status: newStatus } : prev
       );
-      toast(`Insight mis a jour: ${WORKFLOW_CONFIG[newStatus]?.label || newStatus}`, 'success');
+      toast(`Insight mis à jour : ${WORKFLOW_CONFIG[newStatus]?.label || newStatus}`, 'success');
     } catch {
-      toast('Erreur lors de la mise a jour du statut', 'error');
+      toast('Erreur lors de la mise à jour du statut', 'error');
     }
   };
 
@@ -840,7 +840,7 @@ export default function ConsumptionDiagPage() {
             description:
               insight.message +
               (insight.recommended_actions?.length
-                ? '\n\nActions recommandees :\n' +
+                ? '\n\nActions recommandées :\n' +
                   insight.recommended_actions.map((a) => `- ${a.title}`).join('\n')
                 : ''),
           },
@@ -916,9 +916,23 @@ export default function ConsumptionDiagPage() {
     <PageShell
       icon={Zap}
       title="Diagnostic"
-      subtitle={<>Détection automatique : horaires, talon, pointes, dérives <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
+      subtitle={<>Détectez automatiquement les anomalies de consommation : horaires inhabituels, talon excessif, pointes, dérives. <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
       actions={
         <>
+          <Link
+            to={toConsoExplorer()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+          >
+            <BarChart3 size={14} />
+            Explorer
+          </Link>
+          <Link
+            to={toMonitoring()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+          >
+            <Activity size={14} />
+            Performance
+          </Link>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
             {seeding ? 'Génération...' : 'Générer conso démo'}
           </Button>
@@ -1065,7 +1079,7 @@ export default function ConsumptionDiagPage() {
                       Type
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
-                      Severite
+                      Sévérité
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
                       Message

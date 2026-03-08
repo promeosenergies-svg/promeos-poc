@@ -80,19 +80,19 @@ import { fmtNum, fmtPct } from '../utils/format';
 // ── Constants ──────────────────────────────────────────────────────
 
 const STEPS = [
-  { key: 'portfolio', label: 'Portefeuille', icon: MapPin, desc: 'Sites & perimetre' },
+  { key: 'portfolio', label: 'Portefeuille', icon: MapPin, desc: 'Sites & périmètre' },
   { key: 'consumption', label: 'Consommation', icon: BarChart3, desc: 'Volumes & profil' },
-  { key: 'persona', label: 'Persona', icon: User, desc: 'Profil decideur' },
-  { key: 'horizon', label: 'Horizon & Risque', icon: Clock, desc: 'Scenario marche' },
+  { key: 'persona', label: 'Persona', icon: User, desc: 'Profil décideur' },
+  { key: 'horizon', label: 'Horizon & Risque', icon: Clock, desc: 'Scénario marché' },
   { key: 'offers', label: 'Offres', icon: FileText, desc: 'Saisie fournisseurs' },
-  { key: 'results', label: 'Resultats', icon: TrendingUp, desc: 'Corridor & TCO' },
+  { key: 'results', label: 'Résultats', icon: TrendingUp, desc: 'Corridor & TCO' },
   { key: 'scoring', label: 'Scoring', icon: Shield, desc: 'Transparence & risques' },
-  { key: 'decision', label: 'Decision', icon: Target, desc: 'Recommandation & export' },
+  { key: 'decision', label: 'Décision', icon: Target, desc: 'Recommandation & export' },
 ];
 
 const STRUCTURE_LABELS = {
   FIXE: 'Prix Fixe',
-  INDEXE: 'Indexe',
+  INDEXE: 'Indexé',
   SPOT: 'Spot',
   HYBRIDE: 'Hybride',
   HEURES_SOLAIRES: 'Heures Solaires',
@@ -655,7 +655,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
         <KpiCard
           label="Type d'energie"
           value={sitesData.energyType || wizard.energyType}
-          sublabel={sitesData.energyType === 'GAZ' ? 'Gaz naturel' : 'Electricite'}
+          sublabel={sitesData.energyType === 'GAZ' ? 'Gaz naturel' : 'Électricité'}
           icon={sitesData.energyType === 'GAZ' ? <Flame size={18} /> : <Zap size={18} />}
         />
         <KpiCard
@@ -692,7 +692,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
                   value={wizard.energyType}
                   onChange={(e) => setWizard((prev) => ({ ...prev, energyType: e.target.value }))}
                 >
-                  <option value={EnergyType.ELEC}>Electricite</option>
+                  <option value={EnergyType.ELEC}>Électricité</option>
                   <option value={EnergyType.GAZ}>Gaz</option>
                 </select>
               </div>
@@ -1428,7 +1428,7 @@ function StepScoring({ scoredOffers, recommendation }) {
       <EmptyState
         icon={Shield}
         title="Pas de scores"
-        description="Lancez d'abord le calcul a l'etape Resultats."
+        description="Lancez d'abord le calcul à l'étape Résultats."
       />
     );
   }
@@ -1563,7 +1563,7 @@ function StepDecision({
       <EmptyState
         icon={Target}
         title="Pas de recommandation"
-        description="Lancez le calcul a l'etape Resultats."
+        description="Lancez le calcul à l'étape Résultats."
       />
     );
   }

@@ -27,7 +27,7 @@ describe('V114b UX 2-clicks guard-rails', () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((i) => i.to === '/actions');
     expect(centre).toBeDefined();
-    expect(centre.label).toBe("Centre d'actions");
+    expect(centre.label).toBe("Actions & Suivi");
   });
 
   it('3. Exporter OPERAT: QUICK_ACTIONS operat → /conformite/tertiaire', () => {

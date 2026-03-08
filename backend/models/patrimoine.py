@@ -120,6 +120,9 @@ class StagingSite(Base, TimestampMixin):
     target_site_id = Column(Integer, nullable=True, comment="Merge avec un site existant")
     target_portefeuille_id = Column(Integer, nullable=True)
     skip = Column(Boolean, default=False, comment="Ignore par l'utilisateur")
+    # Step 35: incremental update matching
+    match_method = Column(String(20), nullable=True, comment="siret, prm, nom_cp")
+    match_confidence = Column(String(10), nullable=True, comment="high, medium")
 
     # Relations
     batch = relationship("StagingBatch", back_populates="sites")

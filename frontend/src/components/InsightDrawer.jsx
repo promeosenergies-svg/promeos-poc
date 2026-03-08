@@ -4,12 +4,13 @@
  * Props: { open, onClose, insightId }
  */
 import { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ChevronDown } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Explain } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { getInsightDetail, getInvoiceShadowBreakdown } from '../services/api';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
 import ShadowBreakdownCard from './billing/ShadowBreakdownCard';
 import { fmtEurFull, fmtNum } from '../utils/format';
 
@@ -96,6 +97,7 @@ function getBreakdownRows(energyType) {
 
 export default function InsightDrawer({ open, onClose, insightId }) {
   const { isExpert } = useExpertMode();
+  const { org, portefeuille, orgSites, selectedSiteId } = useScope();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -162,7 +164,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center gap-3">
             <AlertTriangle
@@ -192,6 +194,23 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             </div>
           </div>
 
+          {/* Scope context */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/60 rounded-lg border border-blue-100 text-xs text-blue-700">
+            <span className="font-medium">{org?.nom || 'Organisation'}</span>
+            {portefeuille && (
+              <>
+                <span className="text-blue-300">/</span>
+                <span>{portefeuille.nom}</span>
+              </>
+            )}
+            {selectedSiteId && orgSites?.length > 0 && (
+              <>
+                <span className="text-blue-300">/</span>
+                <span>{orgSites.find((s) => String(s.id) === String(selectedSiteId))?.nom || `Site ${selectedSiteId}`}</span>
+              </>
+            )}
+          </div>
+
           {/* Message */}
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-sm text-gray-700">{detail.message}</p>
@@ -203,33 +222,21 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             <p className="text-sm text-gray-800">{cause}</p>
           </div>
 
-          {/* Confiance & Hypothèses */}
-          {m.confidence && (
-            <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2"><Explain term="confiance">Confiance</Explain></h4>
-              <div className="flex items-center gap-2">
-                <Badge
-                  status={
-                    m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'
-                  }
-                >
-                  {m.confidence === 'high'
-                    ? 'Élevée'
-                    : m.confidence === 'medium'
-                      ? 'Moyenne'
-                      : 'Faible'}
-                </Badge>
-              </div>
-              {m.assumptions?.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {m.assumptions.map((a, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0" />
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-              )}
+          {/* Confiance — inline badge (détails dans section diagnostics ci-dessous) */}
+          {m.confidence && !m.diagnostics && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase"><Explain term="confiance">Confiance</Explain> :</span>
+              <Badge
+                status={
+                  m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'
+                }
+              >
+                {m.confidence === 'high'
+                  ? 'Élevée'
+                  : m.confidence === 'medium'
+                    ? 'Moyenne'
+                    : 'Faible'}
+              </Badge>
             </div>
           )}
 
@@ -338,13 +345,14 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             </div>
           )}
 
-          {/* Données & hypothèses */}
+          {/* Données & hypothèses — collapsible */}
           {m.diagnostics && (
-            <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                Données &amp; hypothèses
-              </h4>
-              <div className="flex items-center gap-2 mb-2">
+            <details className="group">
+              <summary className="flex items-center gap-2 cursor-pointer select-none">
+                <ChevronDown size={14} className="text-gray-400 transition-transform group-open:rotate-180" />
+                <h4 className="text-xs font-semibold text-gray-500 uppercase">
+                  Données &amp; hypothèses
+                </h4>
                 <Badge
                   status={
                     m.diagnostics.confidence === 'high'
@@ -361,31 +369,33 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                       ? 'Moyenne'
                       : 'Basse'}
                 </Badge>
-              </div>
-              {m.diagnostics.assumptions?.length > 0 && (
-                <ul className="space-y-1 mb-2">
-                  {m.diagnostics.assumptions.map((a, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0" />
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {m.diagnostics.missing_fields?.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
-                  <p className="text-xs font-semibold text-amber-700 mb-1">Données manquantes</p>
-                  <ul className="space-y-0.5">
-                    {m.diagnostics.missing_fields.map((f, i) => (
-                      <li key={i} className="text-xs text-amber-600 flex items-center gap-1.5">
-                        <AlertTriangle size={10} className="shrink-0" />
-                        {f}
+              </summary>
+              <div className="mt-2 space-y-2 pl-5">
+                {m.diagnostics.assumptions?.length > 0 && (
+                  <ul className="space-y-1">
+                    {m.diagnostics.assumptions.map((a, i) => (
+                      <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0" />
+                        {a}
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
-            </div>
+                )}
+                {m.diagnostics.missing_fields?.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+                    <p className="text-xs font-semibold text-amber-700 mb-1">Données manquantes</p>
+                    <ul className="space-y-0.5">
+                      {m.diagnostics.missing_fields.map((f, i) => (
+                        <li key={i} className="text-xs text-amber-600 flex items-center gap-1.5">
+                          <AlertTriangle size={10} className="shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </details>
           )}
 
           {/* Shadow Breakdown par composante (Step 28) */}

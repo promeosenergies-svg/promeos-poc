@@ -5,23 +5,18 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, Star, Clock } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import {
   NAV_MODULES,
   ROUTE_MODULE_MAP,
-  ALL_NAV_ITEMS,
   QUICK_ACTIONS,
-  SECTION_TINTS,
   TINT_PALETTE,
-  NAV_MAIN_SECTIONS,
   NAV_ADMIN_ITEMS,
   NAV_ADMIN_ICON,
   getSectionsForModule,
-  matchRouteToModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getRecents } from '../utils/navRecent';
 
 /* ── Badge severity styles ── */
 const BADGE_STYLES = {
@@ -44,7 +39,7 @@ function PanelLink({ to, icon: Icon, label, longLabel, badge, badgeKey, pinned, 
       end={to === '/'}
       aria-label={tipText}
       className={({ isActive }) =>
-        `group/link flex items-center gap-2 h-8 rounded-lg text-[13px] leading-5 transition-all duration-150 relative py-1 px-2.5${indent ? ' ml-4' : ''}
+        `group/link flex items-center gap-1.5 h-7 rounded-lg text-[12.5px] leading-5 transition-all duration-150 relative py-0.5 px-2${indent ? ' ml-3' : ''}
         ${
           isActive
             ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
@@ -97,7 +92,7 @@ function SectionHeader({ label, icon: SectionIcon, isOpen, onToggle, tintColor }
   return (
     <button
       onClick={onToggle}
-      className="flex items-center w-full px-2.5 py-1.5 group mt-3 first:mt-0
+      className="flex items-center w-full px-2 py-1 group mt-2 first:mt-0
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md
         hover:bg-slate-50/60 transition-colors duration-150"
       aria-expanded={isOpen}
@@ -154,56 +149,18 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       .filter((s) => s.items.length > 0);
   }, [activeModule, isExpert, filterItems]);
 
-  /* ── B.2: 5 main sections (all visible, collapsible) ── */
-  const mainSections = useMemo(() => {
-    return NAV_MAIN_SECTIONS.map((s) => ({
-      ...s,
-      items: filterItems(
-        s.items.filter((item) => (!item.expertOnly || isExpert) && !item.hidden)
-      ),
-    })).filter((s) => s.items.length > 0);
-  }, [isExpert, filterItems]);
-
   /* ── Admin items (secondary menu) ── */
   const adminItems = useMemo(() => {
     return filterItems(NAV_ADMIN_ITEMS);
   }, [filterItems]);
 
   /* ── All visible items in this module ── */
-  const allModuleItems = useMemo(() => mainSections.flatMap((s) => s.items), [mainSections]);
+  const allModuleItems = useMemo(() => moduleSections.flatMap((s) => s.items), [moduleSections]);
 
   /* ── Pinned items (only from this module's items) ── */
   const pinnedItems = useMemo(() => {
     return pins.map((path) => allModuleItems.find((item) => item.to === path)).filter(Boolean);
   }, [pins, allModuleItems]);
-
-  /* ── Recents (filtered by current module only — no cross-module pollution) ── */
-  const recentItems = useMemo(() => {
-    const recents = getRecents();
-    const visiblePaths = new Set(allModuleItems.map((i) => i.to));
-    const seen = new Set();
-    return recents
-      .filter((r) => {
-        if (pins.includes(r.path) || visiblePaths.has(r.path) || seen.has(r.path)) return false;
-        seen.add(r.path);
-        const recentModule = r.module || matchRouteToModule(r.path).moduleId;
-        return recentModule === activeModule;
-      })
-      .map((r) => {
-        const navItem = ALL_NAV_ITEMS.find((item) => item.to === r.path);
-        if (navItem) return { ...navItem };
-        const { moduleId } = matchRouteToModule(r.path);
-        const m = NAV_MODULES.find((mod) => mod.key === moduleId);
-        return {
-          to: r.path,
-          label: r.label || r.path,
-          icon: m?.icon || NAV_MODULES[0].icon,
-          module: moduleId,
-        };
-      })
-      .filter(Boolean)
-      .slice(0, 3);
-  }, [allModuleItems, pins, activeModule, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Section toggle ── */
   const toggleSection = useCallback((key) => {
@@ -213,7 +170,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   /* ── Auto-open section containing active route ── */
   useEffect(() => {
     const currentPath = location.pathname;
-    for (const section of mainSections) {
+    for (const section of moduleSections) {
       const hasActive = section.items.some(
         (item) => currentPath === item.to || currentPath.startsWith(item.to + '/')
       );
@@ -240,13 +197,13 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   return (
     <div
       className="flex flex-col h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0"
-      style={{ width: 'clamp(248px, 18vw, 300px)' }}
+      style={{ width: 'clamp(220px, 16vw, 260px)' }}
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >
       {/* Module header — tinted gradient */}
       <div
-        className={`px-4 pt-4 pb-3 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}
+        className={`px-3 pt-3 pb-2 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}
       >
         <div className="flex items-center gap-2">
           <mod.icon size={16} className={t.icon} />
@@ -306,27 +263,8 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           </div>
         )}
 
-        {/* Recents (same module only) */}
-        {recentItems.length > 0 && (
-          <div className="pb-2 mb-1 border-b border-slate-200/40">
-            <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Clock size={8} className="text-slate-400" /> Récents
-            </p>
-            {recentItems.map((item) => (
-              <PanelLink
-                key={`recent-${item.to}`}
-                {...item}
-                badge={0}
-                pinned={pins.includes(item.to)}
-                onTogglePin={onTogglePin}
-                tint={tint}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* 5 Main sections (collapsible) */}
-        {mainSections.map((section) => {
+        {/* Main sections — only for active module */}
+        {moduleSections.map((section) => {
           const sectionTint = section.tint || tint;
           const isOpen = isSectionOpen(section);
 

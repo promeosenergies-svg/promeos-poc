@@ -41,6 +41,7 @@ import {
   Calculator,
   Upload,
   BarChart3,
+  Sun,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ──
@@ -65,13 +66,13 @@ export const ROUTE_MODULE_MAP = {
   '/conformite/tertiaire/efa/:id': 'patrimoine',
   '/compliance': 'patrimoine',
   '/compliance/pipeline': 'patrimoine',
+  '/conformite/aper': 'patrimoine',
   '/compliance/findings': 'patrimoine',
   '/compliance/obligations': 'patrimoine',
   '/compliance/sites/:siteId': 'patrimoine',
   '/consommations': 'energie',
   '/consommations/explorer': 'energie',
   '/consommations/import': 'energie',
-  '/consommations/kb': 'energie',
   '/consommations/portfolio': 'energie',
   '/diagnostic-conso': 'energie',
   '/usages-horaires': 'energie',
@@ -84,7 +85,6 @@ export const ROUTE_MODULE_MAP = {
   '/achat-assistant': 'achat',
   '/renouvellements': 'achat',
   '/contracts-radar': 'achat',
-  '/market': 'achat',
   '/import': 'admin',
   '/connectors': 'admin',
   '/segmentation': 'admin',
@@ -337,7 +337,7 @@ export const QUICK_ACTIONS = [
   },
   {
     key: 'centre',
-    label: "Centre d'actions",
+    label: 'Détection automatique',
     icon: AlertTriangle,
     to: '/anomalies',
     keywords: ['anomalies', 'actions', 'inbox', 'plan'],
@@ -433,7 +433,7 @@ export const NAV_SECTIONS = [
     order: 1,
     items: [
       { to: '/cockpit', icon: BarChart3, label: 'Cockpit', keywords: ['cockpit', 'executive', 'synthese', 'dashboard'] },
-      { to: '/actions', icon: AlertTriangle, label: "Centre d'actions", badgeKey: 'alerts', keywords: ['anomalies', 'actions', 'inbox', 'plan', 'todo'] },
+      { to: '/actions', icon: AlertTriangle, label: 'Actions & Suivi', badgeKey: 'alerts', keywords: ['anomalies', 'actions', 'inbox', 'plan', 'todo', 'suivi'] },
       { to: '/notifications', icon: Bell, label: 'Notifications', badgeKey: 'notif_count', keywords: ['alertes', 'notifications'] },
     ],
   },
@@ -457,7 +457,7 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/consommations', icon: Activity, label: 'Consommations', keywords: ['conso', 'energie', 'explorer', 'diagnostic', 'usages'] },
       { to: '/monitoring', icon: TrendingUp, label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance', 'performance'] },
-      { to: '/billing', icon: Receipt, label: 'Facturation', keywords: ['factures', 'billing', 'anomalies', 'surfacturation', 'historique'] },
+      { to: '/bill-intel', icon: Receipt, label: 'Facturation', keywords: ['factures', 'billing', 'anomalies', 'surfacturation', 'historique', 'shadow', 'timeline'] },
     ],
   },
   {
@@ -467,7 +467,9 @@ export const NAV_SECTIONS = [
     expertOnly: false,
     order: 4,
     items: [
-      { to: '/achat-energie', icon: Calculator, label: "Stratégies d'achat", keywords: ['achat', 'purchase', 'scenarios', 'strategie', 'assistant', 'renouvellements'] },
+      { to: '/achat-energie', icon: Calculator, label: "Stratégies d'achat", keywords: ['achat', 'purchase', 'scenarios', 'strategie', 'contrats'] },
+      { to: '/renouvellements', icon: CalendarRange, label: 'Renouvellements', keywords: ['renouvellements', 'contrats', 'echeances', 'radar', 'expiration'] },
+      { to: '/achat-assistant', icon: Target, label: "Assistant d'achat", keywords: ['assistant', 'wizard', 'rfp', 'corridor', 'negociation'] },
     ],
   },
   {
@@ -546,7 +548,7 @@ export const NAV_MAIN_SECTIONS = [
     order: 1,
     items: [
       { to: '/cockpit', icon: BarChart3, label: 'Cockpit', keywords: ['cockpit', 'executive', 'synthese', 'dashboard', 'accueil'] },
-      { to: '/actions', icon: AlertTriangle, label: "Centre d'actions", badgeKey: 'alerts', keywords: ['anomalies', 'actions', 'inbox', 'plan', 'todo'] },
+      { to: '/actions', icon: AlertTriangle, label: 'Actions & Suivi', badgeKey: 'alerts', keywords: ['anomalies', 'actions', 'inbox', 'plan', 'todo', 'suivi'] },
       { to: '/notifications', icon: Bell, label: 'Notifications', badgeKey: 'notif_count', keywords: ['alertes', 'notifications'] },
     ],
   },
@@ -559,6 +561,7 @@ export const NAV_MAIN_SECTIONS = [
     items: [
       { to: '/patrimoine', icon: MapPin, label: 'Sites & Bâtiments', keywords: ['sites', 'batiments', 'immobilier', 'patrimoine'] },
       { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret', 'tertiaire', 'operat', 'obligations'] },
+      { to: '/conformite/aper', icon: Sun, label: 'Solarisation (APER)', expertOnly: true, indent: true, keywords: ['aper', 'solaire', 'parking', 'toiture', 'photovoltaique', 'pvgis'] },
     ],
   },
   {
@@ -570,7 +573,7 @@ export const NAV_MAIN_SECTIONS = [
     items: [
       { to: '/consommations', icon: Activity, label: 'Consommations', keywords: ['conso', 'energie', 'explorer', 'diagnostic', 'usages', 'horaires'] },
       { to: '/monitoring', icon: TrendingUp, label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance', 'performance', 'heatmap'] },
-      { to: '/billing', icon: Receipt, label: 'Facturation', keywords: ['factures', 'billing', 'anomalies', 'surfacturation', 'historique', 'audit', 'import'] },
+      { to: '/bill-intel', icon: Receipt, label: 'Facturation', keywords: ['factures', 'billing', 'anomalies', 'surfacturation', 'historique', 'audit', 'import'] },
     ],
   },
   {
@@ -580,7 +583,9 @@ export const NAV_MAIN_SECTIONS = [
     tint: 'amber',
     order: 4,
     items: [
-      { to: '/achat-energie', icon: Calculator, label: "Stratégies d'achat", keywords: ['achat', 'purchase', 'scenarios', 'strategie', 'assistant', 'renouvellements', 'contrats'] },
+      { to: '/achat-energie', icon: Calculator, label: "Stratégies d'achat", keywords: ['achat', 'purchase', 'scenarios', 'strategie', 'contrats'] },
+      { to: '/renouvellements', icon: CalendarRange, label: 'Renouvellements', keywords: ['renouvellements', 'contrats', 'echeances', 'radar', 'expiration'] },
+      { to: '/achat-assistant', icon: Target, label: "Assistant d'achat", keywords: ['assistant', 'wizard', 'rfp', 'corridor', 'negociation'] },
     ],
   },
 ];
@@ -608,16 +613,14 @@ export const HIDDEN_PAGES = [
   { to: '/kb', icon: BookOpen, label: 'Mémobox / Base de connaissances', keywords: ['kb', 'knowledge', 'memobox', 'documents'], section: 'Autres', hidden: true },
   { to: '/segmentation', icon: Users, label: 'Segmentation', keywords: ['segment', 'profil'], section: 'Autres', hidden: true },
   { to: '/connectors', icon: Link2, label: 'Connecteurs', keywords: ['connecteurs', 'api', 'sync'], section: 'Autres', hidden: true },
-  { to: '/achat-assistant', icon: Target, label: "Assistant d'achat", keywords: ['assistant', 'wizard', 'rfp', 'corridor', 'achat'], section: 'Achat', hidden: true },
   { to: '/diagnostic-conso', icon: Search, label: 'Diagnostic consommation', keywords: ['diagnostic', 'anomalies', 'analyse'], section: 'Énergie', hidden: true },
   { to: '/usages-horaires', icon: Activity, label: 'Usages & Horaires', keywords: ['usages', 'horaires', 'profil', 'heatmap', 'comportement'], section: 'Énergie', hidden: true },
-  { to: '/bill-intel', icon: Receipt, label: 'Anomalies factures', keywords: ['factures', 'billing', 'surfacturation', 'anomalies'], section: 'Énergie', hidden: true },
-  { to: '/renouvellements', icon: CalendarRange, label: 'Renouvellements contrats', keywords: ['renouvellements', 'contrats', 'echeances', 'radar'], section: 'Achat', hidden: true },
   { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa', 'décret'], section: 'Patrimoine', hidden: true },
+  { to: '/conformite/aper', icon: Sun, label: 'Solarisation (APER)', keywords: ['aper', 'solaire', 'parking', 'toiture', 'photovoltaique', 'pvgis'], section: 'Patrimoine', hidden: true },
   { to: '/energy-copilot', icon: Sparkles, label: 'Copilot énergie', keywords: ['copilot', 'ia', 'recommandations'], section: 'Pilotage', hidden: true },
   { to: '/compliance/pipeline', icon: ListChecks, label: 'Pipeline conformité', keywords: ['pipeline', 'findings'], section: 'Patrimoine', hidden: true },
   { to: '/', icon: LayoutDashboard, label: 'Tableau de bord', keywords: ['dashboard', 'accueil', 'home'], section: 'Pilotage', hidden: true },
-  { to: '/anomalies', icon: AlertTriangle, label: "Centre d'actions (anomalies)", keywords: ['anomalies', 'inbox'], section: 'Pilotage', hidden: true },
+  { to: '/anomalies', icon: AlertTriangle, label: 'Détection automatique', keywords: ['anomalies', 'inbox', 'detection', 'automatique'], section: 'Pilotage', hidden: true },
 ];
 
 /** Flat list of all main section items + hidden pages (for CommandPalette) */
@@ -635,7 +638,7 @@ export const COMMAND_SHORTCUTS = [
   { key: 'alertes', label: 'Voir les alertes', icon: AlertTriangle, to: '/anomalies', shortcut: 'Ctrl+Shift+L', keywords: ['alertes', 'anomalies', 'actions'] },
   { key: 'cockpit', label: 'Aller au cockpit', icon: LayoutDashboard, to: '/cockpit', shortcut: 'Ctrl+Shift+C', keywords: ['cockpit', 'executive', 'synthese'] },
   { key: 'changer-site', label: 'Changer de site', icon: Building2, to: '/patrimoine', shortcut: 'Ctrl+Shift+S', keywords: ['site', 'patrimoine', 'changer'] },
-  { key: 'exporter', label: 'Exporter CSV', icon: Download, to: '/consommations/export', shortcut: 'Ctrl+Shift+E', keywords: ['export', 'csv', 'télécharger'] },
+  { key: 'exporter', label: 'Exporter CSV', icon: Download, to: '/consommations/explorer', shortcut: 'Ctrl+Shift+E', keywords: ['export', 'csv', 'télécharger'] },
   { key: 'conformite', label: 'Voir la conformité', icon: ShieldCheck, to: '/conformite', shortcut: 'Ctrl+Shift+F', keywords: ['conformité', 'compliance', 'décret'] },
   { key: 'factures', label: 'Voir les factures', icon: Receipt, to: '/bill-intel', shortcut: 'Ctrl+Shift+B', keywords: ['factures', 'billing', 'anomalies'] },
   { key: 'expert', label: 'Mode expert', icon: ToggleRight, to: '#expert-toggle', shortcut: 'Ctrl+Shift+X', keywords: ['expert', 'mode', 'pro', 'avancé'] },

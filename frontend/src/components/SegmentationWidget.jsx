@@ -186,7 +186,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
                   onClick={() => handleCreateAction(r.key)}
                   disabled={creatingAction === r.key}
                   className="p-1 rounded hover:bg-blue-50 text-blue-500 hover:text-blue-700 transition disabled:opacity-50"
-                  title="Creer une action"
+                  title="Créer une action"
                 >
                   {creatingAction === r.key ? (
                     <Loader2 size={12} className="animate-spin" />

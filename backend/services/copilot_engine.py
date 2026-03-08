@@ -31,7 +31,9 @@ from models.copilot_models import CopilotAction, CopilotActionStatus
 
 logger = logging.getLogger("promeos.copilot")
 
-EUR_PER_KWH = 0.18  # Prix moyen electricite France
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+
+EUR_PER_KWH = DEFAULT_PRICE_ELEC_EUR_KWH  # Source: config.default_prices
 
 
 # ── Rule definitions ──────────────────────────────────────────────────────────

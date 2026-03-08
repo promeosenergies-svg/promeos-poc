@@ -382,7 +382,7 @@ describe("V36: ImpactDecisionPanel — achats d'energie", () => {
   });
 
   it('affiche la section "Achats d\'energie"', () => {
-    expect(panelSrc).toContain('Achats d&apos;energie');
+    expect(panelSrc).toMatch(/Achats d&apos;[eé]nergie/);
   });
 
   it('a un data-testid purchase-section', () => {

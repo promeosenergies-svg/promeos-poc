@@ -46,12 +46,12 @@ function DataCoverageBadge({ meta, siteCount, qualityPct }) {
   const parts = [
     siteCount > 1 ? `${siteCount} sites` : null,
     meta?.n_meters ? `${meta.n_meters}\u00a0compteur${meta.n_meters > 1 ? 's' : ''}` : null,
-    meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0points` : null,
+    meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0mesures` : null,
     meta?.granularity
       ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}`
       : null,
     qualityPct != null ? `Qualité\u00a0: ${qualityPct}\u00a0%` : null,
-    'Source\u00a0: EMS',
+    'Source\u00a0: Compteurs',
   ].filter(Boolean);
 
   if (!parts.length) return null;
@@ -319,10 +319,12 @@ export default function TimeseriesPanel({
   const effectiveValueKey = overlayValueKeys.length ? overlayValueKeys[0] : 'value';
 
   // Issue #33: site name labels for SepareGrid sub-graph titles
+  // Clean technical suffixes like "— 43707 (elec_gaz, electricity)" from labels
+  const cleanLabel = (lbl) => lbl?.replace(/\s*[—–-]\s*\d+\s*\(.*?\)\s*$/, '').trim() || lbl;
   const siteLabels = Object.fromEntries(
     seriesData
       .filter((s) => s.key?.startsWith('site_'))
-      .map((s) => [parseInt(s.key.replace('site_', ''), 10), s.label])
+      .map((s) => [parseInt(s.key.replace('site_', ''), 10), cleanLabel(s.label)])
   );
 
   // Debug panel — shown in ALL states when ?debug=1 (after overlayValueKeys so chartMeta is available)
@@ -408,7 +410,7 @@ export default function TimeseriesPanel({
   // When a single site is displayed in agrege mode, show its name instead of "Agrégé"
   const aggregateLabel =
     siteIds.length === 1
-      ? (_sites.find((s) => s.id === siteIds[0])?.nom ?? siteLabels[siteIds[0]] ?? 'Agrégé')
+      ? (_sites.find((s) => s.id === siteIds[0])?.nom ?? cleanLabel(siteLabels[siteIds[0]]) ?? 'Agrégé')
       : 'Agrégé';
 
   return (

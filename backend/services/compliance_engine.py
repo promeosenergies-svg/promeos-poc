@@ -427,7 +427,9 @@ def compute_scores(
     # compliance_risk_score: 0-100 (0=aucun risque, 100=risque max)
     compliance_risk_score = min(100, nok_count * 30 + a_risque_count * 15 + nok_findings * 10)
 
-    # compliance_score: 0-100 (higher=better, coherent with RegOps)
+    # LEGACY: compliance_score conserve pour backward compat.
+    # Le score OFFICIEL du site est compliance_score_service.compute_site_compliance_score() (A.2).
+    # Cette valeur n'est PAS affichee dans l'UI (remplacee par A.2 au Step 2).
     compliance_score = 100 - compliance_risk_score
 
     # evidence_risk: based on unknown findings (data gaps)

@@ -45,10 +45,10 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 const STEPS = [
   { key: 'mode', label: 'Mode' },
   { key: 'upload', label: 'Import' },
-  { key: 'preview', label: 'Apercu' },
+  { key: 'preview', label: 'Aperçu' },
   { key: 'corrections', label: 'Corrections' },
   { key: 'validation', label: 'Validation' },
-  { key: 'result', label: 'Resultat' },
+  { key: 'result', label: 'Résultat' },
 ];
 
 const MODES = [
@@ -64,7 +64,7 @@ const MODES = [
     value: 'import',
     icon: FileSpreadsheet,
     title: 'Import complet',
-    desc: 'CSV/Excel avec quality gate et corrections.',
+    desc: 'CSV/Excel avec contrôle qualité et corrections.',
     time: '5 min',
     color: 'text-indigo-600 bg-indigo-100',
   },
@@ -562,13 +562,13 @@ const PatrimoineWizard = ({ onClose }) => {
                 <StatCard label="Sites" value={summary.sites} icon={Building2} color="indigo" />
                 <StatCard label="Compteurs" value={summary.compteurs} icon={Zap} color="amber" />
                 <StatCard
-                  label="Findings"
+                  label="Constats"
                   value={summary.findings_total || 0}
                   icon={AlertTriangle}
                   color="orange"
                 />
                 <StatCard
-                  label="Score qualite"
+                  label="Score qualité"
                   value={`${summary.quality_score || 0}%`}
                   icon={ShieldCheck}
                   color={
@@ -708,8 +708,8 @@ const PatrimoineWizard = ({ onClose }) => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-0.5">Corrections</h3>
                   <p className="text-sm text-gray-500">
                     {unresolvedBlocking.length > 0
-                      ? `${unresolvedBlocking.length} probleme(s) bloquant(s) a resoudre.`
-                      : 'Aucun probleme bloquant.'}
+                      ? `${unresolvedBlocking.length} problème(s) bloquant(s) à résoudre.`
+                      : 'Aucun problème bloquant.'}
                   </p>
                 </div>
                 <button
@@ -816,7 +816,7 @@ const PatrimoineWizard = ({ onClose }) => {
                         vc="text-amber-600"
                       />
                       <Row
-                        label="Score qualite"
+                        label="Score qualité"
                         value={`${summary.quality_score || 0}% — ${summary.quality_grade?.label || ''}`}
                         vc={
                           summary.quality_grade?.color === 'green'
@@ -934,7 +934,7 @@ const PatrimoineWizard = ({ onClose }) => {
                   />
                   <NxStep
                     icon={ShieldCheck}
-                    label="Lancer un audit conformite"
+                    label="Lancer un audit conformité"
                     desc="Decret Tertiaire et BACS"
                   />
                 </div>

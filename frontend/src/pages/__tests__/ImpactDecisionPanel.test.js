@@ -297,8 +297,8 @@ describe('V32: Compteurs contextuels', () => {
     expect(panelSrc).toContain('impactée');
   });
 
-  it('optimisation: compteur null en V1 (pas de données granulaires)', () => {
-    expect(panelSrc).toContain('optimisation: null');
+  it('optimisation: compteur contextuel en V1', () => {
+    expect(panelSrc).toMatch(/optimisation:.*impact\.optimAvailable/);
   });
 
   it('chaque tile reçoit subLabel={subLabels.xxx}', () => {
@@ -358,9 +358,8 @@ describe('V33: Leviers activables', () => {
     expect(panelSrc).toContain('er une action');
   });
 
-  it('affiche "Aucun levier detecte (V1)" quand totalLevers = 0', () => {
+  it('affiche "Aucun levier détecté" quand totalLevers = 0', () => {
     expect(panelSrc).toContain('Aucun levier');
-    expect(panelSrc).toContain('(V1)');
   });
 
   it('la section leviers a un data-testid', () => {

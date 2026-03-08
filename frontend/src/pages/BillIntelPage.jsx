@@ -3,7 +3,7 @@
  * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   getBillingSummary,
   getBillingInsights,
@@ -33,6 +33,7 @@ import {
   RefreshCw,
   CheckCircle2,
   CalendarRange,
+  ArrowRight,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
@@ -151,6 +152,8 @@ export default function BillIntelPage() {
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
   const [periodPreset, setPeriodPreset] = useState('all');
+  const [invoicePage, setInvoicePage] = useState(0);
+  const INVOICES_PER_PAGE = 20;
   const [drawerInsightId, setDrawerInsightId] = useState(null);
   const [sites, setSites] = useState([]);
   const [allInsights, setAllInsights] = useState([]); // unfiltered — for health computation
@@ -252,6 +255,15 @@ export default function BillIntelPage() {
       });
   }, [invoices, periodPreset, monthFilter, invoiceStatusFilter, invoiceSearch]);
 
+  // Reset pagination when filters change
+  useEffect(() => { setInvoicePage(0); }, [invoiceSearch, invoiceStatusFilter, periodPreset, monthFilter]);
+
+  const invoicePageCount = Math.ceil(filteredInvoices.length / INVOICES_PER_PAGE);
+  const pagedInvoices = filteredInvoices.slice(
+    invoicePage * INVOICES_PER_PAGE,
+    (invoicePage + 1) * INVOICES_PER_PAGE
+  );
+
   // ── Billing health banner ──
   const billingHealth = useMemo(() => {
     if (!summary) return null;
@@ -262,6 +274,13 @@ export default function BillIntelPage() {
     () => allInsights.filter(isActiveInsight).reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
     [allInsights]
   );
+
+  // Top insight by estimated loss — for hero card
+  const topInsight = useMemo(() => {
+    const active = allInsights.filter(isActiveInsight).filter((i) => i.estimated_loss_eur > 0);
+    if (!active.length) return null;
+    return active.reduce((max, i) => (i.estimated_loss_eur > max.estimated_loss_eur ? i : max), active[0]);
+  }, [allInsights]);
 
   const [billingTrend, setBillingTrend] = useState(null);
   const snapshotScope = useMemo(
@@ -285,9 +304,10 @@ export default function BillIntelPage() {
     try {
       await seedBillingDemo();
       track('billing_seed_demo');
+      toast('Données de démonstration générées avec succès', 'success');
       await fetchData();
     } catch {
-      /* ignore */
+      toast('Erreur lors de la génération des données démo', 'error');
     }
     setSeeding(false);
   }
@@ -297,15 +317,15 @@ export default function BillIntelPage() {
     try {
       await auditAllInvoices();
       track('billing_audit_all');
+      toast('Audit terminé — les anomalies détectées sont affichées ci-dessous', 'success');
       await fetchData();
     } catch {
-      /* ignore */
+      toast("Erreur lors de l'audit", 'error');
     }
     setAuditing(false);
   }
 
   function handleCsvClick() {
-    if (isExpert) console.log('[BillIntelPage] CSV button clicked, pdfSiteId:', pdfSiteId);
     csvInputRef.current?.click();
   }
 
@@ -316,22 +336,12 @@ export default function BillIntelPage() {
       toast('Fichier trop volumineux (max 50 Mo)', 'error');
       return;
     }
-    if (isExpert) console.log('[BillIntelPage] CSV file selected:', file.name, file.size, 'bytes');
     try {
-      if (isExpert) console.log('[BillIntelPage] CSV import request → POST /billing/import-csv');
       const result = await importInvoicesCsv(file);
-      if (isExpert) console.log('[BillIntelPage] CSV import response:', result);
       track('billing_csv_import', { filename: file.name });
       toast(`Import CSV réussi : ${result?.imported ?? '?'} facture(s) importée(s)`, 'success');
       await fetchData();
-    } catch (err) {
-      if (isExpert)
-        console.error(
-          '[BillIntelPage] CSV import error:',
-          err?.response?.status,
-          err?.response?.data,
-          err
-        );
+    } catch {
       toast("Erreur lors de l'import CSV", 'error');
     }
     e.target.value = '';
@@ -341,14 +351,14 @@ export default function BillIntelPage() {
     try {
       await resolveBillingInsight(insightId);
       track('billing_insight_resolved', { insight_id: insightId });
+      toast('Anomalie marquée comme résolue', 'success');
       await fetchData();
     } catch {
-      /* ignore */
+      toast("Erreur lors de la résolution de l'anomalie", 'error');
     }
   }
 
   function handlePdfClick() {
-    if (isExpert) console.log('[BillIntelPage] PDF button clicked, pdfSiteId:', pdfSiteId);
     pdfInputRef.current?.click();
   }
 
@@ -359,36 +369,15 @@ export default function BillIntelPage() {
       toast('Fichier trop volumineux (max 20 Mo)', 'error');
       return;
     }
-    if (isExpert)
-      console.log(
-        '[BillIntelPage] PDF file selected:',
-        file.name,
-        file.size,
-        'bytes, site_id:',
-        pdfSiteId
-      );
     try {
-      if (isExpert)
-        console.log(
-          '[BillIntelPage] PDF import request → POST /billing/import-pdf, site_id:',
-          pdfSiteId
-        );
       const result = await importInvoicesPdf(Number(pdfSiteId), file);
-      if (isExpert) console.log('[BillIntelPage] PDF import response:', result);
       track('billing_pdf_import', { filename: file.name });
       toast(
         `Import PDF réussi : facture ${result?.invoice_id ?? ''} (confiance ${result?.confidence ?? '?'})`,
         'success'
       );
       await fetchData();
-    } catch (err) {
-      if (isExpert)
-        console.error(
-          '[BillIntelPage] PDF import error:',
-          err?.response?.status,
-          err?.response?.data,
-          err
-        );
+    } catch {
       toast("Erreur lors de l'import PDF", 'error');
     }
     e.target.value = '';
@@ -448,18 +437,9 @@ export default function BillIntelPage() {
     <PageShell
       icon={FileText}
       title="Facturation"
-      subtitle={<><Explain term="shadow_billing">Shadow billing</Explain>, <Explain term="turpe">TURPE</Explain>/<Explain term="atrd">ATRD</Explain>/ATRT, écarts & <Explain term="anomalie">anomalies</Explain></>}
+      subtitle="Vérifiez vos factures : PROMEOS recalcule le montant attendu et détecte les écarts."
       actions={
         <>
-          {siteFilter && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => navigate(`/billing?site_id=${siteFilter}`)}
-            >
-              <CalendarRange size={14} /> Voir timeline
-            </Button>
-          )}
           <Button
             type="button"
             variant="secondary"
@@ -529,19 +509,35 @@ export default function BillIntelPage() {
           )}
           {!hasData && (
             <Button onClick={handleSeedDemo} disabled={seeding}>
-              <Zap size={14} /> {seeding ? 'Seed...' : 'Seed demo'}
+              <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo'}
             </Button>
           )}
           <button
             onClick={fetchData}
             className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
-            title="Rafraichir"
+            title="Rafraîchir"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </>
       }
     >
+      {/* Navigation interne Facturation */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm">
+          Anomalies & Audit
+        </span>
+        <Link
+          to={`/billing${siteFilter ? `?site_id=${siteFilter}` : ''}`}
+          className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-white/60 transition"
+        >
+          <span className="flex items-center gap-1.5">
+            <CalendarRange size={14} />
+            Timeline & Couverture
+          </span>
+        </Link>
+      </div>
+
       {/* Breadcrumb filtres actifs */}
       {(siteFilter || monthFilter) && (
         <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
@@ -566,6 +562,50 @@ export default function BillIntelPage() {
           </button>
         </div>
       )}
+
+      {/* Shadow billing explainer — methodology block */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+        <div className="flex items-start gap-3">
+          <Zap size={16} className="mt-0.5 shrink-0 text-blue-600" />
+          <div>
+            <span className="font-semibold">Comment ça marche ?</span>{' '}
+            PROMEOS recalcule le montant attendu de chaque facture à partir de votre consommation réelle,
+            de votre contrat et des tarifs réglementaires (TURPE, accise, TVA).
+            Si l'écart dépasse 10 %, une anomalie est signalée.
+          </div>
+        </div>
+        {isExpert && (
+          <details className="mt-2 ml-7">
+            <summary className="cursor-pointer text-[11px] font-medium text-blue-700 hover:text-blue-900">
+              Méthodologie détaillée
+            </summary>
+            <div className="mt-1.5 text-[11px] text-blue-700 space-y-1.5 leading-relaxed">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                <div>
+                  <span className="font-semibold">Données réelles</span>
+                  <p className="text-blue-600">Consommation (kWh) issue des compteurs ou factures importées.</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Données contractuelles</span>
+                  <p className="text-blue-600">Prix fourniture, puissance souscrite, option tarifaire — extraits de votre contrat.</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Tarifs réglementaires</span>
+                  <p className="text-blue-600">TURPE (C5 BT), accise électricité, CTA, TVA — catalogue PROMEOS versionné.</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Valeurs par défaut</span>
+                  <p className="text-blue-600">Si le contrat est absent, un prix moyen marché est utilisé (indiqué « estimé »).</p>
+                </div>
+              </div>
+              <p className="border-t border-blue-200 pt-1.5">
+                <span className="font-semibold">Couverture :</span> fourniture, réseau (TURPE), taxes (accise + CTA), TVA, abonnement.{' '}
+                <span className="font-semibold">Non couvert :</span> pénalités dépassement, services complémentaires, ajustements rétroactifs.
+              </p>
+            </div>
+          </details>
+        )}
+      </div>
 
       {/* Billing Health Banner */}
       {billingHealth && (
@@ -695,6 +735,32 @@ export default function BillIntelPage() {
             </div>
           }
         />
+      )}
+
+      {/* Top anomalie — hero card */}
+      {topInsight && (
+        <div
+          className="flex items-center gap-4 p-4 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition"
+          onClick={() => setDrawerInsightId(topInsight.id)}
+          data-testid="top-anomaly-hero"
+        >
+          <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+            <AlertTriangle size={20} className="text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-red-500 font-medium uppercase tracking-wide">Anomalie prioritaire</p>
+            <p className="text-sm font-semibold text-gray-900 mt-0.5 truncate">{topInsight.message}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {TYPE_LABELS[topInsight.type] || topInsight.type}
+              {topInsight.site_label && ` · ${topInsight.site_label}`}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-lg font-bold text-red-600">{topInsight.estimated_loss_eur.toLocaleString('fr-FR')} €</p>
+            <p className="text-xs text-gray-400">écart estimé</p>
+          </div>
+          <ArrowRight size={16} className="text-red-400 shrink-0" />
+        </div>
       )}
 
       {/* Insights with workflow filter */}
@@ -905,10 +971,10 @@ export default function BillIntelPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
-                      Numero
+                      N° facture
                     </th>
                     <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
-                      Periode
+                      Période
                     </th>
                     <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
                       Total EUR
@@ -935,7 +1001,7 @@ export default function BillIntelPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredInvoices.map((inv) => (
+                  {pagedInvoices.map((inv) => (
                     <tr key={inv.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-2.5 font-medium text-gray-900">
                         {inv.invoice_number}
@@ -974,12 +1040,33 @@ export default function BillIntelPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 py-2 border-t border-gray-100">
+            <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
               <TrustBadge
                 source="PROMEOS Bill Intel"
                 period="données importées"
                 confidence="medium"
               />
+              {invoicePageCount > 1 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => setInvoicePage((p) => Math.max(0, p - 1))}
+                    disabled={invoicePage === 0}
+                    className="px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    ←
+                  </button>
+                  <span className="text-gray-500">
+                    {invoicePage * INVOICES_PER_PAGE + 1}–{Math.min((invoicePage + 1) * INVOICES_PER_PAGE, filteredInvoices.length)} sur {filteredInvoices.length}
+                  </span>
+                  <button
+                    onClick={() => setInvoicePage((p) => Math.min(invoicePageCount - 1, p + 1))}
+                    disabled={invoicePage >= invoicePageCount - 1}
+                    className="px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </div>
           </Card>
         </div>

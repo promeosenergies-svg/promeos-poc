@@ -560,7 +560,9 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
 
 
 def _compute_compliance_score(obligation, tri_result, inspection_sched) -> float:
-    """Compute a 0-100 compliance score."""
+    """Compute a 0-100 BACS sub-score (composante du score unifie A.2).
+    Le score GLOBAL du site est calcule par compliance_score_service.py.
+    Ne PAS confondre avec le compliance_score_composite du site."""
     if not obligation["is_obligated"]:
         return 100.0
 

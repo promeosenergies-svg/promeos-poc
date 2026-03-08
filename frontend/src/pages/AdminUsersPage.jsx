@@ -33,7 +33,7 @@ const ROLE_COLORS = {
   pmo_acc: 'bg-pink-100 text-pink-700',
 };
 
-const SCOPE_LABELS = { org: 'Organisation', entite: 'Entite juridique', site: 'Site' };
+const SCOPE_LABELS = { org: 'Organisation', entite: 'Entité juridique', site: 'Site' };
 const SCOPE_ICONS = { org: Building2, entite: Building2, site: MapPin };
 
 function EffectiveAccessPanel({ userId, onClose }) {
@@ -48,13 +48,13 @@ function EffectiveAccessPanel({ userId, onClose }) {
   }, [userId]);
 
   if (loading) return <div className="p-4 text-sm text-gray-400">Chargement...</div>;
-  if (!data) return <div className="p-4 text-sm text-red-400">Erreur de chargement</div>;
+  if (!data) return <div className="p-4 text-sm text-red-500">Impossible de charger les accès.</div>;
 
   return (
     <div className="bg-blue-50/50 border-t border-blue-100 px-6 py-4">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-blue-800 flex items-center gap-1.5">
-          <Eye size={14} /> Acces effectif
+          <Eye size={14} /> Accès effectif
         </h4>
         <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600">
           Fermer
@@ -64,7 +64,7 @@ function EffectiveAccessPanel({ userId, onClose }) {
       {/* Scopes */}
       <div className="mb-3">
         <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-          Scopes assignes
+          Scopes assignés
         </p>
         <div className="flex flex-wrap gap-1.5">
           {data.scopes?.length ? (
@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
       <PageShell icon={Users} title="Utilisateurs">
         <EmptyState
           icon={Shield}
-          title="Acces refuse"
+          title="Accès refusé"
           text="Vous n'avez pas les droits d'administration."
         />
       </PageShell>
@@ -180,19 +180,36 @@ export default function AdminUsersPage() {
     <PageShell
       icon={Users}
       title="Utilisateurs"
-      subtitle={`${filtered.length} utilisateur${filtered.length > 1 ? 's' : ''} — Gestion des comptes, roles et perimetres`}
+      subtitle={`${filtered.length} utilisateur${filtered.length > 1 ? 's' : ''} — Gestion des comptes, rôles et périmètres`}
       actions={
         <Button variant="secondary" onClick={load}>
           <RefreshCw size={14} className="mr-1.5" /> Actualiser
         </Button>
       }
     >
+      {/* Admin summary */}
+      {!loading && users.length > 0 && (
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Utilisateurs', value: users.length, color: 'text-blue-700 bg-blue-50' },
+            { label: 'Rôles actifs', value: new Set(users.map((u) => u.role)).size, color: 'text-purple-700 bg-purple-50' },
+            { label: 'Actifs ce mois', value: users.filter((u) => u.last_login && new Date(u.last_login) > new Date(Date.now() - 30 * 86400000)).length, color: 'text-green-700 bg-green-50' },
+            { label: 'Sans connexion', value: users.filter((u) => !u.last_login).length, color: 'text-amber-700 bg-amber-50' },
+          ].map((s) => (
+            <div key={s.label} className={`rounded-lg px-4 py-3 ${s.color}`}>
+              <p className="text-lg font-bold">{s.value}</p>
+              <p className="text-xs opacity-80">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Search */}
       <div className="relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          placeholder="Rechercher par nom, email, role..."
+          placeholder="Rechercher par nom, email, rôle..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 pr-4 py-2 w-full border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
@@ -209,8 +226,8 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-500">Role</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">Scopes</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">Statut</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Derniere connexion</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-500">Acces</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">Dernière connexion</th>
+              <th className="text-center px-4 py-3 font-medium text-gray-500">Accès</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -276,7 +293,7 @@ export default function AdminUsersPage() {
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${u.actif ? 'bg-green-500' : 'bg-red-400'}`}
                               />
-                              {u.actif ? 'Actif' : 'Desactive'}
+                              {u.actif ? 'Actif' : 'Désactivé'}
                             </span>
                           </div>
                           <div className="px-4 py-3 text-xs text-gray-400">
@@ -288,7 +305,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
                               className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-600 transition"
-                              title="Voir l'acces effectif"
+                              title="Voir l'accès effectif"
                             >
                               {expandedUser === u.id ? <ChevronUp size={16} /> : <Eye size={16} />}
                             </button>

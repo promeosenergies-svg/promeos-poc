@@ -30,7 +30,7 @@ function KpiCard({ icon: Icon, label, value, sub, color = 'text-gray-800' }) {
 
 function MonthlyChart({ data }) {
   if (!data || data.length === 0) {
-    return <p className="text-xs text-gray-400 text-center py-4">Pas de donnees mensuelles</p>;
+    return <p className="text-xs text-gray-400 text-center py-4">Pas de données mensuelles</p>;
   }
 
   const maxKwh = Math.max(...data.map((d) => d.kwh), 1);
@@ -55,7 +55,7 @@ function MonthlyChart({ data }) {
 
 function HeatmapGrid({ data }) {
   if (!data || data.length === 0) {
-    return <p className="text-xs text-gray-400 text-center py-4">Pas de donnees heatmap</p>;
+    return <p className="text-xs text-gray-400 text-center py-4">Pas de données heatmap</p>;
   }
 
   const allValues = data.flat().filter((v) => v > 0);
@@ -144,7 +144,7 @@ export default function BacsOpsPanel({ siteId }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard
           icon={Clock}
-          label="Delai conformite"
+          label="Délai conformité"
           value={kpis.compliance_delay_days !== null ? `${kpis.compliance_delay_days}j` : '—'}
           sub={kpis.compliance_delay_days < 0 ? 'En retard' : 'Restants'}
           color={kpis.compliance_delay_days < 0 ? 'text-red-600' : 'text-green-600'}
@@ -161,7 +161,7 @@ export default function BacsOpsPanel({ siteId }) {
           icon={AlertTriangle}
           label="Alertes CVC"
           value={`${kpis.cvc_alerts_count}`}
-          sub="Simulees"
+          sub="Simulées"
           color={kpis.cvc_alerts_count > 0 ? 'text-amber-600' : 'text-green-600'}
         />
         <KpiCard
@@ -204,44 +204,18 @@ export default function BacsOpsPanel({ siteId }) {
               <div className="w-3 h-3 rounded-sm bg-orange-400" />
               <div className="w-3 h-3 rounded-sm bg-red-500" />
             </div>
-            <span>Eleve</span>
+            <span>Élevé</span>
           </div>
         </CardBody>
       </Card>
 
-      {/* CVC Alerts (stub) */}
-      {cvc_alerts_stub && cvc_alerts_stub.length > 0 && (
-        <Card>
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-500" />
-            <h3 className="text-sm font-semibold text-gray-700">Alertes CVC simulees</h3>
-          </div>
-          <CardBody className="space-y-2">
-            {cvc_alerts_stub.map((alert, i) => (
-              <div key={i} className="flex items-center gap-3 py-1.5">
-                <Badge
-                  status={
-                    alert.severity === 'high'
-                      ? 'warn'
-                      : alert.severity === 'medium'
-                        ? 'info'
-                        : 'neutral'
-                  }
-                >
-                  {alert.severity}
-                </Badge>
-                <span className="text-sm text-gray-700">{alert.message}</span>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-      )}
+      {/* CVC Alerts — masqué (stub non actionnable, sera activé quand le backend CVC sera prêt) */}
 
       {/* Linked consumption findings */}
       {consumption_findings && consumption_findings.length > 0 && (
         <Card>
           <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700">Findings operationnels lies</h3>
+            <h3 className="text-sm font-semibold text-gray-700">Constats opérationnels liés</h3>
           </div>
           <CardBody className="space-y-2">
             {consumption_findings

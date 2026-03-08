@@ -56,7 +56,7 @@ export default function CreateActionDrawer({
   evidenceRequired: defaultEvReq = false,
 }) {
   const [saving, setSaving] = useState(false);
-  const { orgSites, selectedSiteId: scopeSiteId } = useScope();
+  const { org, portefeuille, orgSites, selectedSiteId: scopeSiteId } = useScope();
 
   const siteOptions = useMemo(() => {
     const opts = (orgSites || []).map((s) => ({ value: String(s.id), label: s.nom }));
@@ -204,6 +204,23 @@ export default function CreateActionDrawer({
   return (
     <Drawer open={open} onClose={onClose} title="Créer une action" wide>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scope context reminder */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/60 rounded-lg border border-blue-100 text-xs text-blue-700">
+          <span className="font-medium">{org?.nom || 'Organisation'}</span>
+          {portefeuille && (
+            <>
+              <span className="text-blue-300">/</span>
+              <span>{portefeuille.nom}</span>
+            </>
+          )}
+          {scopeSiteId && orgSites?.length > 0 && (
+            <>
+              <span className="text-blue-300">/</span>
+              <span>{orgSites.find((s) => String(s.id) === String(scopeSiteId))?.nom || `Site ${scopeSiteId}`}</span>
+            </>
+          )}
+        </div>
+
         {/* Source context */}
         {sourceType && sourceType !== 'manual' && (
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
@@ -224,13 +241,13 @@ export default function CreateActionDrawer({
         {/* V113: Template selector */}
         {templates.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Modele d'action</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Modèle d'action</label>
             <select
               onChange={(e) => applyTemplate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               defaultValue=""
             >
-              <option value="">-- Choisir un modele (optionnel) --</option>
+              <option value="">-- Choisir un modèle (optionnel) --</option>
               {templates.map((t) => (
                 <option key={t.code} value={t.code}>
                   [{t.category}] {t.title}
@@ -363,7 +380,7 @@ export default function CreateActionDrawer({
           <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>
             Annuler
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || !form.titre.trim()}>
             {saving ? 'Enregistrement...' : "Créer l'action"}
           </Button>
         </div>

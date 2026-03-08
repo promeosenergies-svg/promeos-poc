@@ -501,11 +501,11 @@ export function buildExecutiveKpis(kpis, sites = []) {
     {
       id: 'maturite',
       accentKey: 'maturite',
-      label: 'Maturité',
+      label: 'Maturité plateforme',
       value: total > 0 ? formatPercentFR(readinessScore) : '—',
       rawValue: readinessScore,
       messageCtx: {},
-      sub: 'Données · conformité · actions',
+      sub: 'Score combiné données, conformité et actions',
       status:
         readinessScore < MATURITY_THRESHOLDS.crit
           ? 'crit'

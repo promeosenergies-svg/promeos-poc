@@ -14,6 +14,7 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from 'react';
 import { mockSites } from '../mocks/sites';
@@ -84,15 +85,11 @@ export function ScopeProvider({ children }) {
   const _fetchId = useRef(0); // V18: requestId guard — ignore stale responses
   const _fetchTrigger = useRef(0); // V19: manual refresh trigger
 
-  // ── IMPORTANT: setApiScope MUST be called synchronously during render ──────
-  // ── so _apiScope.orgId is set BEFORE any child useEffect runs.            ──
-  // ── (React runs child effects before parent effects on mount.)             ──
-  // ── setApiScope is idempotent and only mutates a module-level variable     ──
-  // ── — no React state, no re-render. Safe to call during render.           ──
-  setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
-
-  // Also keep the useEffect to handle future scope changes (re-renders).
-  useEffect(() => {
+  // ── Sync API scope via useLayoutEffect ──────────────────────────────────
+  // ── useLayoutEffect fires synchronously after DOM mutations but before   ──
+  // ── child useEffects, ensuring _apiScope.orgId is set before any child   ──
+  // ── effect fetches data. No render-time side-effects.                    ──
+  useLayoutEffect(() => {
     setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
   }, [effectiveOrgId, scope.siteId]);
 

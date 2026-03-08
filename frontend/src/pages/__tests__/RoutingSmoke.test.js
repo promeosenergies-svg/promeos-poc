@@ -31,8 +31,8 @@ describe('NavRegistry — routes canoniques', () => {
     expect(item.to).toBe('/cockpit');
   });
 
-  it('"Centre d\'actions" pointe vers "/actions"', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === "Centre d'actions");
+  it('"Actions & Suivi" pointe vers "/actions"', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === "Actions & Suivi");
     expect(item).toBeDefined();
     expect(item.to).toBe('/actions');
   });

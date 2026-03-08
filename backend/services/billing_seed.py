@@ -28,8 +28,10 @@ START_MONTH = 1
 MONTHS_COUNT = 36  # Jan 2023 → Déc 2025
 KWH_ELEC = 9000
 KWH_GAZ = 6000
-PRICE_REF_ELEC = 0.18  # EUR/kWh all-in (TTC / kWh dans ce modèle simplifié)
-PRICE_REF_GAZ = 0.09
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_GAZ_EUR_KWH
+
+PRICE_REF_ELEC = DEFAULT_PRICE_ELEC_EUR_KWH  # EUR/kWh all-in
+PRICE_REF_GAZ = DEFAULT_PRICE_GAZ_EUR_KWH
 
 # Montants ligne "normaux" pour 9000 kWh elec (total = 1620)
 ELEC_ENERGY_AMT = 1020.0  # fourniture

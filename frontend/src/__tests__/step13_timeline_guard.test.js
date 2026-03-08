@@ -60,9 +60,9 @@ describe('Step 13 — Cockpit integration', () => {
     expect(src).toContain('getComplianceTimeline');
   });
 
-  it('Cockpit has "Prochaine echeance" text', () => {
+  it('Cockpit has "Prochaine échéance" text', () => {
     const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
-    expect(src).toContain('Prochaine echeance');
+    expect(src).toMatch(/Prochaine [eé]ch[eé]ance/);
   });
 
   it('Cockpit navigates to /conformite', () => {

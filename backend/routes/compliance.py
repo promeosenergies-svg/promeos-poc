@@ -644,6 +644,21 @@ def get_portfolio_compliance_score(
     return JSONResponse(content=result, headers={"Cache-Control": "public, max-age=30"})
 
 
+@router.get("/score-trend")
+def get_compliance_score_trend(
+    request: Request,
+    months: int = 6,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """GET /api/compliance/score-trend — Trend mensuel du score conformite (sparkline)."""
+    from services.compliance_score_trend import get_score_trend
+
+    org_id = resolve_org_id(request, auth, db)
+    trend = get_score_trend(db, org_id, months=months)
+    return {"months": months, "trend": trend}
+
+
 # ========================================
 # Step 13 — Timeline reglementaire
 # ========================================

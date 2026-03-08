@@ -51,8 +51,8 @@ export const KPI_LABELS = {
     unit: '%',
   },
   data_quality_score: {
-    simple: 'Fiabilite des donnees',
-    expert: 'Score qualite donnees (DQ)',
+    simple: 'Fiabilité des données',
+    expert: 'Score qualité données (DQ)',
     unit: '/100',
   },
   risk_power_score: {
@@ -66,7 +66,7 @@ export const KPI_LABELS = {
     unit: 'kWh',
   },
   kwh_m2: {
-    simple: 'Intensite energetique',
+    simple: 'Intensité énergétique',
     expert: 'Ratio kWh/m\u00B2/an',
     unit: 'kWh/m\u00B2',
   },

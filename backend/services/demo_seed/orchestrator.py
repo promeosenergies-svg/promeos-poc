@@ -212,6 +212,27 @@ class SeedOrchestrator:
         )
         result["tertiaire"] = tertiaire
 
+        # 9b. Tertiaire EFA scenarios (3 named EFA for HELIOS demo)
+        from .gen_tertiaire_efa import seed_tertiaire_efa
+
+        helios_sites = {}
+        for s in master["sites"]:
+            name_lower = s.nom.lower()
+            if "paris" in name_lower:
+                helios_sites["paris"] = s
+            elif "nice" in name_lower:
+                helios_sites["nice"] = s
+            elif "lyon" in name_lower:
+                helios_sites["lyon"] = s
+        efa_list = seed_tertiaire_efa(self.db, helios_sites)
+        result["tertiaire_efa"] = {"efas_created": len(efa_list)}
+
+        # 9c. Compliance score history (6 months sparkline)
+        from .gen_score_history import seed_score_history
+
+        score_hist = seed_score_history(self.db, master["org"].id, master["sites"])
+        result["score_history"] = score_hist
+
         # 10. TOU Schedules (HP/HC tariff windows per site)
         from .gen_tou import generate_tou
 
@@ -380,6 +401,7 @@ class SeedOrchestrator:
         from models.tou_schedule import TOUSchedule
         from models.payment_rule import PaymentRule
         from models.reconciliation_fix_log import ReconciliationFixLog
+        from models.compliance_score_history import ComplianceScoreHistory
         from models.iam import User, UserOrgRole, UserScope
         from models.tertiaire import (
             TertiaireDataQualityIssue,
@@ -432,6 +454,7 @@ class SeedOrchestrator:
             ("monitoring_snapshots", MonitoringSnapshot),
             ("meter_readings", MeterReading),
             ("weather_cache", EmsWeatherCache),
+            ("compliance_score_history", ComplianceScoreHistory),
             ("compliance_findings", ComplianceFinding),
             ("compliance_batches", ComplianceRunBatch),
             ("evidences", Evidence),
@@ -586,6 +609,7 @@ class SeedOrchestrator:
             _del("monitoring_snapshots", MonitoringSnapshot, MonitoringSnapshot.site_id, demo_site_ids)
             _del("meter_readings", MeterReading, MeterReading.meter_id, demo_meter_ids)
             _del("weather_cache", EmsWeatherCache, EmsWeatherCache.site_id, demo_site_ids)
+            _del("compliance_score_history", ComplianceScoreHistory, ComplianceScoreHistory.site_id, demo_site_ids)
             _del("compliance_findings", ComplianceFinding, ComplianceFinding.site_id, demo_site_ids)
             _del("compliance_batches", ComplianceRunBatch, ComplianceRunBatch.org_id, demo_org_ids)
             _del("evidences", Evidence, Evidence.site_id, demo_site_ids)

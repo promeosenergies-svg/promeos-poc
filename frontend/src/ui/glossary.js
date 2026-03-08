@@ -101,6 +101,21 @@ export const GLOSSARY = {
     short:
       "Recalcul attendu de la facture à partir des données réelles (consommation, contrat, catalogue réglementaire). Permet de détecter les écarts avec le montant facturé.",
   },
+  // ── APER / Solarisation ────────────────────────────────────────────────
+  aper: {
+    term: 'Loi APER',
+    short:
+      "Loi d'Acceleration de la Production d'Energies Renouvelables. Impose la solarisation des parkings exterieurs >= 1500 m2 et des toitures >= 500 m2 avec des echeances echelonnees de 2026 a 2028.",
+    long:
+      "La loi APER (n 2023-175 du 10 mars 2023) impose aux gestionnaires de parkings exterieurs de plus de 1500 m2 et aux proprietaires de toitures de plus de 500 m2 d'installer des dispositifs de production d'energie renouvelable (ombrières, panneaux solaires). Echeances : parkings > 10 000 m2 au 01/07/2026, parkings 1500-10000 m2 au 01/07/2028, toitures au 01/01/2028.",
+  },
+  production_pv: {
+    term: 'Production photovoltaique estimee',
+    short:
+      "Estimation de la production d'electricite solaire basee sur la surface disponible, la localisation du site et les donnees d'irradiance solaire.",
+    long:
+      "Le calcul utilise la puissance crete (surface panneaux x 180 Wc/m2), corrigee par un ratio de couverture (60% parking, 80% toiture) et les donnees d'irradiance PVGIS (European Commission) ou une estimation par zone climatique FR (H1/H2/H3). Pertes systeme : 14%.",
+  },
   shadow_breakdown: {
     term: 'Décomposition shadow',
     short:
@@ -325,5 +340,11 @@ export const GLOSSARY = {
     short:
       "Prix de l'électricité sur le marché spot français (EPEX SPOT SE). Reflète l'offre et la demande en temps réel. Utilisé comme référence pour les contrats indexés et spot.",
     long: "L'EPEX SPOT SE est la bourse européenne de l'électricité. Le prix day-ahead France est la référence pour les contrats indexés. Unité : EUR/MWh. Seed PROMEOS basé sur les tendances observées 2024-2025 (post-crise, normalisation progressive).",
+  },
+  import_incremental: {
+    term: 'Import incrémental',
+    short:
+      "Mode d'import qui met à jour les sites existants au lieu de créer des doublons. Le matching se fait par SIRET (prioritaire), PRM/PCE, ou nom + code postal.",
+    long: "Le mode update du pipeline d'import patrimoine compare chaque site du fichier aux sites existants. Priorité de matching : 1) SIRET exact (confiance haute), 2) PRM/PCE du compteur (confiance haute), 3) Nom + code postal (confiance moyenne). Les champs non-null du fichier écrasent les valeurs existantes. Les sites non matchés sont créés normalement.",
   },
 };

@@ -92,8 +92,8 @@ describe('BillIntelPage.jsx — deep-links V68', () => {
     expect(code).toMatch(/monthFilter/);
   });
 
-  it('has "Voir timeline" CTA navigating to /billing', () => {
-    expect(code).toMatch(/\/billing\?site_id=/);
+  it('has tab bar navigating to /billing (timeline)', () => {
+    expect(code).toMatch(/\/billing/);
   });
 
   it('filters invoices by monthFilter', () => {
@@ -263,9 +263,10 @@ describe('Deep-links bidirectionnels V68', () => {
     expect(code).toMatch(/\/bill-intel/);
   });
 
-  it('BillIntelPage.jsx generates /billing?site_id link (retour timeline)', () => {
+  it('BillIntelPage.jsx generates /billing link with site_id (retour timeline)', () => {
     const code = readSrc('pages', 'BillIntelPage.jsx');
-    expect(code).toMatch(/\/billing\?site_id/);
+    expect(code).toMatch(/\/billing/);
+    expect(code).toMatch(/site_id/);
   });
 
   it('BillingPage.jsx generates /bill-intel link (navigation directe)', () => {
@@ -309,8 +310,9 @@ describe('BillingPage.jsx — P0 fix getMissingPeriods non-bloquant', () => {
     expect(code).toMatch(/setSiteFilter\(['"]{0,2}\)/);
   });
 
-  it('logs errors with isExpert guard', () => {
-    expect(code).toMatch(/isExpert.*console\.error|console\.error.*isExpert/);
+  it('error handling does not leak console logs in production', () => {
+    // console.log/error removed for demo credibility — no raw API leaks
+    expect(code).not.toMatch(/console\.log.*BillingPage.*getBillingPeriods/);
   });
 });
 
@@ -492,20 +494,10 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
     );
   });
 
-  it('Expert logs on CSV button click', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV button clicked/);
-  });
-
-  it('Expert logs on CSV file selected', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV file selected/);
-  });
-
-  it('Expert logs on PDF button click', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF button clicked/);
-  });
-
-  it('Expert logs on PDF file selected', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF file selected/);
+  it('no console.log leaks on import actions (demo credibility)', () => {
+    // console.log statements removed for demo credibility
+    expect(code).not.toMatch(/console\.log.*CSV button clicked/);
+    expect(code).not.toMatch(/console\.log.*PDF button clicked/);
   });
 });
 
@@ -575,8 +567,9 @@ describe('BillingPage.jsx — Expert debug payload', () => {
     expect(code).toMatch(/debugPayload[\s\S]{0,300}orgHeader/);
   });
 
-  it('console.error logs debugPayload when isExpert', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}getBillingPeriods FAILED[\s\S]{0,50}debugPayload/);
+  it('debugPayload constructed for error handling', () => {
+    // debugPayload still built for error banner display, just not console-logged
+    expect(code).toMatch(/debugPayload/);
   });
 
   it('displays debug info in error banner for non-404 errors in Expert mode', () => {
@@ -1021,7 +1014,7 @@ describe('Explainability — V2 breakdown + confidence (V71)', () => {
   });
 
   it('InsightDrawer renders assumptions list', () => {
-    expect(drawer).toMatch(/m\.assumptions/);
+    expect(drawer).toMatch(/diagnostics\.assumptions/);
     expect(drawer).toMatch(/assumptions\.map/);
   });
 

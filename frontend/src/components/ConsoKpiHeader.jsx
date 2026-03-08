@@ -39,10 +39,10 @@ function KpiTile({
         <Icon size={18} className="text-gray-500" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium truncate">
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium whitespace-nowrap">
           {label}
         </p>
-        <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
+        <p className={`text-base font-bold ${color} leading-tight whitespace-nowrap`}>{value ?? '—'}</p>
         {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
       </div>
       {evidenceId && onEvidence && (

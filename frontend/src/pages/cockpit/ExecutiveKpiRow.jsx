@@ -10,9 +10,10 @@
 import { ShieldCheck, TrendingDown, BarChart3, Database, HelpCircle } from 'lucide-react';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { getKpiMessage } from '../../services/kpiMessaging';
+import Sparkline from '../../ui/Sparkline';
 
 /** KPI ids that support the "Pourquoi ?" evidence button */
-const EVIDENCE_KPIS = new Set(['conformite', 'risque']);
+const EVIDENCE_KPIS = new Set(['conformite', 'risque', 'maturite', 'couverture']);
 
 // ── Expert source / confidence per KPI ────────────────────────────────────────
 
@@ -44,7 +45,7 @@ const STATUS_DOT = {
 
 // ── KPI tile ──────────────────────────────────────────────────────────────────
 
-function KpiTile({ kpi, onNavigate, onEvidence, isExpert }) {
+function KpiTile({ kpi, onNavigate, onEvidence, isExpert, scoreTrend }) {
   const acc = KPI_ACCENTS[kpi.accentKey] || KPI_ACCENTS.neutral;
   const Icon = KPI_ICONS[kpi.id] || KPI_ICONS[kpi.accentKey] || Database;
   const dotClass = STATUS_DOT[kpi.status] || STATUS_DOT.neutral;
@@ -75,6 +76,21 @@ function KpiTile({ kpi, onNavigate, onEvidence, isExpert }) {
             <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
           </div>
           {kpi.sub && <p className="text-xs text-gray-500 mt-0.5 truncate">{kpi.sub}</p>}
+          {kpi.id === 'conformite' && scoreTrend?.length >= 2 && (() => {
+            const first = scoreTrend[0]?.score ?? 0;
+            const last = scoreTrend[scoreTrend.length - 1]?.score ?? 0;
+            const progressing = last >= first;
+            const color = progressing ? '#10b981' : '#ef4444';
+            const arrow = progressing ? '\u2191' : '\u2193';
+            return (
+              <div className="mt-1" data-testid="conformite-sparkline">
+                <Sparkline data={scoreTrend} color={color} width={120} height={36} />
+                <p className="text-[10px] mt-0.5" style={{ color }}>
+                  {arrow} {Math.round(first)} → {Math.round(last)} en {scoreTrend.length} mois
+                </p>
+              </div>
+            );
+          })()}
           {(() => {
             const msg = getKpiMessage(kpi.id, kpi.rawValue, kpi.messageCtx);
             if (!msg) return null;
@@ -113,7 +129,7 @@ function KpiTile({ kpi, onNavigate, onEvidence, isExpert }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ExecutiveKpiRow({ kpis = [], onNavigate, onEvidence, isExpert }) {
+export default function ExecutiveKpiRow({ kpis = [], onNavigate, onEvidence, isExpert, scoreTrend }) {
   if (!kpis.length) return null;
 
   return (
@@ -121,7 +137,7 @@ export default function ExecutiveKpiRow({ kpis = [], onNavigate, onEvidence, isE
       className={`grid gap-3 grid-cols-2 ${kpis.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
     >
       {kpis.map((kpi) => (
-        <KpiTile key={kpi.id} kpi={kpi} onNavigate={onNavigate} onEvidence={onEvidence} isExpert={isExpert} />
+        <KpiTile key={kpi.id} kpi={kpi} onNavigate={onNavigate} onEvidence={onEvidence} isExpert={isExpert} scoreTrend={kpi.id === 'conformite' ? scoreTrend : null} />
       ))}
     </div>
   );

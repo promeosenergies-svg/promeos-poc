@@ -49,6 +49,7 @@ from .consumption_unified import router as consumption_unified_router
 from .market import router as market_router
 from .referentiel import router as referentiel_router
 from .patrimoine_crud import router as patrimoine_crud_router
+from .aper import router as aper_router
 
 __all__ = [
     "sites_router",
@@ -98,4 +99,5 @@ __all__ = [
     "market_router",
     "referentiel_router",
     "patrimoine_crud_router",
+    "aper_router",
 ]

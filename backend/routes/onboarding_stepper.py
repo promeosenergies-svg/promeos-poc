@@ -40,12 +40,12 @@ STEP_FIELDS = [
 ]
 
 STEP_META = [
-    {"key": "step_org_created", "label": "Creer l'organisation", "icon": "Building2"},
+    {"key": "step_org_created", "label": "Créer l'organisation", "icon": "Building2"},
     {"key": "step_sites_added", "label": "Ajouter des sites", "icon": "MapPin"},
     {"key": "step_meters_connected", "label": "Connecter les compteurs", "icon": "Zap"},
     {"key": "step_invoices_imported", "label": "Importer les factures", "icon": "FileText"},
     {"key": "step_users_invited", "label": "Inviter les utilisateurs", "icon": "Users"},
-    {"key": "step_first_action", "label": "Creer une action", "icon": "Target"},
+    {"key": "step_first_action", "label": "Créer une action", "icon": "Target"},
 ]
 
 

@@ -44,17 +44,17 @@ _TYPSITE_TO_TYPO = {
 # ========================================
 
 TYPO_LABELS = {
-    Typologie.TERTIAIRE_PRIVE: "Tertiaire Prive",
+    Typologie.TERTIAIRE_PRIVE: "Tertiaire Privé",
     Typologie.TERTIAIRE_PUBLIC: "Tertiaire Public",
     Typologie.INDUSTRIE: "Industrie",
     Typologie.COMMERCE_RETAIL: "Commerce / Retail",
-    Typologie.COPROPRIETE_SYNDIC: "Copropriete / Syndic",
+    Typologie.COPROPRIETE_SYNDIC: "Copropriété / Syndic",
     Typologie.BAILLEUR_SOCIAL: "Bailleur Social",
-    Typologie.COLLECTIVITE: "Collectivite",
-    Typologie.HOTELLERIE_RESTAURATION: "Hotellerie / Restauration",
-    Typologie.SANTE_MEDICO_SOCIAL: "Sante / Medico-social",
+    Typologie.COLLECTIVITE: "Collectivité",
+    Typologie.HOTELLERIE_RESTAURATION: "Hôtellerie / Restauration",
+    Typologie.SANTE_MEDICO_SOCIAL: "Santé / Médico-social",
     Typologie.ENSEIGNEMENT: "Enseignement",
-    Typologie.MIXTE: "Mixte (multi-activites)",
+    Typologie.MIXTE: "Mixte (multi-activités)",
 }
 
 

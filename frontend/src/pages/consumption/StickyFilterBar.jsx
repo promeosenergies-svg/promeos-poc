@@ -527,17 +527,28 @@ export default function StickyFilterBar({
 
         {/* UI mode toggle — pushed to right side of Row 1 (issue #51) */}
         {onToggleUiMode && (
-          <button
-            onClick={onToggleUiMode}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
-            title={
-              isClassic
-                ? 'Passer en mode Expert (contrôles avancés)'
-                : 'Passer en mode Classique (vue standard)'
-            }
-          >
-            {isClassic ? 'Passer en mode Expert →' : '← Retour au mode Classique'}
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={onToggleUiMode}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
+                isClassic
+                  ? 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
+                  : 'text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100'
+              }`}
+              title={
+                isClassic
+                  ? 'Passer en mode Expert (contrôles avancés)'
+                  : 'Passer en mode Classique (vue standard)'
+              }
+            >
+              {isClassic ? 'Mode Expert →' : '← Mode Classique'}
+            </button>
+            <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
+              {isClassic
+                ? 'Signature, météo, tunnel, objectifs'
+                : 'Analyses avancées activées'}
+            </span>
+          </div>
         )}
       </div>
 

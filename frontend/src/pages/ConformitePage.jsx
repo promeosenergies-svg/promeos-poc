@@ -83,7 +83,7 @@ function DevApiBadge() {
       <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
       {isOk ? 'API : Connectée' : 'API : Hors ligne'}
       {!isOk && (
-        <span className="ml-1 text-[9px] text-red-500">{`${window.location.protocol}//${window.location.hostname}:8001/api/health`}</span>
+        <span className="ml-1 text-[9px] text-red-500">API indisponible</span>
       )}
     </span>
   );
@@ -986,8 +986,8 @@ export default function ConformitePage() {
         </>
       }
     >
-      {/* Expert-only badges */}
-      {isExpert && (
+      {/* Expert-only badges — dev environment only */}
+      {isExpert && import.meta.env.DEV && (
         <div className="flex items-center gap-2 -mt-1 mb-1">
           <DevApiBadge />
           <DevScopeBadge
@@ -1002,8 +1002,8 @@ export default function ConformitePage() {
         </div>
       )}
 
-      {/* Health Summary (compact) */}
-      {complianceHealth && (
+      {/* Health Summary (compact) — expert only to reduce visual overload */}
+      {isExpert && complianceHealth && (
         <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
       )}
 

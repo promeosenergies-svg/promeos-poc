@@ -42,6 +42,7 @@ import {
   ActiveFiltersBar,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
+import ErrorState from '../ui/ErrorState';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
@@ -528,7 +529,7 @@ function WeekView({ actions, onCardClick }) {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function ActionsPage({ autoCreate = false, bare = false }) {
-  const { scopedSites, selectedSiteId } = useScope();
+  const { scopedSites, orgSites, selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -562,10 +563,10 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
   const pageSize = 15;
 
   const ownerOptions = useMemo(() => {
-    const unique = [...new Set(actions.map((a) => a.owner).filter(Boolean))];
+    const unique = [...new Set(enrichedActions.map((a) => a.owner).filter(Boolean))];
     unique.sort((a, b) => a.localeCompare(b));
     return unique;
-  }, [actions]);
+  }, [enrichedActions]);
 
   const fetchActions = useCallback(async () => {
     try {
@@ -585,14 +586,24 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
     fetchActions();
   }, [fetchActions]);
 
+  // Enrich actions with real site names from orgSites lookup
+  const enrichedActions = useMemo(() => {
+    if (!orgSites?.length) return actions;
+    const siteMap = Object.fromEntries(orgSites.map((s) => [String(s.id), s.nom]));
+    return actions.map((a) => {
+      const realName = siteMap[String(a.site_id)];
+      return realName ? { ...a, site_nom: realName } : a;
+    });
+  }, [actions, orgSites]);
+
   // Auto-open detail drawer when navigating to /actions/:actionId
   useEffect(() => {
-    if (urlActionId && actions.length > 0 && !detailAction) {
-      const found = actions.find((a) => String(a.id) === urlActionId);
+    if (urlActionId && enrichedActions.length > 0 && !detailAction) {
+      const found = enrichedActions.find((a) => String(a.id) === urlActionId);
       if (found) setDetailAction(found);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlActionId, actions]);
+  }, [urlActionId, enrichedActions]);
 
   // Auto-open create drawer when navigating to /actions/new
   useEffect(() => {
@@ -640,7 +651,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
   }
 
   const filtered = useMemo(() => {
-    let result = [...actions];
+    let result = [...enrichedActions];
 
     // Deep-link filters (from anomaly → action navigation)
     if (filterActionId) {
@@ -697,20 +708,20 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       result.sort(defaultSort);
     }
     return result;
-  }, [actions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery, filterActionId, filterLinkedAnomaly]);
+  }, [enrichedActions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery, filterActionId, filterLinkedAnomaly]);
 
   const total = filtered.length;
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = useMemo(
     () => ({
-      total: actions.length,
-      backlog: actions.filter((a) => a.statut === 'backlog').length,
-      planned: actions.filter((a) => a.statut === 'planned').length,
-      in_progress: actions.filter((a) => a.statut === 'in_progress').length,
-      done: actions.filter((a) => a.statut === 'done').length,
-      total_impact: actions.reduce((s, a) => s + a.impact_eur, 0),
-      total_co2e_kg: actions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
+      total: enrichedActions.length,
+      backlog: enrichedActions.filter((a) => a.statut === 'backlog').length,
+      planned: enrichedActions.filter((a) => a.statut === 'planned').length,
+      in_progress: enrichedActions.filter((a) => a.statut === 'in_progress').length,
+      done: enrichedActions.filter((a) => a.statut === 'done').length,
+      total_impact: enrichedActions.reduce((s, a) => s + a.impact_eur, 0),
+      total_co2e_kg: enrichedActions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
       overdue: actions.filter(isOverdue).length,
     }),
     [actions]
@@ -925,9 +936,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
 
       {/* Error banner */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <ErrorState message={error} onRetry={fetchActions} />
       )}
 
       {/* ROI Summary (V5.0) */}
@@ -1134,11 +1143,15 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
         <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
           <span className="text-gray-500">Résultat filtré :</span>
           <span className="font-semibold text-gray-900">{total} action(s)</span>
-          <span className="text-gray-400">&middot;</span>
-          <span className="font-bold text-red-600">
-            {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} EUR
-          </span>
-          <span className="text-gray-400 text-xs">d'impact</span>
+          {filtered.reduce((s, a) => s + a.impact_eur, 0) > 0 && (
+            <>
+              <span className="text-gray-400">&middot;</span>
+              <span className="font-bold text-red-600">
+                {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} EUR
+              </span>
+              <span className="text-gray-400 text-xs">d'impact estimé</span>
+            </>
+          )}
           <button
             onClick={resetAllFilters}
             className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium"
@@ -1415,7 +1428,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
     <PageShell
       icon={ListChecks}
       title="Plan d'actions"
-      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString('fr-FR')} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      subtitle={`${stats.total} actions${stats.total_impact > 0 ? ` · ${stats.total_impact.toLocaleString('fr-FR')} EUR d'impact estimé` : ''}${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>

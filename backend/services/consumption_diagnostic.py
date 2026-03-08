@@ -34,8 +34,10 @@ from models import (
 )
 from models.energy_models import FrequencyType
 
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+
 # Fallback price — used when no SiteTariffProfile exists
-DEFAULT_PRICE_REF_KWH = 0.18
+DEFAULT_PRICE_REF_KWH = DEFAULT_PRICE_ELEC_EUR_KWH
 
 
 # ========================================

@@ -731,7 +731,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
 
   it('has "Ou agir" section with 4 top-lists', () => {
     expect(code).toMatch(/Ou agir/);
-    expect(code).toMatch(/Impact.*estime/);
+    expect(code).toMatch(/Impact.*estim[eé]/);
     expect(code).toMatch(/Derives detectees/);
     expect(code).toMatch(/nocturne/i);
     expect(code).toMatch(/Pics de puissance/);
@@ -895,7 +895,7 @@ describe('BB · Portfolio V1.1+ frontend enhancements', () => {
 
   it('has top_impact section in "Ou agir"', () => {
     expect(code).toMatch(/top_impact/);
-    expect(code).toMatch(/Impact.*estime/);
+    expect(code).toMatch(/Impact.*estim[eé]/);
   });
 });
 
@@ -1050,7 +1050,7 @@ describe('BF · Portfolio V1.3 pilotage UX', () => {
     expect(code).toMatch(/Eye/);
     expect(code).toMatch(/open_actions_count > 0/);
     expect(code).toMatch(/Voir les actions en cours/);
-    expect(code).toMatch(/Creer une action/);
+    expect(code).toMatch(/Cr[eé]er une action/);
   });
 
   it('Diagnostics count is a clickable button linking to diag page', () => {

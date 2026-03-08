@@ -628,6 +628,8 @@ export const getPortfolioComplianceSummary = (params = {}) =>
   api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
 export const getComplianceTimeline = () =>
   api.get('/compliance/timeline').then((r) => r.data);
+export const getComplianceScoreTrend = (params = {}) =>
+  _cachedGet('/compliance/score-trend', { params }).then((r) => r.data);
 
 // V69: CEE Pipeline + M&V
 export const getSiteWorkPackages = (siteId) =>
@@ -781,6 +783,11 @@ export const getInsightDetail = (insightId) =>
   api.get(`/billing/insights/${insightId}`).then((r) => r.data);
 export const getInvoiceShadowBreakdown = (invoiceId) =>
   api.get(`/billing/invoices/${invoiceId}/shadow-breakdown`).then((r) => r.data);
+
+// ── APER (solarisation) ──
+export const getAperDashboard = () => _cachedGet('/aper/dashboard').then((r) => r.data);
+export const getAperEstimate = (siteId, params = {}) =>
+  _cachedGet(`/aper/site/${siteId}/estimate`, { params }).then((r) => r.data);
 export const getBillingInvoices = (params = {}) =>
   api.get('/billing/invoices', { params }).then((r) => r.data);
 export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then((r) => r.data);
@@ -906,6 +913,9 @@ export const crudUpdateSite = (id, data) =>
   api.patch(`/patrimoine/crud/sites/${id}`, data).then((r) => r.data);
 export const crudDeleteSite = (id) =>
   api.delete(`/patrimoine/crud/sites/${id}`).then((r) => r.data);
+
+export const crudCreateBatiment = (data) =>
+  api.post('/patrimoine/crud/batiments', data).then((r) => r.data);
 
 // ========================================
 // ACHAT ENERGIE
@@ -1131,6 +1141,8 @@ export const stagingActivate = (batchId, portefeuilleId) =>
     .then((r) => r.data);
 export const stagingResult = (batchId) =>
   api.get(`/patrimoine/staging/${batchId}/result`).then((r) => r.data);
+export const getStagingMatching = (batchId) =>
+  api.get(`/patrimoine/staging/${batchId}/matching`).then((r) => r.data);
 export const stagingAbandon = (batchId) =>
   api.delete(`/patrimoine/staging/${batchId}`).then((r) => r.data);
 export const loadPatrimoineDemo = () => api.post('/patrimoine/demo/load').then((r) => r.data);

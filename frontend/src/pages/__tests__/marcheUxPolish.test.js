@@ -16,20 +16,20 @@ function src(relPath) {
   return readFileSync(resolve(root, relPath), 'utf-8');
 }
 
-/* ── A. Récents contextuel ── */
-describe('A. Récents filtré par module', () => {
+/* ── A. Récents supprimé — panneau contextuel par module ── */
+describe('A. Récents supprimé du panneau', () => {
   const navPanel = src('src/layout/NavPanel.jsx');
 
-  it('recents are filtered by activeModule', () => {
-    expect(navPanel).toMatch(/recentModule\s*===\s*activeModule/);
+  it('no recentItems rendering in NavPanel', () => {
+    expect(navPanel).not.toMatch(/recentItems\.map/);
   });
 
-  it('no cross-module badge (_recentModule removed)', () => {
-    expect(navPanel).not.toMatch(/_recentModule/);
+  it('no Clock icon import (recents removed)', () => {
+    expect(navPanel).not.toMatch(/Clock/);
   });
 
-  it('recents comment says "same module only" or "current module"', () => {
-    expect(navPanel).toMatch(/same module|current module|filtered by/i);
+  it('uses moduleSections for contextual display', () => {
+    expect(navPanel).toMatch(/moduleSections\.map/);
   });
 });
 
@@ -88,8 +88,8 @@ describe('C. Group headers — no orange dots', () => {
 describe('D. Micro-details', () => {
   const navPanel = src('src/layout/NavPanel.jsx');
 
-  it('panel width uses responsive clamp (248px–300px)', () => {
-    expect(navPanel).toMatch(/clamp\(248px/);
+  it('panel width uses responsive clamp (220px–260px)', () => {
+    expect(navPanel).toMatch(/clamp\(220px/);
   });
 
   it('PanelLink has aria-label for accessibility', () => {

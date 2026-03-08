@@ -135,7 +135,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
               className="w-full"
             >
               <Zap size={14} className="mr-1.5" />
-              Creer une action corrective
+              Créer une action corrective
             </Button>
             <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
               <p>Suggestions :</p>

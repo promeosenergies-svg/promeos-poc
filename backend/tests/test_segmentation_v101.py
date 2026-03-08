@@ -87,7 +87,7 @@ class TestComputeNextBestStep:
         profile = SegmentationProfile(
             organisation_id=org.id,
             typologie="tertiaire_prive",
-            segment_label="Tertiaire Prive",
+            segment_label="Tertiaire Privé",
             confidence_score=30.0,
             derived_from="mix",
         )
@@ -110,7 +110,7 @@ class TestComputeNextBestStep:
         profile = SegmentationProfile(
             organisation_id=org.id,
             typologie="tertiaire_prive",
-            segment_label="Tertiaire Prive",
+            segment_label="Tertiaire Privé",
             confidence_score=85.0,
             derived_from="mix",
             answers_json=json.dumps(

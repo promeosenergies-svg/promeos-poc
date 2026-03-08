@@ -14,7 +14,7 @@ export default function Pagination({ page, pageSize, total, onChange }) {
         <button
           onClick={() => onChange(page - 1)}
           disabled={page <= 1}
-          aria-label="Page precedente"
+          aria-label="Page précédente"
           className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >

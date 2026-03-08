@@ -14,7 +14,7 @@
  * États :
  *   loading  → skeleton
  *   error    → message + retry
- *   sites_count === 0 → bandeau "0 €" + CTA "Charger HELIOS" → /import
+ *   sites_count === 0 → bandeau "0 €" + CTA "Charger la démo" → /import
  *   nominal  → cockpit complet
  */
 import { useState, useEffect } from 'react';
@@ -249,7 +249,7 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
       // Navigate to same page to refresh all components with new data
       navigate(0);
     } catch {
-      setError('Echec du chargement HELIOS. Essayez via la page Import.');
+      setError('Échec du chargement. Essayez via la page Import.');
       setSeeding(false);
     }
   };
@@ -275,7 +275,7 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
             </>
           ) : (
             <>
-              <Upload size={12} /> Charger HELIOS
+              <Upload size={12} /> Charger la démo
             </>
           )}
         </button>

@@ -5,8 +5,9 @@
  * Route: /billing (alias /facturation)
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
+  FileText,
   CalendarRange,
   AlertTriangle,
   CheckCircle,
@@ -26,6 +27,7 @@ import {
 } from '../services/api';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
+import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
 import BillingTimeline from '../components/BillingTimeline';
@@ -35,7 +37,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import { getKpiMessage } from '../services/kpiMessaging';
 
-const PAGE_TITLE = 'Timeline & Couverture Facturation';
+const PAGE_TITLE = 'Facturation — Timeline';
 
 function KpiChip({ icon: Icon, label, value, color }) {
   return (
@@ -142,7 +144,7 @@ export default function BillingPage() {
               : JSON.stringify(err?.response?.data || err?.message || 'no body').slice(0, 120),
           orgHeader: err?.config?.headers?.['X-Org-Id'] || 'missing',
         };
-        if (isExpert) console.error('[BillingPage] getBillingPeriods FAILED:', debugPayload, err);
+        // Debug payload available for error handling if needed
 
         if (status === 404 && siteId) {
           // P0: purge stale siteId from localStorage scope
@@ -315,7 +317,6 @@ export default function BillingPage() {
   // Import contextuel handlers
   const handleImportClick = (siteId, monthKey, type) => {
     setImportContext({ siteId, monthKey });
-    if (isExpert) console.log('[BillingPage] import click:', { siteId, monthKey, type });
     if (type === 'csv') csvInputRef.current?.click();
     else pdfInputRef.current?.click();
   };
@@ -323,13 +324,11 @@ export default function BillingPage() {
   async function handleContextualCsvImport(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (isExpert) console.log('[BillingPage] CSV file selected:', file.name, importContext);
     try {
       await importInvoicesCsv(file);
       toast('Import CSV réussi', 'success');
       fetchAll(siteFilter, 0, false);
-    } catch (err) {
-      if (isExpert) console.error('[BillingPage] CSV import failed:', err);
+    } catch {
       toast('Échec import CSV', 'error');
     }
     setImportContext(null);
@@ -339,13 +338,11 @@ export default function BillingPage() {
   async function handleContextualPdfImport(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (isExpert) console.log('[BillingPage] PDF file selected:', file.name, importContext);
     try {
       await importInvoicesPdf(importContext?.siteId, file);
       toast('Import PDF réussi', 'success');
       fetchAll(siteFilter, 0, false);
-    } catch (err) {
-      if (isExpert) console.error('[BillingPage] PDF import failed:', err);
+    } catch {
       toast('Échec import PDF', 'error');
     }
     setImportContext(null);
@@ -364,11 +361,33 @@ export default function BillingPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-4xl mx-auto">
+      {/* Navigation interne Facturation */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        <Link
+          to={`/bill-intel${siteFilter ? `?site_id=${siteFilter}` : ''}`}
+          className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-white/60 transition"
+        >
+          <span className="flex items-center gap-1.5">
+            <FileText size={14} />
+            Anomalies & Audit
+          </span>
+        </Link>
+        <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm flex items-center gap-1.5">
+          <CalendarRange size={14} />
+          Timeline & Couverture
+        </span>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarRange size={20} className="text-amber-600" />
-          <h1 className="text-lg font-bold text-gray-900">{PAGE_TITLE}</h1>
+        <div>
+          <div className="flex items-center gap-2">
+            <CalendarRange size={20} className="text-amber-600" />
+            <h1 className="text-lg font-bold text-gray-900">{PAGE_TITLE}</h1>
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Vérifiez la couverture mensuelle de vos factures et importez les périodes manquantes.
+          </p>
         </div>
         <Button
           size="sm"
@@ -421,13 +440,7 @@ export default function BillingPage() {
 
       {/* Erreur */}
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center gap-2">
-          <AlertTriangle size={14} />
-          {error}
-          <Button size="xs" variant="ghost" onClick={() => fetchAll(siteFilter, 0, false)}>
-            Réessayer
-          </Button>
-        </div>
+        <ErrorState message={error} onRetry={() => fetchAll(siteFilter, 0, false)} />
       )}
 
       {/* KPIs + CoverageBar */}
@@ -611,10 +624,10 @@ export default function BillingPage() {
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value)}
         >
-          <option value="date_desc">Date desc</option>
-          <option value="date_asc">Date asc</option>
-          <option value="amount_desc">Montant desc</option>
-          <option value="amount_asc">Montant asc</option>
+          <option value="date_desc">Plus récent</option>
+          <option value="date_asc">Plus ancien</option>
+          <option value="amount_desc">Montant ↓</option>
+          <option value="amount_asc">Montant ↑</option>
           <option value="priority_missing">Priorité manquants</option>
         </select>
       </div>

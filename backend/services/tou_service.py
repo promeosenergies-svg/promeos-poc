@@ -12,13 +12,14 @@ from sqlalchemy import and_, or_
 from models.tou_schedule import TOUSchedule
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
 
 
 # Default TURPE-like schedule (HP 6h-22h weekday, HC rest)
 DEFAULT_WINDOWS = [
-    {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP", "price_eur_kwh": 0.18},
-    {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC", "price_eur_kwh": 0.13},
-    {"day_types": ["weekend", "holiday"], "start": "00:00", "end": "24:00", "period": "HC", "price_eur_kwh": 0.13},
+    {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP", "price_eur_kwh": DEFAULT_PRICE_ELEC_EUR_KWH},
+    {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC", "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH},
+    {"day_types": ["weekend", "holiday"], "start": "00:00", "end": "24:00", "period": "HC", "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH},
 ]
 
 
@@ -78,8 +79,8 @@ def get_active_schedule(
         "windows": DEFAULT_WINDOWS,
         "source": "default",
         "source_ref": None,
-        "price_hp_eur_kwh": 0.18,
-        "price_hc_eur_kwh": 0.13,
+        "price_hp_eur_kwh": DEFAULT_PRICE_ELEC_EUR_KWH,
+        "price_hc_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH,
         "is_default": True,
     }
 
@@ -194,8 +195,8 @@ def compute_hp_hc_ratio(
         return _empty_hp_hc(site_id)
 
     windows = active.get("windows", DEFAULT_WINDOWS)
-    price_hp = active.get("price_hp_eur_kwh") or 0.18
-    price_hc = active.get("price_hc_eur_kwh") or 0.13
+    price_hp = active.get("price_hp_eur_kwh") or DEFAULT_PRICE_ELEC_EUR_KWH
+    price_hc = active.get("price_hc_eur_kwh") or DEFAULT_PRICE_HC_EUR_KWH
 
     # Fetch readings
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -317,8 +318,8 @@ def compute_hphc_breakdown_v2(
         if cal:
             windows = json.loads(cal.ruleset_json) if cal.ruleset_json else DEFAULT_WINDOWS
             cal_name = cal.name
-            price_hp = 0.18
-            price_hc = 0.13
+            price_hp = DEFAULT_PRICE_ELEC_EUR_KWH
+            price_hc = DEFAULT_PRICE_HC_EUR_KWH
             # Try to extract prices from windows
             for w in windows:
                 if w.get("period") == "HP" and w.get("price_eur_kwh"):
@@ -328,18 +329,18 @@ def compute_hphc_breakdown_v2(
         else:
             windows = DEFAULT_WINDOWS
             cal_name = "Defaut"
-            price_hp, price_hc = 0.18, 0.13
+            price_hp, price_hc = DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
     else:
         active = get_active_schedule(db, site_id)
         if active:
             windows = active.get("windows", DEFAULT_WINDOWS)
             cal_name = active.get("name", "Defaut")
-            price_hp = active.get("price_hp_eur_kwh") or 0.18
-            price_hc = active.get("price_hc_eur_kwh") or 0.13
+            price_hp = active.get("price_hp_eur_kwh") or DEFAULT_PRICE_ELEC_EUR_KWH
+            price_hc = active.get("price_hc_eur_kwh") or DEFAULT_PRICE_HC_EUR_KWH
         else:
             windows = DEFAULT_WINDOWS
             cal_name = "TURPE standard"
-            price_hp, price_hc = 0.18, 0.13
+            price_hp, price_hc = DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
 
     # Fetch readings
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -471,7 +472,7 @@ def _empty_hphc_v2(site_id, cal_name):
             for d in range(7)
             for h in range(24)
         ],
-        "opportunity": {"shiftable_kwh": 0, "savings_eur": 0, "price_hp": 0.18, "price_hc": 0.13},
+        "opportunity": {"shiftable_kwh": 0, "savings_eur": 0, "price_hp": DEFAULT_PRICE_ELEC_EUR_KWH, "price_hc": DEFAULT_PRICE_HC_EUR_KWH},
         "confidence": "low",
         "readings_count": 0,
     }

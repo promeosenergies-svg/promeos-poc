@@ -24,15 +24,15 @@ describe('A · Scenarios header dynamique', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('header uses scenarios.length, not hardcoded "3"', () => {
-    expect(code).toContain('{scenarios.length} stratégies comparées');
+    expect(code).toContain('{scenarios.length} scénarios comparés');
   });
 
-  it('no hardcoded "3 stratégies" anywhere', () => {
-    expect(code).not.toContain('3 stratégies comparées');
+  it('no hardcoded "3 scénarios" anywhere', () => {
+    expect(code).not.toContain('3 scénarios comparés');
   });
 
   it('fourchette uses dynamic count', () => {
-    expect(code).toContain('Fourchette des {scenarios.length} stratégies');
+    expect(code).toContain('Fourchette des {scenarios.length} scénarios');
   });
 
   it('no hardcoded "Fourchette des 3" anywhere', () => {

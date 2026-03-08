@@ -3,7 +3,7 @@
  * Usages & Horaires → Profil conso & Anomalies comportementales.
  * 2 tabs: "Profil & Heatmap" | "Horaires & Anomalies"
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Activity, RefreshCw } from 'lucide-react';
 import { getConsumptionContext, refreshConsumptionDiagnose } from '../services/api';
@@ -26,9 +26,16 @@ function scoreBadge(score) {
 }
 
 export default function ConsumptionContextPage() {
-  const { selectedSiteId } = useScope();
+  const { selectedSiteId, orgSites, sitesLoading, setSite } = useScope();
   const { isExpert } = useExpertMode();
   const siteId = selectedSiteId;
+
+  // Auto-select first site if none selected and sites are available
+  useEffect(() => {
+    if (!siteId && !sitesLoading && orgSites?.length > 0) {
+      setSite(orgSites[0].id);
+    }
+  }, [siteId, sitesLoading, orgSites, setSite]);
   const [sp, setSp] = useSearchParams();
   const tabParam = sp.get('tab') || 'profile';
 

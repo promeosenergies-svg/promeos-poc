@@ -3,7 +3,7 @@
  * Route: /onboarding
  * 6-step guided onboarding with auto-detection and manual progression.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Building2,
   MapPin,
@@ -47,12 +47,12 @@ const STEP_LINKS = {
 };
 
 const STEP_DESCRIPTIONS = {
-  step_org_created: "Votre organisation a ete creee lors de l'inscription.",
-  step_sites_added: 'Ajoutez vos batiments et sites dans le patrimoine.',
-  step_meters_connected: "Connectez vos compteurs d'electricite et de gaz.",
-  step_invoices_imported: "Importez vos factures pour l'analyse energetique.",
+  step_org_created: "Votre organisation a été créée lors de l'inscription.",
+  step_sites_added: 'Ajoutez vos bâtiments et sites dans le patrimoine.',
+  step_meters_connected: "Connectez vos compteurs d'électricité et de gaz.",
+  step_invoices_imported: "Importez vos factures pour l'analyse énergétique.",
   step_users_invited: 'Invitez vos collaborateurs sur la plateforme.',
-  step_first_action: "Creez votre premiere action d'economie d'energie.",
+  step_first_action: "Créez votre première action d'économie d'énergie.",
 };
 
 function StepCard({ step, index, onManualComplete }) {
@@ -102,7 +102,7 @@ function StepCard({ step, index, onManualComplete }) {
               </Button>
             )}
             <Button size="sm" variant="secondary" onClick={() => onManualComplete(step.key)}>
-              <CheckCircle size={14} className="mr-1" /> Marquer termine
+              <CheckCircle size={14} className="mr-1" /> Marquer terminé
             </Button>
           </div>
         )}
@@ -130,6 +130,15 @@ export default function OnboardingPage() {
   useEffect(() => {
     fetchProgress();
   }, [fetchProgress]);
+
+  // Auto-detect completed steps on first load if all steps show 0%
+  const autoDetectedRef = useRef(false);
+  useEffect(() => {
+    if (data && data.completed_count === 0 && !autoDetectedRef.current && org?.id) {
+      autoDetectedRef.current = true;
+      autoDetectOnboarding(org.id).then(setData).catch(() => {});
+    }
+  }, [data, org?.id]);
 
   const handleManualComplete = async (stepKey) => {
     if (!org?.id) return;
@@ -164,8 +173,8 @@ export default function OnboardingPage() {
   return (
     <PageShell
       icon={Sparkles}
-      title="Demarrage"
-      subtitle="Configurez votre plateforme en 6 etapes"
+      title="Démarrage"
+      subtitle="Configurez votre plateforme en 6 étapes"
       actions={
         <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={handleAutoDetect} disabled={autoLoading}>
@@ -174,7 +183,7 @@ export default function OnboardingPage() {
             ) : (
               <Sparkles size={14} className="mr-1" />
             )}
-            Detection auto
+            Détection auto
           </Button>
           <Button size="sm" variant="secondary" onClick={handleDismiss}>
             <X size={14} className="mr-1" /> Masquer
@@ -199,7 +208,7 @@ export default function OnboardingPage() {
           </div>
           {data?.all_done && (
             <p className="text-sm text-emerald-600 font-medium mt-2">
-              Felicitations ! Votre plateforme est prete.
+              Félicitations ! Votre plateforme est prête.
             </p>
           )}
         </CardBody>

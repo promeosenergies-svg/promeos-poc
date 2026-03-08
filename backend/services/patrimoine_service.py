@@ -856,11 +856,14 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
         .all()
     )
 
+    is_update_mode = (batch.mode == "update")
     sites_created = 0
+    sites_updated = 0
     compteurs_created = 0
     delivery_points_created = 0
     total_batiments = 0
     total_obligations = 0
+    all_changes = []
 
     # Resolve org_id from the default portefeuille (for multi-entity creation)
     default_pf = db.get(Portefeuille, portefeuille_id)
@@ -874,6 +877,12 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     for ss in staging_sites:
         if ss.target_site_id:
             site = db.get(Site, ss.target_site_id)
+            # Step 35: update fields in update mode
+            if is_update_mode and site:
+                changes = _update_site_fields(site, ss)
+                if changes:
+                    all_changes.extend(changes)
+                    sites_updated += 1
         else:
             # ── Step 20: resolve entité / portefeuille from staging fields ──
             resolved_pf_id = ss.target_portefeuille_id or portefeuille_id
@@ -1049,6 +1058,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     batch.stats_json = json.dumps(
         {
             "sites_created": sites_created,
+            "sites_updated": sites_updated,
             "compteurs_created": compteurs_created,
             "delivery_points_created": delivery_points_created,
             "batiments": total_batiments,
@@ -1059,13 +1069,17 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
 
     db.flush()
 
-    return {
+    result = {
         "sites_created": sites_created,
         "compteurs_created": compteurs_created,
         "delivery_points_created": delivery_points_created,
         "batiments": total_batiments,
         "obligations": total_obligations,
     }
+    if is_update_mode:
+        result["sites_updated"] = sites_updated
+        result["changes"] = all_changes
+    return result
 
 
 def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: int = None) -> dict:
@@ -1282,6 +1296,121 @@ def _compute_site_diff(staging: StagingSite, existing: Site) -> list:
 def compute_content_hash(content: bytes) -> str:
     """SHA-256 hash of file content for idempotence check."""
     return hashlib.sha256(content).hexdigest()
+
+
+# ========================================
+# Step 35 — Incremental update matching
+# ========================================
+
+_UPDATABLE_FIELDS = [
+    "nom", "adresse", "code_postal", "ville",
+    "surface_m2", "naf_code",
+]
+
+
+def match_staging_to_existing(db: Session, batch_id: int, org_id: int) -> dict:
+    """Match staging sites to existing sites by SIRET > PRM > nom+CP.
+
+    Sets target_site_id, match_method, match_confidence on each StagingSite.
+    Returns matching stats.
+    """
+    staging_sites = (
+        db.query(StagingSite)
+        .filter(StagingSite.batch_id == batch_id, StagingSite.skip.is_(False))
+        .all()
+    )
+
+    # Load existing sites for this org
+    org_sites = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Site))
+        .all()
+    )
+
+    by_siret = {s.siret: s for s in org_sites if s.siret}
+
+    # Index meters by meter_id → site_id
+    site_ids = [s.id for s in org_sites]
+    meters = db.query(Meter).filter(Meter.site_id.in_(site_ids)).all() if site_ids else []
+    by_prm = {m.meter_id: m.site_id for m in meters if m.meter_id}
+
+    by_name_cp = {}
+    for s in org_sites:
+        key = f"{(s.nom or '').lower().strip()}|{(s.code_postal or '').strip()}"
+        by_name_cp[key] = s
+
+    results = {"matched": 0, "new": 0, "details": []}
+
+    for ss in staging_sites:
+        match = None
+        match_method = None
+        confidence = None
+
+        # 1. Match by SIRET
+        if ss.siret and ss.siret in by_siret:
+            match = by_siret[ss.siret]
+            match_method = "siret"
+            confidence = "high"
+
+        # 2. Match by PRM/PCE
+        if not match:
+            staging_compteurs = (
+                db.query(StagingCompteur)
+                .filter(StagingCompteur.staging_site_id == ss.id, StagingCompteur.skip.is_(False))
+                .all()
+            )
+            for sc in staging_compteurs:
+                prm = sc.meter_id or sc.numero_serie
+                if prm and prm in by_prm:
+                    match = db.get(Site, by_prm[prm])
+                    match_method = "prm"
+                    confidence = "high"
+                    break
+
+        # 3. Match by nom + code_postal
+        if not match:
+            key = f"{(ss.nom or '').lower().strip()}|{(ss.code_postal or '').strip()}"
+            if key in by_name_cp:
+                match = by_name_cp[key]
+                match_method = "nom_cp"
+                confidence = "medium"
+
+        if match:
+            ss.target_site_id = match.id
+            ss.match_method = match_method
+            ss.match_confidence = confidence
+            results["matched"] += 1
+        else:
+            ss.target_site_id = None
+            ss.match_method = None
+            ss.match_confidence = None
+            results["new"] += 1
+
+        results["details"].append({
+            "staging_nom": ss.nom,
+            "matched_site_id": match.id if match else None,
+            "matched_site_nom": match.nom if match else None,
+            "method": match_method,
+            "confidence": confidence,
+        })
+
+    db.flush()
+    return results
+
+
+def _update_site_fields(existing: Site, staging: StagingSite) -> list:
+    """Update non-null staging fields onto existing site. Returns list of changes."""
+    changes = []
+    for field in _UPDATABLE_FIELDS:
+        new_val = getattr(staging, field, None)
+        if new_val is not None:
+            old_val = getattr(existing, field, None)
+            if new_val != old_val:
+                setattr(existing, field, new_val)
+                changes.append({"site": existing.nom, "field": field, "old": old_val, "new": new_val})
+    return changes
 
 
 def abandon_batch(db: Session, batch_id: int) -> dict:

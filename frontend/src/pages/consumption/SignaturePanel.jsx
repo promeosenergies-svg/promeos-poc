@@ -169,7 +169,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Signature de consommation</h3>
           <p className="text-xs text-gray-500">
-            Moyenne kWh par creneau horaire ({days} derniers jours)
+            Moyenne kWh par créneau horaire ({days} derniers jours)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
             </button>
           ))}
           <span className="text-xs text-gray-400 ml-2">
-            {totalPoints.toLocaleString('fr-FR')} pts
+            {totalPoints.toLocaleString('fr-FR')} mesures
           </span>
         </div>
       </div>

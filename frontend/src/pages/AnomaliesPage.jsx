@@ -244,7 +244,7 @@ export default function AnomaliesPage() {
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
-          text={<>Importez votre <Explain term="patrimoine">patrimoine</Explain> ou chargez les données de démonstration HELIOS pour voir les <Explain term="anomalie">anomalies</Explain>. Pourquoi c'est important : le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données.</>}
+          text={<>Importez votre <Explain term="patrimoine">patrimoine</Explain> ou chargez les données de démonstration pour voir les <Explain term="anomalie">anomalies</Explain>. Le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données.</>}
           ctaLabel="Importer mon patrimoine"
           onCta={() => navigate('/import')}
           actions={
@@ -252,7 +252,7 @@ export default function AnomaliesPage() {
               onClick={() => navigate('/import')}
               className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 hover:bg-blue-100 transition"
             >
-              <Upload size={14} /> Charger HELIOS
+              <Upload size={14} /> Charger la démo
             </button>
           }
         />

@@ -26,7 +26,7 @@ const FRAMEWORK_COLORS = {
 };
 
 const FRAMEWORK_LABELS = {
-  DECRET_TERTIAIRE: 'Decret Tertiaire',
+  DECRET_TERTIAIRE: 'Décret Tertiaire',
   BACS: 'BACS',
   APER: 'APER',
 };
@@ -37,7 +37,7 @@ const STATUS_STYLES = {
     dotOk: 'bg-green-500 border-green-200',
     text: 'text-red-700',
     bg: 'bg-red-50',
-    label: 'Echue',
+    label: 'Échue',
   },
   upcoming: {
     dot: 'bg-orange-500 border-orange-200',
@@ -87,7 +87,7 @@ function EventTooltip({ evt }) {
       </div>
       {evt.penalty_eur != null && (
         <p className="text-[10px] text-red-500 mt-1">
-          Penalite : {evt.penalty_eur.toLocaleString('fr-FR')} EUR
+          Pénalité : {evt.penalty_eur.toLocaleString('fr-FR')} EUR
         </p>
       )}
     </div>
@@ -119,57 +119,100 @@ function HorizontalTimeline({ events, today }) {
   const totalDays = Math.max(daysBetween(minDate, maxDate), 1);
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
+  // Anti-collision: compute stagger levels for events that are too close
+  const MIN_GAP_PCT = 6; // minimum % distance before staggering
+  const eventsWithLayout = events
+    .map((evt) => ({
+      ...evt,
+      leftPct: (daysBetween(minDate, evt.deadline) / totalDays) * 100,
+    }))
+    .sort((a, b) => a.leftPct - b.leftPct);
+
+  // Assign stagger level (0 = above axis, 1 = below axis, 2 = further above)
+  for (let i = 0; i < eventsWithLayout.length; i++) {
+    const evt = eventsWithLayout[i];
+    // Find the closest previous event that would overlap
+    let level = 0;
+    const usedLevels = new Set();
+    for (let j = i - 1; j >= 0; j--) {
+      const prev = eventsWithLayout[j];
+      if (evt.leftPct - prev.leftPct > MIN_GAP_PCT) break;
+      usedLevels.add(prev._level);
+    }
+    while (usedLevels.has(level)) level++;
+    evt._level = level;
+  }
+
+  // Layout constants per level
+  const AXIS_Y = 100; // px — horizontal line position
+  const levelOffsets = [
+    { labelY: 20, dotY: AXIS_Y - 8 },   // level 0: label above axis
+    { labelY: AXIS_Y + 22, dotY: AXIS_Y - 8 }, // level 1: label below axis
+    { labelY: 0, dotY: AXIS_Y - 8 },     // level 2: label further above
+  ];
+
   return (
-    <div className="relative w-full overflow-x-auto pb-2 px-12">
+    <div className="relative w-full overflow-x-auto pb-4 px-12">
       {/* Axis */}
-      <div className="relative h-40 min-w-[600px]">
+      <div className="relative min-w-[600px]" style={{ height: `${AXIS_Y + 60}px` }}>
         {/* Horizontal line */}
-        <div className="absolute top-[88px] left-0 right-0 h-0.5 bg-gray-200" />
+        <div className="absolute left-0 right-0 h-0.5 bg-gray-200" style={{ top: `${AXIS_Y}px` }} />
 
         {/* Today marker */}
         <div
-          className="absolute top-10 h-24 w-px border-l-2 border-dashed border-red-400"
-          style={{ left: `${todayPct}%` }}
+          className="absolute w-px border-l-2 border-dashed border-red-400"
+          style={{ left: `${todayPct}%`, top: '20px', height: `${AXIS_Y - 10}px` }}
         >
-          <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-red-500 whitespace-nowrap bg-white px-1">
+          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-bold text-red-500 whitespace-nowrap bg-white px-1 rounded">
             Aujourd'hui
           </span>
         </div>
 
         {/* Events */}
-        {events.map((evt) => {
-          const leftPct = (daysBetween(minDate, evt.deadline) / totalDays) * 100;
+        {eventsWithLayout.map((evt) => {
           const style = STATUS_STYLES[evt.status] || STATUS_STYLES.future;
           const isPassedOk = evt.status === 'passed' && evt.sites_non_compliant === 0;
           const dotClass = isPassedOk ? style.dotOk || style.dot : style.dot;
+          const layout = levelOffsets[Math.min(evt._level, levelOffsets.length - 1)];
+          const isBelow = evt._level === 1;
 
           return (
             <div
               key={evt.id}
               className="absolute cursor-pointer group"
-              style={{ left: `${leftPct}%`, top: '32px' }}
+              style={{ left: `${evt.leftPct}%`, top: 0, height: '100%' }}
               onMouseEnter={() => setHoveredId(evt.id)}
               onMouseLeave={() => setHoveredId(null)}
               onClick={() => navigate(`/conformite?framework=${evt.framework.toLowerCase()}`)}
             >
-              {/* Label above */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-24 text-center">
-                <p className="text-[9px] font-medium text-gray-600 truncate">{evt.label}</p>
-                <p className="text-[8px] text-gray-400">{formatDate(evt.deadline)}</p>
-              </div>
-
-              {/* Dot */}
+              {/* Stem line from dot to label */}
               <div
-                className={`w-3.5 h-3.5 rounded-full border-2 ${dotClass} -translate-x-1/2 relative`}
-                style={{ top: '24px' }}
+                className="absolute w-px bg-gray-200 left-0 -translate-x-1/2"
+                style={{
+                  top: isBelow ? `${AXIS_Y + 6}px` : `${layout.labelY + 28}px`,
+                  height: isBelow ? '14px' : `${AXIS_Y - layout.labelY - 34}px`,
+                }}
               />
 
-              {/* Framework badge below */}
-              <span
-                className={`absolute top-10 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded text-[7px] font-bold uppercase text-white whitespace-nowrap ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
+              {/* Label */}
+              <div
+                className="absolute left-1/2 -translate-x-1/2 w-28 text-center"
+                style={{ top: `${layout.labelY}px` }}
               >
-                {FRAMEWORK_LABELS[evt.framework] || evt.framework}
-              </span>
+                <span
+                  className={`inline-block px-1 py-0.5 rounded text-[7px] font-bold uppercase text-white mb-0.5 ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
+                >
+                  {FRAMEWORK_LABELS[evt.framework] || evt.framework}
+                </span>
+                <p className="text-[10px] font-medium text-gray-700 leading-tight line-clamp-2">{evt.label}</p>
+                <p className="text-[9px] text-gray-400">{formatDate(evt.deadline)}</p>
+              </div>
+
+              {/* Dot on axis */}
+              <div
+                className={`absolute w-3.5 h-3.5 rounded-full border-2 ${dotClass} -translate-x-1/2`}
+                style={{ top: `${AXIS_Y - 6}px` }}
+              />
 
               {/* Tooltip */}
               {hoveredId === evt.id && <EventTooltip evt={evt} />}
@@ -189,10 +232,10 @@ function HorizontalTimeline({ events, today }) {
               markers.push(
                 <div
                   key={y}
-                  className="absolute top-[88px] text-[9px] text-gray-300 font-mono"
-                  style={{ left: `${pct}%` }}
+                  className="absolute text-[10px] text-gray-400 font-mono"
+                  style={{ left: `${pct}%`, top: `${AXIS_Y}px` }}
                 >
-                  <div className="w-px h-2 bg-gray-200 mb-0.5" />
+                  <div className="w-px h-3 bg-gray-300 mb-0.5" />
                   {y}
                 </div>
               );
@@ -277,7 +320,7 @@ export default function RegulatoryTimeline({ events = [], today, loading = false
   if (!events.length) {
     return (
       <div className="text-center py-6 text-sm text-gray-400">
-        Aucune echeance reglementaire identifiee.
+        Aucune échéance réglementaire identifiée.
       </div>
     );
   }
@@ -295,13 +338,13 @@ export default function RegulatoryTimeline({ events = [], today, loading = false
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
             <Calendar size={16} className="text-blue-500" />
-            <Explain term="timeline_reglementaire">Frise reglementaire</Explain>
+            <Explain term="timeline_reglementaire">Frise réglementaire</Explain>
           </h3>
           <div className="flex items-center gap-2 text-[10px]">
             {passedNonCompliant.length > 0 && (
               <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-600 font-medium">
                 <AlertTriangle size={10} />
-                {passedNonCompliant.length} echeance{passedNonCompliant.length > 1 ? 's' : ''} depassee{passedNonCompliant.length > 1 ? 's' : ''}
+                {passedNonCompliant.length} échéance{passedNonCompliant.length > 1 ? 's' : ''} dépassée{passedNonCompliant.length > 1 ? 's' : ''}
               </span>
             )}
             {upcoming.length > 0 && (

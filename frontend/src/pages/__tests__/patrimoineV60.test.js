@@ -81,8 +81,8 @@ describe('PatrimoinePortfolioHealthBar — états', () => {
     expect(HEALTH_BAR_JSX).toMatch(/sites_count/);
   });
 
-  test('CTA Charger HELIOS présent', () => {
-    expect(HEALTH_BAR_JSX).toMatch(/HELIOS|Charger/);
+  test('CTA Charger la démo présent', () => {
+    expect(HEALTH_BAR_JSX).toMatch(/Charger la démo|Charger/);
   });
 
   test('navigate vers /import présent', () => {

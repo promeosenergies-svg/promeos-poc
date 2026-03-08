@@ -140,7 +140,7 @@ describe('PatrimoinePortfolioHealthBar V61 — vue nominale', () => {
     expect(HEALTH_BAR_JSX).toMatch(/loading/);
     expect(HEALTH_BAR_JSX).toMatch(/error/);
     expect(HEALTH_BAR_JSX).toMatch(/sites_count === 0/);
-    expect(HEALTH_BAR_JSX).toMatch(/Charger HELIOS/);
+    expect(HEALTH_BAR_JSX).toMatch(/Charger la démo/);
   });
 });
 

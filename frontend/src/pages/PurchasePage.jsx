@@ -368,6 +368,22 @@ export default function PurchasePage() {
     if (selectedSiteId) loadSiteData(selectedSiteId);
   }, [selectedSiteId, loadSiteData]);
 
+  // Auto-compute scenarios on first load if none exist (demo-friendly)
+  const autoComputedRef = useRef(false);
+  useEffect(() => {
+    if (
+      selectedSiteId &&
+      !loading &&
+      scenarios.length === 0 &&
+      !computing &&
+      !autoComputedRef.current &&
+      estimate?.volume_kwh_an > 0
+    ) {
+      autoComputedRef.current = true;
+      handleCompute();
+    }
+  }, [selectedSiteId, loading, scenarios.length, computing, estimate]);
+
   // V73: Load renewals when tab becomes active — pass orgId + re-fetch on scope change
   const renewalsOrgRef = useRef(null);
   useEffect(() => {
@@ -865,7 +881,7 @@ export default function PurchasePage() {
                   <Target size={18} /> Scénarios 2026–2030
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  {scenarios.length} stratégies comparées · Horizon{' '}
+                  {scenarios.length} scénarios comparés · Horizon{' '}
                   {assumptions.horizon_months || 24} mois · Volume{' '}
                   {Math.round(assumptions.volume_kwh_an).toLocaleString('fr-FR')} kWh/an
                 </p>
@@ -896,7 +912,7 @@ export default function PurchasePage() {
                           EUR
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          Fourchette des {scenarios.length} stratégies
+                          Fourchette des {scenarios.length} scénarios
                         </div>
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
@@ -977,7 +993,7 @@ export default function PurchasePage() {
                           </div>
                           {isReco && (
                             <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">
-                              Recommande
+                              Recommandé
                             </span>
                           )}
                         </div>
@@ -1019,7 +1035,7 @@ export default function PurchasePage() {
                         )}
 
                         {/* V71: "Pourquoi ?" — explication de la stratégie */}
-                        <details className="mb-3 group" data-testid={`scenario-why-${s.strategy}`}>
+                        <details className="mb-3 group" data-testid={`scenario-why-${s.strategy}`} open={isReco || undefined}>
                           <summary className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800">
                             <HelpCircle size={12} /> Pourquoi cette stratégie ?
                           </summary>
@@ -1276,12 +1292,12 @@ export default function PurchasePage() {
                             onClick={() => handleAccept(s.id)}
                             className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
                           >
-                            <CheckCircle2 size={16} /> Accepter
+                            <CheckCircle2 size={16} /> Acceptér
                           </button>
                         )}
                         {isAccepted && (
                           <div className="w-full bg-green-50 text-green-700 py-2 rounded-lg text-sm font-semibold text-center flex items-center justify-center gap-2">
-                            <CheckCircle2 size={16} /> Accepte
+                            <CheckCircle2 size={16} /> Accepté
                           </div>
                         )}
 
@@ -1592,7 +1608,7 @@ export default function PurchasePage() {
                                         <FileSearch size={12} />
                                       </button>
                                       <button
-                                        aria-label="Creer action"
+                                        aria-label="Créer action"
                                         onClick={() =>
                                           navigate(
                                             toActionNew({

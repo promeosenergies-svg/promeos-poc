@@ -15,7 +15,7 @@
  *   - Fallback si risque = 0 : max_severity (CRITICAL=rouge, HIGH=orange, …)
  *
  * Filtres locaux : framework, sévérité, recherche nom, tri.
- * Reset-safe : si tiles=[] → CTA "Charger HELIOS" → /import.
+ * Reset-safe : si tiles=[] → CTA "Charger la démo" → /import.
  */
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -274,7 +274,7 @@ export default function PatrimoineHeatmap({
           onClick={() => navigate('/import')}
           className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition"
         >
-          <Upload size={12} /> Charger HELIOS
+          <Upload size={12} /> Charger la démo
         </button>
       </div>
     );

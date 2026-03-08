@@ -20,21 +20,21 @@ import { createOnboarding, importSitesCsv, createCompteur } from '../services/ap
 
 const STEPS = [
   { key: 'organisation', label: 'Organisation' },
-  { key: 'entite', label: 'Entite juridique' },
+  { key: 'entite', label: 'Entité juridique' },
   { key: 'sites', label: 'Sites' },
   { key: 'compteurs', label: 'Compteurs' },
-  { key: 'resume', label: 'Resume' },
+  { key: 'resume', label: 'Résumé' },
 ];
 
 const TYPE_CLIENT_OPTIONS = [
   { value: 'retail', label: 'Retail / Grande distribution' },
   { value: 'industrie', label: 'Industrie' },
   { value: 'tertiaire', label: 'Tertiaire / Bureaux' },
-  { value: 'copropriete', label: 'Syndic / Copropriete' },
+  { value: 'copropriete', label: 'Syndic / Copropriété' },
   { value: 'logement_social', label: 'Bailleur social' },
-  { value: 'collectivite', label: 'Collectivite territoriale' },
-  { value: 'hotellerie', label: 'Hotellerie / Residences' },
-  { value: 'sante', label: 'Sante / Medico-social' },
+  { value: 'collectivite', label: 'Collectivité territoriale' },
+  { value: 'hotellerie', label: 'Hôtellerie / Résidences' },
+  { value: 'sante', label: 'Santé / Médico-social' },
   { value: 'enseignement', label: 'Enseignement' },
   { value: 'mixte', label: 'Patrimoine mixte' },
 ];
@@ -42,19 +42,19 @@ const TYPE_CLIENT_OPTIONS = [
 const TYPE_SITE_OPTIONS = [
   { value: 'bureau', label: 'Bureau' },
   { value: 'commerce', label: 'Commerce' },
-  { value: 'entrepot', label: 'Entrepot' },
+  { value: 'entrepot', label: 'Entrepôt' },
   { value: 'usine', label: 'Usine / Industrie' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'sante', label: 'Sante / EHPAD' },
+  { value: 'hotel', label: 'Hôtel' },
+  { value: 'sante', label: 'Santé / EHPAD' },
   { value: 'enseignement', label: 'Enseignement' },
-  { value: 'collectivite', label: 'Collectivite' },
-  { value: 'copropriete', label: 'Copropriete' },
+  { value: 'collectivite', label: 'Collectivité' },
+  { value: 'copropriete', label: 'Copropriété' },
   { value: 'logement_social', label: 'Logement social' },
   { value: 'magasin', label: 'Magasin' },
 ];
 
 const COMPTEUR_TYPES = [
-  { value: 'electricite', label: 'Electricite' },
+  { value: 'electricite', label: 'Électricité' },
   { value: 'gaz', label: 'Gaz' },
   { value: 'eau', label: 'Eau' },
 ];
@@ -319,7 +319,7 @@ const UpgradeWizard = ({ onClose }) => {
                 <Building2 size={20} className="text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Votre organisation</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-5">Qui etes-vous ?</p>
+              <p className="text-sm text-gray-500 mb-5">Qui êtes-vous ?</p>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -373,10 +373,10 @@ const UpgradeWizard = ({ onClose }) => {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Building size={20} className="text-indigo-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Entite juridique</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Entité juridique</h3>
               </div>
               <p className="text-sm text-gray-500 mb-5">
-                Qui signe les contrats ? (pre-rempli depuis l'organisation)
+                Qui signe les contrats ? (pré-rempli depuis l'organisation)
               </p>
               <div className="space-y-4">
                 <div>
@@ -404,7 +404,7 @@ const UpgradeWizard = ({ onClose }) => {
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-700">
-                    L'entite juridique est creee automatiquement. Vous pourrez en ajouter d'autres
+                    L'entité juridique est créée automatiquement. Vous pourrez en ajouter d'autres
                     plus tard.
                   </p>
                 </div>
@@ -419,7 +419,7 @@ const UpgradeWizard = ({ onClose }) => {
                 <MapPin size={20} className="text-green-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Vos sites</h3>
               </div>
-              <p className="text-sm text-gray-500 mb-4">Quels batiments gerez-vous ?</p>
+              <p className="text-sm text-gray-500 mb-4">Quels bâtiments gérez-vous ?</p>
 
               <div className="flex gap-2 mb-4">
                 {[
@@ -532,7 +532,7 @@ const UpgradeWizard = ({ onClose }) => {
                   {csvPreview && (
                     <div className="mt-3">
                       <p className="text-xs font-medium text-gray-600 mb-1">
-                        Apercu ({csvFile?.name})
+                        Aperçu ({csvFile?.name})
                       </p>
                       <div className="bg-gray-50 rounded border text-xs font-mono overflow-x-auto p-2 max-h-28">
                         {csvPreview.map((line, i) => (
@@ -559,13 +559,13 @@ const UpgradeWizard = ({ onClose }) => {
                 <h3 className="text-lg font-semibold text-gray-900">Compteurs</h3>
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                Rattachez des compteurs a vos sites (optionnel — ajoutables plus tard).
+                Rattachez des compteurs à vos sites (optionnel — ajoutables plus tard).
               </p>
 
               {formData.sites.filter((s) => s.nom.trim()).length === 0 &&
               formData.importMethod === 'manual' ? (
                 <div className="bg-gray-50 border rounded-lg p-4 text-center text-sm text-gray-500">
-                  Aucun site saisi. Les compteurs seront ajoutables apres creation.
+                  Aucun site saisi. Les compteurs seront ajoutables après création.
                 </div>
               ) : (
                 <>
@@ -613,7 +613,7 @@ const UpgradeWizard = ({ onClose }) => {
                           type="text"
                           value={c.numero_serie}
                           onChange={(e) => updateCompteur(i, 'numero_serie', e.target.value)}
-                          placeholder="N de serie (optionnel)"
+                          placeholder="N° de série (optionnel)"
                           className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
                         />
                         {c.type === 'electricite' && (
@@ -644,7 +644,7 @@ const UpgradeWizard = ({ onClose }) => {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Check size={28} className="text-green-500" />
-                <h3 className="text-xl font-bold text-gray-900">Patrimoine cree !</h3>
+                <h3 className="text-xl font-bold text-gray-900">Patrimoine créé !</h3>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -652,17 +652,17 @@ const UpgradeWizard = ({ onClose }) => {
                   <span className="font-medium">{formData.orgNom}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Entite juridique</span>
+                  <span className="text-gray-600">Entité juridique</span>
                   <span className="font-medium">{formData.ejNom || formData.orgNom}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sites crees</span>
+                  <span className="text-gray-600">Sites créés</span>
                   <span className="font-medium">
                     {(result.sites_created || 0) + (result.csv_imported || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Compteurs ajoutes</span>
+                  <span className="text-gray-600">Compteurs ajoutés</span>
                   <span className="font-medium">{result.compteurs_created || 0}</span>
                 </div>
                 {result.csv_errors > 0 && (
@@ -674,7 +674,7 @@ const UpgradeWizard = ({ onClose }) => {
               </div>
               {result.sites?.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Sites provisionnes :</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Sites provisionnés :</p>
                   <div className="space-y-1 max-h-36 overflow-y-auto">
                     {result.sites.map((s) => (
                       <div
@@ -691,7 +691,7 @@ const UpgradeWizard = ({ onClose }) => {
                 </div>
               )}
               <p className="mt-4 text-sm text-gray-500">
-                Fermez cette fenetre pour acceder a votre cockpit personnalise.
+                Fermez cette fenêtre pour accéder à votre cockpit personnalisé.
               </p>
             </div>
           )}
@@ -737,7 +737,7 @@ const UpgradeWizard = ({ onClose }) => {
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {loading ? 'Creation en cours...' : step === 3 ? 'Creer mon patrimoine' : 'Suivant'}
+                {loading ? 'Création en cours...' : step === 3 ? 'Créer mon patrimoine' : 'Suivant'}
                 {!loading && <ChevronRight size={16} />}
               </button>
             )}
@@ -746,7 +746,7 @@ const UpgradeWizard = ({ onClose }) => {
                 onClick={handleClose}
                 className="flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
               >
-                Acceder au cockpit
+                Accéder au cockpit
                 <ChevronRight size={16} />
               </button>
             )}

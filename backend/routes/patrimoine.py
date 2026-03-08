@@ -56,6 +56,7 @@ from services.patrimoine_service import (
     get_diff_plan,
     compute_content_hash,
     abandon_batch,
+    match_staging_to_existing,
 )
 from services.import_mapping import (
     CANONICAL_COLUMNS,
@@ -325,7 +326,7 @@ def import_template_columns():
 async def staging_import(
     request: Request,
     file: UploadFile = File(...),
-    mode: str = Query("import", description="express, import, assiste, demo"),
+    mode: str = Query("import", description="express, import, assiste, demo, update"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -399,13 +400,25 @@ async def staging_import(
         }
         result = import_csv_to_staging(db, batch.id, content)
 
-    db.commit()
+    # Step 35: auto-match for update mode
+    if mode == "update" and org_id:
+        matching = match_staging_to_existing(db, batch.id, org_id)
+        db.commit()
+        response = {
+            "batch_id": batch.id,
+            "duplicate": False,
+            "mode": "update",
+            "matching": matching,
+            **result,
+        }
+    else:
+        db.commit()
+        response = {
+            "batch_id": batch.id,
+            "duplicate": False,
+            **result,
+        }
 
-    response = {
-        "batch_id": batch.id,
-        "duplicate": False,
-        **result,
-    }
     if mapping_info:
         response["mapping"] = mapping_info
 
@@ -818,6 +831,24 @@ def staging_activate(
         result = activate_batch(db, batch_id, body.portefeuille_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    db.commit()
+    return result
+
+
+@router.get("/staging/{batch_id}/matching")
+def staging_matching(
+    batch_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Preview matching results for update mode (before activation)."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.get(StagingBatch, batch_id)
+    _check_batch_org(batch, org_id)
+    if batch.mode != "update":
+        raise HTTPException(status_code=400, detail="Matching only available for mode=update")
+    result = match_staging_to_existing(db, batch.id, org_id)
     db.commit()
     return result
 

@@ -10,19 +10,19 @@ const SOURCE_CONFIG = {
     label: 'Compteur',
     icon: Activity,
     className: 'bg-green-50 text-green-700 ring-1 ring-green-200',
-    tooltip: 'Donnees issues des releves compteur (source primaire)',
+    tooltip: 'Données issues des relevés compteur (source primaire)',
   },
   billed: {
     label: 'Facture',
     icon: FileText,
     className: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-    tooltip: 'Donnees issues des factures fournisseur',
+    tooltip: 'Données issues des factures fournisseur',
   },
   estimated: {
-    label: 'Estime',
+    label: 'Estimé',
     icon: HelpCircle,
     className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-    tooltip: 'Estimation basee sur la consommation annuelle declaree',
+    tooltip: 'Estimation basée sur la consommation annuelle déclarée',
   },
 };
 

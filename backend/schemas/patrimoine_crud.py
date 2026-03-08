@@ -98,6 +98,16 @@ class SiteCreate(BaseModel):
     longitude: Optional[float] = None
 
 
+# ── Bâtiment ────────────────────────────────────────────────────────────────
+
+class BatimentCreate(BaseModel):
+    site_id: int
+    nom: str = Field(..., min_length=1, max_length=200)
+    surface_m2: float = Field(..., ge=0)
+    annee_construction: Optional[int] = Field(None, ge=1800, le=2100)
+    cvc_power_kw: Optional[float] = Field(None, ge=0)
+
+
 class SiteUpdate(BaseModel):
     nom: Optional[str] = None
     type: Optional[str] = None

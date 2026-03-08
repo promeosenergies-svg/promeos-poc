@@ -62,16 +62,16 @@ class TestSeedHeliosPack:
     def test_helios_s_creates_meters(self, db_session):
         result = _seed(db_session, "helios", "S")
         # 5 sites: 5 elec meters + 3 gas meters (Paris, Toulouse, Nice have gas=True)
-        assert result["meters_count"] == 8
-        assert db_session.query(Meter).count() == 8
+        assert result["meters_count"] == 11  # 5 elec + 3 gas + 3 sub-meters (Step 26)
+        assert db_session.query(Meter).count() == 11
 
     def test_helios_s_creates_monthly_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
-        # 60 months × 5 meters = 300 monthly records
-        assert result["readings_count"] == 60 * 5
+        # 60 months × 8 main meters = 480 monthly records (sub-meters excluded)
+        assert result["readings_count"] == 60 * 8
         assert result["readings_frequency"] == "monthly"
         monthly = db_session.query(MeterReading).filter_by(frequency=FrequencyType.MONTHLY).count()
-        assert monthly == 60 * 5
+        assert monthly == 60 * 8  # 8 main meters (5 elec + 3 gas)
 
     def test_helios_s_creates_hourly_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
@@ -122,7 +122,7 @@ class TestSeedHeliosPack:
     def test_helios_s_deterministic_monthly(self, db_session):
         """Same RNG seed produces same monthly reading count."""
         result = _seed(db_session, "helios", "S")
-        assert result["readings_count"] == 60 * 5
+        assert result["readings_count"] == 60 * 8  # 8 main meters
 
     def test_helios_idempotent_reseed(self, db_session):
         """Deterministic: same RNG seed + soft reset produces identical counts."""
@@ -184,7 +184,7 @@ class TestSeedStatus:
         status = orch.status()
         assert status["organisations"] == 1
         assert status["sites"] == 5
-        assert status["meters"] == 8  # 5 elec + 3 gas
+        assert status["meters"] == 11  # 5 elec + 3 gas + 3 sub-meters (Step 26)
         assert status["readings"] > 0
 
     def test_status_empty_db(self, db_session):

@@ -63,13 +63,13 @@ export default function ExportOperatModal({ open, onClose }) {
     <Modal open={open} onClose={handleClose} title="Export OPERAT (CSV)">
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          Generez un fichier CSV compatible avec la plateforme OPERAT (ADEME) pour declarer vos
-          consommations energetiques.
+          Générez un fichier CSV compatible avec la plateforme OPERAT (ADEME) pour déclarer vos
+          consommations énergétiques.
         </p>
 
         {/* Year selector */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Annee de reference</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Année de référence</label>
           <div className="flex gap-2 flex-wrap">
             {YEARS.map((y) => (
               <button
@@ -97,7 +97,7 @@ export default function ExportOperatModal({ open, onClose }) {
           ) : (
             <FileSpreadsheet size={14} className="mr-1" />
           )}
-          Apercu ({year})
+          Aperçu ({year})
         </Button>
 
         {/* Preview table */}

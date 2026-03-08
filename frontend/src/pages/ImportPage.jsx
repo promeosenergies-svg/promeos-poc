@@ -94,7 +94,7 @@ function ImportPage() {
         if (def && !selectedPack) setSelectedPack(def.key);
       })
       .catch(() => {
-        toast('Impossible de charger la liste des packs demo', 'error');
+        toast('Impossible de charger la liste des packs démo', 'error');
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,7 +146,7 @@ function ImportPage() {
       const res = await importSitesStandalone(file);
       setResult(res);
       toast(
-        `${res.imported} site${res.imported > 1 ? 's' : ''} importe${res.imported > 1 ? 's' : ''} avec succes`,
+        `${res.imported} site${res.imported > 1 ? 's' : ''} importé${res.imported > 1 ? 's' : ''} avec succès`,
         'success'
       );
     } catch (err) {
@@ -206,8 +206,8 @@ function ImportPage() {
         typeof raw === 'object' ? raw.message : raw || err.message || 'Erreur inconnue';
       toast(
         status
-          ? `Echec du chargement (HTTP\u00a0${status}) — ${detail}`
-          : `Echec du chargement — ${detail}`,
+          ? `Échec du chargement (HTTP\u00a0${status}) — ${detail}`
+          : `Échec du chargement — ${detail}`,
         'error'
       );
     }
@@ -249,7 +249,7 @@ function ImportPage() {
     <PageShell
       icon={Upload}
       title="Imports"
-      subtitle="Fichiers, CSV, historiques & controles"
+      subtitle="Fichiers, CSV, historiques & contrôles"
       actions={
         <a
           href="/template_import_sites.csv"
@@ -289,7 +289,7 @@ function ImportPage() {
 
           {statusError && (
             <p className="text-xs text-amber-600 mb-2">
-              Statut demo indisponible — reset manuel possible.
+              Statut démo indisponible — reset manuel possible.
             </p>
           )}
 
@@ -422,7 +422,7 @@ function ImportPage() {
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle size={16} className="text-green-600" />
                 <span className="font-medium text-green-800 text-sm">
-                  Pack {packResult.pack} ({packResult.size}) charge en {packResult.elapsed_s}s
+                  Pack {packResult.pack} ({packResult.size}) chargé en {packResult.elapsed_s}s
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
@@ -458,7 +458,7 @@ function ImportPage() {
                   <p className="font-bold text-gray-800">
                     {packResult.compliance?.findings_count || 0}
                   </p>
-                  <p className="text-gray-500">Findings</p>
+                  <p className="text-gray-500">Constats</p>
                 </div>
               </div>
             </div>
@@ -484,8 +484,8 @@ function ImportPage() {
         {!file ? (
           <>
             <Upload size={40} className="mx-auto text-gray-400 mb-3" />
-            <p className="text-gray-600 font-medium">Cliquer pour selectionner un fichier CSV</p>
-            <p className="text-sm text-gray-400 mt-1">ou glissez-deposez ici</p>
+            <p className="text-gray-600 font-medium">Cliquer pour sélectionner un fichier CSV</p>
+            <p className="text-sm text-gray-400 mt-1">ou glissez-déposez ici</p>
             <p className="text-xs text-gray-400 mt-2">
               Format: nom, adresse, code_postal, ville, surface_m2, type, naf_code
             </p>
@@ -513,7 +513,7 @@ function ImportPage() {
         <Card>
           <CardBody>
             <h2 className="font-semibold text-gray-700 mb-3">
-              Apercu ({preview.total} ligne{preview.total > 1 ? 's' : ''})
+              Aperçu ({preview.total} ligne{preview.total > 1 ? 's' : ''})
             </h2>
             <div className="overflow-x-auto">
               <Table>
@@ -568,13 +568,13 @@ function ImportPage() {
           <CardBody>
             <div className="flex items-center gap-3 mb-4">
               <CheckCircle size={24} className="text-green-500" />
-              <h2 className="font-semibold text-gray-700">Import termine</h2>
+              <h2 className="font-semibold text-gray-700">Import terminé</h2>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-2xl font-bold text-green-700">{result.imported}</p>
-                <p className="text-sm text-green-600">sites importes</p>
+                <p className="text-sm text-green-600">sites importés</p>
               </div>
               <div className={`rounded-lg p-4 ${result.errors > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
                 <p
@@ -637,8 +637,8 @@ function ImportPage() {
       {!file && !result && (
         <EmptyState
           icon={Upload}
-          title="Pret a importer"
-          text="Selectionnez un fichier CSV ci-dessus ou utilisez le mode demo pour commencer."
+          title="Prêt à importer"
+          text="Sélectionnez un fichier CSV ci-dessus ou utilisez le mode démo pour commencer."
         />
       )}
 

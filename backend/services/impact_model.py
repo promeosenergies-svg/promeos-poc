@@ -1,7 +1,7 @@
 """
 PROMEOS -- Impact Model Service (Sprint V4.9)
 Resolves electricity price and computes EUR impacts for monitoring KPIs.
-Three modes: CONTRAT (contract price), TARIF (site tariff profile), DEMO (default 0.18).
+Three modes: CONTRAT (contract price), TARIF (site tariff profile), DEMO (default from config).
 """
 
 from dataclasses import dataclass, field
@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 from models.billing_models import EnergyContract
 from models.enums import BillingEnergyType
 from models.site_tariff_profile import SiteTariffProfile
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
 
-DEFAULT_PRICE_EUR_KWH = 0.18
+DEFAULT_PRICE_EUR_KWH = DEFAULT_PRICE_ELEC_EUR_KWH
 TURPE_PENALTY_EUR_KVA_MONTH = 15.48
 
 
@@ -40,7 +41,7 @@ class ImpactResult:
 def resolve_price(db: Session, site_id: int) -> PriceInfo:
     """
     Resolve electricity price for a site.
-    Priority: active EnergyContract (ELEC) > SiteTariffProfile > default 0.18.
+    Priority: active EnergyContract (ELEC) > SiteTariffProfile > default from config.
     """
     # 1. Active ELEC contract with price
     today = date.today()

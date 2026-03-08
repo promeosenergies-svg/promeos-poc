@@ -61,6 +61,7 @@ const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
 const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconciliationPage'));
 const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const AperPage = lazy(() => import('./pages/AperPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -126,6 +127,10 @@ function App() {
                           <Patrimoine />
                         </PageSuspense>
                       }
+                    />
+                    <Route
+                      path="/patrimoine/nouveau"
+                      element={<Navigate to="/patrimoine?wizard=open" replace />}
                     />
                     <Route
                       path="/sites/:id"
@@ -196,6 +201,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <TertiaireAnomaliesPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/conformite/aper"
+                      element={
+                        <PageSuspense>
+                          <AperPage />
                         </PageSuspense>
                       }
                     />

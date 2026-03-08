@@ -46,8 +46,8 @@ describe('B. Labels in new modules', () => {
   const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
 
-  it('Facturation (/billing) is in energie section', () => {
-    const item = energieItems.find((i) => i.to === '/billing');
+  it('Facturation (/bill-intel) is in energie section', () => {
+    const item = energieItems.find((i) => i.to === '/bill-intel');
     expect(item).toBeDefined();
     expect(item.label).toBe('Facturation');
   });
@@ -64,14 +64,14 @@ describe('B. Labels in new modules', () => {
     expect(item.label).toBe("Stratégies d'achat");
   });
 
-  it('/achat-assistant is a hidden page (not in main nav)', () => {
+  it('/achat-assistant is in main nav', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-assistant');
-    expect(item).toBeUndefined();
+    expect(item).toBeDefined();
   });
 
-  it('/renouvellements is a hidden page (not in main nav)', () => {
+  it('/renouvellements is in main nav', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/renouvellements');
-    expect(item).toBeUndefined();
+    expect(item).toBeDefined();
   });
 });
 
@@ -109,8 +109,8 @@ describe('D. Tooltips & aria-label in NavPanel', () => {
     expect(navPanel).toMatch(/aria-label=\{tipText\}/);
   });
 
-  it('panel width uses responsive clamp (248px–300px)', () => {
-    expect(navPanel).toMatch(/clamp\(248px/);
+  it('panel width uses responsive clamp (220px–260px)', () => {
+    expect(navPanel).toMatch(/clamp\(220px/);
   });
 
   it('section headers support line-clamp-2', () => {
@@ -125,7 +125,7 @@ describe('E. Routes in new modules', () => {
 
   it('billing route is in energie section', () => {
     const routes = energieItems.map((i) => i.to);
-    expect(routes).toContain('/billing');
+    expect(routes).toContain('/bill-intel');
   });
 
   it('achat-energie route is in achat section', () => {

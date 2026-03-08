@@ -75,7 +75,7 @@ export default function LoginPage() {
 
           {/* Demo hint */}
           <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">Démo : sophie@atlas.demo / demo2024</p>
+            <p className="text-xs text-gray-400">Démo : promeos@promeos.io / promeos2024</p>
           </div>
         </div>
       </div>

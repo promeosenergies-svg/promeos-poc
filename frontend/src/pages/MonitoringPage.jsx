@@ -174,7 +174,7 @@ const DRAWER_TABS = [
 
 const PROFILE_OPTIONS = [
   { value: 'office', label: 'Bureau' },
-  { value: 'hotel', label: 'Hotel' },
+  { value: 'hotel', label: 'Hôtel' },
   { value: 'retail', label: 'Commerce' },
   { value: 'warehouse', label: 'Logistique' },
   { value: 'school', label: 'École' },
@@ -873,7 +873,7 @@ export function formatSchedule(sched) {
 }
 
 const CONFIDENCE_LABEL_FR = { high: 'Forte', medium: 'Moyenne', low: 'Faible' };
-const SOURCE_LABEL_FR = { naf: 'NAF', type_fallback: 'Type site', default: 'Defaut' };
+const SOURCE_LABEL_FR = { naf: 'NAF', type_fallback: 'Type site', default: 'Défaut' };
 
 function UsagePanel({
   usage,
@@ -1872,6 +1872,13 @@ export default function MonitoringPage() {
     climateConf
   );
 
+  // Auto-select first site if none selected and sites are available
+  useEffect(() => {
+    if (!siteId && !sitesLoading && orgSites.length > 0) {
+      setSite(orgSites[0].id);
+    }
+  }, [siteId, sitesLoading, orgSites, setSite]);
+
   // V18-B: guard — don't show empty state while sites are loading
   if (sitesLoading) {
     return (
@@ -1960,7 +1967,7 @@ export default function MonitoringPage() {
     <PageShell
       icon={Activity}
       title="Performance Électrique"
-      subtitle={<>KPIs, puissance, qualité de données & alertes <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
+      subtitle={<>Suivez les KPIs électriques en temps réel : puissance souscrite, qualité de données, alertes automatiques. <span className="text-xs text-gray-400 ml-2">Période : {period.start} — {period.end} ({period.days}j)</span></>}
       actions={
         <>
           <select
@@ -2003,9 +2010,7 @@ export default function MonitoringPage() {
       }
     >
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 text-sm">
-          {error}
-        </div>
+        <ErrorState message={error} onRetry={loadAll} />
       )}
 
       {/* Empty state with demo CTA */}
@@ -2425,7 +2430,7 @@ export default function MonitoringPage() {
                   }
                   sub={
                     climate.slope_kw_per_c != null
-                      ? `R²: ${climate.r_squared != null ? fmtNum(climate.r_squared, 2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
+                      ? `R²: ${climate.r_squared != null ? fmtNum(climate.r_squared, 2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non déterminé'}`
                       : CLIMATE_REASONS[climate.reason] || 'Analyse climatique non disponible'
                   }
                   tooltip={KPI_TOOLTIPS.climate}
@@ -2436,39 +2441,44 @@ export default function MonitoringPage() {
               )}
             </div>
 
-            {/* Expert: KPI technical details */}
+            {/* Expert: KPI technical details — collapsed by default */}
             {isExpert && kpis && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 -mt-2">
-                <div className="text-[10px] text-gray-400 font-mono">
-                  Pmax: src={kpis.source || 'engine'} · period={kpis.period || '-'}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono">
-                  LF seuils: ok≥{lfThresholds.ok}% warn≥{lfThresholds.warn}% · arch={archetype}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono">
-                  Qualité: raw={qualityScore ?? 'null'} · conf={qualityConf?.pct ?? '-'}% · {qualityConf?.level || '-'}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono">
-                  Risque: raw={riskScore ?? 'null'} · status={riskStatus}
-                  {climate?.r_squared != null ? ` · R²=${fmtNum(climate.r_squared, 3)}` : ''}
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono">
-                  HH: ratio={offHoursRatio ?? 'null'} · kwh={offHoursKwh ?? 'null'}
-                  · prix={offHoursEstimate.price} EUR/kWh ({offHoursEstimate.mode || 'est.'})
-                </div>
-                <div className="text-[10px] text-gray-400 font-mono">
-                  CO₂e: factor={emissions.factor?.kgco2e_per_kwh ?? '-'} · src={emissions.factor?.source_label || '-'}
-                </div>
-                {climate && (
+              <details className="mb-4 -mt-2">
+                <summary className="cursor-pointer text-[10px] text-gray-400 hover:text-gray-500">
+                  Données techniques
+                </summary>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
                   <div className="text-[10px] text-gray-400 font-mono">
-                    Climat: slope={climate.slope_kw_per_c ?? '-'} · Tb={climate.balance_point_c ?? '-'}°C
-                    · n={climate.n_points ?? '-'}pts · label={climate.label || '-'}
+                    Pmax: src={kpis.source || 'engine'} · period={kpis.period || '-'}
                   </div>
-                )}
-                <div className="text-[10px] text-gray-400 font-mono">
-                  Site ID: {siteId} · snap_count={snapshots.length} · alerts_total={alerts.length}
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    LF seuils: ok≥{lfThresholds.ok}% warn≥{lfThresholds.warn}% · arch={archetype}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    Qualité: raw={qualityScore ?? 'null'} · conf={qualityConf?.pct ?? '-'}% · {qualityConf?.level || '-'}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    Risque: raw={riskScore ?? 'null'} · status={riskStatus}
+                    {climate?.r_squared != null ? ` · R²=${fmtNum(climate.r_squared, 3)}` : ''}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    HH: ratio={offHoursRatio ?? 'null'} · kwh={offHoursKwh ?? 'null'}
+                    · prix={offHoursEstimate.price} EUR/kWh ({offHoursEstimate.mode || 'est.'})
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    CO₂e: factor={emissions.factor?.kgco2e_per_kwh ?? '-'} · src={emissions.factor?.source_label || '-'}
+                  </div>
+                  {climate && (
+                    <div className="text-[10px] text-gray-400 font-mono">
+                      Climat: slope={climate.slope_kw_per_c ?? '-'} · Tb={climate.balance_point_c ?? '-'}°C
+                      · n={climate.n_points ?? '-'}pts · label={climate.label || '-'}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-gray-400 font-mono">
+                    Site ID: {siteId} · snap_count={snapshots.length} · alerts_total={alerts.length}
+                  </div>
                 </div>
-              </div>
+              </details>
             )}
 
             {/* Compare deltas row */}
@@ -2554,7 +2564,7 @@ export default function MonitoringPage() {
                   <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                     <Sun size={18} /> Heatmap 7j x 24h
                     <span className="text-[10px] text-gray-400 font-normal ml-auto">
-                      kW moyen / creneau
+                      kW moyen / créneau
                     </span>
                   </h2>
                   <HeatmapGrid data={heatmapData} />
@@ -2663,7 +2673,7 @@ export default function MonitoringPage() {
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <h2 className="font-semibold text-gray-700 flex items-center gap-2">
                     <AlertTriangle size={18} className="text-orange-500" />
-                    Insights & Alertes
+                    Analyses & Alertes
                     {openCount > 0 && <Badge status="crit">{openCount} ouvertes</Badge>}
                     {groupedAlerts.length < filteredAlerts.length && (
                       <span className="text-[10px] text-gray-400 font-normal">

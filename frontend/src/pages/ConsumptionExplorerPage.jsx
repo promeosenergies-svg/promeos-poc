@@ -5,7 +5,7 @@
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Activity,
   Target,
@@ -21,8 +21,11 @@ import {
   Grid3x3,
   Cloud,
   Lightbulb,
+  ChevronDown,
+  Eye,
 } from 'lucide-react';
 import { Badge, Button, EmptyState, EvidenceDrawer as GenericEvidenceDrawer } from '../ui';
+import ErrorState from '../ui/ErrorState';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
@@ -48,21 +51,32 @@ import TargetsPanel from './consumption/TargetsPanel';
 import HPHCPanel from './consumption/HPHCPanel';
 import GasPanel from './consumption/GasPanel';
 import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
+import { toConsoDiag, toMonitoring } from '../services/routes';
 
 // ========================================
 // Constants
 // ========================================
 
-const TAB_CONFIG = [
+// ── 3 niveaux d'onglets (Step 31) ─────────────────────────────────────
+const TABS_ESSENTIAL = [
   { key: 'timeseries', label: 'Consommation', icon: BarChart3, desc: 'Série temporelle' },
-  { key: 'insights', label: 'Insights', icon: Lightbulb, desc: 'P05 / P95 / anomalies' },
+  { key: 'insights', label: 'Analyses', icon: Lightbulb, desc: 'P05 / P95 / anomalies' },
+];
+
+const TABS_ANALYSIS = [
   { key: 'signature', label: 'Signature', icon: Grid3x3, desc: 'Empreinte horaire-hebdo' },
   { key: 'meteo', label: 'Météo', icon: Cloud, desc: 'Influence climatique' },
   { key: 'tunnel', label: 'Tunnel', icon: Activity, desc: 'Enveloppe P10-P90' },
   { key: 'targets', label: 'Objectifs', icon: Target, desc: 'Budgets & progression' },
+];
+
+const TABS_SPECIALIST = [
   { key: 'hphc', label: 'HP/HC', icon: Clock, desc: 'Grille tarifaire' },
   { key: 'gas', label: 'Gaz', icon: Flame, desc: 'Beta' },
 ];
+
+// Flat list for backward compat (URL deep-linking, panel routing)
+const TAB_CONFIG = [...TABS_ESSENTIAL, ...TABS_ANALYSIS, ...TABS_SPECIALIST];
 
 // ENERGY_OPTIONS + PERIOD_OPTIONS moved to StickyFilterBar
 
@@ -155,7 +169,7 @@ function SmartEmptyState({
         )}
         {onGenerateDemo && (
           <Button variant="outline" onClick={onGenerateDemo}>
-            Generer demo
+            Générer démo
           </Button>
         )}
       </div>
@@ -254,6 +268,7 @@ export default function ConsumptionExplorerPage() {
     primaryAvailability,
     data: { availabilityBySite, tunnelBySite, hphcBySite, progressionBySite },
     loading,
+    error: motorError,
   } = motor;
 
   // ── Multi-site KPI aggregation (issue #38) ────────────────────────────
@@ -363,11 +378,27 @@ export default function ConsumptionExplorerPage() {
 
   // ── Tab state (persisted in URL) ───────────────────────────────────────
   const [activeTab, setActiveTab] = useState(urlState.tab || 'timeseries');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const switchTab = (tab) => {
     setActiveTab(tab);
     setUrlParams({ tab });
     track('explorer_tab', { tab });
   };
+
+  // ── Visible tabs based on mode + showAdvanced (Step 31) ──────────────
+  const visibleTabs = useMemo(() => {
+    if (isClassic) return TABS_ESSENTIAL;
+    const base = [...TABS_ESSENTIAL, ...TABS_ANALYSIS];
+    return showAdvanced ? [...base, ...TABS_SPECIALIST] : base;
+  }, [isClassic, showAdvanced]);
+
+  // Auto-expand specialist level if active tab is in that tier
+  useEffect(() => {
+    const specialistKeys = new Set(TABS_SPECIALIST.map((t) => t.key));
+    if (specialistKeys.has(activeTab) && !showAdvanced) {
+      setShowAdvanced(true);
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-calibrate period from availability ────────────────────────────
   useEffect(() => {
@@ -566,6 +597,35 @@ export default function ConsumptionExplorerPage() {
 
   return (
     <div className="space-y-5">
+      {/* Page header + cross-nav */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <BarChart3 size={20} className="text-blue-600" />
+            Explorateur de consommation
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Visualisez et comparez les courbes de consommation de vos sites — par période, énergie et granularité.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            to={toConsoDiag()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+          >
+            <Eye size={14} />
+            Diagnostic
+          </Link>
+          <Link
+            to={toMonitoring()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+          >
+            <Activity size={14} />
+            Performance
+          </Link>
+        </div>
+      </div>
+
       {/* V1.3: Scope coherence banner — single site indicator */}
       {selectedSiteId && siteIds.length === 1 && (
         <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
@@ -654,6 +714,11 @@ export default function ConsumptionExplorerPage() {
         />
       )}
 
+      {/* Error state */}
+      {motorError && !loading && (
+        <ErrorState message={motorError} onRetry={() => window.location.reload()} />
+      )}
+
       {/* Loading skeleton */}
       {loading && <AvailabilitySkeleton />}
 
@@ -714,34 +779,57 @@ export default function ConsumptionExplorerPage() {
               )}
             </>
           ) : (
-            /* ── Expert mode: tab bar always visible + panel routing ── */
+            /* ── Expert mode: tab bar with 3 levels + panel routing ── */
             <>
-              {/* Tab bar — always visible regardless of data state */}
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                {TAB_CONFIG.map((tab) => {
+              {/* Tab bar — 3 niveaux avec séparateurs visuels */}
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1 items-center flex-wrap">
+                {visibleTabs.map((tab, idx) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.key;
                   if (nonApplicableTabs(energyType).has(tab.key)) return null;
+                  // Séparateur entre Essentiel→Analyse et Analyse→Spécialiste
+                  const isAnalysisStart = tab.key === TABS_ANALYSIS[0]?.key;
+                  const isSpecialistStart = tab.key === TABS_SPECIALIST[0]?.key;
+                  const showSep = isAnalysisStart || isSpecialistStart;
                   return (
-                    <button
-                      key={tab.key}
-                      onClick={() => switchTab(tab.key)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
-                        active
-                          ? 'bg-white text-blue-700 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      <Icon size={16} />
-                      <span>{tab.label}</span>
-                      {tab.key === 'gas' && (
-                        <Badge variant="warn" className="text-[10px] px-1 py-0">
-                          Beta
-                        </Badge>
+                    <span key={tab.key} className="contents">
+                      {showSep && (
+                        <span className="w-px h-6 bg-gray-300 mx-0.5 shrink-0" aria-hidden="true" />
                       )}
-                    </button>
+                      <button
+                        onClick={() => switchTab(tab.key)}
+                        title={tab.desc}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
+                          active
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        <Icon size={16} />
+                        <span>{tab.label}</span>
+                        {tab.key === 'gas' && (
+                          <Badge variant="warn" className="text-[10px] px-1 py-0">
+                            Beta
+                          </Badge>
+                        )}
+                      </button>
+                    </span>
                   );
                 })}
+                {/* Toggle Spécialiste */}
+                {!isClassic && (
+                  <button
+                    onClick={() => setShowAdvanced((v) => !v)}
+                    title={showAdvanced ? 'Masquer les onglets spécialistes' : 'Afficher les onglets spécialistes'}
+                    className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 transition shrink-0"
+                  >
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+                    />
+                    <span className="hidden sm:inline">{showAdvanced ? 'Moins' : 'Plus'}</span>
+                  </button>
+                )}
               </div>
 
               {/* InsightsStrip — only when data ready */}

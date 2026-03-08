@@ -26,7 +26,7 @@ const ROLE_LABELS = {
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -154,7 +154,7 @@ function UserMenu() {
               className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
             >
               <LogOut size={14} />
-              Deconnexion
+              Déconnexion
             </button>
           </div>,
           document.body

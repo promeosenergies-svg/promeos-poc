@@ -72,6 +72,65 @@ export function evidenceRisque(scopeLabel, risqueEur) {
   });
 }
 
+export function evidenceMaturite(scopeLabel) {
+  return buildEvidence({
+    id: 'exec-maturite',
+    title: 'Score de maturité',
+    scopeLabel,
+    sources: [
+      {
+        kind: 'calc',
+        label: 'Modèle de maturité PROMEOS',
+        confidence: 'high',
+        details: 'Évaluation sur 5 axes : données, conformité, actions, contrats, pilotage.',
+        freshness: 'Recalculé à chaque chargement',
+      },
+      {
+        kind: 'manual',
+        label: 'Données importées',
+        confidence: 'medium',
+        details: 'Complétude des imports : compteurs, factures, contrats, patrimoine.',
+        links: [{ label: 'Activation', href: '/activation' }],
+      },
+    ],
+    method: [
+      'Score = moyenne pondérée des 5 axes de maturité.',
+      'Chaque axe : 0-100% selon le taux de complétion des données et actions.',
+      'Pondérations : données 30%, conformité 25%, actions 20%, contrats 15%, pilotage 10%.',
+    ],
+    assumptions: [
+      'Le score reflète la complétude des données dans PROMEOS, pas la maturité réelle de l\'organisation.',
+      'Importer plus de données fait progresser le score automatiquement.',
+    ],
+  });
+}
+
+export function evidenceCouverture(scopeLabel) {
+  return buildEvidence({
+    id: 'exec-couverture',
+    title: 'Couverture des données',
+    scopeLabel,
+    sources: [
+      {
+        kind: 'calc',
+        label: 'Briques de données PROMEOS',
+        confidence: 'high',
+        details: '5 briques : compteurs, factures, contrats, patrimoine, conformité.',
+        freshness: 'Temps réel',
+      },
+    ],
+    method: [
+      'Couverture = nombre de briques alimentées / 5 briques totales × 100.',
+      'Une brique est « alimentée » si au moins un enregistrement existe pour le périmètre courant.',
+      'Le % reflète la diversité des sources, pas la profondeur de chacune.',
+    ],
+    assumptions: [
+      'Toutes les briques ont le même poids dans le calcul.',
+      'Un seul enregistrement suffit pour considérer une brique comme couverte.',
+    ],
+  });
+}
+
 export function evidenceKwhTotal(scopeLabel, periodLabel, kwhValue) {
   return buildEvidence({
     id: 'conso-kwh-total',

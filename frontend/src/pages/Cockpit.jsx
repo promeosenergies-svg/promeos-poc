@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { getNotificationsSummary, getComplianceTimeline, getMarketContext } from '../services/api';
+import { getNotificationsSummary, getComplianceTimeline, getMarketContext, getComplianceScoreTrend } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
@@ -72,7 +72,7 @@ import {
   getRiskStatus,
   getStatusBadgeProps,
 } from '../lib/constants';
-import { evidenceConformite, evidenceRisque } from '../ui/evidence.fixtures';
+import { evidenceConformite, evidenceRisque, evidenceMaturite, evidenceCouverture } from '../ui/evidence.fixtures';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -108,6 +108,8 @@ const Cockpit = () => {
   const [consoSource, setConsoSource] = useState(null);
   // Step 24: Market context compact
   const [marketContext, setMarketContext] = useState(null);
+  // Step 33: Compliance score trend (6 months)
+  const [scoreTrend, setScoreTrend] = useState(null);
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -152,6 +154,14 @@ const Cockpit = () => {
   useEffect(() => {
     getMarketContext('ELEC').then(setMarketContext).catch(() => setMarketContext(null));
   }, []);
+
+  // Step 33: Fetch compliance score trend
+  useEffect(() => {
+    if (!org?.id) return;
+    getComplianceScoreTrend({ months: 6 })
+      .then((data) => setScoreTrend(data?.trend || null))
+      .catch(() => setScoreTrend(null));
+  }, [org?.id]);
 
   // A.1: Fetch consumption source from cockpit API (conso_confidence)
   useEffect(() => {
@@ -251,6 +261,8 @@ const Cockpit = () => {
     () => ({
       conformite: evidenceConformite(scopeLabel),
       risque: evidenceRisque(scopeLabel, kpis.risqueTotal),
+      maturite: evidenceMaturite(scopeLabel),
+      couverture: evidenceCouverture(scopeLabel),
     }),
     [scopeLabel, kpis.risqueTotal]
   );
@@ -356,24 +368,30 @@ const Cockpit = () => {
         />
       )}
 
+      {/* ═══════════ ZONE 1 : PRIORITÉ DU MOMENT ═══════════ */}
+
       {/* ── Résumé exécutif (Cockpit V2) ── */}
       <ExecutiveSummaryCard bullets={executiveSummary} onNavigate={navigate} />
 
       {/* ── Health Summary ── */}
       <HealthSummary healthState={healthState} onNavigate={navigate} />
 
-      {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
-      <div data-tour="step-1">
-        <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} isExpert={isExpert} />
+      {/* ── Briefing du jour — actions prioritaires ── */}
+      <div data-tour="step-2">
+        <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
       </div>
 
-      {/* ── Step 24: Market compact ── */}
-      <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
+      {/* ═══════════ ZONE 2 : RISQUE & OPPORTUNITÉ ═══════════ */}
+
+      {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
+      <div data-tour="step-1">
+        <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} isExpert={isExpert} scoreTrend={scoreTrend} />
+      </div>
 
       {/* ── Impact & Décision ── */}
       <ImpactDecisionPanel kpis={kpis} />
 
-      {/* Step 13: Prochaine echeance reglementaire */}
+      {/* Prochaine échéance réglementaire */}
       {nextDeadline && (
         <div
           className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition"
@@ -382,7 +400,7 @@ const Cockpit = () => {
           <ShieldCheck size={18} className="text-amber-600 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-amber-800">
-              Prochaine echeance : {nextDeadline.label}
+              Prochaine échéance : {nextDeadline.label}
             </p>
             <p className="text-xs text-amber-600">
               {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour{nextDeadline.days_remaining > 1 ? 's' : ''}
@@ -394,25 +412,19 @@ const Cockpit = () => {
             </p>
           </div>
           <span className="text-xs font-medium text-amber-700 hover:underline shrink-0">
-            Voir toutes les echeances
+            Voir toutes les échéances
           </span>
         </div>
       )}
 
-      {/* ── Briefing du jour ── */}
-      <div data-tour="step-2">
-        <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
-      </div>
-
-      {/* ── Avertissement cohérence données ── */}
-      {!consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
-
-      {/* ── Qualite des donnees V113 ── */}
-      <DataQualityWidget />
+      {/* ═══════════ ZONE 3 : SURVEILLANCE & CONTEXTE ═══════════ */}
 
       <div data-tour="step-3">
         <WatchlistCard watchlist={watchlist} consistency={consistency} onNavigate={navigate} />
       </div>
+
+      {/* Market context — contexte secondaire */}
+      <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
 
       {isExpert && opportunities.length > 0 && (
         <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
@@ -422,7 +434,13 @@ const Cockpit = () => {
 
       <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
 
-      {/* ── Activation des données V37 ── */}
+      {/* ── Avertissement cohérence données (expert) ── */}
+      {isExpert && !consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
+
+      {/* ── Qualité des données (expert) ── */}
+      {isExpert && <DataQualityWidget />}
+
+      {/* ── Activation des données ── */}
       <DataActivationPanel kpis={kpis} />
 
       {/* ── Données & connexions (relégué) ── */}

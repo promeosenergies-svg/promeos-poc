@@ -12,12 +12,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ── Backward-compatible module-level constants (V68 tests import these) ──
-TURPE_EUR_KWH_ELEC = 0.0453
-ATRD_EUR_KWH_GAZ = 0.025
-ATRT_EUR_KWH_GAZ = 0.012
-CSPE_EUR_KWH_ELEC = 0.0225
-TICGN_EUR_KWH_GAZ = 0.01637
-TVA_RATE_20 = 0.20
+# Values loaded from tarif_loader (YAML referentiel) with hardcoded last resort
+try:
+    from config.tarif_loader import (
+        get_turpe_moyen_kwh as _turpe, get_atrd_kwh as _atrd,
+        get_atrt_kwh as _atrt, get_accise_kwh as _accise,
+        get_tva_normale as _tva,
+    )
+    TURPE_EUR_KWH_ELEC = _turpe("C5_BT")
+    ATRD_EUR_KWH_GAZ = _atrd()
+    ATRT_EUR_KWH_GAZ = _atrt()
+    CSPE_EUR_KWH_ELEC = _accise("elec")
+    TICGN_EUR_KWH_GAZ = _accise("gaz")
+    TVA_RATE_20 = _tva()
+except Exception:
+    TURPE_EUR_KWH_ELEC = 0.0453
+    ATRD_EUR_KWH_GAZ = 0.025
+    ATRT_EUR_KWH_GAZ = 0.012
+    CSPE_EUR_KWH_ELEC = 0.0225
+    TICGN_EUR_KWH_GAZ = 0.01637
+    TVA_RATE_20 = 0.20
 
 # ── Fallback from YAML referentiel (tarifs_reglementaires.yaml) ───────
 def _load_fallback() -> dict:

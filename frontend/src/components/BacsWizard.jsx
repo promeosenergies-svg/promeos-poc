@@ -543,7 +543,7 @@ function StepActions({ assessment, onClose }) {
   const actions = [
     {
       priority: 'CRITICAL',
-      label: 'Installer un systeme GTB/GTC conforme',
+      label: 'Installer un système GTB/GTC conforme',
       effort: 'Élevé',
       roi: 'Conformité réglementaire',
     },
@@ -677,7 +677,7 @@ export default function BacsWizard({ siteId, onClose }) {
         // Asset already exists — skip to phase 2
         setPhase(1);
       } else {
-        setError(err.response?.data?.detail || 'Erreur création asset');
+        setError(err.response?.data?.detail || 'Erreur création actif');
       }
     }
     setLoading(false);

@@ -155,7 +155,7 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
         {questions.length > 0 && (
           <div className="px-6 py-3 border-t flex items-center justify-between">
             <span className="text-xs text-gray-500">
-              {answeredCount}/{questions.length} reponse{answeredCount > 1 ? 's' : ''}
+              {answeredCount}/{questions.length} réponse{answeredCount > 1 ? 's' : ''}
             </span>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={onClose}>

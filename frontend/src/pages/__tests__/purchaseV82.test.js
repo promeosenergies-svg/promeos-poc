@@ -147,7 +147,7 @@ describe('E · V81 backward compat', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('header is dynamic scenarios.length (V81)', () => {
-    expect(code).toContain('{scenarios.length} stratégies comparées');
+    expect(code).toContain('{scenarios.length} scénarios comparés');
   });
 
   it('still has cta-assistant-ths (V81)', () => {

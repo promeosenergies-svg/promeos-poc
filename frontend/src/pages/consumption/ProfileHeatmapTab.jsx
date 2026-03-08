@@ -172,7 +172,7 @@ export default function ProfileHeatmapTab({ profile, loading, schedule, stats, i
           detail="Puissance de pointe"
         />
         <KpiCard
-          label="Load Factor"
+          label="Facteur de charge"
           value={fmtNum((load_factor ?? 0) * 100, 1)}
           suffix="%"
           detail="Talon / Pointe"

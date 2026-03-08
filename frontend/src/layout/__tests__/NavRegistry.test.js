@@ -252,12 +252,12 @@ describe('IA coherence', () => {
     expect(perfIdx).toBe(consoIdx + 1);
   });
 
-  it("Centre d'actions has alerts badge in Pilotage", () => {
+  it("Actions & Suivi has alerts badge in Pilotage", () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((item) => item.to === '/actions');
     expect(centre).toBeDefined();
     expect(centre.badgeKey).toBe('alerts');
-    expect(centre.label).toBe("Centre d'actions");
+    expect(centre.label).toBe("Actions & Suivi");
   });
 
   it('Patrimoine lives in Patrimoine module (patrimoine section)', () => {
@@ -464,10 +464,10 @@ describe('Route coverage guard-rails', () => {
     }
   });
 
-  it("actions label is Centre d'actions (FR)", () => {
+  it("actions label is Actions & Suivi (FR)", () => {
     const actions = ALL_NAV_ITEMS.find((item) => item.to === '/actions');
     expect(actions).toBeDefined();
-    expect(actions.label).toBe("Centre d'actions");
+    expect(actions.label).toBe("Actions & Suivi");
   });
 
   it('dynamic routes resolve correctly (not fallback to cockpit)', () => {

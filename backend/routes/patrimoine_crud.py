@@ -15,6 +15,7 @@ from models import (
     EntiteJuridique,
     Portefeuille,
     Site,
+    Batiment,
     TypeSite,
     not_deleted,
 )
@@ -27,6 +28,7 @@ from schemas.patrimoine_crud import (
     PortefeuilleUpdate,
     SiteCreate,
     SiteUpdate,
+    BatimentCreate,
 )
 
 router = APIRouter(prefix="/api/patrimoine/crud", tags=["Patrimoine CRUD"])
@@ -475,3 +477,41 @@ def archive_site_crud(
     site.actif = False
     db.commit()
     return {"status": "archived", "id": site_id}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BATIMENTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _bat_to_dict(b: Batiment) -> dict:
+    return {
+        "id": b.id,
+        "site_id": b.site_id,
+        "nom": b.nom,
+        "surface_m2": b.surface_m2,
+        "annee_construction": b.annee_construction,
+        "cvc_power_kw": b.cvc_power_kw,
+    }
+
+
+@router.post("/batiments", status_code=201)
+def create_batiment(
+    body: BatimentCreate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Cree un batiment rattache a un site."""
+    site = db.query(Site).filter(Site.id == body.site_id, not_deleted(Site)).first()
+    if not site:
+        raise HTTPException(404, "Site introuvable")
+    bat = Batiment(
+        site_id=body.site_id,
+        nom=body.nom,
+        surface_m2=body.surface_m2,
+        annee_construction=body.annee_construction,
+        cvc_power_kw=body.cvc_power_kw,
+    )
+    db.add(bat)
+    db.commit()
+    db.refresh(bat)
+    return _bat_to_dict(bat)

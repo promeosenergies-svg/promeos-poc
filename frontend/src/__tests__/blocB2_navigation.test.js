@@ -140,8 +140,8 @@ describe('B.2 — CommandPalette enrichie', () => {
 describe('B.2 — NavPanel sections collapsibles', () => {
   const src = readSrc('layout', 'NavPanel.jsx');
 
-  it('imports NAV_MAIN_SECTIONS', () => {
-    expect(src).toContain('NAV_MAIN_SECTIONS');
+  it('imports getSectionsForModule for contextual display', () => {
+    expect(src).toContain('getSectionsForModule');
   });
 
   it('imports NAV_ADMIN_ITEMS', () => {
@@ -152,9 +152,9 @@ describe('B.2 — NavPanel sections collapsibles', () => {
     expect(src).toContain('NAV_ADMIN_ICON');
   });
 
-  it('renders mainSections (all 5)', () => {
-    expect(src).toContain('mainSections');
-    expect(src).toMatch(/mainSections\.map/);
+  it('renders moduleSections (contextual per module)', () => {
+    expect(src).toContain('moduleSections');
+    expect(src).toMatch(/moduleSections\.map/);
   });
 
   it('renders admin footer section', () => {

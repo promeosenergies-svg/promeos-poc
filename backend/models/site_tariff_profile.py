@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
 
 class SiteTariffProfile(Base, TimestampMixin):
@@ -29,7 +30,7 @@ class SiteTariffProfile(Base, TimestampMixin):
     price_ref_eur_per_kwh = Column(
         Float,
         nullable=False,
-        default=0.18,
+        default=DEFAULT_PRICE_ELEC_EUR_KWH,
         comment="Prix de reference EUR HT par kWh",
     )
     currency = Column(

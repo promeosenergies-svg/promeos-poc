@@ -143,7 +143,7 @@ function TopListActions({ siteId, dates, navigate }) {
           );
         }}
         className="p-0.5 rounded hover:bg-green-50 text-green-500"
-        title="Creer une action"
+        title="Créer une action"
       >
         <Plus size={11} />
       </button>
@@ -404,7 +404,7 @@ export default function ConsumptionPortfolioPage() {
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={16} className="text-rose-500" />
-                  <h3 className="text-sm font-semibold text-gray-700">Impact financier estime</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">Impact financier estimé</h3>
                 </div>
                 {summary.top_impact?.length > 0 ? (
                   <ul className="space-y-2">
@@ -794,7 +794,7 @@ export default function ConsumptionPortfolioPage() {
                               );
                             }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
-                            title="Creer une action"
+                            title="Créer une action"
                           >
                             <Plus size={10} />
                           </button>
@@ -851,7 +851,7 @@ export default function ConsumptionPortfolioPage() {
                                 );
                               }}
                               className="p-1 rounded hover:bg-green-50 text-green-500"
-                              title="Creer une action"
+                              title="Créer une action"
                             >
                               <Plus size={14} />
                             </button>

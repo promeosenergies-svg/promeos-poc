@@ -228,7 +228,7 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
             <UserCheck size={14} className="text-blue-600 flex-shrink-0" />
             <span className="text-xs text-blue-700">
               Profil <strong>{segProfile.segment_label || segProfile.typologie}</strong> — les
-              scenarios ci-dessous sont adaptes a votre activite.
+              scénarios ci-dessous sont adaptés à votre activité.
             </span>
           </div>
         )}
