@@ -71,7 +71,7 @@ describe('fmtEurFull', () => {
 describe('fmtKwh', () => {
   it('0 → "—"', () => expect(fmtKwh(0)).toBe('—'));
   it('500 → "500 kWh"', () => expect(fmtKwh(500)).toBe('500 kWh'));
-  it('15000 → contient "k kWh"', () => expect(fmtKwh(15000)).toContain('k kWh'));
+  it('15000 → contient "MWh"', () => expect(fmtKwh(15000)).toContain('MWh'));
   it('1500000 → contient "GWh"', () => expect(fmtKwh(1500000)).toContain('GWh'));
 });
 

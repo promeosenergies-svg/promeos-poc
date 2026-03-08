@@ -2044,15 +2044,17 @@ export default function MonitoringPage() {
         <>
           {/* ═══ SECTION A — Header pilotage ═══ */}
           <div data-section="header-pilotage" className="mb-6">
-            {/* Usage Panel */}
-            <UsagePanel
-              usage={usageSuggest}
-              loading={usageLoading}
-              scheduleSuggest={scheduleSuggest}
-              onSuggestSchedule={handleSuggestSchedule}
-              onApplySchedule={handleApplySchedule}
-              suggestLoading={suggestLoading}
-            />
+            {/* Usage Panel — expert only (schedule details are technical) */}
+            {isExpert && (
+              <UsagePanel
+                usage={usageSuggest}
+                loading={usageLoading}
+                scheduleSuggest={scheduleSuggest}
+                onSuggestSchedule={handleSuggestSchedule}
+                onApplySchedule={handleApplySchedule}
+                suggestLoading={suggestLoading}
+              />
+            )}
 
             {/* Quick Actions Bar with primary CTA */}
             <QuickActionsBar
@@ -2235,12 +2237,18 @@ export default function MonitoringPage() {
           {/* Actions mini-list */}
           <ActionMiniList actions={siteActions} siteId={siteId} navigate={navigate} />
 
-          {/* ═══ SECTION D — Détails ═══ */}
-          <div data-section="details" className="mb-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <BarChart3 size={16} className="text-indigo-500" />
-              Détails
-            </h2>
+          {/* ═══ SECTION D — Détails (collapsible in standard mode) ═══ */}
+          <details data-section="details" className="mb-6 group" open={isExpert || undefined}>
+            <summary className="cursor-pointer list-none flex items-center gap-2 mb-3 select-none">
+              <ChevronDown size={16} className="text-indigo-500 transition-transform group-open:rotate-0 -rotate-90" />
+              <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                <BarChart3 size={16} className="text-indigo-500" />
+                Détails techniques
+              </h2>
+              <span className="text-xs text-gray-400 ml-2">
+                {isExpert ? '' : 'Cliquez pour développer'}
+              </span>
+            </summary>
 
             {/* Compare period banner */}
             {compareKpis && (
@@ -2917,7 +2925,7 @@ export default function MonitoringPage() {
                 </div>
               </details>
             )}
-          </div>
+          </details>
           {/* end data-section="details" */}
 
           {/* Trust Badge + Demo CTA */}

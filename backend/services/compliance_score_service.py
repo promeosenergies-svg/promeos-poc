@@ -185,8 +185,10 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
             source=source,
         ))
 
-        weighted_sum += fw_score * weight
-        total_weight += weight
+        # Only include available frameworks in the weighted average
+        if available:
+            weighted_sum += fw_score * weight
+            total_weight += weight
 
     # Score composite
     raw_score = weighted_sum / total_weight if total_weight > 0 else 50.0

@@ -98,17 +98,24 @@ export function buildSourceDeepLink(sourceType, sourceId) {
 
   switch (sourceType) {
     case 'compliance':
-      return '/conformite';
+      // If sourceId is an obligation code, navigate to obligations tab
+      return '/conformite?tab=obligations';
     case 'billing':
       return '/bill-intel';
     case 'consumption':
-      return '/consommations';
+      return '/consommations/explorer';
     case 'purchase':
-      return '/performance';
+      return '/achats';
+    case 'anomaly':
+      return '/anomalies';
     case 'insight': {
       // readiness:xxx → /activation, operat:xxx → /conformite/tertiaire/efa
       if (sourceId.startsWith('readiness:')) return '/activation';
-      if (sourceId.startsWith('operat:')) return '/conformite/tertiaire/efa';
+      if (sourceId.startsWith('operat:')) {
+        const parts = sourceId.split(':');
+        const efaId = parts[1];
+        return efaId ? `/conformite/tertiaire/efa/${efaId}` : '/conformite/tertiaire/efa';
+      }
       return '/anomalies';
     }
     case 'lever_engine':

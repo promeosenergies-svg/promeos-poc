@@ -48,13 +48,14 @@ export function fmtAreaCompact(v) {
   return `${n.toLocaleString(FR)}\u00A0m²`;
 }
 
-/** 125 000 => "125k kWh"  |  1 200 000 => "1,2 GWh" */
+/** 125 000 => "125 MWh"  |  1 200 000 => "1,2 GWh"  |  800 => "800 kWh" */
 export function fmtKwh(v) {
   const n = _safe(v);
   if (n == null || n === 0) return '—';
-  if (n >= 1_000_000)
+  if (Math.abs(n) >= 1_000_000)
     return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} GWh`;
-  if (n >= 1_000) return `${Math.round(n / 1_000).toLocaleString(FR)}k kWh`;
+  if (Math.abs(n) >= 1_000)
+    return `${(n / 1_000).toLocaleString(FR, { maximumFractionDigits: n >= 10_000 ? 0 : 1 })} MWh`;
   return `${n.toLocaleString(FR)} kWh`;
 }
 

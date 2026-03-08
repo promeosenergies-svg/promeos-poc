@@ -11,8 +11,8 @@ export const KPI_LABELS = {
     unit: 'kW',
   },
   p95_kw: {
-    simple: 'Pointe Puissance',
-    expert: 'Pointe Puissance',
+    simple: 'Pointe puissance',
+    expert: 'P95 puissance (percentile 95)',
     unit: 'kW',
   },
   pbase_kw: {
@@ -41,8 +41,8 @@ export const KPI_LABELS = {
     unit: 'kWh',
   },
   night_ratio: {
-    simple: 'Ratio Nuit',
-    expert: 'Ratio Nuit',
+    simple: 'Base nocturne',
+    expert: 'Ratio nuit (22h-6h / 6h-22h)',
     unit: '%',
   },
   weekend_ratio: {

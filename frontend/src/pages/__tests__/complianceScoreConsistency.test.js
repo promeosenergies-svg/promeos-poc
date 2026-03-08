@@ -115,13 +115,12 @@ describe('C - ConformitePage has compliance score header', () => {
   it('shows breakdown bars for 3 frameworks', () => {
     expect(code).toContain("'tertiaire_operat'");
     expect(code).toContain("'bacs'");
-    expect(code).toContain('APER (25%)');
+    expect(code).toContain("APER");
   });
 
-  it('shows DT 45%, BACS 30%, APER 25% labels', () => {
-    expect(code).toContain('45%');
-    expect(code).toContain('30%');
-    expect(code).toContain('25%');
+  it('shows dynamic weight labels from API and Non applicable state', () => {
+    expect(code).toContain('fw.weight');
+    expect(code).toContain('Non applicable');
   });
 
   it('displays /100 format', () => {

@@ -388,16 +388,8 @@ function ObligationCard({
   const files = proofFiles[obligation.id] || [];
 
   return (
-    <Card className={`border-l-4 ${cfg.border} ${overdue ? 'ring-1 ring-red-200' : ''}`}>
+    <Card className={`border-l-4 ${cfg.border}`}>
       <CardBody>
-        {overdue && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-red-50 rounded-lg">
-            <AlertTriangle size={14} className="text-red-600" />
-            <span className="text-xs font-semibold text-red-700">
-              En retard — échéance dépassée ({obligation.echeance})
-            </span>
-          </div>
-        )}
 
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1 min-w-0">

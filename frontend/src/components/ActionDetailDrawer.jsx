@@ -2,7 +2,7 @@
  * PROMEOS - ActionDetailDrawer (Sprint V5.0)
  * 5-tab drawer: Detail, Impact, Pieces jointes, Commentaires, Historique.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -49,6 +49,7 @@ import {
 } from '../models/actionProofLinkModel';
 import { SOURCE_LABELS_FR, buildSourceDeepLink } from '../models/evidenceRules';
 import { fmtEurFull, fmtNum, fmtPct } from '../utils/format';
+import { useScope } from '../contexts/ScopeContext';
 
 const _STATUS_TO_BE = {
   backlog: 'open',
@@ -128,9 +129,19 @@ const SOURCE_LABELS = {
   insight: 'Diagnostic',
 };
 
+const EVIDENCE_TYPE_OPTIONS = [
+  { value: 'facture', label: 'Facture' },
+  { value: 'rapport', label: 'Rapport / Audit' },
+  { value: 'attestation', label: 'Attestation' },
+  { value: 'photo', label: 'Photo / Capture' },
+  { value: 'contrat', label: 'Contrat' },
+  { value: 'autre', label: 'Autre document' },
+];
+
 export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { orgSites } = useScope();
   const [tab, setTab] = useState('detail');
   const [detail, setDetail] = useState(null);
   const [comments, setComments] = useState([]);
@@ -149,6 +160,8 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   // Evidence form
   const [evidenceLabel, setEvidenceLabel] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [evidenceType, setEvidenceType] = useState('autre');
+  const [evidenceDate, setEvidenceDate] = useState('');
   const [submittingEvidence, setSubmittingEvidence] = useState(false);
 
   // Realized gain edit
@@ -165,6 +178,14 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   const [generatingTemplates, setGeneratingTemplates] = useState(false);
 
   const actionId = action?._backend?.id || action?.id;
+
+  // Resolve site name from ScopeContext
+  const siteName = useMemo(() => {
+    const sid = action?._backend?.site_id || action?.site_id;
+    if (!sid || !orgSites?.length) return null;
+    const s = orgSites.find((s) => String(s.id) === String(sid));
+    return s?.nom || null;
+  }, [action, orgSites]);
 
   const fetchAll = useCallback(async () => {
     if (!actionId) return;
@@ -273,31 +294,39 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     }
   }
 
-  // Status change — V49: guided close for OPERAT actions
+  // Status change — V49: guided close for OPERAT actions + P2-4: all actions
   async function handleStatusChange(newStatus) {
     setCloseError(null);
 
-    // V49 + Étape 4: check closeability for OPERAT and evidence_required actions
-    if (newStatus === 'done' && (isOperatAction(d) || d.evidence_required)) {
-      try {
-        const closeCheck = await checkActionCloseability(actionId);
-        if (!closeCheck.closable && !closureJustification.trim()) {
-          setShowCloseForm(true);
-          setCloseError(
-            isOperatAction(d)
-              ? 'Preuve validée ou justification requise pour clôturer cette action OPERAT.'
-              : 'Preuve requise — joignez une pièce ou fournissez une justification (≥ 10 caractères).'
-          );
-          return;
+    // P2-4: ALL closures require the close form (comment encouraged)
+    // OPERAT + evidence_required: strict gate (justification mandatory if no proof)
+    if (newStatus === 'done') {
+      const isStrict = isOperatAction(d) || d.evidence_required;
+      if (isStrict) {
+        try {
+          const closeCheck = await checkActionCloseability(actionId);
+          if (!closeCheck.closable && !closureJustification.trim()) {
+            setShowCloseForm(true);
+            setCloseError(
+              isOperatAction(d)
+                ? 'Preuve validée ou justification requise pour clôturer cette action OPERAT.'
+                : 'Preuve requise — joignez une pièce ou fournissez une justification (≥ 10 caractères).'
+            );
+            return;
+          }
+        } catch {
+          // If closeability check fails, continue and let PATCH enforce
         }
-      } catch {
-        // If closeability check fails, continue and let PATCH enforce
+      } else if (!showCloseForm) {
+        // P2-4: For regular actions, show close form to encourage a closing comment
+        setShowCloseForm(true);
+        return;
       }
     }
 
     try {
       const payload = { status: newStatus };
-      // V49: include justification for OPERAT close
+      // Include justification if provided (any action type)
       if (newStatus === 'done' && closureJustification.trim()) {
         payload.closure_justification = closureJustification.trim();
       }
@@ -351,13 +380,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     if (!evidenceLabel.trim()) return;
     setSubmittingEvidence(true);
     try {
+      const typePrefix = evidenceType !== 'autre' ? `[${EVIDENCE_TYPE_OPTIONS.find(o => o.value === evidenceType)?.label || evidenceType}] ` : '';
+      const datePrefix = evidenceDate ? `(${evidenceDate}) ` : '';
       await addActionEvidence(actionId, {
-        label: evidenceLabel.trim(),
+        label: `${typePrefix}${datePrefix}${evidenceLabel.trim()}`,
         file_url: evidenceUrl.trim() || null,
         uploaded_by: commentAuthor.trim() || null,
       });
       setEvidenceLabel('');
       setEvidenceUrl('');
+      setEvidenceType('autre');
+      setEvidenceDate('');
       const [ev, evts] = await Promise.all([
         getActionEvidence(actionId),
         getActionEvents(actionId),
@@ -462,7 +495,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Site</p>
-                  <p className="text-sm font-medium">Site {d.site_id || '—'}</p>
+                  <p className="text-sm font-medium">
+                    {siteName || (d.site_id ? `Site ${d.site_id}` : '—')}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Categorie</p>
@@ -494,18 +529,69 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Echeance</p>
-                  <p className="text-sm flex items-center gap-1">
+                  <p className="text-xs text-gray-500 mb-1">Échéance</p>
+                  <p className={`text-sm flex items-center gap-1 ${
+                    d.due_date && d.status !== 'done' && new Date(d.due_date) < new Date()
+                      ? 'text-red-600 font-semibold' : ''
+                  }`}>
                     <Clock size={14} /> {d.due_date || '—'}
+                    {d.due_date && d.status !== 'done' && new Date(d.due_date) < new Date() && (
+                      <span className="ml-1 text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-semibold">
+                        En retard
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Responsable</p>
                   <p className="text-sm flex items-center gap-1">
                     <User size={14} />{' '}
-                    {d.owner || <span className="text-gray-400">Non assigne</span>}
+                    {d.owner || <span className="text-gray-400 italic">Non assigné</span>}
                   </p>
                 </div>
+              </div>
+
+              {/* Création + contexte temporel */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Créée le</p>
+                  <p className="text-sm text-gray-600">
+                    {d.created_at ? new Date(d.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    }) : '—'}
+                  </p>
+                </div>
+                {d.due_date && d.created_at && d.status !== 'done' && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Progression temporelle</p>
+                    {(() => {
+                      const start = new Date(d.created_at);
+                      const end = new Date(d.due_date);
+                      const now = new Date();
+                      const totalDays = Math.max(1, (end - start) / 86400000);
+                      const elapsed = Math.max(0, (now - start) / 86400000);
+                      const pct = Math.min(100, Math.round((elapsed / totalDays) * 100));
+                      const isLate = pct > 100;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                isLate ? 'bg-red-500' : pct > 75 ? 'bg-amber-500' : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${Math.min(100, pct)}%` }}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-medium ${
+                            isLate ? 'text-red-600' : pct > 75 ? 'text-amber-600' : 'text-gray-500'
+                          }`}>
+                            {isLate ? 'Dépassé' : `${pct}%`}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               {d.description && (
@@ -752,38 +838,58 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   })}
                 </div>
 
-                {/* V49 + Étape 4: Guided close form for OPERAT + evidence_required actions */}
-                {showCloseForm && (isOperatAction(d) || d.evidence_required) && (
+                {/* P2-4: Guided close form for ALL actions */}
+                {showCloseForm && (
                   <div
-                    className="mt-3 space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-lg"
-                    data-testid="v49-close-form"
+                    className={`mt-3 space-y-2 p-3 rounded-lg border ${
+                      closeError ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'
+                    }`}
+                    data-testid="close-form"
                   >
                     {closeError && (
                       <p
                         className="text-xs text-amber-700 font-medium"
-                        data-testid="v49-close-error"
+                        data-testid="close-error"
                       >
                         {closeError}
                       </p>
                     )}
+                    {!closeError && (
+                      <p className="text-xs text-blue-700 font-medium flex items-center gap-1">
+                        <CheckCircle size={12} />
+                        Confirmer la clôture de cette action
+                      </p>
+                    )}
                     <label className="text-xs text-gray-600 block">
-                      Justification de clôture (min. 10 caractères)
+                      {(isOperatAction(d) || d.evidence_required)
+                        ? 'Justification de clôture (min. 10 caractères)'
+                        : 'Commentaire de clôture (recommandé)'}
                     </label>
                     <textarea
                       value={closureJustification}
                       onChange={(e) => setClosureJustification(e.target.value)}
-                      placeholder="Expliquez pourquoi cette action peut être clôturée sans preuve validée..."
+                      placeholder={
+                        (isOperatAction(d) || d.evidence_required)
+                          ? 'Expliquez pourquoi cette action peut être clôturée...'
+                          : 'Résumé de la résolution, résultat obtenu...'
+                      }
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-                      data-testid="v49-closure-justification"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      data-testid="closure-justification"
                     />
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         onClick={() => handleStatusChange('done')}
-                        disabled={closureJustification.trim().length < 10}
+                        disabled={
+                          (isOperatAction(d) || d.evidence_required)
+                            ? closureJustification.trim().length < 10
+                            : false
+                        }
                       >
-                        Clôturer avec justification
+                        {closureJustification.trim()
+                          ? 'Clôturer avec commentaire'
+                          : 'Clôturer sans commentaire'}
                       </Button>
                       <button
                         onClick={() => {
@@ -794,9 +900,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       >
                         Annuler
                       </button>
-                      <span className="text-[10px] text-gray-400 ml-auto">
-                        {closureJustification.trim().length}/10 caractères min.
-                      </span>
+                      {(isOperatAction(d) || d.evidence_required) && (
+                        <span className="text-[10px] text-gray-400 ml-auto">
+                          {closureJustification.trim().length}/10 caractères min.
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -954,25 +1062,63 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 </div>
               )}
 
+              {/* Evidence progress bar */}
+              {d.evidence_required && (
+                <div className="p-3 rounded-lg border border-amber-200 bg-amber-50/50">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-amber-700 flex items-center gap-1">
+                      <Paperclip size={12} /> Preuve requise pour clôturer
+                    </span>
+                    <Badge status={evidence.length > 0 ? 'ok' : 'warn'}>
+                      {evidence.length} pièce{evidence.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  <div className="h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${evidence.length > 0 ? 'bg-green-500' : 'bg-amber-400'}`}
+                      style={{ width: evidence.length > 0 ? '100%' : '0%' }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Add evidence form */}
               <form
                 onSubmit={handleAddEvidence}
-                className="border-t border-gray-100 pt-4 space-y-2"
+                className="border-t border-gray-100 pt-4 space-y-3"
               >
                 <p className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                  <Plus size={12} /> Ajouter une piece
+                  <Plus size={12} /> Ajouter une pièce justificative
                 </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <select
+                    value={evidenceType}
+                    onChange={(e) => setEvidenceType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {EVIDENCE_TYPE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    value={evidenceDate}
+                    onChange={(e) => setEvidenceDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Date du document"
+                  />
+                </div>
                 <input
                   value={evidenceLabel}
                   onChange={(e) => setEvidenceLabel(e.target.value)}
-                  placeholder="Libelle de la piece..."
+                  placeholder="Libellé de la pièce (ex: Facture EDF mars 2026)..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
                 <input
                   value={evidenceUrl}
                   onChange={(e) => setEvidenceUrl(e.target.value)}
-                  placeholder="URL du document (optionnel)"
+                  placeholder="URL ou chemin du document (optionnel)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <Button
@@ -980,7 +1126,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   type="submit"
                   disabled={submittingEvidence || !evidenceLabel.trim()}
                 >
-                  {submittingEvidence ? 'Ajout...' : 'Ajouter'}
+                  {submittingEvidence ? 'Ajout...' : 'Ajouter la pièce'}
                 </Button>
               </form>
             </div>

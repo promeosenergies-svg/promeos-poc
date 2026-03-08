@@ -1042,40 +1042,52 @@ export default function ConformitePage() {
             </div>
             {/* Breakdown bars */}
             <div className="flex-1 space-y-2">
-              {(complianceScore.breakdown || []).map((fw) => (
-                <div key={fw.framework} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-32 truncate">
-                    {fw.framework === 'tertiaire_operat' ? 'Décret Tertiaire (45%)' : fw.framework === 'bacs' ? 'BACS (30%)' : 'APER (25%)'}
-                  </span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${fw.score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : fw.score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
-                      style={{ width: `${Math.min(100, fw.score)}%` }}
-                    />
+              {(complianceScore.breakdown || []).map((fw) => {
+                const fwLabel = fw.framework === 'tertiaire_operat' ? 'Décret Tertiaire' : fw.framework === 'bacs' ? 'BACS' : 'APER';
+                const weightPct = fw.weight != null ? `${Math.round(fw.weight * 100)}%` : '';
+                const isAvailable = fw.available !== false && fw.source !== 'default';
+                return (
+                  <div key={fw.framework} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-36 truncate">
+                      {fwLabel}{weightPct && isAvailable ? ` (${weightPct})` : ''}
+                    </span>
+                    {isAvailable ? (
+                      <>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${fw.score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : fw.score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(100, fw.score)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}>
+                          {Math.round(fw.score)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Non applicable</span>
+                    )}
                   </div>
-                  <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(fw.score)}`}>
-                    {Math.round(fw.score)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
               {/* Fallback: show breakdown_avg from portfolio if no breakdown */}
               {!complianceScore.breakdown && complianceScore.breakdown_avg && (
-                Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => (
-                  <div key={fw} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-32 truncate">
-                      {fw === 'tertiaire_operat' ? 'Décret Tertiaire (45%)' : fw === 'bacs' ? 'BACS (30%)' : 'APER (25%)'}
-                    </span>
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
-                        style={{ width: `${Math.min(100, score)}%` }}
-                      />
+                Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => {
+                  const fwLabel = fw === 'tertiaire_operat' ? 'Décret Tertiaire' : fw === 'bacs' ? 'BACS' : 'APER';
+                  return (
+                    <div key={fw} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-36 truncate">{fwLabel}</span>
+                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${score >= COMPLIANCE_SCORE_THRESHOLDS.ok ? 'bg-green-500' : score >= COMPLIANCE_SCORE_THRESHOLDS.warn ? 'bg-amber-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(100, score)}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}>
+                        {Math.round(score)}
+                      </span>
                     </div>
-                    <span className={`text-xs font-semibold w-10 text-right ${getComplianceScoreColor(score)}`}>
-                      {Math.round(score)}
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             {/* Confidence */}

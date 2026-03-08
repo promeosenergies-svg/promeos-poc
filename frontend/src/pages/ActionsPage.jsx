@@ -243,7 +243,7 @@ function KanbanBoard({
           key={col}
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, col)}
-          className="bg-gray-50 rounded-xl p-3 min-h-[400px]"
+          className="bg-gray-50 rounded-xl p-3 min-h-[200px]"
         >
           <div className="flex items-center gap-2 mb-3 px-1">
             <span className={`w-2.5 h-2.5 rounded-full ${KANBAN_DOT[col]}`} />
@@ -264,19 +264,32 @@ function KanbanBoard({
                     ${selected.has(a.id) ? 'ring-2 ring-blue-400' : 'border-gray-200'}`}
                 >
                   <p className="text-sm font-medium text-gray-900 line-clamp-2">{a.titre}</p>
-                  <div className="flex items-center gap-1.5 mt-2">
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                     <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>
                       {PRIORITY_LABEL[a.priorite]}
                     </Badge>
                     <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
+                    {a._backend?.evidence_required && (
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 flex items-center gap-0.5">
+                        <Lock size={8} /> Preuve
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                    <span>{a.impact_eur.toLocaleString('fr-FR')} EUR</span>
-                    <span>{a.owner || 'Non assigné'}</span>
+                    <span className="font-medium">{a.impact_eur.toLocaleString('fr-FR')} EUR</span>
+                    <span className="truncate max-w-[80px]">{a.owner || <span className="italic text-gray-400">Non assigné</span>}</span>
                   </div>
-                  {isOverdue(a) && (
-                    <div className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
-                      <AlertTriangle size={12} /> En retard
+                  {a.due_date && (
+                    <div className={`mt-1.5 text-[10px] flex items-center gap-1 ${
+                      isOverdue(a) ? 'text-red-600 font-semibold' : 'text-gray-400'
+                    }`}>
+                      <CalendarDays size={10} />
+                      {a.due_date}
+                      {isOverdue(a) && (
+                        <span className="ml-1 bg-red-50 text-red-600 px-1 py-0.5 rounded text-[9px] font-semibold">
+                          En retard
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -562,12 +575,6 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const pageSize = 15;
 
-  const ownerOptions = useMemo(() => {
-    const unique = [...new Set(enrichedActions.map((a) => a.owner).filter(Boolean))];
-    unique.sort((a, b) => a.localeCompare(b));
-    return unique;
-  }, [enrichedActions]);
-
   const fetchActions = useCallback(async () => {
     try {
       setLoading(true);
@@ -595,6 +602,12 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       return realName ? { ...a, site_nom: realName } : a;
     });
   }, [actions, orgSites]);
+
+  const ownerOptions = useMemo(() => {
+    const unique = [...new Set(enrichedActions.map((a) => a.owner).filter(Boolean))];
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  }, [enrichedActions]);
 
   // Auto-open detail drawer when navigating to /actions/:actionId
   useEffect(() => {
@@ -724,7 +737,8 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       total_co2e_kg: enrichedActions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
       overdue: actions.filter(isOverdue).length,
     }),
-    [actions]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [actions, orgSites]
   );
 
   function handleSort(col) {
@@ -941,6 +955,42 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
 
       {/* ROI Summary (V5.0) */}
       <ROISummaryBar />
+
+      {/* P2-6: Progress summary bar */}
+      {stats.total > 0 && (
+        <div className="flex items-center gap-4 px-4 py-2.5 bg-white rounded-lg border border-gray-200">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">
+                Avancement global
+              </span>
+              <span className="text-xs font-bold text-gray-800">
+                {stats.done}/{stats.total} terminées ({stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}%)
+              </span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+              {stats.done > 0 && (
+                <div className="h-full bg-green-500 transition-all" style={{ width: `${(stats.done / stats.total) * 100}%` }} />
+              )}
+              {stats.in_progress > 0 && (
+                <div className="h-full bg-amber-400 transition-all" style={{ width: `${(stats.in_progress / stats.total) * 100}%` }} />
+              )}
+              {stats.planned > 0 && (
+                <div className="h-full bg-blue-300 transition-all" style={{ width: `${(stats.planned / stats.total) * 100}%` }} />
+              )}
+            </div>
+          </div>
+          {stats.overdue > 0 && (
+            <div className="flex items-center gap-1 text-xs font-medium text-red-600 shrink-0">
+              <AlertTriangle size={12} />
+              {stats.overdue} en retard
+            </div>
+          )}
+          <div className="text-xs text-gray-500 shrink-0">
+            {stats.total_impact.toLocaleString('fr-FR')} EUR d'impact total
+          </div>
+        </div>
+      )}
 
       {/* Quick views with counts */}
       <div className="flex items-center gap-2">

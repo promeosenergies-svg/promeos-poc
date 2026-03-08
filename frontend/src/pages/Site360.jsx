@@ -133,7 +133,7 @@ function TabResume({ site, onSegmentationClick }) {
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
                 <p className="text-xs text-gray-500"><Explain term="anomalie">Anomalies</Explain></p>
-                <p className="text-lg font-bold text-amber-700">{site.anomalies_count}</p>
+                <p className="text-lg font-bold text-amber-700">{site.anomalies_count ?? 0}</p>
               </div>
               <div className="p-3 bg-green-50 rounded-lg">
                 <p className="text-xs text-gray-500">Compteurs</p>
@@ -1248,7 +1248,7 @@ export default function Site360() {
         <MiniKpi
           icon={AlertTriangle}
           label="Anomalies"
-          value={`${site.anomalies_count}`}
+          value={`${site.anomalies_count ?? 0}`}
           color="text-amber-600"
         />
       </div>

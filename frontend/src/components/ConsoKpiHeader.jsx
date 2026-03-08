@@ -10,7 +10,7 @@
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-react';
 import { TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
-import { fmtNum } from '../utils/format';
+import { fmtNum, fmtKwh } from '../utils/format';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { getKpiLabel } from '../shared/kpiLabels';
 
@@ -81,7 +81,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
   // then tunnel.total_kwh (not returned by current tunnel service)
   // then progression.ytd_actual_kwh (YTD targets — may be null if no targets configured)
   const totalKwh = hphc?.total_kwh ?? tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
-  const kwhLabel = totalKwh != null ? fmtNum(Math.round(totalKwh), 0, 'kWh') : '—';
+  const kwhLabel = totalKwh != null ? fmtKwh(totalKwh) : '—';
 
   // --- EUR total (from hphc or progression) ---
   const totalEur = hphc?.total_cost_eur ?? null;
@@ -95,7 +95,9 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
 
   // --- CO2e ---
   const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
-  const co2Label = co2Kg != null ? fmtNum(co2Kg, 0, 'kg') : '—';
+  const co2Label = co2Kg != null
+    ? co2Kg >= 1000 ? fmtNum(Math.round(co2Kg / 1000), 0, 't CO₂e') : fmtNum(co2Kg, 0, 'kg CO₂e')
+    : '—';
 
   // --- Pic kW (P95 from tunnel envelope) ---
   const p95 = (() => {

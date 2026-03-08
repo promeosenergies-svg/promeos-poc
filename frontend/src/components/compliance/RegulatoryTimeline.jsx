@@ -120,7 +120,7 @@ function HorizontalTimeline({ events, today }) {
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
   // Anti-collision: compute stagger levels for events that are too close
-  const MIN_GAP_PCT = 6; // minimum % distance before staggering
+  const MIN_GAP_PCT = 9; // minimum % distance before staggering (wider to prevent overlap)
   const eventsWithLayout = events
     .map((evt) => ({
       ...evt,
@@ -128,10 +128,9 @@ function HorizontalTimeline({ events, today }) {
     }))
     .sort((a, b) => a.leftPct - b.leftPct);
 
-  // Assign stagger level (0 = above axis, 1 = below axis, 2 = further above)
+  // Assign stagger level (0 = above axis, 1 = below axis, 2 = further above, 3 = further below)
   for (let i = 0; i < eventsWithLayout.length; i++) {
     const evt = eventsWithLayout[i];
-    // Find the closest previous event that would overlap
     let level = 0;
     const usedLevels = new Set();
     for (let j = i - 1; j >= 0; j--) {
@@ -143,18 +142,21 @@ function HorizontalTimeline({ events, today }) {
     evt._level = level;
   }
 
-  // Layout constants per level
-  const AXIS_Y = 100; // px — horizontal line position
+  const maxLevel = Math.max(0, ...eventsWithLayout.map((e) => e._level));
+
+  // Layout constants per level — more vertical space
+  const AXIS_Y = 120; // px — horizontal line position (was 100)
   const levelOffsets = [
-    { labelY: 20, dotY: AXIS_Y - 8 },   // level 0: label above axis
-    { labelY: AXIS_Y + 22, dotY: AXIS_Y - 8 }, // level 1: label below axis
-    { labelY: 0, dotY: AXIS_Y - 8 },     // level 2: label further above
+    { labelY: 20, dotY: AXIS_Y - 8 },     // level 0: above axis
+    { labelY: AXIS_Y + 24, dotY: AXIS_Y - 8 }, // level 1: below axis
+    { labelY: -10, dotY: AXIS_Y - 8 },    // level 2: further above
+    { labelY: AXIS_Y + 64, dotY: AXIS_Y - 8 }, // level 3: further below
   ];
 
   return (
     <div className="relative w-full overflow-x-auto pb-4 px-12">
       {/* Axis */}
-      <div className="relative min-w-[600px]" style={{ height: `${AXIS_Y + 60}px` }}>
+      <div className="relative min-w-[600px]" style={{ height: `${AXIS_Y + (maxLevel >= 3 ? 120 : maxLevel >= 1 ? 80 : 60)}px` }}>
         {/* Horizontal line */}
         <div className="absolute left-0 right-0 h-0.5 bg-gray-200" style={{ top: `${AXIS_Y}px` }} />
 

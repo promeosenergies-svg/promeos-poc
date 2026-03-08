@@ -141,28 +141,28 @@ describe('SOURCE_LABELS_FR', () => {
 // ── buildSourceDeepLink ─────────────────────────────────────────────────
 
 describe('buildSourceDeepLink', () => {
-  it('compliance → /conformite', () => {
-    expect(buildSourceDeepLink('compliance', 'BACS')).toBe('/conformite');
+  it('compliance → /conformite?tab=obligations', () => {
+    expect(buildSourceDeepLink('compliance', 'BACS')).toBe('/conformite?tab=obligations');
   });
 
   it('billing → /bill-intel', () => {
     expect(buildSourceDeepLink('billing', '42')).toBe('/bill-intel');
   });
 
-  it('consumption → /consommations', () => {
-    expect(buildSourceDeepLink('consumption', '1')).toBe('/consommations');
+  it('consumption → /consommations/explorer', () => {
+    expect(buildSourceDeepLink('consumption', '1')).toBe('/consommations/explorer');
   });
 
-  it('purchase → /performance', () => {
-    expect(buildSourceDeepLink('purchase', 'contract-5')).toBe('/performance');
+  it('purchase → /achats', () => {
+    expect(buildSourceDeepLink('purchase', 'contract-5')).toBe('/achats');
   });
 
   it('insight readiness:xxx → /activation', () => {
     expect(buildSourceDeepLink('insight', 'readiness:data_ko')).toBe('/activation');
   });
 
-  it('insight operat:xxx → /conformite/tertiaire/efa', () => {
-    expect(buildSourceDeepLink('insight', 'operat:42:2024:dpe')).toBe('/conformite/tertiaire/efa');
+  it('insight operat:xxx → /conformite/tertiaire/efa/{id}', () => {
+    expect(buildSourceDeepLink('insight', 'operat:42:2024:dpe')).toBe('/conformite/tertiaire/efa/42');
   });
 
   it('insight other → /anomalies', () => {

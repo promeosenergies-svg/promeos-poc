@@ -111,7 +111,7 @@ describe('buildDossier', () => {
 
   it('header has deepLink for compliance source', () => {
     const dossier = buildDossier({ sourceType: 'compliance', sourceId: 'RT2012' }, [], new Map());
-    expect(dossier.header.deepLink).toBe('/conformite');
+    expect(dossier.header.deepLink).toBe('/conformite?tab=obligations');
   });
 
   it('counts done vs open correctly', () => {
@@ -232,16 +232,16 @@ describe('DOSSIER_SECTION_LABELS', () => {
 // ── Source tracing (retour à la source) ─────────────────────────────────
 
 describe('Source tracing links', () => {
-  it('compliance → /conformite deep link', () => {
-    expect(buildSourceDeepLink('compliance', 'BACS')).toBe('/conformite');
+  it('compliance → /conformite?tab=obligations deep link', () => {
+    expect(buildSourceDeepLink('compliance', 'BACS')).toBe('/conformite?tab=obligations');
   });
 
   it('billing → /bill-intel deep link', () => {
     expect(buildSourceDeepLink('billing', '42')).toBe('/bill-intel');
   });
 
-  it('insight operat → /conformite/tertiaire/efa', () => {
-    expect(buildSourceDeepLink('insight', 'operat:1:2024:dpe')).toBe('/conformite/tertiaire/efa');
+  it('insight operat → /conformite/tertiaire/efa/{id}', () => {
+    expect(buildSourceDeepLink('insight', 'operat:1:2024:dpe')).toBe('/conformite/tertiaire/efa/1');
   });
 });
 

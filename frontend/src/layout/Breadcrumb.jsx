@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { ALL_NAV_ITEMS, ROUTE_SECTION_MAP, NAV_MAIN_SECTIONS } from './NavRegistry';
+import { useScope } from '../contexts/ScopeContext';
 
 // Auto-derive labels from NavRegistry (single source of truth)
 const LABELS = Object.fromEntries(
@@ -107,7 +108,14 @@ function getSectionRoute(sectionLabel) {
 
 export default function Breadcrumb() {
   const { pathname } = useLocation();
+  const { scopedSites } = useScope();
   const parts = pathname.split('/').filter(Boolean);
+
+  // Build a lookup for dynamic site names
+  const siteNameById = scopedSites?.reduce((acc, s) => {
+    acc[String(s.id)] = s.nom;
+    return acc;
+  }, {}) || {};
 
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
 
@@ -126,7 +134,14 @@ export default function Breadcrumb() {
   for (let i = 0; i < parts.length; i++) {
     path += '/' + parts[i];
     const parent = i > 0 ? parts[i - 1] : null;
-    crumbs.push({ label: resolveBreadcrumbLabel(parts[i], parent), to: path });
+    // Resolve actual entity names for dynamic IDs (e.g. /sites/4 → "Siege HELIOS Paris")
+    let label;
+    if (parent === 'sites' && isDynamicSegment(parts[i]) && siteNameById[parts[i]]) {
+      label = siteNameById[parts[i]];
+    } else {
+      label = resolveBreadcrumbLabel(parts[i], parent);
+    }
+    crumbs.push({ label, to: path });
   }
 
   return (

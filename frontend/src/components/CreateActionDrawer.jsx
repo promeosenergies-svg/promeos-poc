@@ -127,6 +127,17 @@ export default function CreateActionDrawer({
         const evReq = computeEvidenceRequirement({ sourceType, severity: d.priorite });
         d.evidence_required = evReq.required;
       }
+      // P2-1: Auto-rationale from source context
+      if (!d.description && sourceType && sourceType !== 'manual') {
+        const sourceLabels = {
+          compliance: 'Conformité', billing: 'Facturation',
+          insight: 'Diagnostic', anomaly: 'Anomalie', purchase: 'Achats',
+        };
+        const parts = [`Action créée depuis : ${sourceLabels[sourceType] || sourceType}`];
+        if (sourceId) parts.push(`Réf. source : ${sourceId}`);
+        if (d.impact_eur && Number(d.impact_eur) > 0) parts.push(`Impact estimé : ${Number(d.impact_eur).toLocaleString('fr-FR')} EUR`);
+        d.description = parts.join('\n');
+      }
       setForm(d);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,20 +232,32 @@ export default function CreateActionDrawer({
           )}
         </div>
 
-        {/* Source context */}
+        {/* Source context — enriched */}
         {sourceType && sourceType !== 'manual' && (
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase mb-0.5">Source</p>
-            <p className="text-sm text-slate-700 font-medium">
-              {sourceType === 'compliance'
-                ? 'Conformité'
-                : sourceType === 'billing'
-                  ? 'Facturation'
-                  : sourceType === 'insight'
-                    ? 'Diagnostic'
-                    : sourceType}
-              {sourceId && <span className="text-slate-400 ml-1.5">· {sourceId}</span>}
-            </p>
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase">Source</span>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                sourceType === 'compliance' ? 'bg-blue-100 text-blue-700'
+                  : sourceType === 'billing' ? 'bg-red-100 text-red-700'
+                  : sourceType === 'insight' ? 'bg-amber-100 text-amber-700'
+                  : sourceType === 'anomaly' ? 'bg-orange-100 text-orange-700'
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {sourceType === 'compliance' ? 'Conformité'
+                  : sourceType === 'billing' ? 'Facturation'
+                  : sourceType === 'insight' ? 'Diagnostic'
+                  : sourceType === 'anomaly' ? 'Anomalie'
+                  : sourceType === 'purchase' ? 'Achats'
+                  : sourceType}
+              </span>
+            </div>
+            <p className="text-sm text-slate-700 font-medium">{form.titre || '—'}</p>
+            {form.impact_eur && Number(form.impact_eur) > 0 && (
+              <p className="text-xs text-slate-500">
+                Impact estimé : <span className="font-medium text-slate-700">{Number(form.impact_eur).toLocaleString('fr-FR')} EUR</span>
+              </p>
+            )}
           </div>
         )}
 

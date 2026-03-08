@@ -66,16 +66,16 @@ describe('ActionDetailDrawer — V49 guided close flow', () => {
     expect(code).toContain('response?.status === 400');
   });
 
-  it('contient le data-testid v49-close-form', () => {
-    expect(code).toContain('v49-close-form');
+  it('contient le data-testid close-form', () => {
+    expect(code).toContain('close-form');
   });
 
-  it('contient le textarea v49-closure-justification', () => {
-    expect(code).toContain('v49-closure-justification');
+  it('contient le textarea closure-justification', () => {
+    expect(code).toContain('closure-justification');
   });
 
-  it('contient le bouton Cloturer avec justification', () => {
-    expect(code).toContain('avec justification');
+  it('contient le bouton Cloturer avec commentaire', () => {
+    expect(code).toContain('avec commentaire');
   });
 
   it('affiche le compteur de caracteres', () => {

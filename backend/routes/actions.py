@@ -123,18 +123,20 @@ def _source_deeplink(source_type, source_id) -> str | None:
     val = source_type.value if hasattr(source_type, "value") else str(source_type or "")
     sid = source_id or ""
     if val == "compliance":
-        return "/conformite"
+        return "/conformite?tab=obligations"
     if val == "billing":
         return "/bill-intel"
     if val == "consumption":
-        return "/consommations"
+        return "/consommations/explorer"
     if val == "purchase":
-        return "/performance"
+        return "/achats"
     if val == "insight":
         if sid.startswith("readiness:"):
             return "/activation"
         if sid.startswith("operat:"):
-            return "/conformite/tertiaire/efa"
+            parts = sid.split(":")
+            efa_id = parts[1] if len(parts) > 1 else None
+            return f"/conformite/tertiaire/efa/{efa_id}" if efa_id else "/conformite/tertiaire/efa"
         return "/anomalies"
     if val == "lever_engine":
         return "/actions"
