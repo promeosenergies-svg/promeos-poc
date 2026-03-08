@@ -19,9 +19,7 @@ class TestTimeseriesServiceSource:
 
     @pytest.fixture(autouse=True)
     def load_source(self):
-        path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "ems", "timeseries_service.py"
-        )
+        path = os.path.join(os.path.dirname(__file__), "..", "services", "ems", "timeseries_service.py")
         self.source = open(path).read()
 
     def test_query_timeseries_has_compare_param(self):
@@ -67,9 +65,7 @@ class TestEmsRoutesWiring:
 
     @pytest.fixture(autouse=True)
     def load_source(self):
-        path = os.path.join(
-            os.path.dirname(__file__), "..", "routes", "ems.py"
-        )
+        path = os.path.join(os.path.dirname(__file__), "..", "routes", "ems.py")
         self.source = open(path).read()
 
     def test_compare_param_in_get_timeseries(self):
@@ -96,24 +92,29 @@ class TestFunctionImportable:
 
     def test_import_compare_summary(self):
         from services.ems.timeseries_service import compare_summary
+
         assert callable(compare_summary)
 
     def test_import_shift_timestamp(self):
         from services.ems.timeseries_service import _shift_timestamp_forward_1y
+
         assert callable(_shift_timestamp_forward_1y)
 
     def test_shift_daily(self):
         from services.ems.timeseries_service import _shift_timestamp_forward_1y
+
         result = _shift_timestamp_forward_1y("2024-03-15")
         assert result == "2025-03-15"
 
     def test_shift_monthly(self):
         from services.ems.timeseries_service import _shift_timestamp_forward_1y
+
         result = _shift_timestamp_forward_1y("2024-03")
         assert result == "2025-03"
 
     def test_shift_datetime(self):
         from services.ems.timeseries_service import _shift_timestamp_forward_1y
+
         result = _shift_timestamp_forward_1y("2024-06-15 14:00:00")
         assert "2025-06-15" in result
         assert "14:00" in result

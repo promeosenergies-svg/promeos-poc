@@ -35,7 +35,7 @@ describe('D.1 — DataQualityBadge component', () => {
 
   it('imports getDataQualityGrade from constants', () => {
     expect(src).toContain('getDataQualityGrade');
-    expect(src).toContain("constants");
+    expect(src).toContain('constants');
   });
 
   it('imports Explain for popover', () => {
@@ -108,7 +108,9 @@ describe('D.1 — API functions', () => {
   it('uses _cachedGet for both endpoints', () => {
     // Verify both D.1 endpoints use _cachedGet
     const lines = src.split('\n');
-    const dqLines = lines.filter((l) => l.includes('data-quality/site') || l.includes('data-quality/portfolio'));
+    const dqLines = lines.filter(
+      (l) => l.includes('data-quality/site') || l.includes('data-quality/portfolio')
+    );
     dqLines.forEach((line) => {
       expect(line).toContain('_cachedGet');
     });

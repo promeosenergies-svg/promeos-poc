@@ -14,9 +14,7 @@ function fmtDate(ts) {
 }
 
 export default function ContextBanner({ availabilityBySite = {}, siteIds = [] }) {
-  const rows = siteIds
-    .map((sid) => availabilityBySite[sid])
-    .filter((a) => a?.has_data);
+  const rows = siteIds.map((sid) => availabilityBySite[sid]).filter((a) => a?.has_data);
 
   if (!rows.length) return null;
 
@@ -29,7 +27,8 @@ export default function ContextBanner({ availabilityBySite = {}, siteIds = [] })
         >
           <CheckCircle size={16} className="text-blue-600 shrink-0" />
           <span className="text-blue-800">
-            <strong>{a.site_nom || 'Site'}</strong> — {(a.readings_count || 0).toLocaleString('fr-FR')} releves
+            <strong>{a.site_nom || 'Site'}</strong> —{' '}
+            {(a.readings_count || 0).toLocaleString('fr-FR')} releves
             {a.energy_types?.length > 0 && ` (${a.energy_types.join(', ')})`}
           </span>
           {a.first_ts && a.last_ts && (

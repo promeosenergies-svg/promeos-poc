@@ -36,6 +36,7 @@ router = APIRouter(prefix="/api/patrimoine/crud", tags=["Patrimoine CRUD"])
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _org_to_dict(org: Organisation) -> dict:
     return {
         "id": org.id,
@@ -91,6 +92,7 @@ def _site_to_dict(s: Site) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 # ORGANISATIONS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get("/organisations")
 def list_organisations(
@@ -171,6 +173,7 @@ def archive_organisation(
 # ENTITES JURIDIQUES
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @router.get("/entites")
 def list_entites(
     org_id: Optional[int] = Query(None),
@@ -197,10 +200,14 @@ def create_entite(
     if not org:
         raise HTTPException(404, "Organisation introuvable")
     # Vérifier unicité SIREN
-    existing = db.query(EntiteJuridique).filter(
-        EntiteJuridique.siren == body.siren,
-        not_deleted(EntiteJuridique),
-    ).first()
+    existing = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.siren == body.siren,
+            not_deleted(EntiteJuridique),
+        )
+        .first()
+    )
     if existing:
         raise HTTPException(409, f"SIREN {body.siren} déjà utilisé par l'entité #{existing.id}")
     entite = EntiteJuridique(
@@ -261,6 +268,7 @@ def archive_entite(
     # Soft delete via mixin if available, else set actif
     if hasattr(e, "deleted_at"):
         from datetime import datetime, timezone
+
         e.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "archived", "id": entite_id}
@@ -269,6 +277,7 @@ def archive_entite(
 # ══════════════════════════════════════════════════════════════════════════════
 # PORTEFEUILLES
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get("/portefeuilles")
 def list_portefeuilles(
@@ -296,10 +305,14 @@ def create_portefeuille(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Crée un portefeuille."""
-    entite = db.query(EntiteJuridique).filter(
-        EntiteJuridique.id == body.entite_juridique_id,
-        not_deleted(EntiteJuridique),
-    ).first()
+    entite = (
+        db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.id == body.entite_juridique_id,
+            not_deleted(EntiteJuridique),
+        )
+        .first()
+    )
     if not entite:
         raise HTTPException(404, "Entité juridique introuvable")
     pf = Portefeuille(
@@ -356,6 +369,7 @@ def archive_portefeuille(
         raise HTTPException(404, "Portefeuille introuvable")
     if hasattr(pf, "deleted_at"):
         from datetime import datetime, timezone
+
         pf.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "archived", "id": pf_id}
@@ -364,6 +378,7 @@ def archive_portefeuille(
 # ══════════════════════════════════════════════════════════════════════════════
 # SITES (CRUD complet via patrimoine_crud)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get("/sites")
 def list_sites_crud(
@@ -482,6 +497,7 @@ def archive_site_crud(
 # ══════════════════════════════════════════════════════════════════════════════
 # BATIMENTS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _bat_to_dict(b: Batiment) -> dict:
     return {

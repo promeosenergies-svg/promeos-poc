@@ -30,12 +30,15 @@ function CompareTooltip({ active, payload, label }) {
           {p.name} : {fmtK(p.value)}
         </p>
       ))}
-      {payload.length === 2 && payload[0].value != null && payload[1].value != null && payload[1].value > 0 && (
-        <p className="text-gray-500 mt-1 border-t border-gray-100 pt-1">
-          Delta : {fmtK(payload[0].value - payload[1].value)} (
-          {((payload[0].value - payload[1].value) / payload[1].value * 100).toFixed(1)}%)
-        </p>
-      )}
+      {payload.length === 2 &&
+        payload[0].value != null &&
+        payload[1].value != null &&
+        payload[1].value > 0 && (
+          <p className="text-gray-500 mt-1 border-t border-gray-100 pt-1">
+            Delta : {fmtK(payload[0].value - payload[1].value)} (
+            {(((payload[0].value - payload[1].value) / payload[1].value) * 100).toFixed(1)}%)
+          </p>
+        )}
     </div>
   );
 }

@@ -64,10 +64,15 @@ def _catalog_trace(code: str, at_date: Optional[date] = None) -> dict:
 def _build_fallback_rates() -> dict:
     try:
         from config.tarif_loader import (
-            get_turpe_moyen_kwh, get_turpe_gestion_mois,
-            get_atrd_kwh, get_atrt_kwh,
-            get_accise_kwh, get_tva_normale, get_tva_reduite,
+            get_turpe_moyen_kwh,
+            get_turpe_gestion_mois,
+            get_atrd_kwh,
+            get_atrt_kwh,
+            get_accise_kwh,
+            get_tva_normale,
+            get_tva_reduite,
         )
+
         return {
             "TURPE_ENERGIE_C5_BT": get_turpe_moyen_kwh("C5_BT"),
             "TURPE_GESTION_C5_BT": get_turpe_gestion_mois("C5_BT"),
@@ -93,6 +98,7 @@ def _build_fallback_rates() -> dict:
             "DEFAULT_PRICE_ELEC": DEFAULT_PRICE_ELEC_EUR_KWH,
             "DEFAULT_PRICE_GAZ": DEFAULT_PRICE_GAZ_EUR_KWH,
         }
+
 
 _FALLBACK_RATES = _build_fallback_rates()
 

@@ -17,7 +17,7 @@ describe('Step 13 — RegulatoryTimeline component', () => {
     expect(src).toContain('future');
   });
 
-  it('RegulatoryTimeline has Aujourd\'hui marker', () => {
+  it("RegulatoryTimeline has Aujourd'hui marker", () => {
     const src = fs.readFileSync('src/components/compliance/RegulatoryTimeline.jsx', 'utf8');
     expect(src).toContain("Aujourd'hui");
   });

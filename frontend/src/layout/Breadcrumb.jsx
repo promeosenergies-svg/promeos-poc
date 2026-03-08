@@ -112,10 +112,11 @@ export default function Breadcrumb() {
   const parts = pathname.split('/').filter(Boolean);
 
   // Build a lookup for dynamic site names
-  const siteNameById = scopedSites?.reduce((acc, s) => {
-    acc[String(s.id)] = s.nom;
-    return acc;
-  }, {}) || {};
+  const siteNameById =
+    scopedSites?.reduce((acc, s) => {
+      acc[String(s.id)] = s.nom;
+      return acc;
+    }, {}) || {};
 
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
 

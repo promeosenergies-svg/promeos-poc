@@ -332,19 +332,28 @@ export default function NotificationsPage() {
             key: 'search',
             label: 'Recherche',
             value: searchQuery,
-            onRemove: () => { setSearchQuery(''); setPage(1); },
+            onRemove: () => {
+              setSearchQuery('');
+              setPage(1);
+            },
           },
           triageTab !== 'all' && {
             key: 'triage',
             label: 'Statut',
             value: TRIAGE_TABS.find((t) => t.id === triageTab)?.label || triageTab,
-            onRemove: () => { setTriageTab('all'); setPage(1); },
+            onRemove: () => {
+              setTriageTab('all');
+              setPage(1);
+            },
           },
           filterSource && {
             key: 'source',
             label: 'Source',
             value: SOURCE_LABELS[filterSource] || filterSource,
-            onRemove: () => { setFilterSource(''); setPage(1); },
+            onRemove: () => {
+              setFilterSource('');
+              setPage(1);
+            },
           },
         ].filter(Boolean)}
         total={events.length}
@@ -509,7 +518,8 @@ export default function NotificationsPage() {
           {totalFiltered > pageSize && (
             <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
               <span className="text-xs text-gray-400">
-                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalFiltered)} sur {totalFiltered}
+                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalFiltered)} sur{' '}
+                {totalFiltered}
               </span>
               <Pagination
                 page={page}

@@ -64,12 +64,7 @@ describe('P0 — ErrorState on all pages', () => {
 // ── P0: EmptyState on pages with tables/lists ────────────────────────────
 
 describe('P0 — EmptyState on key pages', () => {
-  const pages = [
-    'Dashboard.jsx',
-    'PurchasePage.jsx',
-    'BillIntelPage.jsx',
-    'Patrimoine.jsx',
-  ];
+  const pages = ['Dashboard.jsx', 'PurchasePage.jsx', 'BillIntelPage.jsx', 'Patrimoine.jsx'];
 
   for (const page of pages) {
     it(`${page} imports EmptyState`, () => {

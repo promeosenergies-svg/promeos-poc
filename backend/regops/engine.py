@@ -93,6 +93,7 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
 
     # Compute compliance score via unified A.2 service (single source of truth)
     from services.compliance_score_service import compute_site_compliance_score
+
     a2_result = compute_site_compliance_score(db, site_id)
     compliance_score = a2_result.score
     confidence_score = round(a2_result.frameworks_evaluated / a2_result.frameworks_total * 100, 1)

@@ -2,6 +2,7 @@
 Step 17 — M1 : Seed prix marché EPEX Spot FR 24 mois
 Tests unitaires pour le modèle, le seed, et get_reference_price.
 """
+
 import math
 from datetime import date, timedelta
 
@@ -12,23 +13,28 @@ import pytest
 # Model
 # ============================================================
 
+
 class TestMarketPriceModel:
     """Test that MarketPrice model is importable and has expected fields."""
 
     def test_model_importable(self):
         from models.market_price import MarketPrice
+
         assert MarketPrice.__tablename__ == "market_prices"
 
     def test_model_has_price_field(self):
         from models.market_price import MarketPrice
+
         assert hasattr(MarketPrice, "price_eur_mwh")
 
     def test_model_has_market_field(self):
         from models.market_price import MarketPrice
+
         assert hasattr(MarketPrice, "market")
 
     def test_model_registered_in_init(self):
         from models import MarketPrice
+
         assert MarketPrice.__tablename__ == "market_prices"
 
 
@@ -36,28 +42,33 @@ class TestMarketPriceModel:
 # Seed generation (pure function, no DB needed)
 # ============================================================
 
+
 class TestMarketPriceSeed:
     """Test gen_market_prices deterministic generation."""
 
     def test_generates_prices(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
         assert len(prices) >= 700  # ~730 days
 
     def test_seed_deterministic(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         p1 = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
         p2 = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
         assert [p["price_eur_mwh"] for p in p1] == [p["price_eur_mwh"] for p in p2]
 
     def test_prices_realistic_range(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
         for p in prices:
             assert 15.0 <= p["price_eur_mwh"] <= 150.0, f"Price {p['price_eur_mwh']} out of range for {p['date']}"
 
     def test_seasonality_winter_higher(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2024, 12, 31))
         winter = [p["price_eur_mwh"] for p in prices if p["date"].month in (12, 1, 2)]
         summer = [p["price_eur_mwh"] for p in prices if p["date"].month in (6, 7, 8)]
@@ -67,6 +78,7 @@ class TestMarketPriceSeed:
 
     def test_weekend_lower(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2024, 12, 31))
         weekday = [p["price_eur_mwh"] for p in prices if p["date"].weekday() < 5]
         weekend = [p["price_eur_mwh"] for p in prices if p["date"].weekday() >= 5]
@@ -76,15 +88,19 @@ class TestMarketPriceSeed:
 
     def test_2025_lower_than_2024(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
-        avg_2024 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2024) / \
-                   sum(1 for p in prices if p["date"].year == 2024)
-        avg_2025 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2025) / \
-                   sum(1 for p in prices if p["date"].year == 2025)
+        avg_2024 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2024) / sum(
+            1 for p in prices if p["date"].year == 2024
+        )
+        avg_2025 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2025) / sum(
+            1 for p in prices if p["date"].year == 2025
+        )
         assert avg_2025 < avg_2024, f"2025 avg {avg_2025:.1f} should be < 2024 avg {avg_2024:.1f}"
 
     def test_all_epex_spot_fr(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+
         prices = _generate_prices(date(2024, 1, 1), date(2024, 1, 31))
         assert all(p["market"] == "EPEX_SPOT_FR" for p in prices)
         assert all(p["energy_type"] == "ELEC" for p in prices)
@@ -94,15 +110,18 @@ class TestMarketPriceSeed:
 # get_reference_price fallback (no market data)
 # ============================================================
 
+
 class TestGetReferencePriceFallback:
     """Test updated fallback values."""
 
     def test_fallback_elec_is_0068(self):
         from services.billing_service import DEFAULT_PRICE_ELEC
+
         assert DEFAULT_PRICE_ELEC == 0.068
 
     def test_fallback_gaz_is_0045(self):
         from services.billing_service import DEFAULT_PRICE_GAZ
+
         assert DEFAULT_PRICE_GAZ == 0.045
 
 
@@ -110,14 +129,17 @@ class TestGetReferencePriceFallback:
 # Route source guard
 # ============================================================
 
+
 class TestMarketRoute:
     """Test that market route file exists and has expected structure."""
 
     def test_route_file_importable(self):
         from routes.market import router
+
         assert router.prefix == "/api/market"
 
     def test_route_has_prices_endpoint(self):
         from routes.market import router
+
         paths = [r.path for r in router.routes]
         assert any("prices" in p for p in paths)

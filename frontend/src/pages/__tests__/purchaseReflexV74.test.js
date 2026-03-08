@@ -40,7 +40,7 @@ describe('A · STRATEGY_META reflex_solar', () => {
   });
 
   it('reflex_solar has a desc string', () => {
-    expect(code).toContain("Payez moins quand le soleil brille");
+    expect(code).toContain('Payez moins quand le soleil brille');
   });
 });
 

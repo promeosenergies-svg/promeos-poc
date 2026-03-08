@@ -390,7 +390,6 @@ function ObligationCard({
   return (
     <Card className={`border-l-4 ${cfg.border}`}>
       <CardBody>
-
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className={`p-2 rounded-lg ${cfg.bg} mt-0.5`}>
@@ -745,9 +744,16 @@ export default function ObligationsTab({
           });
           if (!msg) return null;
           return (
-            <p className={`text-xs px-1 ${
-              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-            }`} data-testid="kpi-message-conformite-tab">
+            <p
+              className={`text-xs px-1 ${
+                msg.severity === 'crit'
+                  ? 'text-red-600'
+                  : msg.severity === 'warn'
+                    ? 'text-amber-600'
+                    : 'text-gray-500'
+              }`}
+              data-testid="kpi-message-conformite-tab"
+            >
               {isExpert ? msg.expert : msg.simple}
             </p>
           );
@@ -758,9 +764,16 @@ export default function ObligationsTab({
           });
           if (!msg) return null;
           return (
-            <p className={`text-xs px-1 ${
-              msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-            }`} data-testid="kpi-message-risque-tab">
+            <p
+              className={`text-xs px-1 ${
+                msg.severity === 'crit'
+                  ? 'text-red-600'
+                  : msg.severity === 'warn'
+                    ? 'text-amber-600'
+                    : 'text-gray-500'
+              }`}
+              data-testid="kpi-message-risque-tab"
+            >
               {isExpert ? msg.expert : msg.simple}
             </p>
           );
@@ -822,8 +835,14 @@ export default function ObligationsTab({
                   : "Lancez une évaluation pour détecter les obligations. Pourquoi c'est important : les non-conformités non détectées exposent l'organisation à des sanctions et pénalités financières."
                 : 'Aucun résultat pour cette recherche.'
             }
-            ctaLabel={emptyReason && emptyReason !== 'ALL_COMPLIANT' ? 'Scanner la conformité' : undefined}
-            onCta={emptyReason && emptyReason !== 'ALL_COMPLIANT' ? () => navigate('/conformite') : undefined}
+            ctaLabel={
+              emptyReason && emptyReason !== 'ALL_COMPLIANT' ? 'Scanner la conformité' : undefined
+            }
+            onCta={
+              emptyReason && emptyReason !== 'ALL_COMPLIANT'
+                ? () => navigate('/conformite')
+                : undefined
+            }
           />
         ) : (
           sortedObligations.map((obligation) => (

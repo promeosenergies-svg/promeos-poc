@@ -40,13 +40,15 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
         price = year_base * (1 + seasonal + weekend + variation)
         price = round(max(price, 15.0), 2)  # Floor à 15 EUR/MWh
 
-        prices.append({
-            "market": "EPEX_SPOT_FR",
-            "energy_type": "ELEC",
-            "date": current,
-            "price_eur_mwh": price,
-            "source": SOURCE,
-        })
+        prices.append(
+            {
+                "market": "EPEX_SPOT_FR",
+                "energy_type": "ELEC",
+                "date": current,
+                "price_eur_mwh": price,
+                "source": SOURCE,
+            }
+        )
 
         current += timedelta(days=1)
         day_index += 1

@@ -357,27 +357,61 @@ export default function ConsumptionPortfolioPage() {
         </div>
       ) : summary ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard icon={Zap} label={<>kWh total <InfoTip content="Somme des kWh électricité relevés sur tous les sites pour la période sélectionnée." /></>} value={fmtNum(Math.round(tot?.kwh_total), 'kWh')} />
+          <KpiCard
+            icon={Zap}
+            label={
+              <>
+                kWh total{' '}
+                <InfoTip content="Somme des kWh électricité relevés sur tous les sites pour la période sélectionnée." />
+              </>
+            }
+            value={fmtNum(Math.round(tot?.kwh_total), 'kWh')}
+          />
           <KpiCard
             icon={Euro}
-            label={<>Cout estime <InfoTip content="Estimation basée sur le prix de référence de chaque site (contrat > profil tarifaire > défaut 0,18 EUR/kWh)." /></>}
+            label={
+              <>
+                Cout estime{' '}
+                <InfoTip content="Estimation basée sur le prix de référence de chaque site (contrat > profil tarifaire > défaut 0,18 EUR/kWh)." />
+              </>
+            }
             value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
-            sub={tot?.eur_source === 'estime' ? 'Estimation a 0,18 EUR/kWh' : 'Prix mixtes (contrats + défaut)'}
+            sub={
+              tot?.eur_source === 'estime'
+                ? 'Estimation a 0,18 EUR/kWh'
+                : 'Prix mixtes (contrats + défaut)'
+            }
           />
           <KpiCard
             icon={Leaf}
-            label={<>Emissions CO2 <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO2e/kWh pour l'électricité en France." /></>}
+            label={
+              <>
+                Emissions CO2{' '}
+                <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO2e/kWh pour l'électricité en France." />
+              </>
+            }
             value={fmtNum(Math.round(tot?.co2_total), 'kg')}
             sub="Facteur ADEME 2024"
           />
           <KpiCard
             icon={ShieldCheck}
-            label={<>Couverture donnees <InfoTip content="Nombre de sites avec au moins un relevé sur la période. Confiance = densité de données vs attendu." /></>}
+            label={
+              <>
+                Couverture donnees{' '}
+                <InfoTip content="Nombre de sites avec au moins un relevé sur la période. Confiance = densité de données vs attendu." />
+              </>
+            }
             value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0} sites`}
             sub={
-              confLevel
-                ? <>{`Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}`} <InfoTip content="Haute = ≥ 80% des relevés attendus. Moyenne = 30-80%. Basse = < 30%." size={10} /></>
-                : undefined
+              confLevel ? (
+                <>
+                  {`Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}`}{' '}
+                  <InfoTip
+                    content="Haute = ≥ 80% des relevés attendus. Moyenne = 30-80%. Basse = < 30%."
+                    size={10}
+                  />
+                </>
+              ) : undefined
             }
           />
         </div>
@@ -400,7 +434,13 @@ export default function ConsumptionPortfolioPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Top impact EUR */}
-            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('impact_desc'); scrollToTable(); }}>
+            <Card
+              className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              onClick={() => {
+                setSort('impact_desc');
+                scrollToTable();
+              }}
+            >
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={16} className="text-rose-500" />
@@ -425,7 +465,14 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top derive */}
-            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setAnomalyFilter(true); setSort('diagnostics'); scrollToTable(); }}>
+            <Card
+              className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              onClick={() => {
+                setAnomalyFilter(true);
+                setSort('diagnostics');
+                scrollToTable();
+              }}
+            >
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-amber-500" />
@@ -450,7 +497,13 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top base nocturne */}
-            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('base_night'); scrollToTable(); }}>
+            <Card
+              className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              onClick={() => {
+                setSort('base_night');
+                scrollToTable();
+              }}
+            >
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <Moon size={16} className="text-indigo-500" />
@@ -475,7 +528,13 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top pics */}
-            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('peak'); scrollToTable(); }}>
+            <Card
+              className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              onClick={() => {
+                setSort('peak');
+                scrollToTable();
+              }}
+            >
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <Activity size={16} className="text-red-500" />
@@ -682,7 +741,11 @@ export default function ConsumptionPortfolioPage() {
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
-                      Couverture <InfoTip content="% de relevés reçus vs attendus selon la fréquence du compteur." size={10} />
+                      Couverture{' '}
+                      <InfoTip
+                        content="% de relevés reçus vs attendus selon la fréquence du compteur."
+                        size={10}
+                      />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
                       Impact EUR
@@ -694,10 +757,18 @@ export default function ConsumptionPortfolioPage() {
                       EUR
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
-                      P95 kW <InfoTip content="95e percentile des relevés kWh (proxy puissance). Utile pour détecter les dépassements de puissance souscrite." size={10} />
+                      P95 kW{' '}
+                      <InfoTip
+                        content="95e percentile des relevés kWh (proxy puissance). Utile pour détecter les dépassements de puissance souscrite."
+                        size={10}
+                      />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
-                      Base nuit <InfoTip content="Part de la conso nocturne (22h-6h) dans la conso totale. Théorique si plat = 33%. Un % élevé signale un talon (chauffage, serveurs)." size={10} />
+                      Base nuit{' '}
+                      <InfoTip
+                        content="Part de la conso nocturne (22h-6h) dans la conso totale. Théorique si plat = 33%. Un % élevé signale un talon (chauffage, serveurs)."
+                        size={10}
+                      />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
                       Diag.

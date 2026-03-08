@@ -102,28 +102,38 @@ class AnomalyActionLink(Base):
     __tablename__ = "anomaly_action_links"
     __table_args__ = (
         UniqueConstraint(
-            "anomaly_source", "anomaly_ref", "site_id", "action_id",
+            "anomaly_source",
+            "anomaly_ref",
+            "site_id",
+            "action_id",
             name="uq_anomaly_action_link",
         ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     anomaly_source = Column(
-        String(50), nullable=False, index=True,
+        String(50),
+        nullable=False,
+        index=True,
         comment="Domain: patrimoine, billing, monitoring",
     )
     anomaly_ref = Column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
         comment="Anomaly code or insight ID",
     )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
     action_id = Column(
-        Integer, ForeignKey("action_items.id"), nullable=False, index=True,
+        Integer,
+        ForeignKey("action_items.id"),
+        nullable=False,
+        index=True,
     )
     link_reason = Column(String(500), nullable=True, comment="Why linked")
     created_by = Column(String(200), nullable=True)
     created_at = Column(
-        DateTime, nullable=False,
+        DateTime,
+        nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
 
@@ -137,28 +147,35 @@ class AnomalyDismissal(Base):
     __tablename__ = "anomaly_dismissals"
     __table_args__ = (
         UniqueConstraint(
-            "anomaly_source", "anomaly_ref", "site_id",
+            "anomaly_source",
+            "anomaly_ref",
+            "site_id",
             name="uq_anomaly_dismissal",
         ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     anomaly_source = Column(
-        String(50), nullable=False, index=True,
+        String(50),
+        nullable=False,
+        index=True,
         comment="Domain: patrimoine, billing, monitoring",
     )
     anomaly_ref = Column(
-        String(200), nullable=False,
+        String(200),
+        nullable=False,
         comment="Anomaly code or insight ID",
     )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
     reason_code = Column(
-        SAEnum(DismissReason), nullable=False,
+        SAEnum(DismissReason),
+        nullable=False,
         comment="Motif structure",
     )
     reason_text = Column(Text, nullable=True, comment="Commentaire libre")
     dismissed_by = Column(String(200), nullable=True)
     dismissed_at = Column(
-        DateTime, nullable=False,
+        DateTime,
+        nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )

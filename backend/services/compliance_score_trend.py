@@ -47,11 +47,7 @@ def snapshot_monthly_scores(db: Session, org_id: int, month_key: str = None) -> 
 
     created = 0
     for site in sites:
-        existing = (
-            db.query(ComplianceScoreHistory)
-            .filter_by(site_id=site.id, month_key=month_key)
-            .first()
-        )
+        existing = db.query(ComplianceScoreHistory).filter_by(site_id=site.id, month_key=month_key).first()
         if existing:
             continue
 
@@ -100,7 +96,4 @@ def get_score_trend(db: Session, org_id: int, months: int = 6) -> list:
         .all()
     )
 
-    return [
-        {"month": r.month_key, "score": round(r.avg_score, 1), "sites": r.sites_count}
-        for r in rows
-    ]
+    return [{"month": r.month_key, "score": round(r.avg_score, 1), "sites": r.sites_count} for r in rows]

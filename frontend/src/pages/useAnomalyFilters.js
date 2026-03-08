@@ -36,10 +36,7 @@ export default function useAnomalyFilters() {
     return result;
   }, [searchParams, saved]);
 
-  const hasFilters = useMemo(
-    () => FILTER_KEYS.some((k) => !!filters[k]),
-    [filters]
-  );
+  const hasFilters = useMemo(() => FILTER_KEYS.some((k) => !!filters[k]), [filters]);
 
   /**
    * Merge-update filters → URL (replace) + localStorage.

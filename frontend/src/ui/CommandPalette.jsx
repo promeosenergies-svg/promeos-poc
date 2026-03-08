@@ -6,7 +6,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, CornerDownLeft } from 'lucide-react';
-import { ALL_NAV_ITEMS, QUICK_ACTIONS, ALL_MAIN_ITEMS, COMMAND_SHORTCUTS } from '../layout/NavRegistry';
+import {
+  ALL_NAV_ITEMS,
+  QUICK_ACTIONS,
+  ALL_MAIN_ITEMS,
+  COMMAND_SHORTCUTS,
+} from '../layout/NavRegistry';
 
 export default function CommandPalette({ open, onClose }) {
   const [query, setQuery] = useState('');
@@ -34,7 +39,10 @@ export default function CommandPalette({ open, onClose }) {
     // Search in ALL_MAIN_ITEMS (section-aware) + legacy ALL_NAV_ITEMS + QUICK_ACTIONS + COMMAND_SHORTCUTS
     const seen = new Set();
     const matchItem = (item) => {
-      const searchable = [item.label, item.section, ...(item.keywords || [])].filter(Boolean).join(' ').toLowerCase();
+      const searchable = [item.label, item.section, ...(item.keywords || [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
       return searchable.includes(q);
     };
 
@@ -44,12 +52,17 @@ export default function CommandPalette({ open, onClose }) {
     });
 
     // Add legacy items not in main sections
-    const legacyPages = ALL_NAV_ITEMS.filter((item) => !seen.has(item.to) && matchItem(item)).map((item) => {
-      seen.add(item.to);
-      return { type: 'page', ...item };
-    });
+    const legacyPages = ALL_NAV_ITEMS.filter((item) => !seen.has(item.to) && matchItem(item)).map(
+      (item) => {
+        seen.add(item.to);
+        return { type: 'page', ...item };
+      }
+    );
 
-    const actions = QUICK_ACTIONS.filter((a) => !seen.has(a.to) && matchItem(a)).map((a) => ({ type: 'action', ...a }));
+    const actions = QUICK_ACTIONS.filter((a) => !seen.has(a.to) && matchItem(a)).map((a) => ({
+      type: 'action',
+      ...a,
+    }));
     const shortcuts = COMMAND_SHORTCUTS.filter(matchItem).map((a) => ({ type: 'shortcut', ...a }));
 
     return [...pages, ...legacyPages, ...actions, ...shortcuts];
@@ -122,9 +135,11 @@ export default function CommandPalette({ open, onClose }) {
             const isSelected = idx === selectedIdx;
 
             // Section separator for grouped display
-            const showSectionHeader = item.section && item.section !== lastSection && item.type === 'page';
+            const showSectionHeader =
+              item.section && item.section !== lastSection && item.type === 'page';
             if (item.section) lastSection = item.section;
-            const showShortcutHeader = item.type === 'shortcut' && (idx === 0 || results[idx - 1]?.type !== 'shortcut');
+            const showShortcutHeader =
+              item.type === 'shortcut' && (idx === 0 || results[idx - 1]?.type !== 'shortcut');
 
             return (
               <div key={item.to + (item.key || '') + idx}>

@@ -198,7 +198,9 @@ def compute_site_snapshot(
         "avancement_decret_pct": average_avancement(decret),
         "statut_bacs": worst_bacs or StatutConformite.A_RISQUE,
         "action_recommandee": action,
-        "risque_financier_euro": round(BASE_PENALTY_EURO * non_conforme_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2),
+        "risque_financier_euro": round(
+            BASE_PENALTY_EURO * non_conforme_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2
+        ),
     }
 
 

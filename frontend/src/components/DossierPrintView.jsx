@@ -177,83 +177,114 @@ export default function DossierPrintView({
             </div>
 
             {/* ── Analyse de l'écart (billing) ─────────────── */}
-            {insightDetail && insightDetail.metrics && (() => {
-              const im = insightDetail.metrics;
-              const rows = [
-                { label: 'Fourniture', key: 'fourniture' },
-                { label: 'Réseau', key: 'reseau' },
-                { label: 'Taxes', key: 'taxes' },
-              ];
-              return (
-                <div className="border border-gray-200 rounded-xl p-5 bg-white" data-testid="dossier-billing-breakdown">
-                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Analyse de l'écart</h3>
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Facturé TTC</p>
-                      <p className="text-lg font-bold text-gray-900">{fmtEur(im.actual_ttc)} €</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Attendu TTC</p>
-                      <p className="text-lg font-bold text-gray-900">{fmtEur(im.expected_ttc)} €</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Écart TTC</p>
-                      <p className={`text-lg font-bold ${im.delta_ttc > 0 ? 'text-red-600' : im.delta_ttc < 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                        {im.delta_ttc != null ? `${im.delta_ttc > 0 ? '+' : ''}${fmtEur(im.delta_ttc)} €` : '—'}
-                      </p>
-                    </div>
-                  </div>
-                  <table className="w-full text-sm mb-4">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-1 text-xs text-gray-500">Composante</th>
-                        <th className="text-right py-1 text-xs text-gray-500">Facturé</th>
-                        <th className="text-right py-1 text-xs text-gray-500">Attendu</th>
-                        <th className="text-right py-1 text-xs text-gray-500">Écart</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => {
-                        const act = im[`actual_${r.key}_ht`];
-                        const exp = im[`expected_${r.key}_ht`];
-                        const delta = im[`delta_${r.key}`];
-                        if (act == null && exp == null) return null;
-                        return (
-                          <tr key={r.key} className="border-b border-gray-100">
-                            <td className="py-1 text-gray-700">{r.label}</td>
-                            <td className="py-1 text-right">{fmtEur(act)} €</td>
-                            <td className="py-1 text-right">{fmtEur(exp)} €</td>
-                            <td className={`py-1 text-right font-medium ${delta > 0 ? 'text-red-600' : delta < 0 ? 'text-green-600' : ''}`}>
-                              {delta != null ? `${delta > 0 ? '+' : ''}${fmtEur(delta)} €` : '—'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {im.top_contributors?.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-xs font-semibold text-gray-600 mb-1">Principaux contributeurs</p>
-                      {im.top_contributors.map((c) => (
-                        <p key={c.code} className="text-xs text-gray-600">
-                          • {c.label} : {c.delta_eur > 0 ? '+' : ''}{fmtEur(c.delta_eur)} € — {c.explanation_fr}
+            {insightDetail &&
+              insightDetail.metrics &&
+              (() => {
+                const im = insightDetail.metrics;
+                const rows = [
+                  { label: 'Fourniture', key: 'fourniture' },
+                  { label: 'Réseau', key: 'reseau' },
+                  { label: 'Taxes', key: 'taxes' },
+                ];
+                return (
+                  <div
+                    className="border border-gray-200 rounded-xl p-5 bg-white"
+                    data-testid="dossier-billing-breakdown"
+                  >
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Analyse de l'écart</h3>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500">Facturé TTC</p>
+                        <p className="text-lg font-bold text-gray-900">{fmtEur(im.actual_ttc)} €</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500">Attendu TTC</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {fmtEur(im.expected_ttc)} €
                         </p>
-                      ))}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500">Écart TTC</p>
+                        <p
+                          className={`text-lg font-bold ${im.delta_ttc > 0 ? 'text-red-600' : im.delta_ttc < 0 ? 'text-green-600' : 'text-gray-500'}`}
+                        >
+                          {im.delta_ttc != null
+                            ? `${im.delta_ttc > 0 ? '+' : ''}${fmtEur(im.delta_ttc)} €`
+                            : '—'}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  {im.diagnostics && (
-                    <div className="flex items-center gap-3 text-xs">
-                      <Badge status={im.diagnostics.confidence === 'high' ? 'ok' : im.diagnostics.confidence === 'medium' ? 'info' : 'warn'}>
-                        Confiance : {im.diagnostics.confidence === 'high' ? 'Élevée' : im.diagnostics.confidence === 'medium' ? 'Moyenne' : 'Basse'}
-                      </Badge>
-                      {im.diagnostics.assumptions?.length > 0 && (
-                        <span className="text-gray-500">{im.diagnostics.assumptions.join(' · ')}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                    <table className="w-full text-sm mb-4">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-1 text-xs text-gray-500">Composante</th>
+                          <th className="text-right py-1 text-xs text-gray-500">Facturé</th>
+                          <th className="text-right py-1 text-xs text-gray-500">Attendu</th>
+                          <th className="text-right py-1 text-xs text-gray-500">Écart</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r) => {
+                          const act = im[`actual_${r.key}_ht`];
+                          const exp = im[`expected_${r.key}_ht`];
+                          const delta = im[`delta_${r.key}`];
+                          if (act == null && exp == null) return null;
+                          return (
+                            <tr key={r.key} className="border-b border-gray-100">
+                              <td className="py-1 text-gray-700">{r.label}</td>
+                              <td className="py-1 text-right">{fmtEur(act)} €</td>
+                              <td className="py-1 text-right">{fmtEur(exp)} €</td>
+                              <td
+                                className={`py-1 text-right font-medium ${delta > 0 ? 'text-red-600' : delta < 0 ? 'text-green-600' : ''}`}
+                              >
+                                {delta != null ? `${delta > 0 ? '+' : ''}${fmtEur(delta)} €` : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    {im.top_contributors?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                          Principaux contributeurs
+                        </p>
+                        {im.top_contributors.map((c) => (
+                          <p key={c.code} className="text-xs text-gray-600">
+                            • {c.label} : {c.delta_eur > 0 ? '+' : ''}
+                            {fmtEur(c.delta_eur)} € — {c.explanation_fr}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {im.diagnostics && (
+                      <div className="flex items-center gap-3 text-xs">
+                        <Badge
+                          status={
+                            im.diagnostics.confidence === 'high'
+                              ? 'ok'
+                              : im.diagnostics.confidence === 'medium'
+                                ? 'info'
+                                : 'warn'
+                          }
+                        >
+                          Confiance :{' '}
+                          {im.diagnostics.confidence === 'high'
+                            ? 'Élevée'
+                            : im.diagnostics.confidence === 'medium'
+                              ? 'Moyenne'
+                              : 'Basse'}
+                        </Badge>
+                        {im.diagnostics.assumptions?.length > 0 && (
+                          <span className="text-gray-500">
+                            {im.diagnostics.assumptions.join(' · ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
             {/* ── Stats bar ───────────────────────────────────── */}
             <div className="grid grid-cols-5 gap-3" data-testid="dossier-stats">

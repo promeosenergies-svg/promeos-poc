@@ -1371,7 +1371,9 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {s.annualCostP50 != null ? Math.round(s.annualCostP50).toLocaleString('fr-FR') : '—'}
+                    {s.annualCostP50 != null
+                      ? Math.round(s.annualCostP50).toLocaleString('fr-FR')
+                      : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.volatility != null ? Math.round(s.volatility).toLocaleString('fr-FR') : '—'}

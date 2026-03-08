@@ -39,9 +39,7 @@ describe('ScopeContext — setApiScope via useLayoutEffect (anti-race)', () => {
   });
 
   test('appel documenté (commentaire anti-race ou synchrone)', () => {
-    expect(SCOPE_CTX).toMatch(
-      /synchron|useLayoutEffect|avant.*child|child.*avant|child.*effect/i
-    );
+    expect(SCOPE_CTX).toMatch(/synchron|useLayoutEffect|avant.*child|child.*avant|child.*effect/i);
   });
 
   test('setApiScope importé depuis api.js', () => {

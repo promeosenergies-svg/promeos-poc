@@ -2,6 +2,7 @@
 Tests — Seed idempotence (Playbook 1.2).
 Verify seeding twice produces the same counts without errors.
 """
+
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -59,6 +60,7 @@ class TestSeedIdempotence:
 
         # Reset + re-seed — counts should be identical
         from services.demo_seed.orchestrator import SeedOrchestrator
+
         orch = SeedOrchestrator(fresh_db)
         orch.reset(mode="hard")
         fresh_db.commit()
@@ -66,15 +68,16 @@ class TestSeedIdempotence:
         _seed_once(fresh_db)
         counts_2 = _count_entities(fresh_db)
 
-        assert counts_2["organisations"] == counts_1["organisations"], \
+        assert counts_2["organisations"] == counts_1["organisations"], (
             f"Orgs changed: {counts_1['organisations']} → {counts_2['organisations']}"
-        assert counts_2["sites"] == counts_1["sites"], \
-            f"Sites changed: {counts_1['sites']} → {counts_2['sites']}"
+        )
+        assert counts_2["sites"] == counts_1["sites"], f"Sites changed: {counts_1['sites']} → {counts_2['sites']}"
 
     def test_no_exception_on_reset_reseed(self, fresh_db):
         """Reset + re-seeding does not raise any exception."""
         _seed_once(fresh_db)
         from services.demo_seed.orchestrator import SeedOrchestrator
+
         orch = SeedOrchestrator(fresh_db)
         orch.reset(mode="hard")
         fresh_db.commit()

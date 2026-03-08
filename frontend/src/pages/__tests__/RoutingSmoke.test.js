@@ -32,7 +32,7 @@ describe('NavRegistry — routes canoniques', () => {
   });
 
   it('"Actions & Suivi" pointe vers "/actions"', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === "Actions & Suivi");
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Actions & Suivi');
     expect(item).toBeDefined();
     expect(item.to).toBe('/actions');
   });

@@ -29,7 +29,7 @@ describe('P3-1: PurchasePage uses openActionDrawer', () => {
   });
 
   it('passe idempotencyKey purchase', () => {
-    expect(code).toContain("idempotencyKey: `purchase:");
+    expect(code).toContain('idempotencyKey: `purchase:');
   });
 
   it('a le CTA creer-action-purchase', () => {
@@ -125,7 +125,7 @@ describe('P3-2: ActionDetailDrawer has inline owner edit', () => {
   });
 
   it('appelle patchAction pour sauver le owner', () => {
-    expect(code).toContain("patchAction(actionId, { owner: ownerDraft.trim() })");
+    expect(code).toContain('patchAction(actionId, { owner: ownerDraft.trim() })');
   });
 
   it('affiche le Pencil icon pour edition', () => {

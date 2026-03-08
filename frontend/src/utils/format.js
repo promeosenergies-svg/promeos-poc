@@ -74,7 +74,10 @@ export function fmtKw(v) {
 export function fmtNum(v, decimals = 0, unit = '') {
   const n = _safe(v);
   if (n == null) return '—';
-  const formatted = n.toLocaleString(FR, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const formatted = n.toLocaleString(FR, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
   return unit ? `${formatted} ${unit}` : formatted;
 }
 

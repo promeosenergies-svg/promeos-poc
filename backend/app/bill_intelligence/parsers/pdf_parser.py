@@ -283,7 +283,9 @@ def _extract_elec_components(text: str) -> List[InvoiceComponent]:
         )
 
     # Accise / CSPE / TICFE / Contrib. service public élec (ENGIE label for ACCISE_ELEC)
-    accise = _find_float(text, r"(?:Accise|CSPE|TICFE|Contrib\.?\s*(?:service\s+public|aux\s+charges))[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)")
+    accise = _find_float(
+        text, r"(?:Accise|CSPE|TICFE|Contrib\.?\s*(?:service\s+public|aux\s+charges))[^€\n]*?([\d\s,.]+)\s*(?:EUR|€)"
+    )
     if accise:
         # Detect label_source for traceability
         label_source = "Accise sur l'electricite"
@@ -461,11 +463,15 @@ def parse_engie_elec(text: str, source_file: Optional[str] = None) -> Invoice:
     pdl = _find_str(text, r"(?:PDL|Point\s+de\s+livraison)\s*[:\s]*(\d{14})")
 
     invoice_date = _find_date(text, r"(?:Date\s+(?:de\s+)?facture|Emise?\s+le|facture du)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
-    due_date = _find_date(text, r"(?:Date\s+(?:d['\u2019])?echeance|[AÀ]\s*payer\s+avant|pr[eé]lev[eé]\s+le)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
+    due_date = _find_date(
+        text, r"(?:Date\s+(?:d['\u2019])?echeance|[AÀ]\s*payer\s+avant|pr[eé]lev[eé]\s+le)\s*[:\s]*(\d{2}/\d{2}/\d{4})"
+    )
     period_start = _find_date(text, r"(?:Periode|Du|Consommation\s+du|Abonnement\s+du)\s*[:\s]*(\d{2}/\d{2}/\d{4})")
     period_end = _find_date(text, r"(?:au|Periode.*?au)\s*(\d{2}/\d{2}/\d{4})")
 
-    total_ht = _find_float(text, r"(?:Total\s+HT|total\s+hors\s+toutes\s+taxes|Montant\s+HT)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
+    total_ht = _find_float(
+        text, r"(?:Total\s+HT|total\s+hors\s+toutes\s+taxes|Montant\s+HT)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)"
+    )
     total_tva = _find_float(text, r"(?:Total\s+TVA|Montant\s+TVA)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
     total_ttc = _find_float(text, r"(?:total\s+TTC|Montant\s+TTC|Net\s+[àa]\s+payer)\s*[:\s]*([\d\s,.]+)\s*(?:EUR|€)")
 

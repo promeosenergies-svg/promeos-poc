@@ -16,11 +16,12 @@ logger = logging.getLogger("promeos.aper")
 
 # ── Dashboard APER ──────────────────────────────────────────────────────
 
+
 def _get_org_sites(db: Session, org_id: int) -> list:
     """Recupere tous les sites actifs de l'organisation."""
     pf_ids = [
-        row.id for row in
-        db.query(Portefeuille.id)
+        row.id
+        for row in db.query(Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
         .all()
@@ -55,27 +56,31 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
 
         if parking_area >= 1500 and parking_type == "outdoor":
             deadline = "2026-07-01" if parking_area > 10000 else "2028-07-01"
-            parking_eligible.append({
-                "site_id": site.id,
-                "site_nom": site.nom,
-                "surface_m2": parking_area,
-                "deadline": deadline,
-                "category": "large" if parking_area > 10000 else "medium",
-                "latitude": site.latitude,
-                "longitude": site.longitude,
-            })
+            parking_eligible.append(
+                {
+                    "site_id": site.id,
+                    "site_nom": site.nom,
+                    "surface_m2": parking_area,
+                    "deadline": deadline,
+                    "category": "large" if parking_area > 10000 else "medium",
+                    "latitude": site.latitude,
+                    "longitude": site.longitude,
+                }
+            )
 
         # Toiture >= 500 m2
         roof_area = getattr(site, "roof_area_m2", None) or 0
         if roof_area >= 500:
-            roof_eligible.append({
-                "site_id": site.id,
-                "site_nom": site.nom,
-                "surface_m2": roof_area,
-                "deadline": "2028-01-01",
-                "latitude": site.latitude,
-                "longitude": site.longitude,
-            })
+            roof_eligible.append(
+                {
+                    "site_id": site.id,
+                    "site_nom": site.nom,
+                    "surface_m2": roof_area,
+                    "deadline": "2028-01-01",
+                    "latitude": site.latitude,
+                    "longitude": site.longitude,
+                }
+            )
 
     total_parking_m2 = sum(s["surface_m2"] for s in parking_eligible)
     total_roof_m2 = sum(s["surface_m2"] for s in roof_eligible)
@@ -91,24 +96,32 @@ def get_aper_dashboard(db: Session, org_id: int) -> dict:
             "total_surface_m2": total_roof_m2,
             "sites": roof_eligible,
         },
-        "total_eligible_sites": len(set(
-            [s["site_id"] for s in parking_eligible] +
-            [s["site_id"] for s in roof_eligible]
-        )),
+        "total_eligible_sites": len(
+            set([s["site_id"] for s in parking_eligible] + [s["site_id"] for s in roof_eligible])
+        ),
         "next_deadline": _get_next_aper_deadline(parking_eligible, roof_eligible),
     }
 
 
 # ── Estimation PV ───────────────────────────────────────────────────────
 
+
 def _get_climate_zone(site) -> str:
     """Determine la zone climatique depuis la region."""
     zone_map = {
-        "Ile-de-France": "H1", "Grand Est": "H1", "Bourgogne-Franche-Comte": "H1",
-        "Hauts-de-France": "H1", "Normandie": "H1", "Centre-Val de Loire": "H2",
-        "Pays de la Loire": "H2", "Bretagne": "H2", "Nouvelle-Aquitaine": "H2",
-        "Auvergne-Rhone-Alpes": "H1", "Occitanie": "H3",
-        "Provence-Alpes-Cote d'Azur": "H3", "Corse": "H3",
+        "Ile-de-France": "H1",
+        "Grand Est": "H1",
+        "Bourgogne-Franche-Comte": "H1",
+        "Hauts-de-France": "H1",
+        "Normandie": "H1",
+        "Centre-Val de Loire": "H2",
+        "Pays de la Loire": "H2",
+        "Bretagne": "H2",
+        "Nouvelle-Aquitaine": "H2",
+        "Auvergne-Rhone-Alpes": "H1",
+        "Occitanie": "H3",
+        "Provence-Alpes-Cote d'Azur": "H3",
+        "Corse": "H3",
     }
     return zone_map.get(getattr(site, "region", "") or "", "H2")
 
@@ -155,8 +168,9 @@ def _try_pvgis(lat: float, lon: float, peak_power_kwp: float) -> dict | None:
         return None
 
 
-def estimate_pv_production(db: Session, site_id: int, surface_m2: float | None = None,
-                           surface_type: str = "parking") -> dict:
+def estimate_pv_production(
+    db: Session, site_id: int, surface_m2: float | None = None, surface_type: str = "parking"
+) -> dict:
     """
     Estime la production PV pour une surface donnee.
     Utilise le connecteur PVGIS si les coordonnees sont disponibles,
@@ -202,6 +216,7 @@ def estimate_pv_production(db: Session, site_id: int, surface_m2: float | None =
     autoconso_ratio = 0.70
     try:
         from config.tarif_loader import get_prix_reference
+
         price_kwh = get_prix_reference("elec")
     except Exception:
         price_kwh = 0.068  # fallback prix marche moyen
@@ -209,6 +224,7 @@ def estimate_pv_production(db: Session, site_id: int, surface_m2: float | None =
 
     # CO2 evite
     from config.emission_factors import get_emission_factor
+
     co2_avoided_kg = annual_kwh * get_emission_factor("ELEC")
 
     return {

@@ -113,7 +113,9 @@ class Meter(Base):
     # Relationships
     site = relationship("Site", back_populates="meters")
     delivery_point = relationship("DeliveryPoint", foreign_keys=[delivery_point_id])
-    sub_meters = relationship("Meter", backref=backref("parent_meter", remote_side="Meter.id"), foreign_keys=[parent_meter_id])
+    sub_meters = relationship(
+        "Meter", backref=backref("parent_meter", remote_side="Meter.id"), foreign_keys=[parent_meter_id]
+    )
     readings = relationship("MeterReading", back_populates="meter", cascade="all, delete-orphan")
     profiles = relationship("UsageProfile", back_populates="meter", cascade="all, delete-orphan")
     anomalies = relationship("Anomaly", back_populates="meter", cascade="all, delete-orphan")

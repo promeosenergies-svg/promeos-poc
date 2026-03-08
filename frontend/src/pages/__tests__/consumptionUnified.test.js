@@ -28,27 +28,27 @@ describe('A - ConsoSourceBadge component', () => {
   });
 
   it('has metered source config', () => {
-    expect(code).toContain("metered:");
+    expect(code).toContain('metered:');
   });
 
   it('has billed source config', () => {
-    expect(code).toContain("billed:");
+    expect(code).toContain('billed:');
   });
 
   it('has estimated source config', () => {
-    expect(code).toContain("estimated:");
+    expect(code).toContain('estimated:');
   });
 
   it('renders Compteur label for metered', () => {
-    expect(code).toContain("Compteur");
+    expect(code).toContain('Compteur');
   });
 
   it('renders Facture label for billed', () => {
-    expect(code).toContain("Facture");
+    expect(code).toContain('Facture');
   });
 
   it('renders Estime label for estimated', () => {
-    expect(code).toContain("Estime");
+    expect(code).toContain('Estime');
   });
 
   it('has data-testid="conso-source-badge"', () => {
@@ -82,7 +82,7 @@ describe('C - EssentialsRow receives consoSource', () => {
   const code = readSrc('pages', 'cockpit', 'EssentialsRow.jsx');
 
   it('imports ConsoSourceBadge', () => {
-    expect(code).toContain("ConsoSourceBadge");
+    expect(code).toContain('ConsoSourceBadge');
   });
 
   it('accepts consoSource prop', () => {
@@ -101,7 +101,7 @@ describe('D - PerformanceSnapshot uses ConsoSourceBadge', () => {
   const code = readSrc('components', 'PerformanceSnapshot.jsx');
 
   it('imports ConsoSourceBadge', () => {
-    expect(code).toContain("ConsoSourceBadge");
+    expect(code).toContain('ConsoSourceBadge');
   });
 
   it('renders ConsoSourceBadge', () => {
@@ -188,10 +188,7 @@ describe('F - Backend unified consumption service', () => {
 // ============================================================
 describe('G - Backend unified consumption routes', () => {
   const backendRoot = resolve(__dirname, '../../../../backend');
-  const code = readFileSync(
-    resolve(backendRoot, 'routes', 'consumption_unified.py'),
-    'utf-8'
-  );
+  const code = readFileSync(resolve(backendRoot, 'routes', 'consumption_unified.py'), 'utf-8');
 
   it('defines /site/{site_id} endpoint', () => {
     expect(code).toContain('/site/{site_id}');

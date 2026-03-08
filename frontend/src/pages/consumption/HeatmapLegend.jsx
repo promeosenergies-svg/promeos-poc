@@ -13,7 +13,7 @@ export default function HeatmapLegend({ schedule, stats, isExpert }) {
       text: `Consommation nocturne élevée (${Math.round(stats.night_ratio * 100)}% du total entre 22h et 6h)`,
     });
   }
-  if (stats?.weekend_ratio > 0.10) {
+  if (stats?.weekend_ratio > 0.1) {
     annotations.push({
       type: 'warn',
       text: `Weekend actif — ${Math.round(stats.weekend_ratio * 100)}% de consommation samedi-dimanche`,
@@ -24,7 +24,7 @@ export default function HeatmapLegend({ schedule, stats, isExpert }) {
       text: 'Bonne coupure weekend — consommation minimale samedi-dimanche',
     });
   }
-  if (stats?.off_hours_ratio > 0.30) {
+  if (stats?.off_hours_ratio > 0.3) {
     annotations.push({
       type: 'crit',
       text: `${Math.round(stats.off_hours_ratio * 100)}% de consommation hors horaires d'activité. Vérifiez la programmation.`,
@@ -53,8 +53,8 @@ export default function HeatmapLegend({ schedule, stats, isExpert }) {
         </span>
         {schedule && (
           <span className="text-gray-400 ml-2">
-            Horaires déclarés : {schedule.open_time || '?'}–{schedule.close_time || '?'}{' '}
-            ({schedule.open_days || 'lun-ven'})
+            Horaires déclarés : {schedule.open_time || '?'}–{schedule.close_time || '?'} (
+            {schedule.open_days || 'lun-ven'})
           </span>
         )}
       </div>
@@ -63,11 +63,16 @@ export default function HeatmapLegend({ schedule, stats, isExpert }) {
       {annotations.length > 0 && (
         <div className="space-y-1">
           {annotations.map((a, i) => (
-            <div key={i} className={`text-xs px-3 py-1.5 rounded ${
-              a.type === 'ok' ? 'bg-green-50 text-green-700' :
-              a.type === 'warn' ? 'bg-amber-50 text-amber-700' :
-              'bg-red-50 text-red-700'
-            }`}>
+            <div
+              key={i}
+              className={`text-xs px-3 py-1.5 rounded ${
+                a.type === 'ok'
+                  ? 'bg-green-50 text-green-700'
+                  : a.type === 'warn'
+                    ? 'bg-amber-50 text-amber-700'
+                    : 'bg-red-50 text-red-700'
+              }`}
+            >
               {a.type === 'ok' ? '✅' : '⚠️'} {a.text}
             </div>
           ))}
@@ -80,7 +85,9 @@ export default function HeatmapLegend({ schedule, stats, isExpert }) {
           {stats.avg_kwh != null && <span>Moy: {stats.avg_kwh} kWh</span>}
           {stats.night_ratio != null && <span>Nuit: {Math.round(stats.night_ratio * 100)}%</span>}
           {stats.weekend_ratio != null && <span>WE: {Math.round(stats.weekend_ratio * 100)}%</span>}
-          {stats.off_hours_ratio != null && <span>Hors-h: {Math.round(stats.off_hours_ratio * 100)}%</span>}
+          {stats.off_hours_ratio != null && (
+            <span>Hors-h: {Math.round(stats.off_hours_ratio * 100)}%</span>
+          )}
         </div>
       )}
     </div>

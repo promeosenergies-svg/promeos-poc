@@ -19,9 +19,7 @@ class TestBillingReconcileSource:
 
     @pytest.fixture(autouse=True)
     def load_source(self):
-        path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "billing_reconcile.py"
-        )
+        path = os.path.join(os.path.dirname(__file__), "..", "services", "billing_reconcile.py")
         self.source = open(path).read()
 
     def test_function_exists(self):
@@ -74,9 +72,7 @@ class TestBillingRoutesWiring:
 
     @pytest.fixture(autouse=True)
     def load_source(self):
-        path = os.path.join(
-            os.path.dirname(__file__), "..", "routes", "billing.py"
-        )
+        path = os.path.join(os.path.dirname(__file__), "..", "routes", "billing.py")
         self.source = open(path).read()
 
     def test_import_auto_reconcile(self):
@@ -127,9 +123,11 @@ class TestFunctionImportable:
 
     def test_import_auto_reconcile(self):
         from services.billing_reconcile import auto_reconcile_after_import
+
         assert callable(auto_reconcile_after_import)
 
     def test_handles_none_period(self):
         from services.billing_reconcile import auto_reconcile_after_import
+
         result = auto_reconcile_after_import(None, 1, None, None)
         assert result is None

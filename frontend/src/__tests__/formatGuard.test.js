@@ -15,7 +15,12 @@ function walk(dir, ext = ['.jsx', '.js']) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     const st = statSync(full);
-    if (st.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules' && entry !== '__tests__') {
+    if (
+      st.isDirectory() &&
+      !entry.startsWith('.') &&
+      entry !== 'node_modules' &&
+      entry !== '__tests__'
+    ) {
       results = results.concat(walk(full, ext));
     } else if (ext.some((e) => entry.endsWith(e))) {
       results.push(full);
@@ -31,14 +36,14 @@ const DISPLAY_FILES = [...PAGE_FILES, ...COMPONENT_FILES];
 
 // Fichiers autorisés à utiliser .toFixed (logique métier, pas affichage)
 const ALLOWED_TOFIXED = [
-  'format.js',           // Le formatter lui-même
-  'helpers.js',          // Logique de calcul conso
-  'scoring.js',          // Domain model scoring
-  'rfp.js',              // Domain model RFP
-  'engine.js',           // Domain model engine
-  'recommend.js',        // Domain model recommend
-  'MonitoringPage.jsx',  // Local fmtFR helper (to be migrated later)
-  'SignatureLayer.jsx',  // Computation, not display
+  'format.js', // Le formatter lui-même
+  'helpers.js', // Logique de calcul conso
+  'scoring.js', // Domain model scoring
+  'rfp.js', // Domain model RFP
+  'engine.js', // Domain model engine
+  'recommend.js', // Domain model recommend
+  'MonitoringPage.jsx', // Local fmtFR helper (to be migrated later)
+  'SignatureLayer.jsx', // Computation, not display
   'useEmsTimeseries.js', // Computation
 ];
 
@@ -122,7 +127,8 @@ describe('D. Source guard — pas de NaN/Infinity affichable', () => {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // Skip guards and comparisons
-      if (/isNaN|isFinite|!==\s*Infinity|<\s*Infinity|===\s*Infinity|!=\s*Infinity/.test(line)) continue;
+      if (/isNaN|isFinite|!==\s*Infinity|<\s*Infinity|===\s*Infinity|!=\s*Infinity/.test(line))
+        continue;
       // Flag raw "Infinity" or "NaN" in template literals or JSX
       if (/[`"'].*(?:NaN|Infinity).*[`"']/.test(line) && !/test|spec|guard|filter/i.test(rel)) {
         issues.push({ file: rel, line: i + 1 });

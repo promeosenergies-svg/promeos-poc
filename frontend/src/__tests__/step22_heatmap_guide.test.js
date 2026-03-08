@@ -5,8 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
-const readSrc = (...parts) =>
-  fs.readFileSync(`src/${parts.join('/')}`, 'utf8');
+const readSrc = (...parts) => fs.readFileSync(`src/${parts.join('/')}`, 'utf8');
 
 // ── A. HeatmapLegend component ────────────────────────────────────────────
 
@@ -17,7 +16,7 @@ describe('Step 22 — HeatmapLegend component', () => {
       'src/components/consumption/HeatmapLegend.jsx',
       'src/components/HeatmapLegend.jsx',
     ];
-    expect(candidates.some(f => fs.existsSync(f))).toBe(true);
+    expect(candidates.some((f) => fs.existsSync(f))).toBe(true);
   });
 
   it('has color scale (gradient)', () => {

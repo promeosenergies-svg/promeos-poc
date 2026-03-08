@@ -70,9 +70,13 @@ describe('Key pages handle async states', () => {
     it(`${name} has loading state handling`, () => {
       const src = read(pages(file));
       // Should have some form of loading indicator
-      const hasLoading = src.includes('loading') || src.includes('isLoading') ||
-                         src.includes('Chargement') || src.includes('skeleton') ||
-                         src.includes('Skeleton') || src.includes('animate-pulse');
+      const hasLoading =
+        src.includes('loading') ||
+        src.includes('isLoading') ||
+        src.includes('Chargement') ||
+        src.includes('skeleton') ||
+        src.includes('Skeleton') ||
+        src.includes('animate-pulse');
       expect(hasLoading).toBe(true);
     });
   });

@@ -2,6 +2,7 @@
 Step 35 — Import incremental (mode update) : tests unitaires.
 Matching SIRET > PRM > nom+CP, update fields, backward compat.
 """
+
 import pytest
 
 
@@ -10,10 +11,12 @@ class TestMatchingFunctionExists:
 
     def test_import(self):
         from services.patrimoine_service import match_staging_to_existing
+
         assert callable(match_staging_to_existing)
 
     def test_update_site_fields_import(self):
         from services.patrimoine_service import _update_site_fields
+
         assert callable(_update_site_fields)
 
 
@@ -22,6 +25,7 @@ class TestUpdateableFields:
 
     def test_fields_defined(self):
         from services.patrimoine_service import _UPDATABLE_FIELDS
+
         assert "nom" in _UPDATABLE_FIELDS
         assert "adresse" in _UPDATABLE_FIELDS
         assert "code_postal" in _UPDATABLE_FIELDS
@@ -34,16 +38,19 @@ class TestStagingSiteMatchFields:
 
     def test_match_method_column(self):
         from models.patrimoine import StagingSite
+
         cols = {c.name for c in StagingSite.__table__.columns}
         assert "match_method" in cols
 
     def test_match_confidence_column(self):
         from models.patrimoine import StagingSite
+
         cols = {c.name for c in StagingSite.__table__.columns}
         assert "match_confidence" in cols
 
     def test_target_site_id_exists(self):
         from models.patrimoine import StagingSite
+
         cols = {c.name for c in StagingSite.__table__.columns}
         assert "target_site_id" in cols
 
@@ -53,6 +60,7 @@ class TestStagingBatchModeUpdate:
 
     def test_mode_column(self):
         from models.patrimoine import StagingBatch
+
         cols = {c.name for c in StagingBatch.__table__.columns}
         assert "mode" in cols
 
@@ -62,16 +70,19 @@ class TestRouteAcceptsUpdateMode:
 
     def test_route_import_exists(self):
         from routes.patrimoine import router
+
         paths = [r.path for r in router.routes]
         assert any("staging/import" in p for p in paths)
 
     def test_route_matching_exists(self):
         from routes.patrimoine import router
+
         paths = [r.path for r in router.routes]
         assert any("matching" in p for p in paths)
 
     def test_route_activate_exists(self):
         from routes.patrimoine import router
+
         paths = [r.path for r in router.routes]
         assert any("activate" in p for p in paths)
 
@@ -81,6 +92,7 @@ class TestMatchingImportedInRoutes:
 
     def test_import(self):
         from routes.patrimoine import match_staging_to_existing
+
         assert callable(match_staging_to_existing)
 
 
@@ -169,6 +181,7 @@ class TestDoActivateUpdateMode:
     def test_source_has_update_mode_check(self):
         import inspect
         from services.patrimoine_service import _do_activate
+
         src = inspect.getsource(_do_activate)
         assert "is_update_mode" in src
         assert "sites_updated" in src
@@ -177,6 +190,7 @@ class TestDoActivateUpdateMode:
     def test_result_includes_update_fields_in_update_mode(self):
         import inspect
         from services.patrimoine_service import _do_activate
+
         src = inspect.getsource(_do_activate)
         assert '"sites_updated"' in src
         assert '"changes"' in src
@@ -188,6 +202,7 @@ class TestBackwardCompat:
     def test_default_mode_unchanged(self):
         import inspect
         from services.patrimoine_service import _do_activate
+
         src = inspect.getsource(_do_activate)
         # is_update_mode is only True when batch.mode == "update"
         assert 'batch.mode == "update"' in src

@@ -277,12 +277,16 @@ function KanbanBoard({
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
                     <span className="font-medium">{a.impact_eur.toLocaleString('fr-FR')} EUR</span>
-                    <span className="truncate max-w-[80px]">{a.owner || <span className="italic text-gray-400">Non assigné</span>}</span>
+                    <span className="truncate max-w-[80px]">
+                      {a.owner || <span className="italic text-gray-400">Non assigné</span>}
+                    </span>
                   </div>
                   {a.due_date && (
-                    <div className={`mt-1.5 text-[10px] flex items-center gap-1 ${
-                      isOverdue(a) ? 'text-red-600 font-semibold' : 'text-gray-400'
-                    }`}>
+                    <div
+                      className={`mt-1.5 text-[10px] flex items-center gap-1 ${
+                        isOverdue(a) ? 'text-red-600 font-semibold' : 'text-gray-400'
+                      }`}
+                    >
                       <CalendarDays size={10} />
                       {a.due_date}
                       {isOverdue(a) && (
@@ -296,7 +300,9 @@ function KanbanBoard({
               );
             })}
             {columnActions[col].length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-6 italic">Aucune action dans cette colonne</p>
+              <p className="text-xs text-gray-400 text-center py-6 italic">
+                Aucune action dans cette colonne
+              </p>
             )}
           </div>
         </div>
@@ -672,11 +678,10 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       return result;
     }
     if (filterLinkedAnomaly) {
-      result = result.filter(
-        (a) =>
-          a._backend?.anomaly_links?.some(
-            (l) => `${l.anomaly_source}:${l.anomaly_ref}:${l.site_id}` === filterLinkedAnomaly
-          )
+      result = result.filter((a) =>
+        a._backend?.anomaly_links?.some(
+          (l) => `${l.anomaly_source}:${l.anomaly_ref}:${l.site_id}` === filterLinkedAnomaly
+        )
       );
       return result;
     }
@@ -721,7 +726,17 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       result.sort(defaultSort);
     }
     return result;
-  }, [enrichedActions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery, filterActionId, filterLinkedAnomaly]);
+  }, [
+    enrichedActions,
+    filterStatut,
+    filterType,
+    quickView,
+    sortCol,
+    sortDir,
+    searchQuery,
+    filterActionId,
+    filterLinkedAnomaly,
+  ]);
 
   const total = filtered.length;
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -947,11 +962,8 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
 
   const actionsContent = (
     <>
-
       {/* Error banner */}
-      {error && (
-        <ErrorState message={error} onRetry={fetchActions} />
-      )}
+      {error && <ErrorState message={error} onRetry={fetchActions} />}
 
       {/* ROI Summary (V5.0) */}
       <ROISummaryBar />
@@ -961,22 +973,30 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
         <div className="flex items-center gap-4 px-4 py-2.5 bg-white rounded-lg border border-gray-200">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">
-                Avancement global
-              </span>
+              <span className="text-xs font-medium text-gray-600">Avancement global</span>
               <span className="text-xs font-bold text-gray-800">
-                {stats.done}/{stats.total} terminées ({stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}%)
+                {stats.done}/{stats.total} terminées (
+                {stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}%)
               </span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
               {stats.done > 0 && (
-                <div className="h-full bg-green-500 transition-all" style={{ width: `${(stats.done / stats.total) * 100}%` }} />
+                <div
+                  className="h-full bg-green-500 transition-all"
+                  style={{ width: `${(stats.done / stats.total) * 100}%` }}
+                />
               )}
               {stats.in_progress > 0 && (
-                <div className="h-full bg-amber-400 transition-all" style={{ width: `${(stats.in_progress / stats.total) * 100}%` }} />
+                <div
+                  className="h-full bg-amber-400 transition-all"
+                  style={{ width: `${(stats.in_progress / stats.total) * 100}%` }}
+                />
               )}
               {stats.planned > 0 && (
-                <div className="h-full bg-blue-300 transition-all" style={{ width: `${(stats.planned / stats.total) * 100}%` }} />
+                <div
+                  className="h-full bg-blue-300 transition-all"
+                  style={{ width: `${(stats.planned / stats.total) * 100}%` }}
+                />
               )}
             </div>
           </div>
@@ -1178,10 +1198,58 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
       {/* ActiveFiltersBar */}
       <ActiveFiltersBar
         filters={[
-          ...(filterStatut ? [{ key: 'statut', label: 'Statut', value: STATUT_LABELS[filterStatut] || filterStatut, onRemove: () => { setFilterStatut(''); setPage(1); } }] : []),
-          ...(filterType ? [{ key: 'type', label: 'Type', value: ACTION_TYPE_LABELS[filterType] || filterType, onRemove: () => { setFilterType(''); setPage(1); } }] : []),
-          ...(searchQuery.trim() ? [{ key: 'search', label: 'Recherche', value: searchQuery, onRemove: () => { setSearchQuery(''); setPage(1); } }] : []),
-          ...(quickView ? [{ key: 'quickView', label: 'Vue rapide', value: QUICK_VIEWS.find(q => q.id === quickView)?.label || quickView, onRemove: () => { setQuickView(''); setPage(1); } }] : []),
+          ...(filterStatut
+            ? [
+                {
+                  key: 'statut',
+                  label: 'Statut',
+                  value: STATUT_LABELS[filterStatut] || filterStatut,
+                  onRemove: () => {
+                    setFilterStatut('');
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
+          ...(filterType
+            ? [
+                {
+                  key: 'type',
+                  label: 'Type',
+                  value: ACTION_TYPE_LABELS[filterType] || filterType,
+                  onRemove: () => {
+                    setFilterType('');
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
+          ...(searchQuery.trim()
+            ? [
+                {
+                  key: 'search',
+                  label: 'Recherche',
+                  value: searchQuery,
+                  onRemove: () => {
+                    setSearchQuery('');
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
+          ...(quickView
+            ? [
+                {
+                  key: 'quickView',
+                  label: 'Vue rapide',
+                  value: QUICK_VIEWS.find((q) => q.id === quickView)?.label || quickView,
+                  onRemove: () => {
+                    setQuickView('');
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
         ]}
         total={actions.length}
         filtered={filtered.length}
@@ -1314,7 +1382,9 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                         {PRIORITY_LABEL[a.priorite] || a.priorite}
                       </Badge>
                     </Td>
-                    <Td className="text-right font-medium">{a.impact_eur.toLocaleString('fr-FR')} EUR</Td>
+                    <Td className="text-right font-medium">
+                      {a.impact_eur.toLocaleString('fr-FR')} EUR
+                    </Td>
                     <Td className="text-right text-emerald-600 text-sm">
                       {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString('fr-FR')} kg` : '—'}
                     </Td>

@@ -29,11 +29,7 @@ from models.enums import (
 
 def _get_or_create_building(db, site, nom, surface_m2, annee):
     """Cherche un batiment existant ou en cree un."""
-    existing = (
-        db.query(Batiment)
-        .filter(Batiment.site_id == site.id, Batiment.nom == nom)
-        .first()
-    )
+    existing = db.query(Batiment).filter(Batiment.site_id == site.id, Batiment.nom == nom).first()
     if existing:
         return existing.id
 
@@ -117,12 +113,14 @@ def seed_tertiaire_efa(db, helios_sites: dict) -> list:
                 efa_id=efa_paris.id,
                 year=2024,
                 status=DeclarationStatus.DRAFT,
-                checklist_json=json.dumps({
-                    "surface_renseignee": True,
-                    "consommations_importees": True,
-                    "attestation_affichage": False,
-                    "referent_designe": True,
-                }),
+                checklist_json=json.dumps(
+                    {
+                        "surface_renseignee": True,
+                        "consommations_importees": True,
+                        "attestation_affichage": False,
+                        "referent_designe": True,
+                    }
+                ),
             )
         )
         efas_created.append(efa_paris)
@@ -203,12 +201,14 @@ def seed_tertiaire_efa(db, helios_sites: dict) -> list:
                     efa_id=efa_nice.id,
                     year=2024,
                     status=DeclarationStatus.DRAFT,
-                    checklist_json=json.dumps({
-                        "surface_renseignee": True,
-                        "consommations_importees": False,
-                        "attestation_affichage": False,
-                        "referent_designe": False,
-                    }),
+                    checklist_json=json.dumps(
+                        {
+                            "surface_renseignee": True,
+                            "consommations_importees": False,
+                            "attestation_affichage": False,
+                            "referent_designe": False,
+                        }
+                    ),
                 )
             )
             efas_created.append(efa_nice)
@@ -258,12 +258,14 @@ def seed_tertiaire_efa(db, helios_sites: dict) -> list:
                     efa_id=efa_lyon.id,
                     year=2024,
                     status=DeclarationStatus.SUBMITTED_SIMULATED,
-                    checklist_json=json.dumps({
-                        "surface_renseignee": True,
-                        "consommations_importees": True,
-                        "attestation_affichage": True,
-                        "referent_designe": True,
-                    }),
+                    checklist_json=json.dumps(
+                        {
+                            "surface_renseignee": True,
+                            "consommations_importees": True,
+                            "attestation_affichage": True,
+                            "referent_designe": True,
+                        }
+                    ),
                 )
             )
             efas_created.append(efa_lyon)

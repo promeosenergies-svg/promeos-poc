@@ -29,9 +29,7 @@ export default function usePeriodParams(defaultDays = 365) {
     const daysParam = searchParams.get('days');
 
     if (periodStart && periodEnd) {
-      const daysComputed = Math.round(
-        (new Date(periodEnd) - new Date(periodStart)) / 86400000
-      );
+      const daysComputed = Math.round((new Date(periodEnd) - new Date(periodStart)) / 86400000);
       return {
         start: periodStart,
         end: periodEnd,

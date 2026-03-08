@@ -17,9 +17,27 @@ from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_E
 
 # Default TURPE-like schedule (HP 6h-22h weekday, HC rest)
 DEFAULT_WINDOWS = [
-    {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP", "price_eur_kwh": DEFAULT_PRICE_ELEC_EUR_KWH},
-    {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC", "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH},
-    {"day_types": ["weekend", "holiday"], "start": "00:00", "end": "24:00", "period": "HC", "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH},
+    {
+        "day_types": ["weekday"],
+        "start": "06:00",
+        "end": "22:00",
+        "period": "HP",
+        "price_eur_kwh": DEFAULT_PRICE_ELEC_EUR_KWH,
+    },
+    {
+        "day_types": ["weekday"],
+        "start": "22:00",
+        "end": "06:00",
+        "period": "HC",
+        "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH,
+    },
+    {
+        "day_types": ["weekend", "holiday"],
+        "start": "00:00",
+        "end": "24:00",
+        "period": "HC",
+        "price_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH,
+    },
 ]
 
 
@@ -472,7 +490,12 @@ def _empty_hphc_v2(site_id, cal_name):
             for d in range(7)
             for h in range(24)
         ],
-        "opportunity": {"shiftable_kwh": 0, "savings_eur": 0, "price_hp": DEFAULT_PRICE_ELEC_EUR_KWH, "price_hc": DEFAULT_PRICE_HC_EUR_KWH},
+        "opportunity": {
+            "shiftable_kwh": 0,
+            "savings_eur": 0,
+            "price_hp": DEFAULT_PRICE_ELEC_EUR_KWH,
+            "price_hc": DEFAULT_PRICE_HC_EUR_KWH,
+        },
         "confidence": "low",
         "readings_count": 0,
     }

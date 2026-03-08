@@ -26,7 +26,11 @@ CO2E_FACTOR = get_emission_factor("ELEC")  # ADEME Base Carbone 2024
 
 # Expected readings per day by meter frequency
 READINGS_PER_DAY = {
-    "15min": 96, "30min": 48, "hourly": 24, "daily": 1, "monthly": 1 / 30,
+    "15min": 96,
+    "30min": 48,
+    "hourly": 24,
+    "daily": 1,
+    "monthly": 1 / 30,
 }
 
 

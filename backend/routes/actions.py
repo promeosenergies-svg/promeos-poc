@@ -1012,11 +1012,7 @@ def get_action_detail(
     events_count = db.query(ActionEvent).filter(ActionEvent.action_id == action_id).count()
 
     # Include linked anomalies
-    links = (
-        db.query(AnomalyActionLink)
-        .filter(AnomalyActionLink.action_id == action_id)
-        .all()
-    )
+    links = db.query(AnomalyActionLink).filter(AnomalyActionLink.action_id == action_id).all()
 
     return {
         **_serialize_action(action),
@@ -1080,11 +1076,7 @@ def create_anomaly_action_link(
     if action_id is None:
         # Check idempotency first
         if data.idempotency_key:
-            existing = (
-                db.query(ActionItem)
-                .filter(ActionItem.idempotency_key == data.idempotency_key)
-                .first()
-            )
+            existing = db.query(ActionItem).filter(ActionItem.idempotency_key == data.idempotency_key).first()
             if existing:
                 action_id = existing.id
                 # Check if link already exists
@@ -1154,7 +1146,10 @@ def create_anomaly_action_link(
         )
         db.add(link)
         _create_event(
-            db, action_id, "anomaly_linked", actor=actor,
+            db,
+            action_id,
+            "anomaly_linked",
+            actor=actor,
             new_value=f"{data.anomaly_source}:{data.anomaly_ref}",
         )
         db.commit()
@@ -1271,11 +1266,13 @@ def get_anomaly_statuses(
         for lk in links:
             action = db.query(ActionItem).filter(ActionItem.id == lk.action_id).first()
             if action:
-                linked_actions.append({
-                    "id": action.id,
-                    "title": action.title,
-                    "status": action.status.value if action.status else None,
-                })
+                linked_actions.append(
+                    {
+                        "id": action.id,
+                        "title": action.title,
+                        "status": action.status.value if action.status else None,
+                    }
+                )
 
         # Check dismissal
         dismissal = (
@@ -1295,17 +1292,21 @@ def get_anomaly_statuses(
             all_done = all(a["status"] == "done" for a in linked_actions)
             status = "resolved" if all_done else "linked"
 
-        results.append({
-            "anomaly_source": source,
-            "anomaly_ref": ref,
-            "site_id": site_id,
-            "status": status,
-            "linked_actions": linked_actions,
-            "dismissal": {
-                "reason_code": dismissal.reason_code.value if dismissal else None,
-                "reason_text": dismissal.reason_text if dismissal else None,
-                "dismissed_by": dismissal.dismissed_by if dismissal else None,
-            } if dismissal else None,
-        })
+        results.append(
+            {
+                "anomaly_source": source,
+                "anomaly_ref": ref,
+                "site_id": site_id,
+                "status": status,
+                "linked_actions": linked_actions,
+                "dismissal": {
+                    "reason_code": dismissal.reason_code.value if dismissal else None,
+                    "reason_text": dismissal.reason_text if dismissal else None,
+                    "dismissed_by": dismissal.dismissed_by if dismissal else None,
+                }
+                if dismissal
+                else None,
+            }
+        )
 
     return {"statuses": results}

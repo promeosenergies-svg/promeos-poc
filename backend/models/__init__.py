@@ -144,7 +144,13 @@ from .action_item import ActionItem, ActionSyncBatch
 from .action_detail_models import ActionEvent, ActionComment, ActionEvidence, AnomalyActionLink, AnomalyDismissal
 
 # Notifications (Sprint 10.2)
-from .notification import NotificationEvent, NotificationBatch, NotificationPreference, WebhookSubscription, DigestPreference
+from .notification import (
+    NotificationEvent,
+    NotificationBatch,
+    NotificationPreference,
+    WebhookSubscription,
+    DigestPreference,
+)
 
 # IAM (Users / Roles / Scopes)
 from .iam import User, UserOrgRole, UserScope, AuditLog

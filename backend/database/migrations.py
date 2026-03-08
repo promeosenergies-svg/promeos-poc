@@ -1052,9 +1052,7 @@ def _add_meter_unified_columns(engine):
         for idx_col in ("numero_serie", "delivery_point_id", "parent_meter_id"):
             idx_name = f"ix_meter_{idx_col}"
             try:
-                conn.execute(
-                    text(f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "meter" ("{idx_col}")')
-                )
+                conn.execute(text(f'CREATE INDEX IF NOT EXISTS "{idx_name}" ON "meter" ("{idx_col}")'))
             except Exception:
                 pass
 

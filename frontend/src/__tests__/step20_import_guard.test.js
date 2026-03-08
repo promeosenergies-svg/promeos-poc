@@ -6,10 +6,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
 describe('Step 20 — Import mapping columns', () => {
-  const src = fs.readFileSync(
-    '../backend/services/import_mapping.py',
-    'utf8'
-  );
+  const src = fs.readFileSync('../backend/services/import_mapping.py', 'utf8');
 
   it('import_mapping.py has siren_entite column', () => {
     expect(src).toContain('siren_entite');
@@ -41,10 +38,7 @@ describe('Step 20 — Import mapping columns', () => {
 });
 
 describe('Step 20 — Staging model', () => {
-  const src = fs.readFileSync(
-    '../backend/models/patrimoine.py',
-    'utf8'
-  );
+  const src = fs.readFileSync('../backend/models/patrimoine.py', 'utf8');
 
   it('staging model has siren_entite column', () => {
     expect(src).toContain('siren_entite');
@@ -60,10 +54,7 @@ describe('Step 20 — Staging model', () => {
 });
 
 describe('Step 20 — Quality rules', () => {
-  const src = fs.readFileSync(
-    '../backend/services/quality_rules.py',
-    'utf8'
-  );
+  const src = fs.readFileSync('../backend/services/quality_rules.py', 'utf8');
 
   it('quality_rules has invalid_siren_entite rule', () => {
     expect(src).toContain('invalid_siren_entite');

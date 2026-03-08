@@ -35,6 +35,7 @@ class FakeContract:
 
 class FakeContractNone:
     """Contract without price — triggers catalog fallback."""
+
     id = 99
     energy_type = BillingEnergyType.ELEC
     price_ref_eur_per_kwh = None
@@ -145,7 +146,7 @@ class TestDiagnostics:
     def test_assumptions_mention_catalog_when_no_contract(self):
         result = _shadow(FakeContractNone(), [])
         assumptions = result["diagnostics"]["assumptions"]
-        assert any("catalogue" in a.lower() for a in assumptions)
+        assert any("référentiel" in a.lower() or "referentiel" in a.lower() for a in assumptions)
 
 
 # ═══════════════════════════════════════════════

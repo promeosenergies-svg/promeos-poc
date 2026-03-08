@@ -213,20 +213,20 @@ def _check_site_belongs_to_org(db: Session, site: Site, org_id: int):
     """Verify site belongs to org via portfolio→EJ chain. Fail-closed: raises 403 on any break."""
     if not site.portefeuille_id:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
-    pf = db.get(Portefeuille,site.portefeuille_id)
+    pf = db.get(Portefeuille, site.portefeuille_id)
     if not pf:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
-    ej = db.get(EntiteJuridique,pf.entite_juridique_id)
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
     if not ej or ej.organisation_id != org_id:
         raise HTTPException(status_code=403, detail="Site hors périmètre")
 
 
 def _check_portfolio_belongs_to_org(db: Session, portfolio_id: int, org_id: int):
     """Verify portfolio belongs to org. Raises 403 if mismatch."""
-    pf = db.get(Portefeuille,portfolio_id)
+    pf = db.get(Portefeuille, portfolio_id)
     if not pf:
         raise HTTPException(status_code=404, detail=f"Portefeuille {portfolio_id} non trouvé")
-    ej = db.get(EntiteJuridique,pf.entite_juridique_id)
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
     if not ej or ej.organisation_id != org_id:
         raise HTTPException(status_code=403, detail="Portefeuille hors périmètre")
     return pf
@@ -1410,6 +1410,7 @@ def get_site_detail(
 ):
     """Get a site with compteurs, contracts count, and consumption source."""
     from services.meter_unified_service import get_site_meters
+
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
     unified_meters = get_site_meters(db, site_id)
@@ -1421,6 +1422,7 @@ def get_site_detail(
     try:
         from services.consumption_unified_service import get_consumption_summary
         from datetime import timedelta
+
         today = date.today()
         conso = get_consumption_summary(db, site_id, today - timedelta(days=365), today)
         consumption_source = conso["source_used"]
@@ -1444,6 +1446,7 @@ def list_site_meters_unified(
 ):
     """Liste unifiée des compteurs d'un site (Meter + Compteur legacy)."""
     from services.meter_unified_service import get_site_meters
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return {"meters": get_site_meters(db, site_id)}
@@ -1458,6 +1461,7 @@ def list_site_meters_tree(
 ):
     """Arbre compteurs avec sous-compteurs (1 niveau)."""
     from services.meter_unified_service import get_site_meters_tree
+
     org_id = _get_org_id(request, auth, db)
     _load_site_with_org_check(db, site_id, org_id)
     return {"meters": get_site_meters_tree(db, site_id)}
@@ -1481,6 +1485,7 @@ def create_sub_meter_endpoint(
 ):
     """Crée un sous-compteur rattaché à un compteur principal."""
     from services.meter_unified_service import create_sub_meter
+
     try:
         result = create_sub_meter(db, meter_id, body.model_dump(exclude_unset=True))
         db.commit()
@@ -1499,6 +1504,7 @@ def delete_sub_meter_endpoint(
 ):
     """Supprime un sous-compteur."""
     from services.meter_unified_service import delete_sub_meter
+
     if not delete_sub_meter(db, meter_id, sub_id):
         raise HTTPException(status_code=404, detail="Sous-compteur non trouvé ou mauvais parent")
     db.commit()
@@ -1517,6 +1523,7 @@ def meter_breakdown_endpoint(
     """Breakdown principal vs sous-compteurs."""
     from services.meter_unified_service import get_meter_breakdown
     from datetime import datetime as dt
+
     df = dt.fromisoformat(date_from) if date_from else None
     dto = dt.fromisoformat(date_to) if date_to else None
     return get_meter_breakdown(db, meter_id, df, dto)
@@ -2664,8 +2671,8 @@ def get_site_payment_info(
         return {"resolved": False, "rule": None, "source_level": None}
 
     # Load entity names
-    inv_ej = db.get(EntiteJuridique,pr.invoice_entity_id)
-    pay_ej = db.get(EntiteJuridique,pr.payer_entity_id) if pr.payer_entity_id else None
+    inv_ej = db.get(EntiteJuridique, pr.invoice_entity_id)
+    pay_ej = db.get(EntiteJuridique, pr.payer_entity_id) if pr.payer_entity_id else None
 
     return {
         "resolved": True,

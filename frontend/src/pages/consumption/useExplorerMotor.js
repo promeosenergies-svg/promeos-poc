@@ -189,7 +189,7 @@ export default function useExplorerMotor({
     primarySiteId,
     primaryAvailability: useMemo(
       () => availabilityBySite[primarySiteId] || null,
-      [availabilityBySite, primarySiteId], // eslint-disable-line react-hooks/exhaustive-deps
+      [availabilityBySite, primarySiteId] // eslint-disable-line react-hooks/exhaustive-deps
     ),
     primaryTunnel: tunnelBySite[primarySiteId] || null,
     primaryProgression: progressionBySite[primarySiteId] || null,

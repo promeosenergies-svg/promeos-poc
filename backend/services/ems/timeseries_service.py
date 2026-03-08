@@ -234,9 +234,15 @@ def query_timeseries(
     # YoY comparison: query N-1 period and append _prev series
     if compare == "yoy":
         prev_series = _query_yoy_prev(
-            db, meter_ids=meter_id_list, meters=meters, bucket_expr=bucket_expr,
-            date_from=date_from, date_to=date_to,
-            granularity=granularity, mode=mode, metric=metric,
+            db,
+            meter_ids=meter_id_list,
+            meters=meters,
+            bucket_expr=bucket_expr,
+            date_from=date_from,
+            date_to=date_to,
+            granularity=granularity,
+            mode=mode,
+            metric=metric,
             energy_vector=energy_vector,
         )
         series.extend(prev_series)
@@ -471,6 +477,7 @@ def _compute_availability(series: list, expected_points: int, granularity: str) 
 # YoY comparison helpers (Step 10 — F1)
 # -------------------------------------------------------------------
 
+
 def _shift_timestamp_forward_1y(ts_str: str) -> str:
     """Shift a timestamp string forward by 1 year for YoY overlay alignment.
 
@@ -496,8 +503,16 @@ def _shift_timestamp_forward_1y(ts_str: str) -> str:
 
 
 def _query_yoy_prev(
-    db, meter_ids, meters, bucket_expr,
-    date_from, date_to, granularity, mode, metric, energy_vector,
+    db,
+    meter_ids,
+    meters,
+    bucket_expr,
+    date_from,
+    date_to,
+    granularity,
+    mode,
+    metric,
+    energy_vector,
 ):
     """Query the N-1 period and return _prev series with timestamps shifted +1 year."""
     try:
@@ -508,8 +523,11 @@ def _query_yoy_prev(
         prev_to = date_to.replace(year=date_to.year - 1, day=28)
 
     if mode == "aggregate":
-        raw = [_query_aggregate(db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric,
-                                key="total_prev", label="N-1")]
+        raw = [
+            _query_aggregate(
+                db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric, key="total_prev", label="N-1"
+            )
+        ]
     elif mode in ("overlay", "stack"):
         site_meter_map = {}
         for m in meters:
@@ -517,13 +535,25 @@ def _query_yoy_prev(
         raw = []
         for sid in sorted(site_meter_map.keys())[:8]:
             m_ids = [m.id for m in site_meter_map[sid]]
-            raw.append(_query_aggregate(
-                db, m_ids, bucket_expr, prev_from, prev_to, granularity, metric,
-                key=f"site_{sid}_prev", label=f"Site {sid} (N-1)"
-            ))
+            raw.append(
+                _query_aggregate(
+                    db,
+                    m_ids,
+                    bucket_expr,
+                    prev_from,
+                    prev_to,
+                    granularity,
+                    metric,
+                    key=f"site_{sid}_prev",
+                    label=f"Site {sid} (N-1)",
+                )
+            )
     else:
-        raw = [_query_aggregate(db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric,
-                                key="total_prev", label="N-1")]
+        raw = [
+            _query_aggregate(
+                db, meter_ids, bucket_expr, prev_from, prev_to, granularity, metric, key="total_prev", label="N-1"
+            )
+        ]
 
     # Shift timestamps +1 year to align with current period
     for s in raw:

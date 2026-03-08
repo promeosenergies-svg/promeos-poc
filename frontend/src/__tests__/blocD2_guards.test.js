@@ -34,11 +34,11 @@ describe('D.2 — FreshnessIndicator component', () => {
   });
 
   it('has STATUS_CONFIG with 5 statuses', () => {
-    expect(src).toContain("fresh:");
-    expect(src).toContain("recent:");
-    expect(src).toContain("stale:");
-    expect(src).toContain("expired:");
-    expect(src).toContain("no_data:");
+    expect(src).toContain('fresh:');
+    expect(src).toContain('recent:');
+    expect(src).toContain('stale:');
+    expect(src).toContain('expired:');
+    expect(src).toContain('no_data:');
   });
 
   it('imports Explain for popover', () => {
@@ -77,11 +77,11 @@ describe('D.2 — Glossary freshness entry', () => {
   const src = readSrc('ui/glossary.js');
 
   it('has freshness entry', () => {
-    expect(src).toContain("freshness:");
+    expect(src).toContain('freshness:');
   });
 
   it('freshness entry has term and short', () => {
-    expect(src).toContain("Fraîcheur des données");
+    expect(src).toContain('Fraîcheur des données');
   });
 });
 

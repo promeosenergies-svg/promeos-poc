@@ -136,7 +136,9 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (data && data.completed_count === 0 && !autoDetectedRef.current && org?.id) {
       autoDetectedRef.current = true;
-      autoDetectOnboarding(org.id).then(setData).catch(() => {});
+      autoDetectOnboarding(org.id)
+        .then(setData)
+        .catch(() => {});
     }
   }, [data, org?.id]);
 

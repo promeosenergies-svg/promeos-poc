@@ -1,6 +1,7 @@
 """
 PROMEOS — Tests Step 29 : APER solarisation + estimation PV
 """
+
 import pytest
 import importlib
 import inspect
@@ -15,6 +16,7 @@ ROUTE_PATH = os.path.join(BACKEND, "routes", "aper.py")
 # ═══════════════════════════════════════════════════════════════════════
 # A. Service unit tests
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestAperServiceExists:
     def test_service_file_exists(self):
@@ -112,6 +114,7 @@ class TestEstimatePvCalculations:
 # B. Route / endpoint tests
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestAperRoute:
     def test_route_file_exists(self):
         assert os.path.isfile(ROUTE_PATH), "routes/aper.py manquant"
@@ -133,6 +136,7 @@ class TestAperRoute:
 # ═══════════════════════════════════════════════════════════════════════
 # C. Source guard tests (structural)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestSourceGuards:
     def setup_method(self):

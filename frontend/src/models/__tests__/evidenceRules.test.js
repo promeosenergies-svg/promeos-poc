@@ -162,7 +162,9 @@ describe('buildSourceDeepLink', () => {
   });
 
   it('insight operat:xxx → /conformite/tertiaire/efa/{id}', () => {
-    expect(buildSourceDeepLink('insight', 'operat:42:2024:dpe')).toBe('/conformite/tertiaire/efa/42');
+    expect(buildSourceDeepLink('insight', 'operat:42:2024:dpe')).toBe(
+      '/conformite/tertiaire/efa/42'
+    );
   });
 
   it('insight other → /anomalies', () => {

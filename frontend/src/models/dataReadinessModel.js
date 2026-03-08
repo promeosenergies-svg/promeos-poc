@@ -247,7 +247,8 @@ const CONFIDENCE_LEVELS = {
     label: 'Faible',
     level: 'low',
     badgeStatus: 'crit',
-    tooltipFR: 'Données insuffisantes — importez vos factures et consommations pour améliorer la fiabilité',
+    tooltipFR:
+      'Données insuffisantes — importez vos factures et consommations pour améliorer la fiabilité',
   },
 };
 

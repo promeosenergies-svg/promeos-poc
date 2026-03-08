@@ -106,6 +106,7 @@ def get_cockpit(
 
     # A.1: Unified consumption for portfolio KPI
     from datetime import date, timedelta
+
     today = date.today()
     conso_start = today - timedelta(days=365)
     try:

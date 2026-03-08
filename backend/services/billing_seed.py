@@ -281,7 +281,14 @@ def _add_marseille_invoice(db: Session, site_id: int, contract_id: int, y: int, 
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation elec", energy_kwh, "kWh", round(energy_line / energy_kwh, 4), energy_line),
+        (
+            InvoiceLineType.ENERGY,
+            "Consommation elec",
+            energy_kwh,
+            "kWh",
+            round(energy_line / energy_kwh, 4),
+            energy_line,
+        ),
         (InvoiceLineType.NETWORK, "Acheminement TURPE", None, None, None, network_line),
         (InvoiceLineType.TAX, "CSPE / Accise elec", None, None, None, tax_line),
     ]:
@@ -333,7 +340,14 @@ def _add_nice_elec_invoice(db: Session, site_id: int, contract_id: int, y: int, 
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation elec", energy_kwh, "kWh", round(energy_line / energy_kwh, 4), energy_line),
+        (
+            InvoiceLineType.ENERGY,
+            "Consommation elec",
+            energy_kwh,
+            "kWh",
+            round(energy_line / energy_kwh, 4),
+            energy_line,
+        ),
         (InvoiceLineType.NETWORK, "Acheminement TURPE", None, None, None, network_line),
         (InvoiceLineType.TAX, "CSPE / Accise elec", None, None, None, tax_line),
     ]:
@@ -381,7 +395,14 @@ def _add_nice_gaz_invoice(db: Session, site_id: int, contract_id: int, y: int, m
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Terme variable gaz", energy_kwh, "kWh", round(energy_line / energy_kwh, 4), energy_line),
+        (
+            InvoiceLineType.ENERGY,
+            "Terme variable gaz",
+            energy_kwh,
+            "kWh",
+            round(energy_line / energy_kwh, 4),
+            energy_line,
+        ),
         (InvoiceLineType.NETWORK, "Acheminement gaz (ATRD+ATRT)", None, None, None, network_line),
         (InvoiceLineType.TAX, "TICGN", None, None, None, tax_line),
     ]:
@@ -436,7 +457,14 @@ def _add_toulouse_invoice(db: Session, site_id: int, contract_id: int, y: int, m
     db.flush()
 
     for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation elec", energy_kwh, "kWh", round(energy_line / energy_kwh, 4), energy_line),
+        (
+            InvoiceLineType.ENERGY,
+            "Consommation elec",
+            energy_kwh,
+            "kWh",
+            round(energy_line / energy_kwh, 4),
+            energy_line,
+        ),
         (InvoiceLineType.NETWORK, "Acheminement TURPE", None, None, None, network_line),
         (InvoiceLineType.TAX, "CSPE / Accise elec", None, None, None, tax_line),
     ]:

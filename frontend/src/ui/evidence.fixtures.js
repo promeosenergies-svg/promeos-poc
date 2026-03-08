@@ -99,7 +99,7 @@ export function evidenceMaturite(scopeLabel) {
       'Pondérations : données 30%, conformité 25%, actions 20%, contrats 15%, pilotage 10%.',
     ],
     assumptions: [
-      'Le score reflète la complétude des données dans PROMEOS, pas la maturité réelle de l\'organisation.',
+      "Le score reflète la complétude des données dans PROMEOS, pas la maturité réelle de l'organisation.",
       'Importer plus de données fait progresser le score automatiquement.',
     ],
   });

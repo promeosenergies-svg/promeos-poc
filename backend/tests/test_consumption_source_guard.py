@@ -2,6 +2,7 @@
 Tests — A.1 minor fix: source-guard for consumption_source annotations.
 Verifies kpi_engine.py and consumption_diagnostic.py expose consumption_source.
 """
+
 import pytest
 from datetime import datetime
 
@@ -13,10 +14,7 @@ from services.electric_monitoring.kpi_engine import KPIEngine
 def _make_readings(n=48):
     """Generate n hourly readings."""
     base = datetime(2025, 1, 6, 0, 0, 0)  # Monday
-    return [
-        {"timestamp": datetime(2025, 1, 6 + i // 24, i % 24, 0, 0), "value_kwh": 10.0}
-        for i in range(n)
-    ]
+    return [{"timestamp": datetime(2025, 1, 6 + i // 24, i % 24, 0, 0), "value_kwh": 10.0} for i in range(n)]
 
 
 class TestKPIEngineConsumptionSource:
@@ -53,20 +51,23 @@ class TestDiagnosticConsumptionSource:
     def test_get_readings_docstring(self):
         """_get_readings docstring mentions unified service."""
         from services.consumption_diagnostic import _get_readings
+
         assert "get_consumption_summary" in _get_readings.__doc__
 
     def test_diagnostic_metrics_have_consumption_source(self):
         """run_diagnostic adds consumption_source to insight metrics."""
         import inspect
         from services import consumption_diagnostic
+
         source = inspect.getsource(consumption_diagnostic)
-        assert 'consumption_source' in source
+        assert "consumption_source" in source
         assert '"metered"' in source or "'metered'" in source
 
     def test_consumption_source_in_metrics_block(self):
         """consumption_source is set alongside price_ref in metrics."""
         import inspect
         from services import consumption_diagnostic
+
         source = inspect.getsource(consumption_diagnostic)
         assert 'metrics["consumption_source"]' in source
 

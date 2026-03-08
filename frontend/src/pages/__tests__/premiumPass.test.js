@@ -48,7 +48,7 @@ describe('P3-3: CTA harmonization — "Créer une action"', () => {
 // ── P3-4: Badge/alert color consistency (-100/-700 palette) ────────────────
 
 describe('P3-4: Badge color consistency', () => {
-  it('BillIntelPage n\'utilise pas text-*-800 pour statuts', () => {
+  it("BillIntelPage n'utilise pas text-*-800 pour statuts", () => {
     const code = src('pages/BillIntelPage.jsx');
     // INSIGHT_STATUS_COLORS ne doit pas avoir de -800
     const statusBlock = code.match(/INSIGHT_STATUS_COLORS[\s\S]*?\};/);
@@ -57,7 +57,7 @@ describe('P3-4: Badge color consistency', () => {
     }
   });
 
-  it('ActionDetailDrawer n\'utilise pas text-red-600 pour false_positive', () => {
+  it("ActionDetailDrawer n'utilise pas text-red-600 pour false_positive", () => {
     const code = src('components/ActionDetailDrawer.jsx');
     // false_positive doit utiliser -700, pas -600
     expect(code).not.toMatch(/false_positive.*text-red-600/);

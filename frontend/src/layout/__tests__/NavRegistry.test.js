@@ -90,13 +90,7 @@ describe('NAV_SECTIONS', () => {
 
   it('sections have correct labels and order', () => {
     const labels = NAV_SECTIONS.map((s) => s.label);
-    expect(labels).toEqual([
-      'Pilotage',
-      'Patrimoine',
-      'Énergie',
-      'Achat',
-      'Données',
-    ]);
+    expect(labels).toEqual(['Pilotage', 'Patrimoine', 'Énergie', 'Achat', 'Données']);
   });
 
   it('order field is sequential 1-5', () => {
@@ -130,14 +124,17 @@ describe('Expert filtering', () => {
 
   it('normal mode shows 4 sections', () => {
     expect(normalSections).toHaveLength(4);
-    expect(normalSections.map((s) => s.key)).toEqual(['pilotage', 'patrimoine', 'energie', 'achat']);
+    expect(normalSections.map((s) => s.key)).toEqual([
+      'pilotage',
+      'patrimoine',
+      'energie',
+      'achat',
+    ]);
   });
 
   it('expert mode adds 1 section', () => {
     expect(expertSections).toHaveLength(1);
-    expect(expertSections.map((s) => s.key)).toEqual([
-      'admin-data',
-    ]);
+    expect(expertSections.map((s) => s.key)).toEqual(['admin-data']);
   });
 
   it('normal mode shows ~9 items (excluding expertOnly items)', () => {
@@ -252,12 +249,12 @@ describe('IA coherence', () => {
     expect(perfIdx).toBe(consoIdx + 1);
   });
 
-  it("Actions & Suivi has alerts badge in Pilotage", () => {
+  it('Actions & Suivi has alerts badge in Pilotage', () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((item) => item.to === '/actions');
     expect(centre).toBeDefined();
     expect(centre.badgeKey).toBe('alerts');
-    expect(centre.label).toBe("Actions & Suivi");
+    expect(centre.label).toBe('Actions & Suivi');
   });
 
   it('Patrimoine lives in Patrimoine module (patrimoine section)', () => {
@@ -464,10 +461,10 @@ describe('Route coverage guard-rails', () => {
     }
   });
 
-  it("actions label is Actions & Suivi (FR)", () => {
+  it('actions label is Actions & Suivi (FR)', () => {
     const actions = ALL_NAV_ITEMS.find((item) => item.to === '/actions');
     expect(actions).toBeDefined();
-    expect(actions.label).toBe("Actions & Suivi");
+    expect(actions.label).toBe('Actions & Suivi');
   });
 
   it('dynamic routes resolve correctly (not fallback to cockpit)', () => {

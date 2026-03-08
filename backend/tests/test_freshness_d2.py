@@ -2,6 +2,7 @@
 PROMEOS — D.2 Data Freshness
 Tests for compute_site_freshness + endpoint.
 """
+
 import sys
 import os
 
@@ -44,6 +45,7 @@ class TestFreshnessStatus:
 
         # Simulate: last reading = yesterday, last invoice = 10 days ago
         call_count = [0]
+
         def scalar_side_effect():
             call_count[0] += 1
             if call_count[0] == 1:
@@ -113,11 +115,13 @@ class TestFreshnessEndpoint:
 
     def test_freshness_endpoint_exists(self):
         from routes.data_quality import router
+
         paths = [r.path for r in router.routes]
         assert any("/freshness/{site_id}" in p for p in paths), f"Missing /freshness/{{site_id}} in {paths}"
 
     def test_freshness_endpoint_is_get(self):
         from routes.data_quality import router
+
         for r in router.routes:
             if hasattr(r, "path") and "/freshness/{site_id}" in r.path:
                 assert "GET" in r.methods
@@ -141,6 +145,7 @@ class TestFreshnessRecommendations:
         db.query.return_value.filter.return_value.all.return_value = [(1,)]
 
         call_count = [0]
+
         def scalar_side_effect():
             call_count[0] += 1
             if call_count[0] == 1:

@@ -20,6 +20,7 @@ MARKET_CTX = {
 
 # ── A. compute_strategy_price — fixe ──
 
+
 class TestFixeStrategy:
     def test_fixe_returns_all_fields(self):
         r = compute_strategy_price("fixe", MARKET_CTX)
@@ -54,6 +55,7 @@ class TestFixeStrategy:
 
 # ── B. compute_strategy_price — indexe ──
 
+
 class TestIndexeStrategy:
     def test_indexe_has_spread(self):
         r = compute_strategy_price("indexe", MARKET_CTX)
@@ -75,6 +77,7 @@ class TestIndexeStrategy:
 
 # ── C. compute_strategy_price — spot ──
 
+
 class TestSpotStrategy:
     def test_spot_includes_aggregator_fee(self):
         r = compute_strategy_price("spot", MARKET_CTX)
@@ -93,6 +96,7 @@ class TestSpotStrategy:
 
 # ── D. compute_strategy_price — reflex_solar ──
 
+
 class TestReflexSolarStrategy:
     def test_reflex_solar_has_solar_discount(self):
         r = compute_strategy_price("reflex_solar", MARKET_CTX)
@@ -109,6 +113,7 @@ class TestReflexSolarStrategy:
 
 # ── E. Unknown strategy ──
 
+
 class TestUnknownStrategy:
     def test_unknown_returns_none(self):
         r = compute_strategy_price("unknown_strategy", MARKET_CTX)
@@ -116,6 +121,7 @@ class TestUnknownStrategy:
 
 
 # ── F. Horizon months effect ──
+
 
 class TestHorizonMonths:
     def test_fixe_longer_horizon_higher_price(self):
@@ -134,12 +140,14 @@ class TestHorizonMonths:
 
 # ── G. get_market_context — source guard ──
 
+
 class TestGetMarketContextSignature:
     def test_function_exists(self):
         assert callable(get_market_context)
 
     def test_accepts_db_and_energy_type(self):
         import inspect
+
         sig = inspect.signature(get_market_context)
         params = list(sig.parameters.keys())
         assert "db" in params

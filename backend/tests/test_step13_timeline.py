@@ -1,6 +1,7 @@
 """
 Step 13 — Timeline reglementaire : tests unitaires + integration.
 """
+
 import pytest
 from datetime import date
 
@@ -9,33 +10,39 @@ from datetime import date
 # Unit tests for _deadline_status and _build_timeline_events
 # ============================================================
 
+
 class TestDeadlineStatus:
     """Test the _deadline_status helper."""
 
     def test_import(self):
         from routes.compliance import _deadline_status
+
         assert callable(_deadline_status)
 
     def test_passed_for_old_deadline(self):
         from routes.compliance import _deadline_status
+
         today = date(2026, 3, 6)
         one_year = date(2027, 3, 6)
         assert _deadline_status(date(2025, 1, 1), today, one_year) == "passed"
 
     def test_upcoming_for_near_deadline(self):
         from routes.compliance import _deadline_status
+
         today = date(2026, 3, 6)
         one_year = date(2027, 3, 6)
         assert _deadline_status(date(2026, 7, 1), today, one_year) == "upcoming"
 
     def test_future_for_far_deadline(self):
         from routes.compliance import _deadline_status
+
         today = date(2026, 3, 6)
         one_year = date(2027, 3, 6)
         assert _deadline_status(date(2030, 1, 1), today, one_year) == "future"
 
     def test_today_is_upcoming(self):
         from routes.compliance import _deadline_status
+
         today = date(2026, 3, 6)
         one_year = date(2027, 3, 6)
         # Deadline == today should not be "passed"
@@ -43,6 +50,7 @@ class TestDeadlineStatus:
 
     def test_one_year_boundary_is_upcoming(self):
         from routes.compliance import _deadline_status
+
         today = date(2026, 3, 6)
         one_year = date(2027, 3, 6)
         assert _deadline_status(one_year, today, one_year) == "upcoming"
@@ -53,6 +61,7 @@ class TestBuildTimeline:
 
     def test_import(self):
         from routes.compliance import _build_timeline_events
+
         assert callable(_build_timeline_events)
 
 
@@ -62,11 +71,13 @@ class TestTimelineEndpoint:
     def test_route_exists(self):
         """The timeline route should be registered in the compliance router."""
         from routes.compliance import router
+
         paths = [getattr(r, "path", "") for r in router.routes]
         assert any("/timeline" in p for p in paths), f"No /timeline in {paths}"
 
     def test_route_is_get(self):
         from routes.compliance import router
+
         for route in router.routes:
             path = getattr(route, "path", "")
             if "/timeline" in path:
@@ -82,6 +93,7 @@ class TestTimelineEventStructure:
         against the real DB (demo seeded)."""
         from database import SessionLocal
         from routes.compliance import _build_timeline_events
+
         db = SessionLocal()
         try:
             # Use org_id=1 (demo HELIOS)

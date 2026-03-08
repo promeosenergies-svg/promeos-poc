@@ -16,7 +16,7 @@ import {
 } from '../../layout/NavRegistry';
 
 describe('V114 Nav Refactor guard-rails', () => {
-  it('Pilotage has exactly 3 items (Cockpit + Centre d\'actions + Notifications)', () => {
+  it("Pilotage has exactly 3 items (Cockpit + Centre d'actions + Notifications)", () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     expect(pilotage.items).toHaveLength(3);
     expect(pilotage.items.map((i) => i.to)).toEqual(['/cockpit', '/actions', '/notifications']);
@@ -25,16 +25,13 @@ describe('V114 Nav Refactor guard-rails', () => {
   it('Patrimoine has exactly 2 items (Sites & Bâtiments + Conformité)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
     expect(patrimoine.items).toHaveLength(2);
-    expect(patrimoine.items.map((i) => i.to)).toEqual([
-      '/patrimoine',
-      '/conformite',
-    ]);
+    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/conformite']);
   });
 
-  it("Actions & Suivi at /actions has alerts badge", () => {
+  it('Actions & Suivi at /actions has alerts badge', () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((i) => i.to === '/actions');
-    expect(centre.label).toBe("Actions & Suivi");
+    expect(centre.label).toBe('Actions & Suivi');
     expect(centre.badgeKey).toBe('alerts');
   });
 

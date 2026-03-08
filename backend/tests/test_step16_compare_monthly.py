@@ -2,12 +2,14 @@
 Step 16 — B7 : Comparaison factures N vs N-1
 Tests unitaires pour l'endpoint /api/billing/compare-monthly.
 """
+
 import pytest
 from datetime import date
 
 
 class MockInvoice:
     """Minimal invoice mock."""
+
     def __init__(self, site_id, period_start, total_eur, energy_kwh=0):
         self.site_id = site_id
         self.period_start = period_start
@@ -22,16 +24,19 @@ class TestCompareMonthlyResponse:
 
     def test_response_has_months_array(self):
         from routes.billing import _MONTH_LABELS_FR
+
         assert len(_MONTH_LABELS_FR) == 13  # index 0 is empty
 
     def test_month_labels_french(self):
         from routes.billing import _MONTH_LABELS_FR
+
         assert _MONTH_LABELS_FR[1] == "Janv"
         assert _MONTH_LABELS_FR[6] == "Juin"
         assert _MONTH_LABELS_FR[12] == "Déc"
 
     def test_month_labels_all_non_empty(self):
         from routes.billing import _MONTH_LABELS_FR
+
         for i in range(1, 13):
             assert len(_MONTH_LABELS_FR[i]) > 0
 

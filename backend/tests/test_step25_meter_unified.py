@@ -2,6 +2,7 @@
 Step 25 — Unification Compteur → Meter
 Tests pour le modèle Meter enrichi et le service unifié.
 """
+
 import pytest
 from sqlalchemy import inspect
 from database import engine, SessionLocal
@@ -11,6 +12,7 @@ from services.meter_unified_service import get_site_meters, _infer_type, _type_t
 
 
 # ── A. Meter model columns ─────────────────────────────────────────────────
+
 
 class TestMeterModel:
     """Verify Meter has the new unified columns."""
@@ -45,8 +47,15 @@ class TestMeterModel:
         if not insp.has_table("meter"):
             pytest.skip("meter table not found")
         cols = {c["name"]: c for c in insp.get_columns("meter")}
-        for col_name in ("numero_serie", "type_compteur", "marque", "modele",
-                         "date_derniere_releve", "delivery_point_id", "parent_meter_id"):
+        for col_name in (
+            "numero_serie",
+            "type_compteur",
+            "marque",
+            "modele",
+            "date_derniere_releve",
+            "delivery_point_id",
+            "parent_meter_id",
+        ):
             if col_name in cols:
                 assert cols[col_name]["nullable"], f"{col_name} should be nullable"
 
@@ -60,6 +69,7 @@ class TestMeterModel:
 
 
 # ── B. Unified service helpers ──────────────────────────────────────────────
+
 
 class TestHelpers:
     def test_infer_type_elec(self):
@@ -85,6 +95,7 @@ class TestHelpers:
 
 
 # ── C. Service integration (requires seeded DB) ────────────────────────────
+
 
 class TestUnifiedService:
     def test_get_site_meters_returns_list(self):
@@ -119,6 +130,7 @@ class TestUnifiedService:
         db = SessionLocal()
         try:
             from models import Site
+
             sites = db.query(Site).limit(5).all()
             has_meters = False
             for s in sites:
@@ -132,6 +144,7 @@ class TestUnifiedService:
 
 
 # ── D. Source guard — file structure ────────────────────────────────────────
+
 
 class TestSourceGuard:
     def _read(self, path):

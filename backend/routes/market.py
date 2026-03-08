@@ -55,10 +55,7 @@ def get_market_prices(
                 buckets[key] = {"sum": 0.0, "count": 0}
             buckets[key]["sum"] += r.price_eur_mwh
             buckets[key]["count"] += 1
-        prices = [
-            {"date": k, "price_eur_mwh": round(v["sum"] / v["count"], 2)}
-            for k, v in sorted(buckets.items())
-        ]
+        prices = [{"date": k, "price_eur_mwh": round(v["sum"] / v["count"], 2)} for k, v in sorted(buckets.items())]
     elif granularity == "weekly":
         buckets = {}
         for r in rows:
@@ -69,15 +66,9 @@ def get_market_prices(
                 buckets[key] = {"sum": 0.0, "count": 0}
             buckets[key]["sum"] += r.price_eur_mwh
             buckets[key]["count"] += 1
-        prices = [
-            {"date": k, "price_eur_mwh": round(v["sum"] / v["count"], 2)}
-            for k, v in sorted(buckets.items())
-        ]
+        prices = [{"date": k, "price_eur_mwh": round(v["sum"] / v["count"], 2)} for k, v in sorted(buckets.items())]
     else:
-        prices = [
-            {"date": r.date.isoformat(), "price_eur_mwh": r.price_eur_mwh}
-            for r in rows
-        ]
+        prices = [{"date": r.date.isoformat(), "price_eur_mwh": r.price_eur_mwh} for r in rows]
 
     # Compute stats
     all_prices = [r.price_eur_mwh for r in rows]

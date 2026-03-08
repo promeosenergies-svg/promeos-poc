@@ -31,34 +31,51 @@ def get_market_context(db: Session, energy_type: str = "ELEC", ref_date: date = 
     ref = ref_date or date.today()
 
     # Spot moyen 30 derniers jours
-    spot_30d = db.query(func.avg(MarketPrice.price_eur_mwh)).filter(
-        MarketPrice.market == "EPEX_SPOT_FR",
-        MarketPrice.energy_type == energy_type,
-        MarketPrice.date >= ref - timedelta(days=30),
-        MarketPrice.date <= ref,
-    ).scalar()
+    spot_30d = (
+        db.query(func.avg(MarketPrice.price_eur_mwh))
+        .filter(
+            MarketPrice.market == "EPEX_SPOT_FR",
+            MarketPrice.energy_type == energy_type,
+            MarketPrice.date >= ref - timedelta(days=30),
+            MarketPrice.date <= ref,
+        )
+        .scalar()
+    )
 
     # Spot moyen 12 mois
-    spot_12m = db.query(func.avg(MarketPrice.price_eur_mwh)).filter(
-        MarketPrice.market == "EPEX_SPOT_FR",
-        MarketPrice.energy_type == energy_type,
-        MarketPrice.date >= ref - timedelta(days=365),
-        MarketPrice.date <= ref,
-    ).scalar()
+    spot_12m = (
+        db.query(func.avg(MarketPrice.price_eur_mwh))
+        .filter(
+            MarketPrice.market == "EPEX_SPOT_FR",
+            MarketPrice.energy_type == energy_type,
+            MarketPrice.date >= ref - timedelta(days=365),
+            MarketPrice.date <= ref,
+        )
+        .scalar()
+    )
 
     # Dernier prix
-    last = db.query(MarketPrice.price_eur_mwh).filter(
-        MarketPrice.market == "EPEX_SPOT_FR",
-        MarketPrice.energy_type == energy_type,
-        MarketPrice.date <= ref,
-    ).order_by(MarketPrice.date.desc()).first()
+    last = (
+        db.query(MarketPrice.price_eur_mwh)
+        .filter(
+            MarketPrice.market == "EPEX_SPOT_FR",
+            MarketPrice.energy_type == energy_type,
+            MarketPrice.date <= ref,
+        )
+        .order_by(MarketPrice.date.desc())
+        .first()
+    )
 
     # Volatilité (écart-type 12 mois)
-    prices_12m = db.query(MarketPrice.price_eur_mwh).filter(
-        MarketPrice.market == "EPEX_SPOT_FR",
-        MarketPrice.energy_type == energy_type,
-        MarketPrice.date >= ref - timedelta(days=365),
-    ).all()
+    prices_12m = (
+        db.query(MarketPrice.price_eur_mwh)
+        .filter(
+            MarketPrice.market == "EPEX_SPOT_FR",
+            MarketPrice.energy_type == energy_type,
+            MarketPrice.date >= ref - timedelta(days=365),
+        )
+        .all()
+    )
 
     vol = statistics.stdev([p[0] for p in prices_12m]) if len(prices_12m) > 30 else 15.0
 

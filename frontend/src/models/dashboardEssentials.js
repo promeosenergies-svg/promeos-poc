@@ -453,12 +453,13 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
 export function buildExecutiveKpis(kpis, sites = []) {
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
   // A.2: Score unifié (0-100) si fourni par l'API, sinon fallback % conformes
-  const complianceScore = kpis.compliance_score != null
-    ? Math.round(kpis.compliance_score)
-    : null;
-  const pctConf = complianceScore != null
-    ? complianceScore
-    : (total > 0 ? Math.round((conformes / total) * 100) : 0);
+  const complianceScore = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : null;
+  const pctConf =
+    complianceScore != null
+      ? complianceScore
+      : total > 0
+        ? Math.round((conformes / total) * 100)
+        : 0;
   // Maturité score (mirrors Cockpit useMemo)
   const actionsActives =
     nonConformes + aRisque > 0 ? ACTIONS_SCORE.withIssues : ACTIONS_SCORE.noIssues;
@@ -480,10 +481,18 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: total > 0 ? `${pctConf}/100` : '—',
       rawValue: pctConf,
       messageCtx: { totalSites: total, sitesAtRisk: aRisque, sitesNonConformes: nonConformes },
-      sub: complianceScore != null
-        ? `DT 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
-        : `${conformes} sur ${total} site${total !== 1 ? 's' : ''}`,
-      status: pctConf < COMPLIANCE_SCORE_THRESHOLDS.warn ? 'crit' : pctConf < COMPLIANCE_SCORE_THRESHOLDS.ok ? 'warn' : total > 0 ? 'ok' : 'neutral',
+      sub:
+        complianceScore != null
+          ? `DT 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
+          : `${conformes} sur ${total} site${total !== 1 ? 's' : ''}`,
+      status:
+        pctConf < COMPLIANCE_SCORE_THRESHOLDS.warn
+          ? 'crit'
+          : pctConf < COMPLIANCE_SCORE_THRESHOLDS.ok
+            ? 'warn'
+            : total > 0
+              ? 'ok'
+              : 'neutral',
       path: '/conformite',
       explain: 'compliance_score',
     },

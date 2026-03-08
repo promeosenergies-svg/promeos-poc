@@ -86,7 +86,10 @@ def auto_reconcile_after_import(
 
         logger.info(
             "Reconciliation mismatch site=%s period=%s delta=%.1f%% → insight #%s",
-            site_id, period_tag, delta_pct, insight.id,
+            site_id,
+            period_tag,
+            delta_pct,
+            insight.id,
         )
 
         return {
@@ -98,7 +101,5 @@ def auto_reconcile_after_import(
         }
 
     except Exception as e:
-        logger.warning(
-            "auto_reconcile_after_import failed site=%s: %s", site_id, str(e)[:200]
-        )
+        logger.warning("auto_reconcile_after_import failed site=%s: %s", site_id, str(e)[:200])
         return {"status": "error", "site_id": site_id, "error": str(e)[:200]}

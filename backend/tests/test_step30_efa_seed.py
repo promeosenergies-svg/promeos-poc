@@ -1,6 +1,7 @@
 """
 PROMEOS — Tests Step 30 : Seed 3 EFA Tertiaire HELIOS
 """
+
 import pytest
 import os
 
@@ -18,12 +19,14 @@ SEED_PATH = os.path.join(BACKEND, "services", "demo_seed", "gen_tertiaire_efa.py
 # A. Source guard (no DB needed)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestSourceGuard:
     def test_file_exists(self):
         assert os.path.isfile(SEED_PATH), "gen_tertiaire_efa.py manquant"
 
     def test_importable(self):
         from services.demo_seed.gen_tertiaire_efa import seed_tertiaire_efa
+
         assert callable(seed_tertiaire_efa)
 
     def test_contains_3_efas(self):
@@ -45,6 +48,7 @@ class TestSourceGuard:
 # ═══════════════════════════════════════════════════════════════════════
 # B. Seed integration tests (in-memory DB)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @pytest.fixture(scope="module")
 def seeded_db():
@@ -193,15 +197,11 @@ class TestEfaCreation:
             elif "lyon" in name_lower:
                 helios_sites["lyon"] = s
 
-        count_before = seeded_db.query(TertiaireEfa).filter(
-            TertiaireEfa.nom.in_(names_list)
-        ).count()
+        count_before = seeded_db.query(TertiaireEfa).filter(TertiaireEfa.nom.in_(names_list)).count()
 
         # Re-seed
         seed_tertiaire_efa(seeded_db, helios_sites)
 
-        count_after = seeded_db.query(TertiaireEfa).filter(
-            TertiaireEfa.nom.in_(names_list)
-        ).count()
+        count_after = seeded_db.query(TertiaireEfa).filter(TertiaireEfa.nom.in_(names_list)).count()
 
         assert count_after == count_before, "Seed non idempotent : doublons crees"

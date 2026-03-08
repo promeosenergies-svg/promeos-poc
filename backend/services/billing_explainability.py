@@ -60,13 +60,15 @@ def compute_contributors(metrics: dict) -> list:
             continue
         pct = round(delta / delta_ttc * 100, 1) if delta_ttc else 0
         explanation_fn = _EXPLANATIONS.get(code)
-        contributors.append({
-            "code": code,
-            "label": _LABELS.get(code, code),
-            "delta_eur": round(delta, 2),
-            "pct_of_total": pct,
-            "explanation_fr": explanation_fn(metrics, delta) if explanation_fn else "",
-        })
+        contributors.append(
+            {
+                "code": code,
+                "label": _LABELS.get(code, code),
+                "delta_eur": round(delta, 2),
+                "pct_of_total": pct,
+                "explanation_fr": explanation_fn(metrics, delta) if explanation_fn else "",
+            }
+        )
         if len(contributors) >= 3:
             break
 

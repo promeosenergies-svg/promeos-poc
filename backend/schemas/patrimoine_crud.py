@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 
 # ── Organisation ─────────────────────────────────────────────────────────────
 
+
 class OrganisationCreate(BaseModel):
     nom: str = Field(..., min_length=1, max_length=200)
     type_client: Optional[str] = Field(None, description="retail, tertiaire, industrie")
@@ -33,6 +34,7 @@ class OrganisationUpdate(BaseModel):
 
 
 # ── Entité Juridique ─────────────────────────────────────────────────────────
+
 
 class EntiteJuridiqueCreate(BaseModel):
     organisation_id: int
@@ -69,6 +71,7 @@ class EntiteJuridiqueUpdate(BaseModel):
 
 # ── Portefeuille ─────────────────────────────────────────────────────────────
 
+
 class PortefeuilleCreate(BaseModel):
     entite_juridique_id: int
     nom: str = Field(..., min_length=1, max_length=200)
@@ -81,6 +84,7 @@ class PortefeuilleUpdate(BaseModel):
 
 
 # ── Site ─────────────────────────────────────────────────────────────────────
+
 
 class SiteCreate(BaseModel):
     portefeuille_id: int
@@ -99,6 +103,7 @@ class SiteCreate(BaseModel):
 
 
 # ── Bâtiment ────────────────────────────────────────────────────────────────
+
 
 class BatimentCreate(BaseModel):
     site_id: int

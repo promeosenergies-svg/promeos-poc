@@ -22,13 +22,7 @@ const DELAY_MS = 150;
 const OFFSET = 6;
 const MAX_W = 320;
 
-export default function Explain({
-  term,
-  content,
-  children,
-  position = 'top',
-  className = '',
-}) {
+export default function Explain({ term, content, children, position = 'top', className = '' }) {
   const entry = term ? GLOSSARY[term] : null;
   const label = children || (entry && entry.term) || term;
   const definition = content || (entry && entry.short);
@@ -109,13 +103,11 @@ export default function Explain({
               className="max-w-[320px] px-3 py-2 text-xs text-gray-700 leading-relaxed
                 bg-white border border-gray-200 rounded-lg shadow-lg"
             >
-              {entry && (
-                <span className="font-semibold text-gray-900">{entry.term} — </span>
-              )}
+              {entry && <span className="font-semibold text-gray-900">{entry.term} — </span>}
               {definition}
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </>
   );

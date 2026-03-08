@@ -30,9 +30,9 @@ describe('A. ShadowBreakdownCard', () => {
 
   test('has status colors (ok, warn, alert)', () => {
     const src = readFront('components', 'billing', 'ShadowBreakdownCard.jsx');
-    expect(src).toContain("ok:");
-    expect(src).toContain("warn:");
-    expect(src).toContain("alert:");
+    expect(src).toContain('ok:');
+    expect(src).toContain('warn:');
+    expect(src).toContain('alert:');
   });
 
   test('has confidence badge', () => {

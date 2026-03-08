@@ -2,6 +2,7 @@
 Tests — database dialect detection and compatibility.
 Playbook 1.1: Verify PostgreSQL-ready database configuration.
 """
+
 import os
 import pytest
 

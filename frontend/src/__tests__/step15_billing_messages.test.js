@@ -18,19 +18,27 @@ describe('Step 15 — billing_total_cost handler', () => {
   });
 
   it('hausse 15% → crit', () => {
-    expect(getKpiMessage('billing_total_cost', 115000, { previousYearCost: 100000 }).severity).toBe('crit');
+    expect(getKpiMessage('billing_total_cost', 115000, { previousYearCost: 100000 }).severity).toBe(
+      'crit'
+    );
   });
 
   it('stable → ok', () => {
-    expect(getKpiMessage('billing_total_cost', 101000, { previousYearCost: 100000 }).severity).toBe('ok');
+    expect(getKpiMessage('billing_total_cost', 101000, { previousYearCost: 100000 }).severity).toBe(
+      'ok'
+    );
   });
 
   it('hausse 5% → warn', () => {
-    expect(getKpiMessage('billing_total_cost', 105000, { previousYearCost: 100000 }).severity).toBe('warn');
+    expect(getKpiMessage('billing_total_cost', 105000, { previousYearCost: 100000 }).severity).toBe(
+      'warn'
+    );
   });
 
   it('baisse → ok', () => {
-    expect(getKpiMessage('billing_total_cost', 90000, { previousYearCost: 100000 }).severity).toBe('ok');
+    expect(getKpiMessage('billing_total_cost', 90000, { previousYearCost: 100000 }).severity).toBe(
+      'ok'
+    );
   });
 
   it('formats k€ for large values', () => {
@@ -47,15 +55,21 @@ describe('Step 15 — billing_anomalies_count handler', () => {
   });
 
   it('1 → warn', () => {
-    expect(getKpiMessage('billing_anomalies_count', 1, { totalLossEur: 500 }).severity).toBe('warn');
+    expect(getKpiMessage('billing_anomalies_count', 1, { totalLossEur: 500 }).severity).toBe(
+      'warn'
+    );
   });
 
   it('5 → crit', () => {
-    expect(getKpiMessage('billing_anomalies_count', 5, { totalLossEur: 8000 }).severity).toBe('crit');
+    expect(getKpiMessage('billing_anomalies_count', 5, { totalLossEur: 8000 }).severity).toBe(
+      'crit'
+    );
   });
 
   it('has action when anomalies exist', () => {
-    expect(getKpiMessage('billing_anomalies_count', 3, { totalLossEur: 4000 }).action).toBeDefined();
+    expect(
+      getKpiMessage('billing_anomalies_count', 3, { totalLossEur: 4000 }).action
+    ).toBeDefined();
   });
 
   it('no action when 0', () => {

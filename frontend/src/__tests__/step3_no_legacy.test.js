@@ -33,7 +33,9 @@ describe('Step3 — App.jsx CompliancePage removed from routing', () => {
   it('/compliance redirects to /conformite', () => {
     // Should have: <Route path="/compliance" element={<Navigate to="/conformite" replace />} />
     const lines = src.split('\n');
-    const complianceLine = lines.find((l) => l.includes('path="/compliance"') && !l.includes('/compliance/'));
+    const complianceLine = lines.find(
+      (l) => l.includes('path="/compliance"') && !l.includes('/compliance/')
+    );
     expect(complianceLine).toBeDefined();
     expect(complianceLine).toMatch(/Navigate.*conformite|conformite.*Navigate/i);
   });

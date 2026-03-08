@@ -814,6 +814,7 @@ def seed_emission_factors(db: Session = Depends(get_db)):
         return {"status": "already_exists", "id": existing.id}
 
     from config.emission_factors import get_emission_factor as _cfg_factor
+
     factor = EmissionFactor(
         energy_type="electricity",
         region="FR",

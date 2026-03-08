@@ -28,16 +28,18 @@ _logger = logging.getLogger("promeos.kpi")
 @dataclass
 class KpiScope:
     """Scope for KPI queries."""
+
     org_id: Optional[int] = None
     portfolio_id: Optional[int] = None
     site_id: Optional[int] = None
     period_start: Optional[str] = None  # ISO date
-    period_end: Optional[str] = None    # ISO date
+    period_end: Optional[str] = None  # ISO date
 
 
 @dataclass
 class KpiResult:
     """Standardized KPI result with metadata."""
+
     value: float
     unit: str
     source: str
@@ -110,9 +112,7 @@ class KpiService:
             return cached
 
         total = (
-            _sites_query(self.db, scope)
-            .with_entities(func.coalesce(func.sum(Site.risque_financier_euro), 0))
-            .scalar()
+            _sites_query(self.db, scope).with_entities(func.coalesce(func.sum(Site.risque_financier_euro), 0)).scalar()
         ) or 0
 
         result = KpiResult(
@@ -164,6 +164,7 @@ class KpiService:
 
         if scope.site_id:
             from services.compliance_score_service import compute_site_compliance_score
+
             r = compute_site_compliance_score(self.db, scope.site_id)
             result = KpiResult(
                 value=r.score,
@@ -179,8 +180,11 @@ class KpiService:
         org_id = scope.org_id
         if not org_id:
             result = KpiResult(
-                value=0.0, unit="score", source="No org in scope",
-                formula="0 (no org)", confidence="low",
+                value=0.0,
+                unit="score",
+                source="No org in scope",
+                formula="0 (no org)",
+                confidence="low",
                 scope_description=_scope_desc(scope),
             )
             _set_cached(key, result)
@@ -194,7 +198,9 @@ class KpiService:
             unit="score",
             source="compliance_score_service (unified A.2, surface-weighted)",
             formula="Moyenne pondérée (Tertiaire 45% + BACS 30% + APER 25%) − pénalité findings critiques",
-            confidence="low" if portfolio["total_sites"] == 0 else ("high" if portfolio["high_confidence_count"] > portfolio["total_sites"] * 0.6 else "medium"),
+            confidence="low"
+            if portfolio["total_sites"] == 0
+            else ("high" if portfolio["high_confidence_count"] > portfolio["total_sites"] * 0.6 else "medium"),
             scope_description=_scope_desc(scope),
         )
 
@@ -209,11 +215,7 @@ class KpiService:
         if cached:
             return cached
 
-        avg = (
-            _sites_query(self.db, scope)
-            .with_entities(func.avg(Site.avancement_decret_pct))
-            .scalar()
-        ) or 0
+        avg = (_sites_query(self.db, scope).with_entities(func.avg(Site.avancement_decret_pct)).scalar()) or 0
 
         result = KpiResult(
             value=round(float(avg), 1),
@@ -284,11 +286,7 @@ class KpiService:
         if cached:
             return cached
 
-        total = (
-            _sites_query(self.db, scope)
-            .with_entities(func.coalesce(func.sum(Site.surface_m2), 0))
-            .scalar()
-        ) or 0
+        total = (_sites_query(self.db, scope).with_entities(func.coalesce(func.sum(Site.surface_m2), 0)).scalar()) or 0
 
         result = KpiResult(
             value=round(float(total), 0),

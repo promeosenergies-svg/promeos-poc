@@ -2,11 +2,13 @@
 Step 28 — Shadow Breakdown par composante
 Tests pour compute_shadow_breakdown, _build_breakdown_component, _extract_invoice_component, etc.
 """
+
 import pytest
 from datetime import date
 
 
 # ── Fake objects ──────────────────────────────────────────────────────────────
+
 
 class FakeInvoice:
     def __init__(self, **kwargs):
@@ -42,9 +44,11 @@ class FakeLine:
 
 # ── A. Structure du breakdown ────────────────────────────────────────────────
 
+
 class TestBreakdownStructure:
     def test_has_4_components(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice()
         c = FakeContract()
         lines = [FakeLine("energy", 450.0), FakeLine("network", 226.5)]
@@ -58,6 +62,7 @@ class TestBreakdownStructure:
 
     def test_totals_equal_sum(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice()
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
@@ -68,9 +73,11 @@ class TestBreakdownStructure:
 
 # ── B. Calculs par composante ────────────────────────────────────────────────
 
+
 class TestComponentCalculations:
     def test_fourniture_uses_ref_price(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract(price_ref=0.10)
         result = shadow_billing_v2(inv, [], c)
@@ -78,6 +85,7 @@ class TestComponentCalculations:
 
     def test_turpe_uses_yaml(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
@@ -86,6 +94,7 @@ class TestComponentCalculations:
 
     def test_taxes_accise_elec(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
@@ -94,6 +103,7 @@ class TestComponentCalculations:
 
     def test_taxes_ticgn_gaz(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract(energy_type="gaz")
         result = shadow_billing_v2(inv, [], c)
@@ -102,6 +112,7 @@ class TestComponentCalculations:
 
     def test_tva_dual_rate(self):
         from services.billing_shadow_v2 import shadow_billing_v2
+
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract(price_ref=0.10)
         result = shadow_billing_v2(inv, [], c)
@@ -114,13 +125,12 @@ class TestComponentCalculations:
 
 # ── C. compute_shadow_breakdown ──────────────────────────────────────────────
 
+
 class TestComputeShadowBreakdown:
     def test_breakdown_has_4_components(self):
         from services.billing_shadow_v2 import _build_breakdown_component
-        comp = _build_breakdown_component(
-            "fourniture", "Fourniture", 100.0, 110.0,
-            "test method", {"kwh": 1000}
-        )
+
+        comp = _build_breakdown_component("fourniture", "Fourniture", 100.0, 110.0, "test method", {"kwh": 1000})
         assert comp["name"] == "fourniture"
         assert comp["expected_eur"] == 100.0
         assert comp["invoice_eur"] == 110.0
@@ -130,24 +140,26 @@ class TestComputeShadowBreakdown:
 
     def test_component_status_ok(self):
         from services.billing_shadow_v2 import _component_status
+
         assert _component_status(3.0) == "ok"
         assert _component_status(-4.9) == "ok"
 
     def test_component_status_warn(self):
         from services.billing_shadow_v2 import _component_status
+
         assert _component_status(6.0) == "warn"
         assert _component_status(-10.0) == "warn"
 
     def test_component_status_alert(self):
         from services.billing_shadow_v2 import _component_status
+
         assert _component_status(16.0) == "alert"
         assert _component_status(-20.0) == "alert"
 
     def test_component_null_invoice(self):
         from services.billing_shadow_v2 import _build_breakdown_component
-        comp = _build_breakdown_component(
-            "turpe", "TURPE", 50.0, None, "test", {}
-        )
+
+        comp = _build_breakdown_component("turpe", "TURPE", 50.0, None, "test", {})
         assert comp["invoice_eur"] is None
         assert comp["gap_eur"] is None
         assert comp["status"] == "ok"
@@ -155,57 +167,69 @@ class TestComputeShadowBreakdown:
 
 # ── D. _extract_invoice_component ────────────────────────────────────────────
 
+
 class TestExtractComponent:
     def test_extract_energy_lines(self):
         from services.billing_shadow_v2 import _extract_invoice_component
+
         lines = [FakeLine("energy", 100.0), FakeLine("energy", 50.0), FakeLine("network", 80.0)]
         assert _extract_invoice_component(lines, "fourniture") == 150.0
 
     def test_extract_network_lines(self):
         from services.billing_shadow_v2 import _extract_invoice_component
+
         lines = [FakeLine("energy", 100.0), FakeLine("network", 80.0)]
         assert _extract_invoice_component(lines, "turpe") == 80.0
 
     def test_extract_no_match(self):
         from services.billing_shadow_v2 import _extract_invoice_component
+
         lines = [FakeLine("energy", 100.0)]
         assert _extract_invoice_component(lines, "taxes") is None
 
     def test_extract_empty_lines(self):
         from services.billing_shadow_v2 import _extract_invoice_component
+
         assert _extract_invoice_component([], "fourniture") is None
         assert _extract_invoice_component(None, "fourniture") is None
 
 
 # ── E. Segment resolution ────────────────────────────────────────────────────
 
+
 class TestSegmentResolution:
     def test_default_c5_bt(self):
         from services.billing_shadow_v2 import _resolve_segment
+
         c = FakeContract(subscribed_power_kva=12)
         assert _resolve_segment(c) == "C5_BT"
 
     def test_c4_bt(self):
         from services.billing_shadow_v2 import _resolve_segment
+
         c = FakeContract(subscribed_power_kva=50)
         assert _resolve_segment(c) == "C4_BT"
 
     def test_c3_hta(self):
         from services.billing_shadow_v2 import _resolve_segment
+
         c = FakeContract(subscribed_power_kva=300)
         assert _resolve_segment(c) == "C3_HTA"
 
     def test_no_contract(self):
         from services.billing_shadow_v2 import _resolve_segment
+
         assert _resolve_segment(None) == "C5_BT"
 
 
 # ── F. CTA dans le breakdown ─────────────────────────────────────────────────
 
+
 class TestCTA:
     def test_cta_calculation(self):
         """CTA = TURPE gestion proratisé × taux CTA."""
         from config.tarif_loader import get_cta_taux, get_turpe_gestion_mois
+
         taux = get_cta_taux("elec")
         gestion = get_turpe_gestion_mois("C5_BT")
         # 30 jours
@@ -215,6 +239,7 @@ class TestCTA:
 
 
 # ── G. Source guards ─────────────────────────────────────────────────────────
+
 
 class TestSourceGuards:
     def _read(self, path):

@@ -70,10 +70,7 @@ describe('B - kpi_engine.py consumption_source', () => {
 // C. consumption_diagnostic.py exposes consumption_source
 // ============================================================
 describe('C - consumption_diagnostic.py consumption_source', () => {
-  const code = readFileSync(
-    resolve(backendRoot, 'services', 'consumption_diagnostic.py'),
-    'utf-8'
-  );
+  const code = readFileSync(resolve(backendRoot, 'services', 'consumption_diagnostic.py'), 'utf-8');
 
   it('sets consumption_source in metrics', () => {
     expect(code).toContain('consumption_source');

@@ -97,9 +97,7 @@ describe('C. PurchasePage integration', () => {
   const src = readSrc('pages', 'PurchasePage.jsx');
 
   it('imports MarketContextBanner or getMarketContext', () => {
-    expect(
-      src.includes('MarketContextBanner') || src.includes('getMarketContext')
-    ).toBe(true);
+    expect(src.includes('MarketContextBanner') || src.includes('getMarketContext')).toBe(true);
   });
 
   it('uses marketContext state', () => {
@@ -114,15 +112,15 @@ describe('D. Cockpit compact market info', () => {
 
   it('has market reference', () => {
     expect(
-      src.includes('market') || src.includes('marché') ||
-      src.includes('EUR/MWh') || src.includes('spot')
+      src.includes('market') ||
+        src.includes('marché') ||
+        src.includes('EUR/MWh') ||
+        src.includes('spot')
     ).toBe(true);
   });
 
   it('imports MarketContextCompact or getMarketContext', () => {
-    expect(
-      src.includes('MarketContextCompact') || src.includes('getMarketContext')
-    ).toBe(true);
+    expect(src.includes('MarketContextCompact') || src.includes('getMarketContext')).toBe(true);
   });
 });
 

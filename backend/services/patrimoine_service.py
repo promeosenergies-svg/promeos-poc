@@ -856,7 +856,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
         .all()
     )
 
-    is_update_mode = (batch.mode == "update")
+    is_update_mode = batch.mode == "update"
     sites_created = 0
     sites_updated = 0
     compteurs_created = 0
@@ -1303,8 +1303,12 @@ def compute_content_hash(content: bytes) -> str:
 # ========================================
 
 _UPDATABLE_FIELDS = [
-    "nom", "adresse", "code_postal", "ville",
-    "surface_m2", "naf_code",
+    "nom",
+    "adresse",
+    "code_postal",
+    "ville",
+    "surface_m2",
+    "naf_code",
 ]
 
 
@@ -1314,11 +1318,7 @@ def match_staging_to_existing(db: Session, batch_id: int, org_id: int) -> dict:
     Sets target_site_id, match_method, match_confidence on each StagingSite.
     Returns matching stats.
     """
-    staging_sites = (
-        db.query(StagingSite)
-        .filter(StagingSite.batch_id == batch_id, StagingSite.skip.is_(False))
-        .all()
-    )
+    staging_sites = db.query(StagingSite).filter(StagingSite.batch_id == batch_id, StagingSite.skip.is_(False)).all()
 
     # Load existing sites for this org
     org_sites = (
@@ -1388,13 +1388,15 @@ def match_staging_to_existing(db: Session, batch_id: int, org_id: int) -> dict:
             ss.match_confidence = None
             results["new"] += 1
 
-        results["details"].append({
-            "staging_nom": ss.nom,
-            "matched_site_id": match.id if match else None,
-            "matched_site_nom": match.nom if match else None,
-            "method": match_method,
-            "confidence": confidence,
-        })
+        results["details"].append(
+            {
+                "staging_nom": ss.nom,
+                "matched_site_id": match.id if match else None,
+                "matched_site_nom": match.nom if match else None,
+                "method": match_method,
+                "confidence": confidence,
+            }
+        )
 
     db.flush()
     return results

@@ -2,6 +2,7 @@
 Step 14 — C7 : Impact financier EUR systematique sur chaque finding.
 Tests unitaires pour les penalites dans les regles RegOps.
 """
+
 import pytest
 from datetime import date
 from dataclasses import fields as dc_fields
@@ -12,6 +13,7 @@ from regops.schemas import Finding
 # ============================================================
 # Unit: Finding dataclass has penalty fields
 # ============================================================
+
 
 class TestFindingPenaltyFields:
     """Test that Finding dataclass has the 3 penalty fields."""
@@ -72,6 +74,7 @@ class TestFindingPenaltyFields:
 # Tertiaire OPERAT penalties
 # ============================================================
 
+
 class TestTertiairePenalties:
     """Test that tertiaire_operat rule engine populates penalties."""
 
@@ -95,6 +98,7 @@ class TestTertiairePenalties:
 
     def test_operat_not_started_has_penalty(self):
         from regops.rules.tertiaire_operat import evaluate
+
         site = self._make_site()
         config = {"scope_threshold_m2": 1000, "penalties": {"non_declaration": 7500, "non_affichage": 1500}}
         findings = evaluate(site, [], [], config)
@@ -105,6 +109,7 @@ class TestTertiairePenalties:
 
     def test_energy_data_missing_has_penalty(self):
         from regops.rules.tertiaire_operat import evaluate
+
         site = self._make_site(operat_status="OperatStatus.IN_PROGRESS")
         config = {"scope_threshold_m2": 1000, "penalties": {"non_declaration": 7500}}
         findings = evaluate(site, [], [], config)
@@ -114,7 +119,10 @@ class TestTertiairePenalties:
 
     def test_multi_occupied_has_penalty(self):
         from regops.rules.tertiaire_operat import evaluate
-        site = self._make_site(operat_status="OperatStatus.IN_PROGRESS", annual_kwh_total=100000, is_multi_occupied=True)
+
+        site = self._make_site(
+            operat_status="OperatStatus.IN_PROGRESS", annual_kwh_total=100000, is_multi_occupied=True
+        )
         config = {"scope_threshold_m2": 1000, "penalties": {"non_declaration": 7500, "non_affichage": 1500}}
         findings = evaluate(site, [], [], config)
         multi = [f for f in findings if f.rule_id == "MULTI_OCCUPIED_GOVERNANCE"]
@@ -123,6 +131,7 @@ class TestTertiairePenalties:
 
     def test_out_of_scope_no_penalty(self):
         from regops.rules.tertiaire_operat import evaluate
+
         site = self._make_site(tertiaire_area_m2=500)
         config = {"scope_threshold_m2": 1000}
         findings = evaluate(site, [], [], config)
@@ -131,6 +140,7 @@ class TestTertiairePenalties:
 
     def test_scope_unknown_no_penalty(self):
         from regops.rules.tertiaire_operat import evaluate
+
         site = self._make_site(tertiaire_area_m2=None)
         config = {"scope_threshold_m2": 1000}
         findings = evaluate(site, [], [], config)
@@ -141,6 +151,7 @@ class TestTertiairePenalties:
 # ============================================================
 # APER penalties
 # ============================================================
+
 
 class TestAperPenalties:
     """Test that APER rule engine populates penalties."""
@@ -163,6 +174,7 @@ class TestAperPenalties:
 
     def test_parking_large_has_penalty(self):
         from regops.rules.aper import evaluate
+
         site = self._make_site(parking_area_m2=12000, parking_type="ParkingType.OUTDOOR")
         config = {"parking_thresholds": {"large_m2": 10000, "medium_m2": 1500}, "deadlines": {}}
         findings = evaluate(site, [], [], config)
@@ -173,6 +185,7 @@ class TestAperPenalties:
 
     def test_parking_medium_has_penalty(self):
         from regops.rules.aper import evaluate
+
         site = self._make_site(parking_area_m2=3000, parking_type="ParkingType.OUTDOOR")
         config = {"parking_thresholds": {"large_m2": 10000, "medium_m2": 1500}, "deadlines": {}}
         findings = evaluate(site, [], [], config)
@@ -183,6 +196,7 @@ class TestAperPenalties:
 
     def test_roof_has_penalty(self):
         from regops.rules.aper import evaluate
+
         site = self._make_site(roof_area_m2=800)
         config = {"roof_threshold_m2": 500, "deadlines": {}}
         findings = evaluate(site, [], [], config)
@@ -193,6 +207,7 @@ class TestAperPenalties:
 
     def test_parking_not_outdoor_no_penalty(self):
         from regops.rules.aper import evaluate
+
         site = self._make_site(parking_area_m2=5000, parking_type="ParkingType.INDOOR")
         config = {}
         findings = evaluate(site, [], [], config)
@@ -203,6 +218,7 @@ class TestAperPenalties:
 # ============================================================
 # Engine serialization includes penalty fields
 # ============================================================
+
 
 class TestEngineSerialization:
     """Test that engine.py serialization includes penalty fields."""

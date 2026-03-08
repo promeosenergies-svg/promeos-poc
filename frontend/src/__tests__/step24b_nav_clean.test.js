@@ -5,8 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
-const navFile = ['src/layout/NavRegistry.js', 'src/layout/navConfig.js',
-                 'src/components/layout/NavRegistry.js'].find(f => fs.existsSync(f));
+const navFile = [
+  'src/layout/NavRegistry.js',
+  'src/layout/navConfig.js',
+  'src/components/layout/NavRegistry.js',
+].find((f) => fs.existsSync(f));
 
 describe('Step 24b — Navigation clean', () => {
   it('nav config file exists', () => {
@@ -20,7 +23,7 @@ describe('Step 24b — Navigation clean', () => {
     const block = src.slice(start, start + 3000);
     const end = block.indexOf('];');
     const mainBlock = block.slice(0, end);
-    const sections = (mainBlock.match(/key:\s*['"](pilotage|patrimoine|energie|achat)['"]/g) || []);
+    const sections = mainBlock.match(/key:\s*['"](pilotage|patrimoine|energie|achat)['"]/g) || [];
     expect(sections.length).toBe(4);
   });
 
@@ -28,7 +31,7 @@ describe('Step 24b — Navigation clean', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     // Extract NAV_MAIN_SECTIONS block and count path entries
     const mainBlock = src.split('NAV_MAIN_SECTIONS')[1]?.split('NAV_ADMIN')[0] || '';
-    const paths = (mainBlock.match(/to:\s*['"]\/[^'"]+['"]/g) || []);
+    const paths = mainBlock.match(/to:\s*['"]\/[^'"]+['"]/g) || [];
     expect(paths.length).toBeLessThanOrEqual(12);
   });
 
@@ -36,7 +39,7 @@ describe('Step 24b — Navigation clean', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     const mainBlock = src.split('NAV_MAIN_SECTIONS')[1]?.split('NAV_ADMIN')[0] || '';
     const jargon = ['Mémobox', 'Segmentation', 'Pipeline', 'Copilot', 'RegOps'];
-    jargon.forEach(j => {
+    jargon.forEach((j) => {
       expect(mainBlock).not.toMatch(new RegExp(`label.*${j}`, 'i'));
     });
   });
@@ -49,14 +52,14 @@ describe('Step 24b — Navigation clean', () => {
   it('NAV_ADMIN_ITEMS has max 5 items', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     const adminBlock = src.split('NAV_ADMIN_ITEMS')[1]?.split('];')[0] || '';
-    const paths = (adminBlock.match(/to:\s*['"]\/[^'"]+['"]/g) || []);
+    const paths = adminBlock.match(/to:\s*['"]\/[^'"]+['"]/g) || [];
     expect(paths.length).toBeLessThanOrEqual(5);
   });
 });
 
 describe('Step 24b — NavPanel raccourcis', () => {
   const panelFiles = ['src/layout/NavPanel.jsx', 'src/components/layout/NavPanel.jsx'];
-  const panel = panelFiles.find(f => fs.existsSync(f));
+  const panel = panelFiles.find((f) => fs.existsSync(f));
 
   it('NavPanel exists', () => {
     expect(panel).toBeDefined();
@@ -75,7 +78,7 @@ describe('Step 24b — NavPanel raccourcis', () => {
 
 describe('Step 24b — CommandPalette hidden pages', () => {
   const palFiles = ['src/ui/CommandPalette.jsx', 'src/components/layout/CommandPalette.jsx'];
-  const pal = palFiles.find(f => fs.existsSync(f));
+  const pal = palFiles.find((f) => fs.existsSync(f));
 
   it('CommandPalette exists', () => {
     expect(pal).toBeDefined();
@@ -85,9 +88,7 @@ describe('Step 24b — CommandPalette hidden pages', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     // At least some hidden pages exist in ALL_MAIN_ITEMS
     expect(
-      src.includes('HIDDEN_PAGES') ||
-      src.includes('diagnostic-conso') ||
-      src.includes('Mémobox')
+      src.includes('HIDDEN_PAGES') || src.includes('diagnostic-conso') || src.includes('Mémobox')
     ).toBe(true);
   });
 
@@ -107,7 +108,7 @@ describe('Step 24b — NavRail modules', () => {
     const block = src.slice(start, start + 2000);
     const firstClose = block.indexOf('];');
     const moduleBlock = block.slice(0, firstClose);
-    const keys = (moduleBlock.match(/key:\s*['"][^'"]+['"]/g) || []);
+    const keys = moduleBlock.match(/key:\s*['"][^'"]+['"]/g) || [];
     expect(keys.length).toBe(5);
   });
 

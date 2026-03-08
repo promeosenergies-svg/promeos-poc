@@ -112,13 +112,7 @@ def _billed_kwh(db: Session, site_id: int, start: date, end: date):
 
     # Coverage: count months with invoices
     months_with_invoices = (
-        db.query(
-            func.count(
-                func.distinct(
-                    func.strftime("%Y-%m", EnergyInvoice.period_start)
-                )
-            )
-        )
+        db.query(func.count(func.distinct(func.strftime("%Y-%m", EnergyInvoice.period_start))))
         .filter(
             EnergyInvoice.site_id == site_id,
             EnergyInvoice.period_start >= start,
@@ -341,16 +335,18 @@ def reconcile_metered_billed(
 
     # Need both sources with meaningful data
     if metered_kwh <= 0 or billed_kwh <= 0:
-        result.update({
-            "delta_kwh": None,
-            "delta_pct": None,
-            "status": "insufficient_data",
-            "alert": False,
-            "recommendation": (
-                "Donnees insuffisantes pour la reconciliation. "
-                "Verifiez que des releves compteur ET des factures couvrent la periode."
-            ),
-        })
+        result.update(
+            {
+                "delta_kwh": None,
+                "delta_pct": None,
+                "status": "insufficient_data",
+                "alert": False,
+                "recommendation": (
+                    "Donnees insuffisantes pour la reconciliation. "
+                    "Verifiez que des releves compteur ET des factures couvrent la periode."
+                ),
+            }
+        )
         return result
 
     delta_kwh = metered_kwh - billed_kwh
@@ -373,11 +369,13 @@ def reconcile_metered_billed(
     else:
         recommendation = "Les sources metered et billed sont coherentes."
 
-    result.update({
-        "delta_kwh": round(delta_kwh, 2),
-        "delta_pct": delta_pct,
-        "status": "divergent" if is_divergent else "aligned",
-        "alert": is_divergent,
-        "recommendation": recommendation,
-    })
+    result.update(
+        {
+            "delta_kwh": round(delta_kwh, 2),
+            "delta_pct": delta_pct,
+            "status": "divergent" if is_divergent else "aligned",
+            "alert": is_divergent,
+            "recommendation": recommendation,
+        }
+    )
     return result

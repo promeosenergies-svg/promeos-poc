@@ -20,17 +20,18 @@ Tu dois :
 
 Format de sortie : JSON structuré avec les clés : brief, risks, recommendations, sources"""
 
+
 def _build_user_prompt(site):
     return f"""Site : {site.nom}
-Type : {site.type or 'Non renseigné'}
+Type : {site.type or "Non renseigné"}
 Surface : {site.surface_m2 or 0} m²
-Ville : {site.ville or 'Non renseignée'}
+Ville : {site.ville or "Non renseignée"}
 
 Statut réglementaire :
-- Décret Tertiaire : {site.statut_decret_tertiaire or 'Non évalué'}
-- BACS : {site.statut_bacs or 'Non évalué'}
+- Décret Tertiaire : {site.statut_decret_tertiaire or "Non évalué"}
+- BACS : {site.statut_bacs or "Non évalué"}
 - Risque financier : {site.risque_financier_euro or 0} EUR
-- Avancement décret : {getattr(site, 'avancement_decret_pct', 0) or 0}%
+- Avancement décret : {getattr(site, "avancement_decret_pct", 0) or 0}%
 
 Génère un brief réglementaire de 2 minutes pour ce site."""
 

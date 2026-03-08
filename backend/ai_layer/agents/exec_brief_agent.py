@@ -37,10 +37,7 @@ def _gather_portfolio_data(db, org_id):
 
     total_surface = sum(s.surface_m2 or 0 for s in sites)
     total_risk = sum(s.risque_financier_euro or 0 for s in sites)
-    avg_avancement = (
-        sum(getattr(s, 'avancement_decret_pct', 0) or 0 for s in sites) / len(sites)
-        if sites else 0
-    )
+    avg_avancement = sum(getattr(s, "avancement_decret_pct", 0) or 0 for s in sites) / len(sites) if sites else 0
 
     return {
         "org_name": org.nom,
@@ -73,10 +70,10 @@ def run(db, org_id: int = 1, **kwargs):
     client = get_client()
     data = _gather_portfolio_data(db, org_id)
 
-    user_prompt = f"""Organisation : {data['org_name']}
-Portefeuille : {data['total_sites']} sites, {data.get('total_surface_m2', 0):,.0f} m²
-Risque financier total : {data.get('total_risk_eur', 0):,.0f} EUR
-Avancement moyen Décret Tertiaire : {data.get('avg_avancement_pct', 0)}%
+    user_prompt = f"""Organisation : {data["org_name"]}
+Portefeuille : {data["total_sites"]} sites, {data.get("total_surface_m2", 0):,.0f} m²
+Risque financier total : {data.get("total_risk_eur", 0):,.0f} EUR
+Avancement moyen Décret Tertiaire : {data.get("avg_avancement_pct", 0)}%
 
 Génère un brief exécutif de 2 minutes."""
 

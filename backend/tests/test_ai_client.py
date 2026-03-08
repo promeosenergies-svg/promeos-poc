@@ -3,6 +3,7 @@ Tests — AI Client (Playbook 2.1).
 Verifies stub mode, live mode (mocked), and fallback on error.
 No real API tokens consumed.
 """
+
 import json
 import os
 import pytest
@@ -20,6 +21,7 @@ class TestAIClientStubMode:
             os.environ.pop("AI_API_KEY", None)
             # Reimport to get fresh singleton
             import ai_layer.client as mod
+
             client = mod.AIClient()
             assert client.stub_mode is True
 
@@ -28,6 +30,7 @@ class TestAIClientStubMode:
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AI_API_KEY", None)
             import ai_layer.client as mod
+
             client = mod.AIClient()
             result = client.complete("system", "user prompt")
             assert "[AI Stub Mode]" in result
@@ -37,6 +40,7 @@ class TestAIClientStubMode:
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AI_API_KEY", None)
             import ai_layer.client as mod
+
             client = mod.AIClient()
             result = client.complete("system", "analyse du site Lyon")
             assert "analyse du site Lyon" in result
@@ -49,6 +53,7 @@ class TestAIClientLiveMode:
         """Client should NOT be in stub mode with API key."""
         with patch.dict(os.environ, {"AI_API_KEY": "test-key-123"}):
             import ai_layer.client as mod
+
             client = mod.AIClient()
             assert client.stub_mode is False
 
@@ -58,13 +63,12 @@ class TestAIClientLiveMode:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.raise_for_status = MagicMock()
-        mock_resp.json.return_value = {
-            "content": [{"text": "AI response text"}]
-        }
+        mock_resp.json.return_value = {"content": [{"text": "AI response text"}]}
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"AI_API_KEY": "test-key-123"}):
             import ai_layer.client as mod
+
             client = mod.AIClient()
             result = client.complete("system prompt", "user prompt")
 
@@ -84,6 +88,7 @@ class TestAIClientLiveMode:
 
         with patch.dict(os.environ, {"AI_API_KEY": "test-key-123"}):
             import ai_layer.client as mod
+
             client = mod.AIClient()
             result = client.complete("system", "user prompt")
 
@@ -100,6 +105,7 @@ class TestAIClientLiveMode:
 
         with patch.dict(os.environ, {"AI_API_KEY": "test-key-123"}):
             import ai_layer.client as mod
+
             client = mod.AIClient()
             client.complete("sys", "user", max_tokens=2048)
 

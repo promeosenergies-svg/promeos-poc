@@ -5,8 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
-const readSrc = (...parts) =>
-  fs.readFileSync(`src/${parts.join('/')}`, 'utf8');
+const readSrc = (...parts) => fs.readFileSync(`src/${parts.join('/')}`, 'utf8');
 
 // ── A. ComplianceSummaryBanner ─────────────────────────────────────────────
 
@@ -84,8 +83,8 @@ describe('Step 21 — CTA buttons', () => {
   const src = readSrc('pages', 'ConformitePage.jsx');
 
   it('has "Voir le plan d\'action" CTA', () => {
-    expect(src).toContain("Voir le plan d");
-    expect(src).toContain("action");
+    expect(src).toContain('Voir le plan d');
+    expect(src).toContain('action');
   });
 
   it('has "Préparer les échéances" CTA', () => {

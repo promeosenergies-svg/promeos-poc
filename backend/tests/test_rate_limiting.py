@@ -1,6 +1,7 @@
 """
 Tests — Rate limiting middleware (Playbook 1.3).
 """
+
 import os
 import time
 import pytest
@@ -31,7 +32,12 @@ def clear_buckets():
 def disable_pytest_skip(monkeypatch):
     """Patch os.environ so PYTEST_CURRENT_TEST is hidden from rate limiter."""
     import middleware.rate_limit as rl_mod
-    monkeypatch.setattr(rl_mod.os.environ, "get", lambda key, default=None: None if key == "PYTEST_CURRENT_TEST" else os.environ.get(key, default))
+
+    monkeypatch.setattr(
+        rl_mod.os.environ,
+        "get",
+        lambda key, default=None: None if key == "PYTEST_CURRENT_TEST" else os.environ.get(key, default),
+    )
 
 
 class TestRateLimiting:

@@ -62,9 +62,15 @@ describe('Sprint P1 — FIX 2: Default prices', () => {
   it('no 0.18 hardcode in consumption_diagnostic.py', () => {
     const f = read(join(backend, 'services', 'consumption_diagnostic.py'));
     if (f) {
-      const lines = f.split('\n').filter(
-        (l) => !l.trim().startsWith('#') && l.includes('0.18') && !l.includes('default_prices') && !l.includes('DEFAULT_PRICE')
-      );
+      const lines = f
+        .split('\n')
+        .filter(
+          (l) =>
+            !l.trim().startsWith('#') &&
+            l.includes('0.18') &&
+            !l.includes('default_prices') &&
+            !l.includes('DEFAULT_PRICE')
+        );
       expect(lines.length).toBe(0);
     }
   });
@@ -72,9 +78,15 @@ describe('Sprint P1 — FIX 2: Default prices', () => {
   it('no 0.18 hardcode in copilot_engine.py', () => {
     const f = read(join(backend, 'services', 'copilot_engine.py'));
     if (f) {
-      const lines = f.split('\n').filter(
-        (l) => !l.trim().startsWith('#') && l.includes('0.18') && !l.includes('default_prices') && !l.includes('DEFAULT_PRICE')
-      );
+      const lines = f
+        .split('\n')
+        .filter(
+          (l) =>
+            !l.trim().startsWith('#') &&
+            l.includes('0.18') &&
+            !l.includes('default_prices') &&
+            !l.includes('DEFAULT_PRICE')
+        );
       expect(lines.length).toBe(0);
     }
   });

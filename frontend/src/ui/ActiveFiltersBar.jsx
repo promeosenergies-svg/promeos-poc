@@ -38,9 +38,7 @@ export default function ActiveFiltersBar({
       )}
 
       {/* Séparateur */}
-      {hasFilters && filtered != null && (
-        <span className="text-gray-300">·</span>
-      )}
+      {hasFilters && filtered != null && <span className="text-gray-300">·</span>}
 
       {/* Chips des filtres actifs */}
       {active.map((f) => (

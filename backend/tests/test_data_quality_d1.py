@@ -2,6 +2,7 @@
 PROMEOS — D.1 Data Quality Score (4 dimensions)
 Tests for compute_site_data_quality, compute_portfolio_data_quality, grade helper, endpoints.
 """
+
 import sys
 import os
 
@@ -21,6 +22,7 @@ from services.data_quality_service import (
 
 
 # ── Grade helper ────────────────────────────────────────────────────────────
+
 
 class TestGrade:
     def test_grade_A(self):
@@ -46,6 +48,7 @@ class TestGrade:
 
 # ── Weights ─────────────────────────────────────────────────────────────────
 
+
 class TestWeights:
     def test_weights_sum_to_1(self):
         assert abs(sum(DQ_WEIGHTS.values()) - 1.0) < 0.001
@@ -58,16 +61,37 @@ class TestWeights:
 
 # ── compute_site_data_quality ───────────────────────────────────────────────
 
+
 class TestComputeSiteDataQuality:
     """Tests with mocked dimension functions to isolate score aggregation."""
 
     def _mock_dims(self, completeness=80, freshness=80, accuracy=80, consistency=80):
         """Patch the 4 dimension functions to return fixed scores."""
         return {
-            "_dim_completeness": {"score": completeness, "weight": DQ_WEIGHTS["completeness"], "detail": "mock", "recommendation": None if completeness >= 70 else "fix completeness"},
-            "_dim_freshness": {"score": freshness, "weight": DQ_WEIGHTS["freshness"], "detail": "mock", "recommendation": None if freshness >= 70 else "fix freshness"},
-            "_dim_accuracy": {"score": accuracy, "weight": DQ_WEIGHTS["accuracy"], "detail": "mock", "recommendation": None if accuracy >= 70 else "fix accuracy"},
-            "_dim_consistency": {"score": consistency, "weight": DQ_WEIGHTS["consistency"], "detail": "mock", "recommendation": None if consistency >= 70 else "fix consistency"},
+            "_dim_completeness": {
+                "score": completeness,
+                "weight": DQ_WEIGHTS["completeness"],
+                "detail": "mock",
+                "recommendation": None if completeness >= 70 else "fix completeness",
+            },
+            "_dim_freshness": {
+                "score": freshness,
+                "weight": DQ_WEIGHTS["freshness"],
+                "detail": "mock",
+                "recommendation": None if freshness >= 70 else "fix freshness",
+            },
+            "_dim_accuracy": {
+                "score": accuracy,
+                "weight": DQ_WEIGHTS["accuracy"],
+                "detail": "mock",
+                "recommendation": None if accuracy >= 70 else "fix accuracy",
+            },
+            "_dim_consistency": {
+                "score": consistency,
+                "weight": DQ_WEIGHTS["consistency"],
+                "detail": "mock",
+                "recommendation": None if consistency >= 70 else "fix consistency",
+            },
         }
 
     @patch("services.data_quality_service._dim_consistency")
@@ -201,6 +225,7 @@ class TestComputeSiteDataQuality:
 
 # ── compute_portfolio_data_quality ──────────────────────────────────────────
 
+
 class TestPortfolioDataQuality:
     @patch("services.data_quality_service.compute_site_data_quality")
     def test_avg_score_computed(self, mock_site_dq):
@@ -211,9 +236,7 @@ class TestPortfolioDataQuality:
 
         db = MagicMock()
         # Mock the query chain for site_ids
-        db.query.return_value.join.return_value.join.return_value.filter.return_value.all.return_value = [
-            (1,), (2,)
-        ]
+        db.query.return_value.join.return_value.join.return_value.filter.return_value.all.return_value = [(1,), (2,)]
 
         result = compute_portfolio_data_quality(db, 1, date(2025, 6, 1))
 
@@ -232,7 +255,9 @@ class TestPortfolioDataQuality:
 
         db = MagicMock()
         db.query.return_value.join.return_value.join.return_value.filter.return_value.all.return_value = [
-            (1,), (2,), (3,)
+            (1,),
+            (2,),
+            (3,),
         ]
 
         result = compute_portfolio_data_quality(db, 1, date(2025, 6, 1))
@@ -274,21 +299,25 @@ class TestPortfolioDataQuality:
 
 # ── API Endpoints ───────────────────────────────────────────────────────────
 
+
 class TestEndpoints:
     """Source-level checks: verify routes are registered with expected paths."""
 
     def test_site_endpoint_exists(self):
         from routes.data_quality import router
+
         paths = [r.path for r in router.routes]
         assert any("/site/{site_id}" in p for p in paths), f"Missing /site/{{site_id}} in {paths}"
 
     def test_portfolio_endpoint_exists(self):
         from routes.data_quality import router
+
         paths = [r.path for r in router.routes]
         assert any("/portfolio" in p for p in paths), f"Missing /portfolio in {paths}"
 
     def test_site_endpoint_is_get(self):
         from routes.data_quality import router
+
         for r in router.routes:
             if hasattr(r, "path") and "/site/{site_id}" in r.path:
                 assert "GET" in r.methods

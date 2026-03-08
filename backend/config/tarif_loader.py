@@ -27,6 +27,7 @@ def reload_tarifs() -> dict:
 
 # ── TURPE helpers ────────────────────────────────────────────────────────────
 
+
 def get_turpe_segment(segment: str = "C5_BT") -> dict:
     """Return TURPE segment dict (energie_eur_kwh, gestion_eur_mois, label)."""
     tarifs = load_tarifs()
@@ -48,6 +49,7 @@ def get_turpe_gestion_mois(segment: str = "C5_BT") -> float:
 
 # ── Accise helpers ───────────────────────────────────────────────────────────
 
+
 def get_accise_kwh(energy_type: str = "elec") -> float:
     """Accise en EUR/kWh (elec ou gaz)."""
     tarifs = load_tarifs()
@@ -60,6 +62,7 @@ def get_accise_kwh(energy_type: str = "elec") -> float:
 
 # ── CTA helpers ──────────────────────────────────────────────────────────────
 
+
 def get_cta_taux(energy_type: str = "elec") -> float:
     """CTA en % (27.04 pour élec, 20.80 pour gaz)."""
     tarifs = load_tarifs()
@@ -67,6 +70,7 @@ def get_cta_taux(energy_type: str = "elec") -> float:
 
 
 # ── TICGN / ATRD / ATRT ─────────────────────────────────────────────────────
+
 
 def get_ticgn_kwh() -> float:
     """TICGN (accise gaz) en EUR/kWh."""
@@ -85,6 +89,7 @@ def get_atrt_kwh() -> float:
 
 # ── TVA ──────────────────────────────────────────────────────────────────────
 
+
 def get_tva_normale() -> float:
     """TVA taux normal (0.20)."""
     return load_tarifs()["tva"]["normale"]["taux"]
@@ -97,6 +102,7 @@ def get_tva_reduite() -> float:
 
 # ── Prix de référence ────────────────────────────────────────────────────────
 
+
 def get_prix_reference(energy_type: str = "elec") -> float:
     """Prix de référence par défaut en EUR/kWh."""
     tarifs = load_tarifs()
@@ -106,6 +112,7 @@ def get_prix_reference(energy_type: str = "elec") -> float:
 
 
 # ── Version & meta ───────────────────────────────────────────────────────────
+
 
 def get_tarif_version() -> str:
     """Version string du référentiel."""

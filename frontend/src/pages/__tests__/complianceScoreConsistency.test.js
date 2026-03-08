@@ -115,7 +115,7 @@ describe('C - ConformitePage has compliance score header', () => {
   it('shows breakdown bars for 3 frameworks', () => {
     expect(code).toContain("'tertiaire_operat'");
     expect(code).toContain("'bacs'");
-    expect(code).toContain("APER");
+    expect(code).toContain('APER');
   });
 
   it('shows dynamic weight labels from API and Non applicable state', () => {
@@ -240,7 +240,9 @@ describe('G - dashboardEssentials uses shared thresholds', () => {
   it('does NOT hardcode 40 or 70 for conformite status thresholds', () => {
     // The conformite status line should NOT have literal "< 40" or "< 70"
     // It should use the constants
-    const statusLine = code.split('\n').find((l) => l.includes("status:") && l.includes("COMPLIANCE_SCORE_THRESHOLDS"));
+    const statusLine = code
+      .split('\n')
+      .find((l) => l.includes('status:') && l.includes('COMPLIANCE_SCORE_THRESHOLDS'));
     expect(statusLine).toBeDefined();
   });
 });

@@ -3,6 +3,7 @@ PROMEOS — Step 4: Emission Factors Tests
 Vérifie que les facteurs CO2 sont centralisés dans config/emission_factors.py
 et que les hardcodes 0.052 ont été migrés.
 """
+
 import sys
 import os
 
@@ -14,6 +15,7 @@ from config.emission_factors import get_emission_factor, get_emission_source, EM
 
 
 # ── A. Config values ─────────────────────────────────────────────────────────
+
 
 class TestConfigValues:
     def test_elec_factor(self):
@@ -45,6 +47,7 @@ class TestConfigValues:
 
 
 # ── B. No hardcoded 0.052 in production code ─────────────────────────────────
+
 
 class TestNoHardcodes:
     def test_no_hardcoded_052_in_emissions_service(self):
@@ -82,10 +85,12 @@ class TestNoHardcodes:
 
 # ── C. emissions_service uses config ──────────────────────────────────────────
 
+
 class TestServiceUsesConfig:
     def test_default_factor_is_ademe(self):
         """DEFAULT_FACTOR_KGCO2E should equal config ELEC factor."""
         from services.emissions_service import DEFAULT_FACTOR_KGCO2E
+
         assert DEFAULT_FACTOR_KGCO2E == 0.0569
 
     def test_service_imports_config(self):
@@ -97,6 +102,7 @@ class TestServiceUsesConfig:
 
 # ── D. Config file structure ──────────────────────────────────────────────────
 
+
 class TestConfigFileExists:
     def test_config_file_exists(self):
         path = Path(__file__).parent.parent / "config" / "emission_factors.py"
@@ -104,5 +110,6 @@ class TestConfigFileExists:
 
     def test_config_exports_functions(self):
         from config.emission_factors import get_emission_factor, get_emission_source
+
         assert callable(get_emission_factor)
         assert callable(get_emission_source)

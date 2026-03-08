@@ -241,7 +241,17 @@ export default function useEmsTimeseries({
     return () => {
       cancelled = true;
     };
-  }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode, granularityOverride, compareYoy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    siteIds.join(','),
+    energyType,
+    days,
+    startDate,
+    endDate,
+    unit,
+    mode,
+    granularityOverride,
+    compareYoy,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;
 }

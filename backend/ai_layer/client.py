@@ -37,9 +37,7 @@ class AIClient:
             )
 
         try:
-            return _call_claude_sync(
-                self.api_key, self.model, system_prompt, user_prompt, max_tokens
-            )
+            return _call_claude_sync(self.api_key, self.model, system_prompt, user_prompt, max_tokens)
         except Exception as exc:
             _logger.warning("AI call failed, falling back to stub: %s", exc)
             return (
@@ -61,9 +59,7 @@ class AIClient:
             )
 
         try:
-            return await _call_claude_async(
-                self.api_key, self.model, system_prompt, user_prompt, max_tokens
-            )
+            return await _call_claude_async(self.api_key, self.model, system_prompt, user_prompt, max_tokens)
         except Exception as exc:
             _logger.warning("AI async call failed, falling back to stub: %s", exc)
             return (

@@ -69,11 +69,19 @@ function SitePopup({ site, onClose, onSiteClick }) {
       </div>
       <div className="space-y-1 text-xs text-gray-600">
         {score !== null && (
-          <p>Score : <span className="font-medium text-gray-900">{Math.round(score)}/100</span>{grade ? ` (${grade})` : ''}</p>
+          <p>
+            Score : <span className="font-medium text-gray-900">{Math.round(score)}/100</span>
+            {grade ? ` (${grade})` : ''}
+          </p>
         )}
         {site.surface_m2 > 0 && <p>Surface : {site.surface_m2.toLocaleString('fr-FR')} m²</p>}
         {site.type && <p>Type : {site.type}</p>}
-        {site.ville && <p>{site.ville}{site.code_postal ? ` (${site.code_postal})` : ''}</p>}
+        {site.ville && (
+          <p>
+            {site.ville}
+            {site.code_postal ? ` (${site.code_postal})` : ''}
+          </p>
+        )}
       </div>
       <button
         onClick={() => onSiteClick(site.id)}
@@ -137,7 +145,8 @@ export default function SitesMap({ sites = [], onSiteClick }) {
         </span>
         {stats.conformes > 0 && (
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" /> {stats.conformes} conforme{stats.conformes > 1 ? 's' : ''}
+            <span className="w-2 h-2 rounded-full bg-emerald-500" /> {stats.conformes} conforme
+            {stats.conformes > 1 ? 's' : ''}
           </span>
         )}
         {stats.aRisque > 0 && (
@@ -147,13 +156,17 @@ export default function SitesMap({ sites = [], onSiteClick }) {
         )}
         {stats.nonConformes > 0 && (
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-500" /> {stats.nonConformes} non conforme{stats.nonConformes > 1 ? 's' : ''}
+            <span className="w-2 h-2 rounded-full bg-red-500" /> {stats.nonConformes} non conforme
+            {stats.nonConformes > 1 ? 's' : ''}
           </span>
         )}
       </div>
 
       {/* SVG Map */}
-      <div className="relative bg-gray-50 rounded-xl border border-gray-200 overflow-hidden" style={{ height: '400px' }}>
+      <div
+        className="relative bg-gray-50 rounded-xl border border-gray-200 overflow-hidden"
+        style={{ height: '400px' }}
+      >
         <svg
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
           className="w-full h-full"
@@ -164,7 +177,11 @@ export default function SitesMap({ sites = [], onSiteClick }) {
 
           {/* Site markers */}
           {projected.map((s) => (
-            <g key={s.id} className="cursor-pointer" onClick={() => setSelectedSite(s.id === selectedSite ? null : s.id)}>
+            <g
+              key={s.id}
+              className="cursor-pointer"
+              onClick={() => setSelectedSite(s.id === selectedSite ? null : s.id)}
+            >
               <circle cx={s.x} cy={s.y} r={8} fill={s.color} opacity={0.25} />
               <circle cx={s.x} cy={s.y} r={5} fill={s.color} stroke="white" strokeWidth="1.5" />
             </g>
@@ -172,31 +189,44 @@ export default function SitesMap({ sites = [], onSiteClick }) {
         </svg>
 
         {/* Popup overlay */}
-        {selectedSite && (() => {
-          const s = projected.find((p) => p.id === selectedSite);
-          if (!s) return null;
-          const popupLeft = Math.min(s.x / SVG_W * 100, 70);
-          const popupTop = Math.min(s.y / SVG_H * 100, 60);
-          return (
-            <div
-              className="absolute"
-              style={{ left: `${popupLeft}%`, top: `${popupTop}%`, transform: 'translate(10px, -50%)' }}
-            >
-              <SitePopup
-                site={s}
-                onClose={() => setSelectedSite(null)}
-                onSiteClick={onSiteClick}
-              />
-            </div>
-          );
-        })()}
+        {selectedSite &&
+          (() => {
+            const s = projected.find((p) => p.id === selectedSite);
+            if (!s) return null;
+            const popupLeft = Math.min((s.x / SVG_W) * 100, 70);
+            const popupTop = Math.min((s.y / SVG_H) * 100, 60);
+            return (
+              <div
+                className="absolute"
+                style={{
+                  left: `${popupLeft}%`,
+                  top: `${popupTop}%`,
+                  transform: 'translate(10px, -50%)',
+                }}
+              >
+                <SitePopup
+                  site={s}
+                  onClose={() => setSelectedSite(null)}
+                  onSiteClick={onSiteClick}
+                />
+              </div>
+            );
+          })()}
 
         {/* Legend */}
         <div className="absolute bottom-3 left-3 flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-[10px] text-gray-600 shadow-sm border border-gray-100">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Conforme</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> A risque</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Non conforme</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" /> Non evalue</span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Conforme
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-400" /> A risque
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-red-500" /> Non conforme
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-gray-400" /> Non evalue
+          </span>
         </div>
       </div>
 
@@ -205,8 +235,8 @@ export default function SitesMap({ sites = [], onSiteClick }) {
         <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           <MapPin size={13} className="shrink-0" />
           <span>
-            {missingCount} site{missingCount > 1 ? 's' : ''} sans coordonnées.
-            Complétez les coordonnées GPS pour voir tous vos sites sur la carte.
+            {missingCount} site{missingCount > 1 ? 's' : ''} sans coordonnées. Complétez les
+            coordonnées GPS pour voir tous vos sites sur la carte.
           </span>
         </div>
       )}

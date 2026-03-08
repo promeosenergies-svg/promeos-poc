@@ -40,12 +40,15 @@ export default function AsyncState({
 
   if (error) {
     const msg = typeof error === 'string' ? error : error?.message || 'Une erreur est survenue';
-    const debug = typeof error === 'object' ? { status: error?.status, error_code: error?.code } : undefined;
+    const debug =
+      typeof error === 'object' ? { status: error?.status, error_code: error?.code } : undefined;
     return <ErrorState title="Erreur" message={msg} onRetry={onRetry} debug={debug} />;
   }
 
   if (empty) {
-    return <EmptyState title={emptyTitle} text={emptyMessage} ctaLabel={emptyCta} onCta={onEmptyCta} />;
+    return (
+      <EmptyState title={emptyTitle} text={emptyMessage} ctaLabel={emptyCta} onCta={onEmptyCta} />
+    );
   }
 
   return children;

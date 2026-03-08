@@ -12,9 +12,7 @@ class ComplianceScoreHistory(Base, TimestampMixin):
     """Snapshot mensuel du score conformite par site."""
 
     __tablename__ = "compliance_score_history"
-    __table_args__ = (
-        UniqueConstraint("site_id", "month_key", name="uq_site_month_score"),
-    )
+    __table_args__ = (UniqueConstraint("site_id", "month_key", name="uq_site_month_score"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)

@@ -544,9 +544,7 @@ export default function StickyFilterBar({
               {isClassic ? 'Mode Expert →' : '← Mode Classique'}
             </button>
             <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
-              {isClassic
-                ? 'Signature, météo, tunnel, objectifs'
-                : 'Analyses avancées activées'}
+              {isClassic ? 'Signature, météo, tunnel, objectifs' : 'Analyses avancées activées'}
             </span>
           </div>
         )}

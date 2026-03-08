@@ -32,12 +32,20 @@ function DimBar({ label, value }) {
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[10px] font-medium text-gray-600 w-7 text-right">{Math.round(pct)}</span>
+      <span className="text-[10px] font-medium text-gray-600 w-7 text-right">
+        {Math.round(pct)}
+      </span>
     </div>
   );
 }
 
-export default function DataQualityBadge({ score, dimensions, recommendations, size = 'md', onClick }) {
+export default function DataQualityBadge({
+  score,
+  dimensions,
+  recommendations,
+  size = 'md',
+  onClick,
+}) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const ref = useRef(null);
   const grade = getDataQualityGrade(score);
@@ -80,7 +88,9 @@ export default function DataQualityBadge({ score, dimensions, recommendations, s
         onClick={onClick}
         role={onClick ? 'button' : undefined}
       >
-        <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white ${grade.letter === 'A' || grade.letter === 'B' ? 'bg-green-500' : grade.letter === 'C' ? 'bg-amber-500' : 'bg-red-500'}`}>
+        <span
+          className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white ${grade.letter === 'A' || grade.letter === 'B' ? 'bg-green-500' : grade.letter === 'C' ? 'bg-amber-500' : 'bg-red-500'}`}
+        >
           {grade.letter}
         </span>
         <span className={`text-sm font-semibold ${grade.color}`}>{roundedScore}/100</span>
@@ -97,7 +107,9 @@ export default function DataQualityBadge({ score, dimensions, recommendations, s
         onClick={onClick || togglePopover}
         className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
       >
-        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white ${grade.letter === 'A' || grade.letter === 'B' ? 'bg-green-500' : grade.letter === 'C' ? 'bg-amber-500' : 'bg-red-500'}`}>
+        <span
+          className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white ${grade.letter === 'A' || grade.letter === 'B' ? 'bg-green-500' : grade.letter === 'C' ? 'bg-amber-500' : 'bg-red-500'}`}
+        >
           {grade.letter}
         </span>
         <span className={`text-sm font-bold ${grade.color}`}>{roundedScore}/100</span>
@@ -137,7 +149,9 @@ export default function DataQualityBadge({ score, dimensions, recommendations, s
           {/* Recommendations */}
           {recommendations && recommendations.length > 0 && (
             <div className="px-4 py-2 border-t border-gray-100">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Recommandations</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">
+                Recommandations
+              </p>
               <ul className="space-y-1">
                 {recommendations.slice(0, 3).map((r, i) => (
                   <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">

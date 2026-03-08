@@ -489,6 +489,7 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
     # A.1: unified consumption for source tracking
     from services.consumption_unified_service import get_consumption_summary
     from datetime import date as _date
+
     today = _date.today()
     conso_start = today - timedelta(days=days)
 

@@ -80,9 +80,7 @@ def dispatch_webhooks(
         if sub.events_filter:
             try:
                 allowed = json.loads(sub.events_filter)
-                events_data_filtered = [
-                    e for e in events_data if e["source_type"] in allowed
-                ]
+                events_data_filtered = [e for e in events_data if e["source_type"] in allowed]
             except (json.JSONDecodeError, TypeError):
                 events_data_filtered = events_data
         else:
@@ -92,14 +90,16 @@ def dispatch_webhooks(
             summary["skipped"] += 1
             continue
 
-        payload = json.dumps({
-            "event": "notifications.sync",
-            "trigger": trigger,
-            "org_id": org_id,
-            "count": len(events_data_filtered),
-            "events": events_data_filtered,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }).encode()
+        payload = json.dumps(
+            {
+                "event": "notifications.sync",
+                "trigger": trigger,
+                "org_id": org_id,
+                "count": len(events_data_filtered),
+                "events": events_data_filtered,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        ).encode()
 
         headers = {"Content-Type": "application/json"}
         if sub.secret:
@@ -139,10 +139,14 @@ def build_digest(db: Session, org_id: int) -> Optional[dict]:
     Build a digest summary of NEW notifications since last digest.
     Returns None if no new alerts, or a dict with summary + events list.
     """
-    pref = db.query(DigestPreference).filter(
-        DigestPreference.org_id == org_id,
-        DigestPreference.enabled == True,
-    ).first()
+    pref = (
+        db.query(DigestPreference)
+        .filter(
+            DigestPreference.org_id == org_id,
+            DigestPreference.enabled == True,
+        )
+        .first()
+    )
 
     if not pref:
         return None

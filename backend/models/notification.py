@@ -194,7 +194,7 @@ class WebhookSubscription(Base, TimestampMixin):
     events_filter = Column(
         Text,
         nullable=True,
-        comment='JSON array of source_types to filter (null = all)',
+        comment="JSON array of source_types to filter (null = all)",
     )
     last_triggered_at = Column(DateTime, nullable=True)
     failure_count = Column(Integer, default=0, comment="Consecutive failures")

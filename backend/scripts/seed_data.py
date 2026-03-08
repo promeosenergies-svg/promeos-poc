@@ -1263,7 +1263,9 @@ def main():
         elif billing_result.get("skipped"):
             print(f"  ⚠ Billing seed skipped: {billing_result.get('reason')}")
         else:
-            print(f"  ✓ Billing demo seeded ({billing_result.get('invoices_created')} factures, {billing_result.get('sites_count', 2)} sites)")
+            print(
+                f"  ✓ Billing demo seeded ({billing_result.get('invoices_created')} factures, {billing_result.get('sites_count', 2)} sites)"
+            )
 
         print("\n" + "=" * 70)
         print("SEED TERMINE AVEC SUCCES !")

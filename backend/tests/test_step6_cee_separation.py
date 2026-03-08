@@ -80,9 +80,7 @@ class TestCeeRule:
         """Si cee_p6 produit des findings, ils ont category=incentive."""
         from regops.rules import cee_p6
 
-        source_code = open(
-            os.path.join(os.path.dirname(__file__), "..", "regops", "rules", "cee_p6.py")
-        ).read()
+        source_code = open(os.path.join(os.path.dirname(__file__), "..", "regops", "rules", "cee_p6.py")).read()
         assert "incentive" in source_code
 
 
@@ -97,7 +95,7 @@ class TestEnginePersistCategory:
         engine_path = os.path.join(os.path.dirname(__file__), "..", "regops", "engine.py")
         source = open(engine_path).read()
         assert '"category"' in source
-        assert "getattr(f" in source or 'f.category' in source
+        assert "getattr(f" in source or "f.category" in source
 
 
 # ── D. Routes include category in response ───────────────────────────────────
@@ -138,9 +136,7 @@ class TestScoreExcludesCee:
     """Vérifie que compliance_score_service n'inclut pas CEE."""
 
     def test_score_service_mentions_cee_exclusion(self):
-        score_path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "compliance_score_service.py"
-        )
+        score_path = os.path.join(os.path.dirname(__file__), "..", "services", "compliance_score_service.py")
         source = open(score_path).read()
         # Should mention CEE exclusion
         assert "CEE" in source or "cee" in source
@@ -199,9 +195,7 @@ class TestCategoryMapping:
 
     def test_cee_category_from_compliance_rules(self):
         """compliance_rules.py derives category=incentive for CEE regulation."""
-        rules_path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "compliance_rules.py"
-        )
+        rules_path = os.path.join(os.path.dirname(__file__), "..", "services", "compliance_rules.py")
         source = open(rules_path).read()
         # Should have logic: "cee" in regulation → incentive
         assert "cee" in source.lower()

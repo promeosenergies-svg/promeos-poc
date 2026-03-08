@@ -20,9 +20,7 @@ class TestBillingSeedSource:
 
     @pytest.fixture(autouse=True)
     def load_source(self):
-        seed_path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "billing_seed.py"
-        )
+        seed_path = os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")
         self.source = open(seed_path).read()
 
     def test_source_mentions_5_sites(self):
@@ -100,38 +98,47 @@ class TestBillingConstants:
 
     def test_marseille_volume(self):
         from services.billing_seed import KWH_MARSEILLE
+
         assert KWH_MARSEILLE == 4500
 
     def test_marseille_price(self):
         from services.billing_seed import PRICE_REF_MARSEILLE
+
         assert PRICE_REF_MARSEILLE == 0.19
 
     def test_nice_elec_volume(self):
         from services.billing_seed import KWH_NICE_ELEC
+
         assert KWH_NICE_ELEC == 8000
 
     def test_nice_gaz_volume(self):
         from services.billing_seed import KWH_NICE_GAZ
+
         assert KWH_NICE_GAZ == 3000
 
     def test_nice_elec_price(self):
         from services.billing_seed import PRICE_REF_NICE_ELEC
+
         assert PRICE_REF_NICE_ELEC == 0.21
 
     def test_nice_gaz_price(self):
         from services.billing_seed import PRICE_REF_NICE_GAZ
+
         assert PRICE_REF_NICE_GAZ == 0.09
 
     def test_toulouse_volume(self):
         from services.billing_seed import KWH_TOULOUSE
+
         assert KWH_TOULOUSE == 12000
 
     def test_toulouse_price(self):
         from services.billing_seed import PRICE_REF_TOULOUSE
+
         assert PRICE_REF_TOULOUSE == 0.17
 
     def test_toulouse_partial_coverage(self):
         from services.billing_seed import TOULOUSE_MONTHS
+
         assert TOULOUSE_MONTHS == 18
 
 
@@ -144,6 +151,7 @@ class TestInvoiceCounts:
     def test_marseille_invoice_count(self):
         """Marseille: 24 mois - 1 trou = 23 factures."""
         from services.billing_seed import GAPS_MARSEILLE
+
         expected = 24 - len(GAPS_MARSEILLE)
         assert expected == 23
 
@@ -158,14 +166,18 @@ class TestInvoiceCounts:
     def test_toulouse_invoice_count(self):
         """Toulouse: 18 mois - 3 trous = 15 factures."""
         from services.billing_seed import GAPS_TOULOUSE, TOULOUSE_MONTHS
+
         expected = TOULOUSE_MONTHS - len(GAPS_TOULOUSE)
         assert expected == 15
 
     def test_total_new_invoices(self):
         """3 nouveaux sites: 23 + 24 + 24 + 15 = 86 factures."""
         from services.billing_seed import (
-            GAPS_MARSEILLE, GAPS_TOULOUSE, TOULOUSE_MONTHS,
+            GAPS_MARSEILLE,
+            GAPS_TOULOUSE,
+            TOULOUSE_MONTHS,
         )
+
         marseille = 24 - len(GAPS_MARSEILLE)
         nice_elec = 24
         nice_gaz = 24
@@ -182,18 +194,22 @@ class TestNiceSeasonality:
 
     def test_elec_summer_higher(self):
         from services.billing_seed import _NICE_ELEC_SEASON
+
         assert _NICE_ELEC_SEASON[7] == 1.4  # été ×1.4
 
     def test_elec_winter_lower(self):
         from services.billing_seed import _NICE_ELEC_SEASON
+
         assert _NICE_ELEC_SEASON[1] == 0.9
 
     def test_gaz_winter_higher(self):
         from services.billing_seed import _NICE_GAZ_SEASON
+
         assert _NICE_GAZ_SEASON[1] == 1.3  # hiver ×1.3
 
     def test_gaz_summer_lower(self):
         from services.billing_seed import _NICE_GAZ_SEASON
+
         assert _NICE_GAZ_SEASON[7] == 0.7
 
 
@@ -204,27 +220,19 @@ class TestInvoiceNumberPatterns:
     """Verifie que les patterns de numero de facture sont uniques."""
 
     def test_marseille_pattern(self):
-        source = open(
-            os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")
-        ).read()
+        source = open(os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")).read()
         assert "ENGIE-MAR-" in source
 
     def test_nice_elec_pattern(self):
-        source = open(
-            os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")
-        ).read()
+        source = open(os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")).read()
         assert "TOTAL-NIC-" in source
 
     def test_nice_gaz_pattern(self):
-        source = open(
-            os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")
-        ).read()
+        source = open(os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")).read()
         assert "ENGIE-NIC-G-" in source
 
     def test_toulouse_pattern(self):
-        source = open(
-            os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")
-        ).read()
+        source = open(os.path.join(os.path.dirname(__file__), "..", "services", "billing_seed.py")).read()
         assert "EDF-TLS-" in source
 
     def test_all_patterns_distinct(self):
@@ -240,28 +248,35 @@ class TestExistingSitesUnchanged:
 
     def test_paris_elec_constants(self):
         from services.billing_seed import KWH_ELEC, PRICE_REF_ELEC
+
         assert KWH_ELEC == 9000
         assert PRICE_REF_ELEC == 0.18
 
     def test_lyon_gaz_constants(self):
         from services.billing_seed import KWH_GAZ, PRICE_REF_GAZ
+
         assert KWH_GAZ == 6000
         assert PRICE_REF_GAZ == 0.09
 
     def test_paris_anomalies_unchanged(self):
         from services.billing_seed import (
-            ANOMALY_SHADOW_GAP, ANOMALY_RESEAU_MISMATCH, ANOMALY_TAXES_MISMATCH,
+            ANOMALY_SHADOW_GAP,
+            ANOMALY_RESEAU_MISMATCH,
+            ANOMALY_TAXES_MISMATCH,
         )
+
         assert ANOMALY_SHADOW_GAP == (2024, 7)
         assert ANOMALY_RESEAU_MISMATCH == (2024, 11)
         assert ANOMALY_TAXES_MISMATCH == (2025, 1)
 
     def test_paris_gaps_unchanged(self):
         from services.billing_seed import GAPS_SITE_A, PARTIALS_SITE_A
+
         assert (2023, 3) in GAPS_SITE_A
         assert (2024, 9) in GAPS_SITE_A
         assert (2023, 6) in PARTIALS_SITE_A
 
     def test_lyon_gaps_unchanged(self):
         from services.billing_seed import GAPS_SITE_B
+
         assert (2025, 2) in GAPS_SITE_B

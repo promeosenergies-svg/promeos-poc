@@ -2,6 +2,7 @@
 Tests — A.1: Unified consumption service.
 Covers: get_consumption_summary, get_portfolio_consumption, reconcile_metered_billed.
 """
+
 import pytest
 from datetime import date, datetime
 from sqlalchemy import create_engine
@@ -11,7 +12,11 @@ pytestmark = pytest.mark.fast
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, StatutConformite,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    StatutConformite,
 )
 from models.enums import TypeSite
 from models.energy_models import Meter, MeterReading, EnergyVector, FrequencyType
@@ -49,17 +54,29 @@ def db():
 
     # Site with full data (metered + billed)
     site1 = Site(
-        id=1, nom="Site Full", type=TypeSite.BUREAU, actif=True, portefeuille_id=1,
+        id=1,
+        nom="Site Full",
+        type=TypeSite.BUREAU,
+        actif=True,
+        portefeuille_id=1,
         annual_kwh_total=120000,
     )
     # Site with only billed data
     site2 = Site(
-        id=2, nom="Site Billed Only", type=TypeSite.BUREAU, actif=True, portefeuille_id=1,
+        id=2,
+        nom="Site Billed Only",
+        type=TypeSite.BUREAU,
+        actif=True,
+        portefeuille_id=1,
         annual_kwh_total=80000,
     )
     # Site with no data
     site3 = Site(
-        id=3, nom="Site Empty", type=TypeSite.BUREAU, actif=True, portefeuille_id=1,
+        id=3,
+        nom="Site Empty",
+        type=TypeSite.BUREAU,
+        actif=True,
+        portefeuille_id=1,
         annual_kwh_total=50000,
     )
     session.add_all([site1, site2, site3])
@@ -67,8 +84,12 @@ def db():
 
     # Meter for site1
     meter1 = Meter(
-        id=1, meter_id="PRM001", name="Compteur principal",
-        energy_vector=EnergyVector.ELECTRICITY, site_id=1, is_active=True,
+        id=1,
+        meter_id="PRM001",
+        name="Compteur principal",
+        energy_vector=EnergyVector.ELECTRICITY,
+        site_id=1,
+        is_active=True,
     )
     session.add(meter1)
     session.flush()
@@ -78,27 +99,46 @@ def db():
     for day_offset in range(30):
         for hour in [0, 6, 12, 18]:
             ts = datetime(2025, 1, 1 + day_offset, hour, 0, 0)
-            session.add(MeterReading(
-                meter_id=1, timestamp=ts,
-                frequency=FrequencyType.HOURLY,
-                value_kwh=10.0 + day_offset * 0.1,
-            ))
+            session.add(
+                MeterReading(
+                    meter_id=1,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=10.0 + day_offset * 0.1,
+                )
+            )
 
     # EnergyInvoice for site1 (January)
-    session.add(EnergyInvoice(
-        id=1, site_id=1, invoice_number="INV-001",
-        period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
-        issue_date=date(2025, 2, 5), total_eur=250.0, energy_kwh=1400.0,
-        status=BillingInvoiceStatus.IMPORTED, source="csv",
-    ))
+    session.add(
+        EnergyInvoice(
+            id=1,
+            site_id=1,
+            invoice_number="INV-001",
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
+            issue_date=date(2025, 2, 5),
+            total_eur=250.0,
+            energy_kwh=1400.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="csv",
+        )
+    )
 
     # EnergyInvoice for site2 (January) — no meter
-    session.add(EnergyInvoice(
-        id=2, site_id=2, invoice_number="INV-002",
-        period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
-        issue_date=date(2025, 2, 5), total_eur=180.0, energy_kwh=900.0,
-        status=BillingInvoiceStatus.IMPORTED, source="csv",
-    ))
+    session.add(
+        EnergyInvoice(
+            id=2,
+            site_id=2,
+            invoice_number="INV-002",
+            period_start=date(2025, 1, 1),
+            period_end=date(2025, 1, 31),
+            issue_date=date(2025, 2, 5),
+            total_eur=180.0,
+            energy_kwh=900.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="csv",
+        )
+    )
 
     session.commit()
     yield session
@@ -108,6 +148,7 @@ def db():
 # ============================================================
 # get_consumption_summary
 # ============================================================
+
 
 class TestGetConsumptionSummary:
     """Test unified consumption retrieval for a single site."""
@@ -147,17 +188,13 @@ class TestGetConsumptionSummary:
 
     def test_forced_metered_source(self, db):
         """Forcing source=METERED returns meter data only."""
-        result = get_consumption_summary(
-            db, 1, date(2025, 1, 1), date(2025, 1, 31), ConsumptionSource.METERED
-        )
+        result = get_consumption_summary(db, 1, date(2025, 1, 1), date(2025, 1, 31), ConsumptionSource.METERED)
         assert result["source_used"] == "metered"
         assert result["value_kwh"] > 0
 
     def test_forced_billed_source(self, db):
         """Forcing source=BILLED returns invoice data only."""
-        result = get_consumption_summary(
-            db, 1, date(2025, 1, 1), date(2025, 1, 31), ConsumptionSource.BILLED
-        )
+        result = get_consumption_summary(db, 1, date(2025, 1, 1), date(2025, 1, 31), ConsumptionSource.BILLED)
         assert result["source_used"] == "billed"
         assert result["value_kwh"] == 1400.0
 
@@ -190,6 +227,7 @@ class TestGetConsumptionSummary:
 # ============================================================
 # get_portfolio_consumption
 # ============================================================
+
 
 class TestGetPortfolioConsumption:
     """Test portfolio-level aggregation."""
@@ -231,6 +269,7 @@ class TestGetPortfolioConsumption:
 # ============================================================
 # reconcile_metered_billed
 # ============================================================
+
 
 class TestReconcileMeteredBilled:
     """Test metered vs billed reconciliation."""
@@ -280,6 +319,7 @@ class TestReconcileMeteredBilled:
 # ============================================================
 # ConsumptionSource enum
 # ============================================================
+
 
 class TestConsumptionSource:
     """Test the ConsumptionSource enum."""

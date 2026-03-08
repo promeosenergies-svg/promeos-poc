@@ -12,9 +12,7 @@ class MarketPrice(Base, TimestampMixin):
     """Prix marché énergie (EPEX Spot FR, EEX CAL, etc.)"""
 
     __tablename__ = "market_prices"
-    __table_args__ = (
-        UniqueConstraint("market", "date", "energy_type", name="uq_market_date_energy"),
-    )
+    __table_args__ = (UniqueConstraint("market", "date", "energy_type", name="uq_market_date_energy"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     market = Column(String(50), nullable=False, index=True)  # "EPEX_SPOT_FR", "EEX_CAL"

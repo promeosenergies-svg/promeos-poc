@@ -83,7 +83,7 @@ describe('Step6 — ConformitePage.jsx CEE separation', () => {
     expect(src).toContain('Coins');
   });
 
-  it('mentions Certificats d\'Économies d\'Énergie', () => {
+  it("mentions Certificats d'Économies d'Énergie", () => {
     expect(src).toMatch(/Certificats d'Économies d'Énergie/i);
   });
 });

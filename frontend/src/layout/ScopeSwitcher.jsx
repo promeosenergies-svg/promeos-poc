@@ -17,11 +17,14 @@ import useFloatingPortalPosition from '../hooks/useFloatingPortalPosition';
 function useScopeFeedback(duration = 2200) {
   const [msg, setMsg] = useState(null);
   const timer = useRef(null);
-  const show = useCallback((text) => {
-    clearTimeout(timer.current);
-    setMsg(text);
-    timer.current = setTimeout(() => setMsg(null), duration);
-  }, [duration]);
+  const show = useCallback(
+    (text) => {
+      clearTimeout(timer.current);
+      setMsg(text);
+      timer.current = setTimeout(() => setMsg(null), duration);
+    },
+    [duration]
+  );
   useEffect(() => () => clearTimeout(timer.current), []);
   return { msg, show };
 }
@@ -258,7 +261,9 @@ export default function ScopeSwitcher() {
                 >
                   <span className="flex items-center gap-2 min-w-0">
                     <Briefcase size={14} className="shrink-0" />
-                    <span className="truncate" title={pf.nom}>{pf.nom}</span>
+                    <span className="truncate" title={pf.nom}>
+                      {pf.nom}
+                    </span>
                   </span>
                   {pfSiteCounts[pf.id] > 0 && (
                     <span className="text-[10px] text-gray-400 shrink-0">
@@ -281,7 +286,10 @@ export default function ScopeSwitcher() {
                   {/* Search input */}
                   {showSearch && (
                     <div className="relative mb-2">
-                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <Search
+                        size={14}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
                       <input
                         ref={searchRef}
                         type="text"
@@ -310,16 +318,25 @@ export default function ScopeSwitcher() {
                       ${site.id === scope.siteId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
                     >
                       <MapPin size={14} className="shrink-0" />
-                      <span className="truncate" title={site.nom}>{site.nom}</span>
+                      <span className="truncate" title={site.nom}>
+                        {site.nom}
+                      </span>
                       {site.ville && (
-                        <span className="text-[10px] text-gray-400 shrink-0 ml-auto">{site.ville}</span>
+                        <span className="text-[10px] text-gray-400 shrink-0 ml-auto">
+                          {site.ville}
+                        </span>
                       )}
                     </button>
                   ))}
                   {/* Empty state */}
                   {showSearch && siteSearch.trim() && filteredSites.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-3" data-testid="scope-site-empty">
-                      Aucun site ne correspond à &laquo;{'\u00a0'}{siteSearch.trim()}{'\u00a0'}&raquo;
+                    <p
+                      className="text-xs text-gray-400 text-center py-3"
+                      data-testid="scope-site-empty"
+                    >
+                      Aucun site ne correspond à &laquo;{'\u00a0'}
+                      {siteSearch.trim()}
+                      {'\u00a0'}&raquo;
                     </p>
                   )}
                 </div>

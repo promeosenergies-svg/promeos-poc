@@ -2,6 +2,7 @@
 Tests — CORS configuration (Playbook 1.3).
 Source-guard: verify CORS setup in main.py.
 """
+
 import inspect
 import re
 import os

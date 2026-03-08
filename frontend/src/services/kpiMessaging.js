@@ -30,7 +30,8 @@ const HANDLERS = {
     if (v == null || isNaN(v)) {
       return {
         simple: 'Données insuffisantes pour calculer la conformité.',
-        expert: 'Score unifié A.2 : Tertiaire 45% + BACS 30% + APER 25%. Aucune évaluation disponible.',
+        expert:
+          'Score unifié A.2 : Tertiaire 45% + BACS 30% + APER 25%. Aucune évaluation disponible.',
         severity: 'neutral',
         action: { label: 'Lancer un audit', path: '/conformite' },
       };
@@ -44,7 +45,7 @@ const HANDLERS = {
     }
     if (v >= 40) {
       return {
-        simple: `Conformité moyenne (${v}/100). ${sitesAtRisk + sitesNonConformes} site${(sitesAtRisk + sitesNonConformes) > 1 ? 's' : ''} nécessite${(sitesAtRisk + sitesNonConformes) > 1 ? 'nt' : ''} attention.`,
+        simple: `Conformité moyenne (${v}/100). ${sitesAtRisk + sitesNonConformes} site${sitesAtRisk + sitesNonConformes > 1 ? 's' : ''} nécessite${sitesAtRisk + sitesNonConformes > 1 ? 'nt' : ''} attention.`,
         expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes sur ${totalSites}. Priorisez les échéances proches.`,
         severity: 'warn',
         action: { label: 'Voir les sites à risque', path: '/conformite' },
@@ -159,7 +160,7 @@ const HANDLERS = {
     if (v == null || isNaN(v) || v === 0) {
       return {
         simple: 'Aucune anomalie de facturation détectée.',
-        expert: 'Moteur d\'audit : 0 anomalie. Factures conformes aux attendus.',
+        expert: "Moteur d'audit : 0 anomalie. Factures conformes aux attendus.",
         severity: 'ok',
       };
     }
@@ -216,10 +217,15 @@ const HANDLERS = {
 
   billing_total_cost: (v, ctx) => {
     const { previousYearCost = null, sitesCount = 0 } = ctx;
-    if (v == null || isNaN(v)) return { simple: 'Coût total non calculé.', expert: 'Aucune facture importée.', severity: 'neutral' };
+    if (v == null || isNaN(v))
+      return {
+        simple: 'Coût total non calculé.',
+        expert: 'Aucune facture importée.',
+        severity: 'neutral',
+      };
     const formatted = v >= 1000 ? `${(v / 1000).toFixed(0)} k€` : `${v.toFixed(0)} €`;
     if (previousYearCost && previousYearCost > 0) {
-      const delta = ((v - previousYearCost) / previousYearCost * 100).toFixed(1);
+      const delta = (((v - previousYearCost) / previousYearCost) * 100).toFixed(1);
       const trend = delta > 2 ? 'en hausse' : delta < -2 ? 'en baisse' : 'stable';
       return {
         simple: `${formatted} TTC sur la période. Tendance ${trend} (${delta > 0 ? '+' : ''}${delta}%).`,
@@ -227,19 +233,32 @@ const HANDLERS = {
         severity: delta > 10 ? 'crit' : delta > 2 ? 'warn' : 'ok',
       };
     }
-    return { simple: `${formatted} TTC sur la période.`, expert: `${formatted} TTC pour ${sitesCount} sites.`, severity: 'neutral' };
+    return {
+      simple: `${formatted} TTC sur la période.`,
+      expert: `${formatted} TTC pour ${sitesCount} sites.`,
+      severity: 'neutral',
+    };
   },
 
   billing_anomalies_count: (v, ctx) => {
     const { totalLossEur = 0 } = ctx;
-    if (v == null || isNaN(v) || v === 0) return { simple: 'Aucune anomalie détectée. Facturation cohérente.', expert: '0 anomalie. Shadow billing conforme.', severity: 'ok' };
-    const lossFormatted = totalLossEur >= 1000 ? `${(totalLossEur / 1000).toFixed(1)} k€` : `${totalLossEur.toFixed(0)} €`;
-    if (v <= 2) return {
-      simple: `${v} anomalie${v > 1 ? 's' : ''} détectée${v > 1 ? 's' : ''}. Écart estimé : ${lossFormatted}.`,
-      expert: `${v} insight${v > 1 ? 's' : ''} billing. Perte estimée ${lossFormatted} HT.`,
-      severity: 'warn',
-      action: { label: 'Voir les anomalies', path: '/bill-intel' },
-    };
+    if (v == null || isNaN(v) || v === 0)
+      return {
+        simple: 'Aucune anomalie détectée. Facturation cohérente.',
+        expert: '0 anomalie. Shadow billing conforme.',
+        severity: 'ok',
+      };
+    const lossFormatted =
+      totalLossEur >= 1000
+        ? `${(totalLossEur / 1000).toFixed(1)} k€`
+        : `${totalLossEur.toFixed(0)} €`;
+    if (v <= 2)
+      return {
+        simple: `${v} anomalie${v > 1 ? 's' : ''} détectée${v > 1 ? 's' : ''}. Écart estimé : ${lossFormatted}.`,
+        expert: `${v} insight${v > 1 ? 's' : ''} billing. Perte estimée ${lossFormatted} HT.`,
+        severity: 'warn',
+        action: { label: 'Voir les anomalies', path: '/bill-intel' },
+      };
     return {
       simple: `${v} anomalies détectées. Écart total estimé : ${lossFormatted}. Vérification urgente.`,
       expert: `${v} insights billing ouverts. Perte estimée ${lossFormatted} HT. Audit recommandé.`,
@@ -249,7 +268,12 @@ const HANDLERS = {
   },
 
   billing_reconciliation: (v) => {
-    if (v == null || isNaN(v) || v === 0) return { simple: 'Rapprochement compteur/facture conforme.', expert: 'Tous les sites réconciliés sous le seuil de 10%.', severity: 'ok' };
+    if (v == null || isNaN(v) || v === 0)
+      return {
+        simple: 'Rapprochement compteur/facture conforme.',
+        expert: 'Tous les sites réconciliés sous le seuil de 10%.',
+        severity: 'ok',
+      };
     return {
       simple: `${v} site${v > 1 ? 's' : ''} avec un écart compteur/facture supérieur à 10%.`,
       expert: `${v} site${v > 1 ? 's' : ''} en alerte réconciliation (delta > 10%).`,
@@ -417,19 +441,26 @@ const HANDLERS = {
 
   market_spot_price: (v, ctx) => {
     const { avg12m = null, trendPct = null } = ctx;
-    if (v == null || isNaN(v)) return { simple: 'Prix marché non disponible.', expert: 'Aucune donnée EPEX.', severity: 'neutral' };
-    if (trendPct != null && trendPct < -5) return {
-      simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${Math.abs(trendPct).toFixed(0)}% sous la moyenne. Moment favorable.`,
-      expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ ${trendPct.toFixed(1)}%. Volatilité favorable.`,
-      severity: 'ok',
-      action: { label: 'Simuler un achat', path: '/achat-energie' },
-    };
-    if (trendPct != null && trendPct > 5) return {
-      simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${trendPct.toFixed(0)}% au-dessus de la moyenne. Privilégiez un cap.`,
-      expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ +${trendPct.toFixed(1)}%. Exposition élevée.`,
-      severity: 'warn',
-      action: { label: 'Comparer les stratégies', path: '/achat-energie' },
-    };
+    if (v == null || isNaN(v))
+      return {
+        simple: 'Prix marché non disponible.',
+        expert: 'Aucune donnée EPEX.',
+        severity: 'neutral',
+      };
+    if (trendPct != null && trendPct < -5)
+      return {
+        simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${Math.abs(trendPct).toFixed(0)}% sous la moyenne. Moment favorable.`,
+        expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ ${trendPct.toFixed(1)}%. Volatilité favorable.`,
+        severity: 'ok',
+        action: { label: 'Simuler un achat', path: '/achat-energie' },
+      };
+    if (trendPct != null && trendPct > 5)
+      return {
+        simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — ${trendPct.toFixed(0)}% au-dessus de la moyenne. Privilégiez un cap.`,
+        expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Δ +${trendPct.toFixed(1)}%. Exposition élevée.`,
+        severity: 'warn',
+        action: { label: 'Comparer les stratégies', path: '/achat-energie' },
+      };
     return {
       simple: `Marché spot à ${v.toFixed(0)} EUR/MWh — stable par rapport à la moyenne.`,
       expert: `EPEX Spot FR : ${v.toFixed(1)} EUR/MWh. Moy. 12m : ${avg12m?.toFixed(1) || '—'}. Stable (Δ ${trendPct?.toFixed(1) || 0}%).`,

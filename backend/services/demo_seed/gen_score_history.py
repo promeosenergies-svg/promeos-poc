@@ -69,11 +69,7 @@ def seed_score_history(db, org_id: int, sites: list) -> dict:
                 y -= 1
             month_key = f"{y:04d}-{m:02d}"
 
-            existing = (
-                db.query(ComplianceScoreHistory)
-                .filter_by(site_id=site.id, month_key=month_key)
-                .first()
-            )
+            existing = db.query(ComplianceScoreHistory).filter_by(site_id=site.id, month_key=month_key).first()
             if existing:
                 continue
 

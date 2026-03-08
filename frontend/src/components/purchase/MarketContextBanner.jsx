@@ -50,7 +50,10 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
   const absTrend = Math.abs(trend).toFixed(0);
 
   return (
-    <div className={`flex items-start gap-3 px-4 py-3 border rounded-lg ${cfg.bg}`} data-testid="market-context-banner">
+    <div
+      className={`flex items-start gap-3 px-4 py-3 border rounded-lg ${cfg.bg}`}
+      data-testid="market-context-banner"
+    >
       <div className={`shrink-0 mt-0.5 ${cfg.iconClass}`}>
         <Icon size={18} />
       </div>
@@ -58,26 +61,29 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
         <p className="text-sm font-medium text-gray-800">
           {state === 'low' && (
             <>
-              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, {absTrend}% sous la moyenne 12 mois.
-              {' '}Moment favorable pour sécuriser un prix.
+              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, {absTrend}% sous la
+              moyenne 12 mois. Moment favorable pour sécuriser un prix.
             </>
           )}
           {state === 'stable' && (
             <>
-              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, stable par rapport aux 12 derniers mois.
+              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, stable par rapport
+              aux 12 derniers mois.
             </>
           )}
           {state === 'high' && (
             <>
-              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, {absTrend}% au-dessus de la moyenne 12 mois.
-              {' '}Envisagez un contrat indexé avec cap pour limiter l'exposition.
+              Le marché spot est à <strong>{spot.toFixed(0)} EUR/MWh</strong>, {absTrend}% au-dessus
+              de la moyenne 12 mois. Envisagez un contrat indexé avec cap pour limiter l'exposition.
             </>
           )}
         </p>
 
         {isExpert && (
           <p className="text-xs text-gray-500 mt-1">
-            Spot 30j : {spot30d?.toFixed(1)} EUR/MWh · Moy. 12m : {avg12m?.toFixed(1)} EUR/MWh · Volatilité : {vol?.toFixed(1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}{trend?.toFixed(1)}%
+            Spot 30j : {spot30d?.toFixed(1)} EUR/MWh · Moy. 12m : {avg12m?.toFixed(1)} EUR/MWh ·
+            Volatilité : {vol?.toFixed(1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}
+            {trend?.toFixed(1)}%
           </p>
         )}
 
@@ -106,7 +112,8 @@ export function MarketContextCompact({ marketContext, onNavigate }) {
   const cfg = STATES[state];
   const absTrend = Math.abs(trend).toFixed(0);
   const arrow = trend < -2 ? '↓' : trend > 2 ? '↑' : '→';
-  const trendColor = state === 'low' ? 'text-green-600' : state === 'high' ? 'text-orange-600' : 'text-gray-500';
+  const trendColor =
+    state === 'low' ? 'text-green-600' : state === 'high' ? 'text-orange-600' : 'text-gray-500';
 
   return (
     <div

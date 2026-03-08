@@ -244,11 +244,18 @@ def compute_scenarios(
         if strategy_key == "reflex_solar":
             # RéFlex Solar keeps its detailed blocs horaires model
             reflex = compute_reflex_scenario(
-                ref_price, volume_kwh_an, profile_factor, price_source, report_pct=report_pct,
+                ref_price,
+                volume_kwh_an,
+                profile_factor,
+                price_source,
+                report_pct=report_pct,
             )
             # Enrich with market-based pricing metadata
             ths_pricing = compute_strategy_price(
-                "reflex_solar", market_ctx, profile_factor, horizon_months,
+                "reflex_solar",
+                market_ctx,
+                profile_factor,
+                horizon_months,
             )
             if ths_pricing:
                 reflex["breakdown"] = ths_pricing["breakdown"]
@@ -259,21 +266,26 @@ def compute_scenarios(
             scenarios.append(reflex)
         else:
             pricing = compute_strategy_price(
-                strategy_key, market_ctx, profile_factor, horizon_months,
+                strategy_key,
+                market_ctx,
+                profile_factor,
+                horizon_months,
             )
             total = round(pricing["price_eur_kwh"] * volume_kwh_an, 2)
-            scenarios.append({
-                "strategy": strategy_enum,
-                "price_eur_per_kwh": pricing["price_eur_kwh"],
-                "total_annual_eur": total,
-                "risk_score": pricing["risk_score"],
-                "p10_eur": round(pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2),
-                "p90_eur": round(pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2),
-                "ref_price": ref_price,
-                "ref_price_source": price_source,
-                "breakdown": pricing["breakdown"],
-                "methodology": pricing["methodology"],
-            })
+            scenarios.append(
+                {
+                    "strategy": strategy_enum,
+                    "price_eur_per_kwh": pricing["price_eur_kwh"],
+                    "total_annual_eur": total,
+                    "risk_score": pricing["risk_score"],
+                    "p10_eur": round(pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                    "p90_eur": round(pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                    "ref_price": ref_price,
+                    "ref_price_source": price_source,
+                    "breakdown": pricing["breakdown"],
+                    "methodology": pricing["methodology"],
+                }
+            )
 
     # Compute savings vs current (ref_price)
     current_total = round(ref_price * volume_kwh_an, 2)

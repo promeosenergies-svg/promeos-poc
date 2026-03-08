@@ -2,6 +2,7 @@
 PROMEOS — Step 2: Unified Scoring Tests
 Vérifie que RegOps et Compliance retournent le MÊME score (source unique A.2).
 """
+
 import sys
 import os
 
@@ -14,6 +15,7 @@ from pathlib import Path
 
 
 # ── A. RegOps engine uses A.2 score ──────────────────────────────────────────
+
 
 class TestEngineUsesA2:
     """Verify regops/engine.py delegates scoring to compliance_score_service."""
@@ -47,6 +49,7 @@ class TestEngineUsesA2:
 
 
 # ── B. Routes use A.2 ────────────────────────────────────────────────────────
+
 
 class TestRoutesUseA2:
     """Verify regops routes delegate to compliance_score_service."""
@@ -92,6 +95,7 @@ class TestRoutesUseA2:
 
 # ── C. No legacy scoring formula ─────────────────────────────────────────────
 
+
 class TestNoLegacyFormula:
     """Verify no code outside scoring.py computes compliance scores."""
 
@@ -100,6 +104,7 @@ class TestNoLegacyFormula:
         src = Path(__file__).parent.parent / "regops" / "engine.py"
         content = src.read_text(encoding="utf-8")
         import re
+
         # Pattern: "100.0 - (weighted_sum" or "100 - (sum"
         matches = re.findall(r"100\.?0?\s*-\s*\(.*(?:weighted|penalty|severity)", content)
         assert len(matches) == 0, f"Legacy scoring pattern found: {matches}"
@@ -109,36 +114,43 @@ class TestNoLegacyFormula:
         src = Path(__file__).parent.parent / "routes" / "regops.py"
         content = src.read_text(encoding="utf-8")
         import re
+
         matches = re.findall(r"100\.?0?\s*-\s*\(.*(?:weighted|penalty|severity)", content)
         assert len(matches) == 0, f"Legacy scoring pattern found: {matches}"
 
 
 # ── D. Endpoint structure ────────────────────────────────────────────────────
 
+
 class TestEndpointStructure:
     """Verify endpoint registrations."""
 
     def test_regops_site_endpoint_exists(self):
         from routes.regops import router
+
         paths = [r.path for r in router.routes]
         assert any("/site/{site_id}" in p for p in paths)
 
     def test_score_explain_endpoint_exists(self):
         from routes.regops import router
+
         paths = [r.path for r in router.routes]
         assert any("/score_explain" in p for p in paths)
 
     def test_dashboard_endpoint_exists(self):
         from routes.regops import router
+
         paths = [r.path for r in router.routes]
         assert any("/dashboard" in p for p in paths)
 
     def test_compliance_site_score_endpoint_exists(self):
         from routes.compliance import router
+
         paths = [r.path for r in router.routes]
         assert any("/score" in p for p in paths)
 
     def test_compliance_portfolio_score_endpoint_exists(self):
         from routes.compliance import router
+
         paths = [r.path for r in router.routes]
         assert any("/portfolio/score" in p for p in paths)

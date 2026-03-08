@@ -6,10 +6,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
-import {
-  NAV_SECTIONS,
-  QUICK_ACTIONS,
-} from '../../layout/NavRegistry';
+import { NAV_SECTIONS, QUICK_ACTIONS } from '../../layout/NavRegistry';
 
 const root = resolve(__dirname, '../../../');
 function src(relPath) {
@@ -27,7 +24,7 @@ describe('V114b UX 2-clicks guard-rails', () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
     const centre = pilotage.items.find((i) => i.to === '/actions');
     expect(centre).toBeDefined();
-    expect(centre.label).toBe("Actions & Suivi");
+    expect(centre.label).toBe('Actions & Suivi');
   });
 
   it('3. Exporter OPERAT: QUICK_ACTIONS operat → /conformite/tertiaire', () => {

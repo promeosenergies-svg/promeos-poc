@@ -13,6 +13,7 @@ from models.energy_models import Meter, MeterReading
 
 # ── Step 25 : service unifié ────────────────────────────────────────────────
 
+
 def get_site_meters(db: Session, site_id: int) -> list[dict]:
     """
     Retourne tous les compteurs d'un site, unifiés.
@@ -40,6 +41,7 @@ def get_site_meters(db: Session, site_id: int) -> list[dict]:
 
 
 # ── Step 26 : arbre, sous-compteurs, breakdown ─────────────────────────────
+
 
 def get_site_meters_tree(db: Session, site_id: int) -> list[dict]:
     """
@@ -86,8 +88,13 @@ def create_sub_meter(db: Session, parent_meter_id: int, data: dict) -> dict:
     sub = Meter(
         site_id=parent.site_id,
         parent_meter_id=parent.id,
-        meter_id=data.get("meter_id", f"SUB-{parent.meter_id}-{db.query(Meter).filter(Meter.parent_meter_id == parent.id).count() + 1}"),
-        name=data.get("name", f"Sous-compteur #{db.query(Meter).filter(Meter.parent_meter_id == parent.id).count() + 1}"),
+        meter_id=data.get(
+            "meter_id",
+            f"SUB-{parent.meter_id}-{db.query(Meter).filter(Meter.parent_meter_id == parent.id).count() + 1}",
+        ),
+        name=data.get(
+            "name", f"Sous-compteur #{db.query(Meter).filter(Meter.parent_meter_id == parent.id).count() + 1}"
+        ),
         energy_vector=data.get("energy_vector") or parent.energy_vector,
         type_compteur=data.get("type_compteur") or parent.type_compteur,
         subscribed_power_kva=data.get("subscribed_power_kva"),
@@ -115,9 +122,7 @@ def get_meter_breakdown(db: Session, meter_id: int, date_from=None, date_to=None
     Retourne le breakdown avec delta (pertes & parties communes).
     """
     # Conso du principal
-    q_principal = db.query(func.sum(MeterReading.value_kwh)).filter(
-        MeterReading.meter_id == meter_id
-    )
+    q_principal = db.query(func.sum(MeterReading.value_kwh)).filter(MeterReading.meter_id == meter_id)
     if date_from:
         q_principal = q_principal.filter(MeterReading.timestamp >= date_from)
     if date_to:
@@ -125,31 +130,35 @@ def get_meter_breakdown(db: Session, meter_id: int, date_from=None, date_to=None
     principal_kwh = q_principal.scalar() or 0
 
     # Sous-compteurs
-    subs = db.query(Meter).filter(
-        Meter.parent_meter_id == meter_id,
-        Meter.is_active.is_(True),
-    ).all()
+    subs = (
+        db.query(Meter)
+        .filter(
+            Meter.parent_meter_id == meter_id,
+            Meter.is_active.is_(True),
+        )
+        .all()
+    )
 
     sub_details = []
     sub_total = 0
 
     for s in subs:
-        q_sub = db.query(func.sum(MeterReading.value_kwh)).filter(
-            MeterReading.meter_id == s.id
-        )
+        q_sub = db.query(func.sum(MeterReading.value_kwh)).filter(MeterReading.meter_id == s.id)
         if date_from:
             q_sub = q_sub.filter(MeterReading.timestamp >= date_from)
         if date_to:
             q_sub = q_sub.filter(MeterReading.timestamp <= date_to)
         kwh = q_sub.scalar() or 0
         sub_total += kwh
-        sub_details.append({
-            "id": s.id,
-            "meter_id": s.meter_id,
-            "name": s.name,
-            "kwh": round(kwh, 2),
-            "pct_of_total": round(kwh / principal_kwh * 100, 1) if principal_kwh > 0 else 0,
-        })
+        sub_details.append(
+            {
+                "id": s.id,
+                "meter_id": s.meter_id,
+                "name": s.name,
+                "kwh": round(kwh, 2),
+                "pct_of_total": round(kwh / principal_kwh * 100, 1) if principal_kwh > 0 else 0,
+            }
+        )
 
     delta = principal_kwh - sub_total
     delta_pct = (delta / principal_kwh * 100) if principal_kwh > 0 else 0
@@ -165,6 +174,7 @@ def get_meter_breakdown(db: Session, meter_id: int, date_from=None, date_to=None
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
+
 
 def _meter_to_dict(m: Meter) -> dict:
     """Convertit un Meter en dict unifié."""
@@ -201,9 +211,7 @@ def _add_legacy_compteurs(db: Session, site_id: int, meters: list, result: list)
     from models.compteur import Compteur
     from models import not_deleted
 
-    compteurs = not_deleted(db.query(Compteur), Compteur).filter(
-        Compteur.site_id == site_id
-    ).all()
+    compteurs = not_deleted(db.query(Compteur), Compteur).filter(Compteur.site_id == site_id).all()
 
     # Clés de dédup
     meter_serials = {m.numero_serie for m in meters if m.numero_serie}
@@ -216,24 +224,28 @@ def _add_legacy_compteurs(db: Session, site_id: int, meters: list, result: list)
         if c.meter_id and c.meter_id in meter_prms:
             continue
 
-        result.append({
-            "id": f"legacy_{c.id}",
-            "source": "compteur_legacy",
-            "meter_id": getattr(c, "meter_id", None),
-            "numero_serie": c.numero_serie,
-            "energy_vector": c.energy_vector.value if c.energy_vector else _type_to_vector(c.type.value if c.type else None),
-            "type_compteur": c.type.value if c.type else None,
-            "subscribed_power_kva": c.puissance_souscrite_kw,
-            "site_id": c.site_id,
-            "parent_meter_id": None,
-            "delivery_point_id": c.delivery_point_id,
-            "has_readings": False,
-            "is_active": c.actif,
-            "name": c.numero_serie or f"Compteur #{c.id}",
-            "marque": None,
-            "modele": None,
-            "sub_meters": [],
-        })
+        result.append(
+            {
+                "id": f"legacy_{c.id}",
+                "source": "compteur_legacy",
+                "meter_id": getattr(c, "meter_id", None),
+                "numero_serie": c.numero_serie,
+                "energy_vector": c.energy_vector.value
+                if c.energy_vector
+                else _type_to_vector(c.type.value if c.type else None),
+                "type_compteur": c.type.value if c.type else None,
+                "subscribed_power_kva": c.puissance_souscrite_kw,
+                "site_id": c.site_id,
+                "parent_meter_id": None,
+                "delivery_point_id": c.delivery_point_id,
+                "has_readings": False,
+                "is_active": c.actif,
+                "name": c.numero_serie or f"Compteur #{c.id}",
+                "marque": None,
+                "modele": None,
+                "sub_meters": [],
+            }
+        )
 
 
 def _infer_type(energy_vector) -> str | None:
@@ -254,6 +266,7 @@ def _type_to_vector(type_compteur: str | None) -> str | None:
 def _has_compteur_model() -> bool:
     try:
         from models.compteur import Compteur  # noqa: F401
+
         return True
     except ImportError:
         return False

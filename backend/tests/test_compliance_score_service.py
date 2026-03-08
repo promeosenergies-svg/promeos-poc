@@ -2,6 +2,7 @@
 Tests — A.2: Unified compliance score service.
 Covers: site scoring, portfolio aggregation, confidence levels, critical penalty.
 """
+
 import json
 import pytest
 from datetime import datetime
@@ -12,7 +13,11 @@ pytestmark = pytest.mark.fast
 
 from models.base import Base
 from models import (
-    Organisation, EntiteJuridique, Portefeuille, Site, StatutConformite,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    StatutConformite,
 )
 from models.reg_assessment import RegAssessment
 from models.enums import RegStatus
@@ -47,26 +52,44 @@ def db():
     session.flush()
 
     # Site 1: full snapshots (DT conforme, BACS conforme)
-    session.add(Site(
-        id=1, nom="Site Full", type="bureau", portefeuille_id=1, actif=True,
-        surface_m2=2000,
-        statut_decret_tertiaire=StatutConformite.CONFORME,
-        statut_bacs=StatutConformite.CONFORME,
-    ))
+    session.add(
+        Site(
+            id=1,
+            nom="Site Full",
+            type="bureau",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=2000,
+            statut_decret_tertiaire=StatutConformite.CONFORME,
+            statut_bacs=StatutConformite.CONFORME,
+        )
+    )
     # Site 2: partial snapshots (DT à risque, BACS missing)
-    session.add(Site(
-        id=2, nom="Site Partial", type="commerce", portefeuille_id=1, actif=True,
-        surface_m2=1000,
-        statut_decret_tertiaire=StatutConformite.A_RISQUE,
-        statut_bacs=None,
-    ))
+    session.add(
+        Site(
+            id=2,
+            nom="Site Partial",
+            type="commerce",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=1000,
+            statut_decret_tertiaire=StatutConformite.A_RISQUE,
+            statut_bacs=None,
+        )
+    )
     # Site 3: no snapshots at all
-    session.add(Site(
-        id=3, nom="Site Empty", type="bureau", portefeuille_id=1, actif=True,
-        surface_m2=500,
-        statut_decret_tertiaire=None,
-        statut_bacs=None,
-    ))
+    session.add(
+        Site(
+            id=3,
+            nom="Site Empty",
+            type="bureau",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=500,
+            statut_decret_tertiaire=None,
+            statut_bacs=None,
+        )
+    )
     session.commit()
     yield session
     session.close()
@@ -156,7 +179,8 @@ class TestCriticalPenalty:
             {"regulation": "tertiaire_operat", "severity": "critical", "title": "Deadline passed"},
         ]
         ra = RegAssessment(
-            object_type="site", object_id=1,
+            object_type="site",
+            object_id=1,
             computed_at=datetime.utcnow(),
             global_status=RegStatus.AT_RISK,
             compliance_score=80.0,
@@ -179,7 +203,8 @@ class TestCriticalPenalty:
             for i in range(10)  # 10 findings * 5 pts = 50, but max is 20
         ]
         ra = RegAssessment(
-            object_type="site", object_id=1,
+            object_type="site",
+            object_id=1,
             computed_at=datetime.utcnow(),
             global_status=RegStatus.AT_RISK,
             compliance_score=90.0,
@@ -200,7 +225,8 @@ class TestRegAssessmentScoring:
         # Site 1 has CONFORME DT snapshot (score=100)
         # Add RegAssessment with score=60 for tertiaire_operat
         ra = RegAssessment(
-            object_type="site", object_id=1,
+            object_type="site",
+            object_id=1,
             computed_at=datetime.utcnow(),
             global_status=RegStatus.COMPLIANT,
             compliance_score=60.0,
@@ -220,7 +246,8 @@ class TestRegAssessmentScoring:
     def test_stale_assessment_ignored(self, db):
         """Stale RegAssessments should be ignored."""
         ra = RegAssessment(
-            object_type="site", object_id=1,
+            object_type="site",
+            object_id=1,
             computed_at=datetime.utcnow(),
             global_status=RegStatus.AT_RISK,
             compliance_score=10.0,
@@ -297,6 +324,7 @@ class TestCrossBriqueConsistency:
     def test_kpi_service_uses_unified_score(self, db):
         """KpiService.get_compliance_score should delegate to compliance_score_service."""
         from services.kpi_service import KpiService, KpiScope
+
         svc = KpiService(db)
         result = svc.get_compliance_score(KpiScope(org_id=1))
         # Should return a score (not a percentage of conformes)

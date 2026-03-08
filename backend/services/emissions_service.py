@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 # Default fallback factor: from ADEME Base Carbone 2024 config (single source)
 from config.emission_factors import get_emission_factor as _config_factor
+
 DEFAULT_FACTOR_KGCO2E = _config_factor("ELEC")
 
 

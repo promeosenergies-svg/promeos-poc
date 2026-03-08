@@ -14,7 +14,7 @@ function src(relPath) {
 }
 
 /* ── A. Page title ── */
-describe('A. Page title — Centre d\'actions', () => {
+describe("A. Page title — Centre d'actions", () => {
   const code = src('src/pages/AnomaliesPage.jsx');
 
   it('has title="Centre d\'actions" in PageShell', () => {
@@ -25,7 +25,7 @@ describe('A. Page title — Centre d\'actions', () => {
     expect(code).toMatch(/label:\s*'Anomalies'/);
   });
 
-  it('has Plan d\'actions tab', () => {
+  it("has Plan d'actions tab", () => {
     expect(code).toMatch(/Plan d'actions/);
   });
 });

@@ -439,9 +439,7 @@ export default function BillingPage() {
       </div>
 
       {/* Erreur */}
-      {error && (
-        <ErrorState message={error} onRetry={() => fetchAll(siteFilter, 0, false)} />
-      )}
+      {error && <ErrorState message={error} onRetry={() => fetchAll(siteFilter, 0, false)} />}
 
       {/* KPIs + CoverageBar */}
       {summary && (
@@ -481,9 +479,16 @@ export default function BillingPage() {
               const msg = getKpiMessage('billing_coverage', ratio);
               if (!msg) return null;
               return (
-                <p className={`text-xs mt-2 ${
-                  msg.severity === 'crit' ? 'text-red-600' : msg.severity === 'warn' ? 'text-amber-600' : 'text-gray-500'
-                }`} data-testid="kpi-message-billing-coverage">
+                <p
+                  className={`text-xs mt-2 ${
+                    msg.severity === 'crit'
+                      ? 'text-red-600'
+                      : msg.severity === 'warn'
+                        ? 'text-amber-600'
+                        : 'text-gray-500'
+                  }`}
+                  data-testid="kpi-message-billing-coverage"
+                >
                   {isExpert ? msg.expert : msg.simple}
                 </p>
               );

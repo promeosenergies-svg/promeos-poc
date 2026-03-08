@@ -34,7 +34,16 @@ export default function ShadowBreakdownCard({ breakdown }) {
     );
   }
 
-  const { components, total_expected_ht, total_invoice_ht, total_gap_eur, total_gap_pct, confidence, tarif_version, segment } = breakdown;
+  const {
+    components,
+    total_expected_ht,
+    total_invoice_ht,
+    total_gap_eur,
+    total_gap_pct,
+    confidence,
+    tarif_version,
+    segment,
+  } = breakdown;
   const confBadge = CONFIDENCE_BADGE[confidence] || CONFIDENCE_BADGE.low;
 
   // Calcul largeur des barres (proportionnel à expected_eur)
@@ -50,19 +59,25 @@ export default function ShadowBreakdownCard({ breakdown }) {
           </h4>
           <div className="flex items-baseline gap-3 mt-1">
             <span className="text-sm text-gray-600">
-              Attendu HT : <span className="font-semibold text-gray-900">{fmt(total_expected_ht)} EUR</span>
+              Attendu HT :{' '}
+              <span className="font-semibold text-gray-900">{fmt(total_expected_ht)} EUR</span>
             </span>
             {total_invoice_ht > 0 && (
               <span className="text-sm text-gray-600">
-                Facturé : <span className="font-semibold text-gray-900">{fmt(total_invoice_ht)} EUR</span>
+                Facturé :{' '}
+                <span className="font-semibold text-gray-900">{fmt(total_invoice_ht)} EUR</span>
               </span>
             )}
             {total_gap_eur != null && total_gap_eur !== 0 && (
-              <span className={`text-sm font-bold ${total_gap_eur > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {total_gap_eur > 0 ? '+' : ''}{fmt(total_gap_eur)} EUR
+              <span
+                className={`text-sm font-bold ${total_gap_eur > 0 ? 'text-red-600' : 'text-green-600'}`}
+              >
+                {total_gap_eur > 0 ? '+' : ''}
+                {fmt(total_gap_eur)} EUR
                 {total_gap_pct != null && (
                   <span className="ml-1 text-xs font-normal">
-                    ({total_gap_pct > 0 ? '+' : ''}{total_gap_pct.toFixed(1)}%)
+                    ({total_gap_pct > 0 ? '+' : ''}
+                    {total_gap_pct.toFixed(1)}%)
                   </span>
                 )}
               </span>
@@ -108,19 +123,21 @@ export default function ShadowBreakdownCard({ breakdown }) {
                       <span className="text-gray-600">
                         Facturé : <span className="font-medium">{fmt(c.invoice_eur)} EUR</span>
                       </span>
-                      <span className={`font-bold ${c.gap_eur > 0 ? 'text-red-600' : c.gap_eur < 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                        {c.gap_eur > 0 ? '+' : ''}{fmt(c.gap_eur)} EUR
+                      <span
+                        className={`font-bold ${c.gap_eur > 0 ? 'text-red-600' : c.gap_eur < 0 ? 'text-green-600' : 'text-gray-500'}`}
+                      >
+                        {c.gap_eur > 0 ? '+' : ''}
+                        {fmt(c.gap_eur)} EUR
                         {c.gap_pct != null && (
                           <span className="ml-1 text-xs font-normal">
-                            ({c.gap_pct > 0 ? '+' : ''}{c.gap_pct}%)
+                            ({c.gap_pct > 0 ? '+' : ''}
+                            {c.gap_pct}%)
                           </span>
                         )}
                       </span>
                     </>
                   ) : (
-                    <span className="text-xs text-gray-400 italic">
-                      Détail non disponible
-                    </span>
+                    <span className="text-xs text-gray-400 italic">Détail non disponible</span>
                   )}
                 </div>
               </div>

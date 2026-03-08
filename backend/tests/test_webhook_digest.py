@@ -1,6 +1,7 @@
 """
 Tests — Webhook + Digest service (Playbook 2.4).
 """
+
 import json
 import pytest
 from datetime import datetime, timezone
@@ -105,6 +106,7 @@ class TestDigestModel:
 class TestBuildDigest:
     def test_digest_returns_none_when_disabled(self, db):
         from services.webhook_service import build_digest
+
         result = build_digest(db, org_id=1)
         assert result is None  # No DigestPreference exists
 

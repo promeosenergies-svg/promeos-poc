@@ -1,6 +1,7 @@
 """
 Tests — KPI Service centralized (Playbook 2.2).
 """
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -34,15 +35,39 @@ def db():
     session.flush()
 
     sites = [
-        Site(id=1, nom="Site A", type="bureau", portefeuille_id=1, actif=True, surface_m2=1000,
-             risque_financier_euro=5000, avancement_decret_pct=80,
-             statut_decret_tertiaire=StatutConformite.CONFORME),
-        Site(id=2, nom="Site B", type="commerce", portefeuille_id=1, actif=True, surface_m2=2000,
-             risque_financier_euro=10000, avancement_decret_pct=60,
-             statut_decret_tertiaire=StatutConformite.NON_CONFORME),
-        Site(id=3, nom="Site C", type="bureau", portefeuille_id=1, actif=True, surface_m2=500,
-             risque_financier_euro=0, avancement_decret_pct=100,
-             statut_decret_tertiaire=StatutConformite.CONFORME),
+        Site(
+            id=1,
+            nom="Site A",
+            type="bureau",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=1000,
+            risque_financier_euro=5000,
+            avancement_decret_pct=80,
+            statut_decret_tertiaire=StatutConformite.CONFORME,
+        ),
+        Site(
+            id=2,
+            nom="Site B",
+            type="commerce",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=2000,
+            risque_financier_euro=10000,
+            avancement_decret_pct=60,
+            statut_decret_tertiaire=StatutConformite.NON_CONFORME,
+        ),
+        Site(
+            id=3,
+            nom="Site C",
+            type="bureau",
+            portefeuille_id=1,
+            actif=True,
+            surface_m2=500,
+            risque_financier_euro=0,
+            avancement_decret_pct=100,
+            statut_decret_tertiaire=StatutConformite.CONFORME,
+        ),
     ]
     session.add_all(sites)
     session.commit()
@@ -70,10 +95,7 @@ class TestKpiServiceFinancialRisk:
         """Sum of individual site KPIs should equal org-level KPI."""
         svc = KpiService(db)
         org_total = svc.get_financial_risk_eur(KpiScope(org_id=1)).value
-        site_sum = sum(
-            svc.get_financial_risk_eur(KpiScope(site_id=sid)).value
-            for sid in [1, 2, 3]
-        )
+        site_sum = sum(svc.get_financial_risk_eur(KpiScope(site_id=sid)).value for sid in [1, 2, 3])
         assert abs(org_total - site_sum) < 0.01
 
 

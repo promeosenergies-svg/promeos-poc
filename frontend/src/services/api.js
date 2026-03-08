@@ -626,8 +626,7 @@ export const getSiteComplianceSummary = (siteId) =>
   api.get(`/compliance/sites/${siteId}/summary`).then((r) => r.data);
 export const getPortfolioComplianceSummary = (params = {}) =>
   api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
-export const getComplianceTimeline = () =>
-  api.get('/compliance/timeline').then((r) => r.data);
+export const getComplianceTimeline = () => api.get('/compliance/timeline').then((r) => r.data);
 export const getComplianceScoreTrend = (params = {}) =>
   _cachedGet('/compliance/score-trend', { params }).then((r) => r.data);
 
@@ -871,8 +870,7 @@ export const getMarketContext = (energyType = 'ELEC') =>
 // REFERENTIEL TARIFS
 // ========================================
 
-export const getReferentielTarifs = () =>
-  _cachedGet('/referentiel/tarifs').then((r) => r.data);
+export const getReferentielTarifs = () => _cachedGet('/referentiel/tarifs').then((r) => r.data);
 
 // ========================================
 // PATRIMOINE CRUD
@@ -1549,11 +1547,15 @@ export const getPortfolioBehaviorSummary = (days = 30) =>
 
 // A.1: Unified Consumption
 export const getConsumptionUnifiedSite = (siteId, start, end, source = 'reconciled') =>
-  api.get(`/consumption-unified/site/${siteId}`, { params: { start, end, source } }).then((r) => r.data);
+  api
+    .get(`/consumption-unified/site/${siteId}`, { params: { start, end, source } })
+    .then((r) => r.data);
 export const getConsumptionUnifiedPortfolio = (start, end, source = 'reconciled') =>
   api.get('/consumption-unified/portfolio', { params: { start, end, source } }).then((r) => r.data);
 export const getConsumptionReconcile = (siteId, start, end) =>
-  api.get(`/consumption-unified/reconcile/${siteId}`, { params: { start, end } }).then((r) => r.data);
+  api
+    .get(`/consumption-unified/reconcile/${siteId}`, { params: { start, end } })
+    .then((r) => r.data);
 
 // Step 9 B3: Reconcile-all (compteur/facture tous sites)
 export const postBillingReconcileAll = (months = 12) =>

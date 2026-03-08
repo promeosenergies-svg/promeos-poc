@@ -339,8 +339,7 @@ function StepPortefeuille({ data, setData, portefeuilles, loading }) {
 
 function StepSite({ data, setData }) {
   const site = data.site || {};
-  const update = (field, value) =>
-    setData((d) => ({ ...d, site: { ...d.site, [field]: value } }));
+  const update = (field, value) => setData((d) => ({ ...d, site: { ...d.site, [field]: value } }));
 
   return (
     <div className="space-y-4">
@@ -363,7 +362,9 @@ function StepSite({ data, setData }) {
           >
             <option value="">-- Sélectionnez --</option>
             {SITE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
         </div>
@@ -405,12 +406,16 @@ function StepSite({ data, setData }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Surface tertiaire (m²)</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Surface tertiaire (m²)
+          </label>
           <input
             type="number"
             className="w-full border rounded-lg px-3 py-2 text-sm"
             value={site.tertiaire_area_m2 || ''}
-            onChange={(e) => update('tertiaire_area_m2', e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              update('tertiaire_area_m2', e.target.value ? Number(e.target.value) : null)
+            }
             min="0"
           />
         </div>
@@ -467,7 +472,10 @@ function StepBatiments({ data, setData }) {
     if (batiments.length >= 5) return;
     setData((d) => ({
       ...d,
-      batiments: [...d.batiments, { nom: '', surface_m2: '', annee_construction: '', cvc_power_kw: '' }],
+      batiments: [
+        ...d.batiments,
+        { nom: '', surface_m2: '', annee_construction: '', cvc_power_kw: '' },
+      ],
     }));
   };
   const removeBat = (idx) =>
@@ -603,7 +611,9 @@ function StepCompteurs({ data, setData }) {
               onChange={(e) => updateCompteur(idx, 'energy_type', e.target.value)}
             >
               {ENERGY_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
               ))}
             </select>
             <input
@@ -631,16 +641,15 @@ function StepRecap({ data }) {
       <h3 className="text-sm font-semibold text-gray-800">Recapitulatif</h3>
       <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
         <div>
-          <span className="font-medium text-gray-600">Organisation :</span>{' '}
-          {data.org?.nom} {data.org?._new && <span className="text-blue-600">(nouvelle)</span>}
+          <span className="font-medium text-gray-600">Organisation :</span> {data.org?.nom}{' '}
+          {data.org?._new && <span className="text-blue-600">(nouvelle)</span>}
         </div>
         <div>
-          <span className="font-medium text-gray-600">Entité juridique :</span>{' '}
-          {data.entite?.nom} {data.entite?._new && <span className="text-blue-600">(nouvelle)</span>}
+          <span className="font-medium text-gray-600">Entité juridique :</span> {data.entite?.nom}{' '}
+          {data.entite?._new && <span className="text-blue-600">(nouvelle)</span>}
         </div>
         <div>
-          <span className="font-medium text-gray-600">Portefeuille :</span>{' '}
-          {data.portefeuille?.nom}{' '}
+          <span className="font-medium text-gray-600">Portefeuille :</span> {data.portefeuille?.nom}{' '}
           {data.portefeuille?._new && <span className="text-blue-600">(nouveau)</span>}
         </div>
         <div className="border-t pt-2">
@@ -714,7 +723,10 @@ export default function SiteCreationWizard({ onClose, onSuccess }) {
   // Load entites when org changes
   useEffect(() => {
     const orgId = wizardData.org?.id;
-    if (!orgId) { setEntites([]); return; }
+    if (!orgId) {
+      setEntites([]);
+      return;
+    }
     setLoadingEntites(true);
     crudListEntites({ org_id: orgId })
       .then((r) => {
@@ -731,7 +743,10 @@ export default function SiteCreationWizard({ onClose, onSuccess }) {
   // Load portefeuilles when entite changes
   useEffect(() => {
     const entId = wizardData.entite?.id;
-    if (!entId) { setPortefeuilles([]); return; }
+    if (!entId) {
+      setPortefeuilles([]);
+      return;
+    }
     setLoadingPfs(true);
     crudListPortefeuilles({ entite_id: entId })
       .then((r) => {
@@ -910,10 +925,10 @@ export default function SiteCreationWizard({ onClose, onSuccess }) {
                       isCurrent
                         ? 'bg-blue-100 text-blue-700'
                         : isDone
-                        ? 'text-green-600'
-                        : step.optional
-                        ? 'text-gray-400'
-                        : 'text-gray-500'
+                          ? 'text-green-600'
+                          : step.optional
+                            ? 'text-gray-400'
+                            : 'text-gray-500'
                     }`}
                   >
                     {isDone ? <Check size={12} /> : <Icon size={12} />}

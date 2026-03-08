@@ -412,10 +412,7 @@ def _grade(score: float) -> str:
 
 def _dim_completeness(db: Session, site_id: int, window_start: date, today: date) -> dict:
     """COMPLETENESS (35%) — months with readings / 12."""
-    meter_ids = [
-        r[0]
-        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
-    ]
+    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
 
     if meter_ids:
         month_rows = (
@@ -451,18 +448,11 @@ def _dim_completeness(db: Session, site_id: int, window_start: date, today: date
 
 def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
     """FRESHNESS (25%) — recency of last reading."""
-    meter_ids = [
-        r[0]
-        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
-    ]
+    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
 
     last_ts = None
     if meter_ids:
-        last_ts = (
-            db.query(func.max(MeterReading.timestamp))
-            .filter(MeterReading.meter_id.in_(meter_ids))
-            .scalar()
-        )
+        last_ts = db.query(func.max(MeterReading.timestamp)).filter(MeterReading.meter_id.in_(meter_ids)).scalar()
 
     if last_ts:
         last_date = last_ts if isinstance(last_ts, date) else (last_ts.date() if hasattr(last_ts, "date") else today)
@@ -480,13 +470,15 @@ def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
 
 def _dim_accuracy(db: Session, site_id: int, window_start: date) -> dict:
     """ACCURACY (25%) — anomaly ratio over readings."""
-    meter_ids = [
-        r[0]
-        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
-    ]
+    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
 
     if not meter_ids:
-        return {"score": 50.0, "weight": DQ_WEIGHTS["accuracy"], "detail": "Pas de compteur — score neutre", "recommendation": None}
+        return {
+            "score": 50.0,
+            "weight": DQ_WEIGHTS["accuracy"],
+            "detail": "Pas de compteur — score neutre",
+            "recommendation": None,
+        }
 
     nb_readings = (
         db.query(func.count(MeterReading.id))
@@ -525,7 +517,12 @@ def _dim_consistency(db: Session, site_id: int, window_start: date, today: date)
 
         result = reconcile_metered_billed(db, site_id, window_start, today)
         if result.get("status") == "insufficient_data":
-            return {"score": 50.0, "weight": DQ_WEIGHTS["consistency"], "detail": "Données insuffisantes pour la réconciliation", "recommendation": None}
+            return {
+                "score": 50.0,
+                "weight": DQ_WEIGHTS["consistency"],
+                "detail": "Données insuffisantes pour la réconciliation",
+                "recommendation": None,
+            }
 
         delta_pct = abs(result.get("delta_pct", 0))
         score = round(max(0, 100 - delta_pct * 5), 1)
@@ -533,7 +530,12 @@ def _dim_consistency(db: Session, site_id: int, window_start: date, today: date)
         rec = "Rapprocher les relevés compteur des factures" if score < 70 else None
         return {"score": score, "weight": DQ_WEIGHTS["consistency"], "detail": detail, "recommendation": rec}
     except Exception:
-        return {"score": 50.0, "weight": DQ_WEIGHTS["consistency"], "detail": "Réconciliation non disponible", "recommendation": None}
+        return {
+            "score": 50.0,
+            "weight": DQ_WEIGHTS["consistency"],
+            "detail": "Réconciliation non disponible",
+            "recommendation": None,
+        }
 
 
 def compute_site_data_quality(
@@ -574,11 +576,13 @@ def compute_site_data_quality(
             "accuracy": f"/monitoring?site_id={site_id}",
             "consistency": f"/billing?site_id={site_id}",
         }
-        recommendations.append({
-            "priority": priority_map.get(idx, "low"),
-            "message": dim["recommendation"],
-            "cta_route": cta_map.get(dim_key, f"/sites/{site_id}"),
-        })
+        recommendations.append(
+            {
+                "priority": priority_map.get(idx, "low"),
+                "message": dim["recommendation"],
+                "cta_route": cta_map.get(dim_key, f"/sites/{site_id}"),
+            }
+        )
 
     from datetime import datetime
 
@@ -606,33 +610,22 @@ def compute_site_freshness(
         today = date.today()
 
     # Last meter reading
-    meter_ids = [
-        r[0]
-        for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()
-    ]
+    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
 
     last_reading_date = None
     if meter_ids:
-        last_ts = (
-            db.query(func.max(MeterReading.timestamp))
-            .filter(MeterReading.meter_id.in_(meter_ids))
-            .scalar()
-        )
+        last_ts = db.query(func.max(MeterReading.timestamp)).filter(MeterReading.meter_id.in_(meter_ids)).scalar()
         if last_ts:
-            last_reading_date = last_ts if isinstance(last_ts, date) else (
-                last_ts.date() if hasattr(last_ts, "date") else None
+            last_reading_date = (
+                last_ts if isinstance(last_ts, date) else (last_ts.date() if hasattr(last_ts, "date") else None)
             )
 
     # Last invoice
-    last_inv = (
-        db.query(func.max(EnergyInvoice.period_end))
-        .filter(EnergyInvoice.site_id == site_id)
-        .scalar()
-    )
+    last_inv = db.query(func.max(EnergyInvoice.period_end)).filter(EnergyInvoice.site_id == site_id).scalar()
     last_invoice_date = None
     if last_inv:
-        last_invoice_date = last_inv if isinstance(last_inv, date) else (
-            last_inv.date() if hasattr(last_inv, "date") else None
+        last_invoice_date = (
+            last_inv if isinstance(last_inv, date) else (last_inv.date() if hasattr(last_inv, "date") else None)
         )
 
     # Compute staleness from most recent data source

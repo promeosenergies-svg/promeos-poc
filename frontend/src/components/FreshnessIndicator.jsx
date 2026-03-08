@@ -60,7 +60,12 @@ function formatDate(isoStr) {
   }
 }
 
-export default function FreshnessIndicator({ freshness, size = 'sm', showBanner = false, onImport }) {
+export default function FreshnessIndicator({
+  freshness,
+  size = 'sm',
+  showBanner = false,
+  onImport,
+}) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const ref = useRef(null);
 
@@ -121,13 +126,17 @@ export default function FreshnessIndicator({ freshness, size = 'sm', showBanner 
             {freshness.last_reading && (
               <div className="flex justify-between">
                 <span>Dernier relevé</span>
-                <span className="font-medium text-gray-800">{formatDate(freshness.last_reading)}</span>
+                <span className="font-medium text-gray-800">
+                  {formatDate(freshness.last_reading)}
+                </span>
               </div>
             )}
             {freshness.last_invoice && (
               <div className="flex justify-between">
                 <span>Dernière facture</span>
-                <span className="font-medium text-gray-800">{formatDate(freshness.last_invoice)}</span>
+                <span className="font-medium text-gray-800">
+                  {formatDate(freshness.last_invoice)}
+                </span>
               </div>
             )}
             {!freshness.last_reading && !freshness.last_invoice && (
@@ -151,7 +160,10 @@ export default function FreshnessIndicator({ freshness, size = 'sm', showBanner 
           {onImport && (freshness.status === 'expired' || freshness.status === 'no_data') && (
             <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
               <button
-                onClick={() => { onImport(); setPopoverOpen(false); }}
+                onClick={() => {
+                  onImport();
+                  setPopoverOpen(false);
+                }}
                 className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
                 <Upload size={12} />
@@ -170,7 +182,9 @@ export default function FreshnessIndicator({ freshness, size = 'sm', showBanner 
         >
           <AlertTriangle size={14} className="text-red-600 shrink-0" />
           <span className="text-xs text-red-800">
-            Données périmées ({freshness.staleness_days > 900 ? 'aucune donnée' : `${freshness.staleness_days} jours`}) — les KPIs affichés peuvent être obsolètes.
+            Données périmées (
+            {freshness.staleness_days > 900 ? 'aucune donnée' : `${freshness.staleness_days} jours`}
+            ) — les KPIs affichés peuvent être obsolètes.
           </span>
           {onImport && (
             <button

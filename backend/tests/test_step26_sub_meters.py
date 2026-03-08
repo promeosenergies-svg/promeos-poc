@@ -2,6 +2,7 @@
 Step 26 — Sous-compteurs (O2)
 Tests pour le modèle, service unifié, endpoints et seed.
 """
+
 import pytest
 from sqlalchemy import inspect
 from database import engine, SessionLocal
@@ -16,6 +17,7 @@ from services.meter_unified_service import (
 
 
 # ── A. Meter model — parent_meter_id ────────────────────────────────────────
+
 
 class TestMeterSubModel:
     def test_meter_has_parent_meter_id(self):
@@ -33,6 +35,7 @@ class TestMeterSubModel:
 
 
 # ── B. Service — get_site_meters_tree ────────────────────────────────────────
+
 
 class TestSiteMetersTree:
     def test_returns_list(self):
@@ -55,12 +58,17 @@ class TestSiteMetersTree:
 
 # ── C. Service — create_sub_meter ────────────────────────────────────────────
 
+
 class TestCreateSubMeter:
     def _get_principal(self, db):
-        return db.query(Meter).filter(
-            Meter.parent_meter_id.is_(None),
-            Meter.is_active.is_(True),
-        ).first()
+        return (
+            db.query(Meter)
+            .filter(
+                Meter.parent_meter_id.is_(None),
+                Meter.is_active.is_(True),
+            )
+            .first()
+        )
 
     def test_create_sub_meter_success(self):
         db = SessionLocal()
@@ -111,6 +119,7 @@ class TestCreateSubMeter:
 
 # ── D. Service — delete_sub_meter ────────────────────────────────────────────
 
+
 class TestDeleteSubMeter:
     def test_delete_wrong_parent_returns_false(self):
         db = SessionLocal()
@@ -121,6 +130,7 @@ class TestDeleteSubMeter:
 
 
 # ── E. Service — get_meter_breakdown ─────────────────────────────────────────
+
 
 class TestMeterBreakdown:
     def test_breakdown_returns_dict(self):
@@ -152,15 +162,20 @@ class TestMeterBreakdown:
 
 # ── F. Seed — hotel sub-meters exist ─────────────────────────────────────────
 
+
 class TestSeedSubMeters:
     def test_hotel_has_sub_meters(self):
         """After helios seed, Nice hotel should have sub-meters."""
         db = SessionLocal()
         try:
-            subs = db.query(Meter).filter(
-                Meter.parent_meter_id.isnot(None),
-                Meter.is_active.is_(True),
-            ).all()
+            subs = (
+                db.query(Meter)
+                .filter(
+                    Meter.parent_meter_id.isnot(None),
+                    Meter.is_active.is_(True),
+                )
+                .all()
+            )
             # At least 1 sub-meter should exist after seed
             if not subs:
                 pytest.skip("No sub-meters found (seed may not have run)")
@@ -182,6 +197,7 @@ class TestSeedSubMeters:
 
 
 # ── G. Source guards — file structure ─────────────────────────────────────────
+
 
 class TestSourceGuards:
     def _read(self, path):

@@ -68,9 +68,7 @@ def _create_org_site(db):
     pf = Portefeuille(entite_juridique_id=ej.id, nom="P1")
     db.add(pf)
     db.flush()
-    site = Site(
-        portefeuille_id=pf.id, nom="Site Test", type=TypeSite.BUREAU, surface_m2=1000, actif=True
-    )
+    site = Site(portefeuille_id=pf.id, nom="Site Test", type=TypeSite.BUREAU, surface_m2=1000, actif=True)
     db.add(site)
     db.flush()
     db.commit()
@@ -270,11 +268,7 @@ class TestAnomalyStatuses:
         _create_org_site(db)
         resp = client.post(
             "/api/actions/anomaly-statuses",
-            json={
-                "anomalies": [
-                    {"anomaly_source": "patrimoine", "anomaly_ref": "MISSING_SURFACE", "site_id": 1}
-                ]
-            },
+            json={"anomalies": [{"anomaly_source": "patrimoine", "anomaly_ref": "MISSING_SURFACE", "site_id": 1}]},
         )
         assert resp.status_code == 200
         statuses = resp.json()["statuses"]
@@ -299,11 +293,7 @@ class TestAnomalyStatuses:
         # Check status
         resp = client.post(
             "/api/actions/anomaly-statuses",
-            json={
-                "anomalies": [
-                    {"anomaly_source": "patrimoine", "anomaly_ref": "LOW_SURFACE", "site_id": site.id}
-                ]
-            },
+            json={"anomalies": [{"anomaly_source": "patrimoine", "anomaly_ref": "LOW_SURFACE", "site_id": site.id}]},
         )
         statuses = resp.json()["statuses"]
         assert statuses[0]["status"] == "linked"
@@ -322,11 +312,7 @@ class TestAnomalyStatuses:
         )
         resp = client.post(
             "/api/actions/anomaly-statuses",
-            json={
-                "anomalies": [
-                    {"anomaly_source": "patrimoine", "anomaly_ref": "MISSING_SURFACE", "site_id": 1}
-                ]
-            },
+            json={"anomalies": [{"anomaly_source": "patrimoine", "anomaly_ref": "MISSING_SURFACE", "site_id": 1}]},
         )
         statuses = resp.json()["statuses"]
         assert statuses[0]["status"] == "dismissed"

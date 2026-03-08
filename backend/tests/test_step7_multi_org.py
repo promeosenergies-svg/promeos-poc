@@ -118,9 +118,7 @@ class TestCli:
     """Tests sur le CLI demo_seed."""
 
     def test_cli_accepts_meridian(self):
-        cli_path = os.path.join(
-            os.path.dirname(__file__), "..", "services", "demo_seed", "__main__.py"
-        )
+        cli_path = os.path.join(os.path.dirname(__file__), "..", "services", "demo_seed", "__main__.py")
         source = open(cli_path).read()
         assert "meridian" in source
 
