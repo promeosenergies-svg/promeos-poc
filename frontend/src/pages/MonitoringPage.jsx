@@ -534,7 +534,7 @@ function ExecutiveSummary({
       ctas: topAlert
         ? [
             { label: 'Comprendre', action: () => onInsight(topAlert) },
-            { label: 'Créer action', action: () => onCreateAction(topAlert) },
+            { label: 'Créer une action', action: () => onCreateAction(topAlert) },
           ]
         : [],
       expertDetail: topAlert
@@ -554,7 +554,7 @@ function ExecutiveSummary({
         totalWasteEur > 0
           ? [
               { label: 'Explorer', action: onOpenExplorer },
-              { label: 'Créer action', action: () => onCreateAction(wasteAlerts[0]) },
+              { label: 'Créer une action', action: () => onCreateAction(wasteAlerts[0]) },
             ]
           : [],
       expertDetail: wasteAlerts.length > 0
@@ -586,7 +586,7 @@ function ExecutiveSummary({
         (emissions?.off_hours_co2e_kg || 0) > 0
           ? [
               {
-                label: 'Créer action',
+                label: 'Créer une action',
                 action: () =>
                   onCreateAction({ alert_type: 'CO2E_REDUCTION', estimated_impact_eur: 0 }),
               },
@@ -615,7 +615,7 @@ function ExecutiveSummary({
         ...(offHoursEst.eur > 0
           ? [
               {
-                label: 'Créer action',
+                label: 'Créer une action',
                 action: () =>
                   onCreateAction({
                     alert_type: 'TARIF_HEURES_SOLAIRES',
@@ -1260,7 +1260,7 @@ function OffHoursDrawer({
                 }
               >
                 <Zap size={14} />
-                Créer action ({estimate.label})
+                Créer une action ({estimate.label})
               </Button>
             )}
           </div>

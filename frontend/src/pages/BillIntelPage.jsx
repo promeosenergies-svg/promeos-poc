@@ -102,10 +102,10 @@ const SEVERITY_LABELS = {
 };
 
 const INSIGHT_STATUS_COLORS = {
-  open: 'bg-yellow-100 text-yellow-800',
-  ack: 'bg-blue-100 text-blue-800',
-  resolved: 'bg-green-100 text-green-800',
-  false_positive: 'bg-gray-100 text-gray-500',
+  open: 'bg-yellow-100 text-yellow-700',
+  ack: 'bg-blue-100 text-blue-700',
+  resolved: 'bg-green-100 text-green-700',
+  false_positive: 'bg-gray-100 text-gray-700',
 };
 
 const INSIGHT_STATUS_LABELS = {
@@ -862,9 +862,9 @@ export default function BillIntelPage() {
                         onClick={() => handleOpenCreateAction(insight)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
                           text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors whitespace-nowrap"
-                        title="Créer action"
+                        title="Créer une action"
                       >
-                        Créer action
+                        Créer une action
                       </button>
                     )}
                     <button

@@ -1256,7 +1256,7 @@ export default function PurchasePage() {
                                 }
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
                               >
-                                <Plus size={12} /> Créer action
+                                <Plus size={12} /> Créer une action
                               </button>
                               <button
                                 data-testid="cta-tester-tarif-solaire"
@@ -1326,7 +1326,7 @@ export default function PurchasePage() {
                             }}
                             className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
                           >
-                            <Plus size={14} /> Créer action
+                            <Plus size={14} /> Créer une action
                           </button>
                         )}
                       </div>
@@ -1355,7 +1355,7 @@ export default function PurchasePage() {
                       })}
                       className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
                     >
-                      <Plus size={14} /> Créer action
+                      <Plus size={14} /> Créer une action
                     </button>
                     <button
                       data-testid="cta-voir-actions-purchase"
@@ -1623,7 +1623,7 @@ export default function PurchasePage() {
                                         <FileSearch size={12} />
                                       </button>
                                       <button
-                                        aria-label="Créer action"
+                                        aria-label="Créer une action"
                                         onClick={() =>
                                           navigate(
                                             toActionNew({

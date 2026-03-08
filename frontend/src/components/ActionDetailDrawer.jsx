@@ -88,7 +88,7 @@ const STATUS_PILL = {
   in_progress: 'bg-amber-100 text-amber-700',
   done: 'bg-green-100 text-green-700',
   blocked: 'bg-blue-100 text-blue-700',
-  false_positive: 'bg-red-100 text-red-600',
+  false_positive: 'bg-red-100 text-red-700',
 };
 
 const STATUS_WORKFLOW = [

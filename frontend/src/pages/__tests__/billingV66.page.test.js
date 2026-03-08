@@ -59,8 +59,8 @@ describe('B. BillIntelPage.jsx — PDF upload + action CTA', () => {
     expect(code).toMatch(/handlePdfImport/);
   });
 
-  it('has "Créer action" CTA in insight rows', () => {
-    expect(code).toMatch(/Cr.*er action/);
+  it('has "Créer une action" CTA in insight rows', () => {
+    expect(code).toMatch(/Cr.*er une action/);
   });
 
   it('has actionMap state for tracking created actions (V68: renamed from createdActions)', () => {

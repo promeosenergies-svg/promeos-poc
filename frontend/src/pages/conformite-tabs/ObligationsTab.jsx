@@ -660,7 +660,7 @@ function ObligationCard({
 
             {obligation.statut !== 'conforme' && (
               <Button onClick={() => onCreateAction(obligation)} size="sm">
-                <Plus size={14} /> Créer action conformité
+                <Plus size={14} /> Créer une action
               </Button>
             )}
           </div>

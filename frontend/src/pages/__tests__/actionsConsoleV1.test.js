@@ -159,8 +159,8 @@ describe('C · ActionsPage required constructs', () => {
     expect(code).toMatch(/[Rr][eé]initialiser/);
   });
 
-  it('has "Creer action" CTA', () => {
-    expect(code).toMatch(/Cr[eé]er action/);
+  it('has "Créer une action" CTA', () => {
+    expect(code).toMatch(/Cr[eé]er une action/);
   });
 
   it('has Kanban view', () => {
@@ -252,9 +252,9 @@ describe('E · CTA "Creer action" in source pages', () => {
   CTA_PAGES.forEach(([...pathParts]) => {
     const fileName = pathParts[pathParts.length - 1];
 
-    it(`${fileName}: has "Creer action" CTA text`, () => {
+    it(`${fileName}: has "Creer une action" CTA text`, () => {
       const code = readSrc(...pathParts);
-      expect(code).toMatch(/Cr[eé]er action/);
+      expect(code).toMatch(/Cr[eé]er une action/);
     });
   });
 });

@@ -983,7 +983,7 @@ export default function ConformitePage() {
             {recomputing ? 'Évaluation...' : 'Réévaluer'}
           </Button>
           <Button onClick={() => openActionDrawer({})}>
-            <Plus size={16} /> Créer action conformité
+            <Plus size={16} /> Créer une action
           </Button>
         </>
       }

@@ -486,7 +486,7 @@ const Cockpit = () => {
               })}
               data-testid="cta-cockpit-create-action"
               >
-                <Plus size={14} /> Créer action
+                <Plus size={14} /> Créer une action
               </Button>
               <Button size="sm" onClick={() => navigate(toActionsList())}>
                 Plan d'action <ArrowRight size={14} />
@@ -514,7 +514,7 @@ const Cockpit = () => {
                 </div>
                 {isExpert && (
                   <p className="text-[10px] text-gray-400 mt-1 font-mono">
-                    Source : compliance_engine v2 · Confiance : moyenne
+                    Source : Moteur de conformité v2 · Confiance : moyenne
                   </p>
                 )}
               </div>
@@ -534,7 +534,7 @@ const Cockpit = () => {
                 </p>
                 {isExpert && (
                   <p className="text-[10px] text-gray-400 mt-1 font-mono">
-                    Source : compliance_engine v2 · Confiance : moyenne
+                    Source : Moteur de conformité v2 · Confiance : moyenne
                   </p>
                 )}
               </div>

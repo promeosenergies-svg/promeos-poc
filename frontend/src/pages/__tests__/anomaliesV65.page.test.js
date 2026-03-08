@@ -70,7 +70,7 @@ describe('B. SiteAnomalyPanel.jsx — enriched drawer panel', () => {
   });
 
   it('has "Créer action" CTA', () => {
-    expect(code).toMatch(/Cr.*er action/);
+    expect(code).toMatch(/Cr.*er une action/);
   });
 
   it('sorts by priority_score', () => {
@@ -138,7 +138,7 @@ describe('D. AnomaliesPage.jsx — cross-site action center', () => {
   });
 
   it('has "Créer action" CTA', () => {
-    expect(code).toMatch(/Cr.*er action/);
+    expect(code).toMatch(/Cr.*er une action/);
   });
 
   it('uses Promise.all for bulk fetch', () => {

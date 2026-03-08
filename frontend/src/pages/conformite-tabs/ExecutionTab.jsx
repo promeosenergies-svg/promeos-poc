@@ -188,7 +188,7 @@ export default function ExecutionTab({
         </div>
         {actionableFindings.length > 0 && (
           <Button variant="secondary" size="sm" onClick={() => openActionDrawer({})}>
-            <Plus size={14} /> Nouvelle action
+            <Plus size={14} /> Créer une action
           </Button>
         )}
       </div>

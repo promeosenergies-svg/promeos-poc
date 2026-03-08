@@ -113,7 +113,7 @@ export default function NotificationsPage() {
     setSyncing(true);
     try {
       const r = await syncNotifications();
-      toast(`Sync : ${r.created} creees, ${r.updated} maj`, 'success');
+      toast(`Synchronisation : ${r.created} créées, ${r.updated} mises à jour`, 'success');
       await load();
     } catch (e) {
       toast('Erreur synchronisation', 'error');
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
       setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
       if (drawerEvent?.id === id) setDrawerEvent((prev) => ({ ...prev, status }));
     } catch {
-      toast('Erreur mise a jour', 'error');
+      toast('Erreur lors de la mise à jour', 'error');
     }
   };
 
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
     setEvents((prev) => prev.map((e) => (ids.includes(e.id) ? { ...e, status } : e)));
     setSelected(new Set());
     toast(
-      `${ids.length} alerte(s) ${status === 'dismissed' ? 'ignoree(s)' : 'marquee(s) lue(s)'}`,
+      `${ids.length} alerte(s) ${status === 'dismissed' ? 'ignorée(s)' : 'marquée(s) lue(s)'}`,
       'success'
     );
   };

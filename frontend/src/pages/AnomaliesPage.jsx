@@ -524,7 +524,7 @@ export default function AnomaliesPage() {
                               }
                               className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
                             >
-                              {isLinked ? '+ Action' : 'Créer action'}
+                              {isLinked ? '+ Action' : 'Créer une action'}
                             </button>
                           </Tooltip>
                         )}

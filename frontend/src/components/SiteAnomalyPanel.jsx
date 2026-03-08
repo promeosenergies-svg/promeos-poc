@@ -299,7 +299,7 @@ export default function SiteAnomalyPanel({ siteId, orgId: _orgId }) {
                         }
                         className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline transition"
                       >
-                        Créer action
+                        Créer une action
                       </button>
                     </div>
                   </div>

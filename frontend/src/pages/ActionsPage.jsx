@@ -296,7 +296,7 @@ function KanbanBoard({
               );
             })}
             {columnActions[col].length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-8">Aucune action</p>
+              <p className="text-xs text-gray-400 text-center py-6 italic">Aucune action dans cette colonne</p>
             )}
           </div>
         </div>
@@ -489,7 +489,7 @@ function WeekView({ actions, onCardClick }) {
             <span className="text-xs text-gray-400">{items.length}</span>
           </div>
           {items.length === 0 ? (
-            <p className="text-xs text-gray-400 py-3 pl-5">Aucune action</p>
+            <p className="text-xs text-gray-400 py-3 pl-5 italic">Aucune action dans ce groupe</p>
           ) : (
             <div className="space-y-1.5">
               {items.map((a) => {
@@ -939,7 +939,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
         icon={ListChecks}
         title="Aucune action"
         text="Synchronisez vos données ou créez votre première action pour commencer."
-        ctaLabel="Créer action"
+        ctaLabel="Créer une action"
         onCta={() => openActionDrawer({}, { onSave: handleSaveAction })}
       />
     );
@@ -1400,7 +1400,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
             <ArrowUpDown size={14} /> Statut
           </Button>
           <Button size="sm" variant="secondary" onClick={handleBulkCreate}>
-            <Plus size={14} /> Créer action
+            <Plus size={14} /> Créer une action
           </Button>
           <Button size="sm" variant="secondary" onClick={exportSelected}>
             <Download size={14} /> Exporter
@@ -1501,7 +1501,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
             <Printer size={16} /> Exporter CSV
           </Button>
           <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}>
-            <Plus size={16} /> Créer action
+            <Plus size={16} /> Créer une action
           </Button>
         </>
       }
