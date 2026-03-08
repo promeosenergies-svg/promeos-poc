@@ -24,6 +24,7 @@ import { PageShell, Tooltip } from '../ui';
 import { toConsoExplorer } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { fmtPct, fmtNum } from '../utils/format';
 import {
   getMeters,
@@ -322,7 +323,8 @@ export function ImportWizard() {
               <CheckCircle size={18} /> Import réussi
             </div>
             <p>
-              <strong>Lignes importees:</strong> {importResult.rows_imported?.toLocaleString('fr-FR')}
+              <strong>Lignes importees:</strong>{' '}
+              {importResult.rows_imported?.toLocaleString('fr-FR')}
             </p>
             {importResult.rows_skipped > 0 && (
               <p>
@@ -865,6 +867,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
 // ---- KB Admin Panel ----
 export function KBAdminPanel() {
   const { toast } = useToast();
+  const { isExpert } = useExpertMode();
   const [stats, setStats] = useState(null);
   const [archetypes, setArchetypes] = useState([]);
   const [rules, setRules] = useState([]);
@@ -974,14 +977,16 @@ export function KBAdminPanel() {
             recommandations). Seedez la demo pour demarrer ou rechargez vos propres fichiers YAML.
           </p>
           <div className="flex items-center justify-center gap-3 mb-6">
-            <button
-              onClick={handleSeedDemo}
-              disabled={seeding}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition"
-            >
-              <Database size={16} className={seeding ? 'animate-spin' : ''} />
-              {seeding ? 'Seed en cours...' : 'Seed demo KB (4 archetypes)'}
-            </button>
+            {isExpert && (
+              <button
+                onClick={handleSeedDemo}
+                disabled={seeding}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition"
+              >
+                <Database size={16} className={seeding ? 'animate-spin' : ''} />
+                {seeding ? 'Seed en cours...' : 'Seed demo KB (4 archetypes)'}
+              </button>
+            )}
             <button
               onClick={handleReload}
               disabled={loading}

@@ -34,6 +34,7 @@ import {
 import { getPatrimoinePortfolioSummary, seedDemoPack, clearApiCache } from '../services/api';
 import { fmtEur } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
 
@@ -148,6 +149,7 @@ function HealthBar({ sites_health, sites_count }) {
 export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null }) {
   const navigate = useNavigate();
   const { applyDemoScope } = useScope();
+  const { isExpert } = useExpertMode();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -264,21 +266,23 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
             Aucun site chargé — risque global : <strong className="text-gray-700">0 €</strong>
           </span>
         </div>
-        <button
-          onClick={handleSeedHelios}
-          disabled={seeding}
-          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition disabled:opacity-50"
-        >
-          {seeding ? (
-            <>
-              <Loader2 size={12} className="animate-spin" /> Chargement...
-            </>
-          ) : (
-            <>
-              <Upload size={12} /> Charger la démo
-            </>
-          )}
-        </button>
+        {isExpert && (
+          <button
+            onClick={handleSeedHelios}
+            disabled={seeding}
+            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition disabled:opacity-50"
+          >
+            {seeding ? (
+              <>
+                <Loader2 size={12} className="animate-spin" /> Chargement...
+              </>
+            ) : (
+              <>
+                <Upload size={12} /> Charger la démo
+              </>
+            )}
+          </button>
+        )}
       </div>
     );
   }

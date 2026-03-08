@@ -1441,25 +1441,27 @@ export default function PurchasePage() {
               >
                 Charger résultats existants
               </button>
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-xs text-gray-400 uppercase font-medium">Datasets demo</span>
-                <button
-                  onClick={() => handleSeedWow('happy')}
-                  disabled={!!seedingWow}
-                  className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 transition disabled:opacity-50"
-                >
-                  <Database size={13} />
-                  {seedingWow === 'happy' ? 'Chargement...' : '15 sites (happy)'}
-                </button>
-                <button
-                  onClick={() => handleSeedWow('dirty')}
-                  disabled={!!seedingWow}
-                  className="flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-orange-100 transition disabled:opacity-50"
-                >
-                  <AlertOctagon size={13} />
-                  {seedingWow === 'dirty' ? 'Chargement...' : '15 sites (dirty)'}
-                </button>
-              </div>
+              {isExpert && (
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase font-medium">Datasets demo</span>
+                  <button
+                    onClick={() => handleSeedWow('happy')}
+                    disabled={!!seedingWow}
+                    className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 transition disabled:opacity-50"
+                  >
+                    <Database size={13} />
+                    {seedingWow === 'happy' ? 'Chargement...' : '15 sites (happy)'}
+                  </button>
+                  <button
+                    onClick={() => handleSeedWow('dirty')}
+                    disabled={!!seedingWow}
+                    className="flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-orange-100 transition disabled:opacity-50"
+                  >
+                    <AlertOctagon size={13} />
+                    {seedingWow === 'dirty' ? 'Chargement...' : '15 sites (dirty)'}
+                  </button>
+                </div>
+              )}
             </div>
             {seedResult && (
               <div

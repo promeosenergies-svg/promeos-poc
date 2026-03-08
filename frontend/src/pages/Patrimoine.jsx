@@ -252,6 +252,8 @@ export default function Patrimoine() {
     }
   }, [location.state, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const HEATMAP_MAX_SITES = 10;
+
   // V63 — Enrichissement heatmap : anomalies par site (Promise.all, max 10 sites, guard stale)
   useEffect(() => {
     if (scopedSites.length === 0) {
@@ -260,7 +262,7 @@ export default function Patrimoine() {
       setHmError(null);
       return;
     }
-    const sitesToFetch = scopedSites.slice(0, 10);
+    const sitesToFetch = scopedSites.slice(0, HEATMAP_MAX_SITES);
     setHmLoading(true);
     setHmError(null);
 
@@ -578,6 +580,12 @@ export default function Patrimoine() {
             error={hmError}
             topSlot={<PatrimoineRiskDistributionBar sites={filtered} />}
           />
+          {scopedSites.length > HEATMAP_MAX_SITES && (
+            <p className="text-[11px] text-gray-400 text-center -mt-2">
+              Heatmap limitée à {HEATMAP_MAX_SITES} sites sur {scopedSites.length} — réduisez le
+              scope pour voir tous les sites.
+            </p>
+          )}
 
           {/* ── KPI row (compact) ── */}
           <div className="grid grid-cols-4 gap-3">

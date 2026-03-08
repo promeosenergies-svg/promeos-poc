@@ -985,9 +985,15 @@ export default function ConformitePage() {
           }
           actions={
             error.hint === 'run_reset_db' ? (
-              <Button variant="secondary" onClick={handleResetDb}>
-                <RotateCcw size={14} /> Reset DB (dev)
-              </Button>
+              isExpert ? (
+                <Button variant="secondary" onClick={handleResetDb}>
+                  <RotateCcw size={14} /> Reset DB (dev)
+                </Button>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Contactez l'administrateur pour résoudre ce problème.
+                </p>
+              )
             ) : null
           }
         />

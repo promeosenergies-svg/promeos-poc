@@ -12,13 +12,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_GAZ_EUR_KWH
+
 # ── Defaults B2B France ───────────────────────────────────────────────────────
 
-#: Prix moyen électricité (€/MWh) — hypothèse prudente B2B 2024
-PRIX_ELEC_EUR_MWH_DEFAULT: float = 120.0
+#: Prix moyen électricité (€/MWh) — dérivé du référentiel centralisé (default_prices.py)
+PRIX_ELEC_EUR_MWH_DEFAULT: float = DEFAULT_PRICE_ELEC_EUR_KWH * 1000.0
 
-#: Prix moyen gaz naturel (€/MWh) — hypothèse prudente B2B 2024
-PRIX_GAZ_EUR_MWH_DEFAULT: float = 55.0
+#: Prix moyen gaz naturel (€/MWh) — dérivé du référentiel centralisé (default_prices.py)
+PRIX_GAZ_EUR_MWH_DEFAULT: float = DEFAULT_PRICE_GAZ_EUR_KWH * 1000.0
 
 #: Consommation annuelle fallback global (kWh/an) — site B2B moyen
 CONSO_FALLBACK_GLOBAL_KWH_AN: float = 300_000.0

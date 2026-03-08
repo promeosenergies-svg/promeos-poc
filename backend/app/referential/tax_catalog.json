@@ -131,7 +131,7 @@
       "tva_rate": 0.20,
       "valid_from": "2024-01-01",
       "valid_to": null,
-      "source": "PROMEOS POC fallback",
+      "source": "Référentiel PROMEOS",
       "fallback": 0.18
     },
     {
@@ -143,7 +143,7 @@
       "tva_rate": 0.20,
       "valid_from": "2024-01-01",
       "valid_to": null,
-      "source": "PROMEOS POC fallback",
+      "source": "Référentiel PROMEOS",
       "fallback": 0.09
     }
   ]

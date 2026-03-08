@@ -496,8 +496,14 @@ function App() {
                     />
 
                     {/* URL aliases (redirect to canonical routes) */}
-                    <Route path="/plan-action" element={<Navigate to="/anomalies?tab=actions" replace />} />
-                    <Route path="/plan-actions" element={<Navigate to="/anomalies?tab=actions" replace />} />
+                    <Route
+                      path="/plan-action"
+                      element={<Navigate to="/anomalies?tab=actions" replace />}
+                    />
+                    <Route
+                      path="/plan-actions"
+                      element={<Navigate to="/anomalies?tab=actions" replace />}
+                    />
                     <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
                     <Route path="/facturation" element={<Navigate to="/billing" replace />} />
                     <Route
@@ -532,6 +538,10 @@ function App() {
                       element={<Navigate to="/consommations/explorer" replace />}
                     />
                     <Route path="/donnees" element={<Navigate to="/activation" replace />} />
+                    <Route
+                      path="/contracts-radar"
+                      element={<Navigate to="/renouvellements" replace />}
+                    />
 
                     {/* Catch-all */}
                     <Route

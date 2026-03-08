@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from models import Site, Portefeuille, EntiteJuridique
 from services.scope_utils import resolve_org_id
 from services.consumption_unified_service import (
     ConsumptionSource,
@@ -21,6 +22,20 @@ from services.consumption_unified_service import (
 )
 
 router = APIRouter(prefix="/api/consumption-unified", tags=["Consumption Unified"])
+
+
+def _check_site_belongs_to_org(db: Session, site_id: int, org_id: int) -> Site:
+    """Return site if it belongs to org, or raise 404."""
+    site = (
+        db.query(Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(Site.id == site_id, EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
+    if not site:
+        raise HTTPException(status_code=404, detail="Site non trouvé ou accès refusé")
+    return site
 
 
 def _default_period(start: Optional[date], end: Optional[date]):
@@ -46,7 +61,8 @@ def site_consumption_summary(
     GET /api/consumption-unified/site/{site_id}
     Consommation unifiee d'un site sur une periode.
     """
-    resolve_org_id(request, auth, db)
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_belongs_to_org(db, site_id, org_id)
     start, end = _default_period(start, end)
 
     try:
@@ -95,7 +111,8 @@ def reconcile_site(
     GET /api/consumption-unified/reconcile/{site_id}
     Compare metered vs billed et retourne l'ecart.
     """
-    resolve_org_id(request, auth, db)
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_belongs_to_org(db, site_id, org_id)
     start, end = _default_period(start, end)
 
     return reconcile_metered_billed(db, site_id, start, end)

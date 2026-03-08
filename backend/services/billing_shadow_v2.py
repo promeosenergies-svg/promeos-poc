@@ -15,10 +15,13 @@ logger = logging.getLogger(__name__)
 # Values loaded from tarif_loader (YAML referentiel) with hardcoded last resort
 try:
     from config.tarif_loader import (
-        get_turpe_moyen_kwh as _turpe, get_atrd_kwh as _atrd,
-        get_atrt_kwh as _atrt, get_accise_kwh as _accise,
+        get_turpe_moyen_kwh as _turpe,
+        get_atrd_kwh as _atrd,
+        get_atrt_kwh as _atrt,
+        get_accise_kwh as _accise,
         get_tva_normale as _tva,
     )
+
     TURPE_EUR_KWH_ELEC = _turpe("C5_BT")
     ATRD_EUR_KWH_GAZ = _atrd()
     ATRT_EUR_KWH_GAZ = _atrt()
@@ -33,16 +36,22 @@ except Exception:
     TICGN_EUR_KWH_GAZ = 0.01637
     TVA_RATE_20 = 0.20
 
+
 # ── Fallback from YAML referentiel (tarifs_reglementaires.yaml) ───────
 def _load_fallback() -> dict:
     """Load fallback rates from YAML referentiel, with hardcoded last resort."""
     try:
         from config.tarif_loader import (
-            get_turpe_moyen_kwh, get_turpe_gestion_mois,
-            get_atrd_kwh, get_atrt_kwh,
-            get_accise_kwh, get_tva_normale, get_tva_reduite,
+            get_turpe_moyen_kwh,
+            get_turpe_gestion_mois,
+            get_atrd_kwh,
+            get_atrt_kwh,
+            get_accise_kwh,
+            get_tva_normale,
+            get_tva_reduite,
             get_prix_reference,
         )
+
         return {
             "TURPE_ENERGIE_C5_BT": get_turpe_moyen_kwh("C5_BT"),
             "TURPE_GESTION_C5_BT": get_turpe_gestion_mois("C5_BT"),
@@ -68,6 +77,7 @@ def _load_fallback() -> dict:
             "DEFAULT_PRICE_ELEC": 0.068,
             "DEFAULT_PRICE_GAZ": 0.045,
         }
+
 
 _FALLBACK = _load_fallback()
 
@@ -120,9 +130,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         if has_contract_price
         else _safe_rate("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ")
     )
-    price_source = (
-        f"contract:{contract.id}" if has_contract_price else "catalog_default"
-    )
+    price_source = f"contract:{contract.id}" if has_contract_price else "catalog_default"
 
     # ── Prorata factor (days in period / 30) ─────────────────────────
     p_start = getattr(invoice, "period_start", None)
@@ -144,7 +152,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         accise = _safe_rate("ACCISE_ELEC")
     else:
         turpe_energie = _safe_rate("ATRD_GAZ") + _safe_rate("ATRT_GAZ")
-        turpe_gestion = 0.0  # Simplified for gas POC
+        turpe_gestion = 0.0  # Simplifié pour le gaz
         accise = _safe_rate("ACCISE_GAZ")
 
     # ── Expected HT components ───────────────────────────────────────
@@ -263,7 +271,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         cid = getattr(contract, "id", "?")
         assumptions.append(f"Prix fourniture : contrat #{cid}")
     else:
-        assumptions.append("Prix fourniture : catalogue POC (pas de contrat)")
+        assumptions.append("Prix fourniture : référentiel PROMEOS (pas de contrat)")
     if is_elec:
         assumptions.append("Réseau : TURPE C5 BT (profil simplifié)")
     else:
@@ -403,9 +411,8 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     if contract is None and invoice.contract_id:
         try:
             from models.billing_models import EnergyContract
-            contract = db.query(EnergyContract).filter(
-                EnergyContract.id == invoice.contract_id
-            ).first()
+
+            contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
         except Exception:
             pass
 
@@ -413,6 +420,7 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     if site is None and invoice.site_id:
         try:
             from models.energy_models import Site
+
             site = db.query(Site).filter(Site.id == invoice.site_id).first()
         except Exception:
             pass
@@ -420,9 +428,8 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     # Lignes de la facture
     try:
         from models.billing_models import EnergyInvoiceLine
-        lines = db.query(EnergyInvoiceLine).filter(
-            EnergyInvoiceLine.invoice_id == invoice.id
-        ).all()
+
+        lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == invoice.id).all()
     except Exception:
         lines = []
 
@@ -472,28 +479,39 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
 
     components = [
         _build_breakdown_component(
-            "fourniture", "Fourniture d'énergie",
-            v2["expected_fourniture_ht"], fourniture_invoice,
+            "fourniture",
+            "Fourniture d'énergie",
+            v2["expected_fourniture_ht"],
+            fourniture_invoice,
             f"{kwh:.0f} kWh x {price_ref:.4f} EUR/kWh",
             {"kwh": kwh, "price_kwh": price_ref, "source": v2["price_source"]},
         ),
         _build_breakdown_component(
-            "turpe", "Acheminement (TURPE)",
-            v2["expected_reseau_ht"], turpe_invoice,
+            "turpe",
+            "Acheminement (TURPE)",
+            v2["expected_reseau_ht"],
+            turpe_invoice,
             f"Segment {segment} — {v2['components'][1]['unit_rate']:.4f} EUR/kWh",
             {"segment": segment, "rate_kwh": v2["components"][1]["unit_rate"]},
         ),
         _build_breakdown_component(
-            "taxes", f"Taxes ({taxe_label} + CTA)",
-            round(taxes_expected, 2), taxes_invoice,
+            "taxes",
+            f"Taxes ({taxe_label} + CTA)",
+            round(taxes_expected, 2),
+            taxes_invoice,
             f"{taxe_label}: {kwh:.0f} kWh x {accise_rate:.4f} EUR/kWh + CTA: {cta_eur:.2f} EUR",
             {"taxe_energy": round(taxes_energy, 2), "cta": round(cta_eur, 2), "cta_taux_pct": round(cta_taux * 100, 2)},
         ),
         _build_breakdown_component(
-            "tva", "TVA",
-            exp_tva, tva_invoice,
+            "tva",
+            "TVA",
+            exp_tva,
+            tva_invoice,
             "TVA 5,5% sur abonnement/CTA + TVA 20% sur consommation",
-            {"tva_reduit": round(v2["components"][3]["tva"], 2), "tva_normal": round(exp_tva - v2["components"][3]["tva"], 2)},
+            {
+                "tva_reduit": round(v2["components"][3]["tva"], 2),
+                "tva_normal": round(exp_tva - v2["components"][3]["tva"], 2),
+            },
         ),
     ]
 
@@ -511,7 +529,9 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         "total_invoice_ht": round(total_invoice_ht, 2),
         "total_invoice_ttc": round(act_ttc, 2) if act_ttc else None,
         "total_gap_eur": round(total_invoice_ht - total_expected_ht, 2) if total_expected_ht else 0,
-        "total_gap_pct": round((total_invoice_ht - total_expected_ht) / total_expected_ht * 100, 2) if total_expected_ht > 0 else 0,
+        "total_gap_pct": round((total_invoice_ht - total_expected_ht) / total_expected_ht * 100, 2)
+        if total_expected_ht > 0
+        else 0,
         "components": components,
         "confidence": v2["diagnostics"]["confidence"],
         "tarif_version": tarif_version,

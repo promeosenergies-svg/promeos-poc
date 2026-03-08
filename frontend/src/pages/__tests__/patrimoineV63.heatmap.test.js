@@ -264,8 +264,9 @@ describe('Patrimoine.jsx V63 — intégration heatmap', () => {
     expect(PATRIMOINE_JSX).toMatch(/scopedSites\.length\s*===\s*0/);
   });
 
-  test('guard 10 sites max (slice 0,10)', () => {
-    expect(PATRIMOINE_JSX).toMatch(/slice\s*\(\s*0\s*,\s*10\s*\)/);
+  test('guard 10 sites max (HEATMAP_MAX_SITES)', () => {
+    expect(PATRIMOINE_JSX).toMatch(/HEATMAP_MAX_SITES\s*=\s*10/);
+    expect(PATRIMOINE_JSX).toMatch(/slice\s*\(\s*0\s*,\s*HEATMAP_MAX_SITES\s*\)/);
   });
 
   test('<PatrimoineHeatmap> rendu dans JSX', () => {

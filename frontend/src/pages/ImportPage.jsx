@@ -29,6 +29,7 @@ import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { fmtNum } from '../utils/format';
 
 function ImportPage() {
@@ -40,6 +41,7 @@ function ImportPage() {
   const fileRef = useRef(null);
   const { toast } = useToast();
   const { clearScope, applyDemoScope, org, scope, scopeLabel } = useScope();
+  const { isExpert } = useExpertMode();
   const navigate = useNavigate();
 
   // Demo Packs state — fetched from backend (no hardcoded IDs)
@@ -272,199 +274,201 @@ function ImportPage() {
           pour importer vos sites.
         </span>
       </div>
-      {/* Demo Packs */}
-      <Card className="border-indigo-200 bg-indigo-50/30">
-        <CardBody>
-          <div className="flex items-center gap-2 mb-3">
-            <Package size={18} className="text-indigo-600" />
-            <h2 className="font-semibold text-indigo-900">Demo Packs</h2>
-            {totalRows > 0 && (
-              <Badge status="info">{totalRows.toLocaleString('fr-FR')} lignes</Badge>
-            )}
-          </div>
-          <p className="text-sm text-indigo-700 mb-4">
-            Charger un jeu de données complet : sites, compteurs, relevés 90j, météo, conformité,
-            monitoring, factures, actions, achat.
-          </p>
-
-          {statusError && (
-            <p className="text-xs text-amber-600 mb-2">
-              Statut démo indisponible — reset manuel possible.
-            </p>
-          )}
-
-          {/* Status row — always visible for clarity */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mb-3 text-xs">
-            <p className="text-indigo-700">
-              <span className="text-indigo-400 font-semibold">Contexte actif :</span>{' '}
-              {org ? (
-                <strong>{org.nom}</strong>
-              ) : (
-                <span className="text-gray-400 italic">Aucun</span>
+      {/* Demo Packs — expert mode only */}
+      {isExpert && (
+        <Card className="border-indigo-200 bg-indigo-50/30">
+          <CardBody>
+            <div className="flex items-center gap-2 mb-3">
+              <Package size={18} className="text-indigo-600" />
+              <h2 className="font-semibold text-indigo-900">Demo Packs</h2>
+              {totalRows > 0 && (
+                <Badge status="info">{totalRows.toLocaleString('fr-FR')} lignes</Badge>
               )}
+            </div>
+            <p className="text-sm text-indigo-700 mb-4">
+              Charger un jeu de données complet : sites, compteurs, relevés 90j, météo, conformité,
+              monitoring, factures, actions, achat.
             </p>
-            <p className="text-indigo-700">
-              <span className="text-indigo-400 font-semibold">Portée :</span>{' '}
-              <strong>{scopeLabel}</strong>
-            </p>
-            <p className="text-indigo-700">
-              <span className="text-indigo-400 font-semibold">Pack chargé :</span>{' '}
-              {packStatus?.org_nom ? (
-                <strong>{packStatus.org_nom}</strong>
-              ) : (
-                <span className="text-gray-400 italic">Aucun</span>
-              )}
-            </p>
-            <p className="text-indigo-700">
-              <span className="text-indigo-400 font-semibold">Pack à charger :</span>{' '}
-              <strong>{packDef?.label || selectedPack}</strong>
-            </p>
-            {syncInProgress && (
-              <p className="text-amber-600 flex items-center gap-1">
-                <Loader2 size={12} className="animate-spin" />
-                Synchronisation du contexte…
+
+            {statusError && (
+              <p className="text-xs text-amber-600 mb-2">
+                Statut démo indisponible — reset manuel possible.
               </p>
             )}
-          </div>
 
-          {/* Pack selector — from backend registry */}
-          <div className="flex flex-wrap gap-3 mb-4">
-            {demoPacks.map((p) => {
-              const isLoaded = packStatus?.pack === p.key;
-              const isSelected = selectedPack === p.key;
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => setSelectedPack(p.key)}
-                  className={`flex-1 min-w-[200px] p-3 rounded-lg border-2 text-left transition ${
-                    isSelected
-                      ? 'border-indigo-500 bg-white shadow-sm'
-                      : 'border-transparent bg-white/50 hover:border-indigo-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-800 text-sm">{p.label}</p>
-                    {isLoaded && <Badge status="success">Chargé</Badge>}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
-                </button>
-              );
-            })}
-          </div>
+            {/* Status row — always visible for clarity */}
+            <div className="flex flex-wrap gap-x-6 gap-y-1 mb-3 text-xs">
+              <p className="text-indigo-700">
+                <span className="text-indigo-400 font-semibold">Contexte actif :</span>{' '}
+                {org ? (
+                  <strong>{org.nom}</strong>
+                ) : (
+                  <span className="text-gray-400 italic">Aucun</span>
+                )}
+              </p>
+              <p className="text-indigo-700">
+                <span className="text-indigo-400 font-semibold">Portée :</span>{' '}
+                <strong>{scopeLabel}</strong>
+              </p>
+              <p className="text-indigo-700">
+                <span className="text-indigo-400 font-semibold">Pack chargé :</span>{' '}
+                {packStatus?.org_nom ? (
+                  <strong>{packStatus.org_nom}</strong>
+                ) : (
+                  <span className="text-gray-400 italic">Aucun</span>
+                )}
+              </p>
+              <p className="text-indigo-700">
+                <span className="text-indigo-400 font-semibold">Pack à charger :</span>{' '}
+                <strong>{packDef?.label || selectedPack}</strong>
+              </p>
+              {syncInProgress && (
+                <p className="text-amber-600 flex items-center gap-1">
+                  <Loader2 size={12} className="animate-spin" />
+                  Synchronisation du contexte…
+                </p>
+              )}
+            </div>
 
-          {/* Size selector + actions */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
-              {packDef &&
-                packDef.sizes.map((sz) => (
+            {/* Pack selector — from backend registry */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              {demoPacks.map((p) => {
+                const isLoaded = packStatus?.pack === p.key;
+                const isSelected = selectedPack === p.key;
+                return (
                   <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={`px-3 py-1.5 rounded-md text-sm transition ${
-                      selectedSize === sz
-                        ? 'bg-indigo-600 text-white font-medium'
-                        : 'text-gray-600 hover:bg-gray-50'
+                    key={p.key}
+                    onClick={() => setSelectedPack(p.key)}
+                    className={`flex-1 min-w-[200px] p-3 rounded-lg border-2 text-left transition ${
+                      isSelected
+                        ? 'border-indigo-500 bg-white shadow-sm'
+                        : 'border-transparent bg-white/50 hover:border-indigo-200'
                     }`}
                   >
-                    {sz}
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800 text-sm">{p.label}</p>
+                      {isLoaded && <Badge status="success">Chargé</Badge>}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
                   </button>
-                ))}
+                );
+              })}
             </div>
 
-            <Button
-              onClick={handleSeedPack}
-              disabled={packLoading || resetLoading || !selectedPack}
-            >
-              {packLoading ? (
-                <>
-                  <Loader2 size={14} className="mr-1.5 animate-spin" />
-                  Chargement...
-                </>
-              ) : (
-                <>
-                  <Database size={14} className="mr-1.5" />
-                  Charger la démo
-                </>
-              )}
-            </Button>
-
-            <Button
-              variant="secondary"
-              onClick={() => setShowResetModal(true)}
-              disabled={resetLoading || packLoading}
-            >
-              {resetLoading ? (
-                <>
-                  <Loader2 size={14} className="mr-1.5 animate-spin" />
-                  Reset...
-                </>
-              ) : (
-                <>
-                  <RotateCcw size={14} className="mr-1.5" />
-                  Reset
-                </>
-              )}
-            </Button>
-
-            <Button
-              variant="secondary"
-              onClick={handleReplay}
-              disabled={packLoading || resetLoading || !selectedPack}
-            >
-              <RefreshCw size={14} className="mr-1.5" />
-              Reset + relancer
-            </Button>
-          </div>
-
-          {/* Pack result */}
-          {packResult && packResult.status === 'ok' && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={16} className="text-green-600" />
-                <span className="font-medium text-green-800 text-sm">
-                  Pack {packResult.pack} ({packResult.size}) chargé en {packResult.elapsed_s}s
-                </span>
+            {/* Size selector + actions */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
+                {packDef &&
+                  packDef.sizes.map((sz) => (
+                    <button
+                      key={sz}
+                      onClick={() => setSelectedSize(sz)}
+                      className={`px-3 py-1.5 rounded-md text-sm transition ${
+                        selectedSize === sz
+                          ? 'bg-indigo-600 text-white font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">{packResult.sites_count}</p>
-                  <p className="text-gray-500">Sites</p>
-                </div>
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">
-                    {packResult.readings_count?.toLocaleString('fr-FR')}
-                  </p>
-                  <p className="text-gray-500">Relevés</p>
-                </div>
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">
-                    {packResult.monitoring?.alerts_count || 0}
-                  </p>
-                  <p className="text-gray-500">Alertes</p>
-                </div>
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">
-                    {packResult.billing?.invoices_count || 0}
-                  </p>
-                  <p className="text-gray-500">Factures</p>
-                </div>
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">
-                    {packResult.actions?.actions_count || 0}
-                  </p>
-                  <p className="text-gray-500">Actions</p>
-                </div>
-                <div className="bg-white rounded p-2 text-center">
-                  <p className="font-bold text-gray-800">
-                    {packResult.compliance?.findings_count || 0}
-                  </p>
-                  <p className="text-gray-500">Constats</p>
-                </div>
-              </div>
+
+              <Button
+                onClick={handleSeedPack}
+                disabled={packLoading || resetLoading || !selectedPack}
+              >
+                {packLoading ? (
+                  <>
+                    <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    Chargement...
+                  </>
+                ) : (
+                  <>
+                    <Database size={14} className="mr-1.5" />
+                    Charger la démo
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => setShowResetModal(true)}
+                disabled={resetLoading || packLoading}
+              >
+                {resetLoading ? (
+                  <>
+                    <Loader2 size={14} className="mr-1.5 animate-spin" />
+                    Reset...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={14} className="mr-1.5" />
+                    Reset
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={handleReplay}
+                disabled={packLoading || resetLoading || !selectedPack}
+              >
+                <RefreshCw size={14} className="mr-1.5" />
+                Reset + relancer
+              </Button>
             </div>
-          )}
-        </CardBody>
-      </Card>
+
+            {/* Pack result */}
+            {packResult && packResult.status === 'ok' && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle size={16} className="text-green-600" />
+                  <span className="font-medium text-green-800 text-sm">
+                    Pack {packResult.pack} ({packResult.size}) chargé en {packResult.elapsed_s}s
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">{packResult.sites_count}</p>
+                    <p className="text-gray-500">Sites</p>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">
+                      {packResult.readings_count?.toLocaleString('fr-FR')}
+                    </p>
+                    <p className="text-gray-500">Relevés</p>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">
+                      {packResult.monitoring?.alerts_count || 0}
+                    </p>
+                    <p className="text-gray-500">Alertes</p>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">
+                      {packResult.billing?.invoices_count || 0}
+                    </p>
+                    <p className="text-gray-500">Factures</p>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">
+                      {packResult.actions?.actions_count || 0}
+                    </p>
+                    <p className="text-gray-500">Actions</p>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <p className="font-bold text-gray-800">
+                      {packResult.compliance?.findings_count || 0}
+                    </p>
+                    <p className="text-gray-500">Constats</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Legacy demo seed removed in V55 — HELIOS is the only official pack */}
 

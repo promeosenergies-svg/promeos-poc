@@ -509,7 +509,7 @@ export default function BillIntelPage() {
               </Button>
             </Tooltip>
           )}
-          {!hasData && (
+          {!hasData && isExpert && (
             <Button onClick={handleSeedDemo} disabled={seeding}>
               <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo'}
             </Button>
@@ -774,9 +774,11 @@ export default function BillIntelPage() {
           onCta={() => navigate('/consommations/import')}
           actions={
             <div className="flex items-center gap-3">
-              <Button onClick={handleSeedDemo} disabled={seeding} variant="secondary">
-                <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo'}
-              </Button>
+              {isExpert && (
+                <Button onClick={handleSeedDemo} disabled={seeding} variant="secondary">
+                  <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo'}
+                </Button>
+              )}
               <Button type="button" variant="secondary" onClick={handleCsvClick}>
                 <Upload size={14} /> Importer CSV
               </Button>

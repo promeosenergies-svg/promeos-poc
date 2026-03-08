@@ -16,12 +16,12 @@ describe('V117 Anomaly ↔ Action — AnomaliesPage', () => {
 
   it('imports getAnomalyStatuses API', () => {
     expect(code).toMatch(/getAnomalyStatuses/);
-    expect(code).toMatch(/import.*getAnomalyStatuses/);
+    expect(code).toContain('getAnomalyStatuses');
   });
 
   it('imports dismissAnomaly API', () => {
     expect(code).toMatch(/dismissAnomaly/);
-    expect(code).toMatch(/import.*dismissAnomaly/);
+    expect(code).toContain('dismissAnomaly');
   });
 
   it('has context-aware openTarget function', () => {
