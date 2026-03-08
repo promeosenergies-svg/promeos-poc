@@ -28,6 +28,7 @@ import {
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import {
   Bell,
   RefreshCw,
@@ -38,6 +39,7 @@ import {
   Search,
   Clock,
   Database,
+  Plus,
 } from 'lucide-react';
 
 const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
@@ -66,6 +68,7 @@ const TRIAGE_TABS = [
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { openActionDrawer } = useActionDrawer();
   const { selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
@@ -592,6 +595,27 @@ export default function NotificationsPage() {
             )}
 
             <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+              <Button
+                size="sm"
+                variant="primary"
+                data-testid="cta-notif-create-action"
+                onClick={() => {
+                  setDrawerEvent(null);
+                  openActionDrawer({
+                    prefill: {
+                      titre: drawerEvent.title,
+                      type: SOURCE_LABELS[drawerEvent.source_type]?.toLowerCase() || 'autre',
+                      impact_eur: drawerEvent.estimated_impact_eur || undefined,
+                    },
+                    siteId: drawerEvent.site_id,
+                    sourceType: drawerEvent.source_type || 'manual',
+                    sourceId: drawerEvent.source_id || `notif:${drawerEvent.id}`,
+                    idempotencyKey: `notif:${drawerEvent.id}`,
+                  });
+                }}
+              >
+                <Plus size={14} /> Créer action
+              </Button>
               {drawerEvent.deeplink_path && (
                 <Button
                   size="sm"

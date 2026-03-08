@@ -13,9 +13,11 @@ import {
   TrendingDown,
   AlertTriangle,
   Zap,
+  Plus,
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { getNotificationsSummary, getComplianceTimeline, getMarketContext, getComplianceScoreTrend } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtEur } from '../utils/format';
@@ -88,6 +90,7 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
+  const { openActionDrawer } = useActionDrawer();
   const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
@@ -475,9 +478,20 @@ const Cockpit = () => {
                 )}
               </div>
             </div>
-            <Button size="sm" onClick={() => navigate(toActionsList())}>
-              Plan d'action <ArrowRight size={14} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="primary" onClick={() => openActionDrawer({
+                prefill: { titre: '', type: 'conformite' },
+                sourceType: 'compliance',
+                sourceId: 'cockpit:risk_panel',
+              })}
+              data-testid="cta-cockpit-create-action"
+              >
+                <Plus size={14} /> Créer action
+              </Button>
+              <Button size="sm" onClick={() => navigate(toActionsList())}>
+                Plan d'action <ArrowRight size={14} />
+              </Button>
+            </div>
           </div>
         </div>
       )}

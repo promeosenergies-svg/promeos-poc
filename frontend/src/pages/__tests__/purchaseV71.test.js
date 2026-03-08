@@ -96,8 +96,8 @@ describe('B · Actions CTAs', () => {
     expect(code).toContain('site_id: selectedSiteId');
   });
 
-  it('"Créer action" passes title with strategy label', () => {
-    expect(code).toContain('title: `Achat');
+  it('"Créer action" passes titre with strategy label', () => {
+    expect(code).toContain('titre: `Achat');
     expect(code).toContain('meta.label');
   });
 

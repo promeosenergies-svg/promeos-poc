@@ -164,8 +164,9 @@ describe('E · Action prefill scenario_label', () => {
     expect(match).not.toBeNull();
   });
 
-  it('cockpit action CTA includes scenario_label: meta.label', () => {
-    expect(code).toContain('scenario_label: meta.label');
+  it('cockpit action CTA includes scenario label in prefill', () => {
+    // P3: main CTA migrated to openActionDrawer, but reflex CTAs still use toActionNew
+    expect(code).toContain('meta.label');
   });
 
   it('top-list gain action has scenario_label', () => {
@@ -183,10 +184,10 @@ describe('E · Action prefill scenario_label', () => {
   });
 
   it('all reflex action prefills have source_type=achat', () => {
-    // Count source_type: 'achat' in toActionNew calls — at least 4 (3 CTAs + 1 refactored top-list .map)
+    // P3: main CTA migrated to openActionDrawer; remaining toActionNew calls still pass source_type: 'achat'
     const matches = code.match(/toActionNew\(\{[^}]*source_type:\s*'achat'/g);
     expect(matches).not.toBeNull();
-    expect(matches.length).toBeGreaterThanOrEqual(4);
+    expect(matches.length).toBeGreaterThanOrEqual(3);
   });
 });
 

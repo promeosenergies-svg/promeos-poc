@@ -19,6 +19,7 @@ import {
   Shield,
   ExternalLink,
   FileCheck,
+  Pencil,
 } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Button } from '../ui';
@@ -172,6 +173,8 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   const [closureJustification, setClosureJustification] = useState('');
   const [closeError, setCloseError] = useState(null);
   const [showCloseForm, setShowCloseForm] = useState(false);
+  const [editingOwner, setEditingOwner] = useState(false);
+  const [ownerDraft, setOwnerDraft] = useState('');
 
   // V50: Expected proofs + template generation
   const [expectedProofs, setExpectedProofs] = useState(null);
@@ -542,12 +545,51 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                     )}
                   </p>
                 </div>
-                <div>
+                <div data-testid="owner-field">
                   <p className="text-xs text-gray-500 mb-1">Responsable</p>
-                  <p className="text-sm flex items-center gap-1">
-                    <User size={14} />{' '}
-                    {d.owner || <span className="text-gray-400 italic">Non assigné</span>}
-                  </p>
+                  {editingOwner ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        data-testid="owner-input"
+                        type="text"
+                        value={ownerDraft}
+                        onChange={(e) => setOwnerDraft(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            await patchAction(actionId, { owner: ownerDraft.trim() });
+                            setDetail((prev) => ({ ...prev, owner: ownerDraft.trim() }));
+                            setEditingOwner(false);
+                            onUpdate?.();
+                          } else if (e.key === 'Escape') {
+                            setEditingOwner(false);
+                          }
+                        }}
+                        className="px-2 py-1 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
+                        placeholder="Nom du responsable"
+                        autoFocus
+                      />
+                      <button
+                        onClick={async () => {
+                          await patchAction(actionId, { owner: ownerDraft.trim() });
+                          setDetail((prev) => ({ ...prev, owner: ownerDraft.trim() }));
+                          setEditingOwner(false);
+                          refreshDetail();
+                        }}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <p
+                      className="text-sm flex items-center gap-1 cursor-pointer group hover:text-blue-600"
+                      onClick={() => { setOwnerDraft(d.owner || ''); setEditingOwner(true); }}
+                    >
+                      <User size={14} />{' '}
+                      {d.owner || <span className="text-gray-400 italic">Non assigné</span>}
+                      <Pencil size={12} className="text-gray-300 group-hover:text-blue-500 ml-1" />
+                    </p>
+                  )}
                 </div>
               </div>
 

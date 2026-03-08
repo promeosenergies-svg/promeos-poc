@@ -30,6 +30,7 @@ import { computeDataConfidence } from '../models/dataReadinessModel';
 import ExportNoteDecision from '../components/ExportNoteDecision';
 import ExportPackRFP from '../components/ExportPackRFP';
 import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PurchaseDebugDrawer from '../components/PurchaseDebugDrawer';
 import {
   getPurchaseEstimate,
@@ -182,6 +183,7 @@ export default function PurchasePage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { openActionDrawer } = useActionDrawer();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Data confidence (Step 3.1)
@@ -1305,23 +1307,23 @@ export default function PurchasePage() {
                         {isAccepted && (
                           <button
                             data-testid={`cta-create-action-${s.strategy}`}
-                            onClick={() =>
-                              navigate(
-                                toActionNew({
-                                  source: 'purchase',
-                                  source_type: 'achat',
-                                  site_id: selectedSiteId,
-                                  title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an)`,
-                                  scenario_label: meta.label,
-                                  impact_eur:
-                                    s.savings_vs_current_pct > 0 && s.total_annual_eur
-                                      ? Math.round(
-                                          (s.total_annual_eur * s.savings_vs_current_pct) / 100
-                                        )
-                                      : undefined,
-                                })
-                              )
-                            }
+                            onClick={() => {
+                              const impactEur =
+                                s.savings_vs_current_pct > 0 && s.total_annual_eur
+                                  ? Math.round((s.total_annual_eur * s.savings_vs_current_pct) / 100)
+                                  : undefined;
+                              openActionDrawer({
+                                prefill: {
+                                  titre: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an)`,
+                                  type: 'achat',
+                                  impact_eur: impactEur,
+                                },
+                                siteId: selectedSiteId,
+                                sourceType: 'purchase',
+                                sourceId: `scenario:${s.strategy}:${selectedSiteId}`,
+                                idempotencyKey: `purchase:${selectedSiteId}:${s.strategy}`,
+                              });
+                            }}
                             className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
                           >
                             <Plus size={14} /> Créer action
@@ -1342,6 +1344,19 @@ export default function PurchasePage() {
                     </div>
                   )}
                   <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      data-testid="cta-creer-action-purchase"
+                      onClick={() => openActionDrawer({
+                        prefill: { titre: 'Renouvellement contrat énergie', type: 'achat' },
+                        siteId: selectedSiteId,
+                        sourceType: 'purchase',
+                        sourceId: `renewal:${selectedSiteId}`,
+                        idempotencyKey: `purchase:renewal:${selectedSiteId}`,
+                      })}
+                      className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                    >
+                      <Plus size={14} /> Créer action
+                    </button>
                     <button
                       data-testid="cta-voir-actions-purchase"
                       onClick={() => navigate(toActionsList({ source_type: 'achat' }))}
