@@ -11,6 +11,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from unittest.mock import patch, MagicMock
 
+_MOCK_MARKET_CTX = {
+    "spot_avg_30d_eur_mwh": 60.0,
+    "spot_avg_12m_eur_mwh": 55.0,
+    "spot_current_eur_mwh": 62.0,
+    "volatility_12m_eur_mwh": 8.0,
+    "trend_30d_vs_12m_pct": 9.1,
+}
+
+
+def _mock_purchase():
+    """Context manager that patches get_reference_price and get_market_context."""
+    return (
+        patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")),
+        patch("services.purchase_service.get_market_context", return_value=_MOCK_MARKET_CTX),
+    )
+
 
 # ========================================
 # A. compute_scenarios accepts report_pct
@@ -19,7 +35,8 @@ class TestComputeScenariosReportPct:
     def test_default_report_pct_is_zero(self):
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        p1, p2 = _mock_purchase()
+        with p1, p2:
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
             reflex = next(s for s in scenarios if s["strategy"] == "reflex_solar")
@@ -28,7 +45,8 @@ class TestComputeScenariosReportPct:
     def test_report_pct_passed_to_reflex(self):
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        p1, p2 = _mock_purchase()
+        with p1, p2:
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.15)
             reflex = next(s for s in scenarios if s["strategy"] == "reflex_solar")
@@ -37,7 +55,8 @@ class TestComputeScenariosReportPct:
     def test_report_pct_affects_effort_score(self):
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        p1, p2 = _mock_purchase()
+        with p1, p2:
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
             with_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.15)
@@ -49,7 +68,8 @@ class TestComputeScenariosReportPct:
     def test_report_pct_lowers_reflex_cost(self):
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        p1, p2 = _mock_purchase()
+        with p1, p2:
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
             with_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.10)
@@ -60,7 +80,8 @@ class TestComputeScenariosReportPct:
     def test_non_reflex_scenarios_unaffected(self):
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        p1, p2 = _mock_purchase()
+        with p1, p2:
             db = MagicMock()
             no_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.0)
             with_report = compute_scenarios(db, site_id=1, volume_kwh_an=500_000, report_pct=0.15)
