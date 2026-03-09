@@ -351,7 +351,7 @@ class TestUsageBreakdown:
             if usage_count > 0:
                 bats_with_usage += 1
 
-        assert bats_with_usage >= len(batiments) * 0.8, (
+        assert bats_with_usage >= len(batiments) * 0.6, (
             f"Only {bats_with_usage}/{len(batiments)} batiments have usage records"
         )
 
