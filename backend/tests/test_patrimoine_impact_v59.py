@@ -144,7 +144,7 @@ class TestPatrimoineAssumptions:
     def test_override_partial(self):
         a = PatrimoineAssumptions(prix_elec_eur_mwh=150.0)
         assert a.prix_elec_eur_mwh == 150.0
-        assert a.prix_gaz_eur_mwh == 55.0  # unchanged
+        assert a.prix_gaz_eur_mwh == 90.0  # unchanged (default from centralized pricing)
 
     def test_conso_for_usage_bureaux(self):
         a = PatrimoineAssumptions()
