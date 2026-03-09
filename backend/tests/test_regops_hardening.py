@@ -211,9 +211,9 @@ class TestScoringHardening:
         assert resp.status_code == 200
         data = resp.json()
         assert "score" in data
-        assert "confidence_score" in data
-        assert "scoring_profile" in data
-        assert "penalties" in data
+        assert "confidence" in data
+        assert "breakdown" in data
+        assert "critical_penalty" in data
         assert "how_to_improve" in data
 
 
