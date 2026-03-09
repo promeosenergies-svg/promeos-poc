@@ -54,13 +54,13 @@ import {
   TrustBadge,
   Skeleton,
   PageShell,
-  KpiCard,
   Drawer,
   Tabs,
   Tooltip,
   Explain,
 } from '../ui';
 import { SkeletonCard } from '../ui';
+import { resolveIcon } from '../ui/KpiCard';
 import ErrorState from '../ui/ErrorState';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
@@ -440,7 +440,7 @@ function StatusKpiCard({
   tooltip,
   status,
   color,
-  onClick,
+  _onClick,
   confidence,
   message,
 }) {
@@ -449,35 +449,54 @@ function StatusKpiCard({
     ? `Confiance: ${confidence.level === 'high' ? 'Forte' : confidence.level === 'medium' ? 'Moyenne' : 'Faible'}${confidence.reason ? ' — ' + confidence.reason : ''}`
     : null;
   const fullTip = [tooltip, confTip].filter(Boolean).join('\n');
+  const extraContent = (
+    <>
+      {confidence && (
+        <div className="flex items-center gap-1 px-3 py-1 text-[10px] text-gray-400">
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[confidence.level] || CONFIDENCE_DOT.low}`}
+          />
+          Confiance:{' '}
+          {confidence.level === 'high'
+            ? 'Forte'
+            : confidence.level === 'medium'
+              ? 'Moyenne'
+              : 'Faible'}
+        </div>
+      )}
+      {message && <div className="line-clamp-2 overflow-hidden">{message}</div>}
+    </>
+  );
   return (
     <Tooltip text={fullTip} position="bottom">
-      <div className="h-full flex flex-col">
-        <KpiCard
-          icon={icon}
-          title={title}
-          value={value}
-          sub={sub}
-          color={color}
-          onClick={onClick}
-          badge={st.label}
-          badgeStatus={st.badge}
-          className="flex-1"
-        />
-        {confidence && (
-          <div className="flex items-center gap-1 px-3 py-1 text-[10px] text-gray-400">
-            <span
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[confidence.level] || CONFIDENCE_DOT.low}`}
-            />
-            Confiance:{' '}
-            {confidence.level === 'high'
-              ? 'Forte'
-              : confidence.level === 'medium'
-                ? 'Moyenne'
-                : 'Faible'}
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardBody className="flex-1">
+          <div className="flex items-start gap-3 w-full text-left">
+            {icon && (
+              <div className={`p-2 rounded-lg ${color} shrink-0 mt-0.5`}>
+                {resolveIcon(icon, { size: 18, className: 'text-white' })}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate flex-1 min-w-0">
+                  {title}
+                </p>
+                {st.label && (
+                  <span className="shrink-0 max-w-[50%]">
+                    <Badge status={st.badge}>{st.label}</Badge>
+                  </span>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-gray-900 mt-1 tabular-nums break-words leading-tight">
+                {value ?? '-'}
+              </p>
+              {sub && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{sub}</p>}
+            </div>
           </div>
-        )}
-        {message && <div className="line-clamp-2 overflow-hidden">{message}</div>}
-      </div>
+        </CardBody>
+        {(confidence || message) && <div className="border-t border-gray-50">{extraContent}</div>}
+      </Card>
     </Tooltip>
   );
 }
