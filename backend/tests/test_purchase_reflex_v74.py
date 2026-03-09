@@ -244,14 +244,24 @@ class TestComputeReflex:
 # ========================================
 # D. compute_scenarios returns 4 strategies
 # ========================================
+_MOCK_MARKET_CTX = {
+    "spot_avg_30d_eur_mwh": 60.0,
+    "spot_avg_12m_eur_mwh": 55.0,
+    "spot_current_eur_mwh": 62.0,
+    "volatility_12m_eur_mwh": 8.0,
+    "trend_30d_vs_12m_pct": 9.1,
+}
+
+
 class TestComputeScenarios:
     def test_returns_4_scenarios(self):
-        from unittest.mock import patch
+        from unittest.mock import patch, MagicMock
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
-            from unittest.mock import MagicMock
-
+        with (
+            patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")),
+            patch("services.purchase_service.get_market_context", return_value=_MOCK_MARKET_CTX),
+        ):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
             assert len(scenarios) == 4
@@ -260,7 +270,10 @@ class TestComputeScenarios:
         from unittest.mock import patch, MagicMock
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        with (
+            patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")),
+            patch("services.purchase_service.get_market_context", return_value=_MOCK_MARKET_CTX),
+        ):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
             strategies = {s["strategy"] for s in scenarios}
@@ -270,7 +283,10 @@ class TestComputeScenarios:
         from unittest.mock import patch, MagicMock
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        with (
+            patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")),
+            patch("services.purchase_service.get_market_context", return_value=_MOCK_MARKET_CTX),
+        ):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
             reflex = next(s for s in scenarios if s["strategy"] == "reflex_solar")
@@ -281,7 +297,10 @@ class TestComputeScenarios:
         from unittest.mock import patch, MagicMock
         from services.purchase_service import compute_scenarios
 
-        with patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")):
+        with (
+            patch("services.purchase_service.get_reference_price", return_value=(0.10, "market")),
+            patch("services.purchase_service.get_market_context", return_value=_MOCK_MARKET_CTX),
+        ):
             db = MagicMock()
             scenarios = compute_scenarios(db, site_id=1, volume_kwh_an=500_000)
             for s in scenarios:

@@ -37,7 +37,7 @@ export default function KpiCard({
   onClick,
   className = '',
 }) {
-  const iconNode = resolveIcon(icon, { size: 22, className: 'text-white' });
+  const iconNode = resolveIcon(icon, { size: 18, className: 'text-white' });
 
   // Alias: label → title, sublabel → sub
   const resolvedTitle = title || label;
@@ -51,14 +51,21 @@ export default function KpiCard({
       <CardBody>
         <Wrapper
           onClick={onClick}
-          className={`flex items-start gap-4 w-full text-left ${onClick ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg' : ''}`}
+          className={`flex items-start gap-3 w-full text-left ${onClick ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg' : ''}`}
           {...(onClick ? { type: 'button' } : {})}
         >
-          {iconNode && <div className={`p-3 rounded-lg ${color} shrink-0`}>{iconNode}</div>}
+          {iconNode && <div className={`p-2 rounded-lg ${color} shrink-0 mt-0.5`}>{iconNode}</div>}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider truncate">
-              {resolvedTitle}
-            </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate flex-1 min-w-0">
+                {resolvedTitle}
+              </p>
+              {badge && (
+                <span className="shrink-0">
+                  <Badge status={badgeStatus}>{badge}</Badge>
+                </span>
+              )}
+            </div>
             <p
               className="text-2xl font-bold text-gray-900 mt-1 tabular-nums break-words leading-tight"
               title={typeof value === 'string' ? value : undefined}
@@ -66,10 +73,9 @@ export default function KpiCard({
               {value ?? '-'}
             </p>
             {resolvedSub && (
-              <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{resolvedSub}</p>
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{resolvedSub}</p>
             )}
           </div>
-          {badge && <Badge status={badgeStatus}>{badge}</Badge>}
         </Wrapper>
       </CardBody>
     </Card>

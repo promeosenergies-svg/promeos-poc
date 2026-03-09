@@ -451,7 +451,7 @@ function StatusKpiCard({
   const fullTip = [tooltip, confTip].filter(Boolean).join('\n');
   return (
     <Tooltip text={fullTip} position="bottom">
-      <div>
+      <div className="h-full flex flex-col">
         <KpiCard
           icon={icon}
           title={title}
@@ -461,11 +461,12 @@ function StatusKpiCard({
           onClick={onClick}
           badge={st.label}
           badgeStatus={st.badge}
+          className="flex-1"
         />
         {confidence && (
-          <div className="flex items-center gap-1 px-3 pb-2 -mt-1 text-[10px] text-gray-400">
+          <div className="flex items-center gap-1 px-3 py-1 text-[10px] text-gray-400">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${CONFIDENCE_DOT[confidence.level] || CONFIDENCE_DOT.low}`}
+              className={`w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[confidence.level] || CONFIDENCE_DOT.low}`}
             />
             Confiance:{' '}
             {confidence.level === 'high'
@@ -475,7 +476,7 @@ function StatusKpiCard({
                 : 'Faible'}
           </div>
         )}
-        {message}
+        {message && <div className="line-clamp-2 overflow-hidden">{message}</div>}
       </div>
     </Tooltip>
   );
