@@ -516,9 +516,14 @@ describe('Engine', () => {
   it('cache clears correctly', () => {
     const params = { ...BASE_PARAMS, offers: [FIXED_OFFER] };
     const r1 = runEngine(params);
+    const r1b = runEngine(params);
+    // Same params → cached (same reference)
+    expect(r1).toBe(r1b);
     clearEngineCache();
     const r2 = runEngine(params);
-    expect(r1.computedAt).not.toBe(r2.computedAt);
+    // After clear → new object (not same reference)
+    expect(r2).not.toBe(r1);
+    expect(r2.results).toHaveLength(r1.results.length);
   });
 
   it('handles hybrid normalization', () => {
