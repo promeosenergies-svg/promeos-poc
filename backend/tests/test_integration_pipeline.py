@@ -64,8 +64,10 @@ class TestFullPipeline:
             manifest = json.load(f)
 
         html_path = Path(PROJECT_ROOT) / "docs/base_documentaire/usages_energetiques_b2b" / manifest["source_path"]
-        with open(html_path, "rb") as f:
-            computed = hashlib.sha256(f.read()).hexdigest()
+        # Normalize line endings to LF for consistent hashing across OS
+        with open(html_path, "r", encoding="utf-8") as f:
+            content_lf = f.read().replace("\r\n", "\n")
+        computed = hashlib.sha256(content_lf.encode("utf-8")).hexdigest()
 
         assert computed == manifest["sha256"], "Source integrity check FAILED"
 

@@ -128,8 +128,8 @@ def _make_full_site(db, pf, nom="Site", surface=5000.0):
 class TestPatrimoineAssumptions:
     def test_defaults_valid(self):
         a = PatrimoineAssumptions()
-        assert a.prix_elec_eur_mwh == 120.0
-        assert a.prix_gaz_eur_mwh == 55.0
+        assert a.prix_elec_eur_mwh == 180.0
+        assert a.prix_gaz_eur_mwh == 90.0
         assert a.conso_fallback_kwh_an == 300_000.0
         assert a.horizon_factor == 1.0
 
@@ -418,8 +418,8 @@ class TestAnomaliesEndpointsV59:
         r = client.get("/api/patrimoine/assumptions")
         assert r.status_code == 200
         data = r.json()
-        assert data["prix_elec_eur_mwh"] == 120.0
-        assert data["prix_gaz_eur_mwh"] == 55.0
+        assert data["prix_elec_eur_mwh"] == 180.0
+        assert data["prix_gaz_eur_mwh"] == 90.0
         assert data["conso_fallback_kwh_an"] == 300_000.0
         assert "conso_fallback_by_usage" in data
 
