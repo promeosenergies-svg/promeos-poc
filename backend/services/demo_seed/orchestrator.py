@@ -188,6 +188,23 @@ class SeedOrchestrator:
         )
         result["billing"] = billing
 
+        # 6b. Billing audit-all → génère insights/anomalies post-seed
+        from services.billing_service import audit_invoice_full
+        from models import EnergyInvoice
+
+        org_invoices = (
+            self.db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_([s.id for s in master["sites"]])).all()
+        )
+        audit_count = 0
+        for inv in org_invoices:
+            try:
+                audit_invoice_full(self.db, inv.id)
+                audit_count += 1
+            except Exception:
+                pass  # non-blocking — seed continues even if one audit fails
+        self.db.flush()
+        result["billing_audit"] = {"audited": audit_count}
+
         # 7. Actions
         from .gen_actions import generate_actions
 

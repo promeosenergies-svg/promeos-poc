@@ -10,7 +10,7 @@ function StatusPage() {
   const [lastCheck, setLastCheck] = useState(null);
 
   const checks = [
-    { name: 'Backend /health', url: '/health', key: 'health' },
+    { name: 'Backend /health', url: '/api/health', key: 'health' },
     { name: 'API Sites', url: '/api/sites', key: 'sites' },
     { name: 'API Cockpit', url: '/api/cockpit', key: 'cockpit' },
     { name: 'API KB Stats', url: '/api/kb/stats', key: 'kb' },
@@ -25,7 +25,7 @@ function StatusPage() {
 
     // Health check
     try {
-      const r = await fetch(`${API_BASE}/health`);
+      const r = await fetch(`${API_BASE}/api/health`);
       const data = await r.json();
       results.health = { ok: r.ok, data };
     } catch (e) {
@@ -134,7 +134,7 @@ function StatusPage() {
             <Database size={16} className="text-purple-500" />
             <span className="text-sm text-gray-500">Base de données</span>
           </div>
-          <p className="text-2xl font-bold">{backendOk ? 'SQLite' : '-'}</p>
+          <p className="text-2xl font-bold">{status?.health?.data?.db || '-'}</p>
         </div>
       </div>
 

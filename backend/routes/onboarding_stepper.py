@@ -19,6 +19,7 @@ from models import (
     Site,
     Compteur,
     User,
+    UserOrgRole,
     ActionItem,
     Portefeuille,
     EntiteJuridique,
@@ -219,14 +220,17 @@ def auto_detect_steps(
             if meter_count > 0:
                 progress.step_meters_connected = True
 
-    # Step 4: has invoices
-    inv_count = db.query(EnergyInvoice).filter(EnergyInvoice.org_id == oid).count()
-    if inv_count > 0:
-        progress.step_invoices_imported = True
+    # Step 4: has invoices (via site_ids — EnergyInvoice has no org_id)
+    if pf_ids:
+        inv_site_ids = [r.id for r in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids)).all()]
+        if inv_site_ids:
+            inv_count = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(inv_site_ids)).count()
+            if inv_count > 0:
+                progress.step_invoices_imported = True
 
-    # Step 5: has users
-    user_count = db.query(User).filter(User.org_id == oid).count()
-    if user_count > 1:  # >1 because admin already exists
+    # Step 5: has users (via UserOrgRole — User has no org_id)
+    user_count = db.query(UserOrgRole).filter(UserOrgRole.org_id == oid).count()
+    if user_count >= 1:  # at least 1 user assigned to org
         progress.step_users_invited = True
 
     # Step 6: has actions

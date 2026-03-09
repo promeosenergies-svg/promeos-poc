@@ -133,10 +133,21 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         tax_eur = round((energy_eur + network_eur) * rng.uniform(0.15, 0.25), 2)
         total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
 
-        # Anomaly: 1 in 5 invoices has an overcharge
+        # Anomaly: 1 in 5 invoices — varied types
         is_anomaly = inv_idx % 5 == 3
+        anomaly_type = None
         if is_anomaly:
-            total = round(total * rng.uniform(1.15, 1.40), 2)
+            anomaly_type = rng.choice(["overcharge", "volume_spike", "network_drift", "tax_mismatch"])
+            if anomaly_type == "overcharge":
+                total = round(total * rng.uniform(1.15, 1.40), 2)
+            elif anomaly_type == "volume_spike":
+                total = round(total * rng.uniform(1.20, 1.50), 2)
+            elif anomaly_type == "network_drift":
+                network_eur = round(network_eur * rng.uniform(1.30, 1.60), 2)
+                total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
+            elif anomaly_type == "tax_mismatch":
+                tax_eur = round(tax_eur * rng.uniform(1.25, 1.50), 2)
+                total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
 
         invoice = EnergyInvoice(
             site_id=site.id,
@@ -174,17 +185,43 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             )
             lines_created += 1
 
-        # Billing insight for anomalous invoices
-        if is_anomaly:
+        # Billing insight for anomalous invoices — varied messages
+        if is_anomaly and anomaly_type:
+            _ANOMALY_TEMPLATES = {
+                "overcharge": {
+                    "type": "overcharge",
+                    "severity": "high",
+                    "msg": f"Surfacturation detectee sur {invoice.invoice_number}: montant TTC superieur de "
+                    f"{rng.randint(15, 35)}% au prix contractuel.",
+                },
+                "volume_spike": {
+                    "type": "volume_spike",
+                    "severity": "medium",
+                    "msg": f"Pic de consommation anormal sur {invoice.invoice_number}: volume facture "
+                    f"{monthly_kwh:.0f} kWh vs moyenne attendue {annual / 12:.0f} kWh (+{rng.randint(20, 45)}%).",
+                },
+                "network_drift": {
+                    "type": "network_drift",
+                    "severity": "medium",
+                    "msg": f"Derive reseau (TURPE) sur {invoice.invoice_number}: cout acheminement "
+                    f"{network_eur:.0f} EUR, soit +{rng.randint(30, 55)}% vs reference tarifaire.",
+                },
+                "tax_mismatch": {
+                    "type": "tax_mismatch",
+                    "severity": "low",
+                    "msg": f"Ecart taxes sur {invoice.invoice_number}: montant taxes {tax_eur:.0f} EUR "
+                    f"ne correspond pas au taux applicable ({rng.choice(['accise', 'CTA', 'TVA'])} incorrect).",
+                },
+            }
+            tpl = _ANOMALY_TEMPLATES[anomaly_type]
             db.add(
                 BillingInsight(
                     site_id=site.id,
                     invoice_id=invoice.id,
-                    type="overcharge",
-                    severity="high",
-                    message=f"Surfacturation detectee sur la facture {invoice.invoice_number}: "
-                    f"ecart de {((total / (energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0))) - 1) * 100:.0f}%.",
-                    estimated_loss_eur=round(total * 0.15, 2),
+                    type=tpl["type"],
+                    severity=tpl["severity"],
+                    message=tpl["msg"],
+                    estimated_loss_eur=round(total * rng.uniform(0.05, 0.20), 2),
                     insight_status=InsightStatus.OPEN,
                 )
             )
