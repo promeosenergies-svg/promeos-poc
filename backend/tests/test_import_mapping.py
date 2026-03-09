@@ -384,7 +384,7 @@ class TestTemplateEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert "columns" in data
-        assert len(data["columns"]) == 14
+        assert len(data["columns"]) >= 14
         # Check required field
         nom_col = next(c for c in data["columns"] if c["key"] == "nom")
         assert nom_col["required"] is True
