@@ -308,7 +308,18 @@ def generate_notifications(db, org, sites: list, rng=None) -> dict:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     created = 0
 
-    for tmpl in _TEMPLATES:
+    # Cap at 10 notifications — balanced across 4 source types for realistic demo
+    _by_type = {}
+    for t in _TEMPLATES:
+        _by_type.setdefault(t["source_type_key"], []).append(t)
+    capped_templates = (
+        _by_type.get("billing", [])[:3]
+        + _by_type.get("consumption", [])[:3]
+        + _by_type.get("compliance", [])[:2]
+        + _by_type.get("action_hub", [])[:2]
+    )
+
+    for tmpl in capped_templates:
         site_idx = tmpl.get("site_idx", 0)
         site = sites[min(site_idx, len(sites) - 1)] if sites else None
 

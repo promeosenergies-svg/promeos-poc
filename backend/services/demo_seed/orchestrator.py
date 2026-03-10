@@ -286,6 +286,33 @@ class SeedOrchestrator:
         # 14. Superuser
         self._create_superuser(master["org"])
 
+        # 15. Onboarding auto-detect — mark completed steps from seeded data
+        try:
+            from models.onboarding_progress import OnboardingProgress
+            from models import Organisation, EntiteJuridique, Portefeuille, Site, Compteur, ActionItem
+            from models.user import UserOrgRole
+            from models.billing import EnergyInvoice
+
+            org_id = master["org"].id
+            progress = self.db.query(OnboardingProgress).filter_by(org_id=org_id).first()
+            if not progress:
+                progress = OnboardingProgress(org_id=org_id)
+                self.db.add(progress)
+                self.db.flush()
+            progress.step_org_created = True
+            progress.step_sites_added = len(master["sites"]) > 0
+            progress.step_meters_connected = True  # seed creates meters
+            progress.step_invoices_imported = True  # seed creates invoices
+            progress.step_users_invited = True  # superuser just created
+            progress.step_first_action = True  # actions seeded above
+            from datetime import datetime as dt
+
+            progress.completed_at = dt.utcnow()
+            self.db.flush()
+            result["onboarding"] = {"completed": True}
+        except Exception as e:
+            result["onboarding"] = {"completed": False, "error": str(e)}
+
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
 
@@ -742,32 +769,50 @@ class SeedOrchestrator:
             pass
 
     def _create_superuser(self, org):
-        """Create demo admin user."""
+        """Create demo admin user + 3 team members for realistic user list."""
         try:
             from models.iam import User, UserOrgRole, UserScope
             from models.enums import UserRole, ScopeLevel
             from services.iam_service import hash_password
 
-            existing = self.db.query(User).filter_by(email="promeos@promeos.io").first()
-            if existing:
-                return
+            demo_users = [
+                {"email": "promeos@promeos.io", "nom": "Admin", "prenom": "Promeos", "role": UserRole.DG_OWNER},
+                {
+                    "email": "m.leclerc@helios-energie.fr",
+                    "nom": "Leclerc",
+                    "prenom": "Marie",
+                    "role": UserRole.ENERGY_MANAGER,
+                },
+                {"email": "j.dupont@helios-energie.fr", "nom": "Dupont", "prenom": "Jean", "role": UserRole.AUDITEUR},
+                {
+                    "email": "s.moreau@helios-energie.fr",
+                    "nom": "Moreau",
+                    "prenom": "Sophie",
+                    "role": UserRole.RESP_SITE,
+                },
+            ]
 
-            user = User(
-                email="promeos@promeos.io",
-                hashed_password=hash_password("promeos2024"),
-                nom="Admin",
-                prenom="Promeos",
-                actif=True,
-            )
-            self.db.add(user)
-            self.db.flush()
+            for u in demo_users:
+                existing = self.db.query(User).filter_by(email=u["email"]).first()
+                if existing:
+                    continue
 
-            uor = UserOrgRole(user_id=user.id, org_id=org.id, role=UserRole.DG_OWNER)
-            self.db.add(uor)
-            self.db.flush()
+                user = User(
+                    email=u["email"],
+                    hashed_password=hash_password("promeos2024"),
+                    nom=u["nom"],
+                    prenom=u["prenom"],
+                    actif=True,
+                )
+                self.db.add(user)
+                self.db.flush()
 
-            scope = UserScope(user_org_role_id=uor.id, scope_level=ScopeLevel.ORG, scope_id=org.id)
-            self.db.add(scope)
-            self.db.flush()
+                uor = UserOrgRole(user_id=user.id, org_id=org.id, role=u["role"])
+                self.db.add(uor)
+                self.db.flush()
+
+                scope = UserScope(user_org_role_id=uor.id, scope_level=ScopeLevel.ORG, scope_id=org.id)
+                self.db.add(scope)
+                self.db.flush()
         except Exception:
             pass

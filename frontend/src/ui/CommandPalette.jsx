@@ -13,7 +13,7 @@ import {
   COMMAND_SHORTCUTS,
 } from '../layout/NavRegistry';
 
-export default function CommandPalette({ open, onClose }) {
+export default function CommandPalette({ open, onClose, onToggleExpert }) {
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef(null);
@@ -74,7 +74,7 @@ export default function CommandPalette({ open, onClose }) {
 
   const handleSelect = (item) => {
     if (item.to === '#expert-toggle') {
-      // Special case: expert mode toggle — just close palette
+      if (onToggleExpert) onToggleExpert();
       onClose();
       return;
     }

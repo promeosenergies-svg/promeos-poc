@@ -8,7 +8,7 @@ from .base import Connector
 
 class EnedisDataConnectConnector(Connector):
     name = "enedis_dataconnect"
-    description = "Enedis Data Connect OAuth (stub - cles requises)"
+    description = "Enedis Data Connect OAuth — consommation Linky"
     requires_auth = True
     env_vars = ["ENEDIS_CLIENT_ID", "ENEDIS_CLIENT_SECRET"]
 

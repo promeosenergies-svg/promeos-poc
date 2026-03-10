@@ -417,12 +417,12 @@ class TestMonitoringDepth:
 
 class TestNotifications:
     def test_notification_events_exist(self, seeded_db):
-        """Should have 15+ notification events."""
+        """Should have 8+ notification events (capped to 10 for realistic demo)."""
         from models.notification import NotificationEvent
 
         db, _ = seeded_db
         count = db.query(NotificationEvent).count()
-        assert count >= 15, f"Only {count} notification events (expected 15+)"
+        assert count >= 8, f"Only {count} notification events (expected 8+)"
 
     def test_notification_sources_diverse(self, seeded_db):
         """Should cover all 4 source types."""

@@ -254,7 +254,11 @@ export default function AppShell() {
       </div>
 
       {/* Command Palette overlay */}
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onToggleExpert={toggleExpert}
+      />
 
       {/* Dev Panel — dev-only, visible when ?debug */}
       <DevPanel />

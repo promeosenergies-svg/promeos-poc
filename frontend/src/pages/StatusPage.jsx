@@ -168,9 +168,7 @@ function StatusPage() {
       </div>
 
       {/* Tech Info */}
-      <div className="mt-6 text-xs text-gray-400 text-center">
-        PROMEOS POC | FastAPI + React + SQLite | 427 tests | 97 endpoints | 9 pages
-      </div>
+      <div className="mt-6 text-xs text-gray-400 text-center">PROMEOS v1.0</div>
     </div>
   );
 }

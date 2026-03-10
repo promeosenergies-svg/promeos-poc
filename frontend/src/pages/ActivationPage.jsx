@@ -137,8 +137,8 @@ export default function ActivationPage() {
       title="Activation des données"
       subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}
     >
-      {/* ── Readiness banner ── */}
-      {readinessState && (
+      {/* ── Readiness banner — hide when all briques active to avoid "5/5 actives" + "incomplètes" contradiction ── */}
+      {readinessState && !(activation.activatedCount >= activation.totalDimensions) && (
         <HealthSummary
           healthState={readinessState}
           onNavigate={navigate}
