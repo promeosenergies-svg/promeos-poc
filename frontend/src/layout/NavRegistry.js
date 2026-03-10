@@ -835,14 +835,15 @@ export const HIDDEN_PAGES = [
     section: 'Patrimoine',
     hidden: true,
   },
-  {
-    to: '/energy-copilot',
-    icon: Sparkles,
-    label: 'Copilot énergie',
-    keywords: ['copilot', 'ia', 'recommandations'],
-    section: 'Pilotage',
-    hidden: true,
-  },
+  // Energy Copilot masqué — pas de données seed, page vide en démo
+  // {
+  //   to: '/energy-copilot',
+  //   icon: Sparkles,
+  //   label: 'Copilot énergie',
+  //   keywords: ['copilot', 'ia', 'recommandations'],
+  //   section: 'Pilotage',
+  //   hidden: true,
+  // },
   {
     to: '/compliance/pipeline',
     icon: ListChecks,
@@ -851,14 +852,15 @@ export const HIDDEN_PAGES = [
     section: 'Patrimoine',
     hidden: true,
   },
-  {
-    to: '/',
-    icon: LayoutDashboard,
-    label: 'Tableau de bord',
-    keywords: ['dashboard', 'accueil', 'home'],
-    section: 'Pilotage',
-    hidden: true,
-  },
+  // Tableau de bord (CommandCenter) masqué — doublon avec Cockpit
+  // {
+  //   to: '/',
+  //   icon: LayoutDashboard,
+  //   label: 'Tableau de bord',
+  //   keywords: ['dashboard', 'accueil', 'home'],
+  //   section: 'Pilotage',
+  //   hidden: true,
+  // },
   {
     to: '/anomalies',
     icon: AlertTriangle,

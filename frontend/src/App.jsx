@@ -112,14 +112,7 @@ function App() {
                     }
                   >
                     {/* V1 + V2 pages */}
-                    <Route
-                      path="/"
-                      element={
-                        <PageSuspense>
-                          <CommandCenter />
-                        </PageSuspense>
-                      }
-                    />
+                    <Route path="/" element={<Navigate to="/cockpit" replace />} />
                     <Route
                       path="/patrimoine"
                       element={
@@ -524,7 +517,7 @@ function App() {
                     <Route path="/referentiels" element={<Navigate to="/kb" replace />} />
                     <Route path="/synthese" element={<Navigate to="/cockpit" replace />} />
                     <Route path="/executive" element={<Navigate to="/cockpit" replace />} />
-                    <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                    <Route path="/dashboard" element={<Navigate to="/cockpit" replace />} />
                     <Route
                       path="/conso"
                       element={<Navigate to="/consommations/explorer" replace />}

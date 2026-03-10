@@ -571,7 +571,11 @@ export default function KBExplorerPage() {
       )}
 
       {/* Footer */}
-      <TrustBadge source="PROMEOS Mémobox" period="457 items ingeres" confidence="high" />
+      <TrustBadge
+        source="PROMEOS Mémobox"
+        period={stats ? `${stats.total_items} items de connaissance` : '…'}
+        confidence="high"
+      />
     </PageShell>
   );
 }
