@@ -297,6 +297,11 @@ class TestTreeExcludesDeletedNodes:
 
     def test_cockpit_excludes_deleted_sites(self, db_session, client):
         """Verify /api/cockpit stats exclude soft-deleted sites."""
+        # Clear KPI cache to avoid stale results from other tests sharing org_id=1
+        from services.kpi_service import _cache as kpi_cache
+
+        kpi_cache.clear()
+
         org, ej, pf = _seed_org_hierarchy(db_session)
 
         site_a = Site(
