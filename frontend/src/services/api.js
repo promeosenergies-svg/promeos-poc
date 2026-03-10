@@ -303,6 +303,25 @@ export const getSiteStats = async (id) => {
 };
 
 // ========================================
+// GEOCODING
+// ========================================
+
+export const geocodeOneSite = async (siteId, force = false) => {
+  const response = await api.post(`/geocode/site/${siteId}`, null, { params: { force } });
+  return response.data;
+};
+
+export const geocodeOrgSites = async (orgId, force = false) => {
+  const response = await api.post('/geocode/org', null, { params: { org_id: orgId, force } });
+  return response.data;
+};
+
+export const searchAddress = async (query) => {
+  const response = await api.get('/geocode/search', { params: { q: query } });
+  return response.data;
+};
+
+// ========================================
 // COMPTEURS
 // ========================================
 

@@ -62,6 +62,8 @@ def run_migrations(engine):
     _migrate_segmentation_v100(engine)
     # Step 25 — Meter unification (Compteur → Meter)
     _add_meter_unified_columns(engine)
+    # Step 26 — Geocoding columns on sites
+    _add_site_geocoding_columns(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1060,3 +1062,35 @@ def _add_meter_unified_columns(engine):
         logger.info("migration: Step 25 — added %d column(s) to meter", added)
     else:
         logger.debug("migration: Step 25 — meter unified columns already present")
+
+
+def _add_site_geocoding_columns(engine):
+    """Step 26 — Add geocoding columns to sites for BAN geocoding persistence."""
+    insp = inspect(engine)
+    if not insp.has_table("sites"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("sites")}
+    columns = [
+        ("geocoding_source", "VARCHAR(50)"),
+        ("geocoding_score", "FLOAT"),
+        ("geocoded_at", "DATETIME"),
+        ("geocoding_status", "VARCHAR(20)"),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in columns:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "sites" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: Step 26 — added sites.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: Step 26 — could not add sites.%s: %s", col_name, e)
+
+    if added > 0:
+        logger.info("migration: Step 26 — added %d geocoding column(s) to sites", added)
+    else:
+        logger.debug("migration: Step 26 — sites geocoding columns already present")

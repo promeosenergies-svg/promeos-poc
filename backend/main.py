@@ -65,6 +65,7 @@ from routes import (
     referentiel_router,
     patrimoine_crud_router,
     aper_router,
+    geocoding_router,
 )
 
 # Import KB router
@@ -152,6 +153,7 @@ app.include_router(consumption_unified_router)  # A.1 Unified Consumption (meter
 app.include_router(market_router)  # M.1 Market Prices (EPEX Spot FR)
 app.include_router(referentiel_router)  # M.2 Référentiel Tarifs (TURPE/taxes YAML)
 app.include_router(patrimoine_crud_router)  # O.3 CRUD Organisation/Entité/Portefeuille/Site
+app.include_router(geocoding_router)  # Géocodage BAN (sites → lat/lng)
 app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toitures)
 
 # Run safe schema migrations (idempotent, no drop)

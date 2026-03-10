@@ -37,6 +37,10 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     # Géolocalisation (pour cartographie)
     latitude = Column(Float, comment="Latitude GPS")
     longitude = Column(Float, comment="Longitude GPS")
+    geocoding_source = Column(String(50), nullable=True, comment="Source: ban, manual, seed")
+    geocoding_score = Column(Float, nullable=True, comment="Score confiance géocodage 0-1")
+    geocoded_at = Column(DateTime, nullable=True, comment="Date du dernier géocodage")
+    geocoding_status = Column(String(20), nullable=True, comment="ok, partial, not_found, error")
 
     # Status
     actif = Column(Boolean, default=True, comment="Site actif ou non")

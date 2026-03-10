@@ -274,6 +274,15 @@ class SeedOrchestrator:
         market = generate_market_prices(self.db)
         result["market_prices"] = market
 
+        # 14b. Geocode all sites via BAN
+        from services.geocoding_service import geocode_org_sites
+
+        try:
+            geo_results = geocode_org_sites(self.db, master["org"].id, force=False)
+            result["geocoding"] = {"geocoded": len(geo_results)}
+        except Exception:
+            result["geocoding"] = {"geocoded": 0, "error": "skipped"}
+
         # 14. Superuser
         self._create_superuser(master["org"])
 

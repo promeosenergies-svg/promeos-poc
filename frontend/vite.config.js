@@ -17,6 +17,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          maplibre: ['maplibre-gl'],
+        },
+      },
+    },
   },
   test: {
     environment: 'node',

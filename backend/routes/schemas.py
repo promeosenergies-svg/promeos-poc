@@ -45,6 +45,10 @@ class SiteResponse(SiteBase):
     risque_financier_euro: float = 0.0
     annual_kwh_total: Optional[float] = None
     conso_kwh_an: Optional[float] = None
+    compliance_score_composite: Optional[float] = None
+    geocoding_source: Optional[str] = None
+    geocoding_score: Optional[float] = None
+    geocoding_status: Optional[str] = None
 
     @model_validator(mode="after")
     def _fill_conso_kwh_an(self):

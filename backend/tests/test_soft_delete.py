@@ -318,7 +318,7 @@ class TestTreeExcludesDeletedNodes:
         site_b.soft_delete(by="admin")
         db_session.commit()
 
-        resp = client.get("/api/cockpit")
+        resp = client.get("/api/cockpit", headers={"X-Org-Id": str(org.id)})
         assert resp.status_code == 200
         data = resp.json()
 
