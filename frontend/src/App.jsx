@@ -205,14 +205,8 @@ function App() {
                         </PageSuspense>
                       }
                     />
-                    <Route
-                      path="/energy-copilot"
-                      element={
-                        <PageSuspense>
-                          <EnergyCopilotPage />
-                        </PageSuspense>
-                      }
-                    />
+                    {/* Energy Copilot — redirigé vers cockpit (pas de données seed, page vide) */}
+                    <Route path="/energy-copilot" element={<Navigate to="/cockpit" replace />} />
 
                     {/* Legacy redirects */}
                     <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />

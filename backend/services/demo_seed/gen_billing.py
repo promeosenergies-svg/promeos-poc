@@ -124,14 +124,22 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         if existing:
             continue
 
-        # Realistic energy
+        # Realistic energy — aligned with shadow billing rates to avoid false anomalies
         annual = site.annual_kwh_total or 500000
         monthly_kwh = round(annual / 12 * rng.uniform(0.8, 1.2), 0)
         price = contract.price_ref_eur_per_kwh or 0.15
         energy_eur = round(monthly_kwh * price, 2)
-        network_eur = round(monthly_kwh * rng.uniform(0.03, 0.06), 2)
-        tax_eur = round((energy_eur + network_eur) * rng.uniform(0.15, 0.25), 2)
-        total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
+        # Use realistic TURPE/accise rates (aligned with shadow billing V2 expectations)
+        turpe_rate = 0.0453  # TURPE C5 BT
+        accise_rate = 0.0225  # Accise ELEC (TIEE)
+        # Add small variance ±8% to look realistic without triggering 20% shadow_gap
+        network_eur = round(monthly_kwh * turpe_rate * rng.uniform(0.92, 1.08), 2)
+        tax_eur = round(monthly_kwh * accise_rate * rng.uniform(0.92, 1.08), 2)
+        abo_eur = contract.fixed_fee_eur_per_month or 0
+        # TTC = HT components + TVA (20% on energy/network/taxes, 5.5% on abonnement)
+        ht = energy_eur + network_eur + tax_eur + abo_eur
+        tva = round((energy_eur + network_eur + tax_eur) * 0.20 + abo_eur * 0.055, 2)
+        total = round(ht + tva, 2)
 
         # Anomaly: 1 in 5 invoices — varied types
         is_anomaly = inv_idx % 5 == 3
@@ -139,15 +147,15 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         if is_anomaly:
             anomaly_type = rng.choice(["overcharge", "volume_spike", "network_drift", "tax_mismatch"])
             if anomaly_type == "overcharge":
-                total = round(total * rng.uniform(1.15, 1.40), 2)
+                total = round(total * rng.uniform(1.25, 1.45), 2)
             elif anomaly_type == "volume_spike":
-                total = round(total * rng.uniform(1.20, 1.50), 2)
+                total = round(total * rng.uniform(1.30, 1.55), 2)
             elif anomaly_type == "network_drift":
-                network_eur = round(network_eur * rng.uniform(1.30, 1.60), 2)
-                total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
+                network_eur = round(network_eur * rng.uniform(1.35, 1.65), 2)
+                total = round(energy_eur + network_eur + tax_eur + abo_eur, 2)
             elif anomaly_type == "tax_mismatch":
-                tax_eur = round(tax_eur * rng.uniform(1.25, 1.50), 2)
-                total = round(energy_eur + network_eur + tax_eur + (contract.fixed_fee_eur_per_month or 0), 2)
+                tax_eur = round(tax_eur * rng.uniform(1.30, 1.55), 2)
+                total = round(energy_eur + network_eur + tax_eur + abo_eur, 2)
 
         invoice = EnergyInvoice(
             site_id=site.id,

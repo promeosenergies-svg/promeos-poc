@@ -36,14 +36,16 @@ const FILTER_TABS = [
 export default function ActivationPage() {
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
-  const { scopedSites } = useScope();
+  const { scopedSites, orgSites } = useScope();
+  // Activation page should show ALL org sites, not just the scope-filtered ones
+  const allSites = orgSites?.length > 0 ? orgSites : scopedSites;
   const filterDim = sp.get('dim') || 'all';
 
   const [siteSearch, setSiteSearch] = useState('');
 
   // Compute kpis from scopedSites (same formula as Cockpit.jsx L58-79)
   const kpis = useMemo(() => {
-    const sites = scopedSites;
+    const sites = allSites;
     const total = sites.length;
     const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
     const nonConformes = sites.filter((s) => s.statut_conformite === 'non_conforme').length;
@@ -51,7 +53,7 @@ export default function ActivationPage() {
     const couvertureDonnees =
       total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
-  }, [scopedSites]);
+  }, [allSites]);
 
   const { billingSummary, purchaseSignals, contractSiteIds, loading } = useActivationData(
     kpis.total
@@ -87,7 +89,7 @@ export default function ActivationPage() {
   const hasBillingOrg = (billingSummary?.total_invoices ?? billingSummary?.total_eur ?? 0) > 0;
 
   const sitesWithStatus = useMemo(() => {
-    return scopedSites.map((site) => ({
+    return allSites.map((site) => ({
       ...site,
       _activation: {
         patrimoine: true, // site exists
@@ -97,7 +99,7 @@ export default function ActivationPage() {
         achat: contractSiteIds.has(site.id),
       },
     }));
-  }, [scopedSites, hasBillingOrg, contractSiteIds]);
+  }, [allSites, hasBillingOrg, contractSiteIds]);
 
   // Filter sites
   const filteredSites = useMemo(() => {

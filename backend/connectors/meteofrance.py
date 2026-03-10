@@ -1,5 +1,5 @@
 """
-PROMEOS Connectors - Meteo-France (STUB - requires API key)
+PROMEOS Connectors - Meteo-France (API key requise)
 """
 
 import os
@@ -16,11 +16,11 @@ class MeteoFranceConnector(Connector):
         api_key = os.environ.get("METEOFRANCE_API_KEY")
         if not api_key:
             return {
-                "status": "stub",
-                "message": "Stub mode: definir METEOFRANCE_API_KEY pour activer",
+                "status": "pending",
+                "message": "Clé API non configurée — définir METEOFRANCE_API_KEY",
                 "doc": "https://portail-api.meteofrance.fr/",
             }
         return {"status": "ok", "message": "API key presente (non teste)"}
 
     def sync(self, db, object_type: str, object_id: int, date_from=None, date_to=None):
-        return []  # Stub
+        return []

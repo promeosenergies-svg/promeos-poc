@@ -106,6 +106,11 @@ def get_onboarding_progress(
         raise HTTPException(400, "org_id requis")
 
     progress = _get_or_create(db, oid)
+
+    # Auto-detect completed steps if all steps are still False (fresh record)
+    if not any(getattr(progress, f) for f in STEP_FIELDS):
+        _auto_detect(db, oid, progress)
+
     db.commit()
 
     # Data quality gating — check org's overall coverage
@@ -177,20 +182,8 @@ def dismiss_stepper(
     return _serialize(progress)
 
 
-@router.post("/auto")
-def auto_detect_steps(
-    request: Request,
-    org_id: int = Query(None),
-    db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_optional_auth),
-):
-    """Auto-detect completed steps from actual data."""
-    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
-    if not oid:
-        raise HTTPException(400, "org_id requis")
-
-    progress = _get_or_create(db, oid)
-
+def _auto_detect(db: Session, oid: int, progress: OnboardingProgress):
+    """Auto-detect completed steps from actual data (shared logic)."""
     # Step 1: org exists
     org = db.query(Organisation).filter(Organisation.id == oid).first()
     if org:
@@ -220,7 +213,7 @@ def auto_detect_steps(
             if meter_count > 0:
                 progress.step_meters_connected = True
 
-    # Step 4: has invoices (via site_ids — EnergyInvoice has no org_id)
+    # Step 4: has invoices
     if pf_ids:
         inv_site_ids = [r.id for r in db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids)).all()]
         if inv_site_ids:
@@ -228,9 +221,9 @@ def auto_detect_steps(
             if inv_count > 0:
                 progress.step_invoices_imported = True
 
-    # Step 5: has users (via UserOrgRole — User has no org_id)
+    # Step 5: has users
     user_count = db.query(UserOrgRole).filter(UserOrgRole.org_id == oid).count()
-    if user_count >= 1:  # at least 1 user assigned to org
+    if user_count >= 1:
         progress.step_users_invited = True
 
     # Step 6: has actions
@@ -242,6 +235,22 @@ def auto_detect_steps(
     if all(getattr(progress, f) for f in STEP_FIELDS):
         if not progress.completed_at:
             progress.completed_at = datetime.utcnow()
+
+
+@router.post("/auto")
+def auto_detect_steps(
+    request: Request,
+    org_id: int = Query(None),
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_optional_auth),
+):
+    """Auto-detect completed steps from actual data."""
+    oid = resolve_org_id(request, auth, db, org_id_override=org_id)
+    if not oid:
+        raise HTTPException(400, "org_id requis")
+
+    progress = _get_or_create(db, oid)
+    _auto_detect(db, oid, progress)
 
     db.commit()
     db.refresh(progress)
