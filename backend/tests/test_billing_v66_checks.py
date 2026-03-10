@@ -262,13 +262,13 @@ class TestActionItemBridge:
 
         persist_insights(db, inv, anomalies)
 
-        # Verify ActionItem was created
+        # ActionItem creation is now handled by sync_actions (build_actions_from_billing)
+        # persist_insights only creates BillingInsight records
         actions = db.query(ActionItem).filter(ActionItem.source_type == ActionSourceType.BILLING).all()
-        assert len(actions) == 1
-        assert actions[0].idempotency_key == f"billing:{inv.id}:shadow_gap"
+        assert len(actions) == 0
 
     def test_persist_insights_idempotent_no_duplicate(self, db):
-        """Calling persist_insights twice does not create duplicate ActionItems."""
+        """Calling persist_insights twice does not create duplicate BillingInsights."""
         from services.billing_service import persist_insights
 
         site = _make_site(db)
@@ -295,6 +295,6 @@ class TestActionItemBridge:
         persist_insights(db, inv, anomalies)
         persist_insights(db, inv, anomalies)
 
-        # Should still be only 1 action (idempotency_key dedup)
+        # ActionItem creation now handled by sync_actions, not persist_insights
         actions = db.query(ActionItem).filter(ActionItem.idempotency_key == f"billing:{inv.id}:unit_price_high").all()
-        assert len(actions) == 1
+        assert len(actions) == 0

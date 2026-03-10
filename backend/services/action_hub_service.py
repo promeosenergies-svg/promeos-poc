@@ -277,24 +277,34 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
     site_ids = _get_site_ids(db, org_id)
     warnings = []
 
-    # Collect actions from all 4 briques
+    # Per-source caps — keep volumes realistic for demo (5-site portfolio ≈ 30 actions)
+    _SOURCE_CAP = {
+        "compliance": 10,
+        "consumption": 8,
+        "billing": 8,
+        "purchase": 6,
+    }
+
+    def _capped(builder, label, *args):
+        try:
+            raw = builder(*args)
+            cap = _SOURCE_CAP.get(label, 999)
+            if len(raw) > cap:
+                # Sort by estimated_gain_eur desc so highest-value actions survive
+                raw.sort(key=lambda a: -(a.get("estimated_gain_eur") or 0))
+                warnings.append(f"{label}: capped {len(raw)} → {cap}")
+                return raw[:cap]
+            return raw
+        except Exception as e:
+            warnings.append(f"{label}: {e}")
+            return []
+
+    # Collect actions from all 4 briques (capped per source)
     all_actions = []
-    try:
-        all_actions.extend(build_actions_from_compliance(db, org_id, site_ids))
-    except Exception as e:
-        warnings.append(f"compliance: {e}")
-    try:
-        all_actions.extend(build_actions_from_consumption(db, org_id, site_ids))
-    except Exception as e:
-        warnings.append(f"consumption: {e}")
-    try:
-        all_actions.extend(build_actions_from_billing(db, org_id, site_ids))
-    except Exception as e:
-        warnings.append(f"billing: {e}")
-    try:
-        all_actions.extend(build_actions_from_purchase(db, org_id))
-    except Exception as e:
-        warnings.append(f"purchase: {e}")
+    all_actions.extend(_capped(build_actions_from_compliance, "compliance", db, org_id, site_ids))
+    all_actions.extend(_capped(build_actions_from_consumption, "consumption", db, org_id, site_ids))
+    all_actions.extend(_capped(build_actions_from_billing, "billing", db, org_id, site_ids))
+    all_actions.extend(_capped(build_actions_from_purchase, "purchase", db, org_id))
 
     # Track which (source_type, source_id, source_key) are still active
     active_keys = set()

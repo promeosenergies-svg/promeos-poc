@@ -740,15 +740,19 @@ export default function ConformitePage() {
   const score = useMemo(() => {
     if (!summary)
       return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
+    // Use unified compliance score (59/100) instead of pct_ok (0%) to avoid contradiction
+    const unifiedPct = complianceScore
+      ? Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)
+      : summary.pct_ok || 0;
     return {
-      pct: summary.pct_ok || 0,
+      pct: unifiedPct,
       total: obligations.length,
       non_conformes: summary.sites_nok || 0,
       a_risque: summary.sites_unknown || 0,
       conformes: summary.sites_ok || 0,
       total_impact_eur: 0,
     };
-  }, [summary, obligations]);
+  }, [summary, obligations, complianceScore]);
 
   const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);
 

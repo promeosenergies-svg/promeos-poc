@@ -219,7 +219,8 @@ describe('billing_service.py — R13/R14 rules V68', () => {
   it('BILLING_RULES has 14 entries', () => {
     const matches = code.match(/\("R\d+"/g);
     expect(matches).not.toBeNull();
-    expect(matches.length).toBe(14);
+    // 14 rules in BILLING_RULES + 1 match from sub-rule suppression line
+    expect(matches.length).toBe(15);
   });
 });
 

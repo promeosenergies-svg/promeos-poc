@@ -204,13 +204,13 @@ def _build_inputs(invoice: EnergyInvoice, ref_price: Optional[float] = None) -> 
 def _rule_shadow_gap(
     invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
 ) -> Optional[Dict]:
-    """R1: Ecart shadow billing > 10%."""
+    """R1: Ecart shadow billing > 20%."""
     shadow = shadow_billing_simple(invoice, contract)
-    if shadow["delta_pct"] is not None and abs(shadow["delta_pct"]) > 10:
+    if shadow["delta_pct"] is not None and abs(shadow["delta_pct"]) > 20:
         metrics = {
             **shadow,
             "inputs": _build_inputs(invoice, shadow.get("price_ref_eur_kwh")),
-            "threshold_pct": 10,
+            "threshold_pct": 20,
             "delta_calculated_pct": shadow["delta_pct"],
             "confidence": "medium",
             "assumptions": [
@@ -499,7 +499,7 @@ def _rule_price_drift(
                 "actual_unit_price": round(actual_unit, 4),
                 "contract_ref": ref,
                 "drift_pct": round(drift_pct, 1),
-                "threshold_pct": 15,
+                "threshold_pct": 20,
                 "delta_calculated_pct": round(drift_pct, 1),
                 "inputs": _build_inputs(invoice, ref),
                 "confidence": "high",
@@ -604,7 +604,7 @@ def _rule_contract_expiry(
 def _rule_reseau_mismatch(
     invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
 ) -> Optional[Dict]:
-    """R13: Coût réseau/TURPE facturé ≠ attendu > 10%."""
+    """R13: Coût réseau/TURPE facturé ≠ attendu > 15%."""
     if not lines:
         return None
     from services.billing_shadow_v2 import shadow_billing_v2
@@ -613,7 +613,7 @@ def _rule_reseau_mismatch(
     if res["expected_reseau_ht"] == 0:
         return None
     pct = abs(res["delta_reseau"] / res["expected_reseau_ht"] * 100)
-    if pct > 10:
+    if pct > 15:
         sev = "high" if pct > 20 else "medium"
         return {
             "type": "reseau_mismatch",
@@ -640,7 +640,7 @@ def _rule_reseau_mismatch(
 def _rule_taxes_mismatch(
     invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
 ) -> Optional[Dict]:
-    """R14: Taxes (CSPE/TICGN) facturées ≠ attendu > 5%."""
+    """R14: Taxes (CSPE/TICGN) facturées ≠ attendu > 10%."""
     if not lines:
         return None
     from services.billing_shadow_v2 import shadow_billing_v2
@@ -649,7 +649,7 @@ def _rule_taxes_mismatch(
     if res["expected_taxes_ht"] == 0:
         return None
     pct = abs(res["delta_taxes"] / res["expected_taxes_ht"] * 100)
-    if pct > 5:
+    if pct > 10:
         return {
             "type": "taxes_mismatch",
             "severity": "medium",
@@ -697,9 +697,17 @@ def run_anomaly_engine(
     contract: Optional[EnergyContract],
     db: Session,
 ) -> List[Dict[str, Any]]:
-    """Run all billing rules on an invoice. Returns list of anomaly dicts."""
+    """Run all billing rules on an invoice. Returns list of anomaly dicts.
+
+    When R1 (shadow_gap) fires, skip sub-component rules (R13 reseau, R14 taxes)
+    to avoid stacking 4 anomalies on the same invoice — shadow_gap already covers them.
+    """
     anomalies = []
+    shadow_gap_fired = False
     for rule_id, rule_name, rule_fn in BILLING_RULES:
+        # Skip sub-component rules when shadow_gap already explains the deviation
+        if shadow_gap_fired and rule_id in ("R10", "R13", "R14"):
+            continue
         try:
             if rule_id in _RULES_ACCEPT_DB:
                 result = rule_fn(invoice, contract, lines, db=db)
@@ -712,6 +720,8 @@ def run_anomaly_engine(
                     result["metrics"]["rule_id"] = rule_id
                     result["metrics"]["rule_name"] = rule_name
                 anomalies.append(result)
+                if rule_id == "R1":
+                    shadow_gap_fired = True
         except Exception as e:
             logger.warning("Billing rule %s failed for invoice %s: %s", rule_id, getattr(invoice, "id", "?"), e)
     return anomalies
@@ -755,31 +765,10 @@ def persist_insights(
             insight_status=InsightStatus.OPEN,
         )
         db.add(insight)
-        db.flush()  # get insight.id for idempotency_key
+        db.flush()  # get insight.id
 
-        # V66 P2.4 — Bridge billing anomaly → ActionItem (idempotent)
-        if org_id:
-            idem_key = f"billing:{invoice.id}:{a['type']}"
-            existing_action = db.query(ActionItem).filter(ActionItem.idempotency_key == idem_key).first()
-            if not existing_action:
-                sev = a.get("severity", "medium").lower()
-                priority = 1 if sev == "critical" else 2 if sev == "high" else 3
-                db.add(
-                    ActionItem(
-                        org_id=org_id,
-                        site_id=invoice.site_id,
-                        source_type=ActionSourceType.BILLING,
-                        source_id=str(insight.id),
-                        source_key=f"billing:{invoice.id}:{a['type']}",
-                        idempotency_key=idem_key,
-                        title=a.get("message", a["type"]),
-                        rationale=json.dumps(a.get("metrics", {})),
-                        priority=priority,
-                        severity=sev,
-                        estimated_gain_eur=a.get("estimated_loss_eur"),
-                        status=ActionStatus.OPEN,
-                    )
-                )
+        # NOTE: ActionItem creation for billing insights is handled by sync_actions
+        # (build_actions_from_billing) with per-source capping, not here.
 
         insights.append(insight)
 

@@ -298,7 +298,8 @@ class TestBillingService:
         anomalies = run_anomaly_engine(invoice, [], contract, db_session)
         types = [a["type"] for a in anomalies]
         assert "shadow_gap" in types
-        assert "price_drift" in types  # 0.234 vs 0.18 = +30%
+        # price_drift (R10) is now skipped when shadow_gap (R1) fires to avoid stacking
+        assert "price_drift" not in types
 
     def test_anomaly_engine_period_too_long(self, db_session):
         from services.billing_service import run_anomaly_engine

@@ -407,15 +407,15 @@ class TestR13R14:
         assert result["type"] == "reseau_mismatch"
         assert result["severity"] == "high"
 
-    def test_r13_medium_10_to_20pct(self, db):
-        """R13 MEDIUM quand réseau entre 10% et 20% au-dessus attendu."""
+    def test_r13_medium_16_to_20pct(self, db):
+        """R13 MEDIUM quand réseau entre 15% et 20% au-dessus attendu (threshold=15%)."""
         from services.billing_service import _rule_reseau_mismatch
         from services.billing_shadow_v2 import TURPE_EUR_KWH_ELEC
 
         org, site = _make_org_site(db, "OrgR13M", "600003002")
         contract = _make_contract(db, site.id)
-        # 15% above expected
-        network = round(9000 * TURPE_EUR_KWH_ELEC * 1.15, 2)
+        # 18% above expected (above 15% threshold)
+        network = round(9000 * TURPE_EUR_KWH_ELEC * 1.18, 2)
         total = round(1020 + network + 200, 2)
         inv = self._make_full_invoice(
             db, site.id, contract.id, energy_amt=1020, network_amt=network, tax_amt=200, total_eur=total
@@ -442,15 +442,15 @@ class TestR13R14:
         result = _rule_reseau_mismatch(inv, contract, lines)
         assert result is None
 
-    def test_r14_medium_above_5pct(self, db):
-        """R14 MEDIUM quand taxes > 5% au-dessus attendu."""
+    def test_r14_medium_above_10pct(self, db):
+        """R14 MEDIUM quand taxes > 10% au-dessus attendu (threshold=10%)."""
         from services.billing_service import _rule_taxes_mismatch
         from services.billing_shadow_v2 import CSPE_EUR_KWH_ELEC
 
         org, site = _make_org_site(db, "OrgR14M", "600003004")
         contract = _make_contract(db, site.id)
-        # 8% above expected CSPE
-        tax = round(9000 * CSPE_EUR_KWH_ELEC * 1.08, 2)
+        # 12% above expected CSPE (above 10% threshold)
+        tax = round(9000 * CSPE_EUR_KWH_ELEC * 1.12, 2)
         total = round(1020 + 400 + tax, 2)
         inv = self._make_full_invoice(
             db, site.id, contract.id, energy_amt=1020, network_amt=400, tax_amt=tax, total_eur=total
