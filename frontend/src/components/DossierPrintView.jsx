@@ -37,6 +37,7 @@ export default function DossierPrintView({
   orgLabel,
   period,
   insightDetail,
+  complianceData,
 }) {
   const [actions, setActions] = useState([]);
   const [evidenceMap, setEvidenceMap] = useState(new Map());
@@ -285,6 +286,112 @@ export default function DossierPrintView({
                   </div>
                 );
               })()}
+
+            {/* ── B5: Section conformité (quand ouvert depuis conformité) ── */}
+            {complianceData && (
+              <div
+                className="border border-gray-200 rounded-xl p-5 bg-white"
+                data-testid="dossier-compliance"
+              >
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                  Synthèse conformité réglementaire
+                </h3>
+                {/* Score */}
+                {complianceData.score != null && (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500">Score conformité</p>
+                      <p
+                        className={`text-2xl font-bold ${
+                          complianceData.score >= 70
+                            ? 'text-green-600'
+                            : complianceData.score >= 40
+                              ? 'text-amber-600'
+                              : 'text-red-600'
+                        }`}
+                      >
+                        {Math.round(complianceData.score)}/100
+                      </p>
+                    </div>
+                    {complianceData.confidence && (
+                      <div>
+                        <p className="text-xs text-gray-500">Confiance</p>
+                        <p className="text-sm font-medium text-gray-700">
+                          {complianceData.confidence === 'high'
+                            ? 'Élevée'
+                            : complianceData.confidence === 'medium'
+                              ? 'Moyenne'
+                              : 'Faible'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Top 3 urgences */}
+                {complianceData.topUrgences?.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
+                      Urgences prioritaires
+                    </p>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-1 text-xs text-gray-500">Obligation</th>
+                          <th className="text-left py-1 text-xs text-gray-500">Statut</th>
+                          <th className="text-left py-1 text-xs text-gray-500">Échéance</th>
+                          <th className="text-right py-1 text-xs text-gray-500">Risque (€)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {complianceData.topUrgences.map((u, i) => (
+                          <tr key={i} className="border-b border-gray-100">
+                            <td className="py-1 text-gray-700 font-medium">{u.regulation}</td>
+                            <td className="py-1">
+                              <span
+                                className={`text-xs px-1.5 py-0.5 rounded ${
+                                  u.statut === 'non_conforme'
+                                    ? 'bg-red-50 text-red-700'
+                                    : 'bg-amber-50 text-amber-700'
+                                }`}
+                              >
+                                {u.statut === 'non_conforme' ? 'Non conforme' : 'À qualifier'}
+                              </span>
+                            </td>
+                            <td className="py-1 text-xs text-gray-600">{u.echeance || '—'}</td>
+                            <td className="py-1 text-right text-xs text-red-600">
+                              {u.penalty > 0 ? `${fmtEur(u.penalty)} €` : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Preuves manquantes */}
+                {complianceData.missingProofs?.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-red-600 uppercase mb-1">
+                      Preuves manquantes ({complianceData.missingProofs.length})
+                    </p>
+                    <ul className="space-y-0.5">
+                      {complianceData.missingProofs.map((p, i) => (
+                        <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                          <AlertTriangle size={10} className="text-red-400 shrink-0 mt-0.5" />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* Prochaine échéance */}
+                {complianceData.nextDeadline && (
+                  <p className="text-xs text-gray-600">
+                    Prochaine échéance : {complianceData.nextDeadline.label} —{' '}
+                    {complianceData.nextDeadline.date}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ── Stats bar ───────────────────────────────────── */}
             <div className="grid grid-cols-5 gap-3" data-testid="dossier-stats">

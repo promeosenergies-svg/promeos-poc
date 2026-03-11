@@ -99,10 +99,17 @@ _ACTION_TEMPLATES = {
 }
 
 
-def generate_actions(db, org, sites: list, actions_count: int, rng: random.Random) -> dict:
-    """Generate action items from various sources."""
+def generate_actions(db, org, sites: list, actions_count: int, rng: random.Random, **kwargs) -> dict:
+    """Generate action items from various sources.
+
+    If compliance_findings is passed (list of ComplianceFinding), compliance
+    actions are linked to real finding IDs for demo traceability.
+    """
     created = 0
     source_types = list(_ACTION_TEMPLATES.keys())
+    compliance_findings = kwargs.get("compliance_findings", [])
+    # Index NOK/UNKNOWN findings by source_key prefix for linking
+    _nok_findings = [f for f in compliance_findings if f.status in ("NOK", "UNKNOWN")]
 
     for i in range(actions_count):
         source_type_str = source_types[i % len(source_types)]
@@ -123,11 +130,23 @@ def generate_actions(db, org, sites: list, actions_count: int, rng: random.Rando
         status_choices = [ActionStatus.OPEN] * 5 + [ActionStatus.IN_PROGRESS] * 3 + [ActionStatus.DONE] * 2
         status = rng.choice(status_choices)
 
+        # Link compliance actions to real finding IDs when available
+        source_id = f"demo_{i}"
+        if source_type_str == "compliance" and _nok_findings:
+            prefix = tpl["source_key"].split(":")[0]  # "bacs", "dt", "aper"
+            reg_map = {"bacs": "bacs", "dt": "decret_tertiaire_operat", "aper": "aper"}
+            reg = reg_map.get(prefix)
+            matching = [f for f in _nok_findings if f.regulation == reg and f.site_id == site.id]
+            if not matching:
+                matching = [f for f in _nok_findings if f.regulation == reg]
+            if matching:
+                source_id = str(matching[0].id)
+
         action = ActionItem(
             org_id=org.id,
             site_id=site.id,
             source_type=source_type_map[source_type_str],
-            source_id=f"demo_{i}",
+            source_id=source_id,
             source_key=f"{tpl['source_key']}:{site.id}",
             title=tpl["title"],
             rationale=tpl["rationale"],

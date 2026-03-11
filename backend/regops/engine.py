@@ -1,6 +1,23 @@
 """
-PROMEOS RegOps - Engine orchestrateur
-Coordonne les 4 moteurs de regles + scoring + cache.
+PROMEOS RegOps - Engine orchestrateur  ★ SOURCE DE VÉRITÉ ★
+
+Coordonne les 4 moteurs de règles (tertiaire_operat, bacs, aper, cee_p6)
++ scoring unifié A.2 + cache RegAssessment.
+
+C'est ce moteur qui alimente :
+  - GET /api/regops/site/{id}          → évaluation fraîche
+  - GET /api/regops/site/{id}/cached   → cache RegAssessment
+  - compliance_score_service.py        → lit RegAssessment pour score 0-100
+  - ConformitePage.jsx                 → via /api/compliance/bundle qui lit
+                                         les ComplianceFinding produits par
+                                         compliance_rules.py (même base YAML).
+
+Les 3 autres moteurs existent pour des raisons historiques :
+  - compliance_engine.py  → LEGACY (snapshots Site, backward-compat)
+  - compliance_rules.py   → évaluateur YAML → ComplianceFinding rows
+  - bacs_engine.py        → BACS V2 spécialisé (Putile, TRI, inspections)
+
+Config scoring : regops/config/regs.yaml (poids, seuils, pénalités).
 """
 
 import yaml

@@ -218,7 +218,12 @@ function HorizontalTimeline({ events, today }) {
                 <p className="text-[9px] font-medium text-gray-700 leading-tight line-clamp-2">
                   {evt.label}
                 </p>
-                <p className="text-[8px] text-gray-400">{formatDate(evt.deadline)}</p>
+                <p
+                  className={`text-[8px] ${new Date(evt.deadline) < new Date(today) ? 'text-red-500 font-medium' : 'text-gray-400'}`}
+                >
+                  {new Date(evt.deadline) < new Date(today) ? 'Échue · ' : ''}
+                  {formatDate(evt.deadline)}
+                </p>
               </div>
 
               {/* Dot on axis */}
@@ -291,9 +296,12 @@ function VerticalTimeline({ events, today }) {
                 <span className={`text-[10px] font-medium ${style.text}`}>{style.label}</span>
               </div>
               <p className="text-sm font-semibold text-gray-800">{evt.label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {formatDate(evt.deadline)}
-                {!isPast && ` — dans ${daysBetween(today, evt.deadline)} jours`}
+              <p
+                className={`text-xs mt-0.5 ${isPast ? 'text-red-600 font-medium' : 'text-gray-500'}`}
+              >
+                {isPast
+                  ? `Échéance dépassée depuis le ${formatDate(evt.deadline)}`
+                  : `${formatDate(evt.deadline)} — dans ${daysBetween(today, evt.deadline)} jours`}
               </p>
               <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
                 <span>

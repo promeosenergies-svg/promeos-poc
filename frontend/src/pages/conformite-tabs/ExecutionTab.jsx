@@ -1,6 +1,7 @@
 /**
  * ExecutionTab — Extracted from ConformitePage (V92 split)
  * Tab "Plan d'exécution" with ActionRow per finding.
+ * B4: Boucle finding → action → preuve — statut preuve visible.
  */
 import { useState } from 'react';
 import {
@@ -13,6 +14,8 @@ import {
   Eye,
   FileText,
   ClipboardList,
+  AlertCircle,
+  Shield,
 } from 'lucide-react';
 import { Button, EmptyState } from '../../ui';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
@@ -41,7 +44,20 @@ function WorkflowBadge({ status }) {
   );
 }
 
-function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }) {
+/** B4 — Compute proof lifecycle status for a finding */
+function getProofLifecycle(finding, expectedProofs, proofFiles) {
+  if (expectedProofs.length === 0) return null;
+  const files = proofFiles?.[finding.regulation] || [];
+  if (files.length >= expectedProofs.length)
+    return { label: 'Bouclé', color: 'bg-green-50 text-green-700', icon: CheckCircle2 };
+  if (files.length > 0)
+    return { label: 'Preuve partielle', color: 'bg-amber-50 text-amber-700', icon: Shield };
+  if (finding.insight_status === 'ack')
+    return { label: 'En attente preuve', color: 'bg-blue-50 text-blue-700', icon: AlertCircle };
+  return { label: 'Preuve manquante', color: 'bg-red-50 text-red-600', icon: AlertCircle };
+}
+
+function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding, proofFiles }) {
   const { isExpert } = useExpertMode();
   const ruleInfo = RULE_LABELS[finding.rule_id];
   const nextSteps = RULE_NEXT_STEPS[finding.rule_id] || [];
@@ -114,6 +130,20 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
             </button>
           </>
         )}
+        {/* B4 — Proof lifecycle badge */}
+        {(() => {
+          const lifecycle = getProofLifecycle(finding, expectedProofs, proofFiles);
+          if (!lifecycle) return null;
+          const LcIcon = lifecycle.icon;
+          return (
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded font-medium inline-flex items-center gap-1 shrink-0 ${lifecycle.color}`}
+            >
+              <LcIcon size={10} />
+              {lifecycle.label}
+            </span>
+          );
+        })()}
         {finding.status === 'NOK' && (
           <Button size="sm" variant="secondary" onClick={() => onCreateAction(finding)}>
             <Plus size={12} /> Créer une action
@@ -153,12 +183,46 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
           </div>
           {isExpert && (
             <div className="p-2 bg-gray-50 rounded text-[10px] text-gray-400 space-y-1">
-              <p className="font-mono">rule_id: {finding.rule_id}</p>
-              {finding.source_ref && <p>source_ref: {finding.source_ref}</p>}
-              {finding.inputs && (
-                <pre className="whitespace-pre-wrap text-[10px] text-gray-400 max-h-24 overflow-y-auto">
-                  {JSON.stringify(finding.inputs, null, 2)}
-                </pre>
+              <div className="flex items-center gap-3">
+                <span className="font-mono">rule_id: {finding.rule_id}</span>
+                {finding.source_ref && <span>source: {finding.source_ref}</span>}
+                {finding.engine_version && <span>v{finding.engine_version}</span>}
+              </div>
+              {finding.inputs_json && (
+                <div className="mt-1">
+                  <p className="font-semibold text-gray-500 mb-0.5">Données d'entrée</p>
+                  <table className="w-full text-[10px]">
+                    <tbody>
+                      {Object.entries(
+                        typeof finding.inputs_json === 'string'
+                          ? JSON.parse(finding.inputs_json)
+                          : finding.inputs_json
+                      ).map(([k, v]) => (
+                        <tr key={k} className="border-b border-gray-100">
+                          <td className="py-0.5 pr-2 text-gray-500">{k}</td>
+                          <td className="py-0.5 text-gray-600">
+                            {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {/* Fallback for old-style inputs */}
+              {!finding.inputs_json && finding.inputs && (
+                <div className="mt-1">
+                  <table className="w-full text-[10px]">
+                    <tbody>
+                      {Object.entries(finding.inputs).map(([k, v]) => (
+                        <tr key={k} className="border-b border-gray-100">
+                          <td className="py-0.5 pr-2 text-gray-500">{k}</td>
+                          <td className="py-0.5 text-gray-600">{String(v)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
@@ -176,6 +240,7 @@ export default function ExecutionTab({
   setAuditFindingId,
   openActionDrawer,
   navigate,
+  proofFiles,
 }) {
   return (
     <div className="space-y-4">
@@ -212,6 +277,7 @@ export default function ExecutionTab({
               onWorkflowAction={handleWorkflowAction}
               onCreateAction={handleCreateFromFinding}
               onAuditFinding={setAuditFindingId}
+              proofFiles={proofFiles}
             />
           ))}
         </div>

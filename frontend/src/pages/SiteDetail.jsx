@@ -403,8 +403,14 @@ const SiteDetail = () => {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <Badge statut={ob.statut} />
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                          {ob.echeance || '-'}
+                        <td
+                          className={`px-4 py-3 whitespace-nowrap text-sm ${ob.echeance && ob.statut !== 'conforme' && new Date(ob.echeance) < new Date() ? 'text-red-600 font-medium' : 'text-gray-600'}`}
+                        >
+                          {ob.echeance
+                            ? ob.statut !== 'conforme' && new Date(ob.echeance) < new Date()
+                              ? `Échue · ${new Date(ob.echeance).toLocaleDateString('fr-FR')}`
+                              : new Date(ob.echeance).toLocaleDateString('fr-FR')
+                            : '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">

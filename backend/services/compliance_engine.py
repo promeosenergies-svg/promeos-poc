@@ -1,8 +1,16 @@
 """
-PROMEOS - Compliance Engine
-Calculates Site conformity snapshots from their Obligations.
-Source of truth: Obligation rows -> derived to Site snapshot fields.
-BACS statut is refined using Evidences (attestation_bacs, derogation_bacs).
+PROMEOS - Compliance Engine (LEGACY)
+
+⚠️  DÉPRÉCIÉ — Ce moteur est conservé pour backward-compat (snapshots Site).
+    La source de vérité est désormais RegOps (regops/engine.py) qui orchestre
+    les 4 évaluateurs YAML et produit le score unifié A.2.
+
+    Ce moteur :
+    - recompute_site() : écrit les snapshots statut_decret_tertiaire/statut_bacs sur Site
+    - est appelé par POST /api/compliance/recompute (endpoint legacy)
+    - sert de fallback pour compliance_score_service.py si RegAssessment absent
+
+    NE PAS ajouter de nouvelles règles ici — utiliser regops/rules/*.py + YAML.
 
 V68: Data Readiness Gate — compute_readiness, compute_applicability,
 compute_scores, compute_deadlines, compute_data_trust, site/portfolio summaries.

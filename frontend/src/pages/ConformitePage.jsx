@@ -207,6 +207,25 @@ export function isOverdue(obligation) {
 }
 
 /**
+ * Format a deadline date with contextual wording.
+ * Past deadlines for non-conforme obligations show "Échéance dépassée depuis le …"
+ * Future deadlines show the date normally.
+ */
+export function formatDeadline(echeance, statut) {
+  if (!echeance) return null;
+  const d = new Date(echeance);
+  const formatted = d.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  if (statut !== 'conforme' && d < new Date()) {
+    return { text: `Échéance dépassée depuis le ${formatted}`, overdue: true };
+  }
+  return { text: formatted, overdue: false };
+}
+
+/**
  * Transform API sitesData (from /compliance/sites) into obligation-like objects
  * grouped by regulation, for display in ObligationCard.
  */
@@ -481,7 +500,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
  * ComplianceSummaryBanner — Bandeau contextuel 3 états (vert/rouge/ambre).
  * Affiche un message actionnable + CTA selon le niveau de conformité.
  */
-function ComplianceSummaryBanner({ score, _obligations, timeline, isExpert, navigate }) {
+function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navigate }) {
   const nextDeadline = timeline?.next_deadline || null;
   const pct = score?.pct ?? 0;
   const nonConformes = score?.non_conformes ?? 0;
@@ -600,6 +619,103 @@ function ComplianceSummaryBanner({ score, _obligations, timeline, isExpert, navi
           )}
         </div>
       </div>
+
+      {/* B2 — Résumé exécutif 1 ligne */}
+      {(() => {
+        const oblCount = obligations?.length || 0;
+        const ncCount = nonConformes;
+        const urgentDeadline = nextDeadline?.days_remaining;
+        const urgentLabel =
+          urgentDeadline != null && urgentDeadline <= 90
+            ? `1 échéance sous ${urgentDeadline} jour${urgentDeadline > 1 ? 's' : ''}`
+            : null;
+        const parts = [
+          `${oblCount} obligation${oblCount > 1 ? 's' : ''} active${oblCount > 1 ? 's' : ''}`,
+          ncCount > 0 ? `${ncCount} non conforme${ncCount > 1 ? 's' : ''}` : null,
+          aRisque > 0 ? `${aRisque} à qualifier` : null,
+          urgentLabel,
+        ].filter(Boolean);
+        if (parts.length === 0) return null;
+        return (
+          <p data-testid="executive-summary" className="text-xs text-gray-600 mt-2 font-medium">
+            {parts.join(' · ')}
+          </p>
+        );
+      })()}
+
+      {/* B2 — Top 3 urgences */}
+      {(() => {
+        if (!obligations?.length) return null;
+        // Compute urgency: severity × proximity × penalty
+        const sevWeight = { critical: 100, high: 70, medium: 40, low: 10 };
+        const scored = obligations
+          .filter((o) => o.statut !== 'conforme' && o.statut !== 'hors_perimetre')
+          .map((o) => {
+            const sev = sevWeight[o.severity] || 10;
+            const daysLeft = o.echeance
+              ? Math.max(0, (new Date(o.echeance) - new Date()) / 86400000)
+              : 999;
+            const proximity = daysLeft <= 0 ? 100 : daysLeft <= 90 ? 80 : daysLeft <= 365 ? 50 : 20;
+            const penalty = (o.findings || []).reduce(
+              (s, f) => s + (f.estimated_penalty_eur || 0),
+              0
+            );
+            return {
+              ...o,
+              _urgency: sev * 0.4 + proximity * 0.4 + Math.min(penalty / 100, 20) * 0.2,
+            };
+          })
+          .sort((a, b) => b._urgency - a._urgency)
+          .slice(0, 3);
+        if (scored.length === 0) return null;
+        return (
+          <div
+            data-testid="top3-urgences"
+            className="mt-3 p-3 bg-white/60 rounded-lg border border-gray-200/50"
+          >
+            <p className="text-xs font-semibold text-gray-700 uppercase mb-2">
+              Top {scored.length} urgence{scored.length > 1 ? 's' : ''}
+            </p>
+            <div className="space-y-1.5">
+              {scored.map((o, i) => (
+                <div key={o.id} className="flex items-center gap-2 text-sm">
+                  <span className="text-xs font-bold text-gray-400 w-5">{i + 1}</span>
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      o.severity === 'critical'
+                        ? 'bg-red-500'
+                        : o.severity === 'high'
+                          ? 'bg-orange-500'
+                          : 'bg-amber-400'
+                    }`}
+                  />
+                  <span className="font-medium text-gray-800 flex-1 truncate">{o.regulation}</span>
+                  {o.echeance &&
+                    (() => {
+                      const dl = formatDeadline(o.echeance, o.statut);
+                      return (
+                        <span
+                          className={`text-xs ${dl.overdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}
+                        >
+                          {dl.text}
+                        </span>
+                      );
+                    })()}
+                  <span
+                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      o.statut === 'non_conforme'
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {o.statut === 'non_conforme' ? 'Non conforme' : 'À qualifier'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -706,6 +822,27 @@ export default function ConformitePage() {
     if (!sitesData.length || !summary) return [];
     return sitesToObligations(sitesData, summary);
   }, [sitesData, summary]);
+
+  // P2 — Seed demo proof files so the Preuves tab shows a realistic cycle
+  useEffect(() => {
+    if (obligations.length > 0 && Object.keys(proofFiles).length === 0) {
+      const seed = {};
+      for (const o of obligations) {
+        if (o.code === 'decret_tertiaire_operat') {
+          // Complete: 2 proofs deposited (matches RULE_EXPECTED_PROOFS DT)
+          seed[o.id] = [
+            { name: 'Declaration_OPERAT_2025.pdf', date: '15/01/2026' },
+            { name: 'Attestation_trajectoire_-40pct.pdf', date: '20/02/2026' },
+          ];
+        } else if (o.code === 'bacs') {
+          // Partial: 1 proof deposited (out of 2 expected)
+          seed[o.id] = [{ name: 'Rapport_audit_GTB_2025.pdf', date: '10/12/2025' }];
+        }
+        // aper: no proof → stays "Manquantes"
+      }
+      if (Object.keys(seed).length > 0) setProofFiles(seed);
+    }
+  }, [obligations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const incentives = useMemo(() => {
     if (!sitesData.length) return [];
@@ -1301,6 +1438,7 @@ export default function ConformitePage() {
           setAuditFindingId={setAuditFindingId}
           openActionDrawer={openActionDrawer}
           navigate={navigate}
+          proofFiles={proofFiles}
         />
       )}
 
@@ -1320,10 +1458,36 @@ export default function ConformitePage() {
       <DossierPrintView
         open={!!dossierSource}
         onClose={() => setDossierSource(null)}
-        sourceType={dossierSource?.sourceType}
-        sourceId={dossierSource?.sourceId}
-        sourceLabel={dossierSource?.label}
+        sourceType={dossierSource?.sourceType || 'compliance'}
+        sourceId={dossierSource?.sourceId || dossierSource?.code}
+        sourceLabel={dossierSource?.label || dossierSource?.regulation}
         orgLabel={org?.nom}
+        complianceData={{
+          score: complianceScore?.score ?? complianceScore?.avg_score,
+          confidence: complianceScore?.confidence,
+          topUrgences: obligations
+            .filter((o) => o.statut !== 'conforme' && o.statut !== 'hors_perimetre')
+            .sort((a, b) => {
+              const sev = { critical: 4, high: 3, medium: 2, low: 1 };
+              return (sev[b.severity] || 0) - (sev[a.severity] || 0);
+            })
+            .slice(0, 3)
+            .map((o) => ({
+              regulation: o.regulation,
+              statut: o.statut,
+              echeance: o.echeance,
+              penalty: (o.findings || []).reduce((s, f) => s + (f.estimated_penalty_eur || 0), 0),
+            })),
+          missingProofs: obligations
+            .filter((o) => o.statut !== 'conforme' && !(proofFiles[o.id]?.length > 0))
+            .map((o) => `${o.regulation} — preuve non déposée`),
+          nextDeadline: timeline?.next_deadline
+            ? {
+                label: timeline.next_deadline.label || timeline.next_deadline.regulation,
+                date: timeline.next_deadline.deadline,
+              }
+            : null,
+        }}
       />
     </PageShell>
   );

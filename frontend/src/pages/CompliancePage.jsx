@@ -1,3 +1,10 @@
+/**
+ * @deprecated LEGACY — NE PLUS UTILISER.
+ * Cette page est remplacée par ConformitePage.jsx (V92+).
+ * La route /compliance redirige automatiquement vers /conformite (voir App.jsx).
+ * Ce fichier est conservé temporairement pour référence mais n'est plus importé.
+ * Suppression prévue au prochain sprint de nettoyage.
+ */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {

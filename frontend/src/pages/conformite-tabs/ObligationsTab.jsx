@@ -22,6 +22,10 @@ import {
   Eye,
   Printer,
   Coins,
+  Scale,
+  Info,
+  Lightbulb,
+  Shield,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../../ui';
 import { fmtEur } from '../../utils/format';
@@ -36,8 +40,11 @@ import {
   CONFIDENCE_LABELS,
   WORKFLOW_LABELS,
   RULE_LABELS,
+  RULE_LEGAL_REFS,
+  RULE_OPTIONS,
+  RULE_EXPECTED_PROOFS,
 } from '../../domain/compliance/complianceLabels.fr';
-import { isOverdue } from '../ConformitePage';
+import { isOverdue, formatDeadline } from '../ConformitePage';
 
 const SEVERITY_BADGE = SEVERITY_BADGE_MAP;
 
@@ -436,15 +443,18 @@ function ObligationCard({
             </span>
             <span className="text-gray-400 ml-1">({pctConforme}%)</span>
           </div>
-          {obligation.echeance && (
-            <div className="flex items-center gap-1">
-              <Clock size={14} className={overdue ? 'text-red-500' : 'text-gray-400'} />
-              <span className="text-gray-500">Échéance : </span>
-              <span className={`font-medium ${overdue ? 'text-red-600' : 'text-gray-800'}`}>
-                {obligation.echeance}
-              </span>
-            </div>
-          )}
+          {obligation.echeance &&
+            (() => {
+              const dl = formatDeadline(obligation.echeance, obligation.statut);
+              return (
+                <div className="flex items-center gap-1">
+                  <Clock size={14} className={dl.overdue ? 'text-red-500' : 'text-gray-400'} />
+                  <span className={`font-medium ${dl.overdue ? 'text-red-600' : 'text-gray-800'}`}>
+                    {dl.text}
+                  </span>
+                </div>
+              );
+            })()}
         </div>
 
         {obligation.code === 'bacs' && bacsV2Summary && (
@@ -538,6 +548,123 @@ function ObligationCard({
               </div>
             </div>
 
+            {/* A5 — Base légale */}
+            {(() => {
+              const mainRuleId = obligation.findings?.[0]?.rule_id;
+              const legalRef = mainRuleId && RULE_LEGAL_REFS[mainRuleId];
+              if (!legalRef) return null;
+              return (
+                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <Scale size={14} className="text-slate-500 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-600 uppercase mb-0.5">
+                      Base légale
+                    </p>
+                    <p className="text-sm text-gray-700">{legalRef.ref}</p>
+                    {legalRef.url && (
+                      <a
+                        href={legalRef.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                      >
+                        <ExternalLink size={10} /> Source officielle
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* A3 — Vos options */}
+            {(() => {
+              const mainRuleId = obligation.findings?.[0]?.rule_id;
+              const opts = mainRuleId && RULE_OPTIONS[mainRuleId];
+              if (!opts || !opts.options?.length) return null;
+              return (
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb size={14} className="text-emerald-600" />
+                    <p className="text-xs font-semibold text-emerald-700 uppercase">Vos options</p>
+                  </div>
+                  <ul className="space-y-1">
+                    {opts.options.map((opt, i) => (
+                      <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                        <span className="text-emerald-500 mt-1 shrink-0">•</span>
+                        {opt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
+            {/* A6 — Pénalités sourcées (si penalties dans les findings) */}
+            {(() => {
+              const findingsWithPenalty = (obligation.findings || []).filter(
+                (f) => f.estimated_penalty_eur > 0
+              );
+              if (findingsWithPenalty.length === 0) return null;
+              const totalPenalty = findingsWithPenalty.reduce(
+                (s, f) => s + (f.estimated_penalty_eur || 0),
+                0
+              );
+              return (
+                <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Coins size={14} className="text-red-600" />
+                    <p className="text-xs font-semibold text-red-700 uppercase">
+                      Risque financier estimé
+                    </p>
+                    <span className="text-sm font-bold text-red-700 ml-auto">
+                      {fmtEur(totalPenalty)}
+                    </span>
+                  </div>
+                  {findingsWithPenalty.map((f) => (
+                    <div key={f.id} className="flex items-center gap-3 text-xs text-gray-700 mt-1">
+                      <span className="font-medium truncate flex-1">{f.site_nom}</span>
+                      <span className="text-red-600 font-semibold">
+                        {fmtEur(f.estimated_penalty_eur)}
+                      </span>
+                      {f.penalty_source && (
+                        <span className="text-gray-500 italic">({f.penalty_source})</span>
+                      )}
+                      {f.penalty_basis && <span className="text-gray-400">{f.penalty_basis}</span>}
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-gray-400 mt-2 italic">
+                    Estimation indicative — le montant réel dépend du contexte réglementaire et de
+                    l'instruction administrative.
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* A5 — Preuves attendues */}
+            {(() => {
+              const mainRuleId = obligation.findings?.[0]?.rule_id;
+              const proofs = mainRuleId && RULE_EXPECTED_PROOFS[mainRuleId];
+              if (!proofs?.length) return null;
+              return (
+                <div className="p-3 bg-indigo-50/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield size={14} className="text-indigo-500" />
+                    <p className="text-xs font-semibold text-indigo-600 uppercase">
+                      Preuves attendues
+                    </p>
+                  </div>
+                  <ul className="space-y-0.5">
+                    {proofs.map((p, i) => (
+                      <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
+                        <FileText size={10} className="shrink-0 mt-0.5 text-indigo-400" />
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
             {obligation.findings && obligation.findings.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
@@ -620,6 +747,85 @@ function ObligationCard({
                       </div>
                     ))}
                 </div>
+              </div>
+            )}
+
+            {/* A4 — Audit trail mode expert */}
+            {isExpert && obligation.findings?.length > 0 && (
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info size={14} className="text-gray-500" />
+                  <p className="text-xs font-semibold text-gray-600 uppercase">
+                    Mode expert — Détails de l'évaluation
+                  </p>
+                </div>
+                {obligation.findings
+                  .filter((f) => f.inputs_json || f.params_json || f.engine_version)
+                  .slice(0, 3)
+                  .map((f) => (
+                    <div
+                      key={f.id}
+                      className="mb-2 p-2 bg-white rounded border border-gray-100 text-xs"
+                    >
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-medium text-gray-700">{f.site_nom}</span>
+                        <span className="font-mono text-gray-400">{f.rule_id}</span>
+                        {f.engine_version && (
+                          <span className="text-gray-400">v{f.engine_version}</span>
+                        )}
+                      </div>
+                      {f.inputs_json && (
+                        <div className="mb-1">
+                          <p className="text-[10px] text-gray-500 font-semibold mb-0.5">
+                            Données d'entrée
+                          </p>
+                          <table className="w-full text-[11px]">
+                            <tbody>
+                              {Object.entries(
+                                typeof f.inputs_json === 'string'
+                                  ? JSON.parse(f.inputs_json)
+                                  : f.inputs_json
+                              ).map(([k, v]) => (
+                                <tr key={k} className="border-b border-gray-50">
+                                  <td className="py-0.5 pr-3 text-gray-500 whitespace-nowrap">
+                                    {k}
+                                  </td>
+                                  <td className="py-0.5 text-gray-700 font-medium">
+                                    {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {f.params_json && (
+                        <div>
+                          <p className="text-[10px] text-gray-500 font-semibold mb-0.5">
+                            Paramètres / seuils appliqués
+                          </p>
+                          <table className="w-full text-[11px]">
+                            <tbody>
+                              {Object.entries(
+                                typeof f.params_json === 'string'
+                                  ? JSON.parse(f.params_json)
+                                  : f.params_json
+                              ).map(([k, v]) => (
+                                <tr key={k} className="border-b border-gray-50">
+                                  <td className="py-0.5 pr-3 text-gray-500 whitespace-nowrap">
+                                    {k}
+                                  </td>
+                                  <td className="py-0.5 text-gray-700 font-medium">
+                                    {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             )}
 

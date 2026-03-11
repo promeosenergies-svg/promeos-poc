@@ -296,6 +296,10 @@ def list_findings(
                 "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
                 "penalty_source": getattr(f, "penalty_source", None),
                 "penalty_basis": getattr(f, "penalty_basis", None),
+                # A4 — audit trail fields (surfaced in expert mode)
+                "inputs_json": json.loads(f.inputs_json) if f.inputs_json else None,
+                "params_json": json.loads(f.params_json) if f.params_json else None,
+                "engine_version": f.engine_version,
             }
         )
 

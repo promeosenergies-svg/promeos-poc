@@ -175,11 +175,13 @@ export const RULE_LABELS = {
   },
   BACS_HIGH_DEADLINE: {
     title_fr: 'BACS — Échéance haute puissance',
-    why_fr: 'CVC > 290 kW : obligation GTB/GTC avec échéance au 1er janvier 2025.',
+    why_fr:
+      'CVC > 290 kW : obligation GTB/GTC avec échéance au 1er janvier 2025 (Décret n°2020-887).',
   },
   BACS_LOW_DEADLINE: {
     title_fr: 'BACS — Échéance basse puissance',
-    why_fr: 'CVC entre 70 et 290 kW : obligation GTB/GTC avec échéance au 1er janvier 2027.',
+    why_fr:
+      'CVC entre 70 et 290 kW : obligation GTB/GTC avec échéance au 1er janvier 2030 (Décret n°2020-887 modifié).',
   },
   BACS_ATTESTATION: {
     title_fr: 'Attestation GTB/GTC',
@@ -187,7 +189,8 @@ export const RULE_LABELS = {
   },
   BACS_DEROGATION: {
     title_fr: 'Dérogation BACS',
-    why_fr: 'Demander une dérogation si le TRI dépasse 6 ans.',
+    why_fr:
+      'Demander une dérogation si le TRI dépasse 10 ans (seuil réglementaire Décret n°2020-887).',
   },
 
   // APER
@@ -217,7 +220,7 @@ export const RULE_NEXT_STEPS = {
   DT_ENERGY_DATA: ["Collecter les factures d'énergie", 'Renseigner les consommations annuelles'],
   BACS_POWER: ['Vérifier la puissance CVC installée auprès du mainteneur'],
   BACS_HIGH_DEADLINE: ["Lancer l'appel d'offres GTB/GTC", "Installer le système avant l'échéance"],
-  BACS_LOW_DEADLINE: ["Planifier l'installation GTB/GTC avant le 1er janvier 2027"],
+  BACS_LOW_DEADLINE: ["Planifier l'installation GTB/GTC avant le 1er janvier 2030"],
   BACS_ATTESTATION: ["Demander l'attestation de conformité au prestataire GTB/GTC"],
   BACS_DEROGATION: ["Réaliser l'étude de TRI", 'Constituer le dossier de dérogation'],
   APER_PARKING: [
@@ -246,6 +249,147 @@ export const RULE_EXPECTED_PROOFS = {
   APER_PARKING: ['Plan cadastral', 'Étude de faisabilité ombrières'],
   APER_TOITURE: ['Plan de toiture', 'Étude de faisabilité photovoltaïque'],
   APER_PARKING_TYPE: ['Photographie aérienne', 'Plan de masse'],
+};
+
+// ─── Base légale par obligation (A5) ──────────────────────────────────────
+
+export const RULE_LEGAL_REFS = {
+  DT_SCOPE: {
+    ref: 'Décret n°2019-771 du 23 juillet 2019, Art. 1',
+    label: "Décret Tertiaire — Champ d'application",
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251',
+  },
+  DT_OPERAT: {
+    ref: 'Arrêté du 10 avril 2020, Art. 3',
+    label: 'Plateforme OPERAT — Déclaration annuelle',
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389',
+  },
+  DT_TRAJECTORY_2030: {
+    ref: 'Art. L174-1 Code de la construction — Objectif -40%',
+    label: 'Trajectoire de réduction énergétique 2030',
+  },
+  DT_TRAJECTORY_2040: {
+    ref: 'Art. L174-1 Code de la construction — Objectif -50%',
+    label: 'Trajectoire de réduction énergétique 2040',
+  },
+  DT_ENERGY_DATA: {
+    ref: 'Décret n°2019-771, Art. 2',
+    label: 'Obligation de suivi des consommations',
+  },
+  BACS_POWER: {
+    ref: 'Décret n°2020-887 du 20 juillet 2020',
+    label: 'GTB/GTC — Seuils de puissance CVC',
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844',
+  },
+  BACS_HIGH_DEADLINE: {
+    ref: 'Décret n°2020-887, Art. R241-27',
+    label: 'Échéance 1er janvier 2025 (CVC > 290 kW)',
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844',
+  },
+  BACS_LOW_DEADLINE: {
+    ref: 'Décret n°2020-887 modifié, Art. R241-27',
+    label: 'Échéance 1er janvier 2030 (CVC 70–290 kW)',
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844',
+  },
+  BACS_ATTESTATION: {
+    ref: 'Décret n°2020-887, Art. R241-28',
+    label: 'Attestation de conformité GTB/GTC',
+  },
+  BACS_DEROGATION: {
+    ref: 'Décret n°2020-887, Art. R241-29',
+    label: 'Dérogation BACS — Étude TRI > 10 ans',
+  },
+  APER_PARKING: {
+    ref: 'Loi n°2023-175 du 10 mars 2023 (APER), Art. 40',
+    label: 'Ombrières photovoltaïques — Parking ≥ 1 500 m²',
+    url: 'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244',
+  },
+  APER_TOITURE: {
+    ref: 'Loi APER, Art. 41',
+    label: 'ENR en toiture — Surface ≥ 500 m²',
+  },
+  APER_PARKING_TYPE: {
+    ref: 'Loi APER, Art. 40',
+    label: 'Parking extérieur (non couvert)',
+  },
+};
+
+// ─── "Vos options" par obligation (A3) ────────────────────────────────────
+// Contenu statique prudent. Ton : informatif, non juridique.
+
+export const RULE_OPTIONS = {
+  DT_SCOPE: {
+    options: [
+      "Si la surface tertiaire est inférieure à 1 000 m², votre site n'est pas assujetti.",
+      "Certains bâtiments à usage mixte peuvent bénéficier d'un prorata de surface.",
+    ],
+  },
+  DT_OPERAT: {
+    options: [
+      "Modulation possible si le bâtiment a subi des changements d'activité significatifs.",
+      'En cas de vente, le nouveau propriétaire reprend les obligations de déclaration.',
+    ],
+  },
+  DT_TRAJECTORY_2030: {
+    options: [
+      "Un dossier technique peut justifier l'impossibilité d'atteindre l'objectif (contraintes architecturales, patrimoniales).",
+      "Modulation possible en cas de changement d'activité ayant un impact sur les consommations.",
+    ],
+  },
+  DT_TRAJECTORY_2040: {
+    options: [
+      "Les mêmes dérogations que pour 2030 s'appliquent.",
+      "Un objectif en valeur absolue (kWh/m²) peut se substituer à l'objectif relatif.",
+    ],
+  },
+  DT_ENERGY_DATA: {
+    options: ["En l'absence de compteurs individuels, des estimations au prorata sont acceptées."],
+  },
+  BACS_POWER: {
+    options: [
+      "Si la puissance CVC totale est inférieure à 70 kW, aucune obligation BACS ne s'applique.",
+    ],
+  },
+  BACS_HIGH_DEADLINE: {
+    options: [
+      "Dérogation possible si le TRI de l'installation GTB/GTC dépasse 10 ans.",
+      "L'exemption nécessite une étude TRI documentée et conservée.",
+    ],
+  },
+  BACS_LOW_DEADLINE: {
+    options: [
+      'Même dérogation TRI > 10 ans applicable.',
+      'Échéance estimée selon le périmètre réglementaire applicable — à confirmer selon jurisprudence.',
+    ],
+  },
+  BACS_ATTESTATION: {
+    options: [
+      'Classe B minimum requise. Les systèmes déjà conformes avant le décret peuvent produire une attestation rétroactive.',
+    ],
+  },
+  BACS_DEROGATION: {
+    options: [
+      'La dérogation est acquise si le TRI dépasse 10 ans, documentée par une étude conservée 5 ans.',
+      'Réévaluation obligatoire tous les 5 ans.',
+    ],
+  },
+  APER_PARKING: {
+    options: [
+      "Report d'échéance possible en cas de contraintes techniques, de sécurité ou patrimoniales.",
+      'Exonération si le parking est couvert (seuls les parkings extérieurs > 1 500 m² sont visés).',
+    ],
+  },
+  APER_TOITURE: {
+    options: [
+      'Non applicable si la toiture est classée ou soumise à des contraintes patrimoniales.',
+      "L'obligation peut être satisfaite par un procédé de production d'ENR ou de végétalisation.",
+    ],
+  },
+  APER_PARKING_TYPE: {
+    options: [
+      'Seuls les parkings extérieurs (non couverts) sont assujettis. Les parkings en silo ou souterrains sont exclus.',
+    ],
+  },
 };
 
 // ─── Drawer / UI labels ─────────────────────────────────────────────────

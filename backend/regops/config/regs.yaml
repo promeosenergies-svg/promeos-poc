@@ -41,6 +41,17 @@ cee_p6:
   required_inputs: []
 
 scoring:
+  # Poids des frameworks réglementaires pour le score unifié (A.2)
+  # Source de vérité unique — lu par compliance_score_service.py
+  # DT + BACS + APER = 1.0 (100%)
+  framework_weights:
+    tertiaire_operat: 0.45
+    bacs: 0.30
+    aper: 0.25
+  # Pénalité findings critiques (A.2)
+  critical_penalty:
+    max_pts: 20.0
+    per_finding_pts: 5.0
   severity_weights:
     critical: 100
     high: 70

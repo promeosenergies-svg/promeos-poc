@@ -30,23 +30,48 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass, field, asdict
+from pathlib import Path
 from typing import Optional
 
+import yaml
 from sqlalchemy.orm import Session
 
 _logger = logging.getLogger(__name__)
 
+# ── Chargement config scoring depuis regs.yaml (A7 — source de vérité unique) ─
+_REGS_PATH = Path(__file__).resolve().parent.parent / "regops" / "config" / "regs.yaml"
+
+
+def _load_scoring_config() -> dict:
+    """Charge la section scoring de regs.yaml. Fallback hardcodé si fichier absent."""
+    try:
+        with open(_REGS_PATH, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+        return cfg.get("scoring", {})
+    except Exception as exc:
+        _logger.warning("regs.yaml introuvable ou invalide (%s), fallback hardcodé", exc)
+        return {}
+
+
+_scoring_cfg = _load_scoring_config()
+
 # ── Poids des frameworks (DT + BACS + APER = 100%) ─────────────────────────
-FRAMEWORK_WEIGHTS = {
-    "tertiaire_operat": 0.45,
-    "bacs": 0.30,
-    "aper": 0.25,
-}
+# Source de vérité : regs.yaml > scoring > framework_weights
+FRAMEWORK_WEIGHTS: dict[str, float] = _scoring_cfg.get(
+    "framework_weights",
+    {
+        "tertiaire_operat": 0.45,
+        "bacs": 0.30,
+        "aper": 0.25,
+    },
+)
 
 # ── Pénalité findings critiques ─────────────────────────────────────────────
-MAX_CRITICAL_PENALTY = 20.0  # pts max
-CRITICAL_PENALTY_PER_FINDING = 5.0  # pts par finding critique
+_crit_cfg = _scoring_cfg.get("critical_penalty", {})
+MAX_CRITICAL_PENALTY: float = float(_crit_cfg.get("max_pts", 20.0))
+CRITICAL_PENALTY_PER_FINDING: float = float(_crit_cfg.get("per_finding_pts", 5.0))
 
 
 @dataclass

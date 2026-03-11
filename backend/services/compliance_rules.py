@@ -1,6 +1,17 @@
 """
 PROMEOS - Compliance Rules Evaluator
 Charge les packs YAML et produit des ComplianceFinding persistants.
+
+Architecture moteurs (B1 — clarification) :
+  - compliance_engine.py  : LEGACY, snapshots Site (déprécié)
+  - compliance_rules.py   : Ce fichier. Évaluateur YAML → ComplianceFinding rows.
+                            Appelé par POST /api/compliance/recompute-rules et
+                            par get_compliance_bundle() pour la vue cockpit.
+  - regops/engine.py      : ORCHESTRATEUR, source de vérité pour le score unifié A.2.
+                            Appelle regops/rules/*.py qui wrappent ce même évaluateur.
+  - bacs_engine.py        : Moteur V2 BACS spécialisé (Putile, TRI, inspections).
+
+Source de vérité scoring : compliance_score_service.py (poids lus depuis regs.yaml).
 """
 
 import json

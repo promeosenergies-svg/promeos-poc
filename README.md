@@ -121,6 +121,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Billing Engine Fix (shadow billing energy-only vs TTC, TVA line OTHER, anomaly seed recompute, 110→16 insights, 688k€→14k€ pertes) | Stable -- BF |
 > | Billing Summary Fix (total_loss_eur + coverage_months dans /billing/summary, SURCOÛT FACTURE + Couverture mois resolus) | Stable -- BF+ |
 > | Audit Conformité 8 axes (couverture reg, modele donnees, moteur decision, preuves, UX, orchestration, integration, differenciation — 62/100) | Stable -- AC |
+> | Conformité V1.1 A+B (12 items : harmonize BACS, hide legacy, options/obligation, audit trail, base legale, penalites sourcees, scoring YAML, RegOps SoT, executive summary, proof bridge, finding→action→proof loop, dossier export) | **Stable -- V1.1** |
+> | Conformité Finition Demo (P1 echeance BACS contextualisee, P2 seed preuves partielles/completes, P2 seed actions conformite liees findings, tooltip Expert) | **Stable -- V1.1+** |
+> | Roadmap Domination 12 mois (wedge conformite opposable, 4 horizons, backlog ICE 15 initiatives, plan demo 5 scenarios) | Documentee -- ROADMAP |
 > | Suite de tests automatisés | **5 586+ frontend + 3 071+ backend, 0 régression** |
 
 > **Disclaimer**

@@ -223,7 +223,9 @@ export default function AppShell() {
             </button>
 
             {/* Expert Mode toggle */}
-            <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
+            <div title="Le mode Expert affiche la formule de score, les paramètres, les hypothèses et les références utilisées pour chaque évaluation.">
+              <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
+            </div>
             {isExpert && appVersion && (
               <span
                 className="text-xs font-mono text-slate-400 border border-slate-200 rounded px-1.5 py-0.5"

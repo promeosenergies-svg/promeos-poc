@@ -205,10 +205,20 @@ class SeedOrchestrator:
         self.db.flush()
         result["billing_audit"] = {"audited": audit_count}
 
-        # 7. Actions
+        # 7. Actions (pass compliance findings for linking)
         from .gen_actions import generate_actions
+        from models import ComplianceFinding
 
-        actions = generate_actions(self.db, master["org"], master["sites"], pack_def.get("actions_count", 10), rng)
+        site_ids = [s.id for s in master["sites"]]
+        cf_list = self.db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
+        actions = generate_actions(
+            self.db,
+            master["org"],
+            master["sites"],
+            pack_def.get("actions_count", 10),
+            rng,
+            compliance_findings=cf_list,
+        )
         result["actions"] = actions
 
         # 8. Purchase scenarios
