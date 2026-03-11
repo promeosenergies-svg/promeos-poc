@@ -420,8 +420,8 @@ export default function ContractRadarPage() {
         <div className="mb-3 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
           <HelpCircle size={16} className="text-amber-500 flex-shrink-0" />
           <span className="text-sm text-amber-800 flex-1">
-            Profil a {Math.round(segProfile.confidence_score)}% — repondez a 2 questions pour
-            affiner vos scenarios
+            Profil à {Math.round(segProfile.confidence_score)}% — répondez à 2 questions pour
+            affiner vos scénarios
           </span>
           <button
             onClick={() => setShowSegModal(true)}

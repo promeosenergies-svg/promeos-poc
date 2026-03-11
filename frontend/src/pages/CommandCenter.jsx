@@ -327,7 +327,7 @@ export default function CommandCenter() {
           icon={TrendingDown}
           label="Risque financier"
           value={kpis.risque > 0 ? `${Math.round(kpis.risque / 1000)} k€` : '0 €'}
-          sub={`${kpis.nonConformes + kpis.aRisque} sites à risque`}
+          sub={`${kpis.nonConformes + kpis.aRisque} sites à risque (périmètre sélectionné)`}
           status={kpis.risqueStatus}
           onClick={() => navigate(toActionsList())}
         />

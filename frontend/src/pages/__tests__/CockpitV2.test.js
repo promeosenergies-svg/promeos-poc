@@ -253,6 +253,6 @@ describe('buildExecutiveKpis', () => {
     const sites = makeSites(10); // 7 have conso_kwh_an > 0
     const result = buildExecutiveKpis(makeKpis(), sites);
     expect(result[3].id).toBe('couverture');
-    expect(result[3].sub).toContain('7 sites');
+    expect(result[3].sub).toContain('7/10 sites');
   });
 });

@@ -171,6 +171,7 @@ const ActionPlan = () => {
             <div className="text-2xl font-bold text-purple-600">
               {Math.round(summary.risque_financier_total / 1000)} k€
             </div>
+            <div className="text-[10px] text-gray-400 mt-0.5">périmètre sélectionné</div>
           </div>
         </div>
 

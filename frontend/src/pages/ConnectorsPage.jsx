@@ -12,8 +12,17 @@ import { useToast } from '../ui/ToastProvider';
 const SYNC_OBJECT_TYPES = [
   { value: 'site', label: 'Site' },
   { value: 'meter', label: 'Compteur' },
-  { value: 'batiment', label: 'Batiment' },
+  { value: 'batiment', label: 'Bâtiment' },
 ];
+
+/** Display labels business-friendly pour les connecteurs */
+const CONNECTOR_LABELS = {
+  rte_eco2mix: 'RTE éCO2mix',
+  pvgis: 'PVGIS — Production photovoltaïque',
+  meteofrance: 'Météo-France',
+  enedis_opendata: 'Open Data Enedis',
+  enedis_dataconnect: 'Enedis DataConnect',
+};
 
 export default function ConnectorsPage() {
   const [connectors, setConnectors] = useState([]);
@@ -47,14 +56,14 @@ export default function ConnectorsPage() {
       const result = await testConnector(connectorName);
       setTestResults((prev) => ({ ...prev, [connectorName]: result }));
       if (result?.status === 'ok') {
-        toast(`${connectorName}: connexion OK`, 'success');
+        toast(`${CONNECTOR_LABELS[connectorName] || connectorName} : connexion OK`, 'success');
       }
     } catch (error) {
       setTestResults((prev) => ({
         ...prev,
         [connectorName]: { status: 'error', message: error.message },
       }));
-      toast(`${connectorName}: echec du test`, 'error');
+      toast(`${CONNECTOR_LABELS[connectorName] || connectorName} : échec du test`, 'error');
     }
   };
 
@@ -70,13 +79,14 @@ export default function ConnectorsPage() {
         parseInt(syncForm.objectId)
       );
       setSyncResults((prev) => ({ ...prev, [connectorName]: result }));
-      toast(
-        `${connectorName}: ${result.datapoints_created || 0} datapoints synchronises`,
-        'success'
-      );
+      const label = CONNECTOR_LABELS[connectorName] || connectorName;
+      toast(`${label} : ${result.datapoints_created || 0} points synchronisés`, 'success');
     } catch (error) {
       setSyncResults((prev) => ({ ...prev, [connectorName]: { error: error.message } }));
-      toast(`Erreur de synchronisation ${connectorName}`, 'error');
+      toast(
+        `Erreur de synchronisation ${CONNECTOR_LABELS[connectorName] || connectorName}`,
+        'error'
+      );
     }
   };
 
@@ -124,7 +134,9 @@ export default function ConnectorsPage() {
               <CardBody>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900">{connector.name}</h3>
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {CONNECTOR_LABELS[connector.name] || connector.name}
+                    </h3>
                     <p className="text-sm text-gray-500 mt-1">{connector.description}</p>
                   </div>
                   {getStatusIcon(testResults[connector.name])}
@@ -187,22 +199,22 @@ export default function ConnectorsPage() {
       {/* Info panel */}
       <Card className="mt-6 border-blue-200 bg-blue-50/50">
         <CardBody>
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">A propos des Connecteurs</h3>
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">À propos des Connecteurs</h3>
           <ul className="text-sm text-gray-700 space-y-1.5">
             <li>
-              <strong>RTE eCO2mix:</strong> Intensite CO2 du reseau electrique francais (API
+              <strong>RTE eCO2mix:</strong> Intensité CO2 du réseau électrique français (API
               publique)
             </li>
             <li>
-              <strong>PVGIS:</strong> Estimations de production photovoltaique (EU JRC, API
+              <strong>PVGIS:</strong> Estimations de production photovoltaïque (EU JRC, API
               publique)
             </li>
             <li>
-              <strong>Enedis DataConnect:</strong> Donnees de consommation des compteurs Linky
+              <strong>Enedis DataConnect:</strong> Données de consommation des compteurs Linky
               (OAuth requis)
             </li>
             <li>
-              <strong>Meteo-France:</strong> Donnees meteorologiques historiques (API key requis)
+              <strong>Météo-France:</strong> Données météorologiques historiques (clé API requise)
             </li>
           </ul>
         </CardBody>

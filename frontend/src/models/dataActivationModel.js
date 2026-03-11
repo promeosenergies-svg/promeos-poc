@@ -72,17 +72,17 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
     },
     {
       key: 'conformite',
-      label: 'Conformite reglementaire',
-      description: 'Evaluation du statut conformite par site',
+      label: 'Conformité réglementaire',
+      description: 'Évaluation du statut conformité par site',
       available: conformesSites > 0,
       coverage: total > 0 ? Math.round((conformesSites / total) * 100) : 0,
-      detail: conformesSites > 0 ? `${conformesSites}/${total} evalues` : null,
+      detail: conformesSites > 0 ? `${conformesSites}/${total} évalués` : null,
       ctaPath: '/conformite',
-      ctaLabel: 'Evaluer la conformite',
+      ctaLabel: 'Évaluer la conformité',
     },
     {
       key: 'consommation',
-      label: 'Donnees de consommation',
+      label: 'Données de consommation',
       description: 'Consommation énergétique par site (kWh/an)',
       available: (kpis.couvertureDonnees ?? 0) > 0,
       coverage: kpis.couvertureDonnees ?? 0,
@@ -93,7 +93,7 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
     {
       key: 'facturation',
       label: 'Audit facturation',
-      description: "Factures analysees par le moteur d'audit",
+      description: "Factures analysées par le moteur d'audit",
       available: hasBilling,
       coverage: hasBilling ? 100 : 0,
       detail: hasBilling ? `${billingSummary.total_invoices ?? '\u2013'} factures` : null,
@@ -102,8 +102,8 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
     },
     {
       key: 'achat',
-      label: 'Contrats energie',
-      description: 'Contrats de fourniture renseignes par site',
+      label: 'Contrats énergie',
+      description: 'Contrats de fourniture renseignés par site',
       available: hasPurchase,
       coverage: purchaseSignals?.coverageContractsPct ?? 0,
       detail: hasPurchase

@@ -451,10 +451,10 @@ function interpretKwhM2(kwhM2, archetype) {
 
 // C) Formule de calcul pour tooltip "Comment calcule?"
 const KPI_FORMULAS = {
-  kwh_total: "Somme de toutes les valeurs kWh sur la periode d'analyse.",
-  base_nuit: 'Moyenne conso 0h-5h / moyenne conso 8h-18h en jours ouvres, x 100.',
+  kwh_total: "Somme de toutes les valeurs kWh sur la période d'analyse.",
+  base_nuit: 'Moyenne conso 0h-5h / moyenne conso 8h-18h en jours ouvrés, x 100.',
   weekend: 'Moyenne conso samedi+dimanche / moyenne conso lundi-vendredi, x 100.',
-  load_factor: 'Consommation moyenne / consommation max sur la periode, x 100.',
+  load_factor: 'Consommation moyenne / consommation max sur la période, x 100.',
 };
 
 // ---- Analysis Result View ----

@@ -244,21 +244,21 @@ export function scoreDataReadiness({ offer, consumption, billing }) {
   // D+1
   if (!dataTerms.dplus1) {
     score -= 10;
-    reasons.push('Pas de donnees J+1');
+    reasons.push('Pas de données J+1');
     evs.push(evidence('DR02', 'dplus1', false));
   }
 
   // CSV/API export
   if (!dataTerms.csvExport && !dataTerms.apiAccess) {
     score -= 15;
-    reasons.push('Aucun export CSV ni acces API');
+    reasons.push('Aucun export CSV ni accès API');
     evs.push(evidence('DR03', 'exportAccess', false));
   }
 
   // Consumption granularity
   if (consumption?.granularity === 'monthly') {
     score -= 10;
-    reasons.push('Limite: donnees mensuelles uniquement (pas horaire/journalier)');
+    reasons.push('Limite : données mensuelles uniquement (pas horaire/journalier)');
     evs.push(evidence('DR04', 'granularity', 'monthly'));
   }
 

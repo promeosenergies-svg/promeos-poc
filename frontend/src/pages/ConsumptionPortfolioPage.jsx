@@ -326,17 +326,17 @@ export default function ConsumptionPortfolioPage() {
         <div>
           <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
           <p className="text-sm text-gray-500">
-            Vous pilotez {cov?.sites_total ?? '—'} sites sur la periode du {fmtDate(dates.from)} au{' '}
+            Vous pilotez {cov?.sites_total ?? '—'} sites sur la période du {fmtDate(dates.from)} au{' '}
             {fmtDate(dates.to)}
             {cov?.sites_without_data > 0 && (
-              <span className="text-amber-600"> — {cov.sites_without_data} sans donnees</span>
+              <span className="text-amber-600"> — {cov.sites_without_data} sans données</span>
             )}
           </p>
         </div>
         {cov && (
           <div
             className="flex items-center gap-1.5 shrink-0"
-            title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est élevée, plus les KPIs sont fiables."
+            title="La couverture indique le % de sites avec des relevés sur la période. Plus elle est élevée, plus les KPIs sont fiables."
           >
             <span
               className={`text-sm font-semibold ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}
@@ -522,7 +522,7 @@ export default function ConsumptionPortfolioPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-gray-400">Pas de donnees</p>
+                  <p className="text-xs text-gray-400">Pas de données</p>
                 )}
               </CardBody>
             </Card>
@@ -553,7 +553,7 @@ export default function ConsumptionPortfolioPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-gray-400">Pas de donnees</p>
+                  <p className="text-xs text-gray-400">Pas de données</p>
                 )}
               </CardBody>
             </Card>

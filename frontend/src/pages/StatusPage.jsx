@@ -102,10 +102,10 @@ function StatusPage() {
           )}
           <div>
             <p className="text-lg font-semibold">
-              {backendOk ? 'Backend connecte' : 'Backend injoignable'}
+              {backendOk ? 'Backend connecté' : 'Backend injoignable'}
             </p>
             <p className="text-sm text-gray-500">
-              Version: {version} | Derniere verification: {lastCheck || '-'}
+              Version: {version} | Dernière vérification: {lastCheck || '-'}
             </p>
           </div>
         </div>

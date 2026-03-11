@@ -139,6 +139,19 @@ export default function ActivationPage() {
       title="Activation des données"
       subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}
     >
+      {/* ── Success banner when all briques active ── */}
+      {activation.activatedCount >= activation.totalDimensions && (
+        <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 mb-4">
+          <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">Configuration terminée</p>
+            <p className="text-xs text-emerald-600">
+              Toutes les briques de données sont actives. Votre plateforme est opérationnelle.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Readiness banner — hide when all briques active to avoid "5/5 actives" + "incomplètes" contradiction ── */}
       {readinessState && !(activation.activatedCount >= activation.totalDimensions) && (
         <HealthSummary
@@ -214,7 +227,7 @@ export default function ActivationPage() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher\u2026"
+              placeholder="Rechercher…"
               value={siteSearch}
               onChange={(e) => setSiteSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400

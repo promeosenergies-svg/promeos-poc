@@ -295,7 +295,7 @@ export default function ScopeSwitcher() {
                         type="text"
                         value={siteSearch}
                         onChange={(e) => setSiteSearch(e.target.value)}
-                        placeholder="Rechercher un site\u2026"
+                        placeholder="Rechercher un site…"
                         data-testid="scope-site-search"
                         className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       />

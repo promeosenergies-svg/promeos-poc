@@ -54,8 +54,11 @@ export default function DataActivationPanel({ kpis }) {
           </h4>
           <InfoTip content={TOOLTIPS.executive.activationDonnees} />
         </div>
-        <span className="text-xs font-medium text-gray-500">
-          {activation.activatedCount}/{activation.totalDimensions} briques
+        <span
+          className="text-xs font-medium text-gray-500"
+          title="Nombre de briques avec au moins une donnée disponible"
+        >
+          {activation.activatedCount}/{activation.totalDimensions} briques activées
         </span>
       </div>
 
@@ -63,7 +66,7 @@ export default function DataActivationPanel({ kpis }) {
       <Progress value={activation.overallCoverage} size="sm" color="blue" />
       <p className="text-[10px] text-gray-400 mt-1">
         {activation.overallCoverage}
-        {'\u202f'}% couverture moyenne
+        {'\u202f'}% couverture moyenne des briques
       </p>
 
       {/* Badges par dimension */}

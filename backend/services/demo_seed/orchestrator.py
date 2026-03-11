@@ -313,6 +313,16 @@ class SeedOrchestrator:
         except Exception as e:
             result["onboarding"] = {"completed": False, "error": str(e)}
 
+        # 15b. KB / Mémobox seed (archetypes, rules, recommendations)
+        try:
+            from routes.kb_usages import seed_demo_kb
+
+            seed_demo_kb(self.db)
+            self.db.flush()
+            result["kb"] = {"seeded": True}
+        except Exception as e:
+            result["kb"] = {"seeded": False, "error": str(e)}
+
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
 

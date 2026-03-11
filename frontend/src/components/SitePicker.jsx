@@ -241,7 +241,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
             {/* Site list */}
             <div className="overflow-y-auto flex-1 py-1">
               {filtered.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Aucun site trouve</p>
+                <p className="text-sm text-gray-400 text-center py-4">Aucun site trouvé</p>
               ) : (
                 filtered.map((s) => {
                   const isSelected = selectedIds.includes(s.id);

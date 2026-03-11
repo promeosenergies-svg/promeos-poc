@@ -460,9 +460,9 @@ export function buildExecutiveKpis(kpis, sites = []) {
       : total > 0
         ? Math.round((conformes / total) * 100)
         : 0;
-  // Maturité score (mirrors Cockpit useMemo)
+  // Maturité score — continuous action readiness (0-100)
   const actionsActives =
-    nonConformes + aRisque > 0 ? ACTIONS_SCORE.withIssues : ACTIONS_SCORE.noIssues;
+    total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
   const readinessScore =
     total > 0
       ? Math.round(
@@ -503,7 +503,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: risqueTotal > 0 ? `${Math.round(risqueTotal / 1000)} k€` : '0 €',
       rawValue: risqueTotal,
       messageCtx: { sitesAtRisk: nonConformes + aRisque },
-      sub: `${nonConformes + aRisque} site${nonConformes + aRisque !== 1 ? 's' : ''} concerné${nonConformes + aRisque !== 1 ? 's' : ''}`,
+      sub: `${nonConformes + aRisque} site${nonConformes + aRisque !== 1 ? 's' : ''} concerné${nonConformes + aRisque !== 1 ? 's' : ''} (périmètre sélectionné)`,
       status: getRiskStatus(risqueTotal),
       path: '/actions',
     },
@@ -529,7 +529,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: total > 0 ? formatPercentFR(couvertureDonnees) : '—',
       rawValue: couvertureDonnees,
       messageCtx: {},
-      sub: `${sitesWithData} site${sitesWithData !== 1 ? 's' : ''} avec données`,
+      sub: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} avec données conso`,
       status: couvertureDonnees < COVERAGE_THRESHOLDS.warn ? 'warn' : 'ok',
       path: '/consommations/import',
     },

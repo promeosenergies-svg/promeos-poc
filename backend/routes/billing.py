@@ -137,6 +137,8 @@ class BillingSummaryResponse(BaseModel):
     total_kwh: float
     total_insights: int
     total_estimated_loss_eur: float
+    total_loss_eur: float = 0
+    coverage_months: int = 0
     insights_by_type: dict
     insights_by_severity: dict
     invoices_with_anomalies: int
@@ -708,12 +710,22 @@ def billing_summary(
     for i in insights:
         by_severity[i.severity] = by_severity.get(i.severity, 0) + 1
 
+    # Distinct months covered by invoices
+    distinct_months = set()
+    for inv in invoices:
+        if inv.period_start:
+            distinct_months.add((inv.period_start.year, inv.period_start.month))
+
+    loss_rounded = round(total_loss, 2)
+
     return {
         "total_invoices": len(invoices),
         "total_eur": round(total_eur, 2),
         "total_kwh": round(total_kwh, 0),
         "total_insights": len(insights),
-        "total_estimated_loss_eur": round(total_loss, 2),
+        "total_estimated_loss_eur": loss_rounded,
+        "total_loss_eur": loss_rounded,
+        "coverage_months": len(distinct_months),
         "insights_by_type": by_type,
         "insights_by_severity": by_severity,
         "invoices_with_anomalies": len([i for i in invoices if i.status == BillingInvoiceStatus.ANOMALY]),

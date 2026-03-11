@@ -436,7 +436,7 @@ export default function PurchaseAssistantPage() {
     <PageShell
       icon={ShoppingCart}
       title="Assistant Achat Energie"
-      subtitle={`Brique 3 — Post-ARENH v${BRIQUE3_VERSION}`}
+      subtitle="Scénarios de couverture et aide à la décision"
     >
       {/* Step indicator */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2">
@@ -525,20 +525,11 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Selection du perimetre</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Sélection du périmètre</h3>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isDemo}
-              onChange={(e) => setIsDemo(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            Mode demo
-          </label>
           {demoSites.length > 0 && (
             <button onClick={selectAll} className="text-xs text-blue-600 hover:underline">
-              Tout selectionner
+              Tout sélectionner
             </button>
           )}
         </div>
@@ -919,7 +910,7 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
                   value={DEFAULT_MARKET.baseSpotEurPerMwh}
                 />
                 <p className="text-[10px] text-gray-400 mt-0.5">
-                  Non modifiable en v{BRIQUE3_VERSION}
+                  Non modifiable dans cette version
                 </p>
               </div>
             </div>
@@ -1767,7 +1758,7 @@ function StepDecision({
           <li>Simulation Monte Carlo (max 200 iterations) — valeur indicative</li>
           <li>Prix base sur hypotheses de marche (voir parametres)</li>
           <li>Scoring automatise — validation humaine recommandee</li>
-          <li>Version moteur: {BRIQUE3_VERSION}</li>
+          <li>Moteur de scénarios PROMEOS</li>
         </ul>
       </div>
     </div>

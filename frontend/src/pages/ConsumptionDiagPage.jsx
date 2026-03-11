@@ -747,6 +747,7 @@ export default function ConsumptionDiagPage() {
   const [seeding, setSeeding] = useState(false);
   const [message, setMessage] = useState(null);
   const [filterType, setFilterType] = useState('');
+  const [diagPage, setDiagPage] = useState(0);
 
   // Evidence Drawer
   const [drawerInsight, setDrawerInsight] = useState(null);
@@ -1070,7 +1071,10 @@ export default function ConsumptionDiagPage() {
             <label className="text-sm text-gray-500">Type:</label>
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
+              onChange={(e) => {
+                setFilterType(e.target.value);
+                setDiagPage(0);
+              }}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Tous</option>
@@ -1083,7 +1087,7 @@ export default function ConsumptionDiagPage() {
             <span className="text-xs text-gray-400 ml-2">{filtered.length} insight(s)</span>
           </div>
 
-          {/* Table */}
+          {/* Table with pagination */}
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -1117,7 +1121,7 @@ export default function ConsumptionDiagPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((ins, i) => (
+                  {filtered.slice(diagPage * 20, (diagPage + 1) * 20).map((ins, i) => (
                     <InsightRow
                       key={ins.id || i}
                       insight={ins}
@@ -1128,6 +1132,36 @@ export default function ConsumptionDiagPage() {
                 </tbody>
               </table>
             </div>
+            {/* Pagination controls */}
+            {filtered.length > 20 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+                <span className="text-xs text-gray-500">
+                  {diagPage * 20 + 1}–{Math.min((diagPage + 1) * 20, filtered.length)} sur{' '}
+                  {filtered.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setDiagPage((p) => Math.max(0, p - 1))}
+                    disabled={diagPage === 0}
+                    className="px-3 py-1.5 text-xs rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                  >
+                    Précédent
+                  </button>
+                  <span className="text-xs text-gray-600">
+                    Page {diagPage + 1} / {Math.ceil(filtered.length / 20)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setDiagPage((p) => Math.min(Math.ceil(filtered.length / 20) - 1, p + 1))
+                    }
+                    disabled={diagPage >= Math.ceil(filtered.length / 20) - 1}
+                    className="px-3 py-1.5 text-xs rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
           </Card>
         </>
       )}

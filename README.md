@@ -117,7 +117,11 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | B.6 Messages contextuels billing (3 handlers kpiMessaging billing_total_cost/anomalies/reconciliation, summary phrase BillIntelPage, coverage msg BillingPage, 24 tests) | Stable -- B.6 |
 > | B.7 Comparaison factures N vs N-1 (GET /billing/compare-monthly, BillingCompareChart Recharts BarChart, BillingPage intégré, 21 tests) | Stable -- B.7 |
 > | M.1 Seed prix marché EPEX Spot FR 24 mois (MarketPrice model, 730j déterministes, get_reference_price cascade market→fallback 0.068, GET /market/prices, glossaire, 20 tests) | Stable -- M.1 |
-> | Suite de tests automatisés | **5 243 frontend + 3 071+ backend, 0 régression** |
+> | Demo Credibility Hardening (12 taches : accents FR, labels connecteurs, dates billing relatives, onboarding detect, KPI scoping, script demo 6min) | Stable -- DH |
+> | Billing Engine Fix (shadow billing energy-only vs TTC, TVA line OTHER, anomaly seed recompute, 110→16 insights, 688k€→14k€ pertes) | Stable -- BF |
+> | Billing Summary Fix (total_loss_eur + coverage_months dans /billing/summary, SURCOÛT FACTURE + Couverture mois resolus) | Stable -- BF+ |
+> | Audit Conformité 8 axes (couverture reg, modele donnees, moteur decision, preuves, UX, orchestration, integration, differenciation — 62/100) | Stable -- AC |
+> | Suite de tests automatisés | **5 586+ frontend + 3 071+ backend, 0 régression** |
 
 > **Disclaimer**
 >
@@ -154,7 +158,11 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 - **C.1 Glossaire & Explain** : `GLOSSARY` centralise (30+ termes energie/facturation : TURPE, ATRD, accise, CSPE, CTA, shadow billing...), composant `<Explain term="turpe"/>` tooltip portal avec position auto, integre BillIntel + MonitoringPage. Tests source-guard.
 - **C.2b DemoSpotlight** : onboarding overlay 3 etapes sur Cockpit (KPIs executifs, Briefing du jour, Watchlist), `data-tour` attributes, localStorage persist, portal overlay. Tests source-guard.
 - **C.4 KPI Messaging intelligent** : `getKpiMessage(kpiId, value, ctx)` → messages contextuels simple/expert + severity + CTA recommandee, handlers pour conformite/risque/maturite/couverture, integration ExecutiveKpiRow avec `rawValue` + `messageCtx`. Tests source-guard.
-- **4 771 frontend + 2 850+ backend = 7 621+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Demo Credibility Hardening** : 12 taches P0 pour une demo premium — accents FR (35+ fichiers), labels connecteurs business-friendly (RTE eCO2mix, PVGIS, Meteo-France, Enedis), dates facturation relatives (dates dynamiques, plus de 2025 hardcode), onboarding auto-detect, KPI scoping qualifie ("perimetre selectionne"), script demo officiel 6 minutes.
+- **Billing Engine Fix** : Shadow billing corrige — comparaison energy-only vs TTC eliminee (110→16 insights, 688k€→14k€ pertes). TVA classee OTHER (pas TAX). Anomalies seed recomputees par composante (energy/network/tax). Prix ref DEFAULT_PRICE_ELEC 0.15, GAZ 0.08.
+- **Billing Summary Fix** : `total_loss_eur` + `coverage_months` ajoutes dans `/billing/summary` (resout SURCOUT FACTURE "—" et Couverture "? mois").
+- **Audit Conformite 8 axes** : audit severe de la brique conformite (couverture reg, modele donnees, moteur decision, preuves, UX, orchestration, integration, differenciation) — note 62/100, plan d'upgrade 4 niveaux (A quick wins → D fondations).
+- **5 586+ frontend + 3 071+ backend = 8 657+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 12 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -198,7 +206,7 @@ PROMEOS POC demontre une reponse technique a ces 4 besoins.
 ### Etape 1 -- Dashboard (30s)
 
 1. Ouvrir `http://localhost:5173/`
-2. Le **Dashboard** affiche 120 sites avec statuts conformite (conforme / a risque / non conforme).
+2. Le **Cockpit Executif** affiche les KPIs portefeuille HELIOS (5 sites, score conformite, risque financier).
 3. Cliquer sur un site pour voir son **detail** : obligations, evidences, score.
 
 ### Etape 2 -- Cockpit Executif (30s)
@@ -318,7 +326,7 @@ Le fichier `backend/.env.example` contient toutes les variables :
 | `API_HOST` | `127.0.0.1` | Host du backend |
 | `API_PORT` | `8001` | Port du backend |
 | `FRONTEND_URL` | `http://localhost:5173` | URL du frontend (CORS) |
-| `SEED_NB_SITES` | `120` | Nombre de sites generes par le seed |
+| `SEED_NB_SITES` | `5` | Nombre de sites generes par le seed (pack HELIOS) |
 | `DEBUG` | `True` | Mode debug |
 | `SECRET_KEY` | `your-secret-key...` | Cle JWT legacy |
 | `PROMEOS_DEMO_MODE` | `true` | Mode demo (auth optionnelle). `false` = JWT requis |
@@ -358,8 +366,8 @@ Genere (pack HELIOS) :
 - 5 BacsAssets + 9 BacsCvcSystems + 5 BacsAssessments + 3 BacsInspections
 - 195 ConsumptionTargets (5 sites x 3 ans x 13 = yearly+12 monthly)
 - 4 EmsSavedViews + 2 EmsCollections pre-configurees
-- 8 contrats energie + 60 factures + lignes + insights anomalies
-- 15 actions (compliance, consumption, billing)
+- 8 contrats energie + 36 factures (12 mois × 3 sites, dates relatives) + 5 lignes/facture (energie, reseau, taxes, abonnement, TVA) + 16 insights anomalies (shadow_gap, unit_price_high, reseau_mismatch, taxes_mismatch, contract_expiry_soon)
+- 12 actions (compliance, consumption, billing)
 
 ### Reset DB
 
@@ -410,7 +418,7 @@ python scripts/kb_smoke.py
                           +--------v----------+
                           |   FastAPI Backend  |
                           |  localhost:8001   |
-                          |  ~160 endpoints   |
+                          |  ~380 endpoints   |
                           +--------+----------+
                                    |
               +--------------------+--------------------+
@@ -423,7 +431,7 @@ python scripts/kb_smoke.py
               |                    |                    |
      +--------v------+   +--------v------+   +--------v--------+
      |  SQLAlchemy   |   |  SQLite kb.db |   |  Watchers       |
-     |  20+ modeles  |   |  12 items     |   |  Legifrance,    |
+     |  98+ modeles  |   |  12 items     |   |  Legifrance,    |
      |  promeos.db   |   |               |   |  CRE, RTE RSS   |
      +---------------+   +---------------+   +-----------------+
               |
@@ -454,10 +462,10 @@ python scripts/kb_smoke.py
 Objets principaux (SQLAlchemy, fichier `backend/models/`) :
 
 ```
-Organisation (1)
-  +-- EntiteJuridique (1)
+Organisation (1) — Groupe HELIOS
+  +-- EntiteJuridique (3)
         +-- Portefeuille (3)
-              +-- Site (120)
+              +-- Site (5) — Paris, Lyon, Toulouse, Nice, Marseille
                     |-- Batiment (cvc_power_kw, surface_m2)
                     |-- Compteur (meter_id, energy_vector)
                     |     +-- Consommation (timestamp, valeur, cout_euro)
@@ -491,11 +499,11 @@ Champs cles du Site :
 <a id="api-quick-view"></a>
 ## API Quick View
 
-~160 endpoints au total. Selection des plus importants :
+~380 endpoints au total. Selection des plus importants :
 
 | Methode | Endpoint | Description |
 |---------|----------|-------------|
-| `GET` | `/api/sites` | Liste des 120 sites avec statuts conformite |
+| `GET` | `/api/sites` | Liste des sites avec statuts conformite |
 | `GET` | `/api/sites/{id}/compliance` | Detail conformite d'un site |
 | `GET` | `/api/cockpit` | KPIs portefeuille (score, repartition, risque) |
 | `GET` | `/api/regops/site/{id}` | Evaluation RegOps live (4 reglementations) |
@@ -562,7 +570,7 @@ Documentation Swagger complete : `http://localhost:8001/docs`
 
 | Route | Page | Intention |
 |-------|------|-----------|
-| `/` | Dashboard | Vue portefeuille : 120 sites, filtres, statuts conformite |
+| `/` | Dashboard | Vue portefeuille : sites HELIOS, filtres, statuts conformite |
 | `/cockpit` | Cockpit Executif | KPIs COMEX : score global, worst-sites, risque financier |
 | `/patrimoine` | Patrimoine | Heatmap sites (risque/anomalies/framework) + cockpit portfolio |
 | `/import` | Import HELIOS | Pipeline staging CSV/XLSX : upload, QA, validation, activation |
@@ -906,7 +914,7 @@ taskkill /PID <PID> /F
 cd backend
 python scripts/seed_data.py
 ```
-Le seed drop + recreate toutes les tables, puis genere 120 sites.
+Le seed drop + recreate toutes les tables, puis genere le pack HELIOS (5 sites).
 
 ### `node_modules` corrompus
 
@@ -928,7 +936,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2840+ passed`.
+Resultat attendu : `3071+ passed`.
 
 ### Tests IAM uniquement
 

@@ -40,8 +40,8 @@ from models.enums import ActionSourceType, ActionStatus
 # Price reference resolution (V1.1)
 # ========================================
 
-DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.068"))
-DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.045"))
+DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.15"))
+DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.08"))
 
 
 def get_reference_price(
@@ -160,7 +160,19 @@ def shadow_billing_simple(
         ref_source = "default_elec"
 
     shadow_total = round(invoice.energy_kwh * price_ref, 2)
+    # Compare against energy line when available (avoids comparing energy-only vs TTC all-in)
     actual_total = invoice.total_eur or 0
+    if db:
+        energy_line_total = (
+            db.query(func.sum(EnergyInvoiceLine.amount_eur))
+            .filter(
+                EnergyInvoiceLine.invoice_id == invoice.id,
+                EnergyInvoiceLine.line_type == InvoiceLineType.ENERGY,
+            )
+            .scalar()
+        )
+        if energy_line_total and energy_line_total > 0:
+            actual_total = float(energy_line_total)
     delta = round(actual_total - shadow_total, 2)
     delta_pct = round(delta / shadow_total * 100, 2) if shadow_total > 0 else None
 
@@ -202,10 +214,10 @@ def _build_inputs(invoice: EnergyInvoice, ref_price: Optional[float] = None) -> 
 
 
 def _rule_shadow_gap(
-    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]
+    invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine], db: Session = None
 ) -> Optional[Dict]:
     """R1: Ecart shadow billing > 20%."""
-    shadow = shadow_billing_simple(invoice, contract)
+    shadow = shadow_billing_simple(invoice, contract, db=db)
     if shadow["delta_pct"] is not None and abs(shadow["delta_pct"]) > 20:
         metrics = {
             **shadow,
@@ -486,7 +498,20 @@ def _rule_price_drift(
         return None
     if not invoice.energy_kwh or invoice.energy_kwh <= 0 or not invoice.total_eur:
         return None
-    actual_unit = invoice.total_eur / invoice.energy_kwh
+    # Use energy line amount when available (avoids comparing TTC vs energy-only ref)
+    energy_total = invoice.total_eur
+    if db:
+        energy_line = (
+            db.query(func.sum(EnergyInvoiceLine.amount_eur))
+            .filter(
+                EnergyInvoiceLine.invoice_id == invoice.id,
+                EnergyInvoiceLine.line_type == InvoiceLineType.ENERGY,
+            )
+            .scalar()
+        )
+        if energy_line and energy_line > 0:
+            energy_total = float(energy_line)
+    actual_unit = energy_total / invoice.energy_kwh
     ref = contract.price_ref_eur_per_kwh
     drift_pct = (actual_unit - ref) / ref * 100
     if abs(drift_pct) > 15:

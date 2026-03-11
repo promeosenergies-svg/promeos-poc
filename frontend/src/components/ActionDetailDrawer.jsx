@@ -1089,7 +1089,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
           {tab === 'evidence' && (
             <div className="space-y-4">
               {evidence.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">Aucune piece jointe</p>
+                <p className="text-sm text-gray-400 text-center py-8">Aucune pièce jointe</p>
               ) : (
                 <div className="space-y-2">
                   {evidence.map((ev) => (
@@ -1242,7 +1242,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
           {tab === 'history' && (
             <div className="space-y-1">
               {events.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">Aucun evenement</p>
+                <p className="text-sm text-gray-400 text-center py-8">Aucun événement</p>
               ) : (
                 events.map((ev) => {
                   const Icon = EVENT_ICONS[ev.event_type] || Tag;

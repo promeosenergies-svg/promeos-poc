@@ -521,7 +521,7 @@ export default function Patrimoine() {
   // Dynamic subtitle
   const subtitle = isEmptyPatrimoine
     ? 'Importez votre patrimoine pour commencer'
-    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)} · ${stats.conformes} conformes · ${fmtEur(stats.risque)} de risque`;
+    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)} · ${stats.conformes} conformes · ${fmtEur(stats.risque)} de risque (tous sites)`;
 
   return (
     <PageShell

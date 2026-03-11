@@ -186,7 +186,7 @@ export default function ConsoKpiHeader({
               <TrendDelta deltaPct={compareSummary.delta_pct} />
             ) : undefined
           }
-          tooltip="Somme des releves sur la periode selectionnee"
+          tooltip="Somme des relevés sur la période sélectionnée"
           evidenceId="conso-kwh-total"
           onEvidence={onEvidence}
         />

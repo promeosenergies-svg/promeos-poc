@@ -203,15 +203,7 @@ const Cockpit = () => {
       total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
     const suiviConformite = total > 0 ? Math.round((conformes / total) * 100) : 0;
     const actionsActives =
-      total > 0
-        ? Math.round(
-            sites.filter(
-              (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
-            ).length > 0
-              ? ACTIONS_SCORE.withIssues
-              : ACTIONS_SCORE.noIssues
-          )
-        : 0;
+      total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
     const readinessScore =
       total > 0
         ? Math.round(

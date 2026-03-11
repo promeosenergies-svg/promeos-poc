@@ -62,13 +62,13 @@ function computeConfidence(scoredOffers, consumption, billing) {
   let confidence, reason;
   if (confidenceScore >= 70) {
     confidence = Confidence.HIGH;
-    reason = 'Donnees suffisantes pour une recommandation fiable';
+    reason = 'Données suffisantes pour une recommandation fiable';
   } else if (confidenceScore >= 40) {
     confidence = Confidence.MEDIUM;
-    reason = 'Recommandation indicative — donnees partiellement disponibles';
+    reason = 'Recommandation indicative — données partiellement disponibles';
   } else {
     confidence = Confidence.LOW;
-    reason = 'Confiance faible — donnees insuffisantes ou estimees';
+    reason = 'Confiance faible — données insuffisantes ou estimées';
   }
 
   return { confidence, reason, missingData };

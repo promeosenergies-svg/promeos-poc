@@ -105,11 +105,18 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         if not contract:
             continue
 
-        # Period: rolling monthly invoices
+        # Period: rolling monthly invoices anchored to current date
         month_offset = inv_idx % 12
-        period_start = date(2025, max(1, 12 - month_offset), 1)
+        today = date.today()
+        # Go back month_offset months from current month
+        target_month = today.month - month_offset
+        target_year = today.year
+        while target_month <= 0:
+            target_month += 12
+            target_year -= 1
+        period_start = date(target_year, target_month, 1)
         if period_start.month == 12:
-            period_end = date(2026, 1, 1) - timedelta(days=1)
+            period_end = date(period_start.year + 1, 1, 1) - timedelta(days=1)
         else:
             period_end = date(period_start.year, period_start.month + 1, 1) - timedelta(days=1)
 
@@ -142,20 +149,21 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         total = round(ht + tva, 2)
 
         # Anomaly: 1 in 5 invoices — varied types
+        # Anomalies modify specific line components, then recompute total with TVA
         is_anomaly = inv_idx % 5 == 3
         anomaly_type = None
         if is_anomaly:
-            anomaly_type = rng.choice(["overcharge", "volume_spike", "network_drift", "tax_mismatch"])
+            anomaly_type = rng.choice(["overcharge", "network_drift", "tax_mismatch"])
             if anomaly_type == "overcharge":
-                total = round(total * rng.uniform(1.25, 1.45), 2)
-            elif anomaly_type == "volume_spike":
-                total = round(total * rng.uniform(1.30, 1.55), 2)
+                energy_eur = round(energy_eur * rng.uniform(1.25, 1.45), 2)
             elif anomaly_type == "network_drift":
                 network_eur = round(network_eur * rng.uniform(1.35, 1.65), 2)
-                total = round(energy_eur + network_eur + tax_eur + abo_eur, 2)
             elif anomaly_type == "tax_mismatch":
                 tax_eur = round(tax_eur * rng.uniform(1.30, 1.55), 2)
-                total = round(energy_eur + network_eur + tax_eur + abo_eur, 2)
+            # Recompute total with TVA so lines always sum to total
+            ht = energy_eur + network_eur + tax_eur + abo_eur
+            tva = round((energy_eur + network_eur + tax_eur) * 0.20 + abo_eur * 0.055, 2)
+            total = round(ht + tva, 2)
 
         invoice = EnergyInvoice(
             site_id=site.id,
@@ -173,12 +181,18 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         db.flush()
         invoices_created += 1
 
-        # Invoice lines
+        # Invoice lines (including TVA so sum(lines) == total_eur)
+        tva_line = (
+            round(total - (energy_eur + network_eur + tax_eur + abo_eur), 2)
+            if not is_anomaly
+            else round(total - (energy_eur + network_eur + tax_eur + abo_eur), 2)
+        )
         for lt, label, amount in [
             (InvoiceLineType.ENERGY, "Fourniture electricite", energy_eur),
             (InvoiceLineType.NETWORK, "Acheminement (TURPE)", network_eur),
             (InvoiceLineType.TAX, "Taxes et contributions", tax_eur),
             (InvoiceLineType.OTHER, "Abonnement mensuel", contract.fixed_fee_eur_per_month or 0),
+            (InvoiceLineType.OTHER, "TVA", tva_line),
         ]:
             db.add(
                 EnergyInvoiceLine(
