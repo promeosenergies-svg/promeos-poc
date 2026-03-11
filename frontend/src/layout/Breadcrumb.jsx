@@ -33,6 +33,7 @@ Object.assign(LABELS, {
   achats: 'Achats énergie',
   purchase: 'Achats énergie',
   referentiels: 'Mémobox',
+  kb: 'Mémobox',
   synthese: 'Vue exécutive',
   executive: 'Vue exécutive',
   dashboard: 'Tableau de bord',

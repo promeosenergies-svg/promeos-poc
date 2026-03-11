@@ -110,10 +110,10 @@ class TestDiagnostics:
         assert "missing_fields" in result["diagnostics"]
 
     def test_diagnostics_confidence_high(self):
-        """Contract + multi-type lines → high confidence."""
+        """Contract + multi-type lines → medium confidence (V1 capped, never high)."""
         lines = [FakeLine(), FakeNetworkLine(), FakeTaxLine()]
         result = _shadow(FakeContract(), lines)
-        assert result["diagnostics"]["confidence"] == "high"
+        assert result["diagnostics"]["confidence"] == "medium"
 
     def test_diagnostics_confidence_low(self):
         """No contract price, no lines → low confidence."""

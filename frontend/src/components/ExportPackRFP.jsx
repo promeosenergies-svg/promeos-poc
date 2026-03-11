@@ -138,7 +138,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                 <div className="kpi-val" style={{ color: '#2563eb' }}>
                   {fmtNum(Math.round(portfolio.total_annual_cost_eur || 0), 0)}
                 </div>
-                <div className="kpi-lbl">Cout annuel (EUR)</div>
+                <div className="kpi-lbl">Coût annuel (€)</div>
               </div>
               <div className="kpi">
                 <div
@@ -193,7 +193,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                       <td>{STRATEGY_LABELS[reco.strategy] || reco.strategy}</td>
                       <td style={{ textAlign: 'right' }}>{reco.price_eur_per_kwh?.toFixed(4)}</td>
                       <td style={{ textAlign: 'right' }}>
-                        {fmtNum(Math.round(reco.total_annual_eur), 0)} EUR
+                        {fmtNum(Math.round(reco.total_annual_eur), 0)} €
                       </td>
                       <td
                         style={{
@@ -254,7 +254,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                         </td>
                         <td style={{ textAlign: 'right' }}>{s.price_eur_per_kwh?.toFixed(4)}</td>
                         <td style={{ textAlign: 'right' }}>
-                          {fmtNum(Math.round(s.total_annual_eur), 0)} EUR
+                          {fmtNum(Math.round(s.total_annual_eur), 0)} €
                         </td>
                         <td
                           style={{

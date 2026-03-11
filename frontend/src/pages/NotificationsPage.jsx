@@ -459,7 +459,7 @@ export default function NotificationsPage() {
                     <Td className="text-right text-sm font-medium">
                       {evt.estimated_impact_eur ? (
                         <span className="text-amber-700">
-                          {Math.round(evt.estimated_impact_eur).toLocaleString('fr-FR')} EUR
+                          {Math.round(evt.estimated_impact_eur).toLocaleString('fr-FR')} €
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -573,7 +573,7 @@ export default function NotificationsPage() {
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estime</p>
                 <p className="text-sm text-gray-900">
                   {drawerEvent.estimated_impact_eur
-                    ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} EUR`
+                    ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} €`
                     : 'Non estime'}
                 </p>
               </div>

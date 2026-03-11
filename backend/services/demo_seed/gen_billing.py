@@ -17,6 +17,7 @@ from models import (
     BillingInvoiceStatus,
     InsightStatus,
     ContractIndexation,
+    TariffOptionEnum,
     DeliveryPoint,
     DeliveryPointEnergyType,
     ContractDeliveryPoint,
@@ -66,6 +67,15 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             ref_fournisseur = f"{ref_prefix}-{date.fromisoformat(c_spec['start']).year}-{c_spec['site_idx']:03d}{c_spec['type'][0].upper()}"
             sig_date = date.fromisoformat(c_spec["start"]) - timedelta(days=rng.randint(15, 60))
 
+            # V2 Engine: tariff option mapping
+            _TARIFF_OPT_MAP = {
+                "base": TariffOptionEnum.BASE,
+                "hp_hc": TariffOptionEnum.HP_HC,
+                "cu": TariffOptionEnum.CU,
+                "mu": TariffOptionEnum.MU,
+                "lu": TariffOptionEnum.LU,
+            }
+
             contract = EnergyContract(
                 site_id=site.id,
                 energy_type=_ENERGY_TYPE_MAP.get(c_spec["type"], BillingEnergyType.ELEC),
@@ -82,6 +92,14 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 reference_fournisseur=ref_fournisseur,
                 date_signature=sig_date,
                 conditions_particulieres=c_spec.get("conditions"),
+                # V2 Engine: puissance, option tarifaire, prix par periode
+                subscribed_power_kva=c_spec.get("subscribed_power_kva"),
+                tariff_option=_TARIFF_OPT_MAP.get(c_spec.get("tariff_option", "")),
+                price_hpe_eur_kwh=c_spec.get("price_hpe_eur_kwh"),
+                price_hce_eur_kwh=c_spec.get("price_hce_eur_kwh"),
+                price_hp_eur_kwh=c_spec.get("price_hp_eur_kwh"),
+                price_hc_eur_kwh=c_spec.get("price_hc_eur_kwh"),
+                price_base_eur_kwh=c_spec.get("price_base_eur_kwh"),
             )
             db.add(contract)
             db.flush()

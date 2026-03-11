@@ -101,7 +101,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
       titre: `Priorité : corriger les anomalies facture`,
       bullets: [
         `Surcoût détecté : ${_fmtEur0(surcoutFacture)}`,
-        'Anomalies identifiées par le moteur de shadow billing',
+        'Anomalies identifiées par le moteur de facturation théorique',
         'Vérifiez les écarts prix, volumes et doublons',
       ],
       cta: 'Voir les anomalies',

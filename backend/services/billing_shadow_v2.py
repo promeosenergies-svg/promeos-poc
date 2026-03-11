@@ -32,7 +32,7 @@ except Exception:
     TURPE_EUR_KWH_ELEC = 0.0453
     ATRD_EUR_KWH_GAZ = 0.025
     ATRT_EUR_KWH_GAZ = 0.012
-    CSPE_EUR_KWH_ELEC = 0.0225
+    CSPE_EUR_KWH_ELEC = 0.02623
     TICGN_EUR_KWH_GAZ = 0.01637
     TVA_RATE_20 = 0.20
 
@@ -52,9 +52,7 @@ def _load_fallback() -> dict:
             get_prix_reference,
         )
 
-        return {
-            "TURPE_ENERGIE_C5_BT": get_turpe_moyen_kwh("C5_BT"),
-            "TURPE_GESTION_C5_BT": get_turpe_gestion_mois("C5_BT"),
+        result = {
             "ATRD_GAZ": get_atrd_kwh(),
             "ATRT_GAZ": get_atrt_kwh(),
             "ACCISE_ELEC": get_accise_kwh("elec"),
@@ -64,13 +62,25 @@ def _load_fallback() -> dict:
             "DEFAULT_PRICE_ELEC": get_prix_reference("elec"),
             "DEFAULT_PRICE_GAZ": get_prix_reference("gaz"),
         }
+        # Charger les taux TURPE pour chaque segment disponible
+        for seg in ("C5_BT", "C4_BT", "C3_HTA"):
+            try:
+                result[f"TURPE_ENERGIE_{seg}"] = get_turpe_moyen_kwh(seg)
+                result[f"TURPE_GESTION_{seg}"] = get_turpe_gestion_mois(seg)
+            except Exception:
+                pass
+        return result
     except Exception:
         return {
             "TURPE_ENERGIE_C5_BT": 0.0453,
             "TURPE_GESTION_C5_BT": 18.48,
+            "TURPE_ENERGIE_C4_BT": 0.0390,
+            "TURPE_GESTION_C4_BT": 30.60,
+            "TURPE_ENERGIE_C3_HTA": 0.0260,
+            "TURPE_GESTION_C3_HTA": 58.44,
             "ATRD_GAZ": 0.025,
             "ATRT_GAZ": 0.012,
-            "ACCISE_ELEC": 0.0225,
+            "ACCISE_ELEC": 0.02623,
             "ACCISE_GAZ": 0.01637,
             "TVA_NORMALE": 0.20,
             "TVA_REDUITE": 0.055,
@@ -145,10 +155,13 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     tva_normal = _safe_rate("TVA_NORMALE")
     tva_reduit = _safe_rate("TVA_REDUITE")
 
+    # ── Segment TURPE depuis puissance souscrite du contrat ──────────
+    segment = _resolve_segment(contract)
+
     # ── Component rates from catalog ─────────────────────────────────
     if is_elec:
-        turpe_energie = _safe_rate("TURPE_ENERGIE_C5_BT")
-        turpe_gestion = _safe_rate("TURPE_GESTION_C5_BT")
+        turpe_energie = _safe_rate(f"TURPE_ENERGIE_{segment}")
+        turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}")
         accise = _safe_rate("ACCISE_ELEC")
     else:
         turpe_energie = _safe_rate("ATRD_GAZ") + _safe_rate("ATRT_GAZ")
@@ -245,13 +258,13 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     # ── Catalog audit trace ────────────────────────────────────────────
     at_date = getattr(invoice, "period_start", None)
     catalog_trace = [
-        _safe_trace("TURPE_ENERGIE_C5_BT" if is_elec else "ATRD_GAZ", at_date),
+        _safe_trace(f"TURPE_ENERGIE_{segment}" if is_elec else "ATRD_GAZ", at_date),
         _safe_trace("ACCISE_ELEC" if is_elec else "ACCISE_GAZ", at_date),
         _safe_trace("TVA_NORMALE", at_date),
         _safe_trace("TVA_REDUITE", at_date),
     ]
     if is_elec:
-        catalog_trace.append(_safe_trace("TURPE_GESTION_C5_BT", at_date))
+        catalog_trace.append(_safe_trace(f"TURPE_GESTION_{segment}", at_date))
     # Filter out empty traces (catalog unavailable)
     catalog_trace = [t for t in catalog_trace if t]
 
@@ -273,13 +286,13 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     else:
         assumptions.append("Prix fourniture : référentiel PROMEOS (pas de contrat)")
     if is_elec:
-        assumptions.append("Réseau : TURPE C5 BT (profil simplifié)")
+        assumptions.append(f"Réseau : TURPE {segment} (profil simplifié)")
     else:
         assumptions.append("Réseau : ATRD+ATRT (profil simplifié)")
 
-    # Confidence: high if contract+lines, medium if one, low if neither
+    # Confidence: V1 shadow is approximate — cap at "medium", never "high"
     if has_contract_price and has_lines and len(line_types) >= 2:
-        confidence = "high"
+        confidence = "medium"
     elif has_contract_price or (has_lines and len(line_types) >= 2):
         confidence = "medium"
     else:
@@ -316,6 +329,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         "prorata_factor": round(prorata_factor, 4),
         "days_in_period": days_in_period,
         "method": "shadow_v2_catalog",
+        "segment": segment,
         "price_source": price_source,
         # Structured (new)
         "components": components,
@@ -442,7 +456,7 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
 
     # ── Enrichir avec CTA ──────────────────────────────────────────────
     kwh = v2["kwh"]
-    turpe_gestion = _safe_rate("TURPE_GESTION_C5_BT") if is_elec else 0
+    turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}") if is_elec else 0
     p_start = getattr(invoice, "period_start", None)
     p_end = getattr(invoice, "period_end", None)
     if p_start and p_end:

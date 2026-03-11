@@ -30,6 +30,8 @@ from .enums import (
     InsightStatus,
     ContractIndexation,
     ContractStatus,
+    TariffOptionEnum,
+    InvoiceTypeEnum,
 )
 
 
@@ -128,6 +130,48 @@ class EnergyContract(Base, TimestampMixin):
         comment="Lien vers le scan/PDF du contrat signe",
     )
 
+    # V2 Engine — champs nécessaires à la reconstitution
+    subscribed_power_kva = Column(
+        Float,
+        nullable=True,
+        comment="Puissance souscrite kVA (détermine le segment TURPE)",
+    )
+    tariff_option = Column(
+        Enum(TariffOptionEnum),
+        nullable=True,
+        comment="Option tarifaire: base/hp_hc/cu/mu/lu",
+    )
+    pass_through_items = Column(
+        Text,
+        nullable=True,
+        comment="Clauses pass-through JSON [{code, label, formula}]",
+    )
+    price_hpe_eur_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Prix fourniture HPE EUR HT/kWh",
+    )
+    price_hce_eur_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Prix fourniture HCE EUR HT/kWh",
+    )
+    price_hp_eur_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Prix fourniture HP EUR HT/kWh",
+    )
+    price_hc_eur_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Prix fourniture HC EUR HT/kWh",
+    )
+    price_base_eur_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Prix fourniture Base EUR HT/kWh (= price_ref si tarif unique)",
+    )
+
     # Relations
     site = relationship("Site", backref="energy_contracts")
     invoices = relationship(
@@ -199,6 +243,30 @@ class EnergyInvoice(Base, TimestampMixin):
     )
     raw_json = Column(Text, nullable=True, comment="Donnees brutes (JSON)")
 
+    # V2 Engine — champs reconstitution
+    invoice_type = Column(
+        Enum(InvoiceTypeEnum),
+        nullable=True,
+        default=InvoiceTypeEnum.NORMAL,
+        comment="Type: normal/advance/regularization/credit_note",
+    )
+    is_estimated = Column(
+        Boolean,
+        nullable=True,
+        default=False,
+        comment="True si basée sur index estimés (pas de relève réelle)",
+    )
+    start_index = Column(
+        Float,
+        nullable=True,
+        comment="Index compteur début de période (kWh)",
+    )
+    end_index = Column(
+        Float,
+        nullable=True,
+        comment="Index compteur fin de période (kWh)",
+    )
+
     # Relations
     site = relationship("Site", backref="energy_invoices")
     contract = relationship("EnergyContract", back_populates="invoices")
@@ -243,6 +311,19 @@ class EnergyInvoiceLine(Base, TimestampMixin):
     unit_price = Column(Float, nullable=True, comment="Prix unitaire EUR")
     amount_eur = Column(Float, nullable=True, comment="Montant EUR")
     meta_json = Column(Text, nullable=True, comment="Metadata libre (JSON)")
+
+    # V2 Engine — enrichissement lignes
+    period_code = Column(
+        String(10),
+        nullable=True,
+        comment="Code période tarifaire: BASE/HP/HC/HPE/HCE/HPH/HCH/P",
+    )
+    line_category = Column(
+        String(50),
+        nullable=True,
+        comment="Catégorie fine: turpe_gestion/turpe_comptage/turpe_soutirage_fixe/"
+        "turpe_soutirage_hpe/turpe_soutirage_hce/cta/accise/supply_hpe/supply_hce/tva",
+    )
 
     # Relations
     invoice = relationship("EnergyInvoice", back_populates="lines")

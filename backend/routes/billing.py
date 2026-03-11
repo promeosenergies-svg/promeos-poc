@@ -588,6 +588,7 @@ def get_shadow_breakdown(
     invoice_id: int,
     request: Request,
     org_id: Optional[int] = Query(None),
+    engine: Optional[str] = Query(None, description="v1=legacy, v2=new engine"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -596,13 +597,182 @@ def get_shadow_breakdown(
     invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(EnergyInvoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Facture non trouvée ou accès refusé")
+
+    # V2 engine (new deterministic reconstitution)
+    if engine != "v1":
+        try:
+            return _compute_breakdown_v2(db, invoice)
+        except Exception as e:
+            logger.warning("Billing engine V2 failed for invoice %s: %s — falling back to V1", invoice_id, str(e)[:200])
+            if engine == "v2":
+                raise HTTPException(status_code=500, detail=f"Erreur billing engine V2: {str(e)[:200]}")
+
+    # V1 legacy fallback
     try:
         from services.billing_shadow_v2 import compute_shadow_breakdown
 
-        return compute_shadow_breakdown(db, invoice)
+        result = compute_shadow_breakdown(db, invoice)
+        result["fallback_used"] = True
+        return result
     except Exception as e:
-        logger.warning("Shadow breakdown failed for invoice %s: %s", invoice_id, str(e)[:200])
+        logger.warning("Shadow breakdown V1 failed for invoice %s: %s", invoice_id, str(e)[:200])
         raise HTTPException(status_code=500, detail="Erreur lors du calcul du shadow breakdown")
+
+
+def _compute_breakdown_v2(db: Session, invoice) -> dict:
+    """
+    Adapter: bridge the new billing engine into the shadow-breakdown API shape.
+    Reads contract data from DB, calls the deterministic engine, returns
+    a dict compatible with the frontend ShadowBreakdownCard.
+    """
+    from services.billing_engine.engine import (
+        build_invoice_reconstitution,
+        compare_to_supplier_invoice,
+    )
+    from services.billing_engine.types import TariffOption, InvoiceType
+
+    # ── Resolve contract ─────────────────────────────────────────────────
+    contract = None
+    if invoice.contract_id:
+        contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
+
+    # ── Extract inputs from contract + invoice ───────────────────────────
+    energy_type = "ELEC"
+    if contract and hasattr(contract, "energy_type"):
+        et = getattr(contract.energy_type, "value", str(contract.energy_type))
+        if "gaz" in et.lower() or "gas" in et.lower():
+            energy_type = "GAZ"
+
+    subscribed_power = getattr(contract, "subscribed_power_kva", None) if contract else None
+
+    # Map DB enum to engine enum
+    tariff_option = None
+    if contract and getattr(contract, "tariff_option", None):
+        opt_map = {
+            "base": TariffOption.BASE,
+            "hp_hc": TariffOption.HP_HC,
+            "cu": TariffOption.CU,
+            "mu": TariffOption.MU,
+            "lu": TariffOption.LU,
+        }
+        raw = getattr(contract.tariff_option, "value", str(contract.tariff_option))
+        tariff_option = opt_map.get(raw.lower())
+
+    # Invoice type
+    invoice_type = InvoiceType.NORMAL
+    if hasattr(invoice, "invoice_type") and invoice.invoice_type:
+        it_map = {
+            "normal": InvoiceType.NORMAL,
+            "advance": InvoiceType.ADVANCE,
+            "regularization": InvoiceType.REGULARIZATION,
+            "credit_note": InvoiceType.CREDIT_NOTE,
+        }
+        raw = getattr(invoice.invoice_type, "value", str(invoice.invoice_type))
+        invoice_type = it_map.get(raw.lower(), InvoiceType.NORMAL)
+
+    # kWh by period — from invoice lines if available
+    kwh_by_period = {}
+    lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == invoice.id).all()
+    for line in lines:
+        pc = getattr(line, "period_code", None)
+        if pc and line.qty:
+            kwh_by_period[pc] = kwh_by_period.get(pc, 0) + line.qty
+
+    # Fallback: if no period breakdown, use total kwh as BASE
+    if not kwh_by_period and invoice.energy_kwh:
+        kwh_by_period = {"BASE": invoice.energy_kwh}
+
+    # Supply prices from contract
+    supply_prices = {}
+    if contract:
+        price_map = {
+            "HPE": "price_hpe_eur_kwh",
+            "HCE": "price_hce_eur_kwh",
+            "HP": "price_hp_eur_kwh",
+            "HC": "price_hc_eur_kwh",
+            "BASE": "price_base_eur_kwh",
+        }
+        for period, attr in price_map.items():
+            val = getattr(contract, attr, None)
+            if val is not None:
+                supply_prices[period] = val
+        # Fallback to generic price_ref
+        if not supply_prices and getattr(contract, "price_ref_eur_per_kwh", None):
+            for period in kwh_by_period:
+                supply_prices[period] = contract.price_ref_eur_per_kwh
+
+    # Period
+    period_start = invoice.period_start or invoice.issue_date or date.today()
+    period_end = invoice.period_end or (period_start + __import__("datetime").timedelta(days=30))
+
+    fixed_fee = getattr(contract, "fixed_fee_eur_per_month", 0) or 0
+
+    # ── Call engine ──────────────────────────────────────────────────────
+    result = build_invoice_reconstitution(
+        energy_type=energy_type,
+        subscribed_power_kva=subscribed_power,
+        tariff_option=tariff_option,
+        kwh_by_period=kwh_by_period,
+        supply_prices_by_period=supply_prices,
+        period_start=period_start,
+        period_end=period_end,
+        invoice_type=invoice_type,
+        fixed_fee_eur_month=fixed_fee,
+    )
+
+    # ── Compare to supplier ──────────────────────────────────────────────
+    supplier_ttc = invoice.total_eur or 0
+    comparison = compare_to_supplier_invoice(result, supplier_ttc) if supplier_ttc > 0 else None
+
+    # ── Format response (compatible with frontend) ───────────────────────
+    components_out = []
+    for c in result.components:
+        comp = {
+            "code": c.code,
+            "label": c.label,
+            "expected_ht": c.amount_ht,
+            "tva_rate": c.tva_rate,
+            "tva": c.amount_tva,
+            "ttc": c.amount_ttc,
+            "formula": c.formula_used,
+            "inputs": c.inputs_used,
+            "gap_eur": c.gap_eur,
+            "gap_pct": c.gap_pct,
+            "gap_status": c.gap_status or "unknown",
+            "rate_sources": [
+                {"code": rs.code, "rate": rs.rate, "unit": rs.unit, "source": rs.source} for rs in c.rate_sources
+            ],
+        }
+        if c.supplier_amount_ht is not None:
+            comp["invoice_ht"] = c.supplier_amount_ht
+        components_out.append(comp)
+
+    return {
+        "engine_version": result.engine_version,
+        "status": result.status.value,
+        "segment": result.segment.value,
+        "tariff_option": result.tariff_option.value,
+        "energy_type": result.energy_type,
+        "total_expected_ht": result.total_ht,
+        "total_expected_ttc": result.total_ttc,
+        "total_tva": result.total_tva,
+        "total_tva_reduite": result.total_tva_reduite,
+        "total_tva_normale": result.total_tva_normale,
+        "total_invoice_ttc": supplier_ttc if supplier_ttc > 0 else None,
+        "total_gap_eur": comparison["global_gap_eur"] if comparison else None,
+        "total_gap_pct": comparison["global_gap_pct"] if comparison else None,
+        "total_gap_status": comparison["global_status"] if comparison else "unknown",
+        "components": components_out,
+        "kwh": result.kwh_total,
+        "kwh_by_period": result.kwh_by_period,
+        "days_in_period": result.prorata_days,
+        "prorata_factor": round(result.prorata_factor, 6),
+        "subscribed_power_kva": result.subscribed_power_kva,
+        "missing_inputs": result.missing_inputs,
+        "assumptions": result.assumptions,
+        "warnings": result.warnings,
+        "catalog_version": result.catalog_version,
+    }
 
 
 @router.post("/audit-all")
@@ -1015,6 +1185,7 @@ def list_invoices(
                 "energy_kwh": i.energy_kwh,
                 "status": i.status.value if i.status else None,
                 "source": i.source,
+                "energy_type": i.contract.energy_type.value.upper() if i.contract and i.contract.energy_type else None,
             }
             for i in invoices
         ],

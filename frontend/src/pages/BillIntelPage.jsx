@@ -27,7 +27,7 @@ import {
   Upload,
   Play,
   Printer,
-  DollarSign,
+  Euro,
   Zap,
   TrendingUp,
   RefreshCw,
@@ -535,7 +535,7 @@ export default function BillIntelPage() {
         >
           <span className="flex items-center gap-1.5">
             <CalendarRange size={14} />
-            Timeline & Couverture
+            Chronologie & Couverture
           </span>
         </Link>
       </div>
@@ -661,7 +661,8 @@ export default function BillIntelPage() {
             >
               {count} anomalie{count > 1 ? 's' : ''} détectée{count > 1 ? 's' : ''} pour un écart
               estimé de {lossStr}.
-              {isExpert && ` Shadow billing actif — ${summary.total_invoices} factures analysées.`}
+              {isExpert &&
+                ` Facturation théorique active — ${summary.total_invoices} factures analysées.`}
             </p>
           );
         })()}
@@ -677,7 +678,7 @@ export default function BillIntelPage() {
               color="blue"
             />
             <SummaryCard
-              icon={DollarSign}
+              icon={Euro}
               label="Total €"
               value={`${Math.round(summary.total_eur).toLocaleString('fr-FR')} €`}
               color="indigo"
@@ -709,7 +710,7 @@ export default function BillIntelPage() {
           <div className="flex flex-col gap-1">
             {(() => {
               const msg = getKpiMessage('billing_total_cost', summary.total_eur, {
-                sitesCount: sites.length,
+                sitesCount: siteFilter ? 1 : sites.length,
               });
               if (!msg) return null;
               return (
@@ -1067,11 +1068,9 @@ export default function BillIntelPage() {
                         €/kWh
                       </th>
                     )}
-                    {isExpert && (
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
-                        Type énergie
-                      </th>
-                    )}
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">
+                      Type énergie
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1106,9 +1105,7 @@ export default function BillIntelPage() {
                             : '-'}
                         </td>
                       )}
-                      {isExpert && (
-                        <td className="px-4 py-2.5 text-gray-500">{inv.energy_type || '-'}</td>
-                      )}
+                      <td className="px-4 py-2.5 text-gray-500">{inv.energy_type || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

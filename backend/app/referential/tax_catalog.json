@@ -1,5 +1,5 @@
 {
-  "version": "2025-03-01",
+  "version": "2026-03-11_lockdown",
   "description": "PROMEOS — Catalogue taux réglementaires énergie France B2B (V1)",
   "entries": [
     {
@@ -52,15 +52,15 @@
     },
     {
       "code": "ACCISE_ELEC",
-      "label": "Accise sur l'électricité (ex-CSPE/TIEE)",
-      "rate": 0.02250,
+      "label": "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév-jul 2025",
+      "rate": 0.02623,
       "unit": "EUR/kWh",
       "assiette": "energy_kwh",
       "tva_rate": 0.20,
-      "valid_from": "2025-01-01",
-      "valid_to": null,
-      "source": "Loi de finances 2025 art. 92 (TIEE)",
-      "fallback": 0.02250
+      "valid_from": "2025-02-01",
+      "valid_to": "2025-07-31",
+      "source": "Loi de finances 2025 — accise PME 26.23 EUR/MWh (fév-jul 2025)",
+      "fallback": 0.02623
     },
     {
       "code": "ACCISE_GAZ",
@@ -101,14 +101,14 @@
     {
       "code": "CTA_ELEC",
       "label": "Contribution Tarifaire d'Acheminement (élec)",
-      "rate": 27.04,
+      "rate": 21.93,
       "unit": "PCT",
       "assiette": "turpe_fixe_ht",
       "tva_rate": 0.055,
-      "valid_from": "2025-01-01",
-      "valid_to": null,
-      "source": "Arrêté CTA 2025",
-      "fallback": 27.04
+      "valid_from": "2021-08-01",
+      "valid_to": "2026-01-31",
+      "source": "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%",
+      "fallback": 21.93
     },
     {
       "code": "CTA_GAZ",

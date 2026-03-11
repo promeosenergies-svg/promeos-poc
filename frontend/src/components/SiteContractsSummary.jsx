@@ -141,7 +141,7 @@ export default function SiteContractsSummary({ siteId }) {
                   to={`/bill-intel?site_id=${siteId}`}
                   className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
                 >
-                  <ExternalLink size={12} /> Shadow billing
+                  <ExternalLink size={12} /> Facturation théorique
                 </Link>
               </div>
             </CardBody>

@@ -30,7 +30,7 @@ import useEmsTimeseries from './useEmsTimeseries';
 import { colorForSite } from './helpers';
 import { useScope } from '../../contexts/ScopeContext';
 
-const _UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
+const _UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: '€' };
 
 const GRAN_LABELS = {
   daily: 'Journalière',

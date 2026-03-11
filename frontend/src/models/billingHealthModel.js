@@ -125,7 +125,8 @@ export function computeBillingHealthState(summary, insights = []) {
   });
 
   // Stable billing CTAs — 2 per level, + "Voir tout" overflow
-  const totalReasons = watchlist.length;
+  // Use allReasonCount (same source as subtitle) so numbers stay consistent
+  const totalReasons = state.allReasonCount || watchlist.length;
   let primaryCta, secondaryCta;
 
   if (state.level === 'RED') {

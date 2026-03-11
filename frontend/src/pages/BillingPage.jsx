@@ -1,6 +1,6 @@
 /**
  * PROMEOS — BillingPage (V70)
- * Timeline & Couverture Facturation : suivi mensuel, détection périodes manquantes.
+ * Chronologie & Couverture Facturation : suivi mensuel, détection périodes manquantes.
  * Scope unifié via ScopeContext, filtres avancés, import contextuel.
  * Route: /billing (alias /facturation)
  */
@@ -37,7 +37,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import { getKpiMessage } from '../services/kpiMessaging';
 
-const PAGE_TITLE = 'Facturation — Timeline';
+const PAGE_TITLE = 'Facturation — Chronologie';
 
 function KpiChip({ icon: Icon, label, value, color }) {
   return (
@@ -374,7 +374,7 @@ export default function BillingPage() {
         </Link>
         <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm flex items-center gap-1.5">
           <CalendarRange size={14} />
-          Timeline & Couverture
+          Chronologie & Couverture
         </span>
       </div>
 
@@ -637,11 +637,11 @@ export default function BillingPage() {
         </select>
       </div>
 
-      {/* Timeline complète */}
+      {/* Chronologie complète */}
       <Card>
         <CardBody>
           <h2 className="text-sm font-semibold text-gray-700 mb-3">
-            Timeline complète
+            Chronologie complète
             {periodsTotal > 0 && (
               <span className="ml-2 text-xs font-normal text-gray-400">
                 {filteredPeriods.length}/{periods.length} affichées ({periodsTotal} total)

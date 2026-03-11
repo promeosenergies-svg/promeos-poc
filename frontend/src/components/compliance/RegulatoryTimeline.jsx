@@ -90,7 +90,7 @@ function EventTooltip({ evt }) {
       </div>
       {evt.penalty_eur != null && (
         <p className="text-[10px] text-red-500 mt-1">
-          Pénalité : {evt.penalty_eur.toLocaleString('fr-FR')} EUR
+          Pénalité : {evt.penalty_eur.toLocaleString('fr-FR')} €
         </p>
       )}
     </div>
@@ -313,9 +313,7 @@ function VerticalTimeline({ events, today }) {
                   </span>
                 )}
                 {evt.penalty_eur != null && (
-                  <span className="text-red-500">
-                    {evt.penalty_eur.toLocaleString('fr-FR')} EUR
-                  </span>
+                  <span className="text-red-500">{evt.penalty_eur.toLocaleString('fr-FR')} €</span>
                 )}
               </div>
             </div>
@@ -386,7 +384,7 @@ export default function RegulatoryTimeline({
             )}
             {totalPenalty > 0 && (
               <span className="px-2 py-1 rounded-full bg-gray-50 text-gray-500 font-medium">
-                Exposition : {totalPenalty.toLocaleString('fr-FR')} EUR
+                Exposition : {totalPenalty.toLocaleString('fr-FR')} €
               </span>
             )}
           </div>

@@ -918,7 +918,7 @@ export default function PurchasePage() {
                           {cheapest && mostExpensive
                             ? `${Math.round(cheapest.total_annual_eur).toLocaleString('fr-FR')} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString('fr-FR')}`
                             : '—'}{' '}
-                          EUR
+                          €
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
                           Fourchette des {scenarios.length} scénarios
@@ -1012,7 +1012,7 @@ export default function PurchasePage() {
                             <span className="text-sm font-normal text-gray-500">EUR/kWh</span>
                           </div>
                           <div className="text-sm text-gray-600 mt-1">
-                            {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an
+                            {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an
                           </div>
                         </div>
                         {s.savings_vs_current_pct != null && (
@@ -1039,7 +1039,7 @@ export default function PurchasePage() {
                           <div className="text-xs text-gray-500 mb-3">
                             <AlertTriangle size={12} className="inline mr-1" />
                             Fourchette: {Math.round(s.p10_eur).toLocaleString('fr-FR')} —{' '}
-                            {Math.round(s.p90_eur).toLocaleString('fr-FR')} EUR/an
+                            {Math.round(s.p90_eur).toLocaleString('fr-FR')} €/an
                           </div>
                         )}
 
@@ -1196,8 +1196,8 @@ export default function PurchasePage() {
                                     <TrendingDown size={12} className="text-green-600" />
                                     <span className="text-green-700">
                                       {deltaEur > 0
-                                        ? `-${deltaEur.toLocaleString('fr-FR')} EUR/an`
-                                        : `+${Math.abs(deltaEur).toLocaleString('fr-FR')} EUR/an`}{' '}
+                                        ? `-${deltaEur.toLocaleString('fr-FR')} €/an`
+                                        : `+${Math.abs(deltaEur).toLocaleString('fr-FR')} €/an`}{' '}
                                       ({deltaPct > 0 ? '-' : '+'}
                                       {Math.abs(deltaPct)}%) vs Prix Fixe standard
                                     </span>
@@ -1257,7 +1257,7 @@ export default function PurchasePage() {
                                       source: 'purchase',
                                       source_type: 'achat',
                                       site_id: selectedSiteId,
-                                      title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an`,
+                                      title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an`,
                                       scenario_label: 'Tarif Heures Solaires',
                                       impact_eur:
                                         s.savings_vs_current_pct > 0 && s.total_annual_eur
@@ -1330,7 +1330,7 @@ export default function PurchasePage() {
                                   : undefined;
                               openActionDrawer({
                                 prefill: {
-                                  titre: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an)`,
+                                  titre: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an)`,
                                   type: 'achat',
                                   impact_eur: impactEur,
                                 },
@@ -1491,7 +1491,7 @@ export default function PurchasePage() {
                       {Math.round(portfolioData.portfolio.total_annual_cost_eur).toLocaleString(
                         'fr-FR'
                       )}{' '}
-                      EUR
+                      €
                     </div>
                   </div>
                   <div className="bg-white rounded-lg shadow p-5">
@@ -1693,11 +1693,11 @@ export default function PurchasePage() {
                                     {site.site_nom || `Site ${site.site_id}`}
                                   </td>
                                   <td className="px-4 py-3 text-right text-gray-600">
-                                    {Math.round(site.baseline).toLocaleString('fr-FR')} EUR
+                                    {Math.round(site.baseline).toLocaleString('fr-FR')} €
                                   </td>
                                   <td className="px-4 py-3 text-right font-medium text-amber-700">
                                     {site.reflex
-                                      ? `${Math.round(site.reflexCost).toLocaleString('fr-FR')} EUR`
+                                      ? `${Math.round(site.reflexCost).toLocaleString('fr-FR')} €`
                                       : '—'}
                                   </td>
                                   <td className="px-4 py-3 text-right">
@@ -1758,7 +1758,7 @@ export default function PurchasePage() {
                                     source: 'purchase',
                                     source_type: 'achat',
                                     site_ids: campaignSites.map((s) => s.site_id),
-                                    title: `Campagne Tarif Heures Solaires — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString('fr-FR')} EUR`,
+                                    title: `Campagne Tarif Heures Solaires — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString('fr-FR')} €`,
                                     scenario_label: 'Tarif Heures Solaires',
                                     impact_eur: campaignGainTotal,
                                   })
@@ -1963,7 +1963,7 @@ export default function PurchasePage() {
                         {run.summary?.recommended_total_eur && (
                           <div className="text-sm font-medium text-gray-700 mt-1">
                             {Math.round(run.summary.recommended_total_eur).toLocaleString('fr-FR')}{' '}
-                            EUR/an
+                            €/an
                           </div>
                         )}
                       </div>
@@ -1982,7 +1982,7 @@ export default function PurchasePage() {
                               {s.price_eur_per_kwh?.toFixed(4)} EUR/kWh
                             </div>
                             <div className="text-xs text-gray-500">
-                              {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} EUR/an |
+                              {Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an |
                               Risque: {s.risk_score}
                             </div>
                             {s.is_recommended && (

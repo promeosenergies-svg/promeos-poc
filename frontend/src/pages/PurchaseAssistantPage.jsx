@@ -623,6 +623,14 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
           <strong>{wizard.selectedSiteIds.length}</strong> site(s) selectionne(s)
         </div>
       )}
+
+      {wizard.selectedSiteIds.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          <p className="text-sm">
+            Sélectionnez un ou plusieurs sites pour commencer l'analyse d'achat.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -726,7 +734,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
             {sitesData.anomalies.slice(0, 3).map((a, i) => (
               <li key={i} className="text-xs text-amber-600">
                 {a.message}{' '}
-                {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString('fr-FR')} EUR)`}
+                {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString('fr-FR')} €)`}
               </li>
             ))}
           </ul>
@@ -788,8 +796,7 @@ function StepPersona({ wizard, setWizard }) {
       <Card>
         <CardBody>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Budget plafond annuel (EUR){' '}
-            <span className="text-gray-400 font-normal">— optionnel</span>
+            Budget plafond annuel (€) <span className="text-gray-400 font-normal">— optionnel</span>
           </label>
           <input
             type="number"
@@ -1665,7 +1672,7 @@ function StepDecision({
                 <span className="text-sm font-normal text-gray-500">EUR/MWh</span>
               </div>
               <div className="text-sm text-gray-500">
-                {Math.round(bestScored.annualCostP50).toLocaleString('fr-FR')} EUR/an
+                {Math.round(bestScored.annualCostP50).toLocaleString('fr-FR')} €/an
               </div>
             </div>
           </div>

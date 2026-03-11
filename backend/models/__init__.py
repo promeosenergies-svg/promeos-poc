@@ -70,6 +70,9 @@ from .enums import (
     ReconciliationStatus,
     AnomalyStatus,
     DismissReason,
+    TariffOptionEnum,
+    InvoiceTypeEnum,
+    ReconstitutionStatusEnum,
 )
 
 # Hierarchie organisation

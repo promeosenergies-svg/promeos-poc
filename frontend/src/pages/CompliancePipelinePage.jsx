@@ -264,7 +264,7 @@ export default function CompliancePipelinePage() {
               <th className="px-4 py-3 text-left">Gate</th>
               <th className="px-4 py-3 text-center">Complétude</th>
               <th className="px-4 py-3 text-center">Risque régl.</th>
-              <th className="px-4 py-3 text-right">Opportunité EUR</th>
+              <th className="px-4 py-3 text-right">Opportunité (€)</th>
               <th className="px-4 py-3 text-center">Tertiaire</th>
               <th className="px-4 py-3 text-center">BACS</th>
               <th className="px-4 py-3 text-center">APER</th>

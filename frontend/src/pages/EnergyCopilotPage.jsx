@@ -76,7 +76,7 @@ function ActionCard({ action, onValidate, onReject, loading }) {
             )}
             {action.estimated_savings_eur && (
               <span className="text-emerald-600 font-medium">
-                -{action.estimated_savings_eur.toLocaleString('fr-FR')} EUR
+                -{action.estimated_savings_eur.toLocaleString('fr-FR')} €
               </span>
             )}
           </div>
@@ -246,7 +246,7 @@ export default function EnergyCopilotPage() {
         <Card>
           <CardBody className="text-center">
             <p className="text-2xl font-bold text-emerald-600">
-              {totalSavings > 0 ? `${Math.round(totalSavings).toLocaleString('fr-FR')} EUR` : '-'}
+              {totalSavings > 0 ? `${Math.round(totalSavings).toLocaleString('fr-FR')} €` : '-'}
             </p>
             <p className="text-xs text-gray-500">Economies potentielles</p>
           </CardBody>

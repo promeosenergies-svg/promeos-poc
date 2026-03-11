@@ -28,11 +28,11 @@ turpe:
 
 # ── Accise électricité (ex-CSPE / TIEE) ─────────────────────────────────────
 accise_elec:
-  label: "Accise sur l'électricité (ex-CSPE/TIEE)"
-  rate_eur_kwh: 0.02250
-  source: "Loi de finances 2025 art. 92 (TIEE)"
-  valid_from: "2025-01-01"
-  valid_to: null
+  label: "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév-jul 2025"
+  rate_eur_kwh: 0.02623
+  source: "Loi de finances 2025 — accise PME 26.23 EUR/MWh (fév-jul 2025)"
+  valid_from: "2025-02-01"
+  valid_to: "2025-07-31"
 
 # ── Accise gaz (ex-TICGN) ───────────────────────────────────────────────────
 accise_gaz:
@@ -45,11 +45,11 @@ accise_gaz:
 # ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
 cta:
   elec:
-    taux_pct: 27.04
+    taux_pct: 21.93
     assiette: "turpe_fixe_ht"
-    source: "Arrêté CTA 2025"
-    valid_from: "2025-01-01"
-    valid_to: null
+    source: "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%"
+    valid_from: "2021-08-01"
+    valid_to: "2026-01-31"
   gaz:
     taux_pct: 20.80
     assiette: "atrd_fixe_ht"

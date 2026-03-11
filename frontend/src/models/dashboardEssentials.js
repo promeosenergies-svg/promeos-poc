@@ -672,5 +672,13 @@ export function computeHealthState({
       ? { label: `Voir les ${reasons.length} points`, to: '/anomalies' }
       : undefined;
 
-  return { level, title, subtitle, reasons: reasons.slice(0, 3), primaryCta, secondaryCta };
+  return {
+    level,
+    title,
+    subtitle,
+    reasons: reasons.slice(0, 3),
+    allReasonCount: reasons.length,
+    primaryCta,
+    secondaryCta,
+  };
 }

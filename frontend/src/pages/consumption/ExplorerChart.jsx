@@ -37,7 +37,7 @@ import { colorForSite } from './helpers';
 const UNIT_AXIS_LABELS = {
   kwh: 'kWh',
   kw: 'kW',
-  eur: 'EUR',
+  eur: '€',
 };
 
 /** French pluralization helper */

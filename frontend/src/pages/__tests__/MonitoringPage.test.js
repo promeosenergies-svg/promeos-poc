@@ -418,7 +418,7 @@ describe('computeOffHoursEstimate', () => {
     const r = computeOffHoursEstimate(1000, 0.18);
     const expected = Math.round(1000 * (365 / 90) * 0.18);
     expect(r.eur).toBe(expected);
-    expect(r.label).toContain('EUR/an');
+    expect(r.label).toContain('€/an');
   });
 
   it('accepts custom price', () => {

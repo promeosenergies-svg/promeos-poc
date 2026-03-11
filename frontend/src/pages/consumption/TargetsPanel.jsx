@@ -245,7 +245,7 @@ export default function TargetsPanel({
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block">Budget EUR</label>
+              <label className="text-xs text-gray-500 block">Budget (€)</label>
               <input
                 type="number"
                 value={newTarget.target_eur}

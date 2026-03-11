@@ -139,7 +139,7 @@ export default function CreateActionDrawer({
         const parts = [`Action créée depuis : ${sourceLabels[sourceType] || sourceType}`];
         if (sourceId) parts.push(`Réf. source : ${sourceId}`);
         if (d.impact_eur && Number(d.impact_eur) > 0)
-          parts.push(`Impact estimé : ${Number(d.impact_eur).toLocaleString('fr-FR')} EUR`);
+          parts.push(`Impact estimé : ${Number(d.impact_eur).toLocaleString('fr-FR')} €`);
         d.description = parts.join('\n');
       }
       setForm(d);
@@ -275,7 +275,7 @@ export default function CreateActionDrawer({
               <p className="text-xs text-slate-500">
                 Impact estimé :{' '}
                 <span className="font-medium text-slate-700">
-                  {Number(form.impact_eur).toLocaleString('fr-FR')} EUR
+                  {Number(form.impact_eur).toLocaleString('fr-FR')} €
                 </span>
               </p>
             )}
@@ -295,7 +295,7 @@ export default function CreateActionDrawer({
               {templates.map((t) => (
                 <option key={t.code} value={t.code}>
                   [{t.category}] {t.title}
-                  {t.estimated_gain_eur ? ` (${fmtNum(t.estimated_gain_eur, 0)} EUR)` : ''}
+                  {t.estimated_gain_eur ? ` (${fmtNum(t.estimated_gain_eur, 0)} €)` : ''}
                 </option>
               ))}
             </select>
@@ -339,7 +339,7 @@ export default function CreateActionDrawer({
         </div>
         <div className="grid grid-cols-3 gap-4">
           <Input
-            label="Impact EUR"
+            label="Impact (€)"
             type="number"
             placeholder="5000"
             value={form.impact_eur}

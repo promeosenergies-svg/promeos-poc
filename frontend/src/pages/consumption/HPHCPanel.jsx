@@ -100,7 +100,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                   {breakdown.hp_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.hp_cost_eur.toLocaleString('fr-FR')} EUR
+                  {breakdown.hp_cost_eur.toLocaleString('fr-FR')} €
                 </p>
               </CardBody>
             </Card>
@@ -111,7 +111,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                   {breakdown.hc_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.hc_cost_eur.toLocaleString('fr-FR')} EUR
+                  {breakdown.hc_cost_eur.toLocaleString('fr-FR')} €
                 </p>
               </CardBody>
             </Card>
@@ -122,7 +122,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                   {breakdown.total_kwh.toLocaleString('fr-FR')} kWh
                 </p>
                 <p className="text-xs text-gray-400">
-                  {breakdown.total_cost_eur.toLocaleString('fr-FR')} EUR
+                  {breakdown.total_cost_eur.toLocaleString('fr-FR')} €
                 </p>
               </CardBody>
             </Card>
@@ -152,7 +152,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-green-700">
-                      {breakdown.opportunity.savings_eur} EUR
+                      {breakdown.opportunity.savings_eur} €
                     </p>
                     <p className="text-xs text-green-600">économies potentielles</p>
                   </div>
@@ -202,7 +202,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                           </span>
                         </td>
                         <td className="px-3 py-1.5 text-right">
-                          {w.price_eur_kwh ? `${w.price_eur_kwh} EUR` : '—'}
+                          {w.price_eur_kwh ? `${w.price_eur_kwh} €` : '—'}
                         </td>
                       </tr>
                     ))}

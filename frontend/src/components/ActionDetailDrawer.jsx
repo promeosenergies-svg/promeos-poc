@@ -992,7 +992,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div className="p-4 bg-red-50 rounded-lg">
                   <p className="text-xs text-gray-500 mb-1">Gain estime</p>
                   <p className="text-xl font-bold text-red-700">
-                    {d.estimated_gain_eur != null ? `${fmtNum(d.estimated_gain_eur, 0)} EUR` : '—'}
+                    {d.estimated_gain_eur != null ? `${fmtNum(d.estimated_gain_eur, 0)} €` : '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
@@ -1006,7 +1006,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                         className="w-28 px-2 py-1 border border-gray-300 rounded text-sm"
                         autoFocus
                       />
-                      <span className="text-xs text-gray-500">EUR</span>
+                      <span className="text-xs text-gray-500">€</span>
                       <Button size="sm" onClick={handleSaveRealized}>
                         OK
                       </Button>
@@ -1027,7 +1027,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       title="Cliquer pour modifier"
                     >
                       {d.realized_gain_eur != null
-                        ? `${fmtNum(d.realized_gain_eur, 0)} EUR`
+                        ? `${fmtNum(d.realized_gain_eur, 0)} €`
                         : '— (cliquer pour saisir)'}
                     </p>
                   )}
@@ -1043,7 +1043,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       : 'bg-amber-50 text-amber-700'
                   }`}
                 >
-                  Delta : {fmtNum(d.realized_gain_eur - d.estimated_gain_eur, 0)} EUR (
+                  Delta : {fmtNum(d.realized_gain_eur - d.estimated_gain_eur, 0)} € (
                   {d.estimated_gain_eur > 0
                     ? `${fmtPct(d.realized_gain_eur / d.estimated_gain_eur, true, 0)} du gain estime`
                     : '—'}

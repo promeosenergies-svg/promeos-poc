@@ -28,12 +28,12 @@ describe('A - constants.js has unified compliance score config', () => {
     expect(code).toContain('export const COMPLIANCE_SCORE_THRESHOLDS');
   });
 
-  it('COMPLIANCE_SCORE_THRESHOLDS.ok = 70', () => {
-    expect(code).toContain('ok: 70');
+  it('COMPLIANCE_SCORE_THRESHOLDS.ok = 80', () => {
+    expect(code).toContain('ok: 80');
   });
 
-  it('COMPLIANCE_SCORE_THRESHOLDS.warn = 40', () => {
-    expect(code).toContain('warn: 40');
+  it('COMPLIANCE_SCORE_THRESHOLDS.warn = 50', () => {
+    expect(code).toContain('warn: 50');
   });
 
   it('exports getComplianceScoreColor', () => {

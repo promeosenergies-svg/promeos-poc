@@ -277,19 +277,19 @@ class TestE2E_ShadowElec:
         # Réseau: 1000 × 0.0453 = 45.30
         assert r["expected_reseau_ht"] == 45.30
 
-        # Taxes: 1000 × 0.0225 = 22.50
-        assert r["expected_taxes_ht"] == 22.50
+        # Taxes: 1000 × 0.02623 = 26.23 (accise PME corrigée)
+        assert r["expected_taxes_ht"] == 26.23
 
         # Abonnement: 18.48 × (30/30) = 18.48
         assert r["expected_abo_ht"] == 18.48
 
-        # TVA: (180 + 45.3 + 22.5) × 0.20 + 18.48 × 0.055
-        tva_20 = (180.0 + 45.30 + 22.50) * 0.20  # = 49.56
-        tva_55 = 18.48 * 0.055  # ≈ 1.0164
+        # TVA: (180 + 45.3 + 26.23) × 0.20 + 18.48 × 0.055
+        tva_20 = (180.0 + 45.30 + 26.23) * 0.20
+        tva_55 = 18.48 * 0.055
         assert r["expected_tva"] == pytest.approx(tva_20 + tva_55, abs=0.02)
 
         # TTC = HT + TVA
-        exp_ht = 180.0 + 45.30 + 22.50 + 18.48
+        exp_ht = 180.0 + 45.30 + 26.23 + 18.48
         exp_ttc = exp_ht + tva_20 + tva_55
         assert r["expected_ttc"] == pytest.approx(exp_ttc, abs=0.02)
 
@@ -374,7 +374,7 @@ class TestCatalogLookup:
 
         v = get_catalog_version()
         assert v != "unknown"
-        assert "2025" in v
+        assert "lockdown" in v or "2025" in v or "2026" in v
 
 
 class TestCatalogFallback:
@@ -385,7 +385,7 @@ class TestCatalogFallback:
 
         t = trace("ACCISE_ELEC")
         assert t["code"] == "ACCISE_ELEC"
-        assert t["used_rate"] == 0.02250
+        assert t["used_rate"] == 0.02623
         assert t.get("source") is not None
 
     def test_safe_rate_returns_catalog_value(self):

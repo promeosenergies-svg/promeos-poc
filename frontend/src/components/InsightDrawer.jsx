@@ -17,7 +17,7 @@ import { fmtNum } from '../utils/format';
 const TYPE_LABELS = {
   shadow_gap: (
     <>
-      Écart <Explain term="shadow_billing">shadow billing</Explain>
+      Écart <Explain term="shadow_billing">facturation théorique</Explain>
     </>
   ),
   unit_price_high: 'Prix unitaire élevé',
@@ -79,13 +79,13 @@ const CAUSE_LABELS = {
     m.expected_ttc != null ? (
       <>
         L'écart entre le montant facturé ({fmt(m.actual_ttc)} €) et le{' '}
-        <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.expected_ttc)} €) dépasse le
-        seuil de {m.threshold_pct || 10}%.
+        <Explain term="shadow_billing">facturation théorique</Explain> ({fmt(m.expected_ttc)} €)
+        dépasse le seuil de {m.threshold_pct || 10}%.
       </>
     ) : (
       <>
         L'écart entre le montant facturé ({fmt(m.actual_total_eur)} €) et le{' '}
-        <Explain term="shadow_billing">shadow billing</Explain> ({fmt(m.shadow_total_eur)} €)
+        <Explain term="shadow_billing">facturation théorique</Explain> ({fmt(m.shadow_total_eur)} €)
         dépasse le seuil de {m.threshold_pct || 10}%.
       </>
     ),

@@ -174,7 +174,7 @@ const HANDLERS = {
     }
     return {
       simple: `${v} anomalies détectées. Vérification urgente recommandée.`,
-      expert: `${v} anomalies, perte estimée ${totalLoss.toLocaleString('fr-FR')} €. Shadow billing actif.`,
+      expert: `${v} anomalies, perte estimée ${totalLoss.toLocaleString('fr-FR')} €. Facturation théorique active.`,
       severity: 'crit',
       action: { label: 'Voir les anomalies', path: '/bill-intel' },
     };
@@ -245,7 +245,7 @@ const HANDLERS = {
     if (v == null || isNaN(v) || v === 0)
       return {
         simple: 'Aucune anomalie détectée. Facturation cohérente.',
-        expert: '0 anomalie. Shadow billing conforme.',
+        expert: '0 anomalie. Facturation théorique conforme.',
         severity: 'ok',
       };
     const lossFormatted =

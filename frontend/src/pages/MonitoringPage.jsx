@@ -254,7 +254,7 @@ export function computeOffHoursEstimate(kwh, price = 0.18) {
   if (kwh == null || kwh <= 0) return { eur: 0, label: '-', price };
   const annualized = kwh * (365 / 90);
   const eur = Math.round(annualized * price);
-  return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price };
+  return { eur, label: `~${fmtNum(eur, 0)} €/an`, price };
 }
 
 /**
@@ -302,6 +302,12 @@ function ModeBadge({ mode }) {
 }
 
 const ACTION_STATUS_BADGE = { open: 'warn', in_progress: 'info', done: 'success', blocked: 'crit' };
+const ACTION_STATUS_LABEL_FR = {
+  open: 'Ouvert',
+  in_progress: 'En cours',
+  done: 'Terminé',
+  blocked: 'Bloqué',
+};
 
 function ActionMiniList({ actions, siteId, navigate }) {
   if (!actions || actions.length === 0) return null;
@@ -322,12 +328,12 @@ function ActionMiniList({ actions, siteId, navigate }) {
           {actions.map((a) => (
             <div key={a.id} className="flex items-center gap-2 text-xs">
               <Badge variant={ACTION_STATUS_BADGE[a.status] || 'info'} size="sm">
-                {a.status}
+                {ACTION_STATUS_LABEL_FR[a.status] || a.status}
               </Badge>
               <span className="truncate flex-1 text-gray-700">{a.title}</span>
               {a.estimated_gain_eur > 0 && (
                 <span className="text-emerald-600 font-medium">
-                  {fmtNum(a.estimated_gain_eur, 0)} EUR
+                  {fmtNum(a.estimated_gain_eur, 0)} €
                 </span>
               )}
             </div>
@@ -556,7 +562,7 @@ function ExecutiveSummary({
       iconColor: topAlert ? (isLowConf ? 'text-gray-400' : 'text-red-500') : 'text-gray-300',
       title: 'Risque principal',
       value: topAlert
-        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an${isLowConf ? ' (À confirmer)' : ''}`
+        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} €/an${isLowConf ? ' (À confirmer)' : ''}`
         : 'Aucun risque détecté',
       sub: topAlert
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
@@ -575,7 +581,7 @@ function ExecutiveSummary({
       icon: Zap,
       iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
       title: <Explain term="gaspillage_estime">Gaspillage estimé</Explain>,
-      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non détecté',
+      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} €/an` : 'Non détecté',
       sub:
         wasteAlerts.length > 0
           ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Hors horaires: ${offHoursEst.label}` : ''}`
@@ -658,7 +664,7 @@ function ExecutiveSummary({
       ],
       expertDetail:
         offHoursRatio != null
-          ? `ratio=${fmtNum(offHoursRatio * 100)}% · kwh_90j=${offHoursKwh ?? '-'} · est=${offHoursEst.eur} EUR/an · prix=${offHoursEst.price} EUR/kWh`
+          ? `ratio=${fmtNum(offHoursRatio * 100)}% · kwh_90j=${offHoursKwh ?? '-'} · est=${offHoursEst.eur} €/an · prix=${offHoursEst.price} EUR/kWh`
           : null,
     },
   ];
@@ -1422,9 +1428,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
             </span>
           )}
           {alert.estimated_impact_eur > 0 && (
-            <span className="text-xs text-red-600 font-medium">
-              {alert.estimated_impact_eur} EUR
-            </span>
+            <span className="text-xs text-red-600 font-medium">{alert.estimated_impact_eur} €</span>
           )}
         </div>
 
@@ -1489,7 +1493,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
                   <p className="text-sm font-medium text-gray-800">{alert.recommended_action}</p>
                   {alert.estimated_impact_eur > 0 && (
                     <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded mt-1 inline-block">
-                      Impact: {alert.estimated_impact_eur} EUR/an
+                      Impact: {alert.estimated_impact_eur} €/an
                     </span>
                   )}
                 </div>
@@ -1817,7 +1821,7 @@ export default function MonitoringPage() {
       const eur = impact.off_hours.eur_year;
       return {
         eur,
-        label: `~${fmtNum(eur, 0)} EUR/an`,
+        label: `~${fmtNum(eur, 0)} €/an`,
         price: impact.off_hours.price_eur_kwh,
         mode: impact.off_hours.mode,
         confidence: impact.off_hours.confidence,
@@ -2244,7 +2248,7 @@ export default function MonitoringPage() {
                             </p>
                             {a.estimated_impact_eur > 0 && (
                               <p className="text-sm font-bold text-red-600 mt-1">
-                                {fmtNum(a.estimated_impact_eur, 0)} EUR/an
+                                {fmtNum(a.estimated_impact_eur, 0)} €/an
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-2">
@@ -2843,7 +2847,7 @@ export default function MonitoringPage() {
                             <Explain term="severite">Sévérité</Explain>
                           </th>
                           <th className="pb-2 pr-4">Explication</th>
-                          <th className="pb-2 pr-4 text-right">Impact (EUR)</th>
+                          <th className="pb-2 pr-4 text-right">Impact (€)</th>
                           {isExpert && (
                             <th className="pb-2 pr-4 text-[10px] font-mono">Compteur</th>
                           )}
@@ -2900,7 +2904,7 @@ export default function MonitoringPage() {
                               </td>
                               <td className="py-3 pr-4 text-right font-medium">
                                 {a._totalEur > 0 ? (
-                                  <span className="text-red-600">{fmtNum(a._totalEur, 0)} EUR</span>
+                                  <span className="text-red-600">{fmtNum(a._totalEur, 0)} €</span>
                                 ) : (
                                   '-'
                                 )}

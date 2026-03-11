@@ -91,7 +91,7 @@ export const GLOSSARY = {
 
   // ── Concepts PROMEOS ───────────────────────────────────────────────────────
   shadow_billing: {
-    term: 'Shadow billing',
+    term: 'Facturation théorique',
     short:
       'Recalcul attendu de la facture à partir des données réelles (consommation, contrat, catalogue réglementaire). Permet de détecter les écarts avec le montant facturé.',
   },
@@ -244,7 +244,7 @@ export const GLOSSARY = {
   shadow_gap: {
     term: 'Écart facture',
     short:
-      'Différence significative entre le montant facturé et le montant attendu recalculé par le shadow billing.',
+      'Différence significative entre le montant facturé et le montant attendu recalculé par la facturation théorique.',
   },
   unit_price_high: {
     term: 'Prix unitaire élevé',

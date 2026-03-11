@@ -28,6 +28,7 @@ import {
   getSegmentationProfile,
 } from '../services/api';
 import { track } from '../services/tracker';
+import { fmtDateFR } from '../utils/format';
 import { useScope } from '../contexts/ScopeContext';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 
@@ -212,7 +213,7 @@ function ScenarioDrawer({ contract, open, onClose, segProfile }) {
                 <p className="text-sm font-semibold text-gray-900">{contract.supplier_name}</p>
                 <p className="text-xs text-gray-500">
                   {contract.site_nom} · {contract.energy_type || 'N/A'} · Fin :{' '}
-                  {contract.end_date || 'N/A'}
+                  {fmtDateFR(contract.end_date)}
                 </p>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setShowSummary(true)}>
@@ -294,7 +295,7 @@ function ScenarioSummaryModal({ contractId, siteName, onClose }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span>Fournisseur : {data.supplier_name}</span>
-              <span>Fin : {data.end_date || 'N/A'}</span>
+              <span>Fin : {fmtDateFR(data.end_date)}</span>
             </div>
 
             {data.scenarios?.map((sc) => {
@@ -442,6 +443,12 @@ export default function ContractRadarPage() {
         />
       )}
 
+      {!loading && contracts.length > 0 && contracts.length < 5 && (
+        <div className="text-center py-4 text-gray-400 text-sm">
+          Seuls les contrats arrivant à échéance dans les {horizon} prochains jours sont affichés.
+        </div>
+      )}
+
       {!loading && contracts.length > 0 && (
         <Table>
           <Thead>
@@ -479,7 +486,7 @@ export default function ContractRadarPage() {
                   <Td>
                     <div className="flex items-center gap-1.5">
                       <StIcon size={14} className={st.color} />
-                      <span className="text-xs text-gray-600">{ct.end_date || 'N/A'}</span>
+                      <span className="text-xs text-gray-600">{fmtDateFR(ct.end_date)}</span>
                     </div>
                   </Td>
                   <Td>

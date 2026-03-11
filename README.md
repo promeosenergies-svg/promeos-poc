@@ -126,7 +126,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Roadmap Domination 12 mois (wedge conformite opposable, 4 horizons, backlog ICE 15 initiatives, plan demo 5 scenarios) | Documentee -- ROADMAP |
 > | Registre Patrimonial & Contractuel (KPIs EJ/PF/contrats expirants, filtre portefeuille, champs registre contrat, DP coverage, SiteDetail supprimé, compliance score harmonisé) | **Stable -- V-registre** |
 > | Plan Exécution 90 jours (4 paris : coffre preuves, dossier PDF, notifications, benchmark sectoriel — 12 sprints, 3 gates, 3 KPIs) | Documenté -- PLAN_90J |
-> | Suite de tests automatisés | **5 586+ frontend + 3 508+ backend, 0 régression** |
+> | Billing Lockdown V2 (CTA 21.93%, accise 0.02623, segment C4/C5 dynamique, confidence cap medium, fallback_used flag) | **Stable -- Lockdown** |
+> | Audit UX Full App (27 pages + 8 interactions Playwright, 40+ fichiers corrigés, EUR→€, shadow billing→facturation théorique, labels FR, couleurs sémantiques, empty states) | **Stable -- Audit UX** |
+> | Suite de tests automatisés | **5 586+ frontend + 3 598+ backend, 0 régression** |
 
 > **Disclaimer**
 >

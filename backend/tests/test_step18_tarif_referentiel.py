@@ -87,7 +87,7 @@ class TestAccise:
     def test_accise_elec(self):
         from config.tarif_loader import get_accise_kwh
 
-        assert get_accise_kwh("elec") == 0.02250
+        assert get_accise_kwh("elec") == 0.02623
 
     def test_accise_gaz(self):
         from config.tarif_loader import get_accise_kwh
@@ -112,7 +112,7 @@ class TestOtherHelpers:
     def test_cta_elec(self):
         from config.tarif_loader import get_cta_taux
 
-        assert get_cta_taux("elec") == 27.04
+        assert get_cta_taux("elec") == 21.93
 
     def test_cta_gaz(self):
         from config.tarif_loader import get_cta_taux
@@ -181,7 +181,7 @@ class TestTarifSummary:
         from config.tarif_loader import get_tarif_summary
 
         s = get_tarif_summary()
-        assert s["accise_elec"]["rate_eur_kwh"] == 0.02250
+        assert s["accise_elec"]["rate_eur_kwh"] == 0.02623
 
     def test_summary_has_tva(self):
         from config.tarif_loader import get_tarif_summary

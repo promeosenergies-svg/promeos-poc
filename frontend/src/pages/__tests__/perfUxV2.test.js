@@ -245,8 +245,8 @@ describe("H · Plan d'action section", () => {
     expect(code).toMatch(/Aucune priorit[eé]/);
   });
 
-  it('shows EUR/an for each priority', () => {
-    expect(code).toMatch(/EUR\/an/);
+  it('shows €/an for each priority', () => {
+    expect(code).toMatch(/€\/an/);
   });
 });
 

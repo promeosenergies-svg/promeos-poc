@@ -15,7 +15,7 @@
  */
 import { ReferenceLine, Area } from 'recharts';
 
-const UNIT_SUFFIX = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
+const UNIT_SUFFIX = { kwh: 'kWh', kw: 'kW', eur: '€' };
 
 export default function ObjectivesLayer({ targets = [], visible = true, unit = 'kwh' }) {
   if (!visible || !targets.length) return null;

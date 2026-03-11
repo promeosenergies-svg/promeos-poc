@@ -177,7 +177,7 @@ export default function ConnectorsPage() {
                     onClick={() => handleTest(connector.name)}
                     disabled={testResults[connector.name]?.loading}
                   >
-                    <Play size={14} className="mr-1" /> Test
+                    <Play size={14} className="mr-1" /> Tester
                   </Button>
                   <Button
                     className="flex-1 text-sm"
@@ -187,7 +187,7 @@ export default function ConnectorsPage() {
                     }}
                     disabled={syncResults[connector.name]?.loading}
                   >
-                    <RefreshCw size={14} className="mr-1" /> Sync
+                    <RefreshCw size={14} className="mr-1" /> Synchro
                   </Button>
                 </div>
               </CardBody>

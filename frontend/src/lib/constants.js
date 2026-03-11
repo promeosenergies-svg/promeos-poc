@@ -150,9 +150,9 @@ export function getDataQualityGrade(score) {
 /** Thresholds for the unified compliance score (0-100). */
 export const COMPLIANCE_SCORE_THRESHOLDS = {
   /** >= this → 'ok' (green) */
-  ok: 70,
+  ok: 80,
   /** >= this → 'warn' (amber), below → 'crit' (red) */
-  warn: 40,
+  warn: 50,
 };
 
 /**

@@ -638,6 +638,34 @@ class ReconciliationStatus(str, enum.Enum):
     FAIL = "fail"
 
 
+class TariffOptionEnum(str, enum.Enum):
+    """Option tarifaire d'un point de livraison / contrat."""
+
+    BASE = "base"  # C5 tarif de base
+    HP_HC = "hp_hc"  # C5 Heures Pleines / Heures Creuses
+    CU = "cu"  # C4 Courte Utilisation
+    MU = "mu"  # C4 Moyenne Utilisation
+    LU = "lu"  # C4 Longue Utilisation
+
+
+class InvoiceTypeEnum(str, enum.Enum):
+    """Type de facture énergie."""
+
+    NORMAL = "normal"  # Facture de consommation standard
+    ADVANCE = "advance"  # Acompte / mensualisation
+    REGULARIZATION = "regularization"  # Régularisation
+    CREDIT_NOTE = "credit_note"  # Avoir
+
+
+class ReconstitutionStatusEnum(str, enum.Enum):
+    """Statut de la reconstitution moteur billing."""
+
+    RECONSTITUTED = "reconstituted"
+    PARTIAL = "partial"
+    READ_ONLY = "read_only"
+    UNSUPPORTED = "unsupported"
+
+
 # ========================================
 # Enums Anomaly-Action Link
 # ========================================

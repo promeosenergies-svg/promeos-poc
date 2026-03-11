@@ -101,7 +101,7 @@ export default function ConsoKpiHeader({
 
   // --- EUR total (from hphc or progression) ---
   const totalEur = hphc?.total_cost_eur ?? null;
-  const eurLabel = totalEur != null ? fmtNum(Math.round(totalEur), 0, 'EUR') : '—';
+  const eurLabel = totalEur != null ? fmtNum(Math.round(totalEur), 0, '€') : '—';
   const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
 
   // --- EUR/MWh reel ---

@@ -6,12 +6,12 @@ import { PageShell, Button, EmptyState } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 
 const ROLE_LABELS = {
-  dg_owner: 'DG / Owner',
+  dg_owner: 'DG / Propriétaire',
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
   resp_conformite: 'Resp. Conformité',
-  energy_manager: 'Energy Manager',
+  energy_manager: 'Responsable Énergie',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
   prestataire: 'Prestataire',
@@ -293,7 +293,7 @@ export default function AdminUsersPage() {
                                   key={i}
                                   className="inline-flex items-center gap-0.5 bg-gray-100 rounded px-1.5 py-0.5 mr-1 text-gray-600"
                                 >
-                                  {SCOPE_LABELS[s.level]?.charAt(0) || '?'}:{s.id}
+                                  {s.label || `${SCOPE_LABELS[s.level] || s.level} #${s.id}`}
                                   {s.expires_at && <span className="text-orange-500">*</span>}
                                 </span>
                               ))

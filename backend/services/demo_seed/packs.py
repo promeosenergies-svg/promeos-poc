@@ -273,7 +273,7 @@ PACKS = {
         ],
         # Billing: explicit contracts per site
         "contracts_spec": [
-            # S0 Siege Paris — elec fixe long, gaz indexe 90j
+            # S0 Siege Paris — elec fixe long, C4 BT 108 kVA LU
             {
                 "site_idx": 0,
                 "type": "elec",
@@ -284,6 +284,10 @@ PACKS = {
                 "price": 0.1450,
                 "fee": 180,
                 "auto_renew": True,
+                "subscribed_power_kva": 108,
+                "tariff_option": "lu",
+                "price_hpe_eur_kwh": 0.1450,
+                "price_hce_eur_kwh": 0.1120,
             },
             {
                 "site_idx": 0,
@@ -296,7 +300,7 @@ PACKS = {
                 "fee": 60,
                 "auto_renew": False,
             },
-            # S1 Bureau Lyon — elec fixe 60j urgent, gaz spot 30j critique
+            # S1 Bureau Lyon — elec fixe 60j urgent, C5 BT 12 kVA Base
             {
                 "site_idx": 1,
                 "type": "elec",
@@ -307,6 +311,9 @@ PACKS = {
                 "price": 0.1680,
                 "fee": 45,
                 "auto_renew": False,
+                "subscribed_power_kva": 12,
+                "tariff_option": "base",
+                "price_base_eur_kwh": 0.1680,
             },
             {
                 "site_idx": 1,
@@ -319,7 +326,7 @@ PACKS = {
                 "fee": 35,
                 "auto_renew": False,
             },
-            # S2 Usine Toulouse — elec indexe 180j, gaz hybride 90j
+            # S2 Usine Toulouse — elec indexe 180j, C4 BT 250 kVA MU
             {
                 "site_idx": 2,
                 "type": "elec",
@@ -330,6 +337,10 @@ PACKS = {
                 "price": 0.1320,
                 "fee": 120,
                 "auto_renew": True,
+                "subscribed_power_kva": 250,
+                "tariff_option": "mu",
+                "price_hp_eur_kwh": 0.1320,
+                "price_hc_eur_kwh": 0.1050,
             },
             {
                 "site_idx": 2,
@@ -342,7 +353,7 @@ PACKS = {
                 "fee": 50,
                 "auto_renew": False,
             },
-            # S3 Hotel Nice — elec fixe 180j, gaz indexe 1an
+            # S3 Hotel Nice — elec fixe 180j, C5 BT 36 kVA HP/HC
             {
                 "site_idx": 3,
                 "type": "elec",
@@ -352,6 +363,10 @@ PACKS = {
                 "end": "EXPIRING_180",
                 "price": 0.1550,
                 "fee": 95,
+                "subscribed_power_kva": 36,
+                "tariff_option": "hp_hc",
+                "price_hp_eur_kwh": 0.1550,
+                "price_hc_eur_kwh": 0.1250,
                 "auto_renew": True,
             },
             {
@@ -365,7 +380,7 @@ PACKS = {
                 "fee": 40,
                 "auto_renew": False,
             },
-            # S4 Ecole Marseille — elec fixe long
+            # S4 Ecole Marseille — elec fixe long, C4 BT 150 kVA MU
             {
                 "site_idx": 4,
                 "type": "elec",
@@ -376,6 +391,10 @@ PACKS = {
                 "price": 0.1380,
                 "fee": 55,
                 "auto_renew": True,
+                "subscribed_power_kva": 150,
+                "tariff_option": "mu",
+                "price_hp_eur_kwh": 0.1380,
+                "price_hc_eur_kwh": 0.1100,
             },
         ],
         "readings_frequency": "monthly",
@@ -488,7 +507,7 @@ PACKS = {
             },
         ],
         "contracts_spec": [
-            # S0 Levallois — elec fixe
+            # S0 Levallois — elec fixe, C4 BT 120 kVA LU
             {
                 "site_idx": 0,
                 "type": "elec",
@@ -499,8 +518,12 @@ PACKS = {
                 "price": 0.1520,
                 "fee": 90,
                 "auto_renew": True,
+                "subscribed_power_kva": 120,
+                "tariff_option": "lu",
+                "price_hpe_eur_kwh": 0.1520,
+                "price_hce_eur_kwh": 0.1200,
             },
-            # S1 Bordeaux — elec fixe expiring
+            # S1 Bordeaux — elec fixe expiring, C4 BT 50 kVA HP/HC
             {
                 "site_idx": 1,
                 "type": "elec",
@@ -511,8 +534,12 @@ PACKS = {
                 "price": 0.1650,
                 "fee": 35,
                 "auto_renew": False,
+                "subscribed_power_kva": 50,
+                "tariff_option": "hp_hc",
+                "price_hp_eur_kwh": 0.1650,
+                "price_hc_eur_kwh": 0.1320,
             },
-            # S2 Gennevilliers — elec indexe + gaz
+            # S2 Gennevilliers — elec indexe + gaz, C3 HTA 300 kVA LU
             {
                 "site_idx": 2,
                 "type": "elec",
@@ -523,6 +550,10 @@ PACKS = {
                 "price": 0.1280,
                 "fee": 110,
                 "auto_renew": True,
+                "subscribed_power_kva": 300,
+                "tariff_option": "lu",
+                "price_hpe_eur_kwh": 0.1280,
+                "price_hce_eur_kwh": 0.1020,
             },
             {
                 "site_idx": 2,

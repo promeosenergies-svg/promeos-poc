@@ -7,7 +7,7 @@ import { BadgeEuro, TrendingUp, ArrowRight } from 'lucide-react';
 import { getROISummary } from '../services/api';
 import { fmtNum, fmtPct } from '../utils/format';
 
-const fmtEur = (v) => (v != null ? `${fmtNum(Math.round(v), 0)} EUR` : '— EUR');
+const fmtEur = (v) => (v != null ? `${fmtNum(Math.round(v), 0)} €` : '— €');
 
 export default function ROISummaryBar() {
   const [roi, setRoi] = useState(null);

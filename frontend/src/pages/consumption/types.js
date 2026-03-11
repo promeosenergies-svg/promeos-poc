@@ -41,7 +41,7 @@ export const MODE_LABELS = {
 export const UNIT_LABELS = {
   [UNITS.KWH]: 'kWh',
   [UNITS.KW]: 'kW',
-  [UNITS.EUR]: 'EUR',
+  [UNITS.EUR]: '€',
 };
 
 export const LAYER_LABELS = {
