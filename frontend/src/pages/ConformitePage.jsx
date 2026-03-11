@@ -4,7 +4,7 @@
  * Scope filtering (org/entity/site), empty state reason codes, workflow actions.
  * Sub-components extracted to conformite-tabs/ (V92 split).
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -736,6 +736,7 @@ export default function ConformitePage() {
   const [auditFindingId, setAuditFindingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'obligations');
+  const tabsRef = useRef(null);
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
   const [error, setError] = useState(null);
@@ -970,23 +971,35 @@ export default function ConformitePage() {
     return computeDonneesMetrics(sitesData, [], {});
   }, [sitesData]);
 
+  const switchToTab = useCallback(
+    (tab) => {
+      setActiveTab(tab);
+      setSearchParams({ tab }, { replace: true });
+      // Scroll tabs into view so the user sees the change
+      setTimeout(() => {
+        tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    },
+    [setSearchParams]
+  );
+
   const handleNbaAction = useCallback(
     (ctaAction) => {
       if (ctaAction.type === 'navigate') navigate(ctaAction.path);
-      else if (ctaAction.type === 'tab') setActiveTab(ctaAction.tab);
+      else if (ctaAction.type === 'tab') switchToTab(ctaAction.tab);
       else if (ctaAction.type === 'drawer') openActionDrawer(ctaAction.prefill);
       track('nba_click', { action_id: nextBestAction?.id });
     },
-    [navigate, openActionDrawer, nextBestAction]
+    [navigate, openActionDrawer, nextBestAction, switchToTab]
   );
 
   const handleStepClick = useCallback(
     (step) => {
-      if (step.ctaTarget?.tab) setActiveTab(step.ctaTarget.tab);
+      if (step.ctaTarget?.tab) switchToTab(step.ctaTarget.tab);
       else if (step.ctaTarget?.path) navigate(step.ctaTarget.path);
       track('guided_step_click', { step_id: step.id });
     },
-    [navigate]
+    [navigate, switchToTab]
   );
 
   const handleRecompute = async () => {
@@ -1319,6 +1332,7 @@ export default function ConformitePage() {
       />
 
       {/* Cockpit Tabs */}
+      <div ref={tabsRef} />
       <Tabs
         tabs={COCKPIT_TABS}
         active={activeTab}

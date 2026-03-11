@@ -413,6 +413,7 @@ export default function ConsumptionExplorerPage() {
     // Auto-switch tab for gas-only
     if (avail?.has_data && energyType === 'gas' && activeTab === 'tunnel') {
       setActiveTab('gas');
+      setUrlParams({ tab: 'gas' });
     }
   }, [primaryAvailability]); // eslint-disable-line react-hooks/exhaustive-deps
 
