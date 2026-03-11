@@ -159,6 +159,7 @@ from .iam import User, UserOrgRole, UserScope, AuditLog
 from .patrimoine import (
     OrgEntiteLink,
     PortfolioEntiteLink,
+    ContractDeliveryPoint,
     StagingBatch,
     StagingSite,
     StagingCompteur,
@@ -368,6 +369,7 @@ __all__ = [
     "StagingStatus",
     "ImportSourceType",
     "QualityRuleSeverity",
+    "ContractDeliveryPoint",
     "DeliveryPoint",
     "DeliveryPointStatus",
     "DeliveryPointEnergyType",

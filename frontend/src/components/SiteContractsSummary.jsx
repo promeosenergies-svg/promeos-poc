@@ -3,7 +3,8 @@
  * Affiche les contrats énergie enrichis pour un site.
  */
 import { useState, useEffect } from 'react';
-import { FileText, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, AlertTriangle, BadgeEuro, ExternalLink } from 'lucide-react';
 import { Card, CardBody, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { getPatrimoineContracts } from '../services/api';
@@ -91,13 +92,17 @@ export default function SiteContractsSummary({ siteId }) {
                   )}
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                {ct.reference_fournisseur && (
+                  <span>
+                    Réf: <strong>{ct.reference_fournisseur}</strong>
+                  </span>
+                )}
                 {ct.price_ref_eur_per_kwh != null && (
                   <span>
                     Prix ref: <strong>{ct.price_ref_eur_per_kwh} €/kWh</strong>
                   </span>
                 )}
-                {ct.price_granularity && <span>Granularité: {ct.price_granularity}</span>}
                 {ct.start_date && (
                   <span>
                     {ct.start_date} → {ct.end_date || '...'}
@@ -108,6 +113,12 @@ export default function SiteContractsSummary({ siteId }) {
                     {daysLeft}j restants
                   </span>
                 )}
+                {ct.delivery_points_count > 0 && (
+                  <span>
+                    {ct.delivery_points_count} PDL rattaché{ct.delivery_points_count > 1 ? 's' : ''}
+                  </span>
+                )}
+                {ct.date_signature && <span>Signé le {ct.date_signature}</span>}
               </div>
               {alertRenewal && (
                 <div className="mt-2 flex items-center gap-1 text-xs text-amber-600">
@@ -118,6 +129,21 @@ export default function SiteContractsSummary({ siteId }) {
                   </span>
                 </div>
               )}
+              {/* B2-5: Links to billing & shadow billing */}
+              <div className="mt-2 pt-2 border-t border-gray-100 flex items-center gap-3">
+                <Link
+                  to={`/billing?site_id=${siteId}`}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                >
+                  <BadgeEuro size={12} /> Factures
+                </Link>
+                <Link
+                  to={`/bill-intel?site_id=${siteId}`}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                >
+                  <ExternalLink size={12} /> Shadow billing
+                </Link>
+              </div>
             </CardBody>
           </Card>
         );

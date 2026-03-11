@@ -56,6 +56,11 @@ CHECK_TRANSLATION = {
         "why_it_matters": "Un décalage élec/gaz entre compteurs et contrats fausse vos analyses.",
         "impact_label": "Conso",
     },
+    "dp_covered_by_contract": {
+        "title_simple": "Points de livraison couverts",
+        "why_it_matters": "Un DP non rattaché à un contrat actif peut signifier une consommation non contractualisée — risque de surfacturation.",
+        "impact_label": "Achats",
+    },
     "has_payment_rule": {
         "title_simple": "Circuit de paiement",
         "why_it_matters": "Sans règle de paiement, les factures ne sont pas imputées au bon centre de coût.",
@@ -333,6 +338,54 @@ def reconcile_site(db: Session, site_id: int) -> dict:
                 "fix_actions": [
                     {"action": "create_payment_rule", "label_fr": "Créer une règle de paiement", "method": "POST"},
                 ],
+            }
+        )
+
+    # Check 7: dp_covered_by_contract (V-registre)
+    # Verifie que chaque DP actif est rattache a un contrat actif via contract_delivery_points
+    if dps and active_contracts:
+        from models import ContractDeliveryPoint
+
+        active_ct_ids = [c.id for c in active_contracts]
+        covered_dp_ids = set()
+        links = db.query(ContractDeliveryPoint).filter(ContractDeliveryPoint.contract_id.in_(active_ct_ids)).all()
+        covered_dp_ids = {lnk.delivery_point_id for lnk in links}
+        uncovered = [dp for dp in dps if dp.id not in covered_dp_ids]
+        if not uncovered:
+            checks.append(
+                {
+                    "id": "dp_covered_by_contract",
+                    "label_fr": "DP couverts par contrat",
+                    "status": "ok",
+                    "reason_fr": f"Tous les {len(dps)} point(s) de livraison sont rattachés à un contrat actif",
+                    "suggestion_fr": None,
+                    "cta": None,
+                    "fix_actions": [],
+                }
+            )
+        else:
+            uncov_codes = [dp.code for dp in uncovered[:3]]
+            checks.append(
+                {
+                    "id": "dp_covered_by_contract",
+                    "label_fr": "DP couverts par contrat",
+                    "status": "warn",
+                    "reason_fr": f"{len(uncovered)} DP non rattaché(s) à un contrat actif ({', '.join(uncov_codes)})",
+                    "suggestion_fr": "Rattachez ces points de livraison à un contrat dans le registre contractuel",
+                    "cta": "contracts",
+                    "fix_actions": [],
+                }
+            )
+    else:
+        checks.append(
+            {
+                "id": "dp_covered_by_contract",
+                "label_fr": "DP couverts par contrat",
+                "status": "warn" if dps else "fail",
+                "reason_fr": "Vérification impossible (DP ou contrats manquants)",
+                "suggestion_fr": "Ajoutez des DP et/ou un contrat pour compléter la réconciliation",
+                "cta": "patrimoine",
+                "fix_actions": [],
             }
         )
 

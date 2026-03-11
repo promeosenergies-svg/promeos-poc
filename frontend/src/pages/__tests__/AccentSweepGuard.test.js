@@ -104,18 +104,17 @@ describe('Batch A — BillIntelPage accents', () => {
   });
 });
 
-describe('Batch A — SiteDetail accents', () => {
-  const src = read('SiteDetail.jsx');
+describe('Batch A — Site360 accents', () => {
+  const src = read('Site360.jsx');
   it('Conformité (pas Conformite) dans tabs et headings', () => {
     expect(src).not.toMatch(/label:\s*'Conformite'/);
     expect(src).not.toMatch(/label:\s*'Donnees'/);
   });
-  it('réglementaires avec accent', () => {
-    expect(src).not.toMatch(/Obligations reglementaires/);
+  it('Résumé avec accent dans tabs', () => {
+    expect(src).toContain('Résumé');
   });
-  it('détectée / identifiée avec accents', () => {
-    expect(src).not.toMatch(/facturation detectee/);
-    expect(src).not.toMatch(/incoherence a ete identifiee/);
+  it('Réconciliation avec accent', () => {
+    expect(src).toContain('Réconciliation');
   });
 });
 

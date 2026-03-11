@@ -106,12 +106,40 @@ class EnergyContract(Base, TimestampMixin):
         comment="Statut lifecycle (active/expiring/expired)",
     )
 
+    # V-registre: champs registre patrimonial & contractuel
+    reference_fournisseur = Column(
+        String(100),
+        nullable=True,
+        comment="Reference contrat chez le fournisseur (cle de reconciliation)",
+    )
+    date_signature = Column(
+        Date,
+        nullable=True,
+        comment="Date de signature du contrat (opposabilite juridique)",
+    )
+    conditions_particulieres = Column(
+        Text,
+        nullable=True,
+        comment="Conditions particulieres, clauses speciales, derogations",
+    )
+    document_url = Column(
+        String(500),
+        nullable=True,
+        comment="Lien vers le scan/PDF du contrat signe",
+    )
+
     # Relations
     site = relationship("Site", backref="energy_contracts")
     invoices = relationship(
         "EnergyInvoice",
         back_populates="contract",
         cascade="all, delete-orphan",
+    )
+    # V-registre: N-N contrat ↔ delivery points
+    delivery_points = relationship(
+        "DeliveryPoint",
+        secondary="contract_delivery_points",
+        backref="contracts",
     )
 
 

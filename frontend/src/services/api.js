@@ -1613,6 +1613,12 @@ export const getPortfolioReconciliation = (params = {}) =>
 export const getPatrimoineContracts = (params = {}) =>
   api.get('/patrimoine/contracts', { params }).then((r) => r.data);
 
+// V-registre: KPIs patrimoine + completude
+export const getPatrimoineKpis = (params = {}) =>
+  api.get('/patrimoine/kpis', { params }).then((r) => r.data);
+export const getSiteCompleteness = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/completeness`).then((r) => r.data);
+
 // V97: Resolution Engine
 export const applyReconciliationFix = (siteId, data) =>
   api.post(`/patrimoine/sites/${siteId}/reconciliation/fix`, data).then((r) => r.data);

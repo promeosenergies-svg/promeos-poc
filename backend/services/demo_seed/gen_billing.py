@@ -17,6 +17,9 @@ from models import (
     BillingInvoiceStatus,
     InsightStatus,
     ContractIndexation,
+    DeliveryPoint,
+    DeliveryPointEnergyType,
+    ContractDeliveryPoint,
 )
 
 
@@ -57,6 +60,12 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 end_date_val = date.fromisoformat(end_str)
 
             strategy = c_spec.get("strategy", "fixe")
+            # V-registre: reference fournisseur + date de signature
+            _REF_PREFIXES = {"EDF": "EDF", "Engie": "ENG", "TotalEnergies": "TE", "Eni": "ENI", "Vattenfall": "VAT"}
+            ref_prefix = _REF_PREFIXES.get(c_spec["supplier"], "CTR")
+            ref_fournisseur = f"{ref_prefix}-{date.fromisoformat(c_spec['start']).year}-{c_spec['site_idx']:03d}{c_spec['type'][0].upper()}"
+            sig_date = date.fromisoformat(c_spec["start"]) - timedelta(days=rng.randint(15, 60))
+
             contract = EnergyContract(
                 site_id=site.id,
                 energy_type=_ENERGY_TYPE_MAP.get(c_spec["type"], BillingEnergyType.ELEC),
@@ -69,9 +78,36 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 auto_renew=c_spec.get("auto_renew", False),
                 offer_indexation=_INDEXATION_MAP.get(strategy),
                 metadata_json=json.dumps({"strategy": strategy}),
+                # V-registre: champs registre patrimonial & contractuel
+                reference_fournisseur=ref_fournisseur,
+                date_signature=sig_date,
+                conditions_particulieres=c_spec.get("conditions"),
             )
             db.add(contract)
             db.flush()
+
+            # V-registre: rattacher les delivery points du site pour cette energie
+            _DP_ENERGY_MAP = {"elec": DeliveryPointEnergyType.ELEC, "gaz": DeliveryPointEnergyType.GAZ}
+            dp_energy = _DP_ENERGY_MAP.get(c_spec["type"])
+            site_dps = (
+                db.query(DeliveryPoint)
+                .filter(
+                    DeliveryPoint.site_id == site.id,
+                    DeliveryPoint.deleted_at.is_(None),
+                )
+                .all()
+            )
+            # Filtre par type energie si possible, sinon rattache tous les DP
+            matching_dps = [dp for dp in site_dps if dp.energy_type == dp_energy] if dp_energy else site_dps
+            if not matching_dps:
+                matching_dps = site_dps  # fallback: rattache tout
+            for dp in matching_dps:
+                existing = (
+                    db.query(ContractDeliveryPoint).filter_by(contract_id=contract.id, delivery_point_id=dp.id).first()
+                )
+                if not existing:
+                    db.add(ContractDeliveryPoint(contract_id=contract.id, delivery_point_id=dp.id))
+
             # Keep first contract per site for invoice generation
             if site.id not in contract_map:
                 contract_map[site.id] = contract

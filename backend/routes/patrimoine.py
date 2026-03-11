@@ -7,7 +7,7 @@ CRUD Sites/Compteurs/Contrats + QA scoring.
 import csv
 import io
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
@@ -44,6 +44,7 @@ from models import (
     PaymentRuleLevel,
     ContractIndexation,
     ContractStatus,
+    Batiment,
 )
 from services.patrimoine_service import (
     create_staging_batch,
@@ -148,6 +149,12 @@ class ContractCreateRequest(BaseModel):
     price_granularity: Optional[str] = None
     renewal_alert_days: Optional[int] = None
     contract_status: Optional[str] = None
+    # V-registre: champs registre patrimonial & contractuel
+    reference_fournisseur: Optional[str] = None
+    date_signature: Optional[str] = None
+    conditions_particulieres: Optional[str] = None
+    document_url: Optional[str] = None
+    delivery_point_ids: Optional[list] = None  # IDs des DP couverts
 
 
 class ContractUpdateRequest(BaseModel):
@@ -163,6 +170,12 @@ class ContractUpdateRequest(BaseModel):
     price_granularity: Optional[str] = None
     renewal_alert_days: Optional[int] = None
     contract_status: Optional[str] = None
+    # V-registre
+    reference_fournisseur: Optional[str] = None
+    date_signature: Optional[str] = None
+    conditions_particulieres: Optional[str] = None
+    document_url: Optional[str] = None
+    delivery_point_ids: Optional[list] = None
 
 
 # V96: Payment Rules schemas
@@ -1189,7 +1202,7 @@ def patrimoine_kpis(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Aggregated KPIs for the patrimoine page — replaces client-side useMemo."""
+    """Unified KPIs for the patrimoine page — legacy + V-registre fields."""
     org_id = _get_org_id(request, auth, db)
 
     base_q = (
@@ -1213,7 +1226,74 @@ def patrimoine_kpis(
         func.count(case((Site.anomalie_facture == True, 1))).label("total_anomalies"),
     ).one()
 
+    # V-registre enrichment
+    sites = base_q.all()
+    site_ids = [s.id for s in sites]
+    today = date.today()
+
+    # EJ and PF counts — scoped to the actual sites in view
+    pf_ids = set(s.portefeuille_id for s in sites if s.portefeuille_id)
+    ej_ids = set()
+    for s in sites:
+        if s.portefeuille and s.portefeuille.entite_juridique_id:
+            ej_ids.add(s.portefeuille.entite_juridique_id)
+    nb_ej = (
+        len(ej_ids)
+        if site_id is not None
+        else db.query(EntiteJuridique)
+        .filter(
+            EntiteJuridique.organisation_id == org_id,
+            EntiteJuridique.deleted_at.is_(None),
+        )
+        .count()
+    )
+    nb_pf = (
+        len(pf_ids)
+        if site_id is not None
+        else (
+            db.query(Portefeuille)
+            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(EntiteJuridique.organisation_id == org_id, Portefeuille.deleted_at.is_(None))
+            .count()
+        )
+    )
+
+    nb_batiments = db.query(Batiment).filter(Batiment.site_id.in_(site_ids)).count() if site_ids else 0
+
+    nb_dp = (
+        db.query(DeliveryPoint)
+        .filter(
+            DeliveryPoint.site_id.in_(site_ids),
+            DeliveryPoint.deleted_at.is_(None),
+        )
+        .count()
+        if site_ids
+        else 0
+    )
+
+    contracts_q = (
+        db.query(EnergyContract).filter(EnergyContract.site_id.in_(site_ids))
+        if site_ids
+        else db.query(EnergyContract).filter(False)
+    )
+    nb_contrats = contracts_q.count()
+    nb_contrats_actifs = contracts_q.filter(
+        EnergyContract.end_date >= today,
+        EnergyContract.start_date <= today,
+    ).count()
+    nb_contrats_expiring = contracts_q.filter(
+        EnergyContract.end_date >= today,
+        EnergyContract.end_date <= today + timedelta(days=90),
+    ).count()
+
+    completeness_scores = []
+    for s in sites:
+        score = _compute_site_completeness(db, s, site_ids)
+        completeness_scores.append(score["score"])
+    avg_completeness = round(sum(completeness_scores) / len(completeness_scores)) if completeness_scores else 0
+
     return {
+        # Legacy fields (used by existing KPI cards)
         "total": result.total,
         "conformes": result.conformes,
         "aRisque": result.a_risque,
@@ -1221,6 +1301,18 @@ def patrimoine_kpis(
         "totalRisque": round(float(result.total_risque), 2),
         "totalSurface": round(float(result.total_surface), 2),
         "totalAnomalies": result.total_anomalies,
+        # V-registre fields
+        "nb_organisations": 1,
+        "nb_entites_juridiques": nb_ej,
+        "nb_portefeuilles": nb_pf,
+        "nb_sites": len(sites),
+        "nb_batiments": nb_batiments,
+        "nb_delivery_points": nb_dp,
+        "nb_contrats": nb_contrats,
+        "nb_contrats_actifs": nb_contrats_actifs,
+        "nb_contrats_expiring_90j": nb_contrats_expiring,
+        "surface_totale_m2": round(float(result.total_surface), 2),
+        "completude_moyenne_pct": avg_completeness,
     }
 
 
@@ -1244,6 +1336,7 @@ def _serialize_site(site: Site) -> dict:
         "naf_code": site.naf_code,
         "actif": site.actif,
         "portefeuille_id": site.portefeuille_id,
+        "portefeuille_nom": site.portefeuille.nom if site.portefeuille else None,
         "data_source": site.data_source,
         "created_at": site.created_at.isoformat() if site.created_at else None,
         "updated_at": site.updated_at.isoformat() if site.updated_at else None,
@@ -1761,6 +1854,13 @@ def _serialize_contract(ct: EnergyContract) -> dict:
         "renewal_alert_days": ct.renewal_alert_days,
         "contract_status": ct.contract_status.value if ct.contract_status else None,
         "created_at": ct.created_at.isoformat() if ct.created_at else None,
+        # V-registre: champs registre patrimonial & contractuel
+        "reference_fournisseur": ct.reference_fournisseur,
+        "date_signature": ct.date_signature.isoformat() if ct.date_signature else None,
+        "conditions_particulieres": ct.conditions_particulieres,
+        "document_url": ct.document_url,
+        "delivery_point_ids": [dp.id for dp in ct.delivery_points] if ct.delivery_points else [],
+        "delivery_points_count": len(ct.delivery_points) if ct.delivery_points else 0,
     }
 
 
@@ -2296,8 +2396,20 @@ def create_contract(
         price_granularity=body.price_granularity,
         renewal_alert_days=body.renewal_alert_days,
         contract_status=ct_status,
+        # V-registre
+        reference_fournisseur=body.reference_fournisseur,
+        date_signature=date.fromisoformat(body.date_signature) if body.date_signature else None,
+        conditions_particulieres=body.conditions_particulieres,
+        document_url=body.document_url,
     )
     db.add(ct)
+    db.flush()
+    # V-registre: rattacher les delivery points
+    if body.delivery_point_ids:
+        from models import DeliveryPoint as DP
+
+        dps = db.query(DP).filter(DP.id.in_(body.delivery_point_ids), DP.site_id == body.site_id).all()
+        ct.delivery_points = dps
     db.commit()
     db.refresh(ct)
     return _serialize_contract(ct)
@@ -2317,9 +2429,17 @@ def update_contract(
 
     updates = body.model_dump(exclude_unset=True)
 
-    # Apply field values (parse dates + V96 enums)
+    # V-registre: handle delivery_point_ids separately
+    dp_ids = updates.pop("delivery_point_ids", None)
+    if dp_ids is not None:
+        from models import DeliveryPoint as DP
+
+        dps = db.query(DP).filter(DP.id.in_(dp_ids), DP.site_id == ct.site_id).all()
+        ct.delivery_points = dps
+
+    # Apply field values (parse dates + V96 enums + V-registre dates)
     for field, value in updates.items():
-        if field in ("start_date", "end_date") and value is not None:
+        if field in ("start_date", "end_date", "date_signature") and value is not None:
             value = date.fromisoformat(value)
         elif field == "offer_indexation" and value is not None:
             try:
@@ -2368,6 +2488,70 @@ def delete_contract(
     db.delete(ct)
     db.commit()
     return {"detail": f"Contrat {contract_id} supprime"}
+
+
+# ========================================
+# V-registre: Completude site
+# ========================================
+
+
+def _compute_site_completeness(db: Session, site, site_ids: list) -> dict:
+    """Score de completude d'un site (0-100). Verifie les champs critiques du registre."""
+    checks = {}
+    # 1. Adresse
+    checks["adresse"] = bool(site.adresse and site.ville)
+    # 2. Surface
+    checks["surface"] = bool(site.surface_m2 and site.surface_m2 > 0)
+    # 3. Type site
+    checks["type_site"] = bool(site.type)
+    # 4. Entite juridique (via portefeuille)
+    checks["entite_juridique"] = bool(site.portefeuille_id)
+    # 5. Delivery point
+    nb_dp = (
+        db.query(DeliveryPoint)
+        .filter(
+            DeliveryPoint.site_id == site.id,
+            DeliveryPoint.deleted_at.is_(None),
+        )
+        .count()
+    )
+    checks["delivery_point"] = nb_dp > 0
+    # 6. Contrat energie actif
+    today = date.today()
+    nb_ct = (
+        db.query(EnergyContract)
+        .filter(
+            EnergyContract.site_id == site.id,
+            EnergyContract.end_date >= today,
+        )
+        .count()
+    )
+    checks["contrat_actif"] = nb_ct > 0
+    # 7. Coordonnees GPS
+    checks["coordonnees"] = bool(site.latitude and site.longitude)
+    # 8. SIRET site
+    checks["siret"] = bool(site.siret)
+
+    filled = sum(1 for v in checks.values() if v)
+    total = len(checks)
+    score = round(filled / total * 100) if total else 0
+    level = "complet" if score >= 80 else "partiel" if score >= 50 else "critique"
+    missing = [k for k, v in checks.items() if not v]
+
+    return {"score": score, "level": level, "filled": filled, "total": total, "missing": missing, "checks": checks}
+
+
+@router.get("/sites/{site_id}/completeness")
+def get_site_completeness(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Score de completude d'un site du registre patrimonial."""
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
+    return _compute_site_completeness(db, site, [site_id])
 
 
 # ========================================

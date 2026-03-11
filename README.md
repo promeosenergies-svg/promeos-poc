@@ -124,7 +124,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Conformité V1.1 A+B (12 items : harmonize BACS, hide legacy, options/obligation, audit trail, base legale, penalites sourcees, scoring YAML, RegOps SoT, executive summary, proof bridge, finding→action→proof loop, dossier export) | **Stable -- V1.1** |
 > | Conformité Finition Demo (P1 echeance BACS contextualisee, P2 seed preuves partielles/completes, P2 seed actions conformite liees findings, tooltip Expert) | **Stable -- V1.1+** |
 > | Roadmap Domination 12 mois (wedge conformite opposable, 4 horizons, backlog ICE 15 initiatives, plan demo 5 scenarios) | Documentee -- ROADMAP |
-> | Suite de tests automatisés | **5 586+ frontend + 3 071+ backend, 0 régression** |
+> | Registre Patrimonial & Contractuel (KPIs EJ/PF/contrats expirants, filtre portefeuille, champs registre contrat, DP coverage, SiteDetail supprimé, compliance score harmonisé) | **Stable -- V-registre** |
+> | Plan Exécution 90 jours (4 paris : coffre preuves, dossier PDF, notifications, benchmark sectoriel — 12 sprints, 3 gates, 3 KPIs) | Documenté -- PLAN_90J |
+> | Suite de tests automatisés | **5 586+ frontend + 3 508+ backend, 0 régression** |
 
 > **Disclaimer**
 >
@@ -165,7 +167,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 - **Billing Engine Fix** : Shadow billing corrige — comparaison energy-only vs TTC eliminee (110→16 insights, 688k€→14k€ pertes). TVA classee OTHER (pas TAX). Anomalies seed recomputees par composante (energy/network/tax). Prix ref DEFAULT_PRICE_ELEC 0.15, GAZ 0.08.
 - **Billing Summary Fix** : `total_loss_eur` + `coverage_months` ajoutes dans `/billing/summary` (resout SURCOUT FACTURE "—" et Couverture "? mois").
 - **Audit Conformite 8 axes** : audit severe de la brique conformite (couverture reg, modele donnees, moteur decision, preuves, UX, orchestration, integration, differenciation) — note 62/100, plan d'upgrade 4 niveaux (A quick wins → D fondations).
-- **5 586+ frontend + 3 071+ backend = 8 657+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 12 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Registre Patrimonial & Contractuel (V-registre)** : KPIs patrimoine enrichis (nb EJ, PF, batiments, contrats expirants 90j, surface totale, taux conformite), filtre portefeuille, champs registre contrat (reference_fournisseur, date_signature, conditions_particulieres, document_url, delivery_point_ids), DP coverage par contrat, SiteDetail.jsx supprime (553 lignes dead code), compliance_score harmonise, reconciliation_service enrichi, Site360 contrats summary ameliore. Plan d'execution 90 jours documente (4 paris, 12 sprints, 3 gates).
+- **5 586+ frontend + 3 508+ backend = 9 094+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 12 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -577,7 +580,7 @@ Documentation Swagger complete : `http://localhost:8001/docs`
 | `/cockpit` | Cockpit Executif | KPIs COMEX : score global, worst-sites, risque financier |
 | `/patrimoine` | Patrimoine | Heatmap sites (risque/anomalies/framework) + cockpit portfolio |
 | `/import` | Import HELIOS | Pipeline staging CSV/XLSX : upload, QA, validation, activation |
-| `/sites/:id` | Detail Site | Fiche site : obligations, evidences, actions, score |
+| `/sites/:id` | Site 360 | Fiche site complete : conformite, contrats, factures, reconciliation, actions |
 | `/regops/:id` | RegOps | Audit reglementaire : findings, severite, deadlines, actions |
 | `/tertiaire` | Tertiaire OPERAT | Dashboard EFA, wizard OPERAT, anomalies, plan de preuves |
 | `/action-plan` | Plan d'action | Actions priorisees cross-sites avec lien preuves OPERAT |

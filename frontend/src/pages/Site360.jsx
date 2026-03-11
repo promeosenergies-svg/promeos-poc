@@ -27,6 +27,8 @@ import {
   FileText,
   Sparkles,
   X,
+  ChevronRight,
+  Briefcase,
 } from 'lucide-react';
 import {
   Card,
@@ -52,6 +54,7 @@ import {
   getReconciliationHistory,
   getReconciliationEvidenceCsv,
   getReconciliationEvidenceSummary,
+  patrimoineDeliveryPoints,
 } from '../services/api';
 import {
   getStatusBadgeProps,
@@ -69,7 +72,7 @@ import SegmentationQuestionnaireModal from '../components/SegmentationQuestionna
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
-import { getDataQualityScore, getSiteFreshness } from '../services/api';
+import { getDataQualityScore, getSiteFreshness, getSiteCompleteness } from '../services/api';
 
 const _sb = (k) => {
   const { variant, label } = getStatusBadgeProps(k);
@@ -106,6 +109,8 @@ function MiniKpi({ icon: Icon, label, value, color }) {
 function TabResume({ site, onSegmentationClick }) {
   const [anomalies, setAnomalies] = useState([]);
   const [anomLoading, setAnomLoading] = useState(true);
+  const [deliveryPoints, setDeliveryPoints] = useState([]);
+  const [dpLoading, setDpLoading] = useState(true);
 
   useEffect(() => {
     let stale = false;
@@ -125,116 +130,257 @@ function TabResume({ site, onSegmentationClick }) {
     };
   }, [site.id]);
 
+  // B2-4: Fetch delivery points
+  useEffect(() => {
+    let stale = false;
+    setDpLoading(true);
+    patrimoineDeliveryPoints(site.id)
+      .then((data) => {
+        if (!stale) setDeliveryPoints(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!stale) setDeliveryPoints([]);
+      })
+      .finally(() => {
+        if (!stale) setDpLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [site.id]);
+
   return (
-    <div className="grid grid-cols-2 gap-6 pt-6">
-      {/* Left: KPIs + anomalies */}
-      <div className="space-y-4">
-        <Card>
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">Indicateurs clés</h3>
-          </div>
-          <CardBody>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-500">Conso annuelle</p>
-                <p className="text-lg font-bold text-blue-700">
-                  {fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
-                </p>
-              </div>
-              <div className="p-3 bg-red-50 rounded-lg">
-                <p className="text-xs text-gray-500">Risque financier</p>
-                <p className="text-lg font-bold text-red-700">{fmtEurFull(site.risque_eur)}</p>
-              </div>
-              <div className="p-3 bg-amber-50 rounded-lg">
-                <p className="text-xs text-gray-500">
-                  <Explain term="anomalie">Anomalies</Explain>
-                </p>
-                <p className="text-lg font-bold text-amber-700">{site.anomalies_count ?? 0}</p>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-gray-500">Compteurs</p>
-                <p className="text-lg font-bold text-green-700">{site.nb_compteurs}</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* V96: Payment info */}
-        <PaymentInfoCard siteId={site.id} />
-
-        {/* Reco principale */}
-        <Card className="border-l-4 border-l-blue-500">
-          <CardBody>
-            <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
-              Recommandation principale
-            </p>
-            <p className="text-sm text-gray-800 font-medium">
-              {site.statut_conformite === 'non_conforme'
-                ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
-                : site.statut_conformite === 'a_risque'
-                  ? 'Planifier la mise en conformité BACS pour ce site'
-                  : 'Maintenir la surveillance et optimiser la consommation'}
-            </p>
-            <Button size="sm" className="mt-3">
-              Créer une action
-            </Button>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Right column */}
-      <div className="space-y-4">
-        {/* Anomalies list */}
-        <Card>
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">
-              <Explain term="anomalie">Anomalies</Explain> détectées
-            </h3>
-          </div>
-          {anomLoading ? (
-            <div className="p-4">
-              <SkeletonCard />
-            </div>
-          ) : anomalies.length === 0 ? (
-            <EmptyState
-              title="Aucune anomalie"
-              text="Ce site ne présente aucune anomalie détectée."
-            />
-          ) : (
-            <Table>
-              <Thead>
-                <tr>
-                  <Th>Type</Th>
-                  <Th>Sévérité</Th>
-                  <Th>Message</Th>
-                  <Th className="text-right">Perte</Th>
-                </tr>
-              </Thead>
-              <Tbody>
-                {anomalies.map((a, idx) => (
-                  <Tr key={a.id || idx}>
-                    <Td>
-                      <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
-                        {a.anomaly_type}
-                      </span>
-                    </Td>
-                    <Td>
-                      <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
-                    </Td>
-                    <Td className="text-sm">{a.title_fr}</Td>
-                    <Td className="text-right text-red-600 font-medium">
-                      {fmtEurFull(a.business_impact?.estimated_risk_eur)}
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
+    <div className="space-y-4 pt-6">
+      {/* B2-1: Hierarchy bar — Org > EJ > Portefeuille > Site */}
+      {(site.organisation_nom || site.entite_juridique_nom || site.portefeuille_nom) && (
+        <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-4 py-2.5 border border-gray-100">
+          <Briefcase size={13} className="text-indigo-500 shrink-0" />
+          {site.organisation_nom && (
+            <span className="font-medium text-gray-700">{site.organisation_nom}</span>
           )}
-        </Card>
+          {site.entite_juridique_nom && (
+            <>
+              <ChevronRight size={12} className="text-gray-300" />
+              <span className="text-gray-600">{site.entite_juridique_nom}</span>
+            </>
+          )}
+          {site.portefeuille_nom && (
+            <>
+              <ChevronRight size={12} className="text-gray-300" />
+              <span className="text-gray-600">{site.portefeuille_nom}</span>
+            </>
+          )}
+          <ChevronRight size={12} className="text-gray-300" />
+          <span className="font-medium text-gray-800">{site.nom}</span>
+          <span className="ml-auto text-gray-400">
+            {site.surface_m2 ? `${(site.surface_m2 / 1000).toFixed(1)}k m²` : ''}
+            {site.siret ? ` · SIRET ${site.siret}` : ''}
+          </span>
+        </div>
+      )}
 
-        {/* V100: Segmentation profile & recommendations */}
-        <SegmentationWidget onSegmentationClick={onSegmentationClick} />
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left: KPIs + anomalies */}
+        <div className="space-y-4">
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">Indicateurs clés</h3>
+            </div>
+            <CardBody>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Conso annuelle</p>
+                  <p className="text-lg font-bold text-blue-700">
+                    {fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
+                  </p>
+                </div>
+                <div className="p-3 bg-red-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Risque financier</p>
+                  <p className="text-lg font-bold text-red-700">{fmtEurFull(site.risque_eur)}</p>
+                </div>
+                <div className="p-3 bg-amber-50 rounded-lg">
+                  <p className="text-xs text-gray-500">
+                    <Explain term="anomalie">Anomalies</Explain>
+                  </p>
+                  <p className="text-lg font-bold text-amber-700">{site.anomalies_count ?? 0}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Compteurs</p>
+                  <p className="text-lg font-bold text-green-700">{site.nb_compteurs}</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* V96: Payment info */}
+          <PaymentInfoCard siteId={site.id} />
+
+          {/* Reco principale */}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardBody>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                Recommandation principale
+              </p>
+              <p className="text-sm text-gray-800 font-medium">
+                {site.statut_conformite === 'non_conforme'
+                  ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
+                  : site.statut_conformite === 'a_risque'
+                    ? 'Planifier la mise en conformité BACS pour ce site'
+                    : 'Maintenir la surveillance et optimiser la consommation'}
+              </p>
+              <Button size="sm" className="mt-3">
+                Créer une action
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-4">
+          {/* Anomalies list */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">
+                <Explain term="anomalie">Anomalies</Explain> détectées
+              </h3>
+            </div>
+            {anomLoading ? (
+              <div className="p-4">
+                <SkeletonCard />
+              </div>
+            ) : anomalies.length === 0 ? (
+              <EmptyState
+                title="Aucune anomalie"
+                text="Ce site ne présente aucune anomalie détectée."
+              />
+            ) : (
+              <Table>
+                <Thead>
+                  <tr>
+                    <Th>Type</Th>
+                    <Th>Sévérité</Th>
+                    <Th>Message</Th>
+                    <Th className="text-right">Perte</Th>
+                  </tr>
+                </Thead>
+                <Tbody>
+                  {anomalies.map((a, idx) => (
+                    <Tr key={a.id || idx}>
+                      <Td>
+                        <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                          {a.anomaly_type}
+                        </span>
+                      </Td>
+                      <Td>
+                        <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
+                      </Td>
+                      <Td className="text-sm">{a.title_fr}</Td>
+                      <Td className="text-right text-red-600 font-medium">
+                        {fmtEurFull(a.business_impact?.estimated_risk_eur)}
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            )}
+          </Card>
+
+          {/* B2-4: Points de livraison (PDL) */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">Points de livraison</h3>
+            </div>
+            {dpLoading ? (
+              <div className="p-4">
+                <SkeletonCard />
+              </div>
+            ) : deliveryPoints.length === 0 ? (
+              <EmptyState
+                icon={Zap}
+                title="Aucun PDL"
+                text="Aucun point de livraison rattaché à ce site."
+              />
+            ) : (
+              <CardBody>
+                <div className="space-y-2">
+                  {deliveryPoints.map((dp) => (
+                    <div
+                      key={dp.id}
+                      className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Zap
+                          size={13}
+                          className={
+                            dp.energy_type === 'electricity' ? 'text-blue-500' : 'text-orange-500'
+                          }
+                        />
+                        <span className="font-mono text-xs text-gray-700">{dp.code}</span>
+                        <Badge status={dp.energy_type === 'electricity' ? 'info' : 'warning'}>
+                          {dp.energy_type === 'electricity'
+                            ? 'Élec'
+                            : dp.energy_type === 'gas'
+                              ? 'Gaz'
+                              : dp.energy_type}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {dp.compteurs_count > 0 && (
+                          <span>
+                            {dp.compteurs_count} compteur{dp.compteurs_count > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        <Badge status={dp.status === 'active' ? 'ok' : 'neutral'}>
+                          {dp.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            )}
+          </Card>
+
+          {/* V100: Segmentation profile & recommendations */}
+          <SegmentationWidget onSegmentationClick={onSegmentationClick} />
+
+          {/* V-registre: Cross-module links */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">Accès rapide</h3>
+            </div>
+            <CardBody>
+              <div className="space-y-2">
+                <Link
+                  to={`/billing?site_id=${site.id}`}
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <BadgeEuro size={14} /> Bill Intelligence
+                </Link>
+                <Link
+                  to="/conformite"
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <ShieldCheck size={14} /> Conformité réglementaire
+                </Link>
+                <Link
+                  to={`/contract-radar?site_id=${site.id}`}
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <FileText size={14} /> Radar contrats
+                </Link>
+                <Link
+                  to="/actions"
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <Wrench size={14} /> Actions
+                </Link>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
       </div>
+      {/* /grid-cols-2 */}
     </div>
   );
 }
@@ -912,7 +1058,7 @@ function TabConformite({ site }) {
             {items.length} obligations applicables
           </h3>
         </div>
-        {validated.length > 0 && <Badge status="ok">{validated.length} validees</Badge>}
+        {validated.length > 0 && <Badge status="ok">{validated.length} validées</Badge>}
         {drafts.length > 0 && <Badge status="neutral">{drafts.length} exploration</Badge>}
         <Link
           to="/kb"
@@ -921,6 +1067,84 @@ function TabConformite({ site }) {
           <BookOpen size={12} /> Explorer la KB
         </Link>
       </div>
+
+      {/* B2-3: Fallback when KB returns no items */}
+      {items.length === 0 && (
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                <ShieldCheck size={20} className="text-blue-500" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800">Statut conformité du site</h4>
+                <p className="text-xs text-gray-500">
+                  {site.statut_decret_tertiaire
+                    ? `Décret tertiaire : ${site.statut_decret_tertiaire}`
+                    : 'Aucune obligation identifiée automatiquement'}
+                </p>
+              </div>
+              {site.statut_decret_tertiaire && (
+                <Badge
+                  status={
+                    site.statut_decret_tertiaire === 'conforme'
+                      ? 'ok'
+                      : site.statut_decret_tertiaire === 'non_conforme'
+                        ? 'error'
+                        : 'warning'
+                  }
+                  className="ml-auto"
+                >
+                  {site.statut_decret_tertiaire}
+                </Badge>
+              )}
+            </div>
+
+            {/* Site context summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 bg-gray-50 rounded-lg text-center">
+                <p className="text-xs text-gray-500">Surface</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {site.surface_m2 ? `${site.surface_m2.toLocaleString('fr-FR')} m²` : '—'}
+                </p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg text-center">
+                <p className="text-xs text-gray-500">Type</p>
+                <p className="text-sm font-semibold text-gray-800">{site.type || '—'}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg text-center">
+                <p className="text-xs text-gray-500">Avancement</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {site.avancement_decret_pct != null
+                    ? `${Math.round(site.avancement_decret_pct)} %`
+                    : '—'}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-400">
+              Le moteur réglementaire n'a identifié aucune obligation pour ce profil de site.
+              Complétez les données du site ou explorez la base de connaissances pour une analyse
+              manuelle.
+            </p>
+
+            <div className="flex gap-3">
+              <Link
+                to="/conformite"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+              >
+                <ShieldCheck size={13} /> Ouvrir la brique conformité
+              </Link>
+              <Link
+                to="/kb"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition"
+              >
+                <BookOpen size={13} /> Explorer la KB
+              </Link>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Validated items */}
       {validated.length > 0 && (
@@ -1102,6 +1326,7 @@ export default function Site360() {
   const [siteComplianceScore, setSiteComplianceScore] = useState(null); // A.2
   const [dataQuality, setDataQuality] = useState(null); // D.1
   const [freshness, setFreshness] = useState(null); // D.2
+  const [completeness, setCompleteness] = useState(null); // V-registre
 
   const site = scopedSites.find((s) => String(s.id) === String(id));
 
@@ -1128,6 +1353,14 @@ export default function Site360() {
     getSiteFreshness(id)
       .then(setFreshness)
       .catch(() => setFreshness(null));
+  }, [id]);
+
+  // V-registre: Fetch site completeness
+  useEffect(() => {
+    if (!id) return;
+    getSiteCompleteness(id)
+      .then(setCompleteness)
+      .catch(() => setCompleteness(null));
   }, [id]);
 
   if (sitesLoading) {
@@ -1158,13 +1391,23 @@ export default function Site360() {
 
   return (
     <div className="px-6 py-6 space-y-4">
-      {/* Back + Header */}
-      <button
-        onClick={() => navigate('/patrimoine')}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition"
-      >
-        <ArrowLeft size={16} /> <Explain term="patrimoine">Patrimoine</Explain>
-      </button>
+      {/* Breadcrumb — Patrimoine > [Portefeuille] > Site */}
+      <nav className="flex items-center gap-1.5 text-sm text-gray-500">
+        <button
+          onClick={() => navigate('/patrimoine')}
+          className="hover:text-gray-700 transition flex items-center gap-1"
+        >
+          <ArrowLeft size={14} /> Patrimoine
+        </button>
+        {site.portefeuille_nom && (
+          <>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-600">{site.portefeuille_nom}</span>
+          </>
+        )}
+        <span className="text-gray-300">/</span>
+        <span className="font-medium text-gray-800">{site.nom}</span>
+      </nav>
 
       <div className="flex items-start justify-between">
         <div>
@@ -1195,6 +1438,25 @@ export default function Site360() {
                 recommendations={dataQuality.recommendations}
                 size="md"
               />
+            )}
+            {completeness && (
+              <span
+                data-testid="completeness-badge"
+                className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  completeness.level === 'complet'
+                    ? 'bg-green-50 text-green-700'
+                    : completeness.level === 'partiel'
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-red-50 text-red-700'
+                }`}
+                title={
+                  completeness.missing?.length
+                    ? `Manquant : ${completeness.missing.join(', ')}`
+                    : 'Registre complet'
+                }
+              >
+                {completeness.score}% complet
+              </span>
             )}
             <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
               {site.usage}

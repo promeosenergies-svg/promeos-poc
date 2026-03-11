@@ -3,7 +3,7 @@ PROMEOS - Routes API pour les Sites
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from database import get_db
 from models import (
     Site,
@@ -110,7 +110,9 @@ def get_sites(
     Liste les sites PROMEOS avec pagination et filtres.
     Scope: org_id query param OR X-Org-Id header (header takes priority when both present).
     """
-    query = not_deleted(db.query(Site), Site)
+    query = not_deleted(db.query(Site), Site).options(
+        joinedload(Site.portefeuille).joinedload(Portefeuille.entite_juridique).joinedload(EntiteJuridique.organisation)
+    )
 
     # DEMO_MODE-aware scope resolution (auth > org_id param > header > demo fallback > 401)
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
@@ -144,7 +146,16 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
     Récupère les détails d'un site spécifique
     """
     check_site_access(auth, site_id)
-    site = not_deleted(db.query(Site), Site).filter(Site.id == site_id).first()
+    site = (
+        not_deleted(db.query(Site), Site)
+        .options(
+            joinedload(Site.portefeuille)
+            .joinedload(Portefeuille.entite_juridique)
+            .joinedload(EntiteJuridique.organisation)
+        )
+        .filter(Site.id == site_id)
+        .first()
+    )
 
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")

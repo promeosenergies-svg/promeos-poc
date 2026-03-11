@@ -49,12 +49,36 @@ class SiteResponse(SiteBase):
     geocoding_source: Optional[str] = None
     geocoding_score: Optional[float] = None
     geocoding_status: Optional[str] = None
+    portefeuille_nom: Optional[str] = None
+    entite_juridique_nom: Optional[str] = None
+    organisation_nom: Optional[str] = None
 
-    @model_validator(mode="after")
-    def _fill_conso_kwh_an(self):
-        if self.conso_kwh_an is None and self.annual_kwh_total is not None:
-            self.conso_kwh_an = self.annual_kwh_total
-        return self
+    @model_validator(mode="wrap")
+    @classmethod
+    def _enrich(cls, data, handler):
+        # Extract hierarchy names from ORM relationships before Pydantic consumes the object
+        pf_nom = None
+        ej_nom = None
+        org_nom = None
+        if hasattr(data, "portefeuille") and data.portefeuille is not None:
+            pf = data.portefeuille
+            pf_nom = getattr(pf, "nom", None)
+            ej = getattr(pf, "entite_juridique", None)
+            if ej:
+                ej_nom = getattr(ej, "nom", None)
+                org = getattr(ej, "organisation", None)
+                if org:
+                    org_nom = getattr(org, "nom", None)
+        obj = handler(data)
+        if pf_nom and not obj.portefeuille_nom:
+            obj.portefeuille_nom = pf_nom
+        if ej_nom and not obj.entite_juridique_nom:
+            obj.entite_juridique_nom = ej_nom
+        if org_nom and not obj.organisation_nom:
+            obj.organisation_nom = org_nom
+        if obj.conso_kwh_an is None and obj.annual_kwh_total is not None:
+            obj.conso_kwh_an = obj.annual_kwh_total
+        return obj
 
     created_at: datetime
     updated_at: datetime

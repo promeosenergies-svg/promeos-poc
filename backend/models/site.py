@@ -80,6 +80,11 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         """Alias for annual_kwh_total — used by frontend dashboards."""
         return self.annual_kwh_total
 
+    @property
+    def portefeuille_nom(self):
+        """Nom du portefeuille parent — used by breadcrumbs and Site360."""
+        return self.portefeuille.nom if self.portefeuille else None
+
     is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
     # Data lineage

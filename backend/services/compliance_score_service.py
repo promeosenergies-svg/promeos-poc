@@ -194,8 +194,8 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
             frameworks_evaluated += 1
             total_critical_findings += _count_critical_findings(ra.findings_json)
         else:
-            # Fallback : snapshot Site (pour DT et BACS)
-            fw_score = _fallback_site_score(site, fw_key)
+            # Fallback : findings réels puis snapshot Site (pour DT et BACS)
+            fw_score = _fallback_site_score(site, fw_key, db=db)
             source = "snapshot" if fw_score != 50.0 else "default"
             available = source == "snapshot"
             if available:
@@ -360,8 +360,51 @@ def _detect_framework(assessment) -> Optional[str]:
     return None
 
 
-def _fallback_site_score(site, fw_key: str) -> float:
-    """Fallback score depuis les snapshots Site."""
+def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
+    """
+    Fallback score depuis les ComplianceFinding réels, puis snapshots Site.
+
+    Priorité :
+    1. Findings réels (ComplianceFinding) → calcul basé sur % de règles OK
+    2. Snapshot Site (legacy) → uniquement si aucun finding n'existe
+    """
+    # 1. Essayer les findings réels
+    if db is not None:
+        from models import ComplianceFinding
+
+        # Map fw_key → regulation column values
+        regulation_map = {
+            "tertiaire_operat": ["decret_tertiaire_operat", "tertiaire_operat", "dt"],
+            "bacs": ["bacs"],
+            "aper": ["aper"],
+        }
+        reg_values = regulation_map.get(fw_key, [fw_key])
+
+        findings = (
+            db.query(ComplianceFinding)
+            .filter(
+                ComplianceFinding.site_id == site.id,
+                ComplianceFinding.regulation.in_(reg_values),
+            )
+            .all()
+        )
+        if findings:
+            # Compute score from actual findings
+            total = len(findings)
+            nok_count = sum(1 for f in findings if str(f.status).upper() == "NOK")
+            ok_count = sum(1 for f in findings if str(f.status).upper() == "OK")
+            # Check for overdue deadlines
+            from datetime import date as _date
+
+            overdue = sum(
+                1 for f in findings if str(f.status).upper() == "NOK" and f.deadline and f.deadline < _date.today()
+            )
+            # Score: % of OK rules, penalized heavily for overdue NOK
+            base_score = (ok_count / total) * 100.0 if total > 0 else 50.0
+            overdue_penalty = overdue * 15.0  # -15pts per overdue NOK finding
+            return max(0.0, min(100.0, base_score - overdue_penalty))
+
+    # 2. Fallback legacy snapshot (si pas de findings)
     if fw_key == "tertiaire_operat" and site.statut_decret_tertiaire:
         return _status_to_score(
             site.statut_decret_tertiaire.value

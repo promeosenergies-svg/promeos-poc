@@ -26,6 +26,9 @@ import {
   ChevronDown,
   PlusCircle,
   PieChart,
+  FileText,
+  Briefcase,
+  Clock,
 } from 'lucide-react';
 import {
   Card,
@@ -62,6 +65,9 @@ import {
   getSiteMetersTree,
   createSubMeter,
   getMeterBreakdown,
+  getPatrimoineKpis,
+  getPatrimoineContracts,
+  patrimoineDeliveryPoints,
 } from '../services/api';
 import { track } from '../services/tracker';
 import {
@@ -132,7 +138,7 @@ const PRESET_VIEWS = [
     label: 'Non conformes',
     sort: 'risque_eur',
     dir: 'desc',
-    filter: { statut: 'non_conforme' },
+    filter: { statut: 'nc_risque' },
   },
   { id: 'eval', label: 'À évaluer', sort: 'nom', dir: 'asc', filter: { statut: 'a_evaluer' } },
 ];
@@ -152,6 +158,7 @@ export default function Patrimoine() {
   const search = sp.get('q') || '';
   const filterUsage = sp.get('usage') || '';
   const filterStatut = sp.get('statut') || '';
+  const filterPortefeuille = sp.get('pf') || '';
   const filterAnomalies = sp.get('anomalies') === '1';
   const sortCol = sp.get('sort') || 'risque_eur';
   const sortDir = sp.get('dir') || 'desc';
@@ -166,6 +173,14 @@ export default function Patrimoine() {
   const [viewMode, setViewMode] = useState('table');
   const [drawerSite, setDrawerSite] = useState(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
+
+  // B2-6: Expiring contracts view
+  const [expiringContracts, setExpiringContracts] = useState([]);
+  const [expiringLoading, setExpiringLoading] = useState(false);
+
+  // PDL view
+  const [allDeliveryPoints, setAllDeliveryPoints] = useState([]);
+  const [dpLoading, setDpLoading] = useState(false);
 
   // V63 — Heatmap enrichie (anomalies par site, Promise.all, guard stale)
   const [hmTiles, setHmTiles] = useState([]);
@@ -209,6 +224,29 @@ export default function Patrimoine() {
       })
       .catch(() => {});
   }, [org?.id]);
+
+  // V-registre: KPIs patrimoine agregees — scope-aware
+  const [registreKpis, setRegistreKpis] = useState(null);
+  const scopedSiteIds = useMemo(() => new Set(scopedSites.map((s) => s.id)), [scopedSites]);
+  useEffect(() => {
+    if (!org?.id) return;
+    const params = {};
+    if (scope.siteId) params.site_id = scope.siteId;
+    getPatrimoineKpis(params)
+      .then(setRegistreKpis)
+      .catch(() => {});
+  }, [org?.id, scope.siteId]);
+
+  // Contracts (for expiring view) — scope-aware
+  const [scopedContracts, setScopedContracts] = useState([]);
+  useEffect(() => {
+    if (!org?.id) return;
+    const params = { limit: 500 };
+    if (scope.siteId) params.site_id = scope.siteId;
+    getPatrimoineContracts(params)
+      .then((data) => setScopedContracts(data.contracts || []))
+      .catch(() => setScopedContracts([]));
+  }, [org?.id, scope.siteId]);
 
   // URL param helper — merges params, removes empty values
   const setParams = useCallback(
@@ -327,6 +365,85 @@ export default function Patrimoine() {
 
   /* ─── Computed data ─── */
 
+  // B2-7: Dynamic portefeuille filter options
+  // B2-6: Compute expiring contracts from scopedContracts (scope-aware)
+  useEffect(() => {
+    if (activeView !== 'expiring') {
+      setExpiringContracts([]);
+      setExpiringLoading(false);
+      return;
+    }
+    setExpiringLoading(true);
+    const now = new Date();
+    const horizon = 90 * 24 * 60 * 60 * 1000;
+    const expiring = scopedContracts
+      .filter((ct) => scopedSiteIds.has(ct.site_id))
+      .filter((ct) => {
+        if (!ct.end_date) return false;
+        const end = new Date(ct.end_date);
+        const diff = end - now;
+        return diff > 0 && diff <= horizon;
+      });
+    // Enrich with site name
+    const siteMap = {};
+    scopedSites.forEach((s) => {
+      siteMap[s.id] = s.nom;
+    });
+    expiring.forEach((ct) => {
+      ct._site_nom = siteMap[ct.site_id] || `Site #${ct.site_id}`;
+    });
+    expiring.sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
+    setExpiringContracts(expiring);
+    setExpiringLoading(false);
+  }, [activeView, scopedContracts, scopedSites, scopedSiteIds]);
+
+  // PDL view: fetch delivery points for all scoped sites
+  useEffect(() => {
+    if (activeView !== 'pdl') {
+      setAllDeliveryPoints([]);
+      setDpLoading(false);
+      return;
+    }
+    let stale = false;
+    setDpLoading(true);
+    const siteMap = {};
+    scopedSites.forEach((s) => {
+      siteMap[s.id] = s.nom;
+    });
+    Promise.all(
+      scopedSites.map((s) =>
+        patrimoineDeliveryPoints(s.id)
+          .then((dps) =>
+            (Array.isArray(dps) ? dps : []).map((dp) => ({
+              ...dp,
+              _site_nom: s.nom,
+              _site_id: s.id,
+            }))
+          )
+          .catch(() => [])
+      )
+    ).then((results) => {
+      if (stale) return;
+      setAllDeliveryPoints(results.flat());
+      setDpLoading(false);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [activeView, scopedSites]);
+
+  const portefeuilleOptions = useMemo(() => {
+    const map = new Map();
+    scopedSites.forEach((s) => {
+      if (s.portefeuille_id && s.portefeuille_nom) {
+        map.set(String(s.portefeuille_id), s.portefeuille_nom);
+      }
+    });
+    const opts = [{ value: '', label: 'Portefeuille' }];
+    for (const [id, nom] of map) opts.push({ value: id, label: nom });
+    return opts;
+  }, [scopedSites]);
+
   const stats = useMemo(() => {
     const t = scopedSites.length;
     const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
@@ -352,7 +469,14 @@ export default function Patrimoine() {
       );
     }
     if (filterUsage) r = r.filter((s) => s.usage === filterUsage);
-    if (filterStatut) r = r.filter((s) => s.statut_conformite === filterStatut);
+    if (filterStatut === 'nc_risque') {
+      r = r.filter(
+        (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
+      );
+    } else if (filterStatut) {
+      r = r.filter((s) => s.statut_conformite === filterStatut);
+    }
+    if (filterPortefeuille) r = r.filter((s) => String(s.portefeuille_id) === filterPortefeuille);
     if (filterAnomalies) r = r.filter((s) => (s.anomalies_count || 0) > 0);
     if (sortCol) {
       r.sort((a, b) => {
@@ -365,7 +489,16 @@ export default function Patrimoine() {
       });
     }
     return r;
-  }, [scopedSites, search, filterUsage, filterStatut, filterAnomalies, sortCol, sortDir]);
+  }, [
+    scopedSites,
+    search,
+    filterUsage,
+    filterStatut,
+    filterPortefeuille,
+    filterAnomalies,
+    sortCol,
+    sortDir,
+  ]);
 
   const total = filtered.length;
 
@@ -376,6 +509,15 @@ export default function Patrimoine() {
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
   });
+
+  // Force virtualizer re-measure when table becomes visible again
+  useEffect(() => {
+    if (!activeView && viewMode === 'table') {
+      // Small delay to let the DOM mount before measuring
+      const t = setTimeout(() => virtualizer.measure(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [activeView, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const virtualItems = virtualizer.getVirtualItems();
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
@@ -493,7 +635,10 @@ export default function Patrimoine() {
     });
   if (filterStatut)
     activeChips.push({
-      label: STATUT_OPTIONS.find((o) => o.value === filterStatut)?.label || filterStatut,
+      label:
+        filterStatut === 'nc_risque'
+          ? 'NC + À risque'
+          : STATUT_OPTIONS.find((o) => o.value === filterStatut)?.label || filterStatut,
       clear: () => setParams({ statut: '' }),
     });
   if (filterAnomalies)
@@ -521,12 +666,12 @@ export default function Patrimoine() {
   // Dynamic subtitle
   const subtitle = isEmptyPatrimoine
     ? 'Importez votre patrimoine pour commencer'
-    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)} · ${stats.conformes} conformes · ${fmtEur(stats.risque)} de risque (tous sites)`;
+    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)}${registreKpis ? ` · ${registreKpis.nb_contrats_actifs} contrat${registreKpis.nb_contrats_actifs > 1 ? 's' : ''} actif${registreKpis.nb_contrats_actifs > 1 ? 's' : ''}` : ''} · ${fmtEur(stats.risque)} de risque`;
 
   return (
     <PageShell
       icon={Building2}
-      title="Patrimoine"
+      title="Registre patrimonial & contractuel"
       subtitle={subtitle}
       actions={
         <>
@@ -587,35 +732,47 @@ export default function Patrimoine() {
             </p>
           )}
 
-          {/* ── KPI row (compact) ── */}
-          <div className="grid grid-cols-4 gap-3">
+          {/* ── KPI row — unified 6 cards (B2-2) ── */}
+          <div className="grid grid-cols-6 gap-2">
             <KpiCardCompact
               icon={Building2}
               color="bg-blue-600"
               label="Sites actifs"
               value={stats.total}
-              detail={fmtAreaCompact(stats.surface)}
+              detail={
+                registreKpis
+                  ? `${registreKpis.nb_entites_juridiques} EJ · ${registreKpis.nb_portefeuilles} PF`
+                  : fmtAreaCompact(stats.surface)
+              }
               active={!filterStatut && !filterAnomalies && !activeView}
               onClick={() => setParams({ statut: '', anomalies: '', view: '' })}
             />
             <KpiCardCompact
-              icon={ShieldCheck}
-              color="bg-emerald-600"
-              label="Conformes"
-              value={stats.conformes}
-              detail={
-                stats.total > 0
-                  ? `${Math.round((stats.conformes / stats.total) * 100)}% du parc`
-                  : '—'
-              }
-              active={filterStatut === 'conforme'}
-              onClick={() =>
-                setParams({
-                  statut: filterStatut === 'conforme' ? '' : 'conforme',
-                  anomalies: '',
-                  view: '',
-                })
-              }
+              icon={Zap}
+              color="bg-cyan-600"
+              label="Points de livraison"
+              value={registreKpis?.nb_delivery_points ?? '—'}
+              detail={`${registreKpis?.nb_batiments ?? 0} bâtiment${(registreKpis?.nb_batiments ?? 0) > 1 ? 's' : ''}`}
+              active={activeView === 'pdl'}
+              onClick={() => setParams({ view: activeView === 'pdl' ? '' : 'pdl' })}
+            />
+            <KpiCardCompact
+              icon={FileText}
+              color="bg-violet-600"
+              label="Contrats actifs"
+              value={registreKpis?.nb_contrats_actifs ?? '—'}
+              detail={registreKpis ? `${registreKpis.nb_contrats} total` : '—'}
+              active={activeView === 'contracts'}
+              onClick={() => setParams({ view: activeView === 'contracts' ? '' : 'contracts' })}
+            />
+            <KpiCardCompact
+              icon={Clock}
+              color={registreKpis?.nb_contrats_expiring_90j > 0 ? 'bg-orange-600' : 'bg-gray-400'}
+              label="Expirant < 90j"
+              value={registreKpis?.nb_contrats_expiring_90j ?? 0}
+              detail={registreKpis?.nb_contrats_expiring_90j > 0 ? 'Action requise' : 'OK'}
+              onClick={() => setParams({ view: activeView === 'expiring' ? '' : 'expiring' })}
+              active={activeView === 'expiring'}
             />
             <KpiCardCompact
               icon={AlertTriangle}
@@ -623,24 +780,32 @@ export default function Patrimoine() {
               label="Non conformes"
               value={stats.nc + stats.aRisque}
               detail={`${stats.nc} NC · ${stats.aRisque} à risque`}
-              active={filterStatut === 'non_conforme'}
+              active={filterStatut === 'nc_risque'}
               onClick={() =>
                 setParams({
-                  statut: filterStatut === 'non_conforme' ? '' : 'non_conforme',
+                  statut: filterStatut === 'nc_risque' ? '' : 'nc_risque',
                   anomalies: '',
                   view: '',
                 })
               }
             />
             <KpiCardCompact
-              icon={BadgeEuro}
-              color="bg-amber-600"
-              label="Risque financier"
-              value={fmtEur(stats.risque)}
-              detail={`${stats.withAno} ${stats.withAno > 1 ? 'sites' : 'site'} avec anomalies`}
-              active={filterAnomalies}
-              onClick={() =>
-                setParams({ anomalies: filterAnomalies ? '' : '1', statut: '', view: '' })
+              icon={PieChart}
+              color={
+                registreKpis?.completude_moyenne_pct >= 80
+                  ? 'bg-emerald-600'
+                  : registreKpis?.completude_moyenne_pct >= 50
+                    ? 'bg-amber-600'
+                    : 'bg-red-600'
+              }
+              label="Complétude"
+              value={registreKpis ? `${registreKpis.completude_moyenne_pct}%` : '—'}
+              detail={
+                registreKpis?.completude_moyenne_pct >= 80
+                  ? 'Complet'
+                  : registreKpis?.completude_moyenne_pct >= 50
+                    ? 'Partiel'
+                    : 'Critique'
               }
             />
           </div>
@@ -681,6 +846,13 @@ export default function Patrimoine() {
               value={filterStatut}
               onChange={(v) => setParams({ statut: v, view: '' })}
             />
+            {portefeuilleOptions.length > 2 && (
+              <FilterSelect
+                options={portefeuilleOptions}
+                value={filterPortefeuille}
+                onChange={(v) => setParams({ pf: v, view: '' })}
+              />
+            )}
 
             {/* Separator */}
             <div className="w-px h-6 bg-gray-200" />
@@ -809,13 +981,322 @@ export default function Patrimoine() {
             </div>
           )}
 
+          {/* ── B2-6: Expiring contracts view ── */}
+          {activeView === 'expiring' && (
+            <Card>
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} className="text-orange-500" />
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Contrats expirant dans les 90 prochains jours
+                  </h3>
+                  <Badge status="warning">{expiringContracts.length}</Badge>
+                </div>
+                <button
+                  onClick={() => setParams({ view: '' })}
+                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <X size={12} /> Fermer
+                </button>
+              </div>
+              {expiringLoading ? (
+                <div className="p-8 text-center text-sm text-gray-400">Chargement...</div>
+              ) : expiringContracts.length === 0 ? (
+                <div className="p-8 text-center">
+                  <EmptyState
+                    icon={Clock}
+                    title="Aucun contrat expirant"
+                    text="Tous les contrats sont valides au-delà de 90 jours."
+                  />
+                </div>
+              ) : (
+                <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+                  <Table compact>
+                    <Thead sticky>
+                      <tr>
+                        <Th>Site</Th>
+                        <Th>Fournisseur</Th>
+                        <Th>Énergie</Th>
+                        <Th>Fin contrat</Th>
+                        <Th>Jours restants</Th>
+                        <Th>Indexation</Th>
+                        <Th>Réf.</Th>
+                        <Th className="w-10" />
+                      </tr>
+                    </Thead>
+                    <Tbody>
+                      {expiringContracts.map((ct) => {
+                        const daysLeft = Math.ceil(
+                          (new Date(ct.end_date) - new Date()) / (1000 * 60 * 60 * 24)
+                        );
+                        return (
+                          <Tr
+                            key={ct.id}
+                            className={
+                              daysLeft <= 30 ? 'bg-red-50' : daysLeft <= 60 ? 'bg-amber-50' : ''
+                            }
+                          >
+                            <Td>
+                              <button
+                                onClick={() => navigate(`/sites/${ct.site_id}`)}
+                                className="text-blue-600 hover:underline text-left text-xs font-medium"
+                              >
+                                {ct._site_nom}
+                              </button>
+                            </Td>
+                            <Td className="text-sm font-medium">{ct.supplier_name}</Td>
+                            <Td>
+                              <Badge status={ct.energy_type === 'electricity' ? 'info' : 'warning'}>
+                                {ct.energy_type === 'electricity'
+                                  ? 'Élec'
+                                  : ct.energy_type === 'gas'
+                                    ? 'Gaz'
+                                    : ct.energy_type}
+                              </Badge>
+                            </Td>
+                            <Td className="text-xs">{fmtDateFR(ct.end_date)}</Td>
+                            <Td>
+                              <span
+                                className={`text-sm font-bold ${daysLeft <= 30 ? 'text-red-600' : daysLeft <= 60 ? 'text-amber-600' : 'text-gray-700'}`}
+                              >
+                                {daysLeft}j
+                              </span>
+                            </Td>
+                            <Td>
+                              {ct.offer_indexation && (
+                                <Badge status={ct.offer_indexation === 'fixe' ? 'info' : 'warning'}>
+                                  {ct.offer_indexation}
+                                </Badge>
+                              )}
+                            </Td>
+                            <Td className="text-xs text-gray-500">
+                              {ct.reference_fournisseur || '—'}
+                            </Td>
+                            <Td>
+                              <button
+                                onClick={() => navigate(`/sites/${ct.site_id}#contrats`)}
+                                className="p-1 text-gray-400 hover:text-blue-600"
+                                title="Voir le site"
+                              >
+                                <ExternalLink size={14} />
+                              </button>
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── PDL view ── */}
+          {activeView === 'pdl' && (
+            <Card>
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap size={16} className="text-cyan-500" />
+                  <h3 className="text-sm font-semibold text-gray-800">Points de livraison</h3>
+                  <Badge status="info">{allDeliveryPoints.length}</Badge>
+                </div>
+                <button
+                  onClick={() => setParams({ view: '' })}
+                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <X size={12} /> Fermer
+                </button>
+              </div>
+              {dpLoading ? (
+                <div className="p-8 text-center text-sm text-gray-400">Chargement...</div>
+              ) : allDeliveryPoints.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    icon={Zap}
+                    title="Aucun PDL"
+                    text="Aucun point de livraison rattaché."
+                  />
+                </div>
+              ) : (
+                <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+                  <Table compact>
+                    <Thead sticky>
+                      <tr>
+                        <Th>Site</Th>
+                        <Th>Code PDL</Th>
+                        <Th>Énergie</Th>
+                        <Th>Statut</Th>
+                        <Th>Compteurs</Th>
+                        <Th>Source</Th>
+                        <Th className="w-10" />
+                      </tr>
+                    </Thead>
+                    <Tbody>
+                      {allDeliveryPoints.map((dp) => (
+                        <Tr key={dp.id}>
+                          <Td>
+                            <button
+                              onClick={() => navigate(`/sites/${dp._site_id}`)}
+                              className="text-blue-600 hover:underline text-xs font-medium text-left"
+                            >
+                              {dp._site_nom}
+                            </button>
+                          </Td>
+                          <Td className="font-mono text-xs">{dp.code}</Td>
+                          <Td>
+                            <Badge status={dp.energy_type === 'electricity' ? 'info' : 'warning'}>
+                              {dp.energy_type === 'electricity'
+                                ? 'Élec'
+                                : dp.energy_type === 'gas'
+                                  ? 'Gaz'
+                                  : dp.energy_type}
+                            </Badge>
+                          </Td>
+                          <Td>
+                            <Badge status={dp.status === 'active' ? 'ok' : 'neutral'}>
+                              {dp.status}
+                            </Badge>
+                          </Td>
+                          <Td className="text-sm">{dp.compteurs_count}</Td>
+                          <Td className="text-xs text-gray-500">{dp.data_source || '—'}</Td>
+                          <Td>
+                            <button
+                              onClick={() => navigate(`/sites/${dp._site_id}`)}
+                              className="p-1 text-gray-400 hover:text-blue-600"
+                            >
+                              <ExternalLink size={14} />
+                            </button>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── Contracts view ── */}
+          {activeView === 'contracts' && (
+            <Card>
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-violet-500" />
+                  <h3 className="text-sm font-semibold text-gray-800">Tous les contrats</h3>
+                  <Badge status="info">
+                    {scopedContracts.filter((ct) => scopedSiteIds.has(ct.site_id)).length}
+                  </Badge>
+                </div>
+                <button
+                  onClick={() => setParams({ view: '' })}
+                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <X size={12} /> Fermer
+                </button>
+              </div>
+              {scopedContracts.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState icon={FileText} title="Aucun contrat" text="Aucun contrat énergie." />
+                </div>
+              ) : (
+                <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+                  <Table compact>
+                    <Thead sticky>
+                      <tr>
+                        <Th>Site</Th>
+                        <Th>Fournisseur</Th>
+                        <Th>Énergie</Th>
+                        <Th>Début</Th>
+                        <Th>Fin</Th>
+                        <Th>Indexation</Th>
+                        <Th>Statut</Th>
+                        <Th>Réf.</Th>
+                        <Th className="w-10" />
+                      </tr>
+                    </Thead>
+                    <Tbody>
+                      {scopedContracts
+                        .filter((ct) => scopedSiteIds.has(ct.site_id))
+                        .map((ct) => {
+                          const siteMap = {};
+                          scopedSites.forEach((s) => {
+                            siteMap[s.id] = s.nom;
+                          });
+                          return (
+                            <Tr key={ct.id}>
+                              <Td>
+                                <button
+                                  onClick={() => navigate(`/sites/${ct.site_id}`)}
+                                  className="text-blue-600 hover:underline text-xs font-medium text-left"
+                                >
+                                  {siteMap[ct.site_id] || `Site #${ct.site_id}`}
+                                </button>
+                              </Td>
+                              <Td className="text-sm font-medium">{ct.supplier_name}</Td>
+                              <Td>
+                                <Badge
+                                  status={ct.energy_type === 'electricity' ? 'info' : 'warning'}
+                                >
+                                  {ct.energy_type === 'electricity'
+                                    ? 'Élec'
+                                    : ct.energy_type === 'gas'
+                                      ? 'Gaz'
+                                      : ct.energy_type}
+                                </Badge>
+                              </Td>
+                              <Td className="text-xs">
+                                {ct.start_date ? fmtDateFR(ct.start_date) : '—'}
+                              </Td>
+                              <Td className="text-xs">
+                                {ct.end_date ? fmtDateFR(ct.end_date) : '—'}
+                              </Td>
+                              <Td>
+                                {ct.offer_indexation && (
+                                  <Badge
+                                    status={ct.offer_indexation === 'fixe' ? 'info' : 'warning'}
+                                  >
+                                    {ct.offer_indexation}
+                                  </Badge>
+                                )}
+                              </Td>
+                              <Td>
+                                {ct.contract_status && (
+                                  <Badge
+                                    status={ct.contract_status === 'active' ? 'ok' : 'neutral'}
+                                  >
+                                    {ct.contract_status}
+                                  </Badge>
+                                )}
+                              </Td>
+                              <Td className="text-xs text-gray-500">
+                                {ct.reference_fournisseur || '—'}
+                              </Td>
+                              <Td>
+                                <button
+                                  onClick={() => navigate(`/sites/${ct.site_id}#contrats`)}
+                                  className="p-1 text-gray-400 hover:text-blue-600"
+                                >
+                                  <ExternalLink size={14} />
+                                </button>
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                    </Tbody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* ── Map view ── */}
-          {viewMode === 'map' && (
+          {viewMode === 'map' && !activeView && (
             <SitesMap sites={filtered} onSiteClick={(id) => navigate(`/sites/${id}`)} />
           )}
 
           {/* ── Table ── */}
           {viewMode === 'table' &&
+            !activeView &&
             (total === 0 ? (
               <EmptyState
                 icon={Search}

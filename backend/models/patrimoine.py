@@ -195,6 +195,24 @@ class ActivationLog(Base, TimestampMixin):
 
 
 # ========================================
+# V-registre: Contract ↔ DeliveryPoint (N-N)
+# Hypothese V1: 1 contrat = 1 site + 1 energie.
+# Cette table permet de tracer quels PDL/PCE sont couverts par quel contrat.
+# ========================================
+
+
+class ContractDeliveryPoint(Base, TimestampMixin):
+    """N-N: un contrat couvre N delivery points, un DP peut etre couvert par N contrats (succession)."""
+
+    __tablename__ = "contract_delivery_points"
+    __table_args__ = (UniqueConstraint("contract_id", "delivery_point_id", name="uq_contract_dp"),)
+
+    id = Column(Integer, primary_key=True)
+    contract_id = Column(Integer, ForeignKey("energy_contracts.id"), nullable=False, index=True)
+    delivery_point_id = Column(Integer, ForeignKey("delivery_points.id"), nullable=False, index=True)
+
+
+# ========================================
 # Delivery Point (PRM/PCE)
 # ========================================
 
