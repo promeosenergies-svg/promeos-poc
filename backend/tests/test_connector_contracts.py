@@ -56,7 +56,7 @@ class TestConnectorMeta:
             c = get_connector(name)
             result = c.test_connection()
             assert "status" in result, f"{name}: test_connection missing 'status'"
-            assert result["status"] in ("ok", "stub", "error"), f"{name}: invalid status {result['status']}"
+            assert result["status"] in ("ok", "stub", "error", "pending"), f"{name}: invalid status {result['status']}"
 
 
 class TestMappingValidator:

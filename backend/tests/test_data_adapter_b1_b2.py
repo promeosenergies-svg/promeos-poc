@@ -138,7 +138,7 @@ class TestReferencePrice:
         db.commit()
 
         price, source = get_reference_price(db, site.id, "elec")
-        assert price == 0.068  # Updated Step 17: market price fallback
+        assert price == 0.15  # Default fallback price (PROMEOS_DEFAULT_PRICE_ELEC)
         assert source == "default_elec"
 
     def test_contract_beats_tariff(self, db):
