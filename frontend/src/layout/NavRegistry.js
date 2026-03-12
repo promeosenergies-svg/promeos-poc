@@ -91,7 +91,6 @@ export const ROUTE_MODULE_MAP = {
   '/admin/audit': 'admin',
   '/activation': 'admin',
   '/status': 'admin',
-  '/energy-copilot': 'pilotage',
 };
 
 /**

@@ -90,11 +90,11 @@ export default function EssentialsRow({
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {/* 1 — Couverture données */}
+      {/* 1 — Complétude données */}
       <MiniCard
         accentKey="neutral"
         icon={Database}
-        label="Couverture données"
+        label="Complétude données"
         value={couvertureDonnees === 0 ? 'Aucune donnée' : formatPercentFR(couvertureDonnees)}
         sub={
           couvertureDonnees === 0

@@ -217,12 +217,15 @@ export function computeNextBestAction(bundle, sitesData, summary, signals = {}, 
     };
   }
 
-  // P4: Actionable findings
+  // P4: Actionable findings — count by distinct regulation for clarity
   if (actionableFindings.length > 0) {
     const hasCritical = actionableFindings.some((f) => f.severity === 'critical');
+    const regs = new Set(actionableFindings.map((f) => f.regulation));
+    const regCount = regs.size;
+    const findingCount = actionableFindings.length;
     return {
       id: 'nba-findings',
-      title: `${actionableFindings.length} non-conformité${actionableFindings.length > 1 ? 's' : ''} à traiter`,
+      title: `${findingCount} constat${findingCount > 1 ? 's' : ''} à traiter sur ${regCount} obligation${regCount > 1 ? 's' : ''}`,
       description: 'Des constats nécessitent une action corrective.',
       severity: hasCritical ? 'critical' : 'high',
       ctaLabel: "Voir le plan d'exécution",

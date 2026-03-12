@@ -477,14 +477,14 @@ export function buildExecutiveKpis(kpis, sites = []) {
     {
       id: 'conformite',
       accentKey: 'conformite',
-      label: 'Score conformité',
+      label: 'Conformité réglementaire',
       value: total > 0 ? `${pctConf}/100` : '—',
       rawValue: pctConf,
       messageCtx: { totalSites: total, sitesAtRisk: aRisque, sitesNonConformes: nonConformes },
       sub:
         complianceScore != null
-          ? `DT 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
-          : `${conformes} sur ${total} site${total !== 1 ? 's' : ''}`,
+          ? `Décret Tertiaire 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
+          : `${conformes} sur ${total} site${total !== 1 ? 's' : ''} conforme${conformes !== 1 ? 's' : ''}`,
       status:
         pctConf < COMPLIANCE_SCORE_THRESHOLDS.warn
           ? 'crit'
@@ -525,11 +525,11 @@ export function buildExecutiveKpis(kpis, sites = []) {
     {
       id: 'couverture',
       accentKey: 'neutral',
-      label: 'Couverture données',
+      label: 'Complétude données',
       value: total > 0 ? formatPercentFR(couvertureDonnees) : '—',
       rawValue: couvertureDonnees,
       messageCtx: {},
-      sub: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} avec données conso`,
+      sub: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} avec données de consommation`,
       status: couvertureDonnees < COVERAGE_THRESHOLDS.warn ? 'warn' : 'ok',
       path: '/consommations/import',
     },

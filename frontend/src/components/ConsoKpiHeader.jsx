@@ -105,8 +105,11 @@ export default function ConsoKpiHeader({
   const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
 
   // --- EUR/MWh reel ---
+  // Use hphc.total_kwh (not the fallback totalKwh) so numerator (EUR from hphc)
+  // and denominator (kWh) always come from the same source.
+  const hphcKwh = hphc?.total_kwh ?? null;
   const eurMwh =
-    totalEur != null && totalKwh > 0 ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100 : null;
+    totalEur != null && hphcKwh > 0 ? Math.round((totalEur / hphcKwh) * 1000 * 100) / 100 : null;
   const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, '€/MWh') : '—';
 
   // --- CO2e ---
@@ -201,7 +204,12 @@ export default function ConsoKpiHeader({
           icon={TrendingUp}
           label="Prix moyen"
           value={eurMwhLabel}
-          tooltip="Prix moyen = EUR total / MWh total"
+          sub={
+            eurMwh != null
+              ? `${fmtNum(Math.round(totalEur), 0, '€')} / ${fmtKwh(hphcKwh)}`
+              : undefined
+          }
+          tooltip="Prix moyen = EUR total / MWh total (source HP/HC)"
         />
         <KpiTile
           icon={Leaf}

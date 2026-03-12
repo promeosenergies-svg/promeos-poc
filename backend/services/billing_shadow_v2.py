@@ -391,14 +391,25 @@ def _extract_invoice_component(lines, component_name):
         "fourniture": ["energy"],
         "turpe": ["network"],
         "taxes": ["tax"],
+        "abonnement": ["other"],
+    }
+    # "abonnement" uses line_type=other which is shared with TVA lines,
+    # so we filter by label keywords to avoid including TVA.
+    _label_filter = {
+        "abonnement": ["abonnement", "souscription", "subscription", "gestion"],
     }
     line_types = mapping.get(component_name, [])
+    labels_required = _label_filter.get(component_name)
     total = 0
     found = False
     for line in lines:
         lt = getattr(line, "line_type", None)
         lt_val = lt.value if hasattr(lt, "value") else str(lt or "")
         if lt_val in line_types:
+            if labels_required:
+                line_label = (getattr(line, "label", "") or "").lower()
+                if not any(kw in line_label for kw in labels_required):
+                    continue
             total += getattr(line, "amount_eur", 0) or 0
             found = True
     return total if found else None
@@ -479,12 +490,13 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     fourniture_invoice = _extract_invoice_component(lines, "fourniture")
     turpe_invoice = _extract_invoice_component(lines, "turpe")
     taxes_invoice = _extract_invoice_component(lines, "taxes")
+    abonnement_invoice = _extract_invoice_component(lines, "abonnement")
 
     # TVA : différence TTC - HT si on a le TTC
     exp_ht = v2["totals"]["ht"]
     exp_tva = v2["totals"]["tva"]
     act_ttc = v2["actual_ttc"]
-    act_ht_sum = sum(x for x in [fourniture_invoice, turpe_invoice, taxes_invoice] if x is not None)
+    act_ht_sum = sum(x for x in [fourniture_invoice, turpe_invoice, taxes_invoice, abonnement_invoice] if x is not None)
     tva_invoice = (act_ttc - act_ht_sum) if act_ttc and act_ht_sum > 0 else None
 
     # ── Construire les composantes avec gap/status ─────────────────────

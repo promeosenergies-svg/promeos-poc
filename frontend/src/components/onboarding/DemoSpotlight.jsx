@@ -37,11 +37,14 @@ export default function DemoSpotlight() {
   const overlayRef = useRef(null);
   const [rect, setRect] = useState(null);
 
-  // Check localStorage on mount
+  // Auto-show is disabled: the spotlight blocks the cockpit on fresh sessions
+  // (demo, Playwright, new browser). Users can trigger onboarding from settings
+  // if needed. This fixes P0-1 from the UX audit 2026-03-11.
+  // Check localStorage on mount — only show if explicitly requested
   useEffect(() => {
-    const seen = localStorage.getItem(LS_KEY);
-    if (!seen) {
-      // Small delay so DOM has rendered the data-tour elements
+    const requested = localStorage.getItem('promeos_spotlight_requested');
+    if (requested) {
+      localStorage.removeItem('promeos_spotlight_requested');
       const timer = setTimeout(() => setStep(0), 600);
       return () => clearTimeout(timer);
     }

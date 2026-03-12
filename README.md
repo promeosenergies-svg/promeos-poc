@@ -128,7 +128,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Plan Exécution 90 jours (4 paris : coffre preuves, dossier PDF, notifications, benchmark sectoriel — 12 sprints, 3 gates, 3 KPIs) | Documenté -- PLAN_90J |
 > | Billing Lockdown V2 (CTA 21.93%, accise 0.02623, segment C4/C5 dynamique, confidence cap medium, fallback_used flag) | **Stable -- Lockdown** |
 > | Audit UX Full App (27 pages + 8 interactions Playwright, 40+ fichiers corrigés, EUR→€, shadow billing→facturation théorique, labels FR, couleurs sémantiques, empty states) | **Stable -- Audit UX** |
-> | Suite de tests automatisés | **5 586+ frontend + 3 598+ backend, 0 régression** |
+> | Sprint A — P0 Credibility (5 P0 : breadcrumb, KPI, labels FR, empty states, compliance score label) | **Stable -- Sprint A** |
+> | Sprint B — Data Credibility (6 P0 : prix moyen Explorer source-consistent, dead routes supprimées, OPERAT vivant + run_controls, compliance score 36→84, shadow billing abonnement, CEE domain fix) | **Stable -- Sprint B** |
+> | Suite de tests automatisés | **5 586+ frontend + 797+ backend, 0 régression Sprint B** |
 
 > **Disclaimer**
 >
@@ -170,7 +172,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 - **Billing Summary Fix** : `total_loss_eur` + `coverage_months` ajoutes dans `/billing/summary` (resout SURCOUT FACTURE "—" et Couverture "? mois").
 - **Audit Conformite 8 axes** : audit severe de la brique conformite (couverture reg, modele donnees, moteur decision, preuves, UX, orchestration, integration, differenciation) — note 62/100, plan d'upgrade 4 niveaux (A quick wins → D fondations).
 - **Registre Patrimonial & Contractuel (V-registre)** : KPIs patrimoine enrichis (nb EJ, PF, batiments, contrats expirants 90j, surface totale, taux conformite), filtre portefeuille, champs registre contrat (reference_fournisseur, date_signature, conditions_particulieres, document_url, delivery_point_ids), DP coverage par contrat, SiteDetail.jsx supprime (553 lignes dead code), compliance_score harmonise, reconciliation_service enrichi, Site360 contrats summary ameliore. Plan d'execution 90 jours documente (4 paris, 12 sprints, 3 gates).
-- **5 586+ frontend + 3 508+ backend = 9 094+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 12 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Sprint B — Crédibilité des Données** (6 P0 résolus) : prix moyen Explorer corrigé (source unique hphc, sub-label transparence), routes mortes Command Center/Energy Copilot supprimées (→404), OPERAT vivant (run_controls au seed, 4 anomalies, CTA "Ouvrir OPERAT"), score conformité 36→84/100 (formule _fallback_site_score : OUT_OF_SCOPE exclu, UNKNOWN 50% crédit), shadow billing abonnement inclus dans act_ht_sum (4 composantes alignées), CEE reclassé "acc" (accompagnement financier). Audit Playwright 25/25 pages OK + 8/8 interactions OK.
+- **5 586+ frontend + 797+ backend tests, 0 régression Sprint B** — pytest backend + vitest frontend, seed HELIOS 5 sites + 12 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 

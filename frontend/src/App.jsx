@@ -11,7 +11,8 @@ import AppShell from './layout/AppShell';
 import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
-const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+// CommandCenter — dead code, no active route (Sprint B P0-7)
+// const CommandCenter = lazy(() => import('./pages/CommandCenter'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
@@ -46,7 +47,8 @@ const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
-const EnergyCopilotPage = lazy(() => import('./pages/EnergyCopilotPage'));
+// EnergyCopilotPage — dead code, no active route (Sprint B P0-7)
+// const EnergyCopilotPage = lazy(() => import('./pages/EnergyCopilotPage'));
 const ConsumptionPortfolioPage = lazy(() => import('./pages/ConsumptionPortfolioPage'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
@@ -205,8 +207,7 @@ function App() {
                         </PageSuspense>
                       }
                     />
-                    {/* Energy Copilot — redirigé vers cockpit (pas de données seed, page vide) */}
-                    <Route path="/energy-copilot" element={<Navigate to="/cockpit" replace />} />
+                    {/* Energy Copilot — route supprimée (Sprint B P0-7: plus de doublon avec Cockpit) */}
 
                     {/* Legacy redirects */}
                     <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />

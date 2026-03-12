@@ -3,6 +3,7 @@
  * Tab "Obligations" with ScoreGauge, ObligationCards, KBObligationsSection.
  */
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   CheckCircle,
@@ -26,6 +27,8 @@ import {
   Info,
   Lightbulb,
   Shield,
+  Building2,
+  ArrowRight,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../../ui';
 import { fmtEur } from '../../utils/format';
@@ -384,6 +387,7 @@ function ObligationCard({
   onNavigateIntake,
   isExpert,
 }) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_qualifier;
   const Icon = cfg.icon;
@@ -505,6 +509,21 @@ function ObligationCard({
             </div>
             <Button size="sm" variant="secondary" onClick={onNavigateIntake}>
               Compléter données BACS
+            </Button>
+          </div>
+        )}
+
+        {obligation.code === 'decret_tertiaire_operat' && (
+          <div className="mt-2 p-3 bg-emerald-50 rounded-lg flex items-center gap-3">
+            <Building2 size={16} className="text-emerald-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-emerald-700">Module OPERAT</p>
+              <p className="text-xs text-emerald-600">
+                Gérez vos EFA, contrôlez la qualité des données et préparez vos déclarations.
+              </p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/conformite/tertiaire')}>
+              <ArrowRight size={14} className="mr-1" /> Ouvrir OPERAT
             </Button>
           </div>
         )}

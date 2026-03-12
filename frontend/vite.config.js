@@ -12,6 +12,10 @@ export default defineConfig({
         target: 'http://localhost:8001',
         changeOrigin: true,
       },
+      '/openapi.json': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
     },
   },
   build: {

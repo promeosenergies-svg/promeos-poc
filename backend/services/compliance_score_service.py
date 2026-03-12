@@ -389,18 +389,21 @@ def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
             .all()
         )
         if findings:
-            # Compute score from actual findings
-            total = len(findings)
-            nok_count = sum(1 for f in findings if str(f.status).upper() == "NOK")
-            ok_count = sum(1 for f in findings if str(f.status).upper() == "OK")
-            # Check for overdue deadlines
+            # Exclude OUT_OF_SCOPE findings — they shouldn't affect the score
+            relevant = [f for f in findings if str(f.status).upper() != "OUT_OF_SCOPE"]
+            if not relevant:
+                return 100.0  # all findings are out-of-scope → fully compliant by default
+
+            total = len(relevant)
+            ok_count = sum(1 for f in relevant if str(f.status).upper() == "OK")
+            unknown_count = sum(1 for f in relevant if str(f.status).upper() in ("UNKNOWN", "EN_COURS"))
+            # OK = full credit, UNKNOWN/EN_COURS = half credit, NOK = 0
             from datetime import date as _date
 
             overdue = sum(
-                1 for f in findings if str(f.status).upper() == "NOK" and f.deadline and f.deadline < _date.today()
+                1 for f in relevant if str(f.status).upper() == "NOK" and f.deadline and f.deadline < _date.today()
             )
-            # Score: % of OK rules, penalized heavily for overdue NOK
-            base_score = (ok_count / total) * 100.0 if total > 0 else 50.0
+            base_score = ((ok_count + unknown_count * 0.5) / total) * 100.0 if total > 0 else 50.0
             overdue_penalty = overdue * 15.0  # -15pts per overdue NOK finding
             return max(0.0, min(100.0, base_score - overdue_penalty))
 

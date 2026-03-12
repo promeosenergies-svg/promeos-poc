@@ -33,8 +33,8 @@ describe('A - dashboardEssentials unified compliance score', () => {
     expect(code).toContain('COMPLIANCE_SCORE_THRESHOLDS');
   });
 
-  it('label is Score conformite', () => {
-    expect(code).toContain('Score conformit');
+  it('label is Conformité réglementaire', () => {
+    expect(code).toContain('Conformité réglementaire');
   });
 
   it('has explain: compliance_score for glossary link', () => {
@@ -42,7 +42,7 @@ describe('A - dashboardEssentials unified compliance score', () => {
   });
 
   it('shows DT/BACS/APER breakdown in sub text', () => {
-    expect(code).toContain('DT 45%');
+    expect(code).toContain('Tertiaire 45%');
     expect(code).toContain('BACS 30%');
     expect(code).toContain('APER 25%');
   });

@@ -254,6 +254,21 @@ class SeedOrchestrator:
         efa_list = seed_tertiaire_efa(self.db, helios_sites)
         result["tertiaire_efa"] = {"efas_created": len(efa_list)}
 
+        # 9b-bis. Run quality controls on seeded EFAs to populate issues
+        try:
+            from services.tertiaire_service import run_controls as run_tertiaire_controls
+
+            issues_total = 0
+            for efa in efa_list:
+                issues = run_tertiaire_controls(self.db, efa.id, year=2024)
+                issues_total += len(issues) if issues else 0
+            result["tertiaire_efa"]["quality_issues"] = issues_total
+        except Exception as exc:
+            import logging
+
+            logging.getLogger("demo_seed").warning("run_tertiaire_controls failed: %s", exc)
+            result["tertiaire_efa"]["quality_issues_error"] = str(exc)
+
         # 9c. Compliance score history (6 months sparkline)
         from .gen_score_history import seed_score_history
 
@@ -332,6 +347,13 @@ class SeedOrchestrator:
             result["kb"] = {"seeded": True}
         except Exception as e:
             result["kb"] = {"seeded": False, "error": str(e)}
+
+        # 15c. KB knowledge items seed (Mémobox content visible in frontend)
+        try:
+            self._seed_kb_items()
+            result["kb_items"] = {"seeded": True}
+        except Exception as e:
+            result["kb_items"] = {"seeded": False, "error": str(e)}
 
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
@@ -836,3 +858,194 @@ class SeedOrchestrator:
                 self.db.flush()
         except Exception:
             pass
+
+    def _seed_kb_items(self):
+        """Seed 15 Mémobox knowledge items for a credible demo."""
+        from app.kb.store import KBStore
+
+        store = KBStore()
+        now = datetime.utcnow().isoformat()
+
+        ITEMS = [
+            {
+                "id": "rule-bacs-290kw",
+                "type": "rule",
+                "domain": "reglementaire",
+                "title": "BACS — Obligation GTB pour bâtiments > 290 kW",
+                "summary": "Le décret BACS impose l'installation d'un système de GTB de classe A ou B pour tout bâtiment tertiaire dont la puissance CVC dépasse 290 kW, avant le 1er janvier 2025.",
+                "content_md": "## Décret BACS (Building Automation & Control Systems)\n\n**Seuil** : 290 kW de puissance nominale CVC.\n\n**Obligation** : installer un système GTB de classe A ou B (norme EN 15232).\n\n**Échéance** : 1er janvier 2025 (bâtiments existants > 290 kW).\n\n**Sanctions** : Pas de sanction directe mais non-éligibilité aux aides CEE et risque de non-conformité OPERAT.",
+                "tags": {"regulation": "bacs", "seuil": "290kW", "energie": "tous"},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "rule-decret-tertiaire",
+                "type": "rule",
+                "domain": "reglementaire",
+                "title": "Décret Tertiaire — Objectifs de réduction -40% à 2030",
+                "summary": "Le décret tertiaire (éco-énergie tertiaire) impose une réduction des consommations énergétiques de -40% en 2030, -50% en 2040 et -60% en 2050 par rapport à une année de référence.",
+                "content_md": "## Décret Tertiaire (DEET)\n\n**Périmètre** : Bâtiments tertiaires > 1000 m².\n\n**Objectifs** :\n- 2030 : -40% vs année de référence\n- 2040 : -50%\n- 2050 : -60%\n\n**Alternative** : Atteindre un seuil absolu en kWh/m²/an (valeurs CVC).\n\n**Déclaration** : Annuelle sur la plateforme OPERAT (ADEME).\n\n**Sanctions** : Amende administrative, name & shame.",
+                "tags": {"regulation": "tertiaire", "operat": True, "seuil": "1000m2"},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "rule-operat-declaration",
+                "type": "knowledge",
+                "domain": "reglementaire",
+                "title": "OPERAT — Guide de déclaration annuelle",
+                "summary": "La plateforme OPERAT de l'ADEME permet de déclarer les consommations énergétiques des bâtiments tertiaires. Chaque EFA (Entité Fonctionnelle Assujettie) doit être déclarée individuellement.",
+                "content_md": "## Plateforme OPERAT\n\n**Accès** : operat.ademe.fr\n\n**Données requises** :\n- Surface utile par EFA\n- Consommations annuelles (tous vecteurs)\n- Année de référence\n- Activité exercée (catégorie OPERAT)\n\n**Délai** : Déclaration avant le 30 septembre de chaque année.\n\n**Astuce PROMEOS** : Utilisez l'export automatique depuis le module Patrimoine.",
+                "tags": {"regulation": "operat", "ademe": True},
+                "confidence": "high",
+                "priority": 2,
+            },
+            {
+                "id": "rule-aper-solaire",
+                "type": "rule",
+                "domain": "reglementaire",
+                "title": "Loi APER — Obligation solaire sur parkings > 1 500 m²",
+                "summary": "La loi APER impose l'installation de panneaux photovoltaïques ou de dispositifs d'ombrage sur les parkings extérieurs de plus de 1 500 m², avec un calendrier progressif.",
+                "content_md": "## Loi APER (Accélération de la Production d'Énergies Renouvelables)\n\n**Seuil** :\n- Parkings > 1 500 m² : échéance 1er juillet 2026\n- Parkings > 10 000 m² : échéance 1er juillet 2025\n\n**Taux de couverture** : 50% minimum de la surface.\n\n**Alternatives** : Ombrières solaires, procédés de production d'EnR.\n\n**Exemptions** : Contraintes techniques, architecturales, patrimoniales.",
+                "tags": {"regulation": "aper", "solaire": True, "parking": True},
+                "confidence": "high",
+                "priority": 2,
+            },
+            {
+                "id": "kb-cee-valorisation",
+                "type": "knowledge",
+                "domain": "acc",
+                "title": "CEE — Valorisation des certificats d'économie d'énergie",
+                "summary": "Les CEE permettent de financer jusqu'à 25-40% des travaux d'efficacité énergétique. Les fiches standardisées BAT (bâtiment tertiaire) couvrent l'isolation, la GTB, l'éclairage LED et le CVC.",
+                "content_md": "## Certificats d'Économie d'Énergie (CEE)\n\n**Principe** : Les obligés (fournisseurs d'énergie) financent des actions d'économie via des primes.\n\n**Fiches courantes** :\n- BAT-TH-116 : GTB/BACS\n- BAT-TH-104 : Robinets thermostatiques\n- BAT-EQ-133 : Éclairage LED\n- BAT-EN-101 : Isolation combles\n\n**Valorisation** : 4 à 8 €/MWhc selon le cours.\n\n**Astuce** : Cumulable avec MaPrimeRénov' Copropriété.",
+                "tags": {"cee": True, "financement": True},
+                "confidence": "high",
+                "priority": 2,
+            },
+            {
+                "id": "kb-autoconsommation",
+                "type": "knowledge",
+                "domain": "usages",
+                "title": "Autoconsommation solaire — Dimensionnement et rentabilité",
+                "summary": "L'autoconsommation photovoltaïque en tertiaire permet un TRI de 7-10 ans selon l'ensoleillement et le profil de charge. Le taux d'autoconsommation optimal vise 70-85%.",
+                "content_md": "## Autoconsommation PV en tertiaire\n\n**Règle de dimensionnement** : Viser un taux d'autoconsommation de 70-85% pour maximiser la rentabilité.\n\n**Indicateurs clés** :\n- Productible : 900-1400 kWh/kWc/an selon la zone\n- LCOE : 60-90 €/MWh\n- TRI : 7-10 ans (sans stockage)\n\n**Bonnes pratiques** :\n- Aligner la puissance crête sur le talon de consommation\n- Privilégier les toitures orientées Sud ±30°\n- Coupler avec un contrat d'obligation d'achat pour le surplus",
+                "tags": {"solaire": True, "autoconsommation": True, "pv": True},
+                "confidence": "medium",
+                "priority": 3,
+            },
+            {
+                "id": "kb-flexibilite-effacement",
+                "type": "knowledge",
+                "domain": "flex",
+                "title": "Flexibilité — Mécanismes d'effacement et valorisation",
+                "summary": "L'effacement de consommation permet de valoriser la flexibilité des bâtiments tertiaires sur les marchés de capacité et d'ajustement, avec des revenus de 5-15 k€/MW/an.",
+                "content_md": "## Effacement et flexibilité\n\n**Mécanismes** :\n- Mécanisme de capacité : Obligation annuelle, certifiée par RTE\n- Appel d'offres effacement : NEBEF (valorisation sur le marché spot)\n- Réserves rapides : aFRR / mFRR via agrégateur\n\n**Potentiel tertiaire** :\n- CVC : 20-40% de la puissance pendant 2-4h\n- Éclairage : 10-15% en heures creuses\n- Process léger : variable\n\n**Revenus** : 5 000 à 15 000 €/MW/an selon le mécanisme.",
+                "tags": {"flexibilite": True, "effacement": True, "rte": True},
+                "confidence": "medium",
+                "priority": 3,
+            },
+            {
+                "id": "kb-arenh-fin",
+                "type": "knowledge",
+                "domain": "acc",
+                "title": "ARENH — Fin du dispositif et impact sur les prix",
+                "summary": "L'ARENH (Accès Régulé à l'Électricité Nucléaire Historique) à 42 €/MWh prend fin en 2025. Les contrats post-ARENH seront indexés sur les prix de marché, avec un impact estimé de +15-30% sur les factures tertiaires.",
+                "content_md": "## ARENH — Transition post-2025\n\n**Contexte** : L'ARENH garantissait un prix de 42 €/MWh pour 100 TWh/an.\n\n**Après 2025** :\n- Nouveau mécanisme de régulation en discussion\n- Prix de référence probablement entre 50-70 €/MWh\n- Contrats de gré à gré (PPA) en alternative\n\n**Impact entreprises** :\n- Hausse de 15-30% pour les profils 100% ARENH\n- Opportunité de diversification (PPA, autoconsommation)\n\n**Recommandation PROMEOS** : Anticiper la couverture 2026+ dès maintenant.",
+                "tags": {"arenh": True, "prix": True, "marche": True},
+                "confidence": "medium",
+                "priority": 2,
+            },
+            {
+                "id": "kb-facture-turpe",
+                "type": "knowledge",
+                "domain": "facturation",
+                "title": "TURPE 6 — Comprendre les composantes du tarif réseau",
+                "summary": "Le TURPE (Tarif d'Utilisation des Réseaux Publics d'Électricité) représente 25-35% d'une facture d'électricité tertiaire. Le TURPE 6 HTA est en vigueur depuis août 2023.",
+                "content_md": "## TURPE 6 — Tarif réseau\n\n**Composantes** :\n- CG : Composante de gestion (fixe, ~10 €/mois)\n- CC : Composante de comptage (fixe)\n- CS : Composante de soutirage (variable, €/kWh par poste horosaisonnier)\n- CMDPS : Composante de dépassement de puissance souscrite\n\n**Segments tarifaires** :\n- C5 : ≤ 36 kVA (petits sites)\n- C4 : > 36 kVA en BT (bureaux, commerces)\n- C3 : HTA courte utilisation\n- C2 : HTA longue utilisation\n\n**Astuce** : Optimiser la puissance souscrite évite les CMDPS (pénalité x2).",
+                "tags": {"turpe": True, "facturation": True, "reseau": True},
+                "confidence": "high",
+                "priority": 2,
+            },
+            {
+                "id": "kb-shadow-billing",
+                "type": "checklist",
+                "domain": "facturation",
+                "title": "Facturation théorique — Checklist de vérification",
+                "summary": "La facturation théorique (shadow billing) reconstruit le montant attendu de chaque facture à partir des index de consommation et des grilles tarifaires. Checklist des points de contrôle.",
+                "content_md": "## Checklist facturation théorique\n\n- [ ] Vérifier la cohérence index compteur vs relevé fournisseur\n- [ ] Contrôler le segment tarifaire (C2/C3/C4/C5)\n- [ ] Valider la puissance souscrite vs puissance atteinte\n- [ ] Recalculer le TURPE poste par poste (HPH, HCH, HPE, HCE, P)\n- [ ] Vérifier le taux CTA (27,04% de la part fixe TURPE HTA)\n- [ ] Vérifier le taux d'accise (ex-CSPE + TICFE) : 21 €/MWh\n- [ ] Contrôler la TVA : 5,5% sur abonnement, 20% sur consommation\n- [ ] Comparer total théorique vs total facturé (seuil alerte : ±5%)",
+                "tags": {"facturation": True, "shadow_billing": True, "checklist": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "kb-gtb-roi",
+                "type": "knowledge",
+                "domain": "usages",
+                "title": "GTB — ROI et bonnes pratiques d'installation",
+                "summary": "Une GTB de classe A permet 20-30% d'économies sur le CVC. Le ROI est de 3-5 ans pour un investissement de 15-40 €/m² selon la complexité du bâtiment.",
+                "content_md": "## GTB (Gestion Technique du Bâtiment)\n\n**Classes EN 15232** :\n- Classe D : Pas d'automatisation\n- Classe C : Automatisation standard\n- Classe B : Automatisation avancée (BACS)\n- Classe A : Haute performance énergétique\n\n**Économies attendues** :\n- Classe C → B : 10-15% sur le CVC\n- Classe C → A : 20-30% sur le CVC\n\n**Investissement** : 15-40 €/m² (équipements + intégration)\n\n**ROI** : 3-5 ans (hors CEE)\n\n**Prérequis** : Comptage par zone, capteurs T°/HR, actionneurs CVC.",
+                "tags": {"gtb": True, "bacs": True, "cvc": True},
+                "confidence": "high",
+                "priority": 2,
+            },
+            {
+                "id": "kb-qualite-donnees",
+                "type": "checklist",
+                "domain": "usages",
+                "title": "Qualité des données — Checklist de diagnostic",
+                "summary": "Une base de données énergétiques fiable est le prérequis de toute analyse. Checklist des contrôles qualité à effectuer avant toute exploitation.",
+                "content_md": "## Checklist qualité des données\n\n- [ ] Couverture temporelle : au moins 12 mois glissants par site\n- [ ] Granularité : courbe de charge 10 min ou horaire\n- [ ] Complétude : < 5% de trous (données manquantes)\n- [ ] Cohérence : pas de valeurs négatives ou > 3× la médiane\n- [ ] Concordance : index compteur vs données télérelevées\n- [ ] Météo : données DJU disponibles pour la normalisation\n- [ ] Surface : surface utile renseignée (pas surface SHON)\n- [ ] Activité : horaires d'occupation documentés",
+                "tags": {"qualite": True, "donnees": True, "diagnostic": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "kb-contrat-couverture",
+                "type": "knowledge",
+                "domain": "acc",
+                "title": "Stratégies de couverture — Prix fixe vs indexé",
+                "summary": "Le choix entre contrat à prix fixe et contrat indexé dépend de l'appétence au risque et de l'horizon. Un mix 60% fixe / 40% indexé offre un bon compromis risque-rendement.",
+                "content_md": "## Stratégies de couverture\n\n**Prix fixe** :\n- Avantage : Budget prévisible, protection contre la hausse\n- Inconvénient : Prime de risque intégrée (+5-15%)\n- Idéal pour : Profils risque-averse, budgets publics\n\n**Indexé marché** :\n- Avantage : Bénéficie des baisses, prix moyen plus bas\n- Inconvénient : Volatilité, budget imprévisible\n- Idéal pour : Profils flexibles, trésorerie confortable\n\n**Mix recommandé** : 60% fixe + 40% indexé sur 24-36 mois.\n\n**PPA** : Contrat long terme (10-20 ans) à prix garanti avec producteur EnR.",
+                "tags": {"contrat": True, "couverture": True, "achat": True},
+                "confidence": "medium",
+                "priority": 3,
+            },
+            {
+                "id": "kb-iso50001",
+                "type": "knowledge",
+                "domain": "usages",
+                "title": "ISO 50001 — Système de management de l'énergie",
+                "summary": "La norme ISO 50001 structure la démarche d'amélioration continue de la performance énergétique. Elle exempte du dispositif d'audit énergétique obligatoire pour les grandes entreprises.",
+                "content_md": "## ISO 50001\n\n**Principe** : Cycle PDCA (Plan-Do-Check-Act) appliqué à l'énergie.\n\n**Bénéfices** :\n- Exemption d'audit énergétique obligatoire (art. L233-1 Code énergie)\n- Réduction de 10-20% des consommations en 3 ans\n- Éligibilité bonifiée aux CEE\n- Image RSE\n\n**Prérequis** :\n- Revue énergétique initiale\n- Indicateurs de performance (IPÉ/EnPI)\n- Objectifs et cibles quantifiés\n- Plan de mesurage\n\n**Coût certification** : 5-15 k€/an (audit externe).",
+                "tags": {"iso50001": True, "management": True, "certification": True},
+                "confidence": "high",
+                "priority": 3,
+            },
+            {
+                "id": "kb-pointe-puissance",
+                "type": "rule",
+                "domain": "facturation",
+                "title": "Optimisation puissance souscrite — Règle des 5%",
+                "summary": "La puissance souscrite doit être dimensionnée au plus juste : un dépassement ponctuel coûte 2× le tarif normal (CMDPS), mais un surdimensionnement gaspille l'abonnement fixe.",
+                "content_md": "## Optimisation de la puissance souscrite\n\n**Règle PROMEOS** : La puissance souscrite optimale = P90 de la courbe de charge + 5% de marge.\n\n**Risques** :\n- Sous-dimensionnement : CMDPS à 2× le tarif → surcoût immédiat\n- Surdimensionnement : Abonnement fixe trop élevé → 500-2000 €/an gaspillés\n\n**Calcul** :\n1. Extraire la courbe de charge 10 min sur 12 mois\n2. Calculer le percentile 90 (P90)\n3. Ajouter 5% de marge de sécurité\n4. Arrondir au palier supérieur du TURPE\n\n**Fréquence de révision** : Annuelle ou après tout changement d'équipement.",
+                "tags": {"puissance": True, "turpe": True, "optimisation": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+        ]
+
+        seeded = 0
+        for item in ITEMS:
+            item["updated_at"] = now
+            item["status"] = "validated"
+            if store.upsert_item(item):
+                seeded += 1
+
+        # Also index items for FTS5 search
+        try:
+            from app.kb.indexer import KBIndexer
+
+            indexer = KBIndexer()
+            indexer.rebuild_index()
+        except Exception:
+            pass  # indexer may not be available
