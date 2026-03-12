@@ -459,7 +459,7 @@ export default function ConsumptionPortfolioPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-gray-400">Aucun impact detecte</p>
+                  <p className="text-xs text-gray-400">Aucun impact détecté</p>
                 )}
               </CardBody>
             </Card>
@@ -476,7 +476,7 @@ export default function ConsumptionPortfolioPage() {
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-amber-500" />
-                  <h3 className="text-sm font-semibold text-gray-700">Derives detectees</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">Dérives détectées</h3>
                 </div>
                 {summary.top_drift?.length > 0 ? (
                   <ul className="space-y-2">
@@ -491,7 +491,7 @@ export default function ConsumptionPortfolioPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-gray-400">Aucune derive detectee</p>
+                  <p className="text-xs text-gray-400">Aucune dérive détectée</p>
                 )}
               </CardBody>
             </Card>

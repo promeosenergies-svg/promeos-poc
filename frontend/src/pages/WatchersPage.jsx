@@ -143,7 +143,7 @@ export default function WatchersPage() {
                   >
                     {runResults[watcher.name]?.loading ? (
                       <>
-                        <RefreshCw size={14} className="mr-1.5 animate-spin" /> Execution...
+                        <RefreshCw size={14} className="mr-1.5 animate-spin" /> Exécution...
                       </>
                     ) : (
                       <>

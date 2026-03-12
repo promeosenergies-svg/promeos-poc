@@ -732,7 +732,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
   it('has "Ou agir" section with 4 top-lists', () => {
     expect(code).toMatch(/Ou agir/);
     expect(code).toMatch(/Impact.*estim[eé]/);
-    expect(code).toMatch(/Derives detectees/);
+    expect(code).toMatch(/D[eé]rives d[eé]tect[eé]es/);
     expect(code).toMatch(/nocturne/i);
     expect(code).toMatch(/Pics de puissance/);
   });

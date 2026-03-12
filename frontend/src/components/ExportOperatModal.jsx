@@ -48,7 +48,7 @@ export default function ExportOperatModal({ open, onClose }) {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Erreur lors du telechargement');
+      setError(err?.response?.data?.detail || 'Erreur lors du téléchargement');
     } finally {
       setDownloading(false);
     }

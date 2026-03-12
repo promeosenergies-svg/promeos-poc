@@ -990,13 +990,13 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-red-50 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Gain estime</p>
+                  <p className="text-xs text-gray-500 mb-1">Gain estimé</p>
                   <p className="text-xl font-bold text-red-700">
                     {d.estimated_gain_eur != null ? `${fmtNum(d.estimated_gain_eur, 0)} €` : '—'}
                   </p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Gain realise</p>
+                  <p className="text-xs text-gray-500 mb-1">Gain réalisé</p>
                   {editingRealized ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -1045,7 +1045,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 >
                   Delta : {fmtNum(d.realized_gain_eur - d.estimated_gain_eur, 0)} € (
                   {d.estimated_gain_eur > 0
-                    ? `${fmtPct(d.realized_gain_eur / d.estimated_gain_eur, true, 0)} du gain estime`
+                    ? `${fmtPct(d.realized_gain_eur / d.estimated_gain_eur, true, 0)} du gain estimé`
                     : '—'}
                   )
                 </div>

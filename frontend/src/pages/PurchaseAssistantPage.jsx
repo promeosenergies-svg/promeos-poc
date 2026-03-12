@@ -1584,7 +1584,7 @@ function StepDecision({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('Export CSV telecharge', 'success');
+    toast('Export CSV téléchargé', 'success');
   };
 
   const handleExportDecisionNote = () => {
@@ -1609,7 +1609,7 @@ function StepDecision({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('Note de decision exportee', 'success');
+    toast('Note de décision exportée', 'success');
   };
 
   const handleExportRfp = () => {
@@ -1742,7 +1742,7 @@ function StepDecision({
       {/* Export actions */}
       <div className="flex flex-wrap gap-3 pt-2">
         <Button onClick={handleExportDecisionNote}>
-          <Download size={14} /> Note de Decision (JSON)
+          <Download size={14} /> Note de décision (JSON)
         </Button>
         <Button onClick={handleExportRfp} variant="secondary">
           <Download size={14} /> Pack RFP (JSON)

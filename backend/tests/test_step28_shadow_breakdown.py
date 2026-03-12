@@ -98,8 +98,8 @@ class TestComponentCalculations:
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
-        # Accise élec = 0.0225 EUR/kWh
-        assert result["expected_taxes_ht"] == pytest.approx(22.5, abs=0.5)
+        # Accise élec = 0.02623 EUR/kWh (taux 2024)
+        assert result["expected_taxes_ht"] == pytest.approx(26.23, abs=0.5)
 
     def test_taxes_ticgn_gaz(self):
         from services.billing_shadow_v2 import shadow_billing_v2

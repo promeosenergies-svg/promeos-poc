@@ -455,7 +455,7 @@ const PatrimoineWizard = ({ onClose }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Importez votre fichier</h3>
               <p className="text-sm text-gray-500 mb-3">
-                Format CSV ou Excel. Les noms de colonnes sont detectes automatiquement.
+                Format CSV ou Excel. Les noms de colonnes sont détectés automatiquement.
               </p>
               <div className="flex items-center gap-2 mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <FileText size={16} className="text-indigo-600 shrink-0" />
@@ -591,7 +591,7 @@ const PatrimoineWizard = ({ onClose }) => {
               {mappingInfo && Object.keys(mappingInfo.mapping || {}).length > 0 && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                   <p className="text-xs font-medium text-blue-700 mb-1.5">
-                    Colonnes detectees automatiquement
+                    Colonnes détectées automatiquement
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {Object.entries(mappingInfo.mapping).map(([raw, canonical]) => (
@@ -767,7 +767,7 @@ const PatrimoineWizard = ({ onClose }) => {
                 {filteredFindings.length === 0 && (
                   <div className="text-center py-10 text-gray-400">
                     <CheckCircle2 size={36} className="mx-auto mb-2 text-green-400" />
-                    <p className="text-sm font-medium text-gray-600">Aucun probleme detecte</p>
+                    <p className="text-sm font-medium text-gray-600">Aucun problème détecté</p>
                     <p className="text-xs text-gray-400 mt-1">Vous pouvez passer a la validation</p>
                   </div>
                 )}
@@ -785,12 +785,12 @@ const PatrimoineWizard = ({ onClose }) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Row
-                        label="Sites a creer"
+                        label="Sites à créer"
                         value={summary.sites}
                         vc="text-indigo-600 font-bold"
                       />
                       <Row
-                        label="Compteurs a creer"
+                        label="Compteurs à créer"
                         value={summary.compteurs}
                         vc="text-indigo-600 font-bold"
                       />
@@ -857,14 +857,14 @@ const PatrimoineWizard = ({ onClose }) => {
                   className="w-40 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Les sites seront crees dans ce portefeuille.
+                  Les sites seront créés dans ce portefeuille.
                 </p>
               </div>
               {unresolvedBlocking.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
                   <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-700">
-                    {unresolvedBlocking.length} probleme(s) bloquant(s). Retournez a Corrections.
+                    {unresolvedBlocking.length} problème(s) bloquant(s). Retournez à Corrections.
                   </p>
                 </div>
               )}
@@ -882,13 +882,13 @@ const PatrimoineWizard = ({ onClose }) => {
                   <h3 className="text-xl font-bold text-gray-900">
                     {demoResult ? 'Demo chargee !' : 'Patrimoine active !'}
                   </h3>
-                  <p className="text-sm text-gray-500">Les entites ont ete creees avec succes.</p>
+                  <p className="text-sm text-gray-500">Les entités ont été créées avec succès.</p>
                 </div>
               </div>
               {activationResult && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2 mb-4">
-                  <Row label="Sites crees" value={activationResult.sites_created} />
-                  <Row label="Compteurs crees" value={activationResult.compteurs_created} />
+                  <Row label="Sites créés" value={activationResult.sites_created} />
+                  <Row label="Compteurs créés" value={activationResult.compteurs_created} />
                   {activationResult.delivery_points_created > 0 && (
                     <Row
                       label="Points de livraison"

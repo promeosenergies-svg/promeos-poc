@@ -366,7 +366,7 @@ function GroupedTableView({
                   <Th>Action</Th>
                   <Th>Type</Th>
                   <Th sortable={false}>Priorité</Th>
-                  <Th className="text-right">Impact (€)</Th>
+                  <Th className="text-right">Impact estimé (€)</Th>
                   <Th>Échéance</Th>
                   <Th>Responsable</Th>
                   <Th>Statut</Th>
@@ -1344,7 +1344,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                   onSort={() => handleSort('impact_eur')}
                   className="text-right"
                 >
-                  Impact (€)
+                  Impact estimé (€)
                 </Th>
                 <Th className="text-right">CO₂e</Th>
                 <Th

@@ -65,7 +65,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-300">
         <div className="flex items-center gap-2 text-gray-500">
           <AlertCircle size={18} />
-          <span className="text-sm">Profil non detecte</span>
+          <span className="text-sm">Profil non détecté</span>
         </div>
         <button
           onClick={() => (onSegmentationClick ? onSegmentationClick() : navigate('/segmentation'))}

@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 
 const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
-const SEVERITY_LABEL = { critical: 'Critique', warn: 'Attention', info: 'Info' };
+const SEVERITY_LABEL = { critical: 'Critique', warn: 'Attention', info: 'Information' };
 
 const SOURCE_LABELS = {
   compliance: 'Conformité',
@@ -116,7 +116,7 @@ export default function NotificationsPage() {
       toast(`Synchronisation : ${r.created} créées, ${r.updated} mises à jour`, 'success');
       await load();
     } catch (e) {
-      toast('Erreur synchronisation', 'error');
+      toast('Erreur de synchronisation', 'error');
     } finally {
       setSyncing(false);
     }
@@ -235,7 +235,7 @@ export default function NotificationsPage() {
           )}
           <Button size="sm" onClick={handleSync} disabled={syncing}>
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            {syncing ? 'Sync...' : 'Synchroniser'}
+            {syncing ? 'Synchro...' : 'Synchroniser'}
           </Button>
         </div>
       }
@@ -284,7 +284,7 @@ export default function NotificationsPage() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder="Rechercher"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

@@ -145,7 +145,7 @@ export default function ConnectorsPage() {
                 <div className="mb-4">
                   {connector.requires_auth ? (
                     <Badge status="warning">
-                      <Lock size={10} className="mr-1" /> Auth requise
+                      <Lock size={10} className="mr-1" /> Authentification requise
                     </Badge>
                   ) : (
                     <Badge status="ok">
@@ -166,7 +166,7 @@ export default function ConnectorsPage() {
                   >
                     {syncResults[connector.name].error
                       ? `Erreur: ${syncResults[connector.name].error}`
-                      : `${syncResults[connector.name].datapoints_created || 0} datapoints crees`}
+                      : `${syncResults[connector.name].datapoints_created || 0} points de données créés`}
                   </div>
                 )}
 
