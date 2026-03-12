@@ -601,7 +601,7 @@ export default function StickyFilterBar({
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Date perso
+            Personnaliser
           </button>
         </div>
 
