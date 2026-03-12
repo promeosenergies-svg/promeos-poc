@@ -720,6 +720,9 @@ export default function ConsumptionExplorerPage() {
           confidence={availability?.confidence}
           onEvidence={setEvidenceKpiOpen}
           compareSummary={compareYoy ? compareSummary : null}
+          days={days}
+          startDate={startDate}
+          endDate={endDate}
         />
       )}
 
