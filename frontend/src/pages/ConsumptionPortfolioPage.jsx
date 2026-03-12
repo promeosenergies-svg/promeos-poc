@@ -155,7 +155,7 @@ function TopListActions({ siteId, dates, navigate }) {
 export default function ConsumptionPortfolioPage() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { selectedSiteId, resetScope, scopeLabel } = useScope();
+  const { selectedSiteId, resetScope, scopeLabel, portefeuille } = useScope();
   const [searchParams] = useSearchParams();
   const dates = useMemo(() => {
     const f = searchParams.get('from');
@@ -202,12 +202,12 @@ export default function ConsumptionPortfolioPage() {
   // ─── Fetch summary ────────────────────────────────────────────────────
   useEffect(() => {
     setSummaryLoading(true);
-    getPortfolioSummary({ from: dates.from, to: dates.to })
+    getPortfolioSummary({ from: dates.from, to: dates.to, portefeuille_id: portefeuille?.id })
       .then(setSummary)
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement resume portfolio' }))
       .finally(() => setSummaryLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dates.from, dates.to]);
+  }, [dates.from, dates.to, portefeuille?.id]);
 
   // ─── Fetch sites table ────────────────────────────────────────────────
   const fetchSites = useCallback(() => {
@@ -215,6 +215,7 @@ export default function ConsumptionPortfolioPage() {
     getPortfolioSites({
       from: dates.from,
       to: dates.to,
+      portefeuille_id: portefeuille?.id,
       sort,
       confidence: confidenceFilter || undefined,
       with_anomalies: anomalyFilter || undefined,
@@ -234,6 +235,7 @@ export default function ConsumptionPortfolioPage() {
   }, [
     dates.from,
     dates.to,
+    portefeuille?.id,
     sort,
     confidenceFilter,
     anomalyFilter,
