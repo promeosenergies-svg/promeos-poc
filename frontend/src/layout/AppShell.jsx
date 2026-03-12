@@ -16,7 +16,6 @@ import { ToastProvider } from '../ui/ToastProvider';
 import { ActionDrawerProvider } from '../contexts/ActionDrawerContext';
 import { Toggle } from '../ui';
 import { trackRouteChange } from '../services/tracker';
-import { getMetaVersion } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { resolveModule, MODULE_TINTS } from './NavRegistry';
@@ -167,13 +166,6 @@ export default function AppShell() {
   const location = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { isExpert, toggleExpert } = useExpertMode();
-  const [appVersion, setAppVersion] = useState(null);
-
-  useEffect(() => {
-    if (isExpert) getMetaVersion().then(setAppVersion);
-    else setAppVersion(null);
-  }, [isExpert]);
-
   useEffect(() => {
     trackRouteChange(location.pathname);
   }, [location.pathname]);
@@ -226,15 +218,6 @@ export default function AppShell() {
             <div title="Le mode Expert affiche la formule de score, les paramètres, les hypothèses et les références utilisées pour chaque évaluation.">
               <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
             </div>
-            {isExpert && appVersion && (
-              <span
-                className="text-xs font-mono text-slate-400 border border-slate-200 rounded px-1.5 py-0.5"
-                title={`branch: ${appVersion.branch} — ${appVersion.build_time}`}
-              >
-                {appVersion.sha}
-              </span>
-            )}
-
             <UserMenu />
           </div>
         </header>
