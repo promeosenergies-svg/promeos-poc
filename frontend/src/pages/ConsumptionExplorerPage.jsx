@@ -711,9 +711,6 @@ export default function ConsumptionExplorerPage() {
         </div>
       )}
 
-      {/* Context banner (site info + date range) — one row per site */}
-      <ContextBanner availabilityBySite={availabilityBySite} siteIds={siteIds} />
-
       {/* KPI Header — 6 KPIs respecting scope global */}
       {showContent && (
         <ConsoKpiHeader
@@ -977,6 +974,9 @@ export default function ConsumptionExplorerPage() {
           </button>
         </div>
       )}
+
+      {/* Context banner (site info + date range) — one row per site */}
+      <ContextBanner availabilityBySite={availabilityBySite} siteIds={siteIds} />
 
       {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") ── */}
       <GenericEvidenceDrawer
