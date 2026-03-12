@@ -90,6 +90,9 @@ export default function ConsoKpiHeader({
   confidence,
   onEvidence,
   compareSummary,
+  days,
+  startDate,
+  endDate,
 }) {
   const { isExpert } = useExpertMode();
   // --- kWh total ---
@@ -152,6 +155,17 @@ export default function ConsoKpiHeader({
           : 'text-green-600'
       : 'text-gray-900';
 
+  // --- Period label (dd/mm/yy → dd/mm/yy) ---
+  const periodLabel = (() => {
+    const fmt = (d) =>
+      d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const dateTo = endDate ? new Date(endDate) : new Date();
+    const dateFrom = startDate
+      ? new Date(startDate)
+      : new Date(dateTo.getTime() - (days ?? 30) * 86400000);
+    return `${fmt(dateFrom)} → ${fmt(dateTo)}`;
+  })();
+
   const confBadge = confidence
     ? {
         high: { label: 'Haute', variant: 'ok' },
@@ -187,7 +201,9 @@ export default function ConsoKpiHeader({
           sub={
             compareSummary?.delta_pct != null ? (
               <TrendDelta deltaPct={compareSummary.delta_pct} />
-            ) : undefined
+            ) : (
+              periodLabel
+            )
           }
           tooltip="Somme des relevés sur la période sélectionnée"
           evidenceId="conso-kwh-total"
