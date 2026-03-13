@@ -64,6 +64,8 @@ def run_migrations(engine):
     _add_meter_unified_columns(engine)
     # Step 26 — Geocoding columns on sites
     _add_site_geocoding_columns(engine)
+    # V1.1 Usage — usage_id FK + usage enrichment + usage_baselines table
+    _migrate_usage_v1_1(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1094,3 +1096,71 @@ def _add_site_geocoding_columns(engine):
         logger.info("migration: Step 26 — added %d geocoding column(s) to sites", added)
     else:
         logger.debug("migration: Step 26 — sites geocoding columns already present")
+
+
+def _migrate_usage_v1_1(engine):
+    """V1.1 Usage — Ajouter usage_id FK sur meter/recommendation/bacs_cvc_systems,
+    enrichir la table usages, creer usage_baselines."""
+    insp = inspect(engine)
+
+    # 1. Ajouter usage_id sur les tables existantes
+    _usage_v1_1_columns = {
+        "meter": [("usage_id", "INTEGER")],
+        "recommendation": [("usage_id", "INTEGER")],
+        "bacs_cvc_systems": [("usage_id", "INTEGER")],
+        "consumption_insights": [("usage_id", "INTEGER")],
+        "usages": [
+            ("label", "VARCHAR(200)"),
+            ("surface_m2", "FLOAT"),
+            ("data_source", "VARCHAR(50)"),
+            ("is_significant", "BOOLEAN DEFAULT 0"),
+            ("pct_of_total", "FLOAT"),
+        ],
+    }
+
+    added = 0
+    with engine.begin() as conn:
+        for table_name, columns in _usage_v1_1_columns.items():
+            if not insp.has_table(table_name):
+                logger.debug("migration: V1.1 Usage — table %s not found, skip", table_name)
+                continue
+            existing_cols = {c["name"] for c in insp.get_columns(table_name)}
+            for col_name, col_type in columns:
+                if col_name in existing_cols:
+                    continue
+                try:
+                    conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{col_name}" {col_type}'))
+                    added += 1
+                    logger.info("migration: V1.1 Usage — added %s.%s (%s)", table_name, col_name, col_type)
+                except Exception as e:
+                    logger.warning("migration: V1.1 Usage — could not add %s.%s: %s", table_name, col_name, e)
+
+    # 2. Creer la table usage_baselines si elle n'existe pas
+    if not insp.has_table("usage_baselines"):
+        ddl = """
+        CREATE TABLE usage_baselines (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usage_id INTEGER NOT NULL REFERENCES usages(id),
+            period_start DATETIME NOT NULL,
+            period_end DATETIME NOT NULL,
+            kwh_total FLOAT NOT NULL,
+            kwh_m2_year FLOAT,
+            peak_kw FLOAT,
+            data_source VARCHAR(50),
+            confidence FLOAT,
+            notes VARCHAR(500),
+            is_active BOOLEAN NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+        with engine.begin() as conn:
+            conn.execute(text(ddl))
+            conn.execute(text("CREATE INDEX ix_usage_baselines_usage_id ON usage_baselines(usage_id)"))
+        logger.info("migration: V1.1 Usage — created table usage_baselines")
+        added += 1
+
+    if added > 0:
+        logger.info("migration: V1.1 Usage — %d change(s) applied", added)
+    else:
+        logger.debug("migration: V1.1 Usage — all columns/tables already present")

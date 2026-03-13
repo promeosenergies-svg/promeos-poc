@@ -23,7 +23,7 @@ from models import (
 )
 from models.energy_models import EnergyVector as EnergyVectorModel
 from models.usage import Usage
-from models.enums import TypeUsage
+from models.enums import TypeUsage, DataSourceType
 
 from .packs import _VILLES, _RUES
 
@@ -57,47 +57,66 @@ _PROFILE_SCHEDULES = {
     "hospital": {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
 }
 
-# V107: Usage breakdown per building type (profile → {TypeUsage: description})
+# V1.1: Usage breakdown per profile — (TypeUsage, label, description, pct_of_total, is_significant)
 _USAGE_BREAKDOWN = {
     "office": [
-        (TypeUsage.CVC, "Climatisation et chauffage bureaux"),
-        (TypeUsage.ECLAIRAGE, "Eclairage interieur et exterieur"),
-        (TypeUsage.IT, "Serveurs, postes de travail, reseau"),
-        (TypeUsage.AUTRES, "Ascenseurs, sanitaires, divers"),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage bureaux et communs", 35, True),
+        (TypeUsage.CLIMATISATION, "Climatisation", "Climatisation bureaux", 15, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage interieur et exterieur", 20, True),
+        (TypeUsage.IT, "IT & Bureautique", "Serveurs, postes de travail, reseau", 15, False),
+        (TypeUsage.VENTILATION, "Ventilation", "VMC et CTA", 8, False),
+        (TypeUsage.AUTRES, "Autres", "Ascenseurs, sanitaires, divers", 7, False),
     ],
     "warehouse": [
-        (TypeUsage.CVC, "Ventilation et chauffage entrepot"),
-        (TypeUsage.ECLAIRAGE, "Eclairage industriel"),
-        (TypeUsage.IT, "Systemes de gestion logistique"),
-        (TypeUsage.PROCESS, "Equipements de manutention, chariots"),
-        (TypeUsage.AUTRES, "Securite, portes automatiques"),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage entrepot", 25, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage industriel", 20, True),
+        (TypeUsage.PROCESS, "Process", "Equipements de manutention, chariots", 30, True),
+        (TypeUsage.VENTILATION, "Ventilation", "Ventilation entrepot", 10, False),
+        (TypeUsage.IT, "IT", "Systemes de gestion logistique", 8, False),
+        (TypeUsage.AUTRES, "Autres", "Securite, portes automatiques", 7, False),
     ],
     "hotel": [
-        (TypeUsage.CVC, "Climatisation chambres et communs"),
-        (TypeUsage.ECLAIRAGE, "Eclairage chambres, hall, exterieur"),
-        (TypeUsage.IT, "Gestion hoteliere, Wi-Fi, TV"),
-        (TypeUsage.PROCESS, "Cuisine, buanderie, spa"),
-        (TypeUsage.AUTRES, "Ascenseurs, piscine, divers"),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage chambres et communs", 25, True),
+        (TypeUsage.CLIMATISATION, "Climatisation", "Climatisation chambres", 15, True),
+        (TypeUsage.ECS, "ECS", "Eau chaude sanitaire chambres", 15, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage chambres, hall, exterieur", 15, False),
+        (TypeUsage.PROCESS, "Cuisine & Buanderie", "Cuisine, buanderie, spa", 15, True),
+        (TypeUsage.IT, "IT", "Gestion hoteliere, Wi-Fi, TV", 8, False),
+        (TypeUsage.AUTRES, "Autres", "Ascenseurs, piscine, divers", 7, False),
     ],
     "school": [
-        (TypeUsage.CVC, "Chauffage et ventilation salles de classe"),
-        (TypeUsage.ECLAIRAGE, "Eclairage salles, couloirs, gymnase"),
-        (TypeUsage.IT, "Salles informatiques, videoprojection"),
-        (TypeUsage.AUTRES, "Cantine, sanitaires, alarmes"),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage salles de classe", 45, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage salles, couloirs, gymnase", 20, True),
+        (TypeUsage.VENTILATION, "Ventilation", "Ventilation salles", 10, False),
+        (TypeUsage.IT, "IT", "Salles informatiques, videoprojection", 10, False),
+        (TypeUsage.AUTRES, "Autres", "Cantine, sanitaires, alarmes", 15, False),
     ],
     "hospital": [
-        (TypeUsage.CVC, "Climatisation et traitement air medical"),
-        (TypeUsage.ECLAIRAGE, "Eclairage blocs, chambres, couloirs"),
-        (TypeUsage.IT, "Imagerie, systemes d'information"),
-        (TypeUsage.PROCESS, "Equipements medicaux, sterilisation"),
-        (TypeUsage.AUTRES, "Ascenseurs, buanderie, cuisine"),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage et traitement air medical", 25, True),
+        (TypeUsage.CLIMATISATION, "Climatisation", "Climatisation blocs et chambres", 15, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage blocs, chambres, couloirs", 15, False),
+        (TypeUsage.PROCESS, "Équipements médicaux", "Imagerie, sterilisation, blocs", 25, True),
+        (TypeUsage.IT, "IT", "Systemes d'information hospitalier", 10, False),
+        (TypeUsage.AUTRES, "Autres", "Ascenseurs, buanderie, cuisine", 10, False),
     ],
     "retail": [
-        (TypeUsage.CVC, "Climatisation surface de vente"),
-        (TypeUsage.ECLAIRAGE, "Eclairage vitrine et interieur"),
-        (TypeUsage.IT, "Caisses, systeme de gestion"),
-        (TypeUsage.AUTRES, "Enseignes, securite, reserves"),
+        (TypeUsage.CLIMATISATION, "Climatisation", "Climatisation surface de vente", 30, True),
+        (TypeUsage.ECLAIRAGE, "Éclairage", "Eclairage vitrine et interieur", 30, True),
+        (TypeUsage.CHAUFFAGE, "Chauffage", "Chauffage reserve et bureaux", 15, False),
+        (TypeUsage.IT, "IT & Caisses", "Caisses, systeme de gestion", 10, False),
+        (TypeUsage.AUTRES, "Autres", "Enseignes, securite, reserves", 15, False),
     ],
+}
+
+# Mapping sous-compteur suffix → TypeUsage (pour lier sub_meters aux usages)
+_SUB_METER_USAGE_MAP = {
+    "CVC": TypeUsage.CHAUFFAGE,
+    "ECLAIRAGE": TypeUsage.ECLAIRAGE,
+    "CHAMBRES": TypeUsage.CLIMATISATION,
+    "CUISINE": TypeUsage.PROCESS,
+    "SPA": TypeUsage.ECS,
+    "PROCESS": TypeUsage.PROCESS,
+    "IT": TypeUsage.IT,
 }
 
 
@@ -212,18 +231,34 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 bat_ids.append(bat.id)
             buildings_map[site.id] = bat_ids
 
-            # V107: Usage records per batiment
+            # V1.1: Usage records per batiment (enriched)
             profile_key = spec.get("profile", "office")
             usage_defs = _USAGE_BREAKDOWN.get(profile_key, _USAGE_BREAKDOWN["office"])
+            site_usages = {}  # TypeUsage → Usage (for sub-meter linking)
             for bat_id in bat_ids:
-                for usage_type, usage_desc in usage_defs:
-                    db.add(
-                        Usage(
-                            batiment_id=bat_id,
-                            type=usage_type,
-                            description=usage_desc,
-                        )
+                bat_surface = next(
+                    (
+                        b["surface_m2"]
+                        for b in spec.get("buildings", [])
+                        if bat_id
+                        == bat_ids[spec.get("buildings", []).index(b) if b in spec.get("buildings", []) else 0]
+                    ),
+                    spec["surface_m2"] / max(1, len(bat_ids)),
+                )
+                for usage_type, label, desc, pct, signif in usage_defs:
+                    u = Usage(
+                        batiment_id=bat_id,
+                        type=usage_type,
+                        label=label,
+                        description=desc,
+                        pct_of_total=pct,
+                        is_significant=signif,
+                        surface_m2=round(bat_surface * pct / 100, 0) if bat_surface else None,
+                        data_source=DataSourceType.MESURE_DIRECTE,
                     )
+                    db.add(u)
+                    db.flush()
+                    site_usages[usage_type] = u
 
             # Meter (electricity)
             meter_id_str = f"DEMO-HELI-{site.id:04d}"
@@ -282,10 +317,14 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     )
                 )
 
-            # Step 26: Sous-compteurs pour Hotel Nice
+            # Step 26 + V1.1: Sous-compteurs lies aux usages
             sub_meter_specs = spec.get("sub_meters")
             if sub_meter_specs:
                 for sm_spec in sub_meter_specs:
+                    # Resolve usage_id from suffix mapping
+                    matched_usage_type = _SUB_METER_USAGE_MAP.get(sm_spec["suffix"])
+                    matched_usage = site_usages.get(matched_usage_type) if matched_usage_type else None
+
                     sub = Meter(
                         meter_id=f"SUB-{meter_id_str}-{sm_spec['suffix']}",
                         name=sm_spec["name"],
@@ -294,6 +333,7 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                         energy_vector=EnergyVectorModel.ELECTRICITY,
                         subscribed_power_kva=0,
                         is_active=True,
+                        usage_id=matched_usage.id if matched_usage else None,
                     )
                     sub._pct = sm_spec["pct"]  # fraction of parent conso
                     db.add(sub)
@@ -392,14 +432,19 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 db.add(bat)
                 db.flush()
 
-                # V107: Usage records per batiment
+                # V1.1: Usage records per batiment (enriched)
                 usage_defs = _USAGE_BREAKDOWN.get(profile_name, _USAGE_BREAKDOWN["office"])
-                for usage_type, usage_desc in usage_defs:
+                for usage_type, label, desc, pct, signif in usage_defs:
                     db.add(
                         Usage(
                             batiment_id=bat.id,
                             type=usage_type,
-                            description=usage_desc,
+                            label=label,
+                            description=desc,
+                            pct_of_total=pct,
+                            is_significant=signif,
+                            surface_m2=round(surface * pct / 100, 0) if surface else None,
+                            data_source=DataSourceType.ESTIMATION_PRORATA,
                         )
                     )
 

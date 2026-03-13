@@ -93,7 +93,7 @@ export default function NotificationsPage() {
       const params = selectedSiteId ? { site_id: selectedSiteId } : {};
       const [evts, sum] = await Promise.all([
         getNotificationsList(params),
-        getNotificationsSummary(),
+        getNotificationsSummary(null, selectedSiteId || null),
       ]);
       setEvents(evts);
       setSummary(sum);
@@ -180,6 +180,20 @@ export default function NotificationsPage() {
   const totalFiltered = filteredEvents.length;
   const pageData = filteredEvents.slice((page - 1) * pageSize, page * pageSize);
 
+  // Derive live summary from events so cards stay in sync after patch/bulk actions
+  const liveSummary = useMemo(() => {
+    const by_severity = { critical: 0, warn: 0, info: 0 };
+    let new_critical = 0;
+    let new_warn = 0;
+    for (const e of events) {
+      const sev = e.severity || 'info';
+      by_severity[sev] = (by_severity[sev] || 0) + 1;
+      if (e.status === 'new' && sev === 'critical') new_critical++;
+      if (e.status === 'new' && sev === 'warn') new_warn++;
+    }
+    return { by_severity, new_critical, new_warn, by_source: summary?.by_source };
+  }, [events, summary]);
+
   const tabsWithCounts = useMemo(() => {
     const counts = { all: events.length, new: 0, read: 0, dismissed: 0 };
     for (const e of events) {
@@ -225,10 +239,10 @@ export default function NotificationsPage() {
                 <Clock size={11} />
                 {lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
               </span>
-              {summary && (
+              {liveSummary && (
                 <span className="flex items-center gap-1" title="Couverture sources">
                   <Database size={11} />
-                  {Object.keys(summary.by_source || {}).length} sources
+                  {Object.keys(liveSummary.by_source || {}).length} sources
                 </span>
               )}
             </div>
@@ -240,28 +254,30 @@ export default function NotificationsPage() {
         </div>
       }
     >
-      {/* Summary KPIs with accents */}
-      {summary && (
+      {/* Summary KPIs with accents — derived from events for consistency */}
+      {events.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             accent="risque"
             icon={Bell}
             label="Critique"
-            value={summary.by_severity?.critical || 0}
-            sub={summary.new_critical > 0 ? `${summary.new_critical} nouvelle(s)` : undefined}
+            value={liveSummary.by_severity?.critical || 0}
+            sub={
+              liveSummary.new_critical > 0 ? `${liveSummary.new_critical} nouvelle(s)` : undefined
+            }
             status="crit"
           />
           <MetricCard
             accent="alertes"
             label="Attention"
-            value={summary.by_severity?.warn || 0}
-            sub={summary.new_warn > 0 ? `${summary.new_warn} nouvelle(s)` : undefined}
+            value={liveSummary.by_severity?.warn || 0}
+            sub={liveSummary.new_warn > 0 ? `${liveSummary.new_warn} nouvelle(s)` : undefined}
             status="warn"
           />
           <MetricCard
             accent="conformite"
             label="Info"
-            value={summary.by_severity?.info || 0}
+            value={liveSummary.by_severity?.info || 0}
             status="info"
           />
         </div>

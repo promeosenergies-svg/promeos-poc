@@ -73,6 +73,16 @@ class ConsumptionInsight(Base, TimestampMixin):
     )
     period_start = Column(DateTime, nullable=True)
     period_end = Column(DateTime, nullable=True)
+
+    # V1.1 Usage — lien insight → usage energetique
+    usage_id = Column(
+        Integer,
+        ForeignKey("usages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Usage energetique concerne (via Meter.usage_id)",
+    )
+
     insight_status = Column(
         SAEnum(InsightStatus),
         default=InsightStatus.OPEN,

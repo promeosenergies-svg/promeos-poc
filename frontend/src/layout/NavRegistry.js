@@ -71,6 +71,7 @@ export const ROUTE_MODULE_MAP = {
   '/consommations/import': 'energie',
   '/consommations/portfolio': 'energie',
   '/diagnostic-conso': 'energie',
+  '/usages': 'energie',
   '/usages-horaires': 'energie',
   '/monitoring': 'energie',
   '/billing': 'energie',
@@ -809,6 +810,13 @@ export const HIDDEN_PAGES = [
     keywords: ['diagnostic', 'anomalies', 'analyse'],
     section: 'Énergie',
     hidden: true,
+  },
+  {
+    to: '/usages',
+    icon: Activity,
+    label: 'Usages Énergétiques',
+    keywords: ['usages', 'energetiques', 'plan comptage', 'readiness', 'ues', 'sous-compteur'],
+    section: 'Énergie',
   },
   {
     to: '/usages-horaires',

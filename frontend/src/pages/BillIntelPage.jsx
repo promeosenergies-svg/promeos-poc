@@ -174,7 +174,7 @@ export default function BillIntelPage() {
       // Fetch unfiltered insights in parallel for health banner
       const healthInsightParams = siteFilter ? { site_id: siteFilter } : {};
       const [s, i, inv, allIns] = await Promise.all([
-        getBillingSummary(),
+        getBillingSummary({ ...(siteFilter && { site_id: siteFilter }) }),
         getBillingInsights(insightParams),
         getBillingInvoices(invoiceParams),
         getBillingInsights(healthInsightParams).catch(() => ({ insights: [] })),

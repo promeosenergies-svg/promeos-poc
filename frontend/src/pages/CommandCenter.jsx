@@ -97,7 +97,12 @@ export default function CommandCenter() {
       const [compBundle, actSummary, actList, notifSummary] = await Promise.all([
         getComplianceBundle({ org_id: org.id, ...siteParam }).catch(() => null),
         getActionsSummary(org.id, selectedSiteId || undefined).catch(() => null),
-        getActionsList({ limit: 20, status: 'open,in_progress', ...siteParam }).catch(() => []),
+        getActionsList({
+          org_id: org.id,
+          limit: 20,
+          status: 'open,in_progress',
+          ...siteParam,
+        }).catch(() => []),
         getNotificationsSummary(org.id, selectedSiteId || undefined).catch(() => null),
       ]);
       setCompliance(compBundle);

@@ -106,6 +106,15 @@ class Meter(Base):
     # Support sous-compteur (préparation Step 26)
     parent_meter_id = Column(Integer, ForeignKey("meter.id"), nullable=True)
 
+    # V1.1 Usage — Lien sous-compteur → usage energetique
+    usage_id = Column(
+        Integer,
+        ForeignKey("usages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Usage energetique mesure par ce compteur (sous-compteur → usage)",
+    )
+
     # Audit
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -116,6 +125,7 @@ class Meter(Base):
     sub_meters = relationship(
         "Meter", backref=backref("parent_meter", remote_side="Meter.id"), foreign_keys=[parent_meter_id]
     )
+    usage = relationship("Usage", back_populates="meters", foreign_keys=[usage_id])
     readings = relationship("MeterReading", back_populates="meter", cascade="all, delete-orphan")
     profiles = relationship("UsageProfile", back_populates="meter", cascade="all, delete-orphan")
     anomalies = relationship("Anomaly", back_populates="meter", cascade="all, delete-orphan")
@@ -345,6 +355,15 @@ class Recommendation(Base):
 
     # Trigger (what caused this recommendation)
     triggered_by_anomaly_id = Column(Integer, ForeignKey("anomaly.id"), nullable=True)
+
+    # V1.1 Usage — Usage concerne par la recommandation
+    usage_id = Column(
+        Integer,
+        ForeignKey("usages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Usage energetique concerne par cette recommandation",
+    )
 
     # Impact estimation
     estimated_savings_kwh_year = Column(Float, nullable=True)

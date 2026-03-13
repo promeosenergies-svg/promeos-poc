@@ -45,16 +45,107 @@ class SeveriteAlerte(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class TypeUsage(str, enum.Enum):
-    """Types d'usage énergétique"""
+class UsageFamily(str, enum.Enum):
+    """Familles d'usages energetiques (niveau 1 de la taxonomie)."""
 
-    BUREAUX = "bureaux"
-    PROCESS = "process"
-    FROID = "froid"
-    CVC = "cvc"
+    THERMIQUE = "thermique"  # CVC chaud + froid + ventilation + ECS
+    ECLAIRAGE = "eclairage"  # Eclairage interieur & exterieur
+    ELECTRICITE_SPECIFIQUE = "elec_specifique"  # IT, bureautique, ascenseurs
+    PROCESS = "process"  # Production, air comprime, process metier
+    MOBILITE = "mobilite"  # IRVE, transport vertical
+    AUXILIAIRES = "auxiliaires"  # Parties communes, pertes, divers
+
+
+class TypeUsage(str, enum.Enum):
+    """Types d'usage energetique — taxonomie alignee ADEME/OPERAT.
+
+    12 usages structures en 6 familles (UsageFamily).
+    Anciens codes preserves pour retrocompat (BUREAUX→AUTRES, CVC→CHAUFFAGE).
+    """
+
+    # Famille THERMIQUE
+    CHAUFFAGE = "chauffage"
+    CLIMATISATION = "climatisation"
+    VENTILATION = "ventilation"
+    ECS = "ecs"  # Eau chaude sanitaire
+
+    # Famille ECLAIRAGE
     ECLAIRAGE = "eclairage"
+
+    # Famille ELECTRICITE SPECIFIQUE
     IT = "it"
+    BUREAUTIQUE = "bureautique"  # Postes de travail, impression
+    TRANSPORT_VERTICAL = "transport_vertical"  # Ascenseurs, escaliers mecaniques
+
+    # Famille PROCESS
+    PROCESS = "process"
+    PRODUCTION = "production"  # Lignes de fabrication, air comprime
+
+    # Famille MOBILITE
+    IRVE = "irve"  # Bornes de recharge vehicules electriques
+
+    # Famille AUXILIAIRES / AUTRES
+    PARTIES_COMMUNES = "parties_communes"
     AUTRES = "autres"
+
+    # --- Legacy aliases (pour retrocompat seeds/imports existants) ---
+    BUREAUX = "bureaux"  # Legacy: type batiment, pas un usage
+    CVC = "cvc"  # Legacy: utiliser CHAUFFAGE/CLIM/VENTILATION
+    FROID = "froid"  # Legacy: utiliser CLIMATISATION
+
+
+# Mapping TypeUsage → UsageFamily pour regroupement UI
+USAGE_FAMILY_MAP: dict[TypeUsage, UsageFamily] = {
+    TypeUsage.CHAUFFAGE: UsageFamily.THERMIQUE,
+    TypeUsage.CLIMATISATION: UsageFamily.THERMIQUE,
+    TypeUsage.VENTILATION: UsageFamily.THERMIQUE,
+    TypeUsage.ECS: UsageFamily.THERMIQUE,
+    TypeUsage.ECLAIRAGE: UsageFamily.ECLAIRAGE,
+    TypeUsage.IT: UsageFamily.ELECTRICITE_SPECIFIQUE,
+    TypeUsage.BUREAUTIQUE: UsageFamily.ELECTRICITE_SPECIFIQUE,
+    TypeUsage.TRANSPORT_VERTICAL: UsageFamily.ELECTRICITE_SPECIFIQUE,
+    TypeUsage.PROCESS: UsageFamily.PROCESS,
+    TypeUsage.PRODUCTION: UsageFamily.PROCESS,
+    TypeUsage.IRVE: UsageFamily.MOBILITE,
+    TypeUsage.PARTIES_COMMUNES: UsageFamily.AUXILIAIRES,
+    TypeUsage.AUTRES: UsageFamily.AUXILIAIRES,
+    # Legacy
+    TypeUsage.BUREAUX: UsageFamily.AUXILIAIRES,
+    TypeUsage.CVC: UsageFamily.THERMIQUE,
+    TypeUsage.FROID: UsageFamily.THERMIQUE,
+}
+
+
+# Labels FR pour affichage UI
+USAGE_LABELS_FR: dict[TypeUsage, str] = {
+    TypeUsage.CHAUFFAGE: "Chauffage",
+    TypeUsage.CLIMATISATION: "Climatisation",
+    TypeUsage.VENTILATION: "Ventilation",
+    TypeUsage.ECS: "Eau chaude sanitaire",
+    TypeUsage.ECLAIRAGE: "Éclairage",
+    TypeUsage.IT: "IT / Datacenter",
+    TypeUsage.BUREAUTIQUE: "Bureautique",
+    TypeUsage.TRANSPORT_VERTICAL: "Transport vertical",
+    TypeUsage.PROCESS: "Process",
+    TypeUsage.PRODUCTION: "Production",
+    TypeUsage.IRVE: "IRVE",
+    TypeUsage.PARTIES_COMMUNES: "Parties communes",
+    TypeUsage.AUTRES: "Autres",
+    TypeUsage.BUREAUX: "Bureaux (legacy)",
+    TypeUsage.CVC: "CVC (legacy)",
+    TypeUsage.FROID: "Froid (legacy)",
+}
+
+
+class DataSourceType(str, enum.Enum):
+    """Source / methode d'obtention de la donnee usage."""
+
+    MESURE_DIRECTE = "mesure_directe"  # Sous-compteur physique
+    ESTIMATION_PRORATA = "estimation_prorata"  # Pro-rata surface ou archetype
+    IMPORT_CSV = "import_csv"  # Import fichier
+    GTB_API = "gtb_api"  # Donnee GTB/GTC via API
+    FACTURATION = "facturation"  # Derive de la facture
+    MANUEL = "manuel"  # Saisie manuelle
 
 
 # ========================================

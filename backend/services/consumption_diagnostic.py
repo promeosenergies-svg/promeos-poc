@@ -31,6 +31,8 @@ from models import (
     Organisation,
     Portefeuille,
     EntiteJuridique,
+    Usage,
+    USAGE_LABELS_FR,
 )
 from models.energy_models import FrequencyType
 
@@ -794,9 +796,13 @@ def run_diagnostic(
             gen_fn = ACTIONS_GENERATORS.get(insight_data["type"])
             rec_actions = gen_fn(metrics, price_ref) if gen_fn else []
 
+            # V1.1: propager usage_id depuis le meter (sous-compteur → usage)
+            usage_id = getattr(meter, "usage_id", None)
+
             ci = ConsumptionInsight(
                 site_id=site_id,
                 meter_id=meter.id,
+                usage_id=usage_id,
                 type=insight_data["type"],
                 severity=insight_data["severity"],
                 message=insight_data["message"],
@@ -880,11 +886,24 @@ def get_insights_summary(db: Session, org_id: int) -> dict:
         sites_with.add(ci.site_id)
 
         site = db.query(Site).filter(Site.id == ci.site_id).first()
+        # V1.1: resolve usage label if available
+        usage_label = None
+        usage_type = None
+        if getattr(ci, "usage_id", None):
+            usage_obj = db.query(Usage).filter(Usage.id == ci.usage_id).first()
+            if usage_obj:
+                usage_label = usage_obj.label or USAGE_LABELS_FR.get(usage_obj.type, usage_obj.type.value)
+                usage_type = usage_obj.type.value
+
         insight_list.append(
             {
                 "id": ci.id,
                 "site_id": ci.site_id,
                 "site_nom": site.nom if site else "?",
+                "meter_id": ci.meter_id,
+                "usage_id": getattr(ci, "usage_id", None),
+                "usage_label": usage_label,
+                "usage_type": usage_type,
                 "type": ci.type,
                 "severity": ci.severity,
                 "message": ci.message,

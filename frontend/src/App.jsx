@@ -64,6 +64,7 @@ const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconcil
 const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AperPage = lazy(() => import('./pages/AperPage'));
+const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -321,6 +322,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <ConsumptionDiagPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/usages"
+                      element={
+                        <PageSuspense>
+                          <UsagesDashboardPage />
                         </PageSuspense>
                       }
                     />

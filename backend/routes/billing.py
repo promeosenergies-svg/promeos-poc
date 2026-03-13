@@ -859,12 +859,13 @@ def reconcile_all_sites(
 def billing_summary(
     request: Request,
     org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Aggregate billing summary (invoices, insights, losses) — scoped to org."""
+    """Aggregate billing summary (invoices, insights, losses) — scoped to org, optionally to site."""
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
-    site_ids = _get_org_site_ids(db, effective_org_id)
+    site_ids = [site_id] if site_id else _get_org_site_ids(db, effective_org_id)
 
     invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id.in_(site_ids)).all() if site_ids else []
 
@@ -1567,6 +1568,7 @@ def get_missing_periods(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -1580,7 +1582,10 @@ def get_missing_periods(
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     # Charger toutes les factures + sites en 2 requêtes
-    invoices_all = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
+    q = _org_sites_query(db, EnergyInvoice, effective_org_id)
+    if site_id:
+        q = q.filter(EnergyInvoice.site_id == site_id)
+    invoices_all = q.all()
 
     # Grouper par site
     by_site: dict[int, list] = {}

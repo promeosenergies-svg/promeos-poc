@@ -73,6 +73,11 @@ from .enums import (
     TariffOptionEnum,
     InvoiceTypeEnum,
     ReconstitutionStatusEnum,
+    # V1.1 Usage
+    UsageFamily,
+    DataSourceType,
+    USAGE_FAMILY_MAP,
+    USAGE_LABELS_FR,
 )
 
 # Hierarchie organisation
@@ -83,7 +88,7 @@ from .portefeuille import Portefeuille
 # Site (coeur)
 from .site import Site
 from .batiment import Batiment
-from .usage import Usage
+from .usage import Usage, UsageBaseline
 
 # Assets energie
 from .compteur import Compteur

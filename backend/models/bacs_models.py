@@ -131,6 +131,15 @@ class BacsCvcSystem(Base, TimestampMixin):
         nullable=True,
         comment="Puissance utile calculee (kW)",
     )
+
+    # V1.1 Usage — Lien systeme CVC → usage energetique
+    usage_id = Column(
+        Integer,
+        ForeignKey("usages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Usage energetique couvert par ce systeme CVC",
+    )
     putile_calc_trace_json = Column(
         Text,
         nullable=True,

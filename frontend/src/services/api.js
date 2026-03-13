@@ -794,7 +794,8 @@ export const putSiteTariff = (siteId, data) =>
 // BILL INTELLIGENCE
 // ========================================
 
-export const getBillingSummary = () => api.get('/billing/summary').then((r) => r.data);
+export const getBillingSummary = (params = {}) =>
+  api.get('/billing/summary', { params }).then((r) => r.data);
 export const getBillingInsights = (params = {}) =>
   api.get('/billing/insights', { params }).then((r) => r.data);
 export const getInsightDetail = (insightId) =>
@@ -1706,5 +1707,33 @@ export const dismissOnboarding = (orgId) =>
   api.post('/onboarding-progress/dismiss', null, { params: { org_id: orgId } }).then((r) => r.data);
 export const autoDetectOnboarding = (orgId) =>
   api.post('/onboarding-progress/auto', null, { params: { org_id: orgId } }).then((r) => r.data);
+
+// ── V1.1 Usages Énergétiques ────────────────────────────────────────────────
+
+/** Dashboard agrégé de la page /usages (readiness + plan + UES + dérives + coût) */
+export const getUsagesDashboard = (siteId) =>
+  _cachedGet(`/usages/dashboard/${siteId}`).then((r) => r.data);
+
+/** Score de readiness usage d'un site (/100) */
+export const getUsageReadiness = (siteId) =>
+  _cachedGet(`/usages/readiness/${siteId}`).then((r) => r.data);
+
+/** Plan de comptage dynamique d'un site */
+export const getMeteringPlan = (siteId) =>
+  _cachedGet(`/usages/metering-plan/${siteId}`).then((r) => r.data);
+
+/** Top UES (Usages Énergétiques Significatifs) */
+export const getTopUES = (siteId, limit = 5) =>
+  _cachedGet(`/usages/top-ues/${siteId}`, { params: { limit } }).then((r) => r.data);
+
+/** Ventilation du coût énergétique par usage */
+export const getUsageCostBreakdown = (siteId, days = 365) =>
+  _cachedGet(`/usages/cost-breakdown/${siteId}`, { params: { days } }).then((r) => r.data);
+
+/** Taxonomie des usages (familles + types + labels FR) */
+export const getUsageTaxonomy = () => _cachedGet('/usages/taxonomy').then((r) => r.data);
+
+/** Liste des usages déclarés pour un site */
+export const getSiteUsages = (siteId) => _cachedGet(`/usages/site/${siteId}`).then((r) => r.data);
 
 export default api;

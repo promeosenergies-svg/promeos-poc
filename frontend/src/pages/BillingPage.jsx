@@ -200,7 +200,7 @@ export default function BillingPage() {
       // Non-bloquant : missing-periods (best-effort)
       if (offset === 0) {
         try {
-          const missingData = await getMissingPeriods({ limit: 10 });
+          const missingData = await getMissingPeriods({ limit: 10, ...params });
           setMissingPeriods(missingData.items || []);
         } catch (err) {
           if (isExpert) logger.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
