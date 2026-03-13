@@ -156,12 +156,15 @@ def generate_actions(db, org, sites: list, actions_count: int, rng: random.Rando
             "billing": ActionSourceType.BILLING,
         }
 
-        # Due date: 30 to 180 days from now
-        due = date.today() + timedelta(days=rng.randint(30, 180))
-
         # Status: mix of open, in_progress, done
         status_choices = [ActionStatus.OPEN] * 5 + [ActionStatus.IN_PROGRESS] * 3 + [ActionStatus.DONE] * 2
         status = rng.choice(status_choices)
+
+        # Due date: future for open/in_progress, past for done
+        if status == ActionStatus.DONE:
+            due = date.today() - timedelta(days=rng.randint(10, 90))
+        else:
+            due = date.today() + timedelta(days=rng.randint(30, 180))
 
         # Link compliance actions to real finding IDs when available
         source_id = f"demo_{i}"

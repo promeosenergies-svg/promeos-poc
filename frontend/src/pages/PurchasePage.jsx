@@ -400,7 +400,7 @@ export default function PurchasePage() {
         .then((data) => {
           setRenewals(data.renewals || []);
         })
-        .catch(() => toast('Erreur lors du chargement des echeances', 'error'))
+        .catch(() => toast('Erreur lors du chargement des échéances', 'error'))
         .finally(() => setRenewalsLoading(false));
     }
   }, [activeTab, renewals.length, scope.orgId, toast]);
@@ -1025,7 +1025,10 @@ export default function PurchasePage() {
                         )}
                         <div className="mb-3">
                           <div className="flex justify-between text-xs text-gray-500 mb-1">
-                            <span>Risque</span>
+                            <span>
+                              Risque :{' '}
+                              {risk === 'low' ? 'Faible' : risk === 'medium' ? 'Modéré' : 'Élevé'}
+                            </span>
                             <span className={RISK_COLORS[risk]}>{s.risk_score}/100</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -1812,7 +1815,7 @@ export default function PurchasePage() {
           />
         )}
 
-        {/* ══ TAB: Echeances (V1.1) ══ */}
+        {/* ══ TAB: Échéances (V1.1) ══ */}
         {activeTab === 'echeances' &&
           (() => {
             const filteredRenewals = scopeSiteId
@@ -1822,13 +1825,13 @@ export default function PurchasePage() {
               <div className="space-y-4">
                 {scopeSiteId && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
-                    Filtre actif : site selectionne dans le bandeau (
+                    Filtre actif : site sélectionné dans le bandeau (
                     {scopedSites.find((s) => String(s.id) === String(scopeSiteId))?.nom ||
                       scopeSiteId}
                     ).
                     {filteredRenewals.length === 0 &&
                       renewals.length > 0 &&
-                      ' Aucune echeance pour ce site.'}
+                      ' Aucune échéance pour ce site.'}
                   </div>
                 )}
                 {renewalsLoading ? (

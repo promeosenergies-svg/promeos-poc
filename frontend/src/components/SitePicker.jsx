@@ -117,7 +117,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
 
   const chipLabel =
     selectedSites.length === 0
-      ? 'Selectionner des sites'
+      ? 'Sélectionner des sites'
       : selectedSites.length === 1
         ? selectedSites[0].nom
         : `${selectedSites.length} sites`;

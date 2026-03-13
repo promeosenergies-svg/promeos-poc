@@ -245,7 +245,7 @@ export default function ExportNoteDecision({ data, onClose }) {
           </div>
 
           <div className="footer">
-            PROMEOS — Document genere automatiquement le {today}. Ce document ne constitue pas un
+            PROMEOS — Document généré automatiquement le {today}. Ce document ne constitue pas un
             engagement contractuel.
           </div>
         </div>

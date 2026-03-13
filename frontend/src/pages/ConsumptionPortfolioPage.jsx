@@ -371,14 +371,14 @@ export default function ConsumptionPortfolioPage() {
             icon={Euro}
             label={
               <>
-                Cout estime{' '}
+                Coût estimé{' '}
                 <InfoTip content="Estimation basée sur le prix de référence de chaque site (contrat > profil tarifaire > défaut 0,18 EUR/kWh)." />
               </>
             }
             value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
             sub={
               tot?.eur_source === 'estime'
-                ? 'Estimation a 0,18 EUR/kWh'
+                ? 'Estimation à 0,18 EUR/kWh'
                 : 'Prix mixtes (contrats + défaut)'
             }
           />

@@ -281,7 +281,7 @@ export default function EnergyCopilotPage() {
           <CardBody className="text-center py-8">
             <Brain size={32} className="mx-auto text-gray-300 mb-2" />
             <p className="text-sm text-gray-500">
-              Aucune proposition pour le moment. Lancez l'analyse pour detecter les opportunites.
+              Aucune proposition pour le moment. Lancez l'analyse pour détecter les opportunités.
             </p>
           </CardBody>
         </Card>

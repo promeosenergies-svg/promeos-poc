@@ -282,7 +282,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
           ))}
 
           <div className="footer">
-            PROMEOS — Pack RFP genere le {today}. Document confidentiel —{' '}
+            PROMEOS — Pack RFP généré le {today}. Document confidentiel —{' '}
             {orgName || 'Organisation'}. Ce document ne constitue pas un engagement contractuel.
           </div>
         </div>

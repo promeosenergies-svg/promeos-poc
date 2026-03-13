@@ -216,7 +216,7 @@ export default function AdminAuditLogPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-700">
-                    <span className="font-medium">{e.user_name || 'Systeme'}</span>
+                    <span className="font-medium">{e.user_name || 'Système'}</span>
                     {e.resource_type && (
                       <span className="text-gray-400">
                         {' '}

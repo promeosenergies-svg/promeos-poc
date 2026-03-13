@@ -778,8 +778,8 @@ const PatrimoineWizard = ({ onClose }) => {
           {/* Step 4: Validation */}
           {step === 4 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Plan d'execution</h3>
-              <p className="text-sm text-gray-500 mb-4">Verifiez le resume avant activation.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Plan d'exécution</h3>
+              <p className="text-sm text-gray-500 mb-4">Vérifiez le résumé avant activation.</p>
               {summary && (
                 <div className="bg-gray-50 border rounded-xl p-4 mb-4">
                   <div className="grid grid-cols-2 gap-3">

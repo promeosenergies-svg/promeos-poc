@@ -969,7 +969,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
 
               {d.closed_at && (
                 <p className="text-xs text-gray-400 mt-2">
-                  Fermee le {new Date(d.closed_at).toLocaleDateString('fr-FR')}
+                  Fermée le {new Date(d.closed_at).toLocaleDateString('fr-FR')}
                 </p>
               )}
 
@@ -1054,7 +1054,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               {/* CO₂e savings */}
               {d.co2e_savings_est_kg != null && d.co2e_savings_est_kg > 0 && (
                 <div className="p-3 bg-emerald-50 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">CO₂e evite (estimation)</p>
+                  <p className="text-xs text-gray-500 mb-1">CO₂e évité (estimation)</p>
                   <p className="text-lg font-bold text-emerald-700">
                     {fmtNum(Math.round(d.co2e_savings_est_kg), 0)} kgCO₂e
                     {d.co2e_savings_est_kg >= 1000 && (
@@ -1067,7 +1067,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
               )}
 
               {d.realized_at && (
-                <p className="text-xs text-gray-500">Date de constatation : {d.realized_at}</p>
+                <p className="text-xs text-gray-500">
+                  Date de constatation : {new Date(d.realized_at).toLocaleDateString('fr-FR')}
+                </p>
               )}
 
               {d.severity && (

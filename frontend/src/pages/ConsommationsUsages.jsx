@@ -145,7 +145,7 @@ export function ImportWizard() {
       {/* Step 1: Select site */}
       {step === 1 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">1. Selectionner un site</h3>
+          <h3 className="text-lg font-semibold mb-4">1. Sélectionner un site</h3>
           <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
             {sites.map((site) => (
               <button
@@ -951,7 +951,7 @@ export function KBAdminPanel() {
           <AlertTriangle size={40} className="text-red-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-red-800 mb-2">KB service indisponible</h3>
           <p className="text-sm text-red-600 mb-4">
-            Le backend Knowledge Base ne repond pas. Verifiez que le serveur est demarre.
+            Le backend Knowledge Base ne répond pas. Vérifiez que le serveur est démarré.
           </p>
           <button
             onClick={checkAndLoad}
@@ -1076,7 +1076,7 @@ export function KBAdminPanel() {
             </div>
             <div className="text-center p-3 bg-red-50 rounded">
               <div className="text-2xl font-bold text-red-700">{stats.anomaly_rules_count}</div>
-              <div className="text-xs text-gray-500">Regles anomalie</div>
+              <div className="text-xs text-gray-500">Règles d'anomalie</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded">
               <div className="text-2xl font-bold text-green-700">{stats.recommendations_count}</div>
@@ -1140,7 +1140,7 @@ export function KBAdminPanel() {
 
       {/* Rules */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-3">Regles d'Anomalie ({rules.length})</h3>
+        <h3 className="text-lg font-semibold mb-3">Règles d'anomalie ({rules.length})</h3>
         <div className="space-y-2">
           {rules.map((r) => (
             <div key={r.code} className="flex items-center justify-between border rounded p-3">

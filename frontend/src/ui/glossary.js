@@ -99,14 +99,14 @@ export const GLOSSARY = {
   aper: {
     term: 'Loi APER',
     short:
-      "Loi d'Acceleration de la Production d'Energies Renouvelables. Impose la solarisation des parkings exterieurs >= 1500 m2 et des toitures >= 500 m2 avec des echeances echelonnees de 2026 a 2028.",
-    long: "La loi APER (n 2023-175 du 10 mars 2023) impose aux gestionnaires de parkings exterieurs de plus de 1500 m2 et aux proprietaires de toitures de plus de 500 m2 d'installer des dispositifs de production d'energie renouvelable (ombrières, panneaux solaires). Echeances : parkings > 10 000 m2 au 01/07/2026, parkings 1500-10000 m2 au 01/07/2028, toitures au 01/01/2028.",
+      "Loi d'Accélération de la Production d'Énergies Renouvelables. Impose la solarisation des parkings extérieurs ≥ 1 500 m² et des toitures ≥ 500 m² avec des échéances échelonnées de 2026 à 2028.",
+    long: "La loi APER (n° 2023-175 du 10 mars 2023) impose aux gestionnaires de parkings extérieurs de plus de 1 500 m² et aux propriétaires de toitures de plus de 500 m² d'installer des dispositifs de production d'énergie renouvelable (ombrières, panneaux solaires). Échéances : parkings > 10 000 m² au 01/07/2026, parkings 1 500–10 000 m² au 01/07/2028, toitures au 01/01/2028.",
   },
   production_pv: {
-    term: 'Production photovoltaique estimee',
+    term: 'Production photovoltaïque estimée',
     short:
-      "Estimation de la production d'electricite solaire basee sur la surface disponible, la localisation du site et les donnees d'irradiance solaire.",
-    long: "Le calcul utilise la puissance crete (surface panneaux x 180 Wc/m2), corrigee par un ratio de couverture (60% parking, 80% toiture) et les donnees d'irradiance PVGIS (European Commission) ou une estimation par zone climatique FR (H1/H2/H3). Pertes systeme : 14%.",
+      "Estimation de la production d'électricité solaire basée sur la surface disponible, la localisation du site et les données d'irradiance solaire.",
+    long: "Le calcul utilise la puissance crête (surface panneaux × 180 Wc/m²), corrigée par un ratio de couverture (60 % parking, 80 % toiture) et les données d'irradiance PVGIS (European Commission) ou une estimation par zone climatique FR (H1/H2/H3). Pertes système : 14 %.",
   },
   shadow_breakdown: {
     term: 'Décomposition shadow',

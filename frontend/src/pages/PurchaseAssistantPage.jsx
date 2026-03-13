@@ -620,7 +620,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
 
       {wizard.selectedSiteIds.length > 0 && (
         <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
-          <strong>{wizard.selectedSiteIds.length}</strong> site(s) selectionne(s)
+          <strong>{wizard.selectedSiteIds.length}</strong> site(s) sélectionné(s)
         </div>
       )}
 

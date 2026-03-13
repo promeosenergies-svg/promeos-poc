@@ -724,7 +724,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
 
   it('has 4 KPI cards (kWh, EUR/Cout, CO2, Couverture)', () => {
     expect(code).toMatch(/kWh total/);
-    expect(code).toMatch(/Cout estime|EUR total/);
+    expect(code).toMatch(/Coût estimé|EUR total/);
     expect(code).toMatch(/CO2|Emissions/);
     expect(code).toMatch(/Couverture/);
   });
@@ -1030,8 +1030,8 @@ describe('BF · Portfolio V1.3 pilotage UX', () => {
     expect(code).toMatch(/HelpCircle/);
   });
 
-  it('has KPI card with "Cout estime" label and source explanation', () => {
-    expect(code).toMatch(/Cout estime/);
+  it('has KPI card with "Coût estimé" label and source explanation', () => {
+    expect(code).toMatch(/Coût estimé/);
     expect(code).toMatch(/0,18 EUR\/kWh/);
   });
 

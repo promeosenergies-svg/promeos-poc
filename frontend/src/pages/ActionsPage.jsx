@@ -1553,7 +1553,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />{' '}
-            {syncing ? 'Sync...' : 'Synchroniser'}
+            {syncing ? 'Synchronisation…' : 'Synchroniser'}
           </Button>
           {isExpert && (
             <Button

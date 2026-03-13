@@ -1868,14 +1868,16 @@ function SiteDrawerContent({
                       : 'Non démarré'}
                 </span>
               ) : (
-                '—'
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
+                  Non démarré
+                </span>
               )}
             </DrawerRow>
           </DrawerSection>
 
           {/* Risk block */}
           <DrawerSection title="Risque">
-            <DrawerRow label="Risque estime">{fmtEurFull(site.risque_eur)}</DrawerRow>
+            <DrawerRow label="Risque estimé">{fmtEurFull(site.risque_eur)}</DrawerRow>
             <DrawerRow label="Anomalies">
               {site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}
             </DrawerRow>

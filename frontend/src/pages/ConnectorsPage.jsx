@@ -187,7 +187,7 @@ export default function ConnectorsPage() {
                     }}
                     disabled={syncResults[connector.name]?.loading}
                   >
-                    <RefreshCw size={14} className="mr-1" /> Synchro
+                    <RefreshCw size={14} className="mr-1" /> Synchroniser
                   </Button>
                 </div>
               </CardBody>

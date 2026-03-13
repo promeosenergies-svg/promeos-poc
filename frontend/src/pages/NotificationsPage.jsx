@@ -235,7 +235,7 @@ export default function NotificationsPage() {
           )}
           <Button size="sm" onClick={handleSync} disabled={syncing}>
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            {syncing ? 'Synchro...' : 'Synchroniser'}
+            {syncing ? 'Synchronisation…' : 'Synchroniser'}
           </Button>
         </div>
       }
@@ -399,14 +399,14 @@ export default function NotificationsPage() {
                     checked={selected.size === pageData.length && pageData.length > 0}
                     onChange={toggleSelectAll}
                     className="rounded border-gray-300"
-                    aria-label="Selectionner tout"
+                    aria-label="Sélectionner tout"
                   />
                 </Th>
                 <Th className="w-8">Sev.</Th>
                 <Th>Titre</Th>
                 <Th>Source</Th>
                 <Th className="text-right">Impact</Th>
-                <Th>Echeance</Th>
+                <Th>Échéance</Th>
                 <Th>Statut</Th>
                 {isExpert && <Th>ID</Th>}
                 <Th className="text-right w-24">Actions</Th>
@@ -570,16 +570,16 @@ export default function NotificationsPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estime</p>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estimé</p>
                 <p className="text-sm text-gray-900">
                   {drawerEvent.estimated_impact_eur
                     ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} €`
-                    : 'Non estime'}
+                    : 'Non estimé'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Echeance</p>
-                <p className="text-sm text-gray-900">{drawerEvent.due_date || 'Non definie'}</p>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Échéance</p>
+                <p className="text-sm text-gray-900">{drawerEvent.due_date || 'Non définie'}</p>
               </div>
               {drawerEvent.site_nom && (
                 <div>
@@ -599,7 +599,7 @@ export default function NotificationsPage() {
                   </p>
                 )}
                 {drawerEvent.created_at && (
-                  <p className="text-xs font-mono text-gray-400">Cree : {drawerEvent.created_at}</p>
+                  <p className="text-xs font-mono text-gray-400">Créé : {drawerEvent.created_at}</p>
                 )}
               </div>
             )}
