@@ -5,8 +5,8 @@
  *
  * Route : /usages (intégrée dans App.jsx, pas de nouveau menu)
  */
-import React, { useEffect, useState, useContext, useRef } from 'react';
-import { ScopeContext } from '../contexts/ScopeContext';
+import React, { useEffect, useState, useRef } from 'react';
+import { useScope } from '../contexts/ScopeContext';
 import { getUsagesDashboard } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -811,14 +811,15 @@ function BillingLinksWidget({ billing, cost, navigate }) {
 // ── Main Page ────────────────────────────────────────────────────────────
 
 export default function UsagesDashboardPage() {
-  const { selectedSite } = useContext(ScopeContext);
+  const { selectedSiteId, scopedSites } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const printRef = useRef(null);
 
-  const siteId = selectedSite?.id;
+  const siteId = selectedSiteId;
+  const siteName = scopedSites?.find((s) => s.id === siteId)?.nom;
 
   useEffect(() => {
     if (!siteId) {
