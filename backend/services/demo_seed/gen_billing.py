@@ -174,7 +174,8 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         else:
             period_end = date(period_start.year, period_start.month + 1, 1) - timedelta(days=1)
 
-        inv_number = f"INV-{site.id:04d}-{period_start.strftime('%Y%m')}"
+        supplier_prefix = (contract.supplier_name or "GEN")[:3].upper()
+        inv_number = f"{supplier_prefix}-{site.id:04d}-{period_start.strftime('%Y%m')}"
 
         # Skip if invoice already exists (avoid IntegrityError on re-seed)
         existing = (
@@ -267,25 +268,25 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 "overcharge": {
                     "type": "overcharge",
                     "severity": "high",
-                    "msg": f"Surfacturation detectee sur {invoice.invoice_number}: montant TTC superieur de "
+                    "msg": f"Surfacturation détectée sur {invoice.invoice_number}: montant TTC supérieur de "
                     f"{rng.randint(15, 35)}% au prix contractuel.",
                 },
                 "volume_spike": {
                     "type": "volume_spike",
                     "severity": "medium",
-                    "msg": f"Pic de consommation anormal sur {invoice.invoice_number}: volume facture "
+                    "msg": f"Pic de consommation anormal sur {invoice.invoice_number}: volume facturé "
                     f"{monthly_kwh:.0f} kWh vs moyenne attendue {annual / 12:.0f} kWh (+{rng.randint(20, 45)}%).",
                 },
                 "network_drift": {
                     "type": "network_drift",
                     "severity": "medium",
-                    "msg": f"Derive reseau (TURPE) sur {invoice.invoice_number}: cout acheminement "
-                    f"{network_eur:.0f} EUR, soit +{rng.randint(30, 55)}% vs reference tarifaire.",
+                    "msg": f"Dérive réseau (TURPE) sur {invoice.invoice_number}: coût acheminement "
+                    f"{network_eur:.0f} EUR, soit +{rng.randint(30, 55)}% vs référence tarifaire.",
                 },
                 "tax_mismatch": {
                     "type": "tax_mismatch",
                     "severity": "low",
-                    "msg": f"Ecart taxes sur {invoice.invoice_number}: montant taxes {tax_eur:.0f} EUR "
+                    "msg": f"Écart taxes sur {invoice.invoice_number}: montant taxes {tax_eur:.0f} EUR "
                     f"ne correspond pas au taux applicable ({rng.choice(['accise', 'CTA', 'TVA'])} incorrect).",
                 },
             }

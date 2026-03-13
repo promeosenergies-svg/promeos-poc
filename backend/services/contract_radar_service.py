@@ -126,12 +126,9 @@ def compute_contract_radar(
 
                 pr = _resolve_payment_rule(db, sid, cid)
                 if pr:
-                    # Resolve entity name
-                    ej = (
-                        db.query(EntiteJuridique).filter(EntiteJuridique.id == pr.payer_entity_id).first()
-                        if pr.payer_entity_id
-                        else None
-                    )
+                    # Resolve entity name: payer_entity_id, fallback to invoice_entity_id
+                    eid = pr.payer_entity_id or pr.invoice_entity_id
+                    ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == eid).first() if eid else None
                     pr_cache[key] = (ej.nom if ej else None, pr.cost_center)
                 else:
                     pr_cache[key] = (None, None)

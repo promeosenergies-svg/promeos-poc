@@ -241,7 +241,10 @@ export default function useEmsTimeseries({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    // siteIds is an array — join to get a stable primitive for deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     siteIds.join(','),
     energyType,
     days,
@@ -251,7 +254,7 @@ export default function useEmsTimeseries({
     mode,
     granularityOverride,
     compareYoy,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   return state;
 }

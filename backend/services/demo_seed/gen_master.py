@@ -22,7 +22,7 @@ from models import (
     OperatStatus,
 )
 from models.energy_models import EnergyVector as EnergyVectorModel
-from models.usage import Usage
+from models.usage import Usage, UsageBaseline
 from models.enums import TypeUsage, DataSourceType
 
 from .packs import _VILLES, _RUES
@@ -111,12 +111,18 @@ _USAGE_BREAKDOWN = {
 # Mapping sous-compteur suffix → TypeUsage (pour lier sub_meters aux usages)
 _SUB_METER_USAGE_MAP = {
     "CVC": TypeUsage.CHAUFFAGE,
+    "CHAUFFAGE": TypeUsage.CHAUFFAGE,
     "ECLAIRAGE": TypeUsage.ECLAIRAGE,
     "CHAMBRES": TypeUsage.CLIMATISATION,
+    "CLIM": TypeUsage.CLIMATISATION,
     "CUISINE": TypeUsage.PROCESS,
+    "CUIS": TypeUsage.PROCESS,
     "SPA": TypeUsage.ECS,
+    "ECS": TypeUsage.ECS,
     "PROCESS": TypeUsage.PROCESS,
     "IT": TypeUsage.IT,
+    "VENTILATION": TypeUsage.VENTILATION,
+    "COMM": TypeUsage.AUTRES,
 }
 
 
@@ -259,6 +265,25 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     db.add(u)
                     db.flush()
                     site_usages[usage_type] = u
+
+            # V1.2: Seed baselines for significant usages
+            annual_kwh = spec.get("annual_kwh", 200000)
+            for usage_type, label, desc, pct, signif in usage_defs:
+                if signif and usage_type in site_usages:
+                    u = site_usages[usage_type]
+                    baseline_kwh = annual_kwh * pct / 100
+                    bl = UsageBaseline(
+                        usage_id=u.id,
+                        period_start=datetime(2024, 1, 1),
+                        period_end=datetime(2024, 12, 31),
+                        kwh_total=round(baseline_kwh, 0),
+                        kwh_m2_year=round(baseline_kwh / u.surface_m2, 1) if u.surface_m2 else None,
+                        data_source=DataSourceType.MESURE_DIRECTE,
+                        confidence=0.85,
+                        is_active=True,
+                    )
+                    db.add(bl)
+            db.flush()
 
             # Meter (electricity)
             meter_id_str = f"DEMO-HELI-{site.id:04d}"

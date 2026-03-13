@@ -179,8 +179,8 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="high_night_base",
                 severity=AlertSeverity.WARNING,
-                explanation=f"Consommation nocturne elevee : {kpis['night_ratio']:.0%} de la conso totale.",
-                recommended_action="Verifier les equipements fonctionnant la nuit (CVC, eclairage, process).",
+                explanation=f"Consommation nocturne élevée : {kpis['night_ratio']:.0%} de la conso totale.",
+                recommended_action="Vérifier les équipements fonctionnant la nuit (CVC, éclairage, process).",
                 estimated_impact_kwh=round(kpis.get("total_kwh", 0) * kpis.get("night_ratio", 0) * 0.3, 0),
                 estimated_impact_eur=round(kpis.get("total_kwh", 0) * kpis.get("night_ratio", 0) * 0.3 * 0.15, 0),
                 evidence_json={"night_ratio": kpis.get("night_ratio"), "threshold": 0.35},
@@ -200,8 +200,8 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="power_risk",
                 severity=sev,
-                explanation=f"Risque de depassement de puissance souscrite (score {risk_score}/100).",
-                recommended_action="Evaluer un ajustement de la puissance souscrite ou un effacement de pointe.",
+                explanation=f"Risque de dépassement de puissance souscrite (score {risk_score}/100).",
+                recommended_action="Évaluer un ajustement de la puissance souscrite ou un effacement de pointe.",
                 estimated_impact_eur=round(risk_score * 50, 0),
                 evidence_json={"risk_score": risk_score},
                 status=AlertStatus.OPEN,
@@ -210,7 +210,7 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
             )
         )
 
-    # Data quality alert
+    # Data quality alert — mark older ones as resolved for realism
     q_score = quality.get("quality_score", 100)
     if q_score < 80:
         alerts.append(
@@ -219,10 +219,10 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="data_quality",
                 severity=AlertSeverity.INFO,
-                explanation=f"Qualite des donnees insuffisante (score {q_score}/100).",
-                recommended_action="Verifier la connexion du compteur et l'import des donnees.",
+                explanation=f"Qualité des données insuffisante (score {q_score}/100).",
+                recommended_action="Vérifier la connexion du compteur et l'import des données.",
                 evidence_json={"quality_score": q_score},
-                status=AlertStatus.OPEN,
+                status=AlertStatus.RESOLVED,
                 snapshot_id=snapshot_id,
                 start_ts=now - timedelta(days=14),
             )
@@ -237,8 +237,8 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="off_hours_consumption",
                 severity=AlertSeverity.WARNING,
-                explanation=f"Consommation hors horaires elevee : {off_ratio:.0%} du total.",
-                recommended_action="Programmer l'extinction des equipements en dehors des heures d'ouverture.",
+                explanation=f"Consommation hors horaires élevée : {off_ratio:.0%} du total.",
+                recommended_action="Programmer l'extinction des équipements en dehors des heures d'ouverture.",
                 estimated_impact_kwh=round(kpis.get("off_hours_kwh", 0) * 0.5, 0),
                 estimated_impact_eur=round(kpis.get("off_hours_kwh", 0) * 0.5 * 0.15, 0),
                 evidence_json={"off_hours_ratio": off_ratio, "off_hours_kwh": kpis.get("off_hours_kwh", 0)},
@@ -248,7 +248,7 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
             )
         )
 
-    # Weekend ratio anomaly
+    # Weekend ratio anomaly — mark as acknowledged (user saw it)
     we_ratio = kpis.get("weekend_ratio", 0)
     if we_ratio > 0.8 and kpis.get("total_kwh", 0) > 1000:
         alerts.append(
@@ -257,9 +257,9 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="weekend_anomaly",
                 severity=AlertSeverity.INFO,
-                explanation=f"Ratio weekend/semaine eleve ({we_ratio:.2f}). Consommation similaire 7j/7.",
+                explanation=f"Ratio weekend/semaine élevé ({we_ratio:.2f}). Consommation similaire 7j/7.",
                 evidence_json={"weekend_ratio": we_ratio},
-                status=AlertStatus.OPEN,
+                status=AlertStatus.ACKNOWLEDGED,
                 snapshot_id=snapshot_id,
                 start_ts=now - timedelta(days=10),
             )
@@ -274,8 +274,8 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 meter_id=meter.id,
                 alert_type="low_load_factor",
                 severity=AlertSeverity.WARNING,
-                explanation=f"Facteur de charge faible ({load_factor:.0%}). La puissance souscrite semble surdimensionnee.",
-                recommended_action="Etudier un abaissement de la puissance souscrite pour reduire l'abonnement.",
+                explanation=f"Facteur de charge faible ({load_factor:.0%}). La puissance souscrite semble surdimensionnée.",
+                recommended_action="Étudier un abaissement de la puissance souscrite pour réduire l'abonnement.",
                 estimated_impact_eur=round((1 - load_factor) * 500, 0),
                 evidence_json={"load_factor": load_factor},
                 status=AlertStatus.OPEN,

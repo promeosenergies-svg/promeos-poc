@@ -134,7 +134,7 @@ def _generate_reconciliation_logs(db, sites: list, rng: random.Random) -> int:
     _LOG_TEMPLATES = [
         {
             "check_id": "RECON_TARIF_001",
-            "action": "Correction tarif HP/HC appliquee",
+            "action": "Correction tarif HP/HC appliquée",
             "status_before": ReconciliationStatus.WARN,
             "status_after": ReconciliationStatus.OK,
             "detail": {
@@ -146,7 +146,7 @@ def _generate_reconciliation_logs(db, sites: list, rng: random.Random) -> int:
         },
         {
             "check_id": "RECON_INDEX_002",
-            "action": "Releve d'index corrigee manuellement",
+            "action": "Relevé d'index corrigé manuellement",
             "status_before": ReconciliationStatus.FAIL,
             "status_after": ReconciliationStatus.WARN,
             "detail": {
@@ -158,26 +158,26 @@ def _generate_reconciliation_logs(db, sites: list, rng: random.Random) -> int:
         },
         {
             "check_id": "RECON_PUISSANCE_003",
-            "action": "Puissance souscrite reconciliee avec contrat",
+            "action": "Puissance souscrite réconciliée avec contrat",
             "status_before": ReconciliationStatus.WARN,
             "status_after": ReconciliationStatus.OK,
             "detail": {
                 "type": "puissance_reconciliation",
                 "facture_kva": 250,
                 "contrat_kva": 200,
-                "note": "Facture basee sur ancienne puissance, contrat mis a jour",
+                "note": "Facture basée sur ancienne puissance, contrat mis à jour",
             },
         },
         {
             "check_id": "RECON_PERIOD_004",
-            "action": "Periode de facturation alignee",
+            "action": "Période de facturation alignée",
             "status_before": ReconciliationStatus.FAIL,
             "status_after": ReconciliationStatus.OK,
             "detail": {
                 "type": "period_alignment",
                 "before": {"debut": "2024-11-01", "fin": "2024-12-15"},
                 "after": {"debut": "2024-11-01", "fin": "2024-11-30"},
-                "note": "Chevauchement de periode corrige",
+                "note": "Chevauchement de période corrigé",
             },
         },
     ]

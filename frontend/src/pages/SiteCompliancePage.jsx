@@ -773,8 +773,9 @@ export default function SiteCompliancePage() {
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{data.site_nom}</h1>
           <p className="text-sm text-gray-500">
-            Conformité — {data.obligations_count} obligation(s), {data.findings_count} constat(s),{' '}
-            {data.evidences_count} preuve(s)
+            Conformité — {data.obligations_count} obligation{data.obligations_count > 1 ? 's' : ''},{' '}
+            {data.findings_count} constat{data.findings_count > 1 ? 's' : ''},{' '}
+            {data.evidences_count} preuve{data.evidences_count > 1 ? 's' : ''}
           </p>
         </div>
         <span

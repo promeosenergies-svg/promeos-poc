@@ -187,7 +187,7 @@ export default function AppShell() {
   const headerBandClass = MODULE_TINTS[currentModule] || MODULE_TINTS.cockpit;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
+    <div className="flex min-h-screen overflow-x-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header — glass surface */}

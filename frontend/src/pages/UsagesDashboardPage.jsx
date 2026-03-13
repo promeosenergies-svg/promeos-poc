@@ -1,10 +1,11 @@
 /**
- * PROMEOS — Page Usages Énergétiques V1.1
- * Page pivot : Readiness + Plan de comptage + Top UES + Dérives + Coût par usage
+ * PROMEOS — Page Usages Énergétiques V1.2
+ * Page pivot : Readiness + Plan de comptage + Top UES + Baselines + Dérives
+ *            + Conformité par usage + Coût + Liens facture/contrat/achat + Export
  *
- * Route : /usages
+ * Route : /usages (intégrée dans App.jsx, pas de nouveau menu)
  */
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { ScopeContext } from '../contexts/ScopeContext';
 import { getUsagesDashboard } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -58,6 +59,37 @@ const dataSourceColor = (src) =>
     gtb_api: '#6d28d9',
     facturation: '#0e7490',
   })[src] || '#6b7280';
+
+const trendIcon = (trend) =>
+  ({
+    amelioration: { icon: '↘', color: '#16a34a', label: 'Amélioration' },
+    degradation: { icon: '↗', color: '#dc2626', label: 'Dégradation' },
+    stable: { icon: '→', color: '#6b7280', label: 'Stable' },
+  })[trend] || { icon: '?', color: '#9ca3af', label: '—' };
+
+const priceSourceLabel = (src) =>
+  ({ contrat: 'Prix contrat', facture: 'Prix moyen facturé', defaut: 'Prix par défaut' })[src] ||
+  src;
+
+// ── Shared styles ────────────────────────────────────────────────────────
+
+const sectionStyle = {
+  background: 'white',
+  borderRadius: 12,
+  padding: '20px 24px',
+  marginBottom: 16,
+  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+};
+
+const h2Style = {
+  fontSize: 15,
+  fontWeight: 700,
+  color: '#111827',
+  marginBottom: 12,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+};
 
 // ── Components ───────────────────────────────────────────────────────────
 
@@ -123,10 +155,39 @@ function KpiCard({ label, value, unit, sub }) {
   );
 }
 
-function UesTable({ ues, onAction }) {
-  if (!ues || ues.length === 0) {
+function TrendBadge({ trend, ecart_pct }) {
+  const t = trendIcon(trend);
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        fontSize: 12,
+        fontWeight: 600,
+        color: t.color,
+      }}
+      title={t.label}
+    >
+      <span style={{ fontSize: 16 }}>{t.icon}</span>
+      {ecart_pct != null && (
+        <span>
+          {ecart_pct > 0 ? '+' : ''}
+          {fmt(ecart_pct, 1)}%
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ── V1.2: Baseline / Avant-Après ─────────────────────────────────────────
+
+function BaselineTable({ baselines }) {
+  if (!baselines || baselines.length === 0) {
     return (
-      <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Aucun usage significatif détecté.</p>
+      <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: 13 }}>
+        Baselines non disponibles — données insuffisantes ou sous-compteurs non liés.
+      </p>
     );
   }
   return (
@@ -134,50 +195,62 @@ function UesTable({ ues, onAction }) {
       <thead>
         <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
           <th style={{ padding: '8px 6px' }}>Usage</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>kWh/an</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>%</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE kWh/m²</th>
+          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Baseline kWh</th>
+          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Actuel kWh</th>
+          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Écart</th>
+          <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE base</th>
+          <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE actuel</th>
+          <th style={{ padding: '8px 6px', textAlign: 'center' }}>Tendance</th>
           <th style={{ padding: '8px 6px', textAlign: 'center' }}>Source</th>
-          <th style={{ padding: '8px 6px', textAlign: 'center' }}>Dérive</th>
         </tr>
       </thead>
       <tbody>
-        {ues.map((u, i) => (
-          <tr key={u.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-            <td style={{ padding: '8px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>{familyIcon(u.family)}</span>
-              <span style={{ fontWeight: u.is_significant ? 600 : 400 }}>{u.label}</span>
-              {u.is_significant && (
+        {baselines.map((b, i) => (
+          <tr key={b.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+            <td style={{ padding: '8px 6px' }}>
+              <span>{familyIcon(b.family)}</span>{' '}
+              <span style={{ fontWeight: b.is_significant ? 600 : 400 }}>{b.label}</span>
+              {b.actions_completed > 0 && (
                 <span
                   style={{
+                    marginLeft: 6,
                     fontSize: 10,
                     padding: '1px 5px',
                     borderRadius: 3,
-                    background: '#dbeafe',
-                    color: '#1e40af',
+                    background: '#dcfce7',
+                    color: '#166534',
                     fontWeight: 600,
                   }}
                 >
-                  UES
+                  {b.actions_completed} action(s)
                 </span>
               )}
             </td>
+            <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(b.kwh_baseline)}</td>
             <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
-              {fmt(u.kwh)}
+              {fmt(b.kwh_current)}
             </td>
-            <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(u.pct_of_total, 1)}%</td>
-            <td style={{ padding: '8px 6px', textAlign: 'right' }}>
-              {u.ipe_kwh_m2 ? fmt(u.ipe_kwh_m2, 1) : '—'}
+            <td
+              style={{
+                padding: '8px 6px',
+                textAlign: 'right',
+                color: b.ecart_pct > 0 ? '#dc2626' : b.ecart_pct < 0 ? '#16a34a' : '#6b7280',
+                fontWeight: 600,
+              }}
+            >
+              {b.ecart_kwh != null ? `${b.ecart_kwh > 0 ? '+' : ''}${fmt(b.ecart_kwh)}` : '—'}
+            </td>
+            <td style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
+              {b.ipe_baseline ? `${fmt(b.ipe_baseline, 1)}` : '—'}
+            </td>
+            <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 500 }}>
+              {b.ipe_current ? `${fmt(b.ipe_current, 1)}` : '—'}
             </td>
             <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-              <DataSourceBadge source={u.data_source} />
+              <TrendBadge trend={b.trend} ecart_pct={b.ecart_pct} />
             </td>
             <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-              {u.has_drift ? (
-                <span style={{ color: '#dc2626', fontWeight: 600 }}>+{fmt(u.drift_pct, 1)}%</span>
-              ) : (
-                <span style={{ color: '#65a30d' }}>OK</span>
-              )}
+              <DataSourceBadge source={b.data_source} />
             </td>
           </tr>
         ))}
@@ -185,6 +258,79 @@ function UesTable({ ues, onAction }) {
     </table>
   );
 }
+
+// ── UES Table (enrichi V1.2) ─────────────────────────────────────────────
+
+function UesTable({ ues }) {
+  if (!ues || ues.length === 0) {
+    return (
+      <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Aucun usage significatif détecté.</p>
+    );
+  }
+  return (
+    <div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
+            <th style={{ padding: '8px 6px' }}>Usage</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>kWh/an</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>Part</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE kWh/m²</th>
+            <th style={{ padding: '8px 6px', textAlign: 'center' }}>Source</th>
+            <th style={{ padding: '8px 6px', textAlign: 'center' }}>Dérive</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ues.map((u, i) => (
+            <tr key={u.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: '8px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{familyIcon(u.family)}</span>
+                <span style={{ fontWeight: u.is_significant ? 600 : 400 }}>{u.label}</span>
+                {u.is_significant && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      background: '#dbeafe',
+                      color: '#1e40af',
+                      fontWeight: 600,
+                    }}
+                  >
+                    UES
+                  </span>
+                )}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
+                {fmt(u.kwh)}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(u.pct_of_total, 1)}%</td>
+              <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                {u.ipe_kwh_m2 ? fmt(u.ipe_kwh_m2, 1) : '—'}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                <DataSourceBadge source={u.data_source} />
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                {u.has_drift ? (
+                  <span style={{ color: '#dc2626', fontWeight: 600 }}>+{fmt(u.drift_pct, 1)}%</span>
+                ) : (
+                  <span style={{ color: '#65a30d' }}>OK</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 8, fontStyle: 'italic' }}>
+        UES = Usage Énergétique Significatif (critère ISO 50001). IPE = Indicateur de Performance
+        Énergétique (kWh/m²/an).
+      </div>
+    </div>
+  );
+}
+
+// ── Plan de comptage ─────────────────────────────────────────────────────
 
 function MeteringPlanTree({ plan }) {
   if (!plan || !plan.meters || plan.meters.length === 0) {
@@ -279,6 +425,8 @@ function MeteringPlanTree({ plan }) {
   );
 }
 
+// ── Dérives ──────────────────────────────────────────────────────────────
+
 function DriftCards({ drifts, navigate }) {
   if (!drifts || drifts.length === 0) {
     return <p style={{ color: '#65a30d', fontWeight: 500 }}>Aucune dérive active.</p>;
@@ -349,6 +497,8 @@ function DriftCards({ drifts, navigate }) {
   );
 }
 
+// ── Coût par usage ───────────────────────────────────────────────────────
+
 function CostBreakdown({ cost }) {
   if (!cost || !cost.by_usage || cost.by_usage.length === 0) {
     return <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Aucune ventilation disponible.</p>;
@@ -394,6 +544,270 @@ function CostBreakdown({ cost }) {
   );
 }
 
+// ── V1.2: Widget Conformité par usage ────────────────────────────────────
+
+function ComplianceWidget({ compliance, navigate }) {
+  if (!compliance) return null;
+  const { bacs_score, usage_coverage, top_risk, items } = compliance;
+  const concerned = items?.filter((it) => it.concerned_by_bacs || it.concerned_by_dt) || [];
+  if (concerned.length === 0 && !bacs_score) return null;
+
+  return (
+    <div>
+      {/* Score + couverture */}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
+        {bacs_score != null && (
+          <div
+            style={{
+              padding: '10px 16px',
+              background: bacs_score >= 70 ? '#dcfce7' : bacs_score >= 40 ? '#fef3c7' : '#fee2e2',
+              borderRadius: 8,
+              textAlign: 'center',
+              minWidth: 120,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#6b7280' }}>Score BACS</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>{fmt(bacs_score, 0)}/100</div>
+          </div>
+        )}
+        <div
+          style={{
+            padding: '10px 16px',
+            background: '#f0f9ff',
+            borderRadius: 8,
+            textAlign: 'center',
+            minWidth: 120,
+          }}
+        >
+          <div style={{ fontSize: 11, color: '#6b7280' }}>Couverture BACS</div>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>
+            {fmt(usage_coverage?.coverage_pct, 0)}%
+          </div>
+          <div style={{ fontSize: 11, color: '#6b7280' }}>
+            {usage_coverage?.bacs_covered}/{usage_coverage?.bacs_concerned} usages
+          </div>
+        </div>
+      </div>
+
+      {/* Détail par usage */}
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+            <th style={{ padding: '6px', textAlign: 'left' }}>Usage</th>
+            <th style={{ padding: '6px', textAlign: 'center' }}>BACS</th>
+            <th style={{ padding: '6px', textAlign: 'center' }}>Décret Tertiaire</th>
+            <th style={{ padding: '6px', textAlign: 'center' }}>ISO 50001</th>
+          </tr>
+        </thead>
+        <tbody>
+          {concerned.map((it, i) => (
+            <tr key={it.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: '6px', fontWeight: it.is_significant ? 600 : 400 }}>
+                {it.label}
+              </td>
+              <td style={{ padding: '6px', textAlign: 'center' }}>
+                {it.concerned_by_bacs ? (
+                  it.bacs_covered ? (
+                    <span style={{ color: '#16a34a', fontWeight: 600 }}>Couvert</span>
+                  ) : (
+                    <span style={{ color: '#dc2626', fontWeight: 600 }}>Manquant</span>
+                  )
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>—</span>
+                )}
+              </td>
+              <td style={{ padding: '6px', textAlign: 'center' }}>
+                {it.concerned_by_dt ? (
+                  <span style={{ color: '#d97706', fontWeight: 600 }}>Concerné</span>
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>—</span>
+                )}
+              </td>
+              <td style={{ padding: '6px', textAlign: 'center' }}>
+                {it.concerned_by_iso50001 ? (
+                  <span style={{ color: '#2563eb', fontWeight: 600 }}>UES</span>
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>—</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Risque principal */}
+      {top_risk && (
+        <div
+          style={{
+            marginTop: 10,
+            padding: '8px 12px',
+            background: '#fff7ed',
+            border: '1px solid #fed7aa',
+            borderRadius: 6,
+            fontSize: 12,
+            color: '#9a3412',
+          }}
+        >
+          Principal risque : {top_risk}
+        </div>
+      )}
+
+      {/* CTA */}
+      <button
+        onClick={() => navigate('/conformite/tertiaire')}
+        style={{
+          marginTop: 10,
+          padding: '6px 14px',
+          fontSize: 12,
+          borderRadius: 6,
+          border: '1px solid #d1d5db',
+          background: 'white',
+          cursor: 'pointer',
+          fontWeight: 500,
+        }}
+      >
+        Voir la conformité détaillée →
+      </button>
+    </div>
+  );
+}
+
+// ── V1.2: Liens Facture / Contrat / Achat ────────────────────────────────
+
+function BillingLinksWidget({ billing, cost, navigate }) {
+  if (!billing) return null;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+        {/* Prix de référence */}
+        <div
+          style={{
+            flex: '1 1 180px',
+            padding: '12px 16px',
+            background: '#f9fafb',
+            borderRadius: 8,
+          }}
+        >
+          <div style={{ fontSize: 11, color: '#6b7280' }}>Prix de référence</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>
+            {fmt(billing.price_ref?.value * 100, 2)}{' '}
+            <span style={{ fontSize: 12, fontWeight: 400 }}>c€/kWh</span>
+          </div>
+          <DataSourceBadge
+            source={
+              billing.price_ref?.source === 'contrat'
+                ? 'mesure_directe'
+                : billing.price_ref?.source === 'facture'
+                  ? 'facturation'
+                  : 'estimation_prorata'
+            }
+          />
+          <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 6 }}>
+            {priceSourceLabel(billing.price_ref?.source)}
+          </span>
+        </div>
+
+        {/* Contrat actif */}
+        {billing.contract ? (
+          <div
+            style={{
+              flex: '1 1 220px',
+              padding: '12px 16px',
+              background: '#f0fdf4',
+              borderRadius: 8,
+              border: '1px solid #bbf7d0',
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#6b7280' }}>Contrat actif</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{billing.contract.supplier}</div>
+            <div style={{ fontSize: 11, color: '#6b7280' }}>
+              {billing.contract.tariff_option || '—'} · Fin : {billing.contract.end_date || '—'}
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              flex: '1 1 220px',
+              padding: '12px 16px',
+              background: '#fef2f2',
+              borderRadius: 8,
+              border: '1px solid #fecaca',
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#991b1b' }}>Aucun contrat actif</div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              Le coût est calculé sur un prix par défaut
+            </div>
+          </div>
+        )}
+
+        {/* Factures */}
+        {billing.invoices_summary && (
+          <div
+            style={{
+              flex: '1 1 180px',
+              padding: '12px 16px',
+              background: '#f9fafb',
+              borderRadius: 8,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#6b7280' }}>Factures 12 mois</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>
+              {fmt(billing.invoices_summary.total_eur)}{' '}
+              <span style={{ fontSize: 12, fontWeight: 400 }}>EUR</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#6b7280' }}>
+              {billing.invoices_summary.count} facture(s) ·{' '}
+              {fmt(billing.invoices_summary.total_kwh)} kWh
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Liens rapides */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {[
+          {
+            label: 'Voir les factures',
+            path: billing.links?.bill_intel || '/bill-intel',
+            icon: '💰',
+          },
+          {
+            label: 'Explorer le contrat',
+            path: billing.links?.contract_radar || '/contrats-radar',
+            icon: '📄',
+          },
+          {
+            label: "Scénarios d'achat",
+            path: billing.links?.purchase || '/achat-energie',
+            icon: '📈',
+          },
+        ].map((link) => (
+          <button
+            key={link.path}
+            onClick={() => navigate(link.path)}
+            style={{
+              padding: '5px 12px',
+              fontSize: 12,
+              borderRadius: 6,
+              border: '1px solid #e5e7eb',
+              background: 'white',
+              cursor: 'pointer',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            {link.icon} {link.label} →
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────
 
 export default function UsagesDashboardPage() {
@@ -402,6 +816,7 @@ export default function UsagesDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const printRef = useRef(null);
 
   const siteId = selectedSite?.id;
 
@@ -417,6 +832,10 @@ export default function UsagesDashboardPage() {
       .catch((err) => setError(err?.response?.data?.detail || err.message))
       .finally(() => setLoading(false));
   }, [siteId]);
+
+  const handleExport = () => {
+    window.print();
+  };
 
   if (!siteId) {
     return (
@@ -447,28 +866,20 @@ export default function UsagesDashboardPage() {
 
   if (!data) return null;
 
-  const { readiness, metering_plan, top_ues, cost_breakdown, active_drifts, summary } = data;
-
-  const sectionStyle = {
-    background: 'white',
-    borderRadius: 12,
-    padding: '20px 24px',
-    marginBottom: 16,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-  };
-
-  const h2Style = {
-    fontSize: 15,
-    fontWeight: 700,
-    color: '#111827',
-    marginBottom: 12,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  };
+  const {
+    readiness,
+    metering_plan,
+    top_ues,
+    cost_breakdown,
+    active_drifts,
+    baselines,
+    compliance,
+    billing_links,
+    summary,
+  } = data;
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
+    <div ref={printRef} style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
       <div
         style={{
@@ -483,10 +894,27 @@ export default function UsagesDashboardPage() {
             Usages Énergétiques
           </h1>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
-            Vue pivot : patrimoine, usages, dérives, coût, conformité
+            Usage → Dérive → Action → Gain → Preuve → Conformité → Facture
           </p>
         </div>
-        <ReadinessBadge score={readiness.score} level={readiness.level} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ReadinessBadge score={readiness.score} level={readiness.level} />
+          <button
+            onClick={handleExport}
+            className="print-hide"
+            style={{
+              padding: '6px 14px',
+              fontSize: 12,
+              borderRadius: 6,
+              border: '1px solid #d1d5db',
+              background: 'white',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            Exporter / Imprimer
+          </button>
+        </div>
       </div>
 
       {/* KPI Row */}
@@ -501,7 +929,12 @@ export default function UsagesDashboardPage() {
         />
         <KpiCard label="Sous-compteurs" value={summary.sub_meters_count} />
         <KpiCard label="Dérives actives" value={summary.active_drifts_count} />
-        <KpiCard label="UES identifiés" value={summary.ues_count} />
+        <KpiCard
+          label="Prix réf."
+          value={fmt(billing_links?.price_ref?.value * 100, 1)}
+          unit="c€/kWh"
+          sub={priceSourceLabel(summary.price_source)}
+        />
       </div>
 
       {/* Recommandations readiness */}
@@ -527,16 +960,26 @@ export default function UsagesDashboardPage() {
         </div>
       )}
 
-      {/* Plan de comptage */}
+      {/* V1.2: Baseline / Avant-Après */}
       <div style={sectionStyle}>
-        <h2 style={h2Style}>Plan de comptage</h2>
-        <MeteringPlanTree plan={metering_plan} />
+        <h2 style={h2Style}>Baseline & Avant/Après</h2>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>
+          Comparaison N-1 (baseline) vs N (actuel) pour les usages avec sous-compteurs. Écarts et
+          tendances calculés automatiquement.
+        </p>
+        <BaselineTable baselines={baselines} />
       </div>
 
       {/* Top UES */}
       <div style={sectionStyle}>
-        <h2 style={h2Style}>Répartition par usage (Top UES)</h2>
+        <h2 style={h2Style}>Usages Énergétiques Significatifs (UES)</h2>
         <UesTable ues={top_ues} />
+      </div>
+
+      {/* Plan de comptage */}
+      <div style={sectionStyle}>
+        <h2 style={h2Style}>Plan de comptage</h2>
+        <MeteringPlanTree plan={metering_plan} />
       </div>
 
       {/* Dérives prioritaires */}
@@ -545,14 +988,29 @@ export default function UsagesDashboardPage() {
         <DriftCards drifts={active_drifts} navigate={navigate} />
       </div>
 
+      {/* V1.2: Widget conformité par usage */}
+      <div style={sectionStyle}>
+        <h2 style={h2Style}>Impact conformité</h2>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>
+          Couverture des usages par BACS, Décret Tertiaire et critères ISO 50001.
+        </p>
+        <ComplianceWidget compliance={compliance} navigate={navigate} />
+      </div>
+
       {/* Coût par usage */}
       <div style={sectionStyle}>
         <h2 style={h2Style}>Coût par usage</h2>
         <CostBreakdown cost={cost_breakdown} />
       </div>
 
+      {/* V1.2: Liens facture / contrat / achat */}
+      <div style={sectionStyle}>
+        <h2 style={h2Style}>Impact facture & achat</h2>
+        <BillingLinksWidget billing={billing_links} cost={cost_breakdown} navigate={navigate} />
+      </div>
+
       {/* Liens cross-brique */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <div className="print-hide" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
           { label: 'Diagnostic', route: '/diagnostic-conso', icon: '🔍' },
           { label: 'Conformité', route: '/conformite/tertiaire', icon: '📋' },
@@ -584,6 +1042,14 @@ export default function UsagesDashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .print-hide { display: none !important; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
     </div>
   );
 }

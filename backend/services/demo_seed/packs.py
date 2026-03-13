@@ -159,6 +159,11 @@ PACKS = {
                     {"nom": "Batiment B — Annexe", "surface_m2": 1500, "annee": 2010, "cvc_kw": 100},
                 ],
                 "gas": True,
+                "sub_meters": [
+                    {"suffix": "CVC", "name": "Siege — CVC", "pct": 0.35},
+                    {"suffix": "ECLAIRAGE", "name": "Siege — Eclairage", "pct": 0.20},
+                    {"suffix": "IT", "name": "Siege — IT & Bureautique", "pct": 0.15},
+                ],
             },
             {
                 "nom": "Bureau Regional Lyon",
@@ -185,6 +190,10 @@ PACKS = {
                     {"nom": "Batiment principal", "surface_m2": 1200, "annee": 2005, "cvc_kw": 50},
                 ],
                 "gas": False,
+                "sub_meters": [
+                    {"suffix": "CHAUFFAGE", "name": "Lyon — Chauffage", "pct": 0.35},
+                    {"suffix": "ECLAIRAGE", "name": "Lyon — Eclairage", "pct": 0.25},
+                ],
             },
             {
                 "nom": "Usine HELIOS Toulouse",
@@ -211,6 +220,11 @@ PACKS = {
                     {"nom": "Batiment industriel", "surface_m2": 6000, "annee": 1988, "cvc_kw": 150},
                 ],
                 "gas": True,
+                "sub_meters": [
+                    {"suffix": "PROCESS", "name": "Usine — Process", "pct": 0.30},
+                    {"suffix": "ECLAIRAGE", "name": "Usine — Eclairage", "pct": 0.20},
+                    {"suffix": "VENTILATION", "name": "Usine — Ventilation", "pct": 0.10},
+                ],
             },
             {
                 "nom": "Hotel Helios Nice",

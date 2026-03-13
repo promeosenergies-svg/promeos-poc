@@ -87,14 +87,27 @@ def _serialize_user(db: Session, user: User, uor: Optional[UserOrgRole] = None) 
     if uor:
         scopes = db.query(UserScope).filter(UserScope.user_org_role_id == uor.id).all()
         result["role"] = uor.role.value
-        result["scopes"] = [
-            {
-                "level": s.scope_level.value,
-                "id": s.scope_id,
-                "expires_at": s.expires_at.isoformat() if s.expires_at else None,
-            }
-            for s in scopes
-        ]
+        scope_list = []
+        for s in scopes:
+            label = s.scope_level.value.upper()
+            if s.scope_level == ScopeLevel.ORG:
+                org = db.query(Organisation).filter(Organisation.id == s.scope_id).first()
+                label = org.nom if org else f"Organisation #{s.scope_id}"
+            elif s.scope_level == ScopeLevel.ENTITE:
+                ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == s.scope_id).first()
+                label = ej.nom if ej else f"Entité #{s.scope_id}"
+            elif s.scope_level == ScopeLevel.SITE:
+                site = db.query(Site).filter(Site.id == s.scope_id).first()
+                label = site.nom if site else f"Site #{s.scope_id}"
+            scope_list.append(
+                {
+                    "level": s.scope_level.value,
+                    "id": s.scope_id,
+                    "label": label,
+                    "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+                }
+            )
+        result["scopes"] = scope_list
     return result
 
 

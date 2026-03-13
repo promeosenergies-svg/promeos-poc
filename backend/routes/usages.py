@@ -1,5 +1,5 @@
 """
-PROMEOS — Routes API Usage V1.1
+PROMEOS — Routes API Usage V1.2
 Endpoints pour la brique Usages Energetiques.
 """
 
@@ -13,6 +13,9 @@ from services.usage_service import (
     get_top_ues,
     get_usage_cost_breakdown,
     get_usages_dashboard,
+    compute_baselines,
+    get_usage_compliance,
+    get_usage_billing_links,
 )
 from models import Usage, UsageBaseline, USAGE_LABELS_FR, USAGE_FAMILY_MAP, TypeUsage, UsageFamily, DataSourceType
 
@@ -94,6 +97,33 @@ def api_usage_taxonomy():
         "families": list(families.values()),
         "data_sources": [{"value": ds.value, "label": ds.value.replace("_", " ").title()} for ds in DataSourceType],
     }
+
+
+# ── V1.2 — Baselines ─────────────────────────────────────────────────────
+
+
+@router.get("/baselines/{site_id}")
+def api_usage_baselines(site_id: int, db: Session = Depends(get_db)):
+    """Baselines auto-calculees avec comparaison avant/apres."""
+    return compute_baselines(db, site_id)
+
+
+# ── V1.2 — Compliance par usage ──────────────────────────────────────────
+
+
+@router.get("/compliance/{site_id}")
+def api_usage_compliance(site_id: int, db: Session = Depends(get_db)):
+    """Widget conformite par usage (BACS, DT, ISO 50001)."""
+    return get_usage_compliance(db, site_id)
+
+
+# ── V1.2 — Billing links ────────────────────────────────────────────────
+
+
+@router.get("/billing-links/{site_id}")
+def api_usage_billing_links(site_id: int, db: Session = Depends(get_db)):
+    """Liens usage → facture → contrat → achat."""
+    return get_usage_billing_links(db, site_id)
 
 
 # ── CRUD Usages (liste, create) ──────────────────────────────────────────
