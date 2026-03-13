@@ -12,9 +12,9 @@ export function evidenceConformite(scopeLabel) {
     sources: [
       {
         kind: 'calc',
-        label: 'Moteur RegOps — 4 réglementations',
+        label: 'Moteur RegOps — 3 réglementations',
         confidence: 'high',
-        details: 'Évaluation déterministe Tertiaire, BACS, APER, CEE P6.',
+        details: 'Évaluation déterministe Tertiaire (DT), BACS, APER.',
         freshness: 'Recalculé à chaque chargement du cockpit',
         links: [{ label: 'Voir RegOps', href: '/regops' }],
       },
@@ -27,9 +27,9 @@ export function evidenceConformite(scopeLabel) {
       },
     ],
     method: [
-      'Score = sites conformes / total sites × 100.',
-      'Statut par site : conforme si 0 finding critique, sinon à risque ou non conforme.',
-      'Chaque réglementation évaluée indépendamment (Tertiaire, BACS, APER, CEE P6).',
+      'Score = moyenne pondérée DT (45%) + BACS (30%) + APER (25%) − pénalité findings critiques.',
+      'Statut par site : pire statut parmi Décret Tertiaire et BACS.',
+      'CEE P6 : dispositif de financement, non inclus dans le score réglementaire.',
     ],
     assumptions: [
       'Les données patrimoniales (surface, usage) sont à jour.',

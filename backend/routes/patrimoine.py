@@ -1321,6 +1321,22 @@ def patrimoine_kpis(
 # ========================================
 
 
+def _worst_compliance_status(*statuses) -> StatutConformite | None:
+    """Return the most non-compliant status across all given frameworks.
+
+    Priority: NON_CONFORME > A_RISQUE > CONFORME.
+    None values are ignored (framework not applicable).
+    """
+    valid = [s for s in statuses if s is not None]
+    if not valid:
+        return None
+    if any(s == StatutConformite.NON_CONFORME for s in valid):
+        return StatutConformite.NON_CONFORME
+    if any(s == StatutConformite.A_RISQUE for s in valid):
+        return StatutConformite.A_RISQUE
+    return StatutConformite.CONFORME
+
+
 def _serialize_site(site: Site) -> dict:
     return {
         "id": site.id,
@@ -1342,7 +1358,11 @@ def _serialize_site(site: Site) -> dict:
         "updated_at": site.updated_at.isoformat() if site.updated_at else None,
         # Enriched analytics fields
         "risque_eur": site.risque_financier_euro,
-        "statut_conformite": site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else None,
+        "statut_conformite": (
+            _worst_compliance_status(site.statut_decret_tertiaire, site.statut_bacs).value
+            if _worst_compliance_status(site.statut_decret_tertiaire, site.statut_bacs)
+            else None
+        ),
         "anomalie_facture": site.anomalie_facture,
         "conso_kwh_an": site.annual_kwh_total,
     }
@@ -1478,7 +1498,11 @@ def export_sites_csv(
                     site.siret or "",
                     site.actif,
                     site.risque_financier_euro or 0,
-                    site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else "",
+                    (
+                        _worst_compliance_status(site.statut_decret_tertiaire, site.statut_bacs).value
+                        if _worst_compliance_status(site.statut_decret_tertiaire, site.statut_bacs)
+                        else ""
+                    ),
                     site.anomalie_facture or False,
                     site.annual_kwh_total or "",
                     site.portefeuille_id or "",
