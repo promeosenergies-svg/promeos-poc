@@ -103,13 +103,14 @@ ACTION_TRANSLATION = {
 _CHECK_PRIORITY = [
     "has_active_contract",  # Achats — most critical
     "has_delivery_points",  # Conso — foundational
+    "dp_covered_by_contract",  # Achats — coverage
     "has_recent_invoices",  # Facture — budget control
     "has_payment_rule",  # Facture — cost allocation
     "period_coherence",  # Facture — alignment
     "energy_type_match",  # Conso — accuracy
 ]
 
-# Score gain approximation: each check = 1/6 = ~17 points
+# Score gain approximation: each check = 1/7 = ~14 points
 _SCORE_GAIN_PER_CHECK = 17
 
 

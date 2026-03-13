@@ -81,8 +81,8 @@ class TestActionTranslation:
 class TestCheckPriority:
     """V98 C: _CHECK_PRIORITY order and completeness."""
 
-    def test_priority_has_6_entries(self):
-        assert len(_CHECK_PRIORITY) == 6
+    def test_priority_has_7_entries(self):
+        assert len(_CHECK_PRIORITY) == 7
 
     def test_has_active_contract_is_highest_priority(self):
         assert _CHECK_PRIORITY[0] == "has_active_contract"
