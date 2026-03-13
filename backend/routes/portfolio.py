@@ -243,6 +243,7 @@ def _build_site_row(db, site, dt_from, dt_to, days):
 def get_portfolio_summary(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
+    portefeuille_id: Optional[int] = Query(None),
     site_ids: Optional[str] = Query(None, description="Comma-separated site IDs"),
     db: Session = Depends(get_db),
 ):
@@ -257,6 +258,8 @@ def get_portfolio_summary(
 
     # Resolve sites
     q = db.query(Site).filter(Site.actif == True)
+    if portefeuille_id is not None:
+        q = q.filter(Site.portefeuille_id == portefeuille_id)
     if site_ids:
         ids = [int(x) for x in site_ids.split(",") if x.strip()]
         q = q.filter(Site.id.in_(ids))
@@ -345,6 +348,7 @@ def get_portfolio_summary(
 def get_portfolio_sites(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
+    portefeuille_id: Optional[int] = Query(None),
     sort: str = Query(
         "impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics|coverage"
     ),
@@ -369,6 +373,8 @@ def get_portfolio_sites(
     days = (d_to - d_from).days or 1
 
     q = db.query(Site).filter(Site.actif == True)
+    if portefeuille_id is not None:
+        q = q.filter(Site.portefeuille_id == portefeuille_id)
     if site_ids:
         ids = [int(x) for x in site_ids.split(",") if x.strip()]
         q = q.filter(Site.id.in_(ids))
