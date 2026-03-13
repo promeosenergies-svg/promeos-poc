@@ -89,7 +89,7 @@ const ROW_HEIGHT = 52; // px — fixed row height for virtual scroll
 const OVERSCAN = 10; // extra rows above/below viewport
 
 const USAGE_OPTIONS = [
-  { value: '', label: 'Usage' },
+  { value: '', label: 'Type de site' },
   { value: 'bureau', label: 'Bureau' },
   { value: 'commerce', label: 'Commerce' },
   { value: 'entrepot', label: 'Entrepôt' },
@@ -1328,7 +1328,7 @@ export default function Patrimoine() {
                         >
                           Site
                         </Th>
-                        <Th>Usage</Th>
+                        <Th>Type</Th>
                         <Th>Conformité</Th>
                         <Th
                           sortable
