@@ -36,6 +36,7 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import { getKpiMessage } from '../services/kpiMessaging';
+import { logger } from '../services/logger';
 
 const PAGE_TITLE = 'Facturation — Chronologie';
 
@@ -191,7 +192,7 @@ export default function BillingPage() {
           const summaryData = await getCoverageSummary(params);
           setSummary(summaryData);
         } catch (err) {
-          if (isExpert) console.warn('[BillingPage] coverage-summary failed (non-bloquant):', err);
+          if (isExpert) logger.warn('[BillingPage] coverage-summary failed (non-bloquant):', err);
           setSummary(null);
         }
       }
@@ -202,7 +203,7 @@ export default function BillingPage() {
           const missingData = await getMissingPeriods({ limit: 10 });
           setMissingPeriods(missingData.items || []);
         } catch (err) {
-          if (isExpert) console.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
+          if (isExpert) logger.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
           setMissingPeriods([]);
         }
       }
@@ -213,7 +214,7 @@ export default function BillingPage() {
           const cmp = await getBillingCompareMonthly(params);
           setCompareData(cmp);
         } catch (err) {
-          if (isExpert) console.warn('[BillingPage] compare-monthly failed (non-bloquant):', err);
+          if (isExpert) logger.warn('[BillingPage] compare-monthly failed (non-bloquant):', err);
           setCompareData(null);
         }
       }

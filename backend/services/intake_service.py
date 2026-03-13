@@ -32,7 +32,7 @@ from services.intake_engine import (
     DEMO_DEFAULTS,
     QUESTION_BANK,
 )
-from services.compliance_engine import recompute_site
+from services.compliance_coordinator import recompute_site_full as recompute_site
 from services.onboarding_service import (
     create_batiment_for_site,
     create_obligations_for_site,
@@ -320,9 +320,10 @@ def apply_answers(db: Session, session_id: int) -> dict:
     # Recompute compliance
     recompute_site(db, site.id)
 
-    # Compute new score
-    diff = compute_before_after(db, site.id, {})
-    session.score_after = diff["score_before"]  # Current score IS the "after"
+    # Compute new score (score A.2 après application des données intake)
+    from services.compliance_score_service import compute_site_compliance_score
+
+    session.score_after = round(compute_site_compliance_score(db, site.id).score, 1)
     db.flush()
 
     _log_audit(

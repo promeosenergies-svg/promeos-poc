@@ -84,6 +84,7 @@ import {
   evidenceMaturite,
   evidenceCouverture,
 } from '../ui/evidence.fixtures';
+import { useComplianceMeta } from '../hooks/useComplianceMeta';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -102,6 +103,7 @@ const Cockpit = () => {
   const { openActionDrawer } = useActionDrawer();
   const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
+  const complianceMeta = useComplianceMeta();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
   const [siteSort, setSiteSort] = useState({ col: '', dir: '' });
   const [siteSearch, setSiteSearch] = useState('');
@@ -270,12 +272,12 @@ const Cockpit = () => {
 
   const evidenceMap = useMemo(
     () => ({
-      conformite: evidenceConformite(scopeLabel),
+      conformite: evidenceConformite(scopeLabel, complianceMeta),
       risque: evidenceRisque(scopeLabel, kpis.risqueTotal),
       maturite: evidenceMaturite(scopeLabel),
       couverture: evidenceCouverture(scopeLabel),
     }),
-    [scopeLabel, kpis.risqueTotal]
+    [scopeLabel, kpis.risqueTotal, complianceMeta]
   );
 
   const ptfWithCounts = useMemo(() => {

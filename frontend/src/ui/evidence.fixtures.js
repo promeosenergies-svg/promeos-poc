@@ -4,7 +4,13 @@
  */
 import { buildEvidence } from './evidence';
 
-export function evidenceConformite(scopeLabel) {
+export function evidenceConformite(scopeLabel, meta = null) {
+  const w = meta?.framework_weights;
+  const dtPct = w ? Math.round((w.tertiaire_operat ?? 0.45) * 100) : 45;
+  const bacsPct = w ? Math.round((w.bacs ?? 0.3) * 100) : 30;
+  const aperPct = w ? Math.round((w.aper ?? 0.25) * 100) : 25;
+  const maxPenalty = meta?.critical_penalty?.max_pts ?? 20;
+
   return buildEvidence({
     id: 'exec-conformite',
     title: 'Score de conformité',
@@ -27,7 +33,7 @@ export function evidenceConformite(scopeLabel) {
       },
     ],
     method: [
-      'Score = moyenne pondérée DT (45%) + BACS (30%) + APER (25%) − pénalité findings critiques.',
+      `Score = moyenne pondérée DT (${dtPct}%) + BACS (${bacsPct}%) + APER (${aperPct}%) − pénalité findings critiques (max −${maxPenalty} pts).`,
       'Statut par site : pire statut parmi Décret Tertiaire et BACS.',
       'CEE P6 : dispositif de financement, non inclus dans le score réglementaire.',
     ],

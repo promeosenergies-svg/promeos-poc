@@ -259,6 +259,30 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
     return result
 
 
+def sync_site_unified_score(db: Session, site_id: int) -> ComplianceScoreResult:
+    """Persiste le score A.2 sur Site.compliance_score_composite.
+
+    Calcule le score unifié puis l'écrit dans les 3 champs dédiés du modèle Site.
+    Doit être appelé après recompute_site() pour maintenir les deux chemins en sync.
+    """
+    from models import Site
+
+    result = compute_site_compliance_score(db, site_id)
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if site:
+        site.compliance_score_composite = result.score
+        site.compliance_score_breakdown_json = json.dumps([asdict(f) for f in result.breakdown])
+        site.compliance_score_confidence = result.confidence
+        db.flush()
+        _logger.info(
+            "sync_site_unified_score site=%d: persisted score=%.1f confidence=%s",
+            site_id,
+            result.score,
+            result.confidence,
+        )
+    return result
+
+
 def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
     """
     Score conformité agrégé pour un portefeuille (moyenne pondérée par surface).
@@ -405,16 +429,33 @@ def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
             )
             base_score = ((ok_count + unknown_count * 0.5) / total) * 100.0 if total > 0 else 50.0
             overdue_penalty = overdue * 15.0  # -15pts per overdue NOK finding
-            return max(0.0, min(100.0, base_score - overdue_penalty))
+            score = max(0.0, min(100.0, base_score - overdue_penalty))
+            _logger.debug(
+                "_fallback_site_score site=%d fw=%s: findings path (score=%.1f, ok=%d/%d, overdue=%d)",
+                site.id,
+                fw_key,
+                score,
+                ok_count,
+                total,
+                overdue,
+            )
+            return score
 
     # 2. Fallback legacy snapshot (si pas de findings)
     if fw_key == "tertiaire_operat" and site.statut_decret_tertiaire:
-        return _status_to_score(
+        score = _status_to_score(
             site.statut_decret_tertiaire.value
             if hasattr(site.statut_decret_tertiaire, "value")
             else str(site.statut_decret_tertiaire)
         )
+        _logger.debug("_fallback_site_score site=%d fw=%s: legacy snapshot DT (score=%.1f)", site.id, fw_key, score)
+        return score
     if fw_key == "bacs" and site.statut_bacs:
-        return _status_to_score(site.statut_bacs.value if hasattr(site.statut_bacs, "value") else str(site.statut_bacs))
+        score = _status_to_score(
+            site.statut_bacs.value if hasattr(site.statut_bacs, "value") else str(site.statut_bacs)
+        )
+        _logger.debug("_fallback_site_score site=%d fw=%s: legacy snapshot BACS (score=%.1f)", site.id, fw_key, score)
+        return score
     # APER n'a pas de snapshot dédié → score par défaut
+    _logger.debug("_fallback_site_score site=%d fw=%s: default 50.0 (no data)", site.id, fw_key)
     return 50.0

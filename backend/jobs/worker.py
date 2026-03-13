@@ -100,8 +100,11 @@ def _handle_recompute_assessment(db: Session, payload: dict):
     if object_type == "site":
         summary = evaluate_site(db, object_id)
         persist_assessment(db, summary)
+        db.commit()
     elif object_type in ["entity", "org"]:
-        # TODO: implement entity/org level recompute
+        # NOTE (2026-03): recompute entity/org non implémenté au niveau worker.
+        # Utiliser POST /api/compliance/recompute?scope=org&id=X directement.
+        # Un job dédié n'est pas nécessaire tant que le volume reste < 50 sites.
         pass
 
 

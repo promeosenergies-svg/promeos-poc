@@ -6,6 +6,7 @@ Ces tests détectent les drifts entre :
 - compliance_score_service (FRAMEWORK_WEIGHTS)
 - patrimoine.py (_worst_compliance_status)
 - regops rules (CEE P6 ≠ réglementation)
+- compliance_coordinator (synchronisation des deux chemins de calcul)
 
 Chaque test doit rester vert quand on modifie un composant et oublie de mettre à jour l'autre.
 """
@@ -166,3 +167,48 @@ class TestCeeP6IsNotRegulation:
                 f"CEE P6 finding category='{category}' au lieu de 'incentive'. "
                 "Le CEE est un dispositif financier, pas une obligation réglementaire."
             )
+
+
+# ─────────────────────────────────────────────────────────────
+# E. compliance_coordinator : interface publique stable
+# ─────────────────────────────────────────────────────────────
+
+
+class TestCoordinatorSync:
+    """Vérifie que compliance_coordinator expose les bons points d'entrée."""
+
+    def test_recompute_site_full_is_callable(self):
+        from services.compliance_coordinator import recompute_site_full
+
+        assert callable(recompute_site_full), (
+            "recompute_site_full doit être callable — vérifier compliance_coordinator.py."
+        )
+
+    def test_sync_site_unified_score_is_callable(self):
+        from services.compliance_score_service import sync_site_unified_score
+
+        assert callable(sync_site_unified_score), (
+            "sync_site_unified_score doit être callable — vérifier compliance_score_service.py."
+        )
+
+    def test_compliance_meta_constants_present(self):
+        from services.compliance_score_service import (
+            FRAMEWORK_WEIGHTS,
+            MAX_CRITICAL_PENALTY,
+            CRITICAL_PENALTY_PER_FINDING,
+        )
+
+        assert isinstance(FRAMEWORK_WEIGHTS, dict) and FRAMEWORK_WEIGHTS, (
+            "FRAMEWORK_WEIGHTS doit être un dict non vide."
+        )
+        assert MAX_CRITICAL_PENALTY > 0, f"MAX_CRITICAL_PENALTY={MAX_CRITICAL_PENALTY} doit être > 0."
+        assert CRITICAL_PENALTY_PER_FINDING > 0, (
+            f"CRITICAL_PENALTY_PER_FINDING={CRITICAL_PENALTY_PER_FINDING} doit être > 0."
+        )
+
+    def test_coordinator_imports_without_error(self):
+        """Vérifie qu'il n'y a pas d'erreur d'import circulaire."""
+        import importlib
+
+        mod = importlib.import_module("services.compliance_coordinator")
+        assert hasattr(mod, "recompute_site_full")

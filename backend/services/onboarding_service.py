@@ -22,7 +22,8 @@ from models import (
     ParkingType,
     OperatStatus,
 )
-from services.compliance_engine import bacs_deadline_for_power, BACS_SEUIL_HAUT, recompute_site
+from services.compliance_engine import bacs_deadline_for_power, BACS_SEUIL_HAUT
+from services.compliance_coordinator import recompute_site_full as recompute_site
 from services.naf_classifier import classify_naf
 
 

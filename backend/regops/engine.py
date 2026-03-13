@@ -1,7 +1,8 @@
 """
 PROMEOS RegOps - Engine orchestrateur  ★ SOURCE DE VÉRITÉ ★
 
-Coordonne les 4 moteurs de règles (tertiaire_operat, bacs, aper, cee_p6)
+Coordonne 3 obligations réglementaires (tertiaire_operat, bacs, aper)
++ CEE P6 (incentif financier — hints uniquement, non inclus dans le score)
 + scoring unifié A.2 + cache RegAssessment.
 
 C'est ce moteur qui alimente :
@@ -246,9 +247,15 @@ def persist_assessment(db: Session, summary: SiteSummary):
         existing.top_actions_json = actions_json
         existing.missing_data_json = missing_data_json
         existing.deterministic_version = summary.deterministic_version
-        existing.data_version = compute_data_version(None, [], [])  # Placeholder
+        _site_obj = db.query(Site).filter(Site.id == summary.site_id).first()
+        _batiments = db.query(Batiment).filter(Batiment.site_id == summary.site_id).all()
+        _evidences = db.query(Evidence).filter(Evidence.site_id == summary.site_id).all()
+        existing.data_version = compute_data_version(_site_obj, _batiments, _evidences)
         existing.is_stale = False
     else:
+        _site_obj = db.query(Site).filter(Site.id == summary.site_id).first()
+        _batiments = db.query(Batiment).filter(Batiment.site_id == summary.site_id).all()
+        _evidences = db.query(Evidence).filter(Evidence.site_id == summary.site_id).all()
         assessment = RegAssessment(
             object_type="site",
             object_id=summary.site_id,
@@ -260,9 +267,9 @@ def persist_assessment(db: Session, summary: SiteSummary):
             top_actions_json=actions_json,
             missing_data_json=missing_data_json,
             deterministic_version=summary.deterministic_version,
-            data_version="",
+            data_version=compute_data_version(_site_obj, _batiments, _evidences),
             is_stale=False,
         )
         db.add(assessment)
 
-    db.commit()
+    db.flush()  # Flush only — la transaction est contrôlée par l'appelant

@@ -85,6 +85,7 @@ def recompute_assessments(
     if scope == "site" and site_id:
         summary = evaluate_site(db, site_id)
         persist_assessment(db, summary)
+        db.commit()
         return {"recomputed": 1, "site_id": site_id}
     elif scope == "all":
         from regops.engine import evaluate_batch
@@ -93,6 +94,7 @@ def recompute_assessments(
         summaries = evaluate_batch(db, [s.id for s in sites])
         for summary in summaries:
             persist_assessment(db, summary)
+        db.commit()
         return {"recomputed": len(summaries)}
     else:
         raise HTTPException(status_code=400, detail="Invalid scope or missing site_id")

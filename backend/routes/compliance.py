@@ -24,8 +24,8 @@ from models import (
     Portefeuille,
     EntiteJuridique,
 )
+from services.compliance_coordinator import recompute_site_full as recompute_site
 from services.compliance_engine import (
-    recompute_site,
     recompute_portfolio,
     recompute_organisation,
     compute_site_compliance_summary,
@@ -48,6 +48,41 @@ from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/compliance", tags=["Compliance"])
+
+
+# ========================================
+# Meta endpoint (configuration publique du scoring)
+# ========================================
+
+
+@router.get("/meta")
+def get_compliance_meta():
+    """GET /api/compliance/meta — Configuration publique du scoring conformité.
+
+    Retourne les poids, seuils et frameworks depuis regs.yaml.
+    Consommé par le frontend pour afficher les formules dans les modaux "Pourquoi ce chiffre?".
+    """
+    from services.compliance_score_service import (
+        FRAMEWORK_WEIGHTS,
+        MAX_CRITICAL_PENALTY,
+        CRITICAL_PENALTY_PER_FINDING,
+    )
+
+    return {
+        "framework_weights": FRAMEWORK_WEIGHTS,
+        "frameworks_regulatory": list(FRAMEWORK_WEIGHTS.keys()),
+        "thresholds": {
+            "conforme": 70,
+            "a_risque": 40,
+            "non_conforme": 0,
+        },
+        "critical_penalty": {
+            "max_pts": MAX_CRITICAL_PENALTY,
+            "per_finding_pts": CRITICAL_PENALTY_PER_FINDING,
+        },
+        "scoring_version": "A.2",
+        "source": "regs.yaml",
+    }
 
 
 # ========================================
@@ -80,6 +115,7 @@ def recompute_compliance(
     try:
         if scope == "site":
             snapshot = recompute_site(db, site_id=id)
+            db.commit()
             return {"status": "ok", "scope": "site", "site_id": id, "snapshot": snapshot}
         elif scope == "portfolio":
             result = recompute_portfolio(db, portefeuille_id=id)
