@@ -367,13 +367,14 @@ def get_usage_cost_breakdown(db: Session, site_id: int, days: int = 365) -> dict
         or 0
     )
 
-    # Par usage (sous-compteurs)
+    # Par usage (sous-compteurs uniquement — exclure les compteurs principaux)
     subs = (
         db.query(Meter)
         .filter(
             Meter.site_id == site_id,
             Meter.is_active.is_(True),
             Meter.usage_id.isnot(None),
+            Meter.parent_meter_id.isnot(None),
         )
         .all()
     )
@@ -399,10 +400,32 @@ def get_usage_cost_breakdown(db: Session, site_id: int, days: int = 365) -> dict
         usage_costs[uid]["kwh"] += kwh
         usage_costs[uid]["eur"] += kwh * price_ref
 
-    # Non couvert
+    # Fallback : usages declares sans sous-compteur, utiliser pct_of_total
+    declared_usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=site_id)).all()
+    for u in declared_usages:
+        if u.id not in usage_costs and u.pct_of_total and total_kwh > 0:
+            est_kwh = total_kwh * u.pct_of_total / 100
+            usage_costs[u.id] = {
+                "usage_id": u.id,
+                "type": u.type.value,
+                "label": u.label or USAGE_LABELS_FR.get(u.type, u.type.value),
+                "kwh": est_kwh,
+                "eur": est_kwh * price_ref,
+            }
+
+    # Plafonner la somme des kWh par usage au total site
     covered_kwh = sum(v["kwh"] for v in usage_costs.values())
+    if covered_kwh > total_kwh and total_kwh > 0:
+        # Normaliser au pro-rata pour que la somme = total_kwh
+        ratio = total_kwh / covered_kwh
+        for v in usage_costs.values():
+            v["kwh"] *= ratio
+            v["eur"] = v["kwh"] * price_ref
+        covered_kwh = total_kwh
+
     uncovered_kwh = max(0, total_kwh - covered_kwh)
 
+    total_site_cost = total_kwh * price_ref
     items = sorted(usage_costs.values(), key=lambda x: x["kwh"], reverse=True)
     for item in items:
         item["kwh"] = round(item["kwh"], 1)
@@ -545,6 +568,32 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 .scalar()
                 or 0
             )
+
+            # Annualiser la baseline si les readings couvrent moins d'un an
+            if kwh_baseline > 0:
+                bl_min = (
+                    db.query(func.min(MeterReading.timestamp))
+                    .filter(
+                        MeterReading.meter_id.in_(meter_ids),
+                        MeterReading.timestamp >= baseline_start,
+                        MeterReading.timestamp < baseline_end,
+                    )
+                    .scalar()
+                )
+                bl_max = (
+                    db.query(func.max(MeterReading.timestamp))
+                    .filter(
+                        MeterReading.meter_id.in_(meter_ids),
+                        MeterReading.timestamp >= baseline_start,
+                        MeterReading.timestamp < baseline_end,
+                    )
+                    .scalar()
+                )
+                if bl_min and bl_max:
+                    bl_actual_days = max(1, (bl_max - bl_min).days)
+                    if bl_actual_days < 350:
+                        kwh_baseline = kwh_baseline * 365.0 / bl_actual_days
+
             kwh_current = (
                 db.query(func.sum(MeterReading.value_kwh))
                 .filter(
@@ -555,6 +604,31 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 .scalar()
                 or 0
             )
+
+            # Annualiser le current si les readings couvrent moins d'un an
+            if kwh_current > 0:
+                cur_min = (
+                    db.query(func.min(MeterReading.timestamp))
+                    .filter(
+                        MeterReading.meter_id.in_(meter_ids),
+                        MeterReading.timestamp >= current_start,
+                        MeterReading.timestamp < current_end,
+                    )
+                    .scalar()
+                )
+                cur_max = (
+                    db.query(func.max(MeterReading.timestamp))
+                    .filter(
+                        MeterReading.meter_id.in_(meter_ids),
+                        MeterReading.timestamp >= current_start,
+                        MeterReading.timestamp < current_end,
+                    )
+                    .scalar()
+                )
+                if cur_min and cur_max:
+                    cur_actual_days = max(1, (cur_max - cur_min).days)
+                    if cur_actual_days < 350:
+                        kwh_current = kwh_current * 365.0 / cur_actual_days
 
         # Fallback : baseline stockee en base (seed ou saisie manuelle)
         if kwh_baseline <= 0:
@@ -682,30 +756,44 @@ def get_usage_compliance(db: Session, site_id: int) -> dict:
                 }
             )
 
-    # Construire items par usage
-    items = []
+    # Construire items par usage, dedupliques par TypeUsage
+    # (un site avec N batiments peut avoir le meme type d'usage N fois)
+    merged = {}  # TypeUsage -> dict
     for u in usages:
         has_bacs = u.id in covered_usage_ids
-        # Usages thermiques -> concernes par BACS et DT
         is_thermal = u.type in (
             TypeUsage.CHAUFFAGE,
             TypeUsage.CLIMATISATION,
             TypeUsage.VENTILATION,
             TypeUsage.ECS,
         )
-        items.append(
-            {
-                "usage_id": u.id,
+        if u.type not in merged:
+            merged[u.type] = {
+                "usage_ids": [u.id],
                 "type": u.type.value,
                 "label": u.label or USAGE_LABELS_FR.get(u.type, u.type.value),
                 "is_significant": u.is_significant,
                 "bacs_covered": has_bacs,
-                "bacs_systems": systems_by_usage.get(u.id, []),
+                "bacs_systems": list(systems_by_usage.get(u.id, [])),
                 "concerned_by_bacs": is_thermal,
                 "concerned_by_dt": u.is_significant,  # UES = concerne par DT
                 "concerned_by_iso50001": u.is_significant,
             }
-        )
+        else:
+            row = merged[u.type]
+            row["usage_ids"].append(u.id)
+            # OR logic: if ANY usage of that type has coverage/significance, show it
+            row["is_significant"] = row["is_significant"] or u.is_significant
+            row["bacs_covered"] = row["bacs_covered"] or has_bacs
+            row["bacs_systems"].extend(systems_by_usage.get(u.id, []))
+            row["concerned_by_bacs"] = row["concerned_by_bacs"] or is_thermal
+            row["concerned_by_dt"] = row["concerned_by_dt"] or u.is_significant
+            row["concerned_by_iso50001"] = row["concerned_by_iso50001"] or u.is_significant
+            # Prefer explicit label over default
+            if u.label:
+                row["label"] = u.label
+
+    items = list(merged.values())
 
     # Compteurs
     total_concerned = sum(1 for it in items if it["concerned_by_bacs"])

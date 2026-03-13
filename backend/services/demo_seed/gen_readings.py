@@ -532,6 +532,10 @@ def generate_readings(
         if ev and (ev == EnergyVector.GAS or str(ev).lower() == "gas"):
             continue
 
+        # Skip sub-meters — they get proportional readings via generate_sub_meter_readings
+        if meter.parent_meter_id is not None:
+            continue
+
         profile_name = site_profiles.get(meter.site_id, "office")
         profile = _PROFILES.get(profile_name, _PROFILES["office"])
         site_temps = temp_lookup.get(meter.site_id, {})
@@ -738,6 +742,10 @@ def generate_monthly_readings(
         if ev and (ev == EnergyVector.GAS or str(ev).lower() == "gas"):
             continue
 
+        # Skip sub-meters — they get proportional readings via generate_sub_meter_readings
+        if meter.parent_meter_id is not None:
+            continue
+
         profile_name = site_profiles.get(meter.site_id, "office")
         is_school = profile_name == "school"
 
@@ -812,6 +820,10 @@ def generate_15min_readings(
         # Skip gas meters
         ev = getattr(meter, "energy_vector", None)
         if ev and (ev == EnergyVector.GAS or str(ev).lower() == "gas"):
+            continue
+
+        # Skip sub-meters — they get proportional readings via generate_sub_meter_readings
+        if meter.parent_meter_id is not None:
             continue
 
         profile_name = site_profiles.get(meter.site_id, "office")

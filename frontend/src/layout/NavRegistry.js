@@ -491,6 +491,12 @@ export const NAV_SECTIONS = [
         keywords: ['monitoring', 'kpi', 'puissance', 'performance'],
       },
       {
+        to: '/usages',
+        icon: BarChart3,
+        label: 'Usages',
+        keywords: ['usages', 'energetiques', 'plan comptage', 'readiness', 'ues', 'baseline'],
+      },
+      {
         to: '/bill-intel',
         icon: Receipt,
         label: 'Facturation',
