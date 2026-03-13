@@ -82,6 +82,15 @@ describe('computeImpactKpis', () => {
     const impact = computeImpactKpis(makeKpis(), { total_eur: 123456 });
     expect(impact.opportuniteOptim).toBe(1235); // Math.round(123456 * 0.01)
   });
+
+  it('risqueAvailable = true quand risque 0 mais sites existent', () => {
+    const impact = computeImpactKpis(
+      { total: 1, conformes: 1, nonConformes: 0, aRisque: 0, risqueTotal: 0 },
+      {}
+    );
+    expect(impact.risqueConformite).toBe(0);
+    expect(impact.risqueAvailable).toBe(true); // 0 € = bonne nouvelle, pas donnée manquante
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

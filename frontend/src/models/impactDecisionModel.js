@@ -23,8 +23,8 @@ const OPTIM_RATE_V1 = 0.01; // 1% du montant facturé total
 export function computeImpactKpis(kpis = {}, billingSummary = {}) {
   // 1. Risque conformité — directement depuis le scope
   const risqueConformite = kpis.risqueTotal ?? 0;
-  const risqueAvailable =
-    risqueConformite > 0 || (kpis.nonConformes ?? 0) > 0 || (kpis.aRisque ?? 0) > 0;
+  // Available dès qu'on a des sites (risque 0 € = bonne nouvelle, pas donnée manquante)
+  const risqueAvailable = (kpis.total ?? 0) > 0;
 
   // 2. Surcoût facture — delta pertes billing (clamp >= 0)
   const totalLoss = billingSummary?.total_loss_eur ?? 0;
