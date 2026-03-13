@@ -52,7 +52,7 @@ export default function DataReadinessBadge() {
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
   }, [scopedSites]);
 
-  const { readinessState, loading } = useDataReadiness(kpis);
+  const { readinessState, loading } = useDataReadiness(kpis, { demoEnabled });
 
   // Snapshot scope
   const snapshotScope = useMemo(
@@ -98,7 +98,7 @@ export default function DataReadinessBadge() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
-  if (!kpis.total || loading || !readinessState || demoEnabled) return null;
+  if (!kpis.total || loading || !readinessState) return null;
 
   return (
     <div ref={ref} className="relative" data-testid="data-readiness-badge">
