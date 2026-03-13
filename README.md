@@ -19,8 +19,9 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 11. [Pages UI](#pages-ui)
 12. [What's in / What's out](#whats-in--whats-out)
 13. [Roadmap 30 jours](#roadmap-30-jours)
-14. [Troubleshooting](#troubleshooting)
-15. [Contributing / License / Disclaimer](#contributing)
+14. [E2E Testing (Playwright)](#e2e-testing)
+15. [Troubleshooting](#troubleshooting)
+16. [Contributing / License / Disclaimer](#contributing)
 
 ---
 
@@ -130,7 +131,12 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Audit UX Full App (27 pages + 8 interactions Playwright, 40+ fichiers corrigés, EUR→€, shadow billing→facturation théorique, labels FR, couleurs sémantiques, empty states) | **Stable -- Audit UX** |
 > | Sprint A — P0 Credibility (5 P0 : breadcrumb, KPI, labels FR, empty states, compliance score label) | **Stable -- Sprint A** |
 > | Sprint B — Data Credibility (6 P0 : prix moyen Explorer source-consistent, dead routes supprimées, OPERAT vivant + run_controls, compliance score 36→84, shadow billing abonnement, CEE domain fix) | **Stable -- Sprint B** |
-> | Suite de tests automatisés | **5 586+ frontend + 797+ backend, 0 régression Sprint B** |
+> | Sprint C — Premium Polish (microcopy, accents, impact labels) | **Stable -- Sprint C** |
+> | Sprint D — Modèle Conformité Parfait (coordinateur, meta API, dynamisation frontend) | **Stable -- Sprint D** |
+> | Sprint D+ — Board-Ready Lock (microcopy FR, accents, actions crédibilité, 40 backend + 5587 frontend tests) | **Stable -- Sprint D+** |
+> | Sprint E — E2E Demo Flow Lock (6 scénarios Playwright, 132 tests, 3 viewports, console guards, UX guards) | **Stable -- Sprint E** |
+> | Sprint F — No Excuse Lock (overflow 1024 éliminé, data-quality 500 corrigé, action+preuve E2E, notification→action E2E) | **Stable -- Sprint F** |
+> | Suite de tests automatisés | **5 587 frontend + 40 backend + 142 E2E Playwright, DEMO SAFE SANS RÉSERVE** |
 
 > **Disclaimer**
 >
@@ -883,6 +889,52 @@ Basee sur le backlog existant (`docs/backlog/PROOF_BACKLOG.md`) et l'etat du rep
 - Migrer vers PostgreSQL pour le pilote
 - Deployer sur un serveur (Docker Compose ou VPS)
 - Produire le rapport de couverture KB (`scripts/kb_coverage_report.py`)
+
+---
+
+<a id="e2e-testing"></a>
+## E2E Testing (Playwright)
+
+Suite Playwright complète couvrant tous les parcours board-facing sur 3 viewports (1440x900, 1280x800, 1024x768).
+
+### Lancer les tests
+
+```bash
+# Tous les tests E2E (Sprint E + F)
+cd e2e && npx playwright test --workers=1 --reporter=line
+
+# Sprint E uniquement (6 scénarios × 3 viewports = 132 tests)
+cd e2e && npx playwright test e1-*.spec.js e2-*.spec.js e3-*.spec.js e4-*.spec.js e5-*.spec.js e6-*.spec.js --workers=1
+
+# Sprint F uniquement (4 axes = 10 tests)
+cd e2e && npx playwright test f1-*.spec.js f2-*.spec.js f3-*.spec.js f4-*.spec.js --workers=1
+```
+
+### Scénarios couverts
+
+| Spec | Scénario | Tests |
+|------|----------|-------|
+| E1 | Cockpit → Conformité → Actions → Detail | 21 (7×3 vp) |
+| E2 | Energy Manager (scope, portfolio, explorer, diagnostic) | 27 (9×3 vp) |
+| E3 | Bill Intel (KPIs, invoices, anomalies, timeline) | 18 (6×3 vp) |
+| E4 | Patrimoine → Site360 → Conformité → Pipeline | 24 (8×3 vp) |
+| E5 | Notifications → Action (filters, drawer, deeplinks) | 18 (6×3 vp) |
+| E6 | Achat → Renouvellements → Assistant (tabs, badges, FR) | 24 (8×3 vp) |
+| F1 | Overflow check 8 pages × 3 viewports | 3 |
+| F2 | Data Quality endpoints 200 (freshness, site, portfolio) | 3 |
+| F3 | Action closure + preuve (evidence form → close flow) | 2 |
+| F4 | Notification → Créer action (CTA, pre-fill, deeplink) | 2 |
+| **Total** | | **142** |
+
+### Prérequis
+
+- Backend running sur `http://127.0.0.1:8001`
+- Frontend running sur `http://127.0.0.1:5173`
+- Demo seed HELIOS chargé (`cd backend && python -m services.demo_seed --pack helios --size S --reset`)
+
+### Verdict
+
+**DEMO SAFE SANS RÉSERVE** — 142/142 tests passent, 0 overflow, 0 route 500, 0 erreur console non whitelistée.
 
 ---
 

@@ -190,7 +190,7 @@ describe('Lever Engine V36 — achat levers', () => {
     expect(renew).toBeTruthy();
     expect(renew.type).toBe('achat');
     expect(renew.label).toContain('contrat');
-    expect(renew.label).toContain('energie');
+    expect(renew.label).toContain('énergie');
     expect(renew.ctaPath).toContain('/achat-energie');
   });
 

@@ -4,7 +4,7 @@
  * Agrege les leviers activables a partir des donnees deja presentes
  * dans le state du Cockpit (kpis + billingSummary).
  * V35: enrichissement optionnel via complianceSignals / billingInsights.
- * V36: leviers achat d'energie via purchaseSignals.
+ * V36: leviers achat d'énergie via purchaseSignals.
  * Aucune nouvelle API.
  *
  * Export:
@@ -87,7 +87,7 @@ export function computeActionableLevers({
     levers.push({
       type: 'conformite',
       actionKey: 'lev-conf-ar',
-      label: `Prevenir ${aRisque} site${aRisque > 1 ? 's' : ''} a risque`,
+      label: `Prévenir ${aRisque} site${aRisque > 1 ? 's' : ''} à risque`,
       impactEur:
         risqueTotal > 0 ? Math.round(risqueTotal * (aRisque / (totalRisqueSites || 1))) : null,
       ctaPath: '/conformite',
@@ -138,13 +138,13 @@ export function computeActionableLevers({
     levers.push({
       type: 'optimisation',
       actionKey: 'lev-optim-ener',
-      label: "Lancer l'optimisation energetique",
+      label: "Lancer l'optimisation énergétique",
       impactEur: Math.round(totalEur * 0.01),
       ctaPath: '/diagnostic-conso',
     });
   }
 
-  // ── Achat d'energie V36 ────────────────────────────────────────────────────
+  // ── Achat d'énergie V36 ────────────────────────────────────────────────────
   if (hasPurchase) {
     const expCount = purchaseSignals.expiringSoonCount;
     const missingCount = purchaseSignals.missingContractsCount;
@@ -154,10 +154,10 @@ export function computeActionableLevers({
       levers.push({
         type: 'achat',
         actionKey: 'lev-achat-renew',
-        label: `Renouveler ${expCount} contrat${expCount > 1 ? 's' : ''} d'energie (${expSites.length} site${expSites.length > 1 ? 's' : ''})`,
+        label: `Renouveler ${expCount} contrat${expCount > 1 ? 's' : ''} d'énergie (${expSites.length} site${expSites.length > 1 ? 's' : ''})`,
         impactEur: purchaseSignals.estimatedExposureEur,
         ctaPath: toPurchase({ filter: 'renewal' }),
-        proofHint: 'Contrat de fourniture / avenants / echeancier',
+        proofHint: 'Contrat de fourniture / avenants / échéancier',
       });
     }
 

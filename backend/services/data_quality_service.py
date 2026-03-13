@@ -5,7 +5,7 @@ Returns coverage_pct, freshness_days, cause, next_step for each row.
 """
 
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import func
@@ -21,6 +21,22 @@ from models import (
     EntiteJuridique,
 )
 from models.energy_models import EnergyVector, Anomaly
+
+
+def _to_date(val, fallback=None):
+    """Convert datetime/date/string to a plain date, avoiding date-datetime comparison errors."""
+    if val is None:
+        return fallback
+    if isinstance(val, datetime):
+        return val.date()
+    if isinstance(val, date):
+        return val
+    if isinstance(val, str) and len(val) >= 10:
+        try:
+            return date.fromisoformat(val[:10])
+        except ValueError:
+            return fallback
+    return fallback
 
 
 # Expected months of data (trailing 12 months)
@@ -168,7 +184,7 @@ def compute_site_completeness(
         coverage_pct = min(coverage_pct, 100.0)
 
         if last_ts:
-            last_date = last_ts if isinstance(last_ts, date) else last_ts.date() if hasattr(last_ts, "date") else today
+            last_date = _to_date(last_ts, today)
             freshness_days = (today - last_date).days
         else:
             freshness_days = 999
@@ -455,7 +471,7 @@ def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
         last_ts = db.query(func.max(MeterReading.timestamp)).filter(MeterReading.meter_id.in_(meter_ids)).scalar()
 
     if last_ts:
-        last_date = last_ts if isinstance(last_ts, date) else (last_ts.date() if hasattr(last_ts, "date") else today)
+        last_date = _to_date(last_ts, today)
         days_since = (today - last_date).days
         score = round(max(0, 100 - days_since * 2), 1)
         detail = f"Dernière lecture il y a {days_since} jour{'s' if days_since != 1 else ''}"
@@ -524,7 +540,7 @@ def _dim_consistency(db: Session, site_id: int, window_start: date, today: date)
                 "recommendation": None,
             }
 
-        delta_pct = abs(result.get("delta_pct", 0))
+        delta_pct = abs(result.get("delta_pct") or 0)
         score = round(max(0, 100 - delta_pct * 5), 1)
         detail = f"Écart compteur/facture : {delta_pct:.1f}%"
         rec = "Rapprocher les relevés compteur des factures" if score < 70 else None
@@ -616,17 +632,13 @@ def compute_site_freshness(
     if meter_ids:
         last_ts = db.query(func.max(MeterReading.timestamp)).filter(MeterReading.meter_id.in_(meter_ids)).scalar()
         if last_ts:
-            last_reading_date = (
-                last_ts if isinstance(last_ts, date) else (last_ts.date() if hasattr(last_ts, "date") else None)
-            )
+            last_reading_date = _to_date(last_ts)
 
     # Last invoice
     last_inv = db.query(func.max(EnergyInvoice.period_end)).filter(EnergyInvoice.site_id == site_id).scalar()
     last_invoice_date = None
     if last_inv:
-        last_invoice_date = (
-            last_inv if isinstance(last_inv, date) else (last_inv.date() if hasattr(last_inv, "date") else None)
-        )
+        last_invoice_date = _to_date(last_inv)
 
     # Compute staleness from most recent data source
     most_recent = None

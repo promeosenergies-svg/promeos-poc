@@ -69,7 +69,7 @@ describe('buildActionPayload', () => {
       makeLever({
         type: 'optimisation',
         actionKey: 'lev-optim-ener',
-        label: "Lancer l'optimisation energetique",
+        label: "Lancer l'optimisation énergétique",
         impactEur: 5000,
       })
     );

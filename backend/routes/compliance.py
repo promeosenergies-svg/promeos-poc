@@ -764,7 +764,7 @@ def _build_timeline_events(db: Session, org_id: int, today: date) -> dict:
             {
                 "id": "tertiaire_affichage",
                 "framework": "DECRET_TERTIAIRE",
-                "label": "Attestation d'affichage energetique",
+                "label": "Attestation d'affichage énergétique",
                 "deadline": dl.isoformat(),
                 "status": _deadline_status(dl, today, one_year),
                 "severity": "high",
