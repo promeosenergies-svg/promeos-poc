@@ -113,6 +113,9 @@ function evalOperat(_activation, signals) {
 }
 
 function evalConnectors(activation, signals) {
+  // In demo mode, connector absence is expected (Enedis stub) — skip evaluation
+  if (signals?.demoEnabled) return { status: 'ok' };
+
   const connectors = signals?.connectors;
   const hasConnector =
     Array.isArray(connectors) && connectors.some((c) => c.status === 'active' || c.enabled);

@@ -13,7 +13,10 @@ import { computeDataReadinessState } from '../models/dataReadinessModel';
  * @param {{ operatModuleActive?: boolean }} options
  * @returns {{ readinessState: ReadinessState|null, activation: ActivationResult, loading: boolean }}
  */
-export default function useDataReadiness(kpis, { operatModuleActive = false } = {}) {
+export default function useDataReadiness(
+  kpis,
+  { operatModuleActive = false, demoEnabled = false } = {}
+) {
   const { billingSummary, purchaseSignals, efaDashboard, connectors, loading } = useActivationData(
     kpis?.total
   );
@@ -31,6 +34,7 @@ export default function useDataReadiness(kpis, { operatModuleActive = false } = 
       connectors: Array.isArray(connectors) ? connectors : [],
       operatModuleActive,
       hasManualImport: (activation?.activatedCount ?? 0) > 1,
+      demoEnabled,
     });
   }, [activation, billingSummary, efaDashboard, connectors, operatModuleActive, loading]);
 
