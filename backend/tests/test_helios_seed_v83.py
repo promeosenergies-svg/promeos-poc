@@ -105,15 +105,15 @@ class TestTOUSchedule:
 
 
 class TestNotifications:
-    """V83+V108: 20 NotificationEvent entries with varied types and statuses."""
+    """V83+V108: 10 NotificationEvent entries (capped from 20 templates)."""
 
     def test_notifications_count(self, seeded_db):
-        """NotificationEvent created (count varies with RNG sequence)."""
+        """10 NotificationEvent created (capped at 3+3+2+2 in gen_notifications)."""
         db, _ = seeded_db
         from models.notification import NotificationEvent
 
         count = db.query(NotificationEvent).count()
-        assert count >= 5, f"Expected at least 5 notifications, got {count}"
+        assert count == 10, f"Expected 10 notifications (capped), got {count}"
 
     def test_notifications_have_new_status(self, seeded_db):
         """At least some notifications are NEW (unread)."""
@@ -168,10 +168,10 @@ class TestNotifications:
         assert batch.triggered_by == "demo_seed"
 
     def test_notifications_seed_result(self, seeded_db):
-        """Seed result includes notifications key with created count."""
+        """Seed result includes notifications key with created count (capped at 10)."""
         _, result = seeded_db
         assert "notifications" in result
-        assert result["notifications"]["notifications_created"] == 20
+        assert result["notifications"]["notifications_created"] == 10
 
 
 # ═══════════════════════════════════════════════
