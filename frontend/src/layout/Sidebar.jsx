@@ -4,7 +4,7 @@
  * Manages shared state: active module, pins, badges, recents tracking.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
 import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
@@ -28,6 +28,7 @@ function saveJSON(key, value) {
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   /* ── Active module (derived from route) ── */
   const activeModule = useMemo(() => resolveModule(location.pathname), [location.pathname]);
@@ -41,9 +42,18 @@ export default function Sidebar() {
     setOverrideModule(null);
   }, [activeModule]);
 
-  const handleSelectModule = useCallback((key) => {
-    setOverrideModule((prev) => (prev === key ? null : key));
-  }, []);
+  /* ── Module landing routes (icon click → navigate) ── */
+  const MODULE_LANDING = { energie: '/consommations' };
+
+  const handleSelectModule = useCallback(
+    (key) => {
+      if (key !== activeModule && MODULE_LANDING[key]) {
+        navigate(MODULE_LANDING[key]);
+      }
+      setOverrideModule((prev) => (prev === key ? null : key));
+    },
+    [activeModule, navigate]
+  );
 
   /* ── Pins ── */
   const [pins, setPins] = useState(() => loadJSON(PINS_KEY, []));
