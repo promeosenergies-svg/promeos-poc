@@ -79,8 +79,8 @@ describe('C. StickyFilterBar compare toggle', () => {
     expect(src).toMatch(/Comparer N-1/);
   });
 
-  test('C4. single-site guard (effectiveSiteIds.length === 1)', () => {
-    expect(src).toMatch(/effectiveSiteIds\.length === 1/);
+  test('C4. not-portfolio guard (no single-site restriction)', () => {
+    expect(src).not.toMatch(/effectiveSiteIds\.length === 1/);
   });
 
   test('C5. not in portfolio mode guard', () => {
