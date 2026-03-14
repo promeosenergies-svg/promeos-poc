@@ -60,6 +60,7 @@ import {
   getIntakeQuestions,
   resetDb,
   getComplianceTimeline,
+  getSegmentationProfile,
 } from '../services/api';
 import { getComplianceScoreColor, COMPLIANCE_SCORE_THRESHOLDS } from '../lib/constants';
 
@@ -745,6 +746,7 @@ export default function ConformitePage() {
   const [complianceScore, setComplianceScore] = useState(null); // A.2 unified score
   const [timeline, setTimeline] = useState(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  const [segProfile, setSegProfile] = useState(null);
 
   const loadData = useCallback(() => {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
@@ -809,6 +811,13 @@ export default function ConformitePage() {
       .catch(() => setTimeline(null))
       .finally(() => setTimelineLoading(false));
   }, [org?.id, sitesLoading]);
+
+  // V1.3: Fetch segmentation profile for "Adapté à votre profil" badge
+  useEffect(() => {
+    getSegmentationProfile()
+      .then((p) => setSegProfile(p))
+      .catch(() => setSegProfile(null));
+  }, []);
 
   // Load intake questions for Donnees tab
   useEffect(() => {
@@ -1235,6 +1244,14 @@ export default function ConformitePage() {
                 {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
               </span>
               <span className="text-lg text-gray-400">/100</span>
+              {segProfile?.has_profile && Object.keys(segProfile.answers || {}).length > 0 && (
+                <p
+                  className="text-[10px] text-blue-600 font-medium mt-1"
+                  data-testid="profile-badge"
+                >
+                  Adapté à votre profil
+                </p>
+              )}
             </div>
             {/* Breakdown bars */}
             <div className="flex-1 space-y-2">
@@ -1401,8 +1418,8 @@ export default function ConformitePage() {
         />
       )}
 
-      {/* Financements mobilisables (CEE) — visible on obligations tab */}
-      {activeTab === 'obligations' && incentives.length > 0 && (
+      {/* Financements mobilisables (CEE) — masqué V1.2, prévu évolution future */}
+      {false && activeTab === 'obligations' && incentives.length > 0 && (
         <div
           className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-6"
           data-section="incentives"

@@ -31,7 +31,7 @@ describe('Step6 — RegOps.jsx CEE separation', () => {
     expect(src).toMatch(/category\s*!==\s*['"]incentive['"]/);
   });
 
-  it('filters findings by category for incentives', () => {
+  it.skip('filters findings by category for incentives — CEE masqué V1.2', () => {
     expect(src).toMatch(/category\s*===\s*['"]incentive['"]/);
   });
 
@@ -39,13 +39,13 @@ describe('Step6 — RegOps.jsx CEE separation', () => {
     expect(src).toContain('Coins');
   });
 
-  it('shows "Éligible CEE" badge for incentives', () => {
+  it.skip('shows "Éligible CEE" badge for incentives — CEE masqué V1.2', () => {
     expect(src).toContain('Éligible CEE');
   });
 
   it('has data-section="obligations" and data-section="incentives"', () => {
     expect(src).toContain('data-section="obligations"');
-    expect(src).toContain('data-section="incentives"');
+    // data-section="incentives" masqué V1.2 — CEE prévu évolution future
   });
 
   it('does NOT show severity badge for incentive findings', () => {

@@ -147,6 +147,17 @@ QUESTIONS_V1 = [
             {"value": "non", "label": "Non"},
         ],
     },
+    {
+        "id": "q_surface_seuil",
+        "text": "Vos batiments depassent-ils 1 000 m\u00b2 de surface ?",
+        "type": "single",
+        "options": [
+            {"value": "oui_majorite", "label": "Oui, la majorite"},
+            {"value": "oui_certains", "label": "Oui, certains seulement"},
+            {"value": "non", "label": "Non"},
+            {"value": "ne_sait_pas", "label": "Je ne suis pas sur"},
+        ],
+    },
 ]
 
 

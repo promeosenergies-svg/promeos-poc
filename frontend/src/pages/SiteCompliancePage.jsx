@@ -24,9 +24,7 @@ import {
   Sun,
   ArrowRight,
   Package,
-  Columns,
   Activity,
-  ChevronRight,
   Hammer,
   Banknote,
 } from 'lucide-react';
@@ -35,8 +33,6 @@ import {
   getActionsList,
   getSiteWorkPackages,
   createWorkPackage,
-  createCeeDossier,
-  advanceCeeStep,
   getMvSummary,
 } from '../services/api';
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
@@ -75,21 +71,7 @@ const SIZE_BADGE = {
   L: { label: 'L', cls: 'bg-red-100 text-red-700' },
 };
 
-const CEE_STATUS_BADGE = {
-  a_qualifier: { label: 'À qualifier', cls: 'bg-gray-100 text-gray-600' },
-  ok: { label: 'CEE OK', cls: 'bg-green-100 text-green-700' },
-  non: { label: 'Non éligible', cls: 'bg-red-100 text-red-700' },
-};
-
-const CEE_STEPS = ['devis', 'engagement', 'travaux', 'pv_photos', 'mv', 'versement'];
-const CEE_STEP_LABELS = {
-  devis: 'Devis',
-  engagement: 'Engagement',
-  travaux: 'Travaux',
-  pv_photos: 'PV+Photos',
-  mv: 'M&V',
-  versement: 'Versement',
-};
+/* CEE_STATUS_BADGE, CEE_STEPS, CEE_STEP_LABELS — masqué V1.2, prévu évolution future */
 
 function Badge({ cfg }) {
   return (
@@ -290,99 +272,7 @@ function PreuvesTab({ data }) {
   );
 }
 
-/* ── V69: Kanban CEE ────────────────── */
-function KanbanCee({ dossier, toast, onAdvance }) {
-  const currentIdx = CEE_STEPS.indexOf(dossier.current_step);
-  const [advancing, setAdvancing] = useState(false);
-
-  const handleAdvance = async (stepVal) => {
-    setAdvancing(true);
-    try {
-      await advanceCeeStep(dossier.id, stepVal);
-      toast('Dossier CEE avancé', 'success');
-      if (onAdvance) onAdvance();
-    } catch {
-      toast("Erreur lors de l'avancement", 'error');
-    } finally {
-      setAdvancing(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow p-4" data-section="kanban-cee">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <Columns size={16} className="text-purple-500" />
-        Kanban Dossier CEE
-      </h4>
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {CEE_STEPS.map((step, idx) => {
-          const isCurrent = idx === currentIdx;
-          const isDone = idx < currentIdx;
-          const isNext = idx === currentIdx + 1;
-          return (
-            <div
-              key={step}
-              className={`flex-1 min-w-[100px] rounded-lg border-2 p-2 text-center transition ${
-                isCurrent
-                  ? 'border-blue-500 bg-blue-50'
-                  : isDone
-                    ? 'border-green-300 bg-green-50'
-                    : 'border-gray-200 bg-gray-50'
-              }`}
-            >
-              <p
-                className={`text-xs font-medium ${isCurrent ? 'text-blue-700' : isDone ? 'text-green-700' : 'text-gray-500'}`}
-              >
-                {CEE_STEP_LABELS[step]}
-              </p>
-              {isDone && <CheckCircle size={14} className="mx-auto mt-1 text-green-500" />}
-              {isCurrent && <ChevronRight size={14} className="mx-auto mt-1 text-blue-500" />}
-              {isNext && (
-                <button
-                  onClick={() => handleAdvance(step)}
-                  disabled={advancing}
-                  className="mt-1 text-xs text-blue-600 hover:underline disabled:opacity-50"
-                  data-testid={`cee-advance-${step}`}
-                >
-                  Avancer
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {/* Evidence items */}
-      {dossier.evidence_items?.length > 0 && (
-        <div className="mt-3 space-y-1">
-          <p className="text-xs text-gray-500 font-medium">Pièces justificatives:</p>
-          {dossier.evidence_items.map((ei) => (
-            <div key={ei.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-gray-50">
-              {ei.statut === 'manquant' ? (
-                <XCircle size={12} className="text-red-400" />
-              ) : ei.statut === 'valide' ? (
-                <CheckCircle size={12} className="text-green-500" />
-              ) : (
-                <Clock size={12} className="text-amber-500" />
-              )}
-              <span className="flex-1 text-gray-700">{ei.label}</span>
-              <span
-                className={`px-1.5 py-0.5 rounded ${
-                  ei.statut === 'manquant'
-                    ? 'bg-red-100 text-red-600'
-                    : ei.statut === 'valide'
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-amber-100 text-amber-600'
-                }`}
-              >
-                {ei.statut}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+/* KanbanCee — masqué V1.2, prévu évolution future CEE */
 
 /* ── V69: Widget M&V ────────────────── */
 function MvWidget({ siteId }) {
@@ -505,15 +395,7 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
     }
   };
 
-  const handleCreateDossier = async (wpId) => {
-    try {
-      await createCeeDossier(siteId, wpId);
-      toast('Dossier CEE créé — preuves + actions générées', 'success');
-      reload();
-    } catch (e) {
-      toast(e?.response?.data?.detail || 'Erreur lors de la création du dossier', 'error');
-    }
-  };
+  /* handleCreateDossier — masqué V1.2, prévu évolution future CEE */
 
   const STATUS_PILL = {
     open: 'bg-gray-100 text-gray-700',
@@ -610,7 +492,6 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
                 <div className="flex items-center gap-2 mb-2">
                   <Badge cfg={SIZE_BADGE[wp.size] || SIZE_BADGE.M} />
                   <span className="text-sm font-medium text-gray-900 flex-1">{wp.label}</span>
-                  <Badge cfg={CEE_STATUS_BADGE[wp.cee_status] || CEE_STATUS_BADGE.a_qualifier} />
                 </div>
                 <div className="flex gap-4 text-xs text-gray-500 mb-2">
                   {wp.capex_eur != null && (
@@ -625,19 +506,6 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
                   )}
                   {wp.payback_years != null && <span>Payback: {wp.payback_years} ans</span>}
                 </div>
-
-                {/* CEE Dossier or CTA */}
-                {wp.dossier ? (
-                  <KanbanCee dossier={wp.dossier} toast={toast} onAdvance={reload} />
-                ) : wp.cee_status !== 'non' ? (
-                  <button
-                    onClick={() => handleCreateDossier(wp.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition"
-                    data-testid={`cta-creer-dossier-cee-${wp.id}`}
-                  >
-                    <Plus size={14} /> Créer dossier CEE
-                  </button>
-                ) : null}
               </div>
             ))}
           </div>

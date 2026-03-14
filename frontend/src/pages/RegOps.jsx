@@ -260,47 +260,7 @@ export default function RegOps() {
             })()}
           </div>
 
-          {/* Financements & opportunités (CEE) */}
-          {(() => {
-            const incentiveFindings = (assessment.findings || []).filter(
-              (f) => f.category === 'incentive'
-            );
-            if (incentiveFindings.length === 0) return null;
-            return (
-              <div className="bg-white rounded-lg shadow-md p-6" data-section="incentives">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Coins size={20} className="text-amber-500" />
-                  Financements & opportunités
-                </h2>
-                <p className="text-sm text-gray-500 mb-4">
-                  Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une
-                  obligation réglementaire.
-                </p>
-                <div className="space-y-4">
-                  {incentiveFindings.map((finding, idx) => (
-                    <div key={idx} className="border border-amber-200 bg-amber-50 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-semibold text-gray-800">
-                            {RULE_LABELS[finding.rule_id]?.title_fr || finding.regulation}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {RULE_LABELS[finding.rule_id]?.why_fr || finding.rule_id}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className="px-3 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
-                            Éligible CEE
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-gray-700 mb-2">{finding.explanation}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          {/* Financements & opportunités (CEE) — masqué V1.2, prévu évolution future */}
 
           {/* Actions */}
           <div className="bg-white rounded-lg shadow-md p-6">

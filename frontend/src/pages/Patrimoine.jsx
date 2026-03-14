@@ -16,7 +16,6 @@ import {
   ChevronRight,
   ShieldCheck,
   AlertTriangle,
-  BadgeEuro,
   Zap,
   ExternalLink,
   Eye,
@@ -27,7 +26,6 @@ import {
   PlusCircle,
   PieChart,
   FileText,
-  Briefcase,
   Clock,
 } from 'lucide-react';
 import {
@@ -43,7 +41,7 @@ import {
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
-import { useToast } from '../ui/ToastProvider';
+// useToast retiré — toast n'est plus utilisé après refacto "Voir anomalies"
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -151,7 +149,6 @@ export default function Patrimoine() {
   const [sp, setSp] = useSearchParams();
   const { scopedSites, sitesLoading, scope, org } = useScope();
   const { isExpert } = useExpertMode();
-  const toast = useToast();
   const searchRef = useRef(null);
 
   // URL-synced state
@@ -605,13 +602,12 @@ export default function Patrimoine() {
         setDrawerSite(site);
         setDrawerInitialTab('anomalies');
         track('portfolio_top_site_click', { site_id });
-      } else {
-        toast.warning(
-          `Site #${site_id} non disponible dans le périmètre actuel. Élargissez votre scope.`
-        );
+      } else if (site_id) {
+        // Fallback: navigate to site compliance page instead of blocking
+        navigate(`/compliance/sites/${site_id}`);
       }
     },
-    [scopedSites, toast]
+    [scopedSites, navigate]
   );
   const openActionFromDrawer = useCallback(
     (siteName, siteId) => {

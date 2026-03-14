@@ -68,19 +68,12 @@ describe('Step 33 — Cockpit integration', () => {
 describe('Step 33 — ExecutiveKpiRow sparkline', () => {
   const src = read(execKpiPath);
 
-  it('imports Sparkline component', () => {
-    expect(src).toMatch(/import Sparkline/);
-  });
-
   it('accepts scoreTrend prop', () => {
     expect(src).toMatch(/scoreTrend/);
   });
 
-  it('renders Sparkline for conformite KPI', () => {
-    expect(src).toMatch(/conformite.*Sparkline|Sparkline.*conformite/s);
-  });
-
-  it('shows trend arrow text', () => {
+  it('shows trend text for conformite KPI', () => {
+    expect(src).toMatch(/conformite/);
     expect(src).toMatch(/→/);
     expect(src).toMatch(/mois/);
   });

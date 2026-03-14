@@ -27,7 +27,7 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
     expect(code).toContain('data-section="work-packages"');
   });
 
-  it('has data-section="kanban-cee"', () => {
+  it.skip('has data-section="kanban-cee" — CEE masqué V1.2', () => {
     expect(code).toContain('data-section="kanban-cee"');
   });
 
@@ -62,29 +62,16 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
     expect(code).toContain("'L'");
   });
 
-  it('renders CEE status badges (a_qualifier/ok/non)', () => {
+  it.skip('renders CEE status badges (a_qualifier/ok/non) — CEE masqué V1.2', () => {
     expect(code).toContain('CEE_STATUS_BADGE');
-    expect(code).toContain('a_qualifier');
-    expect(code).toContain("'CEE OK'");
   });
 
-  it('renders CEE kanban steps array', () => {
+  it.skip('renders CEE kanban steps array — CEE masqué V1.2', () => {
     expect(code).toContain('CEE_STEPS');
-    expect(code).toContain("'devis'");
-    expect(code).toContain("'engagement'");
-    expect(code).toContain("'travaux'");
-    expect(code).toContain("'pv_photos'");
-    expect(code).toContain("'mv'");
-    expect(code).toContain("'versement'");
   });
 
-  it('renders kanban step labels', () => {
+  it.skip('renders kanban step labels — CEE masqué V1.2', () => {
     expect(code).toContain('CEE_STEP_LABELS');
-    expect(code).toContain('Devis');
-    expect(code).toContain('Engagement');
-    expect(code).toContain('Travaux');
-    expect(code).toContain('PV+Photos');
-    expect(code).toContain('Versement');
   });
 
   it('imports KanbanCee component', () => {
@@ -98,8 +85,7 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
   it('imports V69 API functions', () => {
     expect(code).toContain('getSiteWorkPackages');
     expect(code).toContain('createWorkPackage');
-    expect(code).toContain('createCeeDossier');
-    expect(code).toContain('advanceCeeStep');
+    // createCeeDossier & advanceCeeStep — CEE masqué V1.2
     expect(code).toContain('getMvSummary');
   });
 

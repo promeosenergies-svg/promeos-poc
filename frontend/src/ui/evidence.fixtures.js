@@ -35,7 +35,6 @@ export function evidenceConformite(scopeLabel, meta = null) {
     method: [
       `Score = moyenne pondérée DT (${dtPct}%) + BACS (${bacsPct}%) + APER (${aperPct}%) − pénalité findings critiques (max −${maxPenalty} pts).`,
       'Statut par site : pire statut parmi Décret Tertiaire et BACS.',
-      'CEE P6 : dispositif de financement, non inclus dans le score réglementaire.',
     ],
     assumptions: [
       'Les données patrimoniales (surface, usage) sont à jour.',

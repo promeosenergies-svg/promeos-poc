@@ -8,8 +8,8 @@ import { BarChart3, Upload, Database, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
 
 const TABS = [
-  { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
+  { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/import', label: 'Import & Analyse', icon: Upload },
   { to: '/consommations/kb', label: 'Mémobox', icon: Database },
 ];

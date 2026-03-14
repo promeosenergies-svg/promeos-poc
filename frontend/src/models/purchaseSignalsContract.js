@@ -90,7 +90,7 @@ export function normalizePurchaseSignals(raw) {
   // Couverture: sites uniques ayant au moins 1 contrat
   const sitesWithContract = new Set(contractsList.map((c) => c?.site_id).filter(Boolean));
   const coverageContractsPct =
-    totalSites > 0 ? Math.round((sitesWithContract.size / totalSites) * 100) : 0;
+    totalSites > 0 ? Math.min(100, Math.round((sitesWithContract.size / totalSites) * 100)) : 0;
   const missingContractsCount = Math.max(0, totalSites - sitesWithContract.size);
 
   return {

@@ -242,7 +242,7 @@ function App() {
                         </PageSuspense>
                       }
                     >
-                      <Route index element={<Navigate to="/consommations/explorer" replace />} />
+                      <Route index element={<Navigate to="/consommations/portfolio" replace />} />
                       <Route
                         path="explorer"
                         element={
@@ -316,6 +316,10 @@ function App() {
                           <SiteCompliancePage />
                         </PageSuspense>
                       }
+                    />
+                    <Route
+                      path="/compliance/sites"
+                      element={<Navigate to="/conformite" replace />}
                     />
                     <Route
                       path="/diagnostic-conso"
@@ -407,7 +411,7 @@ function App() {
                     />
                     <Route
                       path="/explorer"
-                      element={<Navigate to="/consommations/explorer" replace />}
+                      element={<Navigate to="/consommations/portfolio" replace />}
                     />
                     <Route
                       path="/activation"
@@ -524,7 +528,7 @@ function App() {
                     <Route path="/dashboard" element={<Navigate to="/cockpit" replace />} />
                     <Route
                       path="/conso"
-                      element={<Navigate to="/consommations/explorer" replace />}
+                      element={<Navigate to="/consommations/portfolio" replace />}
                     />
                     <Route path="/imports" element={<Navigate to="/import" replace />} />
                     <Route path="/connexions" element={<Navigate to="/connectors" replace />} />
@@ -532,7 +536,7 @@ function App() {
                     <Route path="/alertes" element={<Navigate to="/notifications" replace />} />
                     <Route
                       path="/ems"
-                      element={<Navigate to="/consommations/explorer" replace />}
+                      element={<Navigate to="/consommations/portfolio" replace />}
                     />
                     <Route path="/donnees" element={<Navigate to="/activation" replace />} />
                     <Route

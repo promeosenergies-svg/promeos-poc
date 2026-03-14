@@ -10,7 +10,6 @@
 import { ShieldCheck, TrendingDown, BarChart3, Database, HelpCircle } from 'lucide-react';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { getKpiMessage } from '../../services/kpiMessaging';
-import Sparkline from '../../ui/Sparkline';
 
 /** KPI ids that support the "Pourquoi ?" evidence button */
 const EVIDENCE_KPIS = new Set(['conformite', 'risque', 'maturite', 'couverture']);
@@ -80,17 +79,20 @@ function KpiTile({ kpi, onNavigate, onEvidence, isExpert, scoreTrend }) {
             scoreTrend?.length >= 2 &&
             (() => {
               const first = scoreTrend[0]?.score ?? 0;
-              const last = scoreTrend[scoreTrend.length - 1]?.score ?? 0;
-              const progressing = last >= first;
+              // Use current live score instead of last snapshot for coherence
+              const currentScore = kpi.rawValue ?? scoreTrend[scoreTrend.length - 1]?.score ?? 0;
+              const progressing = currentScore >= first;
               const color = progressing ? '#10b981' : '#ef4444';
               const arrow = progressing ? '\u2191' : '\u2193';
               return (
-                <div className="mt-1" data-testid="conformite-sparkline">
-                  <Sparkline data={scoreTrend} color={color} width={120} height={36} />
-                  <p className="text-[10px] mt-0.5" style={{ color }}>
-                    {arrow} {Math.round(first)} → {Math.round(last)} en {scoreTrend.length} mois
-                  </p>
-                </div>
+                <p
+                  className="text-[10px] mt-1"
+                  style={{ color }}
+                  data-testid="conformite-sparkline"
+                >
+                  {arrow} {Math.round(first)} → {Math.round(currentScore)} en {scoreTrend.length}{' '}
+                  mois
+                </p>
               );
             })()}
           {(() => {
