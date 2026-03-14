@@ -296,7 +296,7 @@ export default function AperPage() {
             />
             <KpiCardInline
               icon={Leaf}
-              label="CO2 évité"
+              label="CO₂ évité"
               value={fmt(estimate.co2_evite_tonnes)}
               unit="t/an"
               {...APER_COLORS.emerald}

@@ -42,6 +42,7 @@ import {
   toActionsList,
   toConsoImport,
 } from '../services/routes';
+import { fmtEur, fmtKwh, fmtCo2, fmtKw } from '../utils/format';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 function defaultDateRange() {
@@ -52,11 +53,6 @@ function defaultDateRange() {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
   };
-}
-
-function fmtNum(n, suffix = '') {
-  if (n == null) return '—';
-  return n.toLocaleString('fr-FR') + (suffix ? ` ${suffix}` : '');
 }
 
 function fmtDate(iso) {
@@ -367,7 +363,7 @@ export default function ConsumptionPortfolioPage() {
                 <InfoTip content="Somme des kWh électricité relevés sur tous les sites pour la période sélectionnée." />
               </>
             }
-            value={fmtNum(Math.round(tot?.kwh_total), 'kWh')}
+            value={fmtKwh(tot?.kwh_total)}
           />
           <KpiCard
             icon={Euro}
@@ -377,7 +373,7 @@ export default function ConsumptionPortfolioPage() {
                 <InfoTip content="Estimation basée sur le prix de référence de chaque site (contrat > profil tarifaire > défaut 0,18 EUR/kWh)." />
               </>
             }
-            value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
+            value={fmtEur(tot?.eur_total)}
             sub={
               tot?.eur_source === 'estime'
                 ? 'Estimation à 0,18 EUR/kWh'
@@ -388,11 +384,11 @@ export default function ConsumptionPortfolioPage() {
             icon={Leaf}
             label={
               <>
-                Emissions CO2{' '}
+                Émissions CO₂{' '}
                 <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO2e/kWh pour l'électricité en France." />
               </>
             }
-            value={fmtNum(Math.round(tot?.co2_total), 'kg')}
+            value={fmtCo2(tot?.co2_total)}
             sub="Facteur ADEME 2024"
           />
           <KpiCard
@@ -454,7 +450,7 @@ export default function ConsumptionPortfolioPage() {
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
                         <span className="text-rose-600 font-medium ml-2 shrink-0">
-                          {fmtNum(r.impact_eur_estimated, 'EUR')}
+                          {fmtEur(r.impact_eur_estimated)}
                         </span>
                         <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
@@ -807,20 +803,20 @@ export default function ConsumptionPortfolioPage() {
                       <td className="py-2 px-3 text-right">
                         {row.impact_eur_estimated > 0 ? (
                           <span className="text-rose-600 font-medium">
-                            {fmtNum(row.impact_eur_estimated, 'EUR')}
+                            {fmtEur(row.impact_eur_estimated)}
                           </span>
                         ) : (
                           <span className="text-gray-300">—</span>
                         )}
                       </td>
                       <td className="py-2 px-3 text-right text-gray-700">
-                        {row.data_status !== 'none' ? fmtNum(row.kwh) : '—'}
+                        {row.data_status !== 'none' ? fmtKwh(row.kwh) : '—'}
                       </td>
                       <td className="py-2 px-3 text-right text-gray-700">
-                        {row.data_status !== 'none' ? fmtNum(row.eur) : '—'}
+                        {row.data_status !== 'none' ? fmtEur(row.eur) : '—'}
                       </td>
                       <td className="py-2 px-3 text-right text-gray-700">
-                        {row.peak_kw != null ? `${row.peak_kw} kW` : '—'}
+                        {row.peak_kw != null ? fmtKw(row.peak_kw) : '—'}
                       </td>
                       <td className="py-2 px-3 text-right text-gray-700">
                         {row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}

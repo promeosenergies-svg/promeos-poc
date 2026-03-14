@@ -307,7 +307,7 @@ function RecommendedAction({ action }) {
         <div className="flex items-center gap-3 mt-2">
           {action.expected_gain_eur > 0 && (
             <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">
-              +{action.expected_gain_eur.toLocaleString('fr-FR')} EUR/an
+              +{fmtEur(action.expected_gain_eur)}/an
             </span>
           )}
           {action.effort && (
@@ -496,7 +496,7 @@ function FlexTab({ siteId }) {
               )}
               {lever.estimate_kwh_year && (
                 <span className="text-[10px] text-gray-500 bg-white/60 px-1.5 py-0.5 rounded">
-                  ~{lever.estimate_kwh_year.toLocaleString('fr-FR')} kWh/an
+                  ~{fmtKwh(lever.estimate_kwh_year)}/an
                 </span>
               )}
             </div>
@@ -549,8 +549,7 @@ function EvidenceDrawer({
           </div>
           {(insight.estimated_loss_kwh > 0 || insight.estimated_loss_eur > 0) && (
             <span className="text-xs text-gray-600">
-              {insight.estimated_loss_kwh > 0 &&
-                `${Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh`}
+              {insight.estimated_loss_kwh > 0 && fmtKwh(insight.estimated_loss_kwh)}
               {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
               {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
               {' · '}
@@ -712,7 +711,7 @@ function EvidenceTab({ insight }) {
         </ResponsiveContainer>
         {insight.estimated_loss_kwh > 0 && (
           <p className="text-xs text-gray-500 mt-1">
-            Écart : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
+            Écart : +{fmtKwh(insight.estimated_loss_kwh)}
             {insight.estimated_loss_eur > 0 &&
               ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
             {' · '}
@@ -1033,10 +1032,7 @@ export default function ConsumptionDiagPage() {
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <div className="text-xs text-gray-500">CO₂e évitable</div>
                 <div className="text-lg font-bold text-emerald-600">
-                  {Math.round(
-                    (displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH
-                  ).toLocaleString('fr-FR')}{' '}
-                  kg
+                  {fmtCo2((displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH)}
                 </div>
                 <div className="text-[11px] text-gray-400">Impact carbone</div>
               </div>

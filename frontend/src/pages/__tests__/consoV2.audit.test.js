@@ -1035,8 +1035,8 @@ describe('BF · Portfolio V1.3 pilotage UX', () => {
     expect(code).toMatch(/0,18 EUR\/kWh/);
   });
 
-  it('has KPI card with "Emissions CO2" and ADEME source', () => {
-    expect(code).toMatch(/Emissions CO2/);
+  it('has KPI card with "Émissions CO₂" and ADEME source', () => {
+    expect(code).toMatch(/Émissions CO₂/);
     expect(code).toMatch(/ADEME 2024/);
   });
 

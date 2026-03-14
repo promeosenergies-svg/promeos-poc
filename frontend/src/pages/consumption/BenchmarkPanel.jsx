@@ -20,6 +20,7 @@ import { SkeletonCard } from '../../ui';
 import { getEmsReferenceProfile } from '../../services/api';
 import { track } from '../../services/tracker';
 import { HelpCircle } from 'lucide-react';
+import { fmtKwh } from '../../utils/format';
 
 const FAMILLE_OPTIONS = [
   { value: 'habitat', label: 'Habitat' },
@@ -188,7 +189,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                 <CardBody className="py-3 px-4 text-center">
                   <p className="text-xs text-gray-500">Votre consommation</p>
                   <p className="text-lg font-bold text-gray-800">
-                    {Math.round(kpi.actual_kwh).toLocaleString('fr-FR')} kWh
+                    {fmtKwh(Math.round(kpi.actual_kwh))}
                   </p>
                   <p
                     className="text-[10px] text-gray-400"
@@ -202,7 +203,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                 <CardBody className="py-3 px-4 text-center">
                   <p className="text-xs text-gray-500">Moyenne sites similaires</p>
                   <p className="text-lg font-bold text-blue-600">
-                    {Math.round(kpi.reference_kwh).toLocaleString('fr-FR')} kWh
+                    {fmtKwh(Math.round(kpi.reference_kwh))}
                   </p>
                   <p className="text-[10px] text-gray-400">Profil statistique</p>
                 </CardBody>
@@ -218,7 +219,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                   </p>
                   <p className="text-xs text-gray-400">
                     {kpi.delta_kwh > 0 ? '+' : ''}
-                    {Math.round(kpi.delta_kwh).toLocaleString('fr-FR')} kWh
+                    {fmtKwh(Math.round(kpi.delta_kwh))}
                   </p>
                 </CardBody>
               </Card>

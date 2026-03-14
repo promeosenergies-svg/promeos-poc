@@ -49,6 +49,7 @@ import {
   seedWowDirty,
   getMarketContext,
 } from '../services/api';
+import { fmtKwh } from '../utils/format';
 import MarketContextBanner from '../components/purchase/MarketContextBanner';
 import {
   toActionNew,
@@ -637,7 +638,7 @@ export default function PurchasePage() {
                         Volume estimé
                       </div>
                       <div className="text-2xl font-bold text-blue-900">
-                        {Math.round(estimate.volume_kwh_an).toLocaleString('fr-FR')} kWh/an
+                        {fmtKwh(Math.round(estimate.volume_kwh_an))}/an
                       </div>
                       <div className="text-xs text-blue-500 mt-1">
                         Source: {estimate.source} ({estimate.months_covered} mois)
@@ -704,7 +705,7 @@ export default function PurchasePage() {
                       className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-900 font-medium flex items-center gap-2"
                     >
                       <Zap size={14} className="text-blue-500" />
-                      {Math.round(assumptions.volume_kwh_an).toLocaleString('fr-FR')} kWh/an
+                      {fmtKwh(Math.round(assumptions.volume_kwh_an))}/an
                       <Lock size={12} className="text-blue-300 ml-auto" />
                     </div>
                   ) : (

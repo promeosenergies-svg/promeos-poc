@@ -8,7 +8,7 @@ import { Bar } from 'recharts';
 import { Card, CardBody, Button } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
-import { fmtNum } from '../../utils/format';
+import { fmtNum, fmtKwh } from '../../utils/format';
 import {
   getConsumptionTargets,
   createConsumptionTarget,
@@ -157,22 +157,18 @@ export default function TargetsPanel({
           <div className="grid grid-cols-4 gap-4 mt-3 text-center">
             <div>
               <p className="text-xs text-gray-500">Objectif annuel</p>
-              <p className="text-sm font-semibold">
-                {(progression.yearly_target_kwh || 0).toLocaleString('fr-FR')} kWh
-              </p>
+              <p className="text-sm font-semibold">{fmtKwh(progression.yearly_target_kwh || 0)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Reel YTD</p>
-              <p className="text-sm font-semibold">
-                {(progression.ytd_actual_kwh || 0).toLocaleString('fr-FR')} kWh
-              </p>
+              <p className="text-sm font-semibold">{fmtKwh(progression.ytd_actual_kwh || 0)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Run-rate annuel</p>
               <p
                 className={`text-sm font-semibold ${(progression.run_rate_kwh || 0) > (progression.yearly_target_kwh || 0) ? 'text-red-600' : 'text-green-600'}`}
               >
-                {(progression.run_rate_kwh || 0).toLocaleString('fr-FR')} kWh
+                {fmtKwh(progression.run_rate_kwh || 0)}
               </p>
             </div>
             <div>
@@ -206,7 +202,7 @@ export default function TargetsPanel({
                     />
                     <span className="text-gray-700 flex-1">{cause.label}</span>
                     <span className="font-semibold text-gray-800">
-                      {(cause.estimated_loss_kwh || 0).toLocaleString('fr-FR')} kWh/an
+                      {fmtKwh(cause.estimated_loss_kwh || 0)}/an
                     </span>
                   </div>
                 ))}

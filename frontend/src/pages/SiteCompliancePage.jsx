@@ -38,7 +38,7 @@ import {
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtDateFR } from '../utils/format';
+import { fmtDateFR, fmtKwh } from '../utils/format';
 
 const REG_CONFIG = {
   tertiaire_operat: { label: 'Décret Tertiaire', icon: Building, color: 'bg-blue-600' },
@@ -302,15 +302,11 @@ function MvWidget({ siteId }) {
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div className="text-center">
           <p className="text-xs text-gray-500">Baseline</p>
-          <p className="text-sm font-bold text-gray-900">
-            {mv.baseline_kwh_month.toLocaleString('fr-FR')} kWh/m
-          </p>
+          <p className="text-sm font-bold text-gray-900">{fmtKwh(mv.baseline_kwh_month)}/m</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500">Actuel</p>
-          <p className="text-sm font-bold text-gray-900">
-            {mv.current_kwh_month.toLocaleString('fr-FR')} kWh/m
-          </p>
+          <p className="text-sm font-bold text-gray-900">{fmtKwh(mv.current_kwh_month)}/m</p>
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500">Delta</p>

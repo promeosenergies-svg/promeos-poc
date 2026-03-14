@@ -25,7 +25,7 @@ import { toConsoExplorer } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { fmtPct, fmtNum } from '../utils/format';
+import { fmtPct, fmtNum, fmtKwh } from '../utils/format';
 import {
   getMeters,
   createMeter,
@@ -573,7 +573,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
           <div className="bg-gray-50 rounded-lg p-3 text-center">
             <div className="text-xs text-gray-500">Consommation</div>
             <div className="text-lg font-bold text-gray-900">
-              {result.features?.kwh_total?.toLocaleString('fr-FR') || '0'} kWh
+              {fmtKwh(result.features?.kwh_total)}
             </div>
             <div className="text-[11px] text-gray-400">
               {result.features?.days_count || '—'} jours · {result.features?.meters_count || 1}{' '}
@@ -614,7 +614,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
           {[
             {
               label: 'kWh total',
-              value: result.features?.kwh_total?.toLocaleString('fr-FR') || '0',
+              value: fmtKwh(result.features?.kwh_total),
               interp: null,
               formula: KPI_FORMULAS.kwh_total,
               action: null,

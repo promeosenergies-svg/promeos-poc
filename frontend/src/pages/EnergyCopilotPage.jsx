@@ -26,6 +26,7 @@ import {
   rejectCopilotAction,
 } from '../services/api';
 import { PageShell, Card, CardBody, Button, Badge } from '../ui';
+import { fmtKwh, fmtEur } from '../utils/format';
 
 const RULE_ICONS = {
   R1_MONTHLY_DRIFT: TrendingDown,
@@ -71,12 +72,12 @@ function ActionCard({ action, onValidate, onReject, loading }) {
           <div className="flex gap-4 text-xs">
             {action.estimated_savings_kwh && (
               <span className="text-emerald-600 font-medium">
-                -{action.estimated_savings_kwh.toLocaleString('fr-FR')} kWh
+                -{fmtKwh(action.estimated_savings_kwh)}
               </span>
             )}
             {action.estimated_savings_eur && (
               <span className="text-emerald-600 font-medium">
-                -{action.estimated_savings_eur.toLocaleString('fr-FR')} €
+                -{fmtEur(action.estimated_savings_eur)}
               </span>
             )}
           </div>

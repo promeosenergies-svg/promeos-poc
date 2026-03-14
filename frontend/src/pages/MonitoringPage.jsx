@@ -69,7 +69,7 @@ import { track } from '../services/tracker';
 import { getKpiMessage } from '../services/kpiMessaging';
 import { getKpiLabel } from '../shared/kpiLabels';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtDateFR } from '../utils/format';
+import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2 } from '../utils/format';
 import {
   toConsoExplorer,
   toConsoDiag,
@@ -254,7 +254,7 @@ export function computeOffHoursEstimate(kwh, price = 0.18) {
   if (kwh == null || kwh <= 0) return { eur: 0, label: '-', price };
   const annualized = kwh * (365 / 90);
   const eur = Math.round(annualized * price);
-  return { eur, label: `~${fmtNum(eur, 0)} €/an`, price };
+  return { eur, label: `~${fmtEur(eur)}/an`, price };
 }
 
 /**
@@ -332,9 +332,7 @@ function ActionMiniList({ actions, siteId, navigate }) {
               </Badge>
               <span className="truncate flex-1 text-gray-700">{a.title}</span>
               {a.estimated_gain_eur > 0 && (
-                <span className="text-emerald-600 font-medium">
-                  {fmtNum(a.estimated_gain_eur, 0)} €
-                </span>
+                <span className="text-emerald-600 font-medium">{fmtEur(a.estimated_gain_eur)}</span>
               )}
             </div>
           ))}
@@ -562,7 +560,7 @@ function ExecutiveSummary({
       iconColor: topAlert ? (isLowConf ? 'text-gray-400' : 'text-red-500') : 'text-gray-300',
       title: 'Risque principal',
       value: topAlert
-        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} €/an${isLowConf ? ' (À confirmer)' : ''}`
+        ? `${fmtEur(topAlert.estimated_impact_eur)}/an${isLowConf ? ' (À confirmer)' : ''}`
         : 'Aucun risque détecté',
       sub: topAlert
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
@@ -581,10 +579,10 @@ function ExecutiveSummary({
       icon: Zap,
       iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
       title: <Explain term="gaspillage_estime">Gaspillage estimé</Explain>,
-      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} €/an` : 'Non détecté',
+      value: totalWasteEur > 0 ? `${fmtEur(totalWasteEur)}/an` : 'Non détecté',
       sub:
         wasteAlerts.length > 0
-          ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Hors horaires: ${offHoursEst.label}` : ''}`
+          ? `${fmtKwh(totalWasteKwh)} · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Hors horaires: ${offHoursEst.label}` : ''}`
           : 'Aucune anomalie de gaspillage',
       ctas:
         totalWasteEur > 0
@@ -613,11 +611,11 @@ function ExecutiveSummary({
       title: 'Empreinte CO₂e',
       value:
         emissions?.annualized_co2e_tonnes != null
-          ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an`
+          ? `${fmtCo2(emissions.annualized_co2e_tonnes * 1000)}/an`
           : 'Non disponible',
       sub:
         (emissions?.off_hours_co2e_kg || 0) > 0
-          ? `dont ${fmtNum(emissions.off_hours_co2e_kg, 0)} kg évitables (hors horaires)`
+          ? `dont ${fmtCo2(emissions.off_hours_co2e_kg)} évitables (hors horaires)`
           : emissions?.factor?.source_label || 'Facteur non configuré',
       ctas:
         (emissions?.off_hours_co2e_kg || 0) > 0
@@ -1821,7 +1819,7 @@ export default function MonitoringPage() {
       const eur = impact.off_hours.eur_year;
       return {
         eur,
-        label: `~${fmtNum(eur, 0)} €/an`,
+        label: `~${fmtEur(eur)}/an`,
         price: impact.off_hours.price_eur_kwh,
         mode: impact.off_hours.mode,
         confidence: impact.off_hours.confidence,
@@ -2248,7 +2246,7 @@ export default function MonitoringPage() {
                             </p>
                             {a.estimated_impact_eur > 0 && (
                               <p className="text-sm font-bold text-red-600 mt-1">
-                                {fmtNum(a.estimated_impact_eur, 0)} €/an
+                                {fmtEur(a.estimated_impact_eur)}/an
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-2">
@@ -2315,8 +2313,8 @@ export default function MonitoringPage() {
               <StatusKpiCard
                 icon={Zap}
                 title={getKpiLabel('pmax_kw', isExpert)}
-                value={kpiData.pmax_kw != null ? `${fmtNum(kpiData.pmax_kw)} kW` : '-'}
-                sub={`P95: ${fmtNum(kpiData.p95_kw)} kW${benchmarkLabel('pmax_kw')}`}
+                value={kpiData.pmax_kw != null ? fmtKw(kpiData.pmax_kw) : '-'}
+                sub={`P95: ${fmtKw(kpiData.p95_kw)}${benchmarkLabel('pmax_kw')}`}
                 tooltip={`${KPI_TOOLTIPS.pmax}\n${benchmarkTip('pmax_kw')}`}
                 status="ok"
                 color="bg-yellow-500"
@@ -2324,8 +2322,8 @@ export default function MonitoringPage() {
               <StatusKpiCard
                 icon={TrendingUp}
                 title={getKpiLabel('pbase_kw', isExpert)}
-                value={kpiData.pbase_kw != null ? `${fmtNum(kpiData.pbase_kw)} kW` : '-'}
-                sub={`Nuit: ${fmtNum(kpiData.pbase_night_kw)} kW${benchmarkLabel('pbase_kw')}`}
+                value={kpiData.pbase_kw != null ? fmtKw(kpiData.pbase_kw) : '-'}
+                sub={`Nuit: ${fmtKw(kpiData.pbase_night_kw)}${benchmarkLabel('pbase_kw')}`}
                 tooltip={`Talon = consommation mini hors périodes d'activité.\n${benchmarkTip('pbase_kw')}`}
                 status="ok"
                 color="bg-blue-500"
@@ -2487,12 +2485,12 @@ export default function MonitoringPage() {
                 title={getKpiLabel('total_tco2e', isExpert)}
                 value={
                   emissions.annualized_co2e_tonnes != null
-                    ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an`
+                    ? `${fmtCo2(emissions.annualized_co2e_tonnes * 1000)}/an`
                     : '-'
                 }
                 sub={
                   emissions.total_co2e_kg != null
-                    ? `${fmtNum(emissions.total_co2e_kg, 0)} kg sur ${emissions.days_covered || 90}j${emissions.off_hours_co2e_kg > 0 ? ` · Hors horaires: ${fmtNum(emissions.off_hours_co2e_kg, 0)} kg` : ''}`
+                    ? `${fmtCo2(emissions.total_co2e_kg)} sur ${emissions.days_covered || 90}j${emissions.off_hours_co2e_kg > 0 ? ` · Hors horaires: ${fmtCo2(emissions.off_hours_co2e_kg)}` : ''}`
                     : 'Facteur non disponible'
                 }
                 tooltip={`Émissions CO₂e estimées sur la période d'analyse.\nFacteur: ${emissions.factor?.kgco2e_per_kwh || '-'} kgCO₂e/kWh\nSource: ${emissions.factor?.source_label || '-'}\nQualité: ${emissions.factor?.quality || '-'}`}
@@ -2904,7 +2902,7 @@ export default function MonitoringPage() {
                               </td>
                               <td className="py-3 pr-4 text-right font-medium">
                                 {a._totalEur > 0 ? (
-                                  <span className="text-red-600">{fmtNum(a._totalEur, 0)} €</span>
+                                  <span className="text-red-600">{fmtEur(a._totalEur)}</span>
                                 ) : (
                                   '-'
                                 )}
@@ -2920,9 +2918,9 @@ export default function MonitoringPage() {
                               {isExpert && (
                                 <td className="py-3 pr-4 text-[10px] text-gray-400 font-mono text-right">
                                   {a._totalKwh > 0
-                                    ? `${fmtNum(a._totalKwh, 1)} kWh`
+                                    ? fmtKwh(a._totalKwh)
                                     : a.estimated_impact_kwh > 0
-                                      ? `${fmtNum(a.estimated_impact_kwh, 1)} kWh`
+                                      ? fmtKwh(a.estimated_impact_kwh)
                                       : '-'}
                                 </td>
                               )}

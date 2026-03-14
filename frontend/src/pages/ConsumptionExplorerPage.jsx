@@ -42,7 +42,7 @@ import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
-import { fmtCo2 } from '../utils/format';
+import { fmtCo2, fmtKwh } from '../utils/format';
 import MeteoPanel from './consumption/MeteoPanel';
 import InsightsPanel from './consumption/InsightsPanel';
 import ConsoKpiHeader from '../components/ConsoKpiHeader';
@@ -354,7 +354,7 @@ export default function ConsumptionExplorerPage() {
     const periodStr = `${days} jours`;
     const hphc = motor.primaryHphc;
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
-    const kwhStr = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : null;
+    const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
     const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.052) : null;
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {

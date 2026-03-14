@@ -207,7 +207,7 @@ export default function ConnectorsPage() {
           <h3 className="text-sm font-semibold text-blue-800 mb-2">À propos des Connecteurs</h3>
           <ul className="text-sm text-gray-700 space-y-1.5">
             <li>
-              <strong>RTE eCO2mix:</strong> Intensité CO2 du réseau électrique français (API
+              <strong>RTE éCO₂mix:</strong> Intensité CO₂ du réseau électrique français (API
               publique)
             </li>
             <li>

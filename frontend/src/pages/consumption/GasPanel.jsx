@@ -22,6 +22,7 @@ import { Card, CardBody, Badge, Button, TrustBadge } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
 import { getGasSummary, getGasWeatherNormalized } from '../../services/api';
+import { fmtKwh } from '../../utils/format';
 import { CONFIDENCE_BADGE } from './constants';
 
 const SEVERITY_STYLE = {
@@ -103,17 +104,13 @@ export default function GasPanel({
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Total</p>
-            <p className="text-xl font-bold text-gray-800">
-              {gas.total_kwh.toLocaleString('fr-FR')} kWh PCS
-            </p>
+            <p className="text-xl font-bold text-gray-800">{fmtKwh(gas.total_kwh)} PCS</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="py-3 px-4 text-center">
             <p className="text-xs text-gray-500">Moy. journaliere</p>
-            <p className="text-xl font-bold text-gray-800">
-              {gas.avg_daily_kwh.toLocaleString('fr-FR')} kWh PCS
-            </p>
+            <p className="text-xl font-bold text-gray-800">{fmtKwh(gas.avg_daily_kwh)} PCS</p>
           </CardBody>
         </Card>
         {model && (

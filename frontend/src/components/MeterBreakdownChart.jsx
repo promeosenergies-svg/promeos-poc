@@ -4,6 +4,7 @@
  * Affiche le delta (pertes & parties communes) comme tranche distincte.
  */
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { fmtKwh } from '../utils/format';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 const DELTA_COLOR = '#94a3b8';
@@ -31,9 +32,7 @@ export default function MeterBreakdownChart({ breakdown }) {
     <div className="w-full" data-testid="meter-breakdown-chart">
       <div className="text-xs text-gray-500 mb-2 text-center">
         Total principal :{' '}
-        <span className="font-medium text-gray-700">
-          {Math.round(total).toLocaleString('fr-FR')} kWh
-        </span>
+        <span className="font-medium text-gray-700">{fmtKwh(Math.round(total))}</span>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>

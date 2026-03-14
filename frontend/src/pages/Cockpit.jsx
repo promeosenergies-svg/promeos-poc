@@ -25,7 +25,7 @@ import {
   getComplianceScoreTrend,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
-import { fmtEur } from '../utils/format';
+import { fmtEur, fmtKwh } from '../utils/format';
 import { toActionsList } from '../services/routes';
 import {
   Button,
@@ -579,7 +579,7 @@ const Cockpit = () => {
                 <p className="text-[10px] text-gray-500 font-medium uppercase">Consommation</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">
                   {singleSite.conso_kwh_an > 0
-                    ? `${singleSite.conso_kwh_an.toLocaleString('fr-FR')} kWh/an`
+                    ? `${fmtKwh(singleSite.conso_kwh_an)}/an`
                     : 'Non renseignée'}
                 </p>
                 {isExpert && (

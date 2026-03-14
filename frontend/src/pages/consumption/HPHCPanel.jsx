@@ -9,6 +9,7 @@ import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
 import { getHPHCBreakdownV2, getActiveTOUSchedule } from '../../services/api';
 import HeatmapChart from './HeatmapChart';
+import { fmtKwh, fmtEur } from '../../utils/format';
 import { CONFIDENCE_BADGE } from './constants';
 
 export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
@@ -96,34 +97,22 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HP</p>
-                <p className="text-lg font-bold text-red-600">
-                  {breakdown.hp_kwh.toLocaleString('fr-FR')} kWh
-                </p>
-                <p className="text-xs text-gray-400">
-                  {breakdown.hp_cost_eur.toLocaleString('fr-FR')} €
-                </p>
+                <p className="text-lg font-bold text-red-600">{fmtKwh(breakdown.hp_kwh)}</p>
+                <p className="text-xs text-gray-400">{fmtEur(breakdown.hp_cost_eur)}</p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HC</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {breakdown.hc_kwh.toLocaleString('fr-FR')} kWh
-                </p>
-                <p className="text-xs text-gray-400">
-                  {breakdown.hc_cost_eur.toLocaleString('fr-FR')} €
-                </p>
+                <p className="text-lg font-bold text-blue-600">{fmtKwh(breakdown.hc_kwh)}</p>
+                <p className="text-xs text-gray-400">{fmtEur(breakdown.hc_cost_eur)}</p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Total</p>
-                <p className="text-lg font-bold text-gray-800">
-                  {breakdown.total_kwh.toLocaleString('fr-FR')} kWh
-                </p>
-                <p className="text-xs text-gray-400">
-                  {breakdown.total_cost_eur.toLocaleString('fr-FR')} €
-                </p>
+                <p className="text-lg font-bold text-gray-800">{fmtKwh(breakdown.total_kwh)}</p>
+                <p className="text-xs text-gray-400">{fmtEur(breakdown.total_cost_eur)}</p>
               </CardBody>
             </Card>
             <Card>
@@ -147,7 +136,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
                       Opportunité de report HP → HC
                     </p>
                     <p className="text-sm text-green-800 mt-0.5">
-                      ~{breakdown.opportunity.shiftable_kwh.toLocaleString('fr-FR')} kWh reportables
+                      ~{fmtKwh(breakdown.opportunity.shiftable_kwh)} reportables
                     </p>
                   </div>
                   <div className="text-right">

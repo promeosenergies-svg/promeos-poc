@@ -5,6 +5,7 @@
  *
  * insight shape: { id, label, severity: 'info'|'warn'|'crit', detail }
  */
+import { fmtKwh } from '../../utils/format';
 
 /**
  * Main entry point: run all rules and collect insights.
@@ -98,7 +99,7 @@ function ruleTargetOverBudget({ primaryProgression } = {}) {
     id: 'target_over_budget',
     label: `Budget depasse de ${over}%`,
     severity: pct > 130 ? 'crit' : 'warn',
-    detail: `La consommation YTD depasse l'objectif de ${over}%. Run-rate annuel : ${(primaryProgression.run_rate_kwh || 0).toLocaleString('fr-FR')} kWh.`,
+    detail: `La consommation YTD depasse l'objectif de ${over}%. Run-rate annuel : ${fmtKwh(primaryProgression.run_rate_kwh || 0)}.`,
   };
 }
 
