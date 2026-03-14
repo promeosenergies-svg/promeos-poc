@@ -289,8 +289,19 @@ Options:
   for (const { name, path, section } of pages) {
     try {
       process.stdout.write(`[${section.toUpperCase().padEnd(12)}] ${name}...`);
-      await page.goto(FRONTEND_URL + path, { waitUntil: 'networkidle', timeout: 12000 }).catch(() => {});
-      await page.waitForTimeout(1500);
+      await page.goto(FRONTEND_URL + path, { waitUntil: 'domcontentloaded', timeout: 12000 }).catch(() => {});
+
+      // Wait for the app to finish loading data:
+      // 1. Wait for any cascading API calls (auth/me → scope → page data) to settle
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+      // 2. Wait for skeleton/loading placeholders to disappear (animate-pulse divs)
+      //    This handles cascading fetches that fire after networkidle settles prematurely
+      await page.waitForFunction(() => {
+        const skeletons = document.querySelectorAll('.animate-pulse');
+        return skeletons.length === 0;
+      }, { timeout: 8000 }).catch(() => {});
+      // 3. Small buffer for final paint
+      await page.waitForTimeout(500);
 
       // Detect 404 / "Page introuvable"
       const is404 = await page.locator('text=Page introuvable, text=introuvable').first().isVisible().catch(() => false);
@@ -320,8 +331,13 @@ Options:
     for (const { name, path, action } of INTERACTIONS) {
       try {
         process.stdout.write(`[INTERACTION] ${name}...`);
-        await page.goto(FRONTEND_URL + path, { waitUntil: 'networkidle', timeout: 12000 }).catch(() => {});
-        await page.waitForTimeout(1000);
+        await page.goto(FRONTEND_URL + path, { waitUntil: 'domcontentloaded', timeout: 12000 }).catch(() => {});
+        await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+        await page.waitForFunction(() => {
+          const skeletons = document.querySelectorAll('.animate-pulse');
+          return skeletons.length === 0;
+        }, { timeout: 8000 }).catch(() => {});
+        await page.waitForTimeout(500);
         await action(page);
         await page.screenshot({
           path: join(outDir, `${name}.png`),
