@@ -386,6 +386,7 @@ function ObligationCard({
   bacsV2Summary,
   onNavigateIntake,
   isExpert,
+  profileEntry,
 }) {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -416,6 +417,50 @@ function ObligationCard({
                   {cfg.label}
                 </span>
                 {overdue && <Badge status="crit">En retard</Badge>}
+                {/* V1.4: profile tags */}
+                {profileEntry?.tags?.map((tag, i) => (
+                  <span
+                    key={i}
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                      tag.color === 'green'
+                        ? 'bg-green-100 text-green-700'
+                        : tag.color === 'blue'
+                          ? 'bg-blue-100 text-blue-700'
+                          : tag.color === 'amber'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-gray-100 text-gray-500'
+                    }`}
+                    title={tag.tooltip}
+                    data-testid="profile-tag"
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+                {profileEntry?.reliability && (
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded ${
+                      profileEntry.reliability === 'declared'
+                        ? 'bg-blue-50 text-blue-500'
+                        : profileEntry.reliability === 'detected'
+                          ? 'bg-gray-50 text-gray-400'
+                          : 'bg-amber-50 text-amber-500'
+                    }`}
+                    title={
+                      profileEntry.reliability === 'declared'
+                        ? 'Ajusté selon vos réponses'
+                        : profileEntry.reliability === 'detected'
+                          ? 'Calculé depuis vos données patrimoine'
+                          : 'Information insuffisante — qualification recommandée'
+                    }
+                    data-testid="reliability-badge"
+                  >
+                    {profileEntry.reliability === 'declared'
+                      ? 'Déclaré'
+                      : profileEntry.reliability === 'detected'
+                        ? 'Détecté'
+                        : 'À confirmer'}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600 mt-1">{obligation.description}</p>
             </div>
@@ -913,6 +958,7 @@ export default function ObligationsTab({
   navigate,
   isExpert,
   setDossierSource,
+  profileTags,
   onNavigateIntake: _onNavigateIntake,
 }) {
   return (
@@ -1089,6 +1135,7 @@ export default function ObligationsTab({
                   : null
               }
               isExpert={isExpert}
+              profileEntry={profileTags?.get(obligation.id || obligation.code)}
             />
           ))
         )}

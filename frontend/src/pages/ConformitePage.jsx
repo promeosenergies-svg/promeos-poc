@@ -38,6 +38,7 @@ import { track } from '../services/tracker';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
+import { computeObligationProfileTags } from '../models/complianceProfileRules';
 import HealthSummary from '../components/HealthSummary';
 import DossierPrintView from '../components/DossierPrintView';
 import RegulatoryTimeline from '../components/compliance/RegulatoryTimeline';
@@ -914,6 +915,12 @@ export default function ConformitePage() {
     [org, scope.siteId, scope.portefeuilleId, scopedSites, portefeuilles]
   );
 
+  // V1.4: profile tags for obligation cards
+  const profileTags = useMemo(
+    () => computeObligationProfileTags(obligations, segProfile),
+    [obligations, segProfile]
+  );
+
   const sortedObligations = useMemo(() => {
     let list = [...obligations];
     if (statusFilter) {
@@ -929,14 +936,24 @@ export default function ConformitePage() {
       );
     }
     list.sort((a, b) => {
+      // 1. Overdue first (never overridden by profile)
       const aOver = isOverdue(a) ? 0 : 1;
       const bOver = isOverdue(b) ? 0 : 1;
       if (aOver !== bOver) return aOver - bOver;
-      const order = { non_conforme: 0, a_risque: 1, conforme: 2 };
-      return (order[a.statut] ?? 9) - (order[b.statut] ?? 9);
+      // 2. Statut metier (never overridden by profile)
+      const order = { non_conforme: 0, a_risque: 1, a_qualifier: 2, conforme: 3 };
+      const aStatut = order[a.statut] ?? 9;
+      const bStatut = order[b.statut] ?? 9;
+      if (aStatut !== bStatut) return aStatut - bStatut;
+      // 3. V1.4: profile boost WITHIN same group only
+      const aBoost = profileTags.get(a.id || a.code)?.priorityBoost || 0;
+      const bBoost = profileTags.get(b.id || b.code)?.priorityBoost || 0;
+      if (aBoost !== bBoost) return bBoost - aBoost;
+      // 4. Stable secondary sort by code
+      return (a.code || '').localeCompare(b.code || '');
     });
     return list;
-  }, [obligations, statusFilter, searchQuery]);
+  }, [obligations, statusFilter, searchQuery, profileTags]);
 
   const actionableFindings = useMemo(() => {
     return obligations
@@ -1245,12 +1262,18 @@ export default function ConformitePage() {
               </span>
               <span className="text-lg text-gray-400">/100</span>
               {segProfile?.has_profile && Object.keys(segProfile.answers || {}).length > 0 && (
-                <p
-                  className="text-[10px] text-blue-600 font-medium mt-1"
-                  data-testid="profile-badge"
-                >
-                  Adapté à votre profil
-                </p>
+                <>
+                  <p
+                    className="text-[10px] text-blue-600 font-medium mt-1"
+                    data-testid="profile-badge"
+                  >
+                    Adapté à votre profil
+                  </p>
+                  <p className="text-[9px] text-gray-400 mt-0.5" data-testid="profile-explain">
+                    Certaines obligations et priorités sont ajustées selon votre profil déclaré ou
+                    détecté.
+                  </p>
+                </>
               )}
             </div>
             {/* Breakdown bars */}
@@ -1407,6 +1430,7 @@ export default function ConformitePage() {
           navigate={navigate}
           isExpert={isExpert}
           setDossierSource={setDossierSource}
+          profileTags={profileTags}
           onNavigateIntake={
             scopedSites[0]
               ? () => {
