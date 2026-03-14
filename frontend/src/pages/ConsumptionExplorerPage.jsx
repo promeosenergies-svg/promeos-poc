@@ -486,6 +486,13 @@ export default function ConsumptionExplorerPage() {
   const [compareYoy, setCompareYoy] = useState(false);
   const [compareSummary, setCompareSummary] = useState(null);
 
+  // Auto-disable YoY comparison when switching to multi-site (#93)
+  useEffect(() => {
+    if (siteIds.length > 1 && compareYoy) {
+      setCompareYoy(false);
+    }
+  }, [siteIds.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!compareYoy || !siteIds.length) {
       setCompareSummary(null);
