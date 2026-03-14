@@ -41,7 +41,7 @@ export const KPI_LABELS = {
     unit: 'kWh',
   },
   night_ratio: {
-    simple: 'Base nocturne',
+    simple: 'Conso. nocturne',
     expert: 'Ratio nuit (22h-6h / 6h-22h)',
     unit: '%',
   },
