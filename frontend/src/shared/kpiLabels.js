@@ -12,7 +12,7 @@ export const KPI_LABELS = {
   },
   p95_kw: {
     simple: 'Puissance',
-    expert: 'Puissance P95',
+    expert: 'Puissance',
     unit: 'kW',
   },
   pbase_kw: {
@@ -42,7 +42,7 @@ export const KPI_LABELS = {
   },
   night_ratio: {
     simple: 'Ratio Conso. Nuit',
-    expert: 'Ratio Nuit 22h-6h',
+    expert: 'Ratio Conso. Nuit',
     unit: '%',
   },
   weekend_ratio: {
