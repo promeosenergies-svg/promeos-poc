@@ -154,7 +154,7 @@ class TestSegmentationQuestions:
             "q_gtb",
             "q_bacs",
             "q_operat",
-            "q_cee",
+            # q_cee masque (hidden=True) — non retourne par get_questions
             "q_horaires",
             "q_chauffage",
             "q_irve",

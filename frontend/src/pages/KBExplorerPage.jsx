@@ -125,7 +125,7 @@ export default function KBExplorerPage() {
         setKbError(null);
       })
       .catch(() => {
-        setKbError('kb_unavailable');
+        // Stats unavailable — not critical, search still works with local data
       });
   }, []);
 

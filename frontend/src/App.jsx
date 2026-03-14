@@ -209,6 +209,7 @@ function App() {
                       }
                     />
                     {/* Energy Copilot — route supprimée (Sprint B P0-7: plus de doublon avec Cockpit) */}
+                    <Route path="/energy-copilot" element={<Navigate to="/" replace />} />
 
                     {/* Legacy redirects */}
                     <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />

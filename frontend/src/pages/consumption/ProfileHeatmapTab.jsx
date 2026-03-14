@@ -137,7 +137,13 @@ export default function ProfileHeatmapTab({ profile, loading, schedule, stats, i
                   confidence === 'high' ? 'success' : confidence === 'medium' ? 'info' : 'neutral'
                 }
               >
-                {confidence}
+                {confidence === 'high'
+                  ? 'Élevée'
+                  : confidence === 'medium'
+                    ? 'Moyenne'
+                    : confidence === 'low'
+                      ? 'Faible'
+                      : confidence}
               </Badge>
             )}
           </div>

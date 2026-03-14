@@ -1472,7 +1472,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
               <DrawerRow label="Sévérité">
                 {SEVERITY_LABEL_FR[alert.severity] || alert.severity}
               </DrawerRow>
-              <DrawerRow label="Moteur">Moteur Monitoring v1.0</DrawerRow>
+              <DrawerRow label="Moteur">Moteur Monitoring v1.4</DrawerRow>
             </DrawerSection>
             <DrawerSection title="Seuils">
               <DrawerRow label="Seuil déclenchement">Calculé par le moteur d'alertes</DrawerRow>

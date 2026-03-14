@@ -109,6 +109,7 @@ QUESTIONS_V1 = [
         "id": "q_cee",
         "text": "Avez-vous deja beneficie de CEE (Certificats d'Economie d'Energie) ?",
         "type": "single",
+        "hidden": True,  # CEE masque dans l'app — question conservee pour compatibilite donnees
         "options": [
             {"value": "oui", "label": "Oui"},
             {"value": "non", "label": "Non"},
@@ -501,7 +502,7 @@ def _score_boost_from_answers(answers: dict) -> float:
 def get_missing_questions(profile: SegmentationProfile) -> list:
     """Return list of question IDs not yet answered."""
     existing = json.loads(profile.answers_json) if profile.answers_json else {}
-    all_ids = [q["id"] for q in QUESTIONS_V1]
+    all_ids = [q["id"] for q in QUESTIONS_V1 if not q.get("hidden")]
     return [qid for qid in all_ids if qid not in existing or not existing[qid]]
 
 
@@ -635,8 +636,8 @@ def recompute_profile(db: Session, org_id: int) -> SegmentationProfile:
 
 
 def get_questions(org_id: int = None) -> list:
-    """Retourne la liste des questions V1."""
-    return QUESTIONS_V1
+    """Retourne la liste des questions V1 (sans les questions masquees)."""
+    return [q for q in QUESTIONS_V1 if not q.get("hidden")]
 
 
 # ========================================
