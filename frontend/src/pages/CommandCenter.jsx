@@ -331,7 +331,7 @@ export default function CommandCenter() {
           accent="risque"
           icon={TrendingDown}
           label="Risque financier"
-          value={kpis.risque > 0 ? `${Math.round(kpis.risque / 1000)} k€` : '0 €'}
+          value={kpis.risque > 0 ? `${Math.round(kpis.risque / 1000)} k€` : '—'}
           sub={`${kpis.nonConformes + kpis.aRisque} sites à risque (périmètre sélectionné)`}
           status={kpis.risqueStatus}
           onClick={() => navigate(toActionsList())}

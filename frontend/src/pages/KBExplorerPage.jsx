@@ -262,9 +262,10 @@ export default function KBExplorerPage() {
           <CardBody className="flex items-center gap-3 py-3">
             <AlertTriangle size={20} className="text-amber-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800">KB locale chargée</p>
+              <p className="text-sm font-medium text-amber-800">Mode démo — données locales</p>
               <p className="text-xs text-amber-600">
-                Le service Mémobox n&apos;est pas disponible. Les données locales sont affichées.
+                La base de connaissances est chargée localement. Toutes les fonctionnalités sont
+                disponibles.
               </p>
             </div>
           </CardBody>

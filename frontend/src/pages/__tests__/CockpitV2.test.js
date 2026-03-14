@@ -243,10 +243,10 @@ describe('buildExecutiveKpis', () => {
     expect(result[3].value).toBe('—'); // couverture
   });
 
-  it('risque tile shows 0€ when no risk', () => {
+  it('risque tile shows dash when no risk', () => {
     const kpis = makeKpis({ risqueTotal: 0, nonConformes: 0, aRisque: 0 });
     const result = buildExecutiveKpis(kpis, makeSites());
-    expect(result[1].value).toBe('0 €');
+    expect(result[1].value).toBe('—');
   });
 
   it('fourth tile is couverture with correct sites count', () => {

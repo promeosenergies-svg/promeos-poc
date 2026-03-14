@@ -94,7 +94,7 @@ describe('V9 CO2e: ConsumptionDiagPage includes CO2e features', () => {
     expect(src).toContain('CO₂e (kg)');
   });
 
-  it('displays kgCO2e in evidence drawer', () => {
-    expect(src).toContain('kgCO₂e');
+  it('uses fmtCo2 for CO₂ formatting', () => {
+    expect(src).toContain('fmtCo2');
   });
 });

@@ -460,7 +460,7 @@ export default function NotificationsPage() {
                             {evt.title}
                           </p>
                           {evt.message && (
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                               {evt.message}
                             </p>
                           )}

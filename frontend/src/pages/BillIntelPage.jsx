@@ -51,6 +51,7 @@ import {
   saveHealthSnapshot,
   isActiveInsight,
 } from '../models/billingHealthModel';
+import { fmtEur, fmtKwh } from '../utils/format';
 
 const VALID_STATUSES = ['open', 'ack', 'resolved', 'false_positive'];
 
@@ -680,7 +681,7 @@ export default function BillIntelPage() {
             <SummaryCard
               icon={Euro}
               label="Total €"
-              value={`${Math.round(summary.total_eur).toLocaleString('fr-FR')} €`}
+              value={fmtEur(summary.total_eur)}
               color="indigo"
             />
             <SummaryCard
@@ -690,7 +691,7 @@ export default function BillIntelPage() {
                   Total <Explain term="kwh">kWh</Explain>
                 </>
               }
-              value={`${Math.round(summary.total_kwh).toLocaleString('fr-FR')}`}
+              value={fmtKwh(Math.round(summary.total_kwh))}
               color="purple"
             />
             <SummaryCard
@@ -702,7 +703,7 @@ export default function BillIntelPage() {
             <SummaryCard
               icon={TrendingUp}
               label="Pertes estimées"
-              value={`${Math.round(activeLoss)} €`}
+              value={fmtEur(activeLoss)}
               color="orange"
             />
           </div>

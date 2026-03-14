@@ -125,7 +125,7 @@ export function computeRecommendation(impact = {}, kpis = {}) {
 
 // ── Helpers internes ─────────────────────────────────────────────────────────
 
-/** fmtEur retourne '—' pour 0 ; ici on veut '0 €' dans les bullets recommandation. */
+/** fmtEur retourne '—' pour 0 ; ici on veut un texte explicite dans les bullets. */
 function _fmtEur0(v) {
-  return v ? fmtEur(v) : '0 €';
+  return v ? fmtEur(v) : 'non estimé';
 }

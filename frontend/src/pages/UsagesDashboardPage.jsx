@@ -1067,7 +1067,7 @@ export default function UsagesDashboardPage() {
           value={summary.sub_meters_count}
           sub={
             summary.sub_meters_count > 0
-              ? `${summary.metering_coverage_pct ?? 0}% couverture`
+              ? `${summary.metering_coverage_pct != null ? summary.metering_coverage_pct : '—'}% couverture`
               : 'Non installés'
           }
         />

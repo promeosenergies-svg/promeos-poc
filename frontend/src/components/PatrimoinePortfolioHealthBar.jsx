@@ -53,7 +53,7 @@ const FRAMEWORK_CHIP_COLOR = {
 /* ── Utilitaires ──────────────────────────────────────────────────────────── */
 
 function fmtRisk(eur) {
-  if (!eur || eur <= 0) return '0 €';
+  if (!eur || eur <= 0) return '—';
   return fmtEur(eur);
 }
 

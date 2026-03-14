@@ -38,6 +38,7 @@ import {
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
+import { fmtDateFR } from '../utils/format';
 
 const REG_CONFIG = {
   tertiaire_operat: { label: 'Décret Tertiaire', icon: Building, color: 'bg-blue-600' },
@@ -563,7 +564,7 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
                 <span className="text-sm text-gray-900 flex-1 truncate">{a.title}</span>
                 {a.due_date && (
                   <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <Clock size={12} /> {a.due_date}
+                    <Clock size={12} /> {fmtDateFR(a.due_date)}
                   </span>
                 )}
                 <button

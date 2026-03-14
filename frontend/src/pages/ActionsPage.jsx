@@ -60,7 +60,7 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/complianceLabels.fr';
 import { groupActionsByWeek, computeCloseabilityBadge } from '../models/dossierModel';
-import { fmtEur } from '../utils/format';
+import { fmtEur, fmtDateFR, fmtCo2 } from '../utils/format';
 
 /* Backend → frontend field mappers */
 const SOURCE_MAP = {
@@ -289,7 +289,7 @@ function KanbanBoard({
                       }`}
                     >
                       <CalendarDays size={10} />
-                      {a.due_date}
+                      {fmtDateFR(a.due_date)}
                       {isOverdue(a) && (
                         <span className="ml-1 bg-red-50 text-red-600 px-1 py-0.5 rounded text-[9px] font-semibold">
                           En retard
@@ -392,7 +392,7 @@ function GroupedTableView({
                       <Td
                         className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
                       >
-                        {a.due_date}
+                        {fmtDateFR(a.due_date)}
                         {overdue && (
                           <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">
                             En retard
@@ -526,7 +526,9 @@ function WeekView({ actions, onCardClick }) {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-gray-500">{a.due_date || 'Sans échéance'}</p>
+                      <p className="text-xs text-gray-500">
+                        {a.due_date ? fmtDateFR(a.due_date) : 'Sans échéance'}
+                      </p>
                       <p className="text-xs text-gray-400">{a.owner || 'Non assigné'}</p>
                     </div>
                     {a.impact_eur > 0 && (
@@ -1383,12 +1385,12 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                     </Td>
                     <Td className="text-right font-medium">{fmtEur(a.impact_eur)}</Td>
                     <Td className="text-right text-emerald-600 text-sm">
-                      {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString('fr-FR')} kg` : '—'}
+                      {a.co2e_kg > 0 ? fmtCo2(a.co2e_kg) : '—'}
                     </Td>
                     <Td
                       className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
                     >
-                      {a.due_date}
+                      {fmtDateFR(a.due_date)}
                       {overdue && (
                         <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">
                           En retard
@@ -1543,7 +1545,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
     <PageShell
       icon={ListChecks}
       title="Plan d'actions"
-      subtitle={`${stats.total} actions${stats.total_impact > 0 ? ` · ${fmtEur(stats.total_impact)} d'impact estimé` : ''}${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      subtitle={`${stats.total} actions${stats.total_impact > 0 ? ` · ${fmtEur(stats.total_impact)} d'impact estimé` : ''}${stats.total_co2e_kg > 0 ? ` · ${fmtCo2(stats.total_co2e_kg)}` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>

@@ -76,7 +76,7 @@ const SORT_OPTIONS = [
 /* ── Utilitaires ─────────────────────────────────────────────────────────── */
 
 function fmtRisk(eur) {
-  if (!eur || eur <= 0) return '0 €';
+  if (!eur || eur <= 0) return '—';
   return fmtEur(eur);
 }
 

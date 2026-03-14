@@ -38,7 +38,7 @@ import {
 import { useToast } from '../ui/ToastProvider';
 import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
-import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
+import { fmtEur, fmtKwh, fmtCo2, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer, toMonitoring } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
@@ -217,7 +217,7 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
             <div className="text-right">
               <p className="text-xs text-gray-400">CO₂e évitable</p>
               <p className="text-lg font-bold text-emerald-600">
-                {Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg
+                {fmtCo2(totalKwh * CO2E_FACTOR_KG_PER_KWH)}
               </p>
             </div>
           </div>
@@ -258,7 +258,7 @@ function SummaryCards({ summary, customPrice }) {
     },
     {
       label: 'CO₂e évitable',
-      value: `${totalCo2eKg.toLocaleString('fr-FR')} kg`,
+      value: fmtCo2(totalCo2eKg),
       color: 'text-emerald-700',
       bg: 'bg-emerald-50',
     },
@@ -351,7 +351,7 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
       </td>
       <td className="py-3 px-4 text-sm text-right text-emerald-600">
         {insight.estimated_loss_kwh
-          ? `${Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')}`
+          ? fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)
           : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-center">
@@ -554,10 +554,7 @@ function EvidenceDrawer({
               {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
               {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
               {' · '}
-              {Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString(
-                'fr-FR'
-              )}{' '}
-              kgCO₂e
+              {fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)}
             </span>
           )}
         </div>
@@ -719,10 +716,7 @@ function EvidenceTab({ insight }) {
             {insight.estimated_loss_eur > 0 &&
               ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
             {' · '}
-            {Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString(
-              'fr-FR'
-            )}{' '}
-            kgCO₂e
+            {fmtCo2(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH)}
           </p>
         )}
       </div>

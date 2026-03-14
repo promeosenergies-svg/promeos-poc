@@ -42,6 +42,7 @@ import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
+import { fmtCo2 } from '../utils/format';
 import MeteoPanel from './consumption/MeteoPanel';
 import InsightsPanel from './consumption/InsightsPanel';
 import ConsoKpiHeader from '../components/ConsoKpiHeader';
@@ -355,7 +356,7 @@ export default function ConsumptionExplorerPage() {
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : null;
     const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.052) : null;
-    const co2Str = co2Kg != null ? `${co2Kg.toLocaleString('fr-FR')} kg CO2e` : null;
+    const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
       'conso-co2e': evidenceCO2e(scopeLabel, periodStr, co2Str),

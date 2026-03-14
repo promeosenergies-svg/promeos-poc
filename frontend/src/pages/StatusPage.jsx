@@ -168,7 +168,7 @@ function StatusPage() {
       </div>
 
       {/* Tech Info */}
-      <div className="mt-6 text-xs text-gray-400 text-center">PROMEOS v1.4</div>
+      <div className="mt-6 text-xs text-gray-400 text-center">PROMEOS v1.7</div>
     </div>
   );
 }

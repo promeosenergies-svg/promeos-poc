@@ -13,7 +13,7 @@ import { fmtEur } from '../utils/format';
 /* ── Utilitaire formatage ── */
 
 function fmtK(n) {
-  if (!n || n <= 0) return '0 €';
+  if (!n || n <= 0) return '—';
   return fmtEur(n);
 }
 

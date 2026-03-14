@@ -180,8 +180,8 @@ export default function TertiaireDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard label="EFA enregistrées" value={kpis.total_efa} icon={Building2} accent="blue" />
         <KpiCard label="EFA actives" value={kpis.active} icon={Building2} accent="emerald" />
-        <KpiCard label="EFA brouillon" value={kpis.draft} icon={FileText} accent="slate" />
         <KpiCard
           label="Anomalies ouvertes"
           value={kpis.open_issues}

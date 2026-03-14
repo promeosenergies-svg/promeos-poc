@@ -499,7 +499,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       id: 'risque',
       accentKey: 'risque',
       label: 'Risque financier',
-      value: risqueTotal > 0 ? `${Math.round(risqueTotal / 1000)} k€` : '0 €',
+      value: risqueTotal > 0 ? `${Math.round(risqueTotal / 1000)} k€` : '—',
       rawValue: risqueTotal,
       messageCtx: { sitesAtRisk: nonConformes + aRisque },
       sub: `${nonConformes + aRisque} site${nonConformes + aRisque !== 1 ? 's' : ''} concerné${nonConformes + aRisque !== 1 ? 's' : ''} (périmètre sélectionné)`,

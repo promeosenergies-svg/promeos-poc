@@ -94,6 +94,15 @@ export function pl(n, word) {
   return `${n}\u00A0${word}${n > 1 ? 's' : ''}`;
 }
 
+/** 35 725 kg => "35,7 t CO₂" | 800 kg => "800 kg CO₂" */
+export function fmtCo2(kgValue) {
+  const n = _safe(kgValue);
+  if (n == null || n === 0) return '—';
+  if (Math.abs(n) >= 1_000)
+    return `${(n / 1_000).toLocaleString(FR, { maximumFractionDigits: 1 })} t CO₂`;
+  return `${Math.round(n).toLocaleString(FR)} kg CO₂`;
+}
+
 /** Format date FR: "14 fev. 2026" */
 export function fmtDateFR(v) {
   if (!v) return '—';
