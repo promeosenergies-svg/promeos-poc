@@ -312,7 +312,14 @@ export default function TimeseriesPanel({
     seriesData.length <= 1
       ? []
       : seriesData
-          .filter((s) => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
+          .filter(
+            (s) =>
+              s.key &&
+              s.key !== 'agg' &&
+              s.key !== 'total' &&
+              s.key !== 'others' &&
+              !s.key.endsWith('_prev')
+          )
           .map((s) => s.key);
 
   // V20-B (RC3 fix): effectiveValueKey must match what ExplorerChart will use
