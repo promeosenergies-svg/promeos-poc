@@ -322,22 +322,24 @@ def _meta(granularity, n_points, n_meters, date_from, date_to, metric, series=No
 def _bucket_key_expr(granularity: str):
     """Build SQLite strftime expression for bucket grouping."""
     if granularity == "15min":
+        minute_bucket = func.printf(
+            "%02d",
+            (cast(func.strftime("%M", MeterReading.timestamp), SAInteger) / 15) * 15,
+        )
         return (
             func.strftime("%Y-%m-%d %H:", MeterReading.timestamp)
-            + func.printf(
-                "%02d",
-                (cast(func.strftime("%M", MeterReading.timestamp), SAInteger) / 15) * 15,
-            )
-            + literal_column("':00'")
+            .op("||")(minute_bucket)
+            .op("||")(literal_column("':00'"))
         )
     elif granularity == "30min":
+        minute_bucket = func.printf(
+            "%02d",
+            (cast(func.strftime("%M", MeterReading.timestamp), SAInteger) / 30) * 30,
+        )
         return (
             func.strftime("%Y-%m-%d %H:", MeterReading.timestamp)
-            + func.printf(
-                "%02d",
-                (cast(func.strftime("%M", MeterReading.timestamp), SAInteger) / 30) * 30,
-            )
-            + literal_column("':00'")
+            .op("||")(minute_bucket)
+            .op("||")(literal_column("':00'"))
         )
     else:
         fmt = _STRFTIME_FORMATS.get(granularity, "%Y-%m-%d")
