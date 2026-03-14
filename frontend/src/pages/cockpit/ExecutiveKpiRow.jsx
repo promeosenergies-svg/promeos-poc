@@ -75,7 +75,7 @@ function KpiTile({ kpi, onNavigate, onEvidence, isExpert, scoreTrend }) {
             <p className="text-lg font-bold text-gray-900 leading-tight break-words">{kpi.value}</p>
             <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
           </div>
-          {kpi.sub && <p className="text-xs text-gray-500 mt-0.5 truncate">{kpi.sub}</p>}
+          {kpi.sub && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{kpi.sub}</p>}
           {kpi.id === 'conformite' &&
             scoreTrend?.length >= 2 &&
             (() => {
