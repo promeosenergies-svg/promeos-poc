@@ -191,8 +191,9 @@ export default function ExplorerChart({
   }
   const yMin = ys.length ? Math.min(...ys) : 0;
   const yMax = ys.length ? Math.max(...ys) : 1;
-  const pad = yMin === yMax ? Math.max(1, Math.abs(yMin) * 0.05) : 0;
-  const yDomain = [Math.max(0, yMin - pad), yMax + pad];
+  const topPad = yMax > 0 ? yMax * 0.08 : 1;
+  const pad = yMin === yMax ? Math.max(1, Math.abs(yMin) * 0.05) : topPad;
+  const yDomain = [Math.max(0, yMin - (yMin === yMax ? pad : 0)), yMax + pad];
 
   if (mode === 'separe' && siteIds.length > 1) {
     return (
