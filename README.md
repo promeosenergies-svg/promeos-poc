@@ -136,6 +136,8 @@ Pilotage réglementaire et énergétique multi-sites B2B France — conformité,
 > | Sprint D+ — Board-Ready Lock (microcopy FR, accents, actions crédibilité, 40 backend + 5587 frontend tests) | **Stable -- Sprint D+** |
 > | Sprint E — E2E Demo Flow Lock (6 scénarios Playwright, 132 tests, 3 viewports, console guards, UX guards) | **Stable -- Sprint E** |
 > | Sprint F — No Excuse Lock (overflow 1024 éliminé, data-quality 500 corrigé, action+preuve E2E, notification→action E2E) | **Stable -- Sprint F** |
+> | Usages V1.2 — Brique Usage pivot (baseline avant/après, IPE bâtiment, coût par type, plan comptage, conformité dédupliquée, sidebar) | **Stable -- V1.2** |
+> | Micro-Sprint P0/P1 Usages (IPE surface bâtiment, cost groupBy type, sub-meter skip triple-gen, compliance OR merge, 0 régression) | **Stable -- V1.2+** |
 > | Suite de tests automatisés | **5 587 frontend + 40 backend + 142 E2E Playwright, DEMO SAFE SANS RÉSERVE** |
 
 > **Disclaimer**

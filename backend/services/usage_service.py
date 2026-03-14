@@ -332,8 +332,12 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
                 "data_source": u.data_source.value if u.data_source else "estimation_prorata",
                 "has_drift": len(drift_insights) > 0,
                 "drift_pct": _extract_drift_pct(drift_insights[0]) if drift_insights else None,
-                "surface_m2": u.surface_m2,
-                "ipe_kwh_m2": round(kwh / u.surface_m2, 1) if u.surface_m2 and u.surface_m2 > 0 else None,
+                "surface_m2": u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2,
+                "ipe_kwh_m2": round(
+                    kwh / (u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2), 1
+                )
+                if (u.batiment and u.batiment.surface_m2 or u.surface_m2)
+                else None,
             }
         )
 
@@ -425,8 +429,16 @@ def get_usage_cost_breakdown(db: Session, site_id: int, days: int = 365) -> dict
 
     uncovered_kwh = max(0, total_kwh - covered_kwh)
 
-    total_site_cost = total_kwh * price_ref
-    items = sorted(usage_costs.values(), key=lambda x: x["kwh"], reverse=True)
+    # Grouper par type d'usage (merge multi-batiments)
+    by_type = {}
+    for v in usage_costs.values():
+        t = v["type"]
+        if t not in by_type:
+            by_type[t] = {"type": t, "label": v["label"], "kwh": 0, "eur": 0}
+        by_type[t]["kwh"] += v["kwh"]
+        by_type[t]["eur"] += v["eur"]
+
+    items = sorted(by_type.values(), key=lambda x: x["kwh"], reverse=True)
     for item in items:
         item["kwh"] = round(item["kwh"], 1)
         item["eur"] = round(item["eur"], 0)
@@ -647,9 +659,10 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
         if kwh_baseline <= 0 and kwh_current <= 0:
             continue
 
-        # IPE
-        ipe_baseline = round(kwh_baseline / u.surface_m2, 1) if u.surface_m2 and u.surface_m2 > 0 else None
-        ipe_current = round(kwh_current / u.surface_m2, 1) if u.surface_m2 and u.surface_m2 > 0 else None
+        # IPE — utiliser la surface du batiment (pas la zone proportionnelle)
+        bat_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2
+        ipe_baseline = round(kwh_baseline / bat_surface, 1) if bat_surface and bat_surface > 0 else None
+        ipe_current = round(kwh_current / bat_surface, 1) if bat_surface and bat_surface > 0 else None
 
         # Ecart
         ecart_kwh = kwh_current - kwh_baseline if kwh_baseline > 0 else None
@@ -703,7 +716,7 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 "ecart_kwh": round(ecart_kwh, 1) if ecart_kwh is not None else None,
                 "ecart_pct": ecart_pct,
                 "trend": trend,
-                "surface_m2": u.surface_m2,
+                "surface_m2": bat_surface,
                 "is_significant": u.is_significant,
                 "data_source": u.data_source.value if u.data_source else "estimation_prorata",
                 "actions_completed": len(actions),
