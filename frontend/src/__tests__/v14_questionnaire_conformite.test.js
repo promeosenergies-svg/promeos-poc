@@ -1,6 +1,7 @@
 /**
- * PROMEOS — V1.4 Questionnaire x Conformite source-guard tests
+ * PROMEOS — V1.4+V1.5 Questionnaire x Conformite source-guard tests
  * Verifie que les reponses questionnaire impactent l'affichage conformite.
+ * V1.5: q_gtb → BACS, q_operat → DT
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -59,6 +60,56 @@ describe('V1.4 — complianceProfileRules.js', () => {
 
   it('declared reliability only when usesUserAnswer', () => {
     expect(src).toContain('usesUserAnswer');
+  });
+
+  // ── V1.5 additions ──
+
+  it('has BACS_GTB_RULES with GTB answers', () => {
+    expect(src).toContain('BACS_GTB_RULES');
+    expect(src).toContain('oui_centralisee');
+    expect(src).toContain('oui_partielle');
+  });
+
+  it('has DT_OPERAT_RULES with OPERAT answers', () => {
+    expect(src).toContain('DT_OPERAT_RULES');
+    expect(src).toContain('oui_a_jour');
+    expect(src).toContain('oui_retard');
+    expect(src).toContain('non_concerne');
+  });
+
+  it('has prudent GTB labels', () => {
+    expect(src).toContain('GTB centralis');
+    expect(src).toContain('Sans GTB');
+    expect(src).toContain('BACS');
+  });
+
+  it('has prudent OPERAT labels', () => {
+    expect(src).toContain('OPERAT');
+    expect(src).toContain('jour');
+    expect(src).toContain('retard');
+  });
+
+  it('reads q_gtb and q_operat from answers', () => {
+    expect(src).toContain('answers.q_gtb');
+    expect(src).toContain('answers.q_operat');
+  });
+
+  it('applies BACS_GTB_RULES only to bacs obligations', () => {
+    expect(src).toMatch(/code\.includes\('bacs'\).*BACS_GTB_RULES/s);
+  });
+
+  it('applies DT_OPERAT_RULES only to tertiaire obligations', () => {
+    expect(src).toMatch(/code\.includes\('tertiaire'\).*DT_OPERAT_RULES/s);
+  });
+
+  it('clamps boost to [-3, +3]', () => {
+    expect(src).toMatch(/Math\.max\(-3.*Math\.min\(3/);
+  });
+
+  it('never masks obligations (no filter/hide logic in code)', () => {
+    // The function body should not filter/remove obligations — only tag/boost
+    expect(src).not.toMatch(/obligations\.filter\(/);
+    expect(src).not.toMatch(/\.splice\(/);
   });
 });
 

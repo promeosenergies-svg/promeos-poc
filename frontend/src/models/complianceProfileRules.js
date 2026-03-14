@@ -1,5 +1,5 @@
 /**
- * PROMEOS — V1.4 Compliance x Profile rules (version corrigee)
+ * PROMEOS — V1.5 Compliance x Profile rules
  * Logique pure : calcule les tags et priorites des obligations
  * selon le profil de segmentation (reponses questionnaire).
  *
@@ -8,6 +8,7 @@
  * - "Declare" uniquement si l'obligation depend d'une reponse utilisateur pertinente
  * - Pertinence affichee uniquement en cas de correspondance forte
  * - Jamais trop affirmatif juridiquement
+ * - Ne JAMAIS masquer une obligation, seulement deprioriser/qualifier/contextualiser
  */
 
 // Typologies ou le Decret Tertiaire est fortement pertinent
@@ -76,6 +77,82 @@ const DT_SURFACE_RULES = {
 };
 
 /**
+ * R4 — BACS x q_gtb
+ * La GTB est l'infrastructure de base pour la conformite BACS.
+ * Sans GTB = mise en conformite a planifier (boost positif = attention requise).
+ * Avec GTB = conformite BACS facilitee.
+ */
+const BACS_GTB_RULES = {
+  oui_centralisee: {
+    boost: 1,
+    tag: 'GTB centralis\u00e9e \u2014 BACS facilit\u00e9',
+    color: 'green',
+    reliability: 'declared',
+    tooltip: 'GTB centralis\u00e9e d\u00e9clar\u00e9e \u2014 conformit\u00e9 BACS plus accessible',
+  },
+  oui_partielle: {
+    boost: 0,
+    tag: 'GTB partielle \u2014 BACS \u00e0 v\u00e9rifier par site',
+    color: 'blue',
+    reliability: 'declared',
+    tooltip:
+      'GTB pr\u00e9sente sur certains sites \u2014 v\u00e9rification site par site recommand\u00e9e',
+  },
+  non: {
+    boost: 1,
+    tag: 'Sans GTB \u2014 mise en conformit\u00e9 BACS \u00e0 planifier',
+    color: 'amber',
+    reliability: 'declared',
+    tooltip: 'Absence de GTB d\u00e9clar\u00e9e \u2014 planification BACS recommand\u00e9e',
+  },
+  ne_sait_pas: {
+    boost: 0,
+    tag: '\u00c0 qualifier',
+    color: 'amber',
+    reliability: 'to_confirm',
+    tooltip: '\u00c9quipement GTB non confirm\u00e9 \u2014 qualification n\u00e9cessaire',
+  },
+};
+
+/**
+ * R5 — Decret Tertiaire x q_operat
+ * OPERAT est la plateforme de declaration pour le Decret Tertiaire.
+ * En retard ou non declare = attention requise (boost positif).
+ * Non concerne = depriorise (boost negatif, JAMAIS masque).
+ */
+const DT_OPERAT_RULES = {
+  oui_a_jour: {
+    boost: 0,
+    tag: 'D\u00e9claration OPERAT \u00e0 jour',
+    color: 'green',
+    reliability: 'declared',
+    tooltip: 'D\u00e9clarations OPERAT \u00e0 jour selon votre profil',
+  },
+  oui_retard: {
+    boost: 1,
+    tag: 'D\u00e9claration OPERAT en retard',
+    color: 'amber',
+    reliability: 'declared',
+    tooltip: 'D\u00e9clarations OPERAT en retard \u2014 r\u00e9gularisation recommand\u00e9e',
+  },
+  non: {
+    boost: 1,
+    tag: 'OPERAT non d\u00e9clar\u00e9',
+    color: 'amber',
+    reliability: 'declared',
+    tooltip: 'Aucune d\u00e9claration OPERAT \u2014 action recommand\u00e9e si concern\u00e9',
+  },
+  non_concerne: {
+    boost: -1,
+    tag: 'Non concern\u00e9 OPERAT selon votre profil',
+    color: 'gray',
+    reliability: 'declared',
+    tooltip:
+      'Non concern\u00e9 par OPERAT selon votre d\u00e9claration \u2014 v\u00e9rification recommand\u00e9e',
+  },
+};
+
+/**
  * Calcule les tags et priorites pour chaque obligation
  * en fonction du profil de segmentation.
  *
@@ -95,19 +172,37 @@ export function computeObligationProfileTags(obligations, segProfile) {
   const answers = segProfile.answers || {};
   const typologie = (segProfile.typologie || '').toLowerCase();
   const surfaceAnswer = answers.q_surface_seuil;
+  const gtbAnswer = answers.q_gtb;
+  const operatAnswer = answers.q_operat;
+
+  // Helper: appliquer une regle questionnaire sur une entry
+  const applyRule = (entry, rule, state) => {
+    entry.priorityBoost += rule.boost;
+    entry.tags.push({ label: rule.tag, color: rule.color, tooltip: rule.tooltip });
+    if (rule.reliability === 'declared') entry.reliability = 'declared';
+    else if (rule.reliability === 'to_confirm' && entry.reliability !== 'declared')
+      entry.reliability = 'to_confirm';
+    state.usesUserAnswer = true;
+  };
 
   for (const obl of obligations) {
     const code = (obl.code || obl.id || '').toLowerCase();
     const entry = { priorityBoost: 0, tags: [], reliability: 'detected' };
-    let usesUserAnswer = false;
+    const state = { usesUserAnswer: false };
 
     // R1 — Decret Tertiaire x q_surface_seuil
     if (code.includes('tertiaire') && surfaceAnswer && DT_SURFACE_RULES[surfaceAnswer]) {
-      const rule = DT_SURFACE_RULES[surfaceAnswer];
-      entry.priorityBoost = rule.boost;
-      entry.tags.push({ label: rule.tag, color: rule.color, tooltip: rule.tooltip });
-      entry.reliability = rule.reliability;
-      usesUserAnswer = true;
+      applyRule(entry, DT_SURFACE_RULES[surfaceAnswer], state);
+    }
+
+    // R4 — BACS x q_gtb
+    if (code.includes('bacs') && gtbAnswer && BACS_GTB_RULES[gtbAnswer]) {
+      applyRule(entry, BACS_GTB_RULES[gtbAnswer], state);
+    }
+
+    // R5 — Decret Tertiaire x q_operat
+    if (code.includes('tertiaire') && operatAnswer && DT_OPERAT_RULES[operatAnswer]) {
+      applyRule(entry, DT_OPERAT_RULES[operatAnswer], state);
     }
 
     // R2 — Pertinence par typologie (prudente)
@@ -130,12 +225,12 @@ export function computeObligationProfileTags(obligations, segProfile) {
 
     // R3 — Fiabilite par obligation
     // "declared" UNIQUEMENT si cette obligation utilise une reponse utilisateur
-    if (usesUserAnswer) {
-      // reliability deja set par DT_SURFACE_RULES
-    } else {
-      // Pas de reponse utilisateur pertinente pour cette obligation
+    if (!state.usesUserAnswer) {
       entry.reliability = 'detected';
     }
+
+    // Garde-fou: clamp boost a [-3, +3] pour eviter les extremes
+    entry.priorityBoost = Math.max(-3, Math.min(3, entry.priorityBoost));
 
     if (entry.tags.length > 0 || entry.priorityBoost !== 0) {
       result.set(obl.id || obl.code, entry);
