@@ -385,7 +385,7 @@ export default function ConsumptionPortfolioPage() {
             label={
               <>
                 Émissions CO₂{' '}
-                <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO2e/kWh pour l'électricité en France." />
+                <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO₂e/kWh pour l'électricité en France." />
               </>
             }
             value={fmtCo2(tot?.co2_total)}
@@ -633,7 +633,7 @@ export default function ConsumptionPortfolioPage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            Sans donnees
+            Sans données
           </button>
 
           <select
@@ -641,8 +641,8 @@ export default function ConsumptionPortfolioPage() {
             onChange={(e) => setSort(e.target.value)}
             className="text-xs border rounded-lg px-2 py-1.5 bg-white"
           >
-            <option value="impact_desc">Impact EUR decroissant</option>
-            <option value="kwh_desc">kWh decroissant</option>
+            <option value="impact_desc">Impact EUR décroissant</option>
+            <option value="kwh_desc">kWh décroissant</option>
             <option value="kwh_asc">kWh croissant</option>
             <option value="name">Nom A-Z</option>
             <option value="peak">P95 kW</option>
@@ -707,7 +707,7 @@ export default function ConsumptionPortfolioPage() {
                     )}
                     {noDataFilter && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-600">
-                        Sans donnees
+                        Sans données
                       </span>
                     )}
                   </div>
@@ -955,7 +955,7 @@ export default function ConsumptionPortfolioPage() {
                     disabled={page === 0}
                     className="px-3 py-1 text-xs rounded border bg-white disabled:opacity-40"
                   >
-                    Precedent
+                    Précédent
                   </button>
                   <span className="text-xs text-gray-500">
                     {page + 1} / {totalPages}

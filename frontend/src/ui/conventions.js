@@ -2,8 +2,8 @@
  * PROMEOS Design System — Conventions V1
  * B2B, sobre, ultra clair. Labels 100% FR.
  *
- * Ce fichier sert de reference executable pour les conventions UI.
- * Utiliser ces constantes dans les pages pour garantir la coherence.
+ * Ce fichier sert de référence exécutable pour les conventions UI.
+ * Utiliser ces constantes dans les pages pour garantir la cohérence.
  */
 
 // ── Spacing standards (classes Tailwind) ────────────────────────────

@@ -160,7 +160,8 @@ export function ImportWizard() {
               >
                 <div className="font-medium text-sm">{site.nom}</div>
                 <div className="text-xs text-gray-500">
-                  {site.ville} - {site.surface_m2 || '?'} m2
+                  {site.ville} - {site.surface_m2 || '?'}
+                  {'\u00A0'}m²
                 </div>
               </button>
             ))}
@@ -266,12 +267,12 @@ export function ImportWizard() {
                 onChange={(e) => setArchetype(e.target.value)}
                 className="w-full border rounded px-3 py-2 text-sm"
               >
-                <option value="BUREAU_STANDARD">Bureau Standard (150-250 kWh/m2/an)</option>
+                <option value="BUREAU_STANDARD">Bureau Standard (150-250 kWh/m²/an)</option>
                 <option value="COMMERCE_ALIMENTAIRE">
-                  Commerce Alimentaire (400-800 kWh/m2/an)
+                  Commerce Alimentaire (400-800 kWh/m²/an)
                 </option>
-                <option value="RESTAURATION_SERVICE">Restauration (250-450 kWh/m2/an)</option>
-                <option value="INDUSTRIE_LEGERE">Industrie Legere (80-200 kWh/m2/an)</option>
+                <option value="RESTAURATION_SERVICE">Restauration (250-450 kWh/m²/an)</option>
+                <option value="INDUSTRIE_LEGERE">Industrie Légère (80-200 kWh/m²/an)</option>
               </select>
             </div>
             <button
@@ -293,7 +294,8 @@ export function ImportWizard() {
               <strong>Site:</strong> {selectedSite?.nom} ({selectedSite?.ville})
             </p>
             <p>
-              <strong>Surface:</strong> {selectedSite?.surface_m2 || 'Non renseignee'} m2
+              <strong>Surface:</strong> {selectedSite?.surface_m2 || 'Non renseignée'}
+              {'\u00A0'}m²
             </p>
             <p>
               <strong>Source:</strong> {useDemo ? `Demo ${archetype}` : file?.name}
@@ -434,18 +436,18 @@ function interpretKwhM2(kwhM2, archetype) {
     return {
       label: 'Sous la ref.',
       color: 'text-green-700 bg-green-50',
-      tip: `En dessous du min archetype (${archetype.kwh_m2_min} kWh/m2/an)`,
+      tip: `En dessous du min archétype (${archetype.kwh_m2_min} kWh/m²/an)`,
     };
   if (kwhM2 <= archetype.kwh_m2_max)
     return {
       label: 'Dans la norme',
       color: 'text-blue-700 bg-blue-50',
-      tip: `Dans la fourchette archetype (${archetype.kwh_m2_min}-${archetype.kwh_m2_max})`,
+      tip: `Dans la fourchette archétype (${archetype.kwh_m2_min}-${archetype.kwh_m2_max})`,
     };
   return {
     label: 'Au-dessus',
     color: 'text-red-700 bg-red-50',
-    tip: `Au-dessus du max archetype (${archetype.kwh_m2_max} kWh/m2/an)`,
+    tip: `Au-dessus du max archétype (${archetype.kwh_m2_max} kWh/m²/an)`,
   };
 }
 
@@ -500,14 +502,14 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
         <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-gray-500">Code</div>
-            <div className="font-bold">{archCode || 'Non determine'}</div>
+            <div className="font-bold">{archCode || 'Non déterminé'}</div>
           </div>
           <div>
             <div className="text-gray-500">Confiance</div>
             <div className="font-bold">{fmtPct(matchScore, true, 0)}</div>
           </div>
           <div>
-            <div className="text-gray-500">kWh/m2/an</div>
+            <div className="text-gray-500">kWh/m²/an</div>
             <div className="font-bold">{kwhM2 || 'N/A'}</div>
             {interpKwh && (
               <span
@@ -526,15 +528,15 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             <div className="flex items-start gap-2">
               <Info size={16} className="text-amber-600 mt-0.5 shrink-0" />
               <div className="text-sm text-amber-800">
-                <p className="font-medium mb-1">Pourquoi "Non determine" ?</p>
+                <p className="font-medium mb-1">Pourquoi "Non déterminé" ?</p>
                 <p className="text-xs text-amber-700 mb-2">
-                  L'archetype est calcule en comparant kWh/m²/an, ratios nuit & WE aux references de
+                  L'archétype est calculé en comparant kWh/m²/an, ratios nuit & WE aux références de
                   la KB. Causes possibles :
                 </p>
                 <ul className="text-xs text-amber-700 mb-3 list-disc pl-4 space-y-0.5">
-                  <li>La Knowledge Base est vide (aucun archetype de reference charge)</li>
-                  <li>La surface du site n'est pas renseignee (kWh/m² impossible a calculer)</li>
-                  <li>Le code NAF / usage du site manque ou ne correspond a aucun archetype</li>
+                  <li>La Knowledge Base est vide (aucun archétype de référence chargé)</li>
+                  <li>La surface du site n'est pas renseignée (kWh/m² impossible à calculer)</li>
+                  <li>Le code NAF / usage du site manque ou ne correspond à aucun archétype</li>
                 </ul>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -1105,7 +1107,7 @@ export function KBAdminPanel() {
             <thead>
               <tr className="border-b text-left text-gray-500">
                 <th className="py-2 px-3">Code</th>
-                <th className="py-2 px-3">kWh/m2/an</th>
+                <th className="py-2 px-3">kWh/m²/an</th>
                 <th className="py-2 px-3">Codes NAF</th>
                 <th className="py-2 px-3">Confiance</th>
               </tr>

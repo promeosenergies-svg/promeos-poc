@@ -7,7 +7,7 @@ from .base import Connector
 
 class EnedisOpenDataConnector(Connector):
     name = "enedis_opendata"
-    description = "Enedis Open Data — donnees reseau publiques"
+    description = "Enedis Open Data — données réseau publiques"
     requires_auth = False
     env_vars = []
 

@@ -8,7 +8,7 @@ from .base import Connector
 
 class MeteoFranceConnector(Connector):
     name = "meteofrance"
-    description = "Meteo-France API — donnees meteorologiques historiques"
+    description = "Météo-France API — données météorologiques historiques"
     requires_auth = True
     env_vars = ["METEOFRANCE_API_KEY"]
 

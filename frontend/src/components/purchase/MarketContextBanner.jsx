@@ -5,6 +5,7 @@
  * Props : marketContext (from GET /api/market/context), isExpert, onNavigate
  */
 import { TrendingDown, TrendingUp, Minus, ArrowRight } from 'lucide-react';
+import { fmtNum } from '../../utils/format';
 
 const STATES = {
   low: {
@@ -81,9 +82,9 @@ export default function MarketContextBanner({ marketContext, isExpert, onNavigat
 
         {isExpert && (
           <p className="text-xs text-gray-500 mt-1">
-            Spot 30j : {spot30d?.toFixed(1)} EUR/MWh · Moy. 12m : {avg12m?.toFixed(1)} EUR/MWh ·
-            Volatilité : {vol?.toFixed(1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}
-            {trend?.toFixed(1)}%
+            Spot 30j : {fmtNum(spot30d, 1)} EUR/MWh · Moy. 12m : {fmtNum(avg12m, 1)} EUR/MWh ·
+            Volatilité : {fmtNum(vol, 1)} EUR/MWh · Δ {trend >= 0 ? '+' : ''}
+            {fmtNum(trend, 1)}%
           </p>
         )}
 

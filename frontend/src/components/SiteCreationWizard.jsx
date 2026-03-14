@@ -996,7 +996,7 @@ export default function SiteCreationWizard({ onClose, onSuccess }) {
             disabled={currentStep === 0}
             className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-30"
           >
-            <ChevronLeft size={16} /> Precedent
+            <ChevronLeft size={16} /> Précédent
           </button>
           <div className="flex items-center gap-2">
             {isOptional && (

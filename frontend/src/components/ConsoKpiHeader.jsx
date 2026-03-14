@@ -182,7 +182,7 @@ export default function ConsoKpiHeader({
         {confBadge && (
           <span
             className="inline-flex items-center gap-1"
-            title={`Comment calcule ? ${confTooltip}`}
+            title={`Comment calculé ? ${confTooltip}`}
           >
             <TrustBadge
               level={confBadge.variant}
@@ -232,7 +232,7 @@ export default function ConsoKpiHeader({
           label={getKpiLabel('total_kgco2e', isExpert)}
           value={co2Label}
           sub="ADEME 2024"
-          tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)"
+          tooltip="Facteur ADEME 2024 : 0,052 kgCO₂e/kWh (mix France)"
           evidenceId="conso-co2e"
           onEvidence={onEvidence}
         />

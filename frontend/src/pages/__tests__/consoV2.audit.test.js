@@ -400,7 +400,7 @@ describe('AR · P1-1 benchmark reference curve', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
     expect(code).toMatch(/Votre consommation/);
     expect(code).toMatch(/Moyenne sites similaires/);
-    expect(code).toMatch(/Ecart/);
+    expect(code).toMatch(/Écart/);
     expect(code).toMatch(/Couverture/);
   });
 
@@ -571,7 +571,7 @@ describe('AU · P1.1 polish labels & tooltips', () => {
 
   it('BenchmarkPanel has confidence tooltip with HelpCircle', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
-    expect(code).toMatch(/Comment calcule/);
+    expect(code).toMatch(/Comment calculé/);
     expect(code).toMatch(/HelpCircle/);
   });
 
@@ -589,7 +589,7 @@ describe('AU · P1.1 polish labels & tooltips', () => {
 
   it('ConsoKpiHeader has confidence tooltip with HelpCircle', () => {
     const code = readSrc('components', 'ConsoKpiHeader.jsx');
-    expect(code).toMatch(/Comment calcule/);
+    expect(code).toMatch(/Comment calculé/);
     expect(code).toMatch(/HelpCircle/);
   });
 
@@ -725,7 +725,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
   it('has 4 KPI cards (kWh, EUR/Cout, CO2, Couverture)', () => {
     expect(code).toMatch(/kWh total/);
     expect(code).toMatch(/Coût estimé|EUR total/);
-    expect(code).toMatch(/CO2|Emissions/);
+    expect(code).toMatch(/CO₂|Emissions/);
     expect(code).toMatch(/Couverture/);
   });
 
@@ -762,7 +762,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
   });
 
   it('has pagination (Precedent/Suivant)', () => {
-    expect(code).toMatch(/Precedent/);
+    expect(code).toMatch(/Précédent/);
     expect(code).toMatch(/Suivant/);
   });
 });
@@ -884,7 +884,7 @@ describe('BB · Portfolio V1.1+ frontend enhancements', () => {
 
   it('has impact_desc sort option in select', () => {
     expect(code).toMatch(/value="impact_desc"/);
-    expect(code).toMatch(/Impact EUR decroissant/);
+    expect(code).toMatch(/Impact EUR décroissant/);
   });
 
   it('has grouped action CTA button', () => {
@@ -1312,7 +1312,7 @@ describe('BM · Portfolio V2 patrimoine-first', () => {
 
   it('frontend has "Sans donnees" filter chip', () => {
     expect(code).toMatch(/noDataFilter/);
-    expect(code).toMatch(/Sans donnees/);
+    expect(code).toMatch(/Sans données/);
     expect(code).toMatch(/without_data/);
   });
 
@@ -1341,7 +1341,7 @@ describe('BM · Portfolio V2 patrimoine-first', () => {
 
   it('frontend shows "X sans donnees" in header when applicable', () => {
     expect(code).toMatch(/sites_without_data/);
-    expect(code).toMatch(/sans donnees/);
+    expect(code).toMatch(/sans données/);
   });
 
   it('backend has data_status field (ok/partial/none)', () => {

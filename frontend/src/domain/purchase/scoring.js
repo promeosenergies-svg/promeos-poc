@@ -64,7 +64,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
     evs.push(evidence('BR04', 'relativeVolatility', relVol));
   } else if (relVol > 0.1) {
     score -= 8;
-    reasons.push(`Volatilite moderee (${(relVol * 100).toFixed(0)}% du TCO)`);
+    reasons.push(`Volatilité modérée (${(relVol * 100).toFixed(0)}% du TCO)`);
   }
 
   // Cap absent on indexed/spot
@@ -85,7 +85,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   ) {
     score -= 15;
     reasons.push(
-      `Probabilite de depasser le budget: ${(offerResult.probExceedBudget * 100).toFixed(0)}%`
+      `Probabilité de dépasser le budget : ${(offerResult.probExceedBudget * 100).toFixed(0)}%`
     );
     evs.push(evidence('BR06', 'probExceedBudget', offerResult.probExceedBudget));
   }
@@ -210,7 +210,7 @@ export function scoreContractRisk({ offer }) {
   // Clause flags
   if (terms.clauseFlags?.length > 0) {
     score -= Math.min(terms.clauseFlags.length * 5, 20);
-    reasons.push(`${terms.clauseFlags.length} clause(s) suspecte(s) detectee(s)`);
+    reasons.push(`${terms.clauseFlags.length} clause(s) suspecte(s) détectée(s)`);
     evs.push(evidence('CR06', 'clauseFlags', terms.clauseFlags));
   }
 

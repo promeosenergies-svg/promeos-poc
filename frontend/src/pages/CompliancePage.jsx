@@ -28,7 +28,7 @@ const STATUS_CONFIG = {
   OK: { label: 'Conforme', color: 'text-green-700 bg-green-100', icon: ShieldCheck },
   NOK: { label: 'Non conforme', color: 'text-red-700 bg-red-100', icon: XCircle },
   UNKNOWN: { label: 'Inconnu', color: 'text-gray-600 bg-gray-100', icon: HelpCircle },
-  OUT_OF_SCOPE: { label: 'Non concerne', color: 'text-blue-600 bg-blue-50', icon: null },
+  OUT_OF_SCOPE: { label: 'Non concerné', color: 'text-blue-600 bg-blue-50', icon: null },
 };
 
 const SEVERITY_CONFIG = {

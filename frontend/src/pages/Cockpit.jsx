@@ -714,7 +714,10 @@ const Cockpit = () => {
                           <div className="text-xs text-gray-400">{site.usage}</div>
                         </Td>
                         <Td>{site.ville}</Td>
-                        <Td>{site.surface_m2?.toLocaleString('fr-FR')} m2</Td>
+                        <Td>
+                          {site.surface_m2?.toLocaleString('fr-FR')}
+                          {'\u00A0'}m²
+                        </Td>
                         <Td>
                           <div className="flex items-center gap-1.5">
                             <StatusDot status={si.dot} />

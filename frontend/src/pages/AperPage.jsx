@@ -197,7 +197,7 @@ export default function AperPage() {
                     Type
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                    Surface (m2)
+                    Surface (m²)
                   </th>
                   <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
                     Échéance
@@ -332,7 +332,10 @@ export default function AperPage() {
             )}
             {isExpert && (
               <div className="flex gap-4 text-xs text-gray-400 mt-1">
-                <span>Surface panneaux : {fmt(estimate.surface_panneaux_m2)} m2</span>
+                <span>
+                  Surface panneaux : {fmt(estimate.surface_panneaux_m2)}
+                  {'\u00A0'}m²
+                </span>
                 <span>Couverture : {(estimate.coverage_ratio * 100).toFixed(0)}%</span>
                 <span>Autoconso : {estimate.autoconsommation_pct}%</span>
               </div>

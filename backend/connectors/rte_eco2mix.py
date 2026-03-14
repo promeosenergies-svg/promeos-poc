@@ -12,7 +12,7 @@ from models import DataPoint, SourceType
 
 class RTEEco2MixConnector(Connector):
     name = "rte_eco2mix"
-    description = "RTE eCO2mix - Mix electrique national (public)"
+    description = "RTE éCO₂mix — Mix électrique national (public)"
     requires_auth = False
     env_vars = []
 

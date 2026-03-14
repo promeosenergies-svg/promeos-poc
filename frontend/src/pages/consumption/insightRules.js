@@ -65,9 +65,9 @@ function ruleBaseLoadDrift({ primaryWeather } = {}) {
   if (drift == null || Math.abs(drift) < 10) return null;
   return {
     id: 'base_load_drift',
-    label: `Derive talon gaz ${drift > 0 ? '+' : ''}${drift}%`,
+    label: `Dérive talon gaz ${drift > 0 ? '+' : ''}${drift}%`,
     severity: Math.abs(drift) > 20 ? 'crit' : 'warn',
-    detail: `La consommation de base (hors chauffage) a derive de ${drift}% par rapport a la periode de reference.`,
+    detail: `La consommation de base (hors chauffage) a dérivé de ${drift}% par rapport à la période de référence.`,
   };
 }
 
@@ -83,7 +83,7 @@ function ruleHpRatioHigh({ primaryHphc } = {}) {
     id: 'hp_ratio_high',
     label: `Ratio HP élevé (${pct}%)`,
     severity: ratio > 0.85 ? 'warn' : 'info',
-    detail: `${pct}% de la consommation electrique est en Heures Pleines. Un report vers HC pourrait reduire la facture.`,
+    detail: `${pct}% de la consommation électrique est en Heures Pleines. Un report vers HC pourrait réduire la facture.`,
   };
 }
 
@@ -97,9 +97,9 @@ function ruleTargetOverBudget({ primaryProgression } = {}) {
   const over = Math.round(pct - 100);
   return {
     id: 'target_over_budget',
-    label: `Budget depasse de ${over}%`,
+    label: `Budget dépassé de ${over}%`,
     severity: pct > 130 ? 'crit' : 'warn',
-    detail: `La consommation YTD depasse l'objectif de ${over}%. Run-rate annuel : ${fmtKwh(primaryProgression.run_rate_kwh || 0)}.`,
+    detail: `La consommation YTD dépasse l'objectif de ${over}%. Run-rate annuel : ${fmtKwh(primaryProgression.run_rate_kwh || 0)}.`,
   };
 }
 
@@ -115,7 +115,7 @@ function ruleGasLeakSuspect({ primaryWeather } = {}) {
     label: 'Fuite gaz probable',
     severity: 'crit',
     detail:
-      leak.message || "Consommation de base estivale anormalement elevee. Verifiez l'installation.",
+      leak.message || "Consommation de base estivale anormalement élevée. Vérifiez l'installation.",
   };
 }
 
@@ -128,9 +128,9 @@ function ruleLowConfidence({ primaryTunnel, primaryHphc, primaryGas } = {}) {
   if (!hasLow) return null;
   return {
     id: 'low_confidence',
-    label: 'Donnees insuffisantes',
+    label: 'Données insuffisantes',
     severity: 'info',
     detail:
-      'Un ou plusieurs panneaux disposent de peu de relevés. Les analyses peuvent etre moins fiables.',
+      'Un ou plusieurs panneaux disposent de peu de relevés. Les analyses peuvent être moins fiables.',
   };
 }

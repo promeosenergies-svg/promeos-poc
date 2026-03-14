@@ -124,12 +124,12 @@ export const mockActions = [
     owner: 'M. Martin',
     due_date: '2026-03-12',
     created_at: '2026-02-10',
-    description: "Ecart de 45% sur le TURPE detecte en juillet 2024. Contester aupres d'Enedis.",
+    description: "Écart de 45% sur le TURPE détecté en juillet 2024. Contester auprès d'Enedis.",
     comments: [],
   },
   {
     id: 8,
-    titre: 'Corriger ecart CSPE — Hotel Helios Nice',
+    titre: 'Corriger écart CSPE — Hotel Helios Nice',
     type: 'facture',
     site_id: 4,
     site_nom: SITE[4].nom,
@@ -256,7 +256,7 @@ export const mockActions = [
     owner: 'S. Bernard',
     due_date: '2026-07-01',
     created_at: '2026-02-25',
-    description: "Loi APER : etudier l'installation d'ombrières PV sur le parking > 1500 m2.",
+    description: "Loi APER : étudier l'installation d'ombrières PV sur le parking > 1500 m².",
     comments: [],
   },
 ];

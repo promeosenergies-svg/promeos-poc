@@ -17,7 +17,7 @@ const SYNC_OBJECT_TYPES = [
 
 /** Display labels business-friendly pour les connecteurs */
 const CONNECTOR_LABELS = {
-  rte_eco2mix: 'RTE éCO2mix',
+  rte_eco2mix: 'RTE éCO₂mix',
   pvgis: 'PVGIS — Production photovoltaïque',
   meteofrance: 'Météo-France',
   enedis_opendata: 'Open Data Enedis',

@@ -186,7 +186,7 @@ export default function TargetsPanel({
           {progression.variance_decomposition?.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-200">
               <p className="text-xs font-semibold text-gray-600 mb-2">
-                Causes principales de l'ecart :
+                Causes principales de l'écart :
               </p>
               <div className="space-y-1.5">
                 {progression.variance_decomposition.map((cause, i) => (
@@ -298,8 +298,8 @@ export default function TargetsPanel({
                 <tr>
                   <th className="text-left px-4 py-2">Mois</th>
                   <th className="text-right px-4 py-2">Objectif kWh</th>
-                  <th className="text-right px-4 py-2">Reel kWh</th>
-                  <th className="text-right px-4 py-2">Ecart</th>
+                  <th className="text-right px-4 py-2">Réel kWh</th>
+                  <th className="text-right px-4 py-2">Écart</th>
                   <th className="text-center px-4 py-2"></th>
                 </tr>
               </thead>

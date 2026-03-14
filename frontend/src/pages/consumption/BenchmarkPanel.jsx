@@ -172,7 +172,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
             {conf && (
               <span
                 className="inline-flex items-center gap-1"
-                title={`Comment calcule ? ${conf.desc}`}
+                title={`Comment calculé ? ${conf.desc}`}
               >
                 <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />
                 <HelpCircle size={12} className="text-gray-400 cursor-help" />
@@ -210,7 +210,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
               </Card>
               <Card>
                 <CardBody className="py-3 px-4 text-center">
-                  <p className="text-xs text-gray-500">Ecart</p>
+                  <p className="text-xs text-gray-500">Écart</p>
                   <p
                     className={`text-lg font-bold ${kpi.delta_pct > 0 ? 'text-red-600' : 'text-green-600'}`}
                   >

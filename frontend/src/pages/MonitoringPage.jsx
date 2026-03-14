@@ -611,7 +611,7 @@ function ExecutiveSummary({
       title: 'Empreinte CO₂e',
       value:
         emissions?.annualized_co2e_tonnes != null
-          ? `${fmtCo2(emissions.annualized_co2e_tonnes * 1000)}/an`
+          ? `${fmtNum(emissions.annualized_co2e_tonnes, 1, 't CO₂e/an')}`
           : 'Non disponible',
       sub:
         (emissions?.off_hours_co2e_kg || 0) > 0
@@ -2485,7 +2485,7 @@ export default function MonitoringPage() {
                 title={getKpiLabel('total_tco2e', isExpert)}
                 value={
                   emissions.annualized_co2e_tonnes != null
-                    ? `${fmtCo2(emissions.annualized_co2e_tonnes * 1000)}/an`
+                    ? `${fmtNum(emissions.annualized_co2e_tonnes, 1, 't CO₂e/an')}`
                     : '-'
                 }
                 sub={

@@ -497,7 +497,7 @@ const UpgradeWizard = ({ onClose }) => {
                           type="number"
                           value={site.surface_m2}
                           onChange={(e) => updateSite(i, 'surface_m2', e.target.value)}
-                          placeholder="Surface m2"
+                          placeholder="Surface m²"
                           className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
                         />
                       </div>

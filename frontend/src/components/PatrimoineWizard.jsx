@@ -636,7 +636,7 @@ const PatrimoineWizard = ({ onClose }) => {
                             'Adresse',
                             'CP',
                             'Ville',
-                            'm2',
+                            'm²',
                             'Usage',
                             'Compteurs',
                             'Erreurs',

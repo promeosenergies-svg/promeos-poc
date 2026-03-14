@@ -32,11 +32,11 @@ export const KPI_LABELS = {
   },
   off_hours_ratio: {
     simple: 'Part hors horaires',
-    expert: 'Ratio hors-horaires d\u2019activite',
+    expert: 'Ratio hors-horaires d\u2019activité',
     unit: '%',
   },
   off_hours_kwh: {
-    simple: 'Gaspillage estime',
+    simple: 'Gaspillage estimé',
     expert: 'Consommation hors-horaires',
     unit: 'kWh',
   },

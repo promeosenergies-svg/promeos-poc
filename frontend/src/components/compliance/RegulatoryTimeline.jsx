@@ -1,10 +1,10 @@
 /**
  * PROMEOS — RegulatoryTimeline (Step 13)
- * Frise chronologique reglementaire : evenements positionnes sur un axe temps.
+ * Frise chronologique réglementaire : événements positionnés sur un axe temps.
  * Pur CSS/Tailwind, pas de librairie externe.
  *
  * Props :
- *   events   {Array}  — evenements tries par deadline
+ *   events   {Array}  — événements triés par deadline
  *   today    {string} — date ISO du jour
  *   loading  {boolean}
  */
@@ -49,7 +49,7 @@ const STATUS_STYLES = {
     dot: 'bg-blue-500 border-blue-200',
     text: 'text-blue-700',
     bg: 'bg-blue-50',
-    label: 'A planifier',
+    label: 'À planifier',
   },
 };
 
@@ -79,7 +79,7 @@ function EventTooltip({ evt }) {
       <p className="text-[11px] text-gray-500 mb-2">{evt.description}</p>
       <div className="flex items-center gap-3 text-xs text-gray-400">
         <span>
-          {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''} concerne
+          {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''} concerné
           {evt.sites_concerned !== 1 ? 's' : ''}
         </span>
         {evt.sites_non_compliant > 0 && (

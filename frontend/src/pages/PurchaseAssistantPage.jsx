@@ -469,7 +469,7 @@ export default function PurchaseAssistantPage() {
           disabled={step === 0}
           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-default transition"
         >
-          <ChevronLeft size={16} /> Precedent
+          <ChevronLeft size={16} /> Précédent
         </button>
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-0.5">
@@ -574,7 +574,8 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
                           {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
-                          {site.surfaceM2.toLocaleString('fr-FR')} m2
+                          {site.surfaceM2.toLocaleString('fr-FR')}
+                          {'\u00A0'}m²
                         </div>
                       </button>
                     );
@@ -610,7 +611,8 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
-                    {(site.surfaceM2 || 0).toLocaleString('fr-FR')} m2
+                    {(site.surfaceM2 || 0).toLocaleString('fr-FR')}
+                    {'\u00A0'}m²
                   </div>
                 </button>
               );

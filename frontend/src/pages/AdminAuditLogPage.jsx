@@ -264,7 +264,7 @@ export default function AdminAuditLogPage() {
             disabled={page === 0}
             className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
           >
-            <ChevronLeft size={14} /> Precedent
+            <ChevronLeft size={14} /> Précédent
           </button>
           <span className="text-sm text-gray-500">
             Page {page + 1} / {totalPages}

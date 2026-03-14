@@ -53,7 +53,7 @@ export const DEMO_ORGANIZATIONS = [
               {
                 type: 'ESTIMATION_ECART',
                 severity: 'medium',
-                message: 'Ecart estimation > 15% mois 11/2024',
+                message: 'Écart estimation > 15% mois 11/2024',
                 estimatedLossEur: 1400,
               },
             ],
