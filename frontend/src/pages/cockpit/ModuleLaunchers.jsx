@@ -27,9 +27,11 @@ function getModuleConfig(moduleKey, kpis) {
       return {
         route: '/conformite',
         metric:
-          kpis.total > 0
-            ? `${formatPercentFR(Math.round((kpis.conformes / kpis.total) * 100))} conformes`
-            : 'Conformité',
+          kpis.compliance_score != null
+            ? `Score conformité : ${Math.round(kpis.compliance_score)} / 100`
+            : kpis.total > 0
+              ? `${kpis.conformes} / ${kpis.total} sites conformes`
+              : 'Conformité',
         cta: 'Conformité',
       };
     case 'analyse':

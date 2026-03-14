@@ -471,13 +471,23 @@ export default function PurchaseAssistantPage() {
         >
           <ChevronLeft size={16} /> Precedent
         </button>
-        <div className="text-xs text-gray-400">
-          Etape {step + 1} / {STEPS.length}
-          {isDemo && (
-            <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-              MODE DEMO
-            </span>
-          )}
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all ${i <= step ? 'w-4 bg-blue-600' : 'w-2 bg-gray-200'}`}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-400">
+            Étape {step + 1} / {STEPS.length}
+            {isDemo && (
+              <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+                MODE DEMO
+              </span>
+            )}
+          </span>
         </div>
         {step < STEPS.length - 1 ? (
           <button

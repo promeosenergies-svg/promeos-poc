@@ -8,7 +8,7 @@
  *   consistency  {{ ok, issues }} — from checkConsistency()
  *   onNavigate   {fn}           — navigate(path)
  */
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardBody, Button } from '../../ui';
 import { SEVERITY_TINT } from '../../ui/colorTokens';
 
@@ -41,6 +41,7 @@ function HeaderBadge({ count, hasCritical }) {
 export default function WatchlistCard({
   watchlist = [],
   consistency = { ok: true, issues: [] },
+  loading = false,
   onNavigate,
 }) {
   const hasCritical = watchlist.some((i) => i.severity === 'critical');
@@ -91,6 +92,12 @@ export default function WatchlistCard({
               </li>
             ))}
           </ul>
+        ) : loading ? (
+          /* Loading state */
+          <div className="flex items-center justify-center py-8 text-gray-400">
+            <Loader2 size={18} className="animate-spin mr-2" />
+            <span className="text-sm">Analyse en cours...</span>
+          </div>
         ) : (
           /* Empty state — all good */
           <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -105,7 +112,7 @@ export default function WatchlistCard({
               onClick={() => onNavigate?.('/consommations/import')}
               className="text-xs text-gray-400"
             >
-              Synchroniser les données
+              Importer des données
             </Button>
           </div>
         )}

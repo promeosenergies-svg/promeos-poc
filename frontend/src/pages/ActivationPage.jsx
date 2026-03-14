@@ -93,7 +93,7 @@ export default function ActivationPage() {
       ...site,
       _activation: {
         patrimoine: true, // site exists
-        conformite: site.statut_conformite != null,
+        conformite: site.statut_conformite != null && site.statut_conformite !== '',
         consommation: (site.conso_kwh_an ?? 0) > 0,
         facturation: hasBillingOrg,
         achat: contractSiteIds.has(site.id),

@@ -230,7 +230,7 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
 
     # Off-hours consumption alert
     off_ratio = kpis.get("off_hours_ratio", 0)
-    if off_ratio > 0.4:
+    if off_ratio > 0.3:
         alerts.append(
             MonitoringAlert(
                 site_id=site.id,
@@ -258,6 +258,9 @@ def _generate_alerts(site, meter, kpis, power_risk, quality, snapshot_id: int, r
                 alert_type="weekend_anomaly",
                 severity=AlertSeverity.INFO,
                 explanation=f"Ratio weekend/semaine élevé ({we_ratio:.2f}). Consommation similaire 7j/7.",
+                recommended_action="Vérifier les programmations horaires et les équipements actifs le weekend.",
+                estimated_impact_kwh=round(kpis.get("total_kwh", 0) * we_ratio * 0.1, 0),
+                estimated_impact_eur=round(kpis.get("total_kwh", 0) * we_ratio * 0.1 * 0.15, 0),
                 evidence_json={"weekend_ratio": we_ratio},
                 status=AlertStatus.ACKNOWLEDGED,
                 snapshot_id=snapshot_id,

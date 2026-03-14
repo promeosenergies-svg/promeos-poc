@@ -442,7 +442,12 @@ const Cockpit = () => {
       {/* ═══════════ ZONE 3 : SURVEILLANCE & CONTEXTE ═══════════ */}
 
       <div data-tour="step-3">
-        <WatchlistCard watchlist={watchlist} consistency={consistency} onNavigate={navigate} />
+        <WatchlistCard
+          watchlist={watchlist}
+          consistency={consistency}
+          loading={sitesLoading}
+          onNavigate={navigate}
+        />
       </div>
 
       {/* Market context — contexte secondaire */}

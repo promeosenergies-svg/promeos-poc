@@ -477,7 +477,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       id: 'conformite',
       accentKey: 'conformite',
       label: 'Conformité réglementaire',
-      value: total > 0 ? `${pctConf}/100` : '—',
+      value: total > 0 ? `${pctConf} / 100` : '—',
       rawValue: pctConf,
       messageCtx: { totalSites: total, sitesAtRisk: aRisque, sitesNonConformes: nonConformes },
       sub:

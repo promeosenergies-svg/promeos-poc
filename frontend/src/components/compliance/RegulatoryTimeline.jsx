@@ -69,15 +69,15 @@ function EventTooltip({ evt }) {
     <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-3 text-left pointer-events-none">
       <div className="flex items-center gap-2 mb-1">
         <span
-          className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase text-white ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
+          className={`px-1.5 py-0.5 rounded text-[11px] font-bold uppercase text-white ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
         >
           {FRAMEWORK_LABELS[evt.framework] || evt.framework}
         </span>
-        <span className={`text-[10px] font-medium ${style.text}`}>{style.label}</span>
+        <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
       </div>
       <p className="text-xs font-semibold text-gray-800 mb-1">{evt.label}</p>
       <p className="text-[11px] text-gray-500 mb-2">{evt.description}</p>
-      <div className="flex items-center gap-3 text-[10px] text-gray-400">
+      <div className="flex items-center gap-3 text-xs text-gray-400">
         <span>
           {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''} concerne
           {evt.sites_concerned !== 1 ? 's' : ''}
@@ -89,7 +89,7 @@ function EventTooltip({ evt }) {
         )}
       </div>
       {evt.penalty_eur != null && (
-        <p className="text-[10px] text-red-500 mt-1">
+        <p className="text-xs text-red-500 mt-1">
           Pénalité : {evt.penalty_eur.toLocaleString('fr-FR')} €
         </p>
       )}
@@ -172,7 +172,7 @@ function HorizontalTimeline({ events, today }) {
           className="absolute w-px border-l-2 border-dashed border-red-400"
           style={{ left: `${todayPct}%`, top: '30px', height: `${AXIS_Y - 20}px` }}
         >
-          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-bold text-red-500 whitespace-nowrap bg-white px-1 rounded">
+          <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs font-bold text-red-500 whitespace-nowrap bg-white px-1 rounded">
             Aujourd'hui
           </span>
         </div>
@@ -215,7 +215,7 @@ function HorizontalTimeline({ events, today }) {
                 >
                   {FRAMEWORK_LABELS[evt.framework] || evt.framework}
                 </span>
-                <p className="text-[9px] font-medium text-gray-700 leading-tight line-clamp-2">
+                <p className="text-[11px] font-medium text-gray-700 leading-tight line-clamp-2">
                   {evt.label}
                 </p>
                 <p
@@ -250,7 +250,7 @@ function HorizontalTimeline({ events, today }) {
               markers.push(
                 <div
                   key={y}
-                  className="absolute text-[10px] text-gray-400 font-mono"
+                  className="absolute text-xs text-gray-400 font-mono"
                   style={{ left: `${pct}%`, top: `${AXIS_Y}px` }}
                 >
                   <div className="w-px h-3 bg-gray-300 mb-0.5" />
@@ -293,7 +293,7 @@ function VerticalTimeline({ events, today }) {
                 >
                   {FRAMEWORK_LABELS[evt.framework] || evt.framework}
                 </span>
-                <span className={`text-[10px] font-medium ${style.text}`}>{style.label}</span>
+                <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
               </div>
               <p className="text-sm font-semibold text-gray-800">{evt.label}</p>
               <p
@@ -303,7 +303,7 @@ function VerticalTimeline({ events, today }) {
                   ? `Échéance dépassée depuis le ${formatDate(evt.deadline)}`
                   : `${formatDate(evt.deadline)} — dans ${daysBetween(today, evt.deadline)} jours`}
               </p>
-              <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
+              <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                 <span>
                   {evt.sites_concerned} site{evt.sites_concerned !== 1 ? 's' : ''}
                 </span>
@@ -368,7 +368,7 @@ export default function RegulatoryTimeline({
             <Calendar size={16} className="text-blue-500" />
             <Explain term="timeline_reglementaire">Frise réglementaire</Explain>
           </h3>
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-xs">
             {passedNonCompliant.length > 0 && (
               <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-600 font-medium">
                 <AlertTriangle size={10} />

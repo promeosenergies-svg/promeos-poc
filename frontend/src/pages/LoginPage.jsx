@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import LoginBackground from './LoginBackground';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,58 +26,183 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-blue-600 tracking-tight">PROMEOS</h1>
-            <p className="text-sm text-gray-400 mt-1">Cockpit énergétique</p>
-          </div>
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Animated background */}
+      <LoginBackground />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Login card */}
+      <div className="relative z-10 w-full max-w-[400px] mx-4">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1
+            style={{
+              fontSize: 30,
+              fontWeight: 700,
+              color: '#ffffff',
+              letterSpacing: 3,
+            }}
+          >
+            PROMEOS
+          </h1>
+          <p
+            style={{
+              fontSize: 14,
+              color: '#5eead4',
+              letterSpacing: 1.5,
+              fontStyle: 'italic',
+              fontWeight: 400,
+              marginTop: 8,
+            }}
+          >
+            Votre énergie, votre maîtrise
+          </p>
+        </div>
+
+        {/* Card */}
+        <div
+          style={{
+            background: 'rgba(22, 48, 82, 0.85)',
+            border: '1.5px solid rgba(45, 212, 191, 0.35)',
+            borderRadius: 14,
+            padding: '2rem 2.25rem',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label
+                htmlFor="login-email"
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: '#94a3b8',
+                  letterSpacing: 0.5,
+                  fontWeight: 500,
+                  marginBottom: 6,
+                }}
+              >
+                Email
+              </label>
               <input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="email@example.com"
                 required
                 autoFocus
+                style={{
+                  width: '100%',
+                  background: 'rgba(30, 61, 107, 0.7)',
+                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                  borderRadius: 8,
+                  padding: '11px 14px',
+                  color: '#e2e8f0',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(45, 212, 191, 0.6)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(56, 189, 248, 0.2)')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+              <label
+                htmlFor="login-password"
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: '#94a3b8',
+                  letterSpacing: 0.5,
+                  fontWeight: 500,
+                  marginBottom: 6,
+                }}
+              >
+                Mot de passe
+              </label>
               <input
+                id="login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
                 required
+                style={{
+                  width: '100%',
+                  background: 'rgba(30, 61, 107, 0.7)',
+                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                  borderRadius: 8,
+                  padding: '11px 14px',
+                  color: '#e2e8f0',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(45, 212, 191, 0.6)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(56, 189, 248, 0.2)')}
               />
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: '#fca5a5',
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                }}
+              >
+                {error}
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #0d9488, #0ea5e9)',
+                border: 'none',
+                borderRadius: 8,
+                padding: 12,
+                color: '#ffffff',
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: 0.5,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                transition: 'opacity 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.target.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+              }}
+              onMouseDown={(e) => {
+                e.target.style.transform = 'translateY(0)';
+              }}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
 
           {/* Demo hint */}
-          <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">Démo : promeos@promeos.io / promeos2024</p>
-          </div>
+          <p
+            style={{
+              fontSize: 11,
+              color: 'rgba(148, 163, 184, 0.5)',
+              textAlign: 'center',
+              marginTop: '1.25rem',
+            }}
+          >
+            Démo : promeos@promeos.io / promeos2024
+          </p>
         </div>
       </div>
     </div>

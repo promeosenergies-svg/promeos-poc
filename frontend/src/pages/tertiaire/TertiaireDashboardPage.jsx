@@ -162,6 +162,22 @@ export default function TertiaireDashboardPage() {
         </Button>
       }
     >
+      {/* Empty state when no EFA */}
+      {kpis.total_efa === 0 && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+          <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">
+              Aucune EFA enregistrée pour ce périmètre
+            </p>
+            <p className="text-xs text-amber-600 mt-1">
+              Importez vos déclarations OPERAT ou ajoutez manuellement vos Entités Fonctionnelles
+              Assujetties pour suivre votre conformité Décret Tertiaire.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="EFA actives" value={kpis.active} icon={Building2} accent="emerald" />

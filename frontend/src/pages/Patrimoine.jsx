@@ -988,12 +988,20 @@ export default function Patrimoine() {
                   </h3>
                   <Badge status="warning">{expiringContracts.length}</Badge>
                 </div>
-                <button
-                  onClick={() => setParams({ view: '' })}
-                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                >
-                  <X size={12} /> Fermer
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/renouvellements')}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Voir le radar renouvellements →
+                  </button>
+                  <button
+                    onClick={() => setParams({ view: '' })}
+                    className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                  >
+                    <X size={12} /> Fermer
+                  </button>
+                </div>
               </div>
               {expiringLoading ? (
                 <div className="p-8 text-center text-sm text-gray-400">Chargement...</div>

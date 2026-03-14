@@ -128,7 +128,12 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-2">
           {results.length === 0 && (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">Aucun résultat</p>
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm text-gray-400">Aucun résultat pour « {query} »</p>
+              <p className="text-xs text-gray-300 mt-2">
+                Essayez : conformité, actions, patrimoine, monitoring...
+              </p>
+            </div>
           )}
           {results.map((item, idx) => {
             const Icon = item.icon;

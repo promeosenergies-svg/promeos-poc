@@ -141,11 +141,12 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random, buildings_map: 
             continue
 
         name = _EFA_NAMES[idx % len(_EFA_NAMES)]
-        # Vary statuses: most active, some draft, one closed
-        if idx == 0:
-            statut = EfaStatut.CLOSED
-        elif idx % 5 == 0:
+        # Vary statuses: most active, some draft, last closed
+        # idx=0 must be ACTIVE to ensure at least 1 active EFA in small packs (helios S)
+        if idx % 5 == 0 and idx > 0:
             statut = EfaStatut.DRAFT
+        elif idx == len(sites) - 1 and len(sites) > 3:
+            statut = EfaStatut.CLOSED
         else:
             statut = EfaStatut.ACTIVE
 

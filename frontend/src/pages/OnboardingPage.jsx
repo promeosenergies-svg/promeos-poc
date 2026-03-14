@@ -142,6 +142,13 @@ export default function OnboardingPage() {
     }
   }, [data, org?.id]);
 
+  // Auto-redirect to cockpit when onboarding is 100% complete
+  useEffect(() => {
+    if (!data?.all_done) return;
+    const timer = setTimeout(() => navigate('/'), 3000);
+    return () => clearTimeout(timer);
+  }, [data?.all_done, navigate]);
+
   const handleManualComplete = async (stepKey) => {
     if (!org?.id) return;
     try {
@@ -209,9 +216,14 @@ export default function OnboardingPage() {
             />
           </div>
           {data?.all_done && (
-            <p className="text-sm text-emerald-600 font-medium mt-2">
-              Félicitations ! Votre plateforme est prête.
-            </p>
+            <div className="mt-2">
+              <p className="text-sm text-emerald-600 font-medium">
+                Félicitations ! Votre plateforme est prête.
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Redirection vers le cockpit dans quelques secondes...
+              </p>
+            </div>
           )}
         </CardBody>
       </Card>

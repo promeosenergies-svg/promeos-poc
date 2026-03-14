@@ -60,6 +60,7 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/complianceLabels.fr';
 import { groupActionsByWeek, computeCloseabilityBadge } from '../models/dossierModel';
+import { fmtEur } from '../utils/format';
 
 /* Backend → frontend field mappers */
 const SOURCE_MAP = {
@@ -276,7 +277,7 @@ function KanbanBoard({
                     )}
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                    <span className="font-medium">{a.impact_eur.toLocaleString('fr-FR')} €</span>
+                    <span className="font-medium">{fmtEur(a.impact_eur)}</span>
                     <span className="truncate max-w-[80px]">
                       {a.owner || <span className="italic text-gray-400">Non assigné</span>}
                     </span>
@@ -356,7 +357,7 @@ function GroupedTableView({
             <span className="text-sm font-semibold text-gray-800">{key}</span>
             <span className="text-xs text-gray-400">{items.length} action(s)</span>
             <span className="ml-auto text-xs font-medium text-gray-500">
-              {items.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} €
+              {fmtEur(items.reduce((s, a) => s + a.impact_eur, 0))}
             </span>
           </button>
           {!collapsed.has(key) && (
@@ -387,9 +388,7 @@ function GroupedTableView({
                           {PRIORITY_LABEL[a.priorite]}
                         </Badge>
                       </Td>
-                      <Td className="text-right font-medium">
-                        {a.impact_eur.toLocaleString('fr-FR')} €
-                      </Td>
+                      <Td className="text-right font-medium">{fmtEur(a.impact_eur)}</Td>
                       <Td
                         className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
                       >
@@ -532,7 +531,7 @@ function WeekView({ actions, onCardClick }) {
                     </div>
                     {a.impact_eur > 0 && (
                       <span className="text-sm font-bold text-red-600 shrink-0">
-                        {a.impact_eur.toLocaleString('fr-FR')} €
+                        {fmtEur(a.impact_eur)}
                       </span>
                     )}
                   </div>
@@ -1007,7 +1006,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
             </div>
           )}
           <div className="text-xs text-gray-500 shrink-0">
-            {stats.total_impact.toLocaleString('fr-FR')} € d'impact total
+            {fmtEur(stats.total_impact)} d'impact total
           </div>
         </div>
       )}
@@ -1265,7 +1264,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
             <>
               <span className="text-gray-400">&middot;</span>
               <span className="font-bold text-red-600">
-                {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString('fr-FR')} €
+                {fmtEur(filtered.reduce((s, a) => s + a.impact_eur, 0))}
               </span>
               <span className="text-gray-400 text-xs">d'impact estimé</span>
             </>
@@ -1382,9 +1381,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
                         {PRIORITY_LABEL[a.priorite] || a.priorite}
                       </Badge>
                     </Td>
-                    <Td className="text-right font-medium">
-                      {a.impact_eur.toLocaleString('fr-FR')} €
-                    </Td>
+                    <Td className="text-right font-medium">{fmtEur(a.impact_eur)}</Td>
                     <Td className="text-right text-emerald-600 text-sm">
                       {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString('fr-FR')} kg` : '—'}
                     </Td>
@@ -1453,11 +1450,9 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
               <span className="font-semibold text-gray-900">sélectionnée(s)</span>
               <span className="ml-2 text-gray-500">&middot;</span>
               <span className="ml-2 font-bold text-red-600">
-                {actions
-                  .filter((a) => selected.has(a.id))
-                  .reduce((s, a) => s + a.impact_eur, 0)
-                  .toLocaleString('fr-FR')}{' '}
-                €
+                {fmtEur(
+                  actions.filter((a) => selected.has(a.id)).reduce((s, a) => s + a.impact_eur, 0)
+                )}
               </span>
               <span className="ml-1 text-xs text-gray-400">d'impact total</span>
             </div>
@@ -1548,7 +1543,7 @@ export default function ActionsPage({ autoCreate = false, bare = false }) {
     <PageShell
       icon={ListChecks}
       title="Plan d'actions"
-      subtitle={`${stats.total} actions${stats.total_impact > 0 ? ` · ${stats.total_impact.toLocaleString('fr-FR')} € d'impact estimé` : ''}${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      subtitle={`${stats.total} actions${stats.total_impact > 0 ? ` · ${fmtEur(stats.total_impact)} d'impact estimé` : ''}${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString('fr-FR')} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>

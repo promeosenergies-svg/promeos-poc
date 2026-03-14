@@ -729,90 +729,97 @@ function ObligationCard({
               );
             })()}
 
-            {obligation.findings && obligation.findings.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                  Constats par site ({obligation.findings.length})
-                </p>
-                <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
-                  {obligation.findings
-                    .filter((f) => f.status === 'NOK' || f.status === 'UNKNOWN')
-                    .map((f) => (
-                      <div
-                        key={f.id}
-                        className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors"
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`}
-                        />
-                        <span className="text-gray-700 font-medium truncate flex-1">
-                          {f.site_nom}
-                        </span>
-                        <span className="text-xs text-gray-500 hidden sm:inline">
-                          {RULE_LABELS[f.rule_id]?.title_fr || f.regulation || 'Non conforme'}
-                        </span>
-                        {f.estimated_penalty_eur > 0 && (
-                          <span className="text-xs text-red-600 font-medium flex items-center gap-1 shrink-0">
-                            <Coins size={11} />
-                            {fmtEur(f.estimated_penalty_eur)}
-                          </span>
-                        )}
-                        {isExpert && (
-                          <span className="text-[10px] text-gray-400 font-mono">{f.rule_id}</span>
-                        )}
-                        <button
-                          onClick={() => onAuditFinding(f.id)}
-                          className="text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                          title="Voir les détails"
+            {obligation.findings &&
+              obligation.findings.length > 0 &&
+              (() => {
+                const actionableFindings = obligation.findings.filter(
+                  (f) => f.status === 'NOK' || f.status === 'UNKNOWN'
+                );
+                if (!actionableFindings.length) return null;
+                return (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                      Constats par site ({actionableFindings.length} non conforme
+                      {actionableFindings.length !== 1 ? 's' : ''} / {obligation.findings.length})
+                    </p>
+                    <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+                      {actionableFindings.map((f) => (
+                        <div
+                          key={f.id}
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors"
                         >
-                          <Eye size={12} /> Détails
-                        </button>
-                        {isExpert ? (
-                          <>
-                            <WorkflowBadge status={f.insight_status} />
-                            {f.insight_status === 'open' && (
-                              <button
-                                onClick={() => onWorkflowAction(f.id, 'ack')}
-                                className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                              >
-                                <UserCheck size={12} /> Prendre en charge
-                              </button>
-                            )}
-                            {f.insight_status === 'ack' && (
-                              <button
-                                onClick={() => onWorkflowAction(f.id, 'resolved')}
-                                className="text-xs text-green-600 hover:text-green-800 hover:bg-green-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                              >
-                                <CheckCircle2 size={12} /> Résolu
-                              </button>
-                            )}
-                            {(f.insight_status === 'open' || f.insight_status === 'ack') && (
-                              <button
-                                onClick={() => onWorkflowAction(f.id, 'false_positive')}
-                                className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                              >
-                                <XCircle size={12} /> FP
-                              </button>
-                            )}
-                          </>
-                        ) : (
                           <span
-                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                              f.status === 'NOK'
-                                ? 'bg-red-50 text-red-700'
-                                : 'bg-amber-50 text-amber-700'
-                            }`}
-                          >
-                            {f.status === 'NOK'
-                              ? STATUT_LABELS.non_conforme
-                              : STATUT_LABELS.a_qualifier}
+                            className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`}
+                          />
+                          <span className="text-gray-700 font-medium truncate flex-1">
+                            {f.site_nom}
                           </span>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
+                          <span className="text-xs text-gray-500 hidden sm:inline">
+                            {RULE_LABELS[f.rule_id]?.title_fr || f.regulation || 'Non conforme'}
+                          </span>
+                          {f.estimated_penalty_eur > 0 && (
+                            <span className="text-xs text-red-600 font-medium flex items-center gap-1 shrink-0">
+                              <Coins size={11} />
+                              {fmtEur(f.estimated_penalty_eur)}
+                            </span>
+                          )}
+                          {isExpert && (
+                            <span className="text-[10px] text-gray-400 font-mono">{f.rule_id}</span>
+                          )}
+                          <button
+                            onClick={() => onAuditFinding(f.id)}
+                            className="text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                            title="Voir les détails"
+                          >
+                            <Eye size={12} /> Détails
+                          </button>
+                          {isExpert ? (
+                            <>
+                              <WorkflowBadge status={f.insight_status} />
+                              {f.insight_status === 'open' && (
+                                <button
+                                  onClick={() => onWorkflowAction(f.id, 'ack')}
+                                  className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                                >
+                                  <UserCheck size={12} /> Prendre en charge
+                                </button>
+                              )}
+                              {f.insight_status === 'ack' && (
+                                <button
+                                  onClick={() => onWorkflowAction(f.id, 'resolved')}
+                                  className="text-xs text-green-600 hover:text-green-800 hover:bg-green-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                                >
+                                  <CheckCircle2 size={12} /> Résolu
+                                </button>
+                              )}
+                              {(f.insight_status === 'open' || f.insight_status === 'ack') && (
+                                <button
+                                  onClick={() => onWorkflowAction(f.id, 'false_positive')}
+                                  className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                                >
+                                  <XCircle size={12} /> FP
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <span
+                              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                f.status === 'NOK'
+                                  ? 'bg-red-50 text-red-700'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}
+                            >
+                              {f.status === 'NOK'
+                                ? STATUT_LABELS.non_conforme
+                                : STATUT_LABELS.a_qualifier}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
             {/* A4 — Audit trail mode expert */}
             {isExpert && obligation.findings?.length > 0 && (

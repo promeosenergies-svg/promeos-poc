@@ -152,6 +152,11 @@ export default function ConnectorsPage() {
                       <Globe size={10} className="mr-1" /> Public
                     </Badge>
                   )}
+                  {connector.requires_auth && (
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      En démo, les données sont simulées — aucune authentification nécessaire.
+                    </p>
+                  )}
                 </div>
 
                 {testResults[connector.name]?.message && (
