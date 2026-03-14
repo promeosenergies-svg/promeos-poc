@@ -56,7 +56,7 @@ describe('Step 12 — kpiLabels service', () => {
   });
 
   it('simple and expert differ for technical KPIs', () => {
-    const technicalIds = ['pmax_kw', 'p95_kw', 'load_factor', 'off_hours_ratio', 'night_ratio'];
+    const technicalIds = ['pmax_kw', 'load_factor', 'off_hours_ratio'];
     technicalIds.forEach((id) => {
       const entry = KPI_LABELS[id];
       expect(entry.simple).not.toBe(entry.expert);

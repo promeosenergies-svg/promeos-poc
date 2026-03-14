@@ -2,7 +2,7 @@
  * PROMEOS — ConsoKpiHeader (QW2 / P1.1 polish)
  * 6-KPI header row for ConsumptionExplorerPage.
  * Reads motor data (tunnel, hphc, progression) to compute:
- *   kWh total, EUR total, EUR/MWh, CO2e, Pic kW (P95), Base nocturne %
+ *   kWh total, EUR total, EUR/MWh, CO2e, Pic kW (P95), Ratio Conso. Nuit %
  * Respects scope global (site + period) via motor props.
  *
  * P1.1: confidence tooltip "Comment calcule ?", EUR source tooltip.
@@ -133,7 +133,7 @@ export default function ConsoKpiHeader({
   })();
   const p95Label = p95 != null ? fmtNum(Math.round(p95), 0, 'kW') : '—';
 
-  // --- Base nocturne % (ratio of night hours P50 vs overall P50) ---
+  // --- Ratio Conso. Nuit % (ratio of night hours P50 vs overall P50) ---
   const basePct = (() => {
     if (!tunnel?.envelope?.weekday) return null;
     const slots = tunnel.envelope.weekday;
@@ -240,14 +240,14 @@ export default function ConsoKpiHeader({
           icon={Activity}
           label={getKpiLabel('p95_kw', isExpert)}
           value={p95Label}
-          sub="P95"
+          sub="Percentile 95"
           tooltip="95e percentile de puissance sur les créneaux horaires"
         />
         <KpiTile
           icon={Moon}
           label={getKpiLabel('night_ratio', isExpert)}
           value={basePctLabel}
-          sub="22h-6h"
+          sub="(22h - 6h)"
           color={basePctColor}
           tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine"
         />
