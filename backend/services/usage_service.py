@@ -247,6 +247,7 @@ def get_metering_plan(db: Session, site_id: int) -> dict:
 def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
     """Retourne les usages significatifs d'un site, tries par kWh decroissant.
 
+    Groupes par TypeUsage (merge multi-batiments).
     Source : sous-compteurs lies a des usages (mesure reelle).
     Fallback : usages declares avec pct_of_total estime.
     """
@@ -277,8 +278,10 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
         or 0
     )
 
-    usage_kwh = {}  # usage_id → kwh
-    usage_objs = {}  # usage_id → Usage
+    # Phase 1 : collecter kWh par usage_id + tracker les usage_id mesures
+    usage_kwh = {}  # usage_id -> kwh
+    usage_objs = {}  # usage_id -> Usage
+    measured_usage_ids = set()  # usage_id avec sous-compteur reel
 
     for s in subs_with_usage:
         kwh = (
@@ -288,56 +291,93 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
             or 0
         )
         usage_kwh[s.usage_id] = usage_kwh.get(s.usage_id, 0) + kwh
+        measured_usage_ids.add(s.usage_id)
         if s.usage_id not in usage_objs:
             usage_objs[s.usage_id] = db.query(Usage).filter(Usage.id == s.usage_id).first()
 
+    # Types deja couverts par mesure directe (sous-compteur)
+    measured_types = set()
+    for uid in measured_usage_ids:
+        u = usage_objs.get(uid)
+        if u:
+            measured_types.add(u.type)
+
     # Fallback: usages declares sans mesure directe
+    # Ne pas ajouter de fallback pour un type deja mesure par sous-compteur
     declared_usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=site_id)).all()
     for u in declared_usages:
-        if u.id not in usage_kwh:
-            # Utiliser pct_of_total estime si disponible
+        if u.id not in usage_kwh and u.type not in measured_types:
             if u.pct_of_total and total_kwh > 0:
                 usage_kwh[u.id] = total_kwh * u.pct_of_total / 100
                 usage_objs[u.id] = u
 
-    # Trier par kWh decroissant
-    sorted_usages = sorted(usage_kwh.items(), key=lambda x: x[1], reverse=True)[:limit]
-
-    result = []
-    for uid, kwh in sorted_usages:
+    # Phase 2 : grouper par TypeUsage (merge multi-batiments)
+    by_type = {}  # TypeUsage -> {kwh, surface, usage_ids, has_measured, ...}
+    for uid, kwh in usage_kwh.items():
         u = usage_objs.get(uid)
         if not u:
             continue
+        t = u.type
+        is_measured = uid in measured_usage_ids
+        bat_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else 0
+        if t not in by_type:
+            by_type[t] = {
+                "type": t,
+                "label": u.label or USAGE_LABELS_FR.get(t, t.value),
+                "family": USAGE_FAMILY_MAP.get(t, UsageFamily.AUXILIAIRES),
+                "kwh": 0,
+                "surface_m2": 0,
+                "is_significant": False,
+                "has_measured": False,
+                "usage_ids": [],
+            }
+        row = by_type[t]
+        row["kwh"] += kwh
+        row["surface_m2"] += bat_surface
+        row["is_significant"] = row["is_significant"] or u.is_significant
+        row["has_measured"] = row["has_measured"] or is_measured
+        row["usage_ids"].append(uid)
 
-        # Check for active drifts on this usage
+    # Phase 3 : normaliser si somme > total_kwh (eviter pct > 100)
+    raw_sum = sum(v["kwh"] for v in by_type.values())
+    if raw_sum > total_kwh and total_kwh > 0:
+        ratio = total_kwh / raw_sum
+        for v in by_type.values():
+            v["kwh"] *= ratio
+
+    sorted_types = sorted(by_type.values(), key=lambda x: x["kwh"], reverse=True)[:limit]
+
+    result = []
+    for row in sorted_types:
+        # Derives actives pour tous les usage_ids de ce type
         drift_insights = (
             db.query(ConsumptionInsight)
             .filter(
                 ConsumptionInsight.site_id == site_id,
-                ConsumptionInsight.usage_id == uid,
+                ConsumptionInsight.usage_id.in_(row["usage_ids"]),
                 ConsumptionInsight.type == "derive",
             )
             .all()
         )
 
+        kwh = row["kwh"]
+        surface = row["surface_m2"]
+        data_source = "mesure_directe" if row["has_measured"] else "estimation_prorata"
+
         result.append(
             {
-                "usage_id": uid,
-                "type": u.type.value,
-                "label": u.label or USAGE_LABELS_FR.get(u.type, u.type.value),
-                "family": USAGE_FAMILY_MAP.get(u.type, UsageFamily.AUXILIAIRES).value,
+                "usage_ids": row["usage_ids"],
+                "type": row["type"].value,
+                "label": row["label"],
+                "family": row["family"].value,
                 "kwh": round(kwh, 1),
                 "pct_of_total": round(kwh / total_kwh * 100, 1) if total_kwh > 0 else 0,
-                "is_significant": u.is_significant,
-                "data_source": u.data_source.value if u.data_source else "estimation_prorata",
+                "is_significant": row["is_significant"],
+                "data_source": data_source,
                 "has_drift": len(drift_insights) > 0,
                 "drift_pct": _extract_drift_pct(drift_insights[0]) if drift_insights else None,
-                "surface_m2": u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2,
-                "ipe_kwh_m2": round(
-                    kwh / (u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2), 1
-                )
-                if (u.batiment and u.batiment.surface_m2 or u.surface_m2)
-                else None,
+                "surface_m2": round(surface, 1) if surface else None,
+                "ipe_kwh_m2": round(kwh / surface, 1) if surface and surface > 0 else None,
             }
         )
 
@@ -530,6 +570,13 @@ def get_usages_dashboard(db: Session, site_id: int) -> dict:
             "active_drifts_count": len(drift_list),
             "ues_count": len(ues),
             "sub_meters_count": plan["total_sub_meters"],
+            "principals_count": plan["total_principals"],
+            "measured_ues": sum(1 for u in ues if u.get("data_source") == "mesure_directe"),
+            "estimated_ues": sum(1 for u in ues if u.get("data_source") != "mesure_directe"),
+            "metering_coverage_pct": round(
+                sum(m.get("coverage_pct", 0) for m in plan["meters"]) / max(1, len(plan["meters"])),
+                1,
+            ),
             "baselines_count": len(baselines),
             "compliance_coverage_pct": compliance["usage_coverage"]["coverage_pct"],
             "contract_active": billing["contract"] is not None,
@@ -718,7 +765,9 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 "trend": trend,
                 "surface_m2": bat_surface,
                 "is_significant": u.is_significant,
-                "data_source": u.data_source.value if u.data_source else "estimation_prorata",
+                "data_source": "mesure_directe"
+                if meter_ids and not from_stored
+                else ("baseline_stockee" if from_stored else "estimation_prorata"),
                 "actions_completed": len(actions),
             }
         )

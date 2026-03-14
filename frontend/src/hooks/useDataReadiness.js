@@ -29,7 +29,7 @@ export default function useDataReadiness(
   const readinessState = useMemo(() => {
     if (loading) return null;
     return computeDataReadinessState(activation, {
-      billingMonthCount: billingSummary?.distinct_months ?? 0,
+      billingMonthCount: billingSummary?.coverage_months ?? billingSummary?.distinct_months ?? 0,
       efaDashboard,
       connectors: Array.isArray(connectors) ? connectors : [],
       operatModuleActive,

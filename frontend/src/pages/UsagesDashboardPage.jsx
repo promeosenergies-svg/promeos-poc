@@ -43,6 +43,7 @@ const dataSourceLabel = (src) =>
   ({
     mesure_directe: 'Mesuré',
     estimation_prorata: 'Estimé',
+    baseline_stockee: 'Baseline',
     import_csv: 'Import',
     gtb_api: 'GTB',
     facturation: 'Facture',
@@ -55,6 +56,7 @@ const dataSourceColor = (src) =>
   ({
     mesure_directe: '#166534',
     estimation_prorata: '#92400e',
+    baseline_stockee: '#7c3aed',
     import_csv: '#1e40af',
     gtb_api: '#6d28d9',
     facturation: '#0e7490',
@@ -182,6 +184,89 @@ function TrendBadge({ trend, ecart_pct }) {
 
 // ── V1.2: Baseline / Avant-Après ─────────────────────────────────────────
 
+function BaselineSummary({ baselines }) {
+  if (!baselines || baselines.length === 0) return null;
+
+  const improving = baselines.filter((b) => b.trend === 'amelioration');
+  const degrading = baselines.filter((b) => b.trend === 'degradation');
+  const stable = baselines.filter((b) => b.trend === 'stable');
+
+  const totalEcart = baselines.reduce((s, b) => s + (b.ecart_kwh || 0), 0);
+  const totalEcartEur = Math.round(totalEcart * 0.18); // prix moyen
+
+  const dominant =
+    degrading.length > improving.length
+      ? 'degradation'
+      : improving.length > degrading.length
+        ? 'amelioration'
+        : 'stable';
+
+  const dominantColor =
+    dominant === 'amelioration' ? '#16a34a' : dominant === 'degradation' ? '#dc2626' : '#6b7280';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 12,
+        flexWrap: 'wrap',
+        marginBottom: 14,
+        padding: '12px 16px',
+        background:
+          dominant === 'amelioration'
+            ? '#f0fdf4'
+            : dominant === 'degradation'
+              ? '#fef2f2'
+              : '#f9fafb',
+        borderRadius: 8,
+        border: `1px solid ${dominant === 'amelioration' ? '#bbf7d0' : dominant === 'degradation' ? '#fecaca' : '#e5e7eb'}`,
+      }}
+    >
+      <div style={{ flex: '1 1 200px' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: dominantColor, marginBottom: 4 }}>
+          {dominant === 'amelioration'
+            ? 'Tendance globale : amélioration'
+            : dominant === 'degradation'
+              ? 'Tendance globale : dégradation'
+              : 'Tendance globale : stable'}
+        </div>
+        <div style={{ fontSize: 12, color: '#374151' }}>
+          {improving.length > 0 && (
+            <span style={{ color: '#16a34a', fontWeight: 600, marginRight: 12 }}>
+              ↘ {improving.length} en amélioration
+            </span>
+          )}
+          {degrading.length > 0 && (
+            <span style={{ color: '#dc2626', fontWeight: 600, marginRight: 12 }}>
+              ↗ {degrading.length} en dégradation
+            </span>
+          )}
+          {stable.length > 0 && (
+            <span style={{ color: '#6b7280', fontWeight: 500 }}>→ {stable.length} stable(s)</span>
+          )}
+        </div>
+      </div>
+      <div style={{ textAlign: 'right', minWidth: 160 }}>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: totalEcart > 0 ? '#dc2626' : totalEcart < 0 ? '#16a34a' : '#6b7280',
+          }}
+        >
+          {totalEcart > 0 ? '+' : ''}
+          {fmt(totalEcart)} kWh
+        </div>
+        <div style={{ fontSize: 11, color: '#6b7280' }}>
+          {totalEcart > 0 ? 'Surconsommation' : totalEcart < 0 ? 'Économie' : 'Écart nul'} :{' '}
+          {totalEcartEur > 0 ? '+' : ''}
+          {fmt(totalEcartEur)} EUR/an estimé
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BaselineTable({ baselines }) {
   if (!baselines || baselines.length === 0) {
     return (
@@ -191,71 +276,74 @@ function BaselineTable({ baselines }) {
     );
   }
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-      <thead>
-        <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
-          <th style={{ padding: '8px 6px' }}>Usage</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Baseline kWh</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Actuel kWh</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>Écart</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE base</th>
-          <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE actuel</th>
-          <th style={{ padding: '8px 6px', textAlign: 'center' }}>Tendance</th>
-          <th style={{ padding: '8px 6px', textAlign: 'center' }}>Source</th>
-        </tr>
-      </thead>
-      <tbody>
-        {baselines.map((b, i) => (
-          <tr key={b.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-            <td style={{ padding: '8px 6px' }}>
-              <span>{familyIcon(b.family)}</span>{' '}
-              <span style={{ fontWeight: b.is_significant ? 600 : 400 }}>{b.label}</span>
-              {b.actions_completed > 0 && (
-                <span
-                  style={{
-                    marginLeft: 6,
-                    fontSize: 10,
-                    padding: '1px 5px',
-                    borderRadius: 3,
-                    background: '#dcfce7',
-                    color: '#166534',
-                    fontWeight: 600,
-                  }}
-                >
-                  {b.actions_completed} action(s)
-                </span>
-              )}
-            </td>
-            <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(b.kwh_baseline)}</td>
-            <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
-              {fmt(b.kwh_current)}
-            </td>
-            <td
-              style={{
-                padding: '8px 6px',
-                textAlign: 'right',
-                color: b.ecart_pct > 0 ? '#dc2626' : b.ecart_pct < 0 ? '#16a34a' : '#6b7280',
-                fontWeight: 600,
-              }}
-            >
-              {b.ecart_kwh != null ? `${b.ecart_kwh > 0 ? '+' : ''}${fmt(b.ecart_kwh)}` : '—'}
-            </td>
-            <td style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
-              {b.ipe_baseline ? `${fmt(b.ipe_baseline, 1)}` : '—'}
-            </td>
-            <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 500 }}>
-              {b.ipe_current ? `${fmt(b.ipe_current, 1)}` : '—'}
-            </td>
-            <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-              <TrendBadge trend={b.trend} ecart_pct={b.ecart_pct} />
-            </td>
-            <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-              <DataSourceBadge source={b.data_source} />
-            </td>
+    <div>
+      <BaselineSummary baselines={baselines} />
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
+            <th style={{ padding: '8px 6px' }}>Usage</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>Baseline kWh</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>Actuel kWh</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>Écart</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE base</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE actuel</th>
+            <th style={{ padding: '8px 6px', textAlign: 'center' }}>Tendance</th>
+            <th style={{ padding: '8px 6px', textAlign: 'center' }}>Source</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {baselines.map((b, i) => (
+            <tr key={b.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <td style={{ padding: '8px 6px' }}>
+                <span>{familyIcon(b.family)}</span>{' '}
+                <span style={{ fontWeight: b.is_significant ? 600 : 400 }}>{b.label}</span>
+                {b.actions_completed > 0 && (
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 10,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      background: '#dcfce7',
+                      color: '#166534',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {b.actions_completed} action(s)
+                  </span>
+                )}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(b.kwh_baseline)}</td>
+              <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
+                {fmt(b.kwh_current)}
+              </td>
+              <td
+                style={{
+                  padding: '8px 6px',
+                  textAlign: 'right',
+                  color: b.ecart_pct > 0 ? '#dc2626' : b.ecart_pct < 0 ? '#16a34a' : '#6b7280',
+                  fontWeight: 600,
+                }}
+              >
+                {b.ecart_kwh != null ? `${b.ecart_kwh > 0 ? '+' : ''}${fmt(b.ecart_kwh)}` : '—'}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
+                {b.ipe_baseline ? `${fmt(b.ipe_baseline, 1)}` : '—'}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 500 }}>
+                {b.ipe_current ? `${fmt(b.ipe_current, 1)}` : '—'}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                <TrendBadge trend={b.trend} ecart_pct={b.ecart_pct} />
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                <DataSourceBadge source={b.data_source} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -677,8 +765,39 @@ function ComplianceWidget({ compliance, navigate }) {
 function BillingLinksWidget({ billing, cost, navigate }) {
   if (!billing) return null;
 
+  const priceSource = billing.price_ref?.source;
+  const hasContract = !!billing.contract;
+  const hasInvoices = billing.invoices_summary?.count > 0;
+
+  // Message contextuel sur la source du calcul de coût
+  const costSourceMsg = hasContract
+    ? 'Prix du contrat actif'
+    : priceSource === 'facture'
+      ? 'Prix moyen issu des factures'
+      : 'Prix par défaut (aucune facture ni contrat)';
+
   return (
     <div>
+      {/* Source de calcul explicite */}
+      <div
+        style={{
+          fontSize: 12,
+          color: '#6b7280',
+          marginBottom: 10,
+          padding: '6px 10px',
+          background: '#f9fafb',
+          borderRadius: 6,
+          borderLeft: '3px solid #3b82f6',
+        }}
+      >
+        Base de calcul du coût : <strong>{costSourceMsg}</strong>
+        {!hasContract && priceSource === 'facture' && (
+          <span style={{ color: '#d97706', marginLeft: 8 }}>
+            — Rattacher un contrat pour un calcul plus précis
+          </span>
+        )}
+      </div>
+
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         {/* Prix de référence */}
         <div
@@ -696,20 +815,20 @@ function BillingLinksWidget({ billing, cost, navigate }) {
           </div>
           <DataSourceBadge
             source={
-              billing.price_ref?.source === 'contrat'
+              priceSource === 'contrat'
                 ? 'mesure_directe'
-                : billing.price_ref?.source === 'facture'
+                : priceSource === 'facture'
                   ? 'facturation'
                   : 'estimation_prorata'
             }
           />
           <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 6 }}>
-            {priceSourceLabel(billing.price_ref?.source)}
+            {priceSourceLabel(priceSource)}
           </span>
         </div>
 
         {/* Contrat actif */}
-        {billing.contract ? (
+        {hasContract ? (
           <div
             style={{
               flex: '1 1 220px',
@@ -730,14 +849,18 @@ function BillingLinksWidget({ billing, cost, navigate }) {
             style={{
               flex: '1 1 220px',
               padding: '12px 16px',
-              background: '#fef2f2',
+              background: hasInvoices ? '#fffbeb' : '#fef2f2',
               borderRadius: 8,
-              border: '1px solid #fecaca',
+              border: `1px solid ${hasInvoices ? '#fde68a' : '#fecaca'}`,
             }}
           >
-            <div style={{ fontSize: 11, color: '#991b1b' }}>Aucun contrat actif</div>
+            <div style={{ fontSize: 11, color: hasInvoices ? '#92400e' : '#991b1b' }}>
+              Aucun contrat rattaché
+            </div>
             <div style={{ fontSize: 12, color: '#6b7280' }}>
-              Le coût est calculé sur un prix par défaut
+              {hasInvoices
+                ? 'Le coût utilise le prix moyen des factures importées'
+                : 'Le coût utilise un prix de référence par défaut'}
             </div>
           </div>
         )}
@@ -765,28 +888,11 @@ function BillingLinksWidget({ billing, cost, navigate }) {
         )}
       </div>
 
-      {/* Liens rapides */}
+      {/* Liens rapides — contextuels */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {[
-          {
-            label: 'Voir les factures',
-            path: billing.links?.bill_intel || '/bill-intel',
-            icon: '💰',
-          },
-          {
-            label: 'Explorer le contrat',
-            path: billing.links?.contract_radar || '/contrats-radar',
-            icon: '📄',
-          },
-          {
-            label: "Scénarios d'achat",
-            path: billing.links?.purchase || '/achat-energie',
-            icon: '📈',
-          },
-        ].map((link) => (
+        {hasInvoices && (
           <button
-            key={link.path}
-            onClick={() => navigate(link.path)}
+            onClick={() => navigate(billing.links?.bill_intel || '/bill-intel')}
             style={{
               padding: '5px 12px',
               fontSize: 12,
@@ -800,9 +906,43 @@ function BillingLinksWidget({ billing, cost, navigate }) {
               gap: 5,
             }}
           >
-            {link.icon} {link.label} →
+            💰 Voir les factures →
           </button>
-        ))}
+        )}
+        <button
+          onClick={() => navigate(billing.links?.contract_radar || '/contrats-radar')}
+          style={{
+            padding: '5px 12px',
+            fontSize: 12,
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            background: 'white',
+            cursor: 'pointer',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          📄 {hasContract ? 'Explorer le contrat' : 'Rattacher un contrat'} →
+        </button>
+        <button
+          onClick={() => navigate(billing.links?.purchase || '/achat-energie')}
+          style={{
+            padding: '5px 12px',
+            fontSize: 12,
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            background: 'white',
+            cursor: 'pointer',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          📈 Scénarios d&apos;achat →
+        </button>
       </div>
     </div>
   );
@@ -923,12 +1063,19 @@ export default function UsagesDashboardPage() {
         <KpiCard label="Conso totale" value={fmt(summary.total_kwh)} unit="kWh/an" />
         <KpiCard label="Coût total" value={fmt(summary.total_eur)} unit="EUR/an" />
         <KpiCard
-          label="Readiness"
-          value={summary.readiness_score}
-          unit="/100"
-          sub={summary.readiness_level}
+          label="Sous-compteurs"
+          value={summary.sub_meters_count}
+          sub={
+            summary.sub_meters_count > 0
+              ? `${summary.metering_coverage_pct ?? 0}% couverture`
+              : 'Non installés'
+          }
         />
-        <KpiCard label="Sous-compteurs" value={summary.sub_meters_count} />
+        <KpiCard
+          label="UES mesurés"
+          value={`${summary.measured_ues ?? 0}/${summary.ues_count ?? 0}`}
+          sub={summary.estimated_ues > 0 ? `${summary.estimated_ues} estimé(s)` : 'Tous mesurés'}
+        />
         <KpiCard label="Dérives actives" value={summary.active_drifts_count} />
         <KpiCard
           label="Prix réf."
