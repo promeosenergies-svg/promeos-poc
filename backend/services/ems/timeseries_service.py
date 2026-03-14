@@ -367,6 +367,13 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
             or 0
         )
         if cnt >= 48:
+            if freq == FrequencyType.MIN_15:
+                hours_span = max(1, (date_to - date_from).total_seconds() / 3600)
+                n_meters = len(meter_ids) if isinstance(meter_ids, list) else 1
+                expected = hours_span * 4 * n_meters
+                coverage = cnt / expected if expected > 0 else 0
+                if coverage < 0.8:  # Enedis pattern: 3/4 = 0.75 → incomplete
+                    continue  # Fall back to next frequency (e.g. HOURLY)
             return [freq]
     return compatible  # fallback: no single freq has enough data
 

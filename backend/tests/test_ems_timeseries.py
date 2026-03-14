@@ -328,3 +328,66 @@ class TestTimeseriesContract:
         )
         assert r.status_code == 200
         assert r.json()["granularity"] == "daily"
+
+    def test_hourly_aggregation_with_enedis_mixed_frequencies(self, env):
+        """Enedis pattern: HOURLY at :00 (full hour) + MIN_15 at :15/:30/:45 only.
+
+        Each hourly bucket must equal the HOURLY reading (10.0 kWh), not the
+        sum of the 3 MIN_15 readings (7.5 kWh).  Regression test for #97.
+        """
+        client, db = env
+        site = _seed_site(db, "Enedis Site")
+        meter = _seed_meter(db, site.id, "PRM-ENEDIS")
+
+        readings = []
+        start = datetime(2025, 1, 1)
+        days = 3
+        for d in range(days):
+            for h in range(24):
+                ts_base = start + timedelta(days=d, hours=h)
+                # HOURLY reading at :00 — represents the full hour (10 kWh)
+                readings.append(
+                    MeterReading(
+                        meter_id=meter.id,
+                        timestamp=ts_base,
+                        frequency=FrequencyType.HOURLY,
+                        value_kwh=10.0,
+                        quality_score=0.95,
+                        is_estimated=False,
+                    )
+                )
+                # MIN_15 readings at :15, :30, :45 only (2.5 kWh each)
+                for minute in (15, 30, 45):
+                    readings.append(
+                        MeterReading(
+                            meter_id=meter.id,
+                            timestamp=ts_base + timedelta(minutes=minute),
+                            frequency=FrequencyType.MIN_15,
+                            value_kwh=2.5,
+                            quality_score=0.95,
+                            is_estimated=False,
+                        )
+                    )
+        db.bulk_save_objects(readings)
+        db.flush()
+
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": str(site.id),
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-04",
+                "granularity": "hourly",
+                "mode": "aggregate",
+                "metric": "kwh",
+            },
+        )
+        assert r.status_code == 200
+        data = r.json()
+        series = data["series"]
+        assert len(series) == 1
+        # Each hourly bucket should be 10.0 kWh (HOURLY reading), not 7.5 (3×MIN_15)
+        for pt in series[0]["data"]:
+            assert pt["v"] == pytest.approx(10.0, abs=0.1), (
+                f"Bucket {pt['t']}: expected 10.0 kWh, got {pt['v']} (Enedis mixed-frequency underestimate bug #97)"
+            )
