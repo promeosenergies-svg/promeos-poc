@@ -146,6 +146,11 @@ def query_timeseries(
             "meta": _meta(granularity, 0, 0, date_from, date_to, metric, series=[]),
         }
 
+    # Exclude sub-meters whose parent is already in the list to avoid double-counting.
+    # A parent meter's reading includes its sub-meters' consumption.
+    all_ids = {m.id for m in meters}
+    meters = [m for m in meters if m.parent_meter_id is None or m.parent_meter_id not in all_ids]
+
     meter_id_list = [m.id for m in meters]
 
     # 2. Build bucket expression
@@ -354,6 +359,10 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
     meter_filter = (
         MeterReading.meter_id.in_(meter_ids) if isinstance(meter_ids, list) else MeterReading.meter_id == meter_ids
     )
+    hours_span = max(1, (date_to - date_from).total_seconds() / 3600)
+    n_meters = len(meter_ids) if isinstance(meter_ids, list) else 1
+    best_fallback = None
+    best_fallback_cnt = 0
     for freq in compatible:  # ordered finest → coarsest
         cnt = (
             db.query(func.count(MeterReading.id))
@@ -366,16 +375,22 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
             .scalar()
             or 0
         )
+        # Skip MIN_15 with incomplete coverage (Enedis pattern: 3/4 = 0.75)
+        if freq == FrequencyType.MIN_15 and cnt > 0:
+            expected = hours_span * 4 * n_meters
+            coverage = cnt / expected if expected > 0 else 0
+            if coverage < 0.8:
+                continue
+        if cnt > best_fallback_cnt:
+            best_fallback = freq
+            best_fallback_cnt = cnt
         if cnt >= 48:
-            if freq == FrequencyType.MIN_15:
-                hours_span = max(1, (date_to - date_from).total_seconds() / 3600)
-                n_meters = len(meter_ids) if isinstance(meter_ids, list) else 1
-                expected = hours_span * 4 * n_meters
-                coverage = cnt / expected if expected > 0 else 0
-                if coverage < 0.8:  # Enedis pattern: 3/4 = 0.75 → incomplete
-                    continue  # Fall back to next frequency (e.g. HOURLY)
             return [freq]
-    return compatible  # fallback: no single freq has enough data
+    # Fallback: pick the single frequency with the most readings to avoid
+    # double-counting when overlapping frequencies exist (e.g. MIN_15 + HOURLY).
+    if best_fallback is not None:
+        return [best_fallback]
+    return compatible
 
 
 def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str = "daily"):
