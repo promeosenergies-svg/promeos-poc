@@ -320,7 +320,7 @@ describe('AP · QW2 ConsoKpiHeader', () => {
     expect(code).toMatch(/EUR\/MWh/);
     expect(code).toMatch(/CO2e/);
     expect(code).toMatch(/Pic kW.*P95/);
-    expect(code).toMatch(/Conso\. nocturne/);
+    expect(code).toMatch(/Conso\. Nuit/);
   });
 
   it('ConsoKpiHeader accepts tunnel + hphc + progression props', () => {
