@@ -631,8 +631,8 @@ export default function StickyFilterBar({
           </span>
         )}
 
-        {/* YoY comparison toggle (Step 10 — F1) — single-site only, not portfolio */}
-        {setCompareYoy && effectiveSiteIds.length === 1 && !isPortfolioMode && (
+        {/* YoY comparison toggle (Step 10 — F1) — not portfolio */}
+        {setCompareYoy && !isPortfolioMode && (
           <button
             onClick={() => setCompareYoy(!compareYoy)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors duration-100 ${
