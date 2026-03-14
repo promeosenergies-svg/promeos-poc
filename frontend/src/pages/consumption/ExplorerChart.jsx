@@ -182,7 +182,7 @@ export default function ExplorerChart({
 
   // Safe Y domain with padding to prevent flat-line chart (when all values equal)
   // Include total_prev values so the N-1 line is not clipped outside the visible area
-  const hasPrev = stableData.length > 0 && stableData[0]?.total_prev != null;
+  const hasPrev = stableData.some((p) => p.total_prev != null);
   const ys = validPoints.map((p) => p[valueKey]).filter(Number.isFinite);
   if (hasPrev) {
     for (const p of stableData) {
@@ -250,7 +250,7 @@ export default function ExplorerChart({
           )}
 
           {/* YoY _prev series — dashed overlay (Step 10 — F1) */}
-          {stableData.length > 0 && stableData[0]?.total_prev != null && mode === 'agrege' && (
+          {hasPrev && mode === 'agrege' && (
             <Line
               type="monotone"
               dataKey="total_prev"
