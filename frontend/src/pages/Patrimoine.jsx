@@ -51,6 +51,7 @@ import SiteCreationWizard from '../components/SiteCreationWizard';
 import QuickCreateSite from '../components/QuickCreateSite';
 import DrawerEditSite from '../components/DrawerEditSite';
 import DrawerAddCompteur from '../components/DrawerAddCompteur';
+import DrawerAddContrat from '../components/DrawerAddContrat';
 import SitesMap from '../components/patrimoine/SitesMap';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -1849,10 +1850,10 @@ const COMPLETUDE_ACTIONS = [
   },
   {
     key: 'contrat_actif',
-    label: 'Associer un contrat energie',
+    label: 'Ajouter un contrat energie',
     badge: 'Achat · Facturation',
     color: 'text-blue-600 bg-blue-50',
-    action: null, // Sprint 2-S3
+    action: 'add_contrat',
   },
   {
     key: 'surface',
@@ -1977,6 +1978,19 @@ function SiteDrawerContent({
           setInlineForm(null);
           setRefreshKey((k) => k + 1);
           setTab('compteurs');
+          onSiteUpdated?.();
+        }}
+      />
+    );
+  }
+  if (inlineForm === 'add_contrat') {
+    return (
+      <DrawerAddContrat
+        siteId={site.id}
+        onBack={() => setInlineForm(null)}
+        onSuccess={() => {
+          setInlineForm(null);
+          setRefreshKey((k) => k + 1);
           onSiteUpdated?.();
         }}
       />
