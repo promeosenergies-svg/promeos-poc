@@ -719,8 +719,8 @@ export default function Patrimoine() {
                 Nouveau site
               </Button>
               <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
-                <Zap size={16} className="mr-2" />
-                Demo
+                <Upload size={16} className="mr-2" />
+                Importer un fichier
               </Button>
             </div>
           }

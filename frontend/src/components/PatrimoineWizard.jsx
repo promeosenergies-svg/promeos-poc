@@ -55,34 +55,20 @@ const MODES = [
   {
     value: 'express',
     icon: Zap,
-    title: 'Express',
-    desc: 'Upload CSV, validation rapide, activation directe.',
+    title: 'Import rapide',
+    desc: 'CSV ou Excel — validation automatique, creation immediate.',
     time: '2 min',
     color: 'text-amber-600 bg-amber-100',
+    recommended: true,
   },
   {
     value: 'import',
     icon: FileSpreadsheet,
-    title: 'Import complet',
-    desc: 'CSV/Excel avec contrôle qualité et corrections.',
+    title: 'Import avec verification',
+    desc: 'Controle qualite, corrections manuelles, puis activation.',
     time: '5 min',
     color: 'text-indigo-600 bg-indigo-100',
-  },
-  {
-    value: 'assiste',
-    icon: ShieldCheck,
-    title: 'Assiste',
-    desc: 'Import depuis factures + enrichissement IA.',
-    time: '10 min',
-    color: 'text-green-600 bg-green-100',
-  },
-  {
-    value: 'demo',
-    icon: Play,
-    title: 'Demo',
-    desc: 'Charger le dataset demo (Collectivite Azur).',
-    time: '10 sec',
-    color: 'text-purple-600 bg-purple-100',
+    recommended: false,
   },
 ];
 
@@ -284,10 +270,6 @@ const PatrimoineWizard = ({ onClose }) => {
   };
 
   const handleNext = () => {
-    if (mode === 'demo' && step === 0) {
-      doDemo();
-      return;
-    }
     if (step === 0) setStep(1);
     else if (step === 1) doUpload();
     else if (step === 2) doValidate();
@@ -407,12 +389,12 @@ const PatrimoineWizard = ({ onClose }) => {
           {step === 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                Choisissez le mode d'import
+                Importer votre patrimoine
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Comment souhaitez-vous alimenter votre patrimoine ?
+                Glissez un fichier CSV ou Excel pour creer vos sites.
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 {MODES.map((m) => {
                   const Icon = m.icon;
                   const active = mode === m.value;
@@ -420,29 +402,36 @@ const PatrimoineWizard = ({ onClose }) => {
                     <button
                       key={m.value}
                       onClick={() => setMode(m.value)}
-                      className={`text-left p-4 border-2 rounded-xl transition ${active ? 'border-indigo-500 bg-indigo-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
+                      className={`w-full text-left p-4 border-2 rounded-xl transition ${active ? 'border-indigo-500 bg-indigo-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}
                     >
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3">
                         <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center ${active ? 'bg-indigo-100' : 'bg-gray-100'}`}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-indigo-100' : 'bg-gray-100'}`}
                         >
                           <Icon
                             size={18}
                             className={active ? 'text-indigo-600' : 'text-gray-400'}
                           />
                         </div>
-                        <div className="flex-1">
-                          <span
-                            className={`font-medium text-sm ${active ? 'text-indigo-700' : 'text-gray-700'}`}
-                          >
-                            {m.title}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`font-medium text-sm ${active ? 'text-indigo-700' : 'text-gray-700'}`}
+                            >
+                              {m.title}
+                            </span>
+                            {m.recommended && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                                Recommande
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{m.desc}</p>
                         </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
                           {m.time}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 pl-12">{m.desc}</p>
                     </button>
                   );
                 })}
