@@ -120,7 +120,7 @@ export default function ScopeSwitcher() {
     (orgId) => {
       setOrg(orgId);
       const o = orgs.find((x) => x.id === orgId);
-      showFeedback(`Organisation : ${o?.nom || orgId}`);
+      showFeedback(`Societe : ${o?.nom || orgId}`);
     },
     [setOrg, orgs, showFeedback]
   );
@@ -133,7 +133,7 @@ export default function ScopeSwitcher() {
         const pf = portefeuilles.find((p) => p.id === pfId);
         showFeedback(`Portefeuille : ${pf?.nom || pfId}`);
       } else {
-        showFeedback('Tous les portefeuilles');
+        showFeedback('Tous les regroupements');
       }
     },
     [setPortefeuille, portefeuilles, showFeedback]
@@ -225,7 +225,7 @@ export default function ScopeSwitcher() {
           >
             {/* Org selector */}
             <div className="px-3 py-1.5">
-              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Organisation</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Societe</p>
               {orgs.map((o) => (
                 <button
                   key={o.id}
@@ -243,14 +243,14 @@ export default function ScopeSwitcher() {
 
             {/* Portefeuille selector */}
             <div className="px-3 py-1.5">
-              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Portefeuille</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Regroupement</p>
               <button
                 onClick={() => handleSetPortefeuille(null)}
                 className={`w-full text-left px-3 py-2 rounded text-sm transition flex items-center gap-2
                 ${!scope.portefeuilleId ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
               >
                 <Briefcase size={14} className="shrink-0" />
-                Tous les portefeuilles
+                Tous les regroupements
               </button>
               {portefeuilles.map((pf) => (
                 <button

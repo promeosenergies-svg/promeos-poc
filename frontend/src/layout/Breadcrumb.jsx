@@ -19,7 +19,7 @@ Object.assign(LABELS, {
   status: 'Statut',
   login: 'Connexion',
   explorer: 'Explorer',
-  portfolio: 'Portefeuille',
+  portfolio: 'Regroupement',
   wizard: 'Assistant',
   tertiaire: 'Tertiaire / OPERAT',
   efa: 'EFA',

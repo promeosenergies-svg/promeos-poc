@@ -88,7 +88,7 @@ const ROW_HEIGHT = 52; // px — fixed row height for virtual scroll
 const OVERSCAN = 10; // extra rows above/below viewport
 
 const USAGE_OPTIONS = [
-  { value: '', label: 'Type de site' },
+  { value: '', label: 'Usage' },
   { value: 'bureau', label: 'Bureau' },
   { value: 'commerce', label: 'Commerce' },
   { value: 'entrepot', label: 'Entrepôt' },
