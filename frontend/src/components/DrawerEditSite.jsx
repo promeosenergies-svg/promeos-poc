@@ -1,14 +1,22 @@
 /**
  * PROMEOS — Sprint 2 : Mini-formulaire enrichissement site (drawer inline)
- * Remplace le contenu du drawer. Champs : societe/SIRET, surface, adresse/GPS.
- * Appelle PATCH /api/patrimoine/sites/{id} puis geocoding si adresse modifiee.
+ * Sections : Societe/etablissement, Surface, Localisation.
+ * Double PATCH : org (nom societe, SIREN) + site (SIRET, NAF, surface, adresse).
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
-import { patrimoineSiteUpdate, geocodeOneSite } from '../services/api';
+import {
+  patrimoineSiteUpdate,
+  geocodeOneSite,
+  crudListOrganisations,
+  crudUpdateOrganisation,
+} from '../services/api';
 
-export default function DrawerEditSite({ site, onBack, onSuccess }) {
+export default function DrawerEditSite({ site, orgId, onBack, onSuccess }) {
+  const [orgData, setOrgData] = useState(null);
   const [form, setForm] = useState({
+    org_nom: '',
+    org_siren: '',
     siret: site.siret || '',
     naf_code: site.naf_code || '',
     surface_m2: site.surface_m2 || '',
@@ -19,6 +27,25 @@ export default function DrawerEditSite({ site, onBack, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  // Charger les donnees de la societe au mount
+  useEffect(() => {
+    if (!orgId) return;
+    crudListOrganisations()
+      .then((res) => {
+        const orgs = res.organisations || res || [];
+        const org = orgs.find((o) => o.id === orgId);
+        if (org) {
+          setOrgData(org);
+          setForm((f) => ({
+            ...f,
+            org_nom: org.nom || '',
+            org_siren: org.siren && org.siren !== '000000000' ? org.siren : '',
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [orgId]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -31,26 +58,41 @@ export default function DrawerEditSite({ site, onBack, onSuccess }) {
     setError(null);
 
     try {
-      // Build payload with only changed fields
-      const payload = {};
-      if (form.siret !== (site.siret || '')) payload.siret = form.siret || null;
-      if (form.naf_code !== (site.naf_code || '')) payload.naf_code = form.naf_code || null;
-      if (String(form.surface_m2) !== String(site.surface_m2 || ''))
-        payload.surface_m2 = form.surface_m2 ? parseFloat(form.surface_m2) : null;
-      if (form.adresse !== (site.adresse || '')) payload.adresse = form.adresse || null;
-      if (form.code_postal !== (site.code_postal || ''))
-        payload.code_postal = form.code_postal || null;
-      if (form.ville !== (site.ville || '')) payload.ville = form.ville || null;
+      // 1. PATCH organisation si nom ou SIREN modifie
+      const orgPayload = {};
+      if (orgData && form.org_nom && form.org_nom !== orgData.nom) {
+        orgPayload.nom = form.org_nom;
+      }
+      if (orgData && form.org_siren && form.org_siren !== (orgData.siren || '')) {
+        orgPayload.siren = form.org_siren;
+      }
+      if (Object.keys(orgPayload).length > 0 && orgId) {
+        await crudUpdateOrganisation(orgId, orgPayload);
+      }
 
-      if (Object.keys(payload).length === 0) {
+      // 2. PATCH site (SIRET, NAF, surface, adresse)
+      const sitePayload = {};
+      if (form.siret !== (site.siret || '')) sitePayload.siret = form.siret || null;
+      if (form.naf_code !== (site.naf_code || '')) sitePayload.naf_code = form.naf_code || null;
+      if (String(form.surface_m2) !== String(site.surface_m2 || ''))
+        sitePayload.surface_m2 = form.surface_m2 ? parseFloat(form.surface_m2) : null;
+      if (form.adresse !== (site.adresse || '')) sitePayload.adresse = form.adresse || null;
+      if (form.code_postal !== (site.code_postal || ''))
+        sitePayload.code_postal = form.code_postal || null;
+      if (form.ville !== (site.ville || '')) sitePayload.ville = form.ville || null;
+
+      if (Object.keys(sitePayload).length > 0) {
+        await patrimoineSiteUpdate(site.id, sitePayload);
+      }
+
+      // Si rien n'a change du tout
+      if (Object.keys(orgPayload).length === 0 && Object.keys(sitePayload).length === 0) {
         onBack();
         return;
       }
 
-      await patrimoineSiteUpdate(site.id, payload);
-
-      // Auto-geocode if address changed
-      if (payload.adresse || payload.code_postal || payload.ville) {
+      // Auto-geocode si adresse modifiee
+      if (sitePayload.adresse || sitePayload.code_postal || sitePayload.ville) {
         try {
           await geocodeOneSite(site.id, true);
         } catch {
@@ -89,12 +131,37 @@ export default function DrawerEditSite({ site, onBack, onSuccess }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Section Etablissement */}
+        {/* Section Societe / Etablissement */}
         <fieldset className="space-y-3">
           <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Etablissement
+            Societe / Etablissement
           </legend>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Nom de la societe
+            </label>
+            <input
+              type="text"
+              value={form.org_nom}
+              onChange={(e) => handleChange('org_nom', e.target.value)}
+              placeholder="Ex : Groupe ACME"
+              className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                SIREN <span className="text-gray-400 font-normal">(optionnel)</span>
+              </label>
+              <input
+                type="text"
+                value={form.org_siren}
+                onChange={(e) => handleChange('org_siren', e.target.value)}
+                placeholder="123456789"
+                maxLength={9}
+                className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">SIRET</label>
               <input
@@ -106,17 +173,19 @@ export default function DrawerEditSite({ site, onBack, onSuccess }) {
                 className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Code NAF</label>
-              <input
-                type="text"
-                value={form.naf_code}
-                onChange={(e) => handleChange('naf_code', e.target.value)}
-                placeholder="69.20Z"
-                maxLength={7}
-                className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Code NAF <span className="text-gray-400 font-normal">(optionnel)</span>
+            </label>
+            <input
+              type="text"
+              value={form.naf_code}
+              onChange={(e) => handleChange('naf_code', e.target.value)}
+              placeholder="69.20Z"
+              maxLength={7}
+              className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
         </fieldset>
 

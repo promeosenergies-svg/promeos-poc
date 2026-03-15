@@ -1957,6 +1957,7 @@ function SiteDrawerContent({
     return (
       <DrawerEditSite
         site={site}
+        orgId={orgId}
         onBack={() => setInlineForm(null)}
         onSuccess={() => {
           setInlineForm(null);
