@@ -1,7 +1,7 @@
 /**
  * PROMEOS — Sprint 1 Patrimoine : Creation rapide de site
- * 1 formulaire, 1 ecran, 5 champs visibles + section optionnelle.
- * Remplace le wizard 7-etapes comme CTA principal.
+ * 1 formulaire, 1 ecran. Obligatoires : nom, usage, adresse complete.
+ * Regle : 1 site = 1 batiment (nom batiment = nom site par defaut).
  */
 import { useState } from 'react';
 import {
@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Settings2,
 } from 'lucide-react';
 import { quickCreateSite } from '../services/api';
 
@@ -29,7 +30,7 @@ const USAGE_OPTIONS = [
   { value: 'magasin', label: 'Magasin' },
 ];
 
-export default function QuickCreateSite({ onClose, onSuccess }) {
+export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
   const [form, setForm] = useState({
     nom: '',
     usage: 'bureau',
@@ -51,68 +52,69 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
     setError(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.nom.trim()) {
-      setError('Le nom du site est obligatoire');
-      return;
-    }
+  // Validation front : nom + adresse complete obligatoires
+  const validate = () => {
+    if (!form.nom.trim()) return 'Le nom du site est obligatoire';
+    if (!form.adresse.trim()) return "L'adresse est obligatoire";
+    if (!form.code_postal.trim()) return 'Le code postal est obligatoire';
+    if (!form.ville.trim()) return 'La ville est obligatoire';
+    return null;
+  };
 
+  const isFormValid =
+    form.nom.trim() && form.adresse.trim() && form.code_postal.trim() && form.ville.trim();
+
+  const doCreate = async (payload) => {
     setLoading(true);
     setError(null);
-    setDuplicate(null);
-
     try {
-      const payload = {
-        nom: form.nom.trim(),
-        usage: form.usage || undefined,
-        adresse: form.adresse || undefined,
-        code_postal: form.code_postal || undefined,
-        ville: form.ville || undefined,
-        surface_m2: form.surface_m2 ? parseFloat(form.surface_m2) : undefined,
-        siret: form.siret || undefined,
-        naf_code: form.naf_code || undefined,
-      };
-
       const result = await quickCreateSite(payload);
-
       if (result.status === 'duplicate_detected') {
         setDuplicate(result);
-        setLoading(false);
         return;
       }
-
       onSuccess?.(result);
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Erreur lors de la creation');
+      setError(err?.response?.data?.detail || 'Erreur lors de la creation du site');
     } finally {
       setLoading(false);
     }
   };
 
-  const forceCreate = async () => {
-    // Retry without code_postal to bypass duplicate check
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const err = validate();
+    if (err) {
+      setError(err);
+      return;
+    }
     setDuplicate(null);
-    const payload = {
+
+    await doCreate({
       nom: form.nom.trim(),
       usage: form.usage || undefined,
-      adresse: form.adresse || undefined,
-      ville: form.ville || undefined,
+      adresse: form.adresse.trim() || undefined,
+      code_postal: form.code_postal.trim() || undefined,
+      ville: form.ville.trim() || undefined,
       surface_m2: form.surface_m2 ? parseFloat(form.surface_m2) : undefined,
       siret: form.siret || undefined,
       naf_code: form.naf_code || undefined,
-    };
-    setLoading(true);
-    try {
-      const result = await quickCreateSite(payload);
-      onSuccess?.(result);
-      onClose();
-    } catch (err) {
-      setError(err?.response?.data?.detail || 'Erreur lors de la creation');
-    } finally {
-      setLoading(false);
-    }
+    });
+  };
+
+  const forceCreate = async () => {
+    setDuplicate(null);
+    // Retry sans code_postal pour bypasser la detection doublon
+    await doCreate({
+      nom: form.nom.trim(),
+      usage: form.usage || undefined,
+      adresse: form.adresse.trim() || undefined,
+      ville: form.ville.trim() || undefined,
+      surface_m2: form.surface_m2 ? parseFloat(form.surface_m2) : undefined,
+      siret: form.siret || undefined,
+      naf_code: form.naf_code || undefined,
+    });
   };
 
   return (
@@ -151,7 +153,9 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
 
           {/* Usage */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usage</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Usage <span className="text-red-500">*</span>
+            </label>
             <select
               value={form.usage}
               onChange={(e) => handleChange('usage', e.target.value)}
@@ -165,9 +169,11 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
             </select>
           </div>
 
-          {/* Adresse row */}
+          {/* Adresse */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Adresse <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={form.adresse}
@@ -180,7 +186,9 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
           {/* CP + Ville */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Code postal <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={form.code_postal}
@@ -191,7 +199,9 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ville</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ville <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={form.ville}
@@ -288,7 +298,22 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">Batiment et obligations auto-generes</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-gray-400">Batiment et obligations auto-generes</p>
+              {onAdvanced && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onAdvanced();
+                  }}
+                  className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600"
+                >
+                  <Settings2 size={12} />
+                  Creation avancee (multi-entites)
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -299,7 +324,7 @@ export default function QuickCreateSite({ onClose, onSuccess }) {
               </button>
               <button
                 type="submit"
-                disabled={loading || !form.nom.trim()}
+                disabled={loading || !isFormValid}
                 className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {loading ? (

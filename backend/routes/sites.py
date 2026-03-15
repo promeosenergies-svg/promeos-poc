@@ -87,19 +87,28 @@ def quick_create_site(
         pass
 
     if org_id is None:
-        # Aucune org → auto-créer "Mon entreprise"
-        result = create_organisation_full(
-            db=db,
-            org_nom="Mon entreprise",
-            org_siren="000000000",
-            org_type_client="tertiaire",
-            portefeuilles_data=[{"nom": "Principal"}],
+        # Chercher une org existante (cas : quick-create précédent sans scope)
+        existing_org = (
+            db.query(Organisation)
+            .filter(Organisation.actif == True, not_deleted(Organisation))  # noqa: E712
+            .first()
         )
-        org_id = result["organisation_id"]
-        auto_created["organisation"] = result["organisation_id"]
-        auto_created["entite_juridique"] = result["entite_juridique_id"]
-        auto_created["portefeuille"] = result["default_portefeuille_id"]
-        db.flush()
+        if existing_org:
+            org_id = existing_org.id
+        else:
+            # Aucune org → auto-créer "Mon entreprise"
+            result = create_organisation_full(
+                db=db,
+                org_nom="Mon entreprise",
+                org_siren="000000000",
+                org_type_client="tertiaire",
+                portefeuilles_data=[{"nom": "Principal"}],
+            )
+            org_id = result["organisation_id"]
+            auto_created["organisation"] = result["organisation_id"]
+            auto_created["entite_juridique"] = result["entite_juridique_id"]
+            auto_created["portefeuille"] = result["default_portefeuille_id"]
+            db.flush()
 
     # ── 2. Trouver le portefeuille ─────────────────────────────────────
     pf = (

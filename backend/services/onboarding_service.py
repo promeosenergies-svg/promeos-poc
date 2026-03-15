@@ -79,12 +79,15 @@ def is_tertiaire(type_site: TypeSite) -> bool:
 # ========================================
 
 
-def create_batiment_for_site(db: Session, site: Site) -> Batiment:
-    """Cree un batiment principal pour un site."""
+def create_batiment_for_site(db: Session, site: Site, batiment_nom: str = None) -> Batiment:
+    """Cree un batiment principal pour un site.
+
+    Par defaut le batiment porte le meme nom que le site (regle 1 site = 1 batiment).
+    """
     cvc_kw = estimate_cvc_power(site.type, site.surface_m2 or 1000)
     bat = Batiment(
         site_id=site.id,
-        nom="Batiment principal",
+        nom=batiment_nom or site.nom,
         surface_m2=site.surface_m2 or 1000,
         cvc_power_kw=cvc_kw,
     )

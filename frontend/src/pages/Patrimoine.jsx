@@ -703,10 +703,16 @@ export default function Patrimoine() {
           ctaLabel="Importer mon patrimoine"
           onCta={() => setShowWizard(true)}
           actions={
-            <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
-              <Zap size={16} className="mr-2" />
-              Demo
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" size="lg" onClick={() => setShowQuickCreate(true)}>
+                <Plus size={16} className="mr-2" />
+                Nouveau site
+              </Button>
+              <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
+                <Zap size={16} className="mr-2" />
+                Demo
+              </Button>
+            </div>
           }
         />
       ) : (
@@ -1576,6 +1582,7 @@ export default function Patrimoine() {
         <QuickCreateSite
           onClose={() => setShowQuickCreate(false)}
           onSuccess={() => window.location.reload()}
+          onAdvanced={() => setShowSiteWizard(true)}
         />
       )}
       {showSiteWizard && (
