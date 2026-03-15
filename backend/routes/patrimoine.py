@@ -1278,8 +1278,8 @@ def patrimoine_kpis(
     )
     nb_contrats = contracts_q.count()
     nb_contrats_actifs = contracts_q.filter(
-        EnergyContract.end_date >= today,
-        EnergyContract.start_date <= today,
+        (EnergyContract.end_date >= today) | (EnergyContract.end_date.is_(None)),
+        (EnergyContract.start_date <= today) | (EnergyContract.start_date.is_(None)),
     ).count()
     nb_contrats_expiring = contracts_q.filter(
         EnergyContract.end_date >= today,
@@ -2548,13 +2548,13 @@ def _compute_site_completeness(db: Session, site, site_ids: list) -> dict:
         .count()
     )
     checks["delivery_point"] = nb_dp > 0
-    # 6. Contrat energie actif
+    # 6. Contrat energie actif (end_date NULL = contrat en cours)
     today = date.today()
     nb_ct = (
         db.query(EnergyContract)
         .filter(
             EnergyContract.site_id == site.id,
-            EnergyContract.end_date >= today,
+            (EnergyContract.end_date >= today) | (EnergyContract.end_date.is_(None)),
         )
         .count()
     )
