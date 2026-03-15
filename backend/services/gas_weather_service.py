@@ -59,6 +59,8 @@ def compute_weather_normalized(
     db: Session,
     site_id: int,
     days: int = 90,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Gas weather normalization using DJU model.
@@ -70,8 +72,12 @@ def compute_weather_normalized(
         alerts: [{ type, severity, message }]
         confidence: str
     """
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
-    start_date = end_date - timedelta(days=days)
+    if start_date and end_date:
+        start_date = start_date.replace(tzinfo=None) if start_date.tzinfo else start_date
+        end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+    else:
+        end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+        start_date = end_date - timedelta(days=days)
 
     meters = (
         db.query(Meter)

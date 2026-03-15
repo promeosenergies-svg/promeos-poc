@@ -319,6 +319,8 @@ def compute_hphc_breakdown_v2(
     days: int = 30,
     calendar_id: Optional[int] = None,
     simulate: bool = False,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     HP/HC V2: breakdown + heatmap + opportunity + optional simulation.
@@ -361,8 +363,12 @@ def compute_hphc_breakdown_v2(
             price_hp, price_hc = DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
 
     # Fetch readings
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
-    start_date = end_date - timedelta(days=days)
+    if start_date and end_date:
+        start_date = start_date.replace(tzinfo=None) if start_date.tzinfo else start_date
+        end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+    else:
+        end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+        start_date = end_date - timedelta(days=days)
 
     meters = (
         db.query(Meter)
@@ -461,7 +467,9 @@ def compute_hphc_breakdown_v2(
 
     # Simulation: compare with default schedule if calendar_id was used
     if simulate and calendar_id:
-        base = compute_hphc_breakdown_v2(db, site_id, days=days, calendar_id=None, simulate=False)
+        base = compute_hphc_breakdown_v2(
+            db, site_id, days=days, calendar_id=None, simulate=False, start_date=start_date, end_date=end_date
+        )
         result["simulation"] = {
             "base_calendar": base.get("calendar_name", "Defaut"),
             "base_cost_eur": base.get("total_cost_eur", 0),

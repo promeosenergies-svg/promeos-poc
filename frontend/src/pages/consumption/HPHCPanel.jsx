@@ -12,7 +12,14 @@ import HeatmapChart from './HeatmapChart';
 import { fmtKwh, fmtEur } from '../../utils/format';
 import { CONFIDENCE_BADGE } from './constants';
 
-export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
+export default function HPHCPanel({
+  siteId,
+  days,
+  toast,
+  initialBreakdown,
+  startDate = null,
+  endDate = null,
+}) {
   const [breakdown, setBreakdown] = useState(initialBreakdown || null);
   const [schedule, setSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +37,9 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
     try {
       // Only fetch breakdown if not provided by motor; always fetch schedule
       const [bd, s] = await Promise.all([
-        initialBreakdown ? Promise.resolve(initialBreakdown) : getHPHCBreakdownV2(siteId, days),
+        initialBreakdown
+          ? Promise.resolve(initialBreakdown)
+          : getHPHCBreakdownV2(siteId, days, null, false, { startDate, endDate }),
         getActiveTOUSchedule(siteId),
       ]);
       setBreakdown(bd);
@@ -41,7 +50,7 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
     } finally {
       setLoading(false);
     }
-  }, [siteId, days, initialBreakdown, toast]);
+  }, [siteId, days, initialBreakdown, toast, startDate, endDate]);
 
   useEffect(() => {
     load();

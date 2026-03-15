@@ -198,6 +198,8 @@ def compute_tunnel_v2(
     interval_minutes: int = 60,
     energy_type: str = "electricity",
     mode: str = "energy",
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Tunnel V2: supports both energy (kWh) and power (kW) modes.
@@ -207,8 +209,12 @@ def compute_tunnel_v2(
 
     Returns same structure as V1 plus: mode, unit, reference_band_method, sample_size.
     """
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
-    start_date = end_date - timedelta(days=days)
+    if start_date and end_date:
+        start_date = start_date.replace(tzinfo=None) if start_date.tzinfo else start_date
+        end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+    else:
+        end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+        start_date = end_date - timedelta(days=days)
 
     meters = (
         db.query(Meter)

@@ -24,16 +24,22 @@ import {
  * @param {string[]} opts.initialSiteIds  — initial site IDs to load
  * @param {string}   opts.initialEnergy   — 'electricity' | 'gas'
  * @param {number}   opts.initialDays     — period in days
+ * @param {string|null} opts.initialStartDate — custom start date (ISO string)
+ * @param {string|null} opts.initialEndDate   — custom end date (ISO string)
  */
 export default function useExplorerMotor({
   initialSiteIds = [],
   initialEnergy = 'electricity',
   initialDays = 90,
+  initialStartDate = null,
+  initialEndDate = null,
 } = {}) {
   // ── Core filter state ──────────────────────────────────────────────────
   const [siteIds, setSiteIds] = useState(initialSiteIds);
   const [energyType, setEnergyType] = useState(initialEnergy);
   const [days, setDays] = useState(initialDays);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [mode, setMode] = useState(MODES.AGREGE);
   const [unit, setUnit] = useState(UNITS.KWH);
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
@@ -73,12 +79,12 @@ export default function useExplorerMotor({
           const [avail, tunnel, progression, targets, hphc, gas, weather] =
             await Promise.allSettled([
               getConsumptionAvailability(sid, energyType),
-              getConsumptionTunnelV2(sid, days, energyType, 'energy'),
+              getConsumptionTunnelV2(sid, days, energyType, 'energy', { startDate, endDate }),
               getTargetsProgressionV2(sid, energyType, year),
               getConsumptionTargets(sid, energyType, year),
-              getHPHCBreakdownV2(sid, days),
-              getGasSummary(sid, days),
-              getGasWeatherNormalized(sid, days).catch(() => null),
+              getHPHCBreakdownV2(sid, days, null, false, { startDate, endDate }),
+              getGasSummary(sid, days, { startDate, endDate }),
+              getGasWeatherNormalized(sid, days, { startDate, endDate }).catch(() => null),
             ]);
           return {
             siteId: sid,
@@ -128,7 +134,7 @@ export default function useExplorerMotor({
     } finally {
       if (reqId === requestIdRef.current) setLoading(false);
     }
-  }, [siteIds, energyType, days]);
+  }, [siteIds, energyType, days, startDate, endDate]);
 
   useEffect(() => {
     fetchAll();
@@ -164,11 +170,13 @@ export default function useExplorerMotor({
 
   return {
     // State (controlled by FilterBar / URL hook)
-    state: { siteIds, energyType, days, mode, unit, layers },
+    state: { siteIds, energyType, days, startDate, endDate, mode, unit, layers },
     // Setters
     setSiteIds,
     setEnergyType,
     setDays,
+    setStartDate,
+    setEndDate,
     setMode,
     setUnit,
     toggleLayer,
