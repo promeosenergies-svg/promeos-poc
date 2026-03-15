@@ -59,16 +59,15 @@ def suggest_granularity(date_from: datetime, date_to: datetime) -> str:
     """Auto-suggest granularity based on date range span.
 
     Thresholds chosen so estimated points stay under GRANULARITY_MAX_POINTS:
+      15min  → ≤3 days    (3×96   = 288 pts)
       hourly → ≤90 days   (90×24  = 2160 pts)
       daily  → ≤4000 days (4000 pts < 5000 cap)
       monthly→ >4000 days
-
-    Note: 15min is not auto-suggested because Enedis meters only publish
-    MIN_15 at :15/:30/:45 (no :00 slot), making the chart misleadingly gappy.
-    Users can still select 15min manually.
     """
     span_days = (date_to - date_from).days
-    if span_days <= 90:
+    if span_days <= 3:
+        return "15min"
+    elif span_days <= 90:
         return "hourly"
     elif span_days <= 4000:
         return "daily"
