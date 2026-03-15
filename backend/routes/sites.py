@@ -43,6 +43,164 @@ class SiteCreateRequest(BaseModel):
     surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
 
 
+class QuickCreateRequest(BaseModel):
+    """Création rapide de site — 2 champs obligatoires, tout le reste auto-généré."""
+
+    nom: str = Field(..., min_length=1, max_length=300, description="Nom du site")
+    usage: Optional[str] = Field(None, max_length=50, description="Usage (bureau, commerce, etc.)")
+    adresse: Optional[str] = Field(None, max_length=500)
+    code_postal: Optional[str] = Field(None, max_length=10)
+    ville: Optional[str] = Field(None, max_length=200)
+    surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
+    siret: Optional[str] = Field(None, max_length=14)
+    naf_code: Optional[str] = Field(None, max_length=10)
+
+
+@router.post("/quick-create", status_code=201)
+def quick_create_site(
+    body: QuickCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Création rapide d'un site B2B France.
+
+    Auto-crée la hiérarchie (Société + Entité juridique + Portefeuille)
+    si aucune n'existe. Auto-provisionne bâtiment + obligations + compliance.
+    Détecte les doublons par nom + code postal.
+    """
+    from models import Organisation
+    from services.onboarding_service import (
+        create_organisation_full,
+        create_site_from_data,
+        provision_site,
+    )
+
+    # ── 1. Résoudre ou créer l'organisation ────────────────────────────
+    org_id = None
+    auto_created = {}
+
+    # Essayer de résoudre l'org depuis le scope (header X-Org-Id)
+    try:
+        org_id = resolve_org_id(request, auth, db)
+    except Exception:
+        pass
+
+    if org_id is None:
+        # Aucune org → auto-créer "Mon entreprise"
+        result = create_organisation_full(
+            db=db,
+            org_nom="Mon entreprise",
+            org_siren="000000000",
+            org_type_client="tertiaire",
+            portefeuilles_data=[{"nom": "Principal"}],
+        )
+        org_id = result["organisation_id"]
+        auto_created["organisation"] = result["organisation_id"]
+        auto_created["entite_juridique"] = result["entite_juridique_id"]
+        auto_created["portefeuille"] = result["default_portefeuille_id"]
+        db.flush()
+
+    # ── 2. Trouver le portefeuille ─────────────────────────────────────
+    pf = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Portefeuille))
+        .first()
+    )
+    if not pf:
+        # Org existe mais pas de PF → en créer un
+        ej = (
+            db.query(EntiteJuridique)
+            .filter(EntiteJuridique.organisation_id == org_id, not_deleted(EntiteJuridique))
+            .first()
+        )
+        if not ej:
+            org = db.query(Organisation).filter(Organisation.id == org_id).first()
+            ej = EntiteJuridique(
+                organisation_id=org_id,
+                nom=org.nom if org else "Entité principale",
+                siren=org.siren if org and org.siren else "000000000",
+            )
+            db.add(ej)
+            db.flush()
+            auto_created["entite_juridique"] = ej.id
+        pf = Portefeuille(entite_juridique_id=ej.id, nom="Principal")
+        db.add(pf)
+        db.flush()
+        auto_created["portefeuille"] = pf.id
+
+    # ── 3. Anti-doublons (nom + code_postal) ───────────────────────────
+    if body.code_postal:
+        existing = (
+            db.query(Site)
+            .filter(
+                Site.nom == body.nom,
+                Site.code_postal == body.code_postal,
+                not_deleted(Site),
+            )
+            .first()
+        )
+        if existing:
+            return {
+                "status": "duplicate_detected",
+                "existing_site": {
+                    "id": existing.id,
+                    "nom": existing.nom,
+                    "ville": existing.ville,
+                    "code_postal": existing.code_postal,
+                },
+                "message": f'Un site "{existing.nom}" existe déjà à {existing.ville or existing.code_postal}',
+            }
+
+    # ── 4. Créer le site + auto-provision ──────────────────────────────
+    site = create_site_from_data(
+        db=db,
+        portefeuille_id=pf.id,
+        nom=body.nom,
+        type_site=body.usage,
+        naf_code=body.naf_code,
+        adresse=body.adresse,
+        code_postal=body.code_postal,
+        ville=body.ville,
+        surface_m2=body.surface_m2,
+    )
+    if body.siret:
+        site.siret = body.siret
+    site.data_source = "manual"
+
+    prov = provision_site(db, site)
+
+    # Auto-evaluate compliance
+    from services.compliance_rules import evaluate_site as eval_rules
+
+    findings = eval_rules(db, site.id)
+
+    db.commit()
+
+    return {
+        "status": "created",
+        "site": {
+            "id": site.id,
+            "nom": site.nom,
+            "usage": site.type.value if site.type else None,
+            "adresse": site.adresse,
+            "code_postal": site.code_postal,
+            "ville": site.ville,
+            "surface_m2": site.surface_m2,
+            "actif": site.actif,
+        },
+        "auto_provisioned": {
+            "batiment_id": prov.get("batiment_id"),
+            "cvc_power_kw": prov.get("cvc_power_kw"),
+            "obligations": prov.get("obligations", 0),
+            "delivery_points": prov.get("delivery_points_created", 0),
+            "findings": len(findings),
+        },
+        "auto_created": auto_created,
+    }
+
+
 @router.post("")
 def create_site(
     req: SiteCreateRequest,

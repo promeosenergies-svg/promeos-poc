@@ -582,6 +582,7 @@ export const seedDemo = () => api.post('/demo/seed').then((r) => r.data);
 // ========================================
 
 export const createSite = (data) => api.post('/sites', data).then((r) => r.data);
+export const quickCreateSite = (data) => api.post('/sites/quick-create', data).then((r) => r.data);
 export const createCompteur = (data) => api.post('/compteurs', data).then((r) => r.data);
 
 // ========================================

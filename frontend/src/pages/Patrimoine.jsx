@@ -41,13 +41,14 @@ import {
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
-// useToast retiré — toast n'est plus utilisé après refacto "Voir anomalies"
+import { useToast } from '../ui';
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
+import QuickCreateSite from '../components/QuickCreateSite';
 import SitesMap from '../components/patrimoine/SitesMap';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -166,6 +167,7 @@ export default function Patrimoine() {
   const { openActionDrawer } = useActionDrawer();
   const [showWizard, setShowWizard] = useState(false);
   const [showSiteWizard, setShowSiteWizard] = useState(sp.get('wizard') === 'open');
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
   const [viewMode, setViewMode] = useState('table');
   const [drawerSite, setDrawerSite] = useState(null);
@@ -681,9 +683,9 @@ export default function Patrimoine() {
               Action
             </Button>
           )}
-          <Button size="sm" variant="secondary" onClick={() => setShowSiteWizard(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setShowQuickCreate(true)}>
             <Plus size={14} className="mr-1" />
-            Ajouter un site
+            Nouveau site
           </Button>
           <Button size="sm" onClick={() => setShowWizard(true)}>
             <Upload size={14} className="mr-1" />
@@ -1570,6 +1572,12 @@ export default function Patrimoine() {
 
       {/* Action creation handled by ActionDrawerContext */}
       {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
+      {showQuickCreate && (
+        <QuickCreateSite
+          onClose={() => setShowQuickCreate(false)}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
       {showSiteWizard && (
         <SiteCreationWizard
           onClose={() => setShowSiteWizard(false)}
@@ -1615,12 +1623,18 @@ function SiteMetersTab({ siteId, count: _count }) {
   const [addingTo, setAddingTo] = useState(null);
   const [newName, setNewName] = useState('');
   const [breakdown, setBreakdown] = useState({});
+  const [metersError, setMetersError] = useState(null);
+  const toast = useToast();
 
   const reload = useCallback(() => {
     if (siteId) {
+      setMetersError(null);
       getSiteMetersTree(siteId)
         .then((data) => setMeters(data.meters || []))
-        .catch(() => setMeters([]));
+        .catch(() => {
+          setMeters([]);
+          setMetersError('Impossible de charger les compteurs.');
+        });
     }
   }, [siteId]);
 
@@ -1636,9 +1650,10 @@ function SiteMetersTab({ siteId, count: _count }) {
       await createSubMeter(parentId, { name: newName.trim() });
       setNewName('');
       setAddingTo(null);
+      toast('Sous-compteur ajouté', 'success');
       reload();
     } catch {
-      /* silently fail */
+      toast('Échec de l\u2019ajout du sous-compteur', 'error');
     }
   };
 
@@ -1648,12 +1663,25 @@ function SiteMetersTab({ siteId, count: _count }) {
       const data = await getMeterBreakdown(meterId);
       setBreakdown((prev) => ({ ...prev, [meterId]: data }));
     } catch {
-      /* silently fail */
+      setBreakdown((prev) => ({ ...prev, [meterId]: { error: true } }));
+      toast('Répartition indisponible', 'warning');
     }
   };
 
   if (meters === null) {
     return <p className="text-sm text-gray-400 animate-pulse py-4">Chargement des compteurs…</p>;
+  }
+
+  if (metersError) {
+    return (
+      <div className="text-center py-6 text-gray-400">
+        <AlertTriangle size={24} className="mx-auto mb-2 text-amber-400" />
+        <p className="text-sm font-medium text-gray-600">{metersError}</p>
+        <button onClick={reload} className="mt-2 text-xs text-blue-600 hover:underline">
+          Réessayer
+        </button>
+      </div>
+    );
   }
 
   if (meters.length === 0) {
