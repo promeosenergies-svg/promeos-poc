@@ -80,7 +80,7 @@ import {
 } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
 import DataQualityBadge from '../components/DataQualityBadge';
-import { getDataQualityPortfolio } from '../services/api';
+import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
@@ -1834,6 +1834,84 @@ const DRAWER_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
+// ── Completude actionnable ────────────────────────────────────────────────
+const COMPLETUDE_ACTIONS = [
+  {
+    key: 'delivery_point',
+    label: 'Ajouter un point de livraison (PRM/PCE)',
+    badge: 'Facturation · Achat',
+    color: 'text-violet-600 bg-violet-50',
+  },
+  {
+    key: 'contrat_actif',
+    label: 'Associer un contrat energie',
+    badge: 'Achat · Facturation',
+    color: 'text-blue-600 bg-blue-50',
+  },
+  {
+    key: 'surface',
+    label: 'Renseigner la surface du site',
+    badge: 'Conformite',
+    color: 'text-amber-600 bg-amber-50',
+  },
+  {
+    key: 'siret',
+    label: 'Renseigner le SIRET',
+    badge: 'OPERAT',
+    color: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    key: 'coordonnees',
+    label: 'Localiser le site (GPS)',
+    badge: 'Cartographie',
+    color: 'text-cyan-600 bg-cyan-50',
+  },
+];
+
+function SiteCompletude({ siteId }) {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    getSiteCompleteness(siteId)
+      .then(setData)
+      .catch(() => {});
+  }, [siteId]);
+
+  if (!data || data.score >= 80) return null;
+
+  const actions = COMPLETUDE_ACTIONS.filter((a) => data.missing.includes(a.key));
+  if (actions.length === 0) return null;
+
+  const pct = data.score;
+  return (
+    <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-800">Completude du site</span>
+        <span className="text-xs font-semibold text-blue-700">
+          {data.filled}/{data.total}
+        </span>
+      </div>
+      {/* Progress bar */}
+      <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-blue-600 rounded-full transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {/* Action list */}
+      <ul className="space-y-1.5">
+        {actions.map((a) => (
+          <li key={a.key} className="flex items-center justify-between text-sm">
+            <span className="text-gray-700">{a.label}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${a.color}`}>
+              {a.badge}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SiteDrawerContent({
   site,
   navigate,
@@ -1882,6 +1960,9 @@ function SiteDrawerContent({
       {/* Tab: Resume */}
       {tab === 'resume' && (
         <div className="space-y-4">
+          {/* Completude actionnable */}
+          <SiteCompletude siteId={site.id} />
+
           {/* Conformite block */}
           <DrawerSection title="Conformité">
             <DrawerRow label="Statut">
