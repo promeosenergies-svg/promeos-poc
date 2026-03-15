@@ -356,15 +356,25 @@ class TestUsageBreakdown:
         )
 
     def test_usage_has_cvc(self, seeded_db):
-        """Most batiments should have a CVC usage."""
+        """Most batiments should have a thermal usage (CVC: chauffage/clim/ventilation)."""
         db, _ = seeded_db
         batiments = db.query(Batiment).all()
+        thermal_types = [TypeUsage.CHAUFFAGE, TypeUsage.CLIMATISATION, TypeUsage.VENTILATION, TypeUsage.CVC]
         bats_with_cvc = 0
         for bat in batiments:
-            cvc = db.query(Usage).filter_by(batiment_id=bat.id, type=TypeUsage.CVC).first()
+            cvc = (
+                db.query(Usage)
+                .filter(
+                    Usage.batiment_id == bat.id,
+                    Usage.type.in_(thermal_types),
+                )
+                .first()
+            )
             if cvc is not None:
                 bats_with_cvc += 1
-        assert bats_with_cvc >= len(batiments) * 0.6, f"Only {bats_with_cvc}/{len(batiments)} batiments have CVC usage"
+        assert bats_with_cvc >= len(batiments) * 0.6, (
+            f"Only {bats_with_cvc}/{len(batiments)} batiments have thermal (CVC) usage"
+        )
 
     def test_usage_types_diverse(self, seeded_db):
         """Should have at least 3 different usage types across all batiments."""
