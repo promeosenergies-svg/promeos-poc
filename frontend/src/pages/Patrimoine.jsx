@@ -50,6 +50,7 @@ import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
 import QuickCreateSite from '../components/QuickCreateSite';
 import DrawerEditSite from '../components/DrawerEditSite';
+import DrawerAddCompteur from '../components/DrawerAddCompteur';
 import SitesMap from '../components/patrimoine/SitesMap';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -1840,11 +1841,11 @@ const DRAWER_TABS = [
 const COMPLETUDE_ACTIONS = [
   {
     key: 'delivery_point',
-    label: 'Ajouter un point de livraison (PRM/PCE)',
+    label: 'Ajouter un compteur (PRM/PCE)',
     badge: 'Facturation · Achat',
     color: 'text-violet-600 bg-violet-50',
-    action: null, // pas cliquable — tooltip explicatif
-    hint: 'Ajoutez un compteur avec PRM/PCE pour creer le PDL automatiquement',
+    action: 'add_compteur',
+    hint: 'Le point de livraison sera cree automatiquement',
   },
   {
     key: 'contrat_actif',
@@ -1967,6 +1968,20 @@ function SiteDrawerContent({
       />
     );
   }
+  if (inlineForm === 'add_compteur') {
+    return (
+      <DrawerAddCompteur
+        siteId={site.id}
+        onBack={() => setInlineForm(null)}
+        onSuccess={() => {
+          setInlineForm(null);
+          setRefreshKey((k) => k + 1);
+          setTab('compteurs');
+          onSiteUpdated?.();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -2068,7 +2083,18 @@ function SiteDrawerContent({
       )}
 
       {/* Tab: Compteurs */}
-      {tab === 'compteurs' && <SiteMetersTab siteId={site.id} count={site.nb_compteurs} />}
+      {tab === 'compteurs' && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setInlineForm('add_compteur')}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+          >
+            + Ajouter un compteur
+          </button>
+          <SiteMetersTab siteId={site.id} count={site.nb_compteurs} />
+        </div>
+      )}
 
       {/* Tab: Actions */}
       {tab === 'actions' && (

@@ -51,6 +51,7 @@ class CompteurCreateRequest(BaseModel):
     type: str  # "electricite", "gaz", "eau"
     numero_serie: Optional[str] = None
     puissance_souscrite_kw: Optional[float] = None
+    meter_id: Optional[str] = None  # PRM/PCE (14 chiffres) — auto-cree le DeliveryPoint
 
 
 @router.post("")
@@ -72,7 +73,7 @@ def create_compteur(req: CompteurCreateRequest, db: Session = Depends(get_db)):
     }
 
     num_serie = req.numero_serie or _generate_unique_numero_serie(db, site.id)
-    meter_id = _generate_unique_meter_id(site.id)
+    meter_id = req.meter_id or _generate_unique_meter_id(site.id)
 
     c = Compteur(
         site_id=site.id,
