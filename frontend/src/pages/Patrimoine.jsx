@@ -151,9 +151,16 @@ export default function Patrimoine() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sp, setSp] = useSearchParams();
-  const { scopedSites, sitesLoading, scope, org } = useScope();
+  const { scopedSites, sitesLoading, scope, org, refreshSites } = useScope();
   const { isExpert } = useExpertMode();
   const searchRef = useRef(null);
+  const [dataVersion, setDataVersion] = useState(0);
+
+  // Refresh cible apres mutation (creation, edition, enrichissement)
+  const handleDataMutation = useCallback(() => {
+    refreshSites();
+    setDataVersion((v) => v + 1);
+  }, [refreshSites]);
 
   // URL-synced state
   const search = sp.get('q') || '';
@@ -237,7 +244,7 @@ export default function Patrimoine() {
     getPatrimoineKpis(params)
       .then(setRegistreKpis)
       .catch(() => {});
-  }, [org?.id, scope.siteId]);
+  }, [org?.id, scope.siteId, dataVersion]);
 
   // Contracts (for expiring view) — scope-aware
   const [scopedContracts, setScopedContracts] = useState([]);
@@ -248,7 +255,7 @@ export default function Patrimoine() {
     getPatrimoineContracts(params)
       .then((data) => setScopedContracts(data.contracts || []))
       .catch(() => setScopedContracts([]));
-  }, [org?.id, scope.siteId]);
+  }, [org?.id, scope.siteId, dataVersion]);
 
   // URL param helper — merges params, removes empty values
   const setParams = useCallback(
@@ -1575,7 +1582,7 @@ export default function Patrimoine() {
             onCreateAction={() => openActionFromDrawer(drawerSite.nom)}
             initialTab={drawerInitialTab}
             orgId={scope.orgId}
-            onSiteUpdated={() => window.location.reload()}
+            onSiteUpdated={() => handleDataMutation()}
           />
         )}
       </Drawer>
@@ -1585,14 +1592,14 @@ export default function Patrimoine() {
       {showQuickCreate && (
         <QuickCreateSite
           onClose={() => setShowQuickCreate(false)}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => handleDataMutation()}
           onAdvanced={() => setShowSiteWizard(true)}
         />
       )}
       {showSiteWizard && (
         <SiteCreationWizard
           onClose={() => setShowSiteWizard(false)}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => handleDataMutation()}
         />
       )}
       {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
