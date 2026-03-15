@@ -75,7 +75,7 @@ import {
   aggregateDemoSites,
   getAllDemoSites,
 } from '../domain/purchase/index.js';
-import { fmtNum, fmtPct } from '../utils/format';
+import { fmtNum, fmtPct, fmtKwh } from '../utils/format';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -573,7 +573,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                           {site.city} — {site.usage}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
+                          {fmtKwh(site.consumption?.annualKwh || 0)}/an —{' '}
                           {site.surfaceM2.toLocaleString('fr-FR')}
                           {'\u00A0'}m²
                         </div>
@@ -610,7 +610,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                     {site.city} — {site.usage}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    {fmtNum((site.consumption?.annualKwh || 0) / 1000, 0)} MWh/an —{' '}
+                    {fmtKwh(site.consumption?.annualKwh || 0)}/an —{' '}
                     {(site.surfaceM2 || 0).toLocaleString('fr-FR')}
                     {'\u00A0'}m²
                   </div>
@@ -659,7 +659,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard
           label="Volume annuel"
-          value={`${fmtNum((sitesData.annualKwh || 0) / 1000, 0)} MWh`}
+          value={fmtKwh(sitesData.annualKwh || 0)}
           sublabel={isDemo ? 'Source: demo' : 'Source: patrimoine'}
           icon={<BarChart3 size={18} />}
         />

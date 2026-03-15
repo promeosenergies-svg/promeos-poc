@@ -141,7 +141,7 @@ export function generateRfpPack({
     parameters: {
       energyType,
       annualKwh,
-      annualMwh: (annualKwh / 1000).toFixed(1),
+      annualMwh: (annualKwh / 1000).toFixed(3),
       horizonMonths,
       scenarioPreset,
       budgetEur,

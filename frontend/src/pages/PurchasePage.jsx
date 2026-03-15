@@ -49,7 +49,7 @@ import {
   seedWowDirty,
   getMarketContext,
 } from '../services/api';
-import { fmtKwh, fmtNum, fmtEur } from '../utils/format';
+import { fmtKwh, fmtNum, fmtEur, kwhUnit } from '../utils/format';
 import MarketContextBanner from '../components/purchase/MarketContextBanner';
 import {
   toActionNew,
@@ -687,7 +687,7 @@ export default function PurchasePage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-gray-700">
-                      Volume (kWh/an)
+                      Volume ({kwhUnit(assumptions.volume_kwh_an)}/an)
                     </label>
                     {/* V72: volume toggle */}
                     <button
@@ -892,7 +892,7 @@ export default function PurchasePage() {
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
                   {scenarios.length} scénarios comparés · Horizon {assumptions.horizon_months || 24}{' '}
-                  mois · Volume {fmtNum(assumptions.volume_kwh_an, 0, 'kWh/an')}
+                  mois · Volume {fmtKwh(assumptions.volume_kwh_an)}/an
                 </p>
 
                 {/* KPI strip: Budget / Risque / Recommandation */}
@@ -1008,8 +1008,12 @@ export default function PurchasePage() {
                         </div>
                         <div className="mb-4">
                           <div className="text-3xl font-bold text-gray-900">
-                            {fmtNum(s.price_eur_per_kwh, 4)}{' '}
-                            <span className="text-sm font-normal text-gray-500">€/kWh</span>
+                            {assumptions.volume_kwh_an >= 1000
+                              ? fmtNum(s.price_eur_per_kwh * 1000, 2)
+                              : fmtNum(s.price_eur_per_kwh, 4)}{' '}
+                            <span className="text-sm font-normal text-gray-500">
+                              €/{assumptions.volume_kwh_an >= 1000 ? 'MWh' : 'kWh'}
+                            </span>
                           </div>
                           <div className="text-sm text-gray-600 mt-1">
                             {fmtNum(s.total_annual_eur, 0, '€/an')}
@@ -1161,8 +1165,10 @@ export default function PurchasePage() {
                                           {b.bloc.replace(/_/g, ' ')}
                                         </span>
                                         <span className="font-mono text-gray-600">
-                                          {fmtNum(b.weight_pct, 0)}% — {fmtNum(b.price_eur_kwh, 4)}{' '}
-                                          €/kWh
+                                          {fmtNum(b.weight_pct, 0)}% —{' '}
+                                          {assumptions.volume_kwh_an >= 1000
+                                            ? `${fmtNum(b.price_eur_kwh * 1000, 2)} €/MWh`
+                                            : `${fmtNum(b.price_eur_kwh, 4)} €/kWh`}
                                         </span>
                                       </div>
                                     ))}

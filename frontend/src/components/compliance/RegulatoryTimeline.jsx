@@ -120,7 +120,7 @@ function HorizontalTimeline({ events, today }) {
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
   // Anti-collision: compute stagger levels for events that are too close
-  const MIN_GAP_PCT = 14; // minimum % distance before staggering (label is ~100px on ~800px axis ≈ 12%)
+  const MIN_GAP_PCT = 18; // minimum % distance before staggering (label ~120px on ~800px axis)
   const eventsWithLayout = events
     .map((evt) => ({
       ...evt,
@@ -145,14 +145,14 @@ function HorizontalTimeline({ events, today }) {
   const maxLevel = Math.max(0, ...eventsWithLayout.map((e) => e._level));
 
   // Layout constants per level — 6 levels for dense timelines
-  const AXIS_Y = 140;
+  const AXIS_Y = 160;
   const levelOffsets = [
-    { labelY: 40, dotY: AXIS_Y - 8 }, // level 0: above axis
-    { labelY: AXIS_Y + 20, dotY: AXIS_Y - 8 }, // level 1: below axis
+    { labelY: 50, dotY: AXIS_Y - 8 }, // level 0: above axis
+    { labelY: AXIS_Y + 24, dotY: AXIS_Y - 8 }, // level 1: below axis
     { labelY: 2, dotY: AXIS_Y - 8 }, // level 2: further above
-    { labelY: AXIS_Y + 60, dotY: AXIS_Y - 8 }, // level 3: further below
-    { labelY: -20, dotY: AXIS_Y - 8 }, // level 4: top
-    { labelY: AXIS_Y + 100, dotY: AXIS_Y - 8 }, // level 5: bottom
+    { labelY: AXIS_Y + 80, dotY: AXIS_Y - 8 }, // level 3: further below
+    { labelY: -30, dotY: AXIS_Y - 8 }, // level 4: top
+    { labelY: AXIS_Y + 130, dotY: AXIS_Y - 8 }, // level 5: bottom
   ];
 
   return (
@@ -207,7 +207,7 @@ function HorizontalTimeline({ events, today }) {
 
               {/* Label */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 w-[90px] text-center"
+                className="absolute left-1/2 -translate-x-1/2 w-[110px] text-center"
                 style={{ top: `${layout.labelY}px` }}
               >
                 <span
@@ -219,7 +219,7 @@ function HorizontalTimeline({ events, today }) {
                   {evt.label}
                 </p>
                 <p
-                  className={`text-[8px] ${new Date(evt.deadline) < new Date(today) ? 'text-red-500 font-medium' : 'text-gray-400'}`}
+                  className={`text-[10px] ${new Date(evt.deadline) < new Date(today) ? 'text-red-500 font-semibold' : 'text-gray-500'}`}
                 >
                   {new Date(evt.deadline) < new Date(today) ? 'Échue · ' : ''}
                   {formatDate(evt.deadline)}

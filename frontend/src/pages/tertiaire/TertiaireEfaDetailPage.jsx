@@ -22,6 +22,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
+import { useToast } from '../../ui/ToastProvider';
 import Tooltip from '../../ui/Tooltip';
 import {
   getTertiaireEfa,
@@ -54,9 +55,11 @@ const STATUS_LABELS = {
 export default function TertiaireEfaDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [efa, setEfa] = useState(null);
   const [loading, setLoading] = useState(true);
   const [controlsRunning, setControlsRunning] = useState(false);
+  const [precheckRunning, setPrecheckRunning] = useState(false);
   const [precheckResult, setPrecheckResult] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState(null);
@@ -115,17 +118,37 @@ export default function TertiaireEfaDetailPage() {
   const handleRunControls = async () => {
     setControlsRunning(true);
     try {
-      await runTertiaireControls(id, new Date().getFullYear());
+      const result = await runTertiaireControls(id, new Date().getFullYear());
       fetchEfa();
+      const count = result?.total ?? result?.issues?.length ?? 0;
+      if (count > 0) {
+        toast(`${count} problème(s) détecté(s)`, 'warning');
+      } else {
+        toast('Aucun problème détecté', 'success');
+      }
+    } catch {
+      toast('Erreur lors de l\u2019exécution des contrôles', 'error');
     } finally {
       setControlsRunning(false);
     }
   };
 
   const handlePrecheck = async () => {
-    const year = new Date().getFullYear();
-    const result = await precheckTertiaireDeclaration(id, year);
-    setPrecheckResult(result);
+    setPrecheckRunning(true);
+    try {
+      const year = new Date().getFullYear();
+      const result = await precheckTertiaireDeclaration(id, year);
+      setPrecheckResult(result);
+      if (result?.status === 'pret') {
+        toast('Pré-vérification OK — prêt pour export', 'success');
+      } else {
+        toast('Pré-vérification terminée — voir résultats ci-dessous', 'info');
+      }
+    } catch {
+      toast('Erreur lors de la pré-vérification', 'error');
+    } finally {
+      setPrecheckRunning(false);
+    }
   };
 
   const handleExport = async () => {
@@ -212,8 +235,18 @@ export default function TertiaireEfaDetailPage() {
                 )}
                 Contrôles
               </Button>
-              <Button size="xs" variant="secondary" onClick={handlePrecheck}>
-                <CheckCircle2 size={14} /> Pré-vérification
+              <Button
+                size="xs"
+                variant="secondary"
+                onClick={handlePrecheck}
+                disabled={precheckRunning}
+              >
+                {precheckRunning ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={14} />
+                )}
+                Pré-vérification
               </Button>
             </div>
           </div>
@@ -632,8 +665,18 @@ export default function TertiaireEfaDetailPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="xs" variant="secondary" onClick={handlePrecheck}>
-                  <CheckCircle2 size={14} /> Pré-vérifier
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handlePrecheck}
+                  disabled={precheckRunning}
+                >
+                  {precheckRunning ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={14} />
+                  )}
+                  Pré-vérifier
                 </Button>
                 <Tooltip
                   text={

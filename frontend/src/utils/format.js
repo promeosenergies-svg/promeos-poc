@@ -48,15 +48,29 @@ export function fmtAreaCompact(v) {
   return `${n.toLocaleString(FR)}\u00A0m²`;
 }
 
-/** 125 000 => "125 MWh"  |  1 200 000 => "1,2 GWh"  |  800 => "800 kWh" */
+/** 125 000 => "125 MWh"  |  1 200 000 => "1,2 GWh"  |  800 => "800 kWh"
+ *  1 500 => "1,500 MWh" (3 décimales pour MWh) */
 export function fmtKwh(v) {
   const n = _safe(v);
   if (n == null || n === 0) return '—';
   if (Math.abs(n) >= 1_000_000)
-    return `${(n / 1_000_000).toLocaleString(FR, { maximumFractionDigits: 1 })} GWh`;
-  if (Math.abs(n) >= 1_000)
-    return `${(n / 1_000).toLocaleString(FR, { maximumFractionDigits: n >= 10_000 ? 0 : 1 })} MWh`;
+    return `${(n / 1_000_000).toLocaleString(FR, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} GWh`;
+  if (Math.abs(n) >= 1_000) {
+    const mwh = n / 1_000;
+    // 3 décimales visibles pour garantir la précision des calculs
+    const decimals = Math.abs(mwh) >= 100 ? 1 : 3;
+    return `${mwh.toLocaleString(FR, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} MWh`;
+  }
   return `${n.toLocaleString(FR)} kWh`;
+}
+
+/** Return the appropriate unit for a kWh value: 'kWh', 'MWh', or 'GWh' */
+export function kwhUnit(v) {
+  const n = _safe(v);
+  if (n == null) return 'kWh';
+  if (Math.abs(n) >= 1_000_000) return 'GWh';
+  if (Math.abs(n) >= 1_000) return 'MWh';
+  return 'kWh';
 }
 
 /** 1 200 => "1,2k kW"  |  0.5 => "0,5 kW" */
