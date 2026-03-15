@@ -1781,7 +1781,7 @@ def list_compteurs(
         .join(Site, Compteur.site_id == Site.id)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Compteur))
     )
     if site_id is not None:
         q = q.filter(Compteur.site_id == site_id)
