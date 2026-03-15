@@ -12,7 +12,7 @@ GET /api/consumption/gas/summary — resume gaz
 """
 
 from typing import Optional, List
-from datetime import date, timezone
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -461,6 +461,8 @@ def get_tunnel_v2(
     days: int = Query(90, ge=7, le=365),
     energy_type: str = Query("electricity"),
     mode: str = Query("energy", description="energy (kWh) or power (kW)"),
+    start_date: Optional[date] = Query(None, description="Custom start date (overrides days)"),
+    end_date: Optional[date] = Query(None, description="Custom end date (overrides days)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -472,7 +474,9 @@ def get_tunnel_v2(
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
-    return compute_tunnel_v2(db, site_id, days=days, energy_type=energy_type, mode=mode)
+    sd = datetime.combine(start_date, datetime.min.time()) if start_date else None
+    ed = datetime.combine(end_date, datetime.max.time()) if end_date else None
+    return compute_tunnel_v2(db, site_id, days=days, energy_type=energy_type, mode=mode, start_date=sd, end_date=ed)
 
 
 # =============================================
@@ -807,12 +811,18 @@ def get_hphc_breakdown_v2(
     days: int = Query(30, ge=1, le=365),
     calendar_id: Optional[int] = Query(None),
     simulate: bool = Query(False),
+    start_date: Optional[date] = Query(None, description="Custom start date (overrides days)"),
+    end_date: Optional[date] = Query(None, description="Custom end date (overrides days)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """HP/HC V2 : breakdown + heatmap 7x24 + opportunite + simulation calendrier alternatif."""
     check_site_access(auth, site_id)
-    return compute_hphc_breakdown_v2(db, site_id, days=days, calendar_id=calendar_id, simulate=simulate)
+    sd = datetime.combine(start_date, datetime.min.time()) if start_date else None
+    ed = datetime.combine(end_date, datetime.max.time()) if end_date else None
+    return compute_hphc_breakdown_v2(
+        db, site_id, days=days, calendar_id=calendar_id, simulate=simulate, start_date=sd, end_date=ed
+    )
 
 
 # =============================================
@@ -824,6 +834,10 @@ def get_hphc_breakdown_v2(
 def gas_summary(
     site_id: int = Query(...),
     days: int = Query(90, ge=7, le=365),
+    start_date_param: Optional[date] = Query(
+        None, alias="start_date", description="Custom start date (overrides days)"
+    ),
+    end_date_param: Optional[date] = Query(None, alias="end_date", description="Custom end date (overrides days)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -831,11 +845,14 @@ def gas_summary(
     check_site_access(auth, site_id)
     from models import Meter, MeterReading
     from models.energy_models import EnergyVector
-    from datetime import datetime, timedelta
     from collections import defaultdict
 
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    if start_date_param and end_date_param:
+        start_date = datetime.combine(start_date_param, datetime.min.time(), tzinfo=timezone.utc)
+        end_date = datetime.combine(end_date_param, datetime.max.time(), tzinfo=timezone.utc)
+    else:
+        end_date = datetime.now(timezone.utc)
+        start_date = end_date - timedelta(days=days)
 
     meters = (
         db.query(Meter)
@@ -910,6 +927,8 @@ def gas_summary(
 def gas_weather_normalized(
     site_id: int = Query(...),
     days: int = Query(90, ge=7, le=365),
+    start_date: Optional[date] = Query(None, description="Custom start date (overrides days)"),
+    end_date: Optional[date] = Query(None, description="Custom end date (overrides days)"),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -917,4 +936,6 @@ def gas_weather_normalized(
     check_site_access(auth, site_id)
     from services.gas_weather_service import compute_weather_normalized
 
-    return compute_weather_normalized(db, site_id, days=days)
+    sd = datetime.combine(start_date, datetime.min.time()) if start_date else None
+    ed = datetime.combine(end_date, datetime.max.time()) if end_date else None
+    return compute_weather_normalized(db, site_id, days=days, start_date=sd, end_date=ed)

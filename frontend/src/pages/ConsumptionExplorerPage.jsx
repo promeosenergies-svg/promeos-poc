@@ -257,13 +257,17 @@ export default function ConsumptionExplorerPage() {
     initialSiteIds,
     initialEnergy: urlState.energy,
     initialDays: urlState.days,
+    initialStartDate: urlState.startDate || null,
+    initialEndDate: urlState.endDate || null,
   });
 
   const {
-    state: { siteIds, energyType, days, mode, unit, layers },
+    state: { siteIds, energyType, days, startDate, endDate, mode, unit, layers },
     setSiteIds,
     setEnergyType,
     setDays,
+    setStartDate,
+    setEndDate,
     setMode,
     setUnit,
     mergedAvailability,
@@ -362,9 +366,6 @@ export default function ConsumptionExplorerPage() {
       'conso-co2e': evidenceCO2e(scopeLabel, periodStr, co2Str),
     };
   }, [scopeLabel, days, motor.primaryHphc, motor.primaryTunnel]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [startDate, setStartDate] = useState(urlState.startDate || null);
-  const [endDate, setEndDate] = useState(urlState.endDate || null);
 
   // Sync custom dates → URL
   useEffect(() => {
@@ -923,6 +924,8 @@ export default function ConsumptionExplorerPage() {
                     showSignature={layers.signature}
                     toast={toast}
                     initialTunnel={motor.primaryTunnel}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 )}
                 {activeTab === 'targets' && showContent && (
@@ -941,6 +944,8 @@ export default function ConsumptionExplorerPage() {
                     days={days}
                     toast={toast}
                     initialBreakdown={motor.primaryHphc}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 )}
                 {activeTab === 'gas' && showContent && (
@@ -951,6 +956,8 @@ export default function ConsumptionExplorerPage() {
                     toast={toast}
                     initialGas={motor.primaryGas}
                     initialWeather={motor.primaryWeather}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 )}
               </div>

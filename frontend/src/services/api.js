@@ -713,10 +713,18 @@ export const getConsumptionTunnelV2 = (
   siteId,
   days = 90,
   energyType = 'electricity',
-  mode = 'energy'
+  mode = 'energy',
+  { startDate, endDate } = {}
 ) =>
   _cachedGet('/consumption/tunnel_v2', {
-    params: { site_id: siteId, days, energy_type: energyType, mode },
+    params: {
+      site_id: siteId,
+      days,
+      energy_type: energyType,
+      mode,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    },
   }).then((r) => r.data);
 
 // Targets (objectifs & budgets)
@@ -766,18 +774,43 @@ export const getHPHCRatio = (siteId, meterId = null, days = 30) =>
   api
     .get('/consumption/hp_hc', { params: { site_id: siteId, meter_id: meterId, days } })
     .then((r) => r.data);
-export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulate = false) =>
+export const getHPHCBreakdownV2 = (
+  siteId,
+  days = 30,
+  calendarId = null,
+  simulate = false,
+  { startDate, endDate } = {}
+) =>
   _cachedGet('/consumption/hphc_breakdown_v2', {
-    params: { site_id: siteId, days, calendar_id: calendarId, simulate },
+    params: {
+      site_id: siteId,
+      days,
+      calendar_id: calendarId,
+      simulate,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    },
   }).then((r) => r.data);
 
 // Gas Summary (beta)
-export const getGasSummary = (siteId, days = 90) =>
-  _cachedGet('/consumption/gas/summary', { params: { site_id: siteId, days } }).then((r) => r.data);
-export const getGasWeatherNormalized = (siteId, days = 90) =>
-  _cachedGet('/consumption/gas/weather_normalized', { params: { site_id: siteId, days } }).then(
-    (r) => r.data
-  );
+export const getGasSummary = (siteId, days = 90, { startDate, endDate } = {}) =>
+  _cachedGet('/consumption/gas/summary', {
+    params: {
+      site_id: siteId,
+      days,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    },
+  }).then((r) => r.data);
+export const getGasWeatherNormalized = (siteId, days = 90, { startDate, endDate } = {}) =>
+  _cachedGet('/consumption/gas/weather_normalized', {
+    params: {
+      site_id: siteId,
+      days,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    },
+  }).then((r) => r.data);
 
 // ========================================
 // SITE CONFIG (Schedule + Tariff)

@@ -23,6 +23,8 @@ export default function TunnelPanel({
   showSignature = false,
   toast,
   initialTunnel,
+  startDate = null,
+  endDate = null,
 }) {
   const [tunnel, setTunnel] = useState(initialTunnel || null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,10 @@ export default function TunnelPanel({
     if (!siteId) return;
     setLoading(true);
     try {
-      const data = await getConsumptionTunnelV2(siteId, days, energyType, mode);
+      const data = await getConsumptionTunnelV2(siteId, days, energyType, mode, {
+        startDate,
+        endDate,
+      });
       setTunnel(data);
       track('tunnel_loaded', { site_id: siteId, days, energy_type: energyType, mode });
     } catch (e) {
@@ -44,7 +49,7 @@ export default function TunnelPanel({
     } finally {
       setLoading(false);
     }
-  }, [siteId, days, energyType, mode, toast]);
+  }, [siteId, days, energyType, mode, toast, startDate, endDate]);
 
   // Only fetch if no initial data OR mode changed from default 'energy'
   useEffect(() => {

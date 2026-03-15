@@ -38,6 +38,8 @@ export default function GasPanel({
   toast,
   initialGas,
   initialWeather,
+  startDate = null,
+  endDate = null,
 }) {
   const [gas, setGas] = useState(initialGas || null);
   const [weather, setWeather] = useState(initialWeather || null);
@@ -48,8 +50,8 @@ export default function GasPanel({
     setLoading(true);
     try {
       const [g, w] = await Promise.all([
-        getGasSummary(siteId, days),
-        getGasWeatherNormalized(siteId, days).catch(() => null),
+        getGasSummary(siteId, days, { startDate, endDate }),
+        getGasWeatherNormalized(siteId, days, { startDate, endDate }).catch(() => null),
       ]);
       setGas(g);
       setWeather(w);
@@ -59,7 +61,7 @@ export default function GasPanel({
     } finally {
       setLoading(false);
     }
-  }, [siteId, days, toast]);
+  }, [siteId, days, toast, startDate, endDate]);
 
   // Skip initial fetch if motor already provided data
   useEffect(() => {
