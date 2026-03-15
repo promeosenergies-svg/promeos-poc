@@ -116,57 +116,110 @@ class TestQuickCreateWithOrg:
 
 
 class TestQuickCreateDuplicateDetection:
-    """Anti-doublons par nom + code_postal."""
+    """Anti-doublons 2 niveaux : exact (nom+CP) et similaire (nom+ville)."""
 
-    def test_detects_duplicate(self, app_client):
+    def test_exact_duplicate_nom_cp(self, app_client):
         client, SessionLocal = app_client
-        # Créer un premier site
         resp1 = client.post(
             "/api/sites/quick-create",
             json={"nom": "Bureau Lyon", "code_postal": "69001", "ville": "Lyon"},
         )
         assert resp1.json()["status"] == "created"
-
         org_id = resp1.json()["auto_created"]["organisation"]
 
-        # Même nom + même CP → doublon
+        # Même nom + même CP → doublon exact
         resp2 = client.post(
             "/api/sites/quick-create",
-            json={"nom": "Bureau Lyon", "code_postal": "69001"},
+            json={"nom": "Bureau Lyon", "code_postal": "69001", "ville": "Lyon"},
             headers={"X-Org-Id": str(org_id)},
         )
         data2 = resp2.json()
         assert data2["status"] == "duplicate_detected"
-        assert "existe" in data2["message"].lower() or "existe" in data2["message"]
+        assert data2["level"] == "exact"
 
-    def test_different_cp_no_duplicate(self, app_client):
-        client, SessionLocal = app_client
+    def test_case_insensitive_detection(self, app_client):
+        client, _ = app_client
         resp1 = client.post(
             "/api/sites/quick-create",
-            json={"nom": "Bureau Lyon", "code_postal": "69001"},
+            json={"nom": "Bureau Lyon", "code_postal": "69001", "ville": "Lyon"},
         )
         org_id = resp1.json()["auto_created"]["organisation"]
 
-        # Même nom mais CP différent → pas de doublon
+        # Casse différente → détecté quand même
         resp2 = client.post(
             "/api/sites/quick-create",
-            json={"nom": "Bureau Lyon", "code_postal": "75001"},
+            json={"nom": "bureau lyon", "code_postal": "69001", "ville": "lyon"},
+            headers={"X-Org-Id": str(org_id)},
+        )
+        assert resp2.json()["status"] == "duplicate_detected"
+
+    def test_similar_duplicate_nom_ville(self, app_client):
+        client, _ = app_client
+        resp1 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau Lyon", "code_postal": "69001", "ville": "Lyon"},
+        )
+        org_id = resp1.json()["auto_created"]["organisation"]
+
+        # Même nom + même ville mais CP différent → similaire
+        resp2 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau Lyon", "code_postal": "69009", "ville": "Lyon"},
+            headers={"X-Org-Id": str(org_id)},
+        )
+        data2 = resp2.json()
+        assert data2["status"] == "duplicate_detected"
+        assert data2["level"] == "similar"
+
+    def test_different_cp_different_ville_no_duplicate(self, app_client):
+        client, _ = app_client
+        resp1 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau", "code_postal": "69001", "ville": "Lyon"},
+        )
+        org_id = resp1.json()["auto_created"]["organisation"]
+
+        # Même nom mais ville différente → pas de doublon
+        resp2 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau", "code_postal": "75001", "ville": "Paris"},
             headers={"X-Org-Id": str(org_id)},
         )
         assert resp2.json()["status"] == "created"
 
-    def test_no_cp_no_duplicate_check(self, app_client):
-        client, SessionLocal = app_client
-        # Sans CP → pas de vérification doublon
+    def test_skip_duplicate_check_forces_creation(self, app_client):
+        client, _ = app_client
         resp1 = client.post(
             "/api/sites/quick-create",
-            json={"nom": "Bureau Lyon"},
+            json={"nom": "Bureau Lyon", "code_postal": "69001", "ville": "Lyon"},
         )
         org_id = resp1.json()["auto_created"]["organisation"]
 
+        # Doublon exact mais skip_duplicate_check=true → créé quand même
         resp2 = client.post(
             "/api/sites/quick-create",
-            json={"nom": "Bureau Lyon"},
+            json={
+                "nom": "Bureau Lyon",
+                "code_postal": "69001",
+                "ville": "Lyon",
+                "skip_duplicate_check": True,
+            },
+            headers={"X-Org-Id": str(org_id)},
+        )
+        assert resp2.json()["status"] == "created"
+
+    def test_no_location_no_duplicate_check(self, app_client):
+        client, _ = app_client
+        resp1 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau"},
+        )
+        org_id = resp1.json()["auto_created"]["organisation"]
+
+        # Sans CP ni ville → pas de vérification
+        resp2 = client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Bureau"},
             headers={"X-Org-Id": str(org_id)},
         )
         assert resp2.json()["status"] == "created"

@@ -105,15 +105,16 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
 
   const forceCreate = async () => {
     setDuplicate(null);
-    // Retry sans code_postal pour bypasser la detection doublon
     await doCreate({
       nom: form.nom.trim(),
       usage: form.usage || undefined,
       adresse: form.adresse.trim() || undefined,
+      code_postal: form.code_postal.trim() || undefined,
       ville: form.ville.trim() || undefined,
       surface_m2: form.surface_m2 ? parseFloat(form.surface_m2) : undefined,
       siret: form.siret || undefined,
       naf_code: form.naf_code || undefined,
+      skip_duplicate_check: true,
     });
   };
 
@@ -266,10 +267,30 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
 
           {/* Duplicate warning */}
           {duplicate && (
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <AlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+            <div
+              className={`flex items-start gap-3 p-3 rounded-lg border ${
+                duplicate.level === 'exact'
+                  ? 'bg-amber-50 border-amber-300'
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}
+            >
+              <AlertTriangle
+                size={18}
+                className={`mt-0.5 shrink-0 ${
+                  duplicate.level === 'exact' ? 'text-amber-600' : 'text-yellow-500'
+                }`}
+              />
               <div className="text-sm">
-                <p className="font-medium text-amber-800">{duplicate.message}</p>
+                <p
+                  className={`font-medium ${
+                    duplicate.level === 'exact' ? 'text-amber-800' : 'text-yellow-800'
+                  }`}
+                >
+                  {duplicate.level === 'exact'
+                    ? 'Site identique detecte'
+                    : 'Site similaire detecte'}
+                </p>
+                <p className="text-gray-600 mt-0.5">{duplicate.message}</p>
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"

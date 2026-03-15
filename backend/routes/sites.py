@@ -54,6 +54,7 @@ class QuickCreateRequest(BaseModel):
     surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
     siret: Optional[str] = Field(None, max_length=14)
     naf_code: Optional[str] = Field(None, max_length=10)
+    skip_duplicate_check: bool = Field(False, description="Forcer la creation meme si doublon detecte")
 
 
 @router.post("/quick-create", status_code=201)
@@ -139,28 +140,58 @@ def quick_create_site(
         db.flush()
         auto_created["portefeuille"] = pf.id
 
-    # ── 3. Anti-doublons (nom + code_postal) ───────────────────────────
-    if body.code_postal:
-        existing = (
-            db.query(Site)
-            .filter(
-                Site.nom == body.nom,
-                Site.code_postal == body.code_postal,
-                not_deleted(Site),
+    # ── 3. Anti-doublons (case-insensitive, 2 niveaux) ──────────────────
+    if not body.skip_duplicate_check:
+        nom_lower = func.lower(Site.nom)
+        body_nom_lower = body.nom.strip().lower()
+
+        # Niveau 1 : nom exact (CI) + même code postal → doublon fort
+        if body.code_postal:
+            exact = (
+                db.query(Site)
+                .filter(
+                    nom_lower == body_nom_lower,
+                    Site.code_postal == body.code_postal.strip(),
+                    not_deleted(Site),
+                )
+                .first()
             )
-            .first()
-        )
-        if existing:
-            return {
-                "status": "duplicate_detected",
-                "existing_site": {
-                    "id": existing.id,
-                    "nom": existing.nom,
-                    "ville": existing.ville,
-                    "code_postal": existing.code_postal,
-                },
-                "message": f'Un site "{existing.nom}" existe déjà à {existing.ville or existing.code_postal}',
-            }
+            if exact:
+                return {
+                    "status": "duplicate_detected",
+                    "level": "exact",
+                    "existing_site": {
+                        "id": exact.id,
+                        "nom": exact.nom,
+                        "ville": exact.ville,
+                        "code_postal": exact.code_postal,
+                    },
+                    "message": f'Un site "{exact.nom}" existe deja a {exact.ville or exact.code_postal}',
+                }
+
+        # Niveau 2 : nom exact (CI) + même ville → doublon probable
+        if body.ville:
+            similar = (
+                db.query(Site)
+                .filter(
+                    nom_lower == body_nom_lower,
+                    func.lower(Site.ville) == body.ville.strip().lower(),
+                    not_deleted(Site),
+                )
+                .first()
+            )
+            if similar:
+                return {
+                    "status": "duplicate_detected",
+                    "level": "similar",
+                    "existing_site": {
+                        "id": similar.id,
+                        "nom": similar.nom,
+                        "ville": similar.ville,
+                        "code_postal": similar.code_postal,
+                    },
+                    "message": f'Un site similaire "{similar.nom}" existe a {similar.ville}',
+                }
 
     # ── 4. Créer le site + auto-provision ──────────────────────────────
     site = create_site_from_data(
