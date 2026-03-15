@@ -37,8 +37,8 @@ export const SCENARIO_PRESETS = {
     shockMagnitude: 0.4,
   },
   [ScenarioPreset.DEFENSIVE]: {
-    label: 'Defensif',
-    description: 'Scénario prudent : hausse moderee + volatilité élevée',
+    label: 'Défensif',
+    description: 'Scénario prudent : hausse modérée + volatilité élevée',
     driftAnnual: 0.08,
     volMultiplier: 1.2,
     shockProb: 0.05,
@@ -50,29 +50,29 @@ export const SCENARIO_PRESETS = {
 
 export const PERSONA_PROFILES = {
   [Persona.DG]: {
-    label: 'DG / Direction Generale',
-    description: 'Priorite: visibilite budgetaire, simplicite, faible risque contrat',
+    label: 'DG / Direction Générale',
+    description: 'Priorité: visibilité budgétaire, simplicité, faible risque contrat',
     weights: { budgetRisk: 0.4, transparency: 0.15, contractRisk: 0.35, dataReadiness: 0.1 },
     preferSimple: true,
     maxAcceptableRisk: 40,
   },
   [Persona.DAF]: {
-    label: 'DAF / Direction Financiere',
-    description: 'Priorite: transparence, SLA billing, faibles anomalies/ecarts',
+    label: 'DAF / Direction Financière',
+    description: 'Priorité: transparence, SLA billing, faibles anomalies/écarts',
     weights: { budgetRisk: 0.25, transparency: 0.4, contractRisk: 0.2, dataReadiness: 0.15 },
     preferSimple: false,
     maxAcceptableRisk: 55,
   },
   [Persona.ACHETEUR]: {
     label: 'Acheteur / Procurement',
-    description: 'Priorite: comparabilite, clauses, pack RFP, meilleur prix',
+    description: 'Priorité: comparabilité, clauses, pack RFP, meilleur prix',
     weights: { budgetRisk: 0.3, transparency: 0.25, contractRisk: 0.3, dataReadiness: 0.15 },
     preferSimple: false,
     maxAcceptableRisk: 65,
   },
   [Persona.RESP_ENERGIE]: {
-    label: 'Responsable Energie',
-    description: 'Priorite: hybride si data OK, sinon prudence, optimisation technique',
+    label: 'Responsable Énergie',
+    description: 'Priorité: hybride si data OK, sinon prudence, optimisation technique',
     weights: { budgetRisk: 0.2, transparency: 0.2, contractRisk: 0.2, dataReadiness: 0.4 },
     preferSimple: false,
     maxAcceptableRisk: 70,

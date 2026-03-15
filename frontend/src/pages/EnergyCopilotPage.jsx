@@ -249,7 +249,7 @@ export default function EnergyCopilotPage() {
             <p className="text-2xl font-bold text-emerald-600">
               {totalSavings > 0 ? `${Math.round(totalSavings).toLocaleString('fr-FR')} €` : '-'}
             </p>
-            <p className="text-xs text-gray-500">Economies potentielles</p>
+            <p className="text-xs text-gray-500">Économies potentielles</p>
           </CardBody>
         </Card>
       </div>

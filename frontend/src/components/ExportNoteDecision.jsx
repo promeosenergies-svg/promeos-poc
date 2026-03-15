@@ -110,7 +110,7 @@ export default function ExportNoteDecision({ data, onClose }) {
         {/* Printable content */}
         <div ref={printRef} className="p-8">
           <div className="header">
-            <h1>Note de Decision — Achat Energie</h1>
+            <h1>Note de Décision — Achat Énergie</h1>
             <div className="sub">
               PROMEOS — Recommandation d'achat pour {data.site_nom || `Site ${data.site_id}`}
             </div>
@@ -144,17 +144,17 @@ export default function ExportNoteDecision({ data, onClose }) {
                     <div className="kpi-value" style={{ color: '#2563eb' }}>
                       {STRATEGY_LABELS[reco.strategy] || reco.strategy}
                     </div>
-                    <div className="kpi-label">Strategie recommandee</div>
+                    <div className="kpi-label">Stratégie recommandée</div>
                   </div>
                   <div className="kpi-box">
                     <div className="kpi-value">{reco.price_eur_per_kwh?.toFixed(4)}</div>
-                    <div className="kpi-label">EUR/kWh</div>
+                    <div className="kpi-label">€/kWh</div>
                   </div>
                   <div className="kpi-box">
                     <div className="kpi-value" style={{ color: '#16a34a' }}>
                       {fmtNum(Math.round(reco.total_annual_eur || 0), 0)}
                     </div>
-                    <div className="kpi-label">EUR/an</div>
+                    <div className="kpi-label">€/an</div>
                   </div>
                   <div className="kpi-box">
                     <div
@@ -182,12 +182,12 @@ export default function ExportNoteDecision({ data, onClose }) {
             <table>
               <thead>
                 <tr>
-                  <th>Strategie</th>
-                  <th style={{ textAlign: 'right' }}>Prix (EUR/kWh)</th>
-                  <th style={{ textAlign: 'right' }}>Cout annuel (EUR)</th>
-                  <th style={{ textAlign: 'right' }}>Economies</th>
+                  <th>Stratégie</th>
+                  <th style={{ textAlign: 'right' }}>Prix (€/kWh)</th>
+                  <th style={{ textAlign: 'right' }}>Coût annuel (€)</th>
+                  <th style={{ textAlign: 'right' }}>Économies</th>
                   <th style={{ textAlign: 'center' }}>Risque</th>
-                  <th style={{ textAlign: 'right' }}>Fourchette (EUR/an)</th>
+                  <th style={{ textAlign: 'right' }}>Fourchette (€/an)</th>
                 </tr>
               </thead>
               <tbody>

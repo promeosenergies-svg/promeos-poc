@@ -25,11 +25,11 @@ function computeConfidence(scoredOffers, consumption, billing) {
   // Data completeness checks
   if (!consumption || consumption.source === 'DEMO') {
     confidenceScore -= 25;
-    missingData.push('Donnees de consommation reelles (non demo)');
+    missingData.push('Données de consommation réelles (non démo)');
   }
   if (consumption?.granularity === 'monthly') {
     confidenceScore -= 10;
-    missingData.push('Courbes de charge horaires ou journalieres');
+    missingData.push('Courbes de charge horaires ou journalières');
   }
   if (!billing || billing.invoiceCount === 0) {
     confidenceScore -= 20;
@@ -182,7 +182,7 @@ export function recommend({
   const corridorWidth = (best.result.corridor?.p90 ?? 0) - (best.result.corridor?.p10 ?? 0);
   if (corridorWidth < 30) {
     rationaleBullets.push(
-      `Corridor serre (P10-P90: ${corridorWidth.toFixed(0)} EUR/MWh) = bonne visibilite budgetaire`
+      `Corridor serré (P10-P90: ${corridorWidth.toFixed(0)} €/MWh) = bonne visibilité budgétaire`
     );
   }
 
@@ -209,16 +209,16 @@ export function recommend({
   // Tradeoffs (max 3)
   const tradeoffs = [];
   if (best.result.volatility > 0) {
-    tradeoffs.push(`Volatilite residuelle: ${best.result.volatility.toFixed(0)} EUR`);
+    tradeoffs.push(`Volatilité résiduelle: ${best.result.volatility.toFixed(0)} €`);
   }
   if (best.scores.contractRisk.level !== 'GREEN' && best.scores.contractRisk.reasons?.length > 0) {
-    tradeoffs.push('Risque contractuel a negocier: ' + best.scores.contractRisk.reasons[0]);
+    tradeoffs.push('Risque contractuel à négocier: ' + best.scores.contractRisk.reasons[0]);
   }
   if (
     best.scores.dataReadiness.level !== 'GREEN' &&
     best.scores.dataReadiness.reasons?.length > 0
   ) {
-    tradeoffs.push('Donnees incompletes: ' + best.scores.dataReadiness.reasons[0]);
+    tradeoffs.push('Données incomplètes: ' + best.scores.dataReadiness.reasons[0]);
   }
 
   // Why not others

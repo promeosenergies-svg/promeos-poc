@@ -96,7 +96,7 @@ export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateActi
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Mode</p>
               <Badge status="info">
-                {tunnelData?.mode === 'power' ? 'Puissance (kW)' : 'Energie (kWh)'}
+                {tunnelData?.mode === 'power' ? 'Puissance (kW)' : 'Énergie (kWh)'}
               </Badge>
             </div>
             <div>

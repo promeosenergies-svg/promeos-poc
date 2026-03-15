@@ -115,14 +115,14 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
         <div ref={printRef} className="p-8">
           {/* ═══ PAGE 1: Executive Summary ═══ */}
           <div className="header">
-            <h1>Pack RFP — Portefeuille Energie</h1>
+            <h1>Pack RFP — Portefeuille Énergie</h1>
             <div className="sub">
               PROMEOS — {orgName || 'Organisation'} — {today}
             </div>
           </div>
 
           <div className="section">
-            <div className="section-title">Synthese du portefeuille</div>
+            <div className="section-title">Synthèse du portefeuille</div>
             <div className="kpi-strip">
               <div className="kpi">
                 <div className="kpi-val" style={{ color: '#2563eb' }}>
@@ -148,7 +148,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                   {portfolio.weighted_savings_pct > 0 ? '-' : ''}
                   {portfolio.weighted_savings_pct}%
                 </div>
-                <div className="kpi-lbl">Economies potentielles</div>
+                <div className="kpi-lbl">Économies potentielles</div>
               </div>
             </div>
           </div>
@@ -172,10 +172,10 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                 <tr>
                   <th>Site</th>
                   <th style={{ textAlign: 'right' }}>Volume (kWh/an)</th>
-                  <th>Strategie</th>
-                  <th style={{ textAlign: 'right' }}>Prix (EUR/kWh)</th>
-                  <th style={{ textAlign: 'right' }}>Cout annuel</th>
-                  <th style={{ textAlign: 'right' }}>Economies</th>
+                  <th>Stratégie</th>
+                  <th style={{ textAlign: 'right' }}>Prix (€/kWh)</th>
+                  <th style={{ textAlign: 'right' }}>Coût annuel</th>
+                  <th style={{ textAlign: 'right' }}>Économies</th>
                   <th style={{ textAlign: 'center' }}>Risque</th>
                 </tr>
               </thead>
@@ -235,10 +235,10 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
               <table>
                 <thead>
                   <tr>
-                    <th>Strategie</th>
+                    <th>Stratégie</th>
                     <th style={{ textAlign: 'right' }}>Prix</th>
-                    <th style={{ textAlign: 'right' }}>Cout annuel</th>
-                    <th style={{ textAlign: 'right' }}>Economies</th>
+                    <th style={{ textAlign: 'right' }}>Coût annuel</th>
+                    <th style={{ textAlign: 'right' }}>Économies</th>
                     <th style={{ textAlign: 'center' }}>Risque</th>
                     <th style={{ textAlign: 'right' }}>P10 — P90</th>
                   </tr>

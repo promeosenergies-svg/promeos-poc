@@ -45,7 +45,7 @@ const DOMAIN_TABS = [
 ];
 
 const TYPE_LABELS = {
-  rule: 'Regle',
+  rule: 'Règle',
   knowledge: 'Connaissance',
   checklist: 'Checklist',
   calc: 'Calcul',

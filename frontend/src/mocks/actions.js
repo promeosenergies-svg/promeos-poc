@@ -78,7 +78,7 @@ export const mockActions = [
   },
   {
     id: 5,
-    titre: 'Reduire consommation hors horaires — Siege HELIOS Paris',
+    titre: 'Réduire consommation hors horaires — Siege HELIOS Paris',
     type: 'conso',
     site_id: 1,
     site_nom: SITE[1].nom,
@@ -90,7 +90,7 @@ export const mockActions = [
     due_date: '2026-03-20',
     created_at: '2026-02-01',
     description:
-      "58% de la consommation est hors horaires d'ouverture. Programmer les CVC et eclairage.",
+      "58% de la consommation est hors horaires d'ouverture. Programmer les CVC et éclairage.",
     comments: [],
   },
   {

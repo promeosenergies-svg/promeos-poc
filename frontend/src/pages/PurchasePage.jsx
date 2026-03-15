@@ -1506,7 +1506,7 @@ export default function PurchasePage() {
                   </div>
                   <div className="bg-white rounded-lg shadow p-5">
                     <div className="text-xs text-gray-500 uppercase font-medium">
-                      Economies potentielles
+                      Économies potentielles
                     </div>
                     <div
                       className={`text-3xl font-bold mt-1 ${portfolioData.portfolio.weighted_savings_pct > 0 ? 'text-green-600' : 'text-red-600'}`}
@@ -1845,7 +1845,7 @@ export default function PurchasePage() {
                           <th className="px-4 py-3 text-left">Urgence</th>
                           <th className="px-4 py-3 text-left">Site</th>
                           <th className="px-4 py-3 text-left">Fournisseur</th>
-                          <th className="px-4 py-3 text-left">Energie</th>
+                          <th className="px-4 py-3 text-left">Énergie</th>
                           <th className="px-4 py-3 text-left">Fin contrat</th>
                           <th className="px-4 py-3 text-left">Délai de préavis</th>
                           <th className="px-4 py-3 text-right">Jours restants</th>

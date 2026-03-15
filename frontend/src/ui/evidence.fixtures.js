@@ -174,7 +174,7 @@ export function evidenceKwhTotal(scopeLabel, periodLabel, kwhValue) {
 export function evidenceCO2e(scopeLabel, periodLabel, co2Value) {
   return buildEvidence({
     id: 'conso-co2e',
-    title: `Émissions CO2e${periodLabel ? ` — ${periodLabel}` : ''}`,
+    title: `Émissions CO₂e${periodLabel ? ` — ${periodLabel}` : ''}`,
     valueLabel: co2Value,
     scopeLabel,
     periodLabel,

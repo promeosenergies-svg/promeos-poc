@@ -140,7 +140,7 @@ function StatusPage() {
 
       {/* Endpoint Checks */}
       <div className="bg-white rounded-lg shadow p-5">
-        <h2 className="font-semibold text-gray-700 mb-4">Verification des endpoints</h2>
+        <h2 className="font-semibold text-gray-700 mb-4">Vérification des endpoints</h2>
         <div className="space-y-2">
           {checks.map((check) => {
             const result = status?.[check.key];

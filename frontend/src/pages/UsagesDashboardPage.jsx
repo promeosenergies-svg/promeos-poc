@@ -260,7 +260,7 @@ function BaselineSummary({ baselines }) {
         <div style={{ fontSize: 11, color: '#6b7280' }}>
           {totalEcart > 0 ? 'Surconsommation' : totalEcart < 0 ? 'Économie' : 'Écart nul'} :{' '}
           {totalEcartEur > 0 ? '+' : ''}
-          {fmt(totalEcartEur)} EUR/an estimé
+          {fmt(totalEcartEur)} €/an estimé
         </div>
       </div>
     </div>

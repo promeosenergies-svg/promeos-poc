@@ -63,7 +63,7 @@ export function normalizeHybridShares(pricing) {
       spotSharePct: Math.round(((pricing.spotSharePct || 0) / total) * 1000) / 1000,
     },
     normalized: true,
-    message: `Parts normalisees (somme etait ${(total * 100).toFixed(1)}%, ajustee a 100%)`,
+    message: `Parts normalisées (somme était ${(total * 100).toFixed(1)}%, ajustée à 100%)`,
   };
 }
 

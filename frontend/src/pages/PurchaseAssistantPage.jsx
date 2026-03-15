@@ -435,7 +435,7 @@ export default function PurchaseAssistantPage() {
   return (
     <PageShell
       icon={ShoppingCart}
-      title="Assistant Achat Energie"
+      title="Assistant Achat Énergie"
       subtitle="Scénarios de couverture et aide à la décision"
     >
       {/* Step indicator */}
@@ -1202,7 +1202,7 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
           <div>
             <strong>Intermediation:</strong>{' '}
             {offer.intermediation?.hasIntermediary
-              ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' EUR/MWh' : 'Non divulgue'})`
+              ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' EUR/MWh' : 'Non divulgué'})`
               : 'Non'}
           </div>
           <div>
@@ -1473,7 +1473,7 @@ function StepScoring({ scoredOffers, recommendation }) {
             { key: 'budgetRisk', label: 'Risque Budgetaire', icon: AlertTriangle },
             { key: 'transparency', label: 'Transparence', icon: Eye },
             { key: 'contractRisk', label: 'Risque Contractuel', icon: Lock },
-            { key: 'dataReadiness', label: 'Donnees & Readiness', icon: BarChart3 },
+            { key: 'dataReadiness', label: 'Données & Readiness', icon: BarChart3 },
           ].map((axis) => {
             const score = selected.scores[axis.key];
             if (!score) return null;

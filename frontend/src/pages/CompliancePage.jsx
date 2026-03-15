@@ -149,11 +149,11 @@ function SiteRow({ site }) {
           <table className="w-full text-sm mt-2">
             <thead>
               <tr className="text-xs text-gray-400 border-b">
-                <th className="text-left py-1">Regle</th>
-                <th className="text-left py-1">Regulation</th>
+                <th className="text-left py-1">Règle</th>
+                <th className="text-left py-1">Régulation</th>
                 <th className="text-left py-1">Statut</th>
-                <th className="text-left py-1">Severite</th>
-                <th className="text-left py-1">Echeance</th>
+                <th className="text-left py-1">Sévérité</th>
+                <th className="text-left py-1">Échéance</th>
                 <th className="text-left py-1">Explication</th>
               </tr>
             </thead>

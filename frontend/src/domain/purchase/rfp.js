@@ -43,7 +43,7 @@ export function generateDecisionNote({
   const bestOffer = offers.find((o) => o.id === recommendation.bestOfferId);
   const bestResult = offerResults.find((r) => r.offerId === recommendation.bestOfferId);
   return {
-    title: `Note de Decision — Achat Energie ${energyType}`,
+    title: `Note de Décision — Achat Énergie ${energyType}`,
     version: BRIQUE3_VERSION,
     generatedAt: new Date().toISOString(),
     organization: organizationName,

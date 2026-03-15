@@ -168,7 +168,7 @@ export default function IntakeWizard({ siteId, onClose }) {
             <h3 className="font-semibold text-gray-900">Smart Intake</h3>
             {phase !== 'intro' && phase !== 'result' && (
               <span className="text-xs text-gray-400">
-                Etape {currentStep}/{totalSteps - 1}
+                Étape {currentStep}/{totalSteps - 1}
               </span>
             )}
           </div>

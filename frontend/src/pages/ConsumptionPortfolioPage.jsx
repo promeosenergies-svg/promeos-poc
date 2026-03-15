@@ -77,7 +77,7 @@ function DataStatusBadge({ status, coveragePct }) {
     return (
       <span
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700"
-        title={`Couverture ${coveragePct}% — Donnees partielles`}
+        title={`Couverture ${coveragePct}% — Données partielles`}
       >
         {coveragePct}%
       </span>
@@ -932,7 +932,7 @@ export default function ConsumptionPortfolioPage() {
                               navigate(toConsoImport());
                             }}
                             className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
-                            title="Importer des donnees pour ce site"
+                            title="Importer des données pour ce site"
                           >
                             <Upload size={10} />
                             Importer

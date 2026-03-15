@@ -268,7 +268,7 @@ export function computeActionableLevers({
     levers.push({
       type: 'data_activation',
       actionKey: 'lev-data-cover',
-      label: `Completer ${missing} brique${missing > 1 ? 's' : ''} de donnees manquante${missing > 1 ? 's' : ''}`,
+      label: `Compléter ${missing} brique${missing > 1 ? 's' : ''} de données manquante${missing > 1 ? 's' : ''}`,
       impactEur: null,
       ctaPath: '/activation',
     });
