@@ -438,7 +438,7 @@ export default function Patrimoine() {
         map.set(String(s.portefeuille_id), s.portefeuille_nom);
       }
     });
-    const opts = [{ value: '', label: 'Portefeuille' }];
+    const opts = [{ value: '', label: 'Regroupement' }];
     for (const [id, nom] of map) opts.push({ value: id, label: nom });
     return opts;
   }, [scopedSites]);
@@ -745,7 +745,7 @@ export default function Patrimoine() {
               value={stats.total}
               detail={
                 registreKpis
-                  ? `${registreKpis.nb_entites_juridiques} EJ · ${registreKpis.nb_portefeuilles} PF`
+                  ? `${registreKpis.nb_entites_juridiques} entites · ${registreKpis.nb_portefeuilles} regr.`
                   : fmtAreaCompact(stats.surface)
               }
               active={!filterStatut && !filterAnomalies && !activeView}
