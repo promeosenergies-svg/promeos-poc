@@ -21,6 +21,7 @@ from models import (
     DeliveryPoint,
     DeliveryPointEnergyType,
     ContractDeliveryPoint,
+    not_deleted,
 )
 
 
@@ -111,7 +112,7 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 db.query(DeliveryPoint)
                 .filter(
                     DeliveryPoint.site_id == site.id,
-                    DeliveryPoint.deleted_at.is_(None),
+                    not_deleted(DeliveryPoint),
                 )
                 .all()
             )

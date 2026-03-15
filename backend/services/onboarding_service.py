@@ -15,12 +15,18 @@ from models import (
     Portefeuille,
     Site,
     Batiment,
+    Compteur,
     Obligation,
     TypeSite,
+    TypeCompteur,
     StatutConformite,
     TypeObligation,
     ParkingType,
     OperatStatus,
+    DeliveryPoint,
+    DeliveryPointEnergyType,
+    DeliveryPointStatus,
+    not_deleted,
 )
 from services.compliance_engine import bacs_deadline_for_power, BACS_SEUIL_HAUT
 from services.compliance_coordinator import recompute_site_full as recompute_site
@@ -124,18 +130,87 @@ def create_obligations_for_site(db: Session, site: Site, cvc_power_kw: float) ->
     return obligations
 
 
+def ensure_delivery_points_for_site(db: Session, site_id: int) -> int:
+    """Auto-create DeliveryPoints for compteurs that have a meter_id but no DP.
+
+    Rule: for each active compteur with meter_id and no delivery_point_id,
+    find or create a DeliveryPoint with code=meter_id on the same site.
+    Then link the compteur to the DP.
+
+    Returns count of DPs created (not linked-to-existing).
+    """
+    orphan_compteurs = (
+        db.query(Compteur)
+        .filter(
+            Compteur.site_id == site_id,
+            not_deleted(Compteur),
+            Compteur.delivery_point_id.is_(None),
+            Compteur.meter_id.isnot(None),
+            Compteur.meter_id != "",
+        )
+        .all()
+    )
+
+    created = 0
+    for c in orphan_compteurs:
+        # Skip auto-generated meter_ids (not real PRM/PCE)
+        if c.meter_id.startswith("AUTO-") or c.meter_id.startswith("SEED-"):
+            continue
+
+        # Deduce energy type from compteur type
+        energy_type = None
+        if c.type == TypeCompteur.ELECTRICITE:
+            energy_type = DeliveryPointEnergyType.ELEC
+        elif c.type == TypeCompteur.GAZ:
+            energy_type = DeliveryPointEnergyType.GAZ
+
+        # Find existing DP with same code on same site
+        existing_dp = (
+            db.query(DeliveryPoint)
+            .filter(
+                DeliveryPoint.code == c.meter_id,
+                DeliveryPoint.site_id == site_id,
+                not_deleted(DeliveryPoint),
+            )
+            .first()
+        )
+
+        if existing_dp:
+            c.delivery_point_id = existing_dp.id
+        else:
+            dp = DeliveryPoint(
+                code=c.meter_id,
+                energy_type=energy_type,
+                site_id=site_id,
+                status=DeliveryPointStatus.ACTIVE,
+                data_source=c.data_source or "auto",
+                data_source_ref="auto_provision",
+            )
+            db.add(dp)
+            db.flush()
+            c.delivery_point_id = dp.id
+            created += 1
+
+    if orphan_compteurs:
+        db.flush()
+
+    return created
+
+
 def provision_site(db: Session, site: Site) -> dict:
-    """Provision complet d'un site: batiment + obligations + compliance.
+    """Provision complet d'un site: batiment + obligations + compliance + delivery points.
 
     Returns dict with creation details.
     """
     bat = create_batiment_for_site(db, site)
     obligations = create_obligations_for_site(db, site, bat.cvc_power_kw)
+    dp_created = ensure_delivery_points_for_site(db, site.id)
     recompute_site(db, site.id)
     return {
         "batiment_id": bat.id,
         "cvc_power_kw": bat.cvc_power_kw,
         "obligations": len(obligations),
+        "delivery_points_created": dp_created,
     }
 
 

@@ -66,6 +66,8 @@ def run_migrations(engine):
     _add_site_geocoding_columns(engine)
     # V1.1 Usage — usage_id FK + usage enrichment + usage_baselines table
     _migrate_usage_v1_1(engine)
+    # Soft-delete coherence — sync actif/deleted_at on dual-field tables
+    _sync_soft_delete_coherence(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1164,3 +1166,45 @@ def _migrate_usage_v1_1(engine):
         logger.info("migration: V1.1 Usage — %d change(s) applied", added)
     else:
         logger.debug("migration: V1.1 Usage — all columns/tables already present")
+
+
+# ========================================
+# Soft-delete coherence sync
+# ========================================
+
+
+def _sync_soft_delete_coherence(engine):
+    """Sync actif/deleted_at on tables that have both fields.
+
+    Fixes two inconsistent states:
+    1. actif=0 BUT deleted_at IS NULL → set deleted_at = updated_at
+    2. deleted_at IS NOT NULL BUT actif=1 → set actif=0
+    Idempotent — no-op when data is already coherent.
+    """
+    DUAL_TABLES = ["organisations", "sites", "compteurs"]
+    insp = inspect(engine)
+    total_fixed = 0
+
+    with engine.begin() as conn:
+        for table in DUAL_TABLES:
+            if not insp.has_table(table):
+                continue
+            cols = {c["name"] for c in insp.get_columns(table)}
+            if "actif" not in cols or "deleted_at" not in cols:
+                continue
+
+            # Case 1: actif=0 but deleted_at is NULL
+            r1 = conn.execute(
+                text(f'UPDATE "{table}" SET deleted_at = updated_at WHERE actif = 0 AND deleted_at IS NULL')
+            )
+            # Case 2: deleted_at set but actif still 1
+            r2 = conn.execute(text(f'UPDATE "{table}" SET actif = 0 WHERE deleted_at IS NOT NULL AND actif = 1'))
+            fixed = r1.rowcount + r2.rowcount
+            if fixed > 0:
+                logger.info("migration: soft-delete sync — %s: %d row(s) fixed", table, fixed)
+                total_fixed += fixed
+
+    if total_fixed > 0:
+        logger.info("migration: soft-delete coherence — %d total row(s) synced", total_fixed)
+    else:
+        logger.debug("migration: soft-delete coherence — already in sync")

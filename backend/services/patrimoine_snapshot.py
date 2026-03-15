@@ -22,6 +22,7 @@ from models import (
     Compteur,
     DeliveryPoint,
     EnergyContract,
+    not_deleted,
 )
 
 # Tolérance SURFACE_MISMATCH (D1) — 5 % par défaut
@@ -41,10 +42,8 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
     if site is None:
         return None
 
-    # ── 1. Bâtiments (soft-delete : deleted_at IS NULL) ──────────────────────
-    batiments: List[Batiment] = (
-        db.query(Batiment).filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None)).all()
-    )
+    # ── 1. Bâtiments (soft-delete unifié) ─────────────────────────────────────
+    batiments: List[Batiment] = db.query(Batiment).filter(Batiment.site_id == site_id, not_deleted(Batiment)).all()
 
     # ── 2. Usages (batch — pas de N+1) ───────────────────────────────────────
     bat_ids = [b.id for b in batiments]
@@ -54,20 +53,12 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
         for u in usages:
             usages_by_bat.setdefault(u.batiment_id, []).append(u)
 
-    # ── 3. Compteurs (actif=True ET deleted_at IS NULL) ───────────────────────
-    compteurs: List[Compteur] = (
-        db.query(Compteur)
-        .filter(
-            Compteur.site_id == site_id,
-            Compteur.actif.is_(True),
-            Compteur.deleted_at.is_(None),
-        )
-        .all()
-    )
+    # ── 3. Compteurs (soft-delete unifié) ──────────────────────────────────────
+    compteurs: List[Compteur] = db.query(Compteur).filter(Compteur.site_id == site_id, not_deleted(Compteur)).all()
 
-    # ── 4. Points de livraison (deleted_at IS NULL) ───────────────────────────
+    # ── 4. Points de livraison (soft-delete unifié) ────────────────────────────
     delivery_points: List[DeliveryPoint] = (
-        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
+        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, not_deleted(DeliveryPoint)).all()
     )
 
     # ── 5. Contrats énergie ───────────────────────────────────────────────────

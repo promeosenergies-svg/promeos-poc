@@ -4,7 +4,7 @@ Configuration de base pour tous les modeles de donnees
 """
 
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, DateTime, String
+from sqlalchemy import Column, Integer, DateTime, String, and_, literal
 from datetime import datetime, timezone
 
 # Base commune pour tous les modeles
@@ -49,22 +49,52 @@ class SoftDeleteMixin:
         return self.deleted_at is not None
 
     def soft_delete(self, by=None, reason=None):
-        """Marque l'objet comme supprime."""
+        """Marque l'objet comme supprime.
+
+        Synchronise actif=False si le champ existe (Organisation, Site, Compteur).
+        """
         self.deleted_at = datetime.now(timezone.utc)
         self.deleted_by = by
         self.delete_reason = reason
+        # Sync: keep actif coherent with deleted_at
+        if hasattr(self, "actif"):
+            self.actif = False
 
     def restore(self):
-        """Restaure un objet soft-deleted."""
+        """Restaure un objet soft-deleted.
+
+        Synchronise actif=True si le champ existe.
+        """
         self.deleted_at = None
         self.deleted_by = None
         self.delete_reason = None
+        # Sync: keep actif coherent with deleted_at
+        if hasattr(self, "actif"):
+            self.actif = True
 
 
-def not_deleted(query, model):
-    """Filtre les objets soft-deleted d'une query SQLAlchemy.
-    Si le model n'a pas SoftDeleteMixin, retourne la query inchangee.
+def not_deleted(query_or_model, model=None):
+    """Filtre les objets soft-deleted.
+
+    Deux modes :
+      not_deleted(query, Model) → retourne la query filtrée
+      not_deleted(Model)        → retourne un critère pour .filter()
+
+    Checks deleted_at IS NULL AND actif=True (if field exists).
     """
+    if model is None:
+        # Mode expression : retourne un critère SQLAlchemy
+        m = query_or_model
+        conditions = []
+        if hasattr(m, "deleted_at"):
+            conditions.append(m.deleted_at.is_(None))
+        if hasattr(m, "actif"):
+            conditions.append(m.actif == True)  # noqa: E712
+        return and_(*conditions) if conditions else literal(True)
+    # Mode query : retourne la query filtrée
+    query = query_or_model
     if hasattr(model, "deleted_at"):
-        return query.filter(model.deleted_at.is_(None))
+        query = query.filter(model.deleted_at.is_(None))
+    if hasattr(model, "actif"):
+        query = query.filter(model.actif == True)  # noqa: E712
     return query

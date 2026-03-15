@@ -27,6 +27,7 @@ from models import (
     DataQualityIssueStatus,
     Site,
     Batiment,  # V42
+    not_deleted,
 )
 
 logger = logging.getLogger(__name__)
@@ -598,7 +599,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 
 def get_tertiaire_dashboard(db: Session, org_id: int = None, site_id: int = None) -> dict:
     """KPIs agrégés pour le dashboard tertiaire."""
-    query = db.query(TertiaireEfa).filter(TertiaireEfa.deleted_at.is_(None))
+    query = db.query(TertiaireEfa).filter(not_deleted(TertiaireEfa))
     if site_id:
         query = query.filter(TertiaireEfa.site_id == site_id)
     elif org_id:
@@ -794,7 +795,7 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
     """
     site_query = db.query(Site).filter(
         Site.actif.is_(True),
-        Site.deleted_at.is_(None),
+        not_deleted(Site),
     )
     if site_id:
         site_query = site_query.filter(Site.id == site_id)
@@ -806,7 +807,7 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
     efas = (
         db.query(TertiaireEfa)
         .filter(
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .all()
     )
@@ -834,7 +835,7 @@ def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -
             db.query(Batiment)
             .filter(
                 Batiment.site_id == site.id,
-                Batiment.deleted_at.is_(None),
+                not_deleted(Batiment),
             )
             .all()
         )

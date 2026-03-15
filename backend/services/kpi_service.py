@@ -135,7 +135,7 @@ class KpiService:
         if cached:
             return cached
 
-        total = _sites_query(self.db, scope).filter(Site.actif == True).count()
+        total = _sites_query(self.db, scope).count()  # not_deleted() déjà appliqué
 
         result = KpiResult(
             value=float(total),

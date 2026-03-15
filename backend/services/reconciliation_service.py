@@ -22,6 +22,7 @@ from models import (
     ReconciliationFixLog,
     ReconciliationStatus,
     PaymentRuleLevel,
+    not_deleted,
 )
 from models.billing_models import EnergyInvoice
 
@@ -125,7 +126,7 @@ def reconcile_site(db: Session, site_id: int) -> dict:
     six_months_ago = today - timedelta(days=180)
 
     # Load site data
-    dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
+    dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, not_deleted(DeliveryPoint)).all()
     contracts = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
     active_contracts = [
         c
@@ -690,7 +691,7 @@ def fix_align_energy_type(db: Session, site_id: int, applied_by: str = None) -> 
     """Fix: Align contract energy_type with the majority DP energy_type."""
     from models.enums import BillingEnergyType
 
-    dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
+    dps = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, not_deleted(DeliveryPoint)).all()
     if not dps:
         return {"error": "Aucun point de livraison"}
 

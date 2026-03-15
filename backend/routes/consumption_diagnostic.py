@@ -159,7 +159,7 @@ def seed_demo_consumption(
         return {"status": "ok", "sites": [result]}
 
     # Seed all sites
-    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
+    sites = not_deleted(db.query(Site), Site).all()
     if not sites:
         raise HTTPException(status_code=400, detail="Aucun site actif.")
 

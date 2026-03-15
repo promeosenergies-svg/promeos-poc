@@ -25,6 +25,7 @@ from models import (
     Compteur,
     DeliveryPoint,
     EnergyContract,
+    not_deleted,
 )
 from services.patrimoine_snapshot import SURFACE_MISMATCH_TOLERANCE
 
@@ -334,9 +335,7 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
         }
 
     # Batch queries — zéro N+1
-    batiments: List[Batiment] = (
-        db.query(Batiment).filter(Batiment.site_id == site_id, Batiment.deleted_at.is_(None)).all()
-    )
+    batiments: List[Batiment] = db.query(Batiment).filter(Batiment.site_id == site_id, not_deleted(Batiment)).all()
     bat_ids = [b.id for b in batiments]
     usages_by_bat: Dict[int, List] = {}
     if bat_ids:
@@ -344,17 +343,9 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
         for u in usages:
             usages_by_bat.setdefault(u.batiment_id, []).append(u)
 
-    compteurs: List[Compteur] = (
-        db.query(Compteur)
-        .filter(
-            Compteur.site_id == site_id,
-            Compteur.actif.is_(True),
-            Compteur.deleted_at.is_(None),
-        )
-        .all()
-    )
+    compteurs: List[Compteur] = db.query(Compteur).filter(Compteur.site_id == site_id, not_deleted(Compteur)).all()
     delivery_points: List[DeliveryPoint] = (
-        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, DeliveryPoint.deleted_at.is_(None)).all()
+        db.query(DeliveryPoint).filter(DeliveryPoint.site_id == site_id, not_deleted(DeliveryPoint)).all()
     )
     contracts: List[EnergyContract] = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).all()
 

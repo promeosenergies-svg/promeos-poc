@@ -58,7 +58,7 @@ def get_cockpit(
     # Stats sites (exclude soft-deleted, scoped to org)
     q_sites = _sites_for_org(db, effective_org_id)
     total_sites = q_sites.count()
-    sites_actifs = q_sites.filter(Site.actif == True).count()
+    sites_actifs = q_sites.count()  # not_deleted() déjà appliqué via _sites_for_org
 
     # Stats conformite (compare to enum, not string)
     sites_tertiaire_ko = (

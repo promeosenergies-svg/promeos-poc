@@ -27,6 +27,7 @@ from models import (
     DataQualityIssueStatus,
     Site,
     Batiment,  # V41
+    not_deleted,
 )
 from services.tertiaire_service import (
     qualify_efa,
@@ -237,7 +238,7 @@ def list_efas(
     statut: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    query = db.query(TertiaireEfa).filter(TertiaireEfa.deleted_at.is_(None))
+    query = db.query(TertiaireEfa).filter(not_deleted(TertiaireEfa))
     if site_id:
         query = query.filter(TertiaireEfa.site_id == site_id)
     elif org_id:
@@ -258,7 +259,7 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
             db.query(Batiment)
             .filter(
                 Batiment.id.in_(building_ids),
-                Batiment.deleted_at.is_(None),
+                not_deleted(Batiment),
             )
             .all()
         )
@@ -281,7 +282,7 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
             db.query(TertiaireEfa)
             .filter(
                 TertiaireEfa.site_id == inferred_site_id,
-                TertiaireEfa.deleted_at.is_(None),
+                not_deleted(TertiaireEfa),
                 TertiaireEfa.statut.in_([EfaStatut.DRAFT, EfaStatut.ACTIVE]),
             )
             .all()
@@ -334,7 +335,7 @@ def get_efa(efa_id: int, db: Session = Depends(get_db)):
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )
@@ -401,7 +402,7 @@ def update_efa(efa_id: int, body: EfaUpdate, db: Session = Depends(get_db)):
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )
@@ -432,16 +433,14 @@ def delete_efa(efa_id: int, db: Session = Depends(get_db)):
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )
     if not efa:
         raise HTTPException(404, "EFA introuvable")
 
-    from datetime import datetime
-
-    efa.deleted_at = datetime.now(timezone.utc)
+    efa.soft_delete()
     db.commit()
     return {"status": "deleted", "efa_id": efa_id}
 
@@ -634,8 +633,7 @@ def building_catalog(
     sites = (
         db.query(Site)
         .filter(
-            Site.actif.is_(True),
-            Site.deleted_at.is_(None),
+            not_deleted(Site),
         )
         .order_by(Site.nom)
         .all()
@@ -647,7 +645,7 @@ def building_catalog(
             db.query(Batiment)
             .filter(
                 Batiment.site_id == site.id,
-                Batiment.deleted_at.is_(None),
+                not_deleted(Batiment),
             )
             .all()
         )
@@ -694,7 +692,7 @@ def get_efa_proofs(
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )
@@ -721,7 +719,7 @@ def link_proof_to_efa(
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )
@@ -815,7 +813,7 @@ def create_proof_templates(
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )

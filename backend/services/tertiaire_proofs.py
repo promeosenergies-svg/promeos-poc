@@ -18,6 +18,7 @@ from models import (
     TertiairePerimeterEvent,
     TertiaireProofArtifact,
     EfaStatut,
+    not_deleted,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ def get_expected_proofs_for_efa(db: Session, efa_id: int, year: int = None) -> l
         db.query(TertiaireEfa)
         .filter(
             TertiaireEfa.id == efa_id,
-            TertiaireEfa.deleted_at.is_(None),
+            not_deleted(TertiaireEfa),
         )
         .first()
     )

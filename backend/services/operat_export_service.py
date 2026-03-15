@@ -26,6 +26,7 @@ from models import (
     AuditLog,
     Portefeuille,
     EntiteJuridique,
+    not_deleted,
 )
 
 logger = logging.getLogger("promeos.operat_export")
@@ -95,7 +96,7 @@ def validate_operat_export(
 
     query = db.query(TertiaireEfa).filter(
         TertiaireEfa.org_id == org_id,
-        TertiaireEfa.deleted_at.is_(None),
+        not_deleted(TertiaireEfa),
     )
     if efa_ids:
         query = query.filter(TertiaireEfa.id.in_(efa_ids))
@@ -146,7 +147,7 @@ def generate_operat_csv(
     """
     query = db.query(TertiaireEfa).filter(
         TertiaireEfa.org_id == org_id,
-        TertiaireEfa.deleted_at.is_(None),
+        not_deleted(TertiaireEfa),
     )
     if efa_ids:
         query = query.filter(TertiaireEfa.id.in_(efa_ids))

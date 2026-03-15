@@ -1210,7 +1210,7 @@ def patrimoine_kpis(
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
-        .filter(Site.actif == True)
+        .filter(not_deleted(Site))
     )
 
     if site_id is not None:
@@ -1243,7 +1243,7 @@ def patrimoine_kpis(
         else db.query(EntiteJuridique)
         .filter(
             EntiteJuridique.organisation_id == org_id,
-            EntiteJuridique.deleted_at.is_(None),
+            not_deleted(EntiteJuridique),
         )
         .count()
     )
@@ -1253,7 +1253,7 @@ def patrimoine_kpis(
         else (
             db.query(Portefeuille)
             .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(EntiteJuridique.organisation_id == org_id, Portefeuille.deleted_at.is_(None))
+            .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Portefeuille))
             .count()
         )
     )
@@ -1264,7 +1264,7 @@ def patrimoine_kpis(
         db.query(DeliveryPoint)
         .filter(
             DeliveryPoint.site_id.in_(site_ids),
-            DeliveryPoint.deleted_at.is_(None),
+            not_deleted(DeliveryPoint),
         )
         .count()
         if site_ids
@@ -1376,7 +1376,7 @@ def _build_sites_query(
         db.query(Site)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Site))
     )
     if portefeuille_id is not None:
         q = q.filter(Site.portefeuille_id == portefeuille_id)
@@ -1679,12 +1679,12 @@ def archive_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Soft-delete a site (set actif=False)."""
+    """Soft-delete a site."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
-    if not site.actif:
+    if site.is_deleted:
         return {"detail": "Site deja archive", "site_id": site_id}
-    site.actif = False
+    site.soft_delete()
     db.commit()
     return {"detail": "Site archive", "site_id": site_id}
 
@@ -1696,12 +1696,12 @@ def restore_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Restore an archived site (set actif=True)."""
+    """Restore an archived site."""
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
-    if site.actif:
+    if not site.is_deleted:
         return {"detail": "Site deja actif", "site_id": site_id}
-    site.actif = True
+    site.restore()
     db.commit()
     return {"detail": "Site restaure", "site_id": site_id}
 
@@ -1733,7 +1733,7 @@ def merge_sites(
         .update({"site_id": target.id}, synchronize_session="fetch")
     )
     # Archive source
-    source.actif = False
+    source.soft_delete()
     db.commit()
 
     return {
@@ -1850,7 +1850,7 @@ def detach_compteur(
     """Deactivate a compteur (soft detach)."""
     org_id = _get_org_id(request, auth, db)
     c = _load_compteur_with_org_check(db, compteur_id, org_id)
-    c.actif = False
+    c.soft_delete()
     db.commit()
     return {"detail": f"Compteur {compteur_id} desactive", **_serialize_compteur(c)}
 
@@ -2535,7 +2535,7 @@ def _compute_site_completeness(db: Session, site, site_ids: list) -> dict:
         db.query(DeliveryPoint)
         .filter(
             DeliveryPoint.site_id == site.id,
-            DeliveryPoint.deleted_at.is_(None),
+            not_deleted(DeliveryPoint),
         )
         .count()
     )

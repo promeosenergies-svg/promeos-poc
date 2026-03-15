@@ -164,7 +164,7 @@ def archive_organisation(
     org = db.query(Organisation).filter(Organisation.id == org_id, not_deleted(Organisation)).first()
     if not org:
         raise HTTPException(404, "Organisation introuvable")
-    org.actif = False
+    org.soft_delete()
     db.commit()
     return {"status": "archived", "id": org_id}
 
@@ -265,11 +265,7 @@ def archive_entite(
     e = db.query(EntiteJuridique).filter(EntiteJuridique.id == entite_id, not_deleted(EntiteJuridique)).first()
     if not e:
         raise HTTPException(404, "Entité juridique introuvable")
-    # Soft delete via mixin if available, else set actif
-    if hasattr(e, "deleted_at"):
-        from datetime import datetime, timezone
-
-        e.deleted_at = datetime.now(timezone.utc)
+    e.soft_delete()
     db.commit()
     return {"status": "archived", "id": entite_id}
 
@@ -367,10 +363,7 @@ def archive_portefeuille(
     pf = db.query(Portefeuille).filter(Portefeuille.id == pf_id, not_deleted(Portefeuille)).first()
     if not pf:
         raise HTTPException(404, "Portefeuille introuvable")
-    if hasattr(pf, "deleted_at"):
-        from datetime import datetime, timezone
-
-        pf.deleted_at = datetime.now(timezone.utc)
+    pf.soft_delete()
     db.commit()
     return {"status": "archived", "id": pf_id}
 
@@ -388,7 +381,7 @@ def list_sites_crud(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Liste les sites, filtrables par portefeuille ou organisation."""
-    q = db.query(Site).filter(not_deleted(Site), Site.actif == True)
+    q = db.query(Site).filter(not_deleted(Site))
     if pf_id:
         q = q.filter(Site.portefeuille_id == pf_id)
     if org_id:
@@ -489,7 +482,7 @@ def archive_site_crud(
     site = db.query(Site).filter(Site.id == site_id, not_deleted(Site)).first()
     if not site:
         raise HTTPException(404, "Site introuvable")
-    site.actif = False
+    site.soft_delete()
     db.commit()
     return {"status": "archived", "id": site_id}
 
