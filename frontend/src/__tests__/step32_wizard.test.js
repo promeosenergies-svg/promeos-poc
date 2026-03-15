@@ -101,8 +101,8 @@ describe('Patrimoine page integration', () => {
     expect(src).toMatch(/SiteCreationWizard/);
   });
 
-  it('has "Ajouter un site" button', () => {
-    expect(src).toMatch(/Ajouter un site/);
+  it('has "Nouveau site" button', () => {
+    expect(src).toMatch(/Nouveau site/);
   });
 
   it('has showSiteWizard state', () => {

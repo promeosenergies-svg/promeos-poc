@@ -267,8 +267,8 @@ const Cockpit = () => {
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
-    ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`
-    : org?.nom || 'Organisation';
+    ? `${org?.nom || 'Societe'} / ${portefeuille.nom}`
+    : org?.nom || 'Societe';
 
   const evidenceMap = useMemo(
     () => ({

@@ -191,7 +191,7 @@ export function computeBacsV2Summary(bacsV2Data) {
  * Exported for testing.
  */
 export function computeScopeLabel(org, scope, scopedSites, portefeuilles) {
-  const orgName = org?.nom || 'Organisation';
+  const orgName = org?.nom || 'Societe';
   if (scope?.siteId) {
     const site = scopedSites?.[0];
     return `${orgName} · Site: ${site?.nom || scope.siteId}`;
@@ -200,7 +200,7 @@ export function computeScopeLabel(org, scope, scopedSites, portefeuilles) {
     const pf = portefeuilles?.find((p) => p.id === scope.portefeuilleId);
     return `${orgName} · Portefeuille: ${pf?.nom || scope.portefeuilleId} (${scopedSites?.length || 0} sites)`;
   }
-  return `${orgName} · Organisation (${scopedSites?.length || 0} sites)`;
+  return `${orgName} · Societe (${scopedSites?.length || 0} sites)`;
 }
 
 export function isOverdue(obligation) {

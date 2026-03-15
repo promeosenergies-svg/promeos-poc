@@ -157,7 +157,7 @@ def ensure_delivery_points_for_site(db: Session, site_id: int) -> int:
     created = 0
     for c in orphan_compteurs:
         # Skip auto-generated meter_ids (not real PRM/PCE)
-        if c.meter_id.startswith("AUTO-") or c.meter_id.startswith("SEED-"):
+        if c.meter_id.startswith("AUTO-") or c.meter_id.startswith("SEED-") or c.meter_id.startswith("DEMO-"):
             continue
 
         # Deduce energy type from compteur type

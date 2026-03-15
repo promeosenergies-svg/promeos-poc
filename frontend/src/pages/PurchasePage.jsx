@@ -1813,7 +1813,7 @@ export default function PurchasePage() {
           <ExportPackRFP
             portfolio={portfolioData.portfolio}
             sites={portfolioData.sites}
-            orgName={scope.org?.nom || 'Organisation'}
+            orgName={scope.org?.nom || 'Societe'}
             onClose={() => setShowPackRFP(false)}
           />
         )}

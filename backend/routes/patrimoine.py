@@ -1815,6 +1815,14 @@ def update_compteur(
         updated.append(field)
 
     db.commit()
+
+    # Auto-créer DeliveryPoint si meter_id modifié (#105)
+    if "meter_id" in updated:
+        from services.onboarding_service import ensure_delivery_points_for_site
+
+        ensure_delivery_points_for_site(db, c.site_id)
+        db.commit()
+
     return {"updated": updated, **_serialize_compteur(c)}
 
 

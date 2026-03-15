@@ -2,9 +2,11 @@
 PROMEOS - Routes API pour les Compteurs
 """
 
-import random
+import time
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Compteur, Site, TypeCompteur, EnergyVector, not_deleted
@@ -12,6 +14,36 @@ from routes.schemas import CompteurResponse
 from typing import List, Optional
 
 router = APIRouter(prefix="/api/compteurs", tags=["Compteurs"])
+
+
+def _generate_unique_meter_id(site_id: int) -> str:
+    """Generate a deterministic, collision-free meter_id.
+
+    Format: AUTO-{site_id:06d}-{timestamp_hex} (14+ chars, unique by construction).
+    This is a placeholder value — real PRM/PCE should come from import or manual entry.
+    """
+    ts_hex = format(int(time.time() * 1000) % 0xFFFFFFFF, "08x")
+    return f"AUTO-{site_id:06d}-{ts_hex}"
+
+
+def _generate_unique_numero_serie(db: Session, site_id: int) -> str:
+    """Generate next sequential numero_serie for a site.
+
+    Format: CPT-{site_id}-{seq} where seq is max(existing) + 1.
+    """
+    max_seq = (
+        db.query(func.max(Compteur.numero_serie))
+        .filter(Compteur.site_id == site_id, Compteur.numero_serie.like(f"CPT-{site_id}-%"))
+        .scalar()
+    )
+    if max_seq:
+        try:
+            last_num = int(max_seq.rsplit("-", 1)[-1])
+        except (ValueError, IndexError):
+            last_num = 0
+    else:
+        last_num = 0
+    return f"CPT-{site_id}-{last_num + 1}"
 
 
 class CompteurCreateRequest(BaseModel):
@@ -39,19 +71,45 @@ def create_compteur(req: CompteurCreateRequest, db: Session = Depends(get_db)):
         TypeCompteur.EAU: EnergyVector.OTHER,
     }
 
-    num_serie = req.numero_serie or f"CPT-{site.id}-{random.randint(1000, 9999)}"
+    num_serie = req.numero_serie or _generate_unique_numero_serie(db, site.id)
+    meter_id = _generate_unique_meter_id(site.id)
+
     c = Compteur(
         site_id=site.id,
         type=tc,
         numero_serie=num_serie,
         puissance_souscrite_kw=req.puissance_souscrite_kw,
-        meter_id=f"{random.randint(10000000000000, 99999999999999)}",
+        meter_id=meter_id,
         energy_vector=ev_map.get(tc, EnergyVector.OTHER),
         actif=True,
     )
     db.add(c)
-    db.commit()
+
+    # Retry up to 3 times on IntegrityError (numero_serie collision)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            db.commit()
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt == max_retries - 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Impossible de generer un numero de serie unique apres 3 tentatives",
+                )
+            c.numero_serie = _generate_unique_numero_serie(db, site.id)
+            c.meter_id = _generate_unique_meter_id(site.id)
+            db.add(c)
+
     db.refresh(c)
+
+    # Auto-créer DeliveryPoint si meter_id reel (#105)
+    from services.onboarding_service import ensure_delivery_points_for_site
+
+    ensure_delivery_points_for_site(db, site.id)
+    db.commit()
+
     return {
         "id": c.id,
         "site_id": c.site_id,

@@ -35,7 +35,7 @@ import {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const STEPS = [
-  { id: 'org', label: 'Organisation', icon: Building2 },
+  { id: 'org', label: 'Societe', icon: Building2 },
   { id: 'entite', label: 'Entité juridique', icon: FileText },
   { id: 'portefeuille', label: 'Portefeuille', icon: Folder },
   { id: 'site', label: 'Site', icon: MapPin },
@@ -86,7 +86,7 @@ function StepOrganisation({ data, setData, orgs, loading }) {
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-700">Organisation</label>
+      <label className="block text-sm font-medium text-gray-700">Societe</label>
       {!creating ? (
         <>
           <select
@@ -109,7 +109,7 @@ function StepOrganisation({ data, setData, orgs, loading }) {
             onClick={() => setCreating(true)}
             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
           >
-            <Plus size={14} /> Créer une nouvelle organisation
+            <Plus size={14} /> Creer une nouvelle societe
           </button>
         </>
       ) : (
@@ -170,7 +170,7 @@ function StepEntite({ data, setData, entites, loading }) {
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">
-        Entité juridique (org: {data.org?.nom})
+        Entité juridique (societe: {data.org?.nom})
       </label>
       {!creating ? (
         <>
@@ -641,7 +641,7 @@ function StepRecap({ data }) {
       <h3 className="text-sm font-semibold text-gray-800">Recapitulatif</h3>
       <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
         <div>
-          <span className="font-medium text-gray-600">Organisation :</span> {data.org?.nom}{' '}
+          <span className="font-medium text-gray-600">Societe :</span> {data.org?.nom}{' '}
           {data.org?._new && <span className="text-blue-600">(nouvelle)</span>}
         </div>
         <div>

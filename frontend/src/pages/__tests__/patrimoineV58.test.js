@@ -156,16 +156,16 @@ describe("Guard multi-org V57 — pas d'Organisation.first()", () => {
 // ── Soft-delete filtering ──────────────────────────────────────────────────
 
 describe('Soft-delete filtering strict dans les services', () => {
-  test('snapshot filtre Batiment.deleted_at IS NULL', () => {
-    expect(SNAPSHOT_PY).toMatch(/deleted_at\.is_\(None\)/);
+  test('snapshot utilise not_deleted() pour Batiment', () => {
+    expect(SNAPSHOT_PY).toMatch(/not_deleted\(Batiment\)/);
   });
 
-  test('snapshot filtre Compteur.deleted_at IS NULL', () => {
-    expect(SNAPSHOT_PY).toMatch(/deleted_at\.is_\(None\)/);
+  test('snapshot utilise not_deleted() pour Compteur', () => {
+    expect(SNAPSHOT_PY).toMatch(/not_deleted\(Compteur\)/);
   });
 
-  test('anomalies filtre Batiment.deleted_at IS NULL', () => {
-    expect(ANOMALIES_PY).toMatch(/deleted_at\.is_\(None\)/);
+  test('anomalies utilise not_deleted() pour Batiment', () => {
+    expect(ANOMALIES_PY).toMatch(/not_deleted\(Batiment\)/);
   });
 });
 
