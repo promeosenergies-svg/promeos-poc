@@ -49,6 +49,7 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
 import QuickCreateSite from '../components/QuickCreateSite';
+import DrawerEditSite from '../components/DrawerEditSite';
 import SitesMap from '../components/patrimoine/SitesMap';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -1572,6 +1573,7 @@ export default function Patrimoine() {
             onCreateAction={() => openActionFromDrawer(drawerSite.nom)}
             initialTab={drawerInitialTab}
             orgId={scope.orgId}
+            onSiteUpdated={() => window.location.reload()}
           />
         )}
       </Drawer>
@@ -1841,40 +1843,46 @@ const COMPLETUDE_ACTIONS = [
     label: 'Ajouter un point de livraison (PRM/PCE)',
     badge: 'Facturation · Achat',
     color: 'text-violet-600 bg-violet-50',
+    action: null, // pas cliquable — tooltip explicatif
+    hint: 'Ajoutez un compteur avec PRM/PCE pour creer le PDL automatiquement',
   },
   {
     key: 'contrat_actif',
     label: 'Associer un contrat energie',
     badge: 'Achat · Facturation',
     color: 'text-blue-600 bg-blue-50',
+    action: null, // Sprint 2-S3
   },
   {
     key: 'surface',
     label: 'Renseigner la surface du site',
     badge: 'Conformite',
     color: 'text-amber-600 bg-amber-50',
+    action: 'edit_site',
   },
   {
     key: 'siret',
-    label: 'Renseigner le SIRET',
+    label: 'Completer les informations etablissement',
     badge: 'OPERAT',
     color: 'text-emerald-600 bg-emerald-50',
+    action: 'edit_site',
   },
   {
     key: 'coordonnees',
     label: 'Localiser le site (GPS)',
     badge: 'Cartographie',
     color: 'text-cyan-600 bg-cyan-50',
+    action: 'edit_site',
   },
 ];
 
-function SiteCompletude({ siteId }) {
+function SiteCompletude({ siteId, onAction, refreshKey }) {
   const [data, setData] = useState(null);
   useEffect(() => {
     getSiteCompleteness(siteId)
       .then(setData)
       .catch(() => {});
-  }, [siteId]);
+  }, [siteId, refreshKey]);
 
   if (!data || data.score >= 80) return null;
 
@@ -1900,11 +1908,29 @@ function SiteCompletude({ siteId }) {
       {/* Action list */}
       <ul className="space-y-1.5">
         {actions.map((a) => (
-          <li key={a.key} className="flex items-center justify-between text-sm">
-            <span className="text-gray-700">{a.label}</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${a.color}`}>
-              {a.badge}
-            </span>
+          <li key={a.key}>
+            {a.action ? (
+              <button
+                type="button"
+                onClick={() => onAction?.(a.action)}
+                className="w-full flex items-center justify-between text-sm px-2 py-1.5 -mx-2 rounded-md hover:bg-blue-50 cursor-pointer group transition"
+              >
+                <span className="text-gray-700 group-hover:text-blue-700">{a.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${a.color}`}>
+                  {a.badge}
+                </span>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">{a.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${a.color}`}>
+                    {a.badge}
+                  </span>
+                </div>
+                {a.hint && <p className="text-[11px] text-gray-400 pl-0.5">{a.hint}</p>}
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -1918,10 +1944,28 @@ function SiteDrawerContent({
   onCreateAction,
   initialTab = 'resume',
   orgId = null,
+  onSiteUpdated = null,
 }) {
   const [tab, setTab] = useState(initialTab);
+  const [inlineForm, setInlineForm] = useState(null); // 'edit_site' | null
+  const [refreshKey, setRefreshKey] = useState(0);
   const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
   const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+
+  // Si un formulaire inline est actif, il remplace tout le contenu
+  if (inlineForm === 'edit_site') {
+    return (
+      <DrawerEditSite
+        site={site}
+        onBack={() => setInlineForm(null)}
+        onSuccess={() => {
+          setInlineForm(null);
+          setRefreshKey((k) => k + 1);
+          onSiteUpdated?.();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -1961,7 +2005,11 @@ function SiteDrawerContent({
       {tab === 'resume' && (
         <div className="space-y-4">
           {/* Completude actionnable */}
-          <SiteCompletude siteId={site.id} />
+          <SiteCompletude
+            siteId={site.id}
+            onAction={(action) => setInlineForm(action)}
+            refreshKey={refreshKey}
+          />
 
           {/* Conformite block */}
           <DrawerSection title="Conformité">
