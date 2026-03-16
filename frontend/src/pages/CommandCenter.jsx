@@ -378,8 +378,8 @@ export default function CommandCenter() {
             <div className="px-5 py-8">
               <EmptyState
                 icon={CheckCircle2}
-                title="Tous les sites sont conformes"
-                text="Aucun site ne nécessite d'intervention."
+                title="Aucune alerte reglementaire active"
+                text="Aucune penalite identifiee. Verifier les anomalies et preuves separement."
               />
             </div>
           ) : (

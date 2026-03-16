@@ -2029,7 +2029,11 @@ function SiteDrawerContent({
         </div>
         {/* Metric pills */}
         <div className="flex items-center gap-3 mt-3">
-          <MetricPill label="Risque" value={fmtEur(site.risque_eur)} warn={site.risque_eur > 0} />
+          <MetricPill
+            label="Penalite regl."
+            value={fmtEur(site.risque_eur)}
+            warn={site.risque_eur > 0}
+          />
           <MetricPill label="Surface" value={fmtArea(site.surface_m2)} />
           <MetricPill label="Compteurs" value={site.nb_compteurs || '—'} />
         </div>
@@ -2081,7 +2085,7 @@ function SiteDrawerContent({
 
           {/* Risk block */}
           <DrawerSection title="Risque">
-            <DrawerRow label="Risque estimé">{fmtEurFull(site.risque_eur)}</DrawerRow>
+            <DrawerRow label="Penalite reglementaire">{fmtEurFull(site.risque_eur)}</DrawerRow>
             <DrawerRow label="Anomalies">
               {site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}
             </DrawerRow>

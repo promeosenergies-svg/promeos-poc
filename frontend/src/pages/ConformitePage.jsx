@@ -174,14 +174,15 @@ export function computeBacsV2Summary(bacsV2Data) {
   const deadlines = entries.map((e) => e.deadline).filter(Boolean);
   const closest = deadlines.length ? deadlines.sort()[0] : null;
   const maxPutile = Math.max(...entries.map((e) => e.putile_kw || 0));
-  const maxThreshold = Math.max(...entries.map((e) => e.threshold_kw || 0));
+  // Seuil applicable = base sur le putile max reel (pas le max des seuils)
+  const applicableThreshold = maxPutile >= 290 ? 290 : 70;
   const triExemption = entries.some((e) => e.tri_exemption);
   return {
     applicable,
     deadline: closest,
     putile_kw: maxPutile || null,
-    threshold_kw: maxThreshold || null,
-    tier: maxThreshold >= 290 ? 'TIER1' : 'TIER2',
+    threshold_kw: applicableThreshold || null,
+    tier: maxPutile >= 290 ? 'TIER1' : 'TIER2',
     tri_exemption: triExemption,
   };
 }

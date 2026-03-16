@@ -70,8 +70,8 @@ const HANDLERS = {
     }
     if (v === 0) {
       return {
-        simple: 'Aucun risque financier identifié. Situation maîtrisée.',
-        expert: 'Risque = 0 €. Tous les sites sont conformes ou couverts.',
+        simple: 'Aucune penalite reglementaire identifiee.',
+        expert: 'Penalite reglementaire = 0 €. Verifier le statut des anomalies separement.',
         severity: 'ok',
       };
     }
