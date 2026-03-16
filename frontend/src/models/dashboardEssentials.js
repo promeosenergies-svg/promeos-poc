@@ -396,11 +396,19 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
           : 'Vérifiez le détail dans Conformité',
     });
   } else {
+    // Clarifier : "0 sites pleinement conformes" ≠ "score 0"
+    const ncTotal = nonConformes + aRisque;
     bullets.push({
       id: 'conforme_partial',
       type: pctConf >= CONFORMITY_THRESHOLDS.warn ? 'warn' : 'negative',
-      label: `${formatPercentFR(pctConf)} des sites en conformité`,
-      sub: `${conformes} sur ${total} site${total > 1 ? 's' : ''}`,
+      label:
+        conformes === 0
+          ? `Aucun site pleinement conforme sur ${total}`
+          : `${conformes} sur ${total} site${total > 1 ? 's' : ''} pleinement conforme${conformes > 1 ? 's' : ''}`,
+      sub:
+        ncTotal > 0
+          ? `${nonConformes} non conforme${nonConformes > 1 ? 's' : ''}, ${aRisque} à risque`
+          : `${conformes} sur ${total}`,
     });
   }
 
@@ -497,7 +505,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       messageCtx: { totalSites: total, sitesAtRisk: aRisque, sitesNonConformes: nonConformes },
       sub:
         complianceScore != null
-          ? `Décret Tertiaire 45% · BACS 30% · APER 25%${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
+          ? `DT 45% · BACS 30% · APER 25%${nonConformes > 0 ? ` · ${nonConformes} NC` : ''}${aRisque > 0 ? ` · ${aRisque} à risque` : ''}${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
           : `${conformes} sur ${total} site${total !== 1 ? 's' : ''} conforme${conformes !== 1 ? 's' : ''}`,
       status:
         pctConf < COMPLIANCE_SCORE_THRESHOLDS.warn
