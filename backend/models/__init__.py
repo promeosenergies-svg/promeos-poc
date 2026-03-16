@@ -207,6 +207,7 @@ from .tertiaire import (
 )
 from .compliance_event_log import ComplianceEventLog
 from .operat_export_manifest import OperatExportManifest
+from .bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument
 
 # V96: Payment Rules
 from .payment_rule import PaymentRule

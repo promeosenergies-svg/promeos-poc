@@ -74,6 +74,8 @@ def run_migrations(engine):
     _migrate_compliance_event_log(engine)
     # BACS hardening
     _migrate_bacs_hardening(engine)
+    # BACS regulatory tables
+    _migrate_bacs_regulatory(engine)
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
 
@@ -1426,3 +1428,104 @@ def _migrate_bacs_hardening(engine):
                 if col not in existing:
                     conn.execute(text(f'ALTER TABLE "bacs_inspections" ADD COLUMN "{col}" {typ}'))
                     logger.info("migration: BACS — added bacs_inspections.%s", col)
+
+    # Inspection regulatory columns
+    if insp.has_table("bacs_inspections"):
+        existing = {c["name"] for c in insp.get_columns("bacs_inspections")}
+        reg_cols = [
+            ("inspection_type", "VARCHAR(20)"),
+            ("report_delivered_at", "DATE"),
+            ("report_retention_until", "DATE"),
+            ("settings_evaluated", "INTEGER DEFAULT 0"),
+            ("functional_analysis_done", "INTEGER DEFAULT 0"),
+            ("recommendations_json", "TEXT"),
+            ("report_compliant", "INTEGER"),
+        ]
+        with engine.begin() as conn:
+            for col, typ in reg_cols:
+                if col not in existing:
+                    conn.execute(text(f'ALTER TABLE "bacs_inspections" ADD COLUMN "{col}" {typ}'))
+                    logger.info("migration: BACS reg — added bacs_inspections.%s", col)
+
+
+def _migrate_bacs_regulatory(engine):
+    """Create BACS regulatory tables (functional requirements, exploitation, proofs)."""
+    insp = inspect(engine)
+
+    if not insp.has_table("bacs_functional_requirements"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "bacs_functional_requirements" (
+                    "id" INTEGER PRIMARY KEY,
+                    "asset_id" INTEGER NOT NULL REFERENCES "bacs_assets"("id") ON DELETE CASCADE,
+                    "continuous_monitoring" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "hourly_timestep" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "functional_zones" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "monthly_retention_5y" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "reference_values" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "efficiency_loss_detection" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "interoperability" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "manual_override" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "autonomous_management" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "data_ownership" VARCHAR(20) DEFAULT 'not_demonstrated',
+                    "assessed_at" DATETIME,
+                    "assessed_by" VARCHAR(200),
+                    "notes" TEXT,
+                    "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+        logger.info("migration: created bacs_functional_requirements")
+
+    if not insp.has_table("bacs_exploitation_status"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "bacs_exploitation_status" (
+                    "id" INTEGER PRIMARY KEY,
+                    "asset_id" INTEGER NOT NULL REFERENCES "bacs_assets"("id") ON DELETE CASCADE,
+                    "written_procedures" VARCHAR(20) DEFAULT 'absent',
+                    "verification_periodicity" VARCHAR(50),
+                    "control_points_defined" INTEGER DEFAULT 0,
+                    "repair_process_defined" INTEGER DEFAULT 0,
+                    "operator_trained" INTEGER DEFAULT 0,
+                    "training_date" DATE,
+                    "training_provider" VARCHAR(200),
+                    "training_certificate_ref" VARCHAR(200),
+                    "last_review_at" DATETIME,
+                    "reviewed_by" VARCHAR(200),
+                    "notes" TEXT,
+                    "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+        logger.info("migration: created bacs_exploitation_status")
+
+    if not insp.has_table("bacs_proof_documents"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "bacs_proof_documents" (
+                    "id" INTEGER PRIMARY KEY,
+                    "asset_id" INTEGER NOT NULL REFERENCES "bacs_assets"("id") ON DELETE CASCADE,
+                    "document_type" VARCHAR(50) NOT NULL,
+                    "label" VARCHAR(300),
+                    "source" VARCHAR(100),
+                    "actor" VARCHAR(200) NOT NULL DEFAULT 'system',
+                    "file_ref" VARCHAR(500),
+                    "valid_until" DATE,
+                    "notes" TEXT,
+                    "linked_entity_type" VARCHAR(50),
+                    "linked_entity_id" INTEGER,
+                    "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(
+                text('CREATE INDEX IF NOT EXISTS "ix_bacs_proof_asset" ON "bacs_proof_documents" ("asset_id")')
+            )
+        logger.info("migration: created bacs_proof_documents")

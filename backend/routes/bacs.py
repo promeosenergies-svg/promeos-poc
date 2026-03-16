@@ -381,3 +381,26 @@ def get_bacs_compliance_gate(
     result = evaluate_bacs_status(db, asset.id)
     db.commit()
     return result
+
+
+@router.get("/site/{site_id}/regulatory-assessment")
+def get_bacs_regulatory_assessment(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Evaluation reglementaire BACS complete (eligibilite + exigences + inspection + preuves)."""
+    from services.bacs_regulatory_engine import evaluate_full_bacs
+
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        return {
+            "error": None,
+            "final_status": "not_evaluated",
+            "final_reason": "Aucun actif BACS pour ce site",
+            "blockers": ["Creer un actif BACS"],
+            "is_compliant_claim_allowed": False,
+        }
+
+    result = evaluate_full_bacs(db, asset.id)
+    db.commit()
+    return result

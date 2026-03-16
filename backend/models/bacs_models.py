@@ -310,5 +310,14 @@ class BacsInspection(Base, TimestampMixin):
     critical_findings_count = Column(Integer, nullable=True, default=0)
     system_class_observed = Column(String(1), nullable=True, comment="Classe observee lors de l'inspection")
 
+    # Exigences inspection reglementaire R.175-5-1
+    inspection_type = Column(String(20), nullable=True, comment="initial, periodic")
+    report_delivered_at = Column(Date, nullable=True)
+    report_retention_until = Column(Date, nullable=True)
+    settings_evaluated = Column(Boolean, nullable=True, default=False, comment="Parametrage evalue")
+    functional_analysis_done = Column(Boolean, nullable=True, default=False, comment="Analyse fonctionnelle realisee")
+    recommendations_json = Column(Text, nullable=True, comment="JSON: recommandations structurees")
+    report_compliant = Column(Boolean, nullable=True, comment="Rapport conforme aux exigences")
+
     # Relations
     asset = relationship("BacsAsset", back_populates="inspections")
