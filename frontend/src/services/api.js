@@ -1537,6 +1537,12 @@ export const linkTertiaireProof = (efaId, body) =>
 export const getOperatProofCatalogV2 = () =>
   api.get(`${TERT_BASE}/proofs/catalog`).then((r) => r.data);
 
+// OPERAT Trajectory
+export const validateEfaTrajectory = (efaId, year) =>
+  api.get(`${TERT_BASE}/efa/${efaId}/targets/validate`, { params: { year } }).then((r) => r.data);
+export const getEfaProofEvents = (efaId) =>
+  api.get(`${TERT_BASE}/efa/${efaId}/proof-events`).then((r) => r.data);
+
 export const getIssueProofs = (issueCode) =>
   api.get(`${TERT_BASE}/issues/${issueCode}/proofs`).then((r) => r.data);
 

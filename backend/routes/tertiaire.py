@@ -910,3 +910,18 @@ def get_efa_consumption_history(
         raise HTTPException(404, "EFA introuvable")
 
     return {"efa_id": efa_id, "consumptions": get_consumption_history(db, efa_id)}
+
+
+@router.get("/efa/{efa_id}/proof-events")
+def get_efa_proof_events(
+    efa_id: int,
+    db: Session = Depends(get_db),
+):
+    """Journal d'audit conformite pour une EFA (consommations, trajectoire, exports)."""
+    from services.operat_trajectory import get_proof_events
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    return {"efa_id": efa_id, "events": get_proof_events(db, efa_id)}

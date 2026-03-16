@@ -5,6 +5,7 @@ Calcul des objectifs -40% (2030) / -50% (2040) / -60% (2050)
 a partir de la consommation de reference d'une EFA.
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -12,8 +13,45 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import TertiaireEfa, TertiaireEfaConsumption
+from models.compliance_event_log import ComplianceEventLog
 
 logger = logging.getLogger("promeos.operat.trajectory")
+
+
+# ── Reliability rules ─────────────────────────────────────────────────
+
+SOURCE_RELIABILITY = {
+    "declared_manual": "medium",
+    "import_invoice": "high",
+    "api": "high",
+    "factures": "high",
+    "site_fallback": "low",
+    "inferred": "low",
+    "estimation": "low",
+    "seed": "low",
+    "unknown": "unverified",
+    None: "unverified",
+}
+
+
+def _reliability_for_source(source: Optional[str]) -> str:
+    return SOURCE_RELIABILITY.get(source, "unverified")
+
+
+def _log_event(db, entity_type, entity_id, action, before=None, after=None, actor="system", context=None):
+    db.add(
+        ComplianceEventLog(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            action=action,
+            before_json=json.dumps(before, default=str) if before else None,
+            after_json=json.dumps(after, default=str) if after else None,
+            actor=actor,
+            source_context=context,
+        )
+    )
+    db.flush()
+
 
 # Objectifs reglementaires Decret Tertiaire (relatifs a la baseline)
 TARGETS = {
@@ -65,6 +103,7 @@ def declare_consumption(
             )
 
     # Upsert consommation
+    reliability = _reliability_for_source(source)
     conso = (
         db.query(TertiaireEfaConsumption)
         .filter(
@@ -73,7 +112,11 @@ def declare_consumption(
         )
         .first()
     )
+    before_state = None
+    action = "create"
     if conso:
+        action = "update"
+        before_state = {"kwh_total": conso.kwh_total, "source": conso.source, "is_reference": conso.is_reference}
         conso.kwh_total = kwh_total
         conso.kwh_elec = kwh_elec
         conso.kwh_gaz = kwh_gaz
@@ -81,6 +124,7 @@ def declare_consumption(
         conso.is_reference = is_reference
         conso.is_normalized = False
         conso.source = source
+        conso.reliability = reliability
     else:
         conso = TertiaireEfaConsumption(
             efa_id=efa_id,
@@ -92,6 +136,7 @@ def declare_consumption(
             is_reference=is_reference,
             is_normalized=False,
             source=source,
+            reliability=reliability,
         )
         db.add(conso)
 
@@ -102,13 +147,25 @@ def declare_consumption(
 
     db.flush()
 
+    # Audit trail
+    after_state = {
+        "kwh_total": kwh_total,
+        "source": source,
+        "reliability": reliability,
+        "is_reference": is_reference,
+        "year": year,
+    }
+    _log_event(db, "TertiaireEfaConsumption", conso.id, action, before=before_state, after=after_state, context="api")
+
     return {
         "id": conso.id,
         "efa_id": efa_id,
         "year": year,
         "kwh_total": kwh_total,
         "is_reference": is_reference,
-        "action": "updated" if conso.id else "created",
+        "source": source,
+        "reliability": reliability,
+        "action": action,
     }
 
 
@@ -195,10 +252,36 @@ def validate_trajectory(
         delta_percent = None
         status = "not_evaluable"
 
+    # 5b. Reliability warnings
+    baseline_rel = _reliability_for_source(baseline_conso.source)
+    current_rel = _reliability_for_source(current_conso.source if current_conso else None)
+    evidence_warnings = []
+    if baseline_rel in ("low", "unverified"):
+        evidence_warnings.append(f"Baseline fiabilite '{baseline_rel}' — source: {baseline_conso.source or 'inconnue'}")
+    if current_conso and current_rel in ("low", "unverified"):
+        evidence_warnings.append(
+            f"Conso courante fiabilite '{current_rel}' — source: {current_conso.source or 'inconnue'}"
+        )
+
     # 6. Mettre a jour le cache EFA
     efa.trajectory_status = status
     efa.trajectory_last_calculated_at = datetime.now(timezone.utc)
     db.flush()
+
+    # 7. Audit trail
+    _log_event(
+        db,
+        "TertiaireEfa",
+        efa_id,
+        "trajectory_compute",
+        after={
+            "status": status,
+            "observation_year": observation_year,
+            "baseline_kwh": baseline_kwh,
+            "current_kwh": current_kwh,
+        },
+        context="api",
+    )
 
     return {
         "efa_id": efa_id,
@@ -207,11 +290,13 @@ def validate_trajectory(
             "year": baseline_conso.year,
             "kwh": baseline_kwh,
             "source": baseline_conso.source,
+            "reliability": baseline_rel,
         },
         "current": {
             "year": observation_year,
             "kwh": current_kwh,
             "source": current_conso.source if current_conso else None,
+            "reliability": current_rel,
         },
         "targets": targets,
         "applicable_target_kwh": applicable_kwh,
@@ -222,6 +307,7 @@ def validate_trajectory(
         "is_normalized": bool(baseline_conso.is_normalized and (current_conso and current_conso.is_normalized)),
         "missing_fields": missing_fields,
         "warnings": warnings,
+        "evidence_warnings": evidence_warnings,
     }
 
 
@@ -244,6 +330,42 @@ def get_consumption_history(db: Session, efa_id: int) -> list:
             "is_reference": r.is_reference,
             "is_normalized": r.is_normalized,
             "source": r.source,
+            "reliability": getattr(r, "reliability", None) or _reliability_for_source(r.source),
+        }
+        for r in rows
+    ]
+
+
+def get_proof_events(db: Session, efa_id: int) -> list:
+    """Retourne le journal d'audit des events conformite lies a une EFA."""
+    from models.compliance_event_log import ComplianceEventLog
+
+    rows = (
+        db.query(ComplianceEventLog)
+        .filter(
+            ((ComplianceEventLog.entity_type == "TertiaireEfa") & (ComplianceEventLog.entity_id == efa_id))
+            | (
+                (ComplianceEventLog.entity_type == "TertiaireEfaConsumption")
+                & (
+                    ComplianceEventLog.entity_id.in_(
+                        db.query(TertiaireEfaConsumption.id).filter(TertiaireEfaConsumption.efa_id == efa_id)
+                    )
+                )
+            )
+        )
+        .order_by(ComplianceEventLog.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "entity_type": r.entity_type,
+            "entity_id": r.entity_id,
+            "action": r.action,
+            "actor": r.actor,
+            "source_context": r.source_context,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
         }
         for r in rows
     ]

@@ -205,6 +205,7 @@ from .tertiaire import (
     TertiaireDataQualityIssue,
     TertiaireEfaConsumption,
 )
+from .compliance_event_log import ComplianceEventLog
 
 # V96: Payment Rules
 from .payment_rule import PaymentRule

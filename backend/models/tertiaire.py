@@ -186,6 +186,9 @@ class TertiaireEfaConsumption(Base, TimestampMixin):
     kwh_reseau = Column(Float, nullable=True, comment="Part reseau chaleur/froid (kWh)")
     is_reference = Column(Boolean, default=False, nullable=False, comment="True si annee de reference")
     is_normalized = Column(Boolean, default=False, nullable=False, comment="True si normalise climatiquement")
-    source = Column(String(50), nullable=True, comment="factures, api, estimation, manuel")
+    source = Column(
+        String(50), nullable=True, comment="declared_manual, import_invoice, site_fallback, inferred, unknown"
+    )
+    reliability = Column(String(20), nullable=True, default="unverified", comment="high, medium, low, unverified")
 
     efa = relationship("TertiaireEfa", back_populates="consumptions")

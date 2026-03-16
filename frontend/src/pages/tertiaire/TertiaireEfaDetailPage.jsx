@@ -31,6 +31,7 @@ import {
   exportTertiairePack,
   getTertiaireEfaProofs,
   createAction,
+  validateEfaTrajectory,
 } from '../../services/api';
 import {
   buildOperatActionPayload,
@@ -38,6 +39,134 @@ import {
 } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
 import DossierPrintView from '../../components/DossierPrintView';
+
+// ── Bloc Trajectoire OPERAT (compact, B2B) ──────────────────────────
+
+const REL_BADGE = {
+  high: { label: 'Fiable', cls: 'bg-green-100 text-green-700' },
+  medium: { label: 'Moyenne', cls: 'bg-amber-100 text-amber-700' },
+  low: { label: 'Faible', cls: 'bg-red-100 text-red-700' },
+  unverified: { label: 'Non verifiee', cls: 'bg-gray-100 text-gray-500' },
+};
+
+const STATUS_LABEL = {
+  on_track: { label: 'Trajectoire atteinte', cls: 'bg-green-100 text-green-700' },
+  off_track: { label: 'Trajectoire non atteinte', cls: 'bg-red-100 text-red-700' },
+  not_evaluable: { label: 'Non evaluable', cls: 'bg-gray-100 text-gray-500' },
+};
+
+function EfaTrajectoryBlock({ efaId }) {
+  const [data, setData] = useState(null);
+  const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    if (!efaId) return;
+    validateEfaTrajectory(efaId, currentYear)
+      .then(setData)
+      .catch(() => setData(null));
+  }, [efaId, currentYear]);
+
+  if (!data) return null;
+
+  const st = STATUS_LABEL[data.status] || STATUS_LABEL.not_evaluable;
+  const baseRel = data.baseline?.reliability
+    ? REL_BADGE[data.baseline.reliability]
+    : REL_BADGE.unverified;
+  const currRel = data.current?.reliability
+    ? REL_BADGE[data.current.reliability]
+    : REL_BADGE.unverified;
+
+  return (
+    <div className="mt-4">
+      <Card>
+        <CardBody className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Trajectoire OPERAT
+            </h4>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${st.cls}`}>
+              {st.label}
+            </span>
+          </div>
+
+          {/* Donnees */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="space-y-1">
+              <p className="text-xs text-gray-400">Reference</p>
+              {data.baseline ? (
+                <>
+                  <p className="font-medium text-gray-800">
+                    {Math.round(data.baseline.kwh).toLocaleString('fr-FR')} kWh (
+                    {data.baseline.year})
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${baseRel.cls}`}>
+                      {baseRel.label}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{data.baseline.source || '—'}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-red-600">
+                  Absente — saisir la consommation de reference
+                </p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-400">Observation {currentYear}</p>
+              {data.current?.kwh != null ? (
+                <>
+                  <p className="font-medium text-gray-800">
+                    {Math.round(data.current.kwh).toLocaleString('fr-FR')} kWh
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${currRel.cls}`}>
+                      {currRel.label}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{data.current.source || '—'}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-gray-500">Non renseignee</p>
+              )}
+            </div>
+          </div>
+
+          {/* Objectif + ecart */}
+          {data.applicable_target_kwh != null && (
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                Objectif {data.applicable_target_year} :{' '}
+                {data.applicable_target_kwh.toLocaleString('fr-FR')} kWh
+              </div>
+              {data.delta_kwh != null && (
+                <div
+                  className={`text-xs font-medium ${data.delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
+                >
+                  {data.delta_kwh > 0 ? '+' : ''}
+                  {Math.round(data.delta_kwh).toLocaleString('fr-FR')} kWh (
+                  {data.delta_percent > 0 ? '+' : ''}
+                  {data.delta_percent}%)
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Warnings */}
+          {(data.warnings?.length > 0 || data.evidence_warnings?.length > 0) && (
+            <div className="pt-2 border-t border-gray-100 space-y-1">
+              {[...(data.warnings || []), ...(data.evidence_warnings || [])].map((w, i) => (
+                <p key={i} className="text-[11px] text-amber-600">
+                  {w}
+                </p>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
 
 const SEVERITY_VARIANTS = {
   critical: 'crit',
@@ -650,6 +779,9 @@ export default function TertiaireEfaDetailPage() {
           </Card>
         </div>
       )}
+
+      {/* Trajectoire OPERAT */}
+      <EfaTrajectoryBlock efaId={efa?.id} />
 
       {/* Actions OPERAT — export pack toujours accessible */}
       <div className="mt-4">

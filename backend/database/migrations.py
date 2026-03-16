@@ -70,6 +70,8 @@ def run_migrations(engine):
     _sync_soft_delete_coherence(engine)
     # OPERAT trajectory — EFA consumption table + trajectory columns
     _migrate_operat_trajectory(engine)
+    # Compliance event log — audit trail
+    _migrate_compliance_event_log(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1268,3 +1270,44 @@ def _migrate_operat_trajectory(engine):
 
     if added == 0:
         logger.debug("migration: OPERAT trajectory — already up to date")
+
+    # 3. Add reliability column to consumption table
+    if insp.has_table("tertiaire_efa_consumption"):
+        existing = {c["name"] for c in insp.get_columns("tertiaire_efa_consumption")}
+        if "reliability" not in existing:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        'ALTER TABLE "tertiaire_efa_consumption" ADD COLUMN "reliability" VARCHAR(20) DEFAULT \'unverified\''
+                    )
+                )
+            logger.info("migration: OPERAT — added tertiaire_efa_consumption.reliability")
+
+
+def _migrate_compliance_event_log(engine):
+    """Create compliance_event_log table for audit trail."""
+    insp = inspect(engine)
+    if not insp.has_table("compliance_event_log"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "compliance_event_log" (
+                    "id" INTEGER PRIMARY KEY,
+                    "entity_type" VARCHAR(100) NOT NULL,
+                    "entity_id" INTEGER NOT NULL,
+                    "action" VARCHAR(50) NOT NULL,
+                    "before_json" TEXT,
+                    "after_json" TEXT,
+                    "actor" VARCHAR(200) NOT NULL DEFAULT 'system',
+                    "source_context" VARCHAR(200),
+                    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_compliance_event_entity" '
+                    'ON "compliance_event_log" ("entity_type", "entity_id")'
+                )
+            )
+        logger.info("migration: created compliance_event_log table")
