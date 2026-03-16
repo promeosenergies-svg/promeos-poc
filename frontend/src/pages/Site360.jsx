@@ -65,6 +65,7 @@ import {
 } from '../lib/constants'; // eslint-disable-line no-unused-vars
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
+import BacsRegulatoryPanel from '../components/BacsRegulatoryPanel';
 import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
@@ -1303,6 +1304,15 @@ function TabConformite({ site }) {
       )}
 
       <TrustBadge source="PROMEOS KB" period={`Analyse pour ${site.nom}`} confidence="high" />
+
+      {/* BACS Regulatory Panel */}
+      <div className="mt-6">
+        <Card>
+          <CardBody className="p-4">
+            <BacsRegulatoryPanel siteId={site.id} />
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -190,7 +190,36 @@ export default function BacsRegulatoryPanel({ siteId }) {
         )}
       </Section>
 
-      {/* Blockers */}
+      {/* Remediation actionnable */}
+      {data.remediation?.length > 0 && (
+        <Section title={`Remediation (${data.remediation.length} action(s))`}>
+          {data.remediation.map((r, i) => {
+            const prioColor =
+              r.priority === 'critical'
+                ? 'bg-red-100 text-red-700'
+                : r.priority === 'high'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-gray-100 text-gray-600';
+            return (
+              <div key={i} className="p-2 rounded-md bg-gray-50 border border-gray-100 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-800">{r.cause}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${prioColor}`}>
+                    {r.priority}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-600">{r.action}</p>
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                  <FileText size={10} />
+                  <span>Preuve : {r.proof}</span>
+                </div>
+              </div>
+            );
+          })}
+        </Section>
+      )}
+
+      {/* Blockers (residuels) */}
       {data.blockers?.length > 0 && (
         <Section title="Blockers">
           {data.blockers.map((b, i) => (
