@@ -256,9 +256,8 @@ class Test15MinRealism:
         assert elec_meter
 
         count = db.query(MeterReading).filter_by(meter_id=elec_meter.id, frequency=FrequencyType.MIN_15).count()
-        # 365 days × 72 unique slots (96 - 24 that collide with hourly at :00)
-        # = 26,280 due to (meter_id, timestamp) unique constraint
-        assert count >= 25000, f"Expected ~26k 15-min readings, got {count}"
+        # 365 days × 96 slots = 35,040 (no collisions with frequency in unique constraint)
+        assert count >= 34000, f"Expected ~35k 15-min readings, got {count}"
 
     def test_15min_sum_approx_hourly(self, seeded_db):
         """Sum of 4 × 15-min slots should approximately equal hourly value."""

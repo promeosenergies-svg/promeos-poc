@@ -47,6 +47,8 @@ def run_migrations(engine):
     # V2-Conso — Dedup meter_reading + unique constraint
     _dedup_meter_reading(engine)
     _add_unique_meter_reading_index(engine)
+    # V101 — Add frequency to meter_reading unique constraint
+    _upgrade_meter_reading_unique_constraint(engine)
     # Étape 4 — Action Engine: evidence_required column
     _add_action_evidence_required_column(engine)
     # Fix delivery_points energy_type enum case (elec→ELEC, gaz→GAZ)
@@ -642,7 +644,7 @@ def _create_tertiaire_tables(engine):
 
 
 def _dedup_meter_reading(engine):
-    """Remove duplicate (meter_id, timestamp) rows from meter_reading.
+    """Remove duplicate (meter_id, timestamp, frequency) rows from meter_reading.
 
     Strategy: keep the row with the best quality_score, ties broken by most
     recent created_at, then highest id.  Idempotent — skips if no duplicates.
@@ -654,9 +656,9 @@ def _dedup_meter_reading(engine):
     with engine.begin() as conn:
         dupes = conn.execute(
             text("""
-            SELECT meter_id, timestamp, COUNT(*) AS cnt
+            SELECT meter_id, timestamp, frequency, COUNT(*) AS cnt
             FROM meter_reading
-            GROUP BY meter_id, timestamp
+            GROUP BY meter_id, timestamp, frequency
             HAVING cnt > 1
         """)
         ).fetchall()
@@ -666,32 +668,32 @@ def _dedup_meter_reading(engine):
             return
 
         deleted = 0
-        for meter_id, ts, cnt in dupes:
+        for meter_id, ts, freq, cnt in dupes:
             # Keep the best row (highest quality_score, then latest created_at, then highest id)
             keep = conn.execute(
                 text("""
                 SELECT id FROM meter_reading
-                WHERE meter_id = :mid AND timestamp = :ts
+                WHERE meter_id = :mid AND timestamp = :ts AND frequency = :freq
                 ORDER BY
                     COALESCE(quality_score, -1) DESC,
                     COALESCE(created_at, '1970-01-01') DESC,
                     id DESC
                 LIMIT 1
             """),
-                {"mid": meter_id, "ts": ts},
+                {"mid": meter_id, "ts": ts, "freq": freq},
             ).scalar()
 
             if keep:
                 result = conn.execute(
                     text("""
                     DELETE FROM meter_reading
-                    WHERE meter_id = :mid AND timestamp = :ts AND id != :keep_id
+                    WHERE meter_id = :mid AND timestamp = :ts AND frequency = :freq AND id != :keep_id
                 """),
-                    {"mid": meter_id, "ts": ts, "keep_id": keep},
+                    {"mid": meter_id, "ts": ts, "freq": freq, "keep_id": keep},
                 )
                 deleted += result.rowcount
 
-        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d pairs", deleted, len(dupes))
+        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d triplets", deleted, len(dupes))
 
 
 def _add_unique_meter_reading_index(engine):
@@ -714,6 +716,47 @@ def _add_unique_meter_reading_index(engine):
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _upgrade_meter_reading_unique_constraint(engine):
+    """Replace (meter_id, timestamp) unique index with (meter_id, timestamp, frequency).
+
+    Different frequencies at the same timestamp are semantically distinct readings.
+    Without this, 15-min :00 slots collide with hourly readings causing silent data loss.
+    """
+    old_name = "uq_meter_reading_meter_ts"
+    new_name = "uq_meter_reading_meter_ts_freq"
+    insp = inspect(engine)
+
+    if not insp.has_table("meter_reading"):
+        return
+
+    existing = {idx["name"] for idx in insp.get_indexes("meter_reading") if idx.get("name")}
+
+    # Always drop the old constraint if it exists (even if new one already
+    # exists from create_all — both can coexist and the old one still blocks)
+    if old_name in existing:
+        with engine.begin() as conn:
+            try:
+                conn.execute(text(f'DROP INDEX IF EXISTS "{old_name}"'))
+                logger.info("migration: dropped old index %s", old_name)
+            except Exception as e:
+                logger.warning("migration: could not drop index %s: %s", old_name, e)
+
+    if new_name in existing:
+        return  # new constraint already exists
+
+    with engine.begin() as conn:
+        try:
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{new_name}" '
+                    f'ON "meter_reading" ("meter_id", "timestamp", "frequency")'
+                )
+            )
+            logger.info("migration: created unique index %s", new_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", new_name, e)
 
 
 # ========================================
