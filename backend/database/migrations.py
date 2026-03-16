@@ -1388,10 +1388,16 @@ def _migrate_bacs_hardening(engine):
     """Add BACS hardening columns to existing tables."""
     insp = inspect(engine)
 
-    # bacs_assets : scope status
+    # bacs_assets : scope status + soft-delete
     if insp.has_table("bacs_assets"):
         existing = {c["name"] for c in insp.get_columns("bacs_assets")}
-        cols = [("bacs_scope_status", "VARCHAR(30)"), ("bacs_scope_reason", "VARCHAR(200)")]
+        cols = [
+            ("bacs_scope_status", "VARCHAR(30)"),
+            ("bacs_scope_reason", "VARCHAR(200)"),
+            ("deleted_at", "DATETIME"),
+            ("deleted_by", "VARCHAR(100)"),
+            ("delete_reason", "VARCHAR(200)"),
+        ]
         with engine.begin() as conn:
             for col, typ in cols:
                 if col not in existing:

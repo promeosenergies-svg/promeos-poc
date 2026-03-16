@@ -180,20 +180,46 @@ else:
 
 
 async def _startup_restore_or_seed_helios():
-    """Restore DemoState or seed HELIOS if DEMO_MODE=true."""
+    """Restore DemoState or seed HELIOS if DEMO_MODE=true.
+
+    Uses run_in_executor to avoid blocking the async event loop
+    and sets a SQLite busy_timeout to prevent deadlocks with uvicorn reloader.
+    """
     if os.environ.get("PROMEOS_DEMO_MODE", "false").lower() != "true":
         return
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
+    if os.environ.get("SKIP_STARTUP_SEED"):
+        return
 
+    import asyncio
+
+    await asyncio.get_event_loop().run_in_executor(None, _sync_restore_or_seed_helios)
+
+
+def _sync_restore_or_seed_helios():
+    """Synchronous helper — restores DemoState from existing DB.
+
+    The actual seed must be done via CLI: python -m services.demo_seed --pack helios --size S --reset
+    This function only reads the DB to restore in-memory DemoState after server restart.
+    This avoids SQLite deadlocks with uvicorn --reload (reloader + worker both run lifespan).
+    """
     from database import SessionLocal
     from services.demo_state import DemoState
+    import logging
+
+    logger = logging.getLogger("promeos.startup")
 
     if DemoState.get_demo_org_id():
         return
 
     db = SessionLocal()
     try:
+        # Set SQLite busy timeout to avoid contention with reloader process
+        from sqlalchemy import text
+
+        db.execute(text("PRAGMA busy_timeout = 5000"))
+
         from models import Organisation, Site, Portefeuille, EntiteJuridique
 
         demo_org = (
@@ -225,17 +251,13 @@ async def _startup_restore_or_seed_helios():
                 default_site_id=first_site.id if first_site else None,
                 default_site_name=first_site.nom if first_site else None,
             )
+            logger.info(f"[startup] DemoState restored: {demo_org.nom} ({sites_count} sites)")
         else:
-            from services.demo_seed import SeedOrchestrator
-            import logging
-
-            logging.getLogger("promeos.startup").info("[startup] Seeding HELIOS demo data...")
-            orch = SeedOrchestrator(db)
-            orch.seed(pack="helios", size="S", rng_seed=42)
+            logger.warning(
+                "[startup] No demo org found. Run: python -m services.demo_seed --pack helios --size S --reset"
+            )
     except Exception as exc:
-        import logging
-
-        logging.getLogger("promeos.startup").warning(f"[startup] HELIOS init failed (non-bloquant): {exc}")
+        logger.warning(f"[startup] HELIOS restore failed (non-bloquant): {exc}")
     finally:
         db.close()
 
