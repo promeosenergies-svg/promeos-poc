@@ -3,7 +3,7 @@
 > Date : 2026-03-16
 > Perimetre : OPERAT + BACS + Integrite patrimoine → conformite
 > Bilan : 20 commits, 173 tests, 0 regression
-> Statut : **GELE V1**
+> Statut : **GEL V1 DU PERIMETRE COEUR — limites connues acceptees**
 
 ---
 
@@ -83,7 +83,7 @@ PROMEOS V1 Conformite est un **outil d'aide a la preparation de la conformite re
 | "Depot OPERAT effectue" | Faux — aucun depot reel | "Pack preparatoire genere" |
 | "Site conforme BACS" | Jamais demontrable par PROMEOS seul | "Pret pour revue interne" |
 | "Donnees verifiees" | Sauf si source = API Meteo-France ou import factures | "Donnees tracees avec qualification de source" |
-| "Risque zero" | Impossible a garantir | "Aucune penalite reglementaire identifiee" |
+| "Risque zero" | Impossible a garantir | "Aucune non-conformite bloquante identifiee dans le perimetre analyse" |
 | "Score de conformite" sans contexte | Trop affirmatif | "Score de preparation (aide a la conformite)" |
 
 ---
@@ -139,7 +139,7 @@ PROMEOS V1 Conformite est un **outil d'aide a la preparation de la conformite re
 | 10 | Preuve rattachee | POST /attach-proof | Status → ready_for_review |
 | 11 | Revue preuve | POST /review-proof accepted | Status → closed |
 | 12 | Coherence propre | GET /coherence | status = clean |
-| 13 | Coherence sale | Archive site sans cascade | Orphelin detecte |
+| 13 | Orphelin simule | Entite conformite orpheline simulee | Detectee par /coherence |
 
 ---
 
@@ -164,11 +164,11 @@ PROMEOS V1 Conformite est un **outil d'aide a la preparation de la conformite re
 
 | # | Action | Effort | Owner | Impact |
 |---|--------|--------|-------|--------|
-| 1 | **Badge UI "a recalculer / desynchronise"** dans Site360 | S | Frontend | Visibilite utilisateur |
-| 2 | **Auto-provision EFA/BACS** quand site eligible a la creation | M | Backend | Onboarding sans friction |
+| 1 | **Smoke test complet** (13 scenarios) avant freeze | S | QA | Validation avant gel |
+| 2 | **Badge UI "a recalculer / desynchronise"** dans Site360 | S | Frontend | Visibilite utilisateur |
 | 3 | **Upload preuve fichier** (stockage local ou S3 minimal) | M | Full stack | Preuve reelle |
-| 4 | **Release GitHub V1 Conformite** avec tag + notes | S | Release | Communication |
-| 5 | **Smoke test complet** (13 scenarios) avant freeze | S | QA | Validation |
+| 4 | **Vue portefeuille coherence** (dashboard multi-site) | M | Full stack | Pilotage |
+| 5 | **Release GitHub V1 Conformite** avec tag + notes | S | Release | Communication |
 
 ---
 
@@ -179,7 +179,7 @@ PROMEOS V1 Conformite est un **outil d'aide a la preparation de la conformite re
 | Commits conformite | 20 |
 | Tests backend | 173 |
 | Tests frontend securite | 12 |
-| Modeles crees | 6 (EfaConsumption, ComplianceEventLog, ExportManifest, FunctionalReq, ExploitationStatus, ProofDoc, RemediationAction) |
+| Modeles crees | 7 (EfaConsumption, ComplianceEventLog, ExportManifest, FunctionalReq, ExploitationStatus, ProofDoc, RemediationAction) |
 | Services crees | 7 (trajectory, normalization, weather, actor, alerts, regulatory engine, sync) |
 | Endpoints crees | 15+ |
 | Composants UI | 2 (BacsRegulatoryPanel, EfaTrajectoryBlock + EfaExportHistory) |
