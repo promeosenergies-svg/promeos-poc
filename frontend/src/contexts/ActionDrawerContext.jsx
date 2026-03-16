@@ -60,9 +60,15 @@ export function ActionDrawerProvider({ children }) {
   );
 }
 
+const NOOP_CTX = { openActionDrawer: () => {}, existingAction: null };
+
 export function useActionDrawer() {
   const ctx = useContext(ActionDrawerContext);
-  if (!ctx) throw new Error('useActionDrawer must be used within ActionDrawerProvider');
+  if (!ctx) {
+    // Graceful fallback — allows rendering outside provider (e.g. during SSR or lazy load race)
+    console.warn('useActionDrawer called outside ActionDrawerProvider — using no-op fallback');
+    return NOOP_CTX;
+  }
   return ctx;
 }
 
