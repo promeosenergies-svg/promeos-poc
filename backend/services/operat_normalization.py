@@ -8,6 +8,7 @@ Si DJU absents : pas de normalisation, warning explicite.
 La valeur brute n'est JAMAIS ecrasee.
 """
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +16,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import TertiaireEfaConsumption
+from models.compliance_event_log import ComplianceEventLog
 
 logger = logging.getLogger("promeos.operat.normalization")
 
@@ -94,6 +96,29 @@ def normalize_consumption(
     conso.dju_reference = dju_reference
     conso.weather_data_source = weather_data_source
     conso.normalized_at = datetime.now(timezone.utc)
+    db.flush()
+
+    # Audit-trail
+    db.add(
+        ComplianceEventLog(
+            entity_type="TertiaireEfaConsumption",
+            entity_id=conso.id,
+            action="normalize",
+            after_json=json.dumps(
+                {
+                    "raw_kwh": raw_kwh,
+                    "normalized_kwh": normalized_kwh,
+                    "method": "dju_ratio",
+                    "confidence": confidence,
+                    "dju_observe": dju_observe,
+                    "dju_reference": dju_reference,
+                    "weather_source": weather_data_source,
+                }
+            ),
+            actor="system",
+            source_context="api_normalize",
+        )
+    )
     db.flush()
 
     delta_kwh = normalized_kwh - raw_kwh

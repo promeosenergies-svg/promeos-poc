@@ -288,15 +288,28 @@ def validate_trajectory(
     norm_status = None
     norm_delta_kwh = None
     norm_delta_pct = None
-    normalization_info = {"applied": False, "method": None, "confidence": None}
+    normalization_info = {
+        "applied": False,
+        "method": None,
+        "confidence": None,
+        "weather_source_type": None,
+        "source_verified": False,
+    }
 
     if current_conso and current_conso.is_normalized and current_conso.normalized_kwh_total:
         norm_current_kwh = current_conso.normalized_kwh_total
+        weather_src = current_conso.weather_data_source or "unknown"
+        source_verified = weather_src in ("meteo_france", "api", "file_import")
+        weather_source_type = (
+            "api" if weather_src in ("meteo_france", "api") else "manual" if weather_src == "manual" else "unknown"
+        )
         normalization_info = {
             "applied": True,
             "method": current_conso.normalization_method,
             "confidence": current_conso.normalization_confidence,
-            "weather_source": current_conso.weather_data_source,
+            "weather_source": weather_src,
+            "weather_source_type": weather_source_type,
+            "source_verified": source_verified,
             "dju_heating": current_conso.dju_heating,
             "dju_reference": current_conso.dju_reference,
         }
@@ -308,12 +321,48 @@ def validate_trajectory(
     if not current_conso or not current_conso.is_normalized:
         warnings.append("Evaluation realisee sur donnees brutes non normalisees")
 
+    # 9. GOUVERNANCE DU STATUT FINAL
+    major_warnings = []
+    baseline_normalized = baseline_conso.is_normalized if baseline_conso else False
+
+    if status == "not_evaluable":
+        final_status = "not_evaluable"
+        final_status_mode = "raw_only"
+    elif not normalization_info["applied"]:
+        # Pas de normalisation → brut seul
+        final_status = status
+        final_status_mode = "raw_only"
+        major_warnings.append("Statut base sur donnees brutes non normalisees")
+    elif normalization_info["confidence"] in ("high", "medium") and normalization_info.get("source_verified"):
+        # Normalisation fiable → fait autorite
+        final_status = norm_status or status
+        final_status_mode = "normalized_authoritative"
+        if not baseline_normalized:
+            final_status_mode = "mixed_basis_warning"
+            major_warnings.append("Baseline non normalisee — comparaison sur base mixte")
+    else:
+        # Normalisation disponible mais pas fiable → revue requise
+        final_status = "review_required"
+        final_status_mode = "review_required"
+        if normalization_info["confidence"] == "low":
+            major_warnings.append("Confiance normalisation faible — revue requise")
+        if not normalization_info.get("source_verified"):
+            major_warnings.append("Source meteo non verifiee (saisie manuelle) — revue requise")
+        if not baseline_normalized:
+            major_warnings.append("Baseline non normalisee — comparaison sur base mixte")
+
+    # 10. Mettre a jour le cache EFA avec le statut gouverne
+    efa.trajectory_status = final_status
+    efa.trajectory_last_calculated_at = datetime.now(timezone.utc)
+    db.flush()
+
     return {
         "efa_id": efa_id,
         "observation_year": observation_year,
         "baseline": {
             "year": baseline_conso.year,
             "kwh": baseline_kwh,
+            "normalized": baseline_normalized,
             "source": baseline_conso.source,
             "reliability": baseline_rel,
         },
@@ -333,12 +382,16 @@ def validate_trajectory(
         "normalized_status": norm_status,
         "normalized_delta_kwh": norm_delta_kwh,
         "normalized_delta_percent": norm_delta_pct,
-        "status": norm_status or status,
+        "final_status": final_status,
+        "final_status_mode": final_status_mode,
+        "status": final_status,
         "normalization": normalization_info,
+        "baseline_normalized": baseline_normalized,
         "is_normalized": normalization_info["applied"],
         "missing_fields": missing_fields,
         "warnings": warnings,
         "evidence_warnings": evidence_warnings,
+        "major_warnings": major_warnings,
     }
 
 

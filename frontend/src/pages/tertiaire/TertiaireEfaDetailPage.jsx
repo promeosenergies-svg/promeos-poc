@@ -54,6 +54,14 @@ const STATUS_LABEL = {
   on_track: { label: 'Trajectoire atteinte', cls: 'bg-green-100 text-green-700' },
   off_track: { label: 'Trajectoire non atteinte', cls: 'bg-red-100 text-red-700' },
   not_evaluable: { label: 'Non evaluable', cls: 'bg-gray-100 text-gray-500' },
+  review_required: { label: 'Revue requise', cls: 'bg-amber-100 text-amber-700' },
+};
+
+const MODE_BADGE = {
+  raw_only: { label: 'Brut', cls: 'bg-gray-100 text-gray-500' },
+  normalized_authoritative: { label: 'Normalise', cls: 'bg-blue-100 text-blue-700' },
+  mixed_basis_warning: { label: 'Base mixte', cls: 'bg-amber-100 text-amber-700' },
+  review_required: { label: 'Revue requise', cls: 'bg-amber-100 text-amber-700' },
 };
 
 function EfaTrajectoryBlock({ efaId }) {
@@ -69,7 +77,9 @@ function EfaTrajectoryBlock({ efaId }) {
 
   if (!data) return null;
 
-  const st = STATUS_LABEL[data.status] || STATUS_LABEL.not_evaluable;
+  const finalStatus = data.final_status || data.status;
+  const st = STATUS_LABEL[finalStatus] || STATUS_LABEL.not_evaluable;
+  const mode = MODE_BADGE[data.final_status_mode] || MODE_BADGE.raw_only;
   const baseRel = data.baseline?.reliability
     ? REL_BADGE[data.baseline.reliability]
     : REL_BADGE.unverified;
@@ -82,9 +92,12 @@ function EfaTrajectoryBlock({ efaId }) {
       <Card>
         <CardBody className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              Trajectoire OPERAT
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Trajectoire OPERAT
+              </h4>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode.cls}`}>{mode.label}</span>
+            </div>
             <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${st.cls}`}>
               {st.label}
             </span>
@@ -175,6 +188,17 @@ function EfaTrajectoryBlock({ efaId }) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Major warnings */}
+          {data.major_warnings?.length > 0 && (
+            <div className="pt-2 border-t border-red-100 space-y-1">
+              {data.major_warnings.map((w, i) => (
+                <p key={`mw-${i}`} className="text-[11px] text-red-600 font-medium">
+                  {w}
+                </p>
+              ))}
             </div>
           )}
 
