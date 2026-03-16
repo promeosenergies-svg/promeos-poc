@@ -1262,6 +1262,8 @@ def _migrate_operat_trajectory(engine):
             ("reference_year_kwh", "REAL"),
             ("trajectory_status", "VARCHAR(20)"),
             ("trajectory_last_calculated_at", "DATETIME"),
+            ("baseline_normalization_status", "VARCHAR(20)"),
+            ("baseline_normalization_reason", "VARCHAR(200)"),
         ]
         with engine.begin() as conn:
             for col_name, col_type in new_cols:

@@ -51,6 +51,12 @@ class TertiaireEfa(Base, TimestampMixin, SoftDeleteMixin):
     trajectory_status = Column(String(20), nullable=True, comment="on_track / off_track / not_evaluable")
     trajectory_last_calculated_at = Column(DateTime, nullable=True)
 
+    # Baseline normalization policy
+    baseline_normalization_status = Column(
+        String(20), nullable=True, comment="normalized, raw_only, not_possible, unknown"
+    )
+    baseline_normalization_reason = Column(String(200), nullable=True)
+
     # Relations
     consumptions = relationship("TertiaireEfaConsumption", back_populates="efa", cascade="all, delete-orphan")
     buildings = relationship("TertiaireEfaBuilding", back_populates="efa", cascade="all, delete-orphan")

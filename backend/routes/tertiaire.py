@@ -6,9 +6,10 @@ Namespace: /api/tertiaire
 from datetime import date, timezone
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from middleware.auth import get_optional_auth
 
 from database import get_db
 from models import (
@@ -27,6 +28,7 @@ from models import (
     DataQualityIssueStatus,
     Site,
     Batiment,  # V41
+    TertiaireEfaConsumption,
     not_deleted,
 )
 from services.tertiaire_service import (
@@ -976,3 +978,69 @@ def get_efa_normalization_history(
         raise HTTPException(404, "EFA introuvable")
 
     return {"efa_id": efa_id, "history": get_normalization_history(db, efa_id)}
+
+
+class AutoNormalizeRequest(BaseModel):
+    consumption_id: int
+    code_postal: Optional[str] = None
+
+
+@router.post("/efa/{efa_id}/consumption/auto-normalize")
+def auto_normalize_efa_consumption(
+    efa_id: int,
+    body: AutoNormalizeRequest,
+    request: Request = None,
+    db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
+):
+    """Normalise automatiquement via le weather provider interne."""
+    from services.operat_normalization import normalize_consumption
+    from services.weather_provider import get_dju_for_year
+    from services.actor_resolver import resolve_actor
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    conso = db.query(TertiaireEfaConsumption).filter(TertiaireEfaConsumption.id == body.consumption_id).first()
+    if not conso:
+        raise HTTPException(404, "Consommation introuvable")
+
+    # Resoudre le code postal depuis le site si pas fourni
+    cp = body.code_postal
+    if not cp and efa.site_id:
+        site = db.query(Site).filter(Site.id == efa.site_id).first()
+        if site:
+            cp = site.code_postal
+    if not cp:
+        cp = "75001"  # Defaut Paris si inconnu
+
+    # Obtenir les DJU via le weather provider
+    weather = get_dju_for_year(cp, conso.year)
+
+    actor = resolve_actor(auth, request, fallback="api_user")
+
+    try:
+        result = normalize_consumption(
+            db,
+            body.consumption_id,
+            dju_heating=weather.dju_heating,
+            dju_cooling=weather.dju_cooling,
+            dju_reference=weather.dju_reference,
+            weather_data_source=weather.provider,
+        )
+        db.commit()
+        return {
+            **result,
+            "weather": {
+                "provider": weather.provider,
+                "source_ref": weather.source_ref,
+                "source_verified": weather.source_verified,
+                "climate_zone": weather.climate_zone,
+                "confidence": weather.confidence,
+                "warnings": weather.warnings,
+            },
+            "actor": actor,
+        }
+    except ValueError as e:
+        raise HTTPException(400, str(e))

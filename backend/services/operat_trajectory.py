@@ -351,10 +351,27 @@ def validate_trajectory(
         if not baseline_normalized:
             major_warnings.append("Baseline non normalisee — comparaison sur base mixte")
 
+    # 9b. Baseline normalization policy
+    baseline_norm_status = "unknown"
+    baseline_norm_reason = None
+    if baseline_normalized:
+        baseline_norm_status = "normalized"
+    elif baseline_conso and baseline_conso.kwh_total:
+        baseline_norm_status = "raw_only"
+        baseline_norm_reason = "Baseline non normalisee — donnees meteo de l'annee de reference non disponibles"
+    else:
+        baseline_norm_status = "not_possible"
+        baseline_norm_reason = "Baseline absente"
+
     # 10. Mettre a jour le cache EFA avec le statut gouverne
     efa.trajectory_status = final_status
     efa.trajectory_last_calculated_at = datetime.now(timezone.utc)
+    efa.baseline_normalization_status = baseline_norm_status
+    efa.baseline_normalization_reason = baseline_norm_reason
     db.flush()
+
+    # Weather provider info
+    weather_provider = normalization_info.get("weather_source") if normalization_info["applied"] else None
 
     return {
         "efa_id": efa_id,
@@ -363,6 +380,8 @@ def validate_trajectory(
             "year": baseline_conso.year,
             "kwh": baseline_kwh,
             "normalized": baseline_normalized,
+            "normalization_status": baseline_norm_status,
+            "normalization_reason": baseline_norm_reason,
             "source": baseline_conso.source,
             "reliability": baseline_rel,
         },
@@ -387,6 +406,9 @@ def validate_trajectory(
         "status": final_status,
         "normalization": normalization_info,
         "baseline_normalized": baseline_normalized,
+        "baseline_normalization_status": baseline_norm_status,
+        "baseline_normalization_reason": baseline_norm_reason,
+        "weather_provider": weather_provider,
         "is_normalized": normalization_info["applied"],
         "missing_fields": missing_fields,
         "warnings": warnings,

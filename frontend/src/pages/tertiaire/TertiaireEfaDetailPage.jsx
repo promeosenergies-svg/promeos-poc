@@ -113,11 +113,28 @@ function EfaTrajectoryBlock({ efaId }) {
                     {Math.round(data.baseline.kwh).toLocaleString('fr-FR')} kWh (
                     {data.baseline.year})
                   </p>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${baseRel.cls}`}>
                       {baseRel.label}
                     </span>
                     <span className="text-[10px] text-gray-400">{data.baseline.source || '—'}</span>
+                    {data.baseline.normalization_status && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          data.baseline.normalization_status === 'normalized'
+                            ? 'bg-blue-50 text-blue-600'
+                            : data.baseline.normalization_status === 'raw_only'
+                              ? 'bg-gray-100 text-gray-500'
+                              : 'bg-red-50 text-red-500'
+                        }`}
+                      >
+                        {data.baseline.normalization_status === 'normalized'
+                          ? 'Normalisee'
+                          : data.baseline.normalization_status === 'raw_only'
+                            ? 'Brute'
+                            : 'Non normalisable'}
+                      </span>
+                    )}
                   </div>
                 </>
               ) : (
@@ -146,8 +163,16 @@ function EfaTrajectoryBlock({ efaId }) {
                     </span>
                     <span className="text-[10px] text-gray-400">{data.current.source || '—'}</span>
                     {data.normalization?.applied && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          data.normalization.source_verified
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}
+                      >
                         {data.normalization.method} · {data.normalization.confidence}
+                        {data.weather_provider ? ` · ${data.weather_provider}` : ''}
+                        {!data.normalization.source_verified && ' (non verifie)'}
                       </span>
                     )}
                   </div>
