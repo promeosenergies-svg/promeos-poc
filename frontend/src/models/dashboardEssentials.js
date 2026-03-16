@@ -380,12 +380,27 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
       label: `${formatPercentFR(pctConf)} des sites en conformité`,
       sub: `${conformes} site${conformes > 1 ? 's' : ''} conforme${conformes > 1 ? 's' : ''} (Décret Tertiaire + BACS)`,
     });
+  } else if (total === 1) {
+    // Mono-site : message adapté — ne pas afficher "0% des sites"
+    const hasPartial = conformes === 0 && (aRisque > 0 || nonConformes > 0);
+    bullets.push({
+      id: 'conforme_partial',
+      type: hasPartial ? 'warn' : 'negative',
+      label:
+        nonConformes > 0
+          ? 'Mise en conformité requise sur ce site'
+          : 'Ce site nécessite une attention réglementaire',
+      sub:
+        aRisque > 0 && nonConformes === 0
+          ? 'Décret Tertiaire ou BACS à risque'
+          : 'Vérifiez le détail dans Conformité',
+    });
   } else {
     bullets.push({
       id: 'conforme_partial',
       type: pctConf >= CONFORMITY_THRESHOLDS.warn ? 'warn' : 'negative',
       label: `${formatPercentFR(pctConf)} des sites en conformité`,
-      sub: `${conformes} sur ${total} sites`,
+      sub: `${conformes} sur ${total} site${total > 1 ? 's' : ''}`,
     });
   }
 
