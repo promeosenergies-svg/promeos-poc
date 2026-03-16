@@ -44,29 +44,15 @@ export const GUIDED_STEPS = [
     cta: 'Voir le plan',
     ctaTarget: { tab: 'execution' },
   },
-  {
-    id: 'cee_gouvernance',
-    order: 5,
-    label: 'CEE & gouvernance',
-    description: 'Gérez les dossiers CEE et la gouvernance énergétique.',
-    cta: 'Gérer les dossiers',
-    ctaTarget: { path: '/compliance/pipeline' },
-  },
+  // CEE & gouvernance : masqué V1 (hors périmètre POC)
+  // M&V : masqué V1 (hors périmètre POC)
   {
     id: 'preuves',
-    order: 6,
+    order: 5,
     label: 'Preuves',
     description: 'Rassemblez les preuves de conformité.',
     cta: 'Joindre les preuves',
     ctaTarget: { tab: 'preuves' },
-  },
-  {
-    id: 'mv',
-    order: 7,
-    label: 'M&V',
-    description: 'Suivez la mesure et vérification des économies.',
-    cta: 'Accéder au suivi',
-    ctaTarget: { path: '/compliance/pipeline' },
   },
 ];
 
@@ -104,23 +90,13 @@ function evalStep(stepId, sitesData, summary, signals) {
       if (obligations.length === 0) return 'pending';
       return actionableFindings.length === 0 ? 'complete' : 'in_progress';
 
-    case 'cee_gouvernance':
-      if (!workPackages || workPackages.length === 0) return 'pending';
-      return workPackages.every(
-        (wp) => !wp.cee_step || wp.cee_step === 'submitted' || wp.cee_step === 'validated'
-      )
-        ? 'complete'
-        : 'in_progress';
+    // cee_gouvernance + mv : masqués V1 (hors périmètre POC)
 
     case 'preuves':
       if (obligations.length === 0) return 'pending';
       return obligations.every((o) => (proofFiles[o.id]?.length || 0) > 0)
         ? 'complete'
         : 'in_progress';
-
-    case 'mv':
-      if (!mvSummary) return 'pending';
-      return mvSummary.has_data ? 'complete' : 'in_progress';
 
     default:
       return 'pending';
@@ -133,7 +109,7 @@ function evalStep(stepId, sitesData, summary, signals) {
  * @param {object[]} sitesData
  * @param {object|null} summary
  * @param {object} signals - { obligations, actionableFindings, proofFiles, workPackages, mvSummary }
- * @returns {GuidedStep[]} 7 steps with status
+ * @returns {GuidedStep[]} 5 steps with status (CEE + M&V masqués V1)
  */
 export function computeGuidedSteps(bundle, sitesData, summary, signals = {}) {
   const donneesStatus = evalStep('donnees', sitesData, summary, signals);
