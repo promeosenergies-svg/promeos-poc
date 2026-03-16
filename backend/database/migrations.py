@@ -1273,16 +1273,25 @@ def _migrate_operat_trajectory(engine):
     if added == 0:
         logger.debug("migration: OPERAT trajectory — already up to date")
 
-    # 3. Add reliability column to consumption table
+    # 3. Add reliability + normalization columns to consumption table
     if insp.has_table("tertiaire_efa_consumption"):
         existing = {c["name"] for c in insp.get_columns("tertiaire_efa_consumption")}
-        if "reliability" not in existing:
-            with engine.begin() as conn:
-                conn.execute(
-                    text(
-                        'ALTER TABLE "tertiaire_efa_consumption" ADD COLUMN "reliability" VARCHAR(20) DEFAULT \'unverified\''
-                    )
-                )
+        norm_cols = [
+            ("reliability", "VARCHAR(20) DEFAULT 'unverified'"),
+            ("normalized_kwh_total", "REAL"),
+            ("normalization_method", "VARCHAR(50)"),
+            ("normalization_confidence", "VARCHAR(20)"),
+            ("dju_heating", "REAL"),
+            ("dju_cooling", "REAL"),
+            ("dju_reference", "REAL"),
+            ("weather_data_source", "VARCHAR(100)"),
+            ("normalized_at", "DATETIME"),
+        ]
+        with engine.begin() as conn:
+            for col_name, col_type in norm_cols:
+                if col_name not in existing:
+                    conn.execute(text(f'ALTER TABLE "tertiaire_efa_consumption" ADD COLUMN "{col_name}" {col_type}'))
+                    logger.info("migration: OPERAT — added tertiaire_efa_consumption.%s", col_name)
             logger.info("migration: OPERAT — added tertiaire_efa_consumption.reliability")
 
 

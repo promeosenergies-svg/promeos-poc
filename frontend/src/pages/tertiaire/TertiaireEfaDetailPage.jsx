@@ -119,12 +119,24 @@ function EfaTrajectoryBlock({ efaId }) {
                 <>
                   <p className="font-medium text-gray-800">
                     {Math.round(data.current.kwh).toLocaleString('fr-FR')} kWh
+                    <span className="text-[10px] text-gray-400 ml-1">(brute)</span>
                   </p>
+                  {data.current.normalized_kwh != null && (
+                    <p className="text-xs text-blue-700">
+                      {Math.round(data.current.normalized_kwh).toLocaleString('fr-FR')} kWh
+                      <span className="text-[10px] ml-1">(normalisee)</span>
+                    </p>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${currRel.cls}`}>
                       {currRel.label}
                     </span>
                     <span className="text-[10px] text-gray-400">{data.current.source || '—'}</span>
+                    {data.normalization?.applied && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">
+                        {data.normalization.method} · {data.normalization.confidence}
+                      </span>
+                    )}
                   </div>
                 </>
               ) : (
@@ -135,19 +147,32 @@ function EfaTrajectoryBlock({ efaId }) {
 
           {/* Objectif + ecart */}
           {data.applicable_target_kwh != null && (
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <div className="text-xs text-gray-500">
-                Objectif {data.applicable_target_year} :{' '}
-                {data.applicable_target_kwh.toLocaleString('fr-FR')} kWh
+            <div className="pt-2 border-t border-gray-100 space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">
+                  Objectif {data.applicable_target_year} :{' '}
+                  {data.applicable_target_kwh.toLocaleString('fr-FR')} kWh
+                </div>
+                {data.raw_delta_kwh != null && (
+                  <div
+                    className={`text-xs font-medium ${data.raw_delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
+                  >
+                    {data.raw_delta_kwh > 0 ? '+' : ''}
+                    {Math.round(data.raw_delta_kwh).toLocaleString('fr-FR')} kWh brut
+                  </div>
+                )}
               </div>
-              {data.delta_kwh != null && (
-                <div
-                  className={`text-xs font-medium ${data.delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
-                >
-                  {data.delta_kwh > 0 ? '+' : ''}
-                  {Math.round(data.delta_kwh).toLocaleString('fr-FR')} kWh (
-                  {data.delta_percent > 0 ? '+' : ''}
-                  {data.delta_percent}%)
+              {data.normalized_delta_kwh != null && (
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-blue-600">Ecart normalise</div>
+                  <div
+                    className={`text-xs font-medium ${data.normalized_delta_kwh <= 0 ? 'text-green-700' : 'text-red-600'}`}
+                  >
+                    {data.normalized_delta_kwh > 0 ? '+' : ''}
+                    {Math.round(data.normalized_delta_kwh).toLocaleString('fr-FR')} kWh (
+                    {data.normalized_delta_percent > 0 ? '+' : ''}
+                    {data.normalized_delta_percent}%)
+                  </div>
                 </div>
               )}
             </div>

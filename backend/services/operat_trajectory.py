@@ -283,6 +283,31 @@ def validate_trajectory(
         context="api",
     )
 
+    # 8. Normalisation — version normalisee si disponible
+    norm_current_kwh = None
+    norm_status = None
+    norm_delta_kwh = None
+    norm_delta_pct = None
+    normalization_info = {"applied": False, "method": None, "confidence": None}
+
+    if current_conso and current_conso.is_normalized and current_conso.normalized_kwh_total:
+        norm_current_kwh = current_conso.normalized_kwh_total
+        normalization_info = {
+            "applied": True,
+            "method": current_conso.normalization_method,
+            "confidence": current_conso.normalization_confidence,
+            "weather_source": current_conso.weather_data_source,
+            "dju_heating": current_conso.dju_heating,
+            "dju_reference": current_conso.dju_reference,
+        }
+        if applicable_kwh:
+            norm_delta_kwh = norm_current_kwh - applicable_kwh
+            norm_delta_pct = round((norm_current_kwh / applicable_kwh - 1) * 100, 1)
+            norm_status = "on_track" if norm_current_kwh <= applicable_kwh else "off_track"
+
+    if not current_conso or not current_conso.is_normalized:
+        warnings.append("Evaluation realisee sur donnees brutes non normalisees")
+
     return {
         "efa_id": efa_id,
         "observation_year": observation_year,
@@ -295,16 +320,22 @@ def validate_trajectory(
         "current": {
             "year": observation_year,
             "kwh": current_kwh,
+            "normalized_kwh": norm_current_kwh,
             "source": current_conso.source if current_conso else None,
             "reliability": current_rel,
         },
         "targets": targets,
         "applicable_target_kwh": applicable_kwh,
         "applicable_target_year": applicable_year,
-        "delta_kwh": delta_kwh,
-        "delta_percent": delta_percent,
-        "status": status,
-        "is_normalized": bool(baseline_conso.is_normalized and (current_conso and current_conso.is_normalized)),
+        "raw_status": status,
+        "raw_delta_kwh": delta_kwh,
+        "raw_delta_percent": delta_percent,
+        "normalized_status": norm_status,
+        "normalized_delta_kwh": norm_delta_kwh,
+        "normalized_delta_percent": norm_delta_pct,
+        "status": norm_status or status,
+        "normalization": normalization_info,
+        "is_normalized": normalization_info["applied"],
         "missing_fields": missing_fields,
         "warnings": warnings,
         "evidence_warnings": evidence_warnings,

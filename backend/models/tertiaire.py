@@ -191,4 +191,14 @@ class TertiaireEfaConsumption(Base, TimestampMixin):
     )
     reliability = Column(String(20), nullable=True, default="unverified", comment="high, medium, low, unverified")
 
+    # Normalisation climatique
+    normalized_kwh_total = Column(Float, nullable=True, comment="Conso normalisee climatiquement (kWh)")
+    normalization_method = Column(String(50), nullable=True, comment="dju_ratio, none")
+    normalization_confidence = Column(String(20), nullable=True, comment="high, medium, low, none")
+    dju_heating = Column(Float, nullable=True, comment="Degres-jours unifies chauffage")
+    dju_cooling = Column(Float, nullable=True, comment="Degres-jours unifies climatisation")
+    dju_reference = Column(Float, nullable=True, comment="DJU reference (moyenne 30 ans)")
+    weather_data_source = Column(String(100), nullable=True, comment="meteo_france, manual, estimated")
+    normalized_at = Column(DateTime, nullable=True)
+
     efa = relationship("TertiaireEfa", back_populates="consumptions")

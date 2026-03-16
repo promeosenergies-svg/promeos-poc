@@ -925,3 +925,54 @@ def get_efa_proof_events(
         raise HTTPException(404, "EFA introuvable")
 
     return {"efa_id": efa_id, "events": get_proof_events(db, efa_id)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# NORMALISATION CLIMATIQUE
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class NormalizeRequest(BaseModel):
+    consumption_id: int
+    dju_heating: Optional[float] = None
+    dju_cooling: Optional[float] = None
+    dju_reference: Optional[float] = None
+    weather_data_source: str = "manual"
+
+
+@router.post("/efa/{efa_id}/consumption/normalize")
+def normalize_efa_consumption(
+    efa_id: int,
+    body: NormalizeRequest,
+    db: Session = Depends(get_db),
+):
+    """Normalise climatiquement une consommation EFA (methode DJU)."""
+    from services.operat_normalization import normalize_consumption
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    try:
+        result = normalize_consumption(
+            db, body.consumption_id, body.dju_heating, body.dju_cooling, body.dju_reference, body.weather_data_source
+        )
+        db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/efa/{efa_id}/normalization-history")
+def get_efa_normalization_history(
+    efa_id: int,
+    db: Session = Depends(get_db),
+):
+    """Historique de normalisation climatique pour une EFA."""
+    from services.operat_normalization import get_normalization_history
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    return {"efa_id": efa_id, "history": get_normalization_history(db, efa_id)}

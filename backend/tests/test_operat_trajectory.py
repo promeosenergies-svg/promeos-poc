@@ -109,15 +109,15 @@ class TestValidateTrajectory:
         result = validate_trajectory(db, efa.id, 2025)
         assert result["status"] == "on_track"
         assert result["applicable_target_kwh"] == 300000  # 500000 * 0.60
-        assert result["delta_kwh"] < 0
+        assert result["raw_delta_kwh"] < 0
 
     def test_off_track(self, db, efa):
         declare_consumption(db, efa.id, year=2019, kwh_total=500000, is_reference=True)
         declare_consumption(db, efa.id, year=2025, kwh_total=350000)  # > 300000 (60%)
         result = validate_trajectory(db, efa.id, 2025)
         assert result["status"] == "off_track"
-        assert result["delta_kwh"] == 50000
-        assert result["delta_percent"] > 0
+        assert result["raw_delta_kwh"] == 50000
+        assert result["raw_delta_percent"] > 0
 
     def test_targets_2030_2040_2050(self, db, efa):
         declare_consumption(db, efa.id, year=2019, kwh_total=1000000, is_reference=True)
