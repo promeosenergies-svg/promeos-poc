@@ -828,3 +828,85 @@ def create_proof_templates(
         action_id=body.action_id,
         efa_nom=efa.nom,
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# OPERAT TRAJECTORY — consommation + trajectoire
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class ConsumptionDeclareRequest(BaseModel):
+    year: int
+    kwh_total: float
+    kwh_elec: Optional[float] = None
+    kwh_gaz: Optional[float] = None
+    kwh_reseau: Optional[float] = None
+    is_reference: bool = False
+    source: Optional[str] = None
+
+
+@router.post("/efa/{efa_id}/consumption/declare")
+def declare_efa_consumption(
+    efa_id: int,
+    body: ConsumptionDeclareRequest,
+    db: Session = Depends(get_db),
+):
+    """Declare ou met a jour la consommation annuelle d'une EFA."""
+    from services.operat_trajectory import declare_consumption
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    try:
+        result = declare_consumption(
+            db=db,
+            efa_id=efa_id,
+            year=body.year,
+            kwh_total=body.kwh_total,
+            kwh_elec=body.kwh_elec,
+            kwh_gaz=body.kwh_gaz,
+            kwh_reseau=body.kwh_reseau,
+            is_reference=body.is_reference,
+            source=body.source,
+        )
+        db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/efa/{efa_id}/targets/validate")
+def validate_efa_trajectory(
+    efa_id: int,
+    year: int = Query(..., description="Annee d'observation"),
+    db: Session = Depends(get_db),
+):
+    """Calcule la trajectoire OPERAT pour une EFA."""
+    from services.operat_trajectory import validate_trajectory
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    try:
+        result = validate_trajectory(db, efa_id, year)
+        db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/efa/{efa_id}/consumption")
+def get_efa_consumption_history(
+    efa_id: int,
+    db: Session = Depends(get_db),
+):
+    """Historique des consommations declarees pour une EFA."""
+    from services.operat_trajectory import get_consumption_history
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    return {"efa_id": efa_id, "consumptions": get_consumption_history(db, efa_id)}

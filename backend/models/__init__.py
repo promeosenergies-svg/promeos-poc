@@ -203,6 +203,7 @@ from .tertiaire import (
     TertiaireDeclaration,
     TertiaireProofArtifact,
     TertiaireDataQualityIssue,
+    TertiaireEfaConsumption,
 )
 
 # V96: Payment Rules
@@ -417,6 +418,7 @@ __all__ = [
     "TertiaireDeclaration",
     "TertiaireProofArtifact",
     "TertiaireDataQualityIssue",
+    "TertiaireEfaConsumption",
     "EfaStatut",
     "EfaRole",
     "DeclarationStatus",

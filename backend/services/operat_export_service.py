@@ -174,18 +174,37 @@ def generate_operat_csv(
                 site_nom = site.nom or ""
                 ville = site.ville or ""
 
-        # Consumption
-        conso = {"elec": 0, "gaz": 0, "reseau": 0}
-        if efa.site_id:
-            conso = _get_site_conso(db, efa.site_id, year)
+        # Consumption — source prioritaire : TertiaireEfaConsumption
+        from models import TertiaireEfaConsumption
 
-        # If no invoice data, use site.annual_kwh_total as fallback
-        total_kwh = conso["elec"] + conso["gaz"] + conso["reseau"]
-        if total_kwh == 0 and efa.site_id:
-            site = db.query(Site).filter(Site.id == efa.site_id).first()
-            if site and site.annual_kwh_total:
-                conso["elec"] = round(site.annual_kwh_total)
-                total_kwh = conso["elec"]
+        efa_conso = (
+            db.query(TertiaireEfaConsumption)
+            .filter(TertiaireEfaConsumption.efa_id == efa.id, TertiaireEfaConsumption.year == year)
+            .first()
+        )
+        if efa_conso:
+            conso = {
+                "elec": efa_conso.kwh_elec or 0,
+                "gaz": efa_conso.kwh_gaz or 0,
+                "reseau": efa_conso.kwh_reseau or 0,
+            }
+            total_kwh = efa_conso.kwh_total
+        else:
+            # Fallback : factures site puis Site.annual_kwh_total
+            conso = {"elec": 0, "gaz": 0, "reseau": 0}
+            if efa.site_id:
+                conso = _get_site_conso(db, efa.site_id, year)
+            total_kwh = conso["elec"] + conso["gaz"] + conso["reseau"]
+            if total_kwh == 0 and efa.site_id:
+                site_fb = db.query(Site).filter(Site.id == efa.site_id).first()
+                if site_fb and site_fb.annual_kwh_total:
+                    conso["elec"] = round(site_fb.annual_kwh_total)
+                    total_kwh = conso["elec"]
+
+        # Baseline — source prioritaire : EFA.reference_year_kwh
+        baseline_kwh = (
+            efa.reference_year_kwh if hasattr(efa, "reference_year_kwh") and efa.reference_year_kwh else total_kwh
+        )
 
         # Declaration status
         decl = (
@@ -202,10 +221,10 @@ def generate_operat_csv(
         resp = db.query(TertiaireResponsibility).filter(TertiaireResponsibility.efa_id == efa.id).first()
         resp_name = resp.entity_value if resp else ""
 
-        # Objectifs decret tertiaire (-40% 2030, -50% 2040, -60% 2050)
-        obj_2030 = round(total_kwh * 0.60) if total_kwh else 0
-        obj_2040 = round(total_kwh * 0.50) if total_kwh else 0
-        obj_2050 = round(total_kwh * 0.40) if total_kwh else 0
+        # Objectifs decret tertiaire — bases sur la BASELINE (pas la conso courante)
+        obj_2030 = round(baseline_kwh * 0.60) if baseline_kwh else 0
+        obj_2040 = round(baseline_kwh * 0.50) if baseline_kwh else 0
+        obj_2050 = round(baseline_kwh * 0.40) if baseline_kwh else 0
 
         writer.writerow(
             {

@@ -68,6 +68,8 @@ def run_migrations(engine):
     _migrate_usage_v1_1(engine)
     # Soft-delete coherence — sync actif/deleted_at on dual-field tables
     _sync_soft_delete_coherence(engine)
+    # OPERAT trajectory — EFA consumption table + trajectory columns
+    _migrate_operat_trajectory(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1208,3 +1210,61 @@ def _sync_soft_delete_coherence(engine):
         logger.info("migration: soft-delete coherence — %d total row(s) synced", total_fixed)
     else:
         logger.debug("migration: soft-delete coherence — already in sync")
+
+
+# ========================================
+# OPERAT trajectory — EFA consumption + trajectory columns
+# ========================================
+
+
+def _migrate_operat_trajectory(engine):
+    """Create tertiaire_efa_consumption table + add trajectory columns to tertiaire_efa."""
+    insp = inspect(engine)
+    added = 0
+
+    # 1. Create consumption table
+    if not insp.has_table("tertiaire_efa_consumption"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "tertiaire_efa_consumption" (
+                    "id" INTEGER PRIMARY KEY,
+                    "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id") ON DELETE CASCADE,
+                    "year" INTEGER NOT NULL,
+                    "kwh_total" REAL NOT NULL,
+                    "kwh_elec" REAL,
+                    "kwh_gaz" REAL,
+                    "kwh_reseau" REAL,
+                    "is_reference" INTEGER NOT NULL DEFAULT 0,
+                    "is_normalized" INTEGER NOT NULL DEFAULT 0,
+                    "source" VARCHAR(50),
+                    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE("efa_id", "year")
+                )
+            """)
+            )
+            conn.execute(
+                text('CREATE INDEX IF NOT EXISTS "ix_efa_consumption_efa_id" ON "tertiaire_efa_consumption" ("efa_id")')
+            )
+        logger.info("migration: OPERAT — created tertiaire_efa_consumption table")
+        added += 1
+
+    # 2. Add trajectory columns to tertiaire_efa
+    if insp.has_table("tertiaire_efa"):
+        existing = {c["name"] for c in insp.get_columns("tertiaire_efa")}
+        new_cols = [
+            ("reference_year", "INTEGER"),
+            ("reference_year_kwh", "REAL"),
+            ("trajectory_status", "VARCHAR(20)"),
+            ("trajectory_last_calculated_at", "DATETIME"),
+        ]
+        with engine.begin() as conn:
+            for col_name, col_type in new_cols:
+                if col_name not in existing:
+                    conn.execute(text(f'ALTER TABLE "tertiaire_efa" ADD COLUMN "{col_name}" {col_type}'))
+                    logger.info("migration: OPERAT — added tertiaire_efa.%s", col_name)
+                    added += 1
+
+    if added == 0:
+        logger.debug("migration: OPERAT trajectory — already up to date")

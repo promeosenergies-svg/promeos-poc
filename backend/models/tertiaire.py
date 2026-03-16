@@ -4,6 +4,7 @@ EFA = Entite Fonctionnelle Assujettie
 """
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     Enum,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import relationship
@@ -43,7 +45,14 @@ class TertiaireEfa(Base, TimestampMixin, SoftDeleteMixin):
     closed_at = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
 
+    # Trajectoire OPERAT
+    reference_year = Column(Integer, nullable=True, comment="Annee de reference (ex: 2010)")
+    reference_year_kwh = Column(Float, nullable=True, comment="Conso reference verrouillée (kWh)")
+    trajectory_status = Column(String(20), nullable=True, comment="on_track / off_track / not_evaluable")
+    trajectory_last_calculated_at = Column(DateTime, nullable=True)
+
     # Relations
+    consumptions = relationship("TertiaireEfaConsumption", back_populates="efa", cascade="all, delete-orphan")
     buildings = relationship("TertiaireEfaBuilding", back_populates="efa", cascade="all, delete-orphan")
     responsibilities = relationship("TertiaireResponsibility", back_populates="efa", cascade="all, delete-orphan")
     events = relationship("TertiairePerimeterEvent", back_populates="efa", cascade="all, delete-orphan")
@@ -160,3 +169,23 @@ class TertiaireDataQualityIssue(Base, TimestampMixin):
     proof_owner_role = Column(String(100), nullable=True)
 
     efa = relationship("TertiaireEfa", back_populates="quality_issues")
+
+
+class TertiaireEfaConsumption(Base, TimestampMixin):
+    """Consommation energetique annuelle d'une EFA — base de la trajectoire OPERAT."""
+
+    __tablename__ = "tertiaire_efa_consumption"
+    __table_args__ = (UniqueConstraint("efa_id", "year", name="uq_efa_consumption_year"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    efa_id = Column(Integer, ForeignKey("tertiaire_efa.id", ondelete="CASCADE"), nullable=False, index=True)
+    year = Column(Integer, nullable=False, comment="Annee de la consommation")
+    kwh_total = Column(Float, nullable=False, comment="Consommation totale (kWh)")
+    kwh_elec = Column(Float, nullable=True, comment="Part electricite (kWh)")
+    kwh_gaz = Column(Float, nullable=True, comment="Part gaz (kWh)")
+    kwh_reseau = Column(Float, nullable=True, comment="Part reseau chaleur/froid (kWh)")
+    is_reference = Column(Boolean, default=False, nullable=False, comment="True si annee de reference")
+    is_normalized = Column(Boolean, default=False, nullable=False, comment="True si normalise climatiquement")
+    source = Column(String(50), nullable=True, comment="factures, api, estimation, manuel")
+
+    efa = relationship("TertiaireEfa", back_populates="consumptions")
