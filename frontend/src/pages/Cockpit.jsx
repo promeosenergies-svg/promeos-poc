@@ -5,16 +5,7 @@
  */
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  FileText,
-  ArrowRight,
-  Search,
-  ShieldCheck,
-  TrendingDown,
-  AlertTriangle,
-  Zap,
-  Plus,
-} from 'lucide-react';
+import { FileText, ArrowRight, Search, AlertTriangle } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -25,12 +16,11 @@ import {
   getComplianceScoreTrend,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
-import { fmtEur, fmtKwh } from '../utils/format';
+import { fmtKwh } from '../utils/format';
 import { toActionsList } from '../services/routes';
 import {
   Button,
   Card,
-  CardBody,
   PageShell,
   Progress,
   Modal,
@@ -45,39 +35,26 @@ import {
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
-import { KPI_ACCENTS } from '../ui/colorTokens';
-// Cockpit V2 — model + sub-components
+// Cockpit V3 — model + sub-components
 import {
-  buildWatchlist,
   buildTopSites,
   buildOpportunities,
   checkConsistency,
-  buildBriefing,
-  buildTodayActions,
-  buildExecutiveSummary,
   buildExecutiveKpis,
-  computeHealthState,
 } from '../models/dashboardEssentials';
-import HealthSummary from '../components/HealthSummary';
+// V3: removed imports — buildWatchlist, buildBriefing, buildTodayActions,
+// buildExecutiveSummary, computeHealthState (replaced by PriorityHero + topActions)
 import EssentialsRow from './cockpit/EssentialsRow';
-import WatchlistCard from './cockpit/WatchlistCard';
 import OpportunitiesCard from './cockpit/OpportunitiesCard';
 import TopSitesCard from './cockpit/TopSitesCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
-import BriefingHeroCard from './cockpit/BriefingHeroCard';
-import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
 import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 import DataActivationPanel from './cockpit/DataActivationPanel';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
 import { MarketContextCompact } from '../components/purchase/MarketContextBanner';
-import {
-  READINESS_WEIGHTS,
-  ACTIONS_SCORE,
-  getRiskStatus,
-  getStatusBadgeProps,
-} from '../lib/constants';
+import { READINESS_WEIGHTS, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 import {
   evidenceConformite,
   evidenceRisque,
@@ -100,7 +77,7 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
-  const { openActionDrawer } = useActionDrawer();
+  const _actionDrawer = useActionDrawer(); // V3: available but not used in DG view
   const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const complianceMeta = useComplianceMeta();
@@ -118,7 +95,7 @@ const Cockpit = () => {
   // A.2: Unified compliance score from backend
   const [complianceApi, setComplianceApi] = useState(null);
   const [nextDeadline, setNextDeadline] = useState(null);
-  const [totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
+  const [_totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   // A.1: Consumption source tracking
   const [consoSource, setConsoSource] = useState(null);
   // Step 24: Market context compact
@@ -245,27 +222,13 @@ const Cockpit = () => {
   const singleSite = isSingleSite ? scopedSites[0] : null;
 
   // Cockpit V2 — derived model data (no extra API calls)
-  const watchlist = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
-  const briefing = useMemo(
-    () => buildBriefing(kpis, watchlist, alertsCount),
-    [kpis, watchlist, alertsCount]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
   const consistency = useMemo(() => checkConsistency(kpis), [kpis]); // eslint-disable-line react-hooks/exhaustive-deps
   const opportunities = useMemo(
     () => buildOpportunities(kpis, scopedSites, { isExpert }),
     [kpis, scopedSites, isExpert]
   ); // eslint-disable-line react-hooks/exhaustive-deps
   const topSites = useMemo(() => buildTopSites(scopedSites), [scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
-  const executiveSummary = useMemo(() => buildExecutiveSummary(kpis, topSites), [kpis, topSites]); // eslint-disable-line react-hooks/exhaustive-deps
   const executiveKpis = useMemo(() => buildExecutiveKpis(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
-  const _todayActions = useMemo(
-    () => buildTodayActions(kpis, watchlist, opportunities),
-    [kpis, watchlist, opportunities]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
-  const healthState = useMemo(
-    () => computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount }),
-    [kpis, watchlist, briefing, consistency, alertsCount]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Societe'} / ${portefeuille.nom}`
@@ -352,6 +315,111 @@ const Cockpit = () => {
     return { dot: variant, label };
   };
 
+  // ── V3 final : derive priority #1 for PriorityHero ──
+  const priority1 = useMemo(() => {
+    // Find the single most critical issue to display
+    if (kpis.nonConformes > 0) {
+      return {
+        type: 'critical',
+        title: `${kpis.nonConformes} site${kpis.nonConformes > 1 ? 's' : ''} non conforme${kpis.nonConformes > 1 ? 's' : ''} — mise en conformité requise`,
+        impact:
+          kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€ d'exposition` : null,
+        deadline: nextDeadline
+          ? `Échéance : ${(() => {
+              try {
+                return new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                });
+              } catch {
+                return nextDeadline.deadline;
+              }
+            })()}`
+          : null,
+        cta: { label: 'Voir conformité', path: '/conformite' },
+      };
+    }
+    if (kpis.aRisque > 0) {
+      return {
+        type: 'warning',
+        title: `${kpis.aRisque} site${kpis.aRisque > 1 ? 's' : ''} à risque réglementaire`,
+        impact:
+          kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€ d'exposition` : null,
+        deadline: nextDeadline
+          ? `Prochaine échéance : ${nextDeadline.label} (${nextDeadline.days_remaining}j)`
+          : null,
+        cta: { label: "Voir le plan d'action", path: toActionsList() },
+      };
+    }
+    if (alertsCount > 0) {
+      return {
+        type: 'info',
+        title: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''} à traiter`,
+        impact: null,
+        deadline: null,
+        cta: { label: 'Voir les alertes', path: '/notifications' },
+      };
+    }
+    return {
+      type: 'ok',
+      title: 'Aucun écart réglementaire détecté',
+      impact: null,
+      deadline: 'Décret Tertiaire et BACS évalués',
+      cta: { label: 'Voir conformité', path: '/conformite' },
+    };
+  }, [kpis, nextDeadline, alertsCount]);
+
+  // ── V3 final : derive top 3 actions for Zone 3 ──
+  const topActions = useMemo(() => {
+    const actions = [];
+    if (kpis.nonConformes > 0) {
+      actions.push({
+        id: 'fix-nc',
+        verb: 'Corriger',
+        label: `${kpis.nonConformes} non-conformité${kpis.nonConformes > 1 ? 's' : ''} réglementaire${kpis.nonConformes > 1 ? 's' : ''}`,
+        impact: kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€` : null,
+        path: '/conformite',
+      });
+    }
+    if (kpis.aRisque > 0 && actions.length < 3) {
+      actions.push({
+        id: 'monitor-risk',
+        verb: 'Surveiller',
+        label: `${kpis.aRisque} site${kpis.aRisque > 1 ? 's' : ''} à risque`,
+        impact: null,
+        path: '/conformite',
+      });
+    }
+    if (alertsCount > 0 && actions.length < 3) {
+      actions.push({
+        id: 'treat-alerts',
+        verb: 'Traiter',
+        label: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''}`,
+        impact: null,
+        path: '/notifications',
+      });
+    }
+    // Fill with opportunities if room
+    for (const opp of opportunities) {
+      if (actions.length >= 3) break;
+      actions.push({
+        id: opp.id,
+        verb: 'Lancer',
+        label: opp.label,
+        impact: null,
+        path: opp.path,
+      });
+    }
+    return actions.slice(0, 3);
+  }, [kpis, alertsCount, opportunities]);
+
+  // ── V3 final : scope label ──
+  const scopeType = isSingleSite ? 'site' : 'groupe';
+  const scopeText = isSingleSite
+    ? `Cockpit site · ${singleSite?.nom || ''}`
+    : `Cockpit groupe · ${kpis.total} site${kpis.total > 1 ? 's' : ''}`;
+
   // V18-B: guard — don't show empty state while sites are loading
   if (sitesLoading) {
     return (
@@ -384,22 +452,63 @@ const Cockpit = () => {
         />
       )}
 
-      {/* ═══════════ ZONE 1 : PRIORITÉ DU MOMENT ═══════════ */}
-
-      {/* ── Résumé exécutif (Cockpit V2) ── */}
-      <ExecutiveSummaryCard bullets={executiveSummary} onNavigate={navigate} />
-
-      {/* ── Health Summary ── */}
-      <HealthSummary healthState={healthState} onNavigate={navigate} />
-
-      {/* ── Briefing du jour — actions prioritaires ── */}
-      <div data-tour="step-2">
-        <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+      {/* ═══════════ SCOPE INDICATOR ═══════════ */}
+      <div className="flex items-center gap-2 text-xs text-gray-400">
+        <span
+          className={`inline-block w-2 h-2 rounded-full ${scopeType === 'site' ? 'bg-blue-400' : 'bg-indigo-400'}`}
+        />
+        <span>{scopeText}</span>
       </div>
 
-      {/* ═══════════ ZONE 2 : RISQUE & OPPORTUNITÉ ═══════════ */}
+      {/* ═══════════ ZONE 1 : PRIORITÉ #1 (radical) ═══════════ */}
+      <div
+        className={`rounded-xl border-l-4 p-5 cursor-pointer hover:shadow-md transition ${
+          priority1.type === 'critical'
+            ? 'bg-red-50 border-red-500'
+            : priority1.type === 'warning'
+              ? 'bg-amber-50 border-amber-500'
+              : priority1.type === 'info'
+                ? 'bg-blue-50 border-blue-500'
+                : 'bg-green-50 border-green-500'
+        }`}
+        onClick={() => navigate(priority1.cta.path)}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p
+              className={`text-base font-semibold ${
+                priority1.type === 'critical'
+                  ? 'text-red-900'
+                  : priority1.type === 'warning'
+                    ? 'text-amber-900'
+                    : priority1.type === 'info'
+                      ? 'text-blue-900'
+                      : 'text-green-900'
+              }`}
+            >
+              {priority1.title}
+            </p>
+            <div className="flex items-center gap-3 mt-1.5 text-sm">
+              {priority1.impact && (
+                <span className="font-medium text-red-700">{priority1.impact}</span>
+              )}
+              {priority1.deadline && <span className="text-gray-600">{priority1.deadline}</span>}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(priority1.cta.path);
+            }}
+          >
+            {priority1.cta.label} <ArrowRight size={14} />
+          </Button>
+        </div>
+      </div>
 
-      {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
+      {/* ═══════════ ZONE 2 : KPI DÉCIDEUR (4 tiles, compact) ═══════════ */}
       <div data-tour="step-1">
         <ExecutiveKpiRow
           kpis={executiveKpis}
@@ -410,58 +519,69 @@ const Cockpit = () => {
         />
       </div>
 
-      {/* Prochaine échéance réglementaire */}
-      {nextDeadline && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition"
-          onClick={() => navigate('/conformite')}
-        >
-          <ShieldCheck size={18} className="text-amber-600 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-800">
-              Prochaine échéance : {nextDeadline.label}
-            </p>
-            <p className="text-xs text-amber-600">
-              {(() => {
-                try {
-                  return new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  });
-                } catch {
-                  return nextDeadline.deadline;
-                }
-              })()}{' '}
-              — dans {nextDeadline.days_remaining} jour
-              {nextDeadline.days_remaining > 1 ? 's' : ''}
-              {totalPenaltyExposure > 0 && (
-                <span className="ml-2 text-red-600 font-medium">
-                  Exposition totale : {fmtEur(totalPenaltyExposure)}
-                </span>
-              )}
-            </p>
+      {/* Single-site compact row (intégré dans zone 2, pas empilé) */}
+      {isSingleSite && singleSite && (
+        <div className="flex items-center gap-6 px-4 py-3 bg-gray-50 rounded-lg text-sm">
+          <div className="flex items-center gap-2">
+            <StatusDot status={getStatusInfo(singleSite.statut_conformite).dot} />
+            <span className="text-gray-700">
+              {getStatusInfo(singleSite.statut_conformite).label}
+            </span>
           </div>
-          <span className="text-xs font-medium text-amber-700 hover:underline shrink-0">
-            Voir toutes les échéances
-          </span>
+          <div className="text-gray-500">
+            Risque :{' '}
+            <span className="font-medium text-gray-900">
+              {singleSite.risque_eur > 0
+                ? `${singleSite.risque_eur.toLocaleString('fr-FR')} €`
+                : '0 €'}
+            </span>
+          </div>
+          <div className="text-gray-500">
+            Conso :{' '}
+            <span className="font-medium text-gray-900">
+              {singleSite.conso_kwh_an > 0 ? `${fmtKwh(singleSite.conso_kwh_an)}/an` : '—'}
+            </span>
+          </div>
+          <div className="text-gray-500">
+            Surface :{' '}
+            <span className="font-medium text-gray-900">
+              {singleSite.surface_m2 ? `${singleSite.surface_m2.toLocaleString('fr-FR')} m²` : '—'}
+            </span>
+          </div>
         </div>
       )}
 
-      {/* ═══════════ ZONE 3 : ACTIONS RECOMMANDÉES (max 3 items) ═══════════ */}
+      {/* ═══════════ ZONE 3 : ACTIONS (3 max, verbes explicites) ═══════════ */}
+      {topActions.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+            Actions recommandées
+          </h3>
+          {topActions.map((action) => (
+            <div
+              key={action.id}
+              className="flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+              onClick={() => navigate(action.path)}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-blue-600 uppercase w-16">
+                  {action.verb}
+                </span>
+                <span className="text-sm text-gray-800">{action.label}</span>
+                {action.impact && (
+                  <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                    {action.impact}
+                  </span>
+                )}
+              </div>
+              <ArrowRight size={14} className="text-gray-400" />
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div data-tour="step-3">
-        <WatchlistCard
-          watchlist={watchlist}
-          consistency={consistency}
-          loading={sitesLoading}
-          onNavigate={navigate}
-        />
-      </div>
-
-      {/* ═══════════ ZONE 4 : ANALYSE DÉTAILLÉE (repliée par défaut) ═══════════ */}
-
-      <div className="flex justify-center">
+      {/* ═══════════ ZONE 4 : ANALYSE DÉTAILLÉE (repliée) ═══════════ */}
+      <div className="flex justify-center pt-2">
         <button
           onClick={() => setShowDetail((v) => !v)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition"
@@ -480,22 +600,17 @@ const Cockpit = () => {
 
       {showDetail && (
         <div className="space-y-4">
+          {/* Impact & Décision */}
+          <ImpactDecisionPanel kpis={kpis} />
+
           {/* Market context */}
           <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
 
-          {/* Top Sites */}
+          {/* Top Sites (multi-site only) */}
           {!isSingleSite && <TopSitesCard topSites={topSites} onNavigate={navigate} />}
 
-          {/* Impact & Décision (détaillé) */}
-          <ImpactDecisionPanel kpis={kpis} />
-
-          {/* Module Launchers */}
-          {isExpert && <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />}
-
-          {/* Opportunities (Expert) */}
-          {isExpert && opportunities.length > 0 && (
-            <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
-          )}
+          {/* Module Launchers (replié) */}
+          <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
 
           {/* Données & connexions */}
           <EssentialsRow
@@ -509,83 +624,17 @@ const Cockpit = () => {
           {/* Data Activation — masqué si tout activé */}
           {kpis.couvertureDonnees < 100 && <DataActivationPanel kpis={kpis} />}
 
-          {/* Data Quality (Expert) */}
+          {/* Expert only */}
+          {isExpert && opportunities.length > 0 && (
+            <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
+          )}
           {isExpert && <DataQualityWidget />}
-
-          {/* Consistency (Expert) */}
           {isExpert && !consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
         </div>
       )}
 
-      {/* ── Mode 1 site: quick insights ── */}
-      {isSingleSite && singleSite && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardBody className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <ShieldCheck size={16} className="text-gray-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-medium uppercase">Statut</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <StatusDot status={getStatusInfo(singleSite.statut_conformite).dot} />
-                  <span className="text-sm font-medium text-gray-900">
-                    {getStatusInfo(singleSite.statut_conformite).label}
-                  </span>
-                </div>
-                {isExpert && (
-                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
-                    Source : Moteur de conformité v2 · Confiance : moyenne
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <TrendingDown size={16} className="text-gray-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-medium uppercase">Risque</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">
-                  {singleSite.risque_eur > 0
-                    ? `${singleSite.risque_eur.toLocaleString('fr-FR')} €`
-                    : 'Aucun'}
-                </p>
-                {isExpert && (
-                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
-                    Source : Moteur de conformité v2 · Confiance : moyenne
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <Zap size={16} className="text-gray-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-medium uppercase">Consommation</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">
-                  {singleSite.conso_kwh_an > 0
-                    ? `${fmtKwh(singleSite.conso_kwh_an)}/an`
-                    : 'Non renseignée'}
-                </p>
-                {isExpert && (
-                  <p className="text-[10px] text-gray-400 mt-1 font-mono">
-                    Source : factures importées · Confiance : variable
-                  </p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Portfolio tabs */}
-      {!portefeuille && !isSingleSite && ptfWithCounts.length > 1 && (
+      {/* Portfolio tabs + Sites Table — inside detail zone */}
+      {showDetail && !portefeuille && !isSingleSite && ptfWithCounts.length > 1 && (
         <Tabs
           tabs={ptfTabs}
           active={activePtf}
@@ -597,8 +646,7 @@ const Cockpit = () => {
         />
       )}
 
-      {/* Sites Table */}
-      {!isSingleSite && (
+      {showDetail && !isSingleSite && (
         <Card>
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-800">
