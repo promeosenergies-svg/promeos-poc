@@ -10,9 +10,21 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from database import SessionLocal
+from database import SessionLocal, engine
 from .orchestrator import SeedOrchestrator
 from .packs import list_packs
+
+
+def _ensure_tables():
+    """Create all tables if DB file is missing or empty, then run migrations."""
+    import models  # noqa: F401 — register all models with SQLAlchemy
+
+    from models.base import Base
+
+    Base.metadata.create_all(bind=engine)
+    from database.migrations import run_migrations
+
+    run_migrations(engine)
 
 
 def main():
@@ -28,6 +40,8 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show current data status")
 
     args = parser.parse_args()
+
+    _ensure_tables()
 
     db = SessionLocal()
     orch = SeedOrchestrator(db)
