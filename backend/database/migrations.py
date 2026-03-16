@@ -719,19 +719,20 @@ def _upgrade_meter_reading_unique_constraint(engine):
 
     existing = {idx["name"] for idx in insp.get_indexes("meter_reading") if idx.get("name")}
 
-    if new_name in existing:
-        return  # already migrated
-
-    with engine.begin() as conn:
-        # Drop old constraint if it exists
-        if old_name in existing:
+    # Always drop the old constraint if it exists (even if new one already
+    # exists from create_all — both can coexist and the old one still blocks)
+    if old_name in existing:
+        with engine.begin() as conn:
             try:
                 conn.execute(text(f'DROP INDEX IF EXISTS "{old_name}"'))
                 logger.info("migration: dropped old index %s", old_name)
             except Exception as e:
                 logger.warning("migration: could not drop index %s: %s", old_name, e)
 
-        # Create new constraint
+    if new_name in existing:
+        return  # new constraint already exists
+
+    with engine.begin() as conn:
         try:
             conn.execute(
                 text(
