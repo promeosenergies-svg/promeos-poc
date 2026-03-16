@@ -17,7 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
     CvcSystemType,
     CvcArchitecture,
@@ -26,7 +26,7 @@ from .enums import (
 )
 
 
-class BacsAsset(Base, TimestampMixin):
+class BacsAsset(Base, TimestampMixin, SoftDeleteMixin):
     """
     Actif BACS lie a un site.
     Porte les donnees d'eligibilite: tertiaire, date PC, renouvellement, responsable.

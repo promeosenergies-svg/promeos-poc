@@ -194,6 +194,11 @@ def add_cvc_system(
     db.add(sys)
     db.commit()
     db.refresh(sys)
+    # Auto-recalcul BACS
+    from services.patrimoine_conformite_sync import auto_recompute_bacs
+
+    auto_recompute_bacs(db, asset.site_id)
+    db.commit()
     return _serialize_system(sys)
 
 
@@ -216,6 +221,13 @@ def update_cvc_system(
     sys.engine_version = ENGINE_VERSION
     db.commit()
     db.refresh(sys)
+    # Auto-recalcul BACS
+    from services.patrimoine_conformite_sync import auto_recompute_bacs
+
+    asset = db.query(BacsAsset).filter(BacsAsset.id == sys.asset_id).first()
+    if asset:
+        auto_recompute_bacs(db, asset.site_id)
+        db.commit()
     return _serialize_system(sys)
 
 
@@ -226,8 +238,15 @@ def delete_cvc_system(system_id: int, db: Session = Depends(get_db)):
     if not sys:
         raise HTTPException(status_code=404, detail="CVC system not found")
 
+    asset = db.query(BacsAsset).filter(BacsAsset.id == sys.asset_id).first()
     db.delete(sys)
     db.commit()
+    # Auto-recalcul BACS apres suppression
+    if asset:
+        from services.patrimoine_conformite_sync import auto_recompute_bacs
+
+        auto_recompute_bacs(db, asset.site_id)
+        db.commit()
     return {"deleted": system_id}
 
 
@@ -567,6 +586,14 @@ def _action_to_dict(a):
         "created_at": a.created_at.isoformat() if a.created_at else None,
         "closed_at": a.closed_at.isoformat() if a.closed_at else None,
     }
+
+
+@router.get("/orphans")
+def get_orphans(db: Session = Depends(get_db)):
+    """Detecte les entites conformite orphelines."""
+    from services.patrimoine_conformite_sync import detect_orphans
+
+    return detect_orphans(db)
 
 
 @router.get("/site/{site_id}/alerts")

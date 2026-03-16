@@ -483,6 +483,9 @@ def archive_site_crud(
     if not site:
         raise HTTPException(404, "Site introuvable")
     site.soft_delete()
+    from services.patrimoine_conformite_sync import cascade_site_archive
+
+    cascade_site_archive(db, site_id)
     db.commit()
     return {"status": "archived", "id": site_id}
 

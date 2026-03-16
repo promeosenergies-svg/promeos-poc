@@ -1669,6 +1669,15 @@ def update_site(
         updated_fields.append(field)
 
     db.commit()
+
+    # Propagation conformite si champs critiques modifies
+    if any(f in updated_fields for f in ("surface_m2", "type", "naf_code")):
+        from services.patrimoine_conformite_sync import flag_efa_desync_on_surface_change
+
+        synced = flag_efa_desync_on_surface_change(db, site_id)
+        if synced:
+            db.commit()
+
     return {"updated": updated_fields, **_serialize_site(site)}
 
 
@@ -1685,8 +1694,13 @@ def archive_site(
     if site.is_deleted:
         return {"detail": "Site deja archive", "site_id": site_id}
     site.soft_delete()
+
+    # Cascade conformite
+    from services.patrimoine_conformite_sync import cascade_site_archive
+
+    cascade_result = cascade_site_archive(db, site_id)
     db.commit()
-    return {"detail": "Site archive", "site_id": site_id}
+    return {"detail": "Site archive", "site_id": site_id, "cascade": cascade_result}
 
 
 @router.post("/sites/{site_id}/restore")
