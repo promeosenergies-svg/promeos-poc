@@ -63,6 +63,15 @@ class SeedOrchestrator:
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
         result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
+        # Auto-create DeliveryPoints for meters that have PRM/PCE but no DP
+        from services.onboarding_service import ensure_delivery_points_for_site
+
+        dp_total = 0
+        for s in master["sites"]:
+            dp_total += ensure_delivery_points_for_site(self.db, s.id)
+        self.db.flush()
+        result["delivery_points_created"] = dp_total
+
         # V107: build site_meta for surface-normalized consumption
         site_meta = {}
         for s in master["sites"]:
@@ -371,6 +380,18 @@ class SeedOrchestrator:
             default_site_id=result.get("default_site_id"),
             default_site_name=result.get("default_site_name"),
         )
+
+        # Recompute compliance scores for all sites (sync DT + BACS + unified score)
+        try:
+            from services.compliance_coordinator import recompute_site_full
+
+            for s in master["sites"]:
+                recompute_site_full(self.db, s.id)
+            self.db.flush()
+        except Exception as exc:
+            import logging
+
+            logging.getLogger("demo_seed").warning("Compliance recompute failed (non-bloquant): %s", exc)
 
         self.db.commit()
 

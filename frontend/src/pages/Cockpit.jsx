@@ -424,7 +424,18 @@ const Cockpit = () => {
               Prochaine échéance : {nextDeadline.label}
             </p>
             <p className="text-xs text-amber-600">
-              {nextDeadline.deadline} — dans {nextDeadline.days_remaining} jour
+              {(() => {
+                try {
+                  return new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  });
+                } catch {
+                  return nextDeadline.deadline;
+                }
+              })()}{' '}
+              — dans {nextDeadline.days_remaining} jour
               {nextDeadline.days_remaining > 1 ? 's' : ''}
               {totalPenaltyExposure > 0 && (
                 <span className="ml-2 text-red-600 font-medium">

@@ -124,7 +124,7 @@ function HealthBar({ sites_health, sites_count }) {
       <ShieldCheck size={14} className="text-green-500 shrink-0" />
       <div className="flex items-center gap-1.5">
         <span className="text-sm font-bold text-green-600">{pct}%</span>
-        <span className="text-xs text-gray-500">sains</span>
+        <span className="text-xs text-gray-500">complets</span>
       </div>
       {/* Mini progress bar */}
       <div className="flex h-1.5 w-16 rounded-full overflow-hidden bg-gray-100">
