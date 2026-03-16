@@ -594,12 +594,41 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       }}
                     >
                       <User size={14} />{' '}
-                      {d.owner || <span className="text-gray-400 italic">Non assigné</span>}
+                      {d.owner || (
+                        <span
+                          className={`italic ${d.status === 'done' ? 'text-amber-500' : 'text-gray-400'}`}
+                        >
+                          {d.status === 'done' ? 'Terminée sans assignation' : 'Non assigné'}
+                        </span>
+                      )}
                       <Pencil size={12} className="text-gray-300 group-hover:text-blue-500 ml-1" />
                     </p>
                   )}
                 </div>
               </div>
+
+              {/* Clôture info (si terminée) */}
+              {d.status === 'done' && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs font-medium text-green-800 mb-1">Action clôturée</p>
+                  <div className="text-xs text-green-700 space-y-0.5">
+                    {d.updated_at && (
+                      <p>
+                        Date :{' '}
+                        {new Date(d.updated_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    )}
+                    {d.closure_justification && <p>Justification : {d.closure_justification}</p>}
+                    {!d.closure_justification && (
+                      <p className="italic text-green-600">Aucune justification renseignée</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Création + contexte temporel */}
               <div className="grid grid-cols-2 gap-4">

@@ -2030,12 +2030,12 @@ function SiteDrawerContent({
         {/* Metric pills */}
         <div className="flex items-center gap-3 mt-3">
           <MetricPill
-            label="Penalite regl."
+            label="Risque estimé"
             value={fmtEur(site.risque_eur)}
             warn={site.risque_eur > 0}
           />
           <MetricPill label="Surface" value={fmtArea(site.surface_m2)} />
-          <MetricPill label="Compteurs" value={site.nb_compteurs || '—'} />
+          <MetricPill label="Compteurs" value={site.nb_compteurs != null ? site.nb_compteurs : 0} />
         </div>
       </div>
 
@@ -2084,10 +2084,12 @@ function SiteDrawerContent({
           </DrawerSection>
 
           {/* Risk block */}
-          <DrawerSection title="Risque">
-            <DrawerRow label="Penalite reglementaire">{fmtEurFull(site.risque_eur)}</DrawerRow>
-            <DrawerRow label="Anomalies">
-              {site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}
+          <DrawerSection title="Risque financier">
+            <DrawerRow label="Risque réglementaire estimé">{fmtEurFull(site.risque_eur)}</DrawerRow>
+            <DrawerRow label="Anomalies détectées">
+              {site.anomalies_count > 0
+                ? `${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''}`
+                : 'Aucune'}
             </DrawerRow>
           </DrawerSection>
 
@@ -2095,7 +2097,11 @@ function SiteDrawerContent({
           <DrawerSection title="Données">
             <DrawerRow label="Surface">{fmtArea(site.surface_m2)}</DrawerRow>
             <DrawerRow label="Conso annuelle">{fmtKwh(site.conso_kwh_an)}</DrawerRow>
-            <DrawerRow label="Compteurs">{site.nb_compteurs || '—'}</DrawerRow>
+            <DrawerRow label="Compteurs">
+              {site.nb_compteurs != null && site.nb_compteurs > 0
+                ? site.nb_compteurs
+                : '0 — non connecté'}
+            </DrawerRow>
           </DrawerSection>
         </div>
       )}
@@ -2136,7 +2142,7 @@ function SiteDrawerContent({
             color="text-green-600"
             title="Voir la conformité"
             desc="Décret Tertiaire, BACS, obligations"
-            onClick={() => navigate('/conformite')}
+            onClick={() => navigate(`/conformite?site_id=${site.id}`)}
           />
           <DrawerActionBtn
             icon={Lightbulb}
@@ -2162,8 +2168,8 @@ function SiteDrawerContent({
       <div className="text-[10px] text-gray-400 pt-1">
         Site #{site.id} ·{' '}
         {fmtDateFR(site.derniere_evaluation) !== '—'
-          ? `Maj : ${fmtDateFR(site.derniere_evaluation)}`
-          : 'Pas encore évalué'}
+          ? `Dernière évaluation : ${fmtDateFR(site.derniere_evaluation)}`
+          : 'Évaluation en attente — lancez un audit depuis Conformité'}
       </div>
     </div>
   );
