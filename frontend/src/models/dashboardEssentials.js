@@ -58,7 +58,7 @@ export function buildWatchlist(kpis, sites = []) {
   if (ar > 0) {
     items.push({
       id: 'a_risque',
-      label: `${ar} site${ar > 1 ? 's' : ''} à risque Décret Tertiaire`,
+      label: `${ar} site${ar > 1 ? 's' : ''} à risque réglementaire`,
       severity: 'high',
       path: '/actions',
       cta: "Plan d'action",
@@ -373,12 +373,12 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
       label: 'Aucun site dans le périmètre',
       sub: 'Importez votre patrimoine pour démarrer',
     });
-  } else if (pctConf >= CONFORMITY_THRESHOLDS.positive && nonConformes === 0) {
+  } else if (pctConf >= CONFORMITY_THRESHOLDS.positive && nonConformes === 0 && aRisque === 0) {
     bullets.push({
       id: 'conforme_ok',
       type: 'positive',
-      label: `${formatPercentFR(pctConf)} des sites sont conformes`,
-      sub: `${conformes} site${conformes > 1 ? 's' : ''} respectent le Décret Tertiaire`,
+      label: `${formatPercentFR(pctConf)} des sites en conformité`,
+      sub: `${conformes} site${conformes > 1 ? 's' : ''} conforme${conformes > 1 ? 's' : ''} (Décret Tertiaire + BACS)`,
     });
   } else {
     bullets.push({
@@ -402,16 +402,16 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
     bullets.push({
       id: 'a_risque_exec',
       type: 'warn',
-      label: `${aRisque} site${aRisque > 1 ? 's' : ''} à surveiller (risque Décret Tertiaire)`,
+      label: `${aRisque} site${aRisque > 1 ? 's' : ''} à surveiller (conformité réglementaire)`,
       sub: risqueTotal > 0 ? `Risque estimé : ${Math.round(risqueTotal / 1000)} k€` : null,
-      path: '/actions',
+      path: '/conformite',
     });
   } else if (total > 0) {
     bullets.push({
       id: 'all_ok_exec',
       type: 'positive',
-      label: 'Aucun site en retard réglementaire',
-      sub: 'Périmètre sous contrôle',
+      label: 'Aucun écart réglementaire détecté',
+      sub: 'Décret Tertiaire et BACS évalués — périmètre sous contrôle',
     });
   }
 

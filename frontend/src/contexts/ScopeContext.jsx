@@ -115,12 +115,31 @@ export function ScopeProvider({ children }) {
       .then((data) => {
         if (myId !== _fetchId.current) return; // stale response — ignore
         const raw = Array.isArray(data) ? data : data.sites || data.items || [];
-        // Normalize: /api/sites returns statut_decret_tertiaire but frontend uses statut_conformite
-        const list = raw.map((s) => ({
-          ...s,
-          statut_conformite: s.statut_conformite ?? s.statut_decret_tertiaire ?? null,
-          risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
-        }));
+        // Normalize: compute worst-of statut_conformite from DT + BACS + composite score
+        const list = raw.map((s) => {
+          const dt = s.statut_conformite ?? s.statut_decret_tertiaire ?? null;
+          const bacs = s.statut_bacs ?? null;
+          // Worst-of logic: non_conforme > a_risque > conforme > null
+          const RANK = { non_conforme: 0, a_risque: 1, conforme: 2 };
+          const dtRank = RANK[dt] ?? 3;
+          const bacsRank = RANK[bacs] ?? 3;
+          const worstRank = Math.min(dtRank, bacsRank);
+          const worstStatut =
+            worstRank === 0
+              ? 'non_conforme'
+              : worstRank === 1
+                ? 'a_risque'
+                : worstRank === 2
+                  ? 'conforme'
+                  : dt; // fallback to DT if both null
+          return {
+            ...s,
+            statut_conformite: worstStatut,
+            statut_bacs: bacs,
+            statut_decret_tertiaire: dt,
+            risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
+          };
+        });
         setApiSites(list);
         setSitesLoading(false);
       })
