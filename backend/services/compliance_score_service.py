@@ -196,10 +196,16 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
         else:
             # Fallback : findings réels puis snapshot Site (pour DT et BACS)
             fw_score = _fallback_site_score(site, fw_key, db=db)
-            source = "snapshot" if fw_score != 50.0 else "default"
-            available = source == "snapshot"
-            if available:
-                frameworks_evaluated += 1
+            if fw_score is None:
+                # Framework non applicable (all findings OUT_OF_SCOPE)
+                fw_score = 0.0
+                source = "not_applicable"
+                available = False
+            else:
+                source = "snapshot" if fw_score != 50.0 else "default"
+                available = source == "snapshot"
+                if available:
+                    frameworks_evaluated += 1
 
         breakdown.append(
             FrameworkScore(
@@ -416,7 +422,7 @@ def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
             # Exclude OUT_OF_SCOPE findings — they shouldn't affect the score
             relevant = [f for f in findings if str(f.status).upper() != "OUT_OF_SCOPE"]
             if not relevant:
-                return 100.0  # all findings are out-of-scope → fully compliant by default
+                return None  # all findings are out-of-scope → framework not applicable
 
             total = len(relevant)
             ok_count = sum(1 for f in relevant if str(f.status).upper() == "OK")

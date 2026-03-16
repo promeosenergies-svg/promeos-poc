@@ -395,7 +395,13 @@ function FindingAuditDrawer({ findingId, onClose }) {
               {detail.deadline && (
                 <div>
                   <span className="text-gray-500">{DRAWER_LABELS.deadline} :</span>{' '}
-                  <span className="font-medium">{detail.deadline}</span>
+                  <span className="font-medium">
+                    {new Date(detail.deadline).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
                 </div>
               )}
             </div>
@@ -581,7 +587,11 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
             >
               <CalendarClock size={12} />
               Prochaine échéance : {nextDeadline.label || nextDeadline.regulation} —{' '}
-              {nextDeadline.deadline}
+              {new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
               {nextDeadline.days_remaining != null && (
                 <span
                   className={nextDeadline.days_remaining <= 30 ? 'font-semibold text-red-600' : ''}
@@ -895,13 +905,13 @@ export default function ConformitePage() {
       : summary.pct_ok || 0;
     return {
       pct: unifiedPct,
-      total: obligations.length,
+      total: summary.total_sites || scopedSites?.length || 0,
       non_conformes: summary.sites_nok || 0,
       a_risque: summary.sites_unknown || 0,
       conformes: summary.sites_ok || 0,
       total_impact_eur: 0,
     };
-  }, [summary, obligations, complianceScore]);
+  }, [summary, obligations, complianceScore, scopedSites]);
 
   const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);
 
