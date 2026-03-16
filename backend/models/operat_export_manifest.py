@@ -32,3 +32,12 @@ class OperatExportManifest(Base):
     efa_count = Column(Integer, nullable=True)
     evidence_warnings_json = Column(Text, nullable=True)
     export_version = Column(String(20), nullable=False, default="1.0")
+
+    # Archivage / retention
+    retention_until = Column(DateTime, nullable=True, comment="Date jusqu'a laquelle conserver")
+    archive_status = Column(String(20), nullable=True, default="active", comment="active, archived, expired")
+
+    # Certification legere
+    weather_provider = Column(String(100), nullable=True)
+    baseline_normalization_status = Column(String(20), nullable=True)
+    promeos_version = Column(String(20), nullable=True, default="2.0")

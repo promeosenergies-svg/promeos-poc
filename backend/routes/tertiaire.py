@@ -851,10 +851,15 @@ class ConsumptionDeclareRequest(BaseModel):
 def declare_efa_consumption(
     efa_id: int,
     body: ConsumptionDeclareRequest,
+    request: Request = None,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Declare ou met a jour la consommation annuelle d'une EFA."""
     from services.operat_trajectory import declare_consumption
+    from services.actor_resolver import resolve_actor
+
+    _ = resolve_actor(auth, request, fallback="api_declare")  # noqa: F841 — pour future journalisation actor
 
     efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id, not_deleted(TertiaireEfa)).first()
     if not efa:

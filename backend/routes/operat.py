@@ -9,6 +9,7 @@ GET  /api/operat/export-manifests/{id} — detail d'un manifest
 
 import hashlib
 import json
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -97,6 +98,14 @@ def _build_manifest(db, org_id, year, csv_content, filename, efa_ids=None, actor
         trajectory_status=trajectory_status,
         efa_count=max(0, efa_count),
         evidence_warnings_json=json.dumps(evidence_warnings) if evidence_warnings else None,
+        # Hardening
+        retention_until=datetime.now(timezone.utc) + timedelta(days=5 * 365),  # 5 ans
+        archive_status="active",
+        weather_provider=ref.source if ref and hasattr(ref, "source") else None,
+        baseline_normalization_status=first_efa.baseline_normalization_status
+        if first_efa and hasattr(first_efa, "baseline_normalization_status")
+        else None,
+        promeos_version="2.0",
     )
     db.add(manifest)
     db.flush()
@@ -138,8 +147,11 @@ def export_operat_csv_route(
     efa_count = csv_content.count("\n") - 1
     log_operat_export(db, body.org_id, body.year, max(0, efa_count))
 
-    # Manifest + event log
-    manifest = _build_manifest(db, body.org_id, body.year, csv_content, filename, body.efa_ids, body.actor)
+    # Manifest + event log (actor depuis body ou fallback)
+    from services.actor_resolver import resolve_actor
+
+    actor = body.actor or resolve_actor(fallback="api_export")
+    manifest = _build_manifest(db, body.org_id, body.year, csv_content, filename, body.efa_ids, actor)
     db.commit()
 
     return StreamingResponse(
@@ -245,4 +257,9 @@ def _manifest_to_dict(m):
         "efa_count": m.efa_count,
         "evidence_warnings": json.loads(m.evidence_warnings_json) if m.evidence_warnings_json else [],
         "export_version": m.export_version,
+        "retention_until": m.retention_until.isoformat() if getattr(m, "retention_until", None) else None,
+        "archive_status": getattr(m, "archive_status", "active"),
+        "weather_provider": getattr(m, "weather_provider", None),
+        "baseline_normalization_status": getattr(m, "baseline_normalization_status", None),
+        "promeos_version": getattr(m, "promeos_version", "1.0"),
     }

@@ -1360,3 +1360,19 @@ def _migrate_operat_export_manifest(engine):
                 text('CREATE INDEX IF NOT EXISTS "ix_export_manifest_org" ON "operat_export_manifest" ("org_id")')
             )
         logger.info("migration: created operat_export_manifest table")
+
+    # Add hardening columns
+    if insp.has_table("operat_export_manifest"):
+        existing = {c["name"] for c in insp.get_columns("operat_export_manifest")}
+        hardening_cols = [
+            ("retention_until", "DATETIME"),
+            ("archive_status", "VARCHAR(20) DEFAULT 'active'"),
+            ("weather_provider", "VARCHAR(100)"),
+            ("baseline_normalization_status", "VARCHAR(20)"),
+            ("promeos_version", "VARCHAR(20) DEFAULT '2.0'"),
+        ]
+        with engine.begin() as conn:
+            for col_name, col_type in hardening_cols:
+                if col_name not in existing:
+                    conn.execute(text(f'ALTER TABLE "operat_export_manifest" ADD COLUMN "{col_name}" {col_type}'))
+                    logger.info("migration: hardening — added operat_export_manifest.%s", col_name)
