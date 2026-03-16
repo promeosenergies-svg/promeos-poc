@@ -120,7 +120,7 @@ function HorizontalTimeline({ events, today }) {
   const todayPct = (daysBetween(minDate, today) / totalDays) * 100;
 
   // Anti-collision: compute stagger levels for events that are too close
-  const MIN_GAP_PCT = 18; // minimum % distance before staggering (label ~120px on ~800px axis)
+  const MIN_GAP_PCT = 20; // minimum % distance before staggering (label ~120px on ~800px axis)
   const eventsWithLayout = events
     .map((evt) => ({
       ...evt,
@@ -145,21 +145,21 @@ function HorizontalTimeline({ events, today }) {
   const maxLevel = Math.max(0, ...eventsWithLayout.map((e) => e._level));
 
   // Layout constants per level — 6 levels for dense timelines
-  const AXIS_Y = 160;
+  const AXIS_Y = 180;
   const levelOffsets = [
-    { labelY: 50, dotY: AXIS_Y - 8 }, // level 0: above axis
-    { labelY: AXIS_Y + 24, dotY: AXIS_Y - 8 }, // level 1: below axis
-    { labelY: 2, dotY: AXIS_Y - 8 }, // level 2: further above
-    { labelY: AXIS_Y + 80, dotY: AXIS_Y - 8 }, // level 3: further below
-    { labelY: -30, dotY: AXIS_Y - 8 }, // level 4: top
-    { labelY: AXIS_Y + 130, dotY: AXIS_Y - 8 }, // level 5: bottom
+    { labelY: 70, dotY: AXIS_Y - 8 }, // level 0: above axis
+    { labelY: AXIS_Y + 28, dotY: AXIS_Y - 8 }, // level 1: below axis
+    { labelY: 2, dotY: AXIS_Y - 8 }, // level 2: further above (68px gap from level 0)
+    { labelY: AXIS_Y + 96, dotY: AXIS_Y - 8 }, // level 3: further below (68px gap from level 1)
+    { labelY: -50, dotY: AXIS_Y - 8 }, // level 4: top
+    { labelY: AXIS_Y + 160, dotY: AXIS_Y - 8 }, // level 5: bottom
   ];
 
   return (
     <div className="relative w-full overflow-x-auto pb-4 px-12">
-      {/* Axis */}
+      {/* Axis — min-w increased for readability with many events */}
       <div
-        className="relative min-w-[700px]"
+        className="relative min-w-[900px]"
         style={{
           height: `${AXIS_Y + (maxLevel >= 5 ? 160 : maxLevel >= 3 ? 120 : maxLevel >= 1 ? 80 : 60)}px`,
         }}
@@ -196,30 +196,30 @@ function HorizontalTimeline({ events, today }) {
             >
               {/* Stem line from dot to label */}
               <div
-                className="absolute w-px bg-gray-200 left-0 -translate-x-1/2"
+                className="absolute w-px bg-gray-300 left-0 -translate-x-1/2"
                 style={{
-                  top: isBelow ? `${AXIS_Y + 6}px` : `${layout.labelY + 36}px`,
+                  top: isBelow ? `${AXIS_Y + 6}px` : `${layout.labelY + 50}px`,
                   height: isBelow
-                    ? `${layout.labelY - AXIS_Y - 10}px`
-                    : `${Math.max(6, AXIS_Y - layout.labelY - 42)}px`,
+                    ? `${Math.max(6, layout.labelY - AXIS_Y - 10)}px`
+                    : `${Math.max(6, AXIS_Y - layout.labelY - 56)}px`,
                 }}
               />
 
               {/* Label */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 w-[110px] text-center"
+                className="absolute left-1/2 -translate-x-1/2 w-[130px] text-center"
                 style={{ top: `${layout.labelY}px` }}
               >
                 <span
-                  className={`inline-block px-1 py-0.5 rounded text-[6.5px] font-bold uppercase text-white mb-0.5 leading-none ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
+                  className={`inline-block px-1.5 py-0.5 rounded text-[7px] font-bold uppercase text-white mb-0.5 leading-none ${FRAMEWORK_COLORS[evt.framework] || 'bg-gray-500'}`}
                 >
                   {FRAMEWORK_LABELS[evt.framework] || evt.framework}
                 </span>
-                <p className="text-[11px] font-medium text-gray-700 leading-tight line-clamp-2">
+                <p className="text-[11px] font-semibold text-gray-700 leading-tight line-clamp-2">
                   {evt.label}
                 </p>
                 <p
-                  className={`text-[10px] ${new Date(evt.deadline) < new Date(today) ? 'text-red-500 font-semibold' : 'text-gray-500'}`}
+                  className={`text-[10px] font-medium ${new Date(evt.deadline) < new Date(today) ? 'text-red-500 font-semibold' : 'text-gray-500'}`}
                 >
                   {new Date(evt.deadline) < new Date(today) ? 'Échue · ' : ''}
                   {formatDate(evt.deadline)}

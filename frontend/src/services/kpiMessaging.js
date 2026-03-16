@@ -36,11 +36,21 @@ const HANDLERS = {
         action: { label: 'Lancer un audit', path: '/conformite' },
       };
     }
-    if (v >= 70) {
+    if (v >= 70 && sitesNonConformes === 0 && sitesAtRisk === 0) {
       return {
-        simple: `Bonne conformité (${v}/100). ${sitesAtRisk > 0 ? `${sitesAtRisk} site${sitesAtRisk > 1 ? 's' : ''} à surveiller.` : 'Continuez ainsi.'}`,
-        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes, ${sitesAtRisk} à risque sur ${totalSites} sites.`,
+        simple: `Conformité maîtrisée (${v}/100). Aucun écart détecté.`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). 0 non conformes, 0 à risque sur ${totalSites} site${totalSites > 1 ? 's' : ''}.`,
         severity: 'ok',
+      };
+    }
+    if (v >= 70) {
+      const nc = sitesNonConformes + sitesAtRisk;
+      return {
+        simple: `Score ${v}/100 — ${nc} site${nc > 1 ? 's' : ''} à traiter.${sitesNonConformes > 0 ? ` ${sitesNonConformes} non conforme${sitesNonConformes > 1 ? 's' : ''}.` : ''}`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes, ${sitesAtRisk} à risque sur ${totalSites} site${totalSites > 1 ? 's' : ''}.`,
+        severity: sitesNonConformes > 0 ? 'warn' : 'ok',
+        action:
+          sitesNonConformes > 0 ? { label: 'Voir conformité', path: '/conformite' } : undefined,
       };
     }
     if (v >= 40) {

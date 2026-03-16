@@ -648,7 +648,7 @@ function ComplianceSummaryBanner({ score, obligations, timeline, isExpert, navig
           aRisque > 0 ? `${aRisque} à qualifier` : null,
           urgentLabel,
         ].filter(Boolean);
-        if (parts.length === 0) return null;
+        if (parts.length === 0 || !isExpert) return null;
         return (
           <p data-testid="executive-summary" className="text-xs text-gray-600 mt-2 font-medium">
             {parts.join(' · ')}
