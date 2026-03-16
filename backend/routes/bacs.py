@@ -596,6 +596,14 @@ def get_orphans(db: Session = Depends(get_db)):
     return detect_orphans(db)
 
 
+@router.get("/coherence")
+def get_coherence_check(db: Session = Depends(get_db)):
+    """Verification de coherence patrimoine ↔ conformite."""
+    from services.patrimoine_conformite_sync import run_coherence_check
+
+    return run_coherence_check(db)
+
+
 @router.get("/site/{site_id}/alerts")
 def get_bacs_alerts(
     site_id: int,

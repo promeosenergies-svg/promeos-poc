@@ -1671,12 +1671,14 @@ def update_site(
     db.commit()
 
     # Propagation conformite si champs critiques modifies
-    if any(f in updated_fields for f in ("surface_m2", "type", "naf_code")):
-        from services.patrimoine_conformite_sync import flag_efa_desync_on_surface_change
+    from services.patrimoine_conformite_sync import flag_efa_desync_on_surface_change, reevaluate_on_usage_change
 
-        synced = flag_efa_desync_on_surface_change(db, site_id)
-        if synced:
-            db.commit()
+    if "surface_m2" in updated_fields:
+        flag_efa_desync_on_surface_change(db, site_id)
+    if any(f in updated_fields for f in ("type", "naf_code")):
+        reevaluate_on_usage_change(db, site_id)
+    if any(f in updated_fields for f in ("surface_m2", "type", "naf_code")):
+        db.commit()
 
     return {"updated": updated_fields, **_serialize_site(site)}
 
