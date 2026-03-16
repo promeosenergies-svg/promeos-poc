@@ -359,10 +359,10 @@ export default function TertiaireWizardPage() {
                                   <select
                                     value={selected.usage_label}
                                     onChange={(e) => setUsageForBuilding(bat.id, e.target.value)}
-                                    className="w-48 text-sm border border-gray-300 rounded-md px-2 py-1"
+                                    className="w-56 text-sm border border-gray-300 rounded-md px-2 py-1"
                                     data-testid={`usage-select-${bat.id}`}
                                   >
-                                    <option value="">Usage OPERAT…</option>
+                                    <option value="">Usage OPERAT</option>
                                     {USAGES.map((u) => (
                                       <option key={u} value={u}>
                                         {u}
@@ -414,12 +414,18 @@ export default function TertiaireWizardPage() {
           {/* Step 4: Reporting */}
           {step === 4 && (
             <div className="space-y-4">
-              <Input
-                label="Début de la période de reporting"
-                type="date"
-                value={form.reporting_start}
-                onChange={(e) => updateField('reporting_start', e.target.value)}
-              />
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Debut de la periode de reporting
+                </label>
+                <input
+                  type="date"
+                  value={form.reporting_start || ''}
+                  onChange={(e) => updateField('reporting_start', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Cliquez pour ouvrir le calendrier</p>
+              </div>
               <Input
                 label="Notes (optionnel)"
                 value={form.notes}
