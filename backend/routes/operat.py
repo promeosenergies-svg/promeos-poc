@@ -36,12 +36,16 @@ def export_operat_csv(
     efa_count = csv_content.count("\n") - 1  # minus header
     log_operat_export(db, body.org_id, body.year, max(0, efa_count))
 
-    filename = f"OPERAT_export_{body.org_id}_{body.year}.csv"
+    filename = f"OPERAT_PREPARATOIRE_{body.org_id}_{body.year}.csv"
 
     return StreamingResponse(
         iter([csv_content]),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-PROMEOS-Submission-Type": "simulation_preparatoire",
+            "X-PROMEOS-Disclaimer": "Pack preparatoire — aucun depot ADEME/OPERAT reel effectue",
+        },
     )
 
 
@@ -63,6 +67,10 @@ def preview_operat_export(
         "efa_count": len(rows),
         "columns": header,
         "rows": rows,
+        # Garde-fou conformite : flag explicite simulation
+        "is_real_submission": False,
+        "submission_type": "simulation_preparatoire",
+        "disclaimer": "Pack preparatoire — aucun depot ADEME/OPERAT reel effectue.",
     }
 
 

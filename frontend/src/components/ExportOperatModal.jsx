@@ -3,7 +3,7 @@
  * Modal with year selection + preview + CSV download.
  */
 import { useState } from 'react';
-import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Download, FileSpreadsheet, Loader2, AlertTriangle } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { exportOperatCsv, previewOperatExport } from '../services/api';
 import { Modal, Button } from '../ui';
@@ -60,11 +60,23 @@ export default function ExportOperatModal({ open, onClose }) {
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Export OPERAT (CSV)">
+    <Modal open={open} onClose={handleClose} title="Preparation dossier OPERAT (CSV)">
       <div className="space-y-4">
+        {/* Banner securite conformite */}
+        <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+          <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="text-xs text-amber-800">
+            <p className="font-semibold">Simulation — aucun depot reel</p>
+            <p className="mt-0.5">
+              Ce fichier est un pack preparatoire. Aucun depot ADEME/OPERAT n'a ete effectue. Le
+              depot reglementaire reste a confirmer sur la plateforme OPERAT officielle.
+            </p>
+          </div>
+        </div>
+
         <p className="text-sm text-gray-600">
-          Générez un fichier CSV compatible avec la plateforme OPERAT (ADEME) pour déclarer vos
-          consommations énergétiques.
+          Generez un fichier CSV preparatoire compatible avec la plateforme OPERAT (ADEME). Ce
+          fichier doit ensuite etre depose manuellement sur operat.ademe.fr.
         </p>
 
         {/* Year selector */}
@@ -152,7 +164,7 @@ export default function ExportOperatModal({ open, onClose }) {
             ) : (
               <Download size={14} className="mr-1" />
             )}
-            Telecharger CSV
+            Telecharger le pack preparatoire
           </Button>
         </div>
       </div>

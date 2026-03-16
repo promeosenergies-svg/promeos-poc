@@ -655,13 +655,21 @@ export default function TertiaireEfaDetailPage() {
       <div className="mt-4">
         <Card>
           <CardBody className="p-4">
+            {/* Banner securite conformite */}
+            <div className="flex items-start gap-2 p-2.5 mb-3 bg-amber-50 border border-amber-200 rounded-md">
+              <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-amber-700">
+                <span className="font-semibold">Aide a la conformite</span> — PROMEOS prepare le
+                dossier declaratif. Le depot reglementaire reste a effectuer sur operat.ademe.fr.
+              </p>
+            </div>
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Actions OPERAT
+                  Preparation dossier OPERAT
                 </h4>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Pré-vérification et export du dossier déclaratif
+                  Pre-verification et generation du pack preparatoire
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -694,7 +702,7 @@ export default function TertiaireEfaDetailPage() {
                     ) : (
                       <Download size={14} />
                     )}
-                    Exporter le pack
+                    Generer le pack preparatoire
                   </Button>
                 </Tooltip>
                 <Button

@@ -30,6 +30,10 @@ export const STATUT_LABELS = {
   non_conforme: 'Non conforme',
   a_risque: 'À risque',
   a_qualifier: 'À qualifier',
+  evaluation_incomplete: 'Evaluation incomplete',
+  preparation_en_cours: 'Preparation en cours',
+  classe_a_verifier: 'Classe systeme a verifier',
+  preuves_non_tracables: 'Preuves non tracables',
   derogation: 'Dérogation',
   hors_perimetre: 'Hors périmètre',
 };
@@ -40,6 +44,29 @@ export const BACKEND_STATUS_MAP = {
   NOK: 'non_conforme',
   UNKNOWN: 'a_qualifier',
   OUT_OF_SCOPE: 'hors_perimetre',
+};
+
+// ─── Garde-fous conformite ────────────────────────────────────────────
+
+/** Avertissements de securite conformite — affiches quand la preuve est insuffisante */
+export const CONFORMITE_WARNINGS = {
+  operat_simulation:
+    "Simulation de dossier OPERAT — aucun depot ADEME/OPERAT reel n'a ete effectue. PROMEOS prepare le dossier ; le depot reglementaire reste a confirmer.",
+  baseline_absente:
+    'Consommation de reference absente — impossible de valider la trajectoire reglementaire.',
+  trajectoire_non_validee:
+    'Trajectoire de reduction non validee — le statut de conformite ne peut pas etre confirme.',
+  preuves_non_tracees: "Les preuves documentaires ne disposent pas d'un audit-trail complet.",
+  classe_gtb_inconnue:
+    "La classe du systeme GTB/GTC (A ou B) n'est pas renseignee — la conformite BACS ne peut pas etre confirmee.",
+};
+
+/** Statuts declaration OPERAT en labels FR explicites */
+export const DECLARATION_STATUS_LABELS = {
+  draft: 'Brouillon',
+  prechecked: 'Pre-verifie',
+  exported: 'Pack preparatoire genere',
+  submitted_simulated: 'Simulation non deposee',
 };
 
 // ─── Workflow (findings) ────────────────────────────────────────────────
