@@ -82,11 +82,10 @@ class TestSeedHeliosPack:
 
     def test_helios_s_creates_15min_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
-        # V107: 365 days × 72 unique slots × 5 meters ≈ 131,400
-        # (:00 slots collide with hourly readings → 72 unique per day)
-        assert result["min15_readings_count"] > 100_000
+        # 365 days × 96 slots × 5 meters = 175,200 (no collisions with frequency in constraint)
+        assert result["min15_readings_count"] > 150_000
         min15 = db_session.query(MeterReading).filter_by(frequency=FrequencyType.MIN_15).count()
-        assert min15 > 100_000
+        assert min15 > 150_000
 
     def test_helios_s_creates_weather(self, db_session):
         result = _seed(db_session, "helios", "S")

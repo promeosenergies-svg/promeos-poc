@@ -47,6 +47,8 @@ def run_migrations(engine):
     # V2-Conso — Dedup meter_reading + unique constraint
     _dedup_meter_reading(engine)
     _add_unique_meter_reading_index(engine)
+    # V101 — Add frequency to meter_reading unique constraint
+    _upgrade_meter_reading_unique_constraint(engine)
     # Étape 4 — Action Engine: evidence_required column
     _add_action_evidence_required_column(engine)
     # Fix delivery_points energy_type enum case (elec→ELEC, gaz→GAZ)
@@ -700,6 +702,46 @@ def _add_unique_meter_reading_index(engine):
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _upgrade_meter_reading_unique_constraint(engine):
+    """Replace (meter_id, timestamp) unique index with (meter_id, timestamp, frequency).
+
+    Different frequencies at the same timestamp are semantically distinct readings.
+    Without this, 15-min :00 slots collide with hourly readings causing silent data loss.
+    """
+    old_name = "uq_meter_reading_meter_ts"
+    new_name = "uq_meter_reading_meter_ts_freq"
+    insp = inspect(engine)
+
+    if not insp.has_table("meter_reading"):
+        return
+
+    existing = {idx["name"] for idx in insp.get_indexes("meter_reading") if idx.get("name")}
+
+    if new_name in existing:
+        return  # already migrated
+
+    with engine.begin() as conn:
+        # Drop old constraint if it exists
+        if old_name in existing:
+            try:
+                conn.execute(text(f'DROP INDEX IF EXISTS "{old_name}"'))
+                logger.info("migration: dropped old index %s", old_name)
+            except Exception as e:
+                logger.warning("migration: could not drop index %s: %s", old_name, e)
+
+        # Create new constraint
+        try:
+            conn.execute(
+                text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{new_name}" '
+                    f'ON "meter_reading" ("meter_id", "timestamp", "frequency")'
+                )
+            )
+            logger.info("migration: created unique index %s", new_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", new_name, e)
 
 
 # ========================================

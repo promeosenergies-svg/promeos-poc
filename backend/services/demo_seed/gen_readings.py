@@ -1012,7 +1012,7 @@ def generate_sub_meter_readings(db, meters: list, days: int, rng: random.Random)
 
 
 def _bulk_insert_ignore(db, readings: list):
-    """INSERT OR IGNORE — safety net against duplicate (meter_id, timestamp)."""
+    """INSERT OR IGNORE — safety net against duplicate (meter_id, timestamp, frequency)."""
     if not readings:
         return
     dialect = db.bind.dialect.name if db.bind else "unknown"
@@ -1047,7 +1047,7 @@ def _bulk_insert_ignore(db, readings: list):
             "INSERT INTO meter_reading "
             "(meter_id, timestamp, frequency, value_kwh, is_estimated, quality_score, created_at) "
             "VALUES (:meter_id, :ts, :freq, :kwh, :est, :qs, :cat) "
-            "ON CONFLICT (meter_id, timestamp) DO NOTHING"
+            "ON CONFLICT (meter_id, timestamp, frequency) DO NOTHING"
         )
         params = [
             {

@@ -139,7 +139,7 @@ class MeterReading(Base):
     """Time series consumption data"""
 
     __tablename__ = "meter_reading"
-    __table_args__ = (UniqueConstraint("meter_id", "timestamp", name="uq_meter_reading_meter_ts"),)
+    __table_args__ = (UniqueConstraint("meter_id", "timestamp", "frequency", name="uq_meter_reading_meter_ts_freq"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
