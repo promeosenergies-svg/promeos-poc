@@ -112,6 +112,7 @@ const Cockpit = () => {
   const [evidenceOpen, setEvidenceOpen] = useState(null); // KPI id or null
   const [alertsCount, setAlertsCount] = useState(0);
   const [error, setError] = useState(null);
+  const [showDetail, setShowDetail] = useState(false); // V3: toggle zone 4
   const sitePageSize = 20;
 
   // A.2: Unified compliance score from backend
@@ -409,9 +410,6 @@ const Cockpit = () => {
         />
       </div>
 
-      {/* ── Impact & Décision ── */}
-      <ImpactDecisionPanel kpis={kpis} />
-
       {/* Prochaine échéance réglementaire */}
       {nextDeadline && (
         <div
@@ -450,7 +448,7 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ═══════════ ZONE 3 : SURVEILLANCE & CONTEXTE ═══════════ */}
+      {/* ═══════════ ZONE 3 : ACTIONS RECOMMANDÉES (max 3 items) ═══════════ */}
 
       <div data-tour="step-3">
         <WatchlistCard
@@ -461,79 +459,61 @@ const Cockpit = () => {
         />
       </div>
 
-      {/* Market context — contexte secondaire */}
-      <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
+      {/* ═══════════ ZONE 4 : ANALYSE DÉTAILLÉE (repliée par défaut) ═══════════ */}
 
-      {isExpert && opportunities.length > 0 && (
-        <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
-      )}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowDetail((v) => !v)}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition"
+        >
+          {showDetail ? 'Masquer le détail' : 'Analyse détaillée'}
+          <svg
+            className={`w-4 h-4 transition-transform ${showDetail ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
 
-      {!isSingleSite && <TopSitesCard topSites={topSites} onNavigate={navigate} />}
+      {showDetail && (
+        <div className="space-y-4">
+          {/* Market context */}
+          <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
 
-      <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
+          {/* Top Sites */}
+          {!isSingleSite && <TopSitesCard topSites={topSites} onNavigate={navigate} />}
 
-      {/* ── Avertissement cohérence données (expert) ── */}
-      {isExpert && !consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
+          {/* Impact & Décision (détaillé) */}
+          <ImpactDecisionPanel kpis={kpis} />
 
-      {/* ── Qualité des données (expert) ── */}
-      {isExpert && <DataQualityWidget />}
+          {/* Module Launchers */}
+          {isExpert && <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />}
 
-      {/* ── Activation des données ── */}
-      <DataActivationPanel kpis={kpis} />
+          {/* Opportunities (Expert) */}
+          {isExpert && opportunities.length > 0 && (
+            <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
+          )}
 
-      {/* ── Données & connexions (relégué) ── */}
-      <EssentialsRow
-        kpis={kpis}
-        sites={scopedSites}
-        onOpenMaturite={() => setShowMaturiteModal(true)}
-        onNavigate={navigate}
-        consoSource={consoSource}
-      />
+          {/* Données & connexions */}
+          <EssentialsRow
+            kpis={kpis}
+            sites={scopedSites}
+            onOpenMaturite={() => setShowMaturiteModal(true)}
+            onNavigate={navigate}
+            consoSource={consoSource}
+          />
 
-      {/* ── Risque résiduel : plan d'action ── */}
-      {kpis.nonConformes + kpis.aRisque > 0 && (
-        <div className="rounded-lg border p-5 bg-amber-50 border-amber-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center ${KPI_ACCENTS.alertes.iconBg}`}
-              >
-                <AlertTriangle size={18} className={KPI_ACCENTS.alertes.iconText} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  {kpis.nonConformes + kpis.aRisque} site
-                  {kpis.nonConformes + kpis.aRisque > 1 ? 's' : ''} non conforme
-                  {kpis.nonConformes + kpis.aRisque > 1 ? 's' : ''} ou à risque
-                </p>
-                {kpis.risqueTotal > 0 && (
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    <Explain term="risque_financier">Risque estimé</Explain> :{' '}
-                    {Math.round(kpis.risqueTotal / 1000)} k€
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() =>
-                  openActionDrawer({
-                    prefill: { titre: '', type: 'conformite' },
-                    sourceType: 'compliance',
-                    sourceId: 'cockpit:risk_panel',
-                  })
-                }
-                data-testid="cta-cockpit-create-action"
-              >
-                <Plus size={14} /> Créer une action
-              </Button>
-              <Button size="sm" onClick={() => navigate(toActionsList())}>
-                Plan d'action <ArrowRight size={14} />
-              </Button>
-            </div>
-          </div>
+          {/* Data Activation — masqué si tout activé */}
+          {kpis.couvertureDonnees < 100 && <DataActivationPanel kpis={kpis} />}
+
+          {/* Data Quality (Expert) */}
+          {isExpert && <DataQualityWidget />}
+
+          {/* Consistency (Expert) */}
+          {isExpert && !consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
         </div>
       )}
 
