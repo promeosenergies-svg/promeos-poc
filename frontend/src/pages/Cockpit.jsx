@@ -376,8 +376,7 @@ const Cockpit = () => {
     if (kpis.nonConformes > 0) {
       actions.push({
         id: 'fix-nc',
-        verb: 'Corriger',
-        label: `${kpis.nonConformes} non-conformité${kpis.nonConformes > 1 ? 's' : ''} réglementaire${kpis.nonConformes > 1 ? 's' : ''}`,
+        label: `Corriger ${kpis.nonConformes > 1 ? 'les' : 'la'} non-conformité${kpis.nonConformes > 1 ? 's' : ''} réglementaire${kpis.nonConformes > 1 ? 's' : ''}`,
         impact: kpis.risqueTotal > 0 ? `${Math.round(kpis.risqueTotal / 1000)} k€` : null,
         path: '/conformite',
       });
@@ -385,8 +384,7 @@ const Cockpit = () => {
     if (kpis.aRisque > 0 && actions.length < 3) {
       actions.push({
         id: 'monitor-risk',
-        verb: 'Surveiller',
-        label: `${kpis.aRisque} site${kpis.aRisque > 1 ? 's' : ''} à risque`,
+        label: `Surveiller les ${kpis.aRisque} site${kpis.aRisque > 1 ? 's' : ''} à risque`,
         impact: null,
         path: '/conformite',
       });
@@ -394,8 +392,7 @@ const Cockpit = () => {
     if (alertsCount > 0 && actions.length < 3) {
       actions.push({
         id: 'treat-alerts',
-        verb: 'Traiter',
-        label: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''}`,
+        label: `Traiter les ${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''}`,
         impact: null,
         path: '/notifications',
       });
@@ -405,8 +402,7 @@ const Cockpit = () => {
       if (actions.length >= 3) break;
       actions.push({
         id: opp.id,
-        verb: 'Lancer',
-        label: opp.label,
+        label: `Lancer ${opp.label.charAt(0).toLowerCase()}${opp.label.slice(1)}`,
         impact: null,
         path: opp.path,
       });
@@ -453,12 +449,42 @@ const Cockpit = () => {
       )}
 
       {/* ═══════════ SCOPE INDICATOR ═══════════ */}
-      <div className="flex items-center gap-2 text-xs text-gray-400">
-        <span
-          className={`inline-block w-2 h-2 rounded-full ${scopeType === 'site' ? 'bg-blue-400' : 'bg-indigo-400'}`}
-        />
-        <span>{scopeText}</span>
+      <div
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${
+          scopeType === 'site' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200'
+        }`}
+      >
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            scopeType === 'site' ? 'bg-blue-100' : 'bg-indigo-100'
+          }`}
+        >
+          <FileText
+            size={14}
+            className={scopeType === 'site' ? 'text-blue-600' : 'text-indigo-600'}
+          />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-900">
+            {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
+          </p>
+          <p className="text-xs text-gray-500">
+            {scopeType === 'site'
+              ? singleSite?.nom || ''
+              : `${kpis.total} site${kpis.total > 1 ? 's' : ''} dans le périmètre`}
+          </p>
+        </div>
       </div>
+
+      {/* Expert mode indicator */}
+      {isExpert && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-lg w-fit">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+          <span className="text-xs font-medium text-violet-700">
+            Mode expert activé — détails techniques visibles
+          </span>
+        </div>
+      )}
 
       {/* ═══════════ ZONE 1 : PRIORITÉ #1 (radical) ═══════════ */}
       <div
@@ -564,9 +590,6 @@ const Cockpit = () => {
               onClick={() => navigate(action.path)}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-blue-600 uppercase w-16">
-                  {action.verb}
-                </span>
                 <span className="text-sm text-gray-800">{action.label}</span>
                 {action.impact && (
                   <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded">

@@ -503,6 +503,12 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: total > 0 ? `${pctConf} / 100` : '—',
       rawValue: pctConf,
       messageCtx: { totalSites: total, sitesAtRisk: aRisque, sitesNonConformes: nonConformes },
+      subShort:
+        nonConformes > 0
+          ? `${nonConformes} NC · ${aRisque} à risque`
+          : aRisque > 0
+            ? `${aRisque} site${aRisque > 1 ? 's' : ''} à risque`
+            : `${conformes}/${total} conformes`,
       sub:
         complianceScore != null
           ? `DT 45% · BACS 30% · APER 25%${nonConformes > 0 ? ` · ${nonConformes} NC` : ''}${aRisque > 0 ? ` · ${aRisque} à risque` : ''}${kpis.compliance_confidence === 'low' ? ' · Données partielles' : ''}`
@@ -525,6 +531,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: risqueTotal > 0 ? `${Math.round(risqueTotal / 1000)} k€` : '—',
       rawValue: risqueTotal,
       messageCtx: { sitesAtRisk: nonConformes + aRisque },
+      subShort: `${nonConformes + aRisque} site${nonConformes + aRisque !== 1 ? 's' : ''} concerné${nonConformes + aRisque !== 1 ? 's' : ''}`,
       sub: `${nonConformes + aRisque} site${nonConformes + aRisque !== 1 ? 's' : ''} concerné${nonConformes + aRisque !== 1 ? 's' : ''} (périmètre sélectionné)`,
       status: getRiskStatus(risqueTotal),
       path: '/actions',
@@ -536,6 +543,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: total > 0 ? formatPercentFR(readinessScore) : '—',
       rawValue: readinessScore,
       messageCtx: {},
+      subShort: 'Données + conformité + actions',
       sub: 'Score combiné données, conformité et actions',
       status:
         readinessScore < MATURITY_THRESHOLDS.crit
@@ -551,6 +559,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       value: total > 0 ? formatPercentFR(couvertureDonnees) : '—',
       rawValue: couvertureDonnees,
       messageCtx: {},
+      subShort: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} couvert${sitesWithData !== 1 ? 's' : ''}`,
       sub: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} avec données de consommation`,
       status: couvertureDonnees < COVERAGE_THRESHOLDS.warn ? 'warn' : 'ok',
       path: '/consommations/import',
