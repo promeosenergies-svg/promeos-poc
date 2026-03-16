@@ -38,6 +38,7 @@ def main():
     parser.add_argument("--reset", action="store_true", help="Reset all data before seeding")
     parser.add_argument("--list", action="store_true", help="List available packs")
     parser.add_argument("--status", action="store_true", help="Show current data status")
+    parser.add_argument("--with-iam", action="store_true", help="Also seed @atlas.demo IAM users")
 
     args = parser.parse_args()
 
@@ -87,6 +88,15 @@ def main():
     print(f"  Billing:      {result.get('billing', {}).get('invoices_count', 0)} invoices")
     print(f"  Actions:      {result.get('actions', {}).get('actions_count', 0)}")
     print(f"  Purchase:     {result.get('purchase', {}).get('scenarios', 0)} scenarios")
+
+    if args.with_iam:
+        from models import Organisation
+        from scripts.seed_data import seed_iam_demo
+
+        org = db.query(Organisation).first()
+        if org:
+            seed_iam_demo(db, org)
+            print("  IAM demo users seeded (@atlas.demo).")
 
     db.close()
 
