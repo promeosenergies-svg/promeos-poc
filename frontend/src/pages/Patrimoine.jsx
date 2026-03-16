@@ -674,7 +674,7 @@ export default function Patrimoine() {
   // Dynamic subtitle
   const subtitle = isEmptyPatrimoine
     ? 'Importez votre patrimoine pour commencer'
-    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)}${registreKpis ? ` · ${registreKpis.nb_contrats_actifs} contrat${registreKpis.nb_contrats_actifs > 1 ? 's' : ''} actif${registreKpis.nb_contrats_actifs > 1 ? 's' : ''}` : ''} · ${fmtEur(stats.risque)} de risque`;
+    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)}${registreKpis ? ` · ${registreKpis.nb_contrats_actifs} contrat${registreKpis.nb_contrats_actifs > 1 ? 's' : ''} actif${registreKpis.nb_contrats_actifs > 1 ? 's' : ''}` : ''}${stats.nc + stats.aRisque > 0 ? ` · ${stats.nc + stats.aRisque} site${stats.nc + stats.aRisque > 1 ? 's' : ''} à traiter` : ''}`;
 
   return (
     <PageShell
@@ -741,7 +741,7 @@ export default function Patrimoine() {
           />
           {scopedSites.length > HEATMAP_MAX_SITES && (
             <p className="text-[11px] text-gray-400 text-center -mt-2">
-              Heatmap limitée à {HEATMAP_MAX_SITES} sites sur {scopedSites.length} — réduisez le
+              Affichage limité à {HEATMAP_MAX_SITES} sites sur {scopedSites.length} — réduisez le
               scope pour voir tous les sites.
             </p>
           )}
@@ -791,9 +791,9 @@ export default function Patrimoine() {
             <KpiCardCompact
               icon={AlertTriangle}
               color="bg-red-600"
-              label="Non conformes"
+              label="Sites à traiter"
               value={stats.nc + stats.aRisque}
-              detail={`${stats.nc} NC · ${stats.aRisque} à risque`}
+              detail={`${stats.nc} non conforme${stats.nc > 1 ? 's' : ''} · ${stats.aRisque} à risque`}
               active={filterStatut === 'nc_risque'}
               onClick={() =>
                 setParams({

@@ -121,6 +121,12 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
         <div className="flex items-center gap-2">
           <UserCheck size={18} className="text-blue-600" />
           <h3 className="text-sm font-semibold text-gray-700">Profil énergie</h3>
+          <span
+            className="text-[10px] text-gray-400"
+            title="Classification automatique basée sur vos réponses au questionnaire de segmentation"
+          >
+            ?
+          </span>
         </div>
         <button
           onClick={() => (onSegmentationClick ? onSegmentationClick() : navigate('/segmentation'))}

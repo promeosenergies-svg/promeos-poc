@@ -241,7 +241,7 @@ export default function PatrimoineHeatmap({
       <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <LayoutGrid size={14} className="text-gray-400" />
-          <span className="text-sm font-semibold text-gray-500">Heatmap sites</span>
+          <span className="text-sm font-semibold text-gray-500">Top sites à risque</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
           {[...Array(4)].map((_, i) => (
@@ -286,7 +286,7 @@ export default function PatrimoineHeatmap({
       {/* ── En-tête + Toolbar ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <LayoutGrid size={14} className="text-gray-500 shrink-0" />
-        <span className="text-sm font-semibold text-gray-700">Heatmap sites</span>
+        <span className="text-sm font-semibold text-gray-700">Top sites à risque</span>
         <span className="text-[10px] font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">
           {tiles.length}
         </span>
