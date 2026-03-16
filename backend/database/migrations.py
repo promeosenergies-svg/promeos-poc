@@ -630,7 +630,7 @@ def _create_tertiaire_tables(engine):
 
 
 def _dedup_meter_reading(engine):
-    """Remove duplicate (meter_id, timestamp) rows from meter_reading.
+    """Remove duplicate (meter_id, timestamp, frequency) rows from meter_reading.
 
     Strategy: keep the row with the best quality_score, ties broken by most
     recent created_at, then highest id.  Idempotent — skips if no duplicates.
@@ -642,9 +642,9 @@ def _dedup_meter_reading(engine):
     with engine.begin() as conn:
         dupes = conn.execute(
             text("""
-            SELECT meter_id, timestamp, COUNT(*) AS cnt
+            SELECT meter_id, timestamp, frequency, COUNT(*) AS cnt
             FROM meter_reading
-            GROUP BY meter_id, timestamp
+            GROUP BY meter_id, timestamp, frequency
             HAVING cnt > 1
         """)
         ).fetchall()
@@ -654,32 +654,32 @@ def _dedup_meter_reading(engine):
             return
 
         deleted = 0
-        for meter_id, ts, cnt in dupes:
+        for meter_id, ts, freq, cnt in dupes:
             # Keep the best row (highest quality_score, then latest created_at, then highest id)
             keep = conn.execute(
                 text("""
                 SELECT id FROM meter_reading
-                WHERE meter_id = :mid AND timestamp = :ts
+                WHERE meter_id = :mid AND timestamp = :ts AND frequency = :freq
                 ORDER BY
                     COALESCE(quality_score, -1) DESC,
                     COALESCE(created_at, '1970-01-01') DESC,
                     id DESC
                 LIMIT 1
             """),
-                {"mid": meter_id, "ts": ts},
+                {"mid": meter_id, "ts": ts, "freq": freq},
             ).scalar()
 
             if keep:
                 result = conn.execute(
                     text("""
                     DELETE FROM meter_reading
-                    WHERE meter_id = :mid AND timestamp = :ts AND id != :keep_id
+                    WHERE meter_id = :mid AND timestamp = :ts AND frequency = :freq AND id != :keep_id
                 """),
-                    {"mid": meter_id, "ts": ts, "keep_id": keep},
+                    {"mid": meter_id, "ts": ts, "freq": freq, "keep_id": keep},
                 )
                 deleted += result.rowcount
 
-        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d pairs", deleted, len(dupes))
+        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d triplets", deleted, len(dupes))
 
 
 def _add_unique_meter_reading_index(engine):
