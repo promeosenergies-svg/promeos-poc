@@ -76,6 +76,8 @@ def run_migrations(engine):
     _migrate_bacs_hardening(engine)
     # BACS regulatory tables
     _migrate_bacs_regulatory(engine)
+    # BACS remediation actions
+    _migrate_bacs_remediation(engine)
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
 
@@ -1529,3 +1531,42 @@ def _migrate_bacs_regulatory(engine):
                 text('CREATE INDEX IF NOT EXISTS "ix_bacs_proof_asset" ON "bacs_proof_documents" ("asset_id")')
             )
         logger.info("migration: created bacs_proof_documents")
+
+
+def _migrate_bacs_remediation(engine):
+    """Create bacs_remediation_actions table."""
+    insp = inspect(engine)
+    if not insp.has_table("bacs_remediation_actions"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "bacs_remediation_actions" (
+                    "id" INTEGER PRIMARY KEY,
+                    "asset_id" INTEGER NOT NULL REFERENCES "bacs_assets"("id") ON DELETE CASCADE,
+                    "blocker_code" VARCHAR(100) NOT NULL,
+                    "blocker_cause" VARCHAR(300) NOT NULL,
+                    "expected_action" VARCHAR(500) NOT NULL,
+                    "expected_proof_type" VARCHAR(100),
+                    "status" VARCHAR(20) NOT NULL DEFAULT 'open',
+                    "priority" VARCHAR(20) NOT NULL DEFAULT 'high',
+                    "owner" VARCHAR(200),
+                    "due_at" DATE,
+                    "created_by" VARCHAR(200) NOT NULL DEFAULT 'system',
+                    "proof_id" INTEGER REFERENCES "bacs_proof_documents"("id") ON DELETE SET NULL,
+                    "proof_review_status" VARCHAR(20),
+                    "proof_reviewed_by" VARCHAR(200),
+                    "proof_reviewed_at" DATETIME,
+                    "resolution_notes" TEXT,
+                    "closed_at" DATETIME,
+                    "closed_by" VARCHAR(200),
+                    "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(
+                text(
+                    'CREATE INDEX IF NOT EXISTS "ix_bacs_remediation_asset" ON "bacs_remediation_actions" ("asset_id")'
+                )
+            )
+        logger.info("migration: created bacs_remediation_actions")

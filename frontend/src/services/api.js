@@ -1381,6 +1381,14 @@ export const getBacsRegulatoryAssessment = (siteId) =>
   api.get(`/regops/bacs/site/${siteId}/regulatory-assessment`).then((r) => r.data);
 export const getBacsComplianceGate = (siteId) =>
   api.get(`/regops/bacs/site/${siteId}/compliance-gate`).then((r) => r.data);
+export const createBacsRemediation = (siteId, data) =>
+  api.post(`/regops/bacs/site/${siteId}/remediation`, data).then((r) => r.data);
+export const listBacsRemediations = (siteId) =>
+  api.get(`/regops/bacs/site/${siteId}/remediation`).then((r) => r.data);
+export const attachBacsProof = (actionId, data) =>
+  api.post(`/regops/bacs/remediation/${actionId}/attach-proof`, data).then((r) => r.data);
+export const reviewBacsProof = (actionId, data) =>
+  api.post(`/regops/bacs/remediation/${actionId}/review-proof`, data).then((r) => r.data);
 
 // ========================================
 // EMS Consumption Explorer

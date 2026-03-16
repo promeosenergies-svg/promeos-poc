@@ -404,3 +404,166 @@ def get_bacs_regulatory_assessment(
     result = evaluate_full_bacs(db, asset.id)
     db.commit()
     return result
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# BACS REMEDIATION ACTIONS
+# ═══════════════════════════════════════════════════════════════════════
+
+from pydantic import BaseModel as PydanticBase
+from typing import Optional
+from models.bacs_remediation import BacsRemediationAction
+from models.bacs_regulatory import BacsProofDocument
+
+
+class CreateRemediationRequest(PydanticBase):
+    blocker_code: str
+    blocker_cause: str
+    expected_action: str
+    expected_proof_type: Optional[str] = None
+    priority: str = "high"
+    owner: Optional[str] = None
+    due_at: Optional[str] = None
+
+
+class AttachProofRequest(PydanticBase):
+    document_type: str
+    label: Optional[str] = None
+    file_ref: Optional[str] = None
+    source: str = "manual"
+
+
+class ReviewProofRequest(PydanticBase):
+    decision: str  # "accepted" or "rejected"
+    reviewed_by: Optional[str] = None
+
+
+@router.post("/site/{site_id}/remediation")
+def create_remediation_action(
+    site_id: int,
+    body: CreateRemediationRequest,
+    db: Session = Depends(get_db),
+):
+    """Creer une action corrective BACS depuis un blocker."""
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        raise HTTPException(404, "Actif BACS introuvable")
+
+    from datetime import date as d
+
+    action = BacsRemediationAction(
+        asset_id=asset.id,
+        blocker_code=body.blocker_code,
+        blocker_cause=body.blocker_cause,
+        expected_action=body.expected_action,
+        expected_proof_type=body.expected_proof_type,
+        priority=body.priority,
+        owner=body.owner,
+        due_at=d.fromisoformat(body.due_at) if body.due_at else None,
+        status="open",
+        proof_review_status="missing",
+    )
+    db.add(action)
+    db.commit()
+    db.refresh(action)
+    return _action_to_dict(action)
+
+
+@router.get("/site/{site_id}/remediation")
+def list_remediation_actions(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Lister les actions correctives BACS d'un site."""
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        return {"actions": []}
+
+    actions = (
+        db.query(BacsRemediationAction)
+        .filter(BacsRemediationAction.asset_id == asset.id)
+        .order_by(BacsRemediationAction.created_at.desc())
+        .all()
+    )
+    return {"actions": [_action_to_dict(a) for a in actions]}
+
+
+@router.post("/remediation/{action_id}/attach-proof")
+def attach_proof_to_action(
+    action_id: int,
+    body: AttachProofRequest,
+    db: Session = Depends(get_db),
+):
+    """Rattacher une preuve a une action corrective."""
+    action = db.query(BacsRemediationAction).filter(BacsRemediationAction.id == action_id).first()
+    if not action:
+        raise HTTPException(404, "Action introuvable")
+
+    proof = BacsProofDocument(
+        asset_id=action.asset_id,
+        document_type=body.document_type,
+        label=body.label,
+        file_ref=body.file_ref,
+        source=body.source,
+        actor="system",
+        linked_entity_type="BacsRemediationAction",
+        linked_entity_id=action.id,
+    )
+    db.add(proof)
+    db.flush()
+
+    action.proof_id = proof.id
+    action.proof_review_status = "uploaded"
+    action.status = "ready_for_review"
+    db.commit()
+    return _action_to_dict(action)
+
+
+@router.post("/remediation/{action_id}/review-proof")
+def review_proof(
+    action_id: int,
+    body: ReviewProofRequest,
+    db: Session = Depends(get_db),
+):
+    """Valider ou rejeter la preuve d'une action corrective."""
+    from datetime import datetime, timezone
+
+    action = db.query(BacsRemediationAction).filter(BacsRemediationAction.id == action_id).first()
+    if not action:
+        raise HTTPException(404, "Action introuvable")
+
+    if body.decision not in ("accepted", "rejected"):
+        raise HTTPException(400, "Decision invalide (accepted ou rejected)")
+
+    action.proof_review_status = body.decision
+    action.proof_reviewed_by = body.reviewed_by or "system"
+    action.proof_reviewed_at = datetime.now(timezone.utc)
+
+    if body.decision == "accepted":
+        action.status = "closed"
+        action.closed_at = datetime.now(timezone.utc)
+        action.closed_by = body.reviewed_by or "system"
+    elif body.decision == "rejected":
+        action.status = "open"  # Revert to open
+
+    db.commit()
+    return _action_to_dict(action)
+
+
+def _action_to_dict(a):
+    return {
+        "id": a.id,
+        "asset_id": a.asset_id,
+        "blocker_code": a.blocker_code,
+        "blocker_cause": a.blocker_cause,
+        "expected_action": a.expected_action,
+        "expected_proof_type": a.expected_proof_type,
+        "status": a.status,
+        "priority": a.priority,
+        "owner": a.owner,
+        "due_at": a.due_at.isoformat() if a.due_at else None,
+        "proof_id": a.proof_id,
+        "proof_review_status": a.proof_review_status,
+        "created_at": a.created_at.isoformat() if a.created_at else None,
+        "closed_at": a.closed_at.isoformat() if a.closed_at else None,
+    }

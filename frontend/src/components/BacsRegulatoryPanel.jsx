@@ -13,7 +13,11 @@ import {
   FileText,
   Loader2,
 } from 'lucide-react';
-import { getBacsRegulatoryAssessment } from '../services/api';
+import {
+  getBacsRegulatoryAssessment,
+  createBacsRemediation,
+  listBacsRemediations,
+} from '../services/api';
 
 const STATUS_CONFIG = {
   not_applicable: { label: 'Non concerne', cls: 'bg-gray-100 text-gray-500', icon: null },
@@ -39,18 +43,57 @@ const REQ_STATUS_ICON = {
   not_demonstrated: { icon: XCircle, cls: 'text-gray-400' },
 };
 
+const ACTION_STATUS = {
+  open: { label: 'Ouvert', cls: 'bg-red-100 text-red-700' },
+  in_progress: { label: 'En cours', cls: 'bg-amber-100 text-amber-700' },
+  ready_for_review: { label: 'A revoir', cls: 'bg-blue-100 text-blue-700' },
+  closed: { label: 'Clos', cls: 'bg-green-100 text-green-700' },
+};
+
+const PROOF_STATUS = {
+  missing: { label: 'Manquante', cls: 'text-red-600' },
+  uploaded: { label: 'Fournie', cls: 'text-blue-600' },
+  accepted: { label: 'Validee', cls: 'text-green-600' },
+  rejected: { label: 'Rejetee', cls: 'text-red-600' },
+};
+
 export default function BacsRegulatoryPanel({ siteId }) {
   const [data, setData] = useState(null);
+  const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!siteId) return;
     setLoading(true);
-    getBacsRegulatoryAssessment(siteId)
-      .then(setData)
-      .catch(() => setData(null))
+    Promise.all([
+      getBacsRegulatoryAssessment(siteId).catch(() => null),
+      listBacsRemediations(siteId).catch(() => ({ actions: [] })),
+    ])
+      .then(([assessment, remActions]) => {
+        setData(assessment);
+        setActions(remActions?.actions || []);
+      })
       .finally(() => setLoading(false));
   }, [siteId]);
+
+  const handleCreateAction = async (rem) => {
+    setCreating(true);
+    try {
+      const result = await createBacsRemediation(siteId, {
+        blocker_code: rem.cause.replace(/\s/g, '_').toLowerCase().slice(0, 100),
+        blocker_cause: rem.cause,
+        expected_action: rem.action,
+        expected_proof_type: rem.proof,
+        priority: rem.priority,
+      });
+      setActions((prev) => [result, ...prev]);
+    } catch {
+      // silent
+    } finally {
+      setCreating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -200,8 +243,12 @@ export default function BacsRegulatoryPanel({ siteId }) {
                 : r.priority === 'high'
                   ? 'bg-amber-100 text-amber-700'
                   : 'bg-gray-100 text-gray-600';
+            // Chercher si une action existe deja pour ce blocker
+            const existingAction = actions.find(
+              (a) => a.blocker_cause === r.cause && a.status !== 'closed'
+            );
             return (
-              <div key={i} className="p-2 rounded-md bg-gray-50 border border-gray-100 space-y-1">
+              <div key={i} className="p-2 rounded-md bg-gray-50 border border-gray-100 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-800">{r.cause}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${prioColor}`}>
@@ -213,6 +260,38 @@ export default function BacsRegulatoryPanel({ siteId }) {
                   <FileText size={10} />
                   <span>Preuve : {r.proof}</span>
                 </div>
+                {/* CTA ou statut action */}
+                {existingAction ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                        ACTION_STATUS[existingAction.status]?.cls || 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {ACTION_STATUS[existingAction.status]?.label || existingAction.status}
+                    </span>
+                    {existingAction.proof_review_status && (
+                      <span
+                        className={`text-[10px] ${
+                          PROOF_STATUS[existingAction.proof_review_status]?.cls || 'text-gray-400'
+                        }`}
+                      >
+                        Preuve :{' '}
+                        {PROOF_STATUS[existingAction.proof_review_status]?.label ||
+                          existingAction.proof_review_status}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleCreateAction(r)}
+                    disabled={creating}
+                    className="mt-1 px-2.5 py-1 text-[11px] font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    Creer action corrective
+                  </button>
+                )}
               </div>
             );
           })}
