@@ -96,6 +96,7 @@ def evaluate_full_bacs(db: Session, asset_id: int) -> dict:
         "final_reason": final["reason"],
         "blockers": final["blockers"],
         "major_warnings": final["major_warnings"],
+        "remediation": final.get("remediation", []),
         "is_compliant_claim_allowed": False,  # JAMAIS — par design
     }
 
@@ -338,9 +339,96 @@ def _compute_final_status(eligibility, functional, exploitation, inspection, pro
         status = "ready_for_internal_review"
         reason = f"Putile {eligibility.get('putile_kw', 0):.0f} kW — exigences couvertes — pret pour revue"
 
+    # Remediation
+    remediation = _build_remediation(blockers, functional, exploitation, inspection, proofs, eligibility)
+
     return {
         "status": status,
         "reason": reason,
         "blockers": blockers,
         "major_warnings": major_warnings,
+        "remediation": remediation,
     }
+
+
+# ── 7. Remediation ────────────────────────────────────────────────────
+
+
+REMEDIATION_MAP = {
+    "exigence": {
+        "cause": "Exigences fonctionnelles R.175-3 non demontrees",
+        "action": "Evaluer chaque exigence (suivi continu, pas horaire, zones, retention, etc.)",
+        "proof": "Auto-evaluation documentee ou rapport d'inspection",
+        "priority": "high",
+    },
+    "consignes": {
+        "cause": "Consignes ecrites d'exploitation absentes",
+        "action": "Rediger et approuver les consignes de verification periodique",
+        "proof": "Document consignes signe par le responsable",
+        "priority": "high",
+    },
+    "formation": {
+        "cause": "Formation exploitant non demontree",
+        "action": "Former l'exploitant et conserver l'attestation",
+        "proof": "Attestation de formation avec date et organisme",
+        "priority": "high",
+    },
+    "inspection": {
+        "cause": "Inspection absente ou en retard",
+        "action": "Planifier et realiser l'inspection reglementaire",
+        "proof": "Rapport d'inspection",
+        "priority": "critical",
+    },
+    "rapport": {
+        "cause": "Rapport d'inspection non conforme",
+        "action": "Faire corriger le rapport par l'inspecteur",
+        "proof": "Rapport conforme",
+        "priority": "high",
+    },
+    "finding_critique": {
+        "cause": "Findings critiques non resolus",
+        "action": "Traiter les non-conformites critiques identifiees",
+        "proof": "Preuve de correction (photo, rapport, facture)",
+        "priority": "critical",
+    },
+    "preuve": {
+        "cause": "Preuves documentaires manquantes",
+        "action": "Deposer les documents manquants dans le coffre BACS",
+        "proof": "Documents types attendus",
+        "priority": "medium",
+    },
+}
+
+
+def _build_remediation(blockers, functional, exploitation, inspection, proofs, eligibility):
+    items = []
+
+    if not functional.get("all_demonstrated"):
+        items.append(REMEDIATION_MAP["exigence"])
+
+    for b in exploitation.get("blockers", []):
+        if "consignes" in b.lower():
+            items.append(REMEDIATION_MAP["consignes"])
+        if "formation" in b.lower():
+            items.append(REMEDIATION_MAP["formation"])
+
+    for b in inspection.get("blockers", []):
+        if "retard" in b.lower() or "inspection" in b.lower():
+            items.append(REMEDIATION_MAP["inspection"])
+        if "non conforme" in b.lower():
+            items.append(REMEDIATION_MAP["rapport"])
+        if "critique" in b.lower():
+            items.append(REMEDIATION_MAP["finding_critique"])
+
+    if proofs.get("missing_types"):
+        items.append({**REMEDIATION_MAP["preuve"], "details": proofs["missing_types"]})
+
+    # Dedup par cause
+    seen = set()
+    unique = []
+    for item in items:
+        if item["cause"] not in seen:
+            seen.add(item["cause"])
+            unique.append(item)
+
+    return sorted(unique, key=lambda x: {"critical": 0, "high": 1, "medium": 2}.get(x["priority"], 3))

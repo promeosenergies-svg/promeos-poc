@@ -1376,6 +1376,12 @@ export const seedBacsDemo = () => api.post('/regops/bacs/seed_demo').then((r) =>
 export const getBacsOpsPanel = (siteId) =>
   api.get(`/regops/bacs/site/${siteId}/ops`).then((r) => r.data);
 
+// BACS Regulatory
+export const getBacsRegulatoryAssessment = (siteId) =>
+  api.get(`/regops/bacs/site/${siteId}/regulatory-assessment`).then((r) => r.data);
+export const getBacsComplianceGate = (siteId) =>
+  api.get(`/regops/bacs/site/${siteId}/compliance-gate`).then((r) => r.data);
+
 // ========================================
 // EMS Consumption Explorer
 // ========================================
