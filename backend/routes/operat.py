@@ -1,18 +1,24 @@
 """
-PROMEOS — OPERAT Export routes (Chantier 2)
-POST /api/operat/export          — generate OPERAT CSV and return as download
+PROMEOS — OPERAT Export routes
+POST /api/operat/export          — generate OPERAT CSV + manifest + audit log
 POST /api/operat/export/preview  — preview export data (JSON)
-POST /api/operat/export/validate — validate before export (errors + warnings)
+POST /api/operat/export/validate — validate before export
+GET  /api/operat/export-manifests — historique des exports
+GET  /api/operat/export-manifests/{id} — detail d'un manifest
 """
 
+import hashlib
+import json
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
+from models.operat_export_manifest import OperatExportManifest
+from models.compliance_event_log import ComplianceEventLog
 from services.operat_export_service import generate_operat_csv, log_operat_export, validate_operat_export
 
 router = APIRouter(prefix="/api/operat", tags=["operat-export"])
@@ -22,21 +28,119 @@ class ExportRequest(BaseModel):
     org_id: int
     year: int
     efa_ids: Optional[List[int]] = None
+    actor: Optional[str] = None
+
+
+def _build_manifest(db, org_id, year, csv_content, filename, efa_ids=None, actor="system"):
+    """Cree un manifest d'export avec checksum et metadonnees tracabilite."""
+    from services.operat_trajectory import validate_trajectory, _reliability_for_source
+    from models import TertiaireEfa, TertiaireEfaConsumption, not_deleted
+
+    checksum = hashlib.sha256(csv_content.encode("utf-8")).hexdigest()
+    efa_count = csv_content.count("\n") - 1
+
+    # Recuperer les metadonnees du premier EFA pour le manifest
+    baseline_year = baseline_kwh = current_kwh = None
+    baseline_source = current_source = baseline_rel = current_rel = None
+    trajectory_status = None
+    evidence_warnings = []
+
+    query = db.query(TertiaireEfa).filter(TertiaireEfa.org_id == org_id, not_deleted(TertiaireEfa))
+    if efa_ids:
+        query = query.filter(TertiaireEfa.id.in_(efa_ids))
+    first_efa = query.first()
+
+    if first_efa:
+        ref = (
+            db.query(TertiaireEfaConsumption)
+            .filter(TertiaireEfaConsumption.efa_id == first_efa.id, TertiaireEfaConsumption.is_reference.is_(True))
+            .first()
+        )
+        cur = (
+            db.query(TertiaireEfaConsumption)
+            .filter(TertiaireEfaConsumption.efa_id == first_efa.id, TertiaireEfaConsumption.year == year)
+            .first()
+        )
+        if ref:
+            baseline_year = ref.year
+            baseline_kwh = ref.kwh_total
+            baseline_source = ref.source
+            baseline_rel = _reliability_for_source(ref.source)
+        if cur:
+            current_kwh = cur.kwh_total
+            current_source = cur.source
+            current_rel = _reliability_for_source(cur.source)
+
+        trajectory_status = first_efa.trajectory_status
+
+        if baseline_rel and baseline_rel in ("low", "unverified"):
+            evidence_warnings.append(f"Baseline fiabilite {baseline_rel}")
+        if current_rel and current_rel in ("low", "unverified"):
+            evidence_warnings.append(f"Conso courante fiabilite {current_rel}")
+        if not ref:
+            evidence_warnings.append("Consommation de reference absente")
+
+    manifest = OperatExportManifest(
+        efa_id=first_efa.id if first_efa else None,
+        org_id=org_id,
+        actor=actor or "system",
+        file_name=filename,
+        checksum_sha256=checksum,
+        observation_year=year,
+        baseline_year=baseline_year,
+        baseline_kwh=baseline_kwh,
+        current_kwh=current_kwh,
+        baseline_source=baseline_source,
+        current_source=current_source,
+        baseline_reliability=baseline_rel,
+        current_reliability=current_rel,
+        trajectory_status=trajectory_status,
+        efa_count=max(0, efa_count),
+        evidence_warnings_json=json.dumps(evidence_warnings) if evidence_warnings else None,
+    )
+    db.add(manifest)
+    db.flush()
+
+    # Event log
+    db.add(
+        ComplianceEventLog(
+            entity_type="OperatExportManifest",
+            entity_id=manifest.id,
+            action="export_generate",
+            after_json=json.dumps(
+                {
+                    "file_name": filename,
+                    "checksum": checksum,
+                    "efa_count": max(0, efa_count),
+                    "year": year,
+                    "trajectory_status": trajectory_status,
+                }
+            ),
+            actor=actor or "system",
+            source_context="api_export",
+        )
+    )
+    db.flush()
+
+    return manifest
 
 
 @router.post("/export")
-def export_operat_csv(
+def export_operat_csv_route(
     body: ExportRequest,
     db: Session = Depends(get_db),
 ):
-    """Generate OPERAT-compatible CSV for download."""
+    """Generate OPERAT-compatible CSV + manifest + audit log."""
     csv_content = generate_operat_csv(db, body.org_id, body.year, body.efa_ids)
+    filename = f"OPERAT_PREPARATOIRE_{body.org_id}_{body.year}.csv"
 
-    # Audit log
-    efa_count = csv_content.count("\n") - 1  # minus header
+    # Legacy audit log
+    efa_count = csv_content.count("\n") - 1
     log_operat_export(db, body.org_id, body.year, max(0, efa_count))
 
-    filename = f"OPERAT_PREPARATOIRE_{body.org_id}_{body.year}.csv"
+    # Manifest + event log
+    manifest = _build_manifest(db, body.org_id, body.year, csv_content, filename, body.efa_ids, body.actor)
+    db.commit()
 
     return StreamingResponse(
         iter([csv_content]),
@@ -45,6 +149,8 @@ def export_operat_csv(
             "Content-Disposition": f'attachment; filename="{filename}"',
             "X-PROMEOS-Submission-Type": "simulation_preparatoire",
             "X-PROMEOS-Disclaimer": "Pack preparatoire — aucun depot ADEME/OPERAT reel effectue",
+            "X-PROMEOS-Manifest-Id": str(manifest.id),
+            "X-PROMEOS-Checksum-SHA256": manifest.checksum_sha256,
         },
     )
 
@@ -67,7 +173,6 @@ def preview_operat_export(
         "efa_count": len(rows),
         "columns": header,
         "rows": rows,
-        # Garde-fou conformite : flag explicite simulation
         "is_real_submission": False,
         "submission_type": "simulation_preparatoire",
         "disclaimer": "Pack preparatoire — aucun depot ADEME/OPERAT reel effectue.",
@@ -81,3 +186,63 @@ def validate_export(
 ):
     """Validate OPERAT export data — returns errors (blocking) + warnings."""
     return validate_operat_export(db, body.org_id, body.year, body.efa_ids)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# EXPORT MANIFESTS — historique + detail
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/export-manifests")
+def list_export_manifests(
+    org_id: int,
+    db: Session = Depends(get_db),
+):
+    """Historique des exports preparatoires OPERAT pour une organisation."""
+    rows = (
+        db.query(OperatExportManifest)
+        .filter(OperatExportManifest.org_id == org_id)
+        .order_by(OperatExportManifest.generated_at.desc())
+        .limit(50)
+        .all()
+    )
+    return {
+        "count": len(rows),
+        "manifests": [_manifest_to_dict(m) for m in rows],
+    }
+
+
+@router.get("/export-manifests/{manifest_id}")
+def get_export_manifest(
+    manifest_id: int,
+    db: Session = Depends(get_db),
+):
+    """Detail d'un manifest d'export OPERAT."""
+    m = db.query(OperatExportManifest).filter(OperatExportManifest.id == manifest_id).first()
+    if not m:
+        raise HTTPException(404, "Manifest introuvable")
+    return _manifest_to_dict(m)
+
+
+def _manifest_to_dict(m):
+    return {
+        "id": m.id,
+        "efa_id": m.efa_id,
+        "org_id": m.org_id,
+        "generated_at": m.generated_at.isoformat() if m.generated_at else None,
+        "actor": m.actor,
+        "file_name": m.file_name,
+        "checksum_sha256": m.checksum_sha256,
+        "observation_year": m.observation_year,
+        "baseline_year": m.baseline_year,
+        "baseline_kwh": m.baseline_kwh,
+        "current_kwh": m.current_kwh,
+        "baseline_source": m.baseline_source,
+        "current_source": m.current_source,
+        "baseline_reliability": m.baseline_reliability,
+        "current_reliability": m.current_reliability,
+        "trajectory_status": m.trajectory_status,
+        "efa_count": m.efa_count,
+        "evidence_warnings": json.loads(m.evidence_warnings_json) if m.evidence_warnings_json else [],
+        "export_version": m.export_version,
+    }

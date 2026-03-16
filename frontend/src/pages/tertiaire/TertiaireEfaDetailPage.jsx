@@ -39,6 +39,7 @@ import {
 } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
 import DossierPrintView from '../../components/DossierPrintView';
+import { getExportManifests } from '../../services/api';
 
 // ── Bloc Trajectoire OPERAT (compact, B2B) ──────────────────────────
 
@@ -162,6 +163,72 @@ function EfaTrajectoryBlock({ efaId }) {
               ))}
             </div>
           )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+// ── Bloc historique exports preparatoires ─────────────────────────────
+
+function EfaExportHistory({ orgId }) {
+  const [manifests, setManifests] = useState(null);
+
+  useEffect(() => {
+    if (!orgId) return;
+    getExportManifests(orgId)
+      .then((data) => setManifests(data.manifests || []))
+      .catch(() => setManifests([]));
+  }, [orgId]);
+
+  if (!manifests || manifests.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <Card>
+        <CardBody className="p-4 space-y-3">
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+            Historique exports preparatoires
+          </h4>
+          <div className="space-y-2">
+            {manifests.slice(0, 5).map((m) => {
+              const relBadge = REL_BADGE[m.baseline_reliability] || REL_BADGE.unverified;
+              const stBadge = STATUS_LABEL[m.trajectory_status] || STATUS_LABEL.not_evaluable;
+              return (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between text-xs p-2 rounded-md bg-gray-50 border border-gray-100"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700">
+                        {new Date(m.generated_at).toLocaleDateString('fr-FR')}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${stBadge.cls}`}>
+                        {stBadge.label}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${relBadge.cls}`}>
+                        {relBadge.label}
+                      </span>
+                    </div>
+                    <div className="text-gray-400">
+                      {m.efa_count} EFA · {m.observation_year} · {m.actor}
+                    </div>
+                  </div>
+                  <div className="text-right space-y-0.5">
+                    <code className="text-[10px] text-gray-400 font-mono">
+                      {m.checksum_sha256?.slice(0, 12)}...
+                    </code>
+                    {m.evidence_warnings?.length > 0 && (
+                      <p className="text-[10px] text-amber-500">
+                        {m.evidence_warnings.length} warning(s)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </CardBody>
       </Card>
     </div>
@@ -782,6 +849,7 @@ export default function TertiaireEfaDetailPage() {
 
       {/* Trajectoire OPERAT */}
       <EfaTrajectoryBlock efaId={efa?.id} />
+      <EfaExportHistory orgId={efa?.org_id} />
 
       {/* Actions OPERAT — export pack toujours accessible */}
       <div className="mt-4">

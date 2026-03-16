@@ -206,6 +206,7 @@ from .tertiaire import (
     TertiaireEfaConsumption,
 )
 from .compliance_event_log import ComplianceEventLog
+from .operat_export_manifest import OperatExportManifest
 
 # V96: Payment Rules
 from .payment_rule import PaymentRule

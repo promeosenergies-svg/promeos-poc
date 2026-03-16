@@ -34,9 +34,9 @@ def test_operat_export_preview_has_simulation_flag():
 def test_operat_export_csv_filename_says_preparatoire():
     """Le nom de fichier CSV doit contenir PREPARATOIRE."""
     import inspect
-    from routes.operat import export_operat_csv
+    from routes.operat import export_operat_csv_route
 
-    source = inspect.getsource(export_operat_csv)
+    source = inspect.getsource(export_operat_csv_route)
     assert "PREPARATOIRE" in source, (
         "Le filename du CSV doit contenir 'PREPARATOIRE' pour ne pas laisser croire a un depot reel"
     )
@@ -45,8 +45,8 @@ def test_operat_export_csv_filename_says_preparatoire():
 def test_operat_export_has_disclaimer_header():
     """La reponse CSV doit contenir un header X-PROMEOS-Disclaimer."""
     import inspect
-    from routes.operat import export_operat_csv
+    from routes.operat import export_operat_csv_route
 
-    source = inspect.getsource(export_operat_csv)
+    source = inspect.getsource(export_operat_csv_route)
     assert "X-PROMEOS-Disclaimer" in source
     assert "X-PROMEOS-Submission-Type" in source

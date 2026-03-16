@@ -72,6 +72,8 @@ def run_migrations(engine):
     _migrate_operat_trajectory(engine)
     # Compliance event log — audit trail
     _migrate_compliance_event_log(engine)
+    # Export manifest — chaine de preuve export
+    _migrate_operat_export_manifest(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1311,3 +1313,39 @@ def _migrate_compliance_event_log(engine):
                 )
             )
         logger.info("migration: created compliance_event_log table")
+
+
+def _migrate_operat_export_manifest(engine):
+    """Create operat_export_manifest table."""
+    insp = inspect(engine)
+    if not insp.has_table("operat_export_manifest"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE IF NOT EXISTS "operat_export_manifest" (
+                    "id" INTEGER PRIMARY KEY,
+                    "efa_id" INTEGER,
+                    "org_id" INTEGER NOT NULL,
+                    "generated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "actor" VARCHAR(200) NOT NULL DEFAULT 'system',
+                    "file_name" VARCHAR(500) NOT NULL,
+                    "checksum_sha256" VARCHAR(64) NOT NULL,
+                    "observation_year" INTEGER NOT NULL,
+                    "baseline_year" INTEGER,
+                    "baseline_kwh" REAL,
+                    "current_kwh" REAL,
+                    "baseline_source" VARCHAR(50),
+                    "current_source" VARCHAR(50),
+                    "baseline_reliability" VARCHAR(20),
+                    "current_reliability" VARCHAR(20),
+                    "trajectory_status" VARCHAR(20),
+                    "efa_count" INTEGER,
+                    "evidence_warnings_json" TEXT,
+                    "export_version" VARCHAR(20) NOT NULL DEFAULT '1.0'
+                )
+            """)
+            )
+            conn.execute(
+                text('CREATE INDEX IF NOT EXISTS "ix_export_manifest_org" ON "operat_export_manifest" ("org_id")')
+            )
+        logger.info("migration: created operat_export_manifest table")

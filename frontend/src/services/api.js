@@ -1720,6 +1720,12 @@ export const exportOperatCsv = (orgId, year, efaIds = null) =>
 export const previewOperatExport = (orgId, year, efaIds = null) =>
   api.post('/operat/export/preview', { org_id: orgId, year, efa_ids: efaIds }).then((r) => r.data);
 
+// Export manifests (chaine de preuve)
+export const getExportManifests = (orgId) =>
+  api.get('/operat/export-manifests', { params: { org_id: orgId } }).then((r) => r.data);
+export const getExportManifest = (manifestId) =>
+  api.get(`/operat/export-manifests/${manifestId}`).then((r) => r.data);
+
 // V113: Data Quality Dashboard
 export const getDataQualityCompleteness = (orgId) =>
   _cachedGet('/data-quality/completeness', { params: { org_id: orgId } }).then((r) => r.data);
