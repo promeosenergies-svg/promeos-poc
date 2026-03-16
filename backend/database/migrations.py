@@ -72,6 +72,8 @@ def run_migrations(engine):
     _migrate_operat_trajectory(engine)
     # Compliance event log — audit trail
     _migrate_compliance_event_log(engine)
+    # BACS hardening
+    _migrate_bacs_hardening(engine)
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
 
@@ -1376,3 +1378,51 @@ def _migrate_operat_export_manifest(engine):
                 if col_name not in existing:
                     conn.execute(text(f'ALTER TABLE "operat_export_manifest" ADD COLUMN "{col_name}" {col_type}'))
                     logger.info("migration: hardening — added operat_export_manifest.%s", col_name)
+
+
+def _migrate_bacs_hardening(engine):
+    """Add BACS hardening columns to existing tables."""
+    insp = inspect(engine)
+
+    # bacs_assets : scope status
+    if insp.has_table("bacs_assets"):
+        existing = {c["name"] for c in insp.get_columns("bacs_assets")}
+        cols = [("bacs_scope_status", "VARCHAR(30)"), ("bacs_scope_reason", "VARCHAR(200)")]
+        with engine.begin() as conn:
+            for col, typ in cols:
+                if col not in existing:
+                    conn.execute(text(f'ALTER TABLE "bacs_assets" ADD COLUMN "{col}" {typ}'))
+                    logger.info("migration: BACS — added bacs_assets.%s", col)
+
+    # bacs_cvc_systems : classe + performance
+    if insp.has_table("bacs_cvc_systems"):
+        existing = {c["name"] for c in insp.get_columns("bacs_cvc_systems")}
+        cols = [
+            ("system_class", "VARCHAR(1)"),
+            ("system_class_source", "VARCHAR(50)"),
+            ("system_class_verified", "INTEGER DEFAULT 0"),
+            ("performance_baseline_kwh", "REAL"),
+            ("efficiency_loss_threshold_pct", "REAL DEFAULT 10.0"),
+        ]
+        with engine.begin() as conn:
+            for col, typ in cols:
+                if col not in existing:
+                    conn.execute(text(f'ALTER TABLE "bacs_cvc_systems" ADD COLUMN "{col}" {typ}'))
+                    logger.info("migration: BACS — added bacs_cvc_systems.%s", col)
+
+    # bacs_inspections : findings + inspecteur
+    if insp.has_table("bacs_inspections"):
+        existing = {c["name"] for c in insp.get_columns("bacs_inspections")}
+        cols = [
+            ("inspector_name", "VARCHAR(200)"),
+            ("inspector_qualification", "VARCHAR(100)"),
+            ("findings_json", "TEXT"),
+            ("findings_count", "INTEGER DEFAULT 0"),
+            ("critical_findings_count", "INTEGER DEFAULT 0"),
+            ("system_class_observed", "VARCHAR(1)"),
+        ]
+        with engine.begin() as conn:
+            for col, typ in cols:
+                if col not in existing:
+                    conn.execute(text(f'ALTER TABLE "bacs_inspections" ADD COLUMN "{col}" {typ}'))
+                    logger.info("migration: BACS — added bacs_inspections.%s", col)

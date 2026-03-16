@@ -348,3 +348,36 @@ def _compute_bacs_dq(asset: BacsAsset, systems: list[BacsCvcSystem]) -> dict:
         "missing_critical": missing_critical,
         "missing_important": missing_important,
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# BACS COMPLIANCE GATE — statut prudent
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/site/{site_id}/compliance-gate")
+def get_bacs_compliance_gate(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Evaluation prudente du statut BACS d'un site.
+
+    JAMAIS de statut affirmatif sans preuve.
+    """
+    from services.bacs_compliance_gate import evaluate_bacs_status
+
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        return {
+            "bacs_status": "not_evaluated",
+            "reason": "Aucun actif BACS pour ce site",
+            "blockers": ["Creer un actif BACS"],
+            "warnings": [],
+            "major_warnings": [],
+            "details": {},
+            "is_compliant_claim_allowed": False,
+        }
+
+    result = evaluate_bacs_status(db, asset.id)
+    db.commit()
+    return result

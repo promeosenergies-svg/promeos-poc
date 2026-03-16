@@ -73,6 +73,14 @@ class BacsAsset(Base, TimestampMixin):
         comment='JSON: {"type":"owner","name":"...","siren":"..."}',
     )
 
+    # Statut perimetre BACS
+    bacs_scope_status = Column(
+        String(30),
+        nullable=True,
+        comment="not_applicable, potentially_in_scope, in_scope_incomplete, review_required, ready_for_internal_review",
+    )
+    bacs_scope_reason = Column(String(200), nullable=True)
+
     # Relations
     site = relationship("Site", backref="bacs_assets")
     building = relationship("Batiment", backref="bacs_assets")
@@ -131,6 +139,28 @@ class BacsCvcSystem(Base, TimestampMixin):
         nullable=True,
         comment="Puissance utile calculee (kW)",
     )
+
+    # Classe systeme (EN 15232)
+    system_class = Column(
+        String(1),
+        nullable=True,
+        comment="Classe GTB : A, B, C, D ou null (inconnue)",
+    )
+    system_class_source = Column(
+        String(50),
+        nullable=True,
+        comment="Source : declaratif, inspection, import_doc, unknown",
+    )
+    system_class_verified = Column(
+        Boolean,
+        nullable=True,
+        default=False,
+        comment="Classe verifiee par inspection ou preuve externe",
+    )
+
+    # Performance baseline
+    performance_baseline_kwh = Column(Float, nullable=True, comment="Conso reference pour detection perte efficacite")
+    efficiency_loss_threshold_pct = Column(Float, nullable=True, default=10.0, comment="Seuil perte efficacite (%)")
 
     # V1.1 Usage — Lien systeme CVC → usage energetique
     usage_id = Column(
@@ -271,6 +301,14 @@ class BacsInspection(Base, TimestampMixin):
         default=InspectionStatus.SCHEDULED,
         comment="Statut: scheduled, completed, overdue",
     )
+
+    # Enrichissement inspection
+    inspector_name = Column(String(200), nullable=True)
+    inspector_qualification = Column(String(100), nullable=True)
+    findings_json = Column(Text, nullable=True, comment="JSON: [{code, severity, description, corrective_action}]")
+    findings_count = Column(Integer, nullable=True, default=0)
+    critical_findings_count = Column(Integer, nullable=True, default=0)
+    system_class_observed = Column(String(1), nullable=True, comment="Classe observee lors de l'inspection")
 
     # Relations
     asset = relationship("BacsAsset", back_populates="inspections")
