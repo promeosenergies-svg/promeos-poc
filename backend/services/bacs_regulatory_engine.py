@@ -85,6 +85,11 @@ def evaluate_full_bacs(db: Session, asset_id: int) -> dict:
     asset.bacs_scope_reason = final["reason"][:200] if final["reason"] else None
     db.flush()
 
+    # 7. Alertes
+    from services.bacs_alerts import compute_bacs_alerts
+
+    alerts = compute_bacs_alerts(db, asset_id)
+
     return {
         "asset_id": asset_id,
         "eligibility": eligibility,
@@ -97,7 +102,11 @@ def evaluate_full_bacs(db: Session, asset_id: int) -> dict:
         "blockers": final["blockers"],
         "major_warnings": final["major_warnings"],
         "remediation": final.get("remediation", []),
+        "alerts": alerts,
+        "alerts_count": len(alerts),
+        "critical_alerts_count": sum(1 for a in alerts if a["severity"] == "critical"),
         "is_compliant_claim_allowed": False,  # JAMAIS — par design
+        "is_ready_for_external_review": final["status"] == "ready_for_internal_review" and len(alerts) == 0,
     }
 
 

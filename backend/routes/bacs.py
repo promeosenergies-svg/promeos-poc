@@ -567,3 +567,19 @@ def _action_to_dict(a):
         "created_at": a.created_at.isoformat() if a.created_at else None,
         "closed_at": a.closed_at.isoformat() if a.closed_at else None,
     }
+
+
+@router.get("/site/{site_id}/alerts")
+def get_bacs_alerts(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Alertes BACS structurees pour un site (echeances, preuves, actions, formation)."""
+    from services.bacs_alerts import compute_bacs_alerts
+
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        return {"alerts": [], "count": 0}
+
+    alerts = compute_bacs_alerts(db, asset.id)
+    return {"alerts": alerts, "count": len(alerts)}
