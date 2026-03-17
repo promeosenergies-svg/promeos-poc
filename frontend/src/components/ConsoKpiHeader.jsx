@@ -177,7 +177,7 @@ export default function ConsoKpiHeader({
 
   return (
     <div
-      className="flex flex-wrap items-baseline gap-x-5 gap-y-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-xs"
+      className="flex flex-wrap items-baseline gap-x-8 gap-y-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-xs"
       aria-label="KPIs Consommation"
     >
       <div className="flex flex-col" title="Somme des relevés sur la période sélectionnée">

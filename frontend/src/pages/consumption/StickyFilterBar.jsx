@@ -381,8 +381,10 @@ export default function StickyFilterBar({
   };
 
   // Determine which period pill is active
-  const isCustomRange = !!(startDate || endDate);
-  const activePill = isCustomRange ? 'custom' : days === 'ytd' ? 'ytd' : days;
+  // YTD sets startDate/endDate internally but should NOT activate the custom calendar
+  const isYtd = days === 'ytd' || (days === 365 && startDate === ytdStart());
+  const isCustomRange = !!(startDate || endDate) && !isYtd;
+  const activePill = isCustomRange ? 'custom' : isYtd ? 'ytd' : days;
 
   const handlePillClick = (value) => {
     if (value === 'ytd') {
