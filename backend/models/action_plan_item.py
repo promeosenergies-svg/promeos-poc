@@ -19,6 +19,13 @@ class ActionPlanItem(Base):
     estimated_impact_eur = Column(Float, nullable=True)
     recommended_action = Column(String(1000), nullable=True)
 
+    # Priority & SLA
+    priority = Column(String(20), nullable=False, default="medium", comment="critical|high|medium|low")
+    sla_days = Column(Integer, nullable=True, comment="Target resolution in days")
+    sla_status = Column(String(20), nullable=True, comment="on_track|at_risk|overdue|resolved")
+    source_ref = Column(String(300), nullable=True, comment="Link to source: compliance/billing/purchase")
+    evidence_type = Column(String(100), nullable=True, comment="Expected evidence type")
+
     # Workflow
     status = Column(String(30), nullable=False, default="open", comment="open|in_progress|resolved|dismissed|reopened")
     owner = Column(String(255), nullable=True)

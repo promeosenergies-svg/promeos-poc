@@ -94,3 +94,7 @@ export const resolveActionCenterAction = (id, data = {}) =>
   api.post(`/action-center/actions/${id}/resolve`, data).then((r) => r.data);
 export const reopenActionCenterAction = (id, data = {}) =>
   api.post(`/action-center/actions/${id}/reopen`, data).then((r) => r.data);
+
+// ── Action Center Summary (persisted actions) ──
+export const getActionCenterActionsSummary = () =>
+  cachedGet('/action-center/actions/summary', {}, 15000);

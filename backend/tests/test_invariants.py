@@ -769,3 +769,97 @@ class TestActionWorkflow:
         r2 = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
         if r1.status_code == 200 and r2.status_code == 200:
             assert r1.json()["total"] == r2.json()["total"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 15. Action Operational — priority, SLA, evidence guard
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionOperational:
+    """Verify operational action features: priority, SLA, evidence guard."""
+
+    def test_action_has_priority(self, app_client):
+        """Created action has priority derived from severity"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "priority_test",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Priority test",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["priority"] == "critical"
+        assert r.json()["sla_days"] == 7
+
+    def test_action_sla_on_track(self, app_client):
+        """New action has sla_status on_track"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "sla_test",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "SLA test",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["sla_status"] in ("on_track", "at_risk")
+
+    def test_evidence_required_blocks_resolve(self, app_client):
+        """Critical action cannot be resolved without evidence"""
+        client, _ = app_client
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "evidence_block_test",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Evidence test",
+            },
+        )
+        action_id = r1.json()["id"]
+        assert r1.json()["evidence_required"] == True
+
+        # Try to resolve without evidence
+        r2 = client.post(f"/api/action-center/actions/{action_id}/resolve", json={})
+        assert r2.status_code == 400  # Should be blocked
+
+    def test_actions_summary_counts(self, app_client):
+        """Actions summary returns consistent counts"""
+        client, _ = app_client
+        r = client.get("/api/action-center/actions/summary")
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "by_status" in data
+        assert "by_priority" in data
+        assert "overdue_count" in data
+        assert "open_count" in data
+
+    def test_action_source_ref(self, app_client):
+        """Action has source_ref linking to origin domain"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "source_ref_test",
+                "domain": "billing",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "no_contract",
+                "issue_label": "Source ref test",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["source_ref"] == "billing:no_contract"

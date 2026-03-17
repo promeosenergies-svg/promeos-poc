@@ -78,13 +78,49 @@ def list_actions_endpoint(
     site_id: Optional[int] = Query(None),
     domain: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
+    priority: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     """List persisted action plan items."""
     from services.action_workflow_service import list_actions, serialize_action
 
-    items = list_actions(db, site_id=site_id, domain=domain, status=status_filter)
+    items = list_actions(db, site_id=site_id, domain=domain, status=status_filter, priority=priority)
     return {"total": len(items), "actions": [serialize_action(i) for i in items]}
+
+
+@router.get("/actions/summary")
+def actions_summary(
+    request: Request,
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    """Summary of persisted actions by status, priority, domain."""
+    from services.action_workflow_service import list_actions, serialize_action, compute_sla_status
+
+    items = list_actions(db)
+
+    by_status = {}
+    by_priority = {}
+    by_domain = {}
+    overdue_count = 0
+
+    for item in items:
+        by_status[item.status] = by_status.get(item.status, 0) + 1
+        p = item.priority or "medium"
+        by_priority[p] = by_priority.get(p, 0) + 1
+        by_domain[item.domain] = by_domain.get(item.domain, 0) + 1
+        if compute_sla_status(item) == "overdue":
+            overdue_count += 1
+
+    return {
+        "total": len(items),
+        "by_status": by_status,
+        "by_priority": by_priority,
+        "by_domain": by_domain,
+        "overdue_count": overdue_count,
+        "open_count": by_status.get("open", 0) + by_status.get("in_progress", 0) + by_status.get("reopened", 0),
+        "resolved_count": by_status.get("resolved", 0),
+    }
 
 
 @router.patch("/actions/{action_id}")

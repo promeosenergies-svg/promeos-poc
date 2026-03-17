@@ -8,9 +8,13 @@ from models.action_plan_item import ActionPlanItem
 
 logger = logging.getLogger("promeos.action_workflow")
 
+SEVERITY_TO_PRIORITY = {"critical": "critical", "high": "high", "medium": "medium", "low": "low", "info": "low"}
+SLA_DAYS = {"critical": 7, "high": 14, "medium": 30, "low": 90}
+
 
 def create_action_from_issue(db: Session, issue_data: dict, owner: str = None, due_date: str = None) -> ActionPlanItem:
     """Create a persisted action from an ActionableIssue."""
+    priority = SEVERITY_TO_PRIORITY.get(issue_data.get("severity", "medium"), "medium")
     item = ActionPlanItem(
         issue_id=issue_data["issue_id"],
         domain=issue_data["domain"],
@@ -24,6 +28,9 @@ def create_action_from_issue(db: Session, issue_data: dict, owner: str = None, d
         status="open",
         owner=owner,
         evidence_required=issue_data.get("severity") in ("critical", "high"),
+        priority=priority,
+        sla_days=SLA_DAYS.get(priority, 30),
+        source_ref=f"{issue_data.get('domain', 'unknown')}:{issue_data.get('issue_code', 'unknown')}",
     )
     if due_date:
         item.due_date = datetime.fromisoformat(due_date)
@@ -80,7 +87,28 @@ def reopen_action(db: Session, action_id: int, reason: str = None) -> ActionPlan
     return item
 
 
-def list_actions(db: Session, site_id: int = None, domain: str = None, status: str = None) -> list:
+def compute_sla_status(item: ActionPlanItem) -> str:
+    """Compute SLA status based on creation date and sla_days."""
+    if item.status == "resolved":
+        return "resolved"
+    if not item.sla_days or not item.created_at:
+        return "on_track"
+    from datetime import timedelta
+
+    now = datetime.now(timezone.utc)
+    created = item.created_at.replace(tzinfo=timezone.utc) if item.created_at.tzinfo is None else item.created_at
+    deadline = created + timedelta(days=item.sla_days)
+    days_left = (deadline - now).days
+    if days_left < 0:
+        return "overdue"
+    elif days_left <= 3:
+        return "at_risk"
+    return "on_track"
+
+
+def list_actions(
+    db: Session, site_id: int = None, domain: str = None, status: str = None, priority: str = None
+) -> list:
     """List persisted actions with optional filters."""
     q = db.query(ActionPlanItem)
     if site_id:
@@ -89,6 +117,8 @@ def list_actions(db: Session, site_id: int = None, domain: str = None, status: s
         q = q.filter(ActionPlanItem.domain == domain)
     if status:
         q = q.filter(ActionPlanItem.status == status)
+    if priority:
+        q = q.filter(ActionPlanItem.priority == priority)
     return q.order_by(ActionPlanItem.created_at.desc()).all()
 
 
@@ -105,6 +135,11 @@ def serialize_action(item: ActionPlanItem) -> dict:
         "reason_codes": json.loads(item.reason_codes) if item.reason_codes else [],
         "estimated_impact_eur": item.estimated_impact_eur,
         "recommended_action": item.recommended_action,
+        "priority": item.priority or "medium",
+        "sla_days": item.sla_days,
+        "sla_status": compute_sla_status(item),
+        "source_ref": item.source_ref,
+        "evidence_type": item.evidence_type,
         "status": item.status,
         "owner": item.owner,
         "due_date": item.due_date.isoformat() if item.due_date else None,
