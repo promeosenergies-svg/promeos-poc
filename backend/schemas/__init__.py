@@ -30,3 +30,7 @@ from .billing_canonical import (  # noqa: F401
     BillingInvoiceCanonical,
     BillingGapReport,
 )
+from .contract_perimeter import (  # noqa: F401
+    ContractPerimeter,
+    PerimeterCheckResult,
+)

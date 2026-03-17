@@ -402,3 +402,63 @@ class TestKpiCatalogEndpoint:
             assert "kpi_id" in kpi
             assert "name" in kpi
             assert "unit" in kpi
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. Billing Perimeter & Canonical Validation
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestBillingPerimeter:
+    """Invariant : perimeter check validates billing ↔ contract ↔ site consistency."""
+
+    def test_perimeter_valid_site(self, app_client):
+        client, _ = app_client
+        # Create a site first
+        r = client.post(
+            "/api/sites/quick-create",
+            json={
+                "nom": "Billing Test",
+                "usage": "bureau",
+                "adresse": "1 rue test",
+                "code_postal": "75001",
+                "ville": "Paris",
+            },
+            headers={"X-Org-Id": "1"},
+        )
+        site_id = r.json()["site"]["id"]
+
+        # Check perimeter
+        r2 = client.post("/api/billing/perimeter/check", json={"site_id": site_id})
+        assert r2.status_code == 200
+        assert r2.json()["consistent"] == True
+        assert r2.json()["site_exists"] == True
+
+    def test_perimeter_invalid_site(self, app_client):
+        client, _ = app_client
+        r = client.post("/api/billing/perimeter/check", json={"site_id": 99999})
+        assert r.status_code == 200
+        assert r.json()["consistent"] == False
+        assert r.json()["site_exists"] == False
+
+    def test_canonical_validation_valid(self, app_client):
+        client, _ = app_client
+        r = client.post(
+            "/api/billing/invoices/validate-canonical",
+            json={
+                "site_id": 1,
+                "supplier_name": "EDF",
+                "amount_ht": 1500.0,
+                "period_start": "2025-01-01",
+                "period_end": "2025-03-31",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["valid"] == True
+
+    def test_canonical_validation_missing_fields(self, app_client):
+        client, _ = app_client
+        r = client.post("/api/billing/invoices/validate-canonical", json={"site_id": 1})
+        assert r.status_code == 200
+        assert r.json()["valid"] == False
+        assert r.json()["missing_required_count"] > 0

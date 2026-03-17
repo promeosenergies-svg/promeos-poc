@@ -483,6 +483,8 @@ export default function Patrimoine() {
       r = r.filter(
         (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
       );
+    } else if (filterStatut === 'needs_review') {
+      r = r.filter((s) => s.compliance_needs_review);
     } else if (filterStatut) {
       r = r.filter((s) => s.statut_conformite === filterStatut);
     }
@@ -647,7 +649,9 @@ export default function Patrimoine() {
       label:
         filterStatut === 'nc_risque'
           ? 'NC + À risque'
-          : STATUT_OPTIONS.find((o) => o.value === filterStatut)?.label || filterStatut,
+          : filterStatut === 'needs_review'
+            ? 'À revoir'
+            : STATUT_OPTIONS.find((o) => o.value === filterStatut)?.label || filterStatut,
       clear: () => setParams({ statut: '' }),
     });
   if (filterAnomalies)

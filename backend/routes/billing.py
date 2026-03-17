@@ -15,7 +15,7 @@ from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, UploadFile, File
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -47,6 +47,7 @@ from middleware.auth import get_optional_auth, require_admin, AuthContext
 from middleware.rate_limit import check_rate_limit
 from services.scope_utils import resolve_org_id
 from services.billing_reconcile import auto_reconcile_after_import
+from schemas.contract_perimeter import ContractPerimeter
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 
@@ -1820,3 +1821,35 @@ def check_contract_overlap(
         if cond1 and cond2:
             return c
     return None
+
+
+# ========================================
+# Canonical Validation & Perimeter Check
+# ========================================
+
+
+@router.post("/invoices/validate-canonical")
+def validate_invoice_canonical_endpoint(body: dict = Body(...)):
+    """Validate invoice data against the canonical billing schema."""
+    from services.billing_canonical_service import validate_invoice_canonical, compute_gap_report
+
+    invoice, errors = validate_invoice_canonical(body)
+    gaps = compute_gap_report(body)
+    missing_required = [g for g in gaps if g["status"] == "missing" and g["required"]]
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "gap_report": gaps,
+        "missing_required_count": len(missing_required),
+        "canonical_fields_present": sum(1 for g in gaps if g["status"] == "present"),
+        "canonical_fields_total": len(gaps),
+    }
+
+
+@router.post("/perimeter/check")
+def check_billing_perimeter(body: ContractPerimeter, db: Session = Depends(get_db)):
+    """Check billing ↔ contract ↔ site consistency."""
+    from services.perimeter_check import check_perimeter
+
+    result = check_perimeter(db, body.site_id, body.contract_id, body.period_start, body.period_end)
+    return result
