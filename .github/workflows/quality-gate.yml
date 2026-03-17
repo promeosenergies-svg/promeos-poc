@@ -74,6 +74,9 @@ jobs:
       - name: Typecheck (Mypy)
         run: python -m mypy . --config-file pyproject.toml
 
+      - name: Alembic check (schema drift)
+        run: python -m alembic check
+
       - name: Unit tests (Pytest)
         run: python -m pytest tests/ -x -q
 

@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from middleware.request_context import RequestContextMiddleware
+from middleware.error_handler import register_error_handlers
 from services.json_logger import setup_logging
 
 # Structured JSON logging
@@ -81,6 +82,9 @@ app = FastAPI(
     description="API de gestion énergétique multi-sites - 120 sites",
     version="1.0.0",
 )
+
+# Global error handlers (HTTPException, ValidationError, unhandled)
+register_error_handlers(app)
 
 # Request context middleware (request_id + timing) — must be added before CORS
 app.add_middleware(RequestContextMiddleware)

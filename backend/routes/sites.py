@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from schemas.patrimoine_schemas import QuickCreateSiteRequest as StrictQuickCreateRequest
 
 router = APIRouter(prefix="/api/sites", tags=["Sites"])
 
@@ -59,7 +60,7 @@ class QuickCreateRequest(BaseModel):
 
 @router.post("/quick-create", status_code=201)
 def quick_create_site(
-    body: QuickCreateRequest,
+    body: StrictQuickCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),

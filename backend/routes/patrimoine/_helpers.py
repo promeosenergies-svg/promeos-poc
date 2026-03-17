@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Optional, List
 
 from fastapi import HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
@@ -459,25 +459,25 @@ class CompteurUpdateRequest(BaseModel):
 
 
 class ContractCreateRequest(BaseModel):
-    site_id: int
-    energy_type: str = "elec"
-    supplier_name: str
+    site_id: int = Field(..., gt=0, description="ID du site rattache")
+    energy_type: str = Field("elec", description="Type energie: elec, gaz, eau, fioul, chaleur")
+    supplier_name: str = Field(..., min_length=1, max_length=300, description="Nom du fournisseur")
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    price_ref_eur_per_kwh: Optional[float] = None
-    fixed_fee_eur_per_month: Optional[float] = None
-    notice_period_days: int = 90
+    price_ref_eur_per_kwh: Optional[float] = Field(None, ge=0, le=10)
+    fixed_fee_eur_per_month: Optional[float] = Field(None, ge=0, le=1e6)
+    notice_period_days: int = Field(90, ge=0, le=365)
     auto_renew: bool = False
     # V96
     offer_indexation: Optional[str] = None
     price_granularity: Optional[str] = None
-    renewal_alert_days: Optional[int] = None
+    renewal_alert_days: Optional[int] = Field(None, ge=0, le=365)
     contract_status: Optional[str] = None
     # V-registre: champs registre patrimonial & contractuel
-    reference_fournisseur: Optional[str] = None
+    reference_fournisseur: Optional[str] = Field(None, max_length=200)
     date_signature: Optional[str] = None
-    conditions_particulieres: Optional[str] = None
-    document_url: Optional[str] = None
+    conditions_particulieres: Optional[str] = Field(None, max_length=2000)
+    document_url: Optional[str] = Field(None, max_length=500)
     delivery_point_ids: Optional[list] = None  # IDs des DP couverts
 
 
