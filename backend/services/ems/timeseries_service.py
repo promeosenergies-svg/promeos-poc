@@ -4,7 +4,7 @@ SQL-level bucket aggregation for consumption timeseries.
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Set, Tuple, Dict, Any
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func, literal_column, Integer as SAInteger, cast
@@ -153,9 +153,21 @@ def query_timeseries(
 
     meter_id_list = [m.id for m in meters]
 
-    # Detect finest native data resolution for these meters (for frontend pill filtering)
+    # Detect native data resolution for these meters (for frontend pill filtering)
     native_freqs = _resolve_best_freq(db, meter_id_list, date_from, date_to, "monthly")
     native_sampling_minutes = min((_SAMPLING_MINUTES.get(f.value, 60) for f in native_freqs), default=60)
+    # Detect all frequencies with actual data (for sub-hourly pill filtering)
+    actual_freq_rows = (
+        db.query(MeterReading.frequency)
+        .filter(
+            MeterReading.meter_id.in_(meter_id_list),
+            MeterReading.timestamp >= date_from,
+            MeterReading.timestamp < date_to,
+        )
+        .distinct()
+        .all()
+    )
+    actual_freqs = {r[0].value for r in actual_freq_rows}
 
     # 2. Build bucket expression
     bucket_expr = _bucket_key_expr(granularity)
@@ -267,6 +279,7 @@ def query_timeseries(
             metric,
             series=series,
             native_sampling_minutes=native_sampling_minutes,
+            actual_freqs=actual_freqs,
         ),
         "availability": availability,
     }
@@ -289,13 +302,22 @@ _SAMPLING_MINUTES = {
 _GRANULARITY_ORDER = ["15min", "30min", "hourly", "daily", "monthly"]
 
 
-def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]:
-    """Return granularities that are (a) >= data frequency and (b) stay under GRANULARITY_MAX_POINTS."""
+def _available_granularities(
+    sampling_minutes: int, span_days: int, actual_freqs: Optional[Set[str]] = None
+) -> List[str]:
+    """Return granularities that are (a) >= data frequency, (b) stay under
+    GRANULARITY_MAX_POINTS, and (c) for sub-hourly: only if that exact
+    frequency exists in the data (no synthetic intermediate steps)."""
+    # Standard aggregation tiers — always offered if data is fine enough
+    _STANDARD_TIERS = {"hourly", "daily", "monthly"}
     result = []
     for g in _GRANULARITY_ORDER:
         g_minutes = _SAMPLING_MINUTES[g]
         # Must not be finer than the actual data resolution
         if g_minutes < sampling_minutes:
+            continue
+        # Sub-hourly: only show if that exact frequency exists in the data
+        if actual_freqs is not None and g not in _STANDARD_TIERS and g not in actual_freqs:
             continue
         # Coarse guard: monthly needs at least 30 days
         if g == "monthly" and span_days < 30:
@@ -310,10 +332,20 @@ def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]
     return result
 
 
-def _meta(granularity, n_points, n_meters, date_from, date_to, metric, series=None, native_sampling_minutes=None):
+def _meta(
+    granularity,
+    n_points,
+    n_meters,
+    date_from,
+    date_to,
+    metric,
+    series=None,
+    native_sampling_minutes=None,
+    actual_freqs=None,
+):
     sampling_minutes = native_sampling_minutes or _SAMPLING_MINUTES.get(granularity, 60)
     span_days = max((date_to - date_from).days, 1)
-    available = _available_granularities(sampling_minutes, span_days)
+    available = _available_granularities(sampling_minutes, span_days, actual_freqs=actual_freqs)
     # valid_count: points with non-null value in the aggregate series
     valid_count = 0
     if series:

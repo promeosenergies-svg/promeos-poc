@@ -215,3 +215,30 @@ export function getAvailableGranularities(days, samplingMinutes = null) {
     return true;
   });
 }
+
+// Label map for granularity keys (must match backend VALID_GRANULARITIES)
+const GRANULARITY_LABELS = {
+  '15min': '15 min',
+  '30min': '30 min',
+  hourly: '1 h',
+  daily: '1 j',
+  monthly: 'Mois',
+};
+
+/**
+ * Build pill list from backend-provided available_granularities.
+ * Always prepends 'Auto'. Falls back to getAvailableGranularities() if no backend list.
+ *
+ * @param {string[]|null} backendList — keys from meta.available_granularities
+ * @param {number}        days        — fallback: period length for local computation
+ * @returns {Array<{ key: string, label: string }>}
+ */
+export function granularityPills(backendList, days) {
+  if (!backendList || !backendList.length) {
+    return getAvailableGranularities(days);
+  }
+  return [
+    { key: 'auto', label: 'Auto' },
+    ...backendList.map((k) => ({ key: k, label: GRANULARITY_LABELS[k] || k })),
+  ];
+}

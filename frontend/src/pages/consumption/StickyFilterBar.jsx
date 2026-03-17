@@ -52,7 +52,12 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { TrustBadge } from '../../ui';
-import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
+import {
+  computeGranularity,
+  colorForSite,
+  getAvailableGranularities,
+  granularityPills,
+} from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
 import { InfoTip } from '../../ui';
 
@@ -295,7 +300,7 @@ export default function StickyFilterBar({
   // Granularity selector (V21-C + V22-B)
   granularity = 'auto',
   setGranularity,
-  samplingMinutes = null, // V22-B: actual meter reading interval for intersection
+  availableGranularities = null, // Backend-provided list of valid granularity keys
   // YoY comparison toggle (Step 10 — F1)
   compareYoy = false,
   setCompareYoy,
@@ -610,7 +615,7 @@ export default function StickyFilterBar({
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 shrink-0">Granularité :</span>
             <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-              {getAvailableGranularities(days, samplingMinutes).map((g) => (
+              {granularityPills(availableGranularities, days).map((g) => (
                 <button
                   key={g.key}
                   onClick={() => setGranularity(g.key)}
