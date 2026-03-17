@@ -29,12 +29,12 @@
 | Dimension | Note | Statut |
 |-----------|------|--------|
 | Architecture | 7.5/10 | Solide |
-| Securite | 6.5/10 | Acceptable |
+| Securite | 6/10 | Secret JWT par defaut CRITIQUE |
 | Performance | 7/10 | Bon |
 | Qualite du code | 6.5/10 | A ameliorer |
 | Tests | 6/10 | Couverture partielle |
 | DevOps / CI | 8/10 | Bon |
-| **Score global** | **6.9/10** | **Production-ready avec reserves** |
+| **Score global** | **6.8/10** | **Production-ready avec reserves** |
 
 **Verdict** : La solution Promeos est un POC mature avec une architecture solide couvrant la gestion energetique multi-sites. Le projet est fonctionnel mais presente des axes d'amelioration sur l'accessibilite, la decomposition de certains composants monolithiques et la couverture de tests.
 
@@ -133,6 +133,10 @@ backend/
 | Mypy desactive la majorite des erreurs | HAUTE | 15 codes d'erreur desactives — typecheck quasi symbolique |
 | SQLite `== True` / `== None` patterns | FAIBLE | Necessaire pour SQLAlchemy, mais documente dans pyproject.toml |
 | Services monolithiques | MOYENNE | Certains services (billing, compliance) sont tres volumineux |
+| Routes volumineuses | HAUTE | `patrimoine.py` (3 129 LOC), `billing.py` (1 822 LOC), `actions.py` (1 312 LOC) |
+| Migrations manuelles (1 621 LOC) | MOYENNE | Un seul fichier `database/migrations.py` sans versioning Alembic |
+| Potentiel N+1 queries | MOYENNE | 175 appels `.all()` vs 76 `.join()`, `selectinload()` quasi absent |
+| `not_deleted()` inconsistant | FAIBLE | Filtre `actif == True` mais ce champ n'existe pas sur tous les modeles |
 
 ### 3.4 API Design
 
@@ -214,20 +218,24 @@ frontend/src/
 
 | Risque | Severite | Detail | Recommandation |
 |--------|----------|--------|----------------|
+| **Secret JWT par defaut en dur** | **CRITIQUE** | `iam_service.py:35` utilise `"dev-secret-change-me-in-prod"` si `PROMEOS_JWT_SECRET` absent | Faire echouer le demarrage si non defini en production |
 | JWT stocke en localStorage | MOYENNE | Vulnerable aux attaques XSS (bien qu'aucun vecteur XSS identifie) | Migrer vers httpOnly cookies |
 | Pas de protection CSRF | MOYENNE | Pas de token CSRF visible | Implementer SameSite=Strict + CSRF token |
 | Pas de CSP headers | MOYENNE | Content-Security-Policy absent | Ajouter CSP dans la config serveur |
-| Mypy quasi desactive | MOYENNE | Type safety minimale cote backend | Reactiver progressivement les checks |
-| DEMO_MODE="true" par defaut | FAIBLE | CORS wildcard en mode demo | Verifier la configuration en production |
+| Mypy quasi desactive | MOYENNE | 15 codes d'erreur desactives + `allow_untyped_defs = true` — typecheck symbolique | Reactiver progressivement les checks |
+| Endpoint `/api/auth/impersonate` | MOYENNE | Permet l'usurpation d'identite (controle admin-only hors demo) | Ajouter audit log + alerting |
+| DEMO_MODE="true" par defaut | FAIBLE | CORS wildcard + bypass auth en mode demo | Verifier la configuration en production |
 | Validation API responses | FAIBLE | Pas de validation des shapes de reponse | Integrer Zod cote frontend |
 | `dev_tools_router` en production | FAIBLE | Endpoint `reset_db` accessible | Conditionner au mode dev/demo |
+| Pas de scan de vulnerabilites | FAIBLE | Ni `bandit` ni `safety` en CI | Ajouter un audit de securite automatise |
 
 ### 5.3 Gestion des secrets
 
 - `.env.example` : bien documente avec instructions de securite
 - `.gitignore` : `.env` correctement exclu
 - Cles API : AI_API_KEY, ENEDIS_CLIENT_SECRET, METEOFRANCE_API_KEY
-- **Aucun secret detecte dans le code source**
+- **Secret JWT par defaut en dur** dans `iam_service.py` (CRITIQUE — cf. ci-dessus)
+- Toutes les requetes SQL passent par SQLAlchemy ORM (pas d'injection SQL detectee)
 
 ---
 
@@ -248,12 +256,14 @@ frontend/src/
 
 | Risque | Impact | Detail |
 |--------|--------|--------|
+| **Potentiel N+1 queries backend** | HAUT | 175 appels `.all()` sans eager loading, `selectinload()` absent |
 | api.js cache TTL 5s | MOYEN | Donnees potentiellement perimees lors de changements d'onglet |
 | Memoisation React sparse | MOYEN | Re-renders inutiles sur les composants couteux (Heatmap, Charts) |
 | localStorage parse a chaque mount | FAIBLE | ScopeSwitcher, DemoSpotlight parsent JSON a chaque montage |
 | @tanstack/react-virtual sous-utilise | MOYEN | Import mais peu utilise pour les longues listes |
 | SQLite en dev (single-writer) | FAIBLE | Pas de probleme en dev, PostgreSQL en production |
 | DevPanel inclus en production | FAIBLE | Code mort charge inutilement |
+| Pas de query profiling | MOYEN | Seuils definis dans `perf_config.py` (slow_request_ms=300) mais pas de profiling SQL |
 
 ---
 
@@ -458,15 +468,15 @@ L'accessibilite est le point le plus faible du projet :
 
 ### 12.1 Priorite CRITIQUE (a faire immediatement)
 
-1. **Accessibilite (a11y)** : Ajouter `aria-labels`, `role=`, `alt=` sur tous les elements interactifs et images. Objectif WCAG AA.
+1. **Supprimer le secret JWT par defaut** (`backend/services/iam_service.py:35`) : Le serveur doit refuser de demarrer si `PROMEOS_JWT_SECRET` n'est pas defini en production. Un secret en dur est un risque d'usurpation de tokens.
 
-2. **Decomposer les fichiers monolithiques** :
-   - `api.js` (77 KB) → decouper en modules par domaine
-   - `MonitoringPage` (3.1K LOC) → Dashboard + DataTable + Controls
-   - `Patrimoine` (2.2K LOC) → List + Map + Sidebar
-   - `ActionDetailDrawer` (1.3K LOC) → sous-composants par onglet
+2. **Accessibilite (a11y)** : Ajouter `aria-labels`, `role=`, `alt=` sur tous les elements interactifs et images. Objectif WCAG AA.
 
-3. **Securiser les endpoints dev** : Conditionner `dev_tools_router` au mode `DEMO_MODE=true` ou `NODE_ENV=development`
+3. **Decomposer les fichiers monolithiques** :
+   - Frontend : `api.js` (77 KB), `MonitoringPage` (3.1K LOC), `Patrimoine` (2.2K LOC)
+   - Backend : `patrimoine.py` (3.1K LOC), `billing.py` (1.8K LOC), `migrations.py` (1.6K LOC)
+
+4. **Securiser les endpoints dev** : Conditionner `dev_tools_router` au mode `DEMO_MODE=true` uniquement
 
 ### 12.2 Priorite HAUTE (1-2 sprints)
 
@@ -494,7 +504,7 @@ L'accessibilite est le point le plus faible du projet :
 |-----------|-------|-------------|
 | Architecture Backend | 8/10 | FastAPI bien structure, 52 domaines, layers clairs |
 | Architecture Frontend | 7/10 | React moderne, lazy loading, mais composants trop gros |
-| Securite | 6.5/10 | Auth RBAC solide, mais JWT en localStorage + pas de CSRF/CSP |
+| Securite | 6/10 | RBAC solide, mais secret JWT par defaut + localStorage + pas de CSRF/CSP |
 | Performance | 7/10 | Code splitting OK, memoisation insuffisante |
 | Qualite du code | 6.5/10 | Conventions respectees, mais code mort + duplication |
 | Tests | 6/10 | 411 fichiers mais couverture estimee ~35% |
@@ -502,7 +512,7 @@ L'accessibilite est le point le plus faible du projet :
 | DevOps / CI | 8/10 | Pipeline complete, Makefile, pre-commit hooks |
 | Documentation | 8/10 | README exhaustif, glossaire, API docs auto |
 | Design System | 8/10 | 38 composants, tokens semantiques, bon ecosysteme |
-| **SCORE GLOBAL** | **6.9/10** | **POC mature, production-ready avec reserves** |
+| **SCORE GLOBAL** | **6.8/10** | **POC mature, production-ready avec reserves** |
 
 ---
 
@@ -510,10 +520,11 @@ L'accessibilite est le point le plus faible du projet :
 
 La solution Promeos est un **POC ambitieux et fonctionnel** couvrant un perimetre metier tres large (patrimoine, consommation, facturation, conformite, achat energie, IA). L'architecture est solide avec une separation claire des responsabilites.
 
-Les **3 axes prioritaires** d'amelioration sont :
-1. **Accessibilite** (score 3/10 — non-conforme WCAG)
-2. **Decomposition des composants monolithiques** (api.js, pages >2K LOC)
-3. **Renforcement de la securite** (CSRF, CSP, httpOnly cookies)
+Les **4 axes prioritaires** d'amelioration sont :
+1. **Secret JWT par defaut** — vulnerabilite critique a corriger immediatement
+2. **Accessibilite** (score 3/10 — non-conforme WCAG)
+3. **Decomposition des composants monolithiques** (api.js, pages >2K LOC, routes >3K LOC)
+4. **Renforcement de la securite** (CSRF, CSP, httpOnly cookies, scan de vulnerabilites)
 
 Le projet est **deployable en production** dans un contexte pilote, sous reserve de traiter les points critiques de securite et d'accessibilite avant un deploiement a grande echelle.
 
