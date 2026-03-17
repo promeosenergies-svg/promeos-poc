@@ -176,7 +176,7 @@ def create_user_endpoint(
                     pass
             assign_scope(db, uor.id, level, s.get("id", org_id), expires)
 
-    log_audit(db, None, "create_user", "user", str(user.id), {"email": req.email, "role": req.role})
+    log_audit(db, None, "create_user", "user", str(user.id), {"email_masked": req.email[:3] + "***", "role": req.role})
     db.commit()
 
     return {"status": "created", "user_id": user.id}

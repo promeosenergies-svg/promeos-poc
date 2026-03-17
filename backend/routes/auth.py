@@ -302,7 +302,7 @@ def impersonate(
             target.id,
             req.email,
         )
-    log_audit(db, caller_id, "impersonate", "user", str(target.id), {"target_email": req.email})
+    log_audit(db, caller_id, "impersonate", "user", str(target.id), {"target_email_masked": req.email[:3] + "***"})
     db.commit()
 
     return _build_login_response(db, target, uor)

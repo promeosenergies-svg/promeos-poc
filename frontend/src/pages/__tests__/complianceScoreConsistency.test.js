@@ -87,48 +87,50 @@ describe('B - Dashboard uses shared compliance score', () => {
 
 // ============================================================
 // C. ConformitePage.jsx: score header + breakdown bars
+// V101: Score header extracted to components/conformite/ComplianceScoreHeader.jsx
 // ============================================================
 describe('C - ConformitePage has compliance score header', () => {
-  const code = readSrc('pages', 'ConformitePage.jsx');
+  const pageCode = readSrc('pages', 'ConformitePage.jsx');
+  const headerCode = readSrc('components', 'conformite', 'ComplianceScoreHeader.jsx');
 
   it('imports from lib/constants', () => {
-    expect(code).toContain("from '../lib/constants'");
+    expect(headerCode).toContain("from '../../lib/constants'");
   });
 
   it('imports getComplianceScoreColor', () => {
-    expect(code).toContain('getComplianceScoreColor');
+    expect(headerCode).toContain('getComplianceScoreColor');
   });
 
   it('imports COMPLIANCE_SCORE_THRESHOLDS', () => {
-    expect(code).toContain('COMPLIANCE_SCORE_THRESHOLDS');
+    expect(headerCode).toContain('COMPLIANCE_SCORE_THRESHOLDS');
   });
 
   it('has data-section="compliance-score-header"', () => {
-    expect(code).toContain('data-section="compliance-score-header"');
+    expect(headerCode).toContain('data-section="compliance-score-header"');
   });
 
   it('fetches /api/compliance/sites/ or /api/compliance/portfolio/score', () => {
-    expect(code).toContain('/api/compliance/sites/');
-    expect(code).toContain('/api/compliance/portfolio/score');
+    expect(pageCode).toContain('/api/compliance/sites/');
+    expect(pageCode).toContain('/api/compliance/portfolio/score');
   });
 
   it('shows breakdown bars for 3 frameworks', () => {
-    expect(code).toContain("'tertiaire_operat'");
-    expect(code).toContain("'bacs'");
-    expect(code).toContain('APER');
+    expect(headerCode).toContain("'tertiaire_operat'");
+    expect(headerCode).toContain("'bacs'");
+    expect(headerCode).toContain('APER');
   });
 
   it('shows dynamic weight labels from API and Non applicable state', () => {
-    expect(code).toContain('fw.weight');
-    expect(code).toContain('Non applicable');
+    expect(headerCode).toContain('fw.weight');
+    expect(headerCode).toContain('Non applicable');
   });
 
   it('displays /100 format', () => {
-    expect(code).toContain('/100');
+    expect(headerCode).toContain('/100');
   });
 
   it('shows confidence indicator', () => {
-    expect(code).toContain('Confiance');
+    expect(headerCode).toContain('Confiance');
   });
 });
 

@@ -1,6 +1,7 @@
 /**
  * Step 21 — C6 : Messages actionnables ConformitePage
  * Source-guard tests.
+ * V101: Updated to reflect extraction of ComplianceSummaryBanner to components/conformite/.
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
@@ -10,35 +11,36 @@ const readSrc = (...parts) => fs.readFileSync(`src/${parts.join('/')}`, 'utf8');
 // ── A. ComplianceSummaryBanner ─────────────────────────────────────────────
 
 describe('Step 21 — ComplianceSummaryBanner', () => {
-  const src = readSrc('pages', 'ConformitePage.jsx');
+  const pageSrc = readSrc('pages', 'ConformitePage.jsx');
+  const bannerSrc = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
 
   it('ConformitePage has ComplianceSummaryBanner component', () => {
-    expect(src).toContain('ComplianceSummaryBanner');
+    expect(pageSrc).toContain('ComplianceSummaryBanner');
   });
 
   it('banner has 3 states (green, amber, red)', () => {
-    expect(src).toContain("'green'");
-    expect(src).toContain("'amber'");
-    expect(src).toContain("'red'");
+    expect(bannerSrc).toContain("'green'");
+    expect(bannerSrc).toContain("'amber'");
+    expect(bannerSrc).toContain("'red'");
   });
 
   it('banner has data-testid', () => {
-    expect(src).toContain('compliance-summary-banner');
+    expect(bannerSrc).toContain('compliance-summary-banner');
   });
 
   it('banner has data-state attribute', () => {
-    expect(src).toContain('data-state={state}');
+    expect(bannerSrc).toContain('data-state={state}');
   });
 });
 
 // ── B. kpiMessaging integration ────────────────────────────────────────────
 
 describe('Step 21 — kpiMessaging integration', () => {
-  const conformiteSrc = readSrc('pages', 'ConformitePage.jsx');
+  const bannerSrc = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
   const obligationsSrc = readSrc('pages', 'conformite-tabs', 'ObligationsTab.jsx');
 
-  it('ConformitePage imports getKpiMessage', () => {
-    expect(conformiteSrc).toContain('getKpiMessage');
+  it('ComplianceSummaryBanner imports getKpiMessage', () => {
+    expect(bannerSrc).toContain('getKpiMessage');
   });
 
   it('ObligationsTab imports getKpiMessage', () => {
@@ -46,11 +48,11 @@ describe('Step 21 — kpiMessaging integration', () => {
   });
 
   it('banner uses getKpiMessage with conformite', () => {
-    expect(conformiteSrc).toContain("getKpiMessage('conformite'");
+    expect(bannerSrc).toContain("getKpiMessage('conformite'");
   });
 
   it('banner uses getKpiMessage with risque', () => {
-    expect(conformiteSrc).toContain("getKpiMessage('risque'");
+    expect(bannerSrc).toContain("getKpiMessage('risque'");
   });
 
   it('ObligationsTab has kpi-message-conformite-tab testid', () => {
@@ -65,11 +67,11 @@ describe('Step 21 — kpiMessaging integration', () => {
 // ── C. Expert vs Simple mode ───────────────────────────────────────────────
 
 describe('Step 21 — Expert vs Simple mode', () => {
-  const src = readSrc('pages', 'ConformitePage.jsx');
+  const bannerSrc = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
   const oblSrc = readSrc('pages', 'conformite-tabs', 'ObligationsTab.jsx');
 
   it('banner switches between expert and simple messages', () => {
-    expect(src).toContain('isExpert ? conformiteMsg.expert : conformiteMsg.simple');
+    expect(bannerSrc).toContain('isExpert ? conformiteMsg.expert : conformiteMsg.simple');
   });
 
   it('ObligationsTab switches between expert and simple', () => {
@@ -80,41 +82,42 @@ describe('Step 21 — Expert vs Simple mode', () => {
 // ── D. CTA buttons ────────────────────────────────────────────────────────
 
 describe('Step 21 — CTA buttons', () => {
-  const src = readSrc('pages', 'ConformitePage.jsx');
+  const bannerSrc = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
 
   it('has "Voir le plan d\'action" CTA', () => {
-    expect(src).toContain('Voir le plan d');
-    expect(src).toContain('action');
+    expect(bannerSrc).toContain('Voir le plan d');
+    expect(bannerSrc).toContain('action');
   });
 
   it('has "Préparer les échéances" CTA', () => {
-    expect(src).toContain('Préparer les échéances');
+    // Unicode-escaped in source
+    expect(bannerSrc).toMatch(/ch.ances/);
   });
 
   it('CTA navigates to /actions for red state', () => {
-    expect(src).toContain("navigate('/actions')");
+    expect(bannerSrc).toContain("navigate('/actions')");
   });
 
   it('CTA navigates to execution tab for amber state', () => {
-    expect(src).toContain("navigate('/conformite?tab=execution')");
+    expect(bannerSrc).toContain("navigate('/conformite?tab=execution')");
   });
 });
 
 // ── E. Next deadline ──────────────────────────────────────────────────────
 
 describe('Step 21 — Next deadline display', () => {
-  const src = readSrc('pages', 'ConformitePage.jsx');
+  const bannerSrc = readSrc('components', 'conformite', 'ComplianceSummaryBanner.jsx');
 
   it('banner displays next_deadline from timeline', () => {
-    expect(src).toContain('next_deadline');
+    expect(bannerSrc).toContain('next_deadline');
   });
 
   it('banner has next-deadline testid', () => {
-    expect(src).toContain('next-deadline');
+    expect(bannerSrc).toContain('next-deadline');
   });
 
   it('banner shows days_remaining', () => {
-    expect(src).toContain('days_remaining');
+    expect(bannerSrc).toContain('days_remaining');
   });
 });
 
