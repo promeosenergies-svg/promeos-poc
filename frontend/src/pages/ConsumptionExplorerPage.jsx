@@ -484,6 +484,8 @@ export default function ConsumptionExplorerPage() {
 
   // ── V21-C: Granularity override (user-selectable pills) ─────────────────
   const [granularity, setGranularity] = useState('auto');
+  // V22-B: resolved granularity from backend (for auto-mode indicator)
+  const [resolvedGranularity, setResolvedGranularity] = useState(null);
   // ── Step 10 — F1: YoY comparison toggle ──────────────────────────────────
   const [compareYoy, setCompareYoy] = useState(false);
   const [compareSummary, setCompareSummary] = useState(null);
@@ -523,6 +525,9 @@ export default function ConsumptionExplorerPage() {
     (m) => {
       if (m?.available_granularities && granularity === 'auto') {
         setAvailableGranularities(m.available_granularities);
+      }
+      if (m?.granularity) {
+        setResolvedGranularity(m.granularity);
       }
     },
     [granularity]
@@ -689,6 +694,7 @@ export default function ConsumptionExplorerPage() {
         granularity={granularity}
         setGranularity={setGranularity}
         availableGranularities={availableGranularities}
+        resolvedGranularity={granularity === 'auto' ? resolvedGranularity : null}
         compareYoy={compareYoy}
         setCompareYoy={setCompareYoy}
         onToggleUiMode={toggleUiMode}
