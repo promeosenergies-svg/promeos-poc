@@ -79,12 +79,13 @@ def list_actions_endpoint(
     domain: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = Query(None),
+    owner: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     """List persisted action plan items."""
     from services.action_workflow_service import list_actions, serialize_action
 
-    items = list_actions(db, site_id=site_id, domain=domain, status=status_filter, priority=priority)
+    items = list_actions(db, site_id=site_id, domain=domain, status=status_filter, priority=priority, owner=owner)
     return {"total": len(items), "actions": [serialize_action(i) for i in items]}
 
 
@@ -102,6 +103,7 @@ def actions_summary(
     by_status = {}
     by_priority = {}
     by_domain = {}
+    by_owner = {}
     overdue_count = 0
 
     for item in items:
@@ -109,6 +111,8 @@ def actions_summary(
         p = item.priority or "medium"
         by_priority[p] = by_priority.get(p, 0) + 1
         by_domain[item.domain] = by_domain.get(item.domain, 0) + 1
+        o = item.owner or "non assigné"
+        by_owner[o] = by_owner.get(o, 0) + 1
         if compute_sla_status(item) == "overdue":
             overdue_count += 1
 
@@ -117,10 +121,33 @@ def actions_summary(
         "by_status": by_status,
         "by_priority": by_priority,
         "by_domain": by_domain,
+        "by_owner": by_owner,
         "overdue_count": overdue_count,
         "open_count": by_status.get("open", 0) + by_status.get("in_progress", 0) + by_status.get("reopened", 0),
         "resolved_count": by_status.get("resolved", 0),
     }
+
+
+@router.post("/actions/{action_id}/override-priority")
+def override_priority_endpoint(
+    action_id: int,
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+):
+    """Override action priority manually. Requires reason (min 5 chars)."""
+    from services.action_workflow_service import override_priority, serialize_action
+
+    new_priority = body.get("priority")
+    reason = body.get("reason")
+    if not new_priority:
+        raise HTTPException(status_code=400, detail="priority is required")
+    if not reason or len(str(reason).strip()) < 5:
+        raise HTTPException(status_code=400, detail="reason is required (min 5 chars)")
+    item = override_priority(db, action_id, new_priority, reason)
+    if not item:
+        raise HTTPException(status_code=404, detail="Action non trouvée ou priorité invalide")
+    db.commit()
+    return serialize_action(item)
 
 
 @router.patch("/actions/{action_id}")

@@ -21,6 +21,8 @@ class ActionPlanItem(Base):
 
     # Priority & SLA
     priority = Column(String(20), nullable=False, default="medium", comment="critical|high|medium|low")
+    priority_source = Column(String(20), nullable=False, default="auto", comment="auto|manual")
+    priority_override_reason = Column(String(500), nullable=True, comment="Reason if priority was manually overridden")
     sla_days = Column(Integer, nullable=True, comment="Target resolution in days")
     sla_status = Column(String(20), nullable=True, comment="on_track|at_risk|overdue|resolved")
     source_ref = Column(String(300), nullable=True, comment="Link to source: compliance/billing/purchase")

@@ -29,6 +29,7 @@ def create_action_from_issue(db: Session, issue_data: dict, owner: str = None, d
         owner=owner,
         evidence_required=issue_data.get("severity") in ("critical", "high"),
         priority=priority,
+        priority_source="auto",
         sla_days=SLA_DAYS.get(priority, 30),
         source_ref=f"{issue_data.get('domain', 'unknown')}:{issue_data.get('issue_code', 'unknown')}",
     )
@@ -45,11 +46,36 @@ def update_action(db: Session, action_id: int, updates: dict) -> ActionPlanItem:
     item = db.query(ActionPlanItem).filter(ActionPlanItem.id == action_id).first()
     if not item:
         return None
-    for key in ("owner", "due_date", "status", "evidence_note", "evidence_received"):
-        if key in updates:
+    for key in ("owner", "status", "evidence_note", "evidence_received"):
+        if key in updates and updates[key] is not None:
             setattr(item, key, updates[key])
+    if "due_date" in updates:
+        val = updates["due_date"]
+        if val:
+            item.due_date = datetime.fromisoformat(val) if isinstance(val, str) else val
+        else:
+            item.due_date = None
     if "status" in updates and updates["status"] == "in_progress" and item.status == "open":
         item.status = "in_progress"
+    item.updated_at = datetime.now(timezone.utc)
+    db.flush()
+    return item
+
+
+def override_priority(db: Session, action_id: int, new_priority: str, reason: str = None) -> ActionPlanItem:
+    """Override priority manually. Reason required."""
+    if new_priority not in ("critical", "high", "medium", "low"):
+        return None
+    if not reason or len(reason.strip()) < 5:
+        return None  # Reason required for override
+    item = db.query(ActionPlanItem).filter(ActionPlanItem.id == action_id).first()
+    if not item:
+        return None
+    item.priority = new_priority
+    item.priority_source = "manual"
+    item.priority_override_reason = reason.strip()
+    # Recalc SLA based on new priority
+    item.sla_days = SLA_DAYS.get(new_priority, 30)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
     return item
@@ -107,7 +133,7 @@ def compute_sla_status(item: ActionPlanItem) -> str:
 
 
 def list_actions(
-    db: Session, site_id: int = None, domain: str = None, status: str = None, priority: str = None
+    db: Session, site_id: int = None, domain: str = None, status: str = None, priority: str = None, owner: str = None
 ) -> list:
     """List persisted actions with optional filters."""
     q = db.query(ActionPlanItem)
@@ -119,6 +145,8 @@ def list_actions(
         q = q.filter(ActionPlanItem.status == status)
     if priority:
         q = q.filter(ActionPlanItem.priority == priority)
+    if owner:
+        q = q.filter(ActionPlanItem.owner == owner)
     return q.order_by(ActionPlanItem.created_at.desc()).all()
 
 
@@ -136,6 +164,8 @@ def serialize_action(item: ActionPlanItem) -> dict:
         "estimated_impact_eur": item.estimated_impact_eur,
         "recommended_action": item.recommended_action,
         "priority": item.priority or "medium",
+        "priority_source": item.priority_source or "auto",
+        "priority_override_reason": item.priority_override_reason,
         "sla_days": item.sla_days,
         "sla_status": compute_sla_status(item),
         "source_ref": item.source_ref,

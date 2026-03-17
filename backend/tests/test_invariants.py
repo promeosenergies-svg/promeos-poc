@@ -863,3 +863,101 @@ class TestActionOperational:
         )
         assert r.status_code == 200
         assert r.json()["source_ref"] == "billing:no_contract"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 16. Action Owner & Priority Override
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionOwnerPriority:
+    """Verify owner assignment and priority override."""
+
+    def test_action_assignable_to_owner(self, app_client):
+        """Can assign owner to action"""
+        client, _ = app_client
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "owner_test",
+                "domain": "compliance",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Owner test",
+                "owner": "alice@promeos.io",
+            },
+        )
+        assert r1.status_code == 200
+        assert r1.json()["owner"] == "alice@promeos.io"
+
+    def test_action_update_owner(self, app_client):
+        """Can update owner on existing action"""
+        client, _ = app_client
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "update_owner_test",
+                "domain": "billing",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Update owner test",
+            },
+        )
+        action_id = r1.json()["id"]
+
+        r2 = client.patch(f"/api/action-center/actions/{action_id}", json={"owner": "bob@promeos.io"})
+        assert r2.status_code == 200
+        assert r2.json()["owner"] == "bob@promeos.io"
+
+    def test_priority_override_requires_reason(self, app_client):
+        """Cannot override priority without reason"""
+        client, _ = app_client
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "override_no_reason",
+                "domain": "compliance",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Override test",
+            },
+        )
+        action_id = r1.json()["id"]
+
+        r2 = client.post(f"/api/action-center/actions/{action_id}/override-priority", json={"priority": "critical"})
+        assert r2.status_code == 400
+
+    def test_priority_override_with_reason(self, app_client):
+        """Can override priority with valid reason"""
+        client, _ = app_client
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "override_ok",
+                "domain": "billing",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Override OK test",
+            },
+        )
+        action_id = r1.json()["id"]
+
+        r2 = client.post(
+            f"/api/action-center/actions/{action_id}/override-priority",
+            json={"priority": "critical", "reason": "Demande direction urgente"},
+        )
+        assert r2.status_code == 200
+        assert r2.json()["priority"] == "critical"
+        assert r2.json()["priority_source"] == "manual"
+        assert r2.json()["sla_days"] == 7
+
+    def test_summary_includes_owner_breakdown(self, app_client):
+        """Summary includes owner breakdown"""
+        client, _ = app_client
+        r = client.get("/api/action-center/actions/summary")
+        assert r.status_code == 200
+        assert "by_owner" in r.json()
