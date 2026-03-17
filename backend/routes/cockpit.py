@@ -181,3 +181,11 @@ def get_portefeuilles(
         result.append({"id": p.id, "nom": p.nom, "description": p.description, "nb_sites": count_map.get(p.id, 0)})
 
     return {"portefeuilles": result, "total": len(result)}
+
+
+@router.get("/kpi-catalog")
+def get_kpi_catalog():
+    """GET /api/kpi-catalog — Catalogue machine-readable des KPIs canoniques PROMEOS."""
+    from schemas.kpi_catalog import list_kpis, KPI_CATALOG
+
+    return {"count": len(KPI_CATALOG), "kpis": list_kpis()}

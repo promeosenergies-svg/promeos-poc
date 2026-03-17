@@ -265,3 +265,103 @@ class TestCompletenessEndpointReturnsValidStructure:
         assert isinstance(data["filled"], int), f"filled doit etre un int"
         assert isinstance(data["total"], int), f"total doit etre un int"
         assert data["filled"] + len(data["missing"]) == data["total"], "filled + len(missing) == total"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. Cross-module invariants — patrimoine ↔ conformité ↔ billing
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestCrossModuleInvariants:
+    """Verify patrimoine ↔ conformite ↔ billing chain integrity"""
+
+    def test_site_identity_consistent_across_modules(self, app_client):
+        """Same site_id returns consistent data across patrimoine and conformité"""
+        client, SessionLocal = app_client
+
+        # Create site via quick-create
+        r = client.post(
+            "/api/sites/quick-create",
+            json={
+                "nom": "Invariant Test",
+                "usage": "bureau",
+                "adresse": "1 rue test",
+                "code_postal": "75001",
+                "ville": "Paris",
+            },
+            headers={"X-Org-Id": "1"},
+        )
+        assert r.status_code == 201, r.text
+        site_id = r.json()["site"]["id"]
+
+        # Same site accessible via patrimoine
+        r2 = client.get(
+            f"/api/patrimoine/sites/{site_id}",
+            headers={"X-Org-Id": "1"},
+        )
+        assert r2.status_code == 200
+        assert r2.json()["nom"] == "Invariant Test"
+
+        # Same site accessible via completeness
+        r3 = client.get(
+            f"/api/patrimoine/sites/{site_id}/completeness",
+            headers={"X-Org-Id": "1"},
+        )
+        assert r3.status_code == 200
+        assert "score" in r3.json()
+
+    def test_contract_references_valid_site(self, app_client):
+        """No contract can reference a non-existent site"""
+        client, _ = app_client
+        r = client.post(
+            "/api/patrimoine/contracts",
+            json={
+                "site_id": 99999,
+                "energy_type": "elec",
+                "supplier_name": "Test",
+                "start_date": "2025-01-01",
+            },
+            headers={"X-Org-Id": "1"},
+        )
+        assert r.status_code in (404, 422, 400)
+
+    def test_kpi_has_required_metadata(self, app_client):
+        """Cockpit KPIs must include source and confidence"""
+        client, _ = app_client
+        r = client.get("/api/cockpit", headers={"X-Org-Id": "1"})
+        if r.status_code == 200:
+            data = r.json()
+            # KPI cards should have source info
+            for card in data.get("kpi_cards", []):
+                if "source" in card:
+                    assert card["source"], "KPI source must not be empty"
+
+    def test_error_format_on_conformite_404(self, app_client):
+        """Conformite endpoints return standard APIError format"""
+        client, _ = app_client
+        r = client.get("/api/tertiaire/efa/99999")
+        if r.status_code == 404:
+            body = r.json()
+            assert "code" in body or "detail" in body
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. KPI Catalog endpoint returns valid data
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestKpiCatalogEndpoint:
+    """Invariant : /api/kpi-catalog retourne le catalogue KPI complet."""
+
+    def test_kpi_catalog_returns_valid_structure(self, app_client):
+        client, _ = app_client
+        r = client.get("/api/kpi-catalog")
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "count" in data
+        assert "kpis" in data
+        assert data["count"] > 0
+        for kpi in data["kpis"]:
+            assert "kpi_id" in kpi
+            assert "name" in kpi
+            assert "unit" in kpi

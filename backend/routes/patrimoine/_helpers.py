@@ -225,6 +225,10 @@ def _serialize_site(site: Site) -> dict:
         ),
         "anomalie_facture": site.anomalie_facture,
         "conso_kwh_an": site.annual_kwh_total,
+        "compliance_needs_review": (
+            str(getattr(site, "statut_bacs", "")).endswith("A_RISQUE")
+            or str(getattr(site, "statut_decret_tertiaire", "")).endswith("A_RISQUE")
+        ),
     }
 
 

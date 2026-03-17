@@ -7,3 +7,20 @@ from .patrimoine_schemas import (  # noqa: F401
     SiteUpdateRequest,
     ContractCreateRequest,
 )
+from .conformite_schemas import (  # noqa: F401
+    RecomputeRequest,
+    ComplianceFindingPatch,
+    EfaCreateRequest,
+    EfaUpdateRequest,
+)
+from .billing_schemas import (  # noqa: F401
+    InvoiceAuditRequest,
+    BillingReconcileRequest,
+    PaymentRuleCreate,
+)
+from .kpi_catalog import (  # noqa: F401
+    KpiDefinition,
+    KPI_CATALOG,
+    get_kpi,
+    list_kpis,
+)

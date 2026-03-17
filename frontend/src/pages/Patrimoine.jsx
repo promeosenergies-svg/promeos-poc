@@ -458,6 +458,7 @@ export default function Patrimoine() {
     const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
     const nc = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
     const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
+    const needsReview = scopedSites.filter((s) => s.compliance_needs_review).length;
     const risque = scopedSites.reduce((a, s) => a + (s.risque_eur || 0), 0);
     const surface = scopedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
     const anomalies = scopedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
