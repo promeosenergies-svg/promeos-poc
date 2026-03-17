@@ -173,9 +173,10 @@ describe('ConsumptionExplorer EvidenceDrawer integration', () => {
     expect(headerSrc).toContain('onEvidence');
   });
 
-  it('ConsoKpiHeader passes evidenceId for kWh and CO2e tiles', () => {
-    expect(headerSrc).toContain('evidenceId="conso-kwh-total"');
-    expect(headerSrc).toContain('evidenceId="conso-co2e"');
+  it('ConsoKpiHeader has evidence data-testid for kWh and CO2e', () => {
+    // #90: inline strip uses data-testid directly instead of evidenceId prop
+    expect(headerSrc).toContain('evidence-open-conso-kwh-total');
+    expect(headerSrc).toContain('evidence-open-conso-co2e');
   });
 
   it('ConsoKpiHeader has Pourquoi ce chiffre aria-label', () => {

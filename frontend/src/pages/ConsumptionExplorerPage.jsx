@@ -17,7 +17,6 @@ import {
   Zap,
   Database,
   Wifi,
-  Info,
   Grid3x3,
   Cloud,
   Lightbulb,
@@ -614,20 +613,17 @@ export default function ConsumptionExplorerPage() {
   const siteId = primarySiteId; // backward compat for panels
 
   return (
-    <div className="space-y-5">
-      {/* Page header + cross-nav */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 size={20} className="text-blue-600" />
-            Explorateur de consommation
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Visualisez et comparez les courbes de consommation de vos sites — par période, énergie
-            et granularité.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+    <div className="space-y-3">
+      {/* Page header + scope badge + cross-nav — compact single row (#90) */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <BarChart3 size={18} className="text-blue-600" />
+          Explorateur de consommation
+        </h1>
+        {selectedSiteId && siteIds.length === 1 && (
+          <Badge status="info">{scopeLabel} — multi-sélection disponible</Badge>
+        )}
+        <div className="flex items-center gap-2 ml-auto shrink-0">
           <Link
             to={toConsoDiag()}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
@@ -644,17 +640,6 @@ export default function ConsumptionExplorerPage() {
           </Link>
         </div>
       </div>
-
-      {/* V1.3: Scope coherence banner — single site indicator */}
-      {selectedSiteId && siteIds.length === 1 && (
-        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
-          <Info size={14} className="text-blue-500 shrink-0" />
-          <span className="text-blue-700">
-            Vous explorez <strong>{scopeLabel}</strong>. La multi-selection est disponible via le
-            selecteur de sites ci-dessous.
-          </span>
-        </div>
-      )}
 
       {/* Unified sticky filter bar */}
       <StickyFilterBar
@@ -698,26 +683,9 @@ export default function ConsumptionExplorerPage() {
         compareYoy={compareYoy}
         setCompareYoy={setCompareYoy}
         onToggleUiMode={toggleUiMode}
+        portfolioBannerDismissed={portfolioBannerDismissed}
+        onDismissPortfolioBanner={() => setPortfolioBannerDismissed(true)}
       />
-
-      {/* Portfolio info banner — non-blocking, dismissible */}
-      {isPortfolioMode && !portfolioBannerDismissed && (
-        <div className="flex items-start gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-700">
-          <Info size={14} className="shrink-0 mt-0.5 text-indigo-500" />
-          <span className="flex-1">
-            <strong>Mode Portfolio</strong> — vue agrégée multi-sites (mode Agrégé uniquement).
-            Chaque site contribue à l&apos;enveloppe globale. Pour comparer des sites
-            individuellement, quittez le Portfolio.
-          </span>
-          <button
-            onClick={() => setPortfolioBannerDismissed(true)}
-            className="shrink-0 text-indigo-400 hover:text-indigo-600"
-            aria-label="Fermer la bannière Portfolio"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      )}
 
       {/* KPI Header — 6 KPIs respecting scope global */}
       {showContent && (
