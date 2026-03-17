@@ -153,6 +153,10 @@ def query_timeseries(
 
     meter_id_list = [m.id for m in meters]
 
+    # Detect finest native data resolution for these meters (for frontend pill filtering)
+    native_freqs = _resolve_best_freq(db, meter_id_list, date_from, date_to, "monthly")
+    native_sampling_minutes = min((_SAMPLING_MINUTES.get(f.value, 60) for f in native_freqs), default=60)
+
     # 2. Build bucket expression
     bucket_expr = _bucket_key_expr(granularity)
 
@@ -254,7 +258,16 @@ def query_timeseries(
 
     return {
         "series": series,
-        "meta": _meta(granularity, n_points, len(meters), date_from, date_to, metric, series=series),
+        "meta": _meta(
+            granularity,
+            n_points,
+            len(meters),
+            date_from,
+            date_to,
+            metric,
+            series=series,
+            native_sampling_minutes=native_sampling_minutes,
+        ),
         "availability": availability,
     }
 
@@ -297,8 +310,8 @@ def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]
     return result
 
 
-def _meta(granularity, n_points, n_meters, date_from, date_to, metric, series=None):
-    sampling_minutes = _SAMPLING_MINUTES.get(granularity, 60)
+def _meta(granularity, n_points, n_meters, date_from, date_to, metric, series=None, native_sampling_minutes=None):
+    sampling_minutes = native_sampling_minutes or _SAMPLING_MINUTES.get(granularity, 60)
     span_days = max((date_to - date_from).days, 1)
     available = _available_granularities(sampling_minutes, span_days)
     # valid_count: points with non-null value in the aggregate series
