@@ -39,6 +39,7 @@ class ActionPlanItem(Base):
     resolved_at = Column(DateTime, nullable=True)
     resolved_by = Column(String(255), nullable=True)
     reopened_at = Column(DateTime, nullable=True)
+    last_status_change_at = Column(DateTime, nullable=True, comment="Last time status changed")
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

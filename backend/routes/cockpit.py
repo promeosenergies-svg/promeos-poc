@@ -127,6 +127,20 @@ def get_cockpit(
         wrap_kpi_runtime("completeness_score", None, perimeter="organisation"),
     ]
 
+    # Action center counts
+    try:
+        from services.action_center_service import get_action_center_issues
+
+        action_issues = get_action_center_issues(db, effective_org_id)
+        action_center_data = {
+            "total_issues": action_issues["total"],
+            "critical": action_issues["severities"].get("critical", 0),
+            "high": action_issues["severities"].get("high", 0),
+            "domains": action_issues["domains"],
+        }
+    except Exception:
+        action_center_data = {"total_issues": 0, "critical": 0, "high": 0, "domains": {}}
+
     return JSONResponse(
         content={
             "organisation": {"nom": org.nom, "type_client": org.type_client},
@@ -145,6 +159,7 @@ def get_cockpit(
                 "conso_sites_with_data": conso_sites_with_data,
             },
             "kpi_details": kpi_details,
+            "action_center": action_center_data,
             "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
         },
         headers={"Cache-Control": "public, max-age=30"},

@@ -961,3 +961,76 @@ class TestActionOwnerPriority:
         r = client.get("/api/action-center/actions/summary")
         assert r.status_code == 200
         assert "by_owner" in r.json()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 17. Due Date SLA Integration
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestDueDateSla:
+    """Verify due_date integration with SLA."""
+
+    def test_action_with_due_date_sla(self, app_client):
+        """Action with explicit due_date uses it for SLA computation"""
+        client, _ = app_client
+        from datetime import datetime, timedelta
+
+        future = (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "due_date_test",
+                "domain": "compliance",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Due date test",
+                "due_date": future,
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["sla_status"] == "on_track"
+
+    def test_action_overdue_with_past_due_date(self, app_client):
+        """Action with past due_date is overdue"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "overdue_due_test",
+                "domain": "billing",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Overdue test",
+                "due_date": "2020-01-01",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["sla_status"] == "overdue"
+
+    def test_summary_has_sla_breakdown(self, app_client):
+        """Summary includes by_sla breakdown"""
+        client, _ = app_client
+        r = client.get("/api/action-center/actions/summary")
+        assert r.status_code == 200
+        assert "by_sla" in r.json()
+
+    def test_cockpit_includes_action_center(self, app_client):
+        """Cockpit response includes action_center counts"""
+        client, _ = app_client
+        # Create a site so org exists
+        client.post("/api/sites/quick-create", json={"nom": "CockpitAC", "usage": "bureau"})
+        r = client.get("/api/cockpit", headers={"X-Org-Id": "1"})
+        assert r.status_code == 200
+        assert "action_center" in r.json()
+        ac = r.json()["action_center"]
+        assert "total_issues" in ac
+        assert "critical" in ac
+
+    def test_filter_due_before(self, app_client):
+        """Can filter actions by due_before"""
+        client, _ = app_client
+        r = client.get("/api/action-center/actions?due_before=2030-12-31")
+        assert r.status_code == 200

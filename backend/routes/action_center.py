@@ -80,12 +80,23 @@ def list_actions_endpoint(
     status_filter: Optional[str] = Query(None, alias="status"),
     priority: Optional[str] = Query(None),
     owner: Optional[str] = Query(None),
+    due_before: Optional[str] = Query(None, description="Due date before (ISO)"),
+    due_after: Optional[str] = Query(None, description="Due date after (ISO)"),
     db: Session = Depends(get_db),
 ):
     """List persisted action plan items."""
     from services.action_workflow_service import list_actions, serialize_action
 
-    items = list_actions(db, site_id=site_id, domain=domain, status=status_filter, priority=priority, owner=owner)
+    items = list_actions(
+        db,
+        site_id=site_id,
+        domain=domain,
+        status=status_filter,
+        priority=priority,
+        owner=owner,
+        due_before=due_before,
+        due_after=due_after,
+    )
     return {"total": len(items), "actions": [serialize_action(i) for i in items]}
 
 
@@ -106,6 +117,7 @@ def actions_summary(
     by_owner = {}
     overdue_count = 0
 
+    by_sla = {}
     for item in items:
         by_status[item.status] = by_status.get(item.status, 0) + 1
         p = item.priority or "medium"
@@ -113,7 +125,9 @@ def actions_summary(
         by_domain[item.domain] = by_domain.get(item.domain, 0) + 1
         o = item.owner or "non assigné"
         by_owner[o] = by_owner.get(o, 0) + 1
-        if compute_sla_status(item) == "overdue":
+        sla = compute_sla_status(item)
+        by_sla[sla] = by_sla.get(sla, 0) + 1
+        if sla == "overdue":
             overdue_count += 1
 
     return {
@@ -122,6 +136,7 @@ def actions_summary(
         "by_priority": by_priority,
         "by_domain": by_domain,
         "by_owner": by_owner,
+        "by_sla": by_sla,
         "overdue_count": overdue_count,
         "open_count": by_status.get("open", 0) + by_status.get("in_progress", 0) + by_status.get("reopened", 0),
         "resolved_count": by_status.get("resolved", 0),

@@ -57,6 +57,8 @@ def update_action(db: Session, action_id: int, updates: dict) -> ActionPlanItem:
             item.due_date = None
     if "status" in updates and updates["status"] == "in_progress" and item.status == "open":
         item.status = "in_progress"
+    if "status" in updates:
+        item.last_status_change_at = datetime.now(timezone.utc)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
     return item
@@ -92,6 +94,7 @@ def resolve_action(db: Session, action_id: int, resolution_note: str = None, res
     item.resolution_note = resolution_note
     item.resolved_at = datetime.now(timezone.utc)
     item.resolved_by = resolved_by or "system"
+    item.last_status_change_at = datetime.now(timezone.utc)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
     logger.info("Action %d resolved by %s", action_id, resolved_by)
@@ -107,6 +110,7 @@ def reopen_action(db: Session, action_id: int, reason: str = None) -> ActionPlan
     item.reopened_at = datetime.now(timezone.utc)
     item.resolved_at = None
     item.resolution_note = reason or f"Réouvert (précédent: {item.resolution_note or 'N/A'})"
+    item.last_status_change_at = datetime.now(timezone.utc)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
     logger.info("Action %d reopened", action_id)
@@ -114,16 +118,27 @@ def reopen_action(db: Session, action_id: int, reason: str = None) -> ActionPlan
 
 
 def compute_sla_status(item: ActionPlanItem) -> str:
-    """Compute SLA status based on creation date and sla_days."""
-    if item.status == "resolved":
+    """Compute SLA status. Prefers due_date if set, falls back to sla_days from creation."""
+    if item.status in ("resolved", "dismissed"):
         return "resolved"
-    if not item.sla_days or not item.created_at:
-        return "on_track"
+
     from datetime import timedelta
 
     now = datetime.now(timezone.utc)
-    created = item.created_at.replace(tzinfo=timezone.utc) if item.created_at.tzinfo is None else item.created_at
-    deadline = created + timedelta(days=item.sla_days)
+
+    # Prefer explicit due_date
+    if item.due_date:
+        deadline = item.due_date
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+    elif item.sla_days and item.created_at:
+        created = item.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        deadline = created + timedelta(days=item.sla_days)
+    else:
+        return "on_track"
+
     days_left = (deadline - now).days
     if days_left < 0:
         return "overdue"
@@ -133,7 +148,14 @@ def compute_sla_status(item: ActionPlanItem) -> str:
 
 
 def list_actions(
-    db: Session, site_id: int = None, domain: str = None, status: str = None, priority: str = None, owner: str = None
+    db: Session,
+    site_id: int = None,
+    domain: str = None,
+    status: str = None,
+    priority: str = None,
+    owner: str = None,
+    due_before: str = None,
+    due_after: str = None,
 ) -> list:
     """List persisted actions with optional filters."""
     q = db.query(ActionPlanItem)
@@ -147,6 +169,10 @@ def list_actions(
         q = q.filter(ActionPlanItem.priority == priority)
     if owner:
         q = q.filter(ActionPlanItem.owner == owner)
+    if due_before:
+        q = q.filter(ActionPlanItem.due_date <= datetime.fromisoformat(due_before))
+    if due_after:
+        q = q.filter(ActionPlanItem.due_date >= datetime.fromisoformat(due_after))
     return q.order_by(ActionPlanItem.created_at.desc()).all()
 
 
@@ -180,6 +206,7 @@ def serialize_action(item: ActionPlanItem) -> dict:
         "resolved_at": item.resolved_at.isoformat() if item.resolved_at else None,
         "resolved_by": item.resolved_by,
         "reopened_at": item.reopened_at.isoformat() if item.reopened_at else None,
+        "last_status_change_at": item.last_status_change_at.isoformat() if item.last_status_change_at else None,
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
         "traceable": True,
