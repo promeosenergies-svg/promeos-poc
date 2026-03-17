@@ -157,28 +157,41 @@ describe('getAvailableGranularities — samplingMinutes intersection (V22-B)', (
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
     expect(keys).toContain('monthly');
+    expect(keys).not.toContain('15min'); // period > 14d
     expect(keys).not.toContain('30min'); // period > 14d
   });
 
-  it('samplingMinutes=1440 (daily) → 30min and hourly excluded even within period window', () => {
-    // days=7 normally includes 30min and hourly, but daily data can't be 30min
+  it('samplingMinutes=1440 (daily) → 15min, 30min and hourly excluded even within period window', () => {
+    // days=7 normally includes 15min, 30min and hourly, but daily data can't be sub-hourly
     const keys = getAvailableGranularities(7, 1440).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
+    expect(keys).not.toContain('15min');
     expect(keys).not.toContain('30min');
     expect(keys).not.toContain('hourly');
   });
 
-  it('samplingMinutes=30 → 30min and coarser available for short period', () => {
+  it('samplingMinutes=30 → 30min and coarser available for short period, 15min excluded', () => {
     const keys = getAvailableGranularities(7, 30).map((g) => g.key);
     expect(keys).toContain('auto');
+    expect(keys).not.toContain('15min'); // 15 < 30 sampling
     expect(keys).toContain('30min');
     expect(keys).toContain('hourly');
     expect(keys).toContain('daily');
   });
 
-  it('samplingMinutes=60 (hourly) → 30min excluded', () => {
+  it('samplingMinutes=15 → 15min available for short period', () => {
+    const keys = getAvailableGranularities(7, 15).map((g) => g.key);
+    expect(keys).toContain('auto');
+    expect(keys).toContain('15min');
+    expect(keys).toContain('30min');
+    expect(keys).toContain('hourly');
+    expect(keys).toContain('daily');
+  });
+
+  it('samplingMinutes=60 (hourly) → 15min and 30min excluded', () => {
     const keys = getAvailableGranularities(7, 60).map((g) => g.key);
+    expect(keys).not.toContain('15min');
     expect(keys).not.toContain('30min');
     expect(keys).toContain('hourly');
   });

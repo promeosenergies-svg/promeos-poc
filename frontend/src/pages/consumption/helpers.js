@@ -176,6 +176,7 @@ export function interpretClimateSensitivity(slope, r2) {
 
 // Sampling interval in minutes for each granularity key (must match backend)
 const GRANULARITY_MINUTES = {
+  '15min': 15,
   '30min': 30,
   hourly: 60,
   daily: 1440,
@@ -195,6 +196,7 @@ const GRANULARITY_MINUTES = {
 export function getAvailableGranularities(days, samplingMinutes = null) {
   const all = [
     { key: 'auto', label: 'Auto' },
+    { key: '15min', label: '15 min', maxDays: 14 },
     { key: '30min', label: '30 min', maxDays: 14 },
     { key: 'hourly', label: '1 h', maxDays: 200 },
     { key: 'daily', label: '1 j', minDays: 7 },
