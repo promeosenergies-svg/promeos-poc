@@ -180,60 +180,92 @@ export default function ConsoKpiHeader({
       className="flex flex-wrap items-baseline gap-x-8 gap-y-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-xs"
       aria-label="KPIs Consommation"
     >
-      <div className="flex flex-col" title="Somme des relevés sur la période sélectionnée">
-        <span className="text-gray-400">{getKpiLabel('total_kwh', isExpert)}</span>
-        <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
-          {kwhLabel}
-          {compareSummary?.delta_pct != null && <TrendDelta deltaPct={compareSummary.delta_pct} />}
-          {onEvidence && (
-            <button
-              onClick={() => onEvidence('conso-kwh-total')}
-              className="text-gray-300 hover:text-blue-500 transition"
-              aria-label={`Pourquoi ce chiffre : ${getKpiLabel('total_kwh', isExpert)}`}
-              data-testid="evidence-open-conso-kwh-total"
-            >
-              <HelpCircle size={12} />
-            </button>
-          )}
-        </span>
+      <div
+        className="flex items-center gap-2"
+        title="Somme des relevés sur la période sélectionnée"
+      >
+        <Zap size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">{getKpiLabel('total_kwh', isExpert)}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
+            {kwhLabel}
+            {compareSummary?.delta_pct != null && (
+              <TrendDelta deltaPct={compareSummary.delta_pct} />
+            )}
+            {onEvidence && (
+              <button
+                onClick={() => onEvidence('conso-kwh-total')}
+                className="text-gray-300 hover:text-blue-500 transition"
+                aria-label={`Pourquoi ce chiffre : ${getKpiLabel('total_kwh', isExpert)}`}
+                data-testid="evidence-open-conso-kwh-total"
+              >
+                <HelpCircle size={12} />
+              </button>
+            )}
+          </span>
+        </div>
       </div>
       <div
-        className="flex flex-col"
+        className="flex items-center gap-2"
         title={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`}
       >
-        <span className="text-gray-400">Coût total</span>
-        <span className="font-semibold text-gray-700 whitespace-nowrap">{eurLabel}</span>
-      </div>
-      <div className="flex flex-col" title="Prix moyen = EUR total / MWh total (source HP/HC)">
-        <span className="text-gray-400">Prix moyen</span>
-        <span className="font-semibold text-gray-700 whitespace-nowrap">{eurMwhLabel}</span>
-      </div>
-      <div className="flex flex-col" title="Facteur ADEME 2024 : 0,052 kgCO₂e/kWh (mix France)">
-        <span className="text-gray-400">{getKpiLabel('total_kgco2e', isExpert)}</span>
-        <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
-          {co2Label}
-          {onEvidence && (
-            <button
-              onClick={() => onEvidence('conso-co2e')}
-              className="text-gray-300 hover:text-blue-500 transition"
-              aria-label={`Pourquoi ce chiffre : ${getKpiLabel('total_kgco2e', isExpert)}`}
-              data-testid="evidence-open-conso-co2e"
-            >
-              <HelpCircle size={12} />
-            </button>
-          )}
-        </span>
-      </div>
-      <div className="flex flex-col" title="95e percentile de puissance sur les créneaux horaires">
-        <span className="text-gray-400">{getKpiLabel('p95_kw', isExpert)}</span>
-        <span className="font-semibold text-gray-700 whitespace-nowrap">{p95Label}</span>
+        <Euro size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">Coût total</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{eurLabel}</span>
+        </div>
       </div>
       <div
-        className="flex flex-col"
+        className="flex items-center gap-2"
+        title="Prix moyen = EUR total / MWh total (source HP/HC)"
+      >
+        <TrendingUp size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">Prix moyen</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{eurMwhLabel}</span>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-2"
+        title="Facteur ADEME 2024 : 0,052 kgCO₂e/kWh (mix France)"
+      >
+        <Leaf size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">{getKpiLabel('total_kgco2e', isExpert)}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
+            {co2Label}
+            {onEvidence && (
+              <button
+                onClick={() => onEvidence('conso-co2e')}
+                className="text-gray-300 hover:text-blue-500 transition"
+                aria-label={`Pourquoi ce chiffre : ${getKpiLabel('total_kgco2e', isExpert)}`}
+                data-testid="evidence-open-conso-co2e"
+              >
+                <HelpCircle size={12} />
+              </button>
+            )}
+          </span>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-2"
+        title="95e percentile de puissance sur les créneaux horaires"
+      >
+        <Activity size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">{getKpiLabel('p95_kw', isExpert)}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{p95Label}</span>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-2"
         title="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine"
       >
-        <span className="text-gray-400">{getKpiLabel('night_ratio', isExpert)}</span>
-        <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>{basePctLabel}</span>
+        <Moon size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">{getKpiLabel('night_ratio', isExpert)}</span>
+          <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>{basePctLabel}</span>
+        </div>
       </div>
       {confBadge && (
         <div className="flex flex-col ml-auto" title={`Comment calculé ? ${confTooltip}`}>
