@@ -82,3 +82,15 @@ export const downloadAuditPDF = (orgId = null) =>
 export const getActionCenterIssues = (params = {}) =>
   cachedGet('/action-center/issues', { params }, 30000);
 export const getActionCenterSummary = () => cachedGet('/action-center/summary', {}, 30000);
+
+// ── Action Center Workflow ──
+export const getActionCenterActions = (params = {}) =>
+  cachedGet('/action-center/actions', { params }, 15000);
+export const createActionCenterAction = (data) =>
+  api.post('/action-center/actions', data).then((r) => r.data);
+export const updateActionCenterAction = (id, data) =>
+  api.patch(`/action-center/actions/${id}`, data).then((r) => r.data);
+export const resolveActionCenterAction = (id, data = {}) =>
+  api.post(`/action-center/actions/${id}/resolve`, data).then((r) => r.data);
+export const reopenActionCenterAction = (id, data = {}) =>
+  api.post(`/action-center/actions/${id}/reopen`, data).then((r) => r.data);

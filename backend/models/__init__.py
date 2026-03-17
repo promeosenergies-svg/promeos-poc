@@ -253,6 +253,9 @@ from .market_price import MarketPrice
 # Compliance Score History (Step 33)
 from .compliance_score_history import ComplianceScoreHistory
 
+# Action Plan Items (Workflow)
+from .action_plan_item import ActionPlanItem
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -461,4 +464,6 @@ __all__ = [
     "MarketPrice",
     # Compliance Score History (Step 33)
     "ComplianceScoreHistory",
+    # Action Plan Items (Workflow)
+    "ActionPlanItem",
 ]

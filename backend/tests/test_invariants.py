@@ -648,3 +648,124 @@ class TestActionCenter:
         assert r2.status_code == 200
         # New site should have at least patrimoine incomplete or compliance issue
         # (it has no contract, no PDL, possibly incomplete)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 14. Action Workflow — create → update → resolve → reopen
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionWorkflow:
+    """Verify action center workflow: create → update → resolve → reopen."""
+
+    def test_create_action_from_issue(self, app_client):
+        """Can create a persisted action from an issue payload"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "compliance_review_1",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "compliance_needs_review",
+                "issue_label": "Test action",
+                "reason_codes": ["a_risque"],
+            },
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "open"
+        assert data["issue_id"] == "compliance_review_1"
+        assert data["id"] > 0
+
+    def test_resolve_action(self, app_client):
+        """Can resolve an action"""
+        client, _ = app_client
+        # Create
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "test_resolve",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Resolve test",
+            },
+        )
+        action_id = r1.json()["id"]
+
+        # Resolve
+        r2 = client.post(
+            f"/api/action-center/actions/{action_id}/resolve", json={"resolution_note": "Corrigé manuellement"}
+        )
+        assert r2.status_code == 200
+        assert r2.json()["status"] == "resolved"
+        assert r2.json()["resolution_note"] == "Corrigé manuellement"
+        assert r2.json()["resolved_at"] is not None
+
+    def test_reopen_action(self, app_client):
+        """Can reopen a resolved action"""
+        client, _ = app_client
+        # Create + resolve
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "test_reopen",
+                "domain": "patrimoine",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Reopen test",
+            },
+        )
+        action_id = r1.json()["id"]
+        client.post(f"/api/action-center/actions/{action_id}/resolve", json={})
+
+        # Reopen
+        r3 = client.post(f"/api/action-center/actions/{action_id}/reopen", json={"reason": "Problème récurrent"})
+        assert r3.status_code == 200
+        assert r3.json()["status"] == "reopened"
+        assert r3.json()["reopened_at"] is not None
+
+    def test_list_actions_filtered(self, app_client):
+        """Can list actions with filters"""
+        client, _ = app_client
+        # Create two actions in different domains
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "filter_test_1",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Filter 1",
+            },
+        )
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "filter_test_2",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Filter 2",
+            },
+        )
+
+        # Filter by domain
+        r = client.get("/api/action-center/actions?domain=compliance")
+        assert r.status_code == 200
+        for action in r.json()["actions"]:
+            assert action["domain"] == "compliance"
+
+    def test_action_counts_consistent(self, app_client):
+        """Summary counts match actual issues"""
+        client, _ = app_client
+        r1 = client.get("/api/action-center/summary", headers={"X-Org-Id": "1"})
+        r2 = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
+        if r1.status_code == 200 and r2.status_code == 200:
+            assert r1.json()["total"] == r2.json()["total"]
