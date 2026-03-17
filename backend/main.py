@@ -140,7 +140,8 @@ app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, b
 app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 app.include_router(ems_router)  # EMS Consumption Explorer
 app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
-app.include_router(dev_tools_router)  # Dev Tools (reset_db)
+if os.environ.get("PROMEOS_ENV") != "production":
+    app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
 app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 app.include_router(consumption_context_router)  # Consumption Context V0 (usages & horaires)

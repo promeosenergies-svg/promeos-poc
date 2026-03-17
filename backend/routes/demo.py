@@ -12,6 +12,7 @@ GET /api/demo/templates, GET /api/demo/templates/{template_id}
 
 import hashlib
 import json
+import os
 import random
 import threading
 from typing import Optional
@@ -35,6 +36,8 @@ from models import (
 )
 from services.demo_state import DemoState
 from services.onboarding_service import provision_site
+
+_IS_PRODUCTION = os.environ.get("PROMEOS_ENV") == "production"
 
 router = APIRouter(prefix="/api/demo", tags=["Demo Mode"])
 
@@ -62,13 +65,13 @@ class ResetPackRequest(BaseModel):
 
 
 @router.post("/enable")
-def enable_demo():
+def enable_demo(_admin=Depends(require_admin()) if _IS_PRODUCTION else None):
     DemoState.enable()
     return DemoState.status()
 
 
 @router.post("/disable")
-def disable_demo():
+def disable_demo(_admin=Depends(require_admin()) if _IS_PRODUCTION else None):
     DemoState.disable()
     return DemoState.status()
 
@@ -317,7 +320,7 @@ _DEMO_SITES = [
 
 
 @router.post("/seed")
-def seed_demo(db: Session = Depends(get_db)):
+def seed_demo(db: Session = Depends(get_db), _admin=Depends(require_admin())):
     """
     Peuple la DB avec un jeu de donnees demo:
     1 org + 2 entites juridiques + 1 portefeuille + 3 sites + compteurs + obligations.
@@ -369,7 +372,7 @@ def seed_demo(db: Session = Depends(get_db)):
                 type=tc,
                 numero_serie=f"DEMO-{site.id}-{i + 1:02d}",
                 puissance_souscrite_kw=random.randint(50, 300) if tc == TypeCompteur.ELECTRICITE else None,
-                meter_id=f"{random.randint(10000000000000, 99999999999999)}",
+                meter_id=f"DEMO-{site.id:06d}-{i + 1:02d}",
                 energy_vector=ev,
                 actif=True,
             )

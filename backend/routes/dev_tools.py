@@ -18,6 +18,7 @@ from middleware.rate_limit import check_rate_limit
 logger = logging.getLogger(__name__)
 
 DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
+_IS_PRODUCTION = os.environ.get("PROMEOS_ENV") == "production"
 
 router = APIRouter(prefix="/api/dev", tags=["Dev Tools"])
 
@@ -34,6 +35,11 @@ def reset_db(request: Request, db: Session = Depends(get_db)):
     Only available in DEMO_MODE.
     """
     check_rate_limit(request, key_prefix="reset_db", max_requests=2, window_seconds=60)
+    if _IS_PRODUCTION:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dev tools are disabled in production",
+        )
     if not DEMO_MODE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

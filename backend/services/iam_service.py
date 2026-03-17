@@ -36,6 +36,9 @@ JWT_SECRET = os.environ.get("PROMEOS_JWT_SECRET", "dev-secret-change-me-in-prod"
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 30
 
+if os.environ.get("PROMEOS_ENV") == "production" and JWT_SECRET == "dev-secret-change-me-in-prod":
+    raise RuntimeError("CRITICAL: PROMEOS_JWT_SECRET must be set in production")
+
 if JWT_SECRET == "dev-secret-change-me-in-prod":
     _logger.warning("PROMEOS_JWT_SECRET is using the default dev value. Set PROMEOS_JWT_SECRET env var for production.")
 
