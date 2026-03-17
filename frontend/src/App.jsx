@@ -16,6 +16,7 @@ import { SkeletonCard } from './ui/Skeleton';
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
+const ActionCenterPage = lazy(() => import('./pages/ActionCenterPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Cockpit = lazy(() => import('./pages/Cockpit'));
@@ -225,6 +226,7 @@ function App() {
                       path="/sites-legacy/:id"
                       element={<Navigate to="/patrimoine" replace />}
                     />
+                    <Route path="/action-center" element={<ActionCenterPage />} />
                     <Route path="/action-plan" element={<Navigate to="/anomalies" replace />} />
                     <Route
                       path="/regops/:id"

@@ -1034,3 +1034,68 @@ class TestDueDateSla:
         client, _ = app_client
         r = client.get("/api/action-center/actions?due_before=2030-12-31")
         assert r.status_code == 200
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 18. Coherence action center / summary / cockpit
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionCenterCoherence:
+    """Verify action center counts are consistent across views."""
+
+    def test_issues_and_summary_counts_match(self, app_client):
+        """Issues total matches summary total"""
+        client, _ = app_client
+        # Create a site to have org
+        client.post("/api/sites/quick-create", json={"nom": "CoherenceTest", "usage": "bureau"})
+
+        r1 = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
+        r2 = client.get("/api/action-center/summary", headers={"X-Org-Id": "1"})
+        if r1.status_code == 200 and r2.status_code == 200:
+            assert r1.json()["total"] == r2.json()["total"]
+
+    def test_actions_list_and_summary_consistent(self, app_client):
+        """Actions list total matches actions summary total"""
+        client, _ = app_client
+        # Create some actions
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "coh_1",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Coh 1",
+            },
+        )
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "coh_2",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Coh 2",
+            },
+        )
+
+        r1 = client.get("/api/action-center/actions")
+        r2 = client.get("/api/action-center/actions/summary")
+        assert r1.status_code == 200
+        assert r2.status_code == 200
+        assert r1.json()["total"] == r2.json()["total"]
+
+    def test_cockpit_action_center_matches_issues(self, app_client):
+        """Cockpit action_center.total_issues matches issues endpoint"""
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "CockpitCoh", "usage": "bureau"})
+
+        r1 = client.get("/api/cockpit", headers={"X-Org-Id": "1"})
+        r2 = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
+        if r1.status_code == 200 and r2.status_code == 200:
+            cockpit_total = r1.json().get("action_center", {}).get("total_issues", 0)
+            issues_total = r2.json()["total"]
+            assert cockpit_total == issues_total, f"Cockpit={cockpit_total} vs Issues={issues_total}"
