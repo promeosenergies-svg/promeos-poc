@@ -48,8 +48,13 @@ export function formatDate(isoStr, granularity) {
       minute: '2-digit',
     });
   }
-  // 15min / 30min
-  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  // 15min / 30min — same day+month+time format as hourly
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 // ── Date computation from `days` ───────────────────────────────────────────────

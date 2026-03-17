@@ -69,11 +69,12 @@ describe('formatDate: French locale formatting', () => {
     expect(result).toContain('15');
   });
 
-  it('default (15min/30min): returns time only (HH:MM)', () => {
+  it('15min/30min: returns day + month + time (same as hourly)', () => {
     const result = formatDate('2025-03-15T09:15:00Z', '15min');
     expect(result).toBeTruthy();
     expect(typeof result).toBe('string');
-    // Should be a time string with colon
+    // Should contain day ("15") and time with colon
+    expect(result).toContain('15');
     expect(result).toContain(':');
   });
 
