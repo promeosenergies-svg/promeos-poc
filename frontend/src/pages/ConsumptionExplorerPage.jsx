@@ -515,14 +515,14 @@ export default function ConsumptionExplorerPage() {
       cancelled = true;
     };
   }, [compareYoy, siteIds.join(','), days, startDate, endDate, energyType]); // eslint-disable-line react-hooks/exhaustive-deps
-  // ── V22-B: Sampling minutes from backend meta (for data-frequency intersection) ──
-  const [samplingMinutes, setSamplingMinutes] = useState(null);
-  // V26-fix: only update native sampling resolution from auto mode responses;
-  // forced-granularity responses return the aggregation window, not native resolution.
+  // ── V22-B: Available granularities from backend meta (for pill filtering) ──
+  const [availableGranularities, setAvailableGranularities] = useState(null);
+  // V26-fix: only update from auto mode responses;
+  // forced-granularity responses reflect the aggregation, not native data.
   const handleMeta = useCallback(
     (m) => {
-      if (m?.sampling_minutes != null && granularity === 'auto') {
-        setSamplingMinutes(m.sampling_minutes);
+      if (m?.available_granularities && granularity === 'auto') {
+        setAvailableGranularities(m.available_granularities);
       }
     },
     [granularity]
@@ -688,7 +688,7 @@ export default function ConsumptionExplorerPage() {
         sitesLoading={sitesLoading}
         granularity={granularity}
         setGranularity={setGranularity}
-        samplingMinutes={samplingMinutes}
+        availableGranularities={availableGranularities}
         compareYoy={compareYoy}
         setCompareYoy={setCompareYoy}
         onToggleUiMode={toggleUiMode}

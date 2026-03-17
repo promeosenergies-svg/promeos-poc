@@ -12,28 +12,31 @@ import { generateSyntheticTemp, computeCorrelation } from '../consumption/MeteoP
 // ── getAvailableGranularities ─────────────────────────────────────────────────
 
 describe('getAvailableGranularities', () => {
-  it('days=7: includes auto, 30min, hourly, daily; excludes monthly', () => {
+  it('days=7: includes auto, 15min, 30min, hourly, daily; excludes monthly', () => {
     const keys = getAvailableGranularities(7).map((g) => g.key);
     expect(keys).toContain('auto');
+    expect(keys).toContain('15min');
     expect(keys).toContain('30min');
     expect(keys).toContain('hourly');
     expect(keys).toContain('daily');
     expect(keys).not.toContain('monthly');
   });
 
-  it('days=90: includes auto, daily, monthly; excludes 30min', () => {
+  it('days=90: includes auto, daily, monthly; excludes 15min and 30min', () => {
     const keys = getAvailableGranularities(90).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
     expect(keys).toContain('monthly');
+    expect(keys).not.toContain('15min');
     expect(keys).not.toContain('30min');
   });
 
-  it('days=365: includes auto, daily, monthly; excludes 30min and hourly', () => {
+  it('days=365: includes auto, daily, monthly; excludes 15min, 30min and hourly', () => {
     const keys = getAvailableGranularities(365).map((g) => g.key);
     expect(keys).toContain('auto');
     expect(keys).toContain('daily');
     expect(keys).toContain('monthly');
+    expect(keys).not.toContain('15min');
     expect(keys).not.toContain('30min');
     expect(keys).not.toContain('hourly');
   });
