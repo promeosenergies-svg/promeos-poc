@@ -365,21 +365,44 @@ Commandes disponibles :
 - `make dev` : Demarrage concurrent back + front
 - `make install` : Installation dependencies
 
-### 9.3 Points d'attention
+### 9.3 E2E (Playwright)
+
+- **17 suites de tests** dans `/e2e/` :
+  - `smoke.spec.js` — Health checks de base
+  - `a11y.spec.js` — Tests d'accessibilite (`@axe-core/playwright`)
+  - `demo-journey.spec.js`, `golden-demo.spec.js` — Parcours utilisateur complet
+  - Suites fonctionnelles : board-flow, energy-manager, bill-intel, patrimoine-conformite
+  - Suites performance : overflow-1024, data-quality-200
+- **Config** : Chromium uniquement, timeout 30s, 1 retry, trace on retry
+- **Helpers partages** : viewports, filtrage erreurs console (favicon, vite, DevTools)
+
+### 9.4 Scripts utilitaires
+
+| Script | Statut | Detail |
+|--------|--------|--------|
+| `scripts/quick-check.sh` | OK | Boucle QA rapide (pytest -m fast + vitest + eslint + ruff) |
+| `scripts/bootstrap.ps1` | OK | Setup Windows PowerShell |
+| `scripts/setup.sh` | VIDE | Stub non implemente |
+| `scripts/dev.sh` | VIDE | Stub non implemente |
+
+### 9.5 Points d'attention
 
 | Element | Statut | Remarque |
 |---------|--------|----------|
 | Makefile | OK | Complet, bien documente |
-| CI/CD | OK | Pipeline comprehensive |
-| Pre-commit hooks | OK | Husky + lint-staged |
+| CI/CD | OK | Pipeline comprehensive avec 3 jobs paralleles |
+| Pre-commit hooks | OK | Husky + lint-staged (ESLint 174 warnings max pre-commit, 15 en CI) |
 | Docker | ABSENT | Pas de Dockerfile pour le deploiement |
 | Monitoring production | ABSENT | Pas de metriques applicatives (Prometheus/Grafana) |
 | Logs structures | OK | JSON logging configure (json_logger) |
-| Backup DB | ABSENT | Pas de strategie de sauvegarde documentee |
+| Backup DB | ATTENTION | Backups anciennes (mars 2026) dans `/data/`, pas de strategie documentee |
+| Scripts setup/dev | VIDES | `setup.sh` et `dev.sh` sont des stubs non implementes |
+| Proxy Vite port | INCOHERENCE | Vite proxy cible port 8000, CI utilise port 8001 |
+| Couverture de code | ABSENTE | Aucun rapport de couverture en CI (ni Istanbul/c8 ni pytest-cov) |
 
-### 9.4 Fichiers .md au root (proliferation)
+### 9.6 Fichiers .md au root (proliferation)
 
-**27 fichiers Markdown** a la racine du projet :
+**35 fichiers Markdown** a la racine du projet :
 - Audits multiples (AUDIT_*.md) : 12 fichiers
 - Sprints (SPRINT_*.md) : 5 fichiers
 - Plans et roadmaps : 5 fichiers
@@ -486,15 +509,19 @@ L'accessibilite est le point le plus faible du projet :
 7. **Implementer CSP headers** et CSRF protection
 8. **Ajouter un rapport de couverture** (Istanbul/c8 frontend, pytest-cov backend) en CI
 9. **Ameliorer la memoisation React** : auditer les composants couteux (Heatmap, Charts)
+10. **Corriger l'incoherence du port proxy Vite** (8000 vs 8001 entre vite.config.js et CI)
+11. **Implementer les scripts setup.sh et dev.sh** (actuellement vides)
 
 ### 12.3 Priorite MOYENNE (roadmap)
 
-10. **Dockeriser l'application** (Dockerfile + docker-compose) pour faciliter le deploiement
-11. **Ajouter du monitoring** (Prometheus + Grafana ou Datadog)
-12. **Ranger les fichiers .md** : deplacer les archives dans `docs/archives/`
-13. **Supprimer le code mort** : CommandCenter, EnergyCopilot, composants deprecated
-14. **Ajouter Storybook** pour le design system UI
-15. **Considerer la migration python-jose → PyJWT** (maintenance plus active)
+12. **Dockeriser l'application** (Dockerfile + docker-compose) pour faciliter le deploiement
+13. **Ajouter du monitoring** (Prometheus + Grafana ou Datadog)
+14. **Ranger les 35 fichiers .md** : deplacer dans `docs/audits/`, `docs/sprints/`, `docs/planning/`
+15. **Supprimer le code mort** : CommandCenter, EnergyCopilot, composants deprecated
+16. **Ajouter Storybook** pour le design system UI
+17. **Considerer la migration python-jose → PyJWT** (maintenance plus active)
+18. **Nettoyer les backups DB anciennes** dans `/data/`
+19. **Ajouter des tests Firefox/Safari** au pipeline E2E (Chromium uniquement actuellement)
 
 ---
 
