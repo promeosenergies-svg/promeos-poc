@@ -12,13 +12,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, require_admin, AuthContext
 from services.iam_scope import check_site_access
+from schemas.contract_perimeter import ContractPerimeter
 
 DEMO_SEED_ENABLED = os.environ.get("DEMO_SEED_ENABLED", "false").lower() == "true"
 
@@ -1249,3 +1250,16 @@ def reconcile_endpoint(
     if "error" in result:
         raise HTTPException(404, result["error"])
     return result
+
+
+# ========================================
+# Perimeter Validation (aligned with billing)
+# ========================================
+
+
+@router.post("/perimeter/validate")
+def validate_purchase_perimeter_endpoint(body: ContractPerimeter, db: Session = Depends(get_db)):
+    """Validate purchase perimeter consistency with billing."""
+    from services.purchase_perimeter import validate_purchase_perimeter
+
+    return validate_purchase_perimeter(db, body.site_id, body.contract_id, body.period_start, body.period_end)

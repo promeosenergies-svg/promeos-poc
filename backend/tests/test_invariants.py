@@ -462,3 +462,112 @@ class TestBillingPerimeter:
         assert r.status_code == 200
         assert r.json()["valid"] == False
         assert r.json()["missing_required_count"] > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 11. Purchase ↔ Billing Perimeter Alignment
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestPurchaseBillingAlignment:
+    """Verify purchase uses same perimeter as billing."""
+
+    def test_purchase_perimeter_valid(self, app_client):
+        """Purchase perimeter validation on valid site"""
+        client, _ = app_client
+        r = client.post(
+            "/api/sites/quick-create",
+            json={
+                "nom": "Purchase Test",
+                "usage": "bureau",
+                "adresse": "1 rue test",
+                "code_postal": "75001",
+                "ville": "Paris",
+            },
+            headers={"X-Org-Id": "1"},
+        )
+        site_id = r.json()["site"]["id"]
+
+        r2 = client.post("/api/purchase/perimeter/validate", json={"site_id": site_id})
+        assert r2.status_code == 200
+        assert r2.json()["consistent"] == True
+        assert r2.json()["module"] == "purchase"
+
+    def test_purchase_perimeter_invalid(self, app_client):
+        """Purchase rejects invalid perimeter"""
+        client, _ = app_client
+        r = client.post("/api/purchase/perimeter/validate", json={"site_id": 99999})
+        assert r.status_code == 200
+        assert r.json()["consistent"] == False
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 12. Shadow Billing Gap Report
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestShadowBillingGaps:
+    """Verify shadow billing gap report quality."""
+
+    def test_shadow_billing_valid(self, app_client):
+        """Valid invoice passes shadow billing check"""
+        client, _ = app_client
+        r = client.post(
+            "/api/billing/invoices/shadow-billing-check",
+            json={
+                "site_id": 1,
+                "supplier_name": "EDF",
+                "amount_ht": 1500.0,
+                "amount_ttc": 1800.0,
+                "period_start": "2025-01-01",
+                "period_end": "2025-03-31",
+                "currency": "EUR",
+                "energy_unit": "kWh",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["shadow_billing_ready"] == True
+        assert r.json()["errors_count"] == 0
+
+    def test_shadow_billing_ht_ttc_mismatch(self, app_client):
+        """TTC < HT triggers warning"""
+        client, _ = app_client
+        r = client.post(
+            "/api/billing/invoices/shadow-billing-check",
+            json={
+                "site_id": 1,
+                "supplier_name": "EDF",
+                "amount_ht": 2000.0,
+                "amount_ttc": 1500.0,
+                "period_start": "2025-01-01",
+                "period_end": "2025-03-31",
+            },
+        )
+        assert r.status_code == 200
+        checks = r.json()["business_checks"]
+        assert any(c["check"] == "ht_ttc_mismatch" for c in checks)
+
+    def test_shadow_billing_period_inverted(self, app_client):
+        """Inverted period triggers error"""
+        client, _ = app_client
+        r = client.post(
+            "/api/billing/invoices/shadow-billing-check",
+            json={
+                "site_id": 1,
+                "supplier_name": "EDF",
+                "amount_ht": 1000.0,
+                "period_start": "2025-06-01",
+                "period_end": "2025-01-01",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["shadow_billing_ready"] == False
+        assert r.json()["errors_count"] > 0
+
+    def test_shadow_billing_missing_required(self, app_client):
+        """Missing required fields makes shadow billing not ready"""
+        client, _ = app_client
+        r = client.post("/api/billing/invoices/shadow-billing-check", json={"site_id": 1})
+        assert r.status_code == 200
+        assert r.json()["shadow_billing_ready"] == False
+        assert r.json()["missing_required_count"] > 0

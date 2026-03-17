@@ -1853,3 +1853,11 @@ def check_billing_perimeter(body: ContractPerimeter, db: Session = Depends(get_d
 
     result = check_perimeter(db, body.site_id, body.contract_id, body.period_start, body.period_end)
     return result
+
+
+@router.post("/invoices/shadow-billing-check")
+def shadow_billing_check(body: dict = Body(...)):
+    """Full shadow billing readiness check — fields + business consistency."""
+    from services.billing_canonical_service import compute_shadow_billing_gaps
+
+    return compute_shadow_billing_gaps(body)
