@@ -23,4 +23,10 @@ from .kpi_catalog import (  # noqa: F401
     KPI_CATALOG,
     get_kpi,
     list_kpis,
+    wrap_kpi_runtime,
+)
+from .billing_canonical import (  # noqa: F401
+    BillingLineItem,
+    BillingInvoiceCanonical,
+    BillingGapReport,
 )

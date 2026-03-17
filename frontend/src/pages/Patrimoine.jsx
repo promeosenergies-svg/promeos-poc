@@ -463,7 +463,7 @@ export default function Patrimoine() {
     const surface = scopedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
     const anomalies = scopedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
     const withAno = scopedSites.filter((s) => (s.anomalies_count || 0) > 0).length;
-    return { total: t, conformes, nc, aRisque, risque, surface, anomalies, withAno };
+    return { total: t, conformes, nc, aRisque, needsReview, risque, surface, anomalies, withAno };
   }, [scopedSites]);
 
   const filtered = useMemo(() => {
@@ -675,7 +675,7 @@ export default function Patrimoine() {
   // Dynamic subtitle
   const subtitle = isEmptyPatrimoine
     ? 'Importez votre patrimoine pour commencer'
-    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)}${registreKpis ? ` · ${registreKpis.nb_contrats_actifs} contrat${registreKpis.nb_contrats_actifs > 1 ? 's' : ''} actif${registreKpis.nb_contrats_actifs > 1 ? 's' : ''}` : ''}${stats.nc + stats.aRisque > 0 ? ` · ${stats.nc + stats.aRisque} site${stats.nc + stats.aRisque > 1 ? 's' : ''} à traiter` : ''}`;
+    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)}${registreKpis ? ` · ${registreKpis.nb_contrats_actifs} contrat${registreKpis.nb_contrats_actifs > 1 ? 's' : ''} actif${registreKpis.nb_contrats_actifs > 1 ? 's' : ''}` : ''}${stats.nc + stats.aRisque > 0 ? ` · ${stats.nc + stats.aRisque} site${stats.nc + stats.aRisque > 1 ? 's' : ''} à traiter` : ''}${stats.needsReview > 0 ? ` · ${stats.needsReview} à revoir` : ''}`;
 
   return (
     <PageShell

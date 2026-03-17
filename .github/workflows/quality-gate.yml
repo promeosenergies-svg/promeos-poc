@@ -125,9 +125,20 @@ jobs:
         run: npx wait-on http://127.0.0.1:8001/api/health http://127.0.0.1:5173 --timeout 30000
 
       - name: Smoke E2E (chain validation)
+        id: smoke
         working-directory: e2e
         run: npx playwright test smoke.spec.js e7-sprint1-chain.spec.js --reporter=list
         timeout-minutes: 5
+
+      - name: Smoke E2E summary
+        if: always()
+        run: |
+          echo "## Smoke E2E Results" >> $GITHUB_STEP_SUMMARY
+          if [ ${{ steps.smoke.outcome || 'success' }} == "success" ]; then
+            echo "✅ Smoke E2E passed — chain patrimoine→conformité→cockpit→actions→billing validated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Smoke E2E FAILED — check artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload report on failure
         if: failure()

@@ -197,7 +197,43 @@ def _worst_compliance_status(*statuses) -> StatutConformite | None:
     return StatutConformite.CONFORME
 
 
+def _compute_compliance_review_status(site, db=None) -> dict:
+    """Compute whether this site needs compliance review and why."""
+    reasons = []
+
+    # 1. Statut non conforme
+    dt = str(getattr(site, "statut_decret_tertiaire", ""))
+    bacs = str(getattr(site, "statut_bacs", ""))
+    if "NON_CONFORME" in dt or "NON_CONFORME" in bacs:
+        reasons.append("non_conforme")
+    elif "A_RISQUE" in dt or "A_RISQUE" in bacs:
+        reasons.append("a_risque")
+
+    # 2. Incomplete patrimoine
+    if not site.surface_m2 or site.surface_m2 <= 0:
+        reasons.append("surface_manquante")
+    if not site.siret:
+        reasons.append("siret_manquant")
+
+    # 3. High financial risk
+    risk = getattr(site, "risque_financier_euro", 0) or 0
+    if risk > 10000:
+        reasons.append("risque_eleve")
+
+    # 4. Score too low
+    score = getattr(site, "compliance_score_composite", None)
+    if score is not None and score < 50:
+        reasons.append("score_critique")
+
+    return {
+        "needs_review": len(reasons) > 0,
+        "reasons": reasons,
+        "reason_count": len(reasons),
+    }
+
+
 def _serialize_site(site: Site) -> dict:
+    review_status = _compute_compliance_review_status(site)
     return {
         "id": site.id,
         "nom": site.nom,
@@ -225,10 +261,8 @@ def _serialize_site(site: Site) -> dict:
         ),
         "anomalie_facture": site.anomalie_facture,
         "conso_kwh_an": site.annual_kwh_total,
-        "compliance_needs_review": (
-            str(getattr(site, "statut_bacs", "")).endswith("A_RISQUE")
-            or str(getattr(site, "statut_decret_tertiaire", "")).endswith("A_RISQUE")
-        ),
+        "compliance_needs_review": review_status["needs_review"],
+        "compliance_review_reasons": review_status["reasons"],
     }
 
 

@@ -22,6 +22,7 @@ from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
+from schemas.kpi_catalog import wrap_kpi_runtime
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
@@ -119,6 +120,13 @@ def get_cockpit(
         conso_confidence = "none"
         conso_sites_with_data = 0
 
+    # KPI runtime metadata for critical KPIs
+    kpi_details = [
+        wrap_kpi_runtime("compliance_score_composite", compliance_score_unified, perimeter="organisation"),
+        wrap_kpi_runtime("risque_financier_euro", round(risque_total, 2), perimeter="organisation"),
+        wrap_kpi_runtime("completeness_score", None, perimeter="organisation"),
+    ]
+
     return JSONResponse(
         content={
             "organisation": {"nom": org.nom, "type_client": org.type_client},
@@ -136,6 +144,7 @@ def get_cockpit(
                 "conso_confidence": conso_confidence,
                 "conso_sites_with_data": conso_sites_with_data,
             },
+            "kpi_details": kpi_details,
             "echeance_prochaine": "31 décembre 2026 (Décret Tertiaire 2030)",
         },
         headers={"Cache-Control": "public, max-age=30"},

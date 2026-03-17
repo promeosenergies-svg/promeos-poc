@@ -350,6 +350,43 @@ class TestCrossModuleInvariants:
 # ═══════════════════════════════════════════════════════════════════════════
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. compliance_needs_review includes reason codes
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestNeedsReviewHasReasons:
+    """Invariant : compliance_needs_review includes reason codes."""
+
+    def test_needs_review_has_reasons(self, app_client):
+        """compliance_needs_review includes reason codes"""
+        client, _ = app_client
+
+        # Create a site first to ensure org exists
+        client.post(
+            "/api/sites/quick-create",
+            json={"nom": "Review Test Site", "usage": "bureau"},
+        )
+
+        r = client.get("/api/patrimoine/sites", headers={"X-Org-Id": "1"})
+        if r.status_code == 200:
+            sites_data = r.json()
+            sites = sites_data.get("sites", sites_data if isinstance(sites_data, list) else [])
+            for site in sites:
+                if site.get("compliance_needs_review"):
+                    assert "compliance_review_reasons" in site, (
+                        f"Site {site.get('id')} has compliance_needs_review=True but missing compliance_review_reasons"
+                    )
+                    assert len(site["compliance_review_reasons"]) > 0, (
+                        f"Site {site.get('id')} has compliance_needs_review=True but empty compliance_review_reasons"
+                    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 9. KPI Catalog endpoint returns valid data
+# ═══════════════════════════════════════════════════════════════════════════
+
+
 class TestKpiCatalogEndpoint:
     """Invariant : /api/kpi-catalog retourne le catalogue KPI complet."""
 

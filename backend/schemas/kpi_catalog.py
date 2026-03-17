@@ -102,3 +102,18 @@ def get_kpi(kpi_id: str) -> Optional[KpiDefinition]:
 
 def list_kpis() -> list:
     return [{"kpi_id": k.kpi_id, "name": k.name, "unit": k.unit, "traceable": k.traceable} for k in KPI_CATALOG]
+
+
+def wrap_kpi_runtime(kpi_id: str, value, perimeter: str = "organisation") -> dict:
+    """Wrap a raw KPI value with canonical metadata for runtime responses."""
+    defn = get_kpi(kpi_id)
+    return {
+        "kpi_id": kpi_id,
+        "value": value,
+        "unit": defn.unit if defn else "unknown",
+        "period": defn.period if defn else "unknown",
+        "perimeter": perimeter,
+        "source": defn.source if defn else "unknown",
+        "traceable": defn.traceable if defn else False,
+        "name": defn.name if defn else kpi_id,
+    }
