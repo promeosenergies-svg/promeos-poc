@@ -616,32 +616,26 @@ export default function StickyFilterBar({
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 shrink-0">Granularité :</span>
             <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-              {(() => {
-                const pills = granularityPills(availableGranularities, days);
-                const resolvedLabel = resolvedGranularity
-                  ? pills.find((p) => p.key === resolvedGranularity)?.label
-                  : null;
-                return pills.map((g) => {
-                  const isActive = granularity === g.key;
-                  const isAutoResolved =
-                    granularity === 'auto' && resolvedGranularity && g.key === resolvedGranularity;
-                  return (
-                    <button
-                      key={g.key}
-                      onClick={() => setGranularity(g.key)}
-                      className={`px-2 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                        isActive
-                          ? 'bg-white text-blue-700 shadow-sm'
-                          : isAutoResolved
-                            ? 'bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-200'
-                            : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      {g.key === 'auto' && resolvedLabel ? `Auto (${resolvedLabel})` : g.label}
-                    </button>
-                  );
-                });
-              })()}
+              {granularityPills(availableGranularities, days).map((g) => {
+                const isActive = granularity === g.key;
+                const isAutoResolved =
+                  granularity === 'auto' && resolvedGranularity && g.key === resolvedGranularity;
+                return (
+                  <button
+                    key={g.key}
+                    onClick={() => setGranularity(g.key)}
+                    className={`px-2 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      isActive
+                        ? 'bg-white text-blue-700 shadow-sm'
+                        : isAutoResolved
+                          ? 'bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-200'
+                          : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
