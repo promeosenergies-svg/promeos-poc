@@ -52,6 +52,7 @@ from .patrimoine_crud import router as patrimoine_crud_router
 from .aper import router as aper_router
 from .geocoding import router as geocoding_router
 from .usages import router as usages_router
+from .action_center import router as action_center_router
 
 __all__ = [
     "sites_router",
@@ -104,4 +105,5 @@ __all__ = [
     "aper_router",
     "geocoding_router",
     "usages_router",
+    "action_center_router",
 ]

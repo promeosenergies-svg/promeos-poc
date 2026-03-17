@@ -77,3 +77,8 @@ export const getAuditReportJSON = (orgId = null) =>
   api.get('/reports/audit.json', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
 export const downloadAuditPDF = (orgId = null) =>
   api.get('/reports/audit.pdf', { params: orgId ? { org_id: orgId } : {}, responseType: 'blob' });
+
+// ── Action Center (unified issues) ──
+export const getActionCenterIssues = (params = {}) =>
+  cachedGet('/action-center/issues', { params }, 30000);
+export const getActionCenterSummary = () => cachedGet('/action-center/summary', {}, 30000);

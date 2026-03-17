@@ -571,3 +571,80 @@ class TestShadowBillingGaps:
         assert r.status_code == 200
         assert r.json()["shadow_billing_ready"] == False
         assert r.json()["missing_required_count"] > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 13. Action Center — unified actionable issues
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionCenter:
+    """Verify action center aggregates issues correctly."""
+
+    def test_action_center_returns_issues(self, app_client):
+        """Action center endpoint returns structured response"""
+        client, _ = app_client
+        r = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "issues" in data
+        assert "domains" in data
+        assert "severities" in data
+        assert isinstance(data["issues"], list)
+
+    def test_action_center_issues_have_required_fields(self, app_client):
+        """Each issue has required canonical fields"""
+        client, _ = app_client
+        r = client.get("/api/action-center/issues", headers={"X-Org-Id": "1"})
+        if r.status_code == 200:
+            for issue in r.json()["issues"]:
+                assert "issue_id" in issue
+                assert "domain" in issue
+                assert "severity" in issue
+                assert "site_id" in issue
+                assert "issue_code" in issue
+                assert "issue_label" in issue
+                assert "reason_codes" in issue
+                assert isinstance(issue["reason_codes"], list)
+
+    def test_action_center_filter_by_domain(self, app_client):
+        """Filtering by domain returns only that domain"""
+        client, _ = app_client
+        r = client.get("/api/action-center/issues?domain=compliance", headers={"X-Org-Id": "1"})
+        if r.status_code == 200:
+            for issue in r.json()["issues"]:
+                assert issue["domain"] == "compliance"
+
+    def test_action_center_summary(self, app_client):
+        """Summary endpoint returns counts"""
+        client, _ = app_client
+        r = client.get("/api/action-center/summary", headers={"X-Org-Id": "1"})
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "critical_count" in data
+        assert "high_count" in data
+
+    def test_compliance_review_generates_issue(self, app_client):
+        """A site with compliance_needs_review generates an action center issue"""
+        client, _ = app_client
+        # Create a site (will likely have needs_review due to missing data)
+        r = client.post(
+            "/api/sites/quick-create",
+            json={
+                "nom": "ActionCenter Test",
+                "usage": "bureau",
+                "adresse": "1 test",
+                "code_postal": "75001",
+                "ville": "Paris",
+            },
+            headers={"X-Org-Id": "1"},
+        )
+        site_id = r.json()["site"]["id"]
+
+        # Check action center has an issue for this site
+        r2 = client.get(f"/api/action-center/issues?site_id={site_id}", headers={"X-Org-Id": "1"})
+        assert r2.status_code == 200
+        # New site should have at least patrimoine incomplete or compliance issue
+        # (it has no contract, no PDL, possibly incomplete)

@@ -68,6 +68,7 @@ from routes import (
     aper_router,
     geocoding_router,
     usages_router,
+    action_center_router,
 )
 
 # Import KB router
@@ -162,6 +163,7 @@ app.include_router(patrimoine_crud_router)  # O.3 CRUD Organisation/Entité/Port
 app.include_router(geocoding_router)  # Géocodage BAN (sites → lat/lng)
 app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toitures)
 app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, cost breakdown)
+app.include_router(action_center_router)  # Action Center (unified actionable issues)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations
