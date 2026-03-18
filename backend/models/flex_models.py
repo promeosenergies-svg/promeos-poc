@@ -84,6 +84,12 @@ class FlexAssessment(Base):
     kpi_source = Column(String(100), nullable=True, default="services/flex_assessment_service.py")
     kpi_confidence = Column(String(20), nullable=True)
 
+    # 4 dimensions
+    technical_readiness_score = Column(Float, nullable=True, comment="0-100: assets controllables, connectes, testes")
+    data_confidence_score = Column(Float, nullable=True, comment="0-100: qualite donnees, couverture, fraicheur")
+    economic_relevance_score = Column(Float, nullable=True, comment="0-100: impact EUR potentiel vs effort")
+    regulatory_alignment_status = Column(String(30), nullable=True, comment="aligned, partial, misaligned, unknown")
+
     assessed_at = Column(DateTime, server_default=func.now())
 
     site = relationship("Site")
@@ -153,3 +159,27 @@ class RegulatoryOpportunity(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     site = relationship("Site")
+
+
+class TariffWindow(Base):
+    """Fenetre tarifaire saisonnalisee — jamais de hardcode HC."""
+
+    __tablename__ = "tariff_windows"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    calendar_id = Column(Integer, ForeignKey("tariff_calendars.id"), nullable=True, index=True)
+    name = Column(String(100), nullable=False, comment="Ex: TURPE7-C5-ETE")
+    segment = Column(String(20), nullable=True, comment="C5, C4, C3, HTA, HTB")
+    season = Column(String(20), nullable=False, comment="hiver, ete, mi_saison, toute_annee")
+    months = Column(Text, nullable=False, comment="JSON array: [4,5,6,7,8,9,10]")
+    period_type = Column(String(20), nullable=False, comment="HC_NUIT, HC_SOLAIRE, HP, POINTE, SUPER_POINTE")
+    start_time = Column(String(5), nullable=False, comment="HH:MM")
+    end_time = Column(String(5), nullable=False, comment="HH:MM")
+    day_types = Column(Text, nullable=False, default='["all"]', comment="JSON: weekday, weekend, holiday, all")
+    price_component_eur_kwh = Column(Float, nullable=True)
+    effective_from = Column(String(10), nullable=True, comment="YYYY-MM-DD")
+    effective_to = Column(String(10), nullable=True)
+    source = Column(String(100), nullable=True, comment="CRE, Enedis, manual")
+    source_ref = Column(String(300), nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())

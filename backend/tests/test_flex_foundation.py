@@ -148,3 +148,139 @@ class TestFlexMiniPreserved:
         r = client.get("/api/sites/1/flex/mini")
         # Should not crash
         assert r.status_code in (200, 404, 500)
+
+
+class TestTariffWindow:
+    def test_create_tariff_window(self, app_client):
+        client, _ = app_client
+        r = client.post(
+            "/api/flex/tariff-windows",
+            json={
+                "name": "TURPE7-C5-ETE-HC_SOLAIRE",
+                "segment": "C5",
+                "season": "ete",
+                "months": [4, 5, 6, 7, 8, 9, 10],
+                "period_type": "HC_SOLAIRE",
+                "start_time": "11:00",
+                "end_time": "17:00",
+                "source": "CRE",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["period_type"] == "HC_SOLAIRE"
+
+    def test_list_tariff_windows(self, app_client):
+        client, _ = app_client
+        client.post(
+            "/api/flex/tariff-windows",
+            json={
+                "name": "Test",
+                "season": "hiver",
+                "months": [11, 12, 1, 2, 3],
+                "period_type": "HP",
+                "start_time": "07:00",
+                "end_time": "23:00",
+            },
+        )
+        r = client.get("/api/flex/tariff-windows")
+        assert r.status_code == 200
+        assert r.json()["total"] >= 1
+
+
+class TestRegulatoryOpportunity:
+    def test_create_aper_obligation(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "AperTest", "usage": "bureau"})
+        r = client.post(
+            "/api/flex/regulatory-opportunities",
+            json={
+                "site_id": 1,
+                "regulation": "aper",
+                "is_obligation": True,
+                "obligation_type": "solarisation_ombriere",
+                "surface_m2": 12000,
+                "surface_type": "parking_exterieur",
+                "threshold_m2": 10000,
+                "deadline": "2026-07-01",
+                "deadline_source": "Loi APER art. L171-4",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["is_obligation"] == True
+
+    def test_create_aper_opportunity(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "AperOpp", "usage": "bureau"})
+        r = client.post(
+            "/api/flex/regulatory-opportunities",
+            json={
+                "site_id": 1,
+                "regulation": "aper",
+                "is_obligation": False,
+                "opportunity_type": "autoconsommation",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["is_obligation"] == False
+
+
+class TestSyncBacsPost:
+    def test_sync_is_post(self, app_client):
+        """sync-from-bacs must be POST (side effect)"""
+        client, _ = app_client
+        r = client.get("/api/flex/assets/sync-from-bacs?site_id=1")
+        assert r.status_code in (405, 404)  # GET not allowed
+
+    def test_sync_post_works(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "SyncPost", "usage": "bureau"})
+        r = client.post("/api/flex/assets/sync-from-bacs", json={"site_id": 1})
+        assert r.status_code == 200
+
+
+class TestFlexAssessmentDimensions:
+    def test_assessment_has_4_dimensions(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "DimTest", "usage": "bureau"})
+        client.post(
+            "/api/flex/assets",
+            json={
+                "site_id": 1,
+                "asset_type": "hvac",
+                "label": "PAC",
+                "power_kw": 100,
+                "is_controllable": True,
+            },
+        )
+        r = client.get("/api/flex/assessment?site_id=1")
+        assert r.status_code == 200
+        dims = r.json().get("dimensions", {})
+        for d in ("technical_readiness", "data_confidence", "economic_relevance", "regulatory_alignment"):
+            assert d in dims, f"Missing dimension: {d}"
+
+
+class TestBacsNotAutoControllable:
+    def test_bacs_sync_not_auto_controllable(self, app_client):
+        """BACS sync should NOT auto-set is_controllable=True"""
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "BacsCtrl", "usage": "bureau"})
+        r = client.post("/api/flex/assets/sync-from-bacs", json={"site_id": 1})
+        assert r.status_code == 200
+        # Any synced assets should have is_controllable=False
+        r2 = client.get("/api/flex/assets?site_id=1")
+        for asset in r2.json().get("assets", []):
+            if asset.get("data_source") == "bacs_sync":
+                assert asset["is_controllable"] == False
+
+
+class TestFlexPortfolio:
+    def test_portfolio_ranking(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "Port1", "usage": "bureau"})
+        client.post("/api/sites/quick-create", json={"nom": "Port2", "usage": "commerce"})
+        r = client.get("/api/flex/portfolio", headers={"X-Org-Id": "1"})
+        assert r.status_code == 200
+        data = r.json()
+        assert "total_sites" in data
+        assert "total_potential_kw" in data
+        assert "rankings" in data

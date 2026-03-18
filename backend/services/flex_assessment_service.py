@@ -74,6 +74,18 @@ def _asset_based_assessment(db: Session, site_id: int, assets: list) -> dict:
 
     score = min(100, int(total_kw / max(total_kw + 10, 1) * 100))
 
+    # 4 dimensions
+    controllable_count = sum(1 for a in assets if a.is_controllable)
+    verified_count = sum(1 for a in assets if a.confidence in ("high", "medium"))
+
+    technical_readiness = min(100, int(controllable_count / max(len(assets), 1) * 100))
+    data_confidence = min(100, int(verified_count / max(len(assets), 1) * 100))
+    economic_relevance = min(100, int(total_kw * 0.5))  # simplified: more kW = more relevant
+
+    # Regulatory alignment
+    has_bacs = any(a.bacs_cvc_system_id for a in assets)
+    reg_status = "aligned" if has_bacs and controllable_count > 0 else "partial" if has_bacs else "unknown"
+
     # Persist assessment
     assessment = FlexAssessment(
         site_id=site_id,
@@ -85,6 +97,10 @@ def _asset_based_assessment(db: Session, site_id: int, assets: list) -> dict:
         levers_json=json.dumps(levers),
         kpi_confidence="medium",
     )
+    assessment.technical_readiness_score = technical_readiness
+    assessment.data_confidence_score = data_confidence
+    assessment.economic_relevance_score = economic_relevance
+    assessment.regulatory_alignment_status = reg_status
     db.merge(assessment)
     db.flush()
 
@@ -97,6 +113,12 @@ def _asset_based_assessment(db: Session, site_id: int, assets: list) -> dict:
         "source": "asset_based",
         "confidence": assessment.confidence,
         "asset_count": len(assets),
+        "dimensions": {
+            "technical_readiness": technical_readiness,
+            "data_confidence": data_confidence,
+            "economic_relevance": economic_relevance,
+            "regulatory_alignment": reg_status,
+        },
         "kpi": {
             "definition": "Potentiel de flexibilite estime par site",
             "formula": "SUM(asset_power_kw * controllability_factor)",
@@ -168,12 +190,22 @@ def sync_bacs_to_flex_assets(db: Session, site_id: int) -> dict:
                 cvc.system_type.value if hasattr(cvc.system_type, "value") else cvc.system_type, "hvac"
             )
 
+            # GTB class informs but does NOT determine controllability
+            # Class A/B suggests automation capability, not confirmed controllability
+            gtb_suggests_control = cvc.system_class in ("A", "B") if cvc.system_class else False
+
             if existing:
                 existing.power_kw = cvc.putile_kw_computed
                 existing.gtb_class = cvc.system_class
                 existing.data_source = "bacs_sync"
-                existing.is_controllable = cvc.system_class in ("A", "B") if cvc.system_class else False
-                existing.control_method = "gtb" if cvc.system_class in ("A", "B") else "unknown"
+                # Don't auto-set is_controllable — leave for operator confirmation
+                # Only set control_method hint
+                existing.control_method = "gtb" if gtb_suggests_control else existing.control_method
+                existing.notes = (
+                    f"GTB classe {cvc.system_class or '?'} — pilotabilite a confirmer"
+                    if not existing.notes
+                    else existing.notes
+                )
                 assets_updated += 1
             else:
                 fa = FlexAsset(
@@ -182,11 +214,12 @@ def sync_bacs_to_flex_assets(db: Session, site_id: int) -> dict:
                     asset_type=asset_type,
                     label=f"CVC {cvc.system_type.value if hasattr(cvc.system_type, 'value') else cvc.system_type} ({cvc.putile_kw_computed or 0:.0f} kW)",
                     power_kw=cvc.putile_kw_computed,
-                    is_controllable=cvc.system_class in ("A", "B") if cvc.system_class else False,
-                    control_method="gtb" if cvc.system_class in ("A", "B") else "unknown",
+                    is_controllable=False,  # Never auto-set — requires operator confirmation
+                    control_method="gtb" if gtb_suggests_control else "unknown",
                     gtb_class=cvc.system_class,
                     data_source="bacs_sync",
-                    confidence="medium" if cvc.system_class_verified else "low",
+                    confidence="low",  # Always low until confirmed
+                    notes=f"Synchro BACS — GTB classe {cvc.system_class or '?'}, pilotabilite a confirmer",
                 )
                 db.add(fa)
                 assets_created += 1

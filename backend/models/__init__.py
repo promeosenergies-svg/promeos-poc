@@ -269,7 +269,15 @@ from .recommendation_decision import RecommendationDecision
 from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
 
 # Flex Foundations (Sprint 21)
-from .flex_models import FlexAsset, FlexAssessment, NebcoSignal, RegulatoryOpportunity, FlexAssetType, ControlMethod
+from .flex_models import (
+    FlexAsset,
+    FlexAssessment,
+    NebcoSignal,
+    RegulatoryOpportunity,
+    FlexAssetType,
+    ControlMethod,
+    TariffWindow,
+)
 
 __all__ = [
     "Base",
@@ -498,4 +506,5 @@ __all__ = [
     "RegulatoryOpportunity",
     "FlexAssetType",
     "ControlMethod",
+    "TariffWindow",
 ]

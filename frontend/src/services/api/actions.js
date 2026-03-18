@@ -196,3 +196,14 @@ export const syncBacsToFlexAssets = (siteId) =>
   cachedGet('/flex/assets/sync-from-bacs', { params: { site_id: siteId } }, 5000);
 export const getFlexAssessment = (siteId) =>
   cachedGet('/flex/assessment', { params: { site_id: siteId } }, 15000);
+
+// ── Flex v2 (Sprint 21 corrections) ──
+export const getRegulatoryOpportunities = (params = {}) =>
+  cachedGet('/flex/regulatory-opportunities', { params }, 15000);
+export const createRegulatoryOpportunity = (data) =>
+  api.post('/flex/regulatory-opportunities', data).then((r) => r.data);
+export const getTariffWindows = (params = {}) =>
+  cachedGet('/flex/tariff-windows', { params }, 30000);
+export const createTariffWindow = (data) =>
+  api.post('/flex/tariff-windows', data).then((r) => r.data);
+export const getFlexPortfolio = () => cachedGet('/flex/portfolio', {}, 15000);
