@@ -168,3 +168,21 @@ export const getRecommendationQualitySummary = (period = 30) =>
   cachedGet('/action-center/recommendations/quality-summary', { params: { period } }, 15000);
 export const getRecommendationCalibration = () =>
   cachedGet('/action-center/recommendations/calibration', {}, 60000);
+
+// ── Calibration Governance ──
+export const getCalibrationHistory = () =>
+  cachedGet('/action-center/recommendations/calibration/history', {}, 30000);
+export const compareCalibrations = (v1, v2) =>
+  cachedGet('/action-center/recommendations/calibration/compare', { params: { v1, v2 } }, 15000);
+export const createCalibration = (data) =>
+  api.post('/action-center/recommendations/calibration', data).then((r) => r.data);
+export const activateCalibration = (version) =>
+  api.post('/action-center/recommendations/calibration/activate', { version }).then((r) => r.data);
+export const rollbackCalibration = () =>
+  api.post('/action-center/recommendations/calibration/rollback').then((r) => r.data);
+
+// ── Recommendation Outcomes ──
+export const getRecommendationOutcomes = (limit = 50) =>
+  cachedGet('/action-center/recommendations/outcomes', { params: { limit } }, 15000);
+export const recordRecommendationOutcome = (data) =>
+  api.post('/action-center/recommendations/outcomes', data).then((r) => r.data);

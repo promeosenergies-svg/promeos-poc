@@ -196,14 +196,114 @@ def quality_summary(
 
 
 @router.get("/recommendations/calibration")
-def get_calibration():
+def get_calibration(db: Session = Depends(get_db)):
     """Current and historical calibration weights."""
-    from services.recommendation_quality_service import get_current_calibration, get_calibration_history
+    from services.calibration_governance_service import get_active_calibration, get_calibration_history
 
-    return {
-        "current": get_current_calibration(),
-        "history": get_calibration_history(),
+    result = {
+        "current": get_active_calibration(db),
+        "history": get_calibration_history(db),
     }
+    db.commit()  # persist initial version if created
+    return result
+
+
+@router.get("/recommendations/calibration/history")
+def calibration_history(db: Session = Depends(get_db)):
+    from services.calibration_governance_service import get_calibration_history
+
+    return {"versions": get_calibration_history(db)}
+
+
+@router.get("/recommendations/calibration/compare")
+def calibration_compare(
+    v1: str = Query(...),
+    v2: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    from services.calibration_governance_service import compare_calibrations
+
+    result = compare_calibrations(db, v1, v2)
+    if not result:
+        raise HTTPException(status_code=404, detail="Version non trouvée")
+    return result
+
+
+@router.post("/recommendations/calibration")
+def create_calibration_endpoint(
+    body: dict = Body(...),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.calibration_governance_service import create_calibration
+
+    actor = (auth.email if auth else None) or body.get("created_by", "system")
+    result = create_calibration(
+        db, body["version"], body["weights"], body.get("comment"), actor, body.get("domain_adjustments")
+    )
+    if not result:
+        raise HTTPException(status_code=400, detail="Version existe déjà ou poids invalides (somme != 1.0)")
+    db.commit()
+    return result
+
+
+@router.post("/recommendations/calibration/activate")
+def activate_calibration_endpoint(
+    body: dict = Body(...),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.calibration_governance_service import activate_calibration
+
+    actor = (auth.email if auth else None) or body.get("actor", "system")
+    result = activate_calibration(db, body["version"], actor)
+    if not result:
+        raise HTTPException(status_code=400, detail="Version non trouvée ou statut incompatible")
+    db.commit()
+    return result
+
+
+@router.post("/recommendations/calibration/rollback")
+def rollback_calibration_endpoint(
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.calibration_governance_service import rollback_calibration
+
+    actor = (auth.email if auth else None) or "system"
+    result = rollback_calibration(db, actor)
+    if not result:
+        raise HTTPException(status_code=400, detail="Aucune version précédente disponible")
+    db.commit()
+    return result
+
+
+@router.get("/recommendations/outcomes")
+def list_outcomes(limit: int = Query(50, ge=1, le=200), db: Session = Depends(get_db)):
+    from services.calibration_governance_service import get_outcomes
+
+    outcomes = get_outcomes(db, limit)
+    return {"total": len(outcomes), "outcomes": outcomes}
+
+
+@router.post("/recommendations/outcomes")
+def record_outcome_endpoint(body: dict = Body(...), db: Session = Depends(get_db)):
+    from services.calibration_governance_service import record_outcome
+
+    o = record_outcome(
+        db,
+        body["recommendation_id"],
+        body["outcome_status"],
+        body.get("action_id"),
+        body.get("domain"),
+        body.get("decision"),
+        body.get("outcome_reason"),
+        body.get("backlog_delta"),
+        body.get("overdue_delta"),
+        body.get("impact_delta_eur"),
+    )
+    db.commit()
+    return {"id": o.id, "outcome_status": o.outcome_status}
 
 
 # ── Recommendation Decisions (Sprint 18) ──────────────────────────────

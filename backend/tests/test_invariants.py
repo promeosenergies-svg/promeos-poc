@@ -1757,3 +1757,92 @@ class TestRecommendationQuality:
         total_dist = dist["high"] + dist["medium"] + dist["low"]
         # Should match open actions count (approximately, since some may be created between calls)
         assert total_dist >= 0
+
+
+class TestCalibrationGovernance:
+    """Verify calibration versioning, activation, rollback, compare."""
+
+    def test_create_calibration(self, app_client):
+        """Can create a new calibration version"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/recommendations/calibration",
+            json={
+                "version": "2.0",
+                "weights": {"urgency": 0.35, "risk": 0.35, "ease": 0.1, "confidence": 0.2},
+                "comment": "Sprint 20 test",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["version"] == "2.0"
+        assert r.json()["status"] == "draft"
+
+    def test_activate_calibration(self, app_client):
+        """Can activate a draft calibration"""
+        client, _ = app_client
+        client.post(
+            "/api/action-center/recommendations/calibration",
+            json={
+                "version": "2.1",
+                "weights": {"urgency": 0.3, "risk": 0.3, "ease": 0.2, "confidence": 0.2},
+            },
+        )
+        r = client.post("/api/action-center/recommendations/calibration/activate", json={"version": "2.1"})
+        assert r.status_code == 200
+        assert r.json()["status"] == "active"
+
+    def test_rollback_calibration(self, app_client):
+        """Can rollback to previous version"""
+        client, _ = app_client
+        # Ensure v1.0 exists (via GET calibration which triggers ensure_initial_version)
+        client.get("/api/action-center/recommendations/calibration")
+        # Create and activate v3.0 (archives v1.0)
+        client.post(
+            "/api/action-center/recommendations/calibration",
+            json={
+                "version": "3.0",
+                "weights": {"urgency": 0.5, "risk": 0.2, "ease": 0.1, "confidence": 0.2},
+            },
+        )
+        client.post("/api/action-center/recommendations/calibration/activate", json={"version": "3.0"})
+
+        # Rollback should restore v1.0
+        r = client.post("/api/action-center/recommendations/calibration/rollback")
+        assert r.status_code == 200
+
+    def test_compare_calibrations(self, app_client):
+        """Can compare two calibration versions"""
+        client, _ = app_client
+        client.post(
+            "/api/action-center/recommendations/calibration",
+            json={
+                "version": "4.0",
+                "weights": {"urgency": 0.4, "risk": 0.3, "ease": 0.1, "confidence": 0.2},
+            },
+        )
+        client.post(
+            "/api/action-center/recommendations/calibration",
+            json={
+                "version": "4.1",
+                "weights": {"urgency": 0.5, "risk": 0.2, "ease": 0.1, "confidence": 0.2},
+            },
+        )
+        r = client.get("/api/action-center/recommendations/calibration/compare?v1=4.0&v2=4.1")
+        assert r.status_code == 200
+        data = r.json()
+        assert "deltas" in data
+        assert data["deltas"]["urgency"]["delta"] == 0.1
+
+    def test_record_outcome(self, app_client):
+        """Can record a recommendation outcome"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/recommendations/outcomes",
+            json={
+                "recommendation_id": "rec_outcome_test",
+                "outcome_status": "positive",
+                "outcome_reason": "Issue resolved successfully",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["outcome_status"] == "positive"

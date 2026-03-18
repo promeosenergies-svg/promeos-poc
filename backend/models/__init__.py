@@ -265,6 +265,9 @@ from .action_notification import ActionNotification
 # Recommendation Decisions (Sprint 18)
 from .recommendation_decision import RecommendationDecision
 
+# Recommendation Outcomes & Calibration Governance (Sprint 20)
+from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -482,4 +485,7 @@ __all__ = [
     "ActionNotification",
     # Recommendation Decisions (Sprint 18)
     "RecommendationDecision",
+    # Recommendation Outcomes & Calibration Governance (Sprint 20)
+    "RecommendationOutcome",
+    "CalibrationVersion",
 ]
