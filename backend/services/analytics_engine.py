@@ -26,6 +26,7 @@ from models import (
     AnomalySeverity,
     RecommendationStatus,
 )
+from services.ems.timeseries_service import resolve_best_freq
 
 
 class AnalyticsEngine:
@@ -109,8 +110,14 @@ class AnalyticsEngine:
 
     def _extract_features(self, meter: Meter) -> Optional[Dict[str, Any]]:
         """Step 1: Extract features from meter readings"""
-        # Get all readings
-        readings = self.db.query(MeterReading).filter_by(meter_id=meter.id).order_by(MeterReading.timestamp).all()
+        # Get all readings (single best frequency to prevent double-counting)
+        best = resolve_best_freq(self.db, [meter.id], None, None)
+        readings = (
+            self.db.query(MeterReading)
+            .filter(MeterReading.meter_id == meter.id, MeterReading.frequency.in_(best))
+            .order_by(MeterReading.timestamp)
+            .all()
+        )
 
         if len(readings) < 48:  # Minimum 2 days of hourly data
             return None

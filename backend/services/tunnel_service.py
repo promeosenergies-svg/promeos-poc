@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from models import Meter, MeterReading, Site
 from models.energy_models import FrequencyType
+from services.ems.timeseries_service import resolve_best_freq
 
 
 def _percentile(data: List[float], pct: float) -> float:
@@ -90,6 +91,7 @@ def compute_tunnel(
         return _empty_tunnel(site_id, energy_type, days)
 
     meter_ids = [m.id for m in meters]
+    best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     # Fetch readings
     readings = (
@@ -98,6 +100,7 @@ def compute_tunnel(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_date,
             MeterReading.timestamp <= end_date,
+            MeterReading.frequency.in_(best),
         )
         .order_by(MeterReading.timestamp)
         .all()
@@ -239,6 +242,7 @@ def compute_tunnel_v2(
         return _empty_tunnel_v2(site_id, energy_type, days, mode, unit)
 
     meter_ids = [m.id for m in meters]
+    best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     readings = (
         db.query(MeterReading)
@@ -246,6 +250,7 @@ def compute_tunnel_v2(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_date,
             MeterReading.timestamp <= end_date,
+            MeterReading.frequency.in_(best),
         )
         .order_by(MeterReading.timestamp)
         .all()

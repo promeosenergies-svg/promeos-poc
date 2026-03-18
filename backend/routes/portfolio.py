@@ -18,6 +18,7 @@ from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
 from services.billing_service import get_reference_price, DEFAULT_PRICE_ELEC
+from services.ems.timeseries_service import resolve_best_freq
 from config.emission_factors import get_emission_factor
 
 router = APIRouter(prefix="/api/portfolio/consumption", tags=["Portfolio Consumption"])
@@ -40,9 +41,9 @@ def _parse_date_or_default(val: Optional[str], default_days_ago: int = 90) -> da
     return date_cls.today() - timedelta(days=default_days_ago)
 
 
-def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
+def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
     """Get aggregated consumption for a single site in the period."""
-    row = (
+    q = (
         db.query(
             func.sum(MeterReading.value_kwh).label("kwh"),
             func.count(MeterReading.id).label("n_readings"),
@@ -55,14 +56,15 @@ def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datet
             MeterReading.timestamp >= dt_from,
             MeterReading.timestamp < dt_to,
         )
-        .first()
     )
-    return row
+    if best_freq:
+        q = q.filter(MeterReading.frequency.in_(best_freq))
+    return q.first()
 
 
-def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
+def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
     """P95 peak: 95th percentile of kWh readings (proxy for kW peak)."""
-    readings = (
+    q = (
         db.query(MeterReading.value_kwh)
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
@@ -72,23 +74,24 @@ def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime)
             MeterReading.timestamp < dt_to,
             MeterReading.value_kwh.isnot(None),
         )
-        .order_by(MeterReading.value_kwh.asc())
-        .all()
     )
+    if best_freq:
+        q = q.filter(MeterReading.frequency.in_(best_freq))
+    readings = q.order_by(MeterReading.value_kwh.asc()).all()
     if not readings:
         return None
     idx = min(int(len(readings) * 0.95), len(readings) - 1)
     return readings[idx].value_kwh
 
 
-def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
+def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
     """Base nocturne %: part de la conso nuit (22h-6h) dans la conso totale.
     Fenêtre 22h-06h = standard tertiaire France (bureaux fermés).
     Résultat en % (0-100). Théorique si plat = 33% (8h/24h).
     """
     from sqlalchemy import extract
 
-    night_kwh = (
+    q_night = (
         db.query(func.sum(MeterReading.value_kwh))
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
@@ -98,10 +101,12 @@ def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetim
             MeterReading.timestamp < dt_to,
             ((extract("hour", MeterReading.timestamp) < 6) | (extract("hour", MeterReading.timestamp) >= 22)),
         )
-        .scalar()
     )
+    if best_freq:
+        q_night = q_night.filter(MeterReading.frequency.in_(best_freq))
+    night_kwh = q_night.scalar()
 
-    total_kwh = (
+    q_total = (
         db.query(func.sum(MeterReading.value_kwh))
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
@@ -110,8 +115,10 @@ def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetim
             MeterReading.timestamp >= dt_from,
             MeterReading.timestamp < dt_to,
         )
-        .scalar()
     )
+    if best_freq:
+        q_total = q_total.filter(MeterReading.frequency.in_(best_freq))
+    total_kwh = q_total.scalar()
 
     if not total_kwh or total_kwh == 0:
         return None
@@ -160,27 +167,25 @@ def _site_open_actions(db: Session, site_id: int) -> int:
 
 def _build_site_row(db, site, dt_from, dt_to, days):
     """Build a single site row dict with all metrics (patrimoine-first)."""
-    conso = _site_consumption(db, site.id, dt_from, dt_to)
+    # Resolve best frequency ONCE per site — used for filtering + display
+    meter_ids = [
+        r[0]
+        for r in db.query(Meter.id)
+        .filter(
+            Meter.site_id == site.id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+        )
+        .all()
+    ]
+    best = resolve_best_freq(db, meter_ids, dt_from, dt_to) if meter_ids else None
+
+    conso = _site_consumption(db, site.id, dt_from, dt_to, best_freq=best)
     kwh = conso.kwh or 0
     n = conso.n_readings or 0
     last_reading = conso.last_reading
     has_data = kwh > 0
 
-    # Dominant frequency for this site's meters
-    dom_freq = (
-        db.query(MeterReading.frequency)
-        .join(Meter, MeterReading.meter_id == Meter.id)
-        .filter(
-            Meter.site_id == site.id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-            MeterReading.timestamp >= dt_from,
-            MeterReading.timestamp < dt_to,
-        )
-        .group_by(MeterReading.frequency)
-        .order_by(func.count(MeterReading.id).desc())
-        .first()
-    )
-    freq_str = dom_freq[0].value if dom_freq and dom_freq[0] else "hourly"
+    freq_str = best[0].value if best else "hourly"
     rpd = READINGS_PER_DAY.get(freq_str, 24)
 
     conf = _confidence_for_readings(n, days, freq_str) if has_data else "low"
@@ -211,8 +216,8 @@ def _build_site_row(db, site, dt_from, dt_to, days):
         or 0
     )
 
-    peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to) if has_data else None
-    base_night = _base_night_pct(db, site.id, dt_from, dt_to) if has_data else None
+    peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to, best_freq=best) if has_data else None
+    base_night = _base_night_pct(db, site.id, dt_from, dt_to, best_freq=best) if has_data else None
     impact_eur = _site_impact_eur(db, site.id, dt_from)
     open_actions = _site_open_actions(db, site.id)
 

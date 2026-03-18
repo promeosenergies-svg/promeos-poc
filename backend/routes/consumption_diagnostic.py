@@ -878,12 +878,18 @@ def gas_summary(
         }
 
     meter_ids = [m.id for m in meters]
+
+    from services.ems.timeseries_service import resolve_best_freq
+
+    best = resolve_best_freq(db, meter_ids, start_date, end_date)
+
     readings = (
         db.query(MeterReading)
         .filter(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_date,
             MeterReading.timestamp <= end_date,
+            MeterReading.frequency.in_(best),
         )
         .order_by(MeterReading.timestamp)
         .all()

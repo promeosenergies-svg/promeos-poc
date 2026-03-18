@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from models import Site, Meter, MeterReading, ConsumptionInsight, Portefeuille, EntiteJuridique
 from models.energy_models import FrequencyType, EnergyVector
+from services.ems.timeseries_service import resolve_best_freq
 
 logger = logging.getLogger(__name__)
 
@@ -150,13 +151,16 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
 
     readings = []
     if meters:
-        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+        cutoff = now_dt - timedelta(days=days)
         meter_ids = [m.id for m in meters]
+        best = resolve_best_freq(db, meter_ids, cutoff, now_dt)
         readings = (
             db.query(MeterReading)
             .filter(
                 MeterReading.meter_id.in_(meter_ids),
                 MeterReading.timestamp >= cutoff,
+                MeterReading.frequency.in_(best),
             )
             .order_by(MeterReading.timestamp)
             .all()
@@ -392,13 +396,16 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
     weekend_ratio = 0.0
 
     if meters:
-        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+        cutoff = now_dt - timedelta(days=days)
         meter_ids = [m.id for m in meters]
+        best = resolve_best_freq(db, meter_ids, cutoff, now_dt)
         readings = (
             db.query(MeterReading)
             .filter(
                 MeterReading.meter_id.in_(meter_ids),
                 MeterReading.timestamp >= cutoff,
+                MeterReading.frequency.in_(best),
             )
             .all()
         )

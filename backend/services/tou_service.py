@@ -13,6 +13,7 @@ from models.tou_schedule import TOUSchedule
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
+from services.ems.timeseries_service import resolve_best_freq
 
 
 # Default TURPE-like schedule (HP 6h-22h weekday, HC rest)
@@ -232,12 +233,15 @@ def compute_hp_hc_ratio(
     if not meter_ids:
         return _empty_hp_hc(site_id)
 
+    best = resolve_best_freq(db, meter_ids, start_date, end_date)
+
     readings = (
         db.query(MeterReading)
         .filter(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_date,
             MeterReading.timestamp <= end_date,
+            MeterReading.frequency.in_(best),
         )
         .all()
     )
@@ -384,12 +388,15 @@ def compute_hphc_breakdown_v2(
         return _empty_hphc_v2(site_id, cal_name)
 
     meter_ids = [m.id for m in meters]
+    best = resolve_best_freq(db, meter_ids, start_date, end_date)
+
     readings = (
         db.query(MeterReading)
         .filter(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_date,
             MeterReading.timestamp <= end_date,
+            MeterReading.frequency.in_(best),
         )
         .all()
     )

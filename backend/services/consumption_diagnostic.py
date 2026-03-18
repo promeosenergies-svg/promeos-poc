@@ -37,6 +37,7 @@ from models import (
 from models.energy_models import FrequencyType
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+from services.ems.timeseries_service import resolve_best_freq
 
 # Fallback price — used when no SiteTariffProfile exists
 DEFAULT_PRICE_REF_KWH = DEFAULT_PRICE_ELEC_EUR_KWH
@@ -425,10 +426,16 @@ def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReadi
     For aggregated consumption totals, prefer ``get_consumption_summary()``
     from ``services.consumption_unified_service``.
     """
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+    now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+    cutoff = now_dt - timedelta(days=days)
+    best = resolve_best_freq(db, [meter_id], cutoff, now_dt)
     return (
         db.query(MeterReading)
-        .filter(MeterReading.meter_id == meter_id, MeterReading.timestamp >= cutoff)
+        .filter(
+            MeterReading.meter_id == meter_id,
+            MeterReading.timestamp >= cutoff,
+            MeterReading.frequency.in_(best),
+        )
         .order_by(MeterReading.timestamp)
         .all()
     )
