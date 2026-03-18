@@ -88,7 +88,88 @@ class SeedOrchestrator:
         temp_lookup = {}
 
         if readings_freq == "monthly":
-            # Monthly readings (helios) — 60 months historical billing
+            # ── Issue #115: Frequency-coherent reading generation ────────────
+            # Guarantee: SUM(fine) == coarse for any overlapping time period.
+            #
+            # Time windows (helios: hourly_days=730, min15_days=365, months=60):
+            #   Days 1-365:   MIN_15 → derived HOURLY/DAILY/MONTHLY (fully coherent)
+            #   Days 366-730: independent HOURLY → derived DAILY/MONTHLY
+            #   Months 25-60: independent MONTHLY (no finer data exists)
+
+            from .gen_weather import generate_weather
+
+            temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
+            result["weather_days"] = hourly_days
+
+            # Step 1: Coherent 15min → derived hourly + daily for recent period
+            from .gen_readings import generate_coherent_readings
+
+            min15_days = pack_def.get("min15_days", 365)
+            min15_count, hourly_derived, daily_derived = generate_coherent_readings(
+                self.db, master["meters"], master["site_profiles"], temp_lookup, min15_days, rng, site_meta=site_meta
+            )
+            result["min15_readings_count"] = min15_count
+
+            # Step 2: Extended hourly for full range (INSERT OR IGNORE skips
+            # the recent period where derived hourly already exists)
+            from .gen_readings import generate_readings
+
+            hourly_total = generate_readings(
+                self.db, master["meters"], master["site_profiles"], temp_lookup, hourly_days, rng, site_meta=site_meta
+            )
+            result["hourly_readings_count"] = hourly_total
+
+            # Step 3: Derive daily for the extended period (older hourly)
+            from .gen_readings import _derive_daily_from_hourly, _derive_monthly_from_daily, _bulk_insert_ignore
+            from datetime import timedelta as _td
+            from models import MeterReading, FrequencyType
+
+            now_ts = datetime.now().replace(microsecond=0)
+            ext_start = now_ts - _td(days=hourly_days)
+            ext_end = now_ts - _td(days=min15_days)
+            extended_hourly = (
+                self.db.query(MeterReading)
+                .filter(
+                    MeterReading.frequency == FrequencyType.HOURLY,
+                    MeterReading.timestamp >= ext_start,
+                    MeterReading.timestamp < ext_end,
+                )
+                .all()
+            )
+            ext_daily = _derive_daily_from_hourly(extended_hourly)
+            _bulk_insert_ignore(self.db, ext_daily)
+            self.db.flush()
+
+            # Step 4: Derive monthly from ALL electricity daily (both periods)
+            from models.energy_models import EnergyVector as _EV
+
+            elec_meter_ids = [
+                m.id
+                for m in master["meters"]
+                if m.parent_meter_id is None
+                and not (
+                    getattr(m, "energy_vector", None)
+                    and (m.energy_vector == _EV.GAS or str(m.energy_vector).lower() == "gas")
+                )
+            ]
+            if elec_meter_ids:
+                all_elec_daily = (
+                    self.db.query(MeterReading)
+                    .filter(
+                        MeterReading.frequency == FrequencyType.DAILY,
+                        MeterReading.meter_id.in_(elec_meter_ids),
+                    )
+                    .all()
+                )
+                derived_monthly = _derive_monthly_from_daily(all_elec_daily)
+                # Exclude current (partial) month to keep count deterministic
+                current_month_start = now_ts.replace(day=1, hour=0, minute=0, second=0)
+                derived_monthly = [r for r in derived_monthly if r.timestamp < current_month_start]
+                _bulk_insert_ignore(self.db, derived_monthly)
+                self.db.flush()
+
+            # Step 5: Independent monthly (fills months beyond hourly coverage;
+            # INSERT OR IGNORE skips months already covered by derived monthly)
             from .gen_readings import generate_monthly_readings
 
             readings_months = pack_def.get("readings_months", 36)
@@ -98,36 +179,13 @@ class SeedOrchestrator:
             result["readings_count"] = readings_count
             result["readings_frequency"] = "monthly"
 
-            # V107: weather for the full hourly window (per-city realistic)
-            from .gen_weather import generate_weather
-
-            temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
-            result["weather_days"] = hourly_days
-
-            # Hourly elec readings over extended window (730 days for helios)
-            from .gen_readings import generate_readings
-
-            hourly_count = generate_readings(
-                self.db, master["meters"], master["site_profiles"], temp_lookup, hourly_days, rng, site_meta=site_meta
-            )
-            result["hourly_readings_count"] = hourly_count
-
-            # V107: Daily gas readings correlated to DJU
+            # Step 6: Gas daily readings (unchanged — gas has no hourly)
             from .gen_readings import generate_gas_readings
 
             gas_count = generate_gas_readings(
                 self.db, master["meters"], master["site_profiles"], temp_lookup, hourly_days, rng, site_meta=site_meta
             )
             result["gas_readings_count"] = gas_count
-
-            # V107: 15-min readings (365 days with CVC cycling)
-            from .gen_readings import generate_15min_readings
-
-            min15_days = pack_def.get("min15_days", 365)
-            min15_count = generate_15min_readings(
-                self.db, master["meters"], master["site_profiles"], temp_lookup, min15_days, rng, site_meta=site_meta
-            )
-            result["min15_readings_count"] = min15_count
         else:
             # Hourly readings (tertiaire) — with weather
             from .gen_weather import generate_weather

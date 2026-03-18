@@ -1008,6 +1008,157 @@ def generate_sub_meter_readings(db, meters: list, days: int, rng: random.Random)
     return total
 
 
+# ── Frequency derivation helpers (Issue #115: coherence guarantee) ─────────
+
+
+def _derive_hourly_from_15min(readings_15min: list) -> list:
+    """Derive HOURLY readings by summing 4 × MIN_15 slots per hour.
+    Guarantees SUM(15min for hour H) == HOURLY value for H."""
+    groups = {}
+    for r in readings_15min:
+        hour_ts = r.timestamp.replace(minute=0, second=0, microsecond=0)
+        key = (r.meter_id, hour_ts)
+        groups.setdefault(key, []).append(r)
+
+    result = []
+    for (meter_id, hour_ts), slots in sorted(groups.items()):
+        value = sum(s.value_kwh for s in slots)
+        quality = min((s.quality_score or 1.0) for s in slots)
+        result.append(
+            MeterReading(
+                meter_id=meter_id,
+                timestamp=hour_ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=round(value, 3),
+                is_estimated=False,
+                quality_score=quality,
+            )
+        )
+    return result
+
+
+def _derive_daily_from_hourly(readings_hourly: list) -> list:
+    """Derive DAILY readings by summing 24 × HOURLY slots per day.
+    Guarantees SUM(hourly for day D) == DAILY value for D."""
+    groups = {}
+    for r in readings_hourly:
+        day_ts = r.timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+        key = (r.meter_id, day_ts)
+        groups.setdefault(key, []).append(r)
+
+    result = []
+    for (meter_id, day_ts), hours in sorted(groups.items()):
+        value = sum(h.value_kwh for h in hours)
+        quality = min((h.quality_score or 1.0) for h in hours)
+        result.append(
+            MeterReading(
+                meter_id=meter_id,
+                timestamp=day_ts,
+                frequency=FrequencyType.DAILY,
+                value_kwh=round(value, 2),
+                is_estimated=False,
+                quality_score=quality,
+            )
+        )
+    return result
+
+
+def _derive_monthly_from_daily(readings_daily: list) -> list:
+    """Derive MONTHLY readings by summing DAILY values per calendar month.
+    Guarantees SUM(daily for month M) == MONTHLY value for M."""
+    groups = {}
+    for r in readings_daily:
+        key = (r.meter_id, r.timestamp.year, r.timestamp.month)
+        groups.setdefault(key, []).append(r)
+
+    result = []
+    for (meter_id, year, month), days in sorted(groups.items()):
+        value = sum(d.value_kwh for d in days)
+        quality = min((d.quality_score or 1.0) for d in days)
+        result.append(
+            MeterReading(
+                meter_id=meter_id,
+                timestamp=datetime(year, month, 1),
+                frequency=FrequencyType.MONTHLY,
+                value_kwh=round(value, 0),
+                is_estimated=False,
+                quality_score=quality,
+            )
+        )
+    return result
+
+
+def generate_coherent_readings(
+    db, meters: list, site_profiles: dict, temp_lookup: dict, days: int, rng: random.Random, site_meta: dict = None
+) -> tuple:
+    """Generate frequency-coherent readings: MIN_15 → derived HOURLY → derived DAILY.
+
+    The derivation chain guarantees that SUM(fine) == coarse at every level.
+    Monthly derivation is deferred to the orchestrator (needs combined daily from
+    both the coherent and extended periods to handle boundary months correctly).
+
+    Returns:
+        (min15_count, hourly_count, daily_count)
+    """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    start = now - timedelta(days=days)
+    site_meta = site_meta or {}
+    all_15min = []
+
+    for meter_idx, meter in enumerate(meters):
+        # Skip gas meters
+        ev = getattr(meter, "energy_vector", None)
+        if ev and (ev == EnergyVector.GAS or str(ev).lower() == "gas"):
+            continue
+
+        # Skip sub-meters
+        if meter.parent_meter_id is not None:
+            continue
+
+        profile_name = site_profiles.get(meter.site_id, "office")
+        profile = _PROFILES.get(profile_name, _PROFILES["office"])
+        site_temps = temp_lookup.get(meter.site_id, {})
+        city = site_meta.get(meter.site_id, {}).get("city", "")
+        base_kw = _get_base_kw(meter, site_profiles, site_meta)
+        psub = meter.subscribed_power_kva or 80
+        max_kw = psub * 1.2 if psub > 0 else base_kw * 3.0
+        vacation_weeks = _get_vacation_weeks(profile_name, city)
+
+        anomalies = _build_anomaly_schedule(meter_idx, profile_name, days, rng)
+        anomaly_lookup = {}
+        for a in anomalies:
+            anomaly_lookup.setdefault(a["day"], []).append(a)
+
+        readings_15min = _gen_15min_meter_readings(
+            meter.id,
+            profile_name,
+            profile,
+            site_temps,
+            start,
+            days,
+            base_kw,
+            psub,
+            max_kw,
+            rng,
+            vacation_weeks,
+            city,
+            anomaly_lookup,
+        )
+        all_15min.extend(readings_15min)
+
+    # Derive coarser frequencies in memory
+    all_hourly = _derive_hourly_from_15min(all_15min)
+    all_daily = _derive_daily_from_hourly(all_hourly)
+
+    # Bulk insert all levels
+    _bulk_insert_ignore(db, all_15min)
+    _bulk_insert_ignore(db, all_hourly)
+    _bulk_insert_ignore(db, all_daily)
+    db.flush()
+
+    return (len(all_15min), len(all_hourly), len(all_daily))
+
+
 # ── Bulk insert helper ───────────────────────────────────────────────────────
 
 
