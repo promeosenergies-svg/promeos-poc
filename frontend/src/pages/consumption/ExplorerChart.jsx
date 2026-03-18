@@ -34,6 +34,24 @@ import {
 } from 'recharts';
 import { colorForSite } from './helpers';
 
+/** Format tooltip date label with weekday + year (fr-FR), preserving hour when present */
+function tooltipLabelFormatter(label, payload) {
+  const raw = payload?.[0]?.payload?.rawDate;
+  if (!raw) return label;
+  const normalized = typeof raw === 'string' ? raw.replace(' ', 'T') : raw;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return label;
+  const hasTime = typeof label === 'string' && /\d:\d/.test(label);
+  const opts = {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    ...(hasTime && { hour: '2-digit', minute: '2-digit' }),
+  };
+  return d.toLocaleString('fr-FR', opts);
+}
+
 const UNIT_AXIS_LABELS = {
   kwh: 'kWh',
   kw: 'kW',
@@ -121,6 +139,7 @@ function SepareGrid({
                   }}
                 />
                 <Tooltip
+                  labelFormatter={tooltipLabelFormatter}
                   formatter={(v) => (v != null ? `${v} ${UNIT_AXIS_LABELS[unit]}` : 'N/A')}
                 />
                 <Area
@@ -234,6 +253,7 @@ export default function ExplorerChart({
             domain={yDomain}
           />
           <Tooltip
+            labelFormatter={tooltipLabelFormatter}
             formatter={(v, name) =>
               v != null && !isNaN(v)
                 ? [`${Number(v).toLocaleString('fr-FR')} ${yLabel}`, name]
