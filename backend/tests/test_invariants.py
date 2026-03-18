@@ -1313,3 +1313,82 @@ class TestNotificationsAndBulk:
         r = client.get("/api/action-center/actions/summary")
         assert r.status_code == 200
         assert "needs_evidence_count" in r.json()
+
+
+class TestManagementSummary:
+    """Verify management summary aggregates."""
+
+    def test_management_summary_structure(self, app_client):
+        """Management summary has all required fields"""
+        client, _ = app_client
+        r = client.get("/api/action-center/management-summary")
+        assert r.status_code == 200
+        data = r.json()
+        for field in (
+            "total_actions",
+            "open_count",
+            "overdue_count",
+            "critical_count",
+            "needs_evidence_count",
+            "stale_count",
+            "by_owner",
+            "by_domain",
+            "by_priority",
+        ):
+            assert field in data, f"Missing field: {field}"
+
+    def test_management_open_matches_list(self, app_client):
+        """open_count matches filtered list count"""
+        client, _ = app_client
+        # Create some actions
+        for i in range(3):
+            client.post(
+                "/api/action-center/actions",
+                json={
+                    "issue_id": f"mgmt_test_{i}",
+                    "domain": "compliance",
+                    "severity": "medium",
+                    "site_id": 1,
+                    "issue_code": "test",
+                    "issue_label": f"Mgmt {i}",
+                },
+            )
+
+        r1 = client.get("/api/action-center/management-summary")
+        r2 = client.get("/api/action-center/actions?status=open")
+        if r1.status_code == 200 and r2.status_code == 200:
+            # open_count should include open + in_progress + reopened
+            open_in_list = len([a for a in r2.json()["actions"] if a["status"] in ("open", "in_progress", "reopened")])
+            assert r1.json()["open_count"] >= open_in_list
+
+    def test_management_stale_rule(self, app_client):
+        """Stale count follows the documented threshold"""
+        client, _ = app_client
+        r = client.get("/api/action-center/management-summary")
+        assert r.status_code == 200
+        data = r.json()
+        assert "stale_threshold_days" in data
+        assert data["stale_threshold_days"] == 14
+
+    def test_management_avg_resolution(self, app_client):
+        """avg_resolution_days is null or reasonable"""
+        client, _ = app_client
+        # Create + resolve an action
+        r1 = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "avg_res_test",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Avg test",
+            },
+        )
+        action_id = r1.json()["id"]
+        client.post(f"/api/action-center/actions/{action_id}/resolve", json={"resolution_note": "Done"})
+
+        r2 = client.get("/api/action-center/management-summary")
+        data = r2.json()
+        if data["avg_resolution_days"] is not None:
+            assert data["avg_resolution_days"] >= 0

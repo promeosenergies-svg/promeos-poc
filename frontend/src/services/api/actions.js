@@ -134,3 +134,7 @@ export const bulkUpdateStatus = (actionIds, status) =>
   api
     .post('/action-center/actions/bulk/update-status', { action_ids: actionIds, status })
     .then((r) => r.data);
+
+// ── Action Center Management ──
+export const getActionCenterManagementSummary = () =>
+  cachedGet('/action-center/management-summary', {}, 15000);

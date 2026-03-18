@@ -158,6 +158,14 @@ def actions_summary(
     }
 
 
+@router.get("/management-summary")
+def management_summary(db: Session = Depends(get_db)):
+    """Management-level summary: backlog health, ageing, workload, top risks."""
+    from services.action_management_service import compute_management_summary
+
+    return compute_management_summary(db)
+
+
 @router.post("/actions/{action_id}/override-priority")
 def override_priority_endpoint(
     action_id: int,
