@@ -144,3 +144,9 @@ export const getActionCenterExecutiveSummary = (period = 30) =>
   cachedGet('/action-center/executive-summary', { params: { period } }, 15000);
 export const getActionCenterTrends = (window = 30) =>
   cachedGet('/action-center/trends', { params: { window } }, 15000);
+
+// ── Action Center Recommendations ──
+export const getActionCenterRecommendations = (params = {}) =>
+  cachedGet('/action-center/recommendations', { params }, 15000);
+export const getActionCenterRecommendationsSummary = () =>
+  cachedGet('/action-center/recommendations/summary', {}, 15000);

@@ -158,6 +158,29 @@ def actions_summary(
     }
 
 
+@router.get("/recommendations")
+def get_recommendations(
+    scope: Optional[str] = Query(None, description="executive|portfolio|site"),
+    site_id: Optional[int] = Query(None),
+    domain: Optional[str] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """Prioritized recommendations across all domains."""
+    from services.recommendation_service import compute_recommendations
+
+    recs = compute_recommendations(db, scope=scope, site_id=site_id, domain=domain, limit=limit)
+    return {"total": len(recs), "recommendations": recs}
+
+
+@router.get("/recommendations/summary")
+def recommendations_summary(db: Session = Depends(get_db)):
+    """Summary of recommendations by scope, domain, and scores."""
+    from services.recommendation_service import compute_recommendation_summary
+
+    return compute_recommendation_summary(db)
+
+
 @router.get("/management-summary")
 def management_summary(db: Session = Depends(get_db)):
     """Management-level summary: backlog health, ageing, workload, top risks."""

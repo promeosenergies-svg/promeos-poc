@@ -40,3 +40,7 @@ from .action_center import (  # noqa: F401
     IssueSeverity,
     IssueDomain,
 )
+from .recommendation import (  # noqa: F401
+    Recommendation,
+    RecommendationSummary,
+)

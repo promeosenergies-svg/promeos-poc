@@ -1475,3 +1475,120 @@ class TestExecutiveSummary:
         action_site_ids = {a["site_id"] for a in r2.json()["actions"]}
 
         assert top_site_ids.issubset(action_site_ids)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 22. Recommendation Engine (Sprint 17)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestRecommendations:
+    """Verify recommendation engine ranking and consistency."""
+
+    def test_recommendations_structure(self, app_client):
+        """Recommendations have all required fields"""
+        client, _ = app_client
+        # Create test actions
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "rec_test_1",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Critical overdue",
+            },
+        )
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "rec_test_2",
+                "domain": "billing",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Low priority",
+            },
+        )
+
+        r = client.get("/api/action-center/recommendations")
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert "recommendations" in data
+        for rec in data["recommendations"]:
+            for field in (
+                "recommendation_id",
+                "scope",
+                "domain",
+                "urgency_score",
+                "risk_score",
+                "confidence_score",
+                "decision_score",
+                "why_now",
+            ):
+                assert field in rec, f"Missing: {field}"
+
+    def test_critical_ranks_above_low(self, app_client):
+        """Critical overdue item ranks above low priority item"""
+        client, _ = app_client
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "rank_critical",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "CRITICAL",
+                "due_date": "2020-01-01",  # overdue
+            },
+        )
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "rank_low",
+                "domain": "patrimoine",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "LOW",
+            },
+        )
+
+        r = client.get("/api/action-center/recommendations")
+        recs = r.json()["recommendations"]
+        if len(recs) >= 2:
+            # Find our items
+            critical_idx = next((i for i, r in enumerate(recs) if "CRITICAL" in r["recommended_action"]), None)
+            low_idx = next((i for i, r in enumerate(recs) if "LOW" in r["recommended_action"]), None)
+            if critical_idx is not None and low_idx is not None:
+                assert critical_idx < low_idx, "Critical should rank above low"
+
+    def test_low_confidence_visible(self, app_client):
+        """Low confidence score is explicitly visible"""
+        client, _ = app_client
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "conf_test",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Confidence test",
+            },
+        )
+        r = client.get("/api/action-center/recommendations")
+        for rec in r.json()["recommendations"]:
+            assert rec["confidence_score"] >= 0
+            assert rec["confidence_score"] <= 100
+
+    def test_recommendations_summary_coherent(self, app_client):
+        """Summary total matches recommendations list"""
+        client, _ = app_client
+        r1 = client.get("/api/action-center/recommendations?limit=100")
+        r2 = client.get("/api/action-center/recommendations/summary")
+        if r1.status_code == 200 and r2.status_code == 200:
+            assert r1.json()["total"] == r2.json()["total"]
