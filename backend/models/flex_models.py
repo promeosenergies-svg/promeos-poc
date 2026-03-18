@@ -128,6 +128,7 @@ class RegulatoryOpportunity(Base):
     opportunity_type = Column(
         String(100), nullable=True, comment="autoconsommation, acc, stockage, revente_surplus, effacement"
     )
+    # APER opportunity_types: "autoconsommation_individuelle", "acc", "stockage_batterie", "revente_surplus"
 
     # Eligibility
     eligible = Column(Boolean, nullable=True)

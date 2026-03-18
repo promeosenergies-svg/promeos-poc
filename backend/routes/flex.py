@@ -154,6 +154,27 @@ def create_regulatory_opportunity(body: dict = Body(...), db: Session = Depends(
     from datetime import datetime
     from models.flex_models import RegulatoryOpportunity
 
+    # Validate APER subtypes
+    if body["regulation"] == "aper":
+        if body.get("is_obligation") and body.get("obligation_type") not in (
+            "solarisation_ombriere",
+            "solarisation_toiture",
+            None,
+        ):
+            raise HTTPException(
+                status_code=400, detail="APER obligation_type: solarisation_ombriere ou solarisation_toiture"
+            )
+
+        APER_OPPORTUNITIES = {"autoconsommation_individuelle", "acc", "stockage_batterie", "revente_surplus"}
+        if (
+            not body.get("is_obligation")
+            and body.get("opportunity_type")
+            and body["opportunity_type"] not in APER_OPPORTUNITIES
+        ):
+            raise HTTPException(
+                status_code=400, detail=f"APER opportunity_type: {', '.join(sorted(APER_OPPORTUNITIES))}"
+            )
+
     # Parse deadline string to datetime if provided
     deadline_raw = body.get("deadline")
     deadline_val = None
@@ -234,7 +255,26 @@ def list_tariff_windows(
 def create_tariff_window(body: dict = Body(...), db: Session = Depends(get_db)):
     """Create a tariff window."""
     import json
+    import re
     from models.flex_models import TariffWindow
+
+    # Validate period_type
+    VALID_PERIODS = {"HC_NUIT", "HC_SOLAIRE", "HP", "POINTE", "SUPER_POINTE"}
+    if body["period_type"] not in VALID_PERIODS:
+        raise HTTPException(
+            status_code=400, detail=f"period_type invalide. Valeurs: {', '.join(sorted(VALID_PERIODS))}"
+        )
+
+    # HC_SOLAIRE requires explicit season != "toute_annee" to prevent implicit generic usage
+    if body["period_type"] == "HC_SOLAIRE" and body.get("season") == "toute_annee":
+        raise HTTPException(
+            status_code=400, detail="HC_SOLAIRE ne peut pas etre applique toute l'annee — specifier une saison"
+        )
+
+    # Validate time format
+    for field in ("start_time", "end_time"):
+        if not re.match(r"^\d{2}:\d{2}$", body[field]):
+            raise HTTPException(status_code=400, detail=f"{field} doit etre au format HH:MM")
 
     w = TariffWindow(
         calendar_id=body.get("calendar_id"),
@@ -256,6 +296,61 @@ def create_tariff_window(body: dict = Body(...), db: Session = Depends(get_db)):
     db.commit()
     db.refresh(w)
     return {"id": w.id, "name": w.name, "period_type": w.period_type}
+
+
+@flex_foundation_router.get("/portfolios/{portfolio_id}/flex-prioritization")
+def flex_prioritization(
+    portfolio_id: int,
+    request: Request,
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    """Portfolio-scoped flex prioritization — PROMEOS canonical path."""
+    from models import Site, Portefeuille
+    from models.flex_models import FlexAsset
+    from models.base import not_deleted
+    from services.flex_assessment_service import compute_flex_assessment
+
+    portfolio = db.query(Portefeuille).filter(Portefeuille.id == portfolio_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portefeuille non trouvé")
+
+    sites = (
+        db.query(Site)
+        .filter(
+            Site.portefeuille_id == portfolio_id,
+            not_deleted(Site),
+        )
+        .all()
+    )
+
+    rankings = []
+    for site in sites:
+        assessment = compute_flex_assessment(db, site.id)
+        asset_count = db.query(FlexAsset).filter(FlexAsset.site_id == site.id, FlexAsset.status == "active").count()
+        rankings.append(
+            {
+                "site_id": site.id,
+                "site_name": site.nom,
+                "flex_score": assessment.get("flex_score", 0),
+                "potential_kw": assessment.get("potential_kw", 0),
+                "source": assessment.get("source", "unknown"),
+                "confidence": assessment.get("confidence", "low"),
+                "asset_count": asset_count,
+                "dimensions": assessment.get("dimensions", {}),
+            }
+        )
+
+    rankings.sort(key=lambda r: -(r["flex_score"] or 0))
+
+    return {
+        "portfolio_id": portfolio_id,
+        "portfolio_name": portfolio.nom if portfolio else None,
+        "total_sites": len(rankings),
+        "total_potential_kw": sum(r["potential_kw"] for r in rankings),
+        "avg_flex_score": round(sum(r["flex_score"] for r in rankings) / max(len(rankings), 1), 1),
+        "rankings": rankings,
+    }
 
 
 @flex_foundation_router.get("/portfolio")

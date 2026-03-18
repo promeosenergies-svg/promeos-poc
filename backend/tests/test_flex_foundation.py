@@ -217,7 +217,7 @@ class TestRegulatoryOpportunity:
                 "site_id": 1,
                 "regulation": "aper",
                 "is_obligation": False,
-                "opportunity_type": "autoconsommation",
+                "opportunity_type": "autoconsommation_individuelle",
             },
         )
         assert r.status_code == 200
@@ -284,3 +284,91 @@ class TestFlexPortfolio:
         assert "total_sites" in data
         assert "total_potential_kw" in data
         assert "rankings" in data
+
+
+class TestTariffWindowHardened:
+    def test_hc_solaire_blocked_toute_annee(self, app_client):
+        """HC_SOLAIRE cannot be set for toute_annee"""
+        client, _ = app_client
+        r = client.post(
+            "/api/flex/tariff-windows",
+            json={
+                "name": "Bad",
+                "season": "toute_annee",
+                "months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "period_type": "HC_SOLAIRE",
+                "start_time": "11:00",
+                "end_time": "17:00",
+            },
+        )
+        assert r.status_code == 400
+
+    def test_invalid_period_type(self, app_client):
+        client, _ = app_client
+        r = client.post(
+            "/api/flex/tariff-windows",
+            json={
+                "name": "Bad",
+                "season": "ete",
+                "months": [6, 7, 8],
+                "period_type": "SUPER_HC",
+                "start_time": "00:00",
+                "end_time": "06:00",
+            },
+        )
+        assert r.status_code == 400
+
+
+class TestAperSubtypes:
+    def test_aper_obligation_valid(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "AperSub", "usage": "bureau"})
+        r = client.post(
+            "/api/flex/regulatory-opportunities",
+            json={
+                "site_id": 1,
+                "regulation": "aper",
+                "is_obligation": True,
+                "obligation_type": "solarisation_ombriere",
+            },
+        )
+        assert r.status_code == 200
+
+    def test_aper_opportunity_acc(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "AperACC", "usage": "bureau"})
+        r = client.post(
+            "/api/flex/regulatory-opportunities",
+            json={
+                "site_id": 1,
+                "regulation": "aper",
+                "is_obligation": False,
+                "opportunity_type": "acc",
+            },
+        )
+        assert r.status_code == 200
+
+    def test_aper_invalid_opportunity_type(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "AperBad", "usage": "bureau"})
+        r = client.post(
+            "/api/flex/regulatory-opportunities",
+            json={
+                "site_id": 1,
+                "regulation": "aper",
+                "is_obligation": False,
+                "opportunity_type": "fake_type",
+            },
+        )
+        assert r.status_code == 400
+
+
+class TestPortfolioFlexPrioritization:
+    def test_portfolio_scoped(self, app_client):
+        client, _ = app_client
+        client.post("/api/sites/quick-create", json={"nom": "PortScope", "usage": "bureau"})
+        r = client.get("/api/flex/portfolios/1/flex-prioritization")
+        assert r.status_code in (200, 404)  # 404 if portfolio doesn't match
+        if r.status_code == 200:
+            assert "portfolio_id" in r.json()
+            assert "rankings" in r.json()
