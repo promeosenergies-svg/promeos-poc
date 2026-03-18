@@ -181,6 +181,80 @@ def recommendations_summary(db: Session = Depends(get_db)):
     return compute_recommendation_summary(db)
 
 
+# ── Recommendation Decisions (Sprint 18) ──────────────────────────────
+
+
+@router.post("/recommendations/{rec_id}/accept")
+def accept_rec(
+    rec_id: str,
+    body: dict = Body(default={}),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.recommendation_decision_service import accept_recommendation, serialize_decision
+
+    actor = (auth.email if auth else None) or body.get("actor", "system")
+    action_id = body.get("action_id")
+    d = accept_recommendation(db, rec_id, action_id, body.get("reason"), actor, body.get("decision_score"))
+    db.commit()
+    return serialize_decision(d)
+
+
+@router.post("/recommendations/{rec_id}/dismiss")
+def dismiss_rec(
+    rec_id: str,
+    body: dict = Body(...),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.recommendation_decision_service import dismiss_recommendation, serialize_decision
+
+    actor = (auth.email if auth else None) or body.get("actor", "system")
+    d = dismiss_recommendation(db, rec_id, body.get("action_id"), body.get("reason"), actor, body.get("decision_score"))
+    if not d:
+        raise HTTPException(status_code=400, detail="Motif requis (min 5 caractères)")
+    db.commit()
+    return serialize_decision(d)
+
+
+@router.post("/recommendations/{rec_id}/defer")
+def defer_rec(
+    rec_id: str,
+    body: dict = Body(default={}),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.recommendation_decision_service import defer_recommendation, serialize_decision
+
+    actor = (auth.email if auth else None) or body.get("actor", "system")
+    d = defer_recommendation(db, rec_id, body.get("action_id"), body.get("reason"), actor, body.get("decision_score"))
+    db.commit()
+    return serialize_decision(d)
+
+
+@router.post("/recommendations/{rec_id}/create-action")
+def convert_rec(
+    rec_id: str,
+    body: dict = Body(...),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.recommendation_decision_service import convert_to_action, serialize_decision
+    from services.action_workflow_service import serialize_action
+
+    actor = (auth.email if auth else None) or body.get("actor", "system")
+    d, action = convert_to_action(db, rec_id, body, actor, body.get("decision_score"))
+    db.commit()
+    return {"decision": serialize_decision(d), "action": serialize_action(action)}
+
+
+@router.get("/recommendations/decisions")
+def list_decisions(db: Session = Depends(get_db)):
+    from services.recommendation_decision_service import get_decision_stats
+
+    return get_decision_stats(db)
+
+
 @router.get("/management-summary")
 def management_summary(db: Session = Depends(get_db)):
     """Management-level summary: backlog health, ageing, workload, top risks."""

@@ -200,10 +200,16 @@ def compute_recommendation_summary(db: Session) -> dict:
         by_domain[r["domain"]] = by_domain.get(r["domain"], 0) + 1
         scores.append(r["decision_score"])
 
+    # Add decision signals
+    from services.recommendation_decision_service import get_decision_stats
+
+    decision_stats = get_decision_stats(db)
+
     return {
         "total": len(recs),
         "by_scope": by_scope,
         "by_domain": by_domain,
         "avg_decision_score": round(sum(scores) / len(scores), 1) if scores else None,
         "top_5": recs[:5],
+        "decisions": decision_stats,
     }

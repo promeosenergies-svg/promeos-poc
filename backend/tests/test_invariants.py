@@ -1592,3 +1592,76 @@ class TestRecommendations:
         r2 = client.get("/api/action-center/recommendations/summary")
         if r1.status_code == 200 and r2.status_code == 200:
             assert r1.json()["total"] == r2.json()["total"]
+
+
+class TestRecommendationDecisions:
+    """Verify recommendation decision workflow."""
+
+    def test_accept_recommendation(self, app_client):
+        """Can accept a recommendation"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "dec_accept",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Accept test",
+            },
+        )
+        action_id = r.json()["id"]
+
+        r2 = client.post(f"/api/action-center/recommendations/rec_{action_id}/accept", json={"action_id": action_id})
+        assert r2.status_code == 200
+        assert r2.json()["decision"] == "accepted"
+
+    def test_dismiss_requires_reason(self, app_client):
+        """Cannot dismiss without reason"""
+        client, _ = app_client
+        r = client.post("/api/action-center/recommendations/rec_999/dismiss", json={})
+        assert r.status_code == 400
+
+    def test_dismiss_with_reason(self, app_client):
+        """Can dismiss with valid reason"""
+        client, _ = app_client
+        r = client.post("/api/action-center/recommendations/rec_test/dismiss", json={"reason": "Hors périmètre actuel"})
+        assert r.status_code == 200
+        assert r.json()["decision"] == "dismissed"
+
+    def test_convert_to_action(self, app_client):
+        """Can convert recommendation to new action"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/recommendations/rec_convert/create-action",
+            json={
+                "issue_id": "converted_rec",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Converted recommendation",
+            },
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert "decision" in data
+        assert "action" in data
+        assert data["decision"]["decision"] == "converted_to_action"
+        assert data["decision"]["created_action_id"] == data["action"]["id"]
+
+    def test_decision_stats(self, app_client):
+        """Decision stats endpoint returns counts"""
+        client, _ = app_client
+        # Make some decisions first
+        client.post("/api/action-center/recommendations/rec_stats1/dismiss", json={"reason": "Not relevant now"})
+        client.post("/api/action-center/recommendations/rec_stats2/defer", json={"reason": "Next quarter"})
+
+        r = client.get("/api/action-center/recommendations/decisions")
+        assert r.status_code == 200
+        data = r.json()
+        assert "total_decisions" in data
+        assert "accepted_count" in data
+        assert "dismissed_count" in data
+        assert "converted_to_action_count" in data

@@ -262,6 +262,9 @@ from .action_event import ActionPlanEvent, ActionPlanEvidence
 # Action Notifications (Sprint 14)
 from .action_notification import ActionNotification
 
+# Recommendation Decisions (Sprint 18)
+from .recommendation_decision import RecommendationDecision
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -477,4 +480,6 @@ __all__ = [
     "ActionPlanEvidence",
     # Action Notifications (Sprint 14)
     "ActionNotification",
+    # Recommendation Decisions (Sprint 18)
+    "RecommendationDecision",
 ]

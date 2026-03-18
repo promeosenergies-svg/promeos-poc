@@ -150,3 +150,15 @@ export const getActionCenterRecommendations = (params = {}) =>
   cachedGet('/action-center/recommendations', { params }, 15000);
 export const getActionCenterRecommendationsSummary = () =>
   cachedGet('/action-center/recommendations/summary', {}, 15000);
+
+// ── Recommendation Decisions ──
+export const acceptRecommendation = (recId, data = {}) =>
+  api.post(`/action-center/recommendations/${recId}/accept`, data).then((r) => r.data);
+export const dismissRecommendation = (recId, data) =>
+  api.post(`/action-center/recommendations/${recId}/dismiss`, data).then((r) => r.data);
+export const deferRecommendation = (recId, data = {}) =>
+  api.post(`/action-center/recommendations/${recId}/defer`, data).then((r) => r.data);
+export const convertRecommendationToAction = (recId, data) =>
+  api.post(`/action-center/recommendations/${recId}/create-action`, data).then((r) => r.data);
+export const getRecommendationDecisionStats = () =>
+  cachedGet('/action-center/recommendations/decisions', {}, 15000);
