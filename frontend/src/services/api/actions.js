@@ -162,3 +162,9 @@ export const convertRecommendationToAction = (recId, data) =>
   api.post(`/action-center/recommendations/${recId}/create-action`, data).then((r) => r.data);
 export const getRecommendationDecisionStats = () =>
   cachedGet('/action-center/recommendations/decisions', {}, 15000);
+
+// ── Recommendation Quality & Calibration ──
+export const getRecommendationQualitySummary = (period = 30) =>
+  cachedGet('/action-center/recommendations/quality-summary', { params: { period } }, 15000);
+export const getRecommendationCalibration = () =>
+  cachedGet('/action-center/recommendations/calibration', {}, 60000);

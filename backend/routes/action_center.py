@@ -181,6 +181,31 @@ def recommendations_summary(db: Session = Depends(get_db)):
     return compute_recommendation_summary(db)
 
 
+# ── Recommendation Quality & Calibration (Sprint 19) ──────────────────
+
+
+@router.get("/recommendations/quality-summary")
+def quality_summary(
+    period: int = Query(30, ge=7, le=365),
+    db: Session = Depends(get_db),
+):
+    """Quality metrics for the recommendation engine."""
+    from services.recommendation_quality_service import compute_quality_summary
+
+    return compute_quality_summary(db, period)
+
+
+@router.get("/recommendations/calibration")
+def get_calibration():
+    """Current and historical calibration weights."""
+    from services.recommendation_quality_service import get_current_calibration, get_calibration_history
+
+    return {
+        "current": get_current_calibration(),
+        "history": get_calibration_history(),
+    }
+
+
 # ── Recommendation Decisions (Sprint 18) ──────────────────────────────
 
 
