@@ -59,6 +59,7 @@ import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistribut
 import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationWidget from '../components/SegmentationWidget';
+import { FlexPortfolioSummary } from '../components/flex';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import {
   getPatrimoineAnomalies,
@@ -835,6 +836,9 @@ export default function Patrimoine() {
               <SegmentationWidget compact onSegmentationClick={() => setShowSegModal(true)} />
             </div>
           </div>
+
+          {/* Flex portfolio ranking */}
+          <FlexPortfolioSummary />
 
           {/* ── Toolbar ── */}
           <div className="flex items-center gap-2 flex-wrap">

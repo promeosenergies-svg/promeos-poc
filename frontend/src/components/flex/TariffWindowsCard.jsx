@@ -49,7 +49,7 @@ export default function TariffWindowsCard({ segment }) {
 
   return (
     <div className="border rounded-lg p-3">
-      <h4 className="text-sm font-semibold text-gray-700 mb-2">Fenêtres tarifaires</h4>
+      <h4 className="text-sm font-semibold text-gray-700 mb-2">Fenêtres tarifaires actives</h4>
       {Object.entries(bySeason).map(([season, wins]) => (
         <div key={season} className="mb-2">
           <div className="text-xs font-medium text-gray-500 mb-1 capitalize">{season}</div>

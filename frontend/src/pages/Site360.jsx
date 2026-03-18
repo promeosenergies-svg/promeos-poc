@@ -66,6 +66,7 @@ import {
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import BacsRegulatoryPanel from '../components/BacsRegulatoryPanel';
+import { FlexPotentialCard, BacsFlexLink } from '../components/flex';
 import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
@@ -382,6 +383,9 @@ function TabResume({ site, onSegmentationClick }) {
         </div>
       </div>
       {/* /grid-cols-2 */}
+
+      {/* Flex potential */}
+      <FlexPotentialCard siteId={site.id} />
     </div>
   );
 }
@@ -1313,6 +1317,9 @@ function TabConformite({ site }) {
           </CardBody>
         </Card>
       </div>
+
+      {/* Flex pilotability link */}
+      <BacsFlexLink siteId={site.id} />
     </div>
   );
 }
