@@ -104,6 +104,23 @@ def validate_cap_points(
     return False, suggested, estimated
 
 
+def resolve_best_freq(db, meter_ids, date_from, date_to, granularity="daily"):
+    """Public API: pick single best frequency to prevent double-counting.
+    See _resolve_best_freq for implementation details.
+    """
+    if date_from is None:
+        date_from = datetime(2000, 1, 1)
+    if date_to is None:
+        date_to = datetime.utcnow()
+    if hasattr(date_from, "tzinfo") and date_from.tzinfo:
+        date_from = date_from.replace(tzinfo=None)
+    if hasattr(date_to, "tzinfo") and date_to.tzinfo:
+        date_to = date_to.replace(tzinfo=None)
+    if not isinstance(meter_ids, list):
+        meter_ids = [meter_ids]
+    return _resolve_best_freq(db, meter_ids, date_from, date_to, granularity)
+
+
 def query_timeseries(
     db: Session,
     site_ids: List[int],

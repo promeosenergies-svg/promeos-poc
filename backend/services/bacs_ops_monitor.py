@@ -20,6 +20,7 @@ from models import (
     Meter,
     InspectionStatus,
 )
+from services.ems.timeseries_service import resolve_best_freq
 
 
 def compute_bacs_ops_kpis(db: Session, site_id: int, period_days: int = 30) -> dict:
@@ -179,8 +180,15 @@ def get_hourly_heatmap(db: Session, site_id: int, days: int = 7) -> list[list[fl
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         start = now - timedelta(days=days * 4)  # 4 weeks of data
 
+        best = resolve_best_freq(db, [meter.id], start, now, granularity="hourly")
         readings = (
-            db.query(MeterReading).filter(MeterReading.meter_id == meter.id, MeterReading.timestamp >= start).all()
+            db.query(MeterReading)
+            .filter(
+                MeterReading.meter_id == meter.id,
+                MeterReading.timestamp >= start,
+                MeterReading.frequency.in_(best),
+            )
+            .all()
         )
 
         # Build 7x24 grid

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models.energy_models import Meter, MeterReading
+from services.ems.timeseries_service import resolve_best_freq
 
 
 # ── Step 25 : service unifié ────────────────────────────────────────────────
@@ -122,7 +123,11 @@ def get_meter_breakdown(db: Session, meter_id: int, date_from=None, date_to=None
     Retourne le breakdown avec delta (pertes & parties communes).
     """
     # Conso du principal
-    q_principal = db.query(func.sum(MeterReading.value_kwh)).filter(MeterReading.meter_id == meter_id)
+    best = resolve_best_freq(db, [meter_id], date_from, date_to)
+    q_principal = db.query(func.sum(MeterReading.value_kwh)).filter(
+        MeterReading.meter_id == meter_id,
+        MeterReading.frequency.in_(best),
+    )
     if date_from:
         q_principal = q_principal.filter(MeterReading.timestamp >= date_from)
     if date_to:
@@ -143,7 +148,11 @@ def get_meter_breakdown(db: Session, meter_id: int, date_from=None, date_to=None
     sub_total = 0
 
     for s in subs:
-        q_sub = db.query(func.sum(MeterReading.value_kwh)).filter(MeterReading.meter_id == s.id)
+        best_sub = resolve_best_freq(db, [s.id], date_from, date_to)
+        q_sub = db.query(func.sum(MeterReading.value_kwh)).filter(
+            MeterReading.meter_id == s.id,
+            MeterReading.frequency.in_(best_sub),
+        )
         if date_from:
             q_sub = q_sub.filter(MeterReading.timestamp >= date_from)
         if date_to:

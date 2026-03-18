@@ -25,6 +25,7 @@ from models import (
     EntiteJuridique,
 )
 from models.energy_models import EnergyVector
+from services.ems.timeseries_service import resolve_best_freq
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,8 @@ def _metered_kwh(db: Session, meter_ids: list, start: date, end: date):
     start_dt = datetime(start.year, start.month, start.day)
     end_dt = datetime(end.year, end.month, end.day, 23, 59, 59)
 
+    best = resolve_best_freq(db, meter_ids, start_dt, end_dt)
+
     result = (
         db.query(
             func.coalesce(func.sum(MeterReading.value_kwh), 0.0),
@@ -73,6 +76,7 @@ def _metered_kwh(db: Session, meter_ids: list, start: date, end: date):
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_dt,
             MeterReading.timestamp <= end_dt,
+            MeterReading.frequency.in_(best),
         )
         .first()
     )
@@ -86,6 +90,7 @@ def _metered_kwh(db: Session, meter_ids: list, start: date, end: date):
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= start_dt,
             MeterReading.timestamp <= end_dt,
+            MeterReading.frequency.in_(best),
         )
         .scalar()
     ) or 0

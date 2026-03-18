@@ -32,6 +32,7 @@ from models.copilot_models import CopilotAction, CopilotActionStatus
 logger = logging.getLogger("promeos.copilot")
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+from services.ems.timeseries_service import resolve_best_freq
 
 EUR_PER_KWH = DEFAULT_PRICE_ELEC_EUR_KWH  # Source: config.default_prices
 
@@ -116,11 +117,16 @@ def _rule_night_baseload(db: Session, site_id: int, meter_ids: list, today: date
     window_start = today - timedelta(days=30)
 
     # Estimate baseload as P05 (5th percentile of readings)
+    dt_from = datetime.combine(window_start, datetime.min.time())
+    dt_to = datetime.combine(today, datetime.min.time())
+    best = resolve_best_freq(db, meter_ids, dt_from, dt_to)
+
     readings = (
         db.query(MeterReading.value_kwh)
         .filter(
             MeterReading.meter_id.in_(meter_ids),
             MeterReading.timestamp >= window_start.isoformat(),
+            MeterReading.frequency.in_(best),
         )
         .order_by(MeterReading.value_kwh)
         .all()
