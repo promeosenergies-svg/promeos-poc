@@ -593,11 +593,11 @@ describe('AU · P1.1 polish labels & tooltips', () => {
     expect(code).toMatch(/HelpCircle/);
   });
 
-  it('ConsoKpiHeader KPI tiles have tooltip prop', () => {
+  it('ConsoKpiHeader KPI items have tooltip via title attribute', () => {
     const code = readSrc('components', 'ConsoKpiHeader.jsx');
-    expect(code).toMatch(/tooltip=/);
-    // At least 6 tooltip props (one per tile) — some use template literals
-    const matches = code.match(/tooltip[=]/g);
+    // #90: inline strip uses title= on wrapper divs instead of tooltip= on KpiTile
+    expect(code).toMatch(/title=/);
+    const matches = code.match(/title=/g);
     expect(matches?.length).toBeGreaterThanOrEqual(6);
   });
 
@@ -1098,14 +1098,15 @@ describe('BH · Explorer scope coherence banner', () => {
     expect(code).toMatch(/scopeLabel/);
   });
 
-  it('shows scope banner when selectedSiteId and single site', () => {
+  it('shows scope indicator when selectedSiteId and single site', () => {
     expect(code).toMatch(/selectedSiteId && siteIds\.length === 1/);
-    expect(code).toMatch(/Vous explorez/);
+    // #90: replaced full-width banner with inline Badge
+    expect(code).toMatch(/multi-sélection disponible/);
     expect(code).toMatch(/scopeLabel/);
   });
 
   it('mentions multi-selection is available', () => {
-    expect(code).toMatch(/multi-selection/i);
+    expect(code).toMatch(/multi-s[eé]lection/i);
   });
 });
 

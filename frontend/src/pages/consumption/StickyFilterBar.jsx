@@ -46,10 +46,12 @@ import {
   Save,
   RotateCcw,
   Link,
+  Calendar,
   ChevronDown,
   Trash2,
   Plus,
   LayoutGrid,
+  Info,
 } from 'lucide-react';
 import { TrustBadge } from '../../ui';
 import {
@@ -307,6 +309,9 @@ export default function StickyFilterBar({
   setCompareYoy,
   // UI mode toggle (issue #51 — moved from standalone row)
   onToggleUiMode,
+  // Portfolio banner (issue #90 — moved from page into "Plus de filtres")
+  portfolioBannerDismissed = false,
+  onDismissPortfolioBanner,
 }) {
   const isClassic = uiMode === 'classic';
 
@@ -315,6 +320,8 @@ export default function StickyFilterBar({
   const [showPresets, setShowPresets] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(!!(startDate || endDate));
   const [showAddSite, setShowAddSite] = useState(false);
+  const [showOverflowSites, setShowOverflowSites] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const addRef = useRef(null);
   const presetsBtnRef = useRef(null);
@@ -374,8 +381,10 @@ export default function StickyFilterBar({
   };
 
   // Determine which period pill is active
-  const isCustomRange = !!(startDate || endDate);
-  const activePill = isCustomRange ? 'custom' : days === 'ytd' ? 'ytd' : days;
+  // YTD sets startDate/endDate internally but should NOT activate the custom calendar
+  const isYtd = days === 'ytd' || (days === 365 && startDate === ytdStart());
+  const isCustomRange = !!(startDate || endDate) && !isYtd;
+  const activePill = isCustomRange ? 'custom' : isYtd ? 'ytd' : days;
 
   const handlePillClick = (value) => {
     if (value === 'ytd') {
@@ -414,16 +423,15 @@ export default function StickyFilterBar({
   const showModePills = setMode && (isClassic || effectiveSiteIds.length > 1 || isPortfolioMode);
 
   return (
-    <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-2.5 md:-mx-6 md:px-6 space-y-2">
-      {/* Row 1: Site chips + Portfolio toggle — "Who" (stable, independent of config) */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* V19: Site section — ALWAYS visible when setSiteIds is provided */}
+    <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-1.5 md:-mx-6 md:px-6 space-y-1.5">
+      {/* Row A: Sites + | + Energy + Period + Granularity (#90 compact) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Site chips */}
         {setSiteIds && !isPortfolioMode && (
           <div className="flex items-center gap-1.5">
             {effectiveSiteIds.length > 0 ? (
-              /* Selected site chips */
               <div className="flex gap-1.5 flex-wrap min-w-0">
-                {effectiveSiteIds.map((id, idx) => {
+                {effectiveSiteIds.slice(0, 3).map((id, idx) => {
                   const site = sites.find((s) => s.id === id);
                   const color = colorForSite(id, idx);
                   return (
@@ -446,21 +454,52 @@ export default function StickyFilterBar({
                     </button>
                   );
                 })}
+                {effectiveSiteIds.length > 3 && !showOverflowSites && (
+                  <button
+                    onClick={() => setShowOverflowSites(true)}
+                    className="flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 shrink-0 transition"
+                    title={effectiveSiteIds
+                      .slice(3)
+                      .map((id) => sites.find((s) => s.id === id)?.nom || id)
+                      .join(', ')}
+                  >
+                    +{effectiveSiteIds.length - 3}
+                  </button>
+                )}
+                {showOverflowSites &&
+                  effectiveSiteIds.slice(3).map((id, idx) => {
+                    const site = sites.find((s) => s.id === id);
+                    const color = colorForSite(id, idx + 3);
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => {
+                          toggleSite(id);
+                          if (effectiveSiteIds.length <= 4) setShowOverflowSites(false);
+                        }}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-white border-transparent shrink-0 transition"
+                        style={{ backgroundColor: color, borderColor: color }}
+                        title={`Retirer ${site?.nom || id}`}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                        <span className="max-w-[120px] truncate">{site?.nom || id}</span>
+                        <X size={10} className="opacity-70 shrink-0" />
+                      </button>
+                    );
+                  })}
               </div>
             ) : (
-              /* Placeholder: loading or no sites yet */
               <span className="text-xs text-gray-400 italic px-1 py-1">
                 {sitesLoading ? 'Chargement…' : 'Sélectionner des sites…'}
               </span>
             )}
 
-            {/* "+" add site button — only when more sites exist to add */}
             {effectiveSiteIds.length < MAX_SITES && sites.length > effectiveSiteIds.length && (
               <div ref={addRef}>
                 <button
                   data-testid="sticky-sitesearch-trigger"
                   onClick={() => setShowAddSite((v) => !v)}
-                  className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
                   title="Ajouter un site"
                 >
                   <Plus size={12} />
@@ -481,7 +520,7 @@ export default function StickyFilterBar({
           </div>
         )}
 
-        {/* Portfolio mode: show label instead of chips */}
+        {/* Portfolio mode label */}
         {isMultiMode && isPortfolioMode && (
           <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full">
             <LayoutGrid size={12} className="text-indigo-600" />
@@ -491,30 +530,7 @@ export default function StickyFilterBar({
           </div>
         )}
 
-        {/* Portfolio toggle button (shown when multi-site available) */}
-        {isMultiMode && onTogglePortfolio && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onTogglePortfolio}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
-                isPortfolioMode
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
-              }`}
-              title={
-                isPortfolioMode
-                  ? 'Quitter le mode Portfolio'
-                  : 'Passer en mode Portfolio (tous les sites)'
-              }
-            >
-              <LayoutGrid size={11} />
-              Portfolio
-            </button>
-            <InfoTip content="Portfolio : vue agrégée de tous les sites. Mode Agrégé uniquement." />
-          </div>
-        )}
-
-        {/* Legacy single-site select (when setSiteIds not provided) */}
+        {/* Legacy single-site select */}
         {!setSiteIds && sites.length > 1 && (
           <select
             value={siteId || effectiveSiteIds[0] || ''}
@@ -531,35 +547,10 @@ export default function StickyFilterBar({
           </select>
         )}
 
-        {/* UI mode toggle — pushed to right side of Row 1 (issue #51) */}
-        {onToggleUiMode && (
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={onToggleUiMode}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
-                isClassic
-                  ? 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
-                  : 'text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100'
-              }`}
-              title={
-                isClassic
-                  ? 'Passer en mode Expert (contrôles avancés)'
-                  : 'Passer en mode Classique (vue standard)'
-              }
-            >
-              {isClassic ? 'Mode Expert →' : '← Mode Classique'}
-            </button>
-            <span className="text-[10px] text-gray-400 max-w-[180px] leading-tight">
-              {isClassic ? 'Signature, météo, tunnel, objectifs' : 'Analyses avancées activées'}
-            </span>
-          </div>
-        )}
-      </div>
+        <span className="w-px h-5 bg-gray-200 shrink-0" aria-hidden="true" />
 
-      {/* Row 2: Energy · Period · Granularité · TrustBadge — "What & When" (never reflows when sites change) */}
-      <div className="flex items-center gap-3 flex-wrap">
         {/* Energy toggle */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+        <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
           {ENERGY_OPTIONS.map((opt) => {
             const Icon = opt.icon;
             const disabled = availableTypes && !availableTypes.includes(opt.value);
@@ -568,7 +559,7 @@ export default function StickyFilterBar({
                 key={opt.value}
                 onClick={() => !disabled && setEnergyType(opt.value)}
                 disabled={disabled}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   energyType === opt.value
                     ? 'bg-white text-blue-700 shadow-sm'
                     : disabled
@@ -583,13 +574,13 @@ export default function StickyFilterBar({
           })}
         </div>
 
-        {/* Period pills — 7j / 30j / 90j / 12m / YTD */}
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+        {/* Period pills */}
+        <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
           {PERIOD_PILLS.map((pill) => (
             <button
               key={pill.value}
               onClick={() => handlePillClick(pill.value)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+              className={`px-2 py-1 rounded-md text-xs font-medium transition ${
                 activePill === pill.value
                   ? 'bg-white text-blue-700 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
@@ -598,23 +589,25 @@ export default function StickyFilterBar({
               {pill.label}
             </button>
           ))}
-          {/* Custom date range pill */}
           <button
-            onClick={() => setShowCustomDates((v) => !v)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+            onClick={() => {
+              setShowCustomDates((v) => !v);
+              if (!showMore && !showCustomDates) setShowMore(true);
+            }}
+            className={`px-2 py-1 rounded-md text-xs font-medium transition flex items-center gap-0.5 ${
               isCustomRange || showCustomDates
                 ? 'bg-white text-blue-700 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Personnaliser
+            <Calendar size={10} />
           </button>
         </div>
 
-        {/* Granularity selector (V21-C) — pills when setGranularity provided, badge otherwise */}
+        {/* Granularity */}
         {setGranularity ? (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-500 shrink-0">Granularité :</span>
+            <span className="text-xs text-gray-400 shrink-0">Gran:</span>
             <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
               {granularityPills(availableGranularities, days).map((g) => {
                 const isActive = granularity === g.key;
@@ -640,15 +633,28 @@ export default function StickyFilterBar({
           </div>
         ) : (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-medium text-gray-600">
-            Granularité&nbsp;: {GRAN_LABELS[gran] || gran}
+            Gran&nbsp;: {GRAN_LABELS[gran] || gran}
           </span>
         )}
+      </div>
 
-        {/* YoY comparison toggle (Step 10 — F1) — not portfolio */}
+      {/* Row B: Mode + Unit + YoY + TrustBadge + icon actions (#90 compact) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {showModePills && (
+          <ModePills
+            mode={mode}
+            setMode={setMode}
+            isPortfolioMode={isPortfolioMode}
+            availableModes={availableModes}
+          />
+        )}
+        {setUnit && <UnitPills unit={unit} setUnit={setUnit} />}
+
+        {/* YoY toggle — compact */}
         {setCompareYoy && !isPortfolioMode && (
           <button
             onClick={() => setCompareYoy(!compareYoy)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors duration-100 ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors duration-100 ${
               compareYoy
                 ? 'bg-blue-50 text-blue-700 border-blue-200'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -656,200 +662,264 @@ export default function StickyFilterBar({
             title="Comparer avec la même période l'année précédente (N-1)"
             data-testid="compare-yoy-toggle"
           >
-            Comparer N-1
+            N-1
           </button>
         )}
 
-        {/* Data quality badge (right-aligned) */}
-        {confidence && (
-          <div className="ml-auto">
+        {/* Right-aligned: TrustBadge + icon actions */}
+        <div className="ml-auto flex items-center gap-2">
+          {confidence && (
             <TrustBadge
               source={`${(availability.readings_count || 0).toLocaleString('fr-FR')} relevés`}
               confidence={confidence}
             />
+          )}
+
+          {/* Compact icon-only actions */}
+          <div className="flex items-center gap-0.5">
+            {onSave &&
+              (showSaveInput ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSave();
+                      if (e.key === 'Escape') setShowSaveInput(false);
+                    }}
+                    placeholder="Nom du preset..."
+                    autoFocus
+                    className="text-xs border border-blue-300 rounded-md px-2 py-1 bg-white w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={handleSave}
+                    disabled={!presetName.trim()}
+                    className="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-40"
+                  >
+                    OK
+                  </button>
+                  <button
+                    onClick={() => setShowSaveInput(false)}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowSaveInput(true)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition"
+                  title="Enregistrer un preset"
+                >
+                  <Save size={14} />
+                </button>
+              ))}
+            {onReset && (
+              <button
+                onClick={onReset}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition"
+                title="Réinitialiser les filtres"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
+            <button
+              onClick={handleCopyLink}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition"
+              title="Copier le lien de partage"
+            >
+              <Link size={14} />
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Custom date range row (collapsible) */}
-      {showCustomDates && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-500 font-medium">Du</span>
-          <input
-            type="date"
-            value={startDate || ''}
-            onChange={(e) => setStartDate && setStartDate(e.target.value || null)}
-            className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
-          />
-          <span className="text-xs text-gray-500 font-medium">au</span>
-          <input
-            type="date"
-            value={endDate || ''}
-            onChange={(e) => setEndDate && setEndDate(e.target.value || null)}
-            className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
-          />
-          {(startDate || endDate) && (
-            <button
-              onClick={() => {
-                if (setStartDate) setStartDate(null);
-                if (setEndDate) setEndDate(null);
-                setShowCustomDates(false);
-                if (setDays) setDays(90);
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600 underline"
-            >
-              Effacer
-            </button>
-          )}
-        </div>
-      )}
+      {/* Option A: Breadcrumb strip — lists hidden filter names, click to expand (#90) */}
+      <button
+        onClick={() => setShowMore((v) => !v)}
+        className="w-full flex items-center gap-1 py-0.5 text-[11px] text-gray-400 border-t border-gray-100 hover:text-gray-600 transition cursor-pointer group"
+      >
+        <ChevronDown
+          size={12}
+          className={`text-gray-300 group-hover:text-gray-500 transition-transform ${showMore ? 'rotate-180' : ''}`}
+        />
+        <span
+          className={isPortfolioMode ? 'text-blue-600 font-medium' : 'text-gray-500 font-medium'}
+        >
+          Portfolio
+        </span>
+        <span className="text-gray-300">&middot;</span>
+        <span className={!isClassic ? 'text-blue-600 font-medium' : 'text-gray-500 font-medium'}>
+          {isClassic ? 'Expert' : 'Classique'}
+        </span>
+        <span className="text-gray-300">&middot;</span>
+        <span className={isCustomRange ? 'text-blue-600 font-medium' : 'text-gray-400'}>Dates</span>
+        <span className="text-gray-300">&middot;</span>
+        <span className={savedPresets.length > 0 ? 'text-gray-500 font-medium' : 'text-gray-400'}>
+          Presets{savedPresets.length > 0 ? ` (${savedPresets.length})` : ''}
+        </span>
+      </button>
 
-      {/* Row 2: Mode pills + Unit toggle (Classic: always shown; Expert: multi-site/portfolio only) */}
-      {(showModePills || setUnit) && (
-        <div className="flex items-center gap-3 flex-wrap">
-          {showModePills && (
-            <ModePills
-              mode={mode}
-              setMode={setMode}
-              isPortfolioMode={isPortfolioMode}
-              availableModes={availableModes}
-              showTooltips={isClassic}
-            />
-          )}
-          {setUnit && <UnitPills unit={unit} setUnit={setUnit} showTooltips={isClassic} />}
-        </div>
-      )}
-
-      {/* Row 3: Actions (Enregistrer / Effacer / Copier le lien / Presets) */}
-      {(onSave || onReset || onCopyLink) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Save preset */}
-          {onSave &&
-            (showSaveInput ? (
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSave();
-                    if (e.key === 'Escape') setShowSaveInput(false);
-                  }}
-                  placeholder="Nom du preset..."
-                  autoFocus
-                  className="text-xs border border-blue-300 rounded-md px-2 py-1 bg-white w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleSave}
-                  disabled={!presetName.trim()}
-                  className="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-40"
-                >
-                  OK
-                </button>
-                <button
-                  onClick={() => setShowSaveInput(false)}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ) : (
+      {/* Collapsible "Plus de filtres" section */}
+      {showMore && (
+        <div className="pb-1 space-y-2">
+          {/* Portfolio + UI mode + Presets */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {isMultiMode && onTogglePortfolio && (
               <button
-                onClick={() => setShowSaveInput(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                onClick={onTogglePortfolio}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
+                  isPortfolioMode
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                }`}
+                title={
+                  isPortfolioMode
+                    ? 'Quitter le mode Portfolio'
+                    : 'Passer en mode Portfolio (tous les sites)'
+                }
               >
-                <Save size={12} />
-                Enregistrer
+                <LayoutGrid size={11} />
+                Portfolio
               </button>
-            ))}
+            )}
 
-          {/* Presets dropdown */}
-          {savedPresets.length > 0 && onLoadPreset && (
-            <div>
+            {onToggleUiMode && (
               <button
-                ref={presetsBtnRef}
-                data-testid="sticky-presets-trigger"
-                onClick={() => setShowPresets((v) => !v)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                onClick={onToggleUiMode}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg border transition ${
+                  isClassic
+                    ? 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
+                    : 'text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100'
+                }`}
+                title={
+                  isClassic
+                    ? 'Passer en mode Expert (contrôles avancés)'
+                    : 'Passer en mode Classique (vue standard)'
+                }
               >
-                Presets ({savedPresets.length})
-                <ChevronDown size={11} />
+                {isClassic ? 'Mode Expert →' : '← Mode Classique'}
               </button>
-              {showPresets &&
-                createPortal(
-                  <div
-                    ref={presetsDropRef}
-                    data-testid="sticky-presets-panel"
-                    className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
-                    style={presetsStyle}
-                  >
-                    {savedPresets.map((p) => (
-                      <div
-                        key={p.name}
-                        className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group"
-                      >
-                        <button
-                          onClick={() => {
-                            onLoadPreset(p.name);
-                            setShowPresets(false);
-                          }}
-                          className="flex-1 text-left text-xs font-medium text-gray-700 truncate"
-                          title={p.name}
+            )}
+
+            {savedPresets.length > 0 && onLoadPreset && (
+              <div>
+                <button
+                  ref={presetsBtnRef}
+                  data-testid="sticky-presets-trigger"
+                  onClick={() => setShowPresets((v) => !v)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Presets ({savedPresets.length})
+                  <ChevronDown size={11} />
+                </button>
+                {showPresets &&
+                  createPortal(
+                    <div
+                      ref={presetsDropRef}
+                      data-testid="sticky-presets-panel"
+                      className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
+                      style={presetsStyle}
+                    >
+                      {savedPresets.map((p) => (
+                        <div
+                          key={p.name}
+                          className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group"
                         >
-                          {p.name}
-                        </button>
-                        {onDeletePreset && (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeletePreset(p.name);
+                            onClick={() => {
+                              onLoadPreset(p.name);
+                              setShowPresets(false);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
-                            title="Supprimer"
+                            className="flex-1 text-left text-xs font-medium text-gray-700 truncate"
+                            title={p.name}
                           >
-                            <Trash2 size={11} />
+                            {p.name}
                           </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>,
-                  document.body
-                )}
+                          {onDeletePreset && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeletePreset(p.name);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
+                              title="Supprimer"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>,
+                    document.body
+                  )}
+              </div>
+            )}
+          </div>
+
+          {/* Custom date range */}
+          {showCustomDates && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-500 font-medium">Du</span>
+              <input
+                type="date"
+                value={startDate || ''}
+                onChange={(e) => setStartDate && setStartDate(e.target.value || null)}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              />
+              <span className="text-xs text-gray-500 font-medium">au</span>
+              <input
+                type="date"
+                value={endDate || ''}
+                onChange={(e) => setEndDate && setEndDate(e.target.value || null)}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              />
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    if (setStartDate) setStartDate(null);
+                    if (setEndDate) setEndDate(null);
+                    setShowCustomDates(false);
+                    if (setDays) setDays(90);
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline"
+                >
+                  Effacer
+                </button>
+              )}
             </div>
           )}
 
-          {/* Reset */}
-          {onReset && (
-            <button
-              onClick={onReset}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-              title="Réinitialiser les filtres"
-            >
-              <RotateCcw size={12} />
-              Effacer
-            </button>
+          {/* Portfolio info banner (moved from page) */}
+          {isPortfolioMode && !portfolioBannerDismissed && onDismissPortfolioBanner && (
+            <div className="flex items-start gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-700">
+              <Info size={14} className="shrink-0 mt-0.5 text-indigo-500" />
+              <span className="flex-1">
+                <strong>Mode Portfolio</strong> — vue agrégée multi-sites (mode Agrégé uniquement).
+                Chaque site contribue à l&apos;enveloppe globale. Pour comparer des sites
+                individuellement, quittez le Portfolio.
+              </span>
+              <button
+                onClick={onDismissPortfolioBanner}
+                className="shrink-0 text-indigo-400 hover:text-indigo-600"
+                aria-label="Fermer la bannière Portfolio"
+              >
+                <X size={13} />
+              </button>
+            </div>
           )}
 
-          {/* Copy link */}
-          <button
-            onClick={handleCopyLink}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-            title="Copier le lien de partage"
-          >
-            <Link size={12} />
-            Copier le lien
-          </button>
+          {/* Résumé contexte */}
+          {isClassic && (
+            <ResumeContexte
+              days={days}
+              gran={gran}
+              nSites={effectiveSiteIds.length || sites.length}
+              availability={availability}
+            />
+          )}
         </div>
-      )}
-
-      {/* Row 4: Résumé contexte (Classic mode only) */}
-      {isClassic && (
-        <ResumeContexte
-          days={days}
-          gran={gran}
-          nSites={effectiveSiteIds.length || sites.length}
-          availability={availability}
-        />
       )}
     </div>
   );

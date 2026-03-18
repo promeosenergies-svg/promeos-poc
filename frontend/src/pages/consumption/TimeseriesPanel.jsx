@@ -42,8 +42,21 @@ const GRAN_LABELS = {
 
 // ── DataCoverageBadge ──────────────────────────────────────────────────────────
 
-function DataCoverageBadge({ meta, siteCount, qualityPct }) {
+/** Format ISO date string (YYYY-MM-DD) to DD/MM/YYYY */
+function formatDateFR(iso) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('T')[0].split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function DataCoverageBadge({ meta, siteCount, qualityPct, startDate, endDate }) {
+  const dateRange =
+    startDate || endDate
+      ? `${formatDateFR(startDate) || '…'} → ${formatDateFR(endDate) || '…'}`
+      : null;
+
   const parts = [
+    dateRange,
     siteCount > 1 ? `${siteCount} sites` : null,
     meta?.n_meters ? `${meta.n_meters}\u00a0compteur${meta.n_meters > 1 ? 's' : ''}` : null,
     meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0mesures` : null,
@@ -428,7 +441,15 @@ export default function TimeseriesPanel({
         {debugPanel}
 
         {/* DataCoverageBadge — compact coverage line above chart */}
-        <DataCoverageBadge meta={meta} siteCount={siteIds.length} qualityPct={qualityPct} />
+        <DataCoverageBadge
+          meta={meta}
+          siteCount={siteIds.length}
+          qualityPct={qualityPct}
+          startDate={
+            startDate || new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+          }
+          endDate={endDate || new Date().toISOString().split('T')[0]}
+        />
 
         {/* Chart */}
         <ExplorerChart

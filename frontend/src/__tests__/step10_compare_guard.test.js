@@ -76,7 +76,8 @@ describe('C. StickyFilterBar compare toggle', () => {
   });
 
   test('C3. Comparer N-1 button text', () => {
-    expect(src).toMatch(/Comparer N-1/);
+    // Compact label "N-1" with full text in title attribute (#90)
+    expect(src).toMatch(/N-1/);
   });
 
   test('C4. not-portfolio guard (no single-site restriction)', () => {

@@ -158,7 +158,7 @@ describe('P0-6: French accent correctness', () => {
 describe('P0-6: ConsoKpiHeader responsive grid', () => {
   const code = src('components/ConsoKpiHeader.jsx');
 
-  it('uses xl:grid-cols-6 (not lg:) for comfortable display', () => {
-    expect(code).toMatch(/xl:grid-cols-6/);
+  it('uses flex-wrap inline strip layout for compact display (#90)', () => {
+    expect(code).toMatch(/flex flex-wrap/);
   });
 });
