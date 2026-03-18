@@ -186,3 +186,13 @@ export const getRecommendationOutcomes = (limit = 50) =>
   cachedGet('/action-center/recommendations/outcomes', { params: { limit } }, 15000);
 export const recordRecommendationOutcome = (data) =>
   api.post('/action-center/recommendations/outcomes', data).then((r) => r.data);
+
+// ── Flex Foundation (Sprint 21) ──
+export const getFlexAssets = (params = {}) => cachedGet('/flex/assets', { params }, 15000);
+export const createFlexAsset = (data) => api.post('/flex/assets', data).then((r) => r.data);
+export const updateFlexAsset = (id, data) =>
+  api.patch(`/flex/assets/${id}`, data).then((r) => r.data);
+export const syncBacsToFlexAssets = (siteId) =>
+  cachedGet('/flex/assets/sync-from-bacs', { params: { site_id: siteId } }, 5000);
+export const getFlexAssessment = (siteId) =>
+  cachedGet('/flex/assessment', { params: { site_id: siteId } }, 15000);
