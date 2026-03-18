@@ -98,3 +98,13 @@ export const reopenActionCenterAction = (id, data = {}) =>
 // ── Action Center Summary (persisted actions) ──
 export const getActionCenterActionsSummary = () =>
   cachedGet('/action-center/actions/summary', {}, 15000);
+
+// ── Action Center Audit Trail ──
+export const getActionCenterHistory = (actionId) =>
+  cachedGet(`/action-center/actions/${actionId}/history`, {}, 10000);
+export const getActionCenterEvidence = (actionId) =>
+  cachedGet(`/action-center/actions/${actionId}/evidence`, {}, 10000);
+export const addActionCenterEvidence = (actionId, data) =>
+  api.post(`/action-center/actions/${actionId}/evidence`, data).then((r) => r.data);
+export const exportActionCenterDossier = (actionId) =>
+  cachedGet(`/action-center/actions/${actionId}/export`, {}, 5000);

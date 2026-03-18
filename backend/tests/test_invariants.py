@@ -1099,3 +1099,124 @@ class TestActionCenterCoherence:
             cockpit_total = r1.json().get("action_center", {}).get("total_issues", 0)
             issues_total = r2.json()["total"]
             assert cockpit_total == issues_total, f"Cockpit={cockpit_total} vs Issues={issues_total}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 19. Action Audit Proof (Sprint 13)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestActionAuditProof:
+    """Verify audit trail and evidence on actions."""
+
+    def test_create_generates_event(self, app_client):
+        """Creating an action generates a 'created' event"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "audit_test_1",
+                "domain": "compliance",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Audit test",
+            },
+        )
+        action_id = r.json()["id"]
+
+        r2 = client.get(f"/api/action-center/actions/{action_id}/history")
+        assert r2.status_code == 200
+        events = r2.json()["events"]
+        assert any(e["event_type"] == "created" for e in events)
+
+    def test_resolve_generates_event(self, app_client):
+        """Resolving an action generates a 'resolved' event"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "audit_resolve",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Resolve audit",
+            },
+        )
+        action_id = r.json()["id"]
+        client.post(f"/api/action-center/actions/{action_id}/resolve", json={"resolution_note": "Done"})
+
+        r2 = client.get(f"/api/action-center/actions/{action_id}/history")
+        events = r2.json()["events"]
+        assert any(e["event_type"] == "resolved" for e in events)
+
+    def test_evidence_added_and_retrievable(self, app_client):
+        """Evidence can be added and retrieved"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "evidence_test",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Evidence test",
+            },
+        )
+        action_id = r.json()["id"]
+
+        r2 = client.post(
+            f"/api/action-center/actions/{action_id}/evidence",
+            json={"evidence_type": "note", "label": "Justification test", "value": "OK validé"},
+        )
+        assert r2.status_code == 200
+
+        r3 = client.get(f"/api/action-center/actions/{action_id}/evidence")
+        assert r3.status_code == 200
+        assert len(r3.json()["evidence"]) > 0
+
+    def test_export_dossier_complete(self, app_client):
+        """Export dossier includes action + history + evidence"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "export_test",
+                "domain": "patrimoine",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Export test",
+            },
+        )
+        action_id = r.json()["id"]
+
+        r2 = client.get(f"/api/action-center/actions/{action_id}/export")
+        assert r2.status_code == 200
+        dossier = r2.json()
+        assert "action" in dossier
+        assert "history" in dossier
+        assert "evidence" in dossier
+        assert dossier["complete"] == True
+
+    def test_critical_resolve_blocked_without_evidence(self, app_client):
+        """Critical action cannot be resolved without evidence"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "block_test",
+                "domain": "compliance",
+                "severity": "critical",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Block test",
+            },
+        )
+        action_id = r.json()["id"]
+        assert r.json()["evidence_required"] == True
+
+        r2 = client.post(f"/api/action-center/actions/{action_id}/resolve", json={})
+        assert r2.status_code == 400

@@ -37,6 +37,9 @@ def create_action_from_issue(db: Session, issue_data: dict, owner: str = None, d
         item.due_date = datetime.fromisoformat(due_date)
     db.add(item)
     db.flush()
+    from services.action_audit_service import log_event
+
+    log_event(db, item.id, "created", actor=owner or "system", new_value=f"priority={priority}, sla={item.sla_days}d")
     logger.info("Action %d created from issue %s", item.id, item.issue_id)
     return item
 
@@ -46,8 +49,13 @@ def update_action(db: Session, action_id: int, updates: dict) -> ActionPlanItem:
     item = db.query(ActionPlanItem).filter(ActionPlanItem.id == action_id).first()
     if not item:
         return None
+    from services.action_audit_service import log_event
+
     for key in ("owner", "status", "evidence_note", "evidence_received"):
         if key in updates and updates[key] is not None:
+            old = getattr(item, key, None)
+            if key in ("owner", "status") and old != updates[key]:
+                log_event(db, item.id, f"{key}_change", old_value=str(old), new_value=str(updates[key]))
             setattr(item, key, updates[key])
     if "due_date" in updates:
         val = updates["due_date"]
@@ -73,6 +81,7 @@ def override_priority(db: Session, action_id: int, new_priority: str, reason: st
     item = db.query(ActionPlanItem).filter(ActionPlanItem.id == action_id).first()
     if not item:
         return None
+    old_priority = item.priority
     item.priority = new_priority
     item.priority_source = "manual"
     item.priority_override_reason = reason.strip()
@@ -80,6 +89,9 @@ def override_priority(db: Session, action_id: int, new_priority: str, reason: st
     item.sla_days = SLA_DAYS.get(new_priority, 30)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
+    from services.action_audit_service import log_event
+
+    log_event(db, item.id, "priority_change", old_value=str(old_priority), new_value=new_priority, comment=reason)
     return item
 
 
@@ -97,6 +109,9 @@ def resolve_action(db: Session, action_id: int, resolution_note: str = None, res
     item.last_status_change_at = datetime.now(timezone.utc)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
+    from services.action_audit_service import log_event
+
+    log_event(db, item.id, "resolved", actor=resolved_by, comment=resolution_note)
     logger.info("Action %d resolved by %s", action_id, resolved_by)
     return item
 
@@ -113,6 +128,9 @@ def reopen_action(db: Session, action_id: int, reason: str = None) -> ActionPlan
     item.last_status_change_at = datetime.now(timezone.utc)
     item.updated_at = datetime.now(timezone.utc)
     db.flush()
+    from services.action_audit_service import log_event
+
+    log_event(db, item.id, "reopened", comment=reason)
     logger.info("Action %d reopened", action_id)
     return item
 

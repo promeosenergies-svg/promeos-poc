@@ -199,6 +199,53 @@ def resolve_action_endpoint(
     return serialize_action(item)
 
 
+@router.get("/actions/{action_id}/history")
+def get_action_history(action_id: int, db: Session = Depends(get_db)):
+    from services.action_audit_service import get_history
+
+    return {"action_id": action_id, "events": get_history(db, action_id)}
+
+
+@router.get("/actions/{action_id}/evidence")
+def get_action_evidence(action_id: int, db: Session = Depends(get_db)):
+    from services.action_audit_service import get_evidence
+
+    return {"action_id": action_id, "evidence": get_evidence(db, action_id)}
+
+
+@router.post("/actions/{action_id}/evidence")
+def add_action_evidence(
+    action_id: int,
+    body: dict = Body(...),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    db: Session = Depends(get_db),
+):
+    from services.action_audit_service import add_evidence
+
+    uploaded_by = (auth.email if auth else None) or body.get("uploaded_by", "system")
+    ev = add_evidence(
+        db,
+        action_id,
+        evidence_type=body.get("evidence_type", "note"),
+        label=body.get("label", "Preuve"),
+        value=body.get("value"),
+        document_name=body.get("document_name"),
+        uploaded_by=uploaded_by,
+    )
+    db.commit()
+    return {"id": ev.id, "evidence_type": ev.evidence_type, "label": ev.label}
+
+
+@router.get("/actions/{action_id}/export")
+def export_action_dossier_endpoint(action_id: int, db: Session = Depends(get_db)):
+    from services.action_audit_service import export_action_dossier
+
+    dossier = export_action_dossier(db, action_id)
+    if not dossier:
+        raise HTTPException(status_code=404, detail="Action non trouvée")
+    return dossier
+
+
 @router.post("/actions/{action_id}/reopen")
 def reopen_action_endpoint(
     action_id: int,

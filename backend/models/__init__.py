@@ -256,6 +256,9 @@ from .compliance_score_history import ComplianceScoreHistory
 # Action Plan Items (Workflow)
 from .action_plan_item import ActionPlanItem
 
+# Action Plan Audit (Sprint 13)
+from .action_event import ActionPlanEvent, ActionPlanEvidence
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -466,4 +469,7 @@ __all__ = [
     "ComplianceScoreHistory",
     # Action Plan Items (Workflow)
     "ActionPlanItem",
+    # Action Plan Audit (Sprint 13)
+    "ActionPlanEvent",
+    "ActionPlanEvidence",
 ]
