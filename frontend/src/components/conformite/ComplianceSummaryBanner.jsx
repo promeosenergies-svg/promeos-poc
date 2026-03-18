@@ -90,7 +90,7 @@ export default function ComplianceSummaryBanner({
               data-testid="next-deadline"
             >
               <CalendarClock size={12} />
-              Prochaine \u00E9ch\u00E9ance : {nextDeadline.label || nextDeadline.regulation} —{' '}
+              Prochaine échéance : {nextDeadline.label || nextDeadline.regulation} —{' '}
               {new Date(nextDeadline.deadline).toLocaleDateString('fr-FR', {
                 day: 'numeric',
                 month: 'long',
@@ -131,7 +131,7 @@ export default function ComplianceSummaryBanner({
               }}
               data-testid="cta-preparer-echeances"
             >
-              Pr\u00E9parer les \u00E9ch\u00E9ances <ArrowRight size={14} />
+              Préparer les échéances <ArrowRight size={14} />
             </Button>
           )}
         </div>
@@ -144,18 +144,18 @@ export default function ComplianceSummaryBanner({
         const urgentDeadline = nextDeadline?.days_remaining;
         const urgentLabel =
           urgentDeadline != null && urgentDeadline <= 90
-            ? `1 \u00E9ch\u00E9ance sous ${urgentDeadline} jour${urgentDeadline > 1 ? 's' : ''}`
+            ? `1 échéance sous ${urgentDeadline} jour${urgentDeadline > 1 ? 's' : ''}`
             : null;
         const parts = [
           `${oblCount} obligation${oblCount > 1 ? 's' : ''} active${oblCount > 1 ? 's' : ''}`,
           ncCount > 0 ? `${ncCount} non conforme${ncCount > 1 ? 's' : ''}` : null,
-          aRisque > 0 ? `${aRisque} \u00E0 qualifier` : null,
+          aRisque > 0 ? `${aRisque} à qualifier` : null,
           urgentLabel,
         ].filter(Boolean);
         if (parts.length === 0 || !isExpert) return null;
         return (
           <p data-testid="executive-summary" className="text-xs text-gray-600 mt-2 font-medium">
-            {parts.join(' \u00B7 ')}
+            {parts.join(' · ')}
           </p>
         );
       })()}
@@ -225,7 +225,7 @@ export default function ComplianceSummaryBanner({
                         : 'bg-amber-50 text-amber-700'
                     }`}
                   >
-                    {o.statut === 'non_conforme' ? 'Non conforme' : '\u00C0 qualifier'}
+                    {o.statut === 'non_conforme' ? 'Non conforme' : 'À qualifier'}
                   </span>
                 </div>
               ))}

@@ -24,10 +24,10 @@ export function DevApiBadge() {
       className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full ${
         isOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
       }`}
-      title={isOk ? `v${health.version} \u00B7 ${health.git_sha}` : 'API injoignable'}
+      title={isOk ? `v${health.version} · ${health.git_sha}` : 'API injoignable'}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
-      {isOk ? 'API : Connect\u00E9e' : 'API : Hors ligne'}
+      {isOk ? 'API : Connectée' : 'API : Hors ligne'}
       {!isOk && <span className="ml-1 text-[9px] text-red-500">API indisponible</span>}
     </span>
   );
@@ -50,12 +50,12 @@ export function DevScopeBadge({ scope, scopedSites }) {
       data-testid="scope-badge"
       className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 cursor-pointer"
       onClick={handleCopy}
-      title={`Copier le p\u00E9rim\u00E8tre : ${label} (${scopedSites.length} sites)`}
+      title={`Copier le périmètre : ${label} (${scopedSites.length} sites)`}
     >
       <Database size={10} />
       {label}
       <span className="text-indigo-400">({scopedSites.length})</span>
-      {copied && <span className="text-green-600 font-medium">copi\u00E9</span>}
+      {copied && <span className="text-green-600 font-medium">copié</span>}
     </span>
   );
 }

@@ -103,7 +103,7 @@ export function formatDeadline(echeance, statut) {
     year: 'numeric',
   });
   if (statut !== 'conforme' && d < new Date()) {
-    return { text: `\u00C9ch\u00E9ance d\u00E9pass\u00E9e depuis le ${formatted}`, overdue: true };
+    return { text: `Échéance dépassée depuis le ${formatted}`, overdue: true };
   }
   return { text: formatted, overdue: false };
 }
@@ -183,14 +183,14 @@ export function sitesToObligations(sitesData, _summary) {
           : obl.statut === 'a_risque'
             ? 'in_progress'
             : 'missing',
-    pourquoi: `${obl._site_ids_all.size} site(s) concern\u00E9(s) par ${obl.regulation}`,
+    pourquoi: `${obl._site_ids_all.size} site(s) concerné(s) par ${obl.regulation}`,
     quoi_faire:
       obl.findings
         .filter((f) => f.actions?.length)
         .flatMap((f) => f.actions)
         .filter((v, i, a) => a.indexOf(v) === i)
-        .join('. ') || '\u00C9valuer la conformit\u00E9',
-    preuve: 'Attestation ou rapport de conformit\u00E9',
+        .join('. ') || 'Évaluer la conformité',
+    preuve: 'Attestation ou rapport de conformité',
     impact_eur: 0,
   }));
 }

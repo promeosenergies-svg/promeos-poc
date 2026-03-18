@@ -14,7 +14,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
       <div className="flex items-center gap-6">
         {/* Score display */}
         <div className="text-center min-w-[100px]">
-          <p className="text-xs text-gray-500 mb-1">Score conformit\u00E9</p>
+          <p className="text-xs text-gray-500 mb-1">Score conformité</p>
           <span
             className={`text-3xl font-bold ${getComplianceScoreColor(complianceScore.score ?? complianceScore.avg_score)}`}
           >
@@ -24,11 +24,11 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
           {segProfile?.has_profile && Object.keys(segProfile.answers || {}).length > 0 && (
             <>
               <p className="text-[10px] text-blue-600 font-medium mt-1" data-testid="profile-badge">
-                Adapt\u00E9 \u00E0 votre profil
+                Adapté à votre profil
               </p>
               <p className="text-[9px] text-gray-400 mt-0.5" data-testid="profile-explain">
-                Certaines obligations et priorit\u00E9s sont ajust\u00E9es selon votre profil
-                d\u00E9clar\u00E9 ou d\u00E9tect\u00E9.
+                Certaines obligations et priorités sont ajustées selon votre profil déclaré ou
+                détecté.
               </p>
             </>
           )}
@@ -38,7 +38,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
           {(complianceScore.breakdown || []).map((fw) => {
             const fwLabel =
               fw.framework === 'tertiaire_operat'
-                ? 'D\u00E9cret Tertiaire'
+                ? 'Décret Tertiaire'
                 : fw.framework === 'bacs'
                   ? 'BACS'
                   : 'APER';
@@ -75,11 +75,7 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             complianceScore.breakdown_avg &&
             Object.entries(complianceScore.breakdown_avg).map(([fw, score]) => {
               const fwLabel =
-                fw === 'tertiaire_operat'
-                  ? 'D\u00E9cret Tertiaire'
-                  : fw === 'bacs'
-                    ? 'BACS'
-                    : 'APER';
+                fw === 'tertiaire_operat' ? 'Décret Tertiaire' : fw === 'bacs' ? 'BACS' : 'APER';
               return (
                 <div key={fw} className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 w-36 truncate">{fwLabel}</span>
@@ -112,8 +108,8 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             >
               {complianceScore.confidence === 'high' ||
               complianceScore.high_confidence_count > (complianceScore.total_sites || 0) * 0.6
-                ? 'Donn\u00E9es fiables'
-                : 'Donn\u00E9es partielles'}
+                ? 'Données fiables'
+                : 'Données partielles'}
             </span>
           </div>
         )}

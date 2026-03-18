@@ -388,7 +388,7 @@ export default function ConformitePage() {
       loadData();
       track('conformite_recompute');
     } catch {
-      setError('Erreur lors de la r\u00E9\u00E9valuation des r\u00E8gles');
+      setError('Erreur lors de la réévaluation des règles');
     } finally {
       setRecomputing(false);
     }
@@ -400,7 +400,7 @@ export default function ConformitePage() {
       loadData();
       track('conformite_workflow', { finding_id: findingId, status: newStatus });
     } catch {
-      toast('Erreur lors de la mise \u00E0 jour du workflow', 'error');
+      toast('Erreur lors de la mise à jour du workflow', 'error');
     }
   };
 
@@ -408,7 +408,7 @@ export default function ConformitePage() {
     openActionDrawer(
       {
         prefill: {
-          titre: `Mise en conformit\u00E9 ${obligation.regulation}`,
+          titre: `Mise en conformité ${obligation.regulation}`,
           type: 'conformite',
           priorite:
             obligation.severity === 'critical'
@@ -419,7 +419,7 @@ export default function ConformitePage() {
           description: obligation.quoi_faire,
           obligation_code: obligation.code,
           impact_eur: obligation.impact_eur,
-          site: `${obligation.sites_concernes} sites concern\u00E9s`,
+          site: `${obligation.sites_concernes} sites concernés`,
         },
         sourceType: 'compliance',
         sourceId: obligation.code,
@@ -436,7 +436,7 @@ export default function ConformitePage() {
     openActionDrawer(
       {
         prefill: {
-          titre: `Mise en conformit\u00E9 ${REG_LABELS[finding.regulation] || finding.regulation} \u2014 ${finding.site_nom}`,
+          titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
           type: 'conformite',
           priorite:
             finding.severity === 'critical'
@@ -474,11 +474,7 @@ export default function ConformitePage() {
 
   if (loading) {
     return (
-      <PageShell
-        icon={ShieldCheck}
-        title="Conformit\u00E9 r\u00E9glementaire"
-        subtitle="Chargement..."
-      >
+      <PageShell icon={ShieldCheck} title="Conformité réglementaire" subtitle="Chargement...">
         <SkeletonKpi count={4} />
         <SkeletonTable rows={5} cols={4} />
       </PageShell>
@@ -492,19 +488,19 @@ export default function ConformitePage() {
         setError(null);
         loadData();
       } catch {
-        setError({ message: '\u00C9chec du reset de la base de donn\u00E9es' });
+        setError({ message: 'Échec du reset de la base de données' });
       }
     };
 
     return (
       <PageShell
         icon={ShieldCheck}
-        title="Conformit\u00E9 r\u00E9glementaire"
-        subtitle={`${org?.nom || 'Organisation'} \u00B7 ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
+        title="Conformité réglementaire"
+        subtitle={`${org?.nom || 'Organisation'} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
       >
         <ErrorState
           title="Erreur de chargement"
-          message={error.message || 'Donn\u00E9es de conformit\u00E9 indisponibles'}
+          message={error.message || 'Données de conformité indisponibles'}
           onRetry={() => {
             setError(null);
             loadData();
@@ -528,7 +524,7 @@ export default function ConformitePage() {
                 </Button>
               ) : (
                 <p className="text-sm text-gray-500">
-                  Contactez l'administrateur pour r\u00E9soudre ce probl\u00E8me.
+                  Contactez l'administrateur pour résoudre ce problème.
                 </p>
               )
             ) : null
@@ -543,7 +539,7 @@ export default function ConformitePage() {
       icon={ShieldCheck}
       title={
         <>
-          <Explain term="statut_conformite">Conformit\u00E9</Explain> r\u00E9glementaire
+          <Explain term="statut_conformite">Conformité</Explain> réglementaire
         </>
       }
       subtitle={scopeLabel}
@@ -551,10 +547,10 @@ export default function ConformitePage() {
         <>
           <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
             <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
-            {recomputing ? '\u00C9valuation...' : 'R\u00E9\u00E9valuer'}
+            {recomputing ? 'Évaluation...' : 'Réévaluer'}
           </Button>
           <Button onClick={() => openActionDrawer({})}>
-            <Plus size={16} /> Cr\u00E9er une action
+            <Plus size={16} /> Créer une action
           </Button>
         </>
       }
@@ -569,7 +565,7 @@ export default function ConformitePage() {
           />
           {bundle?.meta?.generated_at && (
             <span className="text-[10px] font-mono text-gray-400">
-              <Explain term="report_pct">Synth\u00E8se</Explain> :{' '}
+              <Explain term="report_pct">Synthèse</Explain> :{' '}
               {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
             </span>
           )}
@@ -694,8 +690,8 @@ export default function ConformitePage() {
             Financements mobilisables
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            Certificats d'\u00C9conomies d'\u00C9nergie (CEE) \u2014 m\u00E9canisme de financement,
-            pas une obligation r\u00E9glementaire.
+            Certificats d'Économies d'Énergie (CEE) — mécanisme de financement, pas une obligation
+            réglementaire.
           </p>
           <div className="space-y-3">
             {incentives.map((f, idx) => (
@@ -703,7 +699,7 @@ export default function ConformitePage() {
                 <div className="flex items-start justify-between mb-1">
                   <h4 className="font-medium text-gray-800">{f.rule_id || f.regulation}</h4>
                   <span className="px-3 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
-                    \u00C9ligible CEE
+                    Éligible CEE
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">{f.evidence || f.explanation || ''}</p>
@@ -776,7 +772,7 @@ export default function ConformitePage() {
             })),
           missingProofs: obligations
             .filter((o) => o.statut !== 'conforme' && !(proofFiles[o.id]?.length > 0))
-            .map((o) => `${o.regulation} \u2014 preuve non d\u00E9pos\u00E9e`),
+            .map((o) => `${o.regulation} — preuve non déposée`),
           nextDeadline: timeline?.next_deadline
             ? {
                 label: timeline.next_deadline.label || timeline.next_deadline.regulation,
