@@ -8,6 +8,14 @@ from middleware.auth import get_optional_auth, AuthContext
 
 router = APIRouter(prefix="/api/action-center", tags=["action-center"])
 
+# ── Saved Views (in-memory for POC) ─────────────────────────────────────
+SAVED_VIEWS = {
+    "mes_actions": {"label": "Mes actions", "filters": {"owner": "__CURRENT_USER__"}},
+    "overdue": {"label": "En retard", "filters": {"sla_status": "overdue"}},
+    "critiques": {"label": "Critiques", "filters": {"priority": "critical"}},
+    "cette_semaine": {"label": "Cette semaine", "filters": {"due_before": "__THIS_WEEK__"}},
+}
+
 
 def _get_org_id(request: Request, auth: Optional[AuthContext]) -> int:
     org_header = request.headers.get("X-Org-Id")
@@ -130,6 +138,12 @@ def actions_summary(
         if sla == "overdue":
             overdue_count += 1
 
+    needs_evidence = sum(
+        1
+        for item in items
+        if item.evidence_required and not item.evidence_received and item.status not in ("resolved", "dismissed")
+    )
+
     return {
         "total": len(items),
         "by_status": by_status,
@@ -140,6 +154,7 @@ def actions_summary(
         "overdue_count": overdue_count,
         "open_count": by_status.get("open", 0) + by_status.get("in_progress", 0) + by_status.get("reopened", 0),
         "resolved_count": by_status.get("resolved", 0),
+        "needs_evidence_count": needs_evidence,
     }
 
 
@@ -260,3 +275,64 @@ def reopen_action_endpoint(
         raise HTTPException(status_code=404, detail="Action non trouvée")
     db.commit()
     return serialize_action(item)
+
+
+# ── Saved Views ──────────────────────────────────────────────────────────
+
+
+@router.get("/views")
+def list_saved_views():
+    return {"views": [{"id": k, **v} for k, v in SAVED_VIEWS.items()]}
+
+
+# ── Notifications ────────────────────────────────────────────────────────
+
+
+@router.get("/notifications")
+def list_notifications(
+    recipient: Optional[str] = Query(None),
+    unread_only: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    from services.action_notification_service import get_notifications
+
+    return {"notifications": get_notifications(db, recipient, unread_only)}
+
+
+@router.post("/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
+    from services.action_notification_service import mark_read
+
+    mark_read(db, notification_id)
+    db.commit()
+    return {"status": "read"}
+
+
+# ── Bulk Actions ─────────────────────────────────────────────────────────
+
+
+@router.post("/actions/bulk/assign-owner")
+def bulk_assign(body: dict = Body(...), db: Session = Depends(get_db)):
+    from services.action_bulk_service import bulk_assign_owner
+
+    result = bulk_assign_owner(db, body["action_ids"], body["owner"], actor=body.get("actor", "system"))
+    db.commit()
+    return result
+
+
+@router.post("/actions/bulk/update-due-date")
+def bulk_due_date(body: dict = Body(...), db: Session = Depends(get_db)):
+    from services.action_bulk_service import bulk_update_due_date
+
+    result = bulk_update_due_date(db, body["action_ids"], body["due_date"], actor=body.get("actor", "system"))
+    db.commit()
+    return result
+
+
+@router.post("/actions/bulk/update-status")
+def bulk_status(body: dict = Body(...), db: Session = Depends(get_db)):
+    from services.action_bulk_service import bulk_update_status
+
+    result = bulk_update_status(db, body["action_ids"], body["status"], actor=body.get("actor", "system"))
+    db.commit()
+    return result

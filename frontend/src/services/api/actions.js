@@ -108,3 +108,29 @@ export const addActionCenterEvidence = (actionId, data) =>
   api.post(`/action-center/actions/${actionId}/evidence`, data).then((r) => r.data);
 export const exportActionCenterDossier = (actionId) =>
   cachedGet(`/action-center/actions/${actionId}/export`, {}, 5000);
+
+// ── Action Center Notifications ──
+export const getActionCenterNotifications = (params = {}) =>
+  cachedGet('/action-center/notifications', { params }, 10000);
+export const markNotificationRead = (id) =>
+  api.post(`/action-center/notifications/${id}/read`).then((r) => r.data);
+
+// ── Action Center Saved Views ──
+export const getActionCenterViews = () => cachedGet('/action-center/views', {}, 60000);
+
+// ── Action Center Bulk ──
+export const bulkAssignOwner = (actionIds, owner) =>
+  api
+    .post('/action-center/actions/bulk/assign-owner', { action_ids: actionIds, owner })
+    .then((r) => r.data);
+export const bulkUpdateDueDate = (actionIds, dueDate) =>
+  api
+    .post('/action-center/actions/bulk/update-due-date', {
+      action_ids: actionIds,
+      due_date: dueDate,
+    })
+    .then((r) => r.data);
+export const bulkUpdateStatus = (actionIds, status) =>
+  api
+    .post('/action-center/actions/bulk/update-status', { action_ids: actionIds, status })
+    .then((r) => r.data);

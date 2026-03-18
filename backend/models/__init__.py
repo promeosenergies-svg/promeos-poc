@@ -259,6 +259,9 @@ from .action_plan_item import ActionPlanItem
 # Action Plan Audit (Sprint 13)
 from .action_event import ActionPlanEvent, ActionPlanEvidence
 
+# Action Notifications (Sprint 14)
+from .action_notification import ActionNotification
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -472,4 +475,6 @@ __all__ = [
     # Action Plan Audit (Sprint 13)
     "ActionPlanEvent",
     "ActionPlanEvidence",
+    # Action Notifications (Sprint 14)
+    "ActionNotification",
 ]

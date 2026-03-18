@@ -40,6 +40,9 @@ def create_action_from_issue(db: Session, issue_data: dict, owner: str = None, d
     from services.action_audit_service import log_event
 
     log_event(db, item.id, "created", actor=owner or "system", new_value=f"priority={priority}, sla={item.sla_days}d")
+    from services.action_notification_service import generate_notifications
+
+    generate_notifications(db, item.id, "created", actor=owner or "system")
     logger.info("Action %d created from issue %s", item.id, item.issue_id)
     return item
 
@@ -112,6 +115,9 @@ def resolve_action(db: Session, action_id: int, resolution_note: str = None, res
     from services.action_audit_service import log_event
 
     log_event(db, item.id, "resolved", actor=resolved_by, comment=resolution_note)
+    from services.action_notification_service import generate_notifications
+
+    generate_notifications(db, item.id, "resolved", actor=resolved_by or "system")
     logger.info("Action %d resolved by %s", action_id, resolved_by)
     return item
 
@@ -131,6 +137,9 @@ def reopen_action(db: Session, action_id: int, reason: str = None) -> ActionPlan
     from services.action_audit_service import log_event
 
     log_event(db, item.id, "reopened", comment=reason)
+    from services.action_notification_service import generate_notifications
+
+    generate_notifications(db, item.id, "reopened", actor="system")
     logger.info("Action %d reopened", action_id)
     return item
 

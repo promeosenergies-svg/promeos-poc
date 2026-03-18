@@ -1220,3 +1220,96 @@ class TestActionAuditProof:
 
         r2 = client.post(f"/api/action-center/actions/{action_id}/resolve", json={})
         assert r2.status_code == 400
+
+
+class TestNotificationsAndBulk:
+    """Verify notifications, bulk actions, and saved views."""
+
+    def test_notification_on_assign(self, app_client):
+        """Creating action with owner generates assigned notification"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "notif_test",
+                "domain": "compliance",
+                "severity": "medium",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Notif test",
+                "owner": "alice@test.io",
+            },
+        )
+        action_id = r.json()["id"]
+
+        r2 = client.get("/api/action-center/notifications?recipient=alice@test.io")
+        assert r2.status_code == 200
+        notifs = r2.json()["notifications"]
+        assert any(n["type"] == "assigned" and n["action_id"] == action_id for n in notifs)
+
+    def test_bulk_assign_creates_events(self, app_client):
+        """Bulk assign creates audit events"""
+        client, _ = app_client
+        ids = []
+        for i in range(3):
+            r = client.post(
+                "/api/action-center/actions",
+                json={
+                    "issue_id": f"bulk_test_{i}",
+                    "domain": "billing",
+                    "severity": "low",
+                    "site_id": 1,
+                    "issue_code": "test",
+                    "issue_label": f"Bulk {i}",
+                },
+            )
+            ids.append(r.json()["id"])
+
+        r2 = client.post(
+            "/api/action-center/actions/bulk/assign-owner", json={"action_ids": ids, "owner": "bob@test.io"}
+        )
+        assert r2.status_code == 200
+        assert r2.json()["updated"] == 3
+
+        # Check audit trail
+        r3 = client.get(f"/api/action-center/actions/{ids[0]}/history")
+        events = r3.json()["events"]
+        assert any(e["event_type"] == "owner_change" and e["new_value"] == "bob@test.io" for e in events)
+
+    def test_bulk_resolve_blocked(self, app_client):
+        """Bulk resolve is not allowed"""
+        client, _ = app_client
+        r = client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "bulk_resolve",
+                "domain": "compliance",
+                "severity": "low",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Bulk resolve",
+            },
+        )
+        r2 = client.post(
+            "/api/action-center/actions/bulk/update-status", json={"action_ids": [r.json()["id"]], "status": "resolved"}
+        )
+        assert r2.status_code == 200
+        assert r2.json()["updated"] == 0
+
+    def test_saved_views_exist(self, app_client):
+        """Saved views endpoint returns predefined views"""
+        client, _ = app_client
+        r = client.get("/api/action-center/views")
+        assert r.status_code == 200
+        views = r.json()["views"]
+        assert len(views) >= 4
+        view_ids = [v["id"] for v in views]
+        assert "overdue" in view_ids
+        assert "critiques" in view_ids
+
+    def test_summary_needs_evidence(self, app_client):
+        """Summary includes needs_evidence_count"""
+        client, _ = app_client
+        r = client.get("/api/action-center/actions/summary")
+        assert r.status_code == 200
+        assert "needs_evidence_count" in r.json()
