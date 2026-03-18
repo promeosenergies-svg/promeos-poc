@@ -1392,3 +1392,86 @@ class TestManagementSummary:
         data = r2.json()
         if data["avg_resolution_days"] is not None:
             assert data["avg_resolution_days"] >= 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 21. Executive Summary & Trends (Sprint 16)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestExecutiveSummary:
+    """Verify executive summary and trends."""
+
+    def test_executive_summary_structure(self, app_client):
+        """Executive summary has all required fields"""
+        client, _ = app_client
+        r = client.get("/api/action-center/executive-summary")
+        assert r.status_code == 200
+        data = r.json()
+        for field in (
+            "period_days",
+            "open_count",
+            "resolved_count",
+            "overdue_count",
+            "backlog_health",
+            "top_sites",
+            "top_domains",
+            "top_actions",
+        ):
+            assert field in data, f"Missing: {field}"
+
+    def test_executive_backlog_health_rules(self, app_client):
+        """Backlog health follows documented rules"""
+        client, _ = app_client
+        r = client.get("/api/action-center/executive-summary")
+        data = r.json()
+        assert data["backlog_health"] in ("healthy", "at_risk", "unhealthy")
+        assert "backlog_health_rules" in data
+
+    def test_trends_structure(self, app_client):
+        """Trends endpoint returns daily buckets and totals"""
+        client, _ = app_client
+        r = client.get("/api/action-center/trends?window=7")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["window_days"] == 7
+        assert "daily" in data
+        assert "totals" in data
+        assert "current_snapshot" in data
+        assert len(data["daily"]) == 7
+
+    def test_executive_top_sites_coherent(self, app_client):
+        """top_sites site_ids exist in the action list"""
+        client, _ = app_client
+        # Create actions for different sites
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "exec_s1",
+                "domain": "compliance",
+                "severity": "high",
+                "site_id": 1,
+                "issue_code": "test",
+                "issue_label": "Exec 1",
+            },
+        )
+        client.post(
+            "/api/action-center/actions",
+            json={
+                "issue_id": "exec_s2",
+                "domain": "billing",
+                "severity": "medium",
+                "site_id": 2,
+                "issue_code": "test",
+                "issue_label": "Exec 2",
+            },
+        )
+
+        r = client.get("/api/action-center/executive-summary")
+        data = r.json()
+        top_site_ids = {s["site_id"] for s in data["top_sites"]}
+
+        r2 = client.get("/api/action-center/actions")
+        action_site_ids = {a["site_id"] for a in r2.json()["actions"]}
+
+        assert top_site_ids.issubset(action_site_ids)

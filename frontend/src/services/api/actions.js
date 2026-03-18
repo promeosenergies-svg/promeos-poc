@@ -138,3 +138,9 @@ export const bulkUpdateStatus = (actionIds, status) =>
 // ── Action Center Management ──
 export const getActionCenterManagementSummary = () =>
   cachedGet('/action-center/management-summary', {}, 15000);
+
+// ── Action Center Executive ──
+export const getActionCenterExecutiveSummary = (period = 30) =>
+  cachedGet('/action-center/executive-summary', { params: { period } }, 15000);
+export const getActionCenterTrends = (window = 30) =>
+  cachedGet('/action-center/trends', { params: { window } }, 15000);

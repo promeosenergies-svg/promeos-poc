@@ -166,6 +166,28 @@ def management_summary(db: Session = Depends(get_db)):
     return compute_management_summary(db)
 
 
+@router.get("/executive-summary")
+def executive_summary(
+    period: int = Query(30, ge=7, le=365, description="Period in days"),
+    db: Session = Depends(get_db),
+):
+    """Executive-level summary with backlog health and top risks."""
+    from services.action_management_service import compute_executive_summary
+
+    return compute_executive_summary(db, period)
+
+
+@router.get("/trends")
+def action_trends(
+    window: int = Query(30, ge=7, le=365, description="Window in days"),
+    db: Session = Depends(get_db),
+):
+    """Action center trends over time."""
+    from services.action_management_service import compute_trends
+
+    return compute_trends(db, window)
+
+
 @router.post("/actions/{action_id}/override-priority")
 def override_priority_endpoint(
     action_id: int,
