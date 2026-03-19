@@ -32,7 +32,7 @@ from models.copilot_models import CopilotAction, CopilotActionStatus
 logger = logging.getLogger("promeos.copilot")
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 EUR_PER_KWH = DEFAULT_PRICE_ELEC_EUR_KWH  # Source: config.default_prices
 
@@ -286,15 +286,7 @@ def run_copilot_for_site(
     if today is None:
         today = date.today()
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-        )
-        .all()
-    )
-    meter_ids = [m.id for m in meters]
+    meter_ids = get_site_meter_ids(db, site_id)
 
     findings = []
 

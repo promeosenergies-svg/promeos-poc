@@ -13,7 +13,7 @@ from models.tou_schedule import TOUSchedule
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 
 # Default TURPE-like schedule (HP 6h-22h weekday, HC rest)
@@ -221,15 +221,10 @@ def compute_hp_hc_ratio(
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
-    meters_query = db.query(Meter).filter(
-        Meter.site_id == site_id,
-        Meter.is_active == True,
-        Meter.energy_vector == EnergyVector.ELECTRICITY,
-    )
     if meter_id:
-        meters_query = meters_query.filter(Meter.id == meter_id)
-
-    meter_ids = [m.id for m in meters_query.all()]
+        meter_ids = [meter_id]
+    else:
+        meter_ids = get_site_meter_ids(db, site_id, EnergyVector.ELECTRICITY)
     if not meter_ids:
         return _empty_hp_hc(site_id)
 
@@ -374,20 +369,11 @@ def compute_hphc_breakdown_v2(
         end_date = datetime.now(timezone.utc).replace(tzinfo=None)
         start_date = end_date - timedelta(days=days)
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-        )
-        .all()
-    )
+    meter_ids = get_site_meter_ids(db, site_id, EnergyVector.ELECTRICITY)
 
-    if not meters:
+    if not meter_ids:
         return _empty_hphc_v2(site_id, cal_name)
 
-    meter_ids = [m.id for m in meters]
     best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     readings = (

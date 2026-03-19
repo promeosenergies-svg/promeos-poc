@@ -55,6 +55,26 @@ _COMPATIBLE_FREQS = {
 # -------------------------------------------------------------------
 # Public API
 # -------------------------------------------------------------------
+
+
+def get_site_meter_ids(
+    db: Session,
+    site_id: int,
+    energy_vector: Optional[EnergyVector] = None,
+) -> List[int]:
+    """Return active meter IDs for a site, excluding sub-meters whose parent is already in the list.
+
+    This prevents double-counting when a parent meter's readings already include
+    sub-meter consumption.  Pass *energy_vector=None* to return meters of all types.
+    """
+    q = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True)
+    if energy_vector is not None:
+        q = q.filter(Meter.energy_vector == energy_vector)
+    meters = q.all()
+    all_ids = {m.id for m in meters}
+    return [m.id for m in meters if m.parent_meter_id is None or m.parent_meter_id not in all_ids]
+
+
 def suggest_granularity(date_from: datetime, date_to: datetime) -> str:
     """Auto-suggest granularity based on date range span.
 
@@ -670,7 +690,9 @@ def compare_summary(
     if not meters:
         return {"current_kwh": None, "previous_kwh": None, "delta_pct": None}
 
-    meter_ids = [m.id for m in meters]
+    # Exclude sub-meters whose parent is already in the list (avoid double-counting)
+    all_ids = {m.id for m in meters}
+    meter_ids = [m.id for m in meters if m.parent_meter_id is None or m.parent_meter_id not in all_ids]
 
     def _sum_kwh(mids, dt_from, dt_to):
         best = _resolve_best_freq(db, mids, dt_from, dt_to, "daily")

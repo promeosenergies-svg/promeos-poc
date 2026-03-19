@@ -11,8 +11,8 @@ from collections import defaultdict
 from sqlalchemy.orm import Session
 
 from models import Meter, MeterReading, Site
-from models.energy_models import FrequencyType
-from services.ems.timeseries_service import resolve_best_freq
+from models.energy_models import EnergyVector, FrequencyType
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 
 def _percentile(data: List[float], pct: float) -> float:
@@ -68,29 +68,14 @@ def compute_tunnel(
     end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
-    # Find meters for this site and energy type
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-        )
-        .all()
-    )
+    # Find meters for this site and energy type (excluding sub-meters)
+    _ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
+    target_ev = _ev_map.get(energy_type)
+    meter_ids = get_site_meter_ids(db, site_id, target_ev)
 
-    if energy_type == "electricity":
-        from models.energy_models import EnergyVector
-
-        meters = [m for m in meters if m.energy_vector == EnergyVector.ELECTRICITY]
-    elif energy_type == "gas":
-        from models.energy_models import EnergyVector
-
-        meters = [m for m in meters if m.energy_vector == EnergyVector.GAS]
-
-    if not meters:
+    if not meter_ids:
         return _empty_tunnel(site_id, energy_type, days)
 
-    meter_ids = [m.id for m in meters]
     best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     # Fetch readings
@@ -219,29 +204,14 @@ def compute_tunnel_v2(
         end_date = datetime.now(timezone.utc).replace(tzinfo=None)
         start_date = end_date - timedelta(days=days)
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-        )
-        .all()
-    )
-
-    if energy_type == "electricity":
-        from models.energy_models import EnergyVector
-
-        meters = [m for m in meters if m.energy_vector == EnergyVector.ELECTRICITY]
-    elif energy_type == "gas":
-        from models.energy_models import EnergyVector
-
-        meters = [m for m in meters if m.energy_vector == EnergyVector.GAS]
+    _ev_map2 = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
+    target_ev2 = _ev_map2.get(energy_type)
+    meter_ids = get_site_meter_ids(db, site_id, target_ev2)
 
     unit = "kW" if mode == "power" else "kWh"
-    if not meters:
+    if not meter_ids:
         return _empty_tunnel_v2(site_id, energy_type, days, mode, unit)
 
-    meter_ids = [m.id for m in meters]
     best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     readings = (
