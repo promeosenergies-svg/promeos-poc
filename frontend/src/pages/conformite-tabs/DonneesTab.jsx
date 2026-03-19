@@ -167,6 +167,7 @@ export default function DonneesTab({ scopedSites, intakeQuestions, navigate, don
     <div className="space-y-4">
       {scopedSites.length === 0 ? (
         <EmptyState
+          variant="empty"
           icon={Database}
           title="Aucun site dans le périmètre"
           text="Ajoutez des sites pour analyser la qualité des données."

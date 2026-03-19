@@ -4,6 +4,7 @@
  */
 import { ShieldCheck, ArrowRight, CalendarClock } from 'lucide-react';
 import { Button } from '../../ui';
+import { RiskBadge } from '../../lib/risk/normalizeRisk';
 import { getKpiMessage } from '../../services/kpiMessaging';
 import { formatDeadline } from './conformiteUtils';
 
@@ -77,10 +78,16 @@ export default function ComplianceSummaryBanner({
               {isExpert ? conformiteMsg.expert : conformiteMsg.simple}
             </p>
           )}
-          {/* Risque message */}
+          {/* Risque message + RiskBadge */}
           {risqueMsg && risqueMsg.severity !== 'ok' && (
-            <p className={`text-xs mt-1 ${cfg.subColor}`} data-testid="kpi-message-risque">
-              {isExpert ? risqueMsg.expert : risqueMsg.simple}
+            <p
+              className={`text-xs mt-1 ${cfg.subColor} flex items-center gap-2`}
+              data-testid="kpi-message-risque"
+            >
+              <span>{isExpert ? risqueMsg.expert : risqueMsg.simple}</span>
+              {(score?.total_impact_eur ?? 0) > 0 && (
+                <RiskBadge riskEur={score.total_impact_eur} size="sm" />
+              )}
             </p>
           )}
           {/* Next deadline */}

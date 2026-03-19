@@ -158,3 +158,70 @@ describe('Migration verification', () => {
     expect(keys.length).toBe(5);
   });
 });
+
+describe('Conformite convergence', () => {
+  test('ConformitePage imports RiskBadge', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/ConformitePage.jsx', 'utf-8');
+    expect(content).toContain('RiskBadge');
+  });
+
+  test('ConformitePage imports EmptyState', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/ConformitePage.jsx', 'utf-8');
+    expect(content).toContain('EmptyState');
+  });
+});
+
+describe('Cross-page convergence', () => {
+  test('RiskBadge adopted on 3+ pages', async () => {
+    const fs = await import('fs');
+    const pages = ['Cockpit', 'Patrimoine', 'ConformitePage'];
+    let count = 0;
+    for (const page of pages) {
+      try {
+        const content = fs.readFileSync(`src/pages/${page}.jsx`, 'utf-8');
+        if (content.includes('RiskBadge')) count++;
+      } catch (e) {}
+    }
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
+
+  test('EmptyState adopted on 3+ pages', async () => {
+    const fs = await import('fs');
+    const pages = ['Patrimoine', 'BillIntelPage', 'ConformitePage'];
+    let count = 0;
+    for (const page of pages) {
+      try {
+        const content = fs.readFileSync(`src/pages/${page}.jsx`, 'utf-8');
+        if (content.includes('EmptyState')) count++;
+      } catch (e) {}
+    }
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
+
+  test('Deep-links exist across briques', async () => {
+    const fs = await import('fs');
+    // Patrimoine -> Conformité
+    const pat = fs.readFileSync('src/pages/Patrimoine.jsx', 'utf-8');
+    expect(pat).toContain('/conformite');
+    // Facturation -> Achat
+    const bill = fs.readFileSync('src/pages/BillIntelPage.jsx', 'utf-8');
+    expect(bill).toContain('/achat');
+    // Cockpit -> Conformité
+    const cock = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
+    expect(cock).toContain('/conformite');
+  });
+
+  test('Timestamp visible on Cockpit', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
+    expect(content).toContain('Dernière analyse');
+  });
+
+  test('Freshness available on Site360', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/Site360.jsx', 'utf-8');
+    expect(content).toContain('FreshnessIndicator');
+  });
+});

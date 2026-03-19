@@ -26,6 +26,8 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import { RiskBadge } from '../lib/risk/normalizeRisk';
+import EmptyState from '../ui/EmptyState';
 import ErrorState from '../ui/ErrorState';
 import { SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
@@ -586,6 +588,32 @@ export default function ConformitePage() {
           isExpert={isExpert}
           navigate={navigate}
         />
+      )}
+
+      {/* Empty state when no obligations found */}
+      {!summary && emptyReason === 'NO_SITES' && (
+        <EmptyState
+          variant="empty"
+          title="Aucun site dans le périmètre"
+          text="Ajoutez ou sélectionnez des sites pour analyser la conformité réglementaire."
+          ctaLabel="Voir le patrimoine"
+          onCta={() => navigate('/patrimoine')}
+        />
+      )}
+      {!summary && emptyReason && emptyReason !== 'NO_SITES' && (
+        <EmptyState
+          variant="partial"
+          title="Conformité : données partielles"
+          text="Les données de conformité sont incomplètes. Complétez les informations pour obtenir une analyse fiable."
+        />
+      )}
+
+      {/* Risk summary badge — risque financier global */}
+      {score.total_impact_eur > 0 && (
+        <div className="flex items-center gap-2 mb-2" data-testid="conformite-risk-badge">
+          <span className="text-sm text-gray-600">Risque financier global :</span>
+          <RiskBadge riskEur={score.total_impact_eur} size="sm" />
+        </div>
       )}
 
       {/* Guided Mode Bandeau (non-expert only) */}
