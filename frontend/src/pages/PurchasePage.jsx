@@ -51,6 +51,7 @@ import {
 } from '../services/api';
 import { fmtKwh, fmtNum, fmtEur, kwhUnit } from '../utils/format';
 import MarketContextBanner from '../components/purchase/MarketContextBanner';
+import { TariffWindowsCard } from '../components/flex';
 import {
   toActionNew,
   toActionsList,
@@ -561,6 +562,9 @@ export default function PurchasePage() {
           isExpert={isExpert}
           onNavigate={navigate}
         />
+
+        {/* Fenêtres tarifaires actives */}
+        <TariffWindowsCard />
 
         {/* Tab bar */}
         <div className="flex border-b border-gray-200">

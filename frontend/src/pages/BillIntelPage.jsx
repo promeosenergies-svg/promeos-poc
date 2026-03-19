@@ -525,6 +525,14 @@ export default function BillIntelPage() {
         </>
       }
     >
+      {/* CTA vers achat énergie */}
+      <button
+        onClick={() => navigate('/achat')}
+        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+      >
+        Optimiser l'achat énergie →
+      </button>
+
       {/* Navigation interne Facturation */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm">
@@ -769,6 +777,7 @@ export default function BillIntelPage() {
       {/* No data state */}
       {!loading && !hasData && (
         <EmptyState
+          variant="unconfigured"
           icon={FileText}
           title="Aucune facture importée"
           text="Importez des factures pour détecter les anomalies de facturation (surfacturation, doublons, dérives). Pourquoi c'est important : chaque anomalie non détectée est un surcoût invisible."
@@ -1075,6 +1084,24 @@ export default function BillIntelPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {filteredInvoices.length === 0 && (
+                    <tr>
+                      <td colSpan={isExpert ? 8 : 7} className="py-8">
+                        <EmptyState
+                          variant="empty"
+                          title="Aucune facture ne correspond"
+                          text="Essayez d'autres critères de recherche ou de filtrage."
+                          ctaLabel="Réinitialiser"
+                          onCta={() => {
+                            setInvoiceSearch('');
+                            setInvoiceStatusFilter('');
+                            setPeriodPreset('all');
+                            setMonthFilter('');
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  )}
                   {pagedInvoices.map((inv) => (
                     <tr key={inv.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-2.5 font-medium text-gray-900">

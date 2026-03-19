@@ -16,7 +16,7 @@ function RailIcon({ mod, isActive, onClick }) {
     <TooltipPortal text={mod.label} position="right">
       <button
         onClick={() => onClick(mod.key)}
-        className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150
+        className={`relative flex flex-col items-center justify-center w-12 h-14 rounded-xl transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
           ${
             isActive
@@ -27,6 +27,7 @@ function RailIcon({ mod, isActive, onClick }) {
         aria-current={isActive ? 'true' : undefined}
       >
         <Icon size={20} />
+        <span className="text-[10px] mt-0.5 leading-tight opacity-80">{mod.label}</span>
       </button>
     </TooltipPortal>
   );

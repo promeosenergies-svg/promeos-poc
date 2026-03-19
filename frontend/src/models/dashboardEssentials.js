@@ -539,7 +539,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
     {
       id: 'maturite',
       accentKey: 'maturite',
-      label: 'Maturité plateforme',
+      label: 'Couverture opérationnelle',
       value: total > 0 ? formatPercentFR(readinessScore) : '—',
       rawValue: readinessScore,
       messageCtx: {},

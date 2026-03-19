@@ -268,6 +268,17 @@ from .recommendation_decision import RecommendationDecision
 # Recommendation Outcomes & Calibration Governance (Sprint 20)
 from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
 
+# Flex Foundations (Sprint 21)
+from .flex_models import (
+    FlexAsset,
+    FlexAssessment,
+    NebcoSignal,
+    RegulatoryOpportunity,
+    FlexAssetType,
+    ControlMethod,
+    TariffWindow,
+)
+
 __all__ = [
     "Base",
     "TimestampMixin",
@@ -488,4 +499,12 @@ __all__ = [
     # Recommendation Outcomes & Calibration Governance (Sprint 20)
     "RecommendationOutcome",
     "CalibrationVersion",
+    # Flex Foundations (Sprint 21)
+    "FlexAsset",
+    "FlexAssessment",
+    "NebcoSignal",
+    "RegulatoryOpportunity",
+    "FlexAssetType",
+    "ControlMethod",
+    "TariffWindow",
 ]
