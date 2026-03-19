@@ -37,7 +37,7 @@ from models import (
 from models.energy_models import FrequencyType
 
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 # Fallback price — used when no SiteTariffProfile exists
 DEFAULT_PRICE_REF_KWH = DEFAULT_PRICE_ELEC_EUR_KWH
@@ -750,9 +750,11 @@ def run_diagnostic(
 
     Returns list of created ConsumptionInsight objects.
     """
-    meters = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).all()
-    if not meters:
+    meter_ids = get_site_meter_ids(db, site_id)
+    if not meter_ids:
         return []
+
+    meters = db.query(Meter).filter(Meter.id.in_(meter_ids)).all()
 
     # Load schedule + tariff
     schedule = _get_schedule_params(db, site_id)

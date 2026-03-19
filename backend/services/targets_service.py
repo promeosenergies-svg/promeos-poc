@@ -11,7 +11,7 @@ from sqlalchemy import func
 from models.consumption_target import ConsumptionTarget
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 
 def get_targets(
@@ -287,20 +287,11 @@ def get_progression_v2(
         ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
         target_ev = ev_map.get(energy_type, EnergyVector.ELECTRICITY)
 
-        meters = (
-            db.query(Meter)
-            .filter(
-                Meter.site_id == site_id,
-                Meter.is_active == True,
-                Meter.energy_vector == target_ev,
-            )
-            .all()
-        )
+        meter_ids = get_site_meter_ids(db, site_id, target_ev)
 
-        if meters:
+        if meter_ids:
             from datetime import timedelta
 
-            meter_ids = [m.id for m in meters]
             start_date = datetime(year, 1, 1)
             end_date = datetime(year, current_month, 28)
 
