@@ -436,34 +436,36 @@ export default function TimeseriesPanel({
       : 'Agrégé';
 
   // Confidence level for TrustBadge — same logic previously in StickyFilterBar
-  const confidence = availability?.has_data && availability.readings_count > 0
-    ? (availability.readings_count > 1000 ? 'high' : availability.readings_count > 200 ? 'medium' : 'low')
-    : null;
+  const confidence =
+    availability?.has_data && availability.readings_count > 0
+      ? availability.readings_count > 1000
+        ? 'high'
+        : availability.readings_count > 200
+          ? 'medium'
+          : 'low'
+      : null;
 
   return (
     <ChartFrame>
       <div className="space-y-2 p-3">
         {debugPanel}
 
-        {/* DataCoverageBadge — compact coverage line above chart */}
-        <DataCoverageBadge
-          meta={meta}
-          siteCount={siteIds.length}
-          qualityPct={qualityPct}
-          startDate={
-            startDate || new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
-          }
-          endDate={endDate || new Date().toISOString().split('T')[0]}
-        />
+        {/* DataCoverageBadge + TrustBadge — same row, badge pushed right */}
+        <div className="flex items-center gap-2">
+          <DataCoverageBadge
+            meta={meta}
+            siteCount={siteIds.length}
+            qualityPct={qualityPct}
+            startDate={
+              startDate || new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+            }
+            endDate={endDate || new Date().toISOString().split('T')[0]}
+          />
+          {confidence && <TrustBadge confidence={confidence} className="ml-auto shrink-0" />}
+        </div>
 
-        {/* Chart with confidence seal */}
-        <div className="relative">
-          {confidence && (
-            <TrustBadge
-              confidence={confidence}
-              className="absolute top-1 right-2 z-10"
-            />
-          )}
+        {/* Chart */}
+        <div>
           <ExplorerChart
             data={chartData}
             xKey="date"
