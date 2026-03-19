@@ -190,24 +190,6 @@ function SmartEmptyState({
   );
 }
 
-// ========================================
-// Availability Skeleton
-// ========================================
-
-function AvailabilitySkeleton() {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-10 bg-gray-200 rounded-lg w-full" />
-      <div className="grid grid-cols-3 gap-3">
-        <div className="h-20 bg-gray-200 rounded-lg" />
-        <div className="h-20 bg-gray-200 rounded-lg" />
-        <div className="h-20 bg-gray-200 rounded-lg" />
-      </div>
-      <div className="h-64 bg-gray-200 rounded-lg" />
-    </div>
-  );
-}
-
 // FilterBar + ContextBanner extracted to consumption/StickyFilterBar + consumption/ContextBanner
 // TunnelPanel, TargetsPanel, HPHCPanel, GasPanel extracted to consumption/ (V23-H)
 
@@ -687,8 +669,8 @@ export default function ConsumptionExplorerPage() {
         onDismissPortfolioBanner={() => setPortfolioBannerDismissed(true)}
       />
 
-      {/* KPI Header — 6 KPIs respecting scope global */}
-      {showContent && (
+      {/* KPI Header — 6 KPIs respecting scope global (shown during loading with skeletons) */}
+      {(showContent || loading) && (
         <ConsoKpiHeader
           tunnel={aggregatedTunnel}
           hphc={aggregatedHphc}
@@ -699,6 +681,7 @@ export default function ConsumptionExplorerPage() {
           days={days}
           startDate={startDate}
           endDate={endDate}
+          loading={loading}
         />
       )}
 
@@ -707,8 +690,31 @@ export default function ConsumptionExplorerPage() {
         <ErrorState message={motorError} onRetry={() => window.location.reload()} />
       )}
 
-      {/* Loading skeleton */}
-      {loading && <AvailabilitySkeleton />}
+      {/* Loading skeleton — chart area only (KPIs handled by ConsoKpiHeader) */}
+      {/* Only show when no chart content is already visible (avoids skeleton sandwiched between KPIs and chart) */}
+      {loading && !hasData && (
+        <div className="animate-pulse rounded-lg border border-gray-100 bg-white px-4 py-3">
+          <div className="flex h-32">
+            <div className="flex flex-col justify-between pr-2 py-0.5">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-1.5 w-6 bg-gray-100 rounded" />
+              ))}
+            </div>
+            <div className="flex-1 flex items-end gap-1.5">
+              {[55, 80, 40, 65, 85, 50, 70, 35, 75, 60, 45, 68].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                  <div className="bg-gray-100 rounded-t" style={{ height: `${h}%` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex mt-1.5 ml-8 gap-1.5">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="flex-1 h-1.5 bg-gray-100 rounded" />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Smart empty state — only for non-timeseries Expert tabs (Classic + timeseries tab use TimeseriesPanel's own states) */}
       {!loading && availability && !hasData && !isClassic && activeTab !== 'timeseries' && (
