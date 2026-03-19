@@ -83,6 +83,11 @@ function TrendDelta({ deltaPct }) {
   );
 }
 
+/** Inline shimmer bar — matches the size of a KPI value */
+function KpiShimmer({ width = 'w-14' }) {
+  return <span className={`inline-block h-4 ${width} bg-gray-200 rounded animate-pulse align-middle`} />;
+}
+
 export default function ConsoKpiHeader({
   tunnel,
   hphc,
@@ -93,6 +98,7 @@ export default function ConsoKpiHeader({
   days,
   startDate,
   endDate,
+  loading = false,
 }) {
   const { isExpert } = useExpertMode();
   // --- kWh total ---
@@ -188,11 +194,11 @@ export default function ConsoKpiHeader({
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('total_kwh', isExpert)}</span>
           <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
-            {kwhLabel}
-            {compareSummary?.delta_pct != null && (
+            {loading && totalKwh == null ? <KpiShimmer width="w-20" /> : kwhLabel}
+            {!loading && compareSummary?.delta_pct != null && (
               <TrendDelta deltaPct={compareSummary.delta_pct} />
             )}
-            {onEvidence && (
+            {!loading && onEvidence && (
               <button
                 onClick={() => onEvidence('conso-kwh-total')}
                 className="text-gray-300 hover:text-blue-500 transition"
@@ -212,7 +218,7 @@ export default function ConsoKpiHeader({
         <Euro size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">Coût total</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{eurLabel}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && totalEur == null ? <KpiShimmer /> : eurLabel}</span>
         </div>
       </div>
       <div
@@ -222,7 +228,7 @@ export default function ConsoKpiHeader({
         <TrendingUp size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">Prix moyen</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{eurMwhLabel}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && eurMwh == null ? <KpiShimmer /> : eurMwhLabel}</span>
         </div>
       </div>
       <div
@@ -233,8 +239,8 @@ export default function ConsoKpiHeader({
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('total_kgco2e', isExpert)}</span>
           <span className="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
-            {co2Label}
-            {onEvidence && (
+            {loading && co2Kg == null ? <KpiShimmer width="w-16" /> : co2Label}
+            {!loading && onEvidence && (
               <button
                 onClick={() => onEvidence('conso-co2e')}
                 className="text-gray-300 hover:text-blue-500 transition"
@@ -254,7 +260,7 @@ export default function ConsoKpiHeader({
         <Activity size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('p95_kw', isExpert)}</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{p95Label}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && p95 == null ? <KpiShimmer /> : p95Label}</span>
         </div>
       </div>
       <div
@@ -264,7 +270,7 @@ export default function ConsoKpiHeader({
         <Moon size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('night_ratio', isExpert)}</span>
-          <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>{basePctLabel}</span>
+          <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>{loading && basePct == null ? <KpiShimmer /> : basePctLabel}</span>
         </div>
       </div>
       {confBadge && (

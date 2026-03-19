@@ -190,24 +190,6 @@ function SmartEmptyState({
   );
 }
 
-// ========================================
-// Availability Skeleton
-// ========================================
-
-function AvailabilitySkeleton() {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-10 bg-gray-200 rounded-lg w-full" />
-      <div className="grid grid-cols-3 gap-3">
-        <div className="h-20 bg-gray-200 rounded-lg" />
-        <div className="h-20 bg-gray-200 rounded-lg" />
-        <div className="h-20 bg-gray-200 rounded-lg" />
-      </div>
-      <div className="h-64 bg-gray-200 rounded-lg" />
-    </div>
-  );
-}
-
 // FilterBar + ContextBanner extracted to consumption/StickyFilterBar + consumption/ContextBanner
 // TunnelPanel, TargetsPanel, HPHCPanel, GasPanel extracted to consumption/ (V23-H)
 
@@ -687,8 +669,8 @@ export default function ConsumptionExplorerPage() {
         onDismissPortfolioBanner={() => setPortfolioBannerDismissed(true)}
       />
 
-      {/* KPI Header — 6 KPIs respecting scope global */}
-      {showContent && (
+      {/* KPI Header — 6 KPIs respecting scope global (shown during loading with skeletons) */}
+      {(showContent || loading) && (
         <ConsoKpiHeader
           tunnel={aggregatedTunnel}
           hphc={aggregatedHphc}
@@ -699,6 +681,7 @@ export default function ConsumptionExplorerPage() {
           days={days}
           startDate={startDate}
           endDate={endDate}
+          loading={loading}
         />
       )}
 
@@ -707,8 +690,12 @@ export default function ConsumptionExplorerPage() {
         <ErrorState message={motorError} onRetry={() => window.location.reload()} />
       )}
 
-      {/* Loading skeleton */}
-      {loading && <AvailabilitySkeleton />}
+      {/* Loading skeleton — chart area only (KPIs handled by ConsoKpiHeader) */}
+      {loading && (
+        <div className="animate-pulse">
+          <div className="h-64 bg-gray-100 rounded-lg" />
+        </div>
+      )}
 
       {/* Smart empty state — only for non-timeseries Expert tabs (Classic + timeseries tab use TimeseriesPanel's own states) */}
       {!loading && availability && !hasData && !isClassic && activeTab !== 'timeseries' && (
