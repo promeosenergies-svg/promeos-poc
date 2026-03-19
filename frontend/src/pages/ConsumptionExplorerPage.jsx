@@ -767,7 +767,6 @@ export default function ConsumptionExplorerPage() {
                   days={days}
                   startDate={startDate}
                   endDate={endDate}
-                  seriesData={null}
                   toast={toast}
                 />
               )}
@@ -880,7 +879,6 @@ export default function ConsumptionExplorerPage() {
                     days={days}
                     startDate={startDate}
                     endDate={endDate}
-                    seriesData={null}
                     toast={toast}
                   />
                 )}

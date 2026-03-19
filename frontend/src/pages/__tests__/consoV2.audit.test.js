@@ -380,7 +380,7 @@ describe('AR · P1-1 benchmark reference curve', () => {
 
   it('BenchmarkPanel has toggle checkbox', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
-    expect(code).toMatch(/Comparer a la courbe moyenne/);
+    expect(code).toMatch(/Comparer au profil de reference/);
     expect(code).toMatch(/type="checkbox"/);
   });
 
@@ -399,7 +399,7 @@ describe('AR · P1-1 benchmark reference curve', () => {
   it('BenchmarkPanel has 4 KPI cards (actual, reference, ecart, couverture)', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
     expect(code).toMatch(/Votre consommation/);
-    expect(code).toMatch(/Moyenne sites similaires/);
+    expect(code).toMatch(/Profil de reference/);
     expect(code).toMatch(/Écart/);
     expect(code).toMatch(/Couverture/);
   });
@@ -558,15 +558,15 @@ describe('AT · P1-3 overlay meteo UTC', () => {
 // AU. P1.1 — Polish UX labels + tooltips + confidence
 // ============================================================
 describe('AU · P1.1 polish labels & tooltips', () => {
-  it('BenchmarkPanel uses "courbe moyenne de sites similaires" label', () => {
+  it('BenchmarkPanel uses "profil de reference" label', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
-    expect(code).toMatch(/courbe moyenne de sites similaires/);
+    expect(code).toMatch(/profil de reference/);
   });
 
-  it('BenchmarkPanel KPI shows "Votre consommation" and "Moyenne sites similaires"', () => {
+  it('BenchmarkPanel KPI shows "Votre consommation" and "Profil de reference"', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
     expect(code).toMatch(/Votre consommation/);
-    expect(code).toMatch(/Moyenne sites similaires/);
+    expect(code).toMatch(/Profil de reference/);
   });
 
   it('BenchmarkPanel has confidence tooltip with HelpCircle', () => {

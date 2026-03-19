@@ -48,7 +48,7 @@ function formatDate(t) {
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
-export default function BenchmarkPanel({ siteId, days, startDate, endDate, seriesData, toast }) {
+export default function BenchmarkPanel({ siteId, days, startDate, endDate, toast }) {
   const [enabled, setEnabled] = useState(false);
   const [famille, setFamille] = useState('entreprise');
   const [puissance, setPuissance] = useState('9-12');
@@ -99,10 +99,10 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
       refMap[key] = pt.v;
     }
 
-    // Actual data from seriesData (parent TimeseriesPanel)
+    // Actual data from backend response (actual_series)
     const actualMap = {};
-    if (seriesData?.[0]?.data) {
-      for (const pt of seriesData[0].data) {
+    if (refData?.actual_series) {
+      for (const pt of refData.actual_series) {
         const key = (pt.t || '').slice(0, 10);
         if (pt.v != null) actualMap[key] = (actualMap[key] || 0) + pt.v;
       }
@@ -115,7 +115,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
       actual: actualMap[d] != null ? Math.round(actualMap[d] * 10) / 10 : null,
       reference: refMap[d] != null ? Math.round(refMap[d] * 10) / 10 : null,
     }));
-  }, [refData, seriesData]);
+  }, [refData]);
 
   const kpi = refData?.kpi;
   const conf = kpi?.confidence ? CONFIDENCE_MAP[kpi.confidence] : null;
@@ -131,9 +131,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
             onChange={(e) => setEnabled(e.target.checked)}
             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm font-medium text-gray-700">
-            Comparer a la courbe moyenne de sites similaires
-          </span>
+          <span className="text-sm font-medium text-gray-700">Comparer au profil de reference</span>
         </label>
       </div>
 
@@ -201,11 +199,16 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
               </Card>
               <Card>
                 <CardBody className="py-3 px-4 text-center">
-                  <p className="text-xs text-gray-500">Moyenne sites similaires</p>
+                  <p className="text-xs text-gray-500">Profil de reference</p>
                   <p className="text-lg font-bold text-blue-600">
                     {fmtKwh(Math.round(kpi.reference_kwh))}
                   </p>
-                  <p className="text-[10px] text-gray-400">Profil statistique</p>
+                  <p
+                    className="text-[10px] text-gray-400"
+                    title="Profil statistique estime par famille et puissance souscrite — non base sur les donnees reelles de sites pairs"
+                  >
+                    Profil statistique estime
+                  </p>
                 </CardBody>
               </Card>
               <Card>
@@ -243,7 +246,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
             <Card>
               <CardBody>
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                  Votre consommation vs moyenne de sites similaires
+                  Votre consommation vs profil de reference
                 </h4>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={chartData}>
@@ -272,7 +275,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                       stroke="#93c5fd"
                       fill="#dbeafe"
                       fillOpacity={0.5}
-                      name="Moyenne sites similaires"
+                      name="Profil de reference"
                       strokeDasharray="5 5"
                     />
                     <Area
