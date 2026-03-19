@@ -243,3 +243,135 @@ class TestResetHard:
         deleted = result.get("deleted", {})
         errors = {k: v for k, v in deleted.items() if isinstance(v, str) and v.startswith("error:")}
         assert len(errors) == 0, f"Silent failures in reset: {errors}"
+
+
+# ── Frequency coherence (Issue #115) ─────────────────────────
+
+
+class TestFrequencyCoherence:
+    """Verify SUM(fine) == coarse at every derivation level."""
+
+    def test_15min_sum_matches_hourly(self, seeded_db):
+        """SUM(MIN_15 for hour H) == HOURLY value for H."""
+        from services.demo_seed.gen_readings import (
+            _gen_15min_meter_readings,
+            _derive_hourly_from_15min,
+        )
+        from models.energy_models import EnergyVector
+
+        db, meters = seeded_db
+        rng = random.Random(42)
+        meter = meters[0]
+        start = datetime(2025, 6, 1)
+
+        readings_15min = _gen_15min_meter_readings(
+            meter.id,
+            "office",
+            {"heat": 1.5, "cool": 0.8, "peak_h": (8, 18)},
+            {},
+            start,
+            3,
+            80.0,
+            100,
+            120.0,
+            rng,
+            [],
+            "",
+            {},
+        )
+        derived_hourly = _derive_hourly_from_15min(readings_15min)
+
+        # Build lookup: (meter_id, hour_ts) → hourly value
+        hourly_lookup = {(r.meter_id, r.timestamp): r.value_kwh for r in derived_hourly}
+
+        for hour_ts, hourly_val in hourly_lookup.items():
+            meter_id, ts = hour_ts
+            sum_15min = sum(
+                r.value_kwh for r in readings_15min if r.meter_id == meter_id and r.timestamp.replace(minute=0) == ts
+            )
+            assert abs(sum_15min - hourly_val) < 0.01, f"15min sum {sum_15min:.3f} != hourly {hourly_val:.3f} at {ts}"
+
+    def test_hourly_sum_matches_daily(self, seeded_db):
+        """SUM(HOURLY for day D) == DAILY value for D."""
+        from services.demo_seed.gen_readings import (
+            _gen_15min_meter_readings,
+            _derive_hourly_from_15min,
+            _derive_daily_from_hourly,
+        )
+
+        db, meters = seeded_db
+        rng = random.Random(42)
+        meter = meters[0]
+        start = datetime(2025, 6, 1)
+
+        readings_15min = _gen_15min_meter_readings(
+            meter.id,
+            "office",
+            {"heat": 1.5, "cool": 0.8, "peak_h": (8, 18)},
+            {},
+            start,
+            5,
+            80.0,
+            100,
+            120.0,
+            rng,
+            [],
+            "",
+            {},
+        )
+        hourly = _derive_hourly_from_15min(readings_15min)
+        daily = _derive_daily_from_hourly(hourly)
+
+        for dr in daily:
+            sum_hourly = sum(
+                r.value_kwh for r in hourly if r.meter_id == dr.meter_id and r.timestamp.date() == dr.timestamp.date()
+            )
+            assert abs(sum_hourly - dr.value_kwh) < 0.01, (
+                f"hourly sum {sum_hourly:.2f} != daily {dr.value_kwh:.2f} at {dr.timestamp.date()}"
+            )
+
+    def test_daily_sum_matches_monthly(self, seeded_db):
+        """SUM(DAILY for month M) == MONTHLY value for M."""
+        from services.demo_seed.gen_readings import (
+            _gen_15min_meter_readings,
+            _derive_hourly_from_15min,
+            _derive_daily_from_hourly,
+            _derive_monthly_from_daily,
+        )
+
+        db, meters = seeded_db
+        rng = random.Random(42)
+        meter = meters[0]
+        # 62 days spanning June + July to get at least 1 complete month
+        start = datetime(2025, 6, 1)
+
+        readings_15min = _gen_15min_meter_readings(
+            meter.id,
+            "office",
+            {"heat": 1.5, "cool": 0.8, "peak_h": (8, 18)},
+            {},
+            start,
+            62,
+            80.0,
+            100,
+            120.0,
+            rng,
+            [],
+            "",
+            {},
+        )
+        hourly = _derive_hourly_from_15min(readings_15min)
+        daily = _derive_daily_from_hourly(hourly)
+        monthly = _derive_monthly_from_daily(daily)
+
+        for mr in monthly:
+            sum_daily = sum(
+                r.value_kwh
+                for r in daily
+                if r.meter_id == mr.meter_id
+                and r.timestamp.year == mr.timestamp.year
+                and r.timestamp.month == mr.timestamp.month
+            )
+            assert abs(sum_daily - mr.value_kwh) < 1.0, (
+                f"daily sum {sum_daily:.0f} != monthly {mr.value_kwh:.0f} at {mr.timestamp}"
+            )

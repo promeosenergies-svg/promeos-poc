@@ -846,6 +846,7 @@ def gas_summary(
     from models import Meter, MeterReading
     from models.energy_models import EnergyVector
     from collections import defaultdict
+    from services.ems.timeseries_service import get_site_meter_ids as _get_gas_ids
 
     if start_date_param and end_date_param:
         start_date = datetime.combine(start_date_param, datetime.min.time(), tzinfo=timezone.utc)
@@ -854,17 +855,9 @@ def gas_summary(
         end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=days)
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.GAS,
-        )
-        .all()
-    )
+    meter_ids = _get_gas_ids(db, site_id, EnergyVector.GAS)
 
-    if not meters:
+    if not meter_ids:
         return {
             "site_id": site_id,
             "energy_type": "gas",
@@ -876,8 +869,6 @@ def gas_summary(
             "summer_base_kwh": 0,
             "confidence": "low",
         }
-
-    meter_ids = [m.id for m in meters]
 
     from services.ems.timeseries_service import resolve_best_freq
 

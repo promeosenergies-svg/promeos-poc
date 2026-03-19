@@ -18,7 +18,7 @@ from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
 from services.billing_service import get_reference_price, DEFAULT_PRICE_ELEC
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 from config.emission_factors import get_emission_factor
 
 router = APIRouter(prefix="/api/portfolio/consumption", tags=["Portfolio Consumption"])
@@ -41,39 +41,36 @@ def _parse_date_or_default(val: Optional[str], default_days_ago: int = 90) -> da
     return date_cls.today() - timedelta(days=default_days_ago)
 
 
-def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
-    """Get aggregated consumption for a single site in the period."""
-    q = (
-        db.query(
-            func.sum(MeterReading.value_kwh).label("kwh"),
-            func.count(MeterReading.id).label("n_readings"),
-            func.max(MeterReading.timestamp).label("last_reading"),
-        )
-        .join(Meter, MeterReading.meter_id == Meter.id)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-            MeterReading.timestamp >= dt_from,
-            MeterReading.timestamp < dt_to,
-        )
+def _site_consumption(db: Session, meter_ids: list, dt_from: datetime, dt_to: datetime, best_freq=None):
+    """Get aggregated consumption for filtered meter IDs in the period."""
+    if not meter_ids:
+        from collections import namedtuple
+
+        Row = namedtuple("Row", ["kwh", "n_readings", "last_reading"])
+        return Row(kwh=None, n_readings=0, last_reading=None)
+    q = db.query(
+        func.sum(MeterReading.value_kwh).label("kwh"),
+        func.count(MeterReading.id).label("n_readings"),
+        func.max(MeterReading.timestamp).label("last_reading"),
+    ).filter(
+        MeterReading.meter_id.in_(meter_ids),
+        MeterReading.timestamp >= dt_from,
+        MeterReading.timestamp < dt_to,
     )
     if best_freq:
         q = q.filter(MeterReading.frequency.in_(best_freq))
     return q.first()
 
 
-def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
+def _site_peak_kw(db: Session, meter_ids: list, dt_from: datetime, dt_to: datetime, best_freq=None):
     """P95 peak: 95th percentile of kWh readings (proxy for kW peak)."""
-    q = (
-        db.query(MeterReading.value_kwh)
-        .join(Meter, MeterReading.meter_id == Meter.id)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-            MeterReading.timestamp >= dt_from,
-            MeterReading.timestamp < dt_to,
-            MeterReading.value_kwh.isnot(None),
-        )
+    if not meter_ids:
+        return None
+    q = db.query(MeterReading.value_kwh).filter(
+        MeterReading.meter_id.in_(meter_ids),
+        MeterReading.timestamp >= dt_from,
+        MeterReading.timestamp < dt_to,
+        MeterReading.value_kwh.isnot(None),
     )
     if best_freq:
         q = q.filter(MeterReading.frequency.in_(best_freq))
@@ -84,37 +81,29 @@ def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime,
     return readings[idx].value_kwh
 
 
-def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime, best_freq=None):
+def _base_night_pct(db: Session, meter_ids: list, dt_from: datetime, dt_to: datetime, best_freq=None):
     """Base nocturne %: part de la conso nuit (22h-6h) dans la conso totale.
     Fenêtre 22h-06h = standard tertiaire France (bureaux fermés).
     Résultat en % (0-100). Théorique si plat = 33% (8h/24h).
     """
+    if not meter_ids:
+        return None
     from sqlalchemy import extract
 
-    q_night = (
-        db.query(func.sum(MeterReading.value_kwh))
-        .join(Meter, MeterReading.meter_id == Meter.id)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-            MeterReading.timestamp >= dt_from,
-            MeterReading.timestamp < dt_to,
-            ((extract("hour", MeterReading.timestamp) < 6) | (extract("hour", MeterReading.timestamp) >= 22)),
-        )
+    q_night = db.query(func.sum(MeterReading.value_kwh)).filter(
+        MeterReading.meter_id.in_(meter_ids),
+        MeterReading.timestamp >= dt_from,
+        MeterReading.timestamp < dt_to,
+        ((extract("hour", MeterReading.timestamp) < 6) | (extract("hour", MeterReading.timestamp) >= 22)),
     )
     if best_freq:
         q_night = q_night.filter(MeterReading.frequency.in_(best_freq))
     night_kwh = q_night.scalar()
 
-    q_total = (
-        db.query(func.sum(MeterReading.value_kwh))
-        .join(Meter, MeterReading.meter_id == Meter.id)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-            MeterReading.timestamp >= dt_from,
-            MeterReading.timestamp < dt_to,
-        )
+    q_total = db.query(func.sum(MeterReading.value_kwh)).filter(
+        MeterReading.meter_id.in_(meter_ids),
+        MeterReading.timestamp >= dt_from,
+        MeterReading.timestamp < dt_to,
     )
     if best_freq:
         q_total = q_total.filter(MeterReading.frequency.in_(best_freq))
@@ -168,18 +157,11 @@ def _site_open_actions(db: Session, site_id: int) -> int:
 def _build_site_row(db, site, dt_from, dt_to, days):
     """Build a single site row dict with all metrics (patrimoine-first)."""
     # Resolve best frequency ONCE per site — used for filtering + display
-    meter_ids = [
-        r[0]
-        for r in db.query(Meter.id)
-        .filter(
-            Meter.site_id == site.id,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-        )
-        .all()
-    ]
+    # Use helper to exclude sub-meters whose parent is already counted (avoid double-counting)
+    meter_ids = get_site_meter_ids(db, site.id, EnergyVector.ELECTRICITY)
     best = resolve_best_freq(db, meter_ids, dt_from, dt_to) if meter_ids else None
 
-    conso = _site_consumption(db, site.id, dt_from, dt_to, best_freq=best)
+    conso = _site_consumption(db, meter_ids, dt_from, dt_to, best_freq=best)
     kwh = conso.kwh or 0
     n = conso.n_readings or 0
     last_reading = conso.last_reading
@@ -216,8 +198,8 @@ def _build_site_row(db, site, dt_from, dt_to, days):
         or 0
     )
 
-    peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to, best_freq=best) if has_data else None
-    base_night = _base_night_pct(db, site.id, dt_from, dt_to, best_freq=best) if has_data else None
+    peak_kw = _site_peak_kw(db, meter_ids, dt_from, dt_to, best_freq=best) if has_data else None
+    base_night = _base_night_pct(db, meter_ids, dt_from, dt_to, best_freq=best) if has_data else None
     impact_eur = _site_impact_eur(db, site.id, dt_from)
     open_actions = _site_open_actions(db, site.id)
 

@@ -23,7 +23,7 @@
  */
 import { useEffect } from 'react';
 import { Database, BarChart3, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
-import { Button, SkeletonCard } from '../../ui';
+import { Button, SkeletonCard, TrustBadge } from '../../ui';
 import ExplorerChart from './ExplorerChart';
 import ExplorerDebugPanel from './ExplorerDebugPanel';
 import useEmsTimeseries from './useEmsTimeseries';
@@ -435,36 +435,51 @@ export default function TimeseriesPanel({
         'Agrégé')
       : 'Agrégé';
 
+  // Confidence level for TrustBadge — same logic previously in StickyFilterBar
+  const confidence =
+    availability?.has_data && availability.readings_count > 0
+      ? availability.readings_count > 1000
+        ? 'high'
+        : availability.readings_count > 200
+          ? 'medium'
+          : 'low'
+      : null;
+
   return (
     <ChartFrame>
       <div className="space-y-2 p-3">
         {debugPanel}
 
-        {/* DataCoverageBadge — compact coverage line above chart */}
-        <DataCoverageBadge
-          meta={meta}
-          siteCount={siteIds.length}
-          qualityPct={qualityPct}
-          startDate={
-            startDate || new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
-          }
-          endDate={endDate || new Date().toISOString().split('T')[0]}
-        />
+        {/* DataCoverageBadge + TrustBadge — same row, badge pushed right */}
+        <div className="flex items-center gap-2">
+          <DataCoverageBadge
+            meta={meta}
+            siteCount={siteIds.length}
+            qualityPct={qualityPct}
+            startDate={
+              startDate || new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+            }
+            endDate={endDate || new Date().toISOString().split('T')[0]}
+          />
+          {confidence && <TrustBadge confidence={confidence} className="ml-auto shrink-0" />}
+        </div>
 
         {/* Chart */}
-        <ExplorerChart
-          data={chartData}
-          xKey="date"
-          valueKey={overlayValueKeys.length ? overlayValueKeys[0] : 'value'}
-          mode={chartMode}
-          unit={unit}
-          siteIds={chartSiteIds}
-          siteColors={effectiveSiteColors}
-          siteLabels={siteLabels}
-          aggregateLabel={aggregateLabel}
-          height={360}
-          showBrush
-        />
+        <div>
+          <ExplorerChart
+            data={chartData}
+            xKey="date"
+            valueKey={overlayValueKeys.length ? overlayValueKeys[0] : 'value'}
+            mode={chartMode}
+            unit={unit}
+            siteIds={chartSiteIds}
+            siteColors={effectiveSiteColors}
+            siteLabels={siteLabels}
+            aggregateLabel={aggregateLabel}
+            height={360}
+            showBrush
+          />
+        </div>
       </div>
     </ChartFrame>
   );

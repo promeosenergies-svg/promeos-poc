@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 
 def _mock_dju(doy: int) -> float:
@@ -80,20 +80,11 @@ def compute_weather_normalized(
         end_date = datetime.now(timezone.utc).replace(tzinfo=None)
         start_date = end_date - timedelta(days=days)
 
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.GAS,
-        )
-        .all()
-    )
+    meter_ids = get_site_meter_ids(db, site_id, EnergyVector.GAS)
 
-    if not meters:
+    if not meter_ids:
         return _empty_gas_weather(site_id, days, reason="no_gas_meters")
 
-    meter_ids = [m.id for m in meters]
     best = resolve_best_freq(db, meter_ids, start_date, end_date)
 
     readings = (

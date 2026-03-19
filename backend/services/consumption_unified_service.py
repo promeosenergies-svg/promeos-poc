@@ -25,7 +25,7 @@ from models import (
     EntiteJuridique,
 )
 from models.energy_models import EnergyVector
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 logger = logging.getLogger(__name__)
 
@@ -44,17 +44,8 @@ RECONCILIATION_ALERT_THRESHOLD = 0.10
 
 
 def _get_meter_ids(db: Session, site_id: int, energy_vector: EnergyVector = EnergyVector.ELECTRICITY):
-    """Return active meter IDs for a site."""
-    rows = (
-        db.query(Meter.id)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == energy_vector,
-        )
-        .all()
-    )
-    return [r[0] for r in rows]
+    """Return active meter IDs for a site, excluding sub-meters whose parent is in the list."""
+    return get_site_meter_ids(db, site_id, energy_vector)
 
 
 def _metered_kwh(db: Session, meter_ids: list, start: date, end: date):

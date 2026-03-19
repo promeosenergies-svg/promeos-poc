@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from models import Site, Meter, MeterReading, ConsumptionInsight, Portefeuille, EntiteJuridique
 from models.energy_models import FrequencyType, EnergyVector
-from services.ems.timeseries_service import resolve_best_freq
+from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 logger = logging.getLogger(__name__)
 
@@ -139,21 +139,12 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
     heatmap = hphc.get("heatmap", [])
 
     # Get raw readings for daily profile + baseload
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-        )
-        .all()
-    )
+    meter_ids = get_site_meter_ids(db, site_id, EnergyVector.ELECTRICITY)
 
     readings = []
-    if meters:
+    if meter_ids:
         now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
         cutoff = now_dt - timedelta(days=days)
-        meter_ids = [m.id for m in meters]
         best = resolve_best_freq(db, meter_ids, cutoff, now_dt)
         readings = (
             db.query(MeterReading)
@@ -382,23 +373,14 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
 
     # Weekend active detection
     schedule = get_site_schedule_params(db, site_id)
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-        )
-        .all()
-    )
+    meter_ids = get_site_meter_ids(db, site_id, EnergyVector.ELECTRICITY)
 
     weekend_result = {"detected": False, "reason": "no_meters"}
     weekend_ratio = 0.0
 
-    if meters:
+    if meter_ids:
         now_dt = datetime.now(timezone.utc).replace(tzinfo=None)
         cutoff = now_dt - timedelta(days=days)
-        meter_ids = [m.id for m in meters]
         best = resolve_best_freq(db, meter_ids, cutoff, now_dt)
         readings = (
             db.query(MeterReading)

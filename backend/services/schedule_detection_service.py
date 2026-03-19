@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from models import Site, Meter, MeterReading
 from models.energy_models import FrequencyType, EnergyVector
 from models.site_operating_schedule import SiteOperatingSchedule
+from services.ems.timeseries_service import get_site_meter_ids
 
 logger = logging.getLogger(__name__)
 
@@ -76,20 +77,11 @@ def _minutes_to_hhmm(m: int) -> str:
 
 def _fetch_readings(db: Session, site_id: int, days: int):
     """Fetch sub-daily readings for a site."""
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-            Meter.energy_vector == EnergyVector.ELECTRICITY,
-        )
-        .all()
-    )
-    if not meters:
+    meter_ids = get_site_meter_ids(db, site_id, EnergyVector.ELECTRICITY)
+    if not meter_ids:
         return [], 60  # no meters
 
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
-    meter_ids = [m.id for m in meters]
     readings = (
         db.query(MeterReading)
         .filter(
