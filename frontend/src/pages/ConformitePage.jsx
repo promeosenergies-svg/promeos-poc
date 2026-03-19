@@ -557,8 +557,8 @@ export default function ConformitePage() {
         </>
       }
     >
-      {/* Freshness — dernière évaluation */}
-      {bundle?.meta?.generated_at && (
+      {/* Freshness — dernière évaluation + fallback */}
+      {bundle?.meta?.generated_at ? (
         <span className="text-xs text-gray-400 ml-2">
           Dernière évaluation :{' '}
           {new Date(bundle.meta.generated_at).toLocaleDateString('fr-FR', {
@@ -567,6 +567,8 @@ export default function ConformitePage() {
             year: 'numeric',
           })}
         </span>
+      ) : (
+        <span className="text-xs text-gray-400 ml-2">Évaluation en attente</span>
       )}
 
       {/* Expert-only badges — dev environment only */}
