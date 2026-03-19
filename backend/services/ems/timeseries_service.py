@@ -190,10 +190,7 @@ def query_timeseries(
 
     meter_id_list = [m.id for m in meters]
 
-    # Detect native data resolution for these meters (for frontend pill filtering)
-    native_freqs = _resolve_best_freq(db, meter_id_list, date_from, date_to, "monthly")
-    native_sampling_minutes = min((_SAMPLING_MINUTES.get(f.value, 60) for f in native_freqs), default=60)
-    # Detect all frequencies with actual data (for sub-hourly pill filtering)
+    # Detect all frequencies with actual data (for pill filtering + native resolution)
     actual_freq_rows = (
         db.query(MeterReading.frequency)
         .filter(
@@ -205,6 +202,8 @@ def query_timeseries(
         .all()
     )
     actual_freqs = {r[0].value for r in actual_freq_rows}
+    # Native resolution = finest available frequency
+    native_sampling_minutes = min((_SAMPLING_MINUTES.get(v, 60) for v in actual_freqs), default=60)
 
     # 2. Build bucket expression
     bucket_expr = _bucket_key_expr(granularity)
@@ -428,13 +427,35 @@ def _bucket_key_expr(granularity: str):
         return func.strftime(fmt, MeterReading.timestamp)
 
 
-def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
-    """Pick a single frequency to avoid double-counting overlapping readings.
+def _expected_buckets(date_from, date_to, granularity: str) -> int:
+    """Expected number of distinct time buckets for a date range and granularity."""
+    if granularity == "monthly":
+        months = (date_to.year - date_from.year) * 12 + date_to.month - date_from.month
+        # If date_to is past the 1st, that month can contain data too
+        if date_to.day > 1:
+            months += 1
+        return max(1, months)
+    elif granularity == "daily":
+        return max(1, (date_to - date_from).days)
+    elif granularity == "hourly":
+        return max(1, int((date_to - date_from).total_seconds() / 3600))
+    elif granularity == "30min":
+        return max(1, int((date_to - date_from).total_seconds() / 1800))
+    elif granularity == "15min":
+        return max(1, int((date_to - date_from).total_seconds() / 900))
+    return max(1, (date_to - date_from).days)
 
-    When a meter has both 15min and hourly data for the same period, summing
-    both would inflate values ~2×.  We select the finest frequency that has
-    ≥ 48 readings for the window.  Falls back to full compatible list only
-    when no single frequency meets the threshold.
+
+def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
+    """Pick the coarsest frequency with the best output-bucket coverage.
+
+    Iterates from coarsest to finest compatible frequency.  Uses
+    COUNT(DISTINCT strftime(bucket_format, timestamp)) so that coverage
+    comparison is fair across frequencies regardless of row density.
+
+    Short-circuits when a frequency achieves 100% bucket coverage.
+    Otherwise picks the frequency covering the most output buckets
+    (ties go to the coarsest — checked first).
     """
     compatible = _COMPATIBLE_FREQS.get(granularity, list(FrequencyType))
     if len(compatible) <= 1:
@@ -443,13 +464,18 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
     meter_filter = (
         MeterReading.meter_id.in_(meter_ids) if isinstance(meter_ids, list) else MeterReading.meter_id == meter_ids
     )
-    hours_span = max(1, (date_to - date_from).total_seconds() / 3600)
-    n_meters = len(meter_ids) if isinstance(meter_ids, list) else 1
-    best_fallback = None
-    best_fallback_cnt = 0
-    for freq in compatible:  # ordered finest → coarsest
-        cnt = (
-            db.query(func.count(MeterReading.id))
+
+    # Bucket format for counting distinct output periods
+    # Sub-hourly (30min): use hourly format as coverage proxy
+    bucket_fmt = _STRFTIME_FORMATS.get(granularity, _STRFTIME_FORMATS["hourly"])
+    expected = _expected_buckets(date_from, date_to, granularity)
+
+    best_freq = None
+    best_buckets = 0
+
+    for freq in reversed(compatible):  # coarsest → finest
+        bucket_count = (
+            db.query(func.count(func.distinct(func.strftime(bucket_fmt, MeterReading.timestamp))))
             .filter(
                 meter_filter,
                 MeterReading.frequency == freq,
@@ -459,21 +485,14 @@ def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
             .scalar()
             or 0
         )
-        # Skip MIN_15 with incomplete coverage (Enedis pattern: 3/4 = 0.75)
-        if freq == FrequencyType.MIN_15 and cnt > 0:
-            expected = hours_span * 4 * n_meters
-            coverage = cnt / expected if expected > 0 else 0
-            if coverage < 0.8:
-                continue
-        if cnt > best_fallback_cnt:
-            best_fallback = freq
-            best_fallback_cnt = cnt
-        if cnt >= 48:
-            return [freq]
-    # Fallback: pick the single frequency with the most readings to avoid
-    # double-counting when overlapping frequencies exist (e.g. MIN_15 + HOURLY).
-    if best_fallback is not None:
-        return [best_fallback]
+        if bucket_count >= expected:
+            return [freq]  # 100% coverage — short-circuit
+        if bucket_count > best_buckets:
+            best_buckets = bucket_count
+            best_freq = freq
+
+    if best_freq is not None:
+        return [best_freq]
     return compatible
 
 
