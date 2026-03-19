@@ -244,11 +244,18 @@ def compute_hp_hc_ratio(
     if not readings:
         return _empty_hp_hc(site_id)
 
+    # Pre-compute 7x24 period lookup table
+    period_lookup = {}
+    for dow in range(7):
+        for hour in range(24):
+            ref = datetime(2024, 1, 1 + dow, hour, 0)  # 2024-01-01 is Monday (weekday=0)
+            period_lookup[(dow, hour)] = _classify_period(ref, windows)
+
     hp_kwh = 0.0
     hc_kwh = 0.0
 
     for r in readings:
-        period = _classify_period(r.timestamp, windows)
+        period = period_lookup[(r.timestamp.weekday(), r.timestamp.hour)]
         if period == "HP":
             hp_kwh += r.value_kwh
         else:
@@ -390,21 +397,27 @@ def compute_hphc_breakdown_v2(
     if not readings:
         return _empty_hphc_v2(site_id, cal_name)
 
-    # Classify + build heatmap
+    # Pre-compute 7x24 period lookup table (avoids per-reading window iteration)
+    period_lookup = {}
+    for dow in range(7):
+        for hour in range(24):
+            ref = datetime(2024, 1, 1 + dow, hour, 0)  # 2024-01-01 is Monday (weekday=0)
+            period_lookup[(dow, hour)] = _classify_period(ref, windows)
+
+    # Classify + build heatmap using lookup table
     hp_kwh = 0.0
     hc_kwh = 0.0
     heatmap_data = defaultdict(lambda: {"sum_kwh": 0.0, "count": 0, "period": "HC"})
 
     for r in readings:
-        period = _classify_period(r.timestamp, windows)
+        dow = r.timestamp.weekday()
+        hour = r.timestamp.hour
+        period = period_lookup[(dow, hour)]
         if period == "HP":
             hp_kwh += r.value_kwh
         else:
             hc_kwh += r.value_kwh
 
-        # Heatmap: day_of_week (0=Mon) x hour
-        dow = r.timestamp.weekday()
-        hour = r.timestamp.hour
         key = (dow, hour)
         heatmap_data[key]["sum_kwh"] += r.value_kwh
         heatmap_data[key]["count"] += 1

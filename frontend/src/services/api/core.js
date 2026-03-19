@@ -18,7 +18,7 @@ const api = axios.create({
 // Eliminates duplicate concurrent GET requests (React StrictMode double-mount)
 // and caches responses for a short TTL (tab switching in Expert mode).
 const _getCache = new Map();
-const GET_CACHE_TTL_MS = 5000; // 5 seconds
+const GET_CACHE_TTL_MS = 60_000; // 60 seconds — historical consumption data changes rarely
 
 function _cacheKey(url, params) {
   if (!params || Object.keys(params).length === 0) return url;
