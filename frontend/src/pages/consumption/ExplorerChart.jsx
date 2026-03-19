@@ -131,6 +131,7 @@ function SepareGrid({
                 <XAxis dataKey={xKey} tick={{ fontSize: 9 }} />
                 <YAxis
                   tick={{ fontSize: 9 }}
+                  tickFormatter={(v) => Math.round(v).toLocaleString('fr-FR')}
                   label={{
                     value: UNIT_AXIS_LABELS[unit],
                     angle: -90,
@@ -216,7 +217,7 @@ export default function ExplorerChart({
   const isNearFlat = range < avg * 0.05;
   const topPad = yMax > 0 ? yMax * 0.08 : 1;
   const pad = isNearFlat ? Math.max(1, avg * 0.1) : topPad;
-  const yDomain = [Math.max(0, yMin - (isNearFlat ? pad : 0)), yMax + pad];
+  const yDomain = [Math.max(0, Math.floor(yMin - (isNearFlat ? pad : 0))), Math.ceil(yMax + pad)];
 
   if (mode === 'separe' && siteIds.length > 1) {
     return (
@@ -249,6 +250,7 @@ export default function ExplorerChart({
           <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
           <YAxis
             tick={{ fontSize: 11 }}
+            tickFormatter={(v) => Math.round(v).toLocaleString('fr-FR')}
             label={{ value: yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
             domain={yDomain}
           />
