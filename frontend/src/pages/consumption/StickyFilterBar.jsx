@@ -4,7 +4,7 @@
  *
  * Classic mode (default):
  *   Row 1 : Sites (chips + add) • Portfolio toggle  [Who]
- *   Row 2 : Énergie • Période • Granularité • TrustBadge  [What & When]
+ *   Row 2 : Énergie • Période • Granularité  [What & When]
  *   Row 3 : Mode pills (Agrège/Superpose/Empile/Sépare) • Unité pills (kWh/kW/EUR)  [How]
  *   Row 4 : Actions (Enregistrer / Effacer / Copier le lien / Presets)
  *   Row 5 : Résumé contexte (toujours visible)
@@ -53,7 +53,6 @@ import {
   LayoutGrid,
   Info,
 } from 'lucide-react';
-import { TrustBadge } from '../../ui';
 import {
   computeGranularity,
   colorForSite,
@@ -352,14 +351,6 @@ export default function StickyFilterBar({
   }, [showPresets]);
 
   const gran = computeGranularity(days);
-  const confidence = availability?.has_data
-    ? availability.readings_count > 1000
-      ? 'high'
-      : availability.readings_count > 200
-        ? 'medium'
-        : 'low'
-    : null;
-
   // Resolve effective selected site IDs (multi or single legacy)
   const effectiveSiteIds = siteIds.length > 0 ? siteIds : siteId ? [siteId] : [];
   // V19: always multi-mode when setSiteIds is provided (even with 0 or 1 sites)
@@ -638,7 +629,7 @@ export default function StickyFilterBar({
         )}
       </div>
 
-      {/* Row B: Mode + Unit + YoY + TrustBadge + icon actions (#90 compact) */}
+      {/* Row B: Mode + Unit + YoY + icon actions (#90 compact) */}
       <div className="flex items-center gap-2 flex-wrap">
         {showModePills && (
           <ModePills
@@ -666,15 +657,8 @@ export default function StickyFilterBar({
           </button>
         )}
 
-        {/* Right-aligned: TrustBadge + icon actions */}
+        {/* Right-aligned: icon actions */}
         <div className="ml-auto flex items-center gap-2">
-          {confidence && (
-            <TrustBadge
-              source={`${(availability.readings_count || 0).toLocaleString('fr-FR')} relevés`}
-              confidence={confidence}
-            />
-          )}
-
           {/* Compact icon-only actions */}
           <div className="flex items-center gap-0.5">
             {onSave &&

@@ -1,7 +1,7 @@
 const CONFIDENCE = {
   high: { label: 'Confiance élevée', color: 'bg-green-50 text-green-700', dot: 'bg-green-500' },
   medium: { label: 'Confiance moyenne', color: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
-  low: { label: 'Estimation', color: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' },
+  low: { label: 'Confiance basse', color: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' },
 };
 
 function fmtPeriod(period) {
@@ -18,7 +18,7 @@ export default function TrustBadge({ source, period, confidence = 'medium', clas
       title={cfg.label}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {source && <span>{source}</span>}
+      {(source || cfg.label) && <span>{source || cfg.label}</span>}
       {displayPeriod && <span className="text-gray-400">|</span>}
       {displayPeriod && <span>{displayPeriod}</span>}
     </span>
