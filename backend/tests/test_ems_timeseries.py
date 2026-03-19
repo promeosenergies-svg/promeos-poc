@@ -1,6 +1,7 @@
 """
 PROMEOS - EMS Timeseries Contract Tests
 13 tests covering schema, modes, metrics, filters.
++ resolve_best_freq unit tests (bucket-coverage algorithm).
 """
 
 import sys, os
@@ -20,6 +21,7 @@ from main import app
 from models import Base, Site, TypeSite, Meter, MeterReading
 from models.energy_models import EnergyVector, FrequencyType
 from database import get_db
+from services.ems.timeseries_service import _resolve_best_freq, _expected_buckets
 
 
 @pytest.fixture
@@ -391,3 +393,175 @@ class TestTimeseriesContract:
             assert pt["v"] == pytest.approx(10.0, abs=0.1), (
                 f"Bucket {pt['t']}: expected 10.0 kWh, got {pt['v']} (Enedis mixed-frequency underestimate bug #97)"
             )
+
+
+# =============================================
+# Unit tests: _resolve_best_freq (bucket-coverage algorithm)
+# =============================================
+
+
+@pytest.fixture
+def db_session():
+    """Standalone DB session for unit tests (no FastAPI client needed)."""
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.close()
+
+
+def _make_site_and_meter(db):
+    site = Site(nom="FreqTest", type=TypeSite.BUREAU)
+    db.add(site)
+    db.flush()
+    m = Meter(meter_id="PRM-FREQ-1", name="M1", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)
+    db.add(m)
+    db.flush()
+    return m
+
+
+def _insert_readings(db, meter_id, freq, timestamps, kwh=10.0):
+    for ts in timestamps:
+        db.add(
+            MeterReading(
+                meter_id=meter_id,
+                timestamp=ts,
+                frequency=freq,
+                value_kwh=kwh,
+                quality_score=0.95,
+                is_estimated=False,
+            )
+        )
+    db.flush()
+
+
+class TestExpectedBuckets:
+    def test_monthly_full_year(self):
+        assert _expected_buckets(datetime(2025, 1, 1), datetime(2026, 1, 1), "monthly") == 12
+
+    def test_monthly_partial_end(self):
+        # Jan 1 to Apr 10 → Jan, Feb, Mar, Apr = 4 distinct months
+        assert _expected_buckets(datetime(2025, 1, 1), datetime(2025, 4, 10), "monthly") == 4
+
+    def test_monthly_exact_boundary(self):
+        # Jan 1 to Apr 1 → Jan, Feb, Mar = 3 months (Apr excluded, date_to is exclusive)
+        assert _expected_buckets(datetime(2025, 1, 1), datetime(2025, 4, 1), "monthly") == 3
+
+    def test_daily(self):
+        assert _expected_buckets(datetime(2025, 1, 1), datetime(2025, 1, 8), "daily") == 7
+
+    def test_hourly(self):
+        assert _expected_buckets(datetime(2025, 1, 1), datetime(2025, 1, 2), "hourly") == 24
+
+
+class TestResolveBestFreq:
+    def test_prefers_coarsest_with_full_coverage(self, db_session):
+        """Monthly view: if MONTHLY data covers 100%, prefer it over HOURLY."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        dt_from = datetime(2025, 1, 1)
+        dt_to = datetime(2026, 1, 1)
+
+        # Seed MONTHLY: 12 rows, one per month
+        monthly_ts = [datetime(2025, month, 1) for month in range(1, 13)]
+        _insert_readings(db, m.id, FrequencyType.MONTHLY, monthly_ts)
+
+        # Seed HOURLY: full year (denser data)
+        hourly_ts = [dt_from + timedelta(hours=h) for h in range(365 * 24)]
+        _insert_readings(db, m.id, FrequencyType.HOURLY, hourly_ts)
+
+        result = _resolve_best_freq(db, [m.id], dt_from, dt_to, "monthly")
+        assert result == [FrequencyType.MONTHLY]
+
+    def test_falls_back_to_finer_when_coarse_incomplete(self, db_session):
+        """Monthly view: MONTHLY has 6/12 months, HOURLY covers all 12 → pick HOURLY."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        dt_from = datetime(2025, 1, 1)
+        dt_to = datetime(2026, 1, 1)
+
+        # Seed MONTHLY: only Jan–Jun
+        monthly_ts = [datetime(2025, month, 1) for month in range(1, 7)]
+        _insert_readings(db, m.id, FrequencyType.MONTHLY, monthly_ts)
+
+        # Seed HOURLY: full year
+        hourly_ts = [dt_from + timedelta(hours=h) for h in range(365 * 24)]
+        _insert_readings(db, m.id, FrequencyType.HOURLY, hourly_ts)
+
+        result = _resolve_best_freq(db, [m.id], dt_from, dt_to, "monthly")
+        assert result == [FrequencyType.HOURLY]
+
+    def test_best_bucket_count_wins_ties_to_coarsest(self, db_session):
+        """When no frequency has 100%, pick the one with most buckets (coarsest wins ties)."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        dt_from = datetime(2025, 1, 1)
+        dt_to = datetime(2026, 1, 1)
+
+        # Both cover same 10 months — coarsest (MONTHLY) should win
+        monthly_ts = [datetime(2025, month, 1) for month in range(1, 11)]
+        _insert_readings(db, m.id, FrequencyType.MONTHLY, monthly_ts)
+
+        hourly_ts = []
+        for month in range(1, 11):
+            start = datetime(2025, month, 1)
+            for h in range(28 * 24):  # ~28 days per month
+                hourly_ts.append(start + timedelta(hours=h))
+        _insert_readings(db, m.id, FrequencyType.HOURLY, hourly_ts)
+
+        result = _resolve_best_freq(db, [m.id], dt_from, dt_to, "monthly")
+        assert result == [FrequencyType.MONTHLY]
+
+    def test_daily_prefers_daily_over_hourly(self, db_session):
+        """Daily view: if DAILY data has full coverage, prefer it over HOURLY."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        dt_from = datetime(2025, 1, 1)
+        dt_to = datetime(2025, 1, 31)
+
+        daily_ts = [dt_from + timedelta(days=d) for d in range(30)]
+        _insert_readings(db, m.id, FrequencyType.DAILY, daily_ts)
+
+        hourly_ts = [dt_from + timedelta(hours=h) for h in range(30 * 24)]
+        _insert_readings(db, m.id, FrequencyType.HOURLY, hourly_ts)
+
+        result = _resolve_best_freq(db, [m.id], dt_from, dt_to, "daily")
+        assert result == [FrequencyType.DAILY]
+
+    def test_single_compatible_returns_immediately(self, db_session):
+        """15min granularity has only MIN_15 compatible → returns without querying."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        result = _resolve_best_freq(db, [m.id], datetime(2025, 1, 1), datetime(2025, 1, 2), "15min")
+        assert result == [FrequencyType.MIN_15]
+
+    def test_no_data_returns_compatible_list(self, db_session):
+        """No readings at all → returns full compatible list as fallback."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        result = _resolve_best_freq(db, [m.id], datetime(2025, 1, 1), datetime(2026, 1, 1), "monthly")
+        # All 5 frequencies are compatible with monthly
+        assert len(result) == 5
+
+    def test_enedis_mixed_prefers_hourly(self, db_session):
+        """Enedis pattern: 3/4 MIN_15 slots + full HOURLY → HOURLY preferred (coarsest with coverage)."""
+        db = db_session
+        m = _make_site_and_meter(db)
+        dt_from = datetime(2025, 1, 1)
+        dt_to = datetime(2025, 1, 4)
+
+        # HOURLY: full coverage (72 hours)
+        hourly_ts = [dt_from + timedelta(hours=h) for h in range(72)]
+        _insert_readings(db, m.id, FrequencyType.HOURLY, hourly_ts, kwh=10.0)
+
+        # MIN_15: only :15, :30, :45 (no :00) — 3/4 coverage per hour
+        min15_ts = []
+        for h in range(72):
+            base = dt_from + timedelta(hours=h)
+            for minute in (15, 30, 45):
+                min15_ts.append(base + timedelta(minutes=minute))
+        _insert_readings(db, m.id, FrequencyType.MIN_15, min15_ts, kwh=2.5)
+
+        result = _resolve_best_freq(db, [m.id], dt_from, dt_to, "hourly")
+        assert result == [FrequencyType.HOURLY]
