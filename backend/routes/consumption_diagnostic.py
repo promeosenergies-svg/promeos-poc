@@ -303,6 +303,7 @@ def consumption_availability(
     from models import Meter, MeterReading
     from models.energy_models import EnergyVector
     from sqlalchemy import func
+    from services.ems.timeseries_service import get_site_meter_ids
 
     check_site_access(auth, site_id)
     energy_type = _normalize_energy_type(energy_type)
@@ -312,8 +313,9 @@ def consumption_availability(
     if not site:
         return {"has_data": False, "reasons": ["no_site"], "energy_types": [], "meters_count": 0}
 
-    # All active meters for this site
-    all_meters = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    # All active meters for this site, excluding sub-meters whose parent is in the list
+    top_meter_ids = get_site_meter_ids(db, site_id)
+    all_meters = db.query(Meter).filter(Meter.id.in_(top_meter_ids)).all() if top_meter_ids else []
     if not all_meters:
         return {"has_data": False, "reasons": ["no_meter"], "energy_types": [], "meters_count": 0, "site_nom": site.nom}
 

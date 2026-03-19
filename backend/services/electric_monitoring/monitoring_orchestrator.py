@@ -54,15 +54,17 @@ class MonitoringOrchestrator:
             dict with kpis, power_risk, data_quality, alerts, snapshot_id
         """
         from models import Meter, MeterReading, MonitoringSnapshot, MonitoringAlert, AlertStatus, AlertSeverity, Site
+        from services.ems.timeseries_service import get_site_meter_ids
 
         if not self.db:
             raise RuntimeError("DB session required for orchestrator.run()")
 
-        # Determine meters
+        # Determine meters (exclude sub-meters whose parent is already included)
         if meter_id:
             meters = self.db.query(Meter).filter_by(id=meter_id, site_id=site_id).all()
         else:
-            meters = self.db.query(Meter).filter_by(site_id=site_id).all()
+            top_ids = get_site_meter_ids(self.db, site_id)
+            meters = self.db.query(Meter).filter(Meter.id.in_(top_ids)).all() if top_ids else []
 
         if not meters:
             return {"error": f"No meters found for site {site_id}", "kpis": {}, "alerts": []}

@@ -21,6 +21,7 @@ from models import (
     EntiteJuridique,
 )
 from models.energy_models import EnergyVector, Anomaly
+from services.ems.timeseries_service import get_site_meter_ids
 
 
 def _to_date(val, fallback=None):
@@ -135,15 +136,9 @@ def compute_site_completeness(
     window_start = today - timedelta(days=365)
     results = []
 
-    # ── Meter readings ──
-    meters = (
-        db.query(Meter)
-        .filter(
-            Meter.site_id == site_id,
-            Meter.is_active == True,
-        )
-        .all()
-    )
+    # ── Meter readings (exclude sub-meters whose parent is already in the list) ──
+    top_meter_ids = get_site_meter_ids(db, site_id)
+    meters = db.query(Meter).filter(Meter.id.in_(top_meter_ids)).all() if top_meter_ids else []
 
     meters_by_energy = defaultdict(list)
     for m in meters:
@@ -428,7 +423,7 @@ def _grade(score: float) -> str:
 
 def _dim_completeness(db: Session, site_id: int, window_start: date, today: date) -> dict:
     """COMPLETENESS (35%) — months with readings / 12."""
-    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
+    meter_ids = get_site_meter_ids(db, site_id)
 
     if meter_ids:
         month_rows = (
@@ -464,7 +459,7 @@ def _dim_completeness(db: Session, site_id: int, window_start: date, today: date
 
 def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
     """FRESHNESS (25%) — recency of last reading."""
-    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
+    meter_ids = get_site_meter_ids(db, site_id)
 
     last_ts = None
     if meter_ids:
@@ -486,7 +481,7 @@ def _dim_freshness(db: Session, site_id: int, today: date) -> dict:
 
 def _dim_accuracy(db: Session, site_id: int, window_start: date) -> dict:
     """ACCURACY (25%) — anomaly ratio over readings."""
-    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
+    meter_ids = get_site_meter_ids(db, site_id)
 
     if not meter_ids:
         return {
@@ -626,7 +621,7 @@ def compute_site_freshness(
         today = date.today()
 
     # Last meter reading
-    meter_ids = [r[0] for r in db.query(Meter.id).filter(Meter.site_id == site_id, Meter.is_active == True).all()]
+    meter_ids = get_site_meter_ids(db, site_id)
 
     last_reading_date = None
     if meter_ids:
