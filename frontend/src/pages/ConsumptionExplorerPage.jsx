@@ -691,9 +691,28 @@ export default function ConsumptionExplorerPage() {
       )}
 
       {/* Loading skeleton — chart area only (KPIs handled by ConsoKpiHeader) */}
-      {loading && (
-        <div className="animate-pulse">
-          <div className="h-64 bg-gray-100 rounded-lg" />
+      {/* Only show when no chart content is already visible (avoids skeleton sandwiched between KPIs and chart) */}
+      {loading && !hasData && (
+        <div className="animate-pulse rounded-lg border border-gray-100 bg-white px-4 py-3">
+          <div className="flex h-32">
+            <div className="flex flex-col justify-between pr-2 py-0.5">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-1.5 w-6 bg-gray-100 rounded" />
+              ))}
+            </div>
+            <div className="flex-1 flex items-end gap-1.5">
+              {[55, 80, 40, 65, 85, 50, 70, 35, 75, 60, 45, 68].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                  <div className="bg-gray-100 rounded-t" style={{ height: `${h}%` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex mt-1.5 ml-8 gap-1.5">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="flex-1 h-1.5 bg-gray-100 rounded" />
+            ))}
+          </div>
         </div>
       )}
 
