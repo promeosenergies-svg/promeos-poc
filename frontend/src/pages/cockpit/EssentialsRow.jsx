@@ -90,11 +90,11 @@ export default function EssentialsRow({
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {/* 1 — Complétude données */}
+      {/* 1 — Données exploitables */}
       <MiniCard
         accentKey="neutral"
         icon={Database}
-        label="Complétude données"
+        label="Données exploitables"
         value={couvertureDonnees === 0 ? 'Aucune donnée' : formatPercentFR(couvertureDonnees)}
         sub={
           couvertureDonnees === 0
@@ -158,7 +158,7 @@ export default function EssentialsRow({
         onCta={() => onNavigate?.('/patrimoine')}
       />
 
-      {/* 4 — Maturité */}
+      {/* 4 — Couverture opérationnelle */}
       <div
         className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 hover:shadow-sm transition-shadow cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
         onClick={onOpenMaturite}
@@ -174,7 +174,9 @@ export default function EssentialsRow({
       >
         <ProgressRing score={readinessScore} />
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Maturité</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            Couverture opérationnelle
+          </p>
           <p className="text-lg font-bold text-gray-900 leading-tight">
             {formatPercentFR(readinessScore)}
           </p>

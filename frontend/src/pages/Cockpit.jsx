@@ -467,6 +467,16 @@ const Cockpit = () => {
         <div>
           <p className="text-sm font-semibold text-gray-900">
             {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
+            <span className="text-xs text-gray-400 ml-2 font-normal">
+              Dernière analyse :{' '}
+              {new Date().toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
           </p>
           <p className="text-xs text-gray-500">
             {scopeType === 'site'

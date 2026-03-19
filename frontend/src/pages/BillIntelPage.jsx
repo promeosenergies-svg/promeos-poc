@@ -525,6 +525,14 @@ export default function BillIntelPage() {
         </>
       }
     >
+      {/* CTA vers achat énergie */}
+      <button
+        onClick={() => navigate('/achat')}
+        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+      >
+        Optimiser l'achat énergie →
+      </button>
+
       {/* Navigation interne Facturation */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         <span className="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-blue-700 shadow-sm">

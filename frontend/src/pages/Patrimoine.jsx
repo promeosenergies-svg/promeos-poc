@@ -1530,6 +1530,17 @@ export default function Patrimoine() {
                             </Td>
                             <Td>
                               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                                <Tooltip text="Conformité">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/conformite?site_id=${site.id}`);
+                                    }}
+                                    className="p-1 rounded hover:bg-gray-100 text-xs text-blue-600 hover:underline whitespace-nowrap"
+                                  >
+                                    Conformité →
+                                  </button>
+                                </Tooltip>
                                 <Tooltip text="Créer action">
                                   <button
                                     onClick={(e) => {
