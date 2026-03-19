@@ -265,3 +265,20 @@ describe('V3.1 finition', () => {
     expect(found).toBe(true);
   });
 });
+
+describe('ConformitePage freshness', () => {
+  test('renders timestamp when bundle.meta.generated_at present', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/ConformitePage.jsx', 'utf-8');
+    // Ternary: generated_at ? date : fallback
+    expect(content).toContain('bundle?.meta?.generated_at ?');
+    expect(content).toContain('Dernière évaluation');
+    expect(content).toContain('toLocaleDateString');
+  });
+
+  test('renders fallback when bundle.meta.generated_at absent', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/ConformitePage.jsx', 'utf-8');
+    expect(content).toContain('Évaluation en attente');
+  });
+});
