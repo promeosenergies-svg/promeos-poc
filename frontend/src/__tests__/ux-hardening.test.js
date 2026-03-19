@@ -127,3 +127,34 @@ describe('Deep links', () => {
     expect(content).toContain('achat');
   });
 });
+
+describe('Migration verification', () => {
+  test('Cockpit imports RiskBadge', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/Cockpit.jsx', 'utf-8');
+    expect(content).toContain('RiskBadge');
+  });
+
+  test('Patrimoine imports RiskBadge', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/Patrimoine.jsx', 'utf-8');
+    expect(content).toContain('RiskBadge');
+  });
+
+  test('Patrimoine imports EmptyState', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/Patrimoine.jsx', 'utf-8');
+    expect(content).toContain('EmptyState');
+  });
+
+  test('Risk taxonomy has exactly 4 levels + inconnu', async () => {
+    const { RISK_LEVELS } = await import('../lib/risk/normalizeRisk');
+    const keys = Object.keys(RISK_LEVELS);
+    expect(keys).toContain('faible');
+    expect(keys).toContain('modere');
+    expect(keys).toContain('eleve');
+    expect(keys).toContain('critique');
+    expect(keys).toContain('inconnu');
+    expect(keys.length).toBe(5);
+  });
+});

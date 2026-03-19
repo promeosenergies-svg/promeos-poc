@@ -777,6 +777,7 @@ export default function BillIntelPage() {
       {/* No data state */}
       {!loading && !hasData && (
         <EmptyState
+          variant="unconfigured"
           icon={FileText}
           title="Aucune facture importée"
           text="Importez des factures pour détecter les anomalies de facturation (surfacturation, doublons, dérives). Pourquoi c'est important : chaque anomalie non détectée est un surcoût invisible."
@@ -1083,6 +1084,24 @@ export default function BillIntelPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {filteredInvoices.length === 0 && (
+                    <tr>
+                      <td colSpan={isExpert ? 8 : 7} className="py-8">
+                        <EmptyState
+                          variant="empty"
+                          title="Aucune facture ne correspond"
+                          text="Essayez d'autres critères de recherche ou de filtrage."
+                          ctaLabel="Réinitialiser"
+                          onCta={() => {
+                            setInvoiceSearch('');
+                            setInvoiceStatusFilter('');
+                            setPeriodPreset('all');
+                            setMonthFilter('');
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  )}
                   {pagedInvoices.map((inv) => (
                     <tr key={inv.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-2.5 font-medium text-gray-900">

@@ -83,6 +83,7 @@ import {
   pl,
 } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
+import { RiskBadge, getSiteRisk } from '../lib/risk/normalizeRisk';
 import DataQualityBadge from '../components/DataQualityBadge';
 import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';
 
@@ -713,11 +714,12 @@ export default function Patrimoine() {
       {/* ── Welcome empty state ── */}
       {isEmptyPatrimoine ? (
         <EmptyState
+          variant="empty"
           icon={Building2}
-          title="Bienvenue sur PROMEOS"
-          text="Importez votre patrimoine immobilier pour commencer le pilotage énergétique. CSV, Excel ou données de démonstration."
-          ctaLabel="Importer mon patrimoine"
-          onCta={() => setShowWizard(true)}
+          title="Aucun site dans le périmètre"
+          text="Créez ou importez un site pour commencer."
+          ctaLabel="Nouveau site"
+          onCta={() => setShowQuickCreate(true)}
           actions={
             <div className="flex gap-3">
               <Button variant="secondary" size="lg" onClick={() => setShowQuickCreate(true)}>
@@ -1465,15 +1467,7 @@ export default function Patrimoine() {
                               <Badge status={badge.status}>{badge.label}</Badge>
                             </Td>
                             <Td className="text-right tabular-nums">
-                              {site.risque_eur > 0 ? (
-                                <span
-                                  className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}
-                                >
-                                  {fmtEur(site.risque_eur)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
+                              <RiskBadge riskEur={getSiteRisk(site)} size="sm" />
                             </Td>
                             <Td className="text-right text-sm text-gray-600 tabular-nums">
                               {fmtArea(site.surface_m2)}

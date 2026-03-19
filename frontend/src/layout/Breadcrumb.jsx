@@ -25,6 +25,7 @@ Object.assign(LABELS, {
   efa: 'EFA',
   new: 'Nouveau',
   // Aliases for redirect paths
+  'bill-intel': 'Facturation',
   factures: 'Facturation',
   facturation: 'Facturation',
   'plan-action': "Plan d'actions",

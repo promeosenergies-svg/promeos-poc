@@ -55,6 +55,7 @@ import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
 import { MarketContextCompact } from '../components/purchase/MarketContextBanner';
 import { READINESS_WEIGHTS, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
+import { RiskBadge } from '../lib/risk/normalizeRisk';
 import {
   evidenceConformite,
   evidenceRisque,
@@ -564,13 +565,8 @@ const Cockpit = () => {
               {getStatusInfo(singleSite.statut_conformite).label}
             </span>
           </div>
-          <div className="text-gray-500">
-            Risque :{' '}
-            <span className="font-medium text-gray-900">
-              {singleSite.risque_eur > 0
-                ? `${singleSite.risque_eur.toLocaleString('fr-FR')} €`
-                : '0 €'}
-            </span>
+          <div className="text-gray-500 flex items-center gap-1">
+            Risque : <RiskBadge riskEur={singleSite.risque_eur} size="sm" />
           </div>
           <div className="text-gray-500">
             Conso :{' '}
@@ -797,13 +793,7 @@ const Cockpit = () => {
                           </div>
                         </Td>
                         <Td className="text-right text-sm font-medium">
-                          {site.risque_eur > 0 ? (
-                            <span className="text-amber-700">
-                              {site.risque_eur.toLocaleString('fr-FR')} €
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
+                          <RiskBadge riskEur={site.risque_eur} size="sm" />
                         </Td>
                         {isExpert && (
                           <Td className="text-right text-gray-600">
