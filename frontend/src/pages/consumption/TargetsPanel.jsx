@@ -15,6 +15,7 @@ import {
   deleteConsumptionTarget,
   getTargetsProgressionV2,
 } from '../../services/api';
+import { clearApiCache } from '../../services/api/core';
 import ExplorerChart from './ExplorerChart';
 import LayerToggle from './LayerToggle';
 import ObjectivesLayer from './layers/ObjectivesLayer';
@@ -86,6 +87,7 @@ export default function TargetsPanel({
       });
       setShowAdd(false);
       setNewTarget({ month: 1, target_kwh: '', target_eur: '' });
+      clearApiCache();
       load();
       onRefreshMotor?.();
     } catch (e) {
@@ -96,6 +98,7 @@ export default function TargetsPanel({
   const handleDelete = async (id) => {
     try {
       await deleteConsumptionTarget(id);
+      clearApiCache();
       load();
       onRefreshMotor?.();
     } catch (e) {

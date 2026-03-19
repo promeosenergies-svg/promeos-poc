@@ -15,11 +15,10 @@ from models.energy_models import EnergyVector, FrequencyType
 from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
 
-def _percentile(data: List[float], pct: float) -> float:
-    """Compute percentile without numpy."""
-    if not data:
+def _percentile(sorted_data: List[float], pct: float) -> float:
+    """Compute percentile from pre-sorted data (caller must sort)."""
+    if not sorted_data:
         return 0.0
-    sorted_data = sorted(data)
     k = (len(sorted_data) - 1) * pct / 100.0
     f = int(k)
     c = f + 1
@@ -107,21 +106,22 @@ def compute_tunnel(
         power_kw = r.value_kwh / hours_per_interval if hours_per_interval > 0 else r.value_kwh
         buckets[day_type][hour].append(power_kw)
 
-    # Compute envelope per (day_type, hour)
+    # Compute envelope per (day_type, hour) — sort each bucket once
     envelope = {}
     for day_type in ("weekday", "weekend"):
         slots = []
         for h in range(24):
             vals = buckets[day_type].get(h, [])
             if vals:
+                sorted_vals = sorted(vals)
                 slots.append(
                     {
                         "hour": h,
-                        "p10": round(_percentile(vals, 10), 2),
-                        "p25": round(_percentile(vals, 25), 2),
-                        "p50": round(_percentile(vals, 50), 2),
-                        "p75": round(_percentile(vals, 75), 2),
-                        "p90": round(_percentile(vals, 90), 2),
+                        "p10": round(_percentile(sorted_vals, 10), 2),
+                        "p25": round(_percentile(sorted_vals, 25), 2),
+                        "p50": round(_percentile(sorted_vals, 50), 2),
+                        "p75": round(_percentile(sorted_vals, 75), 2),
+                        "p90": round(_percentile(sorted_vals, 90), 2),
                         "count": len(vals),
                     }
                 )
@@ -250,14 +250,15 @@ def compute_tunnel_v2(
         for h in range(24):
             vals = buckets[day_type].get(h, [])
             if vals:
+                sorted_vals = sorted(vals)
                 slots.append(
                     {
                         "hour": h,
-                        "p10": round(_percentile(vals, 10), 2),
-                        "p25": round(_percentile(vals, 25), 2),
-                        "p50": round(_percentile(vals, 50), 2),
-                        "p75": round(_percentile(vals, 75), 2),
-                        "p90": round(_percentile(vals, 90), 2),
+                        "p10": round(_percentile(sorted_vals, 10), 2),
+                        "p25": round(_percentile(sorted_vals, 25), 2),
+                        "p50": round(_percentile(sorted_vals, 50), 2),
+                        "p75": round(_percentile(sorted_vals, 75), 2),
+                        "p90": round(_percentile(sorted_vals, 90), 2),
                         "count": len(vals),
                     }
                 )
