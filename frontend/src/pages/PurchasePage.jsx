@@ -21,6 +21,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { PageShell, Badge, Explain, EmptyState } from '../ui';
+import { RiskBadge } from '../lib/risk/normalizeRisk';
 import { SkeletonCard, SkeletonKpi, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
 import Tooltip from '../ui/Tooltip';
@@ -1005,9 +1006,14 @@ export default function PurchasePage() {
                             </div>
                           </div>
                           {isReco && (
-                            <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">
-                              Recommandé
-                            </span>
+                            <div>
+                              <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">
+                                Recommandé
+                              </span>
+                              <span className="text-[10px] text-gray-400 block mt-0.5">
+                                Meilleur rapport coût / stabilité
+                              </span>
+                            </div>
                           )}
                         </div>
                         <div className="mb-4">
@@ -1046,6 +1052,11 @@ export default function PurchasePage() {
                             />
                           </div>
                         </div>
+                        {s.total_annual_eur && (
+                          <div className="mb-2">
+                            <RiskBadge riskEur={s.total_annual_eur} size="sm" />
+                          </div>
+                        )}
                         {s.p10_eur != null && s.p90_eur != null && (
                           <div className="text-xs text-gray-500 mb-3">
                             <AlertTriangle size={12} className="inline mr-1" />
@@ -1406,23 +1417,14 @@ export default function PurchasePage() {
             )}
             {/* V71: empty state guidé quand aucun scénario */}
             {!loading && scenarios.length === 0 && selectedSiteId && (
-              <div
-                data-testid="empty-state-scenarios"
-                className="bg-white rounded-lg shadow p-8 text-center"
-              >
-                <Target size={40} className="mx-auto text-gray-300 mb-3" />
-                <h4 className="text-lg font-semibold text-gray-700 mb-1">Aucun scénario calculé</h4>
-                <p className="text-sm text-gray-500 mb-4">
-                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Comparer les
-                  scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
-                </p>
-                <button
-                  data-testid="cta-assistant-achat"
-                  onClick={() => navigate(toPurchaseAssistant())}
-                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  <Target size={14} /> Lancer l'Assistant Achat
-                </button>
+              <div data-testid="empty-state-scenarios">
+                <EmptyState
+                  variant="unconfigured"
+                  title="Aucun scénario"
+                  text="Sélectionnez un site et configurez vos hypothèses pour comparer les offres."
+                  ctaLabel="Lancer l'Assistant Achat"
+                  onCta={() => navigate(toPurchaseAssistant())}
+                />
               </div>
             )}
             {loading && (

@@ -215,7 +215,7 @@ export default function AppShell() {
             </button>
 
             {/* Expert Mode toggle */}
-            <div title="Le mode Expert affiche la formule de score, les paramètres, les hypothèses et les références utilisées pour chaque évaluation.">
+            <div title="Affiche source, confiance et détails techniques">
               <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
             </div>
             <UserMenu />

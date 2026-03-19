@@ -12,6 +12,8 @@ import {
   reopenActionCenterAction,
 } from '../services/api';
 import ActionDetailPanel from '../components/ActionDetailPanel';
+import { RiskBadge } from '../lib/risk/normalizeRisk';
+import EmptyState from '../ui/EmptyState';
 
 const PRIORITY_COLORS = {
   critical: 'bg-red-100 text-red-800 border-red-300',
@@ -238,9 +240,11 @@ export default function ActionCenterPage() {
 
       {/* Empty */}
       {!loading && filteredList.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
-          Aucun {tab === 'issues' ? 'signal' : 'action'} trouvé avec ces filtres.
-        </div>
+        <EmptyState
+          variant="empty"
+          title="Aucun signal"
+          text="Toutes les actions sont traitées ou aucun signal détecté."
+        />
       )}
 
       {/* List */}
@@ -296,8 +300,8 @@ export default function ActionCenterPage() {
                         </span>
                       )}
                       {item.estimated_impact_eur && (
-                        <span className="ml-2">
-                          · {Math.round(item.estimated_impact_eur / 1000)} k€
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          · <RiskBadge riskEur={item.estimated_impact_eur} size="sm" />
                         </span>
                       )}
                     </div>

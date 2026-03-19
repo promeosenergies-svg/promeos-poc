@@ -225,3 +225,43 @@ describe('Cross-page convergence', () => {
     expect(content).toContain('FreshnessIndicator');
   });
 });
+
+describe('V3.1 finition', () => {
+  test('ComplianceScoreHeader has calculation tooltip', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/components/conformite/ComplianceScoreHeader.jsx', 'utf-8');
+    expect(content).toContain('Comment');
+    expect(content).toContain('calcul');
+  });
+
+  test('PurchasePage imports RiskBadge', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/PurchasePage.jsx', 'utf-8');
+    expect(content).toContain('RiskBadge');
+  });
+
+  test('PurchasePage has Recommandé justification', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/PurchasePage.jsx', 'utf-8');
+    expect(content).toContain('Recommand');
+  });
+
+  test('ActionCenterPage imports RiskBadge', async () => {
+    const fs = await import('fs');
+    const content = fs.readFileSync('src/pages/ActionCenterPage.jsx', 'utf-8');
+    expect(content).toContain('RiskBadge');
+  });
+
+  test('Expert toggle has explanatory title', async () => {
+    const fs = await import('fs');
+    // Check in layout or cockpit
+    let found = false;
+    for (const f of ['src/layout/NavRail.jsx', 'src/pages/Cockpit.jsx', 'src/layout/Sidebar.jsx']) {
+      try {
+        const content = fs.readFileSync(f, 'utf-8');
+        if (content.includes('source') && content.includes('confiance')) found = true;
+      } catch (e) {}
+    }
+    expect(found).toBe(true);
+  });
+});

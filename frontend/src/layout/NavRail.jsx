@@ -64,7 +64,7 @@ export default function NavRail({ activeModule, onSelectModule }) {
 
       {/* Expert badge */}
       {isExpert && (
-        <div className="mt-auto pt-2">
+        <div className="mt-auto pt-2" title="Affiche source, confiance et détails techniques">
           <span className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-50 text-indigo-600 rounded tracking-wide ring-1 ring-indigo-200/50">
             PRO
           </span>

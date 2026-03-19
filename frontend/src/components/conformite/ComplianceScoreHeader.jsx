@@ -21,6 +21,36 @@ export default function ComplianceScoreHeader({ complianceScore, segProfile }) {
             {Math.round(complianceScore.score ?? complianceScore.avg_score ?? 0)}
           </span>
           <span className="text-lg text-gray-400">/100</span>
+          <div className="relative group inline-block ml-1">
+            <button className="text-gray-400 hover:text-gray-600" title="Comment c'est calculé">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </button>
+            <div className="hidden group-hover:block absolute z-50 left-0 top-6 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-600">
+              <div className="font-semibold text-gray-800 mb-1">Comment c'est calculé</div>
+              <div className="space-y-1">
+                <div>Décret Tertiaire × 45% + BACS × 30% + APER × 25%</div>
+                <div>Pénalité : −5 pts par finding critique (max −20)</div>
+                <div className="text-gray-400 mt-1">
+                  Périmètre : sites du scope actif · Instantané
+                </div>
+                <div className="text-gray-400">
+                  Confiance : données partielles si frameworks non évalués
+                </div>
+              </div>
+            </div>
+          </div>
           {segProfile?.has_profile && Object.keys(segProfile.answers || {}).length > 0 && (
             <>
               <p className="text-[10px] text-blue-600 font-medium mt-1" data-testid="profile-badge">

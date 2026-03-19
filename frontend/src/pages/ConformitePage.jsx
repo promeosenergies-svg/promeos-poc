@@ -557,6 +557,18 @@ export default function ConformitePage() {
         </>
       }
     >
+      {/* Freshness — dernière évaluation */}
+      {bundle?.meta?.generated_at && (
+        <span className="text-xs text-gray-400 ml-2">
+          Dernière évaluation :{' '}
+          {new Date(bundle.meta.generated_at).toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
+        </span>
+      )}
+
       {/* Expert-only badges — dev environment only */}
       {isExpert && import.meta.env.DEV && (
         <div className="flex items-center gap-2 -mt-1 mb-1">
