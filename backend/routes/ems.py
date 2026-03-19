@@ -1105,8 +1105,9 @@ def get_reference_profile(
             daily[day] = daily.get(day, 0) + pt["v"]
         ref_series = [{"t": d, "v": round(v, 1)} for d, v in sorted(daily.items())]
 
-    # Get actual consumption for KPI delta
+    # Get actual consumption for KPI delta + actual series for chart
     kpi = None
+    actual_series = []
     try:
         ts_data = query_timeseries(
             db,
@@ -1119,12 +1120,15 @@ def get_reference_profile(
             "kwh",
         )
         if ts_data["series"] and ts_data["series"][0]["data"]:
-            actual_total = sum(p["v"] for p in ts_data["series"][0]["data"] if p.get("v"))
+            actual_series = [
+                {"t": p["t"], "v": round(p["v"], 1)} for p in ts_data["series"][0]["data"] if p.get("v") is not None
+            ]
+            actual_total = sum(p["v"] for p in actual_series)
             ref_total = sum(p["v"] for p in ref_series)
             delta_kwh = actual_total - ref_total
             delta_pct = round(delta_kwh / ref_total * 100, 1) if ref_total > 0 else 0
             # Confidence based on actual data coverage
-            n_actual = len([p for p in ts_data["series"][0]["data"] if p.get("v")])
+            n_actual = len(actual_series)
             n_expected = len(ref_series)
             coverage = min(100, round(n_actual / max(n_expected, 1) * 100))
             confidence = "high" if coverage >= 80 else "medium" if coverage >= 50 else "low"
@@ -1144,6 +1148,7 @@ def get_reference_profile(
         "puissance": puissance,
         "granularity": granularity,
         "series": ref_series,
+        "actual_series": actual_series,
         "kpi": kpi,
     }
 

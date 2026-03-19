@@ -139,6 +139,25 @@ class TestReferenceProfile:
         # 2 days * 24h = 48 hourly points
         assert len(data["series"]) == 48
 
+    def test_returns_actual_series(self, env):
+        client, _, site = env
+        r = client.get(
+            "/api/ems/reference_profile",
+            params={
+                "site_id": site.id,
+                "date_from": "2025-03-01",
+                "date_to": "2025-03-15",
+                "famille": "entreprise",
+                "puissance": "9-12",
+                "granularity": "daily",
+            },
+        )
+        data = r.json()
+        assert "actual_series" in data
+        assert len(data["actual_series"]) > 0
+        assert "t" in data["actual_series"][0]
+        assert "v" in data["actual_series"][0]
+
     def test_weekend_factor_applied(self, env):
         client, _, site = env
         # 2025-03-01 is Saturday, 2025-03-03 is Monday
