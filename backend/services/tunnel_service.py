@@ -75,7 +75,7 @@ def compute_tunnel(
     if not meter_ids:
         return _empty_tunnel(site_id, energy_type, days)
 
-    best = resolve_best_freq(db, meter_ids, start_date, end_date)
+    best = resolve_best_freq(db, meter_ids, start_date, end_date, granularity="hourly")
 
     # Fetch readings
     readings = (
@@ -212,7 +212,7 @@ def compute_tunnel_v2(
     if not meter_ids:
         return _empty_tunnel_v2(site_id, energy_type, days, mode, unit)
 
-    best = resolve_best_freq(db, meter_ids, start_date, end_date)
+    best = resolve_best_freq(db, meter_ids, start_date, end_date, granularity="hourly")
 
     readings = (
         db.query(MeterReading)
