@@ -119,7 +119,7 @@ export default function Sidebar() {
     // z-[210]  Nested modals   (confirm dialogs inside modals — PatrimoineWizard)
     // z-[250]  Toasts          (always on top — ToastProvider.jsx)
     // ─────────────────────────────────────────────────────────────────────────
-    <aside className="flex h-screen sticky top-0 z-30 shrink-0" aria-label="Navigation principale">
+    <aside className="flex h-full z-30 shrink-0 overflow-y-auto" aria-label="Navigation principale">
       <NavRail activeModule={displayModule} onSelectModule={handleSelectModule} />
       <NavPanel activeModule={displayModule} pins={pins} onTogglePin={togglePin} badges={badges} />
     </aside>
