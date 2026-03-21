@@ -26,6 +26,9 @@ from .enums import (
     ActivationLogStatus,
     DeliveryPointStatus,
     DeliveryPointEnergyType,
+    HcReprogPhase,
+    HcReprogStatus,
+    TariffSegmentEnum,
 )
 
 
@@ -239,6 +242,36 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         default=DeliveryPointStatus.ACTIVE,
         nullable=False,
     )
+
+    # Segment TURPE
+    tariff_segment = Column(
+        Enum(TariffSegmentEnum),
+        nullable=True,
+        comment="C5_BT (≤36kVA), C4_BT (>36kVA), C3_HTA",
+    )
+    puissance_souscrite_kva = Column(Float, nullable=True, comment="Puissance souscrite (kVA)")
+
+    # ── Reprogrammation Heures Creuses (chantier Enedis TURPE 7) ──
+    hc_reprog_phase = Column(
+        Enum(HcReprogPhase),
+        nullable=True,
+        comment="Phase reprog HC: phase_1, phase_2, phase_3, hors_perimetre",
+    )
+    hc_reprog_status = Column(
+        Enum(HcReprogStatus),
+        nullable=True,
+        comment="Statut reprog: a_traiter, en_cours, traite, abandon",
+    )
+    hc_reprog_date_prevue = Column(Date, nullable=True, comment="Date reprog prévue (fichier M-6)")
+    hc_reprog_date_effective = Column(Date, nullable=True, comment="Date reprog effective (CR-M)")
+    hc_code_actuel = Column(String(20), nullable=True, comment="Code HC actuel sur le compteur")
+    hc_code_futur = Column(String(20), nullable=True, comment="Code HC cible après reprog")
+    hc_libelle_actuel = Column(String(100), nullable=True, comment="Libellé HC actuel")
+    hc_libelle_futur = Column(String(100), nullable=True, comment="Libellé HC cible")
+    # Phase 2: HC saisonnalisées (été ≠ hiver)
+    hc_code_futur_ete = Column(String(20), nullable=True, comment="Code HC cible été (phase 2)")
+    hc_code_futur_hiver = Column(String(20), nullable=True, comment="Code HC cible hiver (phase 2)")
+    hc_saisonnalise = Column(Boolean, default=False, comment="True si HC saisonnalisées activées")
 
     # Data lineage (coherent with Site/Compteur)
     data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")

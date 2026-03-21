@@ -732,11 +732,39 @@ class ReconciliationStatus(str, enum.Enum):
 class TariffOptionEnum(str, enum.Enum):
     """Option tarifaire d'un point de livraison / contrat."""
 
-    BASE = "base"  # C5 tarif de base
-    HP_HC = "hp_hc"  # C5 Heures Pleines / Heures Creuses
+    BASE = "base"  # C5 tarif de base (CU dérogatoire, sans différenciation)
+    HP_HC = "hp_hc"  # C5 Heures Pleines / Heures Creuses (MUDT dérogatoire)
+    CU4 = "cu4"  # C5 Courte Utilisation 4 plages (HPH/HCH/HPB/HCB)
+    MU4 = "mu4"  # C5 Moyenne Utilisation 4 plages (HPH/HCH/HPB/HCB)
     CU = "cu"  # C4 Courte Utilisation
-    MU = "mu"  # C4 Moyenne Utilisation
-    LU = "lu"  # C4 Longue Utilisation
+    MU = "mu"  # C4 Moyenne Utilisation (legacy, pas dans TURPE 7 C4)
+    LU = "lu"  # C4/C5 Longue Utilisation
+
+
+class TariffSegmentEnum(str, enum.Enum):
+    """Segment TURPE d'un point de livraison."""
+
+    C5_BT = "c5_bt"  # BT ≤ 36 kVA
+    C4_BT = "c4_bt"  # BT > 36 kVA ≤ 250 kVA
+    C3_HTA = "c3_hta"  # HTA (C1-C4 dans la nomenclature Enedis)
+
+
+class HcReprogPhase(str, enum.Enum):
+    """Phase de reprogrammation HC Enedis (TURPE 7)."""
+
+    PHASE_1 = "phase_1"  # Nov 2025 → Avr 2026, HC non saisonnalisées
+    PHASE_2 = "phase_2"  # Nov 2026+, HC saisonnalisées (été/hiver)
+    PHASE_3 = "phase_3"  # S2 2027 → Août 2028, C1-C4 (HTA/BT>36kVA)
+    HORS_PERIMETRE = "hors_perimetre"  # Pas concerné
+
+
+class HcReprogStatus(str, enum.Enum):
+    """Statut de reprogrammation HC d'un PRM (fichiers Enedis M-6/M-2/CR-M)."""
+
+    A_TRAITER = "a_traiter"  # Reprogrammation prévue
+    EN_COURS = "en_cours"  # Téléopération concurrente, retry
+    TRAITE = "traite"  # Reprogrammation réussie (ou MES)
+    ABANDON = "abandon"  # Échec après 30 jours de tentatives
 
 
 class InvoiceTypeEnum(str, enum.Enum):
