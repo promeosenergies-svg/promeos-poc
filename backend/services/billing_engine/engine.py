@@ -342,6 +342,204 @@ def compute_excise(kwh_total: float, at_date: Optional[date] = None) -> Componen
     )
 
 
+# ─── Gas reconstitution (V110) ───────────────────────────────────────────────
+
+
+def _resolve_gas_tariff_tier(annual_kwh: float) -> str:
+    """Determine ATRD tariff tier from annual gas consumption."""
+    annual_mwh = annual_kwh / 1000
+    if annual_mwh <= 6:
+        return "T1"
+    elif annual_mwh <= 300:
+        return "T2"
+    else:
+        return "T3"
+
+
+def _build_gas_reconstitution(
+    *,
+    kwh_by_period: Dict[str, float],
+    supply_prices_by_period: Dict[str, float],
+    period_start: date,
+    period_end: date,
+    invoice_type: InvoiceType = InvoiceType.NORMAL,
+    fixed_fee_eur_month: float = 0.0,
+) -> "ReconstitutionResult":
+    """
+    Shadow billing gaz — reconstitution simplifiée.
+
+    Composantes :
+    1. Fourniture : kWh × prix fournisseur (TVA 20%)
+    2. ATRD : abonnement (TVA 5.5%) + variable (TVA 20%)
+    3. ATRT : variable (TVA 20%)
+    4. CTA gaz : % × part fixe ATRD (TVA 5.5%)
+    5. TICGN : kWh × taux (TVA 20%)
+    6. Abonnement fournisseur : fixe (TVA 5.5%)
+    """
+    if invoice_type == InvoiceType.ADVANCE:
+        return ReconstitutionResult(
+            status=ReconstitutionStatus.READ_ONLY,
+            segment=TariffSegment.UNSUPPORTED,
+            tariff_option=TariffOption.UNSUPPORTED,
+            energy_type="GAZ",
+            assumptions=["Facture d'acompte gaz — reconstitution non applicable"],
+        )
+
+    prorata_days, prorata_factor = compute_prorata(period_start, period_end)
+    kwh_total = sum(kwh_by_period.values())
+    tva_normale = catalog.get_rate("TVA_NORMALE")
+    tva_reduite = catalog.get_rate("TVA_REDUITE")
+
+    all_components: List[ComponentResult] = []
+    assumptions: List[str] = []
+
+    # Estimate annual consumption for tier selection (extrapolate from period)
+    annual_kwh_est = kwh_total / prorata_factor if prorata_factor > 0 else kwh_total * 12
+    tier = _resolve_gas_tariff_tier(annual_kwh_est)
+    assumptions.append(f"Tranche ATRD : {tier} (conso annuelle estimée : {annual_kwh_est:,.0f} kWh)")
+
+    # 1. Fourniture gaz
+    supply_components = compute_supply_breakdown(kwh_by_period, supply_prices_by_period, tva_normale)
+    all_components.extend(supply_components)
+
+    def _gas_component(code, label, ht, tva, formula, inputs, sources=None):
+        tva_amt = round(ht * tva, 2)
+        return ComponentResult(
+            code=code,
+            label=label,
+            amount_ht=round(ht, 2),
+            tva_rate=tva,
+            amount_tva=tva_amt,
+            amount_ttc=round(ht + tva_amt, 2),
+            formula_used=formula,
+            inputs_used=inputs,
+            rate_sources=sources or [],
+        )
+
+    # 2. ATRD — abonnement fixe
+    try:
+        atrd_abo_rate = catalog.get_rate(f"ATRD_GAZ_ABO_{tier}")
+        atrd_abo_ht = atrd_abo_rate * prorata_factor
+        all_components.append(
+            _gas_component(
+                "atrd_abo",
+                f"ATRD abonnement ({tier})",
+                atrd_abo_ht,
+                tva_reduite,
+                f"{atrd_abo_rate} × {prorata_factor:.4f} = {atrd_abo_ht:.2f}",
+                {"prorata_factor": prorata_factor, "tier": tier},
+                [catalog.get_rate_source(f"ATRD_GAZ_ABO_{tier}")],
+            )
+        )
+    except KeyError:
+        assumptions.append(f"Tarif ATRD abonnement {tier} non trouvé — composante omise")
+
+    # 3. ATRD — variable
+    try:
+        atrd_var_rate = catalog.get_rate(f"ATRD_GAZ_VAR_{tier}")
+        atrd_var_ht = kwh_total * atrd_var_rate
+        all_components.append(
+            _gas_component(
+                "atrd_var",
+                f"ATRD distribution ({tier})",
+                atrd_var_ht,
+                tva_normale,
+                f"{kwh_total:,.0f} × {atrd_var_rate} = {atrd_var_ht:.2f}",
+                {"kwh_total": kwh_total, "rate": atrd_var_rate},
+                [catalog.get_rate_source(f"ATRD_GAZ_VAR_{tier}")],
+            )
+        )
+    except KeyError:
+        assumptions.append(f"Tarif ATRD variable {tier} non trouvé — composante omise")
+
+    # 4. ATRT — transport variable
+    try:
+        atrt_rate = catalog.get_rate("ATRT_GAZ")
+        atrt_ht = kwh_total * atrt_rate
+        all_components.append(
+            _gas_component(
+                "atrt",
+                "ATRT transport",
+                atrt_ht,
+                tva_normale,
+                f"{kwh_total:,.0f} × {atrt_rate} = {atrt_ht:.2f}",
+                {"kwh_total": kwh_total, "rate": atrt_rate},
+                [catalog.get_rate_source("ATRT_GAZ")],
+            )
+        )
+    except KeyError:
+        assumptions.append("Tarif ATRT non trouvé — composante omise")
+
+    # 5. CTA gaz (% de la part fixe ATRD)
+    try:
+        cta_rate_pct = catalog.get_rate("CTA_GAZ") / 100
+        atrd_fixed = next((c.amount_ht for c in all_components if "atrd_abo" == c.code), 0)
+        cta_ht = atrd_fixed * cta_rate_pct
+        all_components.append(
+            _gas_component(
+                "cta_gaz",
+                "CTA gaz",
+                cta_ht,
+                tva_reduite,
+                f"{atrd_fixed:.2f} × {cta_rate_pct:.4f} = {cta_ht:.2f}",
+                {"atrd_fixed_ht": atrd_fixed, "cta_pct": cta_rate_pct},
+                [catalog.get_rate_source("CTA_GAZ")],
+            )
+        )
+    except KeyError:
+        assumptions.append("Taux CTA gaz non trouvé — composante omise")
+
+    # 6. TICGN (accise gaz)
+    try:
+        ticgn_rate = catalog.get_rate("TICGN")
+        ticgn_ht = kwh_total * ticgn_rate
+        all_components.append(
+            _gas_component(
+                "ticgn",
+                "TICGN (accise gaz)",
+                ticgn_ht,
+                tva_normale,
+                f"{kwh_total:,.0f} × {ticgn_rate} = {ticgn_ht:.2f}",
+                {"kwh_total": kwh_total, "rate": ticgn_rate},
+                [catalog.get_rate_source("TICGN")],
+            )
+        )
+    except KeyError:
+        assumptions.append("Taux TICGN non trouvé — composante omise")
+
+    # 7. Abonnement fournisseur (si renseigné)
+    if fixed_fee_eur_month > 0:
+        abo_ht = fixed_fee_eur_month * (prorata_days / 30)
+        all_components.append(
+            _gas_component(
+                "abo_fournisseur",
+                "Abonnement fournisseur",
+                abo_ht,
+                tva_reduite,
+                f"{fixed_fee_eur_month} × {prorata_days}/30 = {abo_ht:.2f}",
+                {"fee_month": fixed_fee_eur_month, "prorata_days": prorata_days},
+            )
+        )
+
+    # Build result
+    total_ht = sum(c.amount_ht for c in all_components)
+    total_ttc = sum(c.amount_ttc for c in all_components)
+
+    return ReconstitutionResult(
+        status=ReconstitutionStatus.RECONSTITUTED,
+        segment=TariffSegment.UNSUPPORTED,  # No segment for gas
+        tariff_option=TariffOption.UNSUPPORTED,
+        energy_type="GAZ",
+        components=all_components,
+        total_ht=round(total_ht, 2),
+        total_ttc=round(total_ttc, 2),
+        prorata_days=prorata_days,
+        prorata_factor=prorata_factor,
+        assumptions=assumptions,
+        missing_inputs=[],
+    )
+
+
 # ─── Main orchestrator ───────────────────────────────────────────────────────
 
 
@@ -374,14 +572,15 @@ def build_invoice_reconstitution(
     Returns: ReconstitutionResult with all components and audit trail.
     """
 
-    # ── Gas → READ_ONLY ───────────────────────────────────────────────────
+    # ── Gas reconstitution (V110) ────────────────────────────────────────
     if energy_type == "GAZ":
-        return ReconstitutionResult(
-            status=ReconstitutionStatus.READ_ONLY,
-            segment=TariffSegment.UNSUPPORTED,
-            tariff_option=TariffOption.UNSUPPORTED,
-            energy_type="GAZ",
-            assumptions=["Reconstitution gaz non disponible en V1 — lecture seule"],
+        return _build_gas_reconstitution(
+            kwh_by_period=kwh_by_period,
+            supply_prices_by_period=supply_prices_by_period,
+            period_start=period_start,
+            period_end=period_end,
+            invoice_type=invoice_type,
+            fixed_fee_eur_month=fixed_fee_eur_month,
         )
 
     # ── Advance invoices → READ_ONLY ──────────────────────────────────────

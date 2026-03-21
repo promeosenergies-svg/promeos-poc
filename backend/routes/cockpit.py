@@ -213,3 +213,72 @@ def get_kpi_catalog():
     from schemas.kpi_catalog import list_kpis, KPI_CATALOG
 
     return {"count": len(KPI_CATALOG), "kpis": list_kpis()}
+
+
+@router.get("/cockpit/benchmark")
+def get_benchmark(
+    db: Session = Depends(get_db),
+    request: Request = None,
+):
+    """
+    [V110] Positionnement des sites par rapport aux benchmarks ADEME (kWh/m²/an).
+    """
+    from config.patrimoine_assumptions import BENCHMARK_ADEME_KWH_M2_AN
+    from models import not_deleted
+
+    org_id = int(request.headers.get("X-Org-Id", "0")) if request else 0
+    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
+
+    results = []
+    for site in sites:
+        usage = str(site.type.value if hasattr(site.type, "value") else (site.type or "bureau")).lower()
+        surface = site.surface_m2 or 0
+        conso = getattr(site, "annual_kwh_total", None) or getattr(site, "conso_kwh_an", None) or 0
+
+        ipe = round(conso / surface, 1) if surface > 0 else None
+        bench = BENCHMARK_ADEME_KWH_M2_AN.get(usage, BENCHMARK_ADEME_KWH_M2_AN.get("bureau", {}))
+
+        if ipe is not None and bench:
+            if ipe <= bench.get("performant", 0):
+                position = "performant"
+            elif ipe <= bench.get("bon", 0):
+                position = "bon"
+            elif ipe <= bench.get("median", 0):
+                position = "median"
+            else:
+                position = "au_dessus"
+        else:
+            position = None
+
+        results.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "usage": usage,
+                "surface_m2": surface,
+                "conso_kwh_an": round(conso, 0),
+                "ipe_kwh_m2_an": ipe,
+                "benchmark": bench,
+                "position": position,
+            }
+        )
+
+    return {
+        "sites": results,
+        "source": "ADEME Observatoire DPE 2024",
+        "unit": "kWh/m²/an",
+    }
+
+
+@router.get("/cockpit/co2")
+def get_co2(
+    db: Session = Depends(get_db),
+    request: Request = None,
+):
+    """
+    [V110] Empreinte CO₂ portfolio — facteurs ADEME Base Carbone 2024.
+    """
+    from services.co2_service import compute_portfolio_co2
+
+    org_id = int(request.headers.get("X-Org-Id", "0")) if request else 0
+    return compute_portfolio_co2(db, org_id)
