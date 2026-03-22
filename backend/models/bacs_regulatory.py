@@ -6,6 +6,7 @@ Exigences fonctionnelles R.175-3, exploitation/maintenance R.175-4/5, preuves.
 from sqlalchemy import Column, Integer, String, Float, Boolean, Text, DateTime, Date, ForeignKey
 from datetime import datetime, timezone
 from .base import Base, TimestampMixin
+from .enums import BacsExemptionType, BacsExemptionStatus
 
 
 class BacsFunctionalRequirement(Base, TimestampMixin):
@@ -83,3 +84,66 @@ class BacsProofDocument(Base, TimestampMixin):
     # Lien generique
     linked_entity_type = Column(String(50), nullable=True, comment="BacsInspection, BacsCvcSystem, etc.")
     linked_entity_id = Column(Integer, nullable=True)
+
+
+# ========================================
+# Dérogation BACS (Art. R.175-6 du CCH)
+# ========================================
+
+
+class BacsExemption(Base, TimestampMixin):
+    """Demande de dérogation BACS (art. R.175-6 Code de la construction).
+
+    Cas de dérogation reconnus:
+    1. TRI non viable (> 10 ans pour CVC existant)
+    2. Impossibilité technique démontrée
+    3. Patrimoine historique (monument classé/inscrit)
+    4. Bâtiment en vente ou démolition programmée
+
+    Workflow: DRAFT → SUBMITTED → APPROVED/REJECTED → (EXPIRED après validité)
+    La dérogation est accordée par le préfet de département.
+    Validité max: 5 ans (renouvelable sur justification).
+    """
+
+    __tablename__ = "bacs_exemptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(Integer, ForeignKey("bacs_assets.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Type et justification
+    exemption_type = Column(
+        String(50),
+        nullable=False,
+        comment="tri_non_viable, impossibilite_technique, patrimoine_historique, mise_en_vente",
+    )
+    status = Column(
+        String(20),
+        default="draft",
+        nullable=False,
+        comment="draft, submitted, approved, rejected, expired",
+    )
+
+    # Justification
+    motif_detaille = Column(Text, nullable=False, comment="Description détaillée du motif")
+
+    # TRI spécifique (si type = tri_non_viable)
+    tri_annees = Column(Float, nullable=True, comment="TRI calculé (années)")
+    cout_installation_eur = Column(Float, nullable=True, comment="Coût estimé installation BACS (EUR)")
+    economies_annuelles_eur = Column(Float, nullable=True, comment="Économies annuelles estimées (EUR)")
+
+    # Dates
+    date_demande = Column(Date, nullable=True, comment="Date soumission au préfet")
+    date_decision = Column(Date, nullable=True, comment="Date décision préfectorale")
+    date_expiration = Column(Date, nullable=True, comment="Fin validité (max 5 ans après décision)")
+
+    # Décision
+    decision_reference = Column(String(200), nullable=True, comment="Référence arrêté préfectoral")
+    decision_conditions = Column(Text, nullable=True, comment="Conditions de la dérogation")
+
+    # Pièces justificatives
+    documents_json = Column(Text, nullable=True, comment="Liste des PJ (JSON)")
+    file_ref = Column(String(500), nullable=True, comment="Document principal")
+
+    # Suivi
+    renouvellement_prevu = Column(Boolean, default=False, comment="True si renouvellement prévu")
+    notes = Column(Text, nullable=True)

@@ -54,6 +54,8 @@ from .enums import (
     CvcArchitecture,
     BacsTriggerReason,
     InspectionStatus,
+    BacsExemptionType,
+    BacsExemptionStatus,
     EfaStatut,
     EfaRole,
     DeclarationStatus,
@@ -207,7 +209,7 @@ from .tertiaire import (
 )
 from .compliance_event_log import ComplianceEventLog
 from .operat_export_manifest import OperatExportManifest
-from .bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument
+from .bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument, BacsExemption
 from .bacs_remediation import BacsRemediationAction
 
 # V96: Payment Rules
@@ -433,6 +435,9 @@ __all__ = [
     "CvcArchitecture",
     "BacsTriggerReason",
     "InspectionStatus",
+    "BacsExemptionType",
+    "BacsExemptionStatus",
+    "BacsExemption",
     # EMS Consumption Explorer
     "EmsWeatherCache",
     "EmsSavedView",

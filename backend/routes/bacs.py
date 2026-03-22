@@ -17,6 +17,9 @@ from models import (
     CvcSystemType,
     CvcArchitecture,
     InspectionStatus,
+    BacsExemption,
+    BacsExemptionType,
+    BacsExemptionStatus,
 )
 from services.bacs_engine import (
     compute_putile,
@@ -51,6 +54,7 @@ def get_bacs_assessment(site_id: int, db: Session = Depends(get_db)):
         .first()
     )
     inspections = db.query(BacsInspection).filter(BacsInspection.asset_id == asset.id).all()
+    exemptions = db.query(BacsExemption).filter(BacsExemption.asset_id == asset.id).all()
 
     # BACS-specific data quality gate
     dq = _compute_bacs_dq(asset, systems)
@@ -62,6 +66,7 @@ def get_bacs_assessment(site_id: int, db: Session = Depends(get_db)):
         "systems": [_serialize_system(s) for s in systems],
         "assessment": _serialize_assessment(assessment) if assessment else None,
         "inspections": [_serialize_inspection(i) for i in inspections],
+        "exemptions": [_serialize_exemption(e) for e in exemptions],
         "data_quality": dq,
     }
 
@@ -585,6 +590,294 @@ def _action_to_dict(a):
         "proof_review_status": a.proof_review_status,
         "created_at": a.created_at.isoformat() if a.created_at else None,
         "closed_at": a.closed_at.isoformat() if a.closed_at else None,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# DEROGATION BACS (Art. R.175-6 CCH)
+# Workflow: DRAFT → SUBMITTED → APPROVED/REJECTED → EXPIRED
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class CreateExemptionRequest(PydanticBase):
+    exemption_type: str  # tri_non_viable, impossibilite_technique, patrimoine_historique, mise_en_vente
+    motif_detaille: str
+    tri_annees: Optional[float] = None
+    cout_installation_eur: Optional[float] = None
+    economies_annuelles_eur: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class UpdateExemptionRequest(PydanticBase):
+    motif_detaille: Optional[str] = None
+    tri_annees: Optional[float] = None
+    cout_installation_eur: Optional[float] = None
+    economies_annuelles_eur: Optional[float] = None
+    notes: Optional[str] = None
+    documents_json: Optional[str] = None
+    file_ref: Optional[str] = None
+    renouvellement_prevu: Optional[bool] = None
+
+
+class ExemptionTransitionRequest(PydanticBase):
+    decision_reference: Optional[str] = None
+    decision_conditions: Optional[str] = None
+    date_expiration: Optional[str] = None
+    motif_rejet: Optional[str] = None
+
+
+VALID_TRANSITIONS = {
+    "draft": ["submitted"],
+    "submitted": ["approved", "rejected"],
+    "approved": ["expired"],
+    "rejected": ["draft"],  # Permet re-soumission apres correction
+    "expired": ["draft"],  # Renouvellement
+}
+
+
+@router.post("/site/{site_id}/exemption")
+def create_exemption(
+    site_id: int,
+    body: CreateExemptionRequest,
+    db: Session = Depends(get_db),
+):
+    """Creer une demande de derogation BACS (art. R.175-6)."""
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        raise HTTPException(404, "Actif BACS introuvable")
+
+    # Valider le type
+    try:
+        ex_type = BacsExemptionType(body.exemption_type)
+    except ValueError:
+        raise HTTPException(
+            400, f"Type invalide: {body.exemption_type}. Valeurs: {[t.value for t in BacsExemptionType]}"
+        )
+
+    # TRI obligatoire si type = tri_non_viable
+    if ex_type == BacsExemptionType.TRI_NON_VIABLE:
+        if body.tri_annees is None:
+            raise HTTPException(400, "tri_annees requis pour type tri_non_viable")
+        if body.tri_annees <= 10:
+            raise HTTPException(400, "TRI doit etre > 10 ans pour justifier une derogation")
+
+    exemption = BacsExemption(
+        asset_id=asset.id,
+        exemption_type=ex_type.value,
+        status="draft",
+        motif_detaille=body.motif_detaille,
+        tri_annees=body.tri_annees,
+        cout_installation_eur=body.cout_installation_eur,
+        economies_annuelles_eur=body.economies_annuelles_eur,
+        notes=body.notes,
+    )
+    db.add(exemption)
+    db.commit()
+    db.refresh(exemption)
+    return _serialize_exemption(exemption)
+
+
+@router.get("/site/{site_id}/exemptions")
+def list_exemptions(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Lister les derogations BACS d'un site."""
+    asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
+    if not asset:
+        return {"exemptions": []}
+
+    exemptions = (
+        db.query(BacsExemption)
+        .filter(BacsExemption.asset_id == asset.id)
+        .order_by(BacsExemption.created_at.desc())
+        .all()
+    )
+    return {"exemptions": [_serialize_exemption(e) for e in exemptions]}
+
+
+@router.get("/exemption/{exemption_id}")
+def get_exemption(
+    exemption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Detail d'une derogation BACS."""
+    exemption = db.query(BacsExemption).filter(BacsExemption.id == exemption_id).first()
+    if not exemption:
+        raise HTTPException(404, "Derogation introuvable")
+    return _serialize_exemption(exemption)
+
+
+@router.patch("/exemption/{exemption_id}")
+def update_exemption(
+    exemption_id: int,
+    body: UpdateExemptionRequest,
+    db: Session = Depends(get_db),
+):
+    """Modifier une derogation BACS (seulement en statut draft)."""
+    exemption = db.query(BacsExemption).filter(BacsExemption.id == exemption_id).first()
+    if not exemption:
+        raise HTTPException(404, "Derogation introuvable")
+
+    if exemption.status != "draft":
+        raise HTTPException(400, f"Modification impossible en statut '{exemption.status}' (draft requis)")
+
+    for field in [
+        "motif_detaille",
+        "tri_annees",
+        "cout_installation_eur",
+        "economies_annuelles_eur",
+        "notes",
+        "documents_json",
+        "file_ref",
+        "renouvellement_prevu",
+    ]:
+        val = getattr(body, field, None)
+        if val is not None:
+            setattr(exemption, field, val)
+
+    db.commit()
+    db.refresh(exemption)
+    return _serialize_exemption(exemption)
+
+
+@router.post("/exemption/{exemption_id}/submit")
+def submit_exemption(
+    exemption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Soumettre la derogation au prefet (DRAFT → SUBMITTED)."""
+    return _transition_exemption(db, exemption_id, "submitted")
+
+
+@router.post("/exemption/{exemption_id}/approve")
+def approve_exemption(
+    exemption_id: int,
+    body: ExemptionTransitionRequest,
+    db: Session = Depends(get_db),
+):
+    """Approuver la derogation (SUBMITTED → APPROVED)."""
+    from datetime import date as d
+
+    exemption = _transition_exemption(db, exemption_id, "approved", commit=False)
+
+    exemption.decision_reference = body.decision_reference
+    exemption.decision_conditions = body.decision_conditions
+    exemption.date_decision = d.today()
+
+    if body.date_expiration:
+        exemption.date_expiration = d.fromisoformat(body.date_expiration)
+    else:
+        # Validite par defaut: 5 ans
+        from datetime import timedelta
+
+        exemption.date_expiration = d.today() + timedelta(days=5 * 365)
+
+    db.commit()
+    db.refresh(exemption)
+    return _serialize_exemption(exemption)
+
+
+@router.post("/exemption/{exemption_id}/reject")
+def reject_exemption(
+    exemption_id: int,
+    body: ExemptionTransitionRequest,
+    db: Session = Depends(get_db),
+):
+    """Rejeter la derogation (SUBMITTED → REJECTED)."""
+    from datetime import date as d
+
+    exemption = _transition_exemption(db, exemption_id, "rejected", commit=False)
+    exemption.decision_reference = body.decision_reference
+    exemption.decision_conditions = body.motif_rejet or body.decision_conditions
+    exemption.date_decision = d.today()
+
+    db.commit()
+    db.refresh(exemption)
+    return _serialize_exemption(exemption)
+
+
+@router.post("/exemption/{exemption_id}/expire")
+def expire_exemption(
+    exemption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Marquer la derogation comme expiree (APPROVED → EXPIRED)."""
+    return _transition_exemption(db, exemption_id, "expired")
+
+
+@router.post("/exemption/{exemption_id}/reopen")
+def reopen_exemption(
+    exemption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Reouvrir en brouillon pour correction ou renouvellement (REJECTED/EXPIRED → DRAFT)."""
+    return _transition_exemption(db, exemption_id, "draft")
+
+
+@router.delete("/exemption/{exemption_id}")
+def delete_exemption(
+    exemption_id: int,
+    db: Session = Depends(get_db),
+):
+    """Supprimer une derogation (seulement en statut draft)."""
+    exemption = db.query(BacsExemption).filter(BacsExemption.id == exemption_id).first()
+    if not exemption:
+        raise HTTPException(404, "Derogation introuvable")
+    if exemption.status != "draft":
+        raise HTTPException(400, "Suppression impossible hors statut draft")
+    db.delete(exemption)
+    db.commit()
+    return {"deleted": exemption_id}
+
+
+def _transition_exemption(db, exemption_id, target_status, commit=True):
+    """Execute une transition de statut avec validation."""
+    from datetime import date as d
+
+    exemption = db.query(BacsExemption).filter(BacsExemption.id == exemption_id).first()
+    if not exemption:
+        raise HTTPException(404, "Derogation introuvable")
+
+    allowed = VALID_TRANSITIONS.get(exemption.status, [])
+    if target_status not in allowed:
+        raise HTTPException(
+            400,
+            f"Transition {exemption.status} → {target_status} invalide. Transitions permises: {allowed}",
+        )
+
+    exemption.status = target_status
+    if target_status == "submitted":
+        exemption.date_demande = d.today()
+
+    if commit:
+        db.commit()
+        db.refresh(exemption)
+    return _serialize_exemption(exemption) if commit else exemption
+
+
+def _serialize_exemption(e) -> dict:
+    if isinstance(e, dict):
+        return e
+    return {
+        "id": e.id,
+        "asset_id": e.asset_id,
+        "exemption_type": e.exemption_type,
+        "status": e.status,
+        "motif_detaille": e.motif_detaille,
+        "tri_annees": e.tri_annees,
+        "cout_installation_eur": e.cout_installation_eur,
+        "economies_annuelles_eur": e.economies_annuelles_eur,
+        "date_demande": e.date_demande.isoformat() if e.date_demande else None,
+        "date_decision": e.date_decision.isoformat() if e.date_decision else None,
+        "date_expiration": e.date_expiration.isoformat() if e.date_expiration else None,
+        "decision_reference": e.decision_reference,
+        "decision_conditions": e.decision_conditions,
+        "documents_json": e.documents_json,
+        "file_ref": e.file_ref,
+        "renouvellement_prevu": e.renouvellement_prevu,
+        "notes": e.notes,
+        "created_at": e.created_at.isoformat() if e.created_at else None,
     }
 
 

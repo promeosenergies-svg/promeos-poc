@@ -560,12 +560,24 @@ function StepActions({ assessment, onClose }) {
       effort: 'Moyen',
       roi: 'Éviter sanction',
     },
-    {
-      priority: 'MEDIUM',
-      label: 'Évaluer le TRI pour exemption éventuelle',
-      effort: 'Faible',
-      roi: 'Potentielle exemption',
-    },
+    ...(assessment.tri_exemption_possible
+      ? [
+          {
+            priority: 'HIGH',
+            label: `Constituer un dossier de dérogation (TRI = ${assessment.tri_years || '?'} ans > 10 ans)`,
+            effort: 'Moyen',
+            roi: 'Dérogation art. R.175-6',
+            isDerogation: true,
+          },
+        ]
+      : [
+          {
+            priority: 'MEDIUM',
+            label: 'Évaluer le TRI pour exemption éventuelle',
+            effort: 'Faible',
+            roi: 'Potentielle exemption',
+          },
+        ]),
     {
       priority: 'LOW',
       label: 'Documenter le responsable et les preuves',

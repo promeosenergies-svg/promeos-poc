@@ -26,6 +26,10 @@ from .enums import (
     PerimeterEventType,
     DataQualityIssueSeverity,
     DataQualityIssueStatus,
+    DpeClasseEnergie,
+    DpeClasseGes,
+    CsrdAssujettissement,
+    CsrdScope,
 )
 
 
@@ -208,3 +212,161 @@ class TertiaireEfaConsumption(Base, TimestampMixin):
     normalized_at = Column(DateTime, nullable=True)
 
     efa = relationship("TertiaireEfa", back_populates="consumptions")
+
+
+# ========================================
+# DPE Tertiaire (Décret 2024-1040)
+# Obligatoire bâtiments tertiaires > 1000 m²
+# Affichage public obligatoire depuis 01/07/2026
+# Validité: 10 ans
+# ========================================
+
+
+class TertiaireEfaDpe(Base, TimestampMixin):
+    """DPE Tertiaire lié à une EFA — décret 2024-1040, arrêté 25/03/2024.
+
+    Obligation:
+    - Bâtiments tertiaires > 1000 m² (neufs et existants)
+    - Affichage public obligatoire (art. L.126-33 CCH)
+    - Validité 10 ans
+    - Réalisation par diagnostiqueur certifié (art. L.271-6 CCH)
+    """
+
+    __tablename__ = "tertiaire_efa_dpe"
+
+    id = Column(Integer, primary_key=True, index=True)
+    efa_id = Column(Integer, ForeignKey("tertiaire_efa.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Classification
+    classe_energie = Column(Enum(DpeClasseEnergie), nullable=False, default=DpeClasseEnergie.VIERGE)
+    classe_ges = Column(Enum(DpeClasseGes), nullable=False, default=DpeClasseGes.VIERGE)
+
+    # Consommation & émissions (valeurs DPE)
+    conso_ep_kwh_m2_an = Column(Float, nullable=True, comment="Consommation énergie primaire (kWhEP/m²/an)")
+    emission_ges_kg_m2_an = Column(Float, nullable=True, comment="Émissions GES (kgCO2eq/m²/an)")
+
+    # Dates
+    date_realisation = Column(Date, nullable=True)
+    date_validite = Column(Date, nullable=True, comment="date_realisation + 10 ans")
+    date_affichage = Column(Date, nullable=True, comment="Date mise en affichage public")
+
+    # Diagnostiqueur
+    diagnostiqueur_nom = Column(String(200), nullable=True)
+    diagnostiqueur_certif = Column(String(100), nullable=True, comment="N° certification COFRAC")
+    numero_ademe = Column(String(20), nullable=True, comment="N° DPE ADEME (13 chiffres)")
+
+    # Recommandations
+    recommandations_json = Column(Text, nullable=True, comment="Travaux recommandés (JSON)")
+
+    # Document
+    file_ref = Column(String(500), nullable=True, comment="URL ou référence fichier DPE")
+
+    efa = relationship("TertiaireEfa", backref="dpe_diagnostics")
+
+
+# ========================================
+# Seuils absolus OPERAT par catégorie
+# Arrêté du 10/04/2020 modifié — valeurs absolues (Cabs)
+# Alternative à la trajectoire relative (-40% / -50% / -60%)
+# ========================================
+
+
+class TertiaireSeuilAbsolu(Base, TimestampMixin):
+    """Seuil absolu OPERAT (Cabs) par catégorie fonctionnelle et zone climatique.
+
+    Art. R.174-26 du CCH: les assujettis peuvent choisir entre
+    - Trajectoire relative: -40% (2030), -50% (2040), -60% (2050) vs année référence
+    - Valeurs absolues (Cabs): seuil en kWhEF/m²/an par catégorie + zone climatique
+
+    Sources: arrêté du 10/04/2020 modifié (annexes), guide ADEME.
+    """
+
+    __tablename__ = "tertiaire_seuil_absolu"
+    __table_args__ = (
+        UniqueConstraint("categorie_fonctionnelle", "zone_climatique", "echeance_annee", name="uq_seuil_absolu"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Catégorie fonctionnelle OPERAT
+    categorie_fonctionnelle = Column(
+        String(100),
+        nullable=False,
+        comment="Ex: bureaux, enseignement_1er_degre, commerce_detail, sante_hopital, hotel_tourisme",
+    )
+    sous_categorie = Column(String(100), nullable=True, comment="Sous-catégorie si applicable")
+
+    # Zone climatique (H1a, H1b, H1c, H2a, H2b, H2c, H2d, H3)
+    zone_climatique = Column(String(10), nullable=False, comment="H1a, H1b, H1c, H2a, H2b, H2c, H2d, H3")
+
+    # Échéance (2030, 2040, 2050)
+    echeance_annee = Column(Integer, nullable=False, comment="2030, 2040 ou 2050")
+
+    # Seuil en kWhEF/m²/an (énergie finale)
+    seuil_kwh_ef_m2_an = Column(Float, nullable=False, comment="Valeur Cabs (kWhEF/m²/an)")
+
+    # Source réglementaire
+    source_arrete = Column(String(200), nullable=True, default="Arrêté 10/04/2020 modifié")
+    notes = Column(Text, nullable=True)
+
+
+# ========================================
+# CSRD — Directive 2022/2464
+# Corporate Sustainability Reporting Directive
+# Obligatoire: grandes entreprises (exercice 2025+),
+#              PME cotées (exercice 2026+)
+# ========================================
+
+
+class CsrdAssujettissementSite(Base, TimestampMixin):
+    """Assujettissement CSRD d'une organisation et données de reporting par site.
+
+    Critères grande entreprise (2 des 3):
+    - > 250 salariés
+    - > 50 M€ CA net
+    - > 25 M€ total bilan
+
+    Obligations:
+    - DPEF (Déclaration de Performance Extra-Financière) remplacée par rapport durabilité
+    - Scope 1/2/3 GHG (protocole GHG / ISO 14064)
+    - Alignement taxonomie EU (% CA/CAPEX/OPEX durables)
+    - Audit par OTI (Organisme Tiers Indépendant)
+    """
+
+    __tablename__ = "csrd_site_reporting"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(Integer, ForeignKey("organisations.id"), nullable=False, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+    year = Column(Integer, nullable=False, comment="Exercice de reporting")
+
+    # Assujettissement
+    assujettissement = Column(
+        Enum(CsrdAssujettissement),
+        default=CsrdAssujettissement.NON_ASSUJETTI,
+        nullable=False,
+    )
+
+    # Scope 1 — Émissions directes (combustion sur site, véhicules propres)
+    scope1_tco2eq = Column(Float, nullable=True, comment="Scope 1 en tCO2eq")
+    scope1_source = Column(String(100), nullable=True, comment="manual, bilan_carbone, api")
+
+    # Scope 2 — Émissions indirectes énergie (élec, chaleur, vapeur achetées)
+    scope2_location_tco2eq = Column(Float, nullable=True, comment="Scope 2 location-based (tCO2eq)")
+    scope2_market_tco2eq = Column(Float, nullable=True, comment="Scope 2 market-based (tCO2eq)")
+    facteur_emission_elec = Column(Float, nullable=True, comment="gCO2eq/kWh élec utilisé")
+
+    # Scope 3 — Chaîne de valeur (optionnel V1)
+    scope3_tco2eq = Column(Float, nullable=True, comment="Scope 3 estimé (tCO2eq)")
+
+    # Taxonomie EU
+    pct_ca_aligne = Column(Float, nullable=True, comment="% CA aligné taxonomie EU")
+    pct_capex_aligne = Column(Float, nullable=True, comment="% CAPEX aligné taxonomie EU")
+    pct_opex_aligne = Column(Float, nullable=True, comment="% OPEX aligné taxonomie EU")
+
+    # Audit
+    oti_nom = Column(String(200), nullable=True, comment="Organisme Tiers Indépendant")
+    oti_date_audit = Column(Date, nullable=True)
+    rapport_durabilite_ref = Column(String(500), nullable=True, comment="Ref du rapport de durabilité")
+
+    notes = Column(Text, nullable=True)

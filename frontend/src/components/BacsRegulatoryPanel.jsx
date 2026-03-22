@@ -17,6 +17,12 @@ import {
   getBacsRegulatoryAssessment,
   createBacsRemediation,
   listBacsRemediations,
+  listBacsExemptions,
+  createBacsExemption,
+  submitBacsExemption,
+  approveBacsExemption,
+  rejectBacsExemption,
+  deleteBacsExemption,
 } from '../services/api';
 
 const STATUS_CONFIG = {
@@ -57,11 +63,35 @@ const PROOF_STATUS = {
   rejected: { label: 'Rejetee', cls: 'text-red-600' },
 };
 
+const EXEMPTION_STATUS = {
+  draft: { label: 'Brouillon', cls: 'bg-gray-100 text-gray-600' },
+  submitted: { label: 'Soumise', cls: 'bg-blue-100 text-blue-700' },
+  approved: { label: 'Approuvee', cls: 'bg-green-100 text-green-700' },
+  rejected: { label: 'Rejetee', cls: 'bg-red-100 text-red-700' },
+  expired: { label: 'Expiree', cls: 'bg-amber-100 text-amber-700' },
+};
+
+const EXEMPTION_TYPE_LABELS = {
+  tri_non_viable: 'TRI non viable (> 10 ans)',
+  impossibilite_technique: 'Impossibilite technique',
+  patrimoine_historique: 'Patrimoine historique',
+  mise_en_vente: 'Mise en vente / demolition',
+};
+
 export default function BacsRegulatoryPanel({ siteId }) {
   const [data, setData] = useState(null);
   const [actions, setActions] = useState([]);
+  const [exemptions, setExemptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [showExemptionForm, setShowExemptionForm] = useState(false);
+  const [exemptionForm, setExemptionForm] = useState({
+    exemption_type: 'tri_non_viable',
+    motif_detaille: '',
+    tri_annees: '',
+    cout_installation_eur: '',
+    economies_annuelles_eur: '',
+  });
 
   useEffect(() => {
     if (!siteId) return;
@@ -69,10 +99,12 @@ export default function BacsRegulatoryPanel({ siteId }) {
     Promise.all([
       getBacsRegulatoryAssessment(siteId).catch(() => null),
       listBacsRemediations(siteId).catch(() => ({ actions: [] })),
+      listBacsExemptions(siteId).catch(() => ({ exemptions: [] })),
     ])
-      .then(([assessment, remActions]) => {
+      .then(([assessment, remActions, exemptionData]) => {
         setData(assessment);
         setActions(remActions?.actions || []);
+        setExemptions(exemptionData?.exemptions || []);
       })
       .finally(() => setLoading(false));
   }, [siteId]);
@@ -92,6 +124,54 @@ export default function BacsRegulatoryPanel({ siteId }) {
       // silent
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateExemption = async () => {
+    setCreating(true);
+    try {
+      const payload = {
+        exemption_type: exemptionForm.exemption_type,
+        motif_detaille: exemptionForm.motif_detaille,
+      };
+      if (exemptionForm.tri_annees) payload.tri_annees = parseFloat(exemptionForm.tri_annees);
+      if (exemptionForm.cout_installation_eur)
+        payload.cout_installation_eur = parseFloat(exemptionForm.cout_installation_eur);
+      if (exemptionForm.economies_annuelles_eur)
+        payload.economies_annuelles_eur = parseFloat(exemptionForm.economies_annuelles_eur);
+      const result = await createBacsExemption(siteId, payload);
+      setExemptions((prev) => [result, ...prev]);
+      setShowExemptionForm(false);
+      setExemptionForm({
+        exemption_type: 'tri_non_viable',
+        motif_detaille: '',
+        tri_annees: '',
+        cout_installation_eur: '',
+        economies_annuelles_eur: '',
+      });
+    } catch {
+      // silent
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleExemptionAction = async (exemptionId, action) => {
+    try {
+      let result;
+      if (action === 'submit') result = await submitBacsExemption(exemptionId);
+      else if (action === 'approve') result = await approveBacsExemption(exemptionId);
+      else if (action === 'reject') result = await rejectBacsExemption(exemptionId);
+      else if (action === 'delete') {
+        await deleteBacsExemption(exemptionId);
+        setExemptions((prev) => prev.filter((e) => e.id !== exemptionId));
+        return;
+      }
+      if (result) {
+        setExemptions((prev) => prev.map((e) => (e.id === exemptionId ? result : e)));
+      }
+    } catch {
+      // silent
     }
   };
 
@@ -230,6 +310,172 @@ export default function BacsRegulatoryPanel({ siteId }) {
           </div>
         ) : (
           <p className="text-xs text-green-600">Toutes les preuves attendues sont presentes</p>
+        )}
+      </Section>
+
+      {/* Derogation BACS (Art. R.175-6) */}
+      <Section title={`Derogation (${exemptions.length})`}>
+        {exemptions.length > 0 ? (
+          <div className="space-y-2">
+            {exemptions.map((ex) => {
+              const statusCfg = EXEMPTION_STATUS[ex.status] || EXEMPTION_STATUS.draft;
+              return (
+                <div
+                  key={ex.id}
+                  className="p-2 rounded-md bg-gray-50 border border-gray-100 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-800">
+                      {EXEMPTION_TYPE_LABELS[ex.exemption_type] || ex.exemption_type}
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusCfg.cls}`}
+                    >
+                      {statusCfg.label}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-600 line-clamp-2">{ex.motif_detaille}</p>
+                  {ex.tri_annees && (
+                    <p className="text-[10px] text-gray-400">
+                      TRI: {ex.tri_annees} ans
+                      {ex.cout_installation_eur &&
+                        ` | Cout: ${Math.round(ex.cout_installation_eur).toLocaleString()} EUR`}
+                      {ex.economies_annuelles_eur &&
+                        ` | Eco: ${Math.round(ex.economies_annuelles_eur).toLocaleString()} EUR/an`}
+                    </p>
+                  )}
+                  {ex.date_expiration && (
+                    <p className="text-[10px] text-gray-400">Expire: {ex.date_expiration}</p>
+                  )}
+                  {ex.decision_reference && (
+                    <p className="text-[10px] text-gray-400">Ref: {ex.decision_reference}</p>
+                  )}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    {ex.status === 'draft' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleExemptionAction(ex.id, 'submit')}
+                          className="px-2 py-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100"
+                        >
+                          Soumettre
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleExemptionAction(ex.id, 'delete')}
+                          className="px-2 py-0.5 text-[10px] font-medium text-red-600 bg-red-50 rounded hover:bg-red-100"
+                        >
+                          Supprimer
+                        </button>
+                      </>
+                    )}
+                    {ex.status === 'submitted' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleExemptionAction(ex.id, 'approve')}
+                          className="px-2 py-0.5 text-[10px] font-medium text-green-700 bg-green-50 rounded hover:bg-green-100"
+                        >
+                          Approuver
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleExemptionAction(ex.id, 'reject')}
+                          className="px-2 py-0.5 text-[10px] font-medium text-red-600 bg-red-50 rounded hover:bg-red-100"
+                        >
+                          Rejeter
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400">Aucune derogation</p>
+        )}
+        {elig.tri_exemption_possible && !showExemptionForm && (
+          <button
+            type="button"
+            onClick={() => setShowExemptionForm(true)}
+            className="mt-2 px-2.5 py-1 text-[11px] font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 w-full"
+          >
+            Demander une derogation
+          </button>
+        )}
+        {showExemptionForm && (
+          <div className="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-md space-y-2">
+            <p className="text-[11px] font-semibold text-blue-800">Nouvelle derogation</p>
+            <select
+              value={exemptionForm.exemption_type}
+              onChange={(e) => setExemptionForm((f) => ({ ...f, exemption_type: e.target.value }))}
+              className="w-full text-xs p-1.5 border rounded"
+            >
+              <option value="tri_non_viable">TRI non viable (&gt; 10 ans)</option>
+              <option value="impossibilite_technique">Impossibilite technique</option>
+              <option value="patrimoine_historique">Patrimoine historique</option>
+              <option value="mise_en_vente">Mise en vente / demolition</option>
+            </select>
+            <textarea
+              placeholder="Motif detaille..."
+              value={exemptionForm.motif_detaille}
+              onChange={(e) => setExemptionForm((f) => ({ ...f, motif_detaille: e.target.value }))}
+              className="w-full text-xs p-1.5 border rounded h-16"
+            />
+            {exemptionForm.exemption_type === 'tri_non_viable' && (
+              <div className="grid grid-cols-3 gap-1.5">
+                <input
+                  type="number"
+                  placeholder="TRI (annees)"
+                  value={exemptionForm.tri_annees}
+                  onChange={(e) => setExemptionForm((f) => ({ ...f, tri_annees: e.target.value }))}
+                  className="text-xs p-1.5 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Cout install. (EUR)"
+                  value={exemptionForm.cout_installation_eur}
+                  onChange={(e) =>
+                    setExemptionForm((f) => ({
+                      ...f,
+                      cout_installation_eur: e.target.value,
+                    }))
+                  }
+                  className="text-xs p-1.5 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Eco/an (EUR)"
+                  value={exemptionForm.economies_annuelles_eur}
+                  onChange={(e) =>
+                    setExemptionForm((f) => ({
+                      ...f,
+                      economies_annuelles_eur: e.target.value,
+                    }))
+                  }
+                  className="text-xs p-1.5 border rounded"
+                />
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={handleCreateExemption}
+                disabled={creating || !exemptionForm.motif_detaille}
+                className="px-2.5 py-1 text-[11px] font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Creer brouillon
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowExemptionForm(false)}
+                className="px-2.5 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
         )}
       </Section>
 

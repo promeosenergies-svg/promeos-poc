@@ -208,3 +208,21 @@ export const attachBacsProof = (actionId, data) =>
   api.post(`/regops/bacs/remediation/${actionId}/attach-proof`, data).then((r) => r.data);
 export const reviewBacsProof = (actionId, data) =>
   api.post(`/regops/bacs/remediation/${actionId}/review-proof`, data).then((r) => r.data);
+
+// BACS Derogation (Art. R.175-6)
+export const listBacsExemptions = (siteId) =>
+  api.get(`/regops/bacs/site/${siteId}/exemptions`).then((r) => r.data);
+export const createBacsExemption = (siteId, data) =>
+  api.post(`/regops/bacs/site/${siteId}/exemption`, data).then((r) => r.data);
+export const getBacsExemption = (exemptionId) =>
+  api.get(`/regops/bacs/exemption/${exemptionId}`).then((r) => r.data);
+export const updateBacsExemption = (exemptionId, data) =>
+  api.patch(`/regops/bacs/exemption/${exemptionId}`, data).then((r) => r.data);
+export const submitBacsExemption = (exemptionId) =>
+  api.post(`/regops/bacs/exemption/${exemptionId}/submit`).then((r) => r.data);
+export const approveBacsExemption = (exemptionId, data = {}) =>
+  api.post(`/regops/bacs/exemption/${exemptionId}/approve`, data).then((r) => r.data);
+export const rejectBacsExemption = (exemptionId, data = {}) =>
+  api.post(`/regops/bacs/exemption/${exemptionId}/reject`, data).then((r) => r.data);
+export const deleteBacsExemption = (exemptionId) =>
+  api.delete(`/regops/bacs/exemption/${exemptionId}`).then((r) => r.data);
