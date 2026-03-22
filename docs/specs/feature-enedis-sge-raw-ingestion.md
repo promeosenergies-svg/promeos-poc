@@ -1,6 +1,23 @@
-# Feature Spec : Ingestion des flux SGE Enedis — Structure de données brute
+# [ARCHIVÉ] Feature Spec : Ingestion des flux SGE Enedis — Structure de données brute
 
-## Contexte
+> **Ce spec est archivé.** Il a été scindé en 3 sub-features ciblées après corrections factuelles.
+>
+> Consulter les specs actifs :
+> 1. [`feature-enedis-sge-1-decrypt.md`](feature-enedis-sge-1-decrypt.md) — Déchiffrement et classification
+> 2. [`feature-enedis-sge-2-ingestion-cdc.md`](feature-enedis-sge-2-ingestion-cdc.md) — Ingestion CDC (R4 + R171)
+> 3. [`feature-enedis-sge-3-ingestion-index.md`](feature-enedis-sge-3-ingestion-index.md) — Ingestion Index (R50 + R151)
+>
+> **Corrections factuelles principales** :
+> - Les `.zip` sont du ciphertext AES brut (pas des archives ZIP)
+> - La séquence est déchiffrement AES → XML (pas dézip → déchiffrement)
+> - `cryptography` n'est pas installé dans le venv malgré `requirements.lock.txt`
+> - Décompte réel : ~98 C1-C4, 10 C5, 3 X14, 3 HDM CSV (pas 114 fichiers homogènes)
+> - X14 et HDM CSV existent mais n'étaient pas mentionnés
+> - R172 contient du binaire illisible (pas dézippable)
+
+---
+
+## Contexte (original)
 
 Promeos fonctionne avec des données de consommation synthétiques (seed). Pour passer en production, la plateforme doit ingérer les **flux réels Enedis SGE** (Système de Gestion des Echanges) qui sont la source de vérité pour toute la chaîne : analytics, anomalies, monitoring, facturation.
 
