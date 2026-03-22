@@ -169,9 +169,9 @@ export function colorForSite(_siteId, index) {
  * @returns {{ level: 'low'|'medium'|'high', label: string }}
  */
 export function interpretClimateSensitivity(slope, r2) {
-  if (r2 < 0.3) return { level: 'low', label: 'Correlation faible' };
-  if (slope < 5) return { level: 'medium', label: 'Sensibilite moderee' };
-  return { level: 'high', label: 'Forte sensibilite climatique' };
+  if (r2 < 0.3) return { level: 'low', label: 'Corrélation faible' };
+  if (slope < 5) return { level: 'medium', label: 'Sensibilité modérée' };
+  return { level: 'high', label: 'Forte sensibilité climatique' };
 }
 
 // Sampling interval in minutes for each granularity key (must match backend)

@@ -97,8 +97,8 @@ export function generateDecisionNote({
     // Limits
     limits: [
       'Simulation Monte Carlo (max 200 iterations) — valeur indicative',
-      'Prix base sur hypotheses de marche (voir parametres)',
-      'Scoring automatise — validation humaine recommandee',
+      'Prix basé sur hypothèses de marché (voir paramètres)',
+      'Scoring automatisé — validation humaine recommandée',
       `Version moteur: ${BRIQUE3_VERSION}`,
     ],
   };

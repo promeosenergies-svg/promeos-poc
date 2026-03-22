@@ -105,7 +105,7 @@ describe('Site selector always-visible logic (V19-B RC2)', () => {
     return {
       visible: true,
       content: 'placeholder',
-      label: sitesLoading ? 'Chargement\u2026' : 'S\u00e9lectionner des sites\u2026',
+      label: sitesLoading ? 'Chargement…' : 'Sélectionner des sites…',
     };
   }
 
@@ -119,7 +119,7 @@ describe('Site selector always-visible logic (V19-B RC2)', () => {
     });
     expect(result.visible).toBe(true);
     expect(result.content).toBe('placeholder');
-    expect(result.label).toBe('S\u00e9lectionner des sites\u2026');
+    expect(result.label).toBe('Sélectionner des sites…');
   });
 
   it('setSiteIds provided + sitesLoading → section visible with "Chargement…"', () => {

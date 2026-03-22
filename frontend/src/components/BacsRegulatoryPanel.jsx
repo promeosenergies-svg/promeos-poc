@@ -39,7 +39,8 @@ const STATUS_CONFIG = {
     cls: 'bg-green-100 text-green-700',
     icon: ShieldCheck,
   },
-  not_evaluated: { label: 'Non evalue', cls: 'bg-gray-100 text-gray-500', icon: null },
+  not_evaluated: { label: 'Non évalué', cls: 'bg-gray-100 text-gray-500', icon: null },
+  exempted: { label: 'Dérogation approuvée', cls: 'bg-blue-100 text-blue-700', icon: ShieldCheck },
 };
 
 const REQ_STATUS_ICON = {
@@ -59,23 +60,23 @@ const ACTION_STATUS = {
 const PROOF_STATUS = {
   missing: { label: 'Manquante', cls: 'text-red-600' },
   uploaded: { label: 'Fournie', cls: 'text-blue-600' },
-  accepted: { label: 'Validee', cls: 'text-green-600' },
-  rejected: { label: 'Rejetee', cls: 'text-red-600' },
+  accepted: { label: 'Validée', cls: 'text-green-600' },
+  rejected: { label: 'Rejetée', cls: 'text-red-600' },
 };
 
 const EXEMPTION_STATUS = {
   draft: { label: 'Brouillon', cls: 'bg-gray-100 text-gray-600' },
   submitted: { label: 'Soumise', cls: 'bg-blue-100 text-blue-700' },
-  approved: { label: 'Approuvee', cls: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rejetee', cls: 'bg-red-100 text-red-700' },
-  expired: { label: 'Expiree', cls: 'bg-amber-100 text-amber-700' },
+  approved: { label: 'Approuvée', cls: 'bg-green-100 text-green-700' },
+  rejected: { label: 'Rejetée', cls: 'bg-red-100 text-red-700' },
+  expired: { label: 'Expirée', cls: 'bg-amber-100 text-amber-700' },
 };
 
 const EXEMPTION_TYPE_LABELS = {
   tri_non_viable: 'TRI non viable (> 10 ans)',
-  impossibilite_technique: 'Impossibilite technique',
+  impossibilite_technique: 'Impossibilité technique',
   patrimoine_historique: 'Patrimoine historique',
-  mise_en_vente: 'Mise en vente / demolition',
+  mise_en_vente: 'Mise en vente / démolition',
 };
 
 export default function BacsRegulatoryPanel({ siteId }) {
@@ -84,6 +85,7 @@ export default function BacsRegulatoryPanel({ siteId }) {
   const [exemptions, setExemptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [errMsg, setErrMsg] = useState(null);
   const [showExemptionForm, setShowExemptionForm] = useState(false);
   const [exemptionForm, setExemptionForm] = useState({
     exemption_type: 'tri_non_viable',
@@ -96,6 +98,7 @@ export default function BacsRegulatoryPanel({ siteId }) {
   useEffect(() => {
     if (!siteId) return;
     setLoading(true);
+    setErrMsg(null);
     Promise.all([
       getBacsRegulatoryAssessment(siteId).catch(() => null),
       listBacsRemediations(siteId).catch(() => ({ actions: [] })),
@@ -111,6 +114,7 @@ export default function BacsRegulatoryPanel({ siteId }) {
 
   const handleCreateAction = async (rem) => {
     setCreating(true);
+    setErrMsg(null);
     try {
       const result = await createBacsRemediation(siteId, {
         blocker_code: rem.cause.replace(/\s/g, '_').toLowerCase().slice(0, 100),
@@ -120,8 +124,10 @@ export default function BacsRegulatoryPanel({ siteId }) {
         priority: rem.priority,
       });
       setActions((prev) => [result, ...prev]);
-    } catch {
-      // silent
+    } catch (e) {
+      setErrMsg(
+        e?.response?.data?.detail || e?.message || "Erreur lors de la création de l'action"
+      );
     } finally {
       setCreating(false);
     }
@@ -129,6 +135,7 @@ export default function BacsRegulatoryPanel({ siteId }) {
 
   const handleCreateExemption = async () => {
     setCreating(true);
+    setErrMsg(null);
     try {
       const payload = {
         exemption_type: exemptionForm.exemption_type,
@@ -149,14 +156,17 @@ export default function BacsRegulatoryPanel({ siteId }) {
         cout_installation_eur: '',
         economies_annuelles_eur: '',
       });
-    } catch {
-      // silent
+    } catch (e) {
+      setErrMsg(
+        e?.response?.data?.detail || e?.message || 'Erreur lors de la création de la dérogation'
+      );
     } finally {
       setCreating(false);
     }
   };
 
   const handleExemptionAction = async (exemptionId, action) => {
+    setErrMsg(null);
     try {
       let result;
       if (action === 'submit') result = await submitBacsExemption(exemptionId);
@@ -170,8 +180,10 @@ export default function BacsRegulatoryPanel({ siteId }) {
       if (result) {
         setExemptions((prev) => prev.map((e) => (e.id === exemptionId ? result : e)));
       }
-    } catch {
-      // silent
+    } catch (e) {
+      setErrMsg(
+        e?.response?.data?.detail || e?.message || "Erreur lors de l'action sur la dérogation"
+      );
     }
   };
 
@@ -199,6 +211,20 @@ export default function BacsRegulatoryPanel({ siteId }) {
 
   return (
     <div className="space-y-4">
+      {/* Bandeau erreur */}
+      {errMsg && (
+        <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{errMsg}</span>
+          <button
+            type="button"
+            onClick={() => setErrMsg(null)}
+            className="ml-auto text-red-400 hover:text-red-600"
+          >
+            &times;
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -413,12 +439,12 @@ export default function BacsRegulatoryPanel({ siteId }) {
               className="w-full text-xs p-1.5 border rounded"
             >
               <option value="tri_non_viable">TRI non viable (&gt; 10 ans)</option>
-              <option value="impossibilite_technique">Impossibilite technique</option>
+              <option value="impossibilite_technique">Impossibilité technique</option>
               <option value="patrimoine_historique">Patrimoine historique</option>
-              <option value="mise_en_vente">Mise en vente / demolition</option>
+              <option value="mise_en_vente">Mise en vente / démolition</option>
             </select>
             <textarea
-              placeholder="Motif detaille..."
+              placeholder="Motif détaillé..."
               value={exemptionForm.motif_detaille}
               onChange={(e) => setExemptionForm((f) => ({ ...f, motif_detaille: e.target.value }))}
               className="w-full text-xs p-1.5 border rounded h-16"

@@ -37,7 +37,7 @@ const PUISSANCE_OPTIONS = [
 ];
 
 const CONFIDENCE_MAP = {
-  high: { label: 'Elevee', variant: 'ok', desc: 'Couverture > 80 % des points attendus' },
+  high: { label: 'Élevée', variant: 'ok', desc: 'Couverture > 80 % des points attendus' },
   medium: { label: 'Moyenne', variant: 'warn', desc: 'Couverture entre 50 % et 80 %' },
   low: { label: 'Basse', variant: 'crit', desc: 'Couverture < 50 % — profil indicatif' },
 };

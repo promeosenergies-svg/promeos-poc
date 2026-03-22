@@ -64,9 +64,9 @@ export const CONFORMITE_WARNINGS = {
 /** Statuts declaration OPERAT en labels FR explicites */
 export const DECLARATION_STATUS_LABELS = {
   draft: 'Brouillon',
-  prechecked: 'Pre-verifie',
-  exported: 'Pack preparatoire genere',
-  submitted_simulated: 'Simulation non deposee',
+  prechecked: 'Pré-vérifié',
+  exported: 'Pack préparatoire généré',
+  submitted_simulated: 'Simulation non déposée',
 };
 
 // ─── Workflow (findings) ────────────────────────────────────────────────

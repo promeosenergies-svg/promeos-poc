@@ -179,7 +179,7 @@ export function scoreContractRisk({ offer }) {
     evs.push(evidence('CR01', 'earlyTerminationPenalty', 'HIGH'));
   } else if (terms.earlyTerminationPenalty === 'MODERATE') {
     score -= 10;
-    reasons.push('Penalite de resiliation moderee');
+    reasons.push('Pénalité de résiliation modérée');
     evs.push(evidence('CR02', 'earlyTerminationPenalty', 'MODERATE'));
   }
 

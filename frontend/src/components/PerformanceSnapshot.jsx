@@ -206,7 +206,7 @@ export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo,
               ? 'Excellente'
               : qualityScore >= 60
                 ? 'Correcte'
-                : 'Degradee'
+                : 'Dégradée'
             : null
         }
         onClick={goToMonitoring}

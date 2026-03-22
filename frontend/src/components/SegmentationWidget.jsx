@@ -96,7 +96,7 @@ export default function SegmentationWidget({ onSegmentationClick, compact = fals
     setCreatingAction(key);
     try {
       const result = await createActionFromRecommendation(key);
-      setToast(result.status === 'existing' ? 'Action deja creee' : 'Action creee');
+      setToast(result.status === 'existing' ? 'Action déjà créée' : 'Action créée');
       setTimeout(() => setToast(null), 3000);
     } catch {
       setToast('Erreur');

@@ -47,13 +47,13 @@ const REL_BADGE = {
   high: { label: 'Fiable', cls: 'bg-green-100 text-green-700' },
   medium: { label: 'Moyenne', cls: 'bg-amber-100 text-amber-700' },
   low: { label: 'Faible', cls: 'bg-red-100 text-red-700' },
-  unverified: { label: 'Non verifiee', cls: 'bg-gray-100 text-gray-500' },
+  unverified: { label: 'Non vérifiée', cls: 'bg-gray-100 text-gray-500' },
 };
 
 const STATUS_LABEL = {
   on_track: { label: 'Trajectoire atteinte', cls: 'bg-green-100 text-green-700' },
   off_track: { label: 'Trajectoire non atteinte', cls: 'bg-red-100 text-red-700' },
-  not_evaluable: { label: 'Non evaluable', cls: 'bg-gray-100 text-gray-500' },
+  not_evaluable: { label: 'Non évaluable', cls: 'bg-gray-100 text-gray-500' },
   review_required: { label: 'Revue requise', cls: 'bg-amber-100 text-amber-700' },
 };
 
@@ -129,7 +129,7 @@ function EfaTrajectoryBlock({ efaId }) {
                         }`}
                       >
                         {data.baseline.normalization_status === 'normalized'
-                          ? 'Normalisee'
+                          ? 'Normalisée'
                           : data.baseline.normalization_status === 'raw_only'
                             ? 'Brute'
                             : 'Non normalisable'}

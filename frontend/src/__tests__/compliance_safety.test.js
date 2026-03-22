@@ -65,9 +65,9 @@ describe('complianceLabels.fr.js — garde-fous statuts', () => {
     expect(LABELS_SRC).toMatch(/operat_simulation/);
   });
 
-  test('contient DECLARATION_STATUS_LABELS avec "Simulation non deposee"', () => {
+  test('contient DECLARATION_STATUS_LABELS avec "Simulation non déposée"', () => {
     expect(LABELS_SRC).toMatch(/DECLARATION_STATUS_LABELS/);
-    expect(LABELS_SRC).toMatch(/Simulation non deposee/);
+    expect(LABELS_SRC).toMatch(/Simulation non déposée/);
   });
 
   test('DECLARATION_STATUS_LABELS mappe "exported" en "Pack preparatoire genere"', () => {

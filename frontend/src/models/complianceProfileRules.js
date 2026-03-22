@@ -1,17 +1,17 @@
 /**
  * PROMEOS — V1.5 Compliance x Profile rules
- * Logique pure : calcule les tags et priorites des obligations
- * selon le profil de segmentation (reponses questionnaire).
+ * Logique pure : calcule les tags et priorités des obligations
+ * selon le profil de segmentation (réponses questionnaire).
  *
  * Garde-fous :
  * - Le boost profil ne casse JAMAIS le tri par urgence/statut
- * - "Declare" uniquement si l'obligation depend d'une reponse utilisateur pertinente
- * - Pertinence affichee uniquement en cas de correspondance forte
+ * - "Déclaré" uniquement si l'obligation dépend d'une réponse utilisateur pertinente
+ * - Pertinence affichée uniquement en cas de correspondance forte
  * - Jamais trop affirmatif juridiquement
- * - Ne JAMAIS masquer une obligation, seulement deprioriser/qualifier/contextualiser
+ * - Ne JAMAIS masquer une obligation, seulement déprioriser/qualifier/contextualiser
  */
 
-// Typologies ou le Decret Tertiaire est fortement pertinent
+// Typologies où le Décret Tertiaire est fortement pertinent
 const DT_RELEVANCE = {
   tertiaire_prive: 'high',
   tertiaire_public: 'high',
@@ -26,7 +26,7 @@ const DT_RELEVANCE = {
   mixte: 'medium',
 };
 
-// Typologies ou BACS est fortement pertinent
+// Typologies où BACS est fortement pertinent
 const BACS_RELEVANCE = {
   tertiaire_prive: 'high',
   tertiaire_public: 'high',
@@ -42,8 +42,8 @@ const BACS_RELEVANCE = {
 };
 
 /**
- * R1 — Decret Tertiaire x q_surface_seuil
- * Libelles sobres et prudents.
+ * R1 — Décret Tertiaire x q_surface_seuil
+ * Libellés sobres et prudents.
  */
 const DT_SURFACE_RULES = {
   oui_majorite: {
@@ -51,113 +51,111 @@ const DT_SURFACE_RULES = {
     tag: 'Prioritaire selon votre profil',
     color: 'green',
     reliability: 'declared',
-    tooltip: 'Surface > 1 000 m\u00b2 d\u00e9clar\u00e9e sur la majorit\u00e9 des b\u00e2timents',
+    tooltip: 'Surface > 1 000 m² déclarée sur la majorité des bâtiments',
   },
   oui_certains: {
     boost: 1,
-    tag: 'Applicable sur une partie du p\u00e9rim\u00e8tre',
+    tag: 'Applicable sur une partie du périmètre',
     color: 'blue',
     reliability: 'declared',
-    tooltip: 'Surface > 1 000 m\u00b2 d\u00e9clar\u00e9e sur certains b\u00e2timents',
+    tooltip: 'Surface > 1 000 m² déclarée sur certains bâtiments',
   },
   non: {
     boost: -2,
     tag: 'Moins prioritaire selon votre profil',
     color: 'gray',
     reliability: 'declared',
-    tooltip: 'Surface < 1 000 m\u00b2 d\u00e9clar\u00e9e — v\u00e9rification recommand\u00e9e',
+    tooltip: 'Surface < 1 000 m² déclarée — vérification recommandée',
   },
   ne_sait_pas: {
     boost: 0,
-    tag: '\u00c0 qualifier',
+    tag: 'À qualifier',
     color: 'amber',
     reliability: 'to_confirm',
-    tooltip: 'Surface non confirm\u00e9e — qualification n\u00e9cessaire',
+    tooltip: 'Surface non confirmée — qualification nécessaire',
   },
 };
 
 /**
  * R4 — BACS x q_gtb
- * La GTB est l'infrastructure de base pour la conformite BACS.
- * Sans GTB = mise en conformite a planifier (boost positif = attention requise).
- * Avec GTB = conformite BACS facilitee.
+ * La GTB est l'infrastructure de base pour la conformité BACS.
+ * Sans GTB = mise en conformité à planifier (boost positif = attention requise).
+ * Avec GTB = conformité BACS facilitée.
  */
 const BACS_GTB_RULES = {
   oui_centralisee: {
     boost: 1,
-    tag: 'GTB centralis\u00e9e \u2014 BACS facilit\u00e9',
+    tag: 'GTB centralisée — BACS facilité',
     color: 'green',
     reliability: 'declared',
-    tooltip: 'GTB centralis\u00e9e d\u00e9clar\u00e9e \u2014 conformit\u00e9 BACS plus accessible',
+    tooltip: 'GTB centralisée déclarée — conformité BACS plus accessible',
   },
   oui_partielle: {
     boost: 0,
-    tag: 'GTB partielle \u2014 BACS \u00e0 v\u00e9rifier par site',
+    tag: 'GTB partielle — BACS à vérifier par site',
     color: 'blue',
     reliability: 'declared',
-    tooltip:
-      'GTB pr\u00e9sente sur certains sites \u2014 v\u00e9rification site par site recommand\u00e9e',
+    tooltip: 'GTB présente sur certains sites — vérification site par site recommandée',
   },
   non: {
     boost: 1,
-    tag: 'Sans GTB \u2014 mise en conformit\u00e9 BACS \u00e0 planifier',
+    tag: 'Sans GTB — mise en conformité BACS à planifier',
     color: 'amber',
     reliability: 'declared',
-    tooltip: 'Absence de GTB d\u00e9clar\u00e9e \u2014 planification BACS recommand\u00e9e',
+    tooltip: 'Absence de GTB déclarée — planification BACS recommandée',
   },
   ne_sait_pas: {
     boost: 0,
-    tag: '\u00c0 qualifier',
+    tag: 'À qualifier',
     color: 'amber',
     reliability: 'to_confirm',
-    tooltip: '\u00c9quipement GTB non confirm\u00e9 \u2014 qualification n\u00e9cessaire',
+    tooltip: 'Équipement GTB non confirmé — qualification nécessaire',
   },
 };
 
 /**
- * R5 — Decret Tertiaire x q_operat
- * OPERAT est la plateforme de declaration pour le Decret Tertiaire.
- * En retard ou non declare = attention requise (boost positif).
- * Non concerne = depriorise (boost negatif, JAMAIS masque).
+ * R5 — Décret Tertiaire x q_operat
+ * OPERAT est la plateforme de déclaration pour le Décret Tertiaire.
+ * En retard ou non déclaré = attention requise (boost positif).
+ * Non concerné = dépriorisé (boost négatif, JAMAIS masqué).
  */
 const DT_OPERAT_RULES = {
   oui_a_jour: {
     boost: 0,
-    tag: 'D\u00e9claration OPERAT \u00e0 jour',
+    tag: 'Déclaration OPERAT à jour',
     color: 'green',
     reliability: 'declared',
-    tooltip: 'D\u00e9clarations OPERAT \u00e0 jour selon votre profil',
+    tooltip: 'Déclarations OPERAT à jour selon votre profil',
   },
   oui_retard: {
     boost: 1,
-    tag: 'D\u00e9claration OPERAT en retard',
+    tag: 'Déclaration OPERAT en retard',
     color: 'amber',
     reliability: 'declared',
-    tooltip: 'D\u00e9clarations OPERAT en retard \u2014 r\u00e9gularisation recommand\u00e9e',
+    tooltip: 'Déclarations OPERAT en retard — régularisation recommandée',
   },
   non: {
     boost: 1,
-    tag: 'OPERAT non d\u00e9clar\u00e9',
+    tag: 'OPERAT non déclaré',
     color: 'amber',
     reliability: 'declared',
-    tooltip: 'Aucune d\u00e9claration OPERAT \u2014 action recommand\u00e9e si concern\u00e9',
+    tooltip: 'Aucune déclaration OPERAT — action recommandée si concerné',
   },
   non_concerne: {
     boost: -1,
-    tag: 'Non concern\u00e9 OPERAT selon votre profil',
+    tag: 'Non concerné OPERAT selon votre profil',
     color: 'gray',
     reliability: 'declared',
-    tooltip:
-      'Non concern\u00e9 par OPERAT selon votre d\u00e9claration \u2014 v\u00e9rification recommand\u00e9e',
+    tooltip: 'Non concerné par OPERAT selon votre déclaration — vérification recommandée',
   },
 };
 
 /**
- * Calcule les tags et priorites pour chaque obligation
+ * Calcule les tags et priorités pour chaque obligation
  * en fonction du profil de segmentation.
  *
- * Le priorityBoost est un entier petit (ex: -2 a +2) utilise
- * UNIQUEMENT pour trier au sein d'un meme groupe statut/urgence.
+ * Le priorityBoost est un entier petit (ex: -2 à +2) utilisé
+ * UNIQUEMENT pour trier au sein d'un même groupe statut/urgence.
  * Il ne peut jamais faire remonter une obligation conforme
  * au-dessus d'une obligation non conforme.
  *
@@ -175,7 +173,7 @@ export function computeObligationProfileTags(obligations, segProfile) {
   const gtbAnswer = answers.q_gtb;
   const operatAnswer = answers.q_operat;
 
-  // Helper: appliquer une regle questionnaire sur une entry
+  // Helper: appliquer une règle questionnaire sur une entry
   const applyRule = (entry, rule, state) => {
     entry.priorityBoost += rule.boost;
     entry.tags.push({ label: rule.tag, color: rule.color, tooltip: rule.tooltip });
@@ -190,7 +188,7 @@ export function computeObligationProfileTags(obligations, segProfile) {
     const entry = { priorityBoost: 0, tags: [], reliability: 'detected' };
     const state = { usesUserAnswer: false };
 
-    // R1 — Decret Tertiaire x q_surface_seuil
+    // R1 — Décret Tertiaire x q_surface_seuil
     if (code.includes('tertiaire') && surfaceAnswer && DT_SURFACE_RULES[surfaceAnswer]) {
       applyRule(entry, DT_SURFACE_RULES[surfaceAnswer], state);
     }
@@ -200,7 +198,7 @@ export function computeObligationProfileTags(obligations, segProfile) {
       applyRule(entry, BACS_GTB_RULES[gtbAnswer], state);
     }
 
-    // R5 — Decret Tertiaire x q_operat
+    // R5 — Décret Tertiaire x q_operat
     if (code.includes('tertiaire') && operatAnswer && DT_OPERAT_RULES[operatAnswer]) {
       applyRule(entry, DT_OPERAT_RULES[operatAnswer], state);
     }
@@ -210,7 +208,7 @@ export function computeObligationProfileTags(obligations, segProfile) {
       let relevance = null;
       if (code.includes('tertiaire')) relevance = DT_RELEVANCE[typologie];
       else if (code.includes('bacs')) relevance = BACS_RELEVANCE[typologie];
-      // APER: toujours medium (applicable selon parking/toiture, pas liee a typologie)
+      // APER: toujours medium (applicable selon parking/toiture, pas liée à typologie)
 
       // Afficher le badge "Pertinent" uniquement en cas de correspondance forte
       if (relevance === 'high') {
@@ -223,13 +221,13 @@ export function computeObligationProfileTags(obligations, segProfile) {
       // medium et check_context : pas de badge visible, pas d'affirmation
     }
 
-    // R3 — Fiabilite par obligation
-    // "declared" UNIQUEMENT si cette obligation utilise une reponse utilisateur
+    // R3 — Fiabilité par obligation
+    // "declared" UNIQUEMENT si cette obligation utilise une réponse utilisateur
     if (!state.usesUserAnswer) {
       entry.reliability = 'detected';
     }
 
-    // Garde-fou: clamp boost a [-3, +3] pour eviter les extremes
+    // Garde-fou: clamp boost à [-3, +3] pour éviter les extrêmes
     entry.priorityBoost = Math.max(-3, Math.min(3, entry.priorityBoost));
 
     if (entry.tags.length > 0 || entry.priorityBoost !== 0) {
@@ -242,19 +240,19 @@ export function computeObligationProfileTags(obligations, segProfile) {
 
 export const RELIABILITY_CONFIG = {
   declared: {
-    label: 'D\u00e9clar\u00e9',
+    label: 'Déclaré',
     cls: 'bg-blue-50 text-blue-600',
-    tooltip: 'Ajust\u00e9 selon vos r\u00e9ponses',
+    tooltip: 'Ajusté selon vos réponses',
   },
   detected: {
-    label: 'D\u00e9tect\u00e9',
+    label: 'Détecté',
     cls: 'bg-gray-50 text-gray-400',
-    tooltip: 'Calcul\u00e9 depuis vos donn\u00e9es patrimoine',
+    tooltip: 'Calculé depuis vos données patrimoine',
   },
   to_confirm: {
-    label: '\u00c0 confirmer',
+    label: 'À confirmer',
     cls: 'bg-amber-50 text-amber-600',
-    tooltip: 'Information insuffisante \u2014 qualification recommand\u00e9e',
+    tooltip: 'Information insuffisante — qualification recommandée',
   },
 };
 
