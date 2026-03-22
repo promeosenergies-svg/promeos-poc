@@ -43,7 +43,7 @@ const EXPLAIN_FILES = [
   {
     file: 'pages/Cockpit.jsx',
     name: 'Cockpit',
-    terms: ['risque_financier', 'statut_conformite', 'distribution_sites', 'effort_score'],
+    terms: ['statut_conformite', 'distribution_sites', 'effort_score'],
   },
   {
     file: 'pages/MonitoringPage.jsx',
@@ -53,7 +53,7 @@ const EXPLAIN_FILES = [
   {
     file: 'pages/ConformitePage.jsx',
     name: 'ConformitePage',
-    terms: ['statut_conformite', 'finding', 'report_pct', 'severite'],
+    terms: ['statut_conformite', 'report_pct'],
   },
   {
     file: 'pages/PurchasePage.jsx',
@@ -168,13 +168,7 @@ describe('E. DemoSpotlight — intégration Cockpit', () => {
     expect(src).toContain('data-tour="step-1"');
   });
 
-  it('Cockpit a data-tour="step-2"', () => {
-    expect(src).toContain('data-tour="step-2"');
-  });
-
-  it('Cockpit a data-tour="step-3"', () => {
-    expect(src).toContain('data-tour="step-3"');
-  });
+  // step-2 et step-3 retirés dans Cockpit V3 (vue exécutive réduite à 1 zone)
 });
 
 // ── F. Smoke — les 5 fichiers sont parsables ─────────────────────────────────

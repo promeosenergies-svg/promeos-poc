@@ -62,8 +62,9 @@ describe('Step6 — ConformitePage.jsx CEE separation', () => {
   const src = readSrc('pages/ConformitePage.jsx');
 
   it('sitesToObligations skips CEE findings', () => {
-    // Should have logic to skip CEE/incentive findings
-    expect(src).toMatch(/category\s*===\s*['"]incentive['"]/);
+    // Logique extraite vers conformiteUtils.js (refactoring V101)
+    const utilsSrc = readSrc('components/conformite/conformiteUtils.js');
+    expect(utilsSrc).toMatch(/category\s*===\s*['"]incentive['"]/);
     expect(src).toMatch(/cee/i);
   });
 

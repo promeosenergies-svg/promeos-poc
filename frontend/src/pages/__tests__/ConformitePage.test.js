@@ -374,7 +374,7 @@ describe('computeScopeLabel', () => {
 
   it('returns org scope by default', () => {
     const result = computeScopeLabel(org, { siteId: null, portefeuilleId: null }, [{}, {}, {}], []);
-    expect(result).toBe('Nexity \u00b7 Organisation (3 sites)');
+    expect(result).toBe('Nexity \u00b7 Societe (3 sites)');
   });
 
   it('shows portefeuille name when selected', () => {

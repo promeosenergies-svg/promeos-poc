@@ -118,8 +118,5 @@ describe('Patrimoine V24 standardisation', () => {
     expect(src).toContain('sitesLoading');
   });
 
-  it('uses EmptyState for welcome state (not custom HTML)', () => {
-    // Should use <EmptyState component, not a raw <h2> "Bienvenue"
-    expect(src).toMatch(/EmptyState[\s\S]*?Bienvenue/);
-  });
+  // EmptyState + "Bienvenue" retiré dans Patrimoine V3
 });

@@ -70,21 +70,13 @@ describe('source-guard — guidedModeModel', () => {
 // GUIDED_STEPS constant
 // ============================================================
 describe('GUIDED_STEPS', () => {
-  it('has 7 steps', () => {
-    expect(GUIDED_STEPS).toHaveLength(7);
+  it('has 5 steps', () => {
+    expect(GUIDED_STEPS).toHaveLength(5);
   });
 
   it('step IDs are correct', () => {
     const ids = GUIDED_STEPS.map((s) => s.id);
-    expect(ids).toEqual([
-      'assujettissement',
-      'donnees',
-      'deadlines',
-      'plan',
-      'cee_gouvernance',
-      'preuves',
-      'mv',
-    ]);
+    expect(ids).toEqual(['assujettissement', 'donnees', 'deadlines', 'plan', 'preuves']);
   });
 
   it('all steps have FR labels and descriptions', () => {
@@ -112,9 +104,9 @@ describe('GUIDED_STEPS', () => {
 // computeGuidedSteps
 // ============================================================
 describe('computeGuidedSteps', () => {
-  it('returns 7 steps', () => {
+  it('returns 5 steps', () => {
     const steps = computeGuidedSteps(FIXTURE_BUNDLE, FIXTURE_SITES, FIXTURE_SUMMARY, {});
-    expect(steps).toHaveLength(7);
+    expect(steps).toHaveLength(5);
   });
 
   it('step 1 (assujettissement) is complete when findings exist', () => {
@@ -135,7 +127,7 @@ describe('computeGuidedSteps', () => {
     expect(steps[1].status).toBe('blocked');
   });
 
-  it('cascade: steps 3-7 blocked when donnees is blocked', () => {
+  it('cascade: steps 3-5 blocked when donnees is blocked', () => {
     const blockedSites = [{ site_id: 1, data_quality_gate: 'BLOCKED', findings: [] }];
     const steps = computeGuidedSteps(null, blockedSites, FIXTURE_SUMMARY, {
       obligations: [{ id: 'bacs' }],
@@ -144,9 +136,7 @@ describe('computeGuidedSteps', () => {
     expect(steps[1].status).toBe('blocked'); // donnees
     expect(steps[2].status).toBe('blocked'); // deadlines
     expect(steps[3].status).toBe('blocked'); // plan
-    expect(steps[4].status).toBe('blocked'); // cee
-    expect(steps[5].status).toBe('blocked'); // preuves
-    expect(steps[6].status).toBe('blocked'); // mv
+    expect(steps[4].status).toBe('blocked'); // preuves
   });
 
   it('all steps can reach complete', () => {
@@ -154,8 +144,6 @@ describe('computeGuidedSteps', () => {
       obligations: [{ id: 'bacs', statut: 'conforme', echeance: '2030-01-01' }],
       actionableFindings: [],
       proofFiles: { bacs: [{ name: 'proof.pdf' }] },
-      workPackages: [{ cee_step: 'validated' }],
-      mvSummary: { has_data: true },
     };
     const goodSites = [{ site_id: 1, data_quality_gate: 'OK', findings: [{ status: 'OK' }] }];
     const steps = computeGuidedSteps(FIXTURE_BUNDLE, goodSites, FIXTURE_SUMMARY, signals);
@@ -164,8 +152,6 @@ describe('computeGuidedSteps', () => {
     expect(steps[2].status).toBe('complete');
     expect(steps[3].status).toBe('complete');
     expect(steps[4].status).toBe('complete');
-    expect(steps[5].status).toBe('complete');
-    expect(steps[6].status).toBe('complete');
   });
 
   it('plan step is in_progress when actionable findings remain', () => {

@@ -45,19 +45,11 @@ describe('Step 14 — ObligationsTab penalty display', () => {
 });
 
 describe('Step 14 — Cockpit penalty exposure', () => {
-  it('Cockpit imports fmtEur', () => {
-    const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
-    expect(src).toContain('fmtEur');
-  });
+  // fmtEur et "Exposition totale" retirés dans Cockpit V3 (exposition inline via RiskBadge)
 
   it('Cockpit stores totalPenaltyExposure', () => {
     const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
     expect(src).toContain('totalPenaltyExposure');
-  });
-
-  it('Cockpit shows Exposition totale', () => {
-    const src = fs.readFileSync('src/pages/Cockpit.jsx', 'utf8');
-    expect(src).toContain('Exposition totale');
   });
 
   it('Cockpit reads total_penalty_exposure_eur from timeline', () => {

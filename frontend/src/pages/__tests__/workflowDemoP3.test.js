@@ -41,31 +41,7 @@ describe('P3-1: PurchasePage uses openActionDrawer', () => {
   });
 });
 
-// ── P3-1 / P3-5: Cockpit — action drawer from risk panel ────────────────────
-
-describe('P3-1: Cockpit uses openActionDrawer', () => {
-  const code = src('pages/Cockpit.jsx');
-
-  it('importe useActionDrawer', () => {
-    expect(code).toContain('useActionDrawer');
-  });
-
-  it('appelle openActionDrawer', () => {
-    expect(code).toContain('openActionDrawer(');
-  });
-
-  it('a le CTA cockpit-create-action', () => {
-    expect(code).toContain('cta-cockpit-create-action');
-  });
-
-  it('conserve Plan d action navigation', () => {
-    expect(code).toContain("Plan d'action");
-  });
-
-  it('importe Plus icon', () => {
-    expect(code).toContain('Plus');
-  });
-});
+// P3-1 / P3-5: Cockpit — openActionDrawer retiré dans Cockpit V3 (vue exécutive DG, drawer délégué aux pages métier)
 
 // ── P3-1 / P3-6: NotificationsPage — action CTA in drawer ───────────────────
 

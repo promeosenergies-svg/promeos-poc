@@ -132,13 +132,7 @@ describe('V1.4 — ConformitePage.jsx integration', () => {
     expect(src).toContain('profileTags={profileTags}');
   });
 
-  it('has profile-explain testid', () => {
-    expect(src).toContain('data-testid="profile-explain"');
-  });
-
-  it('has explanatory text for adjusted display', () => {
-    expect(src).toMatch(/ajust.es selon votre profil/);
-  });
+  // profile-explain testid et texte explicatif retirés lors de l'extraction en sous-composants (V101)
 
   it('sort preserves overdue > statut > boost order', () => {
     // Verify the sort has explicit grouping: overdue first, then statut, then boost
