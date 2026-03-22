@@ -1,25 +1,77 @@
+# ══════════════════════════════════════════════════════════════════════
+# PROMEOS — Référentiel réglementaire unifié
+# Source de vérité pour le moteur RegOps + scoring A.2
+# Dernière mise à jour: 2026-03-21
+# ══════════════════════════════════════════════════════════════════════
+
 tertiaire_operat:
   scope_threshold_m2: 1000
   deadlines:
     attestation_display: "2026-07-01"
     declaration_2025: "2026-09-30"
+    # Trajectoire relative (art. R.174-26 CCH)
+    reduction_2030: -0.40  # -40%
+    reduction_2040: -0.50  # -50%
+    reduction_2050: -0.60  # -60%
   penalties:
     non_declaration: 7500
     non_affichage: 1500
+    # Décret tertiaire - sanctions renforcées (art. L.174-1-1)
+    name_and_shame: true  # Publication sur site ADEME
   required_inputs:
     - tertiaire_area_m2
     - operat_status
     - annual_kwh_total
+  # Seuils absolus — catégories avec Cabs publiés (arrêté 10/04/2020 modifié)
+  categories_with_cabs:
+    - bureaux
+    - enseignement_1er_degre
+    - enseignement_2nd_degre
+    - enseignement_superieur
+    - commerce_detail
+    - logistique_froid
+    - logistique_sec
+    - sante_hopital
+    - sante_clinique
+    - hotel_tourisme
+    - restauration
+    - sport_piscine
+    - sport_salle
+    - spectacle_cinema
+    - justice_tribunal
+
+dpe_tertiaire:
+  # Décret 2024-1040 — DPE tertiaire obligatoire
+  scope_threshold_m2: 1000
+  deadlines:
+    # Calendrier progressif d'obligation
+    erp_cat_1_2: "2025-01-01"  # ERP catégorie 1 et 2
+    batiments_1000m2: "2026-01-01"  # Bâtiments > 1000 m²
+    affichage_public: "2026-07-01"  # Affichage obligatoire
+  validite_annees: 10
+  penalties:
+    non_realisation: 1500  # Personne physique
+    non_realisation_pm: 7500  # Personne morale
+    non_affichage: 1500
+  required_inputs:
+    - tertiaire_area_m2
+    - dpe_classe_energie
 
 bacs:
   thresholds:
     high_kw: 290
     low_kw: 70
   deadlines:
-    above_290: "2025-01-01"
-    above_70: "2030-01-01"
+    above_290: "2025-01-01"  # Tier 1 — déjà passé
+    above_70: "2027-01-01"  # Tier 2 — décret BACS 2025 (avancé de 2030 à 2027)
+    new_construction: "2023-04-09"  # PC déposé après cette date → obligatoire
   penalties:
     non_compliance: 7500
+  exemption:
+    tri_max_years: 10  # TRI > 10 ans → exemption possible (art. R.175-6)
+    exemption_validity_years: 5  # Validité max dérogation
+  inspection_periodicity_years: 5  # Inspection quinquennale (R.175-5-1)
+  functional_requirements_count: 10  # 10 critères R.175-3
   required_inputs:
     - cvc_power_kw
 
@@ -32,22 +84,65 @@ aper:
     parking_large: "2026-07-01"
     parking_medium: "2028-07-01"
     roof: "2028-01-01"
+  coverage_pct_required: 50  # 50% de la surface imperméabilisée
+  alternatives_allowed:
+    - ombriere_pv
+    - toiture_vegetalisee  # Végétalisation = alternative réglementaire
+    - procede_ombrage_equivalent
   required_inputs:
     - parking_area_m2
     - parking_type
     - roof_area_m2
 
+csrd:
+  # Directive 2022/2464 — Corporate Sustainability Reporting Directive
+  # Transposition FR: ordonnance 2023-1142 du 06/12/2023
+  scope:
+    grande_entreprise:
+      # 2 des 3 critères (art. L.230-1 Code de commerce)
+      seuil_effectif: 250
+      seuil_ca_meur: 50
+      seuil_bilan_meur: 25
+      exercice_debut: 2025  # Rapport publié en 2026 sur exercice 2025
+    pme_cotee:
+      exercice_debut: 2026
+  deadlines:
+    rapport_durabilite_grandes: "2026-04-30"  # Sur exercice 2025
+    rapport_durabilite_pme: "2027-04-30"  # Sur exercice 2026
+  obligations:
+    - rapport_durabilite_esrs  # European Sustainability Reporting Standards
+    - scope_1_2_ghg  # Émissions GHG scope 1 et 2 (obligatoire)
+    - scope_3_ghg  # Scope 3 (progressif)
+    - taxonomie_eu_alignement  # % CA/CAPEX/OPEX aligné
+    - plan_transition_climatique  # Plan de transition 1,5°C
+    - audit_oti  # Vérification par Organisme Tiers Indépendant
+  facteurs_emission:
+    # Facteurs émission élec France (Base Carbone ADEME 2024)
+    elec_france_location_gco2_kwh: 52  # Location-based (mix moyen)
+    elec_france_market_go_gco2_kwh: 0  # Market-based avec GO renouvelable
+    gaz_nat_gco2_kwh: 227  # Gaz naturel PCI
+    reseau_chaleur_gco2_kwh: 125  # Réseau chaleur urbain (moyenne)
+  required_inputs:
+    - effectif_site
+    - ca_meur
+
 cee_p6:
+  # CEE = financement, pas une obligation réglementaire
+  # Période 6: 01/01/2026 → 31/12/2029
+  # Obligation: 1050 TWhc/an dont 600 TWhc précarité
+  classification: financement  # Pas dans le score A.2
   required_inputs: []
 
 scoring:
   # Poids des frameworks réglementaires pour le score unifié (A.2)
   # Source de vérité unique — lu par compliance_score_service.py
-  # DT + BACS + APER = 1.0 (100%)
+  # DT + BACS + APER + DPE + CSRD = 1.0 (100%)
   framework_weights:
-    tertiaire_operat: 0.45
-    bacs: 0.30
-    aper: 0.25
+    tertiaire_operat: 0.35
+    bacs: 0.25
+    aper: 0.15
+    dpe_tertiaire: 0.15
+    csrd: 0.10
   # Pénalité findings critiques (A.2)
   critical_penalty:
     max_pts: 20.0

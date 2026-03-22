@@ -8,6 +8,7 @@ import random
 from datetime import date, datetime, timezone
 
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
+from models.bacs_regulatory import BacsExemption
 from models.enums import CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus
 
 
@@ -27,6 +28,7 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
     systems_count = 0
     assessments_count = 0
     inspections_count = 0
+    exemptions_count = 0
 
     for site in sites:
         # cvc_kw: set as dynamic attribute by gen_master (same pattern as gen_compliance)
@@ -139,6 +141,47 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
             )
             inspections_count += 1
 
+        # --- BacsExemption (pour sites avec TRI > 10 ans) ---
+        tri_val = round(rng.uniform(4.0, 14.0), 1)
+        if is_obligated and tri_val > 10:
+            exemption_scenarios = [
+                {
+                    "type": "tri_non_viable",
+                    "status": "approved",
+                    "motif": f"TRI de {tri_val} ans depasse le seuil de 10 ans. "
+                    f"Installation BACS estimee a {int(cvc_kw * 120)} EUR "
+                    f"pour des economies annuelles de {int(cvc_kw * 8)} EUR.",
+                    "tri": tri_val,
+                    "cout": float(int(cvc_kw * 120)),
+                    "eco": float(int(cvc_kw * 8)),
+                },
+                {
+                    "type": "tri_non_viable",
+                    "status": "submitted",
+                    "motif": f"Etude TRI realisee: {tri_val} ans. Dossier soumis au prefet.",
+                    "tri": tri_val,
+                    "cout": float(int(cvc_kw * 130)),
+                    "eco": float(int(cvc_kw * 7)),
+                },
+            ]
+            scenario = rng.choice(exemption_scenarios)
+            ex = BacsExemption(
+                asset_id=asset.id,
+                exemption_type=scenario["type"],
+                status=scenario["status"],
+                motif_detaille=scenario["motif"],
+                tri_annees=scenario["tri"],
+                cout_installation_eur=scenario["cout"],
+                economies_annuelles_eur=scenario["eco"],
+                date_demande=date(2024, rng.randint(3, 9), rng.randint(1, 28)),
+            )
+            if scenario["status"] == "approved":
+                ex.date_decision = date(2024, rng.randint(10, 12), rng.randint(1, 28))
+                ex.date_expiration = date(2029, 12, 31)
+                ex.decision_reference = f"AP-BACS-{site.id:04d}-2024"
+            db.add(ex)
+            exemptions_count += 1
+
         db.flush()
 
     return {
@@ -146,4 +189,5 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
         "bacs_systems_count": systems_count,
         "bacs_assessments_count": assessments_count,
         "bacs_inspections_count": inspections_count,
+        "bacs_exemptions_count": exemptions_count,
     }

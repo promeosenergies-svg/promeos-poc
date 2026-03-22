@@ -168,6 +168,8 @@ class TypeObligation(str, enum.Enum):
     DECRET_TERTIAIRE = "decret_tertiaire"
     BACS = "bacs"
     APER = "aper"
+    DPE_TERTIAIRE = "dpe_tertiaire"  # Décret 2024-1040
+    CSRD = "csrd"  # Directive 2022/2464
 
 
 class TypeEvidence(str, enum.Enum):
@@ -276,7 +278,9 @@ class RegulationType(str, enum.Enum):
     TERTIAIRE_OPERAT = "tertiaire_operat"
     BACS = "bacs"
     APER = "aper"
-    CEE_P6 = "cee_p6"
+    DPE_TERTIAIRE = "dpe_tertiaire"  # Décret 2024-1040
+    CSRD = "csrd"  # Directive 2022/2464
+    CEE_P6 = "cee_p6"  # Financement (pas dans score A.2)
 
 
 class Typologie(str, enum.Enum):
@@ -604,6 +608,68 @@ class EfaStatut(str, enum.Enum):
     ACTIVE = "active"
     CLOSED = "closed"
     DRAFT = "draft"
+
+
+class DpeClasseEnergie(str, enum.Enum):
+    """Classe DPE tertiaire (décret 2024-1040, arrêté du 25/03/2024)."""
+
+    A = "A"
+    B = "B"
+    C = "C"
+    D = "D"
+    E = "E"
+    F = "F"
+    G = "G"
+    VIERGE = "vierge"  # Pas de DPE réalisé
+
+
+class DpeClasseGes(str, enum.Enum):
+    """Classe GES du DPE tertiaire."""
+
+    A = "A"
+    B = "B"
+    C = "C"
+    D = "D"
+    E = "E"
+    F = "F"
+    G = "G"
+    VIERGE = "vierge"
+
+
+class CsrdScope(str, enum.Enum):
+    """Scope GHG pour reporting CSRD/taxonomie."""
+
+    SCOPE_1 = "scope_1"  # Émissions directes
+    SCOPE_2 = "scope_2"  # Électricité, chaleur, vapeur achetées
+    SCOPE_3 = "scope_3"  # Chaîne de valeur amont/aval
+
+
+class CsrdAssujettissement(str, enum.Enum):
+    """Critère d'assujettissement CSRD (directive 2022/2464)."""
+
+    GRANDE_ENTREPRISE = "grande_entreprise"  # 2 des 3 critères: >250 salariés, >50M€ CA, >25M€ bilan
+    PME_COTEE = "pme_cotee"  # PME cotée (>2026)
+    FILIALE_UE = "filiale_ue"  # Filiale d'un groupe UE assujetti
+    NON_ASSUJETTI = "non_assujetti"
+
+
+class BacsExemptionType(str, enum.Enum):
+    """Type de dérogation BACS (art. R.175-6)."""
+
+    TRI_NON_VIABLE = "tri_non_viable"  # TRI > 10 ans
+    IMPOSSIBILITE_TECHNIQUE = "impossibilite_technique"  # Contrainte technique
+    PATRIMOINE_HISTORIQUE = "patrimoine_historique"  # Monument historique
+    MISE_EN_VENTE = "mise_en_vente"  # Bâtiment en vente/démolition prévue
+
+
+class BacsExemptionStatus(str, enum.Enum):
+    """Statut de la demande de dérogation BACS."""
+
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
 
 
 class EfaRole(str, enum.Enum):

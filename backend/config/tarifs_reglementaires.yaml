@@ -7,10 +7,66 @@
 version: "2025-02-01"
 description: "Tarifs réglementaires énergie France B2B — TURPE 7, accises 2025, TVA"
 
+# ── TURPE 6 soutirage énergie (composante variable) ──────────────────────────
+# Période tarifaire 2021-2024, délibération CRE n°2021-13 du 21 janvier 2021
+# Taux énergie = moyenne pondérée des coefficients horosaisonniers (grille 1er août 2021)
+# Gestion = (CG hors Rf + CC) / 12 mois
+turpe_6:
+  source: "CRE délibération n°2021-13 — TURPE 6 HTA-BT"
+  valid_from: "2021-08-01"
+  valid_to: "2025-07-31"
+  segments:
+    C5_BT:
+      label: "C5 BT ≤36 kVA (résidentiel & petit pro)"
+      energie_eur_kwh: 0.0282
+      gestion_eur_mois: 2.14
+      detail:
+        cg_eur_an: 7.46
+        cc_eur_an: 18.24
+        soutirage_b_mu4_eur_kva_an: 9.96
+        soutirage_b_cu4_eur_kva_an: 8.40
+        energie_mu4_hph: 0.0575
+        energie_mu4_hch: 0.0399
+        energie_mu4_hpe: 0.0131
+        energie_mu4_hce: 0.0082
+    C4_BT:
+      label: "C4 BT >36 kVA (tertiaire moyen)"
+      energie_eur_kwh: 0.0313
+      gestion_eur_mois: 28.46
+      detail:
+        cg_eur_an: 106.61
+        cc_eur_an: 234.90
+        soutirage_cu_b_hph: 11.61
+        soutirage_cu_b_hch: 7.11
+        soutirage_cu_b_hpe: 5.90
+        soutirage_cu_b_hce: 3.74
+        energie_cu_hph: 0.0515
+        energie_cu_hch: 0.0336
+        energie_cu_hpe: 0.0228
+        energie_cu_hce: 0.0180
+    C3_HTA:
+      label: "C3 HTA (industriel / gros tertiaire)"
+      energie_eur_kwh: 0.0204
+      gestion_eur_mois: 43.78
+      detail:
+        cg_eur_an: 213.23
+        cc_eur_an: 312.12
+        cmdps_coeff: 0.04
+        soutirage_cu_pf_b_pte: 4.88
+        soutirage_cu_pf_b_hph: 4.67
+        soutirage_cu_pf_b_hch: 4.40
+        soutirage_cu_pf_b_hpe: 4.26
+        soutirage_cu_pf_b_hce: 3.60
+        energie_cu_pf_pte: 0.0373
+        energie_cu_pf_hph: 0.0320
+        energie_cu_pf_hch: 0.0217
+        energie_cu_pf_hpe: 0.0164
+        energie_cu_pf_hce: 0.0101
+
 # ── TURPE 7 soutirage énergie (composante variable) ──────────────────────────
 turpe:
   source: "CRE délibération TURPE 7 HTA-BT 2025"
-  valid_from: "2025-02-01"
+  valid_from: "2025-08-01"
   valid_to: null
   segments:
     C5_BT:
