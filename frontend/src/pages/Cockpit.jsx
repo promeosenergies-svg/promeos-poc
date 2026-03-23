@@ -588,7 +588,7 @@ const Cockpit = () => {
               </span>
             </div>
             <button
-              onClick={() => navigate('/actions')}
+              onClick={() => navigate(toActionsList())}
               className="text-xs text-amber-700 font-medium hover:text-amber-900 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
             >
               Plan de rattrapage →
