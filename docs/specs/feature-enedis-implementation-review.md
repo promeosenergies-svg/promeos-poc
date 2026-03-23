@@ -74,6 +74,7 @@ La contrainte `unique=True` protege contre les doublons, mais l'exception n'est 
 `_hash_file(file_path)` est appele **avant** `decrypt_file()`. Si le fichier n'existe pas, l'erreur vient de `Path.read_bytes()` (message generique) plutot que du message custom de `decrypt_file` ("File not found: ..."). Mineur.
 
 **Décision Utilisateur** : La clarté dans le traitement et les causes d'erreurs est essentielle. Ouvrir une issue github et faire le fix.
+**Statut** : Résolu — PR fix/issue-151-filenotfounderror-message (#151).
 
 
 ---
@@ -172,7 +173,7 @@ Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_table
 | 2 | Bug | Index duplique sur `flux_file_id` | Basse | ~~Fix simple~~ Résolu — **#150** |
 | 3 | Edge case | Concurrence sur idempotence | Basse (POC) | A traiter si parallelisme — **#152** |
 | 4 | Edge case | `_hash_file` lit tout en memoire | Basse (POC) | Note pour production — **#153** |
-| 5 | Edge case | `FileNotFoundError` message peu clair | Basse | Amelioration mineure — **#151** |
+| 5 | Edge case | `FileNotFoundError` message peu clair | Basse | ~~Amelioration mineure~~ Résolu — **#151** |
 | 6 | Cleanup | Enum `RECEIVED` inutilise | Basse | Conserver, implémenter en SF3 — **#154** |
 | 7 | Cleanup | Docstring `EnedisFluxMesure` restrictive | Basse | Résolu par tables dédiées — **#155** |
 | 8 | Decision | Pas de contrainte unique mesures | -- | Versioning republications avant SF3 — **#156** |
