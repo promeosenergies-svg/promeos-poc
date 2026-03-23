@@ -26,6 +26,7 @@ Si `session.flush()` (ligne 133) ou `session.bulk_save_objects()` (ligne 157) le
 La session est laissee dans un etat dirty. Le caller doit gerer lui-meme, ce qui contredit le contrat documente ("rolls back on unhandled error").
 
 **Fix propose** : wrapper le bloc store dans un try/except qui fait rollback + enregistre le fichier en erreur.
+**Décision Utilisateur** : Fix convenable qui apporte de la sécurité. A implémenter. 
 
 ---
 
@@ -42,6 +43,7 @@ Index("ix_enedis_mesure_flux_file", "flux_file_id"),
 ```
 
 Les deux creent le **meme index**. Double cout en espace et en ecriture, zero benefice. Supprimer l'un des deux (garder celui nomme dans `__table_args__` pour la coherence avec les autres index).
+**Décision Utilisateur** : OK. Analyser impact et faire l'optimisation.
 
 ---
 
@@ -56,13 +58,21 @@ Si deux workers traitent le meme fichier simultanement :
 
 La contrainte `unique=True` protege contre les doublons, mais l'exception n'est pas catchee. Pour le POC mono-processus c'est OK, mais pour SF3 avec `ingest_directory()` si on envisage du parallelisme, il faudra le gerer.
 
+**Décision Utilisateur** : Overkill pour le POC. Cependant ouvrir in feature détaillé dans Github pour un développement en phases ultérieures.
+
 ### 2. `_hash_file` lit tout le fichier en memoire (`pipeline.py:178-180`)
 
 `file_path.read_bytes()` charge tout en RAM. Avec les fichiers actuels (25 Ko - 700 Ko) c'est fin. Si les R4Q trimestriels grossissent en production, utiliser un hash par chunks serait plus safe. Pas bloquant pour le POC.
 
+**Décision Utilisateur** : Overkill pour le POC. Cependant ouvrir in feature détaillé dans Github pour un développement en phases ultérieures lorsque le scaleup sera d'actualité.
+
+
 ### 3. `FileNotFoundError` message peu clair
 
 `_hash_file(file_path)` est appele **avant** `decrypt_file()`. Si le fichier n'existe pas, l'erreur vient de `Path.read_bytes()` (message generique) plutot que du message custom de `decrypt_file` ("File not found: ..."). Mineur.
+
+**Décision Utilisateur** : La clarté dans le traitement et les causes d'erreurs est essentielle. Ouvrir une issue github et faire le fix.
+
 
 ---
 
@@ -71,12 +81,17 @@ La contrainte `unique=True` protege contre les doublons, mais l'exception n'est 
 `FluxStatus.RECEIVED = "received"` existe dans `enums.py` mais n'est assigne nulle part dans le pipeline. Le cycle de vie implemente saute directement de "pas en base" a PARSED/ERROR/SKIPPED. Le `DECRYPTED` du spec original a aussi ete elimine.
 
 **Question** : on supprime `RECEIVED` pour eviter la confusion, ou on le garde pour un futur usage (e.g., pipeline asynchrone ou le fichier est recu avant d'etre traite) ?
+**Décision Utilisateur** : Le status received permet de stocker en base de données tous les fichiers reçus, avant meme de tenter leur ingestion. Important de l'avoir pour une gestion de pipeline solide. Vérifier si cela est prévu en SF3, car c'est plus logique lorsque nous traiterons des directory plutôt que des files uniques.
+
 
 ---
 
 ## Docstring `EnedisFluxMesure` trop restrictive
 
 La docstring dit : *"Raw measurement point from an Enedis R4x CDC flux"*. Or SF3 va utiliser cette meme table pour R171, R50, R151. Elle devrait dire simplement "Raw measurement from an Enedis flux".
+
+**Décision Utilisateur** : Je ne pense pas que ça soit une bonne idée de stocker tous les flux, qui ont des structures différentes, dans une meme table. Trop de compromis et de confusion. Audit difficile. Implémentation Data à revoir. A mon avis c'est consistant d'avoir une table centralisée de suivi des flux traités, mais les contenus devraient être dans des tables spécialisées. La normalisation et/ou fusion dans une table fonctionnelle se fera en étapes ultérieures hors du scope de ce feature.
+
 
 ---
 
@@ -90,11 +105,17 @@ L'implementation a deliberement devie du spec (qui voulait `UNIQUE(point_id, hor
 
 **Question** : est-ce le comportement souhaite ? En production avec des milliers de fichiers, la table grossira vite. La dedup future devra distinguer original vs correction vs vrai doublon.
 
+**Décision Utilisateur** : Nous devrions être capables de détecter ce edge case. Charger les données en spécifiant que c'est, par exemple, une v2 du meme fichier (donnant la compréhension qu'il y a eu republication du meme fichier avec données différentes et obligeant en staging à une analyse et décision du data manager). Gestion donc à dévelloper avant d'attaquer SF3.
+
+
 ### 2. Toutes les valeurs en strings
 
 `valeur_point` est String(20), `horodatage` est String(50). Aucune requete SQL de type `WHERE valeur_point > 500` ou `WHERE horodatage BETWEEN ...` ne fonctionnera sur la table staging.
 
 C'est coherent avec la philosophie "zero manipulation", mais ca signifie que **toute exploitation analytique necessite la couche de normalisation**. L'approche est correcte pour le staging, juste confirmer qu'on n'a pas besoin de requetes directes sur ces donnees brutes.
+
+**Décision Utilisateur** : Cette approche est volontaire. Nous la maintenons.
+
 
 ### 3. Colonnes R4x-specifiques sur `EnedisFluxMesure`
 
@@ -108,9 +129,12 @@ Pour R171 (structure `serieMesuresDatees`), certaines colonnes pourraient etre r
 
 **Recommandation** : Option A pour R171 (meme concept CDC, champs mappables) + Option B pour R50/R151 (index != CDC, structure trop differente). Mais c'est a confirmer.
 
+**Décision Utilisateur** : Voir décision antérieure. Nous sommes en phase d'ingestion brute. Il serait préférable d'avoir des tables dédiées par flux. La fusion/normalisation se faisant en phases postérieures. Analysez les best practices et confirmez cette décision.
+
 ### 4. `point_id` String(14) — suffisant pour tous les flux ?
 
 Les PRM francais font toujours 14 chiffres. Mais est-ce que R50/R151 utilisent bien un PRM ou un identifiant de format different ? A verifier en dechiffrant un fichier R50.
+**Décision Utilisateur** : En principe c'est fixe chez Enedis. Doute sur d'autres ELDs. Ne rien faire pour l'instant, nous le gardons en point d'attention (ouvrir un issue de type question)
 
 ### 5. Colonnes header R4x-specifiques sur `EnedisFluxFile`
 
@@ -118,9 +142,12 @@ Les PRM francais font toujours 14 chiffres. Mais est-ce que R50/R151 utilisent b
 
 **Question** : est-ce acceptable d'avoir ces colonnes toujours NULL pour les flux non-R4x, ou faut-il les renommer en quelque chose de plus generique ?
 
+**Décision Utilisateur** : Sujet devraie être résolu en ayant en phase d'ingestion brute des tables dédiées par flux.
+
 ### 6. La migration `_create_enedis_tables` ne gere pas les ALTER TABLE
 
 Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_tables` fait `has_table()` -> `return` (skip). Il faudra une logique de migration complementaire (comme les `_add_*_columns` patterns existants dans `migrations.py`).
+**Décision Utilisateur** : Ceci doit être régle en code ou en processus lors de l'implémentation de nouvelles colonnes?
 
 ---
 
