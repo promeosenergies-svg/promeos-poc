@@ -158,7 +158,7 @@ export default function CommandCenter() {
 
   // ── Hooks enrichissement Step 5 ──
   const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
-  const { trajectoire } = useCockpitData();
+  const { trajectoire, kpis: cockpitKpis } = useCockpitData();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -395,9 +395,25 @@ export default function CommandCenter() {
           accent="conformite"
           icon={ShieldCheck}
           label="Conformité"
-          value={`${kpis.pctConf}%`}
-          sub={`${kpis.conformes} / ${kpis.total} sites conformes`}
-          status={kpis.compStatus}
+          value={
+            cockpitKpis?.conformiteScore != null
+              ? `${cockpitKpis.conformiteScore}%`
+              : `${kpis.pctConf}%`
+          }
+          sub={
+            cockpitKpis?.conformiteSource
+              ? `Score ${cockpitKpis.conformiteSource}`
+              : `${kpis.conformes} / ${kpis.total} sites conformes`
+          }
+          status={
+            cockpitKpis?.conformiteScore != null
+              ? cockpitKpis.conformiteScore >= 80
+                ? 'ok'
+                : cockpitKpis.conformiteScore >= 60
+                  ? 'warn'
+                  : 'crit'
+              : kpis.compStatus
+          }
           onClick={() => navigate('/conformite')}
         />
         <MetricCard
