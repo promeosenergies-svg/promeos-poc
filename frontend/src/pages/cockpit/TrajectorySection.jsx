@@ -23,36 +23,6 @@ import { Skeleton, EmptyState } from '../../ui';
 
 // ── SiteBar — barre horizontale kWh/m² ──────────────────────────────
 
-function SiteBar({ site }) {
-  const { nom, kwh_m2, objectif_kwh_m2 } = site;
-  const maxVal = Math.max(kwh_m2 ?? 0, objectif_kwh_m2 ?? 0, 1);
-  const fillPct = Math.round(((kwh_m2 ?? 0) / maxVal) * 100);
-  const targetPct = Math.round(((objectif_kwh_m2 ?? 0) / maxVal) * 100);
-  const isOver = (kwh_m2 ?? 0) > (objectif_kwh_m2 ?? 0);
-
-  return (
-    <div className="mb-2">
-      <div className="flex justify-between text-xs mb-1">
-        <span className="font-medium text-gray-700">{nom}</span>
-        <span className={isOver ? 'text-amber-700 font-medium' : 'text-green-700 font-medium'}>
-          {kwh_m2 ?? '—'} kWh/m² · obj. {objectif_kwh_m2 ?? '—'}
-        </span>
-      </div>
-      <div className="relative h-1.5 bg-gray-100 rounded-full overflow-visible">
-        <div
-          className={`h-full rounded-full ${isOver ? 'bg-amber-500' : 'bg-blue-500'}`}
-          style={{ width: `${fillPct}%` }}
-        />
-        <div
-          className="absolute top-[-2px] w-0.5 h-2.5 bg-blue-600 rounded"
-          style={{ left: `${targetPct}%` }}
-          title={`Objectif : ${objectif_kwh_m2} kWh/m²`}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ── TrajectorySection ────────────────────────────────────────────────
 
 export default function TrajectorySection({ trajectoire, loading, sites }) {
@@ -265,17 +235,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
         ))}
       </div>
 
-      {/* ── Barres kWh/m² par site ── */}
-      {sites?.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-            Performance par site — kWh/m²
-          </div>
-          {sites.map((site) => (
-            <SiteBar key={site.nom} site={site} />
-          ))}
-        </div>
-      )}
+      {/* Barres kWh/m² supprimées — affichées par PerformanceSitesCard (pas de doublon) */}
     </div>
   );
 }

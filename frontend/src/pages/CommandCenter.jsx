@@ -478,78 +478,76 @@ export default function CommandCenter() {
         />
       </div>
 
-      {/* ── Graphiques consommation (Step 5) ── */}
-      {(weekSeries?.length > 0 || hourlyProfile?.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="charts-conso">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Conso 7 jours — {scopedSites.length} sites (kWh/j)
-            </div>
-            {weekSeries?.length > 0 ? (
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={weekSeries}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    tickFormatter={(d) => d?.slice(5)}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    tickFormatter={(v) => `${Math.round(v)}`}
-                  />
-                  <Tooltip
-                    formatter={(v) => [v != null ? `${Math.round(v)} kWh` : '—', 'Conso']}
-                    labelFormatter={(l) => `Jour : ${l}`}
-                  />
-                  <Bar dataKey="kwh" name="Cette semaine" fill="#378ADD" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
-                Pas de données disponibles
-              </div>
-            )}
+      {/* ── Graphiques consommation (Step 5 — toujours visibles) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="charts-conso">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            Conso 7 jours — {scopedSites.length} sites (kWh/j)
           </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Profil journalier J-1 (kW agrégé)
+          {weekSeries?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={weekSeries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tickFormatter={(d) => d?.slice(5)}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tickFormatter={(v) => `${Math.round(v)}`}
+                />
+                <Tooltip
+                  formatter={(v) => [v != null ? `${Math.round(v)} kWh` : '—', 'Conso']}
+                  labelFormatter={(l) => `Jour : ${l}`}
+                />
+                <Bar dataKey="kwh" name="Cette semaine" fill="#378ADD" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
+              Pas de données disponibles
             </div>
-            {hourlyProfile?.length > 0 ? (
-              <ResponsiveContainer width="100%" height={140}>
-                <ComposedChart data={hourlyProfile}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={3} />
-                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => `${v}kW`} />
-                  <Tooltip formatter={(v, name) => [v != null ? `${v} kW` : '—', name]} />
-                  <Area
-                    type="monotone"
-                    dataKey="kw"
-                    name="Réel J-1"
-                    stroke="#378ADD"
-                    fill="rgba(55,138,221,0.07)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  {kpisJ1?.picKw > 38 && (
-                    <ReferenceLine
-                      y={38}
-                      stroke="#E24B4A"
-                      strokeDasharray="4 3"
-                      label={{ value: 'Seuil', position: 'right', fontSize: 9, fill: '#E24B4A' }}
-                    />
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
-                Profil horaire indisponible
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      )}
+
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            Profil journalier J-1 (kW agrégé)
+          </div>
+          {hourlyProfile?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={140}>
+              <ComposedChart data={hourlyProfile}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={3} />
+                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => `${v}kW`} />
+                <Tooltip formatter={(v, name) => [v != null ? `${v} kW` : '—', name]} />
+                <Area
+                  type="monotone"
+                  dataKey="kw"
+                  name="Réel J-1"
+                  stroke="#378ADD"
+                  fill="rgba(55,138,221,0.07)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                {kpisJ1?.picKw > 38 && (
+                  <ReferenceLine
+                    y={38}
+                    stroke="#E24B4A"
+                    strokeDasharray="4 3"
+                    label={{ value: 'Seuil', position: 'right', fontSize: 9, fill: '#E24B4A' }}
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
+              Profil horaire indisponible
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── Progression trajectoire mensuelle (Step 5) ── */}
       {trajectoire && (
