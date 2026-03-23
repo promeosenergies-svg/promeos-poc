@@ -1,6 +1,7 @@
-"""Fixtures for Enedis SGE decrypt tests.
+"""Fixtures for Enedis SGE tests (SF1 decrypt + SF2 ingestion).
 
-Provides synthetic AES-encrypted test data (no real Enedis keys needed).
+Provides synthetic AES-encrypted test data (no real Enedis keys needed)
+and an in-memory SQLite DB fixture for model/pipeline tests.
 """
 
 import io
@@ -13,6 +14,9 @@ import pytest
 from cryptography.hazmat.primitives import padding as crypto_padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # Ensure backend/ is on sys.path (same defensive pattern as existing tests)
 sys.path.insert(
@@ -104,3 +108,27 @@ def empty_file(tmp_path):
     path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_EMPTY.zip"
     path.write_bytes(b"")
     return path
+
+
+# ---------------------------------------------------------------------------
+# DB fixture for SF2 model/pipeline tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def db():
+    """In-memory SQLite DB with Enedis staging tables only."""
+    from models.base import Base
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    # Import models so they register with Base.metadata
+    import data_ingestion.enedis.models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+    yield session
+    session.close()

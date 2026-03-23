@@ -82,6 +82,8 @@ def run_migrations(engine):
     _migrate_bacs_remediation(engine)
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
+    # Enedis SGE — CDC staging tables
+    _create_enedis_tables(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1619,3 +1621,22 @@ def _migrate_bacs_remediation(engine):
                 )
             )
         logger.info("migration: created bacs_remediation_actions")
+
+
+def _create_enedis_tables(engine):
+    """Create Enedis SGE staging tables (enedis_flux_file, enedis_flux_mesure) if missing."""
+    insp = inspect(engine)
+    if insp.has_table("enedis_flux_file") and insp.has_table("enedis_flux_mesure"):
+        return
+
+    # Import models to register them with Base.metadata
+    import data_ingestion.enedis.models  # noqa: F401
+    from models.base import Base
+
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[
+            Base.metadata.tables[t] for t in ("enedis_flux_file", "enedis_flux_mesure") if t in Base.metadata.tables
+        ],
+    )
+    logger.info("migration: created Enedis SGE staging tables")
