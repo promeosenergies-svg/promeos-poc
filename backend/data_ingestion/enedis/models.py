@@ -93,7 +93,6 @@ class EnedisFluxMesure(Base, TimestampMixin):
         Integer,
         ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
         comment="FK vers enedis_flux_file",
     )
     flux_type = Column(String(10), nullable=False, comment="R4H/R4M/R4Q — dénormalisé pour les requêtes")
