@@ -16,7 +16,7 @@ import {
   getComplianceScoreTrend,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
-import { fmtKwh } from '../utils/format';
+import { fmtKwh, fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
 import {
   Button,
@@ -582,10 +582,18 @@ const Cockpit = () => {
           >
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-              <span className="text-amber-800 font-medium">
-                Retard trajectoire DT · {trajectoire.reductionPctActuelle}% réalisé vs objectif{' '}
-                {trajectoire.objectif2026Pct}%
-              </span>
+              <div>
+                <span className="text-amber-800 font-medium">
+                  Retard trajectoire DT · {trajectoire.reductionPctActuelle}% réalisé vs objectif{' '}
+                  {trajectoire.objectif2026Pct}%
+                </span>
+                {cockpitKpis?.risqueBreakdown?.reglementaire_eur > 0 && (
+                  <span className="text-amber-700 text-xs block mt-0.5">
+                    {fmtEur(cockpitKpis.risqueBreakdown.reglementaire_eur)} si non rattrapé ·
+                    Actions P0 à lancer avant le 30 avril 2026
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={() => navigate(toActionsList())}

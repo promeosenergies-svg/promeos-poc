@@ -130,6 +130,15 @@ export default function CockpitHero({
           {label}
         </span>
 
+        {/* Pondérations réglementaires — constantes figées */}
+        <div className="text-[10px] text-gray-400 text-center mt-0.5 flex items-center gap-1">
+          <span className="font-medium text-blue-600">DT 45%</span>
+          <span>·</span>
+          <span className="font-medium text-blue-500">BACS 30%</span>
+          <span>·</span>
+          <span className="font-medium text-blue-400">APER 25%</span>
+        </div>
+
         {onEvidence && (
           <button
             onClick={() => onEvidence('conformite')}
@@ -164,11 +173,23 @@ export default function CockpitHero({
           <span className="text-[10px] text-gray-400">Objectif 2026 : −25 %</span>
         </div>
 
-        {/* Intensité énergétique */}
-        <div className="bg-gray-50 rounded-lg p-3 flex flex-col gap-1" data-testid="kpi-intensite">
-          <span className="text-xs text-gray-500">Intensité énergétique</span>
-          <span className="text-lg font-semibold text-gray-900">—</span>
-          <span className="text-[10px] text-gray-400">kWh/m² · Réf. sectorielle : 120</span>
+        {/* Actions en cours */}
+        <div
+          className="bg-gray-50 rounded-lg p-3 flex flex-col gap-1"
+          data-testid="kpi-actions-encours"
+        >
+          <span className="text-xs text-gray-500">Actions en cours</span>
+          <span className="text-lg font-semibold text-gray-900">
+            {actions?.enCours != null ? actions.enCours : '—'}
+            {actions?.total != null && (
+              <span className="text-sm font-normal text-gray-400"> / {actions.total}</span>
+            )}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            {actions?.potentielEur > 0
+              ? `+${fmtEur(actions.potentielEur)}/an potentiel`
+              : "Plan d'actions"}
+          </span>
         </div>
 
         {/* CO₂ évité */}

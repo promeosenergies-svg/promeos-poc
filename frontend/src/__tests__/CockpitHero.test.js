@@ -68,8 +68,8 @@ describe('CockpitHero — structure', () => {
     expect(heroSrc).toContain('data-testid="kpi-reduction-dt"');
   });
 
-  it('contient data-testid kpi-intensite', () => {
-    expect(heroSrc).toContain('data-testid="kpi-intensite"');
+  it('contient data-testid kpi-actions-encours', () => {
+    expect(heroSrc).toContain('data-testid="kpi-actions-encours"');
   });
 
   it('contient data-testid kpi-co2', () => {
@@ -100,6 +100,36 @@ describe('CockpitHero — structure', () => {
 
   it('accepte trajectoire en prop pour reductionPctActuelle', () => {
     expect(heroSrc).toMatch(/trajectoire\?\.reductionPctActuelle/);
+  });
+});
+
+// ── Pondérations gauge ───────────────────────────────────────────────
+
+describe('CockpitHero — ponderations gauge', () => {
+  it('affiche DT 45%, BACS 30%, APER 25%', () => {
+    expect(heroSrc).toMatch(/DT 45%/);
+    expect(heroSrc).toMatch(/BACS 30%/);
+    expect(heroSrc).toMatch(/APER 25%/);
+  });
+
+  it('ponderations sont des constantes (pas depuis API)', () => {
+    expect(heroSrc).not.toMatch(/complianceMeta.*weights/);
+  });
+});
+
+// ── Actions en cours card ────────────────────────────────────────────
+
+describe('CockpitHero — card actions en cours', () => {
+  it('affiche actions.enCours depuis les props', () => {
+    expect(heroSrc).toMatch(/actions\?\.enCours/);
+  });
+
+  it('affiche actions.total', () => {
+    expect(heroSrc).toMatch(/actions\?\.total/);
+  });
+
+  it('utilise fmtEur pour potentielEur', () => {
+    expect(heroSrc).toMatch(/fmtEur\(actions\.potentielEur\)/);
   });
 });
 
