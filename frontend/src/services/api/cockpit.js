@@ -106,6 +106,8 @@ export const autoDetectOnboarding = (orgId) =>
 // ── Cockpit Executive ──
 export const getCockpit = () => cachedGet('/cockpit').then((r) => r.data);
 export const getCockpitTrajectory = () => cachedGet('/cockpit/trajectory').then((r) => r.data);
+export const getCockpitBenchmark = () => cachedGet('/cockpit/benchmark').then((r) => r.data);
+export const getCockpitCo2 = () => cachedGet('/cockpit/co2').then((r) => r.data);
 
 // ── Health + Meta ──
 export const getApiHealth = () => api.get('/health').then((r) => r.data);

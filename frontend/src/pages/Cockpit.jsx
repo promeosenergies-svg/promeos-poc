@@ -67,6 +67,8 @@ import { useCockpitData } from '../hooks/useCockpitData';
 import CockpitHero from './cockpit/CockpitHero';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
+import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
+import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -605,6 +607,12 @@ const Cockpit = () => {
         )}
 
       <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} />
+
+      {/* ── Performance sites + Vecteur énergétique (2 colonnes) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <PerformanceSitesCard />
+        <VecteurEnergetiqueCard />
+      </div>
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
 

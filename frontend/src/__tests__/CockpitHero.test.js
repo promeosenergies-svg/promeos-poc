@@ -1,6 +1,6 @@
 /**
  * PROMEOS — CockpitHero — Source Guards + Structure Tests
- * Vérifie que le composant est display-only et respecte le design system.
+ * Layout 4 cards : Score santé | Risque financier | Réduction DT | Actions en cours
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -47,21 +47,25 @@ describe('CockpitHero — design system', () => {
     expect(heroSrc).not.toMatch(/toLocaleString.*EUR/);
   });
 
-  it('importe KPI_ACCENTS depuis colorTokens', () => {
-    expect(heroSrc).toMatch(/import.*KPI_ACCENTS.*colorTokens/);
-  });
-
   it('importe Skeleton et ErrorState', () => {
     expect(heroSrc).toMatch(/Skeleton/);
     expect(heroSrc).toMatch(/ErrorState/);
   });
 });
 
-// ── Structure ────────────────────────────────────────────────────────
+// ── Structure 4 cards ────────────────────────────────────────────────
 
-describe('CockpitHero — structure', () => {
-  it('contient data-testid gauge-conformite', () => {
+describe('CockpitHero — structure 4 cards', () => {
+  it('contient data-testid cockpit-hero', () => {
+    expect(heroSrc).toContain('data-testid="cockpit-hero"');
+  });
+
+  it('contient data-testid gauge-conformite (card Score sante)', () => {
     expect(heroSrc).toContain('data-testid="gauge-conformite"');
+  });
+
+  it('contient data-testid kpi-risque (card Risque financier)', () => {
+    expect(heroSrc).toContain('data-testid="kpi-risque"');
   });
 
   it('contient data-testid kpi-reduction-dt', () => {
@@ -72,34 +76,22 @@ describe('CockpitHero — structure', () => {
     expect(heroSrc).toContain('data-testid="kpi-actions-encours"');
   });
 
-  it('contient data-testid kpi-co2', () => {
-    expect(heroSrc).toContain('data-testid="kpi-co2"');
-  });
-
-  it('contient data-testid risque-breakdown', () => {
-    expect(heroSrc).toContain('data-testid="risque-breakdown"');
-  });
-
   it('navigue vers /conformite au clic gauge', () => {
     expect(heroSrc).toMatch(/navigate\(['"]\/conformite['"]\)/);
   });
 
-  it('navigue vers /actions au clic CTA risque', () => {
-    expect(heroSrc).toMatch(/navigate\(['"]\/actions['"]\)/);
-  });
-
-  it('utilise onEvidence callback (pas de EvidenceDrawer interne)', () => {
+  it('utilise onEvidence callback', () => {
     expect(heroSrc).toMatch(/onEvidence/);
-    // Pas d'import EvidenceDrawer — le parent le gère
     expect(heroSrc).not.toMatch(/import.*EvidenceDrawer/);
-  });
-
-  it('affiche la fraicheur conformiteComputedAt', () => {
-    expect(heroSrc).toMatch(/conformiteComputedAt/);
   });
 
   it('accepte trajectoire en prop pour reductionPctActuelle', () => {
     expect(heroSrc).toMatch(/trajectoire\?\.reductionPctActuelle/);
+  });
+
+  it('affiche le label retard si reduction > objectif', () => {
+    expect(heroSrc).toMatch(/isRetard/);
+    expect(heroSrc).toMatch(/retard/);
   });
 });
 

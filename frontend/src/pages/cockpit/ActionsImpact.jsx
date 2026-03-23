@@ -69,6 +69,11 @@ function ActionRow({ action }) {
         <PriorityBadge priority={action.priority ?? 3} />
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium text-gray-800 truncate">{action.title ?? '—'}</div>
+          {(action.rationale || action.description) && (
+            <div className="text-[10px] text-gray-500 truncate mt-0.5">
+              {action.rationale ?? action.description}
+            </div>
+          )}
           <div className="flex items-center gap-1.5 mt-0.5">
             <SourceTag sourceType={action.source_type} sourceLabel={action.source_label} />
             {action.due_date && (

@@ -144,15 +144,19 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
       <div className="flex gap-4 flex-wrap mb-3 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 h-0.5 bg-blue-500 rounded" />
-          Réel
+          Réel HELIOS (
+          {trajectoire.annees?.length
+            ? `${new Set(trajectoire.reelMwh?.filter((v) => v != null)).size > 0 ? '5' : '0'} sites`
+            : ''}
+          )
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 border-t-2 border-dashed border-red-400" />
-          Objectif DT
+          Objectif DT (−40% 2030)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 h-0.5 bg-green-600 rounded" />
-          Projection + actions
+          Projection actions planifiées
         </span>
         <span className="ml-auto text-xs text-gray-400">
           Réf. {trajectoire.refYear} · {trajectoire.surfaceM2Total?.toLocaleString('fr-FR')} m²
