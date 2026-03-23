@@ -595,6 +595,32 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     # Vérifié sur factures réelles:
     #   ENGIE SUENO (C5, jan 2026): 29,98 ✓ — (C5, fév 2026): 30,85 ✓
     #   EDF Cannes BL (C4 108kW, oct 2025): 25,79 ✓
+    # ── Historique bouclier tarifaire 2023 ──
+    "ACCISE_ELEC_2023": {
+        "rate": 0.01000,
+        "unit": "EUR/kWh",
+        "source": "Bouclier tarifaire 2023 — accise réduite tous segments (10 EUR/MWh)",
+        "valid_from": "2023-01-01",
+        "valid_to": "2024-01-31",
+        "tva_rate": 0.20,
+    },
+    # ── Historique 2024 (fin bouclier, arrêté 25/01/2024) ──
+    "ACCISE_ELEC_2024": {
+        "rate": 0.02100,
+        "unit": "EUR/kWh",
+        "source": "Arrêté 25/01/2024 (art. 92 LFI 2024) — accise T1 ménages 21 EUR/MWh",
+        "valid_from": "2024-02-01",
+        "valid_to": "2024-12-31",
+        "tva_rate": 0.20,
+    },
+    "ACCISE_ELEC_T2_2024": {
+        "rate": 0.02050,
+        "unit": "EUR/kWh",
+        "source": "Arrêté 25/01/2024 (art. 92 LFI 2024) — accise T2 PME 20.50 EUR/MWh",
+        "valid_from": "2024-02-01",
+        "valid_to": "2024-12-31",
+        "tva_rate": 0.20,
+    },
     # ── T1 (≤ 250 MWh/an) — C5 BT particuliers et petits pro ──
     "ACCISE_ELEC": {
         "rate": 0.02623,
@@ -639,12 +665,19 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     "ACCISE_ELEC_T2_AOUT2025": {
         "rate": 0.02579,
         "unit": "EUR/kWh",
-        "source": "Loi de finances 2025 — accise T2 août 2025+ (25.79 EUR/MWh) — vérifié facture EDF Cannes BL oct 2025",
+        "source": "Loi de finances 2025 — accise T2 août 2025-jan 2026 (25.79 EUR/MWh) — vérifié facture EDF Cannes BL oct 2025",
         "valid_from": "2025-08-01",
+        "valid_to": "2026-01-31",
         "tva_rate": 0.20,
     },
-    # ── GAZ — ATRD (Distribution) ────────────────────────────────────────
-    # Source : CRE délibération ATRD 6 (structure)
+    "ACCISE_ELEC_T2_FEV2026": {
+        "rate": 0.02658,
+        "unit": "EUR/kWh",
+        "source": "Loi de finances 2026 — accise T2 fév 2026+ (26.58 EUR/MWh)",
+        "valid_from": "2026-02-01",
+        "tva_rate": 0.20,
+    },
+    # ── GAZ — ATRD (Distribution) — ATRD7 (01/07/2024 →) ───────────────
     "ATRD_GAZ_ABO_T1": {
         "rate": 54.72,
         "unit": "EUR/an",
@@ -687,12 +720,85 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "valid_from": "2024-07-01",
         "tva_rate": 0.20,
     },
+    # ── GAZ — ATRD6 historique (01/07/2023 → 30/06/2024) ─────────────
+    # Source : CRE délibération n°2023-123 du 10 mai 2023
+    # Z2023 = IPC(4.20%) + X(-1.90%) + k(+2.00%) = +4.30%
+    # Y2023 = 1.0415, Rf T1/T2 = 8.76 €/an, Rf T3 = 98.40 €/an
+    "ATRD6_GAZ_ABO_T1": {
+        "rate": 42.24,
+        "unit": "EUR/an",
+        "source": "CRE ATRD 6 T1 (0-6 MWh/an) abonnement — délibération n°2023-123 01/07/2023 (incl. Rf 8.76€)",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.055,
+    },
+    "ATRD6_GAZ_ABO_T2": {
+        "rate": 139.44,
+        "unit": "EUR/an",
+        "source": "CRE ATRD 6 T2 (6-300 MWh/an) abonnement — délibération n°2023-123 01/07/2023 (incl. Rf 8.76€)",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.055,
+    },
+    "ATRD6_GAZ_ABO_T3": {
+        "rate": 982.92,
+        "unit": "EUR/an",
+        "source": "CRE ATRD 6 T3 (300-5000 MWh/an) abonnement — délibération n°2023-123 01/07/2023 (incl. Rf 98.40€)",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.055,
+    },
+    "ATRD6_GAZ_VAR_T1": {
+        "rate": 0.03323,
+        "unit": "EUR/kWh",
+        "source": "CRE ATRD 6 T1 variable (33.23 EUR/MWh) — délibération n°2023-123 01/07/2023",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.20,
+    },
+    "ATRD6_GAZ_VAR_T2": {
+        "rate": 0.00893,
+        "unit": "EUR/kWh",
+        "source": "CRE ATRD 6 T2 variable (8.93 EUR/MWh) — délibération n°2023-123 01/07/2023",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.20,
+    },
+    "ATRD6_GAZ_VAR_T3": {
+        "rate": 0.00642,
+        "unit": "EUR/kWh",
+        "source": "CRE ATRD 6 T3 variable (6.42 EUR/MWh) — délibération n°2023-123 01/07/2023",
+        "valid_from": "2023-07-01",
+        "valid_to": "2024-06-30",
+        "tva_rate": 0.20,
+    },
     # ── GAZ — ATRT (Transport) ────────────────────────────────────────
+    "ATRT_GAZ_2023": {
+        "rate": 0.00240,
+        "unit": "EUR/kWh",
+        "source": "CRE ATRT7 — terme proportionnel transport gaz (~2.40 EUR/MWh, 2023-2025)",
+        "valid_from": "2023-07-01",
+        "valid_to": "2025-03-31",
+        "tva_rate": 0.20,
+    },
     "ATRT_GAZ": {
         "rate": 0.00267,
         "unit": "EUR/kWh",
-        "source": "CRE ATRT variable (terme proportionnel à la consommation)",
+        "source": "CRE ATRT8 — terme proportionnel transport (2.67 EUR/MWh, avr 2025+)",
         "valid_from": "2025-04-01",
+        "tva_rate": 0.20,
+    },
+    # ── GAZ — TDN (Terme de Débit Normalisé) ────────────────────────
+    # Applicable 01/07/2026 aux clients T1/T2/T3 dont le débit normalisé
+    # est > 40 Nm³/h. Tarif : 5,52 EUR/an par Nm³/h de débit normalisé.
+    # Source : GRDF sites.grdf.fr/web/terme-debit-normalise
+    #          CRE délibération n°2025-161 du 19/06/2025 (prestations GRD)
+    # Non applicable B2C (99% à 6 ou 10 Nm³/h).
+    "TDN_GAZ": {
+        "rate": 5.52,
+        "unit": "EUR/an/Nm3h",
+        "source": "CRE/GRDF — TDN 5.52 EUR/an/Nm³/h au 01/07/2026 (sites > 40 Nm³/h)",
+        "valid_from": "2026-07-01",
         "tva_rate": 0.20,
     },
     # ── GAZ — CTA ─────────────────────────────────────────────────────
@@ -704,6 +810,22 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "tva_rate": 0.055,
     },
     # ── GAZ — TICGN (accise) ──────────────────────────────────────────
+    "TICGN_2023": {
+        "rate": 0.00841,
+        "unit": "EUR/kWh",
+        "source": "Bouclier tarifaire 2023 — TICGN réduite 8.41 EUR/MWh",
+        "valid_from": "2023-01-01",
+        "valid_to": "2023-12-31",
+        "tva_rate": 0.20,
+    },
+    "TICGN_2024": {
+        "rate": 0.01637,
+        "unit": "EUR/kWh",
+        "source": "Art. 64 LFI 2024 — fin bouclier, TICGN 16.37 EUR/MWh (2024-2025)",
+        "valid_from": "2024-01-01",
+        "valid_to": "2026-01-31",
+        "tva_rate": 0.20,
+    },
     "TICGN": {
         "rate": 0.01639,
         "unit": "EUR/kWh",
@@ -711,6 +833,85 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "valid_from": "2026-02-01",
         "tva_rate": 0.20,
     },
+    # ── CAPACITÉ (Mécanisme de capacité) ───────────────────────────────
+    # Obligation fournisseur répercutée au client B2B. Prix = résultat
+    # des enchères de garanties de capacité. Réforme acheteur unique
+    # RTE prévue nov. 2026 (loi de finances 2025).
+    # Prix enchères 2026 : 3,15 €/MW (enchère 06/03/2025 pour livraison 2026).
+    # Conversion en EUR/kWh : prix_MW × coefficient_obligation / 8760h
+    # Coefficient obligation moyen B2B ≈ 1.2 (pro-rata consommation pointe)
+    # → 3.15 × 1.2 / 8760 ≈ 0.00043 EUR/kWh
+    "CAPACITE_ELEC": {
+        "rate": 0.00043,
+        "unit": "EUR/kWh",
+        "source": "Enchères capacité RTE 06/03/2025 — 3.15 EUR/MW × coeff 1.2 / 8760h ≈ 0.43 EUR/MWh",
+        "valid_from": "2026-01-01",
+        "tva_rate": 0.20,
+    },
+    "CAPACITE_ELEC_2025": {
+        "rate": 0.00000,
+        "unit": "EUR/kWh",
+        "source": "Enchères capacité RTE 2025 — 0 EUR/MW (prix nul en 2025)",
+        "valid_from": "2025-01-01",
+        "valid_to": "2025-12-31",
+        "tva_rate": 0.20,
+    },
+    # ── CAPACITÉ — Réforme acheteur unique RTE (nov 2026) ──────────────
+    "CAPACITE_ELEC_NOV2026": {
+        "rate": 0.00043,
+        "unit": "EUR/kWh",
+        "source": "Réforme capacité RTE acheteur unique (nov 2026) — placeholder = enchères 2026 (3.15 EUR/MW)",
+        "valid_from": "2026-11-01",
+        "tva_rate": 0.20,
+    },
+    # ── CPB (Certificats de Production de Biogaz) — shadow ────────────
+    # Obligation fournisseur gaz depuis 01/01/2026 (Décret 2024-718).
+    # 0.0041 CPB/MWh PCS × ~85 EUR/CPB estimé ≈ 0.35 EUR/MWh.
+    "CPB_GAZ_2026": {
+        "rate": 0.00035,
+        "unit": "EUR/kWh",
+        "source": "Décret 2024-718 — CPB 0.0041/MWh × ~85 EUR/CPB ≈ 0.35 EUR/MWh (estimation shadow)",
+        "valid_from": "2026-01-01",
+        "tva_rate": 0.20,
+    },
+    # ── STOCKAGE GAZ (ATS3 — terme tarifaire stockage souterrain) ────
+    # Inclus dans ATRT, explicité comme shadow component pour traçabilité.
+    # Source: CRE délibérations ATS3 2025/2026
+    "STOCKAGE_GAZ_2025": {
+        "rate": 0.00038,
+        "unit": "EUR/kWh",
+        "source": "CRE ATS3 2025 — terme stockage 331.44 EUR/MWh/j/an (shadow, inclus dans ATRT)",
+        "valid_from": "2025-04-01",
+        "valid_to": "2026-03-31",
+        "tva_rate": 0.20,
+    },
+    "STOCKAGE_GAZ_2026": {
+        "rate": 0.00046,
+        "unit": "EUR/kWh",
+        "source": "CRE ATS3 2026 estimé — +20% vs 2025 (shadow, inclus dans ATRT)",
+        "valid_from": "2026-04-01",
+        "tva_rate": 0.20,
+    },
+    # ── CEE (shadow — coût implicite estimatif) ──────────────────────
+    # Pas une ligne facture dédiée. Estimé pour décomposition pédagogique.
+    "CEE_P5_SHADOW": {
+        "rate": 0.0050,
+        "unit": "EUR/kWh",
+        "source": "Estimation PROMEOS — coût CEE P5 implicite ~5 EUR/MWh (780 TWhc/an)",
+        "valid_from": "2022-01-01",
+        "valid_to": "2025-12-31",
+        "tva_rate": 0.20,
+    },
+    "CEE_P6_SHADOW": {
+        "rate": 0.0065,
+        "unit": "EUR/kWh",
+        "source": "Estimation PROMEOS — coût CEE P6 implicite ~6.5 EUR/MWh (1050 TWhc/an, +35% vs P5)",
+        "valid_from": "2026-01-01",
+        "tva_rate": 0.20,
+    },
+    # ── GAZ — ELD (péréquation nationale LFI 2026, 01/07/2026) ──────
+    # Taux ELD convergeront vers GRDF. Entrées à ajouter quand CRE publie.
+    # Pattern: ATRD_GAZ_ABO_T2_REGIE_STRASBOURG, etc.
     # ── TVA ───────────────────────────────────────────────────────────────
     "TVA_NORMALE": {
         "rate": 0.20,
@@ -728,16 +929,22 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     },
 }
 
-CATALOG_VERSION = "2026-03-21_turpe7_official_rates"
+CATALOG_VERSION = "2026-03-22_v2.2_c3hta_stockage_cee_perequation_capacite_reforme"
 
 
 def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
     """
     Resolve a rate code to its temporal variant based on at_date.
-    Supports CTA_ELEC and ACCISE_ELEC temporal versioning.
+    Supports CTA_ELEC, ACCISE_ELEC, and ATRD_GAZ temporal versioning.
     """
     if at_date is None:
         return code
+
+    # ── ATRD GAZ : ATRD6 (01/07/2023 → 30/06/2024) vs ATRD7 (01/07/2024 →) ──
+    if code.startswith("ATRD_GAZ_") and at_date < date(2024, 7, 1):
+        atrd6_code = code.replace("ATRD_GAZ_", "ATRD6_GAZ_")
+        if atrd6_code in TURPE7_RATES:
+            return atrd6_code
 
     if code == "CTA_ELEC":
         if at_date >= date(2026, 2, 1) and "CTA_ELEC_2026" in TURPE7_RATES:
@@ -745,6 +952,10 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
         return "CTA_ELEC"
 
     if code == "ACCISE_ELEC":
+        if at_date < date(2024, 2, 1):
+            return "ACCISE_ELEC_2023"
+        if at_date < date(2025, 1, 1):
+            return "ACCISE_ELEC_2024"
         if at_date < date(2025, 2, 1):
             return "ACCISE_ELEC_JAN2025"
         if at_date >= date(2026, 2, 1):
@@ -754,11 +965,51 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
         return "ACCISE_ELEC"
 
     if code == "ACCISE_ELEC_T2":
+        if at_date < date(2024, 2, 1):
+            return "ACCISE_ELEC_2023"  # Bouclier : même taux tous segments
+        if at_date < date(2025, 1, 1):
+            return "ACCISE_ELEC_T2_2024"
         if at_date < date(2025, 2, 1):
             return "ACCISE_ELEC_JAN2025"
+        if at_date >= date(2026, 2, 1):
+            return "ACCISE_ELEC_T2_FEV2026"
         if at_date >= date(2025, 8, 1):
             return "ACCISE_ELEC_T2_AOUT2025"
         return "ACCISE_ELEC_T2"
+
+    if code == "CAPACITE_ELEC":
+        if at_date < date(2026, 1, 1):
+            return "CAPACITE_ELEC_2025"
+        if at_date >= date(2026, 11, 1):
+            return "CAPACITE_ELEC_NOV2026"
+        return "CAPACITE_ELEC"
+
+    if code == "STOCKAGE_GAZ":
+        if at_date >= date(2026, 4, 1):
+            return "STOCKAGE_GAZ_2026"
+        return "STOCKAGE_GAZ_2025"
+
+    if code == "CEE_SHADOW":
+        if at_date >= date(2026, 1, 1):
+            return "CEE_P6_SHADOW"
+        return "CEE_P5_SHADOW"
+
+    if code == "ATRT_GAZ":
+        if at_date < date(2025, 4, 1):
+            return "ATRT_GAZ_2023"
+        return "ATRT_GAZ"
+
+    if code == "TICGN":
+        if at_date < date(2024, 1, 1):
+            return "TICGN_2023"
+        if at_date < date(2026, 2, 1):
+            return "TICGN_2024"
+        return "TICGN"
+
+    if code == "CPB_SHADOW":
+        if at_date >= date(2026, 1, 1):
+            return "CPB_GAZ_2026"
+        return code  # Pas de rate pré-2026 → KeyError attendu
 
     return code
 
@@ -794,12 +1045,30 @@ def get_rate_source(code: str, at_date: Optional[date] = None) -> RateSource:
 
 
 def get_tva_rate_for(code: str, at_date: Optional[date] = None) -> Optional[float]:
-    """Get the TVA rate applicable to a given rate code."""
+    """Get the TVA rate applicable to a given rate code.
+
+    Depuis le 1er août 2025 (LFI 2025, art. 20), la TVA à taux réduit (5,5%)
+    sur l'abonnement, la CTA et les composantes fixes TURPE est supprimée.
+    Toutes ces composantes passent à 20% (directive UE, CGI art. 278).
+    Source : service-public.fr, bofip ACTU-2025-00057, energie-info.fr
+    """
     resolved = _resolve_temporal_code(code, at_date)
     entry = TURPE7_RATES.get(resolved)
     if entry is None:
         return None
-    return entry.get("tva_rate")
+    base_tva = entry.get("tva_rate")
+    # ── Résolution temporelle TVA : suppression taux réduit 5,5% → 20% ──
+    # Applicable au 01/08/2025 sur abonnement, CTA, TURPE fixe (gestion,
+    # comptage, soutirage fixe). LFI 2025 art. 20, directive UE.
+    if (
+        at_date is not None and at_date >= date(2025, 8, 1) and base_tva is not None and base_tva < 0.10  # was 5.5%
+    ):
+        # Composantes concernées : TURPE gestion, comptage, soutirage fixe,
+        # CTA, abonnement fournisseur. Identifiées par tva_rate == 0.055.
+        # La TVA_NORMALE et TVA_REDUITE sont des constantes, pas des composantes.
+        if code not in ("TVA_NORMALE", "TVA_REDUITE"):
+            return 0.20
+    return base_tva
 
 
 def list_rates() -> List[Dict[str, Any]]:
@@ -829,23 +1098,30 @@ def resolve_segment(subscribed_power_kva: Optional[float]) -> TariffSegment:
 
 
 def get_soutirage_fixe_code(segment: TariffSegment, option: TariffOption) -> Optional[str]:
-    """Get the catalog code for soutirage fixe (C4 only — returns HPH as reference).
+    """Get the catalog code for soutirage fixe (C4/HTA — returns HPH as reference).
 
     TURPE 7 C4 BT uses 4 b_i coefficients (HPH, HCH, HPB, HCB).
-    This returns the HPH code for backward compat; use get_soutirage_fixe_codes_4p
-    for full 4-plage calculation.
+    TURPE 7 HTA uses 5 b_i coefficients (P, HPH, HCH, HPB, HCB).
+    This returns the HPH code for backward compat; use get_soutirage_fixe_codes_5p
+    for full multi-plage calculation.
     """
-    if segment != TariffSegment.C4_BT:
-        return None
-    mapping = {
-        TariffOption.LU: "TURPE_SOUTIRAGE_FIXE_C4_LU_HPH",
-        TariffOption.CU: "TURPE_SOUTIRAGE_FIXE_C4_CU_HPH",
-    }
-    return mapping.get(option)
+    if segment == TariffSegment.C4_BT:
+        mapping = {
+            TariffOption.LU: "TURPE_SOUTIRAGE_FIXE_C4_LU_HPH",
+            TariffOption.CU: "TURPE_SOUTIRAGE_FIXE_C4_CU_HPH",
+        }
+        return mapping.get(option)
+    if segment == TariffSegment.C3_HTA:
+        mapping = {
+            TariffOption.LU: "TURPE_SOUTIRAGE_FIXE_HTA_LU_HPH",
+            TariffOption.CU: "TURPE_SOUTIRAGE_FIXE_HTA_CU_HPH",
+        }
+        return mapping.get(option)
+    return None
 
 
 def get_soutirage_fixe_codes_4p(segment: TariffSegment, option: TariffOption) -> Dict[str, str]:
-    """Get catalog codes for soutirage fixe b_i per period (4 plages).
+    """Get catalog codes for soutirage fixe b_i per period (4 plages C4).
 
     TURPE 7 formula: CS = b1×P1 + Σ bi×(Pi - Pi-1) + Σ ci×Ei
     Returns: {period_code: catalog_rate_code}
@@ -859,6 +1135,25 @@ def get_soutirage_fixe_codes_4p(segment: TariffSegment, option: TariffOption) ->
             "HCB": f"TURPE_SOUTIRAGE_FIXE_C4_{opt_key}_HCB",
         }
     return {}
+
+
+def get_soutirage_fixe_codes_5p(segment: TariffSegment, option: TariffOption) -> Dict[str, str]:
+    """Get catalog codes for soutirage fixe b_i per period (5 plages HTA: P+HPH+HCH+HPB+HCB).
+
+    TURPE 7 HTA formula: CS = Σ bi×Pi (5 plages, EUR/kW/an).
+    Returns: {period_code: catalog_rate_code}
+    Falls back to get_soutirage_fixe_codes_4p for C4 BT.
+    """
+    if segment == TariffSegment.C3_HTA and option in (TariffOption.CU, TariffOption.LU):
+        opt_key = option.value  # CU or LU
+        return {
+            "P": f"TURPE_SOUTIRAGE_FIXE_HTA_{opt_key}_P",
+            "HPH": f"TURPE_SOUTIRAGE_FIXE_HTA_{opt_key}_HPH",
+            "HCH": f"TURPE_SOUTIRAGE_FIXE_HTA_{opt_key}_HCH",
+            "HPB": f"TURPE_SOUTIRAGE_FIXE_HTA_{opt_key}_HPB",
+            "HCB": f"TURPE_SOUTIRAGE_FIXE_HTA_{opt_key}_HCB",
+        }
+    return get_soutirage_fixe_codes_4p(segment, option)
 
 
 def get_soutirage_variable_codes(segment: TariffSegment, option: TariffOption) -> Dict[str, str]:
@@ -916,3 +1211,19 @@ def get_soutirage_variable_codes(segment: TariffSegment, option: TariffOption) -
         }
 
     return {}
+
+
+# ─── Résolution saisonnière ──────────────────────────────────────────────────
+
+
+def get_season_for_date(d: date) -> str:
+    """Retourne la saison TURPE pour une date donnée.
+
+    Returns:
+        "HIVER" (saison haute, nov-mars) ou "ETE" (saison basse, avr-oct)
+
+    Source: CRE TURPE 7, délibération n°2025-78.
+    """
+    from .turpe_calendar import get_season
+
+    return get_season(d)

@@ -23,6 +23,7 @@ from models import (
     ContractDeliveryPoint,
     not_deleted,
 )
+from services.billing_engine.seasonal_resolver import compute_seasonal_ratios
 
 
 _SUPPLIERS = ["EDF", "Engie", "TotalEnergies", "Eni", "Vattenfall"]
@@ -238,13 +239,48 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
         invoices_created += 1
 
         # Invoice lines (including TVA so sum(lines) == total_eur)
-        tva_line = (
-            round(total - (energy_eur + network_eur + tax_eur + abo_eur), 2)
-            if not is_anomaly
-            else round(total - (energy_eur + network_eur + tax_eur + abo_eur), 2)
-        )
+        tva_line = round(total - (energy_eur + network_eur + tax_eur + abo_eur), 2)
+
+        # V110: ventilation saisonnière pour les contrats 4 plages (CU/MU/LU)
+        _4P_OPTIONS = {TariffOptionEnum.CU, TariffOptionEnum.MU, TariffOptionEnum.LU}
+        is_4p = contract.tariff_option in _4P_OPTIONS if contract.tariff_option else False
+
+        if is_4p:
+            # Ventiler l'énergie par plage horosaisonnière via calendrier TURPE
+            ratios = compute_seasonal_ratios(period_start, period_end, is_seasonal=True)
+            for period_code, ratio in ratios.items():
+                period_kwh = round(monthly_kwh * ratio, 1)
+                period_price = price  # même prix unitaire pour la démo
+                period_amount = round(energy_eur * ratio, 2)
+                db.add(
+                    EnergyInvoiceLine(
+                        invoice_id=invoice.id,
+                        line_type=InvoiceLineType.ENERGY,
+                        label=f"Fourniture {period_code}",
+                        amount_eur=period_amount,
+                        qty=period_kwh,
+                        unit="kWh",
+                        unit_price=period_price,
+                        period_code=period_code,
+                        line_category=f"supply_{period_code.lower()}",
+                    )
+                )
+                lines_created += 1
+        else:
+            db.add(
+                EnergyInvoiceLine(
+                    invoice_id=invoice.id,
+                    line_type=InvoiceLineType.ENERGY,
+                    label="Fourniture electricite",
+                    amount_eur=energy_eur,
+                    qty=monthly_kwh,
+                    unit="kWh",
+                    unit_price=price,
+                )
+            )
+            lines_created += 1
+
         for lt, label, amount in [
-            (InvoiceLineType.ENERGY, "Fourniture electricite", energy_eur),
             (InvoiceLineType.NETWORK, "Acheminement (TURPE)", network_eur),
             (InvoiceLineType.TAX, "Taxes et contributions", tax_eur),
             (InvoiceLineType.OTHER, "Abonnement mensuel", contract.fixed_fee_eur_per_month or 0),
@@ -256,9 +292,9 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                     line_type=lt,
                     label=label,
                     amount_eur=amount,
-                    qty=monthly_kwh if lt == InvoiceLineType.ENERGY else None,
-                    unit="kWh" if lt == InvoiceLineType.ENERGY else None,
-                    unit_price=price if lt == InvoiceLineType.ENERGY else None,
+                    qty=monthly_kwh if lt == InvoiceLineType.NETWORK else None,
+                    unit="kWh" if lt == InvoiceLineType.NETWORK else None,
+                    unit_price=None,
                 )
             )
             lines_created += 1

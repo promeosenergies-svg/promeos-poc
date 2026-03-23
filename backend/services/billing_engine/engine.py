@@ -10,10 +10,15 @@ SUPPORTED:
 
 NOT SUPPORTED (V1):
   - C3 HTA / C2 / C1 (returned as UNSUPPORTED)
-  - Gas reconstitution (returned as READ_ONLY)
   - Reactive energy / power factor penalties
-  - Capacity mechanism (MEOC)
-  - CEE
+  - CEE (coût amont implicite, pas de ligne facture dédiée)
+
+ADDED (V2.1):
+  - Gas reconstitution (ATRD6/7, ATRT, CTA gaz, TICGN)
+  - Capacity mechanism (garantie de capacité, enchères RTE)
+  - TDN gaz (Terme de Débit Normalisé, B2B > 40 Nm³/h)
+  - TVA 20% uniforme post 01/08/2025 (LFI 2025 art. 20)
+  - Accise T2 février 2026 (26.58 EUR/MWh)
 
 RULES:
   - Zero magic numbers: all rates from catalog.
@@ -31,6 +36,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import catalog
+from .seasonal_resolver import needs_seasonal_upgrade, resolve_kwh_by_season
 from .types import (
     AuditTrace,
     ComponentResult,
@@ -129,6 +135,7 @@ def compute_turpe_breakdown(
     kwh_by_period: Dict[str, float],
     prorata_days: int,
     prorata_factor: float,
+    at_date: Optional[date] = None,
 ) -> List[ComponentResult]:
     """
     Compute TURPE components for C4 BT or C5 BT.
@@ -153,6 +160,9 @@ def compute_turpe_breakdown(
     elif segment == TariffSegment.C5_BT:
         gestion_code = "TURPE_GESTION_C5"
         comptage_code = "TURPE_COMPTAGE_C5"
+    elif segment == TariffSegment.C3_HTA:
+        gestion_code = "TURPE_GESTION_HTA"
+        comptage_code = "TURPE_COMPTAGE_HTA"
     else:
         return [
             ComponentResult(
@@ -162,15 +172,15 @@ def compute_turpe_breakdown(
                 tva_rate=0.0,
                 amount_tva=0.0,
                 amount_ttc=0.0,
-                formula_used=f"Segment {segment.value} non supporté en V1",
-                assumptions=[f"Segment {segment.value} hors scope V1"],
+                formula_used=f"Segment {segment.value} non supporté",
+                assumptions=[f"Segment {segment.value} hors scope"],
             )
         ]
 
     # ── 1. Gestion ────────────────────────────────────────────────────────
     gestion_annual = catalog.get_rate(gestion_code)
     gestion_ht = round(gestion_annual * prorata_factor, 2)
-    gestion_tva_rate = catalog.get_tva_rate_for(gestion_code) or 0.055
+    gestion_tva_rate = catalog.get_tva_rate_for(gestion_code, at_date) or 0.055
     gestion_tva = round(gestion_ht * gestion_tva_rate, 2)
     gestion_src = catalog.get_rate_source(gestion_code)
     components.append(
@@ -190,7 +200,7 @@ def compute_turpe_breakdown(
     # ── 2. Comptage ───────────────────────────────────────────────────────
     comptage_annual = catalog.get_rate(comptage_code)
     comptage_ht = round(comptage_annual * prorata_factor, 2)
-    comptage_tva_rate = catalog.get_tva_rate_for(comptage_code) or 0.055
+    comptage_tva_rate = catalog.get_tva_rate_for(comptage_code, at_date) or 0.055
     comptage_tva = round(comptage_ht * comptage_tva_rate, 2)
     comptage_src = catalog.get_rate_source(comptage_code)
     components.append(
@@ -207,12 +217,53 @@ def compute_turpe_breakdown(
         )
     )
 
-    # ── 3. Soutirage fixe (C4 only) ──────────────────────────────────────
-    soutirage_fixe_code = catalog.get_soutirage_fixe_code(segment, option)
-    if soutirage_fixe_code:
+    # ── 3. Soutirage fixe (C4 BT + C3 HTA) ────────────────────────────────
+    # C4 BT: 4 plages (HPH/HCH/HPB/HCB) en EUR/kVA/an
+    # C3 HTA: 5 plages (P/HPH/HCH/HPB/HCB) en EUR/kW/an
+    # Agrégé en un seul ComponentResult pour compatibilité CTA (assiette = turpe_soutirage_fixe)
+    sf_codes = catalog.get_soutirage_fixe_codes_5p(segment, option)
+    if sf_codes:
+        power_unit = "kW" if segment == TariffSegment.C3_HTA else "kVA"
+        sf_total_ht = 0.0
+        sf_sources = []
+        sf_detail = {}
+        for period_code, rate_code in sf_codes.items():
+            sf_rate = catalog.get_rate(rate_code)
+            sf_period_ht = round(sf_rate * subscribed_power_kva * prorata_factor, 2)
+            sf_total_ht += sf_period_ht
+            sf_sources.append(catalog.get_rate_source(rate_code))
+            sf_detail[period_code] = {"rate": sf_rate, "amount_ht": sf_period_ht}
+        sf_total_ht = round(sf_total_ht, 2)
+        sf_tva_rate = catalog.get_tva_rate_for(list(sf_codes.values())[0], at_date) or 0.055
+        sf_tva = round(sf_total_ht * sf_tva_rate, 2)
+        n_plages = len(sf_codes)
+        components.append(
+            ComponentResult(
+                code="turpe_soutirage_fixe",
+                label=f"Composante de soutirage fixe ({n_plages} plages)",
+                amount_ht=sf_total_ht,
+                tva_rate=sf_tva_rate,
+                amount_tva=sf_tva,
+                amount_ttc=round(sf_total_ht + sf_tva, 2),
+                formula_used=(
+                    f"Σ(rate × {subscribed_power_kva:.0f} {power_unit} × {prorata_factor:.4f}) "
+                    f"= {sf_total_ht:.2f} EUR HT ({n_plages} plages)"
+                ),
+                inputs_used={
+                    "power": subscribed_power_kva,
+                    "power_unit": power_unit,
+                    "prorata": prorata_factor,
+                    "detail_per_period": sf_detail,
+                },
+                rate_sources=sf_sources,
+            )
+        )
+    elif catalog.get_soutirage_fixe_code(segment, option):
+        # Fallback single-code for backward compat (should not be reached)
+        soutirage_fixe_code = catalog.get_soutirage_fixe_code(segment, option)
         sf_rate = catalog.get_rate(soutirage_fixe_code)
         sf_ht = round(sf_rate * subscribed_power_kva * prorata_factor, 2)
-        sf_tva_rate = catalog.get_tva_rate_for(soutirage_fixe_code) or 0.055
+        sf_tva_rate = catalog.get_tva_rate_for(soutirage_fixe_code, at_date) or 0.055
         sf_tva = round(sf_ht * sf_tva_rate, 2)
         sf_src = catalog.get_rate_source(soutirage_fixe_code)
         components.append(
@@ -242,7 +293,7 @@ def compute_turpe_breakdown(
         kwh = kwh_by_period.get(period_code, 0.0)
         var_rate = catalog.get_rate(rate_code)
         var_ht = round(kwh * var_rate, 2)
-        var_tva_rate = catalog.get_tva_rate_for(rate_code) or 0.20
+        var_tva_rate = catalog.get_tva_rate_for(rate_code, at_date) or 0.20
         var_tva = round(var_ht * var_tva_rate, 2)
         var_src = catalog.get_rate_source(rate_code)
         components.append(
@@ -316,18 +367,24 @@ def compute_cta(
 # ─── Accise ───────────────────────────────────────────────────────────────────
 
 
-def compute_excise(kwh_total: float, at_date: Optional[date] = None) -> ComponentResult:
+def compute_excise(
+    kwh_total: float,
+    at_date: Optional[date] = None,
+    segment: Optional[TariffSegment] = None,
+) -> ComponentResult:
     """
     Compute electricity excise (accise, ex-CSPE/TIEE).
     Assiette: total kWh.
     TVA: 20%.
-    Taux PME : jan 2025 = 20.50 €/MWh, fév-jul 2025 = 26.23, août+ 2025 = 29.98.
+    Segment routing: C4 BT / C3 HTA → T2 (PME), sinon T1 (ménages/petits pro).
     """
-    rate = catalog.get_rate("ACCISE_ELEC", at_date)
+    # T2 pour C4 BT et C3 HTA (>36 kVA, typiquement >250 MWh/an)
+    accise_code = "ACCISE_ELEC_T2" if segment in (TariffSegment.C4_BT, TariffSegment.C3_HTA) else "ACCISE_ELEC"
+    rate = catalog.get_rate(accise_code, at_date)
     ht = round(kwh_total * rate, 2)
-    tva_rate = catalog.get_tva_rate_for("ACCISE_ELEC", at_date) or 0.20
+    tva_rate = catalog.get_tva_rate_for(accise_code, at_date) or 0.20
     tva = round(ht * tva_rate, 2)
-    src = catalog.get_rate_source("ACCISE_ELEC", at_date)
+    src = catalog.get_rate_source(accise_code, at_date)
 
     return ComponentResult(
         code="accise",
@@ -364,17 +421,20 @@ def _build_gas_reconstitution(
     period_end: date,
     invoice_type: InvoiceType = InvoiceType.NORMAL,
     fixed_fee_eur_month: float = 0.0,
+    debit_normalise_nm3h: Optional[float] = None,
+    grd_code: str = "GRDF",
 ) -> "ReconstitutionResult":
     """
     Shadow billing gaz — reconstitution simplifiée.
 
     Composantes :
     1. Fourniture : kWh × prix fournisseur (TVA 20%)
-    2. ATRD : abonnement (TVA 5.5%) + variable (TVA 20%)
+    2. ATRD : abonnement (TVA 5.5%→20% post 01/08/2025) + variable (TVA 20%)
     3. ATRT : variable (TVA 20%)
-    4. CTA gaz : % × part fixe ATRD (TVA 5.5%)
+    4. CTA gaz : % × part fixe ATRD (TVA 5.5%→20% post 01/08/2025)
     5. TICGN : kWh × taux (TVA 20%)
-    6. Abonnement fournisseur : fixe (TVA 5.5%)
+    6. Abonnement fournisseur : fixe (TVA 5.5%→20% post 01/08/2025)
+    7. TDN : débit normalisé × taux (TVA 20%) — si > 40 Nm³/h et post 01/07/2026
     """
     if invoice_type == InvoiceType.ADVANCE:
         return ReconstitutionResult(
@@ -388,7 +448,8 @@ def _build_gas_reconstitution(
     prorata_days, prorata_factor = compute_prorata(period_start, period_end)
     kwh_total = sum(kwh_by_period.values())
     tva_normale = catalog.get_rate("TVA_NORMALE")
-    tva_reduite = catalog.get_rate("TVA_REDUITE")
+    # Post 01/08/2025 : TVA 20% uniforme (LFI 2025 art. 20)
+    tva_reduite = 0.20 if period_start >= date(2025, 8, 1) else catalog.get_rate("TVA_REDUITE")
 
     all_components: List[ComponentResult] = []
     assumptions: List[str] = []
@@ -397,6 +458,7 @@ def _build_gas_reconstitution(
     annual_kwh_est = kwh_total / prorata_factor if prorata_factor > 0 else kwh_total * 12
     tier = _resolve_gas_tariff_tier(annual_kwh_est)
     assumptions.append(f"Tranche ATRD : {tier} (conso annuelle estimée : {annual_kwh_est:,.0f} kWh)")
+    assumptions.append(f"GRD : {grd_code}")
 
     # 1. Fourniture gaz
     supply_components = compute_supply_breakdown(kwh_by_period, supply_prices_by_period, tva_normale)
@@ -416,9 +478,9 @@ def _build_gas_reconstitution(
             rate_sources=sources or [],
         )
 
-    # 2. ATRD — abonnement fixe
+    # 2. ATRD — abonnement fixe (résolution temporelle ATRD6/ATRD7)
     try:
-        atrd_abo_rate = catalog.get_rate(f"ATRD_GAZ_ABO_{tier}")
+        atrd_abo_rate = catalog.get_rate(f"ATRD_GAZ_ABO_{tier}", at_date=period_start)
         atrd_abo_ht = atrd_abo_rate * prorata_factor
         all_components.append(
             _gas_component(
@@ -428,15 +490,15 @@ def _build_gas_reconstitution(
                 tva_reduite,
                 f"{atrd_abo_rate} × {prorata_factor:.4f} = {atrd_abo_ht:.2f}",
                 {"prorata_factor": prorata_factor, "tier": tier},
-                [catalog.get_rate_source(f"ATRD_GAZ_ABO_{tier}")],
+                [catalog.get_rate_source(f"ATRD_GAZ_ABO_{tier}", at_date=period_start)],
             )
         )
     except KeyError:
         assumptions.append(f"Tarif ATRD abonnement {tier} non trouvé — composante omise")
 
-    # 3. ATRD — variable
+    # 3. ATRD — variable (résolution temporelle ATRD6/ATRD7)
     try:
-        atrd_var_rate = catalog.get_rate(f"ATRD_GAZ_VAR_{tier}")
+        atrd_var_rate = catalog.get_rate(f"ATRD_GAZ_VAR_{tier}", at_date=period_start)
         atrd_var_ht = kwh_total * atrd_var_rate
         all_components.append(
             _gas_component(
@@ -446,7 +508,7 @@ def _build_gas_reconstitution(
                 tva_normale,
                 f"{kwh_total:,.0f} × {atrd_var_rate} = {atrd_var_ht:.2f}",
                 {"kwh_total": kwh_total, "rate": atrd_var_rate},
-                [catalog.get_rate_source(f"ATRD_GAZ_VAR_{tier}")],
+                [catalog.get_rate_source(f"ATRD_GAZ_VAR_{tier}", at_date=period_start)],
             )
         )
     except KeyError:
@@ -454,7 +516,7 @@ def _build_gas_reconstitution(
 
     # 4. ATRT — transport variable
     try:
-        atrt_rate = catalog.get_rate("ATRT_GAZ")
+        atrt_rate = catalog.get_rate("ATRT_GAZ", at_date=period_start)
         atrt_ht = kwh_total * atrt_rate
         all_components.append(
             _gas_component(
@@ -464,11 +526,32 @@ def _build_gas_reconstitution(
                 tva_normale,
                 f"{kwh_total:,.0f} × {atrt_rate} = {atrt_ht:.2f}",
                 {"kwh_total": kwh_total, "rate": atrt_rate},
-                [catalog.get_rate_source("ATRT_GAZ")],
+                [catalog.get_rate_source("ATRT_GAZ", at_date=period_start)],
             )
         )
     except KeyError:
         assumptions.append("Tarif ATRT non trouvé — composante omise")
+
+    # 4b. Stockage gaz (ATS3 — shadow, déjà inclus dans ATRT)
+    try:
+        stockage_rate = catalog.get_rate("STOCKAGE_GAZ", at_date=period_start)
+        stockage_shadow_ht = round(kwh_total * stockage_rate, 2)
+        all_components.append(
+            ComponentResult(
+                code="stockage_gaz",
+                label="Stockage gaz ATS3 (shadow, inclus dans ATRT)",
+                amount_ht=0.0,  # Shadow: NOT added to totals
+                tva_rate=0.0,
+                amount_tva=0.0,
+                amount_ttc=0.0,
+                formula_used=f"SHADOW: {kwh_total:,.0f} kWh × {stockage_rate:.5f} = {stockage_shadow_ht:.2f} EUR (inclus dans ATRT)",
+                inputs_used={"kwh_total": kwh_total, "rate": stockage_rate, "shadow_amount_ht": stockage_shadow_ht},
+                rate_sources=[catalog.get_rate_source("STOCKAGE_GAZ", at_date=period_start)],
+            )
+        )
+        assumptions.append(f"Stockage gaz explicité (shadow {stockage_shadow_ht:.2f} EUR) — déjà inclus dans ATRT")
+    except KeyError:
+        pass  # Stockage non trouvé — composante shadow omise silencieusement
 
     # 5. CTA gaz (% de la part fixe ATRD)
     try:
@@ -491,7 +574,7 @@ def _build_gas_reconstitution(
 
     # 6. TICGN (accise gaz)
     try:
-        ticgn_rate = catalog.get_rate("TICGN")
+        ticgn_rate = catalog.get_rate("TICGN", at_date=period_start)
         ticgn_ht = kwh_total * ticgn_rate
         all_components.append(
             _gas_component(
@@ -501,13 +584,75 @@ def _build_gas_reconstitution(
                 tva_normale,
                 f"{kwh_total:,.0f} × {ticgn_rate} = {ticgn_ht:.2f}",
                 {"kwh_total": kwh_total, "rate": ticgn_rate},
-                [catalog.get_rate_source("TICGN")],
+                [catalog.get_rate_source("TICGN", at_date=period_start)],
             )
         )
     except KeyError:
         assumptions.append("Taux TICGN non trouvé — composante omise")
 
-    # 7. Abonnement fournisseur (si renseigné)
+    # 6b. CEE gaz (shadow — coût implicite estimatif)
+    try:
+        cee_rate = catalog.get_rate("CEE_SHADOW", at_date=period_start)
+        cee_shadow_ht = round(kwh_total * cee_rate, 2)
+        all_components.append(
+            ComponentResult(
+                code="cee_shadow",
+                label="CEE (coût implicite estimé, inclus dans fourniture)",
+                amount_ht=0.0,
+                tva_rate=0.0,
+                amount_tva=0.0,
+                amount_ttc=0.0,
+                formula_used=f"ESTIMATIF: {kwh_total:,.0f} kWh × {cee_rate:.4f} = {cee_shadow_ht:.2f} EUR (implicite)",
+                inputs_used={"kwh_total": kwh_total, "rate": cee_rate, "shadow_amount_ht": cee_shadow_ht},
+                rate_sources=[catalog.get_rate_source("CEE_SHADOW", at_date=period_start)],
+            )
+        )
+    except KeyError:
+        pass
+
+    # 6c. CPB gaz (shadow — Certificats Production Biogaz, obligation depuis 01/01/2026)
+    try:
+        cpb_rate = catalog.get_rate("CPB_SHADOW", at_date=period_start)
+        cpb_shadow_ht = round(kwh_total * cpb_rate, 2)
+        all_components.append(
+            ComponentResult(
+                code="cpb_shadow",
+                label="CPB (coût implicite estimé, obligation fournisseur gaz)",
+                amount_ht=0.0,
+                tva_rate=0.0,
+                amount_tva=0.0,
+                amount_ttc=0.0,
+                formula_used=f"ESTIMATIF: {kwh_total:,.0f} kWh × {cpb_rate:.5f} = {cpb_shadow_ht:.2f} EUR (implicite)",
+                inputs_used={"kwh_total": kwh_total, "rate": cpb_rate, "shadow_amount_ht": cpb_shadow_ht},
+                rate_sources=[catalog.get_rate_source("CPB_SHADOW", at_date=period_start)],
+            )
+        )
+    except KeyError:
+        pass  # Pas de CPB avant 2026
+
+    # 7. TDN (Terme de Débit Normalisé) — B2B gaz > 40 Nm³/h, post 01/07/2026
+    if debit_normalise_nm3h is not None and debit_normalise_nm3h > 40 and period_start >= date(2026, 7, 1):
+        try:
+            tdn_rate = catalog.get_rate("TDN_GAZ")
+            tdn_ht = tdn_rate * debit_normalise_nm3h * prorata_factor
+            tdn_tva = catalog.get_tva_rate_for("TDN_GAZ", period_start) or 0.20
+            all_components.append(
+                _gas_component(
+                    "tdn",
+                    f"TDN (débit normalisé {debit_normalise_nm3h:.0f} Nm³/h)",
+                    tdn_ht,
+                    tdn_tva,
+                    f"{tdn_rate} EUR/an/Nm³h × {debit_normalise_nm3h:.0f} Nm³/h × {prorata_factor:.4f} = {tdn_ht:.2f}",
+                    {"debit_nm3h": debit_normalise_nm3h, "rate": tdn_rate, "prorata": prorata_factor},
+                    [catalog.get_rate_source("TDN_GAZ")],
+                )
+            )
+        except KeyError:
+            assumptions.append("Taux TDN non trouvé — composante omise")
+    elif debit_normalise_nm3h is not None and debit_normalise_nm3h > 40 and period_start < date(2026, 7, 1):
+        assumptions.append(f"TDN non applicable avant 01/07/2026 (débit {debit_normalise_nm3h:.0f} Nm³/h)")
+
+    # 8. Abonnement fournisseur (si renseigné)
     if fixed_fee_eur_month > 0:
         abo_ht = fixed_fee_eur_month * (prorata_days / 30)
         all_components.append(
@@ -554,6 +699,8 @@ def build_invoice_reconstitution(
     period_end: date,
     invoice_type: InvoiceType = InvoiceType.NORMAL,
     fixed_fee_eur_month: float = 0.0,
+    debit_normalise_nm3h: Optional[float] = None,
+    grd_code: str = "GRDF",
 ) -> ReconstitutionResult:
     """
     Build a complete invoice reconstitution.
@@ -572,7 +719,7 @@ def build_invoice_reconstitution(
     Returns: ReconstitutionResult with all components and audit trail.
     """
 
-    # ── Gas reconstitution (V110) ────────────────────────────────────────
+    # ── Gas reconstitution (V110+TDN+stockage+CEE) ────────────────────────
     if energy_type == "GAZ":
         return _build_gas_reconstitution(
             kwh_by_period=kwh_by_period,
@@ -581,6 +728,8 @@ def build_invoice_reconstitution(
             period_end=period_end,
             invoice_type=invoice_type,
             fixed_fee_eur_month=fixed_fee_eur_month,
+            debit_normalise_nm3h=debit_normalise_nm3h,
+            grd_code=grd_code,
         )
 
     # ── Advance invoices → READ_ONLY ──────────────────────────────────────
@@ -601,9 +750,7 @@ def build_invoice_reconstitution(
         if subscribed_power_kva is None:
             missing_inputs.append("subscribed_power_kva")
         return ReconstitutionResult(
-            status=ReconstitutionStatus.UNSUPPORTED
-            if (subscribed_power_kva and subscribed_power_kva > 250)
-            else ReconstitutionStatus.PARTIAL,
+            status=ReconstitutionStatus.PARTIAL,
             segment=segment,
             tariff_option=tariff_option or TariffOption.UNSUPPORTED,
             energy_type=energy_type,
@@ -615,20 +762,11 @@ def build_invoice_reconstitution(
             ],
         )
 
-    if segment == TariffSegment.C3_HTA:
-        return ReconstitutionResult(
-            status=ReconstitutionStatus.UNSUPPORTED,
-            segment=segment,
-            tariff_option=tariff_option or TariffOption.UNSUPPORTED,
-            energy_type=energy_type,
-            assumptions=[f"Segment C3 HTA (>250 kVA) hors scope V1. Puissance: {subscribed_power_kva} kVA."],
-        )
-
     # ── Resolve tariff option ─────────────────────────────────────────────
     if tariff_option is None or tariff_option == TariffOption.UNSUPPORTED:
         missing_inputs.append("tariff_option")
-        # Default: LU for C4, BASE for C5
-        if segment == TariffSegment.C4_BT:
+        # Default: LU for C4/HTA, BASE for C5
+        if segment in (TariffSegment.C4_BT, TariffSegment.C3_HTA):
             tariff_option = TariffOption.LU
         else:
             tariff_option = TariffOption.BASE
@@ -647,10 +785,32 @@ def build_invoice_reconstitution(
     if not supply_prices_by_period:
         missing_inputs.append("supply_prices_by_period")
 
+    # ── Résolution saisonnière (TURPE 7 Phase 2) ─────────────────────────
+    # Si les kWh sont en 2 plages (HP/HC) ou BASE mais que l'option
+    # tarifaire nécessite 4 plages (CU/MU/LU), upgrader la ventilation
+    # via le calendrier TURPE officiel.
+    if needs_seasonal_upgrade(kwh_by_period, tariff_option, segment):
+        kwh_by_period = resolve_kwh_by_season(
+            total_kwh=kwh_total,
+            period_start=period_start,
+            period_end=period_end,
+            tariff_option=tariff_option,
+            is_seasonal=True,
+        )
+
     # ── Compute components ────────────────────────────────────────────────
     all_components: List[ComponentResult] = []
     assumptions: List[str] = []
     warnings: List[str] = []
+
+    # Trace la ventilation saisonnière si elle a été appliquée
+    if needs_seasonal_upgrade({"HP": 1}, tariff_option, segment):
+        # On vérifie si les clés actuelles sont en 4P pour confirmer l'upgrade
+        if set(kwh_by_period.keys()) & {"HPH", "HCH", "HPB", "HCB"}:
+            assumptions.append(
+                "Ventilation horosaisonnière estimée par calendrier TURPE 7 "
+                f"({', '.join(f'{k}={v:.0f}' for k, v in kwh_by_period.items())} kWh)"
+            )
 
     if assumed_option:
         assumptions.append(f"Option tarifaire non renseignée — hypothèse {tariff_option.value}")
@@ -668,6 +828,7 @@ def build_invoice_reconstitution(
         kwh_by_period,
         prorata_days,
         prorata_factor,
+        at_date=period_start,
     )
     all_components.extend(turpe_components)
 
@@ -676,20 +837,66 @@ def build_invoice_reconstitution(
     all_components.append(cta_component)
 
     # 4. Accise — temporally resolved (PME taux par période)
-    accise_component = compute_excise(kwh_total, at_date=period_start)
+    accise_component = compute_excise(kwh_total, at_date=period_start, segment=segment)
     all_components.append(accise_component)
 
-    # 5. Supplier fixed fee (if any)
+    # 5. Capacité (obligation fournisseur B2B, répercutée)
+    try:
+        capa_rate = catalog.get_rate("CAPACITE_ELEC", at_date=period_start)
+        if capa_rate > 0:
+            capa_ht = round(kwh_total * capa_rate, 2)
+            capa_tva_rate = catalog.get_tva_rate_for("CAPACITE_ELEC", period_start) or 0.20
+            capa_tva = round(capa_ht * capa_tva_rate, 2)
+            capa_src = catalog.get_rate_source("CAPACITE_ELEC", at_date=period_start)
+            all_components.append(
+                ComponentResult(
+                    code="capacite",
+                    label="Garantie de capacité",
+                    amount_ht=capa_ht,
+                    tva_rate=capa_tva_rate,
+                    amount_tva=capa_tva,
+                    amount_ttc=round(capa_ht + capa_tva, 2),
+                    formula_used=f"{kwh_total:.0f} kWh × {capa_rate:.5f} EUR/kWh = {capa_ht:.2f} EUR HT",
+                    inputs_used={"kwh_total": kwh_total, "rate": capa_rate},
+                    rate_sources=[capa_src],
+                )
+            )
+    except KeyError:
+        pass  # Capacité non trouvée — composante omise silencieusement (acceptable)
+
+    # 5b. CEE élec (shadow — coût implicite estimatif)
+    try:
+        cee_rate = catalog.get_rate("CEE_SHADOW", at_date=period_start)
+        cee_shadow_ht = round(kwh_total * cee_rate, 2)
+        cee_src = catalog.get_rate_source("CEE_SHADOW", at_date=period_start)
+        all_components.append(
+            ComponentResult(
+                code="cee_shadow",
+                label="CEE (coût implicite estimé, inclus dans fourniture)",
+                amount_ht=0.0,
+                tva_rate=0.0,
+                amount_tva=0.0,
+                amount_ttc=0.0,
+                formula_used=f"ESTIMATIF: {kwh_total:.0f} kWh × {cee_rate:.4f} = {cee_shadow_ht:.2f} EUR (implicite)",
+                inputs_used={"kwh_total": kwh_total, "rate": cee_rate, "shadow_amount_ht": cee_shadow_ht},
+                rate_sources=[cee_src],
+            )
+        )
+    except KeyError:
+        pass
+
+    # 6. Supplier fixed fee (if any)
     if fixed_fee_eur_month > 0:
         fee_ht = round(fixed_fee_eur_month * prorata_factor, 2)
-        tva_reduite = catalog.get_rate("TVA_REDUITE")
-        fee_tva = round(fee_ht * tva_reduite, 2)
+        # Post 01/08/2025 : TVA 20% sur abonnement (LFI 2025 art. 20)
+        fee_tva_rate = 0.20 if period_start >= date(2025, 8, 1) else catalog.get_rate("TVA_REDUITE")
+        fee_tva = round(fee_ht * fee_tva_rate, 2)
         all_components.append(
             ComponentResult(
                 code="supplier_fixed_fee",
                 label="Abonnement fournisseur",
                 amount_ht=fee_ht,
-                tva_rate=tva_reduite,
+                tva_rate=fee_tva_rate,
                 amount_tva=fee_tva,
                 amount_ttc=round(fee_ht + fee_tva, 2),
                 formula_used=f"{fixed_fee_eur_month:.2f} EUR/mois × {prorata_factor:.4f} = {fee_ht:.2f} EUR HT",

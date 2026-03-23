@@ -9,7 +9,7 @@ from models import Site, AiInsight, InsightType
 from ..client import get_client
 
 SYSTEM_PROMPT = """Tu es un expert en réglementation énergétique française pour les bâtiments tertiaires.
-Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH (depuis 2025).
+Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH/VNU (depuis 01/01/2026).
 
 Tu dois :
 - Fournir un brief concis (3-5 paragraphes) sur le statut réglementaire du site

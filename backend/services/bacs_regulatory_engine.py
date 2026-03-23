@@ -20,7 +20,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
-from models.bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument
+from models.bacs_regulatory import BacsFunctionalRequirement, BacsExploitationStatus, BacsProofDocument, BacsExemption
 
 logger = logging.getLogger("promeos.bacs.regulatory")
 
@@ -77,8 +77,8 @@ def evaluate_full_bacs(db: Session, asset_id: int) -> dict:
     # 5. Preuves
     proofs = _evaluate_proofs(db, asset_id)
 
-    # 6. Statut final
-    final = _compute_final_status(eligibility, functional, exploitation, inspection, proofs)
+    # 6. Statut final (avec verification derogation approuvee)
+    final = _compute_final_status(eligibility, functional, exploitation, inspection, proofs, db=db, asset_id=asset_id)
 
     # Persist
     asset.bacs_scope_status = final["status"]
@@ -309,7 +309,7 @@ def _evaluate_proofs(db, asset_id):
 # ── 6. Statut final ───────────────────────────────────────────────────
 
 
-def _compute_final_status(eligibility, functional, exploitation, inspection, proofs):
+def _compute_final_status(eligibility, functional, exploitation, inspection, proofs, *, db=None, asset_id=None):
     blockers = []
     major_warnings = []
 
@@ -324,6 +324,31 @@ def _compute_final_status(eligibility, functional, exploitation, inspection, pro
             "blockers": ["CVC non inventorie"],
             "major_warnings": [],
         }
+
+    # Verifier si une derogation approuvee et non expiree existe
+    if db and asset_id:
+        approved_exemption = (
+            db.query(BacsExemption)
+            .filter(
+                BacsExemption.asset_id == asset_id,
+                BacsExemption.status == "approved",
+            )
+            .first()
+        )
+        if approved_exemption:
+            today = date.today()
+            is_valid = approved_exemption.date_expiration is None or approved_exemption.date_expiration >= today
+            if is_valid:
+                return {
+                    "status": "exempted",
+                    "reason": f"Derogation approuvee ({approved_exemption.exemption_type}) — ref: {approved_exemption.decision_reference or 'N/A'}",
+                    "blockers": [],
+                    "major_warnings": [
+                        f"Derogation valide jusqu'au {approved_exemption.date_expiration}"
+                        if approved_exemption.date_expiration
+                        else "Derogation sans date d'expiration"
+                    ],
+                }
 
     # Collecter tous les blockers
     if not functional["all_demonstrated"]:

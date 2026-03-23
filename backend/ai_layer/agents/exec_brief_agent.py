@@ -9,7 +9,7 @@ from models import AiInsight, InsightType, Site, Portefeuille, EntiteJuridique, 
 from ..client import get_client
 
 SYSTEM_PROMPT = """Tu es un directeur énergie-environnement d'un grand groupe tertiaire français.
-Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH (depuis 2025).
+Contexte PROMEOS : plateforme B2B de gestion énergétique multi-sites, post-ARENH/VNU (depuis 01/01/2026).
 
 Tu dois :
 - Fournir un brief exécutif de 2 minutes pour le DG

@@ -47,16 +47,16 @@ def _load_configs():
 
     config_dir = Path(__file__).parent / "config"
 
-    with open(config_dir / "regs.yaml") as f:
+    with open(config_dir / "regs.yaml", encoding="utf-8") as f:
         _config_cache["regs"] = yaml.safe_load(f)
 
-    with open(config_dir / "naf_profiles.yaml") as f:
+    with open(config_dir / "naf_profiles.yaml", encoding="utf-8") as f:
         _config_cache["naf_profiles"] = yaml.safe_load(f)
 
-    with open(config_dir / "location_profiles.yaml") as f:
+    with open(config_dir / "location_profiles.yaml", encoding="utf-8") as f:
         _config_cache["location_profiles"] = yaml.safe_load(f)
 
-    with open(config_dir / "cee_p6_catalog.yaml") as f:
+    with open(config_dir / "cee_p6_catalog.yaml", encoding="utf-8") as f:
         _config_cache["cee_p6_catalog"] = yaml.safe_load(f)
 
     return _config_cache

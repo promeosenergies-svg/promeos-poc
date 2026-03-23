@@ -4,8 +4,8 @@
 # Source  : CRE, DGEC, CGI
 # ──────────────────────────────────────────────────────────────────────────────
 
-version: "2025-02-01"
-description: "Tarifs réglementaires énergie France B2B — TURPE 7, accises 2025, TVA"
+version: "2026-03-22"
+description: "Tarifs réglementaires énergie France B2B — TURPE 6/7, ATRD6/7, accises 2024+2025, TVA"
 
 # ── TURPE 6 soutirage énergie (composante variable) ──────────────────────────
 # Période tarifaire 2021-2024, délibération CRE n°2021-13 du 21 janvier 2021
@@ -83,6 +83,29 @@ turpe:
       gestion_eur_mois: 58.44
 
 # ── Accise électricité (ex-CSPE / TIEE) ─────────────────────────────────────
+# 2024 : arrêté du 25/01/2024, art. 92 LFI n°2023-1322
+accise_elec_2024_menages:
+  label: "Accise électricité 2024 — ménages & assimilés"
+  rate_eur_kwh: 0.02100
+  source: "Arrêté 25/01/2024 (art. 92 LFI 2024 n°2023-1322) — 21.00 EUR/MWh"
+  valid_from: "2024-02-01"
+  valid_to: "2025-01-31"
+
+accise_elec_2024_pme:
+  label: "Accise électricité 2024 — PME (>36 kVA)"
+  rate_eur_kwh: 0.02050
+  source: "Arrêté 25/01/2024 (art. 92 LFI 2024 n°2023-1322) — 20.50 EUR/MWh"
+  valid_from: "2024-02-01"
+  valid_to: "2025-01-31"
+
+accise_elec_2024_haute_puissance:
+  label: "Accise électricité 2024 — haute puissance"
+  rate_eur_kwh: 0.02250
+  source: "Arrêté 25/01/2024 (art. 92 LFI 2024 n°2023-1322) — 22.50 EUR/MWh"
+  valid_from: "2024-02-01"
+  valid_to: "2025-01-31"
+
+# 2025-2026 : Loi de finances 2025 + 2026
 accise_elec:
   label: "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév-jul 2025"
   rate_eur_kwh: 0.02623
@@ -90,7 +113,30 @@ accise_elec:
   valid_from: "2025-02-01"
   valid_to: "2025-07-31"
 
+accise_elec_2026_t1:
+  label: "Accise électricité 2026 — T1 ménages & assimilés (≤250 MWh)"
+  rate_eur_kwh: 0.03085
+  source: "Loi de finances 2026 — 30.85 EUR/MWh (fév 2026+)"
+  valid_from: "2026-02-01"
+  valid_to: null
+
+accise_elec_2026_t2:
+  label: "Accise électricité 2026 — T2 PME (250 MWh-1 GWh)"
+  rate_eur_kwh: 0.02658
+  source: "Loi de finances 2026 — 26.58 EUR/MWh (fév 2026+)"
+  valid_from: "2026-02-01"
+  valid_to: null
+
 # ── Accise gaz (ex-TICGN) ───────────────────────────────────────────────────
+# 2024 : art. 64 LFI 2024 — fin bouclier tarifaire, retour taux plein
+accise_gaz_2024:
+  label: "Accise gaz naturel 2024 (ex-TICGN) — fin bouclier tarifaire"
+  rate_eur_kwh: 0.01637
+  source: "Art. 64 LFI 2024 n°2023-1322 — 16.37 EUR/MWh (fin bouclier)"
+  valid_from: "2024-01-01"
+  valid_to: "2024-12-31"
+
+# 2025
 accise_gaz:
   label: "Accise sur le gaz naturel (ex-TICGN)"
   rate_eur_kwh: 0.01637
@@ -121,10 +167,79 @@ ticgn:
   valid_to: null
 
 # ── ATRD / ATRT gaz ─────────────────────────────────────────────────────────
+# ATRD6 — grille au 01/07/2023 (CRE délibération n°2023-123 du 10 mai 2023)
+# Z2023 = IPC(4.20%) + X(-1.90%) + k(+2.00%) = +4.30%, Y2023 = 1.0415
+atrd6_gaz:
+  source: "CRE délibération n°2023-123 — ATRD6 GRDF au 01/07/2023"
+  valid_from: "2023-07-01"
+  valid_to: "2024-06-30"
+  evolution_z: 0.043
+  coefficient_y: 1.0415
+  rf_t1_t2_eur_an: 8.76
+  rf_t3_t4_tp_eur_an: 98.40
+  tiers:
+    T1:
+      label: "T1 (≤6 MWh/an)"
+      abo_hors_rf_eur_an: 33.48
+      abo_eur_an: 42.24
+      var_eur_mwh: 33.23
+    T2:
+      label: "T2 (6-300 MWh/an)"
+      abo_hors_rf_eur_an: 130.68
+      abo_eur_an: 139.44
+      var_eur_mwh: 8.93
+    T3:
+      label: "T3 (300-5000 MWh/an)"
+      abo_hors_rf_eur_an: 884.52
+      abo_eur_an: 982.92
+      var_eur_mwh: 6.42
+    T4:
+      label: "T4 (>5000 MWh/an)"
+      abo_hors_rf_eur_an: 15971.16
+      abo_eur_an: 16069.56
+      var_eur_mwh: 0.87
+      capa_inf500_eur_mwh_j: 213.00
+      capa_sup500_eur_mwh_j: 106.44
+    TP:
+      label: "Tarif de proximité"
+      abo_hors_rf_eur_an: 38164.56
+      abo_eur_an: 38262.96
+      capa_j_eur_mwh_j: 106.20
+      distance_eur_m_an: 69.72
+
+# ATRD6 — grille au 01/07/2024 (CRE délib. n°2024-40 + CRCP n°2024-88)
+# Evolution +27.5% vs grille 2023 (inclut bascule vers ATRD7)
+atrd6_gaz_2024:
+  source: "CRE délibération n°2024-40 du 15/02/2024 + n°2024-88 du 23/05/2024 — ATRD6→7 GRDF"
+  valid_from: "2024-07-01"
+  valid_to: "2025-06-30"
+  evolution_pct: 27.5
+  tiers:
+    T1:
+      label: "T1 (≤6 MWh/an)"
+      abo_eur_an: 53.86
+      var_eur_mwh: 42.37
+    T2:
+      label: "T2 (6-300 MWh/an)"
+      abo_eur_an: 177.78
+      var_eur_mwh: 11.39
+    T3:
+      label: "T3 (300-5000 MWh/an)"
+      abo_eur_an: 1253.22
+      var_eur_mwh: 8.19
+    T4:
+      label: "T4 (>5000 MWh/an)"
+      abo_eur_an: 20488.69
+      var_eur_mwh: 1.11
+    TP:
+      label: "Tarif de proximité"
+      abo_eur_an: 48785.28
+
+# ATRD7 — grille au 01/07/2025 (simplifié)
 atrd_gaz:
   rate_eur_kwh: 0.025
   source: "CRE ATRD7 GRDF 2025"
-  valid_from: "2025-07-01"
+  valid_from: "2024-07-01"
   valid_to: null
 
 atrt_gaz:
@@ -142,6 +257,25 @@ tva:
     taux: 0.055
     source: "CGI art. 278-0 bis"
     applicable_a: ["abonnement", "cta", "turpe_fixe"]
+    # ATTENTION : Depuis le 1er août 2025 (LFI 2025, art. 20, directive UE),
+    # le taux réduit 5,5% est supprimé sur abonnement, CTA et TURPE fixe.
+    # TVA 20% uniforme sur toutes les composantes facture.
+    # Source : bofip ACTU-2025-00057, service-public.fr, energie-info.fr
+    supprime_au: "2025-08-01"
+
+# ── VNU (Versement Nucléaire Universel) — post-ARENH ───────────────────────
+# L'ARENH (42 €/MWh, 100 TWh/an) a pris fin le 31/12/2025.
+# Le VNU est une taxe redistributive sur EDF, activée uniquement si
+# le prix de marché dépasse les seuils fixés par la CRE.
+# Source : Loi de souveraineté énergétique, art. L. 336-1 Code énergie
+vnu:
+  seuil_1_eur_mwh: 78.0
+  seuil_2_eur_mwh: 110.0
+  statut: "EN VIGUEUR — DORMANT (prix marché ~60 €/MWh < seuil 78)"
+  source: "Loi de souveraineté énergétique — VNU au 01/01/2026"
+  valid_from: "2026-01-01"
+  revision_triennale: "~2028 (CRE)"
+  note: "L'ancien ARENH (42 EUR/MWh) n'est plus applicable. Ne plus utiliser comme référence de prix."
 
 # ── Prix de référence par défaut (fallback shadow billing) ──────────────────
 prix_reference:

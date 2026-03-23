@@ -56,7 +56,7 @@ from services.purchase_actions_engine import compute_purchase_actions
 
 router = APIRouter(prefix="/api/purchase", tags=["Achat Energie"])
 
-# ── Energy Gate: ELEC-only (post-ARENH, Brique 3) ──
+# ── Energy Gate: ELEC-only (post-ARENH/VNU, Brique 3) ──
 ALLOWED_ENERGY_TYPES = {"elec"}
 
 

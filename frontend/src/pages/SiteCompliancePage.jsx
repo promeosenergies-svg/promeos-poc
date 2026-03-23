@@ -57,6 +57,7 @@ const STATUT_BADGE = {
   a_risque: { label: 'À risque', cls: 'bg-amber-100 text-amber-700' },
   non_conforme: { label: 'Non conforme', cls: 'bg-red-100 text-red-700' },
   derogation: { label: 'Dérogation', cls: 'bg-blue-100 text-blue-700' },
+  exempted: { label: 'Dérogation approuvée', cls: 'bg-blue-100 text-blue-700' },
 };
 
 const CTA_NAVIGATE = {

@@ -646,6 +646,31 @@ def create_exemption(
     if not asset:
         raise HTTPException(404, "Actif BACS introuvable")
 
+    # Verifier que le site est bien assujetti BACS (obligation reelle)
+    latest_assessment = (
+        db.query(BacsAssessment)
+        .filter(BacsAssessment.asset_id == asset.id)
+        .order_by(BacsAssessment.assessed_at.desc())
+        .first()
+    )
+    if latest_assessment and latest_assessment.is_obligated is False:
+        raise HTTPException(400, "Site non assujetti BACS — derogation non applicable")
+
+    # Empecher les doublons actifs (une seule exemption active par asset)
+    active = (
+        db.query(BacsExemption)
+        .filter(
+            BacsExemption.asset_id == asset.id,
+            BacsExemption.status.in_(["draft", "submitted", "approved"]),
+        )
+        .first()
+    )
+    if active:
+        raise HTTPException(
+            409,
+            f"Derogation deja en cours (id={active.id}, statut={active.status}). Traiter celle-ci avant d'en creer une nouvelle.",
+        )
+
     # Valider le type
     try:
         ex_type = BacsExemptionType(body.exemption_type)

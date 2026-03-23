@@ -1,5 +1,5 @@
 {
-  "version": "2026-03-11_lockdown",
+  "version": "2026-03-22_accises_2024",
   "description": "PROMEOS — Catalogue taux réglementaires énergie France B2B (V1)",
   "entries": [
     {
@@ -121,6 +121,54 @@
       "valid_to": null,
       "source": "CRE délibération TURPE 7 HTA-BT 2025",
       "fallback": 18.48
+    },
+    {
+      "code": "ACCISE_ELEC",
+      "label": "Accise électricité 2024 — ménages & assimilés (21.00 EUR/MWh)",
+      "rate": 0.02100,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-02-01",
+      "valid_to": "2025-01-31",
+      "source": "Arrêté 25/01/2024, art. 92 LFI 2024 n°2023-1322",
+      "fallback": 0.02100
+    },
+    {
+      "code": "ACCISE_ELEC_PME",
+      "label": "Accise électricité 2024 — PME >36kVA (20.50 EUR/MWh)",
+      "rate": 0.02050,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-02-01",
+      "valid_to": "2025-01-31",
+      "source": "Arrêté 25/01/2024, art. 92 LFI 2024 n°2023-1322",
+      "fallback": 0.02050
+    },
+    {
+      "code": "ACCISE_GAZ",
+      "label": "Accise gaz naturel 2024 (ex-TICGN) — 16.37 EUR/MWh (fin bouclier)",
+      "rate": 0.01637,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-01-01",
+      "valid_to": "2024-12-31",
+      "source": "Art. 64 LFI 2024 n°2023-1322",
+      "fallback": 0.01637
+    },
+    {
+      "code": "ATRD_GAZ",
+      "label": "ATRD6→7 distribution gaz GRDF 2024 (moy. +27.5%)",
+      "rate": 0.022,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-07-01",
+      "valid_to": "2025-06-30",
+      "source": "CRE délib. n°2024-40 + n°2024-88 — ATRD6 GRDF évolution 01/07/2024",
+      "fallback": 0.022
     },
     {
       "code": "ACCISE_ELEC",

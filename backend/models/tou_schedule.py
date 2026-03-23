@@ -3,15 +3,16 @@ PROMEOS - TOU Schedule (Grille Tarifaire HP/HC)
 Time-of-Use schedule with effective date versioning.
 Supports HP/HC windows per day-type, with source tracking (manual, TURPE, Enedis).
 
-Phase 2 TURPE 7 (nov 2026+): supports seasonal HC (été/hiver différents).
+Phase 2 TURPE 7 (déc 2026 → oct 2027): supports seasonal HC (été/hiver différents).
   - windows_json: HC for saison haute (hiver) — default / legacy
   - windows_ete_json: HC for saison basse (été) — only if is_seasonal=True
   - Saison haute: novembre à mars
   - Saison basse: avril à octobre
 
-Règles CRE (délibération TURPE 7 + N°2026-02):
+Règles CRE placement HC consommateur (délibération n°2025-78 + n°2026-33):
   - Été: HC favorisées 02h-06h et 11h-17h, interdites 07h-10h et 18h-23h
-  - Hiver: HC interdites 07h-11h et 17h-21h
+  - Hiver: HC interdites 07h-11h et 17h-21h, gel 11h-14h levé (n°2026-33)
+  - 8h HC/jour, dont ≥5h consécutives la nuit (23h-7h)
 """
 
 from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text, Boolean
