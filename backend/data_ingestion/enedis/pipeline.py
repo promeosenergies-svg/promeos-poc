@@ -67,6 +67,9 @@ def ingest_file(
         FileNotFoundError: file_path does not exist.
         MissingKeyError: no decryption keys available (from decrypt module).
     """
+    if not file_path.exists():
+        raise FileNotFoundError(f"Flux file not found: {file_path}")
+
     filename = file_path.name
     flux_type = classify_flux(filename)
 
