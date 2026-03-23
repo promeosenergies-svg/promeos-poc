@@ -118,52 +118,59 @@ def ingest_file(
         session.commit()
         return FluxStatus.ERROR
 
-    # Store file record
-    flux_file = EnedisFluxFile(
-        filename=filename,
-        file_hash=file_hash,
-        flux_type=flux_type.value,
-        status=FluxStatus.PARSED,
-        frequence_publication=parsed.header.frequence_publication,
-        nature_courbe_demandee=parsed.header.nature_courbe_demandee,
-        identifiant_destinataire=parsed.header.identifiant_destinataire,
-    )
-    flux_file.set_header_raw(parsed.header.raw)
-    session.add(flux_file)
-    session.flush()  # Get flux_file.id
+    # Store file record + mesures
+    try:
+        flux_file = EnedisFluxFile(
+            filename=filename,
+            file_hash=file_hash,
+            flux_type=flux_type.value,
+            status=FluxStatus.PARSED,
+            frequence_publication=parsed.header.frequence_publication,
+            nature_courbe_demandee=parsed.header.nature_courbe_demandee,
+            identifiant_destinataire=parsed.header.identifiant_destinataire,
+        )
+        flux_file.set_header_raw(parsed.header.raw)
+        session.add(flux_file)
+        session.flush()  # Get flux_file.id
 
-    # Store mesures in batches
-    total_inserted = 0
-    batch = []
-    for courbe in parsed.courbes:
-        for point in courbe.points:
-            batch.append(
-                EnedisFluxMesure(
-                    flux_file_id=flux_file.id,
-                    flux_type=flux_type.value,
-                    point_id=parsed.point_id,
-                    grandeur_physique=courbe.grandeur_physique,
-                    grandeur_metier=courbe.grandeur_metier,
-                    unite_mesure=courbe.unite_mesure,
-                    granularite=courbe.granularite,
-                    horodatage_debut=courbe.horodatage_debut,
-                    horodatage_fin=courbe.horodatage_fin,
-                    horodatage=point.horodatage,
-                    valeur_point=point.valeur_point,
-                    statut_point=point.statut_point,
+        # Store mesures in batches
+        total_inserted = 0
+        batch = []
+        for courbe in parsed.courbes:
+            for point in courbe.points:
+                batch.append(
+                    EnedisFluxMesure(
+                        flux_file_id=flux_file.id,
+                        flux_type=flux_type.value,
+                        point_id=parsed.point_id,
+                        grandeur_physique=courbe.grandeur_physique,
+                        grandeur_metier=courbe.grandeur_metier,
+                        unite_mesure=courbe.unite_mesure,
+                        granularite=courbe.granularite,
+                        horodatage_debut=courbe.horodatage_debut,
+                        horodatage_fin=courbe.horodatage_fin,
+                        horodatage=point.horodatage,
+                        valeur_point=point.valeur_point,
+                        statut_point=point.statut_point,
+                    )
                 )
-            )
-            if len(batch) >= chunk_size:
-                session.bulk_save_objects(batch)
-                total_inserted += len(batch)
-                batch = []
+                if len(batch) >= chunk_size:
+                    session.bulk_save_objects(batch)
+                    total_inserted += len(batch)
+                    batch = []
 
-    if batch:
-        session.bulk_save_objects(batch)
-        total_inserted += len(batch)
+        if batch:
+            session.bulk_save_objects(batch)
+            total_inserted += len(batch)
 
-    flux_file.measures_count = total_inserted
-    session.commit()
+        flux_file.measures_count = total_inserted
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        logger.error("DB storage failed for %s: %s", filename, exc)
+        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc))
+        session.commit()
+        return FluxStatus.ERROR
 
     logger.info(
         "Ingested %s: %d mesures from PRM %s [%s]",

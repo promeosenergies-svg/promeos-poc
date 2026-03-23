@@ -265,6 +265,22 @@ class TestIngestErrors:
         with pytest.raises(FileNotFoundError):
             ingest_file(Path("/nonexistent/file.zip"), db, test_keys)
 
+    def test_db_storage_error_records_error_and_returns(self, db, r4h_encrypted_file, test_keys):
+        """DB error during storage → rollback, record error, return ERROR."""
+        from unittest.mock import patch
+
+        with patch.object(db, "bulk_save_objects", side_effect=Exception("disk full")):
+            status = ingest_file(r4h_encrypted_file, db, test_keys)
+
+        assert status == FluxStatus.ERROR
+
+        f = db.query(EnedisFluxFile).first()
+        assert f is not None
+        assert f.status == FluxStatus.ERROR
+        assert "disk full" in f.error_message
+        assert f.measures_count == 0
+        assert db.query(EnedisFluxMesure).count() == 0
+
     def test_zero_mesures_is_parsed_not_error(self, db, tmp_path, test_keys):
         """Valid XML with 0 points → status=parsed, measures_count=0."""
         xml = b"""\
