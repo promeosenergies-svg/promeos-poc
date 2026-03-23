@@ -151,6 +151,7 @@ Les PRM francais font toujours 14 chiffres. Mais est-ce que R50/R151 utilisent b
 
 Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_tables` fait `has_table()` -> `return` (skip). Il faudra une logique de migration complementaire (comme les `_add_*_columns` patterns existants dans `migrations.py`).
 **Décision Utilisateur** : Ceci doit être régle en code ou en processus lors de l'implémentation de nouvelles colonnes?
+**Statut** : Résolu — PR fix/issue-158-enedis-alter-table-columns (#162). Ajout de `_add_enedis_columns()` suivant le pattern existant, appelée dans `run_migrations()` après `_create_enedis_tables()`. Listes de colonnes vides aujourd'hui — scaffold prêt pour SF3+.
 
 ---
 
@@ -181,4 +182,4 @@ Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_table
 | 10 | Decision | Colonnes R4x-specifiques sur mesures | -- | Tables dédiées par flux — **#155** |
 | 11 | Decision | `point_id` String(14) suffisant ? | -- | Point d'attention — **#157** |
 | 12 | Decision | Colonnes header R4x-specifiques | -- | Résolu par tables dédiées — **#155** |
-| 13 | Decision | Migration ne gere pas ALTER TABLE | -- | A traiter dans SF3 — **#158** |
+| 13 | Decision | Migration ne gere pas ALTER TABLE | -- | ~~A traiter dans SF3~~ Résolu — **#158** |
