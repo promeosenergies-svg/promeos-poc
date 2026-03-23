@@ -59,6 +59,8 @@ import { useCockpitData } from '../hooks/useCockpitData';
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   ComposedChart,
   XAxis,
   YAxis,
@@ -68,6 +70,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { fmtKwh } from '../utils/format';
+import SitesBaselineCard from './cockpit/SitesBaselineCard';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
 
@@ -89,6 +92,35 @@ function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }
         <div className="text-xl font-semibold text-gray-900">{value}</div>
       )}
       <div className="text-xs text-gray-400 mt-1 truncate">{sub}</div>
+    </div>
+  );
+}
+
+// ── CockpitTabs — navigation Vue exécutive / Tableau de bord ──
+function CockpitTabs({ active }) {
+  const nav = useNavigate();
+  return (
+    <div className="flex gap-6 border-b border-gray-200 mb-4">
+      <button
+        onClick={() => nav('/cockpit')}
+        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+          active === 'cockpit'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Vue exécutive — /cockpit
+      </button>
+      <button
+        onClick={() => nav('/')}
+        className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+          active === 'dashboard'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        Tableau de bord — /
+      </button>
     </div>
   );
 }
@@ -351,6 +383,7 @@ export default function CommandCenter() {
       }
     >
       {/* ── Health Summary ── */}
+      <CockpitTabs active="dashboard" />
       <HealthSummary healthState={healthState} onNavigate={navigate} />
 
       {/* ── Briefing du jour ── */}
@@ -436,7 +469,7 @@ export default function CommandCenter() {
             </div>
             {weekSeries?.length > 0 ? (
               <ResponsiveContainer width="100%" height={140}>
-                <AreaChart data={weekSeries}>
+                <BarChart data={weekSeries}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
                     dataKey="date"
@@ -451,16 +484,8 @@ export default function CommandCenter() {
                     formatter={(v) => [v != null ? `${Math.round(v)} kWh` : '—', 'Conso']}
                     labelFormatter={(l) => `Jour : ${l}`}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="kwh"
-                    name="kWh"
-                    stroke="#378ADD"
-                    fill="rgba(55,138,221,0.1)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </AreaChart>
+                  <Bar dataKey="kwh" name="Cette semaine" fill="#378ADD" radius={[3, 3, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
@@ -658,6 +683,9 @@ export default function CommandCenter() {
       </div>
 
       {/* ── Accès rapide aux modules ── */}
+      {/* ── Sites J-1 vs Baseline (Step rapprochement) ── */}
+      <SitesBaselineCard />
+
       <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
     </PageShell>
   );

@@ -69,6 +69,8 @@ import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
 import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
+import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
+import EvenementsRecents from './cockpit/EvenementsRecents';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -512,53 +514,68 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ═══════════ ZONE 1 : PRIORITÉ #1 (radical) ═══════════ */}
-      <div
-        className={`rounded-xl border-l-4 p-5 cursor-pointer hover:shadow-md transition ${
-          priority1.type === 'critical'
-            ? 'bg-red-50 border-red-500'
-            : priority1.type === 'warning'
-              ? 'bg-amber-50 border-amber-500'
-              : priority1.type === 'info'
-                ? 'bg-blue-50 border-blue-500'
-                : 'bg-green-50 border-green-500'
-        }`}
-        onClick={() => navigate(priority1.cta.path)}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p
-              className={`text-base font-semibold ${
-                priority1.type === 'critical'
-                  ? 'text-red-900'
-                  : priority1.type === 'warning'
-                    ? 'text-amber-900'
-                    : priority1.type === 'info'
-                      ? 'text-blue-900'
-                      : 'text-green-900'
-              }`}
-            >
-              {priority1.title}
-            </p>
-            <div className="flex items-center gap-3 mt-1.5 text-sm">
-              {priority1.impact && (
-                <span className="font-medium text-red-700">{priority1.impact}</span>
-              )}
-              {priority1.deadline && <span className="text-gray-600">{priority1.deadline}</span>}
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(priority1.cta.path);
-            }}
-          >
-            {priority1.cta.label} <ArrowRight size={14} />
-          </Button>
-        </div>
+      {/* ── Tabs navigation ── */}
+      <div className="flex gap-6 border-b border-gray-200 mb-4">
+        <button className="pb-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
+          Vue exécutive — /cockpit
+        </button>
+        <button
+          onClick={() => navigate('/')}
+          className="pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+        >
+          Tableau de bord — /
+        </button>
       </div>
+
+      {/* ═══════════ ZONE 1 : PRIORITÉ #1 (expert only — remplacé par CockpitHero+Alertes) ═══════════ */}
+      {isExpert && (
+        <div
+          className={`rounded-xl border-l-4 p-5 cursor-pointer hover:shadow-md transition ${
+            priority1.type === 'critical'
+              ? 'bg-red-50 border-red-500'
+              : priority1.type === 'warning'
+                ? 'bg-amber-50 border-amber-500'
+                : priority1.type === 'info'
+                  ? 'bg-blue-50 border-blue-500'
+                  : 'bg-green-50 border-green-500'
+          }`}
+          onClick={() => navigate(priority1.cta.path)}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p
+                className={`text-base font-semibold ${
+                  priority1.type === 'critical'
+                    ? 'text-red-900'
+                    : priority1.type === 'warning'
+                      ? 'text-amber-900'
+                      : priority1.type === 'info'
+                        ? 'text-blue-900'
+                        : 'text-green-900'
+                }`}
+              >
+                {priority1.title}
+              </p>
+              <div className="flex items-center gap-3 mt-1.5 text-sm">
+                {priority1.impact && (
+                  <span className="font-medium text-red-700">{priority1.impact}</span>
+                )}
+                {priority1.deadline && <span className="text-gray-600">{priority1.deadline}</span>}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(priority1.cta.path);
+              }}
+            >
+              {priority1.cta.label} <ArrowRight size={14} />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
       {!cockpitLoading && cockpitKpis && (
@@ -606,6 +623,12 @@ const Cockpit = () => {
           </div>
         )}
 
+      {/* ── Alertes + Événements (2 colonnes) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <AlertesPrioritaires />
+        <EvenementsRecents />
+      </div>
+
       <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} />
 
       {/* ── Performance sites + Vecteur énergétique (2 colonnes) ── */}
@@ -616,16 +639,18 @@ const Cockpit = () => {
 
       <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
 
-      {/* ═══════════ ZONE 2 : KPI DÉCIDEUR (4 tiles, compact) ═══════════ */}
-      <div data-tour="step-1">
-        <ExecutiveKpiRow
-          kpis={executiveKpis}
-          onNavigate={navigate}
-          onEvidence={setEvidenceOpen}
-          isExpert={isExpert}
-          scoreTrend={scoreTrend}
-        />
-      </div>
+      {/* ═══════════ ZONE 2 : KPI DÉCIDEUR (expert only — remplacé par CockpitHero) ═══════════ */}
+      {isExpert && (
+        <div data-tour="step-1">
+          <ExecutiveKpiRow
+            kpis={executiveKpis}
+            onNavigate={navigate}
+            onEvidence={setEvidenceOpen}
+            isExpert={isExpert}
+            scoreTrend={scoreTrend}
+          />
+        </div>
+      )}
 
       {/* Single-site compact row (intégré dans zone 2, pas empilé) */}
       {isSingleSite && singleSite && (
