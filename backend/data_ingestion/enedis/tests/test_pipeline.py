@@ -262,7 +262,7 @@ class TestIngestErrors:
     def test_file_not_found_raises(self, db, tmp_path, test_keys):
         from pathlib import Path
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError, match="Flux file not found"):
             ingest_file(Path("/nonexistent/file.zip"), db, test_keys)
 
     def test_db_storage_error_records_error_and_returns(self, db, r4h_encrypted_file, test_keys):
