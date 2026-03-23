@@ -26,7 +26,8 @@ Si `session.flush()` (ligne 133) ou `session.bulk_save_objects()` (ligne 157) le
 La session est laissee dans un etat dirty. Le caller doit gerer lui-meme, ce qui contredit le contrat documente ("rolls back on unhandled error").
 
 **Fix propose** : wrapper le bloc store dans un try/except qui fait rollback + enregistre le fichier en erreur.
-**Décision Utilisateur** : Fix convenable qui apporte de la sécurité. A implémenter. 
+**Décision Utilisateur** : Fix convenable qui apporte de la sécurité. A implémenter.
+**Statut** : Resolu — PR fix/issue-149-db-storage-try-except (#149).
 
 ---
 
@@ -166,7 +167,7 @@ Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_table
 
 | # | Type | Sujet | Severite | Action |
 |---|------|-------|----------|--------|
-| 1 | Bug | Pas de try/except autour du stockage DB | **Haute** | Fix necessaire — **#149** |
+| 1 | Bug | Pas de try/except autour du stockage DB | **Haute** | ~~Fix necessaire~~ Resolu — **#149** |
 | 2 | Bug | Index duplique sur `flux_file_id` | Basse | Fix simple — **#150** |
 | 3 | Edge case | Concurrence sur idempotence | Basse (POC) | A traiter si parallelisme — **#152** |
 | 4 | Edge case | `_hash_file` lit tout en memoire | Basse (POC) | Note pour production — **#153** |
