@@ -26,6 +26,9 @@ pyyaml>=6.0
 # Market Data connectors
 entsoe-py>=0.6.0
 
+# Enedis SGE decryption
+cryptography>=42.0.0
+
 # Utils
 python-dotenv>=1.0.0
 requests>=2.31.0
