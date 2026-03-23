@@ -52,8 +52,13 @@ BACS_SEUIL_BAS = 70.0  # deadline 2030-01-01
 BACS_DEADLINE_290 = date(2025, 1, 1)
 BACS_DEADLINE_70 = date(2030, 1, 1)
 
-# Base penalty per non-conforme obligation (euros)
-BASE_PENALTY_EURO = 7500.0
+# ── Constantes réglementaires ────────────────────────────────────────
+# Source : Code de la construction L174-1 / ADEME Base Carbone 2024
+BASE_PENALTY_EURO = 7_500  # Pénalité non-conformité
+A_RISQUE_PENALTY_RATIO = 0.5  # 50 % pour sites à risque
+A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
+CO2_FACTOR_ELEC_KG_KWH = 0.0569  # ADEME 2024 — électricité
+CO2_FACTOR_GAZ_KG_KWH = 0.2270  # ADEME 2024 — gaz naturel
 
 # Action text templates ordered by priority (highest first)
 _ACTION_TEMPLATES = [
@@ -94,7 +99,7 @@ def compute_risque_financier(obligations: List[Obligation]) -> float:
     """Calculate financial risk: NON_CONFORME = 100% penalty, A_RISQUE = 50% penalty."""
     non_conforme_count = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
     a_risque_count = sum(1 for o in obligations if o.statut == StatutConformite.A_RISQUE)
-    return round(BASE_PENALTY_EURO * non_conforme_count + BASE_PENALTY_EURO * 0.5 * a_risque_count, 2)
+    return round(BASE_PENALTY_EURO * non_conforme_count + A_RISQUE_PENALTY_EURO * a_risque_count, 2)
 
 
 def compute_action_recommandee(obligations: List[Obligation]) -> Optional[str]:

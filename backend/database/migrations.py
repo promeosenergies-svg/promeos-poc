@@ -7,7 +7,7 @@ SQLite supports ALTER TABLE ADD COLUMN for nullable columns.
 import logging
 from sqlalchemy import inspect, text
 
-from services.compliance_engine import BASE_PENALTY_EURO
+from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
 logger = logging.getLogger(__name__)
 
@@ -827,8 +827,8 @@ def _fix_delivery_point_energy_type_case(engine):
 def _backfill_site_risque_financier(engine):
     """Compute risque_financier_euro for sites based on their obligations.
 
-    NON_CONFORME → BASE_PENALTY_EURO (7500 €)
-    A_RISQUE     → BASE_PENALTY_EURO * 0.5 (3750 €)
+    NON_CONFORME → BASE_PENALTY_EURO
+    A_RISQUE     → A_RISQUE_PENALTY_EURO
     Idempotent: only updates sites where current value is 0 but obligations warrant risk.
     """
     insp = inspect(engine)
@@ -838,7 +838,7 @@ def _backfill_site_risque_financier(engine):
     with engine.begin() as conn:
         # Get sites with risque_financier_euro = 0 (or NULL) that have non-conforme/a_risque obligations
         penalty = BASE_PENALTY_EURO
-        half_penalty = BASE_PENALTY_EURO * 0.5
+        half_penalty = A_RISQUE_PENALTY_EURO
         rows = conn.execute(
             text(f"""
             SELECT s.id,

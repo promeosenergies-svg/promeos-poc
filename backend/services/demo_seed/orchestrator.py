@@ -837,7 +837,7 @@ class SeedOrchestrator:
     def _sync_site_compliance_statuses(self, sites):
         """Update Site.statut_decret_tertiaire/bacs + risque_financier_euro from Obligation records."""
         from models import Obligation, TypeObligation, StatutConformite
-        from services.compliance_engine import BASE_PENALTY_EURO
+        from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
         for site in sites:
             for type_obl, attr in [
@@ -856,7 +856,7 @@ class SeedOrchestrator:
                 if o.statut == StatutConformite.NON_CONFORME:
                     risque += BASE_PENALTY_EURO  # confirmed penalty
                 elif o.statut == StatutConformite.A_RISQUE:
-                    risque += BASE_PENALTY_EURO * 0.5  # estimated potential risk
+                    risque += A_RISQUE_PENALTY_EURO  # estimated potential risk
             site.risque_financier_euro = round(risque, 2)
         self.db.flush()
 
