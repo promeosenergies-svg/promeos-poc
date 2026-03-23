@@ -19,3 +19,12 @@ class FluxType(str, Enum):
     X14 = "X14"  # Hors scope
     HDM = "HDM"  # CSV chiffré PGP, hors scope
     UNKNOWN = "UNKNOWN"
+
+
+class FluxStatus(str, Enum):
+    """Statut de traitement d'un fichier flux Enedis."""
+
+    RECEIVED = "received"
+    PARSED = "parsed"
+    ERROR = "error"
+    SKIPPED = "skipped"
