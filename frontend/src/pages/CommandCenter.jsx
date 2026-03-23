@@ -54,8 +54,44 @@ import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
 import EssentialsRow from './cockpit/EssentialsRow';
+import { useCommandCenterData } from '../hooks/useCommandCenterData';
+import { useCockpitData } from '../hooks/useCockpitData';
+import {
+  AreaChart,
+  Area,
+  ComposedChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
+import { fmtKwh } from '../utils/format';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
+
+// ── KpiJ1Card — mini card J-1 pour CommandCenter (Step 5) ──
+function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }) {
+  const accentCls =
+    {
+      neutral: 'border-gray-200',
+      warn: 'border-amber-300 bg-amber-50',
+      ok: 'border-green-200 bg-green-50',
+    }[accent] ?? 'border-gray-200';
+
+  return (
+    <div className={`bg-white border rounded-lg p-3 ${accentCls}`}>
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      {isLoading ? (
+        <div className="h-6 w-20 bg-gray-100 rounded animate-pulse" />
+      ) : (
+        <div className="text-xl font-semibold text-gray-900">{value}</div>
+      )}
+      <div className="text-xs text-gray-400 mt-1 truncate">{sub}</div>
+    </div>
+  );
+}
 
 /* ── normalizeDashboardModel: prevent contradictions ── */
 export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
@@ -87,6 +123,10 @@ export default function CommandCenter() {
   const [actions, setActions] = useState([]);
   const [alertsSummary, setAlertsSummary] = useState(null);
   const [lastSync, setLastSync] = useState(null);
+
+  // ── Hooks enrichissement Step 5 ──
+  const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
+  const { trajectoire } = useCockpitData();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -358,6 +398,185 @@ export default function CommandCenter() {
         onOpenMaturite={() => navigate('/cockpit')}
         onNavigate={navigate}
       />
+
+      {/* ── KPIs J-1 (Step 5) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
+        <KpiJ1Card
+          label="Conso hier (J-1)"
+          value={kpisJ1?.consoHierKwh != null ? fmtKwh(kpisJ1.consoHierKwh) : '—'}
+          sub={
+            kpisJ1?.consoHierKwh != null
+              ? `${scopedSites.length} sites · données réelles`
+              : 'Chargement...'
+          }
+          loading={cmdLoading}
+        />
+        <KpiJ1Card label="Conso ce mois" value="—" sub="Endpoint à venir" loading={cmdLoading} />
+        <KpiJ1Card
+          label="Pic puissance J-1"
+          value={kpisJ1?.picKw != null ? `${kpisJ1.picKw} kW` : '—'}
+          sub={kpisJ1?.picKw != null ? 'Maximum horaire agrégé' : 'Pas de données horaires'}
+          accent={kpisJ1?.picKw > 40 ? 'warn' : 'neutral'}
+          loading={cmdLoading}
+        />
+        <KpiJ1Card
+          label="Intensité CO₂ réseau"
+          value={kpisJ1?.co2ResKgKwh != null ? `${kpisJ1.co2ResKgKwh} g/kWh` : '—'}
+          sub="Connecteur RTE à brancher"
+          loading={cmdLoading}
+        />
+      </div>
+
+      {/* ── Graphiques consommation (Step 5) ── */}
+      {(weekSeries?.length > 0 || hourlyProfile?.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="charts-conso">
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+              Conso 7 jours — {scopedSites.length} sites (kWh/j)
+            </div>
+            {weekSeries?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={140}>
+                <AreaChart data={weekSeries}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickFormatter={(d) => d?.slice(5)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickFormatter={(v) => `${Math.round(v)}`}
+                  />
+                  <Tooltip
+                    formatter={(v) => [v != null ? `${Math.round(v)} kWh` : '—', 'Conso']}
+                    labelFormatter={(l) => `Jour : ${l}`}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="kwh"
+                    name="kWh"
+                    stroke="#378ADD"
+                    fill="rgba(55,138,221,0.1)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
+                Pas de données disponibles
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+              Profil journalier J-1 (kW agrégé)
+            </div>
+            {hourlyProfile?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={140}>
+                <ComposedChart data={hourlyProfile}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={3} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => `${v}kW`} />
+                  <Tooltip formatter={(v, name) => [v != null ? `${v} kW` : '—', name]} />
+                  <Area
+                    type="monotone"
+                    dataKey="kw"
+                    name="Réel J-1"
+                    stroke="#378ADD"
+                    fill="rgba(55,138,221,0.07)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  {kpisJ1?.picKw > 38 && (
+                    <ReferenceLine
+                      y={38}
+                      stroke="#E24B4A"
+                      strokeDasharray="4 3"
+                      label={{ value: 'Seuil', position: 'right', fontSize: 9, fill: '#E24B4A' }}
+                    />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
+                Profil horaire indisponible
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Progression trajectoire mensuelle (Step 5) ── */}
+      {trajectoire && (
+        <div
+          className="bg-white border border-gray-200 rounded-lg p-4"
+          data-testid="trajectoire-mensuelle"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Progression trajectoire mensuelle
+            </span>
+            <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
+              {trajectoire.reductionPctActuelle != null
+                ? `${trajectoire.reductionPctActuelle}%`
+                : '—'}{' '}
+              objectif {trajectoire.objectif2026Pct ?? -25}%
+            </span>
+          </div>
+          <div className="mb-3">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="font-medium text-gray-700">Réel 2026</span>
+              <span className="text-red-600 font-medium">
+                {trajectoire.reductionPctActuelle != null
+                  ? `${trajectoire.reductionPctActuelle}% · retard`
+                  : '—'}
+              </span>
+            </div>
+            <div className="relative h-2.5 bg-gray-100 rounded-full overflow-visible">
+              <div
+                className="h-full bg-blue-500 rounded-full"
+                style={{
+                  width: `${
+                    trajectoire.reductionPctActuelle != null
+                      ? Math.min(
+                          100,
+                          (Math.abs(trajectoire.reductionPctActuelle) /
+                            Math.abs(trajectoire.objectif2026Pct ?? -25)) *
+                            100
+                        )
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+              <span>0%</span>
+              <span className="text-blue-600 font-medium">
+                Obj. {trajectoire.objectif2026Pct ?? -25}%
+              </span>
+              <span>-40%</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="font-medium text-gray-700">Avec actions planifiées</span>
+              <span className="text-green-700 font-medium">
+                {trajectoire.projectionMwh?.some((v) => v != null) ? 'Objectif atteignable' : '—'}
+              </span>
+            </div>
+            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-teal-500 rounded-full" style={{ width: '100%' }} />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Actions à démarrer avant le{' '}
+            <span className="text-amber-600 font-medium">30 juin 2026</span> pour atteindre
+            l'objectif annuel.
+          </p>
+        </div>
+      )}
 
       {/* ── À traiter aujourd'hui + Sites à risque ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
