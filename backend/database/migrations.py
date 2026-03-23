@@ -83,6 +83,7 @@ def run_migrations(engine):
     # Export manifest — chaine de preuve export
     _migrate_operat_export_manifest(engine)
     # Enedis SGE — CDC staging tables
+    _rename_enedis_mesure_table(engine)
     _create_enedis_tables(engine)
     _add_enedis_columns(engine)
 
@@ -1624,10 +1625,49 @@ def _migrate_bacs_remediation(engine):
         logger.info("migration: created bacs_remediation_actions")
 
 
-def _create_enedis_tables(engine):
-    """Create Enedis SGE staging tables (enedis_flux_file, enedis_flux_mesure) if missing."""
+def _rename_enedis_mesure_table(engine):
+    """Rename enedis_flux_mesure → enedis_flux_mesure_r4x for existing DBs.
+
+    Also drops old indexes and recreates them with r4x-qualified names.
+    Idempotent: skips if old table does not exist or new table already exists.
+    """
     insp = inspect(engine)
-    if insp.has_table("enedis_flux_file") and insp.has_table("enedis_flux_mesure"):
+    if not insp.has_table("enedis_flux_mesure"):
+        return
+    if insp.has_table("enedis_flux_mesure_r4x"):
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text('ALTER TABLE "enedis_flux_mesure" RENAME TO "enedis_flux_mesure_r4x"'))
+        # Drop old indexes (SQLite doesn't support RENAME INDEX)
+        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_point_horodatage"'))
+        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_flux_file"'))
+        conn.execute(text('DROP INDEX IF EXISTS "ix_enedis_mesure_flux_type"'))
+        # Recreate with r4x-qualified names
+        conn.execute(
+            text(
+                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_point_horodatage"'
+                ' ON "enedis_flux_mesure_r4x" ("point_id", "horodatage")'
+            )
+        )
+        conn.execute(
+            text(
+                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_flux_file"'
+                ' ON "enedis_flux_mesure_r4x" ("flux_file_id")'
+            )
+        )
+        conn.execute(
+            text(
+                'CREATE INDEX IF NOT EXISTS "ix_enedis_mesure_r4x_flux_type" ON "enedis_flux_mesure_r4x" ("flux_type")'
+            )
+        )
+    logger.info("migration: renamed enedis_flux_mesure → enedis_flux_mesure_r4x")
+
+
+def _create_enedis_tables(engine):
+    """Create Enedis SGE staging tables (enedis_flux_file, enedis_flux_mesure_r4x) if missing."""
+    insp = inspect(engine)
+    if insp.has_table("enedis_flux_file") and insp.has_table("enedis_flux_mesure_r4x"):
         return
 
     # Import models to register them with Base.metadata
@@ -1637,7 +1677,7 @@ def _create_enedis_tables(engine):
     Base.metadata.create_all(
         bind=engine,
         tables=[
-            Base.metadata.tables[t] for t in ("enedis_flux_file", "enedis_flux_mesure") if t in Base.metadata.tables
+            Base.metadata.tables[t] for t in ("enedis_flux_file", "enedis_flux_mesure_r4x") if t in Base.metadata.tables
         ],
     )
     logger.info("migration: created Enedis SGE staging tables")
@@ -1647,7 +1687,7 @@ def _add_enedis_columns(engine):
     """Add columns to existing Enedis tables that may have been created before schema evolution.
 
     Follows the same pattern as _add_soft_delete_columns, _add_site_geocoding_columns, etc.
-    When new columns are added to EnedisFluxFile or EnedisFluxMesure models,
+    When new columns are added to EnedisFluxFile or EnedisFluxMesureR4x models,
     add them to the relevant list below so existing DBs receive them via ALTER TABLE.
     """
     insp = inspect(engine)
@@ -1659,15 +1699,15 @@ def _add_enedis_columns(engine):
         # ("new_column_name", "VARCHAR(100)"),
     ]
 
-    # --- enedis_flux_mesure columns ---
-    enedis_flux_mesure_columns = [
+    # --- enedis_flux_mesure_r4x columns ---
+    enedis_flux_mesure_r4x_columns = [
         # Example for future SF3+:
         # ("new_column_name", "VARCHAR(50)"),
     ]
 
     table_column_map = {
         "enedis_flux_file": enedis_flux_file_columns,
-        "enedis_flux_mesure": enedis_flux_mesure_columns,
+        "enedis_flux_mesure_r4x": enedis_flux_mesure_r4x_columns,
     }
 
     added = 0

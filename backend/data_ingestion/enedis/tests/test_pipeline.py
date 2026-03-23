@@ -5,7 +5,7 @@ import os
 import pytest
 
 from data_ingestion.enedis.enums import FluxStatus
-from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesure
+from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesureR4x
 from data_ingestion.enedis.pipeline import ingest_file
 
 from .conftest import TEST_IV, TEST_KEY, make_encrypted_zip
@@ -146,7 +146,7 @@ class TestIngestFilePipeline:
         assert f.get_header_raw()["Reference_Demande"] == "189465931"
 
         # Mesures
-        mesures = db.query(EnedisFluxMesure).all()
+        mesures = db.query(EnedisFluxMesureR4x).all()
         assert len(mesures) == 3
         m0 = mesures[0]
         assert m0.point_id == "30000210411333"
@@ -166,7 +166,7 @@ class TestIngestFilePipeline:
         f = db.query(EnedisFluxFile).first()
         assert f.measures_count == 4  # 2 EA + 2 ERI
 
-        mesures = db.query(EnedisFluxMesure).all()
+        mesures = db.query(EnedisFluxMesureR4x).all()
         assert len(mesures) == 4
         gp_values = {m.grandeur_physique for m in mesures}
         assert gp_values == {"EA", "ERI"}
@@ -185,7 +185,7 @@ class TestIngestIdempotence:
         assert status1 == FluxStatus.PARSED
         assert status2 == FluxStatus.PARSED  # returns PARSED (already done)
         assert db.query(EnedisFluxFile).count() == 1
-        assert db.query(EnedisFluxMesure).count() == 3  # not duplicated
+        assert db.query(EnedisFluxMesureR4x).count() == 3  # not duplicated
 
     def test_skipped_file_twice_is_noop(self, db, r172_file, test_keys):
         """Re-submitting a SKIPPED file should not raise IntegrityError."""
@@ -209,7 +209,7 @@ class TestIngestIdempotence:
         ingest_file(f2, db, test_keys)
 
         assert db.query(EnedisFluxFile).count() == 2
-        assert db.query(EnedisFluxMesure).count() == 6  # 3 + 3, both stored
+        assert db.query(EnedisFluxMesureR4x).count() == 6  # 3 + 3, both stored
 
     def test_retry_after_error(self, db, tmp_path, test_keys):
         """A file that previously failed can be retried."""
@@ -279,7 +279,7 @@ class TestIngestErrors:
         assert f.status == FluxStatus.ERROR
         assert "disk full" in f.error_message
         assert f.measures_count == 0
-        assert db.query(EnedisFluxMesure).count() == 0
+        assert db.query(EnedisFluxMesureR4x).count() == 0
 
     def test_zero_mesures_is_parsed_not_error(self, db, tmp_path, test_keys):
         """Valid XML with 0 points → status=parsed, measures_count=0."""

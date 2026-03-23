@@ -31,7 +31,7 @@ from data_ingestion.enedis.decrypt import (
     decrypt_file,
 )
 from data_ingestion.enedis.enums import FluxStatus, FluxType
-from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesure
+from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesureR4x
 from data_ingestion.enedis.parsers.r4 import R4xParseError, parse_r4x
 
 logger = logging.getLogger("promeos.enedis.pipeline")
@@ -142,7 +142,7 @@ def ingest_file(
         for courbe in parsed.courbes:
             for point in courbe.points:
                 batch.append(
-                    EnedisFluxMesure(
+                    EnedisFluxMesureR4x(
                         flux_file_id=flux_file.id,
                         flux_type=flux_type.value,
                         point_id=parsed.point_id,
