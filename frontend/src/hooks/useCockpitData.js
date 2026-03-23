@@ -49,7 +49,25 @@ function normalizeCockpitKpis(raw) {
  * Le front reçoit les séries prêtes — pas de calcul.
  */
 function normalizeTrajectory(raw) {
-  if (!raw?.annees?.length) return null;
+  // Si le backend retourne error mais avec des jalons, conserver les jalons
+  if (!raw?.annees?.length && !raw?.jalons?.length) return null;
+  if (!raw?.annees?.length) {
+    // Pas de données de séries mais jalons disponibles — état partiel
+    return {
+      refYear: null,
+      refKwh: null,
+      reductionPctActuelle: null,
+      objectif2026Pct: raw.objectif_2026_pct ?? -25.0,
+      annees: [],
+      reelMwh: [],
+      objectifMwh: [],
+      projectionMwh: [],
+      jalons: raw.jalons ?? [],
+      surfaceM2Total: null,
+      computedAt: null,
+      partial: true,
+    };
+  }
   return {
     refYear: raw.ref_year,
     refKwh: raw.ref_kwh,

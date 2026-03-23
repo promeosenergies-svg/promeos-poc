@@ -322,7 +322,18 @@ def get_cockpit_trajectory(
     site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
 
     if not site_ids:
-        return {"error": "no_sites", "annees": [], "reel_mwh": [], "objectif_mwh": []}
+        return {
+            "error": "no_sites",
+            "annees": [],
+            "reel_mwh": [],
+            "objectif_mwh": [],
+            "jalons": [
+                {"annee": 2026, "reduction_pct": -25.0},
+                {"annee": 2030, "reduction_pct": -40.0},
+                {"annee": 2040, "reduction_pct": -50.0},
+                {"annee": 2050, "reduction_pct": -60.0},
+            ],
+        }
 
     # 1. Targets yearly (ConsumptionTarget, period='yearly')
     yearly_targets = (
@@ -347,6 +358,12 @@ def get_cockpit_trajectory(
             "reel_mwh": [],
             "objectif_mwh": [],
             "projection_mwh": [],
+            "jalons": [
+                {"annee": 2026, "reduction_pct": -25.0},
+                {"annee": 2030, "reduction_pct": -40.0},
+                {"annee": 2040, "reduction_pct": -50.0},
+                {"annee": 2050, "reduction_pct": -60.0},
+            ],
         }
 
     # 3. Année de référence = plus ancienne année avec target

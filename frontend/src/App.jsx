@@ -11,8 +11,7 @@ import AppShell from './layout/AppShell';
 import { SkeletonCard } from './ui/Skeleton';
 
 // Lazy-loaded pages — code-split per route
-// CommandCenter — dead code, no active route (Sprint B P0-7)
-// const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const CommandCenter = lazy(() => import('./pages/CommandCenter'));
 const Patrimoine = lazy(() => import('./pages/Patrimoine'));
 const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
@@ -116,7 +115,14 @@ function App() {
                     }
                   >
                     {/* V1 + V2 pages */}
-                    <Route path="/" element={<Navigate to="/cockpit" replace />} />
+                    <Route
+                      path="/"
+                      element={
+                        <PageSuspense>
+                          <CommandCenter />
+                        </PageSuspense>
+                      }
+                    />
                     <Route
                       path="/patrimoine"
                       element={
