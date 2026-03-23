@@ -94,8 +94,34 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
     );
   }
 
-  // ── Empty ──
+  // ── Empty / Partial ──
   if (!trajectoire?.annees?.length) {
+    // Partial state: jalons disponibles mais pas de séries annuelles
+    if (trajectoire?.partial && trajectoire.jalons?.length) {
+      return (
+        <div
+          className="bg-white border border-gray-200 rounded-xl p-4"
+          data-testid="trajectory-section"
+        >
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">Trajectoire Décret Tertiaire</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Données de consommation annuelle en cours de collecte — jalons réglementaires :
+          </p>
+          <div className="flex gap-3 text-xs text-gray-500 flex-wrap">
+            <span>Jalons :</span>
+            {trajectoire.jalons.map((j) => (
+              <span key={j.annee} className="text-blue-600 font-medium">
+                {j.annee} {j.reduction_pct} %
+              </span>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-400 mt-3">
+            Objectif 2026 : {trajectoire.objectif2026Pct ?? -25} % · La trajectoire sera calculée
+            automatiquement dès que les objectifs annuels seront configurés.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4">
         <EmptyState
@@ -144,11 +170,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
       <div className="flex gap-4 flex-wrap mb-3 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 h-0.5 bg-blue-500 rounded" />
-          Réel HELIOS (
-          {trajectoire.annees?.length
-            ? `${new Set(trajectoire.reelMwh?.filter((v) => v != null)).size > 0 ? '5' : '0'} sites`
-            : ''}
-          )
+          Réel HELIOS ({trajectoire.annees?.length ? `${sites?.length ?? ''} sites` : ''})
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 border-t-2 border-dashed border-red-400" />

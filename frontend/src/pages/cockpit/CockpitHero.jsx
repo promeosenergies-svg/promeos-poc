@@ -151,12 +151,20 @@ export default function CockpitHero({
         data-testid="kpi-reduction-dt"
       >
         <span className="text-xs text-gray-500">Réduction DT cumulée</span>
-        <span className={`text-2xl font-bold ${isRetard ? 'text-red-600' : 'text-green-700'}`}>
-          {reductionPct != null ? `${reductionPct}%` : '—'}
+        <span
+          className={`text-2xl font-bold ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
+        >
+          {reductionPct != null ? `${reductionPct}%` : trajectoire?.partial ? 'En attente' : '—'}
         </span>
         <span className="text-[10px] text-gray-400">
-          Objectif 2026 : <span className="text-blue-600">−25%</span>
-          {isRetard && <span className="text-red-500 ml-1">· retard</span>}
+          {trajectoire?.partial ? (
+            'Données annuelles en cours de collecte'
+          ) : (
+            <>
+              Objectif 2026 : <span className="text-blue-600">−25%</span>
+              {isRetard && <span className="text-red-500 ml-1">· retard</span>}
+            </>
+          )}
         </span>
       </div>
 

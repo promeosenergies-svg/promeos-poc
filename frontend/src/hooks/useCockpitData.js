@@ -87,7 +87,7 @@ function normalizeTrajectory(raw) {
  * Normalise la réponse /api/actions/summary.
  */
 function normalizeActions(raw) {
-  if (!raw) return { total: 0, enCours: 0, urgentes: 0, potentielEur: 0 };
+  if (!raw) return null;
   return {
     total: raw.total ?? raw.total_actions ?? 0,
     enCours: raw.en_cours ?? raw.in_progress ?? 0,

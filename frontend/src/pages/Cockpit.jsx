@@ -578,18 +578,16 @@ const Cockpit = () => {
       )}
 
       {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
-      {!cockpitLoading && cockpitKpis && (
-        <CockpitHero
-          kpis={cockpitKpis}
-          trajectoire={trajectoire}
-          actions={cockpitActions}
-          billing={billing}
-          loading={cockpitLoading}
-          error={null}
-          orgNom={cockpitKpis.orgNom}
-          onEvidence={setEvidenceOpen}
-        />
-      )}
+      <CockpitHero
+        kpis={cockpitKpis}
+        trajectoire={trajectoire}
+        actions={cockpitActions}
+        billing={billing}
+        loading={cockpitLoading}
+        error={!cockpitLoading && !cockpitKpis ? 'Données KPIs indisponibles' : null}
+        orgNom={cockpitKpis?.orgNom}
+        onEvidence={setEvidenceOpen}
+      />
 
       {/* Bannière retard trajectoire (conditionnelle) */}
       {trajectoire?.reductionPctActuelle != null &&
@@ -629,7 +627,7 @@ const Cockpit = () => {
         <EvenementsRecents />
       </div>
 
-      <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} />
+      <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} sites={scopedSites} />
 
       {/* ── Performance sites + Vecteur énergétique (2 colonnes) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

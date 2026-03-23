@@ -454,9 +454,11 @@ export default function CommandCenter() {
           label="Conso hier (J-1)"
           value={kpisJ1?.consoHierKwh != null ? fmtKwh(kpisJ1.consoHierKwh) : '—'}
           sub={
-            kpisJ1?.consoHierKwh != null
-              ? `${scopedSites.length} sites · données réelles`
-              : 'Chargement...'
+            cmdLoading
+              ? 'Chargement...'
+              : kpisJ1?.consoHierKwh != null
+                ? `${scopedSites.length} sites · données réelles`
+                : 'Aucune donnée EMS hier'
           }
           loading={cmdLoading}
         />
