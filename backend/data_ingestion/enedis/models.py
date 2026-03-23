@@ -4,7 +4,7 @@ Raw archive layer: store every byte Enedis sends, without transformation.
 
 Tables:
   enedis_flux_file   — one row per ingested file (registry + raw header)
-  enedis_flux_mesure — one row per Donnees_Point_Mesure (fully denormalized)
+  enedis_flux_mesure_r4x — one row per Donnees_Point_Mesure (fully denormalized)
 
 Design decisions:
   - Uses the shared Base (models.base.Base) so tables are created in promeos.db
@@ -55,7 +55,7 @@ class EnedisFluxFile(Base, TimestampMixin):
     # Full raw header as JSON for complete fidelity
     header_raw = Column(Text, nullable=True, comment="Entete XML complet en JSON")
 
-    mesures = relationship("EnedisFluxMesure", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures = relationship("EnedisFluxMesureR4x", back_populates="flux_file", cascade="all, delete-orphan")
 
     def set_header_raw(self, header_dict: dict) -> None:
         self.header_raw = json.dumps(header_dict, ensure_ascii=False)
@@ -69,7 +69,7 @@ class EnedisFluxFile(Base, TimestampMixin):
         return f"<EnedisFluxFile {self.filename} [{self.flux_type}] {self.status}>"
 
 
-class EnedisFluxMesure(Base, TimestampMixin):
+class EnedisFluxMesureR4x(Base, TimestampMixin):
     """Raw measurement point from an Enedis R4x CDC flux.
 
     Fully denormalized: each row carries its Donnees_Courbe context
@@ -80,12 +80,12 @@ class EnedisFluxMesure(Base, TimestampMixin):
     deferred to a future staging layer.
     """
 
-    __tablename__ = "enedis_flux_mesure"
+    __tablename__ = "enedis_flux_mesure_r4x"
     __table_args__ = (
         # Performance indexes (not unique — raw archive)
-        Index("ix_enedis_mesure_point_horodatage", "point_id", "horodatage"),
-        Index("ix_enedis_mesure_flux_file", "flux_file_id"),
-        Index("ix_enedis_mesure_flux_type", "flux_type"),
+        Index("ix_enedis_mesure_r4x_point_horodatage", "point_id", "horodatage"),
+        Index("ix_enedis_mesure_r4x_flux_file", "flux_file_id"),
+        Index("ix_enedis_mesure_r4x_flux_type", "flux_type"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -116,4 +116,4 @@ class EnedisFluxMesure(Base, TimestampMixin):
     flux_file = relationship("EnedisFluxFile", back_populates="mesures")
 
     def __repr__(self) -> str:
-        return f"<EnedisFluxMesure {self.point_id} {self.horodatage} {self.valeur_point}>"
+        return f"<EnedisFluxMesureR4x {self.point_id} {self.horodatage} {self.valeur_point}>"

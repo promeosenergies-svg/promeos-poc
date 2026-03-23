@@ -3,7 +3,7 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesure
+from data_ingestion.enedis.models import EnedisFluxFile, EnedisFluxMesureR4x
 
 
 # ---------------------------------------------------------------------------
@@ -84,11 +84,11 @@ class TestEnedisFluxFile:
 
 
 # ---------------------------------------------------------------------------
-# EnedisFluxMesure
+# EnedisFluxMesureR4x
 # ---------------------------------------------------------------------------
 
 
-class TestEnedisFluxMesure:
+class TestEnedisFluxMesureR4x:
     def _make_file(self, db, file_hash="h1"):
         f = EnedisFluxFile(filename="a.zip", file_hash=file_hash, flux_type="R4H", status="parsed")
         db.add(f)
@@ -97,7 +97,7 @@ class TestEnedisFluxMesure:
 
     def test_create_mesure(self, db):
         f = self._make_file(db)
-        m = EnedisFluxMesure(
+        m = EnedisFluxMesureR4x(
             flux_file_id=f.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -114,7 +114,7 @@ class TestEnedisFluxMesure:
         db.add(m)
         db.commit()
 
-        result = db.query(EnedisFluxMesure).first()
+        result = db.query(EnedisFluxMesureR4x).first()
         assert result.point_id == "30000210411333"
         assert result.valeur_point == "398"
         assert result.statut_point == "R"
@@ -124,7 +124,7 @@ class TestEnedisFluxMesure:
     def test_duplicate_mesures_allowed(self, db):
         """No unique constraint on mesures — raw archive allows duplicates."""
         f = self._make_file(db)
-        m1 = EnedisFluxMesure(
+        m1 = EnedisFluxMesureR4x(
             flux_file_id=f.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -132,7 +132,7 @@ class TestEnedisFluxMesure:
             valeur_point="398",
             statut_point="R",
         )
-        m2 = EnedisFluxMesure(
+        m2 = EnedisFluxMesureR4x(
             flux_file_id=f.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -142,13 +142,13 @@ class TestEnedisFluxMesure:
         )
         db.add_all([m1, m2])
         db.commit()
-        assert db.query(EnedisFluxMesure).count() == 2
+        assert db.query(EnedisFluxMesureR4x).count() == 2
 
     def test_mesure_from_different_files_coexist(self, db):
         """Same PRM/timestamp from different files are both stored."""
         f1 = self._make_file(db, file_hash="h1")
         f2 = self._make_file(db, file_hash="h2")
-        m1 = EnedisFluxMesure(
+        m1 = EnedisFluxMesureR4x(
             flux_file_id=f1.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -156,7 +156,7 @@ class TestEnedisFluxMesure:
             valeur_point="398",
             statut_point="R",
         )
-        m2 = EnedisFluxMesure(
+        m2 = EnedisFluxMesureR4x(
             flux_file_id=f2.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -166,11 +166,11 @@ class TestEnedisFluxMesure:
         )
         db.add_all([m1, m2])
         db.commit()
-        assert db.query(EnedisFluxMesure).count() == 2
+        assert db.query(EnedisFluxMesureR4x).count() == 2
 
     def test_null_valeur_point_allowed(self, db):
         f = self._make_file(db)
-        m = EnedisFluxMesure(
+        m = EnedisFluxMesureR4x(
             flux_file_id=f.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -180,13 +180,13 @@ class TestEnedisFluxMesure:
         )
         db.add(m)
         db.commit()
-        result = db.query(EnedisFluxMesure).first()
+        result = db.query(EnedisFluxMesureR4x).first()
         assert result.valeur_point is None
         assert result.statut_point is None
 
     def test_cascade_delete_with_file(self, db):
         f = self._make_file(db)
-        m = EnedisFluxMesure(
+        m = EnedisFluxMesureR4x(
             flux_file_id=f.id,
             flux_type="R4H",
             point_id="30000210411333",
@@ -195,17 +195,17 @@ class TestEnedisFluxMesure:
         )
         db.add(m)
         db.commit()
-        assert db.query(EnedisFluxMesure).count() == 1
+        assert db.query(EnedisFluxMesureR4x).count() == 1
 
         db.delete(f)
         db.commit()
-        assert db.query(EnedisFluxMesure).count() == 0
+        assert db.query(EnedisFluxMesureR4x).count() == 0
 
     def test_relationship_file_to_mesures(self, db):
         f = self._make_file(db)
         db.add_all(
             [
-                EnedisFluxMesure(
+                EnedisFluxMesureR4x(
                     flux_file_id=f.id,
                     flux_type="R4H",
                     point_id="PRM1",
