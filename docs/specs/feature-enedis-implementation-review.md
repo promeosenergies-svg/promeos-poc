@@ -45,6 +45,7 @@ Index("ix_enedis_mesure_flux_file", "flux_file_id"),
 
 Les deux creent le **meme index**. Double cout en espace et en ecriture, zero benefice. Supprimer l'un des deux (garder celui nomme dans `__table_args__` pour la coherence avec les autres index).
 **Décision Utilisateur** : OK. Analyser impact et faire l'optimisation.
+**Statut** : Résolu — PR fix/issue-150-duplicate-index-flux-file-id (#160).
 
 ---
 
@@ -168,7 +169,7 @@ Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_table
 | # | Type | Sujet | Severite | Action |
 |---|------|-------|----------|--------|
 | 1 | Bug | Pas de try/except autour du stockage DB | **Haute** | ~~Fix necessaire~~ Resolu — **#149** |
-| 2 | Bug | Index duplique sur `flux_file_id` | Basse | Fix simple — **#150** |
+| 2 | Bug | Index duplique sur `flux_file_id` | Basse | ~~Fix simple~~ Résolu — **#150** |
 | 3 | Edge case | Concurrence sur idempotence | Basse (POC) | A traiter si parallelisme — **#152** |
 | 4 | Edge case | `_hash_file` lit tout en memoire | Basse (POC) | Note pour production — **#153** |
 | 5 | Edge case | `FileNotFoundError` message peu clair | Basse | Amelioration mineure — **#151** |
