@@ -166,16 +166,16 @@ Si SF3 ajoute de nouvelles colonnes aux tables existantes, `_create_enedis_table
 
 | # | Type | Sujet | Severite | Action |
 |---|------|-------|----------|--------|
-| 1 | Bug | Pas de try/except autour du stockage DB | **Haute** | Fix necessaire |
-| 2 | Bug | Index duplique sur `flux_file_id` | Basse | Fix simple |
-| 3 | Edge case | Concurrence sur idempotence | Basse (POC) | A traiter si parallelisme |
-| 4 | Edge case | `_hash_file` lit tout en memoire | Basse (POC) | Note pour production |
-| 5 | Edge case | `FileNotFoundError` message peu clair | Basse | Amelioration mineure |
-| 6 | Cleanup | Enum `RECEIVED` inutilise | Basse | Supprimer ou justifier |
-| 7 | Cleanup | Docstring `EnedisFluxMesure` restrictive | Basse | Corriger le texte |
-| 8 | Decision | Pas de contrainte unique mesures | -- | A confirmer |
-| 9 | Decision | Toutes les valeurs en strings | -- | A confirmer |
-| 10 | Decision | Colonnes R4x-specifiques sur mesures | -- | Choisir Option A/B pour SF3 |
-| 11 | Decision | `point_id` String(14) suffisant ? | -- | A verifier sur R50/R151 |
-| 12 | Decision | Colonnes header R4x-specifiques | -- | A confirmer |
-| 13 | Decision | Migration ne gere pas ALTER TABLE | -- | A traiter dans SF3 |
+| 1 | Bug | Pas de try/except autour du stockage DB | **Haute** | Fix necessaire — **#149** |
+| 2 | Bug | Index duplique sur `flux_file_id` | Basse | Fix simple — **#150** |
+| 3 | Edge case | Concurrence sur idempotence | Basse (POC) | A traiter si parallelisme — **#152** |
+| 4 | Edge case | `_hash_file` lit tout en memoire | Basse (POC) | Note pour production — **#153** |
+| 5 | Edge case | `FileNotFoundError` message peu clair | Basse | Amelioration mineure — **#151** |
+| 6 | Cleanup | Enum `RECEIVED` inutilise | Basse | Conserver, implémenter en SF3 — **#154** |
+| 7 | Cleanup | Docstring `EnedisFluxMesure` restrictive | Basse | Résolu par tables dédiées — **#155** |
+| 8 | Decision | Pas de contrainte unique mesures | -- | Versioning republications avant SF3 — **#156** |
+| 9 | Decision | Toutes les valeurs en strings | -- | Confirmé — ADR `v69_enedis_staging_strings.md` |
+| 10 | Decision | Colonnes R4x-specifiques sur mesures | -- | Tables dédiées par flux — **#155** |
+| 11 | Decision | `point_id` String(14) suffisant ? | -- | Point d'attention — **#157** |
+| 12 | Decision | Colonnes header R4x-specifiques | -- | Résolu par tables dédiées — **#155** |
+| 13 | Decision | Migration ne gere pas ALTER TABLE | -- | A traiter dans SF3 — **#158** |

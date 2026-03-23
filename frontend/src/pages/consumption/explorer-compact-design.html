@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explorer Compact — Design Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Match Promeos existing design system — no new fonts, no new palette */
+  body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+  /* Annotation overlays for design review */
+  .annotation {
+    position: absolute;
+    right: -220px;
+    font-size: 11px;
+    color: #6366f1;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .annotation::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    width: 10px;
+    height: 1px;
+    background: #6366f1;
+  }
+  .height-marker {
+    position: absolute;
+    right: -60px;
+    font-size: 10px;
+    color: #ef4444;
+    font-weight: 700;
+    background: #fef2f2;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid #fecaca;
+  }
+
+  /* Smooth collapse/expand */
+  .collapse-section {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease-out, opacity 0.15s ease-out;
+    opacity: 0;
+  }
+  .collapse-section.open {
+    max-height: 300px;
+    opacity: 1;
+  }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- ═══════════════════════════════════════════════════════════
+     DESIGN NOTES (not part of the UI — review context)
+
+     BEFORE (current):  ~490px before chart
+       - Page header + subtitle:          ~50px
+       - Scope banner:                    ~40px
+       - StickyFilterBar (5 rows):       ~200px
+       - Portfolio banner:                ~40px  (conditional)
+       - KPI Header (title + 6 tiles):  ~120px
+       - space-y-5 gaps (8 sections):   ~140px
+
+     AFTER (this design):  ~150px before chart
+       - Page header (single row):        ~32px
+       - StickyFilterBar (2 rows):        ~56px
+       - KPI strip (inline):              ~32px
+       - space-y-3 gaps (3 sections):     ~24px
+       Total:                            ~144px
+
+     SAVINGS: ~340px  (70% reduction)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Simulated parent shell (breadcrumb + tabs) — NOT in scope, shown for context -->
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-6 py-2">
+    <nav class="text-xs text-gray-400">
+      PROMEOS &rsaquo; Energie &rsaquo; Consommations &rsaquo; <span class="text-gray-700 font-medium">Explorer</span>
+    </nav>
+  </div>
+  <div class="max-w-7xl mx-auto px-6 pb-3">
+    <div class="flex items-center gap-2">
+      <span class="text-lg font-bold text-gray-900">Consommations</span>
+      <div class="flex gap-1 ml-4">
+        <span class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg">Portefeuille</span>
+        <span class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg">Explorer</span>
+        <span class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg">Import</span>
+        <span class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg">Memobox</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EXPLORER PAGE — COMPACT DESIGN
+     ═══════════════════════════════════════════════════════════ -->
+<div class="max-w-7xl mx-auto px-6">
+  <div class="space-y-3 relative">
+
+    <!-- ─── CHANGE 1+2+3: Compact header — single row ────────────────────
+         BEFORE: 2 rows (title+subtitle, nav links) + full-width scope banner
+         AFTER:  1 row: title + inline badge + nav links
+         SAVES:  ~60px (subtitle + banner eliminated, single row)
+    -->
+    <div class="flex items-center gap-3 pt-3 flex-wrap">
+      <h1 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+        <svg class="w-[18px] h-[18px] text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Explorateur de consommation
+      </h1>
+      <!-- Inline scope badge (replaces full-width banner) -->
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap bg-blue-50 text-blue-700 border border-blue-200">
+        Siege HELIOS Paris — multi-selection disponible
+      </span>
+      <!-- Nav links pushed right -->
+      <div class="flex items-center gap-2 ml-auto shrink-0">
+        <a href="#" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          Diagnostic
+        </a>
+        <a href="#" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Performance
+        </a>
+      </div>
+    </div>
+
+    <!-- ─── CHANGE 4: StickyFilterBar — 2 rows + collapsible ──────────────
+         BEFORE: 5 always-visible rows (~200px)
+           Row 1: Sites + Portfolio + UI mode toggle
+           Row 2: Energy + Period + Granularity + YoY + TrustBadge
+           Row 3: Mode pills + Unit pills
+           Row 4: Save/Reset/Copy/Presets
+           Row 5: Resume contexte
+
+         AFTER: 2 rows (~56px) + collapsible "Plus de filtres"
+           Row A: Sites + | + Energy + Period + Granularity
+           Row B: Mode + Unit + YoY + TrustBadge + icon actions + "Plus" toggle
+
+         Collapsed "Plus de filtres" (hidden by default):
+           - Portfolio toggle + UI mode toggle
+           - Custom date inputs
+           - Presets dropdown
+           - Resume contexte
+           - Portfolio info banner
+
+         SAVES: ~140-150px
+    -->
+    <div class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-6 px-6 py-1.5 space-y-1.5">
+
+      <!-- Row A: Sites + Energy + Period + Granularity (primary filters) -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Site chips -->
+        <div class="flex items-center gap-1.5">
+          <button class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-white shrink-0 transition hover:opacity-90" style="background-color: #3b82f6">
+            <span class="w-2 h-2 rounded-full bg-white/60 shrink-0"></span>
+            <span class="max-w-[120px] truncate">Siege HELIOS Paris</span>
+          </button>
+          <button class="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition" title="Ajouter un site">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+
+        <!-- Separator -->
+        <span class="w-px h-5 bg-gray-200 shrink-0" aria-hidden="true"></span>
+
+        <!-- Energy toggle -->
+        <div class="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          <button class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white text-blue-700 shadow-sm">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Elec
+          </button>
+          <button class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            Gaz
+          </button>
+        </div>
+
+        <!-- Period pills -->
+        <div class="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          <button class="px-2 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">7j</button>
+          <button class="px-2 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">30j</button>
+          <button class="px-2 py-1 rounded-md text-xs font-medium bg-white text-blue-700 shadow-sm">90j</button>
+          <button class="px-2 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">12m</button>
+          <button class="px-2 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">YTD</button>
+          <button class="px-2 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-0.5">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </button>
+        </div>
+
+        <!-- Granularity -->
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-gray-400 shrink-0">Gran:</span>
+          <div class="flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+            <button class="px-2 py-1 text-xs font-medium bg-white text-blue-700 shadow-sm">Auto</button>
+            <button class="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-200">1h</button>
+            <button class="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900">1j</button>
+            <button class="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-900">Mois</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row B: Mode + Unit + YoY + TrustBadge + icon actions + "Plus" toggle -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Mode pills (no InfoTip inside button — fixes nested-interactive) -->
+        <div class="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium bg-white text-blue-700 shadow-sm" title="Somme de tous les sites sur une seule courbe.">Agrege</button>
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900" title="Courbe de chaque site superposee, meme axe Y.">Superpose</button>
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900" title="Courbe de chaque site empilee (aires cumulees).">Empile</button>
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900" title="Un sous-graphique par site, axe independant.">Separe</button>
+        </div>
+
+        <!-- Unit pills -->
+        <div class="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium bg-white text-blue-700 shadow-sm">kWh</button>
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">kW</button>
+          <button class="px-2.5 py-1 rounded-md text-xs font-medium text-gray-600 hover:text-gray-900">&euro;</button>
+        </div>
+
+        <!-- YoY toggle -->
+        <button class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Comparer N-1">
+          N-1
+        </button>
+
+        <!-- TrustBadge (right-aligned) -->
+        <div class="ml-auto flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-50 text-green-700 border border-green-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+            210 369 releves
+          </span>
+
+          <!-- Compact icon-only actions -->
+          <div class="flex items-center gap-0.5">
+            <button class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition" title="Enregistrer un preset">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+            <button class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition" title="Reinitialiser les filtres">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+            <button class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition" title="Copier le lien">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+          </div>
+
+          <!-- "Plus de filtres" toggle -->
+          <button id="toggleMore" onclick="document.getElementById('moreFilters').classList.toggle('open'); this.querySelector('svg').classList.toggle('rotate-180')" class="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-500 hover:text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition">
+            Plus
+            <svg class="w-3 h-3 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible "Plus de filtres" section (hidden by default) -->
+      <div id="moreFilters" class="collapse-section">
+        <div class="pt-1.5 pb-0.5 space-y-2 border-t border-gray-100">
+          <!-- Row: Portfolio + UI Mode + Presets -->
+          <div class="flex items-center gap-3 flex-wrap">
+            <!-- Portfolio toggle -->
+            <button class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Portfolio
+            </button>
+
+            <!-- UI mode toggle -->
+            <button class="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition">
+              Mode Expert &rarr;
+            </button>
+
+            <!-- Presets -->
+            <button class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+              Presets (2)
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+
+          <!-- Row: Custom dates -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 font-medium">Du</span>
+            <input type="date" class="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white">
+            <span class="text-xs text-gray-500 font-medium">au</span>
+            <input type="date" class="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white">
+          </div>
+
+          <!-- Resume contexte -->
+          <div class="text-[10px] text-gray-400 flex flex-wrap gap-x-3 gap-y-0.5">
+            <span>90 j</span>
+            <span>Jour</span>
+            <span>1 site</span>
+            <span>1 compteur</span>
+            <span>Qualite : 100 %</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CHANGE 5: KPI strip — inline flex-wrap ──────────────────────
+         BEFORE: "KPIs Consommation" title row + 6-tile card grid (~120px)
+           Each tile: 36x36 icon + uppercase label + bold value + sub-text + evidence button
+
+         AFTER: Single-row flex-wrap strip (~32px)
+           Each KPI: gray label + semibold value, separated by gap-x-5
+           Evidence buttons: small inline HelpCircle icons
+           Confidence badge: inline at end of strip
+
+         SAVES: ~80-90px
+    -->
+    <div class="flex flex-wrap items-baseline gap-x-5 gap-y-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-xs" aria-label="KPIs Consommation">
+      <div class="flex flex-col">
+        <span class="text-gray-400">Conso. totale</span>
+        <span class="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
+          983,9 MWh
+          <button class="text-gray-300 hover:text-blue-500 transition" title="Pourquoi ce chiffre ?">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+        </span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-gray-400">Cout total</span>
+        <span class="font-semibold text-gray-700 whitespace-nowrap">158 338 &euro;</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-gray-400">Prix moyen</span>
+        <span class="font-semibold text-gray-700 whitespace-nowrap">160,92 &euro;/MWh</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-gray-400">Emissions CO&#8322;e</span>
+        <span class="font-semibold text-gray-700 whitespace-nowrap flex items-center gap-1">
+          51 t CO&#8322;e
+          <button class="text-gray-300 hover:text-blue-500 transition" title="Pourquoi ce chiffre ?">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+        </span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-gray-400">Pic P95</span>
+        <span class="font-semibold text-gray-700 whitespace-nowrap">66 kW</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-gray-400">Nuit (22h-6h)</span>
+        <span class="font-semibold text-green-600 whitespace-nowrap">19 %</span>
+      </div>
+      <!-- Inline confidence at end -->
+      <div class="flex flex-col ml-auto">
+        <span class="text-gray-400">Confiance</span>
+        <span class="font-semibold text-green-600 whitespace-nowrap">Haute</span>
+      </div>
+    </div>
+
+    <!-- ─── CHART AREA (placeholder) ──────────────────────────────────── -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <!-- Chart metadata strip -->
+      <div class="flex items-center gap-4 px-4 py-2 text-[11px] text-gray-400 border-b border-gray-50">
+        <span>1 compteur</span>
+        <span>2 160 mesures</span>
+        <span>Granularite : Horaire</span>
+        <span>Qualite : 100 %</span>
+        <span>Source : Compteurs</span>
+      </div>
+      <!-- Simulated line chart — energy flow -->
+      <div class="h-[420px] bg-white relative">
+        <div class="absolute inset-0 px-4 py-4">
+          <!-- Y-axis labels -->
+          <div class="absolute left-2 top-4 bottom-12 flex flex-col justify-between text-[10px] text-gray-400">
+            <span>276 kWh</span>
+            <span>216 kWh</span>
+            <span>146 kWh</span>
+            <span>76 kWh</span>
+            <span>6 kWh</span>
+          </div>
+          <!-- SVG line chart -->
+          <div class="ml-12 mr-4 h-full">
+            <svg id="lineChart" class="w-full h-full" preserveAspectRatio="none"></svg>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                const svg = document.getElementById('lineChart');
+                if (!svg) return;
+                const W = 960, H = 360;
+                svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+                // Generate synthetic energy consumption data (90 days, hourly-ish feel)
+                const points = [];
+                const N = 400;
+                for (let i = 0; i < N; i++) {
+                  const t = i / N;
+                  // Base load ~140 kWh with daily cycling pattern
+                  const daily = Math.sin(t * Math.PI * 2 * 45) * 60;
+                  // Weekly pattern (weekends lower)
+                  const weekly = Math.sin(t * Math.PI * 2 * 6.5) * 20;
+                  // Random spikes (peak demand)
+                  const spike = Math.random() > 0.92 ? (Math.random() * 80 + 20) : 0;
+                  // Noise
+                  const noise = (Math.random() - 0.5) * 30;
+                  // Seasonal drift
+                  const seasonal = Math.sin(t * Math.PI * 0.8) * 25;
+
+                  const val = 160 + daily + weekly + spike + noise + seasonal;
+                  const x = (i / (N - 1)) * W;
+                  // Map val range ~30-300 to chart height (inverted Y)
+                  const y = H - ((Math.max(6, Math.min(276, val)) - 6) / 270) * H;
+                  points.push({ x, y });
+                }
+
+                // Build path string
+                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+                // Gradient fill under the line
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                defs.innerHTML = `
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.02"/>
+                  </linearGradient>
+                `;
+                svg.appendChild(defs);
+
+                // Horizontal grid lines
+                for (let i = 0; i <= 4; i++) {
+                  const gy = (i / 4) * H;
+                  const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  gridLine.setAttribute('x1', '0');
+                  gridLine.setAttribute('y1', gy.toFixed(1));
+                  gridLine.setAttribute('x2', W);
+                  gridLine.setAttribute('y2', gy.toFixed(1));
+                  gridLine.setAttribute('stroke', '#f3f4f6');
+                  gridLine.setAttribute('stroke-width', '1');
+                  svg.appendChild(gridLine);
+                }
+
+                // Area fill
+                const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                areaPath.setAttribute('d', `${pathD} L${W},${H} L0,${H} Z`);
+                areaPath.setAttribute('fill', 'url(#areaGrad)');
+                svg.appendChild(areaPath);
+
+                // Line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', pathD);
+                line.setAttribute('fill', 'none');
+                line.setAttribute('stroke', '#3b82f6');
+                line.setAttribute('stroke-width', '1.5');
+                line.setAttribute('stroke-linejoin', 'round');
+                svg.appendChild(line);
+              });
+            </script>
+          </div>
+        </div>
+        <!-- X-axis labels -->
+        <div class="absolute bottom-1 left-12 right-4 flex justify-between text-[9px] text-gray-400">
+          <span>20 dec.</span>
+          <span>05 janv.</span>
+          <span>22 janv.</span>
+          <span>08 fevr.</span>
+          <span>24 fevr.</span>
+          <span>16 mars</span>
+        </div>
+      </div>
+      <!-- Legend -->
+      <div class="flex items-center justify-center gap-2 py-2 border-t border-gray-50">
+        <span class="w-3 h-0.5 rounded-full bg-blue-500"></span>
+        <span class="text-xs text-gray-500">Siege HELIOS Paris</span>
+      </div>
+    </div>
+
+    <!-- Context banner (unchanged) -->
+    <div class="flex items-center gap-3 px-4 py-2.5 bg-white rounded-lg border border-gray-200 text-xs">
+      <svg class="w-4 h-4 text-green-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span class="text-gray-600"><strong>Siege HELIOS Paris</strong> — 210 369 releves (gas, electricity)</span>
+      <span class="ml-auto text-gray-400">01 mars 2021 &rarr; 16 mars 2026</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     COMPARISON: BEFORE vs AFTER
+     ═══════════════════════════════════════════════════════════ -->
+<div class="max-w-7xl mx-auto px-6 mt-12 mb-8">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-bold text-gray-900 mb-4">Design Summary — Vertical Space Budget</h2>
+
+    <div class="grid grid-cols-2 gap-6">
+      <!-- BEFORE -->
+      <div>
+        <h3 class="text-sm font-semibold text-red-600 mb-3">BEFORE (~490px before chart)</h3>
+        <div class="space-y-1 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~50px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">Title + subtitle (2 rows)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~40px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">Scope banner (full width)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~200px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">StickyFilterBar (5 rows)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~40px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">Portfolio banner</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~120px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">KPI Header (title + 6 tiles)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~40px</span>
+            <div class="flex-1 h-6 bg-red-50 border border-red-200 rounded flex items-center px-2 text-red-700">space-y-5 gaps</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div>
+        <h3 class="text-sm font-semibold text-green-600 mb-3">AFTER (~144px before chart)</h3>
+        <div class="space-y-1 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~32px</span>
+            <div class="flex-1 h-6 bg-green-50 border border-green-200 rounded flex items-center px-2 text-green-700">Title + badge + nav (1 row)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~56px</span>
+            <div class="flex-1 h-6 bg-green-50 border border-green-200 rounded flex items-center px-2 text-green-700">StickyFilterBar (2 rows)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~32px</span>
+            <div class="flex-1 h-6 bg-green-50 border border-green-200 rounded flex items-center px-2 text-green-700">KPI inline strip</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-16 text-right text-gray-400">~24px</span>
+            <div class="flex-1 h-6 bg-green-50 border border-green-200 rounded flex items-center px-2 text-green-700">space-y-3 gaps</div>
+          </div>
+        </div>
+        <p class="mt-3 text-sm font-semibold text-green-700">Savings: ~346px (71% reduction)</p>
+      </div>
+    </div>
+
+    <!-- Key design decisions -->
+    <div class="mt-6 pt-4 border-t border-gray-100">
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Key Design Decisions</h3>
+      <ul class="text-xs text-gray-600 space-y-1.5">
+        <li><strong>Scope banner &rarr; Badge:</strong> The full-width blue banner ("Vous explorez Siege HELIOS Paris") becomes a compact <code class="bg-gray-100 px-1 rounded">&lt;Badge status="info"&gt;</code> inline with the title. Same info, ~40px saved.</li>
+        <li><strong>Filter bar 5&rarr;2 rows:</strong> Primary filters (site, energy, period, granularity) on Row A. Secondary controls (mode, unit, YoY, actions) on Row B. Everything else in a collapsible "Plus de filtres" section.</li>
+        <li><strong>Actions: label &rarr; icon-only:</strong> Save/Reset/Copy become icon buttons with tooltips. Saves horizontal space and reduces row height. Full labels still accessible via "Plus de filtres" or tooltips.</li>
+        <li><strong>KPI grid &rarr; strip:</strong> Follows the existing OverviewRow pattern (<code class="bg-gray-100 px-1 rounded">flex flex-wrap gap-x-5</code>). Removes icon containers, section title, card borders. Evidence buttons are small inline icons. Confidence badge is inline at end.</li>
+        <li><strong>InfoTip fix:</strong> Mode pill tooltips use native <code class="bg-gray-100 px-1 rounded">title</code> attribute instead of nested InfoTip button. Fixes nested-interactive a11y violation.</li>
+        <li><strong>Subtitle removed:</strong> "Visualisez et comparez les courbes..." adds no information — the page title is self-explanatory.</li>
+        <li><strong>Portfolio banner &rarr; "Plus de filtres":</strong> Only shown when Portfolio mode is active AND user expands the section. Stops consuming vertical space for a rarely-active feature.</li>
+        <li><strong>No design system changes:</strong> All components use existing Tailwind classes, Badge component, TrustBadge, and pill patterns already established in the codebase.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
