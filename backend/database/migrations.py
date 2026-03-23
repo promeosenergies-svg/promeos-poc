@@ -84,6 +84,7 @@ def run_migrations(engine):
     _migrate_operat_export_manifest(engine)
     # Enedis SGE — CDC staging tables
     _create_enedis_tables(engine)
+    _add_enedis_columns(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1640,3 +1641,54 @@ def _create_enedis_tables(engine):
         ],
     )
     logger.info("migration: created Enedis SGE staging tables")
+
+
+def _add_enedis_columns(engine):
+    """Add columns to existing Enedis tables that may have been created before schema evolution.
+
+    Follows the same pattern as _add_soft_delete_columns, _add_site_geocoding_columns, etc.
+    When new columns are added to EnedisFluxFile or EnedisFluxMesure models,
+    add them to the relevant list below so existing DBs receive them via ALTER TABLE.
+    """
+    insp = inspect(engine)
+
+    # --- enedis_flux_file columns ---
+    # Add new columns here as (col_name, col_type) when evolving the model.
+    enedis_flux_file_columns = [
+        # Example for future SF3+:
+        # ("new_column_name", "VARCHAR(100)"),
+    ]
+
+    # --- enedis_flux_mesure columns ---
+    enedis_flux_mesure_columns = [
+        # Example for future SF3+:
+        # ("new_column_name", "VARCHAR(50)"),
+    ]
+
+    table_column_map = {
+        "enedis_flux_file": enedis_flux_file_columns,
+        "enedis_flux_mesure": enedis_flux_mesure_columns,
+    }
+
+    added = 0
+    with engine.begin() as conn:
+        for table_name, columns in table_column_map.items():
+            if not insp.has_table(table_name) or not columns:
+                continue
+
+            existing_cols = {c["name"] for c in insp.get_columns(table_name)}
+
+            for col_name, col_type in columns:
+                if col_name in existing_cols:
+                    continue
+                try:
+                    conn.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{col_name}" {col_type}'))
+                    added += 1
+                    logger.info("migration: added %s.%s (%s)", table_name, col_name, col_type)
+                except Exception as e:
+                    logger.warning("migration: could not add %s.%s: %s", table_name, col_name, e)
+
+    if added > 0:
+        logger.info("migration: added %d Enedis column(s)", added)
+    else:
+        logger.debug("migration: Enedis columns already present — no changes")
