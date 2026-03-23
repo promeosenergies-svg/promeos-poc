@@ -63,6 +63,10 @@ import {
   evidenceCouverture,
 } from '../ui/evidence.fixtures';
 import { useComplianceMeta } from '../hooks/useComplianceMeta';
+import { useCockpitData } from '../hooks/useCockpitData';
+import CockpitHero from './cockpit/CockpitHero';
+import TrajectorySection from './cockpit/TrajectorySection';
+import ActionsImpact from './cockpit/ActionsImpact';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -103,6 +107,15 @@ const Cockpit = () => {
   const [marketContext, setMarketContext] = useState(null);
   // Step 33: Compliance score trend (6 months)
   const [scoreTrend, setScoreTrend] = useState(null);
+
+  // ── Step 6: Cockpit world-class data (backend-driven) ──
+  const {
+    kpis: cockpitKpis,
+    trajectoire,
+    actions: cockpitActions,
+    billing,
+    loading: cockpitLoading,
+  } = useCockpitData();
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -544,6 +557,48 @@ const Cockpit = () => {
           </Button>
         </div>
       </div>
+
+      {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
+      {!cockpitLoading && cockpitKpis && (
+        <CockpitHero
+          kpis={cockpitKpis}
+          trajectoire={trajectoire}
+          actions={cockpitActions}
+          billing={billing}
+          loading={cockpitLoading}
+          error={null}
+          orgNom={cockpitKpis.orgNom}
+          onEvidence={setEvidenceOpen}
+        />
+      )}
+
+      {/* Bannière retard trajectoire (conditionnelle) */}
+      {trajectoire?.reductionPctActuelle != null &&
+        trajectoire?.objectif2026Pct != null &&
+        trajectoire.reductionPctActuelle > trajectoire.objectif2026Pct && (
+          <div
+            className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm"
+            data-testid="banner-retard-trajectoire"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span className="text-amber-800 font-medium">
+                Retard trajectoire DT · {trajectoire.reductionPctActuelle}% réalisé vs objectif{' '}
+                {trajectoire.objectif2026Pct}%
+              </span>
+            </div>
+            <button
+              onClick={() => navigate('/actions')}
+              className="text-xs text-amber-700 font-medium hover:text-amber-900 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+            >
+              Plan de rattrapage →
+            </button>
+          </div>
+        )}
+
+      <TrajectorySection trajectoire={trajectoire} loading={cockpitLoading} />
+
+      <ActionsImpact actions={cockpitActions} loading={cockpitLoading} />
 
       {/* ═══════════ ZONE 2 : KPI DÉCIDEUR (4 tiles, compact) ═══════════ */}
       <div data-tour="step-1">
