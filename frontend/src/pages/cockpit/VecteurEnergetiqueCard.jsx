@@ -53,10 +53,40 @@ export default function VecteurEnergetiqueCard() {
   }
 
   // Agrégats pré-calculés backend — zéro calcul front
-  const backendVectors = data.vectors ?? [];
-  const totalTco2 = data.total_t_co2 ?? 0;
-  const scope1Tco2 = data.scope1_t_co2 ?? 0;
-  const scope2Tco2 = data.scope2_t_co2 ?? 0;
+  // Fallback : si data.vectors absent (ancien cache), reconstruire depuis sites.breakdown
+  let backendVectors = data.vectors ?? [];
+  let totalTco2 = data.total_t_co2 ?? 0;
+  let scope1Tco2 = data.scope1_t_co2 ?? 0;
+  let scope2Tco2 = data.scope2_t_co2 ?? 0;
+
+  if (backendVectors.length === 0 && data.sites?.length > 0) {
+    // Rétro-compatibilité : agréger depuis breakdown (sera supprimé quand le cache expire)
+    const agg = {};
+    let totalKwh = 0;
+    let s1 = 0;
+    let s2 = 0;
+    for (const site of data.sites) {
+      for (const b of site.breakdown ?? []) {
+        const k = b.energy_type;
+        if (!agg[k]) agg[k] = { kwh: 0, kgCo2: 0 };
+        agg[k].kwh += b.kwh ?? 0;
+        agg[k].kgCo2 += b.kg_co2 ?? 0;
+        totalKwh += b.kwh ?? 0;
+        if (k === 'gaz' || k === 'fioul') s1 += b.kg_co2 ?? 0;
+        else s2 += b.kg_co2 ?? 0;
+      }
+    }
+    backendVectors = Object.entries(agg)
+      .sort((a, b) => b[1].kwh - a[1].kwh)
+      .map(([k, v]) => ({
+        key: k,
+        mwh: Math.round(v.kwh / 1000),
+        pct: totalKwh > 0 ? Math.round((v.kwh / totalKwh) * 100) : 0,
+        t_co2: (v.kgCo2 / 1000).toFixed(1),
+      }));
+    scope1Tco2 = (s1 / 1000).toFixed(1);
+    scope2Tco2 = (s2 / 1000).toFixed(1);
+  }
 
   // Enrichir avec les labels/couleurs du design system
   const vectors = backendVectors.map((v) => ({
