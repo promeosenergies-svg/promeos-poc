@@ -387,33 +387,43 @@ def get_cockpit_trajectory(
     ref_year = min(targets_by_year.keys())
     ref_kwh = targets_by_year[ref_year]
 
-    # 4. Consommations réelles annuelles depuis MeterReading
-    #    Agréger par année civile, filtrer freq granulaires (éviter doublons)
-    meter_ids = [m.id for m in db.query(Meter.id).filter(Meter.site_id.in_(site_ids)).all()]
+    # 4. Consommations réelles annuelles depuis ConsumptionTarget.actual_kwh (rapide)
+    #    Priorité aux targets yearly avec actual_kwh renseigné (seed + import)
+    #    Fallback MeterReading si actual_kwh absent (lent sur SQLite)
     reel_by_year: dict[int, float] = {}
-    if meter_ids:
-        from sqlalchemy import extract
 
-        rows = (
-            db.query(
-                extract("year", MeterReading.timestamp).label("yr"),
-                func.sum(MeterReading.value_kwh),
+    # Source rapide : actual_kwh des targets yearly
+    for t in yearly_targets:
+        if t.actual_kwh and t.actual_kwh > 0:
+            y = t.year
+            reel_by_year[y] = reel_by_year.get(y, 0) + t.actual_kwh
+
+    # Fallback lent : MeterReading uniquement si aucun actual_kwh trouvé
+    if not reel_by_year:
+        meter_ids = [m.id for m in db.query(Meter.id).filter(Meter.site_id.in_(site_ids)).all()]
+        if meter_ids:
+            from sqlalchemy import extract
+
+            rows = (
+                db.query(
+                    extract("year", MeterReading.timestamp).label("yr"),
+                    func.sum(MeterReading.value_kwh),
+                )
+                .filter(
+                    MeterReading.meter_id.in_(meter_ids),
+                    MeterReading.frequency.in_(
+                        [
+                            FrequencyType.MIN_15,
+                            FrequencyType.MIN_30,
+                            FrequencyType.HOURLY,
+                        ]
+                    ),
+                )
+                .group_by("yr")
+                .all()
             )
-            .filter(
-                MeterReading.meter_id.in_(meter_ids),
-                MeterReading.frequency.in_(
-                    [
-                        FrequencyType.MIN_15,
-                        FrequencyType.MIN_30,
-                        FrequencyType.HOURLY,
-                    ]
-                ),
-            )
-            .group_by("yr")
-            .all()
-        )
-        for yr, total in rows:
-            reel_by_year[int(yr)] = total
+            for yr, total in rows:
+                reel_by_year[int(yr)] = total
 
     # 5. Jalons réglementaires DT (décret n°2019-771)
     DT_TARGETS = {2026: -0.25, 2030: -0.40, 2040: -0.50, 2050: -0.60}
