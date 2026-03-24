@@ -20,6 +20,7 @@ import {
 import {
   Card,
   Button,
+  Skeleton,
   SkeletonCard,
   PageShell,
   StatusDot,
@@ -552,11 +553,17 @@ export default function CommandCenter() {
             </p>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center min-h-[200px]">
-            <span className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 min-h-[200px]">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-3">
               Progression trajectoire mensuelle
             </span>
-            <span className="text-sm text-gray-500">Données en cours de collecte...</span>
+            <div className="space-y-3 mt-6">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-2.5 w-full rounded-full" />
+              <Skeleton className="h-3 w-40 mt-4" />
+              <Skeleton className="h-2.5 w-full rounded-full" />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-4">Chargement des données trajectoire...</p>
           </div>
         )}
 
