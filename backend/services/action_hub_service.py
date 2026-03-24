@@ -176,7 +176,7 @@ def build_actions_from_billing(db: Session, org_id: int, site_ids: list) -> List
         db.query(BillingInsight)
         .filter(
             BillingInsight.site_id.in_(site_ids),
-            BillingInsight.insight_status != InsightStatus.FALSE_POSITIVE,
+            BillingInsight.insight_status.notin_([InsightStatus.FALSE_POSITIVE, InsightStatus.RESOLVED]),
             BillingInsight.recommended_actions_json.isnot(None),
         )
         .all()

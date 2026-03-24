@@ -480,9 +480,10 @@ class TestBillingService:
 
         price_e, src_e = get_reference_price(db_session, site.id, "elec")
         price_g, src_g = get_reference_price(db_session, site.id, "gaz")
-        assert price_e == 0.15
+        # Source unique : config/default_prices.py (0.18 elec, 0.09 gaz)
+        assert price_e == 0.18
         assert src_e == "default_elec"
-        assert price_g == 0.08
+        assert price_g == 0.09
         assert src_g == "default_gaz"
 
     def test_rule_metrics_have_inputs(self, db_session):

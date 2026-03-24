@@ -39,6 +39,27 @@ def recompute_site_full(db: Session, site_id: int) -> dict:
     snapshot = recompute_site(db, site_id)
     _logger.info("recompute_site_full site=%d: étape 1 (legacy snapshot) done", site_id)
 
+    # ── Étape 1b : avancement DT dynamique (conso réelle vs référence) ───
+    try:
+        from services.dt_trajectory_service import update_site_avancement
+
+        avancement = update_site_avancement(db, site_id)
+        if avancement is not None:
+            snapshot["avancement_decret_pct"] = avancement
+            _logger.info(
+                "recompute_site_full site=%d: étape 1b (avancement DT) = %.1f%%",
+                site_id,
+                avancement,
+            )
+        else:
+            _logger.debug("recompute_site_full site=%d: étape 1b — avancement incalculable", site_id)
+    except Exception as exc:
+        _logger.warning(
+            "recompute_site_full site=%d: étape 1b (avancement DT) failed (%s) — skipping",
+            site_id,
+            exc,
+        )
+
     # ── Étape 2 : RegAssessment via RegOps engine ─────────────────────────────
     try:
         from regops.engine import evaluate_site, persist_assessment

@@ -1,6 +1,14 @@
 """
 PROMEOS — V99 Purchase Scenarios Service (Grand Public)
-3 simple deterministic scenarios per contract. No AI.
+
+⚠️  DÉPRÉCIÉ — Ce service utilise des facteurs prix fixes (1.05/0.95/0.88).
+    La source de vérité pour les scénarios achat est désormais :
+      - purchase_service.py (4 stratégies market-based)
+      - purchase_pricing.py (forward, spread, volatility)
+    via POST /api/purchase/compute/{site_id}
+
+    Ce service est conservé pour backward-compat (contracts_radar).
+    NE PAS ajouter de nouvelles logiques ici.
 """
 
 from sqlalchemy.orm import Session

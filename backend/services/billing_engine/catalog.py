@@ -677,6 +677,31 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "valid_from": "2026-02-01",
         "tva_rate": 0.20,
     },
+    # ── GAZ — TICGN / Accise gaz (versionnée) ────────────────────────────
+    # Sources : Légifrance arrêtés constatant les tarifs d'accise
+    "TICGN_2024": {
+        "rate": 0.01637,
+        "unit": "EUR/kWh",
+        "source": "Loi de finances 2024 — TICGN usage combustible (16.37 EUR/MWh)",
+        "valid_from": "2024-01-01",
+        "valid_to": "2025-07-31",
+        "tva_rate": 0.20,
+    },
+    "TICGN_AOUT2025": {
+        "rate": 0.01054,
+        "unit": "EUR/kWh",
+        "source": "Arrêté 24/07/2025 (Légifrance JORFTEXT000052009319) — accise gaz août 2025 (10.54 EUR/MWh)",
+        "valid_from": "2025-08-01",
+        "valid_to": "2026-01-31",
+        "tva_rate": 0.20,
+    },
+    "TICGN_FEV2026": {
+        "rate": 0.01073,
+        "unit": "EUR/kWh",
+        "source": "Arrêté 24/12/2025 (Légifrance JORFTEXT000053229989) — accise gaz fév 2026+ (10.73 EUR/MWh)",
+        "valid_from": "2026-02-01",
+        "tva_rate": 0.20,
+    },
     # ── GAZ — ATRD (Distribution) — ATRD7 (01/07/2024 →) ───────────────
     "ATRD_GAZ_ABO_T1": {
         "rate": 54.72,
@@ -935,7 +960,7 @@ CATALOG_VERSION = "2026-03-22_v2.2_c3hta_stockage_cee_perequation_capacite_refor
 def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
     """
     Resolve a rate code to its temporal variant based on at_date.
-    Supports CTA_ELEC, ACCISE_ELEC, and ATRD_GAZ temporal versioning.
+    Supports CTA_ELEC, ACCISE_ELEC, TICGN, and ATRD_GAZ temporal versioning.
     """
     if at_date is None:
         return code
@@ -976,6 +1001,13 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
         if at_date >= date(2025, 8, 1):
             return "ACCISE_ELEC_T2_AOUT2025"
         return "ACCISE_ELEC_T2"
+
+    if code == "TICGN":
+        if at_date >= date(2026, 2, 1):
+            return "TICGN_FEV2026"
+        if at_date >= date(2025, 8, 1):
+            return "TICGN_AOUT2025"
+        return "TICGN_2024"
 
     if code == "CAPACITE_ELEC":
         if at_date < date(2026, 1, 1):

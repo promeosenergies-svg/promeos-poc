@@ -63,7 +63,7 @@ bacs:
     low_kw: 70
   deadlines:
     above_290: "2025-01-01"  # Tier 1 — déjà passé
-    above_70: "2027-01-01"  # Tier 2 — décret BACS 2025 (avancé de 2030 à 2027)
+    above_70: "2030-01-01"  # Tier 2 — décret n°2025-1343 du 26/12/2025 reporte de 2027 à 2030 (alignement EPBD)
     new_construction: "2023-04-09"  # PC déposé après cette date → obligatoire
   penalties:
     non_compliance: 7500
@@ -141,8 +141,8 @@ scoring:
     tertiaire_operat: 0.35
     bacs: 0.25
     aper: 0.15
-    dpe_tertiaire: 0.15
-    csrd: 0.10
+    dpe_tertiaire: 0.15   # implemented: false — évaluateur non disponible, exclu du dénominateur A.2
+    csrd: 0.10             # implemented: false — évaluateur non disponible, exclu du dénominateur A.2
   # Pénalité findings critiques (A.2)
   critical_penalty:
     max_pts: 20.0

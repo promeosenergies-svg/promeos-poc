@@ -114,15 +114,15 @@ class TestMarketPriceSeed:
 class TestGetReferencePriceFallback:
     """Test updated fallback values."""
 
-    def test_fallback_elec_is_0068(self):
-        from services.billing_service import DEFAULT_PRICE_ELEC
+    def test_fallback_elec_uses_config(self):
+        from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
-        assert DEFAULT_PRICE_ELEC == 0.068
+        assert DEFAULT_PRICE_ELEC_EUR_KWH == 0.18
 
-    def test_fallback_gaz_is_0045(self):
-        from services.billing_service import DEFAULT_PRICE_GAZ
+    def test_fallback_gaz_uses_config(self):
+        from config.default_prices import DEFAULT_PRICE_GAZ_EUR_KWH
 
-        assert DEFAULT_PRICE_GAZ == 0.045
+        assert DEFAULT_PRICE_GAZ_EUR_KWH == 0.09
 
 
 # ============================================================

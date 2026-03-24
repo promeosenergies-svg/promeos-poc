@@ -10,7 +10,6 @@ V1.1: get_reference_price (contract > site_tariff > fallback),
 import inspect
 import json
 import logging
-import os
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
@@ -34,14 +33,17 @@ from models import (
     EntiteJuridique,
 )
 from models.enums import ActionSourceType, ActionStatus
+from config.default_prices import (
+    DEFAULT_PRICE_ELEC_EUR_KWH,
+    DEFAULT_PRICE_GAZ_EUR_KWH,
+    get_default_price,
+)
 
 
 # ========================================
 # Price reference resolution (V1.1)
+# Source unique : config/default_prices.py
 # ========================================
-
-DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.15"))
-DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.08"))
 
 
 def get_reference_price(
@@ -109,10 +111,10 @@ def get_reference_price(
     if tariff and tariff.price_ref_eur_per_kwh:
         return (tariff.price_ref_eur_per_kwh, "site_tariff_profile")
 
-    # Priority 4: Default fallback
+    # Priority 4: Default fallback (source unique: config/default_prices.py)
     if energy_type == "gaz":
-        return (DEFAULT_PRICE_GAZ, "default_gaz")
-    return (DEFAULT_PRICE_ELEC, "default_elec")
+        return (DEFAULT_PRICE_GAZ_EUR_KWH, "default_gaz")
+    return (DEFAULT_PRICE_ELEC_EUR_KWH, "default_elec")
 
 
 # ========================================
@@ -156,7 +158,7 @@ def shadow_billing_simple(
         ref_source = f"contract:{contract.id}"
 
     if price_ref is None:
-        price_ref = DEFAULT_PRICE_ELEC
+        price_ref = DEFAULT_PRICE_ELEC_EUR_KWH
         ref_source = "default_elec"
 
     shadow_total = round(invoice.energy_kwh * price_ref, 2)

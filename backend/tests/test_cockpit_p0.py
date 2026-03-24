@@ -164,13 +164,21 @@ class TestCockpitTrajectory:
 
 class TestCo2Factor:
     def test_co2_factor_elec_canonical(self):
-        """CO2 électricité = 0.0569 kg/kWh (ADEME 2024) — pas 0.052."""
+        """CO2 electricite = 0.052 kg/kWh (ADEME Base Empreinte V23.6)."""
         from services.compliance_engine import CO2_FACTOR_ELEC_KG_KWH
 
-        assert CO2_FACTOR_ELEC_KG_KWH == 0.0569
+        assert CO2_FACTOR_ELEC_KG_KWH == 0.052
 
     def test_co2_factor_gaz_canonical(self):
-        """CO2 gaz naturel = 0.2270 kg/kWh (ADEME 2024)."""
+        """CO2 gaz naturel = 0.227 kg/kWh (ADEME Base Empreinte V23.6)."""
         from services.compliance_engine import CO2_FACTOR_GAZ_KG_KWH
 
-        assert CO2_FACTOR_GAZ_KG_KWH == 0.2270
+        assert CO2_FACTOR_GAZ_KG_KWH == 0.227
+
+    def test_co2_factors_from_single_source(self):
+        """Tous les facteurs CO2 viennent de config/emission_factors.py."""
+        from config.emission_factors import get_emission_factor
+        from services.compliance_engine import CO2_FACTOR_ELEC_KG_KWH, CO2_FACTOR_GAZ_KG_KWH
+
+        assert CO2_FACTOR_ELEC_KG_KWH == get_emission_factor("ELEC")
+        assert CO2_FACTOR_GAZ_KG_KWH == get_emission_factor("GAZ")

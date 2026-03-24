@@ -19,13 +19,13 @@ from config.emission_factors import get_emission_factor, get_emission_source, EM
 
 class TestConfigValues:
     def test_elec_factor(self):
-        assert get_emission_factor("ELEC") == 0.0569
+        assert get_emission_factor("ELEC") == 0.052  # ADEME Base Empreinte V23.6
 
     def test_gaz_factor(self):
-        assert get_emission_factor("GAZ") == 0.2270
+        assert get_emission_factor("GAZ") == 0.227  # ADEME Base Empreinte V23.6
 
     def test_unknown_fallback_to_elec(self):
-        assert get_emission_factor("EAU") == 0.0569
+        assert get_emission_factor("EAU") == 0.052
 
     def test_case_insensitive(self):
         assert get_emission_factor("elec") == get_emission_factor("ELEC")
@@ -91,7 +91,7 @@ class TestServiceUsesConfig:
         """DEFAULT_FACTOR_KGCO2E should equal config ELEC factor."""
         from services.emissions_service import DEFAULT_FACTOR_KGCO2E
 
-        assert DEFAULT_FACTOR_KGCO2E == 0.0569
+        assert DEFAULT_FACTOR_KGCO2E == 0.052  # ADEME Base Empreinte V23.6
 
     def test_service_imports_config(self):
         """emissions_service.py imports from config.emission_factors."""

@@ -52,7 +52,9 @@ function normalizeHourlyProfile(raw) {
   const serie = raw.series[0];
   return (serie?.data ?? []).map((point) => ({
     heure: new Date(point.t).getHours() + 'h',
-    kw: point.v != null ? Math.round(point.v * 4) : null,
+    // kWh/h = kW pour des données horaires (pas de facteur * 4)
+    // Le * 4 était incorrect : il s'applique uniquement aux données 15min
+    kw: point.v != null ? Math.round(point.v) : null,
     t: point.t,
   }));
 }

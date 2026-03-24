@@ -33,7 +33,14 @@ except Exception:
     ATRD_EUR_KWH_GAZ = 0.025
     ATRT_EUR_KWH_GAZ = 0.012
     CSPE_EUR_KWH_ELEC = 0.02623
-    TICGN_EUR_KWH_GAZ = 0.01637
+    # TICGN fallback : utilise le catalog versionné si disponible, sinon taux fév 2026
+    try:
+        from services.billing_engine.catalog import get_rate
+        from datetime import date as _d
+        _ticgn_rate = get_rate("TICGN", _d.today())
+        TICGN_EUR_KWH_GAZ = _ticgn_rate["rate"] if _ticgn_rate else 0.01073
+    except Exception:
+        TICGN_EUR_KWH_GAZ = 0.01073  # Taux fév 2026+ (arrêté 24/12/2025)
     TVA_RATE_20 = 0.20
 
 

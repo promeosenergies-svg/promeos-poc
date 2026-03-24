@@ -52,12 +52,21 @@ def get_purchase_scenarios(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """3 simple purchase scenarios for a contract."""
+    """3 simple purchase scenarios for a contract.
+
+    ⚠️ DÉPRÉCIÉ — Utilise des facteurs prix fixes.
+    Préférer POST /api/purchase/compute/{site_id} pour les scénarios market-based.
+    """
     from services.purchase_scenarios_service import compute_purchase_scenarios
 
     org_id = _get_org_id(request, auth, db)
     _load_contract_with_org_check(db, contract_id, org_id)
-    return compute_purchase_scenarios(db, contract_id)
+    result = compute_purchase_scenarios(db, contract_id)
+    result["_deprecated"] = (
+        "Ce endpoint utilise des facteurs prix fixes (demo). "
+        "Utilisez POST /api/purchase/compute/{site_id} pour les scenarios market-based."
+    )
+    return result
 
 
 @router.post("/{contract_id}/actions/from-scenario")

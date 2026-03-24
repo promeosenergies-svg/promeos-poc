@@ -3,7 +3,6 @@ PROMEOS - Service Onboarding
 Logique metier pour la creation d'un patrimoine (org + sites + batiments + obligations).
 """
 
-import random
 from datetime import datetime
 from typing import List, Optional
 
@@ -54,9 +53,14 @@ _CVC_RATIOS = {
 
 
 def estimate_cvc_power(type_site: TypeSite, surface_m2: float) -> float:
-    """Estime la puissance CVC (kW) d'un site selon son type et surface."""
+    """Estime la puissance CVC (kW) d'un site selon son type et surface.
+
+    Utilise la mediane du range W/m² par type de site (deterministe).
+    Meme site cree 2 fois = meme puissance CVC = meme obligation BACS.
+    Hypothese : mediane des ratios ADEME typiques par usage.
+    """
     lo, hi = _CVC_RATIOS.get(type_site, (40, 70))
-    watt_per_m2 = random.uniform(lo, hi)
+    watt_per_m2 = (lo + hi) / 2  # mediane deterministe
     return round(surface_m2 * watt_per_m2 / 1000, 1)
 
 

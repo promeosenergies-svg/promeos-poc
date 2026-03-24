@@ -17,7 +17,7 @@ from models.energy_models import Meter, MeterReading, EnergyVector
 from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
-from services.billing_service import get_reference_price, DEFAULT_PRICE_ELEC
+from services.billing_service import get_reference_price
 from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 from config.emission_factors import get_emission_factor
 

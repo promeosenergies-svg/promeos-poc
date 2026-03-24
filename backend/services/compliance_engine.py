@@ -53,12 +53,14 @@ BACS_DEADLINE_290 = date(2025, 1, 1)
 BACS_DEADLINE_70 = date(2030, 1, 1)
 
 # ── Constantes réglementaires ────────────────────────────────────────
-# Source : Code de la construction L174-1 / ADEME Base Carbone 2024
+# Source : Code de la construction L174-1 / ADEME Base Empreinte V23.6
 BASE_PENALTY_EURO = 7_500  # Pénalité non-conformité
 A_RISQUE_PENALTY_RATIO = 0.5  # 50 % pour sites à risque
 A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
-CO2_FACTOR_ELEC_KG_KWH = 0.0569  # ADEME 2024 — électricité
-CO2_FACTOR_GAZ_KG_KWH = 0.2270  # ADEME 2024 — gaz naturel
+# CO2 — source unique : config/emission_factors.py (ADEME Base Empreinte V23.6)
+from config.emission_factors import get_emission_factor as _get_ef
+CO2_FACTOR_ELEC_KG_KWH = _get_ef("ELEC")  # 0.052
+CO2_FACTOR_GAZ_KG_KWH = _get_ef("GAZ")    # 0.227
 
 # Action text templates ordered by priority (highest first)
 _ACTION_TEMPLATES = [
@@ -965,8 +967,9 @@ def compute_mv_summary(
     Baseline from consumption data, current from recent, delta + alerts.
     MVP heuristic — uses annual_kwh_total as baseline reference.
     """
-    from models import Consommation, Site
-    from datetime import datetime
+    from models import Site
+    from models.energy_models import Meter, MeterReading
+    from datetime import datetime, date, timedelta
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -975,21 +978,46 @@ def compute_mv_summary(
     baseline_kwh = site.annual_kwh_total or 0
     baseline_monthly = round(baseline_kwh / 12, 1) if baseline_kwh else 0
 
-    # Try to get recent consumption (last 12 months)
+    # Source de verite : Meter/MeterReading (modele Yannick)
+    current_kwh = 0
+    months_covered = 0
     try:
-        recent = (
-            db.query(Consommation)
-            .filter(Consommation.compteur_id.in_(db.query(Compteur.id).filter(Compteur.site_id == site_id)))
-            .order_by(Consommation.date_debut.desc())
-            .limit(12)
-            .all()
-        )
-        current_kwh = sum(c.valeur or 0 for c in recent) if recent else 0
-    except Exception:
-        recent = []
-        current_kwh = 0
+        from sqlalchemy import func
+        from models.enums import FrequencyType
 
-    current_monthly = round(current_kwh / max(1, len(recent)), 1) if recent else 0
+        meter_ids = [
+            m.id
+            for m in db.query(Meter)
+            .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
+            .all()
+        ]
+        if meter_ids:
+            y_ago = date.today() - timedelta(days=365)
+            result = (
+                db.query(func.sum(MeterReading.value_kwh))
+                .filter(
+                    MeterReading.meter_id.in_(meter_ids),
+                    MeterReading.frequency == FrequencyType.MONTHLY,
+                    MeterReading.timestamp >= y_ago,
+                )
+                .scalar()
+            )
+            current_kwh = float(result or 0)
+            # Nombre de mois couverts
+            months_covered = (
+                db.query(func.count(func.distinct(func.strftime("%Y-%m", MeterReading.timestamp))))
+                .filter(
+                    MeterReading.meter_id.in_(meter_ids),
+                    MeterReading.frequency == FrequencyType.MONTHLY,
+                    MeterReading.timestamp >= y_ago,
+                )
+                .scalar()
+            ) or 0
+    except Exception:
+        current_kwh = 0
+        months_covered = 0
+
+    current_monthly = round(current_kwh / max(1, months_covered), 1) if months_covered > 0 else 0
 
     # Compute delta
     delta_pct = 0.0
@@ -1129,9 +1157,6 @@ def _resolve_site_org(db: Session, site_id: int) -> int:
     )
     return row[0] if row else 1  # Fallback to org 1 for demo
 
-
-# Imports needed for V69 that weren't already imported
-from models import Compteur
 
 
 # ========================================

@@ -80,10 +80,21 @@ def get_market_context(db: Session, energy_type: str = "ELEC", ref_date: date = 
     vol = statistics.stdev([p[0] for p in prices_12m]) if len(prices_12m) > 30 else 15.0
 
     # Defaults réalistes si pas de données marché
+    has_real_data = spot_30d is not None
     spot_30d = spot_30d or 68.0
     spot_12m = spot_12m or 72.0
     current = last[0] if last else 68.0
     trend = ((spot_30d - spot_12m) / spot_12m * 100) if spot_12m else 0
+
+    # Detecter si les donnees sont seed/demo
+    source_sample = (
+        db.query(MarketPrice.source)
+        .filter(MarketPrice.market == "EPEX_SPOT_FR", MarketPrice.source.isnot(None))
+        .order_by(MarketPrice.date.desc())
+        .first()
+    )
+    source_label = source_sample[0] if source_sample else ("fallback_defaults" if not has_real_data else "unknown")
+    is_demo = not has_real_data or (source_label and "seed" in source_label.lower())
 
     return {
         "spot_avg_30d_eur_mwh": round(spot_30d, 2),
@@ -91,6 +102,8 @@ def get_market_context(db: Session, energy_type: str = "ELEC", ref_date: date = 
         "spot_current_eur_mwh": round(current, 2),
         "volatility_12m_eur_mwh": round(vol, 2),
         "trend_30d_vs_12m_pct": round(trend, 1),
+        "source": source_label,
+        "is_demo": is_demo,
     }
 
 

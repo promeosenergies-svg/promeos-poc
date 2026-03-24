@@ -138,7 +138,7 @@ class TestReferencePrice:
         db.commit()
 
         price, source = get_reference_price(db, site.id, "elec")
-        assert price == 0.15  # Default fallback price (PROMEOS_DEFAULT_PRICE_ELEC)
+        assert price == 0.18  # Source unique : config/default_prices.py
         assert source == "default_elec"
 
     def test_contract_beats_tariff(self, db):
@@ -278,7 +278,7 @@ class TestScenariosUseRefPrice:
     def test_scenarios_use_default_price(self, db):
         """Without contract, scenarios use the configured default price."""
         from services.purchase_service import compute_scenarios
-        from services.billing_service import DEFAULT_PRICE_ELEC
+        from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH as DEFAULT_PRICE_ELEC
 
         _, site = _create_org_site(db)
         db.commit()
@@ -345,7 +345,7 @@ class TestEndToEndCompute:
 
     def test_compute_without_contract(self, client, db):
         """POST /compute uses default price when no contract."""
-        from services.billing_service import DEFAULT_PRICE_ELEC
+        from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH as DEFAULT_PRICE_ELEC
 
         _, site = _create_org_site(db)
         db.commit()

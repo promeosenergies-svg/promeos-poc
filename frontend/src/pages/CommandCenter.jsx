@@ -484,12 +484,18 @@ export default function CommandCenter() {
                   strokeWidth={2}
                   dot={false}
                 />
-                {kpisJ1?.picKw > 38 && (
+                {/* Seuil puissance : 80% du pic comme alerte visuelle */}
+                {kpisJ1?.picKw > 0 && (
                   <ReferenceLine
-                    y={38}
+                    y={Math.round(kpisJ1.picKw * 0.8)}
                     stroke="#E24B4A"
                     strokeDasharray="4 3"
-                    label={{ value: 'Seuil', position: 'right', fontSize: 9, fill: '#E24B4A' }}
+                    label={{
+                      value: `Seuil ${Math.round(kpisJ1.picKw * 0.8)} kW`,
+                      position: 'right',
+                      fontSize: 9,
+                      fill: '#E24B4A',
+                    }}
                   />
                 )}
               </ComposedChart>
@@ -524,11 +530,19 @@ export default function CommandCenter() {
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-gray-700">Réel 2026</span>
-                <span className="text-red-600 font-medium">
-                  {trajectoire.reductionPctActuelle != null
-                    ? `${trajectoire.reductionPctActuelle}% · retard`
-                    : '—'}
-                </span>
+                {trajectoire.reductionPctActuelle != null ? (
+                  trajectoire.reductionPctActuelle > trajectoire.objectif2026Pct ? (
+                    <span className="text-red-600 font-medium">
+                      {trajectoire.reductionPctActuelle}% · retard
+                    </span>
+                  ) : (
+                    <span className="text-green-700 font-medium">
+                      {trajectoire.reductionPctActuelle}% · en avance
+                    </span>
+                  )
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
               </div>
               <div className="relative h-2.5 bg-gray-100 rounded-full overflow-visible">
                 <div
@@ -594,24 +608,13 @@ export default function CommandCenter() {
       {/* ── Sites J-1 vs Baseline ── */}
       <SitesBaselineCard />
 
-      {/* ── Sections legacy (expert only — absentes des maquettes Tableau de bord) ── */}
-      {isExpert && (
-        <>
-          <HealthSummary healthState={healthState} onNavigate={navigate} />
-          <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
-          <EssentialsRow
-            kpis={kpis}
-            sites={scopedSites}
-            onOpenMaturite={() => navigate('/cockpit')}
-            onNavigate={navigate}
-          />
-        </>
-      )}
+      {/* Sections legacy masquées — redondantes avec les widgets cockpit world-class */}
+      {/* HealthSummary, BriefingHeroCard, EssentialsRow déplacés dans /cockpit expert mode */}
 
-      {/* ── Sections complémentaires (expert only) ── */}
-      {isExpert && (
+      {/* Sections complémentaires masquées — redondantes avec cockpit /cockpit */}
+      {/* Sites à traiter, ModuleLaunchers → visibles uniquement dans /cockpit */}
+      {false && isExpert && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sites à risque — table with accent on risk column */}
           <Card>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="font-semibold text-gray-800">Sites à traiter</h3>
@@ -684,8 +687,7 @@ export default function CommandCenter() {
         </div>
       )}
 
-      {/* ── Accès rapide aux modules ── */}
-      <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
+      {/* ModuleLaunchers masqué — accessible via /cockpit expert mode */}
     </PageShell>
   );
 }

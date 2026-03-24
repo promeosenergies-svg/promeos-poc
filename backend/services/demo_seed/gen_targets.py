@@ -24,7 +24,8 @@ ADEME_BENCHMARKS = {
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_GAZ_EUR_KWH
 
 EUR_PER_KWH = {"electricity": DEFAULT_PRICE_ELEC_EUR_KWH, "gas": DEFAULT_PRICE_GAZ_EUR_KWH}
-CO2_KG_PER_KWH = {"electricity": 0.0569, "gas": 0.227}
+from config.emission_factors import get_emission_factor
+CO2_KG_PER_KWH = {"electricity": get_emission_factor("ELEC"), "gas": get_emission_factor("GAZ")}
 
 # ── Seasonal weight profiles (Jan-Dec, sum ~12.0) ─────────────────────────────
 
@@ -103,7 +104,7 @@ def generate_targets(db, sites: list, rng: random.Random, site_meta: dict = None
                 baseline_kwh = site.annual_kwh_total or 500_000
 
             eur_rate = EUR_PER_KWH.get(energy_type, DEFAULT_PRICE_ELEC_EUR_KWH)
-            co2_rate = CO2_KG_PER_KWH.get(energy_type, 0.0569)
+            co2_rate = CO2_KG_PER_KWH.get(energy_type, get_emission_factor("ELEC"))
             weights = _get_weights(type_site, energy_type)
 
             for year in [2024, 2025, 2026]:

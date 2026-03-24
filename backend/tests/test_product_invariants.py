@@ -400,11 +400,11 @@ class TestInv8ShadowBilling:
         db.add(invoice)
         db.commit()
 
-        from services.billing_service import DEFAULT_PRICE_ELEC
+        from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
         result = shadow_billing_simple(invoice)
         assert result["method"] == "simple"
-        expected_shadow = 1000 * DEFAULT_PRICE_ELEC
+        expected_shadow = 1000 * DEFAULT_PRICE_ELEC_EUR_KWH
         assert result["shadow_total_eur"] == expected_shadow
         assert result["delta_eur"] == 200.0 - expected_shadow
         assert result["energy_kwh"] == 1000
