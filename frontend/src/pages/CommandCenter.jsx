@@ -28,7 +28,7 @@ import {
   ScopeSummary,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-// toActionsList utilisé dans les sections legacy déplacées ci-dessous
+import { toActionsList } from '../services/routes';
 import {
   getComplianceBundle,
   getActionsSummary,
@@ -53,6 +53,7 @@ import EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
+  AreaChart,
   Area,
   BarChart,
   Bar,
@@ -561,89 +562,95 @@ export default function CommandCenter() {
       {/* ── Sites J-1 vs Baseline ── */}
       <SitesBaselineCard />
 
-      {/* ── Sections legacy (déplacées après maquette — conservées sans suppression) ── */}
-      <HealthSummary healthState={healthState} onNavigate={navigate} />
-      <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
-      <EssentialsRow
-        kpis={kpis}
-        sites={scopedSites}
-        onOpenMaturite={() => navigate('/cockpit')}
-        onNavigate={navigate}
-      />
+      {/* ── Sections legacy (expert only — absentes des maquettes Tableau de bord) ── */}
+      {isExpert && (
+        <>
+          <HealthSummary healthState={healthState} onNavigate={navigate} />
+          <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+          <EssentialsRow
+            kpis={kpis}
+            sites={scopedSites}
+            onOpenMaturite={() => navigate('/cockpit')}
+            onNavigate={navigate}
+          />
+        </>
+      )}
 
-      {/* ── Sections complémentaires ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sites à risque — table with accent on risk column */}
-        <Card>
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Sites à traiter</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/patrimoine')}>
-              Patrimoine <ArrowRight size={14} />
-            </Button>
-          </div>
-          {scopedSites.filter(
-            (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
-          ).length === 0 ? (
-            <div className="px-5 py-8">
-              <EmptyState
-                icon={CheckCircle2}
-                title="Aucune alerte réglementaire active"
-                text="Aucune pénalité identifiée. Vérifier les anomalies et preuves séparément."
-              />
+      {/* ── Sections complémentaires (expert only) ── */}
+      {isExpert && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Sites à risque — table with accent on risk column */}
+          <Card>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">Sites à traiter</h3>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/patrimoine')}>
+                Patrimoine <ArrowRight size={14} />
+              </Button>
             </div>
-          ) : (
-            <Table>
-              <Thead>
-                <tr>
-                  <Th>Site</Th>
-                  <Th>Statut</Th>
-                  <Th className="text-right">Risque</Th>
-                </tr>
-              </Thead>
-              <Tbody>
-                {scopedSites
-                  .filter(
-                    (s) =>
-                      s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
-                  )
-                  .sort((a, b) => (b.risque_eur || 0) - (a.risque_eur || 0))
-                  .slice(0, 8)
-                  .map((site) => (
-                    <Tr
-                      key={site.id}
-                      onClick={() => navigate(`/sites/${site.id}`)}
-                      className="group cursor-pointer hover:bg-blue-50/40"
-                    >
-                      <Td>
-                        <div className="font-medium text-gray-900">{site.nom}</div>
-                        <div className="text-xs text-gray-400">{site.ville}</div>
-                      </Td>
-                      <Td>
-                        <div className="flex items-center gap-1.5">
-                          <StatusDot
-                            status={site.statut_conformite === 'non_conforme' ? 'crit' : 'warn'}
-                          />
-                          <span className="text-xs text-gray-600">
-                            {site.statut_conformite === 'non_conforme'
-                              ? 'Non conforme'
-                              : 'À risque'}
-                          </span>
-                        </div>
-                      </Td>
-                      <Td className="text-right text-sm font-medium">
-                        {site.risque_eur > 0 ? (
-                          <span className="text-amber-700">{fmtEur(site.risque_eur)}</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </Td>
-                    </Tr>
-                  ))}
-              </Tbody>
-            </Table>
-          )}
-        </Card>
-      </div>
+            {scopedSites.filter(
+              (s) => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
+            ).length === 0 ? (
+              <div className="px-5 py-8">
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="Aucune alerte réglementaire active"
+                  text="Aucune pénalité identifiée. Vérifier les anomalies et preuves séparément."
+                />
+              </div>
+            ) : (
+              <Table>
+                <Thead>
+                  <tr>
+                    <Th>Site</Th>
+                    <Th>Statut</Th>
+                    <Th className="text-right">Risque</Th>
+                  </tr>
+                </Thead>
+                <Tbody>
+                  {scopedSites
+                    .filter(
+                      (s) =>
+                        s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque'
+                    )
+                    .sort((a, b) => (b.risque_eur || 0) - (a.risque_eur || 0))
+                    .slice(0, 8)
+                    .map((site) => (
+                      <Tr
+                        key={site.id}
+                        onClick={() => navigate(`/sites/${site.id}`)}
+                        className="group cursor-pointer hover:bg-blue-50/40"
+                      >
+                        <Td>
+                          <div className="font-medium text-gray-900">{site.nom}</div>
+                          <div className="text-xs text-gray-400">{site.ville}</div>
+                        </Td>
+                        <Td>
+                          <div className="flex items-center gap-1.5">
+                            <StatusDot
+                              status={site.statut_conformite === 'non_conforme' ? 'crit' : 'warn'}
+                            />
+                            <span className="text-xs text-gray-600">
+                              {site.statut_conformite === 'non_conforme'
+                                ? 'Non conforme'
+                                : 'À risque'}
+                            </span>
+                          </div>
+                        </Td>
+                        <Td className="text-right text-sm font-medium">
+                          {site.risque_eur > 0 ? (
+                            <span className="text-amber-700">{fmtEur(site.risque_eur)}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </Td>
+                      </Tr>
+                    ))}
+                </Tbody>
+              </Table>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* ── Accès rapide aux modules ── */}
       <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
