@@ -47,6 +47,35 @@ class TestEnedisFluxFile:
         db.commit()
         assert db.query(EnedisFluxFile).count() == 2
 
+    def test_version_defaults_to_1(self, db):
+        f = EnedisFluxFile(filename="a.zip", file_hash="h_ver", flux_type="R4H", status="parsed")
+        db.add(f)
+        db.commit()
+
+        result = db.query(EnedisFluxFile).first()
+        assert result.version == 1
+        assert result.supersedes_file_id is None
+
+    def test_version_chain_fk(self, db):
+        f1 = EnedisFluxFile(filename="a.zip", file_hash="h1_chain", flux_type="R4H", status="parsed", version=1)
+        db.add(f1)
+        db.flush()
+
+        f2 = EnedisFluxFile(
+            filename="a.zip",
+            file_hash="h2_chain",
+            flux_type="R4H",
+            status="needs_review",
+            version=2,
+            supersedes_file_id=f1.id,
+        )
+        db.add(f2)
+        db.commit()
+
+        result = db.query(EnedisFluxFile).filter_by(version=2).first()
+        assert result.supersedes_file_id == f1.id
+        assert result.status == "needs_review"
+
     def test_header_raw_json_roundtrip(self, db):
         f = EnedisFluxFile(filename="a.zip", file_hash="h1", flux_type="R4H", status="parsed")
         header = {"Identifiant_Flux": "R4x", "Frequence_Publication": "H"}

@@ -28,3 +28,4 @@ class FluxStatus(str, Enum):
     PARSED = "parsed"
     ERROR = "error"
     SKIPPED = "skipped"
+    NEEDS_REVIEW = "needs_review"
