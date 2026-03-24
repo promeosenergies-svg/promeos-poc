@@ -75,10 +75,13 @@ export default function CockpitHero({
     reductionPct > trajectoire.objectif2026Pct;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="cockpit-hero">
+    <div
+      className="bg-white border border-gray-200 rounded-xl grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100"
+      data-testid="cockpit-hero"
+    >
       {/* ── Card 1 : Score santé ── */}
       <div
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 cursor-pointer hover:border-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="p-4 flex flex-col gap-2 cursor-pointer hover:bg-blue-50/30 transition-colors rounded-l-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         data-testid="gauge-conformite"
         onClick={() => navigate('/conformite')}
         role="button"
@@ -87,7 +90,7 @@ export default function CockpitHero({
       >
         <span className="text-xs text-gray-500">Score santé</span>
         <div className="flex items-center gap-3">
-          <svg viewBox="0 0 120 70" width={56} height={32} className="shrink-0">
+          <svg viewBox="0 0 120 70" width={48} height={28} className="shrink-0">
             <path
               d="M 15 60 A 45 45 0 0 1 105 60"
               fill="none"
@@ -136,22 +139,14 @@ export default function CockpitHero({
       </div>
 
       {/* ── Card 2 : Risque financier ── */}
-      <div
-        className={`rounded-xl p-4 flex flex-col gap-2 border ${
-          kpis?.risqueTotal > 0 ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-gray-200'
-        }`}
-        data-testid="kpi-risque"
-      >
+      <div className="p-4 flex flex-col gap-2" data-testid="kpi-risque">
         <span className="text-xs text-gray-500">Risque financier</span>
         <span className="text-2xl font-bold text-amber-600">{fmtEur(kpis?.risqueTotal)}</span>
         <span className="text-[10px] text-gray-400">pénalités + anomalies billing</span>
       </div>
 
       {/* ── Card 3 : Réduction DT cumulée ── */}
-      <div
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2"
-        data-testid="kpi-reduction-dt"
-      >
+      <div className="p-4 flex flex-col gap-2" data-testid="kpi-reduction-dt">
         <span className="text-xs text-gray-500">Réduction DT cumulée</span>
         <span
           className={`text-2xl font-bold ${reductionPct == null ? 'text-gray-400' : isRetard ? 'text-red-600' : 'text-green-700'}`}
@@ -171,10 +166,7 @@ export default function CockpitHero({
       </div>
 
       {/* ── Card 4 : Actions en cours ── */}
-      <div
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2"
-        data-testid="kpi-actions-encours"
-      >
+      <div className="p-4 flex flex-col gap-2 rounded-r-xl" data-testid="kpi-actions-encours">
         <span className="text-xs text-gray-500">Actions en cours</span>
         <span className="text-2xl font-bold text-gray-900">
           {actions?.enCours != null ? actions.enCours : '—'}

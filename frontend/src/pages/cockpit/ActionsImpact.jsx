@@ -133,20 +133,11 @@ export default function ActionsImpact({ actions, loading }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Plan d'actions · impact trajectoire
+          Actions · impact sur trajectoire
         </span>
-        <div className="flex items-center gap-2">
-          {actions?.enCours != null && (
-            <span className="text-[10px] font-medium bg-green-50 text-green-700 px-2 py-0.5 rounded-full">
-              {actions.enCours} en cours
-            </span>
-          )}
-          {actions?.total != null && (
-            <span className="text-[10px] font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-              {actions.total} planifiées
-            </span>
-          )}
-        </div>
+        <span className="text-[10px] font-medium text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full">
+          {actions?.enCours ?? 0} en cours · {actions?.total ?? 0} planifiées
+        </span>
       </div>
 
       {/* Liste actions */}
@@ -181,7 +172,7 @@ export default function ActionsImpact({ actions, loading }) {
         <span className="text-xs text-gray-500">
           {actions?.potentielEur > 0 ? (
             <>
-              Potentiel total :
+              Actions planifiées · Économie potentielle :
               <span className="text-green-700 font-medium ml-1">
                 {fmtEur(actions.potentielEur)}/an
               </span>
