@@ -193,13 +193,18 @@ const Cockpit = () => {
   const kpis = useMemo(() => {
     const sites = scopedSites;
     const total = sites.length;
+    // Comptages de présentation — acceptables (pas des scores réglementaires)
     const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
     const nonConformes = sites.filter((s) => s.statut_conformite === 'non_conforme').length;
     const aRisque = sites.filter((s) => s.statut_conformite === 'a_risque').length;
-    const risqueTotal = sites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
+    const risqueTotal =
+      cockpitKpis?.risqueTotal ?? sites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
     const couvertureDonnees =
       total > 0 ? Math.round((sites.filter((s) => s.conso_kwh_an > 0).length / total) * 100) : 0;
-    const suiviConformite = total > 0 ? Math.round((conformes / total) * 100) : 0;
+
+    // Score conformité : source unique = RegAssessment backend (P0, pas de calcul front)
+    const suiviConformite = cockpitKpis?.conformiteScore ?? 0;
+
     const actionsActives =
       total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
     const readinessScore =
@@ -225,16 +230,17 @@ const Cockpit = () => {
       actionsActives,
       compStatus,
       risqueStatus,
-      // A.2: unified compliance score from API (null if not yet loaded)
-      compliance_score: complianceApi?.avg_score ?? null,
-      compliance_confidence:
-        complianceApi?.high_confidence_count > total * 0.6
+      // Source unique : RegAssessment via useCockpitData (P0)
+      compliance_score: cockpitKpis?.conformiteScore ?? complianceApi?.avg_score ?? null,
+      compliance_confidence: cockpitKpis?.conformiteSource
+        ? 'high'
+        : complianceApi?.high_confidence_count > total * 0.6
           ? 'high'
           : complianceApi
             ? 'medium'
             : null,
     };
-  }, [scopedSites, complianceApi]);
+  }, [scopedSites, complianceApi, cockpitKpis]);
 
   const isSingleSite = scopedSites.length === 1;
   const singleSite = isSingleSite ? scopedSites[0] : null;
@@ -713,7 +719,7 @@ const Cockpit = () => {
               onClick={() => setShowDetail((v) => !v)}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition"
             >
-              {showDetail ? 'Masquer le détail' : 'Analyse détaillée'}
+              {showDetail ? 'Masquer le détail' : 'Plus de détails'}
               <svg
                 className={`w-4 h-4 transition-transform ${showDetail ? 'rotate-180' : ''}`}
                 fill="none"

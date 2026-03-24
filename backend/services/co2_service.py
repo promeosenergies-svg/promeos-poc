@@ -20,30 +20,33 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger("promeos.co2")
 
-# ── Facteurs d'émission ADEME Base Carbone 2024 ───────────────────────────
-# En kgCO₂eq / kWh (consommation finale)
+# ── Facteurs d'émission — source unique : config/emission_factors.py ──────
+# ADEME Base Empreinte V23.6 (juillet 2025)
+from config.emission_factors import EMISSION_FACTORS as _CANONICAL_FACTORS
+
+# Mapping lowercase pour backward-compat avec le reste de co2_service
 EMISSION_FACTORS = {
     "elec": {
-        "factor_kg_per_kwh": 0.052,
-        "source": "ADEME Base Carbone 2024 — électricité réseau France, mix moyen annuel",
+        "factor_kg_per_kwh": _CANONICAL_FACTORS["ELEC"]["kgco2e_per_kwh"],
+        "source": _CANONICAL_FACTORS["ELEC"]["source"],
         "method": "ACV (analyse cycle de vie)",
-        "year": 2024,
+        "year": _CANONICAL_FACTORS["ELEC"]["year"],
     },
     "gaz": {
-        "factor_kg_per_kwh": 0.227,
-        "source": "ADEME Base Carbone 2024 — gaz naturel PCI, combustion + amont",
+        "factor_kg_per_kwh": _CANONICAL_FACTORS["GAZ"]["kgco2e_per_kwh"],
+        "source": _CANONICAL_FACTORS["GAZ"]["source"],
         "method": "ACV (analyse cycle de vie)",
-        "year": 2024,
+        "year": _CANONICAL_FACTORS["GAZ"]["year"],
     },
     "reseau_chaleur": {
         "factor_kg_per_kwh": 0.110,
-        "source": "ADEME Base Carbone 2024 — réseau de chaleur moyen France",
+        "source": "ADEME Base Empreinte V23.6 — reseau de chaleur moyen France",
         "method": "ACV",
         "year": 2024,
     },
     "fioul": {
         "factor_kg_per_kwh": 0.324,
-        "source": "ADEME Base Carbone 2024 — fioul domestique PCI",
+        "source": "ADEME Base Empreinte V23.6 — fioul domestique PCI",
         "method": "ACV",
         "year": 2024,
     },
@@ -68,37 +71,39 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
     """
     Calcule l'empreinte CO₂ annuelle d'un site.
 
-    Utilise la conso unifiée (12 mois) par vecteur énergétique.
+    Utilise le modele Meter (source de verite) pour decouvrir les vecteurs
+    energetiques et lire les MeterReading. Fallback Site.annual_kwh_total.
     """
-    from models import Site, Compteur, not_deleted
+    from models import Site
+    from models.energy_models import Meter, MeterReading
+    from models.enums import EnergyVector
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         return Co2Result(site_id=site_id, total_kg_co2=0, total_t_co2=0, breakdown=[], confidence="low")
 
-    # Récupérer les compteurs par vecteur
-    meters = db.query(Compteur).filter(Compteur.site_id == site_id).all()
+    # Source de verite : modele Meter (Yannick) — exclut sous-compteurs
+    meters = (
+        db.query(Meter)
+        .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
+        .all()
+    )
 
-    # Grouper par vecteur énergétique
-    vectors = {}
+    # Grouper par vecteur energetique
+    vectors: dict[str, list[int]] = {}
     for m in meters:
-        ev = (
-            str(m.energy_vector.value).lower()
-            if hasattr(m.energy_vector, "value")
-            else str(m.energy_vector or "elec").lower()
-        )
+        ev = m.energy_vector.value.lower() if m.energy_vector else "elec"
         if ev in ("electricity", "elec"):
             ev = "elec"
         elif ev in ("gas", "gaz"):
             ev = "gaz"
         vectors.setdefault(ev, []).append(m.id)
 
-    # Si pas de compteurs, utiliser le site.annual_kwh_total comme élec
+    # Si pas de Meter, utiliser le site.annual_kwh_total comme elec
     if not vectors:
-        annual = getattr(site, "annual_kwh_total", None) or getattr(site, "conso_kwh_an", None) or 0
+        annual = getattr(site, "annual_kwh_total", None) or 0
         if annual > 0:
             vectors = {"elec": []}
-            # On utilisera le fallback ci-dessous
 
     # Calculer par vecteur
     breakdown = []
@@ -108,19 +113,17 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
         factor_info = EMISSION_FACTORS.get(energy_type, EMISSION_FACTORS.get("elec"))
         factor = factor_info["factor_kg_per_kwh"]
 
-        # Conso du vecteur : unified service ou fallback
+        # Conso du vecteur via MeterReading (modele Yannick)
         kwh = 0
         if meter_ids:
             try:
-                from models import MeterReading
                 from sqlalchemy import func
                 from datetime import date, timedelta
 
                 today = date.today()
                 y_ago = today - timedelta(days=365)
 
-                # Conso mensuelle dédupliquée
-                from models import FrequencyType
+                from models.enums import FrequencyType
 
                 result = (
                     db.query(func.sum(MeterReading.value_kwh))
@@ -137,7 +140,7 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
 
         # Fallback si pas de meter readings
         if kwh <= 0 and energy_type == "elec":
-            kwh = float(getattr(site, "annual_kwh_total", 0) or getattr(site, "conso_kwh_an", 0) or 0)
+            kwh = float(getattr(site, "annual_kwh_total", 0) or 0)
 
         if kwh > 0:
             kg_co2 = round(kwh * factor, 1)
@@ -189,10 +192,46 @@ def compute_portfolio_co2(db: Session, org_id: int) -> dict:
             }
         )
 
+    # Agrégats par vecteur — calculés backend (le front ne doit PAS agréger)
+    vectors_agg: dict[str, dict] = {}
+    scope1_kg = 0.0
+    scope2_kg = 0.0
+    total_kwh_all = 0.0
+    for r in results:
+        for bd in r.get("breakdown", []):
+            key = bd.get("energy_type", "autres")
+            if key not in vectors_agg:
+                vectors_agg[key] = {"kwh": 0.0, "kg_co2": 0.0}
+            vectors_agg[key]["kwh"] += bd.get("kwh", 0)
+            vectors_agg[key]["kg_co2"] += bd.get("kg_co2", 0)
+            total_kwh_all += bd.get("kwh", 0)
+            # Scope 1 = gaz, fioul ; Scope 2 = elec, réseau chaleur
+            if key in ("gaz", "fioul"):
+                scope1_kg += bd.get("kg_co2", 0)
+            else:
+                scope2_kg += bd.get("kg_co2", 0)
+
+    vectors_display = []
+    for key, val in sorted(vectors_agg.items(), key=lambda x: -x[1]["kwh"]):
+        mwh = round(val["kwh"] / 1000, 1) if val["kwh"] else 0
+        pct = round((val["kwh"] / total_kwh_all) * 100) if total_kwh_all > 0 else 0
+        vectors_display.append(
+            {
+                "key": key,
+                "mwh": mwh,
+                "pct": pct,
+                "t_co2": round(val["kg_co2"] / 1000, 1),
+            }
+        )
+
     return {
         "org_id": org_id,
         "total_t_co2": round(total_kg / 1000, 1),
         "total_kg_co2": round(total_kg, 1),
+        "scope1_t_co2": round(scope1_kg / 1000, 1),
+        "scope2_t_co2": round(scope2_kg / 1000, 1),
+        "vectors": vectors_display,
+        "total_kwh": round(total_kwh_all, 0),
         "sites": results,
         "emission_factors": {k: v["factor_kg_per_kwh"] for k, v in EMISSION_FACTORS.items()},
         "source": "ADEME Base Carbone 2024",

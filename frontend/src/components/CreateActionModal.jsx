@@ -101,9 +101,9 @@ export default function CreateActionModal({
     setSaving(true);
     try {
       const idemKey = idempotencyKey || prefill?._idempotencyKey || undefined;
-      // Auto-compute CO2e from EUR impact: EUR / price → kWh → kgCO2e
       const impactEur = Number(form.impact_eur) || 0;
-      const co2eKg = impactEur > 0 ? Math.round((impactEur / 0.15) * 0.052) : undefined;
+      // CO2e calculé backend (compliance_engine.py CO2_FACTOR_ELEC_KG_KWH=0.0569)
+      // Ne PAS calculer côté front — le backend enrichit co2e_savings_est_kg post-création
       const payload = {
         title: form.titre.trim(),
         source_type: sourceType || 'manual',
@@ -116,7 +116,7 @@ export default function CreateActionModal({
         notes: form.description || undefined,
         rationale: form.description || undefined,
         idempotency_key: idemKey,
-        co2e_savings_est_kg: co2eKg,
+        // co2e_savings_est_kg : calculé backend post-création (ADEME 0.0569)
       };
       const result = await createAction(payload);
       track('action_create', { type: form.type, site: form.site, backend: true });

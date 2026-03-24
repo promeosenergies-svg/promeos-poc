@@ -52,46 +52,25 @@ export default function VecteurEnergetiqueCard() {
     );
   }
 
-  // Agréger les breakdowns par vecteur depuis les sites (données backend)
-  const totals = {};
-  let totalKwh = 0;
-  let totalKgCo2 = 0;
-  for (const site of data.sites) {
-    for (const b of site.breakdown ?? []) {
-      const key = b.energy_type;
-      if (!totals[key]) totals[key] = { kwh: 0, kgCo2: 0 };
-      totals[key].kwh += b.kwh ?? 0;
-      totals[key].kgCo2 += b.kg_co2 ?? 0;
-      totalKwh += b.kwh ?? 0;
-      totalKgCo2 += b.kg_co2 ?? 0;
-    }
-  }
+  // Agrégats pré-calculés backend — zéro calcul front
+  const backendVectors = data.vectors ?? [];
+  const totalTco2 = data.total_t_co2 ?? 0;
+  const scope1Tco2 = data.scope1_t_co2 ?? 0;
+  const scope2Tco2 = data.scope2_t_co2 ?? 0;
 
-  // Identifier scope 1 (gaz, fioul) vs scope 2 (elec, réseau)
-  let scope1KgCo2 = 0;
-  let scope2KgCo2 = 0;
-  for (const [key, val] of Object.entries(totals)) {
-    if (key === 'gaz' || key === 'fioul') scope1KgCo2 += val.kgCo2;
-    else scope2KgCo2 += val.kgCo2;
-  }
+  // Enrichir avec les labels/couleurs du design system
+  const vectors = backendVectors.map((v) => ({
+    ...v,
+    ...(VECTOR_CONFIG[v.key] ?? { label: v.key, color: 'bg-gray-400', scopeLabel: '' }),
+  }));
 
-  const vectors = Object.entries(totals)
-    .map(([key, val]) => ({
-      key,
-      ...(VECTOR_CONFIG[key] ?? { label: key, color: 'bg-gray-400', scopeLabel: '' }),
-      mwh: Math.round(val.kwh / 1000),
-      pct: totalKwh > 0 ? Math.round((val.kwh / totalKwh) * 100) : 0,
-      tCo2: (val.kgCo2 / 1000).toFixed(1),
-    }))
-    .sort((a, b) => b.mwh - a.mwh);
-
-  // Grouper les vecteurs mineurs en "Autres" si > 2 vecteurs
+  // Grouper les vecteurs mineurs en "Autres" si > 3 vecteurs
   let displayVectors = vectors;
   if (vectors.length > 3) {
     const main = vectors.slice(0, 2);
     const others = vectors.slice(2);
-    const othersMwh = others.reduce((s, v) => s + v.mwh, 0);
-    const othersPct = others.reduce((s, v) => s + v.pct, 0);
+    const othersMwh = others.reduce((s, v) => s + (v.mwh ?? 0), 0);
+    const othersPct = others.reduce((s, v) => s + (v.pct ?? 0), 0);
     main.push({
       key: 'autres',
       label: 'Autres',
@@ -133,23 +112,17 @@ export default function VecteurEnergetiqueCard() {
         </div>
         <div className="flex items-baseline gap-4">
           <div>
-            <span className="text-lg font-bold text-gray-900">
-              {(totalKgCo2 / 1000).toFixed(1)}
-            </span>
+            <span className="text-lg font-bold text-gray-900">{totalTco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Total</div>
           </div>
           <div>
-            <span className="text-base font-semibold text-blue-600">
-              {(scope2KgCo2 / 1000).toFixed(1)}
-            </span>
+            <span className="text-base font-semibold text-blue-600">{scope2Tco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Scope 2 (élec)</div>
           </div>
           <div>
-            <span className="text-base font-semibold text-amber-600">
-              {(scope1KgCo2 / 1000).toFixed(1)}
-            </span>
+            <span className="text-base font-semibold text-amber-600">{scope1Tco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Scope 1 (gaz)</div>
           </div>
