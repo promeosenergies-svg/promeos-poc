@@ -1665,22 +1665,35 @@ def _rename_enedis_mesure_table(engine):
 
 
 def _create_enedis_tables(engine):
-    """Create Enedis SGE staging tables (enedis_flux_file, enedis_flux_mesure_r4x) if missing."""
+    """Create Enedis SGE staging tables if any are missing.
+
+    Checks each table individually so that tables added after the initial
+    deployment are created on the next migration run.
+    """
+    all_enedis_tables = (
+        "enedis_flux_file",
+        "enedis_flux_mesure_r4x",
+        "enedis_flux_mesure_r171",
+        "enedis_flux_mesure_r50",
+        "enedis_flux_mesure_r151",
+    )
     insp = inspect(engine)
-    if insp.has_table("enedis_flux_file") and insp.has_table("enedis_flux_mesure_r4x"):
+    missing = [t for t in all_enedis_tables if not insp.has_table(t)]
+    if not missing:
         return
 
     # Import models to register them with Base.metadata
     import data_ingestion.enedis.models  # noqa: F401
     from models.base import Base
 
+    # Use checkfirst=True with the full table list so SQLAlchemy handles
+    # FK-dependency ordering correctly (matters for PostgreSQL).
     Base.metadata.create_all(
         bind=engine,
-        tables=[
-            Base.metadata.tables[t] for t in ("enedis_flux_file", "enedis_flux_mesure_r4x") if t in Base.metadata.tables
-        ],
+        tables=[Base.metadata.tables[t] for t in all_enedis_tables if t in Base.metadata.tables],
+        checkfirst=True,
     )
-    logger.info("migration: created Enedis SGE staging tables")
+    logger.info("migration: created Enedis SGE staging tables: %s", missing)
 
 
 def _add_enedis_columns(engine):
@@ -1705,9 +1718,17 @@ def _add_enedis_columns(engine):
         # ("new_column_name", "VARCHAR(50)"),
     ]
 
+    # SF3 tables — add evolved columns here when the model grows:
+    enedis_flux_mesure_r171_columns = []
+    enedis_flux_mesure_r50_columns = []
+    enedis_flux_mesure_r151_columns = []
+
     table_column_map = {
         "enedis_flux_file": enedis_flux_file_columns,
         "enedis_flux_mesure_r4x": enedis_flux_mesure_r4x_columns,
+        "enedis_flux_mesure_r171": enedis_flux_mesure_r171_columns,
+        "enedis_flux_mesure_r50": enedis_flux_mesure_r50_columns,
+        "enedis_flux_mesure_r151": enedis_flux_mesure_r151_columns,
     }
 
     added = 0
