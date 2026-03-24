@@ -96,7 +96,6 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
   }
 
   const yKey = (base) => (mode === 'pct' ? `${base}Pct` : base);
-  const nbSites = (sites?.length ?? trajectoire.annees?.length) ? '' : '';
   const siteCount = sites?.length ?? 0;
 
   return (

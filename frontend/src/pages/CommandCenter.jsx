@@ -552,7 +552,12 @@ export default function CommandCenter() {
             </p>
           </div>
         ) : (
-          <div />
+          <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center min-h-[200px]">
+            <span className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Progression trajectoire mensuelle
+            </span>
+            <span className="text-sm text-gray-500">Données en cours de collecte...</span>
+          </div>
         )}
 
         {/* Actions du jour */}

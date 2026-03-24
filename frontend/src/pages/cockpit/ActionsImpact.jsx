@@ -176,23 +176,27 @@ export default function ActionsImpact({ actions, loading }) {
         </div>
       )}
 
-      {/* Footer */}
-      {actions?.potentielEur > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            Potentiel total :
-            <span className="text-green-700 font-medium ml-1">
-              {fmtEur(actions.potentielEur)}/an
-            </span>
-          </span>
-          <button
-            onClick={() => navigate('/actions')}
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-          >
-            Voir toutes les actions <ArrowRight size={12} />
-          </button>
-        </div>
-      )}
+      {/* Footer — toujours visible (maquette) */}
+      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+        <span className="text-xs text-gray-500">
+          {actions?.potentielEur > 0 ? (
+            <>
+              Potentiel total :
+              <span className="text-green-700 font-medium ml-1">
+                {fmtEur(actions.potentielEur)}/an
+              </span>
+            </>
+          ) : (
+            'Actions planifiées'
+          )}
+        </span>
+        <button
+          onClick={() => navigate('/actions')}
+          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+        >
+          Voir toutes les actions <ArrowRight size={12} />
+        </button>
+      </div>
     </div>
   );
 }

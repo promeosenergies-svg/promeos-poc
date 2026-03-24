@@ -137,7 +137,9 @@ export default function CockpitHero({
 
       {/* ── Card 2 : Risque financier ── */}
       <div
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2"
+        className={`rounded-xl p-4 flex flex-col gap-2 border ${
+          kpis?.risqueTotal > 0 ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-gray-200'
+        }`}
         data-testid="kpi-risque"
       >
         <span className="text-xs text-gray-500">Risque financier</span>
