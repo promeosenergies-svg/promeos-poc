@@ -123,13 +123,19 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
                 today = date.today()
                 y_ago = today - timedelta(days=365)
 
-                from models.enums import FrequencyType
+                from models.energy_models import FrequencyType
 
+                # Accepter MONTHLY et DAILY (gaz = daily, elec = monthly)
                 result = (
                     db.query(func.sum(MeterReading.value_kwh))
                     .filter(
                         MeterReading.meter_id.in_(meter_ids),
-                        MeterReading.frequency == FrequencyType.MONTHLY,
+                        MeterReading.frequency.in_(
+                            [
+                                FrequencyType.MONTHLY,
+                                FrequencyType.DAILY,
+                            ]
+                        ),
                         MeterReading.timestamp >= y_ago,
                     )
                     .scalar()
