@@ -151,8 +151,14 @@ export function useCockpitData() {
           return null;
         }),
         getCockpitTrajectory().catch((err) => {
-          logger.error(TAG, 'getCockpitTrajectory failed', { err: err.message });
-          return null;
+          logger.error(TAG, 'getCockpitTrajectory failed, retrying...', { err: err.message });
+          // Retry une fois après 1s (endpoint parfois lent au premier appel)
+          return new Promise((resolve) => setTimeout(resolve, 1000)).then(() =>
+            getCockpitTrajectory().catch((err2) => {
+              logger.error(TAG, 'getCockpitTrajectory retry failed', { err: err2.message });
+              return null;
+            })
+          );
         }),
         getActionsSummary().catch((err) => {
           logger.error(TAG, 'getActionsSummary failed', { err: err.message });
