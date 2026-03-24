@@ -168,7 +168,7 @@ class TestParseR171MultipleSeries:
         assert result.series[0].mesures[1].valeur == "200"
         assert result.series[0].mesures[2].valeur == "300"
 
-    def test_total_mesures_across_series(self):
+    def test_total_measures_across_series(self):
         mesure1 = "\n".join([
             _make_mesure_xml("2026-03-01T00:00:00", "100"),
             _make_mesure_xml("2026-03-01T01:00:00", "200"),
@@ -179,7 +179,7 @@ class TestParseR171MultipleSeries:
         xml = _make_r171_xml(series_xml=serie1 + serie2)
         result = parse_r171(xml)
 
-        assert result.total_mesures == 3
+        assert result.total_measures == 3
 
 
 # ---------------------------------------------------------------------------
@@ -253,12 +253,12 @@ class TestParseR171Namespace:
 
 class TestParseR171Empty:
     def test_empty_series_list(self):
-        """0 series -> no error, total_mesures=0."""
+        """0 series -> no error, total_measures=0."""
         xml = _make_r171_xml(series_xml="")
         result = parse_r171(xml)
 
         assert len(result.series) == 0
-        assert result.total_mesures == 0
+        assert result.total_measures == 0
 
     def test_empty_mesures_in_serie(self):
         """Serie with 0 mesureDatee -> empty list, no error."""
@@ -321,6 +321,18 @@ class TestParseR171Errors:
         with pytest.raises(R171ParseError, match="Missing or empty <prmId>"):
             parse_r171(xml)
 
+    def test_empty_prm_id_raises(self):
+        """serieMesuresDatees with whitespace-only prmId -> R171ParseError."""
+        serie_xml = """\
+<serieMesuresDatees>
+  <prmId>  </prmId>
+  <type>INDEX</type>
+  <mesuresDateesListe></mesuresDateesListe>
+</serieMesuresDatees>"""
+        xml = _make_r171_xml(series_xml=serie_xml)
+        with pytest.raises(R171ParseError, match="Missing or empty <prmId>"):
+            parse_r171(xml)
+
     def test_missing_date_fin_raises(self):
         """mesureDatee without dateFin -> R171ParseError."""
         mesure_xml = "<mesureDatee><valeur>100</valeur></mesureDatee>"
@@ -328,6 +340,24 @@ class TestParseR171Errors:
         xml = _make_r171_xml(series_xml=serie)
         with pytest.raises(R171ParseError, match="Missing or empty <dateFin>"):
             parse_r171(xml)
+
+
+# ---------------------------------------------------------------------------
+# Tests — Whitespace stripping
+# ---------------------------------------------------------------------------
+
+
+class TestParseR171Whitespace:
+    def test_whitespace_in_fields_stripped(self):
+        """Leading/trailing whitespace in XML text is stripped."""
+        mesure = "<mesureDatee><dateFin>  2026-03-01T00:51:11  </dateFin><valeur>  1320  </valeur></mesureDatee>"
+        serie = _make_serie_xml(mesures_xml=mesure)
+        xml = _make_r171_xml(series_xml=serie)
+        result = parse_r171(xml)
+
+        m = result.series[0].mesures[0]
+        assert m.date_fin == "2026-03-01T00:51:11"
+        assert m.valeur == "1320"
 
 
 # ---------------------------------------------------------------------------

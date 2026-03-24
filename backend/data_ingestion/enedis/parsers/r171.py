@@ -87,7 +87,7 @@ class ParsedR171File:
     series: list[ParsedR171Serie] = field(default_factory=list)
 
     @property
-    def total_mesures(self) -> int:
+    def total_measures(self) -> int:
         return sum(len(s.mesures) for s in self.series)
 
 
