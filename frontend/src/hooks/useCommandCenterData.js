@@ -99,9 +99,11 @@ export function useCommandCenterData() {
           logger.error(TAG, 'weekSeries failed', { err: err.message });
           return null;
         }),
+        // Profil horaire : J-1 avec fallback sur les 3 derniers jours
+        // (le seed peut ne pas couvrir J-1 exactement)
         getEmsTimeseries({
           site_ids: siteIds,
-          date_from: yest,
+          date_from: isoDate(daysAgo(3)),
           date_to: today,
           granularity: 'hourly',
           mode: 'aggregate',
@@ -116,8 +118,11 @@ export function useCommandCenterData() {
       const weekSeries = normalizeWeekSeries(weekRaw);
       const hourlyProfile = normalizeHourlyProfile(profileRaw);
 
+      // Chercher J-1, sinon le dernier jour avec données disponibles
       const yestData = weekSeries.find((p) => p.date === yest);
-      const consoHierKwh = yestData?.kwh ?? null;
+      const lastDayData =
+        !yestData && weekSeries.length > 0 ? weekSeries[weekSeries.length - 1] : yestData;
+      const consoHierKwh = lastDayData?.kwh ?? null;
 
       const picKw = hourlyProfile.length ? Math.max(...hourlyProfile.map((p) => p.kw ?? 0)) : null;
 
@@ -126,6 +131,7 @@ export function useCommandCenterData() {
         hourlyProfile,
         kpisJ1: {
           consoHierKwh,
+          consoDate: lastDayData?.date ?? null,
           picKw,
           co2ResKgKwh: null,
         },

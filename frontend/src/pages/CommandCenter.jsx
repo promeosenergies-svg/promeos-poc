@@ -389,8 +389,8 @@ export default function CommandCenter() {
             cmdLoading
               ? 'Chargement...'
               : kpisJ1?.consoHierKwh != null
-                ? `${scopedSites.length} sites · données réelles`
-                : 'Aucune donnée EMS hier'
+                ? `${scopedSites.length} sites · données ${kpisJ1.consoDate ? `du ${kpisJ1.consoDate.slice(5).replace('-', '/')}` : 'réelles'}`
+                : 'Aucune donnée EMS disponible'
           }
           loading={cmdLoading}
         />
