@@ -453,12 +453,16 @@ def get_cockpit_trajectory(
         objectif_mwh.append(round(ref_kwh * (1 + obj_ratio) / 1000, 1))
 
     # 7. Réduction cumulée actuelle
+    # Utiliser la dernière année COMPLÈTE pour éviter de comparer 3 mois vs 12 mois
     current_year = datetime.now(tz=None).year
-    current_year_reel = reel_by_year.get(current_year)
+    last_full_year = current_year - 1
+    best_reel = reel_by_year.get(last_full_year) or reel_by_year.get(current_year)
     reduction_pct = None
-    if current_year_reel and ref_kwh > 0:
+    reduction_year = None
+    if best_reel and ref_kwh > 0:
+        reduction_year = last_full_year if last_full_year in reel_by_year else current_year
         # Convention maquette : négatif = réduction (ex: -18% = 18% de réduction)
-        reduction_pct = round((current_year_reel / ref_kwh - 1) * 100, 1)
+        reduction_pct = round((best_reel / ref_kwh - 1) * 100, 1)
 
     # Surface totale
     surface_total = (db.query(func.sum(Batiment.surface_m2)).filter(Batiment.site_id.in_(site_ids)).scalar()) or 0
@@ -467,6 +471,7 @@ def get_cockpit_trajectory(
         "ref_year": ref_year,
         "ref_kwh": round(ref_kwh / 1000, 1),
         "reduction_pct_actuelle": reduction_pct,
+        "reduction_year": reduction_year,
         "objectif_2026_pct": -25.0,
         "annees": annees,
         "reel_mwh": reel_mwh,

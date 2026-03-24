@@ -13,24 +13,32 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
   if (!scopedSites?.length) return null;
 
   // TRANSFORMATION DE PRÉSENTATION : conso_kwh_an / 365 = baseline journalière estimée
-  // Si consoJ1BySite absent, estimer J-1 par site au prorata de conso_kwh_an
   const totalConsoAn = scopedSites.reduce((s, site) => s + (site.conso_kwh_an || 0), 0);
+  const hasRealJ1 = consoJ1BySite && Object.keys(consoJ1BySite).length > 0;
 
   const sites = scopedSites.slice(0, 5).map((site) => {
     const baselineJ = site.conso_kwh_an ? Math.round(site.conso_kwh_an / 365) : null;
 
-    // Priorité 1 : données J-1 par site réelles
-    // Priorité 2 : estimation proportionnelle depuis consoHierTotal
+    // Données J-1 réelles par site (quand disponibles depuis EMS par site)
     let consoJ1 = consoJ1BySite?.[site.id] ?? null;
+
+    // Fallback : si on a le total J-1 agrégé mais pas par site,
+    // répartir proportionnellement MAIS ne pas afficher de delta%
+    // (le ratio serait identique pour tous les sites → trompeur)
+    let estimated = false;
     if (consoJ1 == null && consoHierTotal > 0 && totalConsoAn > 0 && site.conso_kwh_an > 0) {
       consoJ1 = Math.round((site.conso_kwh_an / totalConsoAn) * consoHierTotal);
+      estimated = true;
     }
 
+    // Delta% seulement avec des données réelles par site (pas estimées)
     const deltaPct =
-      consoJ1 != null && baselineJ ? Math.round(((consoJ1 - baselineJ) / baselineJ) * 100) : null;
+      !estimated && consoJ1 != null && baselineJ
+        ? Math.round(((consoJ1 - baselineJ) / baselineJ) * 100)
+        : null;
     const isOver = deltaPct != null && deltaPct > 0;
 
-    return { ...site, baselineJ, consoJ1, deltaPct, isOver };
+    return { ...site, baselineJ, consoJ1, deltaPct, isOver, estimated };
   });
 
   return (
@@ -51,18 +59,15 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
             <div key={site.id}>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-gray-700">{site.nom}</span>
-                <span
-                  className={
-                    site.isOver ? 'text-red-600 font-medium' : 'text-green-700 font-medium'
-                  }
-                >
+                <span className={site.isOver ? 'text-red-600 font-medium' : 'text-green-700 font-medium'}>
                   {site.consoJ1 != null ? `${site.consoJ1} kWh` : '—'}
-                  {site.deltaPct != null && (
+                  {site.deltaPct != null ? (
                     <span className="ml-1">
-                      · {site.deltaPct > 0 ? '+' : ''}
-                      {site.deltaPct}% vs baseline
+                      · {site.deltaPct > 0 ? '+' : ''}{site.deltaPct}% vs baseline
                     </span>
-                  )}
+                  ) : site.estimated ? (
+                    <span className="ml-1 text-gray-400"> · estimé</span>
+                  ) : null}
                 </span>
               </div>
               <div className="relative h-2 bg-gray-100 rounded-full overflow-visible">
