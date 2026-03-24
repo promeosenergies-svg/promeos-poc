@@ -415,30 +415,41 @@ export default function CommandCenter() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="charts-conso">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-            Conso 7 jours — {scopedSites.length} sites (kWh/j)
+            Conso 7 jours — {scopedSites.length} sites (MWh/j)
           </div>
           {weekSeries?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={140}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={weekSeries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={(d) => d?.slice(5)}
+                  tickFormatter={(d) => {
+                    if (!d) return '';
+                    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+                    const dt = new Date(d);
+                    return `${days[dt.getDay()]} ${d.slice(8)}`;
+                  }}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={(v) => `${Math.round(v)}`}
+                  tickFormatter={(v) => `${(v / 1000).toFixed(1)}`}
+                  label={{
+                    value: 'MWh',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 10, fill: '#9ca3af' },
+                  }}
                 />
                 <Tooltip
-                  formatter={(v) => [v != null ? `${Math.round(v)} kWh` : '—', 'Conso']}
+                  formatter={(v) => [v != null ? `${(v / 1000).toFixed(1)} MWh` : '—', 'Conso']}
                   labelFormatter={(l) => `Jour : ${l}`}
                 />
                 <Bar dataKey="kwh" name="Cette semaine" fill="#378ADD" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[140px] flex items-center justify-center text-xs text-gray-400">
+            <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">
               Pas de données disponibles
             </div>
           )}
@@ -449,11 +460,20 @@ export default function CommandCenter() {
             Profil journalier J-1 (kW agrégé)
           </div>
           {hourlyProfile?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={140}>
+            <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={hourlyProfile}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="heure" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={3} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => `${v}kW`} />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tickFormatter={(v) => `${v} kW`}
+                  label={{
+                    value: 'kW',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 10, fill: '#9ca3af' },
+                  }}
+                />
                 <Tooltip formatter={(v, name) => [v != null ? `${v} kW` : '—', name]} />
                 <Area
                   type="monotone"
