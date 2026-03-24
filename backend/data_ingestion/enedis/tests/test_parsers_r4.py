@@ -194,9 +194,9 @@ class TestParseR4xCourbe:
         result = parse_r4x(xml)
 
         assert len(result.courbes) == 0
-        assert result.total_points == 0
+        assert result.total_measures == 0
 
-    def test_total_points_across_courbes(self):
+    def test_total_measures_across_courbes(self):
         courbe1 = _make_courbe_xml(
             grandeur_physique="EA",
             points_xml="\n".join(
@@ -213,7 +213,7 @@ class TestParseR4xCourbe:
         xml = _make_r4x_xml(courbes_xml=courbe1 + courbe2)
         result = parse_r4x(xml)
 
-        assert result.total_points == 3
+        assert result.total_measures == 3
 
 
 # ---------------------------------------------------------------------------
