@@ -609,8 +609,12 @@ const Cockpit = () => {
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <div>
                 <span className="text-amber-800 font-medium">
-                  Retard trajectoire DT · {trajectoire.reductionPctActuelle}% réalisé vs objectif{' '}
-                  {trajectoire.objectif2026Pct}%
+                  Trajectoire DT 2026 en retard de{' '}
+                  {/* Écart en pts = soustraction de 2 valeurs backend (présentation) */}
+                  {Math.abs(
+                    (trajectoire.reductionPctActuelle ?? 0) - (trajectoire.objectif2026Pct ?? -25)
+                  ).toFixed(1)}{' '}
+                  pts
                 </span>
                 {cockpitKpis?.risqueBreakdown?.reglementaire_eur > 0 && (
                   <span className="text-amber-700 text-xs block mt-0.5">

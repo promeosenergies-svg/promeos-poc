@@ -469,7 +469,9 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
             status = "AT_RISK"
             severity = "MEDIUM"
 
-    bacs_penalty = 7500.0  # regs.yaml: bacs.penalties.non_compliance
+    from services.compliance_engine import BASE_PENALTY_EURO
+
+    bacs_penalty = float(BASE_PENALTY_EURO)  # CRIT-7: constante centralisée
 
     findings.append(
         Finding(

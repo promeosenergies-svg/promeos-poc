@@ -276,7 +276,9 @@ def get_benchmark(
     from models import not_deleted
 
     org_id = int(request.headers.get("X-Org-Id", "0")) if request else 0
-    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
+    # Scoper aux sites de l'org demandée (fix data leak multi-tenant CRIT-1)
+    site_ids = [s.id for s in _sites_for_org(db, org_id if org_id else None).with_entities(Site.id).all()]
+    sites = not_deleted(db.query(Site), Site).filter(Site.id.in_(site_ids), Site.actif == True).all()
 
     results = []
     for site in sites:
@@ -498,5 +500,12 @@ def get_co2(
     """
     from services.co2_service import compute_portfolio_co2
 
-    org_id = int(request.headers.get("X-Org-Id", "0")) if request else 0
-    return compute_portfolio_co2(db, org_id)
+    # Fix CRIT-2 : résolution robuste de l'org (pas org_id=0 qui bypass le filtre)
+    from middleware.auth import get_optional_auth
+    auth = None
+    try:
+        auth = get_optional_auth(request)
+    except Exception:
+        pass
+    effective_org_id = resolve_org_id(request, auth, db)
+    return compute_portfolio_co2(db, effective_org_id)

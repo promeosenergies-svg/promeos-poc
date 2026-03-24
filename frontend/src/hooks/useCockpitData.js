@@ -35,7 +35,8 @@ function normalizeCockpitKpis(raw) {
     conformiteScore: s.compliance_score ?? null,
     conformiteSource: s.compliance_source ?? null,
     conformiteComputedAt: s.compliance_computed_at ?? null,
-    risqueTotal: s.risque_financier_euro ?? 0,
+    // CRIT-3: total_eur inclut réglementaire + billing + contrat
+    risqueTotal: s.risque_breakdown?.total_eur ?? s.risque_financier_euro ?? 0,
     risqueBreakdown: s.risque_breakdown ?? null,
     totalSites: s.total_sites ?? 0,
     sitesActifs: s.sites_actifs ?? 0,

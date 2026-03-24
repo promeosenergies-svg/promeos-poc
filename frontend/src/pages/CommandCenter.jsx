@@ -570,15 +570,22 @@ export default function CommandCenter() {
               </div>
             </div>
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="font-medium text-gray-700">Avec actions planifiées</span>
-                <span className="text-green-700 font-medium">
-                  {trajectoire.projectionMwh?.some((v) => v != null) ? 'Objectif atteignable' : '—'}
-                </span>
-              </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-teal-500 rounded-full" style={{ width: '100%' }} />
-              </div>
+              {/* HIGH-2: masquer barre si projection vide */}
+              {trajectoire.projectionMwh?.some((v) => v != null) ? (
+                <>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium text-gray-700">Avec actions planifiées</span>
+                    <span className="text-green-700 font-medium">Objectif atteignable</span>
+                  </div>
+                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-teal-500 rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 italic mt-2">
+                  Projection disponible après ajout d'actions planifiées.
+                </p>
+              )}
             </div>
             <p className="text-xs text-gray-400 mt-2">
               Actions à démarrer avant le{' '}

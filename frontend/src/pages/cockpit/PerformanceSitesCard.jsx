@@ -32,7 +32,7 @@ function SitePerformanceBar({ site, index = 0 }) {
       <div className="flex justify-between text-xs mb-1">
         <span className="font-medium text-gray-700">{site_nom}</span>
         <span className={`font-medium ${isOver ? 'text-red-600' : color.text}`}>
-          {ipe_kwh_m2_an ?? '—'} kWh/m² · obj. {objectif}
+          {ipe_kwh_m2_an ?? '—'} kWh/m² · réf. {objectif}
         </span>
       </div>
       <div className="relative h-2 bg-gray-100 rounded-full overflow-visible">

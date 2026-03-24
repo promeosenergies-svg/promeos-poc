@@ -140,10 +140,13 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
           <span className="inline-block w-5 border-t-2 border-dashed border-red-400" />
           <span>Objectif DT (−40% 2030)</span>
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-5 border-t-2 border-dotted border-green-600" />
-          <span>Projection actions planifiées</span>
-        </span>
+        {/* HIGH-1: masquer légende Projection si projectionMwh vide */}
+        {trajectoire?.projectionMwh?.some((v) => v != null) && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-5 border-t-2 border-dotted border-green-600" />
+            <span>Projection actions planifiées</span>
+          </span>
+        )}
       </div>
 
       {/* ── Graphique Recharts ── */}
