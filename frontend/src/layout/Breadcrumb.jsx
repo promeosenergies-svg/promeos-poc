@@ -147,12 +147,15 @@ export default function Breadcrumb() {
     crumbs.push({ label, to: path });
   }
 
+  // Déduplication : supprimer les crumbs consécutifs avec le même label
+  const deduped = crumbs.filter((c, i) => i === 0 || c.label !== crumbs[i - 1].label);
+
   return (
     <nav className="flex items-center gap-1 text-sm text-gray-500">
-      {crumbs.map((c, i) => (
+      {deduped.map((c, i) => (
         <span key={c.to} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
-          {i < crumbs.length - 1 ? (
+          {i < deduped.length - 1 ? (
             <Link
               to={c.to}
               className="hover:text-blue-600 hover:underline underline-offset-2 transition"
