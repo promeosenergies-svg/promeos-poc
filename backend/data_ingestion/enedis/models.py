@@ -3,8 +3,11 @@
 Raw archive layer: store every byte Enedis sends, without transformation.
 
 Tables:
-  enedis_flux_file   — one row per ingested file (registry + raw header)
-  enedis_flux_mesure_r4x — one row per Donnees_Point_Mesure (fully denormalized)
+  enedis_flux_file         — one row per ingested file (registry + raw header)
+  enedis_flux_mesure_r4x   — one row per Donnees_Point_Mesure R4x CDC (fully denormalized)
+  enedis_flux_mesure_r171  — one row per mesureDatee R171 index C2-C4
+  enedis_flux_mesure_r50   — one row per PDC R50 courbe de charge C5
+  enedis_flux_mesure_r151  — one row per valeur R151 index+puissance max C5
 
 Design decisions:
   - Uses the shared Base (models.base.Base) so tables are created in promeos.db
@@ -68,7 +71,10 @@ class EnedisFluxFile(Base, TimestampMixin):
     # Full raw header as JSON for complete fidelity
     header_raw = Column(Text, nullable=True, comment="Entete XML complet en JSON")
 
-    mesures = relationship("EnedisFluxMesureR4x", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures_r4x = relationship("EnedisFluxMesureR4x", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures_r171 = relationship("EnedisFluxMesureR171", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures_r50 = relationship("EnedisFluxMesureR50", back_populates="flux_file", cascade="all, delete-orphan")
+    mesures_r151 = relationship("EnedisFluxMesureR151", back_populates="flux_file", cascade="all, delete-orphan")
 
     def set_header_raw(self, header_dict: dict) -> None:
         self.header_raw = json.dumps(header_dict, ensure_ascii=False)
@@ -126,7 +132,136 @@ class EnedisFluxMesureR4x(Base, TimestampMixin):
     valeur_point = Column(String(20), nullable=True, comment="Valeur brute — string, pas float")
     statut_point = Column(String(2), nullable=True, comment="R/H/P/S/T/F/G/E/C/K/D — brut XML")
 
-    flux_file = relationship("EnedisFluxFile", back_populates="mesures")
+    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r4x")
 
     def __repr__(self) -> str:
         return f"<EnedisFluxMesureR4x {self.point_id} {self.horodatage} {self.valeur_point}>"
+
+
+class EnedisFluxMesureR171(Base, TimestampMixin):
+    """Raw measurement row from an Enedis R171 index flux (C2-C4).
+
+    Granularity: 1 row per mesureDatee (= 1 row per serie in observed data).
+    No unique constraint — raw archive, deduplication deferred.
+    """
+
+    __tablename__ = "enedis_flux_mesure_r171"
+    __table_args__ = (
+        Index("ix_enedis_mesure_r171_point_date_fin", "point_id", "date_fin"),
+        Index("ix_enedis_mesure_r171_flux_file", "flux_file_id"),
+        Index("ix_enedis_mesure_r171_flux_type", "flux_type"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    flux_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="FK vers enedis_flux_file",
+    )
+    flux_type = Column(String(10), nullable=False, comment="R171 — dénormalisé pour les requêtes")
+
+    # Serie context
+    point_id = Column(String(14), nullable=False, comment="prmId (14 chiffres)")
+    type_mesure = Column(String(10), nullable=False, comment="INDEX — brut XML")
+    grandeur_metier = Column(String(10), nullable=True, comment="CONS — brut XML")
+    grandeur_physique = Column(String(10), nullable=True, comment="DD/DQ/EA/ERC/ERI/PMA/TF — brut XML")
+    type_calendrier = Column(String(5), nullable=True, comment="D — brut XML")
+    code_classe_temporelle = Column(String(10), nullable=True, comment="HCE/HCH/HPE/HPH/P — brut XML")
+    libelle_classe_temporelle = Column(String(100), nullable=True, comment="Libellé humain — brut XML")
+    unite = Column(String(10), nullable=True, comment="Wh/VArh/VA/s — brut XML")
+
+    # Mesure
+    date_fin = Column(String(50), nullable=False, comment="dateFin — brut ISO8601")
+    valeur = Column(String(20), nullable=True, comment="Valeur brute — string, pas float")
+
+    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r171")
+
+    def __repr__(self) -> str:
+        return f"<EnedisFluxMesureR171 {self.point_id} {self.date_fin} {self.valeur}>"
+
+
+class EnedisFluxMesureR50(Base, TimestampMixin):
+    """Raw measurement row from an Enedis R50 courbe de charge flux (C5).
+
+    Granularity: 1 row per PDC (point de courbe, pas de 30 min).
+    No unique constraint — raw archive, deduplication deferred.
+    """
+
+    __tablename__ = "enedis_flux_mesure_r50"
+    __table_args__ = (
+        Index("ix_enedis_mesure_r50_point_horodatage", "point_id", "horodatage"),
+        Index("ix_enedis_mesure_r50_flux_file", "flux_file_id"),
+        Index("ix_enedis_mesure_r50_flux_type", "flux_type"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    flux_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="FK vers enedis_flux_file",
+    )
+    flux_type = Column(String(10), nullable=False, comment="R50 — dénormalisé pour les requêtes")
+
+    # PRM + releve context
+    point_id = Column(String(14), nullable=False, comment="Id_PRM (14 chiffres)")
+    date_releve = Column(String(20), nullable=False, comment="Date_Releve — brut XML")
+    id_affaire = Column(String(20), nullable=True, comment="Id_Affaire — brut XML")
+
+    # PDC (point de courbe)
+    horodatage = Column(String(50), nullable=False, comment="Horodatage du PDC — brut ISO8601+TZ")
+    valeur = Column(String(20), nullable=True, comment="Valeur brute — absent si pas de mesure")
+    indice_vraisemblance = Column(String(5), nullable=True, comment="0/1 — brut XML")
+
+    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r50")
+
+    def __repr__(self) -> str:
+        return f"<EnedisFluxMesureR50 {self.point_id} {self.horodatage} {self.valeur}>"
+
+
+class EnedisFluxMesureR151(Base, TimestampMixin):
+    """Raw measurement row from an Enedis R151 index + puissance max flux (C5).
+
+    Granularity: 1 row per valeur (index par classe temporelle OU puissance max).
+    type_donnee distinguishes: CT_DIST (grille distributeur), CT (fournisseur), PMAX.
+    No unique constraint — raw archive, deduplication deferred.
+    """
+
+    __tablename__ = "enedis_flux_mesure_r151"
+    __table_args__ = (
+        Index("ix_enedis_mesure_r151_point_date_releve", "point_id", "date_releve"),
+        Index("ix_enedis_mesure_r151_flux_file", "flux_file_id"),
+        Index("ix_enedis_mesure_r151_flux_type", "flux_type"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    flux_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="FK vers enedis_flux_file",
+    )
+    flux_type = Column(String(10), nullable=False, comment="R151 — dénormalisé pour les requêtes")
+
+    # PRM + releve context
+    point_id = Column(String(14), nullable=False, comment="Id_PRM (14 chiffres)")
+    date_releve = Column(String(20), nullable=False, comment="Date_Releve — brut XML")
+    id_calendrier_fournisseur = Column(String(20), nullable=True, comment="Id_Calendrier_Fournisseur — brut XML")
+    libelle_calendrier_fournisseur = Column(String(100), nullable=True, comment="Brut XML")
+    id_calendrier_distributeur = Column(String(20), nullable=True, comment="Id_Calendrier_Distributeur — brut XML")
+    libelle_calendrier_distributeur = Column(String(150), nullable=True, comment="Brut XML")
+    id_affaire = Column(String(20), nullable=True, comment="Id_Affaire — brut XML")
+
+    # Donnee (index ou puissance max)
+    type_donnee = Column(String(10), nullable=False, comment="CT_DIST/CT/PMAX — dérivé de la structure XML")
+    id_classe_temporelle = Column(String(10), nullable=True, comment="HCB/HCH/HPB/HPH/HC/HP — NULL pour PMAX")
+    libelle_classe_temporelle = Column(String(100), nullable=True, comment="NULL pour PMAX — brut XML")
+    rang_cadran = Column(String(5), nullable=True, comment="NULL pour PMAX — brut XML")
+    valeur = Column(String(20), nullable=True, comment="Index Wh ou puissance VA — brut string")
+    indice_vraisemblance = Column(String(5), nullable=True, comment="0-15 — NULL pour PMAX — brut XML")
+
+    flux_file = relationship("EnedisFluxFile", back_populates="mesures_r151")
+
+    def __repr__(self) -> str:
+        return f"<EnedisFluxMesureR151 {self.point_id} {self.date_releve} {self.valeur}>"
