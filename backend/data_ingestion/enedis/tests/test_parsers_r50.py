@@ -238,12 +238,12 @@ class TestParseR50OptionalFields:
         assert result.prms[0].releves[0].id_affaire is None
 
     def test_empty_prm_list(self):
-        """0 PRM blocks -> no error, empty list, total_points=0."""
+        """0 PRM blocks -> no error, empty list, total_measures=0."""
         xml = _make_r50_xml(prms_xml="")
         result = parse_r50(xml)
 
         assert len(result.prms) == 0
-        assert result.total_points == 0
+        assert result.total_measures == 0
 
     def test_empty_releve_zero_pdcs(self):
         """Releve with 0 PDC -> empty points list."""
@@ -275,13 +275,13 @@ class TestParseR50OptionalFields:
 
 
 # ---------------------------------------------------------------------------
-# Tests -- total_points
+# Tests -- total_measures
 # ---------------------------------------------------------------------------
 
 
-class TestParseR50TotalPoints:
-    def test_total_points_across_prms_and_releves(self):
-        """total_points should count all PDCs across all PRMs and releves."""
+class TestParseR50TotalMeasures:
+    def test_total_measures_across_prms_and_releves(self):
+        """total_measures should count all PDCs across all PRMs and releves."""
         # PRM 1: 2 releves with 3 and 2 points
         pdcs_r1 = "\n".join(_make_pdc_xml(h=f"2023-01-01T{i:02d}:00:00+01:00") for i in range(3))
         pdcs_r2 = "\n".join(_make_pdc_xml(h=f"2023-01-02T{i:02d}:00:00+01:00") for i in range(2))
@@ -297,7 +297,7 @@ class TestParseR50TotalPoints:
         xml = _make_r50_xml(prms_xml=prm1 + prm2)
         result = parse_r50(xml)
 
-        assert result.total_points == 3 + 2 + 4  # = 9
+        assert result.total_measures == 3 + 2 + 4  # = 9
 
 
 # ---------------------------------------------------------------------------
@@ -384,3 +384,23 @@ class TestParseR50Errors:
 </Donnees_Releve></PRM></R50>"""
         with pytest.raises(R50ParseError, match="Missing or empty <H>"):
             parse_r50(xml)
+
+
+# ---------------------------------------------------------------------------
+# Tests -- Whitespace stripping
+# ---------------------------------------------------------------------------
+
+
+class TestParseR50Whitespace:
+    def test_whitespace_in_fields_stripped(self):
+        """Leading/trailing whitespace in XML text is stripped."""
+        pdc = "<PDC><H>  2023-01-02T16:30:00+01:00  </H><V>  20710  </V><IV>  0  </IV></PDC>"
+        releve = _make_releve_xml(pdcs_xml=pdc)
+        prm = _make_prm_xml(releves_xml=releve)
+        xml = _make_r50_xml(prms_xml=prm)
+        result = parse_r50(xml)
+
+        p = result.prms[0].releves[0].points[0]
+        assert p.horodatage == "2023-01-02T16:30:00+01:00"
+        assert p.valeur == "20710"
+        assert p.indice_vraisemblance == "0"

@@ -88,7 +88,7 @@ class ParsedR50File:
     prms: list[ParsedR50PRM] = field(default_factory=list)
 
     @property
-    def total_points(self) -> int:
+    def total_measures(self) -> int:
         return sum(len(r.points) for prm in self.prms for r in prm.releves)
 
 
