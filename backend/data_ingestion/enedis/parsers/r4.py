@@ -86,7 +86,7 @@ class ParsedR4xFile:
     courbes: list[ParsedCourbe] = field(default_factory=list)
 
     @property
-    def total_points(self) -> int:
+    def total_measures(self) -> int:
         return sum(len(c.points) for c in self.courbes)
 
 
