@@ -76,8 +76,9 @@ describe('TrajectorySection — structure', () => {
     expect(trajSrc).toMatch(/EmptyState/);
   });
 
-  it('contient SiteBar pour les barres kWh/m2', () => {
-    expect(trajSrc).toMatch(/SiteBar/);
+  it('barres kWh/m2 déplacées dans PerformanceSitesCard (pas de doublon)', () => {
+    // SiteBar retiré de TrajectorySection pour éviter le doublon avec PerformanceSitesCard
+    expect(trajSrc).not.toMatch(/function SiteBar/);
   });
 
   it('a des focus-visible rings', () => {

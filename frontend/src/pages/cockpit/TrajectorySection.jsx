@@ -1,5 +1,5 @@
 /**
- * TrajectorySection — Courbe trajectoire Décret Tertiaire + barres kWh/m² par site.
+ * TrajectorySection — Courbe trajectoire Décret Tertiaire.
  *
  * RÈGLE : zéro calcul métier. Toutes les données viennent de `trajectoire` (backend P0).
  *
@@ -20,10 +20,6 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { Skeleton, EmptyState } from '../../ui';
-
-// ── SiteBar — barre horizontale kWh/m² ──────────────────────────────
-
-// ── TrajectorySection ────────────────────────────────────────────────
 
 export default function TrajectorySection({ trajectoire, loading, sites }) {
   const [mode, setMode] = useState('kwh'); // 'kwh' | 'pct'
@@ -57,43 +53,40 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
-        <Skeleton className="h-6 w-48 mb-4" />
-        <Skeleton className="h-[220px] w-full rounded-lg" />
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <Skeleton className="h-5 w-72 mb-4" />
+        <Skeleton className="h-[280px] w-full rounded-lg" />
       </div>
     );
   }
 
   // ── Empty / Partial ──
   if (!trajectoire?.annees?.length) {
-    // Partial state: jalons disponibles mais pas de séries annuelles
     if (trajectoire?.partial && trajectoire.jalons?.length) {
       return (
         <div
-          className="bg-white border border-gray-200 rounded-xl p-4"
+          className="bg-white border border-gray-200 rounded-xl p-5"
           data-testid="trajectory-section"
         >
-          <h3 className="text-sm font-semibold text-gray-800 mb-3">Trajectoire Décret Tertiaire</h3>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Trajectoire de consommation vs objectifs Décret Tertiaire
+          </h3>
           <p className="text-xs text-gray-500 mb-3">
             Données de consommation annuelle en cours de collecte — jalons réglementaires :
           </p>
-          <div className="flex gap-3 text-xs text-gray-500 flex-wrap">
-            <span>Jalons :</span>
+          <div className="flex gap-2 text-xs text-gray-500 flex-wrap">
+            <span className="text-gray-400">Jalons DT ·</span>
             {trajectoire.jalons.map((j) => (
               <span key={j.annee} className="text-blue-600 font-medium">
-                {j.annee} {j.reduction_pct} %
+                {j.annee} {j.reduction_pct}%
               </span>
             ))}
           </div>
-          <p className="text-[10px] text-gray-400 mt-3">
-            Objectif 2026 : {trajectoire.objectif2026Pct ?? -25} % · La trajectoire sera calculée
-            automatiquement dès que les objectifs annuels seront configurés.
-          </p>
         </div>
       );
     }
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
         <EmptyState
           title="Trajectoire non disponible"
           text="Aucune donnée de consommation annuelle disponible pour calculer la trajectoire."
@@ -103,90 +96,92 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
   }
 
   const yKey = (base) => (mode === 'pct' ? `${base}Pct` : base);
+  const nbSites = (sites?.length ?? trajectoire.annees?.length) ? '' : '';
+  const siteCount = sites?.length ?? 0;
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-xl p-4"
+      className="bg-white border border-gray-200 rounded-xl p-5"
       data-testid="trajectory-section"
     >
       {/* ── Header + Toggle ── */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">Trajectoire Décret Tertiaire</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Trajectoire de consommation vs objectifs Décret Tertiaire
+        </h3>
         <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
           <button
             onClick={() => setMode('kwh')}
-            className={`px-3 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              mode === 'kwh'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-500 hover:bg-gray-50'
+            className={`px-3 py-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              mode === 'kwh' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'
             }`}
           >
-            MWh
+            KWH
           </button>
           <button
             onClick={() => setMode('pct')}
-            className={`px-3 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              mode === 'pct'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-500 hover:bg-gray-50'
+            className={`px-3 py-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              mode === 'pct' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'
             }`}
           >
-            % réduction
+            % RÉDUCTION
           </button>
         </div>
       </div>
 
       {/* ── Légende custom ── */}
-      <div className="flex gap-4 flex-wrap mb-3 text-xs text-gray-500">
+      <div className="flex gap-5 flex-wrap mb-4 text-xs text-gray-600">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-6 h-0.5 bg-blue-500 rounded" />
-          Réel HELIOS ({trajectoire.annees?.length ? `${sites?.length ?? ''} sites` : ''})
+          <span className="inline-block w-5 h-0.5 bg-blue-500 rounded" />
+          <span className="font-medium">
+            Réel HELIOS{siteCount > 0 ? ` (${siteCount} sites)` : ''}
+          </span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-6 border-t-2 border-dashed border-red-400" />
-          Objectif DT (−40% 2030)
+          <span className="inline-block w-5 border-t-2 border-dashed border-red-400" />
+          <span>Objectif DT (−40% 2030)</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-6 h-0.5 bg-green-600 rounded" />
-          Projection actions planifiées
-        </span>
-        <span className="ml-auto text-xs text-gray-400">
-          Réf. {trajectoire.refYear} · {trajectoire.surfaceM2Total?.toLocaleString('fr-FR')} m²
+          <span className="inline-block w-5 border-t-2 border-dotted border-green-600" />
+          <span>Projection actions planifiées</span>
         </span>
       </div>
 
       {/* ── Graphique Recharts ── */}
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="annee" tick={{ fontSize: 11, fill: '#6b7280' }} />
           <YAxis
             tick={{ fontSize: 11, fill: '#6b7280' }}
-            tickFormatter={(v) => (mode === 'pct' ? `${v}%` : `${v}`)}
+            tickFormatter={(v) => (mode === 'pct' ? `${v}%` : `${v.toLocaleString('fr-FR')} MWh`)}
             label={{
               value: mode === 'pct' ? 'Réduction (%)' : 'MWh',
               angle: -90,
               position: 'insideLeft',
               style: { fontSize: 10, fill: '#9ca3af' },
             }}
+            width={80}
           />
           <Tooltip
             formatter={(value, name) => {
               if (value == null) return ['—', name];
-              return mode === 'pct' ? [`${value.toFixed(1)} %`, name] : [`${value} MWh`, name];
+              return mode === 'pct'
+                ? [`${value.toFixed(1)} %`, name]
+                : [`${value.toLocaleString('fr-FR')} MWh`, name];
             }}
             labelFormatter={(l) => `Année ${l}`}
           />
 
-          {/* Réel */}
+          {/* Réel HELIOS */}
           <Area
             type="monotone"
             dataKey={yKey('reel')}
-            name="Réel"
+            name="Réel HELIOS"
             stroke="#378ADD"
-            fill="rgba(55,138,221,0.08)"
-            strokeWidth={2}
-            dot={{ r: 3, fill: '#378ADD' }}
+            fill="rgba(55,138,221,0.10)"
+            strokeWidth={2.5}
+            dot={{ r: 4, fill: '#378ADD', strokeWidth: 0 }}
             connectNulls={false}
           />
 
@@ -197,7 +192,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
             name="Objectif DT"
             stroke="#E24B4A"
             strokeWidth={1.5}
-            strokeDasharray="5 3"
+            strokeDasharray="6 4"
             dot={false}
             connectNulls
           />
@@ -208,10 +203,10 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
             dataKey={yKey('projection')}
             name="Projection + actions"
             stroke="#1D9E75"
-            fill="rgba(29,158,117,0.06)"
-            strokeWidth={1.5}
-            strokeDasharray="3 3"
-            dot={{ r: 2, fill: '#1D9E75' }}
+            fill="rgba(29,158,117,0.12)"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            dot={{ r: 3, fill: '#1D9E75', strokeWidth: 0 }}
             connectNulls={false}
           />
 
@@ -225,17 +220,24 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
         </ComposedChart>
       </ResponsiveContainer>
 
-      {/* ── Jalons DT ── */}
-      <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
-        <span>Jalons :</span>
-        {trajectoire.jalons?.map((j) => (
-          <span key={j.annee} className="text-blue-600 font-medium">
-            {j.annee} {j.reduction_pct} %
-          </span>
-        ))}
+      {/* ── Footer : Jalons + Référence ── */}
+      <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-gray-400">Jalons DT ·</span>
+          {trajectoire.jalons?.map((j, i) => (
+            <span key={j.annee}>
+              <span className="text-blue-600 font-medium">
+                {j.annee} {j.reduction_pct}%
+              </span>
+              {i < trajectoire.jalons.length - 1 && <span className="text-gray-300 mx-0.5">·</span>}
+            </span>
+          ))}
+        </div>
+        <span className="text-gray-400">
+          Réf. {trajectoire.refYear} · Surface :{' '}
+          {trajectoire.surfaceM2Total?.toLocaleString('fr-FR') ?? '—'} m²
+        </span>
       </div>
-
-      {/* Barres kWh/m² supprimées — affichées par PerformanceSitesCard (pas de doublon) */}
     </div>
   );
 }

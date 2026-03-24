@@ -143,13 +143,19 @@ def get_cockpit(
         conso_confidence = "none"
         conso_sites_with_data = 0
 
-    # Billing anomalies loss for risque_breakdown
+    # Billing anomalies loss for risque_breakdown (P0-2: excl. resolved + false_positive)
     _billing_loss = 0.0
     try:
         from models import BillingInsight
+        from models.enums import InsightStatus
 
         _billing_loss = (
-            db.query(func.sum(BillingInsight.estimated_loss_eur)).filter(BillingInsight.site_id.in_(site_ids)).scalar()
+            db.query(func.sum(BillingInsight.estimated_loss_eur))
+            .filter(
+                BillingInsight.site_id.in_(site_ids),
+                BillingInsight.insight_status.notin_([InsightStatus.RESOLVED, InsightStatus.FALSE_POSITIVE]),
+            )
+            .scalar()
         ) or 0.0
     except Exception:
         _billing_loss = 0.0
@@ -441,7 +447,8 @@ def get_cockpit_trajectory(
     current_year_reel = reel_by_year.get(current_year)
     reduction_pct = None
     if current_year_reel and ref_kwh > 0:
-        reduction_pct = round((1 - current_year_reel / ref_kwh) * 100, 1)
+        # Convention maquette : négatif = réduction (ex: -18% = 18% de réduction)
+        reduction_pct = round((current_year_reel / ref_kwh - 1) * 100, 1)
 
     # Surface totale
     surface_total = (db.query(func.sum(Batiment.surface_m2)).filter(Batiment.site_id.in_(site_ids)).scalar()) or 0

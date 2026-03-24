@@ -55,9 +55,12 @@ function SourceTag({ sourceType, sourceLabel }) {
 
 // ── ActionRow ────────────────────────────────────────────────────────
 
-function ActionRow({ action }) {
+function ActionRow({ action, totalGainEur }) {
   const navigate = useNavigate();
   const deeplink = action.source_deeplink ?? `/actions?id=${action.id}`;
+  // Barre de progression proportionnelle au gain relatif (présentation, pas un KPI)
+  const gainEur = action.estimated_gain_eur ?? 0;
+  const barPct = totalGainEur > 0 ? Math.min(100, Math.round((gainEur / totalGainEur) * 100)) : 0;
 
   return (
     <div
@@ -82,12 +85,19 @@ function ActionRow({ action }) {
               </span>
             )}
           </div>
+          {/* Barre de contribution — proportion relative du gain */}
+          {barPct > 0 && (
+            <div className="mt-1.5 h-1 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all"
+                style={{ width: `${barPct}%` }}
+              />
+            </div>
+          )}
         </div>
         <div className="text-right flex-shrink-0">
-          {action.estimated_gain_eur != null && action.estimated_gain_eur > 0 && (
-            <div className="text-sm font-semibold text-green-700">
-              {fmtEur(action.estimated_gain_eur)}
-            </div>
+          {gainEur > 0 && (
+            <div className="text-sm font-semibold text-green-700">{fmtEur(gainEur)}</div>
           )}
         </div>
       </div>
@@ -115,6 +125,8 @@ export default function ActionsImpact({ actions, loading }) {
   }, []);
 
   const isLoading = loading || listLoading;
+  // Total gain pour la barre de proportion (présentation, pas un KPI)
+  const totalGainEur = actionsList.reduce((s, a) => s + (a.estimated_gain_eur ?? 0), 0);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4" data-testid="actions-impact">
@@ -159,7 +171,7 @@ export default function ActionsImpact({ actions, loading }) {
       ) : (
         <div className="divide-y divide-gray-50">
           {actionsList.slice(0, 6).map((action) => (
-            <ActionRow key={action.id} action={action} />
+            <ActionRow key={action.id} action={action} totalGainEur={totalGainEur} />
           ))}
         </div>
       )}

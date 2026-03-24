@@ -129,7 +129,7 @@ export default function VecteurEnergetiqueCard() {
       {/* CO₂ totaux */}
       <div className="border-t border-gray-100 pt-3">
         <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Émissions CO₂ cumulées
+          Émissions CO₂ cumulées N
         </div>
         <div className="flex items-baseline gap-4">
           <div>
