@@ -38,6 +38,8 @@ Tolerances:
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
+from data_ingestion.enedis.parsers._helpers import child_text, find_child, strip_ns
+
 
 class R4xParseError(Exception):
     """Raised when XML is structurally invalid for R4x format."""
@@ -107,18 +109,18 @@ def parse_r4x(xml_bytes: bytes) -> ParsedR4xFile:
         raise R4xParseError(f"Invalid XML: {exc}") from exc
 
     # Root must be <Courbe>
-    root_tag = _strip_ns(root.tag)
+    root_tag = strip_ns(root.tag)
     if root_tag != "Courbe":
         raise R4xParseError(f"Expected root <Courbe>, got <{root_tag}>")
 
     # Parse Entete
-    entete = _find_child(root, "Entete")
+    entete = find_child(root, "Entete")
     if entete is None:
         raise R4xParseError("Missing <Entete> element")
 
     header_raw = {}
     for child in entete:
-        tag = _strip_ns(child.tag)
+        tag = strip_ns(child.tag)
         header_raw[tag] = (child.text or "").strip()
 
     header = ParsedR4xHeader(
@@ -129,11 +131,11 @@ def parse_r4x(xml_bytes: bytes) -> ParsedR4xFile:
     )
 
     # Parse Corps
-    corps = _find_child(root, "Corps")
+    corps = find_child(root, "Corps")
     if corps is None:
         raise R4xParseError("Missing <Corps> element")
 
-    prm_elem = _find_child(corps, "Identifiant_PRM")
+    prm_elem = find_child(corps, "Identifiant_PRM")
     if prm_elem is None or not (prm_elem.text or "").strip():
         raise R4xParseError("Missing or empty <Identifiant_PRM>")
 
@@ -142,7 +144,7 @@ def parse_r4x(xml_bytes: bytes) -> ParsedR4xFile:
     # Parse all Donnees_Courbe blocks
     courbes = []
     for dc in corps:
-        if _strip_ns(dc.tag) != "Donnees_Courbe":
+        if strip_ns(dc.tag) != "Donnees_Courbe":
             continue
         courbe = _parse_donnees_courbe(dc)
         courbes.append(courbe)
@@ -153,16 +155,16 @@ def parse_r4x(xml_bytes: bytes) -> ParsedR4xFile:
 def _parse_donnees_courbe(dc_elem) -> ParsedCourbe:
     """Parse a single <Donnees_Courbe> element."""
     courbe = ParsedCourbe(
-        horodatage_debut=_child_text(dc_elem, "Horodatage_Debut"),
-        horodatage_fin=_child_text(dc_elem, "Horodatage_Fin"),
-        granularite=_child_text(dc_elem, "Granularite"),
-        unite_mesure=_child_text(dc_elem, "Unite_Mesure"),
-        grandeur_metier=_child_text(dc_elem, "Grandeur_Metier"),
-        grandeur_physique=_child_text(dc_elem, "Grandeur_Physique"),
+        horodatage_debut=child_text(dc_elem, "Horodatage_Debut"),
+        horodatage_fin=child_text(dc_elem, "Horodatage_Fin"),
+        granularite=child_text(dc_elem, "Granularite"),
+        unite_mesure=child_text(dc_elem, "Unite_Mesure"),
+        grandeur_metier=child_text(dc_elem, "Grandeur_Metier"),
+        grandeur_physique=child_text(dc_elem, "Grandeur_Physique"),
     )
 
     for child in dc_elem:
-        if _strip_ns(child.tag) != "Donnees_Point_Mesure":
+        if strip_ns(child.tag) != "Donnees_Point_Mesure":
             continue
 
         horodatage_raw = (child.get("Horodatage") or "").strip()
@@ -180,26 +182,3 @@ def _parse_donnees_courbe(dc_elem) -> ParsedCourbe:
         courbe.points.append(point)
 
     return courbe
-
-
-def _strip_ns(tag: str) -> str:
-    """Remove namespace prefix from an XML tag: {ns}Tag -> Tag."""
-    if "}" in tag:
-        return tag.split("}", 1)[1]
-    return tag
-
-
-def _find_child(parent, tag_name: str):
-    """Find first direct child matching tag_name, namespace-tolerant."""
-    for child in parent:
-        if _strip_ns(child.tag) == tag_name:
-            return child
-    return None
-
-
-def _child_text(parent, tag_name: str) -> str | None:
-    """Get text content of first child matching tag_name, or None."""
-    elem = _find_child(parent, tag_name)
-    if elem is not None and elem.text:
-        return elem.text.strip()
-    return None
