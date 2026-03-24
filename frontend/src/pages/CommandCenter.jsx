@@ -606,7 +606,7 @@ export default function CommandCenter() {
       </div>
 
       {/* ── Sites J-1 vs Baseline ── */}
-      <SitesBaselineCard />
+      <SitesBaselineCard consoHierTotal={kpisJ1?.consoHierKwh} />
 
       {/* Sections legacy masquées — redondantes avec les widgets cockpit world-class */}
       {/* HealthSummary, BriefingHeroCard, EssentialsRow déplacés dans /cockpit expert mode */}

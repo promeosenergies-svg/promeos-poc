@@ -7,15 +7,25 @@
  */
 import { useScope } from '../../contexts/ScopeContext';
 
-export default function SitesBaselineCard({ consoJ1BySite }) {
+export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
   const { scopedSites } = useScope();
 
   if (!scopedSites?.length) return null;
 
   // TRANSFORMATION DE PRÉSENTATION : conso_kwh_an / 365 = baseline journalière estimée
+  // Si consoJ1BySite absent, estimer J-1 par site au prorata de conso_kwh_an
+  const totalConsoAn = scopedSites.reduce((s, site) => s + (site.conso_kwh_an || 0), 0);
+
   const sites = scopedSites.slice(0, 5).map((site) => {
     const baselineJ = site.conso_kwh_an ? Math.round(site.conso_kwh_an / 365) : null;
-    const consoJ1 = consoJ1BySite?.[site.id] ?? null;
+
+    // Priorité 1 : données J-1 par site réelles
+    // Priorité 2 : estimation proportionnelle depuis consoHierTotal
+    let consoJ1 = consoJ1BySite?.[site.id] ?? null;
+    if (consoJ1 == null && consoHierTotal > 0 && totalConsoAn > 0 && site.conso_kwh_an > 0) {
+      consoJ1 = Math.round((site.conso_kwh_an / totalConsoAn) * consoHierTotal);
+    }
+
     const deltaPct =
       consoJ1 != null && baselineJ ? Math.round(((consoJ1 - baselineJ) / baselineJ) * 100) : null;
     const isOver = deltaPct != null && deltaPct > 0;
