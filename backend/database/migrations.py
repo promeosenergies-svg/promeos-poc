@@ -1695,8 +1695,8 @@ def _add_enedis_columns(engine):
     # --- enedis_flux_file columns ---
     # Add new columns here as (col_name, col_type) when evolving the model.
     enedis_flux_file_columns = [
-        # Example for future SF3+:
-        # ("new_column_name", "VARCHAR(100)"),
+        ("version", "INTEGER DEFAULT 1"),
+        ("supersedes_file_id", "INTEGER REFERENCES enedis_flux_file(id) ON DELETE SET NULL"),
     ]
 
     # --- enedis_flux_mesure_r4x columns ---

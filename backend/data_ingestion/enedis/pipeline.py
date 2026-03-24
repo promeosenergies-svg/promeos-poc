@@ -3,10 +3,11 @@
 Orchestrates: classify → hash check → decrypt → parse → store.
 
 Idempotence:
-  - File-level only: SHA256 of the raw ciphertext. Same .zip = skip.
-  - No measure-level deduplication: corrections/republications by Enedis
-    are archived alongside originals. Deduplication is deferred to a
-    future staging/normalization layer.
+  - File-level: SHA256 of the raw ciphertext. Same .zip = skip.
+  - Republication detection: same filename + different hash = versioned
+    republication (status needs_review, version 2+, supersedes_file_id chain).
+    Both original and republication data are preserved.
+  - No measure-level deduplication: deferred to a future staging layer.
 
 Usage:
     from data_ingestion.enedis.pipeline import ingest_file
@@ -79,7 +80,7 @@ def ingest_file(
     # Idempotence check — applies to all flux types
     existing = session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
     if existing is not None:
-        if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED):
+        if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED, FluxStatus.NEEDS_REVIEW):
             logger.info(
                 "Already processed %s (hash=%s…, status=%s), skipping", filename, file_hash[:12], existing.status
             )
@@ -103,6 +104,18 @@ def ingest_file(
         session.commit()
         return FluxStatus.SKIPPED
 
+    # Republication detection — same filename, different hash, already ingested
+    previous_file = (
+        session.query(EnedisFluxFile)
+        .filter(
+            EnedisFluxFile.filename == filename,
+            EnedisFluxFile.status.in_([FluxStatus.PARSED, FluxStatus.NEEDS_REVIEW]),
+        )
+        .order_by(EnedisFluxFile.version.desc())
+        .first()
+    )
+    is_republication = previous_file is not None
+
     # Decrypt
     try:
         xml_bytes = decrypt_file(file_path, keys, archive_dir)
@@ -123,11 +136,29 @@ def ingest_file(
 
     # Store file record + mesures
     try:
+        if is_republication:
+            file_status = FluxStatus.NEEDS_REVIEW
+            file_version = previous_file.version + 1
+            supersedes_id = previous_file.id
+            logger.warning(
+                "Republication detected for %s: v%d supersedes file id=%d (v%d). Status set to needs_review.",
+                filename,
+                file_version,
+                previous_file.id,
+                previous_file.version,
+            )
+        else:
+            file_status = FluxStatus.PARSED
+            file_version = 1
+            supersedes_id = None
+
         flux_file = EnedisFluxFile(
             filename=filename,
             file_hash=file_hash,
             flux_type=flux_type.value,
-            status=FluxStatus.PARSED,
+            status=file_status,
+            version=file_version,
+            supersedes_file_id=supersedes_id,
             frequence_publication=parsed.header.frequence_publication,
             nature_courbe_demandee=parsed.header.nature_courbe_demandee,
             identifiant_destinataire=parsed.header.identifiant_destinataire,
@@ -176,13 +207,15 @@ def ingest_file(
         return FluxStatus.ERROR
 
     logger.info(
-        "Ingested %s: %d mesures from PRM %s [%s]",
+        "Ingested %s: %d mesures from PRM %s [%s] (v%d%s)",
         filename,
         total_inserted,
         parsed.point_id,
         flux_type.value,
+        file_version,
+        ", needs_review" if is_republication else "",
     )
-    return FluxStatus.PARSED
+    return file_status
 
 
 def _hash_file(file_path: Path) -> str:

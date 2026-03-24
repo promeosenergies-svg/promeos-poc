@@ -13,8 +13,12 @@ Design decisions:
   - No unique constraint on mesure rows: Enedis may republish corrections for the
     same PRM/timestamp. Both versions are archived; deduplication is deferred to a
     future staging/normalization layer.
-  - File-level idempotence only: file_hash (SHA256 of ciphertext) prevents
+  - File-level idempotence: file_hash (SHA256 of ciphertext) prevents
     re-processing the exact same physical file.
+  - Republication detection: if a new file shares the filename of an already-parsed
+    file (but has a different hash), it is ingested as a versioned republication
+    (version 2+, supersedes_file_id → previous file) with status needs_review.
+    Both original and republication data are preserved for data manager analysis.
   - All values stored as raw strings from the XML (no float conversion, no UTC
     normalization) to guarantee zero data loss or transformation.
 """
@@ -46,6 +50,15 @@ class EnedisFluxFile(Base, TimestampMixin):
     status = Column(String(20), nullable=False, default="received", comment="received/parsed/error/skipped")
     error_message = Column(Text, nullable=True, comment="Message d'erreur si status=error")
     measures_count = Column(Integer, nullable=True, default=0, comment="Nombre de mesures extraites")
+
+    # Republication versioning
+    version = Column(Integer, nullable=False, default=1, comment="Version du fichier (1=original, 2+=republication)")
+    supersedes_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="FK vers le fichier précédent que cette version remplace",
+    )
 
     # Header fields — dedicated columns for queryable fields
     frequence_publication = Column(String(5), nullable=True, comment="H/M/Q — Frequence_Publication")
