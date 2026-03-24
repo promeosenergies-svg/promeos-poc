@@ -430,7 +430,7 @@ const Cockpit = () => {
 
   // ── V3 final : scope label ──
   const scopeType = isSingleSite ? 'site' : 'groupe';
-  const scopeText = isSingleSite
+  const _scopeText = isSingleSite
     ? `Cockpit site · ${singleSite?.nom || ''}`
     : `Cockpit groupe · ${kpis.total} site${kpis.total > 1 ? 's' : ''}`;
 
@@ -466,43 +466,45 @@ const Cockpit = () => {
         />
       )}
 
-      {/* ═══════════ SCOPE INDICATOR ═══════════ */}
-      <div
-        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${
-          scopeType === 'site' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200'
-        }`}
-      >
+      {/* ═══════════ SCOPE INDICATOR (expert only — absent des maquettes) ═══════════ */}
+      {isExpert && (
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            scopeType === 'site' ? 'bg-blue-100' : 'bg-indigo-100'
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${
+            scopeType === 'site' ? 'bg-blue-50 border-blue-200' : 'bg-indigo-50 border-indigo-200'
           }`}
         >
-          <FileText
-            size={14}
-            className={scopeType === 'site' ? 'text-blue-600' : 'text-indigo-600'}
-          />
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              scopeType === 'site' ? 'bg-blue-100' : 'bg-indigo-100'
+            }`}
+          >
+            <FileText
+              size={14}
+              className={scopeType === 'site' ? 'text-blue-600' : 'text-indigo-600'}
+            />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
+              <span className="text-xs text-gray-400 ml-2 font-normal">
+                Dernière analyse :{' '}
+                {new Date().toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500">
+              {scopeType === 'site'
+                ? singleSite?.nom || ''
+                : `${kpis.total} site${kpis.total > 1 ? 's' : ''} dans le périmètre`}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-900">
-            {scopeType === 'site' ? 'Cockpit site' : 'Cockpit groupe'}
-            <span className="text-xs text-gray-400 ml-2 font-normal">
-              Dernière analyse :{' '}
-              {new Date().toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </p>
-          <p className="text-xs text-gray-500">
-            {scopeType === 'site'
-              ? singleSite?.nom || ''
-              : `${kpis.total} site${kpis.total > 1 ? 's' : ''} dans le périmètre`}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Expert mode indicator */}
       {isExpert && (
@@ -650,8 +652,8 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* Single-site compact row (intégré dans zone 2, pas empilé) */}
-      {isSingleSite && singleSite && (
+      {/* Single-site compact row (expert only — absent des maquettes exec) */}
+      {isExpert && isSingleSite && singleSite && (
         <div className="flex items-center gap-6 px-4 py-3 bg-gray-50 rounded-lg text-sm">
           <div className="flex items-center gap-2">
             <StatusDot status={getStatusInfo(singleSite.statut_conformite).dot} />

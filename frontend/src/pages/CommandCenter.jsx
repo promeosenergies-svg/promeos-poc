@@ -14,9 +14,6 @@ import {
   Scan,
   RefreshCw,
   CheckCircle2,
-  ShieldCheck,
-  TrendingDown,
-  Bell,
   Database,
   FileText,
 } from 'lucide-react';
@@ -25,14 +22,13 @@ import {
   Button,
   SkeletonCard,
   PageShell,
-  MetricCard,
   StatusDot,
   EmptyState,
   ErrorState,
   ScopeSummary,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { toActionsList } from '../services/routes';
+// toActionsList utilisé dans les sections legacy déplacées ci-dessous
 import {
   getComplianceBundle,
   getActionsSummary,
@@ -57,7 +53,6 @@ import EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
-  AreaChart,
   Area,
   BarChart,
   Bar,
@@ -69,7 +64,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { fmtKwh } from '../utils/format';
+import { fmtKwh, fmtEur } from '../utils/format';
 import SitesBaselineCard from './cockpit/SitesBaselineCard';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -158,7 +153,7 @@ export default function CommandCenter() {
 
   // ── Hooks enrichissement Step 5 ──
   const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
-  const { trajectoire, kpis: cockpitKpis } = useCockpitData();
+  const { trajectoire } = useCockpitData();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -382,73 +377,9 @@ export default function CommandCenter() {
         </div>
       }
     >
-      {/* ── Health Summary ── */}
       <CockpitTabs active="dashboard" />
-      <HealthSummary healthState={healthState} onNavigate={navigate} />
 
-      {/* ── Briefing du jour ── */}
-      <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
-
-      {/* ── KPI Row: 3 MetricCards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          accent="conformite"
-          icon={ShieldCheck}
-          label="Conformité"
-          value={
-            cockpitKpis?.conformiteScore != null
-              ? `${cockpitKpis.conformiteScore}%`
-              : `${kpis.pctConf}%`
-          }
-          sub={
-            cockpitKpis?.conformiteSource
-              ? `Score ${cockpitKpis.conformiteSource}`
-              : `${kpis.conformes} / ${kpis.total} sites conformes`
-          }
-          status={
-            cockpitKpis?.conformiteScore != null
-              ? cockpitKpis.conformiteScore >= 80
-                ? 'ok'
-                : cockpitKpis.conformiteScore >= 60
-                  ? 'warn'
-                  : 'crit'
-              : kpis.compStatus
-          }
-          onClick={() => navigate('/conformite')}
-        />
-        <MetricCard
-          accent="risque"
-          icon={TrendingDown}
-          label="Risque financier"
-          value={kpis.risque > 0 ? `${Math.round(kpis.risque / 1000)} k€` : '—'}
-          sub={`${kpis.nonConformes + kpis.aRisque} sites à risque (périmètre sélectionné)`}
-          status={kpis.risqueStatus}
-          onClick={() => navigate(toActionsList())}
-        />
-        <MetricCard
-          accent="alertes"
-          icon={Bell}
-          label="Alertes actives"
-          value={alertsCount}
-          sub={
-            alertsSummary
-              ? `dont ${alertsSummary.by_severity?.critical || 0} critiques`
-              : 'Chargement...'
-          }
-          status={alertsCount > 5 ? 'crit' : alertsCount > 0 ? 'warn' : 'ok'}
-          onClick={() => navigate('/anomalies')}
-        />
-      </div>
-
-      {/* ── Essentiels patrimoine ── */}
-      <EssentialsRow
-        kpis={kpis}
-        sites={scopedSites}
-        onOpenMaturite={() => navigate('/cockpit')}
-        onNavigate={navigate}
-      />
-
-      {/* ── KPIs J-1 (Step 5) ── */}
+      {/* ── KPIs J-1 (maquette : section 1 après tabs) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="kpis-j1">
         <KpiJ1Card
           label="Conso hier (J-1)"
@@ -549,81 +480,99 @@ export default function CommandCenter() {
         </div>
       </div>
 
-      {/* ── Progression trajectoire mensuelle (Step 5) ── */}
-      {trajectoire && (
-        <div
-          className="bg-white border border-gray-200 rounded-lg p-4"
-          data-testid="trajectoire-mensuelle"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Progression trajectoire mensuelle
-            </span>
-            <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
-              {trajectoire.reductionPctActuelle != null
-                ? `${trajectoire.reductionPctActuelle}%`
-                : '—'}{' '}
-              objectif {trajectoire.objectif2026Pct ?? -25}%
-            </span>
-          </div>
-          <div className="mb-3">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="font-medium text-gray-700">Réel 2026</span>
-              <span className="text-red-600 font-medium">
+      {/* ── Trajectoire + Actions du jour (maquette : 2 colonnes) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Progression trajectoire mensuelle */}
+        {trajectoire ? (
+          <div
+            className="bg-white border border-gray-200 rounded-lg p-4"
+            data-testid="trajectoire-mensuelle"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Progression trajectoire mensuelle
+              </span>
+              <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
                 {trajectoire.reductionPctActuelle != null
-                  ? `${trajectoire.reductionPctActuelle}% · retard`
-                  : '—'}
+                  ? `${trajectoire.reductionPctActuelle}%`
+                  : '—'}{' '}
+                objectif {trajectoire.objectif2026Pct ?? -25}%
               </span>
             </div>
-            <div className="relative h-2.5 bg-gray-100 rounded-full overflow-visible">
-              <div
-                className="h-full bg-blue-500 rounded-full"
-                style={{
-                  width: `${
-                    trajectoire.reductionPctActuelle != null
-                      ? Math.min(
-                          100,
-                          (Math.abs(trajectoire.reductionPctActuelle) /
-                            Math.abs(trajectoire.objectif2026Pct ?? -25)) *
-                            100
-                        )
-                      : 0
-                  }%`,
-                }}
-              />
+            <div className="mb-3">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-medium text-gray-700">Réel 2026</span>
+                <span className="text-red-600 font-medium">
+                  {trajectoire.reductionPctActuelle != null
+                    ? `${trajectoire.reductionPctActuelle}% · retard`
+                    : '—'}
+                </span>
+              </div>
+              <div className="relative h-2.5 bg-gray-100 rounded-full overflow-visible">
+                <div
+                  className="h-full bg-blue-500 rounded-full"
+                  style={{
+                    width: `${
+                      trajectoire.reductionPctActuelle != null
+                        ? Math.min(
+                            100,
+                            (Math.abs(trajectoire.reductionPctActuelle) /
+                              Math.abs(trajectoire.objectif2026Pct ?? -25)) *
+                              100
+                          )
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                <span>0%</span>
+                <span className="text-blue-600 font-medium">
+                  Obj. {trajectoire.objectif2026Pct ?? -25}%
+                </span>
+                <span>-40%</span>
+              </div>
             </div>
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>0%</span>
-              <span className="text-blue-600 font-medium">
-                Obj. {trajectoire.objectif2026Pct ?? -25}%
-              </span>
-              <span>-40%</span>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-medium text-gray-700">Avec actions planifiées</span>
+                <span className="text-green-700 font-medium">
+                  {trajectoire.projectionMwh?.some((v) => v != null) ? 'Objectif atteignable' : '—'}
+                </span>
+              </div>
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-teal-500 rounded-full" style={{ width: '100%' }} />
+              </div>
             </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Actions à démarrer avant le{' '}
+              <span className="text-amber-600 font-medium">30 juin 2026</span> pour atteindre
+              l'objectif annuel.
+            </p>
           </div>
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="font-medium text-gray-700">Avec actions planifiées</span>
-              <span className="text-green-700 font-medium">
-                {trajectoire.projectionMwh?.some((v) => v != null) ? 'Objectif atteignable' : '—'}
-              </span>
-            </div>
-            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-teal-500 rounded-full" style={{ width: '100%' }} />
-            </div>
-          </div>
-          <p className="text-xs text-gray-400 mt-2">
-            Actions à démarrer avant le{' '}
-            <span className="text-amber-600 font-medium">30 juin 2026</span> pour atteindre
-            l'objectif annuel.
-          </p>
-        </div>
-      )}
+        ) : (
+          <div />
+        )}
 
-      {/* ── À traiter aujourd'hui + Sites à risque ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Deduped priority actions from model */}
+        {/* Actions du jour */}
         <TodayActionsCard actions={todayActions} onNavigate={navigate} />
+      </div>
 
+      {/* ── Sites J-1 vs Baseline ── */}
+      <SitesBaselineCard />
+
+      {/* ── Sections legacy (déplacées après maquette — conservées sans suppression) ── */}
+      <HealthSummary healthState={healthState} onNavigate={navigate} />
+      <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+      <EssentialsRow
+        kpis={kpis}
+        sites={scopedSites}
+        onOpenMaturite={() => navigate('/cockpit')}
+        onNavigate={navigate}
+      />
+
+      {/* ── Sections complémentaires ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sites à risque — table with accent on risk column */}
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -638,8 +587,8 @@ export default function CommandCenter() {
             <div className="px-5 py-8">
               <EmptyState
                 icon={CheckCircle2}
-                title="Aucune alerte reglementaire active"
-                text="Aucune penalite identifiee. Verifier les anomalies et preuves separement."
+                title="Aucune alerte réglementaire active"
+                text="Aucune pénalité identifiée. Vérifier les anomalies et preuves séparément."
               />
             </div>
           ) : (
@@ -683,9 +632,7 @@ export default function CommandCenter() {
                       </Td>
                       <Td className="text-right text-sm font-medium">
                         {site.risque_eur > 0 ? (
-                          <span className="text-amber-700">
-                            {(site.risque_eur || 0).toLocaleString('fr-FR')} €
-                          </span>
+                          <span className="text-amber-700">{fmtEur(site.risque_eur)}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -699,9 +646,6 @@ export default function CommandCenter() {
       </div>
 
       {/* ── Accès rapide aux modules ── */}
-      {/* ── Sites J-1 vs Baseline (Step rapprochement) ── */}
-      <SitesBaselineCard />
-
       <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
     </PageShell>
   );

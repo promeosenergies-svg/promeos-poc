@@ -88,11 +88,15 @@ function normalizeTrajectory(raw) {
  */
 function normalizeActions(raw) {
   if (!raw) return null;
+  // API réelle retourne { counts: { open, in_progress, total }, total_gain_eur, by_source }
+  const counts = raw.counts ?? {};
   return {
-    total: raw.total ?? raw.total_actions ?? 0,
-    enCours: raw.en_cours ?? raw.in_progress ?? 0,
+    total: counts.total ?? raw.total ?? 0,
+    enCours: counts.in_progress ?? raw.in_progress ?? 0,
+    ouvertes: counts.open ?? raw.open ?? 0,
     urgentes: raw.urgentes ?? raw.critical ?? 0,
-    potentielEur: raw.potentiel_eur ?? raw.savings_eur ?? 0,
+    potentielEur: raw.total_gain_eur ?? raw.potentiel_eur ?? 0,
+    parSource: raw.by_source ?? null,
   };
 }
 
@@ -100,10 +104,17 @@ function normalizeActions(raw) {
  * Normalise la réponse /api/billing/summary.
  */
 function normalizeBilling(raw) {
-  if (!raw) return { anomalies: 0, montantEur: 0 };
+  if (!raw) return null;
+  // API réelle retourne { invoices_with_anomalies, total_estimated_loss_eur, total_insights, ... }
   return {
-    anomalies: raw.anomalies_count ?? raw.total_anomalies ?? 0,
-    montantEur: raw.pertes_estimees_eur ?? raw.amount_eur ?? 0,
+    anomalies: raw.invoices_with_anomalies ?? raw.anomalies_count ?? 0,
+    montantEur: raw.total_estimated_loss_eur ?? raw.total_loss_eur ?? 0,
+    totalFactures: raw.total_invoices ?? 0,
+    totalKwh: raw.total_kwh ?? 0,
+    totalEur: raw.total_eur ?? 0,
+    insights: raw.total_insights ?? 0,
+    parType: raw.insights_by_type ?? null,
+    parSeverite: raw.insights_by_severity ?? null,
   };
 }
 

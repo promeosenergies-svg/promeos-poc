@@ -143,6 +143,17 @@ def get_cockpit(
         conso_confidence = "none"
         conso_sites_with_data = 0
 
+    # Billing anomalies loss for risque_breakdown
+    _billing_loss = 0.0
+    try:
+        from models import BillingInsight
+
+        _billing_loss = (
+            db.query(func.sum(BillingInsight.estimated_loss_eur)).filter(BillingInsight.site_id.in_(site_ids)).scalar()
+        ) or 0.0
+    except Exception:
+        _billing_loss = 0.0
+
     # KPI runtime metadata for critical KPIs
     kpi_details = [
         wrap_kpi_runtime("compliance_score_composite", compliance_score_unified, perimeter="organisation"),
@@ -182,9 +193,9 @@ def get_cockpit(
                 "sites_evaluated": _ra_sites_evaluated,
                 "risque_breakdown": {
                     "reglementaire_eur": round(risque_total, 2),
-                    "billing_anomalies_eur": 0,
+                    "billing_anomalies_eur": round(_billing_loss, 2),
                     "contract_risk_eur": 0,
-                    "total_eur": round(risque_total, 2),
+                    "total_eur": round(risque_total + _billing_loss, 2),
                 },
                 "conso_kwh_total": round(conso_kwh, 2),
                 "conso_confidence": conso_confidence,

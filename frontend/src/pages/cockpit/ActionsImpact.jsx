@@ -61,20 +61,20 @@ function ActionRow({ action }) {
 
   return (
     <div
-      className="py-2 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
+      className="py-3 cursor-pointer hover:bg-gray-50 rounded px-2 -mx-2 transition-colors"
       onClick={() => navigate(deeplink)}
       data-testid="action-row"
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2.5">
         <PriorityBadge priority={action.priority ?? 3} />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-800 truncate">{action.title ?? '—'}</div>
+          <div className="text-sm font-medium text-gray-900">{action.title ?? '—'}</div>
           {(action.rationale || action.description) && (
-            <div className="text-[10px] text-gray-500 truncate mt-0.5">
+            <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
               {action.rationale ?? action.description}
             </div>
           )}
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-1">
             <SourceTag sourceType={action.source_type} sourceLabel={action.source_label} />
             {action.due_date && (
               <span className="text-[10px] text-gray-400">
@@ -85,7 +85,7 @@ function ActionRow({ action }) {
         </div>
         <div className="text-right flex-shrink-0">
           {action.estimated_gain_eur != null && action.estimated_gain_eur > 0 && (
-            <div className="text-xs font-medium text-green-700">
+            <div className="text-sm font-semibold text-green-700">
               {fmtEur(action.estimated_gain_eur)}
             </div>
           )}
