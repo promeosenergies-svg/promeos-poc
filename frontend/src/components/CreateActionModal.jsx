@@ -102,7 +102,7 @@ export default function CreateActionModal({
     try {
       const idemKey = idempotencyKey || prefill?._idempotencyKey || undefined;
       const impactEur = Number(form.impact_eur) || 0;
-      // CO2e calculé backend (compliance_engine.py CO2_FACTOR_ELEC_KG_KWH=0.0569)
+      // CO2e calculé backend (config/emission_factors.py ELEC=0.052 kgCO₂e/kWh ADEME V23.6)
       // Ne PAS calculer côté front — le backend enrichit co2e_savings_est_kg post-création
       const payload = {
         title: form.titre.trim(),
@@ -116,7 +116,7 @@ export default function CreateActionModal({
         notes: form.description || undefined,
         rationale: form.description || undefined,
         idempotency_key: idemKey,
-        // co2e_savings_est_kg : calculé backend post-création (ADEME 0.0569)
+        // co2e_savings_est_kg : calculé backend post-création (ADEME 0.052)
       };
       const result = await createAction(payload);
       track('action_create', { type: form.type, site: form.site, backend: true });

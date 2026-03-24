@@ -340,8 +340,8 @@ export default function ConsumptionExplorerPage() {
     const hphc = motor.primaryHphc;
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
-    // Facteur ADEME 2024 : 0.0569 kgCO₂/kWh (source : compliance_engine.py)
-    const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.0569) : null;
+    // Facteur ADEME Base Empreinte V23.6 : 0.052 kgCO₂e/kWh (source : config/emission_factors.py)
+    const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.052) : null;
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
