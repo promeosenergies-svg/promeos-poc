@@ -421,8 +421,56 @@ class TestParseR151Errors:
 </Donnees_Releve>"""
         prm = _make_prm_xml(releves_xml=releve_no_date)
         xml = _make_r151_xml(prm_xml=prm)
-        with pytest.raises(R151ParseError, match="Missing <Date_Releve>"):
+        with pytest.raises(R151ParseError, match="Missing or empty <Date_Releve>"):
             parse_r151(xml)
+
+    def test_empty_id_prm_raises(self):
+        """PRM with whitespace-only Id_PRM raises."""
+        prm = "<PRM><Id_PRM>  </Id_PRM></PRM>"
+        xml = _make_r151_xml(prm_xml=prm)
+        with pytest.raises(R151ParseError, match="Missing or empty <Id_PRM>"):
+            parse_r151(xml)
+
+    def test_empty_date_releve_raises(self):
+        """Donnees_Releve with whitespace-only Date_Releve raises."""
+        releve = """\
+<Donnees_Releve>
+  <Date_Releve>  </Date_Releve>
+  <Id_Calendrier_Fournisseur>FC020831</Id_Calendrier_Fournisseur>
+</Donnees_Releve>"""
+        prm = _make_prm_xml(releves_xml=releve)
+        xml = _make_r151_xml(prm_xml=prm)
+        with pytest.raises(R151ParseError, match="Missing or empty <Date_Releve>"):
+            parse_r151(xml)
+
+
+# ---------------------------------------------------------------------------
+# Tests — Whitespace stripping
+# ---------------------------------------------------------------------------
+
+
+class TestParseR151Whitespace:
+    def test_whitespace_in_fields_stripped(self):
+        """Leading/trailing whitespace in XML text is stripped."""
+        donnees = """\
+<Classe_Temporelle_Distributeur>
+  <Id_Classe_Temporelle>  HCB  </Id_Classe_Temporelle>
+  <Libelle_Classe_Temporelle>  Heures Creuses  </Libelle_Classe_Temporelle>
+  <Rang_Cadran>  1  </Rang_Cadran>
+  <Valeur>  83044953  </Valeur>
+  <Indice_Vraisemblance>  0  </Indice_Vraisemblance>
+</Classe_Temporelle_Distributeur>"""
+        releve = _make_releve_xml(donnees_xml=donnees)
+        prm = _make_prm_xml(releves_xml=releve)
+        xml = _make_r151_xml(prm_xml=prm)
+        result = parse_r151(xml)
+
+        d = result.prms[0].releves[0].donnees[0]
+        assert d.id_classe_temporelle == "HCB"
+        assert d.libelle_classe_temporelle == "Heures Creuses"
+        assert d.rang_cadran == "1"
+        assert d.valeur == "83044953"
+        assert d.indice_vraisemblance == "0"
 
 
 # ---------------------------------------------------------------------------
@@ -463,13 +511,13 @@ class TestParseR151ClassIDs:
 
 
 # ---------------------------------------------------------------------------
-# Tests — total_donnees property
+# Tests — total_measures property
 # ---------------------------------------------------------------------------
 
 
 class TestParseR151TotalDonnees:
-    def test_total_donnees_across_prms_and_releves(self):
-        """total_donnees counts across all PRMs and releves."""
+    def test_total_measures_across_prms_and_releves(self):
+        """total_measures counts across all PRMs and releves."""
         # PRM 1: 1 releve with 3 donnees
         donnees1 = "\n".join([
             _make_ct_dist_xml(id_ct="HCB"),
@@ -490,13 +538,13 @@ class TestParseR151TotalDonnees:
         xml = _make_r151_xml(prm_xml=prm1 + prm2)
         result = parse_r151(xml)
 
-        assert result.total_donnees == 5
+        assert result.total_measures == 5
 
-    def test_total_donnees_zero_when_no_donnees(self):
-        """total_donnees is 0 when no PRM blocks."""
+    def test_total_measures_zero_when_no_donnees(self):
+        """total_measures is 0 when no PRM blocks."""
         xml = _make_r151_xml(prm_xml="")
         result = parse_r151(xml)
-        assert result.total_donnees == 0
+        assert result.total_measures == 0
 
 
 # ---------------------------------------------------------------------------

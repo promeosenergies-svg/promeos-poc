@@ -111,7 +111,7 @@ class ParsedR151File:
     prms: list[ParsedR151PRM] = field(default_factory=list)
 
     @property
-    def total_donnees(self) -> int:
+    def total_measures(self) -> int:
         return sum(len(r.donnees) for prm in self.prms for r in prm.releves)
 
 
@@ -178,8 +178,8 @@ def parse_r151(xml_bytes: bytes) -> ParsedR151File:
 def _parse_donnees_releve(releve_elem: ET.Element) -> ParsedR151Releve:
     """Parse a single <Donnees_Releve> element."""
     date_releve = child_text(releve_elem, "Date_Releve")
-    if date_releve is None:
-        raise R151ParseError("Missing <Date_Releve> in Donnees_Releve")
+    if not date_releve:
+        raise R151ParseError("Missing or empty <Date_Releve> in Donnees_Releve")
 
     releve = ParsedR151Releve(
         date_releve=date_releve,
