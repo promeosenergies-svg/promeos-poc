@@ -11,13 +11,17 @@ Idempotence:
   - No measure-level deduplication: deferred to a future staging layer.
 
 Usage:
-    from data_ingestion.enedis.pipeline import ingest_file
+    from data_ingestion.enedis.pipeline import ingest_file, ingest_directory
     from data_ingestion.enedis.decrypt import load_keys_from_env
 
     keys = load_keys_from_env()
     session = SessionLocal()
+
+    # Single file
     status = ingest_file(Path("flux.zip"), session, keys)
-    # ingest_file commits on success, rolls back on unhandled error
+
+    # Whole directory (scan → register RECEIVED → process)
+    counters = ingest_directory(Path("flux_enedis/C1-C4"), session, keys)
 """
 
 import hashlib
@@ -89,6 +93,9 @@ def ingest_file(
     file_hash = _hash_file(file_path)
 
     # Idempotence check — applies to all flux types
+    # pre_registered tracks a RECEIVED record to update in-place
+    pre_registered: EnedisFluxFile | None = None
+
     existing = session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
     if existing is not None:
         if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED, FluxStatus.NEEDS_REVIEW):
@@ -100,11 +107,14 @@ def ingest_file(
             logger.info("Retrying previously failed %s (hash=%s…)", filename, file_hash[:12])
             session.delete(existing)
             session.flush()
+        elif existing.status == FluxStatus.RECEIVED:
+            logger.info("Processing pre-registered %s (hash=%s…)", filename, file_hash[:12])
+            pre_registered = existing
 
     # Skip non-decryptable flux types
     if flux_type in SKIP_FLUX_TYPES:
         logger.info("Skipping %s (flux type %s)", filename, flux_type.value)
-        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.SKIPPED)
+        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.SKIPPED, existing=pre_registered)
         session.commit()
         return FluxStatus.SKIPPED
 
@@ -112,7 +122,7 @@ def ingest_file(
     handler = _DISPATCH.get(flux_type)
     if handler is None:
         logger.info("Skipping %s (flux type %s not yet supported)", filename, flux_type.value)
-        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.SKIPPED)
+        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.SKIPPED, existing=pre_registered)
         session.commit()
         return FluxStatus.SKIPPED
 
@@ -135,7 +145,9 @@ def ingest_file(
         xml_bytes = decrypt_file(file_path, keys, archive_dir)
     except DecryptError as exc:
         logger.error("Decrypt failed for %s: %s", filename, exc)
-        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc))
+        _record_file(
+            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=pre_registered,
+        )
         session.commit()
         return FluxStatus.ERROR
 
@@ -144,7 +156,9 @@ def ingest_file(
         parsed = parser_fn(xml_bytes)
     except parse_error_cls as exc:
         logger.error("Parse failed for %s: %s", filename, exc)
-        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc))
+        _record_file(
+            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=pre_registered,
+        )
         session.commit()
         return FluxStatus.ERROR
 
@@ -168,8 +182,10 @@ def ingest_file(
 
         flux_file = _create_flux_file(
             filename, file_hash, flux_type, file_status, file_version, supersedes_id, parsed,
+            existing=pre_registered,
         )
-        session.add(flux_file)
+        if pre_registered is None:
+            session.add(flux_file)
         session.flush()  # Get flux_file.id
 
         total_inserted = store_fn(parsed, flux_file, session, chunk_size)
@@ -178,7 +194,17 @@ def ingest_file(
     except Exception as exc:
         session.rollback()
         logger.error("DB storage failed for %s: %s", filename, exc)
-        _record_file(session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc))
+        # After rollback, objects are detached — re-fetch the pre-registered
+        # record if it exists so the update actually persists.
+        refetched = (
+            session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+            if pre_registered is not None
+            else None
+        )
+        _record_file(
+            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc),
+            existing=refetched,
+        )
         session.commit()
         return FluxStatus.ERROR
 
@@ -192,6 +218,113 @@ def ingest_file(
         ", needs_review" if is_republication else "",
     )
     return file_status
+
+
+def ingest_directory(
+    directory: Path,
+    session: Session,
+    keys: list[tuple[bytes, bytes]],
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    archive_dir: Path | None = None,
+    recursive: bool = False,
+    pattern: str = "*.zip",
+) -> dict[str, int]:
+    """Ingest all flux files in a directory: scan → register → process.
+
+    Two-phase design for crash recovery:
+      Phase 1: scan directory, register each new file as RECEIVED (single commit).
+      Phase 2: process each RECEIVED file via ingest_file() → PARSED/ERROR/SKIPPED.
+    Files left in RECEIVED after a crash are re-processed on the next run.
+
+    Args:
+        directory: Path to the directory containing encrypted .zip files.
+        session: SQLAlchemy session.
+        keys: Decryption key/IV pairs from load_keys_from_env().
+        chunk_size: Number of mesure rows per batch insert.
+        archive_dir: Optional directory to write decrypted XML for audit.
+        recursive: If True, scan subdirectories recursively.
+        pattern: Glob pattern for file matching (default ``*.zip``).
+
+    Returns:
+        Dict of counters: received, parsed, needs_review, skipped, error,
+        already_processed.
+        ``received == parsed + needs_review + skipped + error``.
+    """
+    counters: dict[str, int] = {
+        "received": 0,
+        "parsed": 0,
+        "needs_review": 0,
+        "skipped": 0,
+        "error": 0,
+        "already_processed": 0,
+    }
+
+    if not directory.is_dir():
+        logger.warning("ingest_directory: %s is not a directory", directory)
+        return counters
+
+    # Phase 1 — Scan & register as RECEIVED
+    glob_fn = directory.rglob if recursive else directory.glob
+    zip_files = sorted(p for p in glob_fn(pattern) if p.is_file())
+
+    # (file_path, file_hash, flux_file) — hash is kept to avoid re-reading
+    # the file in the Phase 2 exception handler.
+    to_process: list[tuple[Path, str, EnedisFluxFile]] = []
+
+    for file_path in zip_files:
+        file_hash = _hash_file(file_path)
+        existing = session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+
+        if existing is not None:
+            if existing.status == FluxStatus.RECEIVED:
+                # Stale from a previous interrupted run — re-process
+                logger.info("Found stale RECEIVED %s, will re-process", file_path.name)
+                to_process.append((file_path, file_hash, existing))
+            else:
+                # Already processed (PARSED/ERROR/SKIPPED/NEEDS_REVIEW)
+                counters["already_processed"] += 1
+            continue
+
+        # New file — register as RECEIVED
+        flux_file = EnedisFluxFile(
+            filename=file_path.name,
+            file_hash=file_hash,
+            flux_type=classify_flux(file_path.name).value,
+            status=FluxStatus.RECEIVED,
+            measures_count=0,
+        )
+        session.add(flux_file)
+        to_process.append((file_path, file_hash, flux_file))
+
+    if to_process:
+        session.commit()  # Single commit for all RECEIVED registrations
+    counters["received"] = len(to_process)
+
+    logger.info(
+        "ingest_directory: %d files to process, %d already processed",
+        len(to_process),
+        counters["already_processed"],
+    )
+
+    # Phase 2 — Process each RECEIVED file
+    for file_path, phase1_hash, flux_file in to_process:
+        try:
+            status = ingest_file(file_path, session, keys, chunk_size, archive_dir)
+        except Exception as exc:
+            # ingest_file raises FileNotFoundError/MissingKeyError without recording;
+            # update the RECEIVED record to ERROR so it doesn't stay stale.
+            logger.error("Unhandled error processing %s: %s", file_path.name, exc)
+            # Use Phase 1 hash — the file may no longer exist on disk.
+            record = session.query(EnedisFluxFile).filter_by(file_hash=phase1_hash).first()
+            if record is not None and record.status == FluxStatus.RECEIVED:
+                record.status = FluxStatus.ERROR
+                record.error_message = str(exc)
+                session.commit()
+            status = FluxStatus.ERROR
+
+        counters[status.value] += 1
+
+    return counters
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +344,18 @@ def _record_file(
     flux_type: str,
     status: FluxStatus,
     error_message: str | None = None,
+    existing: EnedisFluxFile | None = None,
 ) -> EnedisFluxFile:
-    """Create a minimal EnedisFluxFile record for skipped/error files."""
+    """Create or update a minimal EnedisFluxFile record for skipped/error files.
+
+    If *existing* is provided (pre-registered RECEIVED record), updates it
+    in-place instead of creating a new row.
+    """
+    if existing is not None:
+        existing.status = status
+        existing.error_message = error_message
+        existing.measures_count = 0
+        return existing
     flux_file = EnedisFluxFile(
         filename=filename,
         file_hash=file_hash,
@@ -233,8 +376,12 @@ def _create_flux_file(
     version: int,
     supersedes_id: int | None,
     parsed: Any,
+    existing: EnedisFluxFile | None = None,
 ) -> EnedisFluxFile:
-    """Create an EnedisFluxFile ORM object with header fields.
+    """Create or update an EnedisFluxFile ORM object with header fields.
+
+    If *existing* is provided (pre-registered RECEIVED record), updates it
+    in-place instead of creating a new row — preserving id and created_at.
 
     R4x-specific columns (frequence_publication, nature_courbe_demandee,
     identifiant_destinataire) are populated only for R4x flux types.
@@ -249,6 +396,16 @@ def _create_flux_file(
         freq = None
         nature = None
         dest = None
+
+    if existing is not None:
+        existing.status = status
+        existing.version = version
+        existing.supersedes_file_id = supersedes_id
+        existing.frequence_publication = freq
+        existing.nature_courbe_demandee = nature
+        existing.identifiant_destinataire = dest
+        existing.set_header_raw(parsed.header.raw)
+        return existing
 
     flux_file = EnedisFluxFile(
         filename=filename,
