@@ -23,7 +23,7 @@ Usage:
 import hashlib
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from sqlalchemy.orm import Session
 
@@ -278,9 +278,11 @@ def _prm_summary(parsed: Any) -> str:
     if hasattr(parsed, "series"):
         # R171 — PRM per serie
         prm_ids = {s.point_id for s in parsed.series}
-    else:
+    elif hasattr(parsed, "prms"):
         # R50 / R151 — PRM per prm block
         prm_ids = {p.point_id for p in parsed.prms}
+    else:
+        return "unknown PRMs"
 
     count = len(prm_ids)
     if count == 1:
@@ -430,7 +432,10 @@ def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_
 # Dispatch table — FluxType → (parser_fn, parse_error_cls, store_fn)
 # ---------------------------------------------------------------------------
 
-_DISPATCH: dict[FluxType, tuple] = {
+_StoreFn = Callable[[Any, EnedisFluxFile, Session, int], int]
+_DispatchEntry = tuple[Callable[[bytes], Any], type[Exception], _StoreFn]
+
+_DISPATCH: dict[FluxType, _DispatchEntry] = {
     FluxType.R4H: (parse_r4x, R4xParseError, _store_r4x),
     FluxType.R4M: (parse_r4x, R4xParseError, _store_r4x),
     FluxType.R4Q: (parse_r4x, R4xParseError, _store_r4x),
