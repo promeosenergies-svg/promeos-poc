@@ -132,3 +132,30 @@ def db():
     session = sessionmaker(bind=engine)()
     yield session
     session.close()
+
+
+# ---------------------------------------------------------------------------
+# Real-file fixtures (keys + flux directory)
+# ---------------------------------------------------------------------------
+
+_FLUX_DIR = Path(__file__).resolve().parents[5] / "flux_enedis"
+
+_HAS_REAL_KEYS = bool(os.environ.get("KEY_1") and os.environ.get("IV_1"))
+_HAS_REAL_FILES = _FLUX_DIR.is_dir()
+
+
+@pytest.fixture(scope="module")
+def real_keys():
+    """Real Enedis decryption keys from env vars. Skip if not available."""
+    if not _HAS_REAL_KEYS:
+        pytest.skip("Real Enedis keys not available (KEY_1/IV_1 not set)")
+    from data_ingestion.enedis.decrypt import load_keys_from_env
+    return load_keys_from_env()
+
+
+@pytest.fixture
+def real_flux_dir():
+    """Path to flux_enedis/ directory. Skip if not found."""
+    if not _HAS_REAL_FILES:
+        pytest.skip("flux_enedis/ directory not found")
+    return _FLUX_DIR
