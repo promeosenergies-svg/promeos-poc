@@ -3,6 +3,7 @@
 import hashlib
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -14,7 +15,7 @@ from data_ingestion.enedis.models import (
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
 )
-from data_ingestion.enedis.pipeline import ingest_directory
+from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
 from .conftest import TEST_IV, TEST_KEY, make_encrypted_zip
 
@@ -222,19 +223,33 @@ class TestAllSkipped:
 class TestLifecycleReceived:
     """RECEIVED status lifecycle — files are registered before processing."""
 
-    def test_files_registered_as_received_then_transition(self, db, tmp_path, test_keys):
+    def test_intermediate_received_state_visible_between_phases(self, db, tmp_path, test_keys):
+        """After Phase 1 scan, files must be RECEIVED. After Phase 2, they transition."""
         _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
         _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260301.zip", R171_XML)
 
-        counters = ingest_directory(tmp_path, db, test_keys)
+        # Capture the intermediate DB state between Phase 1 (register) and Phase 2 (process)
+        # by wrapping ingest_file to snapshot statuses before it runs.
+        intermediate_statuses: list[str] = []
+        original_ingest_file = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
 
-        # After full processing, no file should remain in RECEIVED
-        received_files = db.query(EnedisFluxFile).filter_by(status=FluxStatus.RECEIVED).count()
-        assert received_files == 0
+        def capturing_ingest_file(file_path, session, keys, chunk_size=1000, archive_dir=None):
+            # On first call, capture the state of ALL files (both should be RECEIVED)
+            if not intermediate_statuses:
+                for f in session.query(EnedisFluxFile).all():
+                    intermediate_statuses.append(f.status)
+            return original_ingest_file(file_path, session, keys, chunk_size, archive_dir)
 
-        # All transitioned to final statuses
-        parsed_files = db.query(EnedisFluxFile).filter_by(status=FluxStatus.PARSED).count()
-        assert parsed_files == 2
+        with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=capturing_ingest_file):
+            counters = ingest_directory(tmp_path, db, test_keys)
+
+        # Between phases: both files were RECEIVED
+        assert len(intermediate_statuses) == 2
+        assert all(s == FluxStatus.RECEIVED for s in intermediate_statuses)
+
+        # After processing: no file remains RECEIVED
+        assert db.query(EnedisFluxFile).filter_by(status=FluxStatus.RECEIVED).count() == 0
+        assert db.query(EnedisFluxFile).filter_by(status=FluxStatus.PARSED).count() == 2
         assert counters["received"] == 2
         assert counters["parsed"] == 2
 
@@ -342,3 +357,140 @@ class TestSortOrder:
             "ENEDIS_23X--TEST_R4H_CDC_20260302.zip",
             "ENEDIS_23X--TEST_R4H_CDC_20260303.zip",
         ]
+
+
+# ===========================================================================
+# Edge case tests
+# ===========================================================================
+
+
+class TestFileDisappears:
+    """File deleted between Phase 1 (scan) and Phase 2 (process)."""
+
+    def test_file_removed_after_scan_records_error(self, db, tmp_path, test_keys):
+        """If a file is deleted between scan and processing, it should not abort the batch."""
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260302.zip", R171_XML)
+
+        # Wrap ingest_file: delete the R4H file just before its first call
+        call_count = 0
+        original_ingest = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
+
+        def delete_first_then_ingest(file_path, session, keys, chunk_size=1000, archive_dir=None):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # Delete the file before ingest_file reads it
+                file_path.unlink()
+            return original_ingest(file_path, session, keys, chunk_size, archive_dir)
+
+        with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=delete_first_then_ingest):
+            counters = ingest_directory(tmp_path, db, test_keys)
+
+        # First file → error (deleted), second file → parsed (still exists)
+        assert counters["error"] == 1
+        assert counters["parsed"] == 1
+        assert counters["received"] == 2
+
+        # The deleted file's RECEIVED record transitioned to ERROR
+        error_files = db.query(EnedisFluxFile).filter_by(status=FluxStatus.ERROR).all()
+        assert len(error_files) == 1
+        assert "not found" in error_files[0].error_message.lower()
+
+        # No file stuck in RECEIVED
+        assert db.query(EnedisFluxFile).filter_by(status=FluxStatus.RECEIVED).count() == 0
+
+
+class TestDbStorageErrorInBatch:
+    """DB storage error on one file does not block the rest of the batch."""
+
+    def test_storage_error_transitions_received_to_error(self, db, tmp_path, test_keys):
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260302.zip", R171_XML)
+
+        call_count = 0
+        original_bulk_save = db.bulk_save_objects
+
+        def fail_first_bulk_save(objects):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise Exception("simulated disk full")
+            return original_bulk_save(objects)
+
+        with patch.object(db, "bulk_save_objects", side_effect=fail_first_bulk_save):
+            counters = ingest_directory(tmp_path, db, test_keys)
+
+        # First file fails at storage, second succeeds
+        assert counters["error"] == 1
+        assert counters["parsed"] == 1
+
+        # The failed file's record transitioned from RECEIVED → ERROR (not stuck)
+        error_file = db.query(EnedisFluxFile).filter_by(status=FluxStatus.ERROR).first()
+        assert error_file is not None
+        assert "simulated disk full" in error_file.error_message
+
+        # No file stuck in RECEIVED
+        assert db.query(EnedisFluxFile).filter_by(status=FluxStatus.RECEIVED).count() == 0
+
+
+class TestRecursiveDirectory:
+    """Recursive scanning of subdirectories."""
+
+    def test_recursive_finds_nested_files(self, db, tmp_path, test_keys):
+        # Mimic real Enedis directory structure
+        c1c4 = tmp_path / "C1-C4"
+        c5 = tmp_path / "C5"
+        c1c4.mkdir()
+        c5.mkdir()
+
+        _write_encrypted(c1c4, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        _write_encrypted(c1c4, "ENEDIS_23X--TEST_R171_20260301.zip", R171_XML)
+        _write_encrypted(c5, "ERDF_R50_23X--TEST_20260301.zip", R50_XML)
+        _write_encrypted(c5, "ERDF_R151_23X--TEST_20260301.zip", R151_XML)
+
+        # Non-recursive: should find nothing (files are in subdirs)
+        counters_flat = ingest_directory(tmp_path, db, test_keys)
+        assert counters_flat["received"] == 0
+
+        # Recursive: should find all 4
+        counters_recursive = ingest_directory(tmp_path, db, test_keys, recursive=True)
+        assert counters_recursive["received"] == 4
+        assert counters_recursive["parsed"] == 4
+
+
+class TestRepublicationInBatch:
+    """Republication (same filename, different hash) within a single batch directory."""
+
+    def test_republication_detected_in_batch(self, db, tmp_path, test_keys):
+        """Two files with the same Enedis filename but different content in the same batch.
+
+        This can't happen in a single flat directory (filenames must be unique),
+        but can happen across two runs. Here we verify that a pre-existing PARSED
+        file is detected as already_processed, and a new republication variant
+        (different hash via different inner XML) is ingested with needs_review.
+        """
+        # First run: ingest v1
+        ct1 = make_encrypted_zip(R4H_XML, "a.xml", TEST_KEY, TEST_IV)
+        path1 = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_20260301.zip"
+        path1.write_bytes(ct1)
+
+        counters1 = ingest_directory(tmp_path, db, test_keys)
+        assert counters1["parsed"] == 1
+
+        # Second run: same filename, different content (republication)
+        ct2 = make_encrypted_zip(R4H_XML, "b.xml", TEST_KEY, TEST_IV)
+        path1.write_bytes(ct2)
+
+        counters2 = ingest_directory(tmp_path, db, test_keys)
+        assert counters2["received"] == 1
+        assert counters2["needs_review"] == 1
+        assert counters2["already_processed"] == 0  # old hash no longer on disk
+
+        # Both versions in DB
+        files = db.query(EnedisFluxFile).order_by(EnedisFluxFile.version).all()
+        assert len(files) == 2
+        assert files[0].version == 1
+        assert files[0].status == FluxStatus.PARSED
+        assert files[1].version == 2
+        assert files[1].status == FluxStatus.NEEDS_REVIEW
