@@ -10,6 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from middleware.request_context import RequestContextMiddleware
+
+# Register Market Data V2 models (tables created via Base.metadata.create_all)
+from models.market_models import *  # noqa: F401
 from middleware.error_handler import register_error_handlers
 from services.json_logger import setup_logging
 
