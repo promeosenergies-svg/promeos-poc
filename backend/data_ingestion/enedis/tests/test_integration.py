@@ -4,37 +4,24 @@ Skipped entirely if KEY_1/IV_1 env vars are not set (CI without keys).
 Requires real flux files in the flux_enedis/ directory.
 """
 
-import os
-from pathlib import Path
-
 import pytest
 
 from data_ingestion.enedis.decrypt import (
     classify_flux,
     decrypt_file,
-    load_keys_from_env,
     SKIP_FLUX_TYPES,
 )
 from data_ingestion.enedis.enums import FluxType
 
-# flux_enedis/ lives outside promeos-poc/, at the Promeos/ root level
-_FLUX_DIR = Path(__file__).resolve().parents[5] / "flux_enedis"
-
-_HAS_KEYS = bool(os.environ.get("KEY_1") and os.environ.get("IV_1"))
-_HAS_FILES = _FLUX_DIR.is_dir()
+from .conftest import _HAS_REAL_FILES, _HAS_REAL_KEYS, _FLUX_DIR
 
 pytestmark = pytest.mark.skipif(
-    not (_HAS_KEYS and _HAS_FILES),
+    not (_HAS_REAL_KEYS and _HAS_REAL_FILES),
     reason="Real Enedis keys or flux_enedis/ directory not available",
 )
 
 
-@pytest.fixture(scope="module")
-def keys():
-    return load_keys_from_env()
-
-
-def _find_files(subdir: str, pattern: str) -> list[Path]:
+def _find_files(subdir: str, pattern: str) -> list:
     """Find encrypted files matching a glob pattern."""
     base = _FLUX_DIR / subdir if subdir else _FLUX_DIR
     return sorted(base.glob(pattern))
@@ -56,13 +43,13 @@ def _find_files(subdir: str, pattern: str) -> list[Path]:
         ("C5", "*R151*.zip", FluxType.R151),
     ],
 )
-def test_decrypt_all_files(keys, subdir, pattern, expected_type):
+def test_decrypt_all_files(real_keys, subdir, pattern, expected_type):
     """Decrypt ALL files of a given type and validate XML output."""
     files = _find_files(subdir, pattern)
     assert len(files) > 0, f"No {expected_type.value} files found"
     for f in files:
         assert classify_flux(f.name) == expected_type
-        xml = decrypt_file(f, keys)
+        xml = decrypt_file(f, real_keys)
         assert xml.startswith(b"<?xml")
 
 
