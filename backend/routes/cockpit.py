@@ -469,6 +469,25 @@ def get_cockpit_trajectory(
     # Surface totale
     surface_total = (db.query(func.sum(Batiment.surface_m2)).filter(Batiment.site_id.in_(site_ids)).scalar()) or 0
 
+    # 8. Projection trajectoire depuis actions planifiées (P1)
+    from models.action_item import ActionItem
+
+    _proj_actions = (
+        db.query(ActionItem)
+        .filter(ActionItem.site_id.in_(site_ids), ActionItem.status.in_(["open", "in_progress"]))
+        .all()
+    )
+    _savings_kwh = sum(a.estimated_gain_eur or 0 for a in _proj_actions) / 0.068 if _proj_actions else 0
+    projection_mwh = []
+    if _savings_kwh > 0:
+        _cy = datetime.now(tz=None).year
+        _lr = reel_by_year.get(_cy - 1) or reel_by_year.get(_cy)
+        for y in annees:
+            if y < _cy or _lr is None:
+                projection_mwh.append(None)
+            else:
+                projection_mwh.append(max(0, round((_lr - _savings_kwh * (y - _cy + 1)) / 1000, 1)))
+
     return {
         "ref_year": ref_year,
         "ref_kwh": round(ref_kwh / 1000, 1),
@@ -478,7 +497,8 @@ def get_cockpit_trajectory(
         "annees": annees,
         "reel_mwh": reel_mwh,
         "objectif_mwh": objectif_mwh,
-        "projection_mwh": [],
+        "projection_mwh": projection_mwh,
+        "projection_savings_kwh_an": round(_savings_kwh) if _savings_kwh > 0 else 0,
         "jalons": [
             {"annee": 2026, "reduction_pct": -25.0},
             {"annee": 2030, "reduction_pct": -40.0},
@@ -487,6 +507,65 @@ def get_cockpit_trajectory(
         ],
         "surface_m2_total": round(surface_total, 1),
         "computed_at": datetime.now(tz=None).isoformat(),
+    }
+
+
+@router.get("/cockpit/conso-month")
+def get_cockpit_conso_month(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Consommation du mois courant — source ConsumptionTarget.actual_kwh."""
+    from datetime import datetime as _dt
+    from models.consumption_target import ConsumptionTarget
+
+    effective_org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
+    today = _dt.now(tz=None)
+    cm, cy = today.month, today.year
+
+    monthly = (
+        db.query(ConsumptionTarget)
+        .filter(
+            ConsumptionTarget.site_id.in_(site_ids),
+            ConsumptionTarget.year == cy,
+            ConsumptionTarget.month == cm,
+            ConsumptionTarget.period.in_(["monthly", "month"]),
+            ConsumptionTarget.energy_type == "electricity",
+        )
+        .all()
+    )
+    actual = sum(t.actual_kwh or 0 for t in monthly)
+    target = sum(t.target_kwh or 0 for t in monthly)
+    sites_data = sum(1 for t in monthly if t.actual_kwh)
+
+    pm = cm - 1 if cm > 1 else 12
+    py = cy if cm > 1 else cy - 1
+    prev = (
+        db.query(ConsumptionTarget)
+        .filter(
+            ConsumptionTarget.site_id.in_(site_ids),
+            ConsumptionTarget.year == py,
+            ConsumptionTarget.month == pm,
+            ConsumptionTarget.period.in_(["monthly", "month"]),
+            ConsumptionTarget.energy_type == "electricity",
+        )
+        .all()
+    )
+    prev_kwh = sum(t.actual_kwh or 0 for t in prev)
+    delta = round((actual - prev_kwh) / prev_kwh * 100, 1) if prev_kwh > 0 and actual > 0 else None
+
+    return {
+        "year": cy,
+        "month": cm,
+        "actual_kwh": round(actual) if actual else None,
+        "actual_mwh": round(actual / 1000, 1) if actual else None,
+        "target_kwh": round(target) if target else None,
+        "delta_vs_prev_month_pct": delta,
+        "sites_with_data": sites_data,
+        "total_sites": len(site_ids),
+        "source": "ConsumptionTarget.actual_kwh",
     }
 
 

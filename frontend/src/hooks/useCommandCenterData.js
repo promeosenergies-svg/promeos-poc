@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useScope } from '../contexts/ScopeContext';
 import { logger } from '../services/logger';
-import { getEmsTimeseries } from '../services/api';
+import { getEmsTimeseries, getCockpitConsoMonth } from '../services/api';
 
 const TAG = 'CommandCenterData';
 
@@ -90,7 +90,7 @@ export function useCommandCenterData() {
     logger.info(TAG, 'Fetching command center data', { orgId: org.id, sites: scopedSites.length });
 
     try {
-      const [weekRaw, profileRaw] = await Promise.all([
+      const [weekRaw, profileRaw, consoMonthRaw] = await Promise.all([
         getEmsTimeseries({
           site_ids: siteIds,
           date_from: week7,
@@ -101,8 +101,6 @@ export function useCommandCenterData() {
           logger.error(TAG, 'weekSeries failed', { err: err.message });
           return null;
         }),
-        // Profil horaire : J-1 avec fallback sur les 3 derniers jours
-        // (le seed peut ne pas couvrir J-1 exactement)
         getEmsTimeseries({
           site_ids: siteIds,
           date_from: isoDate(daysAgo(3)),
@@ -111,6 +109,10 @@ export function useCommandCenterData() {
           mode: 'aggregate',
         }).catch((err) => {
           logger.error(TAG, 'hourlyProfile failed', { err: err.message });
+          return null;
+        }),
+        getCockpitConsoMonth().catch((err) => {
+          logger.error(TAG, 'consoMonth failed', { err: err.message });
           return null;
         }),
       ]);
@@ -136,6 +138,10 @@ export function useCommandCenterData() {
           consoDate: lastDayData?.date ?? null,
           picKw,
           co2ResKgKwh: null,
+          // Conso ce mois — backend /api/cockpit/conso-month (zéro calcul front)
+          consoMoisMwh: consoMonthRaw?.actual_mwh ?? null,
+          consoMoisDeltaPct: consoMonthRaw?.delta_vs_prev_month_pct ?? null,
+          consoMoisSites: consoMonthRaw?.sites_with_data ?? null,
         },
         loading: false,
         error: null,

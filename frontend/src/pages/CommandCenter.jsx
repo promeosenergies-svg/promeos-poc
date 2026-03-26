@@ -395,7 +395,18 @@ export default function CommandCenter() {
           }
           loading={cmdLoading}
         />
-        <KpiJ1Card label="Conso ce mois" value="—" sub="Endpoint à venir" loading={cmdLoading} />
+        <KpiJ1Card
+          label={`Conso ${new Date().toLocaleDateString('fr-FR', { month: 'long' })}`}
+          value={kpisJ1?.consoMoisMwh != null ? `${kpisJ1.consoMoisMwh} MWh` : '—'}
+          sub={
+            kpisJ1?.consoMoisMwh != null
+              ? kpisJ1.consoMoisDeltaPct != null
+                ? `${kpisJ1.consoMoisDeltaPct > 0 ? '+' : ''}${kpisJ1.consoMoisDeltaPct}% vs mois préc.`
+                : `${kpisJ1.consoMoisSites ?? 0} sites`
+              : 'Données mensuelles à venir'
+          }
+          loading={cmdLoading}
+        />
         <KpiJ1Card
           label="Pic puissance J-1"
           value={kpisJ1?.picKw != null ? `${kpisJ1.picKw} kW` : '—'}
