@@ -71,8 +71,8 @@ export default function CockpitHero({
   const reductionPct = trajectoire?.reductionPctActuelle;
   const isRetard =
     reductionPct != null &&
-    trajectoire?.objectif2026Pct != null &&
-    reductionPct > trajectoire.objectif2026Pct;
+    trajectoire?.objectifPremierJalonPct != null &&
+    reductionPct > trajectoire.objectifPremierJalonPct;
 
   return (
     <div
@@ -173,7 +173,7 @@ export default function CockpitHero({
             'Données annuelles en cours de collecte'
           ) : (
             <>
-              Objectif 2026 : <span className="text-blue-600">{trajectoire?.objectif2026Pct ?? -25}%</span>
+              Objectif 2030 : <span className="text-blue-600">{trajectoire?.objectifPremierJalonPct ?? -40}%</span>
               {isRetard && <span className="text-red-500 ml-1">· retard</span>}
             </>
           )}

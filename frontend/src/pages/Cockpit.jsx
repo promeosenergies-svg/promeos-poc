@@ -599,8 +599,8 @@ const Cockpit = () => {
 
       {/* Bannière retard trajectoire (conditionnelle) */}
       {trajectoire?.reductionPctActuelle != null &&
-        trajectoire?.objectif2026Pct != null &&
-        trajectoire.reductionPctActuelle > trajectoire.objectif2026Pct && (
+        trajectoire?.objectifPremierJalonPct != null &&
+        trajectoire.reductionPctActuelle > trajectoire.objectifPremierJalonPct && (
           <div
             className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm"
             data-testid="banner-retard-trajectoire"
@@ -609,10 +609,10 @@ const Cockpit = () => {
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
               <div>
                 <span className="text-amber-800 font-medium">
-                  Trajectoire DT 2026 en retard de{' '}
+                  Trajectoire DT 2030 en retard de{' '}
                   {/* Écart en pts = soustraction de 2 valeurs backend (présentation) */}
                   {Math.abs(
-                    (trajectoire.reductionPctActuelle ?? 0) - (trajectoire.objectif2026Pct ?? -25)
+                    (trajectoire.reductionPctActuelle ?? 0) - (trajectoire.objectifPremierJalonPct ?? -25)
                   ).toFixed(1)}{' '}
                   pts
                 </span>

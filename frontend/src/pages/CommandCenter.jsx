@@ -535,14 +535,14 @@ export default function CommandCenter() {
                 {trajectoire.reductionPctActuelle != null
                   ? `${trajectoire.reductionPctActuelle}%`
                   : '—'}{' '}
-                objectif {trajectoire.objectif2026Pct ?? -25}%
+                objectif {trajectoire.objectifPremierJalonPct ?? -25}%
               </span>
             </div>
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-gray-700">Réel 2026</span>
                 {trajectoire.reductionPctActuelle != null ? (
-                  trajectoire.reductionPctActuelle > trajectoire.objectif2026Pct ? (
+                  trajectoire.reductionPctActuelle > trajectoire.objectifPremierJalonPct ? (
                     <span className="text-red-600 font-medium">
                       {trajectoire.reductionPctActuelle}% · retard
                     </span>
@@ -564,7 +564,7 @@ export default function CommandCenter() {
                         ? Math.min(
                             100,
                             (Math.abs(trajectoire.reductionPctActuelle) /
-                              Math.abs(trajectoire.objectif2026Pct ?? -25)) *
+                              Math.abs(trajectoire.objectifPremierJalonPct ?? -25)) *
                               100
                           )
                         : 0
@@ -575,7 +575,7 @@ export default function CommandCenter() {
               <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>0%</span>
                 <span className="text-blue-600 font-medium">
-                  Obj. {trajectoire.objectif2026Pct ?? -25}%
+                  Obj. {trajectoire.objectifPremierJalonPct ?? -25}%
                 </span>
                 <span>-40%</span>
               </div>

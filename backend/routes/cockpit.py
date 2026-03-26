@@ -347,10 +347,9 @@ def get_cockpit_trajectory(
             "reel_mwh": [],
             "objectif_mwh": [],
             "jalons": [
-                {"annee": 2026, "reduction_pct": -25.0},
-                {"annee": 2030, "reduction_pct": -40.0},
-                {"annee": 2040, "reduction_pct": -50.0},
-                {"annee": 2050, "reduction_pct": -60.0},
+                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
+                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
+                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
             ],
         }
 
@@ -378,10 +377,9 @@ def get_cockpit_trajectory(
             "objectif_mwh": [],
             "projection_mwh": [],
             "jalons": [
-                {"annee": 2026, "reduction_pct": -25.0},
-                {"annee": 2030, "reduction_pct": -40.0},
-                {"annee": 2040, "reduction_pct": -50.0},
-                {"annee": 2050, "reduction_pct": -60.0},
+                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
+                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
+                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
             ],
         }
 
@@ -427,8 +425,10 @@ def get_cockpit_trajectory(
             for yr, total in rows:
                 reel_by_year[int(yr)] = total
 
-    # 5. Jalons réglementaires DT (décret n°2019-771)
-    DT_TARGETS = {2026: -0.25, 2030: -0.40, 2040: -0.50, 2050: -0.60}
+    # 5. Jalons réglementaires DT (décret n°2019-771 — Art. R131-39 CCH)
+    # Source : legifrance.gouv.fr/jorf/id/JORFTEXT000038812251
+    # NOTE : pas de jalon officiel en 2026 — le premier jalon est 2030
+    DT_TARGETS = {2030: -0.40, 2040: -0.50, 2050: -0.60}
 
     def _interpolate_dt_target(year: int) -> float:
         if year <= ref_year:
@@ -501,18 +501,18 @@ def get_cockpit_trajectory(
         "ref_kwh": round(ref_kwh / 1000, 1),
         "reduction_pct_actuelle": reduction_pct,
         "reduction_year": reduction_year,
-        "objectif_2026_pct": -25.0,
+        "objectif_2030_pct": -40.0,  # premier jalon officiel DT (décret n°2019-771)
         "annees": annees,
         "reel_mwh": reel_mwh,
         "objectif_mwh": objectif_mwh,
         "projection_mwh": projection_mwh,
         "projection_savings_kwh_an": round(_savings_kwh) if _savings_kwh > 0 else 0,
         "jalons": [
-            {"annee": 2026, "reduction_pct": -25.0},
-            {"annee": 2030, "reduction_pct": -40.0},
-            {"annee": 2040, "reduction_pct": -50.0},
-            {"annee": 2050, "reduction_pct": -60.0},
+            {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
+            {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
+            {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
         ],
+        "source_reglementaire": "Décret n°2019-771, Art. R131-39 CCH",
         "surface_m2_total": round(surface_total, 1),
         "computed_at": datetime.now(tz=None).isoformat(),
     }

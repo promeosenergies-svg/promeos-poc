@@ -58,7 +58,8 @@ function normalizeTrajectory(raw) {
       refYear: null,
       refKwh: null,
       reductionPctActuelle: null,
-      objectif2026Pct: raw.objectif_2026_pct ?? -25.0,
+      // Premier jalon officiel DT = 2030 -40% (décret n°2019-771)
+      objectifPremierJalonPct: raw.objectif_2030_pct ?? -40.0,
       annees: [],
       reelMwh: [],
       objectifMwh: [],
