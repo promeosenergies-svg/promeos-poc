@@ -44,6 +44,8 @@ import {
 } from '../models/dashboardEssentials';
 // V3: removed imports — buildWatchlist, buildBriefing, buildTodayActions,
 // buildExecutiveSummary, computeHealthState (replaced by PriorityHero + topActions)
+import CockpitHeaderSignals from './cockpit/CockpitHeaderSignals';
+import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
 import EssentialsRow from './cockpit/EssentialsRow';
 import OpportunitiesCard from './cockpit/OpportunitiesCard';
 import TopSitesCard from './cockpit/TopSitesCard';
@@ -456,7 +458,17 @@ const Cockpit = () => {
   }
 
   return (
-    <PageShell icon={FileText} title="Vue exécutive" subtitle={<ScopeSummary />}>
+    <PageShell
+      icon={FileText}
+      title="Vue exécutive"
+      subtitle={<ScopeSummary />}
+      actions={
+        <div className="flex items-center gap-3">
+          <CockpitHeaderSignals />
+          <BoutonRapportCOMEX />
+        </div>
+      }
+    >
       {/* ── Error banner ── */}
       {error && (
         <ErrorState
