@@ -105,6 +105,51 @@ cta:
   valid_from: "2026-01-01"
   valid_to: null
 
+turpe:
+  # TURPE 7 — Tarif d'Utilisation des Reseaux Publics d'Electricite
+  # Source: CRE Deliberation n.2025-78, applicable 1er aout 2025
+  # Reference croisee: backend/config/tarifs_reglementaires.yaml (source CRE brute)
+  # Valeurs pour profil HTA CU poste 5-50, composante soutirage energie variable.
+  source: "CRE Deliberation TURPE 7 n.2025-78"
+  source_url: "https://www.cre.fr/electricite/tarifs-dacheminement"
+  notes: |
+    Composantes soutirage energie (variable) pour profil HTA CU poste.
+    Pour le detail complet par option tarifaire, voir tarifs_reglementaires.yaml.
+    Valeurs en EUR/MWh pour coherence avec le referentiel market_tariffs_2026.
+  rates:
+    - component: TURPE_SOUTIRAGE_HPH
+      value: 63.70
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      notes: "Heures Pleines Hiver — soutirage energie variable"
+    - component: TURPE_SOUTIRAGE_HCH
+      value: 44.40
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      notes: "Heures Creuses Hiver — soutirage energie variable"
+    - component: TURPE_SOUTIRAGE_HPB
+      value: 14.30
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      notes: "Heures Pleines Ete — soutirage energie variable"
+    - component: TURPE_SOUTIRAGE_HCB
+      value: 10.40
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      notes: "Heures Creuses Ete — soutirage energie variable"
+    - component: TURPE_PART_FIXE
+      value: 9.84
+      unit: EUR_KW_AN
+      applies_to_voltage: "HTA"
+      notes: "Part fixe annuelle par kW souscrit — prime fixe CU poste HTA"
+    - component: TURPE_COMPTAGE
+      value: 312.12
+      unit: EUR_AN
+      applies_to_voltage: "HTA"
+      notes: "Composante comptage annuelle HTA — CC deliberation TURPE 7"
+  valid_from: "2025-08-01"
+  valid_to: null
+
 tva:
   source: "Code general des impots"
   values:

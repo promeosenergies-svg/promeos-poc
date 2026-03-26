@@ -30,7 +30,6 @@ def db_session():
 
 
 class TestTariffLoader:
-
     def test_load_yaml_inserts_tariffs(self, db_session):
         result = load_tariffs_from_yaml(db_session)
         assert result["inserted"] > 0
@@ -44,28 +43,36 @@ class TestTariffLoader:
 
     def test_cspe_c4_value_correct(self, db_session):
         load_tariffs_from_yaml(db_session)
-        tariff = get_current_tariff(
-            db_session, TariffType.CSPE, TariffComponent.CSPE_C4
-        )
+        tariff = get_current_tariff(db_session, TariffType.CSPE, TariffComponent.CSPE_C4)
         assert tariff is not None
         assert tariff.value == 26.58
         assert tariff.unit == "EUR_MWH"
 
     def test_vnu_seuil_bas_correct(self, db_session):
         load_tariffs_from_yaml(db_session)
-        tariff = get_current_tariff(
-            db_session, TariffType.VNU, TariffComponent.VNU_SEUIL_BAS
-        )
+        tariff = get_current_tariff(db_session, TariffType.VNU, TariffComponent.VNU_SEUIL_BAS)
         assert tariff is not None
         assert tariff.value == 78.0
 
     def test_capacity_price_2026(self, db_session):
         load_tariffs_from_yaml(db_session)
-        tariff = get_current_tariff(
-            db_session, TariffType.CAPACITY, TariffComponent.CAPACITY_PRICE_MW
-        )
+        tariff = get_current_tariff(db_session, TariffType.CAPACITY, TariffComponent.CAPACITY_PRICE_MW)
         assert tariff is not None
         assert tariff.value == 98.6
+
+    def test_turpe_hph_loaded(self, db_session):
+        load_tariffs_from_yaml(db_session)
+        tariff = get_current_tariff(db_session, TariffType.TURPE, TariffComponent.TURPE_SOUTIRAGE_HPH)
+        assert tariff is not None
+        assert tariff.value == 63.70
+        assert tariff.applies_to_voltage == "HTA"
+
+    def test_turpe_part_fixe_loaded(self, db_session):
+        load_tariffs_from_yaml(db_session)
+        tariff = get_current_tariff(db_session, TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
+        assert tariff is not None
+        assert tariff.value == 9.84
+        assert tariff.unit == "EUR_KW_AN"
 
     def test_versioning_no_update(self, db_session):
         """Verifie que le loader n'UPDATE jamais -- insert-only."""

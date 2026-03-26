@@ -8,9 +8,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
-from models.market_models import (
-    RegulatedTariff, TariffType, TariffComponent
-)
+from models.market_models import RegulatedTariff, TariffType, TariffComponent
 
 REFERENTIAL_DIR = Path(__file__).parent.parent / "referentials"
 
@@ -58,12 +56,16 @@ def load_tariffs_from_yaml(db: Session, filepath: str = None) -> dict:
                 continue
 
             # Verifier si deja present (meme composant + version + valid_from)
-            existing = db.query(RegulatedTariff).filter(
-                RegulatedTariff.tariff_type == tariff_type,
-                RegulatedTariff.component == component,
-                RegulatedTariff.version == version,
-                RegulatedTariff.valid_from == valid_from,
-            ).first()
+            existing = (
+                db.query(RegulatedTariff)
+                .filter(
+                    RegulatedTariff.tariff_type == tariff_type,
+                    RegulatedTariff.component == component,
+                    RegulatedTariff.version == version,
+                    RegulatedTariff.valid_from == valid_from,
+                )
+                .first()
+            )
 
             if existing:
                 skipped += 1
@@ -81,6 +83,7 @@ def load_tariffs_from_yaml(db: Session, filepath: str = None) -> dict:
                 version=version,
                 notes=rate.get("notes"),
                 applies_to_profile=rate.get("applies_to_profile"),
+                applies_to_voltage=rate.get("applies_to_voltage"),
                 applies_to_power_range=rate.get("applies_to_power_range"),
             )
             db.add(tariff)
@@ -91,10 +94,7 @@ def load_tariffs_from_yaml(db: Session, filepath: str = None) -> dict:
 
 
 def get_current_tariff(
-    db: Session,
-    tariff_type: TariffType,
-    component: TariffComponent,
-    at_date: datetime = None
+    db: Session, tariff_type: TariffType, component: TariffComponent, at_date: datetime = None
 ) -> RegulatedTariff | None:
     """
     Retourne le tarif en vigueur a une date donnee.
@@ -103,12 +103,17 @@ def get_current_tariff(
     if at_date is None:
         at_date = datetime.now(timezone.utc)
 
-    return db.query(RegulatedTariff).filter(
-        RegulatedTariff.tariff_type == tariff_type,
-        RegulatedTariff.component == component,
-        RegulatedTariff.valid_from <= at_date,
-        (RegulatedTariff.valid_to.is_(None)) | (RegulatedTariff.valid_to >= at_date),
-    ).order_by(RegulatedTariff.valid_from.desc()).first()
+    return (
+        db.query(RegulatedTariff)
+        .filter(
+            RegulatedTariff.tariff_type == tariff_type,
+            RegulatedTariff.component == component,
+            RegulatedTariff.valid_from <= at_date,
+            (RegulatedTariff.valid_to.is_(None)) | (RegulatedTariff.valid_to >= at_date),
+        )
+        .order_by(RegulatedTariff.valid_from.desc())
+        .first()
+    )
 
 
 def _map_tariff_type(key: str) -> TariffType | None:
@@ -126,5 +131,8 @@ def _map_tariff_type(key: str) -> TariffType | None:
 
 
 def _parse_date(s: str) -> datetime:
-    return datetime.fromisoformat(s).replace(tzinfo=timezone.utc) if "T" in s \
+    return (
+        datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+        if "T" in s
         else datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    )
