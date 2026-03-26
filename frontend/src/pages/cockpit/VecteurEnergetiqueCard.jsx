@@ -61,7 +61,10 @@ export default function VecteurEnergetiqueCard() {
   // Pas de fallback calcul front — si vectors absent, EmptyState
   if (backendVectors.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4" data-testid="vecteur-energetique">
+      <div
+        className="bg-white border border-gray-200 rounded-xl p-4"
+        data-testid="vecteur-energetique"
+      >
         <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
           Répartition par vecteur énergétique
         </div>
@@ -120,7 +123,7 @@ export default function VecteurEnergetiqueCard() {
       {/* CO₂ totaux */}
       <div className="border-t border-gray-100 pt-3">
         <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Émissions CO₂ cumulées N
+          Émissions CO₂ cumulées {data.annee_ref ?? new Date().getFullYear()}
         </div>
         <div className="flex items-baseline gap-4">
           <div>

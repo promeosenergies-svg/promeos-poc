@@ -138,7 +138,12 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-5 border-t-2 border-dashed border-red-400" />
-          <span>Objectif DT (−40% 2030)</span>
+          <span>
+            Objectif DT
+            {trajectoire.jalons?.length > 0
+              ? ` (${trajectoire.jalons[0].reduction_pct}% ${trajectoire.jalons[0].annee})`
+              : ''}
+          </span>
         </span>
         {/* HIGH-1: masquer légende Projection si projectionMwh vide */}
         {trajectoire?.projectionMwh?.some((v) => v != null) && (
@@ -199,13 +204,13 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
             connectNulls
           />
 
-          {/* Projection + actions */}
-          <Area
+          {/* Projection + actions — Line sans fill pour ne pas suggérer un "succès"
+              quand la projection est au-dessus de l'objectif DT */}
+          <Line
             type="monotone"
             dataKey={yKey('projection')}
             name="Projection + actions"
             stroke="#1D9E75"
-            fill="rgba(29,158,117,0.12)"
             strokeWidth={2}
             strokeDasharray="4 3"
             dot={{ r: 3, fill: '#1D9E75', strokeWidth: 0 }}
