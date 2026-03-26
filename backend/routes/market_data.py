@@ -7,16 +7,16 @@ Les endpoints sont sous /api/market/spot/*, /api/market/forwards, /api/market/ta
 Pas de conflit avec les routes legacy /api/market/prices et /api/market/context.
 """
 
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from services.market_data_service import MarketDataService
 from services.market_tariff_loader import get_current_tariff, load_tariffs_from_yaml
-from models.market_models import (
-    PriceZone, MarketType, TariffType, TariffComponent, ProductType
-)
+from models.market_models import PriceZone, MarketType, TariffType, TariffComponent, ProductType
 
 router = APIRouter(prefix="/api/market", tags=["Market Data V2"])
 
@@ -144,7 +144,10 @@ def get_data_freshness(db: Session = Depends(get_db)):
 
 
 @router.post("/tariffs/reload")
-def reload_tariffs(db: Session = Depends(get_db)):
-    """Recharge les tarifs depuis le YAML (admin)."""
+def reload_tariffs(
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Recharge les tarifs depuis le YAML (admin, authentification requise)."""
     result = load_tariffs_from_yaml(db)
     return {"status": "ok", **result}

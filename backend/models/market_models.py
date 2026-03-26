@@ -1,14 +1,32 @@
 """
-Modeles Market Data -- Prix marche electricite France.
+Market Data Models -- Prix marche electricite France.
 Architecture concue pour 2026-2030 : post-ARENH, VNU, nouveau mecanisme capacite.
 
-NOTE: La table legacy 'market_prices' (models/market_price.py) reste intacte.
-Les nouvelles tables utilisent le prefixe 'mkt_' pour eviter les conflits.
+COEXISTENCE TABLE LEGACY:
+La table 'market_prices' (Step 17 legacy) existe encore en DB avec un schema simple.
+La nouvelle table 'mkt_prices' (ce fichier) est la source de verite pour tous les
+nouveaux developpements. La table legacy sera supprimee dans une future migration
+apres verification que plus aucun code ne la reference.
+
+Migration tracking:
+- Commit fix/market-data-cleanup: consommateurs legacy migres vers mkt_prices
+  (purchase_pricing.py, billing_service.py, routes/market.py, gen_market_prices.py)
+- TODO: DROP TABLE market_prices quand seed_data.py ne la reference plus
 """
 
 from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, Enum as SAEnum,
-    Boolean, Text, JSON, ForeignKey, Index, UniqueConstraint
+    Column,
+    Integer,
+    String,
+    Float,
+    DateTime,
+    Enum as SAEnum,
+    Boolean,
+    Text,
+    JSON,
+    ForeignKey,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -19,63 +37,70 @@ from models.base import Base, TimestampMixin
 
 # -- Enums ------------------------------------------------------------------
 
+
 class MarketDataSource(str, enum.Enum):
     """Source de la donnee prix"""
-    ENTSOE = "ENTSOE"              # ENTSO-E Transparency Platform (gratuit)
-    RTE_WHOLESALE = "RTE_WHOLESALE" # RTE data.rte-france.com (gratuit, OAuth2)
-    EEX = "EEX"                    # EEX Group DataSource (payant, sFTP/API)
-    EPEX_SPOT = "EPEX_SPOT"        # EPEX SPOT direct (payant, licence)
-    PILOTT = "PILOTT"              # Pilott/Sirenergies (freemium)
-    MANUAL = "MANUAL"              # Saisie manuelle / import CSV
-    COMPUTED = "COMPUTED"           # Calcule par PROMEOS (indices derives)
+
+    ENTSOE = "ENTSOE"  # ENTSO-E Transparency Platform (gratuit)
+    RTE_WHOLESALE = "RTE_WHOLESALE"  # RTE data.rte-france.com (gratuit, OAuth2)
+    EEX = "EEX"  # EEX Group DataSource (payant, sFTP/API)
+    EPEX_SPOT = "EPEX_SPOT"  # EPEX SPOT direct (payant, licence)
+    PILOTT = "PILOTT"  # Pilott/Sirenergies (freemium)
+    MANUAL = "MANUAL"  # Saisie manuelle / import CSV
+    COMPUTED = "COMPUTED"  # Calcule par PROMEOS (indices derives)
 
 
 class MarketType(str, enum.Enum):
     """Type de marche"""
-    SPOT_DAY_AHEAD = "SPOT_DAY_AHEAD"   # J-1, fixing 12h30-13h
-    SPOT_INTRADAY = "SPOT_INTRADAY"     # Continu, jusqu'a 5min avant livraison
-    FORWARD_MONTH = "FORWARD_MONTH"     # M+1, M+2, M+3...
-    FORWARD_QUARTER = "FORWARD_QUARTER" # Q+1, Q+2...
-    FORWARD_YEAR = "FORWARD_YEAR"       # CAL+1, CAL+2, CAL+3...
-    FORWARD_WEEK = "FORWARD_WEEK"       # W+1, W+2...
-    CAPACITY = "CAPACITY"               # Mecanisme de capacite (encheres)
-    BALANCING = "BALANCING"             # Prix d'ajustement RTE
+
+    SPOT_DAY_AHEAD = "SPOT_DAY_AHEAD"  # J-1, fixing 12h30-13h
+    SPOT_INTRADAY = "SPOT_INTRADAY"  # Continu, jusqu'a 5min avant livraison
+    FORWARD_MONTH = "FORWARD_MONTH"  # M+1, M+2, M+3...
+    FORWARD_QUARTER = "FORWARD_QUARTER"  # Q+1, Q+2...
+    FORWARD_YEAR = "FORWARD_YEAR"  # CAL+1, CAL+2, CAL+3...
+    FORWARD_WEEK = "FORWARD_WEEK"  # W+1, W+2...
+    CAPACITY = "CAPACITY"  # Mecanisme de capacite (encheres)
+    BALANCING = "BALANCING"  # Prix d'ajustement RTE
 
 
 class ProductType(str, enum.Enum):
     """Type de produit"""
-    BASELOAD = "BASELOAD"   # 24h/24, 7j/7
-    PEAKLOAD = "PEAKLOAD"   # Lun-Ven 8h-20h (France)
-    OFFPEAK = "OFFPEAK"     # Heures creuses
-    HOURLY = "HOURLY"       # Prix horaire (spot)
+
+    BASELOAD = "BASELOAD"  # 24h/24, 7j/7
+    PEAKLOAD = "PEAKLOAD"  # Lun-Ven 8h-20h (France)
+    OFFPEAK = "OFFPEAK"  # Heures creuses
+    HOURLY = "HOURLY"  # Prix horaire (spot)
 
 
 class PriceZone(str, enum.Enum):
     """Zone de prix (bidding zone ENTSO-E)"""
-    FR = "FR"           # France -- 10YFR-RTE------C
-    DE_LU = "DE_LU"     # Allemagne-Luxembourg
-    BE = "BE"           # Belgique
-    ES = "ES"           # Espagne
+
+    FR = "FR"  # France -- 10YFR-RTE------C
+    DE_LU = "DE_LU"  # Allemagne-Luxembourg
+    BE = "BE"  # Belgique
+    ES = "ES"  # Espagne
     IT_NORTH = "IT_NORTH"
-    NL = "NL"           # Pays-Bas
-    GB = "GB"           # Grande-Bretagne
-    CH = "CH"           # Suisse
+    NL = "NL"  # Pays-Bas
+    GB = "GB"  # Grande-Bretagne
+    CH = "CH"  # Suisse
 
 
 class TariffType(str, enum.Enum):
     """Type de tarif reglemente"""
-    TURPE = "TURPE"             # Acheminement electricite
-    CSPE = "CSPE"               # Accise sur l'electricite (ex-TICFE)
-    CAPACITY = "CAPACITY"       # Mecanisme de capacite
-    CEE = "CEE"                 # Certificats Economies Energie
-    CTA = "CTA"                 # Contribution Tarifaire Acheminement
-    TVA = "TVA"                 # TVA (5.5% abo, 20% conso)
-    VNU = "VNU"                 # Versement Nucleaire Universel (post-ARENH)
-    ATRD = "ATRD"               # Acheminement distribution gaz
+
+    TURPE = "TURPE"  # Acheminement electricite
+    CSPE = "CSPE"  # Accise sur l'electricite (ex-TICFE)
+    CAPACITY = "CAPACITY"  # Mecanisme de capacite
+    CEE = "CEE"  # Certificats Economies Energie
+    CTA = "CTA"  # Contribution Tarifaire Acheminement
+    TVA = "TVA"  # TVA (5.5% abo, 20% conso)
+    VNU = "VNU"  # Versement Nucleaire Universel (post-ARENH)
+    ATRD = "ATRD"  # Acheminement distribution gaz
 
 
 class TariffComponent(str, enum.Enum):
     """Composante de tarif (granularite fine)"""
+
     # TURPE
     TURPE_PART_FIXE = "TURPE_PART_FIXE"
     TURPE_SOUTIRAGE_HPH = "TURPE_SOUTIRAGE_HPH"
@@ -86,16 +111,16 @@ class TariffComponent(str, enum.Enum):
     TURPE_COMPTAGE = "TURPE_COMPTAGE"
     TURPE_DEPASSEMENT = "TURPE_DEPASSEMENT"
     # CSPE par profil
-    CSPE_C5 = "CSPE_C5"               # <=36 kVA menages/assimiles
-    CSPE_C4 = "CSPE_C4"               # >36 kVA PME
-    CSPE_C2 = "CSPE_C2"               # >250 kVA
+    CSPE_C5 = "CSPE_C5"  # <=36 kVA menages/assimiles
+    CSPE_C4 = "CSPE_C4"  # >36 kVA PME
+    CSPE_C2 = "CSPE_C2"  # >250 kVA
     CSPE_ELECTRO_INTENSIF = "CSPE_ELECTRO_INTENSIF"  # Taux reduit
     # Capacite
     CAPACITY_PRICE_MW = "CAPACITY_PRICE_MW"
     CAPACITY_COEFFICIENT = "CAPACITY_COEFFICIENT"
     # VNU
-    VNU_SEUIL_BAS = "VNU_SEUIL_BAS"   # 78 EUR/MWh
-    VNU_SEUIL_HAUT = "VNU_SEUIL_HAUT" # 110 EUR/MWh
+    VNU_SEUIL_BAS = "VNU_SEUIL_BAS"  # 78 EUR/MWh
+    VNU_SEUIL_HAUT = "VNU_SEUIL_HAUT"  # 110 EUR/MWh
     VNU_TAUX_PRELEVEMENT = "VNU_TAUX_PRELEVEMENT"
     # CEE
     CEE_OBLIGATION = "CEE_OBLIGATION"
@@ -108,16 +133,17 @@ class TariffComponent(str, enum.Enum):
 
 class SignalType(str, enum.Enum):
     """Type de signal prix"""
-    SPOT_ALERT_HIGH = "SPOT_ALERT_HIGH"       # Prix spot > seuil haut
-    SPOT_ALERT_LOW = "SPOT_ALERT_LOW"         # Prix spot < seuil bas (fenetre achat)
-    SPOT_NEGATIVE = "SPOT_NEGATIVE"           # Prix negatif (surplus EnR)
-    FORWARD_TREND_UP = "FORWARD_TREND_UP"     # Tendance haussiere forwards
-    FORWARD_TREND_DOWN = "FORWARD_TREND_DOWN" # Tendance baissiere
-    BUYING_WINDOW = "BUYING_WINDOW"           # Fenetre d'achat recommandee
-    SPREAD_ALERT = "SPREAD_ALERT"             # Spread spot-forward anormal
-    REGULATORY_CHANGE = "REGULATORY_CHANGE"   # Changement tarif reglemente
-    VNU_ACTIVATION = "VNU_ACTIVATION"         # Seuil VNU atteint
-    CAPACITY_AUCTION = "CAPACITY_AUCTION"     # Resultat enchere capacite
+
+    SPOT_ALERT_HIGH = "SPOT_ALERT_HIGH"  # Prix spot > seuil haut
+    SPOT_ALERT_LOW = "SPOT_ALERT_LOW"  # Prix spot < seuil bas (fenetre achat)
+    SPOT_NEGATIVE = "SPOT_NEGATIVE"  # Prix negatif (surplus EnR)
+    FORWARD_TREND_UP = "FORWARD_TREND_UP"  # Tendance haussiere forwards
+    FORWARD_TREND_DOWN = "FORWARD_TREND_DOWN"  # Tendance baissiere
+    BUYING_WINDOW = "BUYING_WINDOW"  # Fenetre d'achat recommandee
+    SPREAD_ALERT = "SPREAD_ALERT"  # Spread spot-forward anormal
+    REGULATORY_CHANGE = "REGULATORY_CHANGE"  # Changement tarif reglemente
+    VNU_ACTIVATION = "VNU_ACTIVATION"  # Seuil VNU atteint
+    CAPACITY_AUCTION = "CAPACITY_AUCTION"  # Resultat enchere capacite
 
 
 class SignalSeverity(str, enum.Enum):
@@ -129,17 +155,19 @@ class SignalSeverity(str, enum.Enum):
 
 class Resolution(str, enum.Enum):
     """Resolution temporelle des donnees"""
-    PT15M = "PT15M"   # 15 minutes (EPEX depuis oct 2025)
-    PT30M = "PT30M"   # 30 minutes (Enedis C5)
-    PT60M = "PT60M"   # 1 heure (standard day-ahead)
-    P1D = "P1D"       # Journalier
-    P1W = "P1W"       # Hebdomadaire
-    P1M = "P1M"       # Mensuel
-    P3M = "P3M"       # Trimestriel
-    P1Y = "P1Y"       # Annuel
+
+    PT15M = "PT15M"  # 15 minutes (EPEX depuis oct 2025)
+    PT30M = "PT30M"  # 30 minutes (Enedis C5)
+    PT60M = "PT60M"  # 1 heure (standard day-ahead)
+    P1D = "P1D"  # Journalier
+    P1W = "P1W"  # Hebdomadaire
+    P1M = "P1M"  # Mensuel
+    P3M = "P3M"  # Trimestriel
+    P1Y = "P1Y"  # Annuel
 
 
 # -- Modeles ----------------------------------------------------------------
+
 
 class MktPrice(TimestampMixin, Base):
     """
@@ -149,6 +177,7 @@ class MktPrice(TimestampMixin, Base):
 
     NOTE: Table 'mkt_prices' (pas 'market_prices' qui est la table legacy Step 17).
     """
+
     __tablename__ = "mkt_prices"
 
     id = Column(Integer, primary_key=True)
@@ -164,8 +193,7 @@ class MktPrice(TimestampMixin, Base):
     volume_mwh = Column(Float, nullable=True)  # Volume echange (si dispo)
 
     resolution = Column(SAEnum(Resolution), nullable=False, default=Resolution.PT60M)
-    fetched_at = Column(DateTime(timezone=True), nullable=False,
-                        default=lambda: datetime.now(timezone.utc))
+    fetched_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     is_provisional = Column(Boolean, default=False)  # Donnee provisoire vs definitive
 
     # Metadonnees source
@@ -174,14 +202,16 @@ class MktPrice(TimestampMixin, Base):
 
     __table_args__ = (
         UniqueConstraint(
-            'source', 'market_type', 'product_type', 'zone',
-            'delivery_start', 'resolution',
-            name='uq_mkt_price_natural_key'
+            "source",
+            "market_type",
+            "product_type",
+            "zone",
+            "delivery_start",
+            "resolution",
+            name="uq_mkt_price_natural_key",
         ),
-        Index('ix_mkt_price_lookup',
-              'zone', 'market_type', 'delivery_start'),
-        Index('ix_mkt_price_range',
-              'zone', 'market_type', 'delivery_start', 'delivery_end'),
+        Index("ix_mkt_price_lookup", "zone", "market_type", "delivery_start"),
+        Index("ix_mkt_price_range", "zone", "market_type", "delivery_start", "delivery_end"),
     )
 
 
@@ -191,6 +221,7 @@ class RegulatedTariff(TimestampMixin, Base):
     Chaque modification cree une nouvelle ligne avec valid_from/valid_to.
     Jamais de UPDATE -- insert-only pour tracabilite.
     """
+
     __tablename__ = "regulated_tariffs"
 
     id = Column(Integer, primary_key=True)
@@ -204,7 +235,7 @@ class RegulatedTariff(TimestampMixin, Base):
     valid_to = Column(DateTime(timezone=True), nullable=True)  # NULL = en vigueur
 
     # Tracabilite
-    source_name = Column(String(100), nullable=False)   # CRE, LOI_FINANCES, EPEX_SPOT
+    source_name = Column(String(100), nullable=False)  # CRE, LOI_FINANCES, EPEX_SPOT
     source_reference = Column(String(500), nullable=True)  # URL deliberation, n. decret
     source_date = Column(DateTime(timezone=True), nullable=True)  # Date publication source
     version = Column(String(20), nullable=False)  # "TURPE7", "LF2025", "2026-Q1"
@@ -216,10 +247,8 @@ class RegulatedTariff(TimestampMixin, Base):
     applies_to_power_range = Column(String(50), nullable=True)  # "<36kVA", "36-250kVA", ">250kVA"
 
     __table_args__ = (
-        Index('ix_tariff_lookup',
-              'tariff_type', 'component', 'valid_from'),
-        Index('ix_tariff_current',
-              'tariff_type', 'component', 'valid_to'),
+        Index("ix_tariff_lookup", "tariff_type", "component", "valid_from"),
+        Index("ix_tariff_current", "tariff_type", "component", "valid_to"),
     )
 
 
@@ -229,6 +258,7 @@ class PriceSignal(TimestampMixin, Base):
     Generes automatiquement par le signal_engine a partir des MktPrice + RegulatedTariff.
     Scopes par organisation.
     """
+
     __tablename__ = "price_signals"
 
     id = Column(Integer, primary_key=True)
@@ -254,9 +284,7 @@ class PriceSignal(TimestampMixin, Base):
     trigger_market_price_id = Column(Integer, ForeignKey("mkt_prices.id"), nullable=True)
     trigger_tariff_id = Column(Integer, ForeignKey("regulated_tariffs.id"), nullable=True)
 
-    __table_args__ = (
-        Index('ix_signal_active', 'org_id', 'is_active', 'signal_type'),
-    )
+    __table_args__ = (Index("ix_signal_active", "org_id", "is_active", "signal_type"),)
 
 
 class MarketDataFetchLog(TimestampMixin, Base):
@@ -264,6 +292,7 @@ class MarketDataFetchLog(TimestampMixin, Base):
     Log des fetches de donnees marche.
     Permet le monitoring, le retry, et l'audit de fraicheur.
     """
+
     __tablename__ = "market_data_fetch_logs"
 
     id = Column(Integer, primary_key=True)
@@ -286,9 +315,7 @@ class MarketDataFetchLog(TimestampMixin, Base):
     period_start = Column(DateTime(timezone=True), nullable=True)
     period_end = Column(DateTime(timezone=True), nullable=True)
 
-    __table_args__ = (
-        Index('ix_fetch_log_recent', 'connector_name', 'started_at'),
-    )
+    __table_args__ = (Index("ix_fetch_log_recent", "connector_name", "started_at"),)
 
 
 class PriceDecomposition(TimestampMixin, Base):
@@ -297,6 +324,7 @@ class PriceDecomposition(TimestampMixin, Base):
     Calculee backend a partir de : MktPrice + RegulatedTariff + profil charge site.
     C'est la brique qui alimente le shadow pricing et la comparaison d'offres.
     """
+
     __tablename__ = "price_decompositions"
 
     id = Column(Integer, primary_key=True)
@@ -308,26 +336,24 @@ class PriceDecomposition(TimestampMixin, Base):
     profile = Column(String(20), nullable=False)  # C5, C4, C2, HTA
 
     # Decomposition en EUR/MWh
-    energy_eur_mwh = Column(Float, nullable=False)        # Brique 1: commodity
-    turpe_eur_mwh = Column(Float, nullable=False)          # Brique 2: acheminement
-    cspe_eur_mwh = Column(Float, nullable=False)           # Brique 3: accise
-    capacity_eur_mwh = Column(Float, nullable=False)       # Brique 4: capacite
-    cee_eur_mwh = Column(Float, nullable=False)            # Brique 5: CEE
-    cta_eur_mwh = Column(Float, nullable=False)            # Brique 6: CTA
-    total_ht_eur_mwh = Column(Float, nullable=False)       # Total HT
-    tva_eur_mwh = Column(Float, nullable=False)            # TVA
-    total_ttc_eur_mwh = Column(Float, nullable=False)      # Total TTC
+    energy_eur_mwh = Column(Float, nullable=False)  # Brique 1: commodity
+    turpe_eur_mwh = Column(Float, nullable=False)  # Brique 2: acheminement
+    cspe_eur_mwh = Column(Float, nullable=False)  # Brique 3: accise
+    capacity_eur_mwh = Column(Float, nullable=False)  # Brique 4: capacite
+    cee_eur_mwh = Column(Float, nullable=False)  # Brique 5: CEE
+    cta_eur_mwh = Column(Float, nullable=False)  # Brique 6: CTA
+    total_ht_eur_mwh = Column(Float, nullable=False)  # Total HT
+    tva_eur_mwh = Column(Float, nullable=False)  # TVA
+    total_ttc_eur_mwh = Column(Float, nullable=False)  # Total TTC
 
     # Contexte de calcul
-    spot_avg_eur_mwh = Column(Float, nullable=True)        # Spot moyen periode
-    forward_ref_eur_mwh = Column(Float, nullable=True)     # Forward de reference
-    volume_mwh = Column(Float, nullable=True)              # Volume estime
+    spot_avg_eur_mwh = Column(Float, nullable=True)  # Spot moyen periode
+    forward_ref_eur_mwh = Column(Float, nullable=True)  # Forward de reference
+    volume_mwh = Column(Float, nullable=True)  # Volume estime
 
     # Metadonnees
     calculation_method = Column(String(50), nullable=False)  # SPOT_BASED, FORWARD_BASED, CONTRACT
     calculated_at = Column(DateTime(timezone=True), nullable=False)
-    tariff_version = Column(String(50), nullable=False)      # Ex: "TURPE7_CSPE_2026-02"
+    tariff_version = Column(String(50), nullable=False)  # Ex: "TURPE7_CSPE_2026-02"
 
-    __table_args__ = (
-        Index('ix_decomp_lookup', 'org_id', 'site_id', 'period_start'),
-    )
+    __table_args__ = (Index("ix_decomp_lookup", "org_id", "site_id", "period_start"),)
