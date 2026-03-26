@@ -1,6 +1,6 @@
 # SF4 — Operationalization Pipeline Enedis SGE — Plan d'implementation
 
-> **Status** : Plan v2 — aligne avec spec v5, pret pour implementation phase par phase
+> **Status** : Plan v3 — aligne avec spec v6, pret pour implementation phase par phase
 > **Spec** : `docs/specs/feature-enedis-sge-4-operationalization.md`
 > **Branche** : `feat/enedis-sge-sf4-operationalization` (depuis `feat/enedis-sge-ingestion`)
 
@@ -19,24 +19,33 @@ SF4 rend le pipeline **fiable, complet et auditable** en livrant : config, error
 | Historique d'erreurs | **Table separee** `enedis_flux_file_error` | Propre, extensible, requetable en SQL directement |
 | Compteur de tentatives | **Derive** de `len(flux_file.errors)` — pas de colonne `retry_count` | Pas de desynchronisation, source unique de verite |
 | Retry ERROR en batch | **Auto-retry** dans `ingest_directory()` si `len(errors) < MAX_RETRIES` (default 3) | Un seul point d'entree fait tout, pas de fichiers oublies. Garde max_retries empeche les boucles infinies |
-| Suivi d'execution | **Table `IngestionRun`** (1 row par execution CLI/API) | Audit trail lisible, `LastIngestion` = latest completed run |
+| Fichiers PERMANENTLY_FAILED | **Nouveau statut `FluxStatus.PERMANENTLY_FAILED`** quand MAX_RETRIES atteint | Identification immediate par le data manager. Plus de retry automatique |
+| Fichiers NEEDS_REVIEW | **Pas de retry automatique** — donnees chargees, attente review humaine | Traitement initial reussi, republication detectee. Pas un cas d'erreur |
+| Suivi d'execution | **Table `IngestionRun`** avec **compteurs incrementaux** fichier par fichier | Si crash mid-run : compteurs fiables, status "partial", run suivant traite les restants |
+| Statuts IngestionRun | **running / completed / partial / failed** | partial = crash avec compteurs utiles, failed = erreur avant tout traitement |
 | Session API | **`Depends(get_db)`** standard | Pipeline commits per-file (by design). Tracabilite via `IngestionRun` |
+| Concurrence | **Verrou simple** : refuser si IngestionRun en status "running" | 5 lignes, empeche compteurs incoherents en parallele |
+| Validation pre-flight | **Verifier cles + repertoire AVANT creation d'IngestionRun** | Fail fast, pas de run "failed" inutile dans l'historique |
+| Variable ENEDIS_FLUX_DIR | **Obligatoire** dans `.env` — pas de fallback | La clarte prime. Les chemins relatifs sont source d'erreurs |
 | Rapport CLI mesures | **Requetes DB post-ingestion** (pattern `ingest_real_db.py`) | `ingest_directory()` retourne des compteurs de fichiers, pas de mesures. `_print_report()` calcule les volumes via queries sur les tables staging |
+| Mesures dans IngestResponse | **Non** — compteurs fichiers uniquement | Les volumes de mesures sont des totaux staging, pas des deltas du run. Disponibles via GET /stats |
 | CLI scope | **Minimaliste** — `ingest` uniquement (+ `--dry-run`) | Les stats restent cote API, evite la duplication de logique |
 | Auth API | **Pas d'auth** pour le POC | Usage ops/admin, ajout facile ulterieurement |
 | Schemas Pydantic | **Dans le router** (`routes/enedis.py`) | Pattern dominant du codebase |
 | `.env.example` | **Les deux** fichiers (racine + `backend/`) | Coherence avec les conventions existantes |
 | Tests API | **`backend/tests/test_enedis_api.py`** | Coherent avec les autres tests d'API (`test_bacs_api.py`, etc.) |
+| Scripts ad-hoc | **Deprecation** phase 1, suppression apres validation SF4 complete | Reference pendant la transition |
 
 ---
 
 ## Phase 0 — Mise a jour de la spec
 
-**Commit** : `docs(enedis): update SF4 spec v5 with full architecture decisions`
+**Commit** : `docs(enedis): update SF4 spec v6 with final architecture decisions`
 
 | Fichier | Action |
 |---------|--------|
-| `docs/specs/feature-enedis-sge-4-operationalization.md` | Aligner sur spec v5 (decisions architecture completes, IngestionRun, MAX_RETRIES, retry batch, session API) |
+| `docs/specs/feature-enedis-sge-4-operationalization.md` | Aligner sur spec v6 (toutes decisions finales integrees) |
+| `docs/specs/plan-enedis-sge-4-implementation.md` | Aligner sur plan v3 |
 
 ---
 
@@ -57,16 +66,19 @@ SF4 rend le pipeline **fiable, complet et auditable** en livrant : config, error
 |---------|-------------|
 | `.env.example` (racine) | Ajouter `ENEDIS_FLUX_DIR` section External Data Connectors |
 | `backend/.env.example` | Ajouter `ENEDIS_FLUX_DIR` |
+| `backend/data_ingestion/enedis/scripts/ingest_real_db.py` | Ajouter commentaire de deprecation en tete de fichier |
+| `backend/data_ingestion/enedis/scripts/decrypt_samples.py` | Ajouter commentaire de deprecation en tete de fichier |
 
 ### Contenu de `config.py`
 
 ```python
-MAX_RETRIES: int = 3  # Nombre max de tentatives sur un fichier en erreur
+MAX_RETRIES: int = 3  # Nombre max de retries sur un fichier en erreur (4 tentatives au total)
 
-def get_flux_dir(override: str | None = None, validate: bool = True) -> Path:
+def get_flux_dir(override: str | None = None) -> Path:
     """Resolve le repertoire de flux Enedis.
 
-    Priorite : override > env var ENEDIS_FLUX_DIR > fallback projet.
+    Priorite : override > env var ENEDIS_FLUX_DIR.
+    Pas de fallback — ENEDIS_FLUX_DIR est obligatoire si pas d'override.
     """
 ```
 
@@ -75,28 +87,29 @@ def get_flux_dir(override: str | None = None, validate: bool = True) -> Path:
 ```
 1. Si override fourni et non vide -> Path(override)
 2. Sinon os.environ.get("ENEDIS_FLUX_DIR") -> Path(env_value)
-3. Sinon fallback -> Path(__file__).resolve().parents[4] / "flux_enedis"
-4. Si validate=True et le path n'est pas un repertoire -> ValueError
+3. Sinon -> ValueError("ENEDIS_FLUX_DIR environment variable is required — set it in .env")
+4. Dans tous les cas : si le path n'est pas un repertoire -> ValueError("... is not a directory")
 ```
 
 ### Tests
 
 | Classe | Cas |
 |--------|-----|
-| `TestGetFluxDir` | env var set, env var absent (fallback), override explicite, repertoire inexistant -> ValueError, validate=False bypass |
+| `TestGetFluxDir` | env var set → correct path, env var absent + no override → ValueError avec message explicite, override explicite → correct path, repertoire inexistant → ValueError, override vide string → fallback sur env var |
 | `TestMaxRetries` | Constante accessible et correctement typee |
 
 ---
 
 ## Phase 2 — Modeles d'audit (erreurs + suivi d'execution)
 
-**Commit** : `feat(enedis): add EnedisFluxFileError and IngestionRun models (SF4)`
+**Commit** : `feat(enedis): add EnedisFluxFileError, IngestionRun models and PERMANENTLY_FAILED status (SF4)`
 
 ### Modifier
 
 | Fichier | Modification |
 |---------|-------------|
 | `backend/data_ingestion/enedis/models.py` | + classe `EnedisFluxFileError`, + classe `IngestionRun`, + relation `errors` sur `EnedisFluxFile` |
+| `backend/data_ingestion/enedis/enums.py` | + `PERMANENTLY_FAILED = "permanently_failed"` dans `FluxStatus` |
 
 ### Schema `EnedisFluxFileError`
 
@@ -124,7 +137,7 @@ Table: enedis_ingestion_run
   directory               String(500) NOT NULL
   recursive               Boolean NOT NULL default True
   dry_run                 Boolean NOT NULL default False
-  status                  String(20) NOT NULL default "running"  (running / completed / failed)
+  status                  String(20) NOT NULL default "running"  (running / completed / partial / failed)
   triggered_by            String(10) NOT NULL  (cli / api)
   files_received          Integer default 0
   files_parsed            Integer default 0
@@ -139,24 +152,39 @@ Table: enedis_ingestion_run
   updated_at              DateTime (TimestampMixin)
 ```
 
+Note : `files_max_retries` comptabilise tous les fichiers non-retentables (nouvellement PERMANENTLY_FAILED + deja en PERMANENTLY_FAILED).
+
+### Enum `FluxStatus` — extension
+
+```python
+class FluxStatus(str, Enum):
+    RECEIVED = "received"
+    PARSED = "parsed"
+    ERROR = "error"
+    SKIPPED = "skipped"
+    NEEDS_REVIEW = "needs_review"
+    PERMANENTLY_FAILED = "permanently_failed"  # NEW — MAX_RETRIES atteint
+```
+
 ### Tests
 
 | Fichier | Cas |
 |---------|-----|
 | `test_models.py` (extend) | `EnedisFluxFileError` : creation, cascade delete, ordering par `created_at` |
-| `test_models.py` (extend) | `IngestionRun` : creation, status transitions, default values, all counter columns |
+| `test_models.py` (extend) | `IngestionRun` : creation, status transitions (running→completed, running→partial, running→failed), default values, all counter columns |
+| `test_models.py` (extend) | `FluxStatus.PERMANENTLY_FAILED` : valeur accessible, distinct de ERROR |
 
 ---
 
-## Phase 3 — Correction audit d'erreurs + retry batch + dry-run dans le pipeline
+## Phase 3 — Correction audit d'erreurs + retry batch + dry-run + compteurs incrementaux
 
-**Commit** : `fix(enedis): preserve error history, enable batch retry and dry-run (SF4)`
+**Commit** : `fix(enedis): preserve error history, enable batch retry, dry-run and incremental run tracking (SF4)`
 
 ### Modifier
 
 | Fichier | Modification |
 |---------|-------------|
-| `backend/data_ingestion/enedis/pipeline.py` | (1) Fix retry dans `ingest_file()`. (2) Retry ERROR + garde MAX_RETRIES dans `ingest_directory()`. (3) Parametre `dry_run` dans `ingest_directory()`. |
+| `backend/data_ingestion/enedis/pipeline.py` | (1) Fix retry dans `ingest_file()`. (2) Retry ERROR + PERMANENTLY_FAILED + NEEDS_REVIEW dans `ingest_directory()`. (3) Parametre `dry_run`. (4) Parametre `run` pour compteurs incrementaux. |
 
 ### Changement 1 : Fix du retry dans `ingest_file()`
 
@@ -181,7 +209,7 @@ if existing.status == FluxStatus.ERROR:
 - Si `flux_file.error_message` non vide : creer `EnedisFluxFileError(flux_file_id=flux_file.id, error_message=flux_file.error_message)`
 - Sinon : no-op
 
-### Changement 2 : Retry ERROR dans `ingest_directory()`
+### Changement 2 : Retry ERROR + gestion PERMANENTLY_FAILED et NEEDS_REVIEW dans `ingest_directory()`
 
 **Localisation** : Phase 1 de `ingest_directory()`, le bloc `else` apres le check `if existing.status == FluxStatus.RECEIVED` qui compte actuellement tous les autres statuts comme `already_processed`.
 
@@ -194,6 +222,12 @@ else:
 
 **Apres** :
 ```python
+elif existing.status == FluxStatus.NEEDS_REVIEW:
+    # Data loaded, awaiting human review (republication) — no retry
+    counters["already_processed"] += 1
+elif existing.status == FluxStatus.PERMANENTLY_FAILED:
+    # Max retries reached — skip, needs manual intervention
+    counters["max_retries_reached"] += 1
 elif existing.status == FluxStatus.ERROR:
     error_count = len(existing.errors)
     if error_count < MAX_RETRIES:
@@ -202,16 +236,20 @@ elif existing.status == FluxStatus.ERROR:
         to_process.append((file_path, file_hash, existing))
         counters["retried"] += 1
     else:
-        logger.info("Skipping %s — max retries reached (%d)",
+        # Transition to PERMANENTLY_FAILED
+        existing.status = FluxStatus.PERMANENTLY_FAILED
+        session.commit()
+        logger.info("File %s reached MAX_RETRIES (%d) — marked PERMANENTLY_FAILED",
                      file_path.name, MAX_RETRIES)
         counters["max_retries_reached"] += 1
 else:
+    # PARSED, SKIPPED
     counters["already_processed"] += 1
 ```
 
 **Compteurs ajoutes** dans le dict de retour de `ingest_directory()` :
 - `retried: int` — fichiers ERROR retentes dans cette execution
-- `max_retries_reached: int` — fichiers ignores car MAX_RETRIES atteint
+- `max_retries_reached: int` — fichiers ignores car PERMANENTLY_FAILED (nouveau ou existant)
 
 **Import necessaire** : `from data_ingestion.enedis.config import MAX_RETRIES`
 
@@ -224,19 +262,72 @@ else:
 - Phase 2 : **skipped entierement** en mode dry_run
 - Retour : meme dict de compteurs (`received` = nombre de fichiers qui seraient traites, `retried` et `max_retries_reached` comme en mode normal, les compteurs de processing a 0)
 
+### Changement 4 : Parametre `run` pour compteurs incrementaux
+
+**Signature** : ajouter `run: IngestionRun | None = None` a `ingest_directory()`.
+
+**Comportement** :
+- Si `run` est fourni, les compteurs de l'IngestionRun sont mis a jour **apres chaque fichier traite** dans Phase 2 :
+```python
+# After each file in Phase 2 processing loop:
+if run:
+    if status == FluxStatus.PARSED:
+        run.files_parsed += 1
+    elif status == FluxStatus.ERROR:
+        run.files_error += 1
+    elif status == FluxStatus.SKIPPED:
+        run.files_skipped += 1
+    elif status == FluxStatus.NEEDS_REVIEW:
+        run.files_needs_review += 1
+    session.commit()  # commit incremental counter update
+```
+- Apres Phase 1 (scan), les compteurs de scan sont aussi mis a jour sur le run :
+```python
+if run:
+    run.files_received = counters["received"]
+    run.files_already_processed = counters["already_processed"]
+    run.files_retried = counters["retried"]
+    run.files_max_retries = counters["max_retries_reached"]
+    session.commit()
+```
+- A la fin de `ingest_directory()`, si tout s'est bien passe :
+```python
+if run:
+    run.status = "completed"
+    run.finished_at = datetime.now(timezone.utc)
+    session.commit()
+```
+- Si une exception non geree survient, elle remonte au caller (CLI/API) qui mettra `run.status = "partial"`.
+
+### Signature finale de `ingest_directory()`
+
+```python
+def ingest_directory(
+    dir_path: Path,
+    session: Session,
+    keys: list[tuple[bytes, bytes]],
+    *,
+    recursive: bool = True,
+    dry_run: bool = False,
+    run: IngestionRun | None = None,
+) -> dict[str, int]:
+```
+
 ### Tests
 
 | Fichier | Cas |
 |---------|-----|
-| `test_pipeline.py` (extend) | `TestErrorHistoryPreserved` : (1) echoue 2x -> 2 entries error history + `len(errors)==2`, (2) echoue puis reussit -> history preservee + status=PARSED, (3) decrypt error puis parse error -> 2 messages distincts |
-| `test_pipeline_full.py` (extend) | `TestErrorRetryInBatch` : fichier ERROR dans `ingest_directory()` est retente automatiquement, history preservee. Fichier avec `MAX_RETRIES` atteint est ignore (compteur `max_retries_reached`). |
+| `test_pipeline.py` (extend) | `TestErrorHistoryPreserved` : (1) echoue 2x → 2 entries error history + `len(errors)==2`, (2) echoue puis reussit → history preservee + status=PARSED, (3) decrypt error puis parse error → 2 messages distincts |
+| `test_pipeline_full.py` (extend) | `TestErrorRetryInBatch` : fichier ERROR dans `ingest_directory()` est retente, history preservee. Fichier avec MAX_RETRIES atteint → status PERMANENTLY_FAILED, compteur `max_retries_reached`. Fichier PERMANENTLY_FAILED dans un run suivant → skip + compteur `max_retries_reached`. |
+| `test_pipeline_full.py` (extend) | `TestNeedsReviewNoRetry` : fichier NEEDS_REVIEW dans `ingest_directory()` → comptabilise comme `already_processed`, pas retente |
 | `test_pipeline.py` (extend) | `TestDryRun` : `ingest_directory(dry_run=True)` retourne les bons compteurs sans modifier la DB |
+| `test_pipeline_full.py` (extend) | `TestIncrementalCounters` : passer un `IngestionRun` a `ingest_directory()`, verifier que les compteurs sont mis a jour apres chaque fichier (pas seulement a la fin). Simuler un crash mid-run et verifier que les compteurs refletent le travail partiel |
 
 ---
 
 ## Phase 4 — CLI
 
-**Commit** : `feat(enedis): add CLI for ingestion with dry-run and structured report (SF4)`
+**Commit** : `feat(enedis): add CLI for ingestion with dry-run, pre-flight validation and structured report (SF4)`
 
 ### Creer
 
@@ -253,7 +344,7 @@ python -m data_ingestion.enedis.cli ingest [--dir PATH] [--recursive] [--dry-run
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--dir PATH` | env var ou fallback | Repertoire source |
+| `--dir PATH` | env var `ENEDIS_FLUX_DIR` (obligatoire) | Repertoire source |
 | `--recursive` | Active | Scanner les sous-repertoires |
 | `--dry-run` | Desactive | Scan + classify sans ingerer |
 | `--verbose` | Desactive | Logging DEBUG |
@@ -271,15 +362,36 @@ from models.base import Base
 main() -> argparse -> dispatch
   cmd_ingest(args):
     _ensure_tables(engine)            # Base.metadata.create_all() + run_migrations()
+
+    # === PRE-FLIGHT VALIDATION ===
+    flux_dir = get_flux_dir(override=args.dir)      # ValueError if missing
+    keys = load_keys_from_env()                       # MissingKeyError if missing
+
     session = SessionLocal()
-    run = IngestionRun(triggered_by="cli", directory=..., dry_run=args.dry_run, ...)
+
+    # === CONCURRENCY GUARD ===
+    running = session.query(IngestionRun).filter_by(status="running").first()
+    if running:
+      print(f"ERROR: Run #{running.id} is already in progress (started {running.started_at})")
+      sys.exit(1)
+
+    # === CREATE RUN (only after all validations pass) ===
+    run = IngestionRun(triggered_by="cli", directory=str(flux_dir),
+                       recursive=args.recursive, dry_run=args.dry_run,
+                       started_at=datetime.now(timezone.utc))
     session.add(run) ; session.commit()
+
     try:
-      mode normal  -> get_flux_dir -> load_keys -> ingest_directory(session, ...) -> _print_report
-      mode dry-run -> get_flux_dir -> ingest_directory(session, ..., dry_run=True) -> _dry_run_report
-      update run (status="completed", counters, finished_at) -> session.commit()
-    except Exception:
-      run.status = "failed" ; run.error_message = str(exc) ; session.commit()
+      mode normal  -> ingest_directory(session, keys, ..., run=run) -> _print_report
+      mode dry-run -> ingest_directory(session, keys, ..., dry_run=True, run=run) -> _dry_run_report
+      # run.status already set to "completed" by ingest_directory()
+    except Exception as exc:
+      run.status = "partial"  # counters are already incremental
+      run.finished_at = datetime.now(timezone.utc)
+      run.error_message = str(exc)
+      session.commit()
+      print(f"ERROR: Run #{run.id} interrupted — status: partial")
+      traceback.print_exc()
       sys.exit(1)
     finally:
       session.close()
@@ -298,7 +410,7 @@ main() -> argparse -> dispatch
 
 ```
 === ENEDIS SGE INGESTION REPORT ===
-Run #42        triggered_by: cli
+Run #42        triggered_by: cli        status: completed
 Source:          /path/to/flux_enedis (recursive)
 Duration:        3.2s
 Files received:  45
@@ -307,9 +419,9 @@ Files received:  45
   error:         1
   needs_review:  1
 Retried:         2  (from previous errors)
-Max retries:     0  (skipped — limit reached)
+Max retries:     0  (permanently failed — skipped)
 Already processed: 46
-Measures stored:
+Measures stored (staging totals):
   R4x:    98,432
   R171:   12,310
   R50:     8,450
@@ -327,7 +439,7 @@ Run #43        triggered_by: cli  (dry-run)
 Source:          /path/to/flux_enedis (recursive)
 New files:       12
 Retryable errors: 2  (eligible for retry, < MAX_RETRIES)
-Max retries:     1   (will be skipped — limit reached)
+Max retries:     1   (permanently failed — will be skipped)
 Already processed: 46
 No data modifications made.
 ```
@@ -339,8 +451,10 @@ No data modifications made.
 | `TestCliIngest` | Mode normal avec fichiers synthetiques, compteurs corrects, IngestionRun created avec status=completed |
 | `TestCliDryRun` | Aucune modification sur les donnees d'ingestion, IngestionRun avec dry_run=True |
 | `TestCliVerbose` | Logging DEBUG active |
-| `TestCliMissingDir` | Repertoire inexistant -> erreur propre, sys.exit(1) |
-| `TestCliNoKeys` | Cles absentes -> erreur propre, sys.exit(1) |
+| `TestCliMissingDir` | ENEDIS_FLUX_DIR absent + no --dir → erreur propre "ENEDIS_FLUX_DIR environment variable is required", sys.exit(1), pas d'IngestionRun cree |
+| `TestCliMissingKeys` | Cles absentes → erreur propre, sys.exit(1), pas d'IngestionRun cree |
+| `TestCliConcurrentRun` | IngestionRun en status "running" existe deja → erreur propre, sys.exit(1), pas de nouveau run cree |
+| `TestCliPartialRun` | Simuler crash mid-ingestion → run.status="partial", compteurs incrementaux corrects |
 
 ---
 
@@ -367,7 +481,7 @@ No data modifications made.
 | Methode | Path | Description |
 |---------|------|-------------|
 | `POST` | `/api/enedis/ingest` | Declencher ingestion (sync, body JSON) |
-| `GET` | `/api/enedis/flux-files` | Liste paginee + filtres (status, flux_type) |
+| `GET` | `/api/enedis/flux-files` | Liste paginee + filtres (status incluant PERMANENTLY_FAILED, flux_type) |
 | `GET` | `/api/enedis/stats` | Stats agregees (fichiers, mesures, PRMs, dernier run) |
 | `GET` | `/api/enedis/flux-files/{id}` | Detail fichier + header_raw + error history |
 
@@ -376,11 +490,13 @@ No data modifications made.
 **Ingestion :**
 ```python
 IngestRequest     { directory?, recursive=True, dry_run=False }
-IngestResponse    { run_id, received, parsed, needs_review, skipped, error,
+IngestResponse    { run_id, status, received, parsed, needs_review, skipped, error,
                     retried, max_retries_reached, already_processed,
                     errors: [IngestErrorDetail], duration_seconds, dry_run }
 IngestErrorDetail { filename, error_message }
 ```
+
+Note : `IngestResponse` ne contient PAS de volumes de mesures — ceux-ci sont des totaux staging disponibles via GET /stats.
 
 **Flux files :**
 ```python
@@ -405,41 +521,67 @@ LastIngestion    { run_id, timestamp, files_count, triggered_by }
 
 **Logique `LastIngestion`** : query `IngestionRun` le plus recent avec `status='completed'` et `dry_run=False`, ordonne par `finished_at DESC`, limit 1. Champ nullable dans `StatsResponse` (null si aucune ingestion reussie).
 
-**Note `PrmStats`** : la requete exacte (UNION DISTINCT de `point_id` sur les 4 tables mesure) est laissee a l'architecte d'implementation. Hint : `union_all()` sur `select(distinct(Table.point_id))` pour chaque table.
+**Note `PrmStats`** : la requete exacte (UNION DISTINCT de `point_id` sur les 4 tables mesure) est laissee a l'architecte d'implementation. Hint : `union_all()` sur `select(distinct(Table.point_id))` pour chaque table. Dans le POC, la liste PRM est globale. En production, filtrer par contrat/portefeuille — point d'attention futur.
 
 ### Pattern de l'endpoint `POST /api/enedis/ingest`
 
 ```python
 @router.post("/ingest", response_model=IngestResponse)
 def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
-    flux_dir = get_flux_dir(override=body.directory)
-    keys = load_keys_from_env()
+    # === PRE-FLIGHT VALIDATION ===
+    try:
+        flux_dir = get_flux_dir(override=body.directory)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
-    # 1. Create IngestionRun record
+    try:
+        keys = load_keys_from_env()
+    except MissingKeyError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    # === CONCURRENCY GUARD ===
+    running = db.query(IngestionRun).filter_by(status="running").first()
+    if running:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Run #{running.id} is already in progress (started {running.started_at})"
+        )
+
+    # === CREATE RUN (only after all validations pass) ===
     run = IngestionRun(
         triggered_by="api", directory=str(flux_dir),
         recursive=body.recursive, dry_run=body.dry_run,
+        started_at=datetime.now(timezone.utc),
     )
     db.add(run)
     db.commit()
 
-    # 2. Execute pipeline (pipeline commits per-file internally — by design)
+    # === EXECUTE PIPELINE ===
     t0 = time.time()
-    counters = ingest_directory(
-        flux_dir, db, keys,
-        recursive=body.recursive, dry_run=body.dry_run,
-    )
+    try:
+        counters = ingest_directory(
+            flux_dir, db, keys,
+            recursive=body.recursive, dry_run=body.dry_run,
+            run=run,
+        )
+    except Exception as exc:
+        # Incremental counters are already committed
+        run.status = "partial"
+        run.finished_at = datetime.now(timezone.utc)
+        run.error_message = str(exc)
+        db.commit()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Run #{run.id} interrupted (status: partial) — {str(exc)}"
+        )
     duration = time.time() - t0
 
-    # 3. Update IngestionRun with results
-    run.status = "completed"
-    run.finished_at = datetime.now(timezone.utc)
-    run.files_received = counters["received"]
-    # ... (all counters)
-    db.commit()
+    # run.status already set to "completed" by ingest_directory()
 
-    # 4. Return response with run_id
-    return IngestResponse(run_id=run.id, duration_seconds=round(duration, 2), ...)
+    return IngestResponse(
+        run_id=run.id, status=run.status,
+        duration_seconds=round(duration, 2), ...
+    )
 ```
 
 ### Wiring
@@ -454,9 +596,11 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
 
 | Classe | Cas |
 |--------|-----|
-| `TestIngestEndpoint` | POST normal (IngestionRun created, run_id dans la reponse), POST dry-run, repertoire inexistant |
-| `TestFluxFilesEndpoint` | Liste paginee, filtre status, filtre flux_type |
-| `TestStatsEndpoint` | Stats correctes apres ingestion, last_ingestion populated avec run_id |
+| `TestIngestEndpoint` | POST normal (IngestionRun created, run_id + status dans la reponse), POST dry-run, repertoire inexistant → 422 |
+| `TestIngestPreFlight` | POST sans cles → 422 avec message explicite, POST sans ENEDIS_FLUX_DIR → 422, POST avec run concurrent → 409 avec run_id existant |
+| `TestIngestPartial` | Simuler erreur mid-ingestion → status "partial", compteurs incrementaux dans la reponse 500 |
+| `TestFluxFilesEndpoint` | Liste paginee, filtre status (incluant PERMANENTLY_FAILED), filtre flux_type |
+| `TestStatsEndpoint` | Stats correctes apres ingestion, last_ingestion populated avec run_id, PRM count et identifiers |
 | `TestFluxFileDetailEndpoint` | Detail + header_raw, detail + error_history, 404 |
 
 ---
@@ -503,9 +647,9 @@ cd promeos-poc && ./backend/venv/bin/pytest backend/tests/ backend/data_ingestio
 
 | # | Commit | Phase |
 |---|--------|-------|
-| 0 | `docs(enedis): update SF4 spec v5 with full architecture decisions` | Spec |
+| 0 | `docs(enedis): update SF4 spec v6 with final architecture decisions` | Spec |
 | 1 | `feat(enedis): externalize flux directory config (SF4)` | Config |
-| 2 | `feat(enedis): add EnedisFluxFileError and IngestionRun models (SF4)` | Models |
-| 3 | `fix(enedis): preserve error history, enable batch retry and dry-run (SF4)` | Pipeline |
-| 4 | `feat(enedis): add CLI for ingestion with dry-run and structured report (SF4)` | CLI |
+| 2 | `feat(enedis): add EnedisFluxFileError, IngestionRun models and PERMANENTLY_FAILED status (SF4)` | Models |
+| 3 | `fix(enedis): preserve error history, enable batch retry, dry-run and incremental run tracking (SF4)` | Pipeline |
+| 4 | `feat(enedis): add CLI for ingestion with dry-run, pre-flight validation and structured report (SF4)` | CLI |
 | 5 | `feat(enedis): add REST API endpoints and wire router into app (SF4)` | API + Wiring |
