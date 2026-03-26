@@ -1,6 +1,6 @@
 # SF4 — Enedis SGE Operational Ingestion Pipeline
 
-> **Status**: Spec v6 — integre les decisions Q&A finales (concurrence, validation pre-flight, PERMANENTLY_FAILED, compteurs incrementaux)
+> **Status**: Spec v7 — integre les decisions revue finale (garde MAX_RETRIES dans ingest_file, dry-run sans mutation, statut failed unique, IngestionRunStatus enum)
 > **Plan d'implementation** : `docs/specs/plan-enedis-sge-4-implementation.md`
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion) — all complete on `feat/enedis-sge-ingestion`
 > **Out of scope**: Promotion staging → production (SF5). Pas de matching PRM→Site, pas d'ecriture dans les tables fonctionnelles (`Consommation`, `MeterReading`), pas de deduplication des republications. Pas d'endpoint de force-retry pour PERMANENTLY_FAILED (futur).
@@ -14,8 +14,8 @@
 | Retry automatique en batch | **Auto-retry avec garde `MAX_RETRIES`** (default 3) dans `ingest_directory()` | Un seul point d'entree fait tout. Les fichiers definitivement casses ne sont pas retentes indefiniment |
 | Fichiers PERMANENTLY_FAILED | **Nouveau statut `FluxStatus.PERMANENTLY_FAILED`** quand `MAX_RETRIES` atteint | Un data manager identifie d'un coup d'oeil les fichiers bloques. Forcer un retry = futur endpoint dedie |
 | Fichiers NEEDS_REVIEW | **Pas de retry automatique** — donnees deja chargees, en attente de review humaine | Traitement initial reussi, republication detectee. Pas un cas d'erreur |
-| Suivi d'execution | **Table `IngestionRun`** avec **compteurs incrementaux** mis a jour fichier par fichier | Si le run crashe, les compteurs refletent le travail reel. Statut "partial" plutot que compteurs a 0 |
-| Statuts IngestionRun | **running / completed / partial / failed** | "partial" = crash en cours d'execution (compteurs fiables). "failed" = erreur apres creation du run mais avant tout traitement |
+| Suivi d'execution | **Table `IngestionRun`** avec **compteurs incrementaux** mis a jour fichier par fichier | Si le run crashe, les compteurs refletent le travail reel. Statut "failed" avec compteurs fiables |
+| Statuts IngestionRun | **running / completed / failed** | "failed" = crash ou erreur apres creation du run. Les compteurs incrementaux refletent le travail effectue avant le crash |
 | Session API | **`Depends(get_db)`** standard + `IngestionRun` pour tracabilite | Pipeline commits per-file (by design). Pas de session cachee, tout est tracable via `IngestionRun` |
 | Concurrence | **Verrou simple** : refuser un nouveau run si un run est en status "running" | Evite les compteurs incoherents si deux runs traitent le meme repertoire en parallele |
 | Validation pre-flight | **Verifier cles + repertoire AVANT de creer l'IngestionRun** | Fail fast : pas de run inutile dans l'historique si les conditions minimales ne sont pas remplies |
@@ -89,7 +89,7 @@ python -m data_ingestion.enedis.cli ingest [OPTIONS]
 - Detail des skips par type de flux (R172, X14, HDM)
 - Volume de mesures par table staging (R4x, R171, R50, R151) — requetes DB post-ingestion, pattern identique a `ingest_real_db.py`
 - Liste des erreurs eventuelles (filename + message)
-- Statut final du run (completed / partial)
+- Statut final du run (completed / failed)
 
 **Mode dry-run** — rapport de ce qui *serait* fait :
 - Nombre de fichiers nouveaux par type de flux
@@ -123,7 +123,7 @@ Exposer le declenchement d'ingestion et la consultation d'etat via REST. Doit fo
   - Pas de run concurrent en status "running" — sinon **409** avec `run_id` du run en cours
 - Execution synchrone (suffisant pour le volume POC ~100 fichiers, <10 secondes)
 - Cree un enregistrement `IngestionRun` (`triggered_by='api'`) **apres** validation pre-flight reussie
-- **Compteurs mis a jour incrementalement** pendant l'execution : si le run crashe, l'IngestionRun passe en status "partial" avec les compteurs refletant le travail effectue
+- **Compteurs mis a jour incrementalement** pendant l'execution : si le run crashe, l'IngestionRun passe en status "failed" avec les compteurs refletant le travail effectue
 - Reponse : `run_id`, compteurs par statut, liste des erreurs, duree d'execution, statut du run
 - Le mode dry-run retourne les memes compteurs sans effectuer de modification sur les donnees
 
@@ -194,6 +194,9 @@ Ce comportement est non-auditable et empeche toute analyse statistique des erreu
 - Le nombre de tentatives est derive de `len(flux_file.errors)` — pas de colonne dediee
 - En mode batch (`ingest_directory()`), les fichiers ERROR sont **automatiquement retentes** si `len(errors) < MAX_RETRIES`. Au-dela, leur statut passe a `PERMANENTLY_FAILED`
 - Les fichiers `NEEDS_REVIEW` ne sont **pas retentes** automatiquement : leurs donnees ont ete chargees avec succes, seule une analyse manuelle est requise (republication detectee)
+- `ingest_file()` refuse de traiter un fichier `PERMANENTLY_FAILED` (skip silencieux, meme comportement que PARSED/SKIPPED)
+- `ingest_file()` verifie `len(errors) >= MAX_RETRIES` avant de retenter un fichier ERROR — si la limite est atteinte, le fichier passe en `PERMANENTLY_FAILED` sans retry. Cette garde est necessaire pour les appels directs (futur endpoint UX de re-ingestion fichier par fichier)
+- En mode `dry_run`, la transition ERROR → `PERMANENTLY_FAILED` n'est pas commitee : le dry-run compte les fichiers concernes sans les modifier
 
 ### Nouveau statut : PERMANENTLY_FAILED
 
@@ -207,15 +210,14 @@ Un fichier atteint `PERMANENTLY_FAILED` quand le nombre d'erreurs archivees atte
 
 Chaque execution (CLI ou API) cree un enregistrement `IngestionRun`. Les compteurs sont mis a jour **fichier par fichier** pendant l'execution (pas uniquement a la fin). Ce design a trois consequences :
 
-1. **Si le run crashe** : les compteurs refletent le travail reel effectue. Le statut passe a `partial`. Les fichiers traites avant le crash sont bien en base (commits per-file).
+1. **Si le run crashe** : les compteurs refletent le travail reel effectue. Le statut passe a `failed`. Les fichiers traites avant le crash sont bien en base (commits per-file).
 2. **Run suivant** : les fichiers deja traites sont vus comme `already_processed`. Seuls les fichiers restants sont traites. Pas de reprocessing inutile grace a l'idempotence SHA256.
 3. **Audit** : on peut analyser sur la duree les patterns d'execution partielle pour identifier des problemes recurrents (timeout, memoire, fichier corrompu specifique).
 
 Statuts possibles d'un `IngestionRun` :
 - `running` — en cours d'execution
 - `completed` — tous les fichiers traites avec succes (certains peuvent etre en erreur, mais le run lui-meme a termine)
-- `partial` — interruption en cours d'execution, compteurs fiables pour la partie traitee
-- `failed` — erreur apres creation du run mais avant tout traitement de fichier
+- `failed` — interruption ou erreur apres creation du run. Les compteurs incrementaux refletent le travail effectue avant le crash
 
 ---
 
@@ -248,3 +250,4 @@ Le nouveau router Enedis est integre dans l'application via le meme pattern que 
 - **Endpoint force-retry** : permettre au data manager de remettre un fichier PERMANENTLY_FAILED en ERROR pour forcer un nouveau cycle de retry.
 - **Filtrage PRM par contrat** : adapter GET /stats pour filtrer les PRMs par portefeuille/contrat en cours de visualisation.
 - **Suppression scripts ad-hoc** : cleanup de `backend/data_ingestion/enedis/scripts/` une fois SF4 valide.
+- **Cleanup conftest.py** : remplacer `_FLUX_DIR` hardcode dans `conftest.py` par `get_flux_dir()` de `config.py`.
