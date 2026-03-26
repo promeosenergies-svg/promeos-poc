@@ -158,7 +158,7 @@ export default function CockpitHero({
             'Données annuelles en cours de collecte'
           ) : (
             <>
-              Objectif 2026 : <span className="text-blue-600">{trajectoire?.objectif2026Pct ?? −25}%</span>
+              Objectif 2026 : <span className="text-blue-600">{trajectoire?.objectif2026Pct ?? -25}%</span>
               {isRetard && <span className="text-red-500 ml-1">· retard</span>}
             </>
           )}
