@@ -202,7 +202,7 @@ class TestTariffModel:
         tariff = SiteTariffProfile(site_id=site.id)
         db_session.add(tariff)
         db_session.flush()
-        assert tariff.price_ref_eur_per_kwh == 0.18
+        assert tariff.price_ref_eur_per_kwh == 0.068
 
 
 # ==============================================
@@ -304,7 +304,7 @@ class TestTariffAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["is_default"] is True
-        assert data["price_ref_eur_per_kwh"] == 0.18
+        assert data["price_ref_eur_per_kwh"] == 0.068
 
     def test_put_tariff(self, client, db_session):
         _, site = _create_org_site(db_session)
@@ -413,7 +413,7 @@ class TestTariffAwareLoss:
                 )
 
     def test_loss_eur_fallback_default(self, db_session):
-        """Without tariff profile, should use DEFAULT_PRICE_REF_KWH (0.18)."""
+        """Without tariff profile, should use DEFAULT_PRICE_REF_KWH (0.068)."""
         from services.consumption_diagnostic import run_diagnostic
 
         _, site = _create_org_site(db_session)
@@ -423,7 +423,7 @@ class TestTariffAwareLoss:
         insights = run_diagnostic(db_session, site.id)
         for ci in insights:
             if ci.estimated_loss_kwh and ci.estimated_loss_kwh > 0:
-                expected_eur = round(ci.estimated_loss_kwh * 0.18, 0)
+                expected_eur = round(ci.estimated_loss_kwh * 0.068, 0)
                 assert ci.estimated_loss_eur == expected_eur
 
     def test_price_ref_in_metrics(self, db_session):
@@ -438,7 +438,7 @@ class TestTariffAwareLoss:
         for ci in insights:
             metrics = json.loads(ci.metrics_json) if ci.metrics_json else {}
             assert "price_ref_eur_kwh" in metrics
-            assert metrics["price_ref_eur_kwh"] == 0.18
+            assert metrics["price_ref_eur_kwh"] == 0.068
 
 
 # ==============================================

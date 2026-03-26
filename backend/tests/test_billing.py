@@ -480,11 +480,50 @@ class TestBillingService:
 
         price_e, src_e = get_reference_price(db_session, site.id, "elec")
         price_g, src_g = get_reference_price(db_session, site.id, "gaz")
-        # Source unique : config/default_prices.py (0.18 elec, 0.09 gaz)
-        assert price_e == 0.18
+        # Source unique : config/default_prices.py (0.068 elec, 0.045 gaz)
+        assert price_e == 0.068
         assert src_e == "default_elec"
-        assert price_g == 0.09
+        assert price_g == 0.045
         assert src_g == "default_gaz"
+
+    def test_ref_price_uses_spot_when_no_contract(self, db_session):
+        """get_reference_price uses mkt_prices spot average when no contract."""
+        from services.billing_service import get_reference_price
+        from models.market_models import (
+            MktPrice,
+            MarketDataSource,
+            MarketType,
+            ProductType,
+            PriceZone,
+            Resolution,
+        )
+        from datetime import datetime, timezone, timedelta
+
+        _, site = _create_org_site(db_session)
+
+        # Seed 24 hours of spot prices at 85 EUR/MWh
+        now = datetime.now(timezone.utc)
+        for h in range(24):
+            db_session.add(
+                MktPrice(
+                    source=MarketDataSource.MANUAL,
+                    market_type=MarketType.SPOT_DAY_AHEAD,
+                    product_type=ProductType.HOURLY,
+                    zone=PriceZone.FR,
+                    delivery_start=now - timedelta(hours=h),
+                    delivery_end=now - timedelta(hours=h - 1),
+                    price_eur_mwh=85.0,
+                    resolution=Resolution.PT60M,
+                    fetched_at=now,
+                )
+            )
+        db_session.commit()
+
+        price, source = get_reference_price(db_session, site.id, "elec")
+        # 85 EUR/MWh = 0.085 EUR/kWh
+        assert source == "market_epex_spot_30d"
+        assert 0.05 < price < 0.15  # Fourchette raisonnable
+        assert price != 0.068  # Pas le fallback
 
     def test_rule_metrics_have_inputs(self, db_session):
         """V1.1: all triggered rules include 'inputs' in metrics."""

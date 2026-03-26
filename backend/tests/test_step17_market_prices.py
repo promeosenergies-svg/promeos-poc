@@ -152,12 +152,12 @@ class TestGetReferencePriceFallback:
     def test_fallback_elec_uses_config(self):
         from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
-        assert DEFAULT_PRICE_ELEC_EUR_KWH == 0.18
+        assert DEFAULT_PRICE_ELEC_EUR_KWH == 0.068
 
     def test_fallback_gaz_uses_config(self):
         from config.default_prices import DEFAULT_PRICE_GAZ_EUR_KWH
 
-        assert DEFAULT_PRICE_GAZ_EUR_KWH == 0.09
+        assert DEFAULT_PRICE_GAZ_EUR_KWH == 0.045
 
 
 # ============================================================

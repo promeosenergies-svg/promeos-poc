@@ -250,13 +250,13 @@ class TestExistingSitesUnchanged:
         from services.billing_seed import KWH_ELEC, PRICE_REF_ELEC
 
         assert KWH_ELEC == 9000
-        assert PRICE_REF_ELEC == 0.18
+        assert PRICE_REF_ELEC == 0.068
 
     def test_lyon_gaz_constants(self):
         from services.billing_seed import KWH_GAZ, PRICE_REF_GAZ
 
         assert KWH_GAZ == 6000
-        assert PRICE_REF_GAZ == 0.09
+        assert PRICE_REF_GAZ == 0.045
 
     def test_paris_anomalies_unchanged(self):
         from services.billing_seed import (

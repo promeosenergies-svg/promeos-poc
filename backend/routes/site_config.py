@@ -21,7 +21,7 @@ DEFAULT_OPEN_TIME = "08:00"
 DEFAULT_CLOSE_TIME = "19:00"
 DEFAULT_OPEN_DAYS = "0,1,2,3,4"
 DEFAULT_TIMEZONE = "Europe/Paris"
-DEFAULT_PRICE_REF = 0.18
+DEFAULT_PRICE_REF = 0.068  # Aligne sur config/default_prices.py (EPEX Spot moyen 2025)
 
 VALID_DAY_KEYS = {"0", "1", "2", "3", "4", "5", "6"}
 HH_MM_RE = re.compile(r"^\d{2}:\d{2}$")

@@ -17,23 +17,23 @@ class TestDefaultPrices:
     def test_default_price_elec(self):
         from config.default_prices import get_default_price
 
-        assert get_default_price("ELEC") == 0.18
+        assert get_default_price("ELEC") == 0.068
 
     def test_default_price_gaz(self):
         from config.default_prices import get_default_price
 
-        assert get_default_price("GAZ") == 0.09
+        assert get_default_price("GAZ") == 0.045
 
     def test_default_price_fallback(self):
         from config.default_prices import get_default_price
 
-        assert get_default_price("UNKNOWN") == 0.18
+        assert get_default_price("UNKNOWN") == 0.068
 
     def test_constants_exported(self):
         from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_GAZ_EUR_KWH
 
-        assert DEFAULT_PRICE_ELEC_EUR_KWH == 0.18
-        assert DEFAULT_PRICE_GAZ_EUR_KWH == 0.09
+        assert DEFAULT_PRICE_ELEC_EUR_KWH == 0.068
+        assert DEFAULT_PRICE_GAZ_EUR_KWH == 0.045
 
 
 class TestTurpeUnified:

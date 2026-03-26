@@ -138,7 +138,7 @@ class TestReferencePrice:
         db.commit()
 
         price, source = get_reference_price(db, site.id, "elec")
-        assert price == 0.18  # Source unique : config/default_prices.py
+        assert price == 0.068  # Source unique : config/default_prices.py
         assert source == "default_elec"
 
     def test_contract_beats_tariff(self, db):

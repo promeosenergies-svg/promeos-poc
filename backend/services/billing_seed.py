@@ -146,7 +146,7 @@ def _add_elec_invoice(db: Session, site_id: int, contract_id: int, y: int, m: in
 
     # Anomalie R1 : surcharge 45%
     if (y, m) == ANOMALY_SHADOW_GAP:
-        total_eur = round(KWH_ELEC * PRICE_REF_ELEC * 1.45, 2)  # 2349.00
+        total_eur = round(KWH_ELEC * PRICE_REF_ELEC * 1.45, 2)  # 887.40 (9000 * 0.068 * 1.45)
         energy_line = round(total_eur - network_line - tax_line, 2)
 
     inv = EnergyInvoice(
