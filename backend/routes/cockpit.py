@@ -448,9 +448,15 @@ def get_cockpit_trajectory(
     reel_mwh = []
     objectif_mwh = []
 
+    current_year_val = datetime.now(tz=None).year
+    current_month = datetime.now(tz=None).month
     for y in annees:
         reel = reel_by_year.get(y)
-        reel_mwh.append(round(reel / 1000, 1) if reel else None)
+        # Exclure l'année en cours si données partielles (< 10 mois)
+        if y == current_year_val and current_month < 10:
+            reel_mwh.append(None)  # pas de point réel pour année partielle
+        else:
+            reel_mwh.append(round(reel / 1000, 1) if reel else None)
         obj_ratio = _interpolate_dt_target(y)
         objectif_mwh.append(round(ref_kwh * (1 + obj_ratio) / 1000, 1))
 
@@ -479,14 +485,16 @@ def get_cockpit_trajectory(
     )
     _savings_kwh = sum(a.estimated_gain_eur or 0 for a in _proj_actions) / 0.068 if _proj_actions else 0
     projection_mwh = []
+    _cy = datetime.now(tz=None).year
     if _savings_kwh > 0:
-        _cy = datetime.now(tz=None).year
-        _lr = reel_by_year.get(_cy - 1) or reel_by_year.get(_cy)
+        # Base de projection = dernière année COMPLÈTE (pas l'année en cours partielle)
+        _lr = reel_by_year.get(_cy - 1)
         for y in annees:
             if y < _cy or _lr is None:
                 projection_mwh.append(None)
             else:
-                projection_mwh.append(max(0, round((_lr - _savings_kwh * (y - _cy + 1)) / 1000, 1)))
+                # Les savings s'appliquent UNE FOIS (réduction permanente), pas cumulativement
+                projection_mwh.append(max(0, round((_lr - _savings_kwh) / 1000, 1)))
 
     return {
         "ref_year": ref_year,
