@@ -431,7 +431,9 @@ def actions_summary(
 
     # Top 5 open by priority
     open_items = [a for a in items if a.status in (ActionStatus.OPEN, ActionStatus.IN_PROGRESS)]
-    open_items.sort(key=lambda a: (a.priority or 5, a.due_date or "9999-12-31"))
+    from datetime import date as _date
+
+    open_items.sort(key=lambda a: (a.priority or 5, a.due_date or _date(9999, 12, 31)))
     top5 = [_serialize_action(a) for a in open_items[:5]]
 
     return {
