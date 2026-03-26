@@ -10,6 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from middleware.request_context import RequestContextMiddleware
+
+# Register Market Data V2 models (tables created via Base.metadata.create_all)
+from models.market_models import *  # noqa: F401
 from middleware.error_handler import register_error_handlers
 from services.json_logger import setup_logging
 
@@ -77,6 +80,9 @@ from app.kb.router import router as kb_router
 
 # Import Bill Intelligence router
 from app.bill_intelligence.router import router as bill_router
+
+# Import Market Data V2 router (spot, forwards, tariffs, freshness)
+from routes.market_data import router as market_data_router
 
 # Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
@@ -160,6 +166,7 @@ app.include_router(action_templates_router)  # V113 Action Templates
 app.include_router(onboarding_stepper_router)  # V113 Onboarding Stepper
 app.include_router(consumption_unified_router)  # A.1 Unified Consumption (metered/billed/reconciled)
 app.include_router(market_router)  # M.1 Market Prices (EPEX Spot FR)
+app.include_router(market_data_router)  # M.1b Market Data V2 (spot, forwards, tariffs, freshness)
 app.include_router(referentiel_router)  # M.2 Référentiel Tarifs (TURPE/taxes YAML)
 app.include_router(patrimoine_crud_router)  # O.3 CRUD Organisation/Entité/Portefeuille/Site
 app.include_router(geocoding_router)  # Géocodage BAN (sites → lat/lng)

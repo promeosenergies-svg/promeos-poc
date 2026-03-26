@@ -1,0 +1,119 @@
+# Referentiel tarifs reglementes France — Version 2026-02
+# Source: CRE, Loi de Finances 2025, EPEX Spot encheres
+# Mis a jour: 2026-02-01
+# Prochain review: 2026-08-01 (TURPE annuel) ou changement reglementaire
+
+version: "2026-02"
+last_updated: "2026-02-01"
+next_review: "2026-08-01"
+
+cspe:
+  # Accise sur l'electricite (ex-TICFE/CSPE)
+  # Source: Code des impositions, arrete fev 2026
+  source: "Code des impositions sur les biens et services"
+  source_url: "https://www.legifrance.gouv.fr"
+  rates:
+    - component: CSPE_C5
+      value: 30.35
+      unit: EUR_MWH
+      applies_to_profile: "C5"
+      applies_to_power_range: "<=36kVA"
+      notes: "Menages et assimiles, +1.23% vs 2025"
+    - component: CSPE_C4
+      value: 26.58
+      unit: EUR_MWH
+      applies_to_profile: "C4"
+      applies_to_power_range: "36-250kVA"
+      notes: "PME, +3.06% vs 2025"
+    - component: CSPE_C2
+      value: 26.58
+      unit: EUR_MWH
+      applies_to_profile: "C2"
+      applies_to_power_range: ">250kVA"
+      notes: "Grands sites"
+    - component: CSPE_ELECTRO_INTENSIF
+      value: 0.50
+      unit: EUR_MWH
+      applies_to_profile: "ELECTRO_INTENSIF"
+      notes: "Taux plancher UE, eligibilite >6 kWh/EUR VA"
+  valid_from: "2026-02-01"
+  valid_to: null
+
+capacity:
+  # Mecanisme de capacite — encheres EPEX Spot
+  source: "EPEX Spot encheres capacite"
+  source_url: "https://www.edf.fr/entreprises/electricite-gaz/mecanisme-de-capacite"
+  values:
+    - component: CAPACITY_PRICE_MW
+      value: 98.6
+      unit: EUR_MW
+      notes: "Derniere enchere dec 2025 pour livraison 2026, -96% vs oct"
+    - component: CAPACITY_COEFFICIENT
+      value: 1.0
+      unit: COEFFICIENT
+      notes: "Coefficient de securite RTE 2026"
+  valid_from: "2026-01-01"
+  valid_to: "2026-10-31"
+  next_mechanism: "Centralise RTE a partir nov 2026, 1ere enchere juil 2026"
+
+vnu:
+  # Versement Nucleaire Universel — Post-ARENH
+  # Source: Loi de Finances 2025, art. 17
+  source: "LF 2025 art. 17, decrets 2025-909/910, CRE 2025-268"
+  values:
+    - component: VNU_SEUIL_BAS
+      value: 78.0
+      unit: EUR_MWH
+      notes: "Seuil declenchement prelevement EDF"
+    - component: VNU_SEUIL_HAUT
+      value: 110.0
+      unit: EUR_MWH
+      notes: "Seuil prelevement majore"
+    - component: VNU_TAUX_PRELEVEMENT
+      value: 50.0
+      unit: PCT
+      notes: "50% des revenus excedentaires entre seuil bas et haut"
+  valid_from: "2026-01-01"
+  valid_to: null
+  cost_complet_nucleaire: 60.3
+  cost_complet_unit: EUR_MWH
+  cost_revision_next: "2029"
+  notes: |
+    VNU ne se declenche que si revenus nucleaires EDF > seuil bas.
+    Estimation CRE 2026: revenus ~66 EUR/MWh -> VNU probablement non active.
+    Redistribution ex-post via guichet fournisseurs.
+
+cee:
+  # Certificats d'Economies d'Energie
+  source: "Obligation fournisseur, estimation marche"
+  values:
+    - component: CEE_OBLIGATION
+      value: 5.0
+      unit: EUR_MWH
+      notes: "Estimation moyenne pass-through, fourchette 3-7 EUR/MWh"
+  valid_from: "2026-01-01"
+  valid_to: "2026-12-31"
+
+cta:
+  # Contribution Tarifaire d'Acheminement
+  source: "CRE"
+  values:
+    - component: CTA_TAUX
+      value: 27.04
+      unit: PCT
+      notes: "27.04% de la part fixe TURPE HTA, finance retraites IEG"
+  valid_from: "2026-01-01"
+  valid_to: null
+
+tva:
+  source: "Code general des impots"
+  values:
+    - component: TVA_REDUIT
+      value: 5.5
+      unit: PCT
+      notes: "Supprime sur abonnements menages depuis aout 2025, reste pour CTA"
+    - component: TVA_NORMAL
+      value: 20.0
+      unit: PCT
+  valid_from: "2025-08-01"
+  valid_to: null
