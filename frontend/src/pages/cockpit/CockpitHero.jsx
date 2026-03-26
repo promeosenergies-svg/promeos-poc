@@ -79,70 +79,85 @@ export default function CockpitHero({
       className="bg-white border border-gray-200 rounded-xl grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100"
       data-testid="cockpit-hero"
     >
-      {/* ── Card 1 : Score santé ── */}
+      {/* ── Card 1 : Conformité réglementaire (jauge + détails) ── */}
       <div
-        className="p-4 flex flex-col gap-2 cursor-pointer hover:bg-blue-50/30 transition-colors rounded-l-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-blue-50/30 transition-colors rounded-l-xl"
         data-testid="gauge-conformite"
         onClick={() => navigate('/conformite')}
         role="button"
         tabIndex={0}
-        aria-label="Voir le score de conformité"
       >
-        <span className="text-xs text-gray-500">Score santé</span>
-        <div className="flex items-center gap-3">
-          <svg viewBox="0 0 120 70" width={48} height={28} className="shrink-0">
-            <path
-              d="M 15 60 A 45 45 0 0 1 105 60"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth={10}
-              strokeLinecap="round"
-            />
-            <path
-              d="M 15 60 A 45 45 0 0 1 105 60"
-              fill="none"
-              stroke={color}
-              strokeWidth={10}
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={dashOffset}
-              className="transition-all duration-700"
-            />
-          </svg>
-          <div>
-            <span className="text-2xl font-bold text-gray-900">{score ?? '—'}</span>
-            <div className="text-xs font-medium" style={{ color }}>
-              {label}
-            </div>
-          </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            Conformité réglementaire
+          </span>
           {onEvidence && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEvidence('conformite');
-              }}
-              className="ml-auto text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              onClick={(e) => { e.stopPropagation(); onEvidence('conformite'); }}
+              className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               aria-label="Pourquoi ce chiffre ?"
             >
               <HelpCircle size={14} />
             </button>
           )}
         </div>
-        <div className="text-[10px] text-gray-400 flex items-center gap-1">
-          <span className="font-medium text-blue-600">DT 45%</span>
-          <span>·</span>
-          <span className="font-medium text-blue-500">BACS 30%</span>
-          <span>·</span>
-          <span className="font-medium text-blue-400">APER 25%</span>
-          <span>→</span>
+        <div className="flex items-center gap-3">
+          {/* Jauge SVG conservée */}
+          <svg viewBox="0 0 120 70" width={48} height={28} className="shrink-0">
+            <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="#e5e7eb" strokeWidth={10} strokeLinecap="round" />
+            <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke={color} strokeWidth={10} strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE} strokeDashoffset={dashOffset} className="transition-all duration-700" />
+          </svg>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xl font-bold text-gray-900">{score ?? '—'} / 100</span>
+            <span className={`w-2 h-2 rounded-full shrink-0 ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} />
+          </div>
         </div>
+        <p className="text-xs text-gray-500">
+          DT 45% · BACS 30% · APER 25% · {kpis?.totalSites ?? 0} sites
+        </p>
+        <p className="text-[10px] text-gray-400">
+          Source : {kpis?.conformiteSource ?? 'compliance_engine'} · Confiance : moyenne
+        </p>
       </div>
 
-      {/* ── Card 2 : Risque financier ── */}
-      <div className="p-4 flex flex-col gap-2" data-testid="kpi-risque">
-        <span className="text-xs text-gray-500">Risque financier</span>
-        <span className="text-2xl font-bold text-amber-600">{fmtEur(kpis?.risqueTotal)}</span>
-        <span className="text-[10px] text-gray-400">pénalités + anomalies billing</span>
+      {/* ── Card 2 : Risque financier (détaillé) ── */}
+      <div
+        className="p-4 flex flex-col gap-1.5 cursor-pointer hover:bg-amber-50/30 transition-colors"
+        data-testid="kpi-risque"
+        onClick={() => navigate('/actions')}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+            Risque financier
+          </span>
+          {onEvidence && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEvidence('risque'); }}
+              className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              aria-label="Détail risque"
+            >
+              <HelpCircle size={14} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl font-bold text-amber-600">{fmtEur(kpis?.risqueTotal)}</span>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`} />
+        </div>
+        <p className="text-xs text-gray-500">
+          {kpis?.totalSites ?? 0} sites concernés (périmètre sélectionné)
+        </p>
+        {(kpis?.risqueTotal ?? 0) > 0 && (
+          <p className="text-[10px] text-red-600">
+            Risque total {fmtEur(kpis?.risqueTotal)}. Actions correctives urgentes.
+          </p>
+        )}
+        <p className="text-[10px] text-gray-400">
+          Source : {kpis?.conformiteSource ?? 'compliance_engine'} · Confiance : moyenne
+        </p>
       </div>
 
       {/* ── Card 3 : Réduction DT cumulée ── */}
