@@ -2,18 +2,23 @@
 PROMEOS — Demo Seed: Market Prices (EPEX Spot FR)
 Generates 24 months of deterministic daily EPEX Spot FR prices.
 Period: 2024-01-01 → 2025-12-31 (730 days).
+
+Source de vérité : table mkt_prices (MktPrice) via market_models.py.
 """
 
 import math
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from models.market_price import MarketPrice
-
-
-SOURCE = "Seed PROMEOS — basé sur tendances EPEX 2024-2025"
+from models.market_models import (
+    MktPrice,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    Resolution,
+)
 
 
 def _generate_prices(start_date: date, end_date: date) -> list[dict]:
@@ -40,13 +45,21 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
         price = year_base * (1 + seasonal + weekend + variation)
         price = round(max(price, 15.0), 2)  # Floor à 15 EUR/MWh
 
+        delivery_start = datetime(current.year, current.month, current.day, tzinfo=timezone.utc)
+        delivery_end = delivery_start + timedelta(hours=24)
+
         prices.append(
             {
-                "market": "EPEX_SPOT_FR",
-                "energy_type": "ELEC",
-                "date": current,
+                "source": MarketDataSource.MANUAL,
+                "market_type": MarketType.SPOT_DAY_AHEAD,
+                "product_type": ProductType.BASELOAD,
+                "zone": PriceZone.FR,
+                "delivery_start": delivery_start,
+                "delivery_end": delivery_end,
                 "price_eur_mwh": price,
-                "source": SOURCE,
+                "resolution": Resolution.P1D,
+                "fetched_at": datetime.now(timezone.utc),
+                "source_reference": "Seed PROMEOS — basé sur tendances EPEX 2024-2025",
             }
         )
 
@@ -57,7 +70,7 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
 
 
 def generate_market_prices(db: Session) -> dict:
-    """Seed EPEX Spot FR prices. Idempotent via INSERT OR IGNORE."""
+    """Seed EPEX Spot FR prices into mkt_prices. Idempotent via dedup check."""
     start = date(2024, 1, 1)
     end = date(2025, 12, 31)
     prices = _generate_prices(start, end)
@@ -65,16 +78,19 @@ def generate_market_prices(db: Session) -> dict:
     inserted = 0
     for p in prices:
         existing = (
-            db.query(MarketPrice)
+            db.query(MktPrice)
             .filter(
-                MarketPrice.market == p["market"],
-                MarketPrice.date == p["date"],
-                MarketPrice.energy_type == p["energy_type"],
+                MktPrice.source == p["source"],
+                MktPrice.market_type == p["market_type"],
+                MktPrice.product_type == p["product_type"],
+                MktPrice.zone == p["zone"],
+                MktPrice.delivery_start == p["delivery_start"],
+                MktPrice.resolution == p["resolution"],
             )
             .first()
         )
         if not existing:
-            db.add(MarketPrice(**p))
+            db.add(MktPrice(**p))
             inserted += 1
 
     db.flush()

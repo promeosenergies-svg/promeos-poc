@@ -1,6 +1,11 @@
 """
-PROMEOS — MarketPrice model
+PROMEOS — MarketPrice model (DEPRECATED)
 Prix marché énergie (EPEX Spot, forwards, etc.)
+
+⚠️ DEPRECATED: Ce modèle mappe vers la table legacy 'market_prices' (Step 17).
+La source de vérité est désormais MktPrice (table 'mkt_prices') dans market_models.py.
+Ne pas utiliser dans du nouveau code. Sera supprimé dans une future migration
+après vérification que la table legacy peut être droppée.
 """
 
 from sqlalchemy import Column, Integer, String, Float, Date, UniqueConstraint

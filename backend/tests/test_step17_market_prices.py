@@ -1,6 +1,10 @@
 """
 Step 17 — M1 : Seed prix marché EPEX Spot FR 24 mois
-Tests unitaires pour le modèle, le seed, et get_reference_price.
+Tests unitaires pour le modèle V2 (MktPrice), le seed, et get_reference_price.
+
+NOTE: Le modèle legacy MarketPrice (table market_prices) est testé pour
+rétrocompatibilité import uniquement. Tous les tests fonctionnels
+utilisent MktPrice (table mkt_prices).
 """
 
 import math
@@ -10,32 +14,51 @@ import pytest
 
 
 # ============================================================
-# Model
+# Legacy model — rétrocompatibilité import uniquement
 # ============================================================
 
 
-class TestMarketPriceModel:
-    """Test that MarketPrice model is importable and has expected fields."""
+class TestLegacyMarketPriceModel:
+    """Vérifie que le modèle legacy reste importable (non cassé)."""
 
-    def test_model_importable(self):
+    def test_legacy_model_importable(self):
         from models.market_price import MarketPrice
 
         assert MarketPrice.__tablename__ == "market_prices"
 
-    def test_model_has_price_field(self):
-        from models.market_price import MarketPrice
-
-        assert hasattr(MarketPrice, "price_eur_mwh")
-
-    def test_model_has_market_field(self):
-        from models.market_price import MarketPrice
-
-        assert hasattr(MarketPrice, "market")
-
-    def test_model_registered_in_init(self):
+    def test_legacy_model_registered_in_init(self):
         from models import MarketPrice
 
         assert MarketPrice.__tablename__ == "market_prices"
+
+
+# ============================================================
+# New model — MktPrice (source de vérité)
+# ============================================================
+
+
+class TestMktPriceModel:
+    """Test that MktPrice model is importable and has expected fields."""
+
+    def test_model_importable(self):
+        from models.market_models import MktPrice
+
+        assert MktPrice.__tablename__ == "mkt_prices"
+
+    def test_model_has_price_field(self):
+        from models.market_models import MktPrice
+
+        assert hasattr(MktPrice, "price_eur_mwh")
+
+    def test_model_has_zone_field(self):
+        from models.market_models import MktPrice
+
+        assert hasattr(MktPrice, "zone")
+
+    def test_model_registered_in_init(self):
+        from models import MktPrice
+
+        assert MktPrice.__tablename__ == "mkt_prices"
 
 
 # ============================================================
@@ -64,14 +87,14 @@ class TestMarketPriceSeed:
 
         prices = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
         for p in prices:
-            assert 15.0 <= p["price_eur_mwh"] <= 150.0, f"Price {p['price_eur_mwh']} out of range for {p['date']}"
+            assert 15.0 <= p["price_eur_mwh"] <= 150.0, f"Price {p['price_eur_mwh']} out of range"
 
     def test_seasonality_winter_higher(self):
         from services.demo_seed.gen_market_prices import _generate_prices
 
         prices = _generate_prices(date(2024, 1, 1), date(2024, 12, 31))
-        winter = [p["price_eur_mwh"] for p in prices if p["date"].month in (12, 1, 2)]
-        summer = [p["price_eur_mwh"] for p in prices if p["date"].month in (6, 7, 8)]
+        winter = [p["price_eur_mwh"] for p in prices if p["delivery_start"].month in (12, 1, 2)]
+        summer = [p["price_eur_mwh"] for p in prices if p["delivery_start"].month in (6, 7, 8)]
         avg_winter = sum(winter) / len(winter)
         avg_summer = sum(summer) / len(summer)
         assert avg_winter > avg_summer, f"Winter {avg_winter:.1f} should be > summer {avg_summer:.1f}"
@@ -80,8 +103,8 @@ class TestMarketPriceSeed:
         from services.demo_seed.gen_market_prices import _generate_prices
 
         prices = _generate_prices(date(2024, 1, 1), date(2024, 12, 31))
-        weekday = [p["price_eur_mwh"] for p in prices if p["date"].weekday() < 5]
-        weekend = [p["price_eur_mwh"] for p in prices if p["date"].weekday() >= 5]
+        weekday = [p["price_eur_mwh"] for p in prices if p["delivery_start"].weekday() < 5]
+        weekend = [p["price_eur_mwh"] for p in prices if p["delivery_start"].weekday() >= 5]
         avg_weekday = sum(weekday) / len(weekday)
         avg_weekend = sum(weekend) / len(weekend)
         assert avg_weekday > avg_weekend, f"Weekday {avg_weekday:.1f} should be > weekend {avg_weekend:.1f}"
@@ -90,20 +113,32 @@ class TestMarketPriceSeed:
         from services.demo_seed.gen_market_prices import _generate_prices
 
         prices = _generate_prices(date(2024, 1, 1), date(2025, 12, 31))
-        avg_2024 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2024) / sum(
-            1 for p in prices if p["date"].year == 2024
+        avg_2024 = sum(p["price_eur_mwh"] for p in prices if p["delivery_start"].year == 2024) / sum(
+            1 for p in prices if p["delivery_start"].year == 2024
         )
-        avg_2025 = sum(p["price_eur_mwh"] for p in prices if p["date"].year == 2025) / sum(
-            1 for p in prices if p["date"].year == 2025
+        avg_2025 = sum(p["price_eur_mwh"] for p in prices if p["delivery_start"].year == 2025) / sum(
+            1 for p in prices if p["delivery_start"].year == 2025
         )
         assert avg_2025 < avg_2024, f"2025 avg {avg_2025:.1f} should be < 2024 avg {avg_2024:.1f}"
 
-    def test_all_epex_spot_fr(self):
+    def test_all_spot_fr(self):
         from services.demo_seed.gen_market_prices import _generate_prices
+        from models.market_models import MarketType, PriceZone
 
         prices = _generate_prices(date(2024, 1, 1), date(2024, 1, 31))
-        assert all(p["market"] == "EPEX_SPOT_FR" for p in prices)
-        assert all(p["energy_type"] == "ELEC" for p in prices)
+        assert all(p["market_type"] == MarketType.SPOT_DAY_AHEAD for p in prices)
+        assert all(p["zone"] == PriceZone.FR for p in prices)
+
+    def test_seed_uses_mkt_price_schema(self):
+        from services.demo_seed.gen_market_prices import _generate_prices
+        from models.market_models import MarketDataSource, Resolution
+
+        prices = _generate_prices(date(2024, 1, 1), date(2024, 1, 2))
+        p = prices[0]
+        assert "delivery_start" in p
+        assert "delivery_end" in p
+        assert p["source"] == MarketDataSource.MANUAL
+        assert p["resolution"] == Resolution.P1D
 
 
 # ============================================================

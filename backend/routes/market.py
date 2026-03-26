@@ -1,9 +1,12 @@
 """
-PROMEOS — Market Prices Route (Step 17)
+PROMEOS — Market Prices Route (Step 17 → V2 mkt_prices)
 GET /api/market/prices — prix marché EPEX Spot FR.
+GET /api/market/context — contexte marché synthétique.
+
+Source de vérité : table mkt_prices (MktPrice) via market_models.py.
 """
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -11,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.market_price import MarketPrice
+from models.market_models import MktPrice, MarketType, PriceZone
 from services.purchase_pricing import get_market_context
 
 router = APIRouter(prefix="/api/market", tags=["Market Prices"])
@@ -27,30 +30,31 @@ def get_market_prices(
     db: Session = Depends(get_db),
 ):
     """Prix marché énergie (lecture seule, données publiques simulées)."""
-    q = db.query(MarketPrice).filter(
-        MarketPrice.market == market,
-        MarketPrice.energy_type == energy_type,
+    q = db.query(MktPrice).filter(
+        MktPrice.zone == PriceZone.FR,
+        MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
     )
 
-    # Date filters
+    # Date filters (string YYYY-MM-DD → datetime UTC)
     if date_from:
         try:
-            q = q.filter(MarketPrice.date >= date.fromisoformat(date_from))
+            dt = datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc)
+            q = q.filter(MktPrice.delivery_start >= dt)
         except ValueError:
             pass
     if date_to:
         try:
-            q = q.filter(MarketPrice.date <= date.fromisoformat(date_to))
+            dt = datetime.fromisoformat(date_to).replace(tzinfo=timezone.utc)
+            q = q.filter(MktPrice.delivery_start <= dt)
         except ValueError:
             pass
 
-    rows = q.order_by(MarketPrice.date.asc()).all()
+    rows = q.order_by(MktPrice.delivery_start.asc()).all()
 
     if granularity == "monthly":
-        # Aggregate by month
-        buckets = {}
+        buckets: dict = {}
         for r in rows:
-            key = r.date.strftime("%Y-%m")
+            key = r.delivery_start.strftime("%Y-%m")
             if key not in buckets:
                 buckets[key] = {"sum": 0.0, "count": 0}
             buckets[key]["sum"] += r.price_eur_mwh
@@ -59,8 +63,7 @@ def get_market_prices(
     elif granularity == "weekly":
         buckets = {}
         for r in rows:
-            # ISO week
-            iso = r.date.isocalendar()
+            iso = r.delivery_start.isocalendar()
             key = f"{iso[0]}-W{iso[1]:02d}"
             if key not in buckets:
                 buckets[key] = {"sum": 0.0, "count": 0}
@@ -68,7 +71,7 @@ def get_market_prices(
             buckets[key]["count"] += 1
         prices = [{"date": k, "price_eur_mwh": round(v["sum"] / v["count"], 2)} for k, v in sorted(buckets.items())]
     else:
-        prices = [{"date": r.date.isoformat(), "price_eur_mwh": r.price_eur_mwh} for r in rows]
+        prices = [{"date": r.delivery_start.date().isoformat(), "price_eur_mwh": r.price_eur_mwh} for r in rows]
 
     # Compute stats
     all_prices = [r.price_eur_mwh for r in rows]
@@ -79,8 +82,8 @@ def get_market_prices(
         current_val = round(all_prices[-1], 2)
 
         # vs 12m avg
-        twelve_months_ago = rows[-1].date - timedelta(days=365)
-        older = [r.price_eur_mwh for r in rows if r.date <= twelve_months_ago]
+        twelve_months_ago = rows[-1].delivery_start - timedelta(days=365)
+        older = [r.price_eur_mwh for r in rows if r.delivery_start <= twelve_months_ago]
         if older:
             avg_12m = sum(older) / len(older)
             vs_12m = round((current_val - avg_12m) / avg_12m * 100, 1) if avg_12m > 0 else None

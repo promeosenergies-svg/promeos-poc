@@ -83,28 +83,28 @@ def get_reference_price(
             # Contract without dates = always valid
             return (c.price_ref_eur_per_kwh, f"contract:{c.id}")
 
-    # Priority 2: MarketPrice (average over 30 days around period)
+    # Priority 2: MktPrice — moyenne spot 30 jours (mkt_prices V2)
     try:
-        from sqlalchemy import func
-        from models.market_price import MarketPrice
+        from datetime import datetime as _dt, timezone as _tz
+        from models.market_models import MktPrice, MarketType, PriceZone
 
-        market_code = "EPEX_SPOT_FR" if energy_type != "gaz" else None
-        if market_code:
+        if energy_type != "gaz":
             ref_date = period_end or period_start or date.today()
+            ref_dt = _dt(ref_date.year, ref_date.month, ref_date.day, tzinfo=_tz.utc)
             avg_price = (
-                db.query(func.avg(MarketPrice.price_eur_mwh))
+                db.query(func.avg(MktPrice.price_eur_mwh))
                 .filter(
-                    MarketPrice.market == market_code,
-                    MarketPrice.energy_type == "ELEC",
-                    MarketPrice.date >= ref_date - timedelta(days=30),
-                    MarketPrice.date <= ref_date,
+                    MktPrice.zone == PriceZone.FR,
+                    MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+                    MktPrice.delivery_start >= ref_dt - timedelta(days=30),
+                    MktPrice.delivery_start <= ref_dt,
                 )
                 .scalar()
             )
             if avg_price and avg_price > 0:
                 return (round(avg_price / 1000, 6), "market_epex_spot_30d")
     except Exception:
-        pass  # MarketPrice table may not exist yet
+        pass  # mkt_prices table may not exist yet
 
     # Priority 3: SiteTariffProfile
     tariff = db.query(SiteTariffProfile).filter(SiteTariffProfile.site_id == site_id).first()

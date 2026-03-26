@@ -9,70 +9,83 @@ Remplace les multiplicateurs simplistes par un modèle structuré :
 
 Les prix sont en EUR/MWh (convention marché) et convertis en EUR/kWh
 pour l'affichage final.
+
+Source de vérité prix : table mkt_prices (MktPrice) via market_models.py.
 """
 
 import statistics
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from models.market_price import MarketPrice
+from models.market_models import (
+    MktPrice,
+    MarketType,
+    PriceZone,
+    MarketDataSource,
+)
+
+
+def _date_to_utc(d: date) -> datetime:
+    """Convertit une date en datetime UTC minuit."""
+    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
 
 
 def get_market_context(db: Session, energy_type: str = "ELEC", ref_date: date = None) -> dict:
     """
-    Récupère le contexte marché depuis market_prices (Step 17).
+    Récupère le contexte marché depuis mkt_prices (V2).
 
     Retourne :
       spot_avg_30d_eur_mwh, spot_avg_12m_eur_mwh, spot_current_eur_mwh,
       volatility_12m_eur_mwh, trend_30d_vs_12m_pct
     """
     ref = ref_date or date.today()
+    ref_dt = _date_to_utc(ref)
 
     # Spot moyen 30 derniers jours
     spot_30d = (
-        db.query(func.avg(MarketPrice.price_eur_mwh))
+        db.query(func.avg(MktPrice.price_eur_mwh))
         .filter(
-            MarketPrice.market == "EPEX_SPOT_FR",
-            MarketPrice.energy_type == energy_type,
-            MarketPrice.date >= ref - timedelta(days=30),
-            MarketPrice.date <= ref,
+            MktPrice.zone == PriceZone.FR,
+            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            MktPrice.delivery_start >= ref_dt - timedelta(days=30),
+            MktPrice.delivery_start <= ref_dt,
         )
         .scalar()
     )
 
     # Spot moyen 12 mois
     spot_12m = (
-        db.query(func.avg(MarketPrice.price_eur_mwh))
+        db.query(func.avg(MktPrice.price_eur_mwh))
         .filter(
-            MarketPrice.market == "EPEX_SPOT_FR",
-            MarketPrice.energy_type == energy_type,
-            MarketPrice.date >= ref - timedelta(days=365),
-            MarketPrice.date <= ref,
+            MktPrice.zone == PriceZone.FR,
+            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            MktPrice.delivery_start >= ref_dt - timedelta(days=365),
+            MktPrice.delivery_start <= ref_dt,
         )
         .scalar()
     )
 
     # Dernier prix
     last = (
-        db.query(MarketPrice.price_eur_mwh)
+        db.query(MktPrice.price_eur_mwh)
         .filter(
-            MarketPrice.market == "EPEX_SPOT_FR",
-            MarketPrice.energy_type == energy_type,
-            MarketPrice.date <= ref,
+            MktPrice.zone == PriceZone.FR,
+            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            MktPrice.delivery_start <= ref_dt,
         )
-        .order_by(MarketPrice.date.desc())
+        .order_by(MktPrice.delivery_start.desc())
         .first()
     )
 
     # Volatilité (écart-type 12 mois)
     prices_12m = (
-        db.query(MarketPrice.price_eur_mwh)
+        db.query(MktPrice.price_eur_mwh)
         .filter(
-            MarketPrice.market == "EPEX_SPOT_FR",
-            MarketPrice.energy_type == energy_type,
-            MarketPrice.date >= ref - timedelta(days=365),
+            MktPrice.zone == PriceZone.FR,
+            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+            MktPrice.delivery_start >= ref_dt - timedelta(days=365),
         )
         .all()
     )
@@ -88,13 +101,16 @@ def get_market_context(db: Session, energy_type: str = "ELEC", ref_date: date = 
 
     # Detecter si les donnees sont seed/demo
     source_sample = (
-        db.query(MarketPrice.source)
-        .filter(MarketPrice.market == "EPEX_SPOT_FR", MarketPrice.source.isnot(None))
-        .order_by(MarketPrice.date.desc())
+        db.query(MktPrice.source)
+        .filter(MktPrice.zone == PriceZone.FR, MktPrice.source.isnot(None))
+        .order_by(MktPrice.delivery_start.desc())
         .first()
     )
-    source_label = source_sample[0] if source_sample else ("fallback_defaults" if not has_real_data else "unknown")
-    is_demo = not has_real_data or (source_label and "seed" in source_label.lower())
+    if source_sample:
+        source_label = source_sample[0].value if hasattr(source_sample[0], "value") else str(source_sample[0])
+    else:
+        source_label = "fallback_defaults" if not has_real_data else "unknown"
+    is_demo = not has_real_data or (source_label and "manual" in source_label.lower())
 
     return {
         "spot_avg_30d_eur_mwh": round(spot_30d, 2),

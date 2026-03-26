@@ -249,8 +249,27 @@ from .action_template import ActionTemplate
 # Onboarding Progress (V113)
 from .onboarding_progress import OnboardingProgress
 
-# Market Prices (Step 17)
-from .market_price import MarketPrice
+# Market Prices — DEPRECATED: legacy table 'market_prices' (Step 17)
+# Tous les nouveaux développements doivent utiliser MktPrice (table 'mkt_prices')
+from .market_price import MarketPrice  # legacy, ne pas utiliser dans du nouveau code
+
+# Market Data V2 — source de vérité
+from .market_models import (
+    MktPrice,
+    RegulatedTariff,
+    PriceSignal,
+    MarketDataFetchLog,
+    PriceDecomposition,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    TariffType,
+    TariffComponent,
+    SignalType,
+    SignalSeverity,
+    Resolution,
+)
 
 # Compliance Score History (Step 33)
 from .compliance_score_history import ComplianceScoreHistory
@@ -488,8 +507,23 @@ __all__ = [
     "ActionTemplate",
     # V113: Onboarding Progress
     "OnboardingProgress",
-    # Market Prices (Step 17)
+    # Market Prices (Step 17) — DEPRECATED
     "MarketPrice",
+    # Market Data V2
+    "MktPrice",
+    "RegulatedTariff",
+    "PriceSignal",
+    "MarketDataFetchLog",
+    "PriceDecomposition",
+    "MarketDataSource",
+    "MarketType",
+    "ProductType",
+    "PriceZone",
+    "TariffType",
+    "TariffComponent",
+    "SignalType",
+    "SignalSeverity",
+    "Resolution",
     # Compliance Score History (Step 33)
     "ComplianceScoreHistory",
     # Action Plan Items (Workflow)
