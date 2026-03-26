@@ -1,8 +1,22 @@
 # SF4 — Enedis SGE Operational Ingestion Pipeline
 
-> **Status**: Spec v3 — decisions taken, ready for implementation planning
+> **Status**: Spec v4 — decisions validated, implementation plan ready
+> **Plan d'implémentation** : `docs/specs/plan-enedis-sge-4-implementation.md`
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion) — all complete on `feat/enedis-sge-ingestion`
 > **Out of scope**: Promotion staging → production (SF5). Pas de matching PRM→Site, pas d'écriture dans les tables fonctionnelles (`Consommation`, `MeterReading`), pas de déduplication des republications.
+
+## Décisions d'architecture
+
+| Question | Décision | Justification |
+|----------|----------|---------------|
+| Historique d'erreurs | **Table séparée** `enedis_flux_file_error` (FK vers `enedis_flux_file`) | Propre, extensible, requêtable en SQL directement. Plus robuste qu'une colonne JSON |
+| CLI scope | **Minimaliste** — sous-commande `ingest` uniquement (+ `--dry-run`) | Les stats restent côté API, évite la duplication de logique |
+| Auth API | **Pas d'auth** pour le POC | Usage ops/admin, ajout facile ultérieurement via `get_optional_auth` |
+| Schémas Pydantic | **Dans le router** (`routes/enedis.py`) | Pattern dominant du codebase — les schémas spécifiques à un domaine sont co-localisés avec le router |
+| `.env.example` | **Les deux** fichiers (racine + `backend/`) mis à jour | Cohérence avec les conventions existantes |
+| Tests API | **`backend/tests/test_enedis_api.py`** | Cohérent avec les autres tests d'API (`test_bacs_api.py`, etc.) — les tests HTTP vivent dans le répertoire de tests principal |
+
+---
 
 ## Contexte
 
