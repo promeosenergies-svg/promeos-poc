@@ -154,10 +154,13 @@ def _serialize_action(a: ActionItem) -> dict:
         except Exception:
             pass
 
+    site_nom = a.site.nom if a.site and hasattr(a.site, "nom") else None
+
     return {
         "id": a.id,
         "org_id": a.org_id,
         "site_id": a.site_id,
+        "site_nom": site_nom,
         "campaign_sites": campaign_sites,
         "source_type": a.source_type.value if a.source_type else None,
         "source_id": a.source_id,

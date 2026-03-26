@@ -71,7 +71,12 @@ function ActionRow({ action, totalGainEur }) {
       <div className="flex items-start gap-2.5">
         <PriorityBadge priority={action.priority ?? 3} />
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900">{action.title ?? '—'}</div>
+          <div className="text-sm font-medium text-gray-900">
+            {action.title ?? '—'}
+            {action.site_nom && (
+              <span className="text-gray-400 font-normal ml-1">— {action.site_nom}</span>
+            )}
+          </div>
           {(action.rationale || action.description) && (
             <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
               {action.rationale ?? action.description}
