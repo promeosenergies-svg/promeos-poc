@@ -33,7 +33,7 @@ class TestTariffLoader:
     def test_load_yaml_inserts_tariffs(self, db_session):
         result = load_tariffs_from_yaml(db_session)
         assert result["inserted"] > 0
-        assert result["version"] == "2026-02"
+        assert result["version"] == "2026-03"
 
     def test_load_yaml_idempotent(self, db_session):
         r1 = load_tariffs_from_yaml(db_session)
@@ -64,14 +64,14 @@ class TestTariffLoader:
         load_tariffs_from_yaml(db_session)
         tariff = get_current_tariff(db_session, TariffType.TURPE, TariffComponent.TURPE_SOUTIRAGE_HPH)
         assert tariff is not None
-        assert tariff.value == 63.70
+        assert tariff.value == 42.30  # CRE TURPE 7 HTA CU pointe fixe
         assert tariff.applies_to_voltage == "HTA"
 
     def test_turpe_part_fixe_loaded(self, db_session):
         load_tariffs_from_yaml(db_session)
         tariff = get_current_tariff(db_session, TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
         assert tariff is not None
-        assert tariff.value == 9.84
+        assert tariff.value == 14.41  # CRE TURPE 7 HTA CU pointe fixe
         assert tariff.unit == "EUR_KW_AN"
 
     def test_versioning_no_update(self, db_session):

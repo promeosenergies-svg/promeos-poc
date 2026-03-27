@@ -111,11 +111,11 @@ class TestBriqueEnergie:
 
 class TestBriqueTurpe:
     def test_turpe_weighted_average(self, db_with_tariffs):
-        """TURPE C4 = 0.25*63.70 + 0.10*44.40 + 0.40*14.30 + 0.25*10.40"""
+        """TURPE C4 = 0.25*42.30 + 0.10*19.90 + 0.40*10.10 + 0.25*6.90 (CRE TURPE 7 CU pf)"""
         svc = PriceDecompositionService(db_with_tariffs)
         result = svc.compute(profile="C4", energy_price_eur_mwh=70.0)
-        # Calcul attendu: 15.925 + 4.44 + 5.72 + 2.60 = 28.685
-        assert 28.0 < result.turpe_eur_mwh < 30.0
+        # Calcul attendu: 10.575 + 1.99 + 4.04 + 1.725 = 18.33
+        assert 17.5 < result.turpe_eur_mwh < 19.5
 
     def test_turpe_c5_different_from_c4(self, db_with_tariffs):
         svc = PriceDecompositionService(db_with_tariffs)
@@ -135,7 +135,7 @@ class TestBriqueTurpe:
         assert r_with_power.turpe_eur_mwh > r_no_power.turpe_eur_mwh
 
     def test_turpe_fixed_part_calculation(self, db_with_tariffs):
-        """Part fixe = 250kW * 9.84 EUR/kW/an / 2000 MWh = 1.23 EUR/MWh."""
+        """Part fixe = 250kW * 14.41 EUR/kW/an / 2000 MWh = 1.80 EUR/MWh (CRE TURPE 7)."""
         svc = PriceDecompositionService(db_with_tariffs)
         result = svc.compute(
             profile="C4",
@@ -145,7 +145,7 @@ class TestBriqueTurpe:
         )
         r_no = svc.compute(profile="C4", energy_price_eur_mwh=70.0)
         delta = result.turpe_eur_mwh - r_no.turpe_eur_mwh
-        assert abs(delta - 1.23) < 0.1  # 250 * 9.84 / 2000
+        assert abs(delta - 1.80) < 0.1  # 250 * 14.41 / 2000
 
 
 # ============================================================
@@ -199,7 +199,7 @@ class TestBriqueCee:
 
 class TestBriqueCta:
     def test_cta_with_power_and_volume(self, db_with_tariffs):
-        """CTA = 27.04% * 250kW * 9.84 EUR/kW/an / 2000 MWh = 0.333 EUR/MWh."""
+        """CTA = 27.04% * 250kW * 14.41 EUR/kW/an / 2000 MWh = 0.488 EUR/MWh."""
         svc = PriceDecompositionService(db_with_tariffs)
         result = svc.compute(
             profile="C4",
@@ -207,7 +207,7 @@ class TestBriqueCta:
             power_kw=250,
             volume_mwh=2000,
         )
-        assert abs(result.cta_eur_mwh - 0.33) < 0.05
+        assert abs(result.cta_eur_mwh - 0.49) < 0.05
 
     def test_cta_approximation_without_power(self, db_with_tariffs):
         svc = PriceDecompositionService(db_with_tariffs)
@@ -251,7 +251,7 @@ class TestAssemblage:
     def test_tariff_version_populated(self, db_with_tariffs):
         svc = PriceDecompositionService(db_with_tariffs)
         r = svc.compute(profile="C4", energy_price_eur_mwh=70.0)
-        assert r.tariff_version == "2026-02"
+        assert r.tariff_version == "2026-03"
 
     def test_to_dict_serializable(self, db_with_tariffs):
         svc = PriceDecompositionService(db_with_tariffs)
@@ -300,7 +300,9 @@ class TestRealisme:
             ("cspe", r.cspe_eur_mwh),
         ]
         briques.sort(key=lambda x: x[1], reverse=True)
-        assert briques[1][0] == "turpe"
+        # Avec TURPE 7 CRE officiel, CSPE (26.58) > TURPE variable (18.33)
+        assert briques[0][0] == "energy"
+        assert briques[1][0] in ("turpe", "cspe")  # CSPE ou TURPE selon profil
 
     def test_c5_more_expensive_than_c4(self, db_with_tariffs):
         """Un C5 (petit consommateur) paye plus cher au MWh qu'un C4."""
@@ -356,3 +358,99 @@ class TestProfilsCharge:
 
     def test_four_profiles_defined(self):
         assert set(LOAD_PROFILES.keys()) == {"C5", "C4", "C2", "HTA"}
+
+
+# ============================================================
+# Versionnement temporel des tarifs
+# ============================================================
+
+
+class TestVersionnementTemporel:
+    """Verifie que la decomposition utilise les tarifs de la bonne periode."""
+
+    def test_turpe6_vs_turpe7(self, db_with_tariffs):
+        """Juin 2025 = TURPE 6, oct 2025 = TURPE 7 — valeurs differentes."""
+        svc = PriceDecompositionService(db_with_tariffs)
+        r_t6 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2025, 6, 15, tzinfo=timezone.utc),
+        )
+        r_t7 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2025, 10, 15, tzinfo=timezone.utc),
+        )
+        assert r_t6.turpe_eur_mwh != r_t7.turpe_eur_mwh
+        # TURPE 6 HPH=32.00, TURPE 7 HPH=42.30 — pondere C4 => T6~19.25, T7~18.33
+        assert 18.5 < r_t6.turpe_eur_mwh < 20.5  # TURPE 6
+        assert 17.5 < r_t7.turpe_eur_mwh < 19.5  # TURPE 7
+
+    def test_cspe_2024_vs_2025_vs_2026(self, db_with_tariffs):
+        """CSPE augmente chaque annee: 2024 < 2025 < 2026."""
+        svc = PriceDecompositionService(db_with_tariffs)
+        r24 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2024, 6, 15, tzinfo=timezone.utc),
+        )
+        r25 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2025, 6, 15, tzinfo=timezone.utc),
+        )
+        r26 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2026, 6, 15, tzinfo=timezone.utc),
+        )
+        assert r24.cspe_eur_mwh == 20.50  # LF 2024
+        assert r25.cspe_eur_mwh == 25.79  # LF 2025
+        assert r26.cspe_eur_mwh == 26.58  # LF 2026
+        assert r24.cspe_eur_mwh < r25.cspe_eur_mwh < r26.cspe_eur_mwh
+
+    def test_cta_taux_change_2026(self, db_with_tariffs):
+        """CTA passe de 21.93% a 27.04% au 1er jan 2026."""
+        svc = PriceDecompositionService(db_with_tariffs)
+        r_2025 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2025, 12, 15, tzinfo=timezone.utc),
+        )
+        r_2026 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2026, 1, 15, tzinfo=timezone.utc),
+        )
+        assert r_2026.cta_eur_mwh > r_2025.cta_eur_mwh
+
+    def test_cee_p5_vs_p6(self, db_with_tariffs):
+        """CEE P5 (4 EUR/MWh) avant 2026, P6 (5 EUR/MWh) apres."""
+        svc = PriceDecompositionService(db_with_tariffs)
+        r_p5 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2025, 6, 15, tzinfo=timezone.utc),
+        )
+        r_p6 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2026, 6, 15, tzinfo=timezone.utc),
+        )
+        assert r_p5.cee_eur_mwh == 4.0
+        assert r_p6.cee_eur_mwh == 5.0
+
+    def test_retroactive_ttc_realistic(self, db_with_tariffs):
+        """Un calcul retroactif oct 2024 @ 85 EUR/MWh doit etre < mars 2026."""
+        svc = PriceDecompositionService(db_with_tariffs)
+        r_2024 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2024, 10, 15, tzinfo=timezone.utc),
+        )
+        r_2026 = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+        )
+        # Taxes augmentent => TTC 2024 < TTC 2026
+        assert r_2024.total_ttc_eur_mwh < r_2026.total_ttc_eur_mwh

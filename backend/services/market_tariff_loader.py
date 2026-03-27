@@ -117,6 +117,11 @@ def get_current_tariff(
 
 
 def _map_tariff_type(key: str) -> TariffType | None:
+    """Mappe une cle YAML vers un TariffType, en ignorant les suffixes de version.
+
+    Exemples: 'turpe' -> TURPE, 'turpe_v6' -> TURPE, 'cspe_2024' -> CSPE,
+    'capacity_2025' -> CAPACITY, 'cee_p5' -> CEE, 'cta_2021' -> CTA.
+    """
     mapping = {
         "cspe": TariffType.CSPE,
         "capacity": TariffType.CAPACITY,
@@ -127,7 +132,14 @@ def _map_tariff_type(key: str) -> TariffType | None:
         "turpe": TariffType.TURPE,
         "atrd": TariffType.ATRD,
     }
-    return mapping.get(key)
+    # Correspondance exacte d'abord
+    if key in mapping:
+        return mapping[key]
+    # Puis par prefixe (turpe_v6 -> turpe, cspe_2024 -> cspe, etc.)
+    for prefix, tt in mapping.items():
+        if key.startswith(prefix + "_"):
+            return tt
+    return None
 
 
 def _parse_date(s: str) -> datetime:

@@ -1,15 +1,179 @@
-# Referentiel tarifs reglementes France — Version 2026-02
-# Source: CRE, Loi de Finances 2025, EPEX Spot encheres
-# Mis a jour: 2026-02-01
-# Prochain review: 2026-08-01 (TURPE annuel) ou changement reglementaire
+# ══════════════════════════════════════════════════════════════════════════════
+# PROMEOS — Referentiel tarifs reglementes France (multi-versions)
+# Chaque section porte un suffixe de version (_v6, _v7, _2024, _2025, _2026…).
+# Le loader insere chaque version dans regulated_tariffs avec valid_from/valid_to.
+# get_current_tariff(at_date) retourne le tarif en vigueur a la date demandee.
+# ══════════════════════════════════════════════════════════════════════════════
 
-version: "2026-02"
-last_updated: "2026-02-01"
+version: "2026-03"
+last_updated: "2026-03-27"
 next_review: "2026-08-01"
 
+# ── TURPE 6 — CRE Deliberation n.2021-13 ────────────────────────────────────
+# Applicable du 1er aout 2021 au 31 juillet 2025.
+# Valeurs HTA CU pointe fixe (composante soutirage variable).
+# Source: tarifs_reglementaires.yaml (CRE brut)
+turpe_v6:
+  source: "CRE Deliberation n.2021-13 — TURPE 6 HTA-BT"
+  source_url: "https://www.cre.fr/electricite/tarifs-dacheminement"
+  notes: |
+    TURPE 6 HTA CU pointe fixe — composante soutirage variable.
+    Valeurs au 1er aout 2021 (derniere grille TURPE 6).
+  rates:
+    - component: TURPE_SOUTIRAGE_HPH
+      value: 32.00
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "3.20 cEUR/kWh — HPH TURPE 6 C3 HTA CU pf"
+    - component: TURPE_SOUTIRAGE_HCH
+      value: 21.70
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "2.17 cEUR/kWh — HCH TURPE 6 C3 HTA CU pf"
+    - component: TURPE_SOUTIRAGE_HPB
+      value: 16.40
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "1.64 cEUR/kWh — HPB TURPE 6 C3 HTA CU pf"
+    - component: TURPE_SOUTIRAGE_HCB
+      value: 10.10
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "1.01 cEUR/kWh — HCB TURPE 6 C3 HTA CU pf"
+    - component: TURPE_PART_FIXE
+      value: 9.84
+      unit: EUR_KW_AN
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "Part fixe annuelle CU poste HTA TURPE 6"
+    - component: TURPE_COMPTAGE
+      value: 312.12
+      unit: EUR_AN
+      applies_to_voltage: "HTA"
+      notes: "Composante comptage annuelle HTA TURPE 6"
+  valid_from: "2021-08-01"
+  valid_to: "2025-07-31"
+
+# ── TURPE 7 — CRE Deliberation n.2025-78 ────────────────────────────────────
+# Applicable depuis le 1er aout 2025.
+# Valeurs HTA CU pointe fixe (composante soutirage variable).
+turpe:
+  source: "CRE Deliberation n.2025-78 du 13 mars 2025 — TURPE 7 HTA-BT"
+  source_url: "https://www.enedis.fr/media/4717/download"
+  notes: |
+    Valeurs TURPE 7 HTA CU pointe fixe (composante soutirage variable uniquement).
+    FTA par defaut pour tertiaire bureau ETI. Pour LU, utiliser les grilles CRE.
+    La composante Pointe est ajoutee (dec-fev, hors dim).
+    Part fixe (b) = EUR/kW/an par plage, valeur HPH utilisee.
+  rates:
+    - component: TURPE_SOUTIRAGE_POINTE
+      value: 57.40
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "5.74 cEUR/kWh x10 = 57.40 EUR/MWh — Pointe (dec-fev, 2h matin + 2h soir, hors dim)"
+    - component: TURPE_SOUTIRAGE_HPH
+      value: 42.30
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "4.23 cEUR/kWh x10 = 42.30 EUR/MWh — Heures Pleines Hiver"
+    - component: TURPE_SOUTIRAGE_HCH
+      value: 19.90
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "1.99 cEUR/kWh x10 = 19.90 EUR/MWh — Heures Creuses Hiver"
+    - component: TURPE_SOUTIRAGE_HPB
+      value: 10.10
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "1.01 cEUR/kWh x10 = 10.10 EUR/MWh — Heures Pleines Ete"
+    - component: TURPE_SOUTIRAGE_HCB
+      value: 6.90
+      unit: EUR_MWH
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "0.69 cEUR/kWh x10 = 6.90 EUR/MWh — Heures Creuses Ete"
+    - component: TURPE_PART_FIXE
+      value: 14.41
+      unit: EUR_KW_AN
+      applies_to_voltage: "HTA"
+      applies_to_profile: "CU_POINTE_FIXE"
+      notes: "Part fixe HPH/HCH/Pointe = 14.41 EUR/kW/an, HPB = 12.55, HCB = 11.22"
+    - component: TURPE_COMPTAGE
+      value: 376.39
+      unit: EUR_AN
+      applies_to_voltage: "HTA"
+      notes: "Comptage mensuel HTA — TURPE 7 Enedis plaquette"
+  valid_from: "2025-08-01"
+  valid_to: null
+
+# ── CSPE / Accise electricite — historique ───────────────────────────────────
+
+# 2024 (bouclier tarifaire leve)
+cspe_2024:
+  source: "Arrete 25/01/2024 (art. 92 LFI 2024 n.2023-1322)"
+  source_url: "https://www.legifrance.gouv.fr"
+  rates:
+    - component: CSPE_C5
+      value: 21.00
+      unit: EUR_MWH
+      applies_to_profile: "C5"
+      notes: "Menages et assimiles 2024"
+    - component: CSPE_C4
+      value: 20.50
+      unit: EUR_MWH
+      applies_to_profile: "C4"
+      notes: "PME 2024"
+    - component: CSPE_C2
+      value: 22.50
+      unit: EUR_MWH
+      applies_to_profile: "C2"
+      notes: "Haute puissance 2024"
+    - component: CSPE_ELECTRO_INTENSIF
+      value: 0.50
+      unit: EUR_MWH
+      applies_to_profile: "ELECTRO_INTENSIF"
+      notes: "Plancher UE 2024"
+  valid_from: "2024-02-01"
+  valid_to: "2025-01-31"
+
+# 2025 (LF 2025, fev-jan)
+cspe_2025:
+  source: "Loi de finances 2025"
+  source_url: "https://www.legifrance.gouv.fr"
+  rates:
+    - component: CSPE_C5
+      value: 25.09
+      unit: EUR_MWH
+      applies_to_profile: "C5"
+      notes: "Menages et assimiles 2025"
+    - component: CSPE_C4
+      value: 25.79
+      unit: EUR_MWH
+      applies_to_profile: "C4"
+      notes: "PME 2025"
+    - component: CSPE_C2
+      value: 25.79
+      unit: EUR_MWH
+      applies_to_profile: "C2"
+      notes: "Grands sites 2025"
+    - component: CSPE_ELECTRO_INTENSIF
+      value: 0.50
+      unit: EUR_MWH
+      applies_to_profile: "ELECTRO_INTENSIF"
+      notes: "Plancher UE 2025"
+  valid_from: "2025-02-01"
+  valid_to: "2026-01-31"
+
+# 2026 (LF 2026, fev+)
 cspe:
-  # Accise sur l'electricite (ex-TICFE/CSPE)
-  # Source: Code des impositions, arrete fev 2026
   source: "Code des impositions sur les biens et services"
   source_url: "https://www.legifrance.gouv.fr"
   rates:
@@ -18,19 +182,19 @@ cspe:
       unit: EUR_MWH
       applies_to_profile: "C5"
       applies_to_power_range: "<=36kVA"
-      notes: "Menages et assimiles, +1.23% vs 2025"
+      notes: "Professionnels B2B C5 2026, +1.23% vs 2025"
     - component: CSPE_C4
       value: 26.58
       unit: EUR_MWH
       applies_to_profile: "C4"
       applies_to_power_range: "36-250kVA"
-      notes: "PME, +3.06% vs 2025"
+      notes: "PME 2026, +3.06% vs 2025"
     - component: CSPE_C2
       value: 26.58
       unit: EUR_MWH
       applies_to_profile: "C2"
       applies_to_power_range: ">250kVA"
-      notes: "Grands sites"
+      notes: "Grands sites 2026"
     - component: CSPE_ELECTRO_INTENSIF
       value: 0.50
       unit: EUR_MWH
@@ -39,8 +203,23 @@ cspe:
   valid_from: "2026-02-01"
   valid_to: null
 
+# ── Capacite — historique ────────────────────────────────────────────────────
+
+capacity_2025:
+  source: "EPEX Spot encheres capacite 2025"
+  values:
+    - component: CAPACITY_PRICE_MW
+      value: 20000.0
+      unit: EUR_MW
+      notes: "Enchere oct 2024 pour livraison 2025 — prix eleve pre-reforme"
+    - component: CAPACITY_COEFFICIENT
+      value: 1.0
+      unit: COEFFICIENT
+      notes: "Coefficient de securite RTE 2025"
+  valid_from: "2025-01-01"
+  valid_to: "2025-12-31"
+
 capacity:
-  # Mecanisme de capacite — encheres EPEX Spot
   source: "EPEX Spot encheres capacite"
   source_url: "https://www.edf.fr/entreprises/electricite-gaz/mecanisme-de-capacite"
   values:
@@ -56,9 +235,53 @@ capacity:
   valid_to: "2026-10-31"
   next_mechanism: "Centralise RTE a partir nov 2026, 1ere enchere juil 2026"
 
+# ── CEE — historique ─────────────────────────────────────────────────────────
+
+cee_p5:
+  source: "Obligation fournisseur P5 (2022-2025)"
+  values:
+    - component: CEE_OBLIGATION
+      value: 4.0
+      unit: EUR_MWH
+      notes: "Estimation moyenne pass-through P5, fourchette 3-5 EUR/MWh"
+  valid_from: "2022-01-01"
+  valid_to: "2025-12-31"
+
+cee:
+  source: "Obligation fournisseur P6 (2026-2030)"
+  values:
+    - component: CEE_OBLIGATION
+      value: 5.0
+      unit: EUR_MWH
+      notes: "Estimation moyenne pass-through P6, fourchette 3-7 EUR/MWh"
+  valid_from: "2026-01-01"
+  valid_to: "2030-12-31"
+
+# ── CTA — historique ─────────────────────────────────────────────────────────
+
+cta_2021:
+  source: "Arrete CTA du 26 juillet 2021"
+  values:
+    - component: CTA_TAUX
+      value: 21.93
+      unit: PCT
+      notes: "21.93% de la part fixe TURPE HTA, finance retraites IEG"
+  valid_from: "2021-08-01"
+  valid_to: "2025-12-31"
+
+cta:
+  source: "CRE"
+  values:
+    - component: CTA_TAUX
+      value: 27.04
+      unit: PCT
+      notes: "27.04% de la part fixe TURPE HTA, finance retraites IEG"
+  valid_from: "2026-01-01"
+  valid_to: null
+
+# ── VNU (post-ARENH) — effectif 2026 ────────────────────────────────────────
+
 vnu:
-  # Versement Nucleaire Universel — Post-ARENH
-  # Source: Loi de Finances 2025, art. 17
   source: "LF 2025 art. 17, decrets 2025-909/910, CRE 2025-268"
   values:
     - component: VNU_SEUIL_BAS
@@ -83,72 +306,7 @@ vnu:
     Estimation CRE 2026: revenus ~66 EUR/MWh -> VNU probablement non active.
     Redistribution ex-post via guichet fournisseurs.
 
-cee:
-  # Certificats d'Economies d'Energie
-  source: "Obligation fournisseur, estimation marche"
-  values:
-    - component: CEE_OBLIGATION
-      value: 5.0
-      unit: EUR_MWH
-      notes: "Estimation moyenne pass-through, fourchette 3-7 EUR/MWh"
-  valid_from: "2026-01-01"
-  valid_to: "2026-12-31"
-
-cta:
-  # Contribution Tarifaire d'Acheminement
-  source: "CRE"
-  values:
-    - component: CTA_TAUX
-      value: 27.04
-      unit: PCT
-      notes: "27.04% de la part fixe TURPE HTA, finance retraites IEG"
-  valid_from: "2026-01-01"
-  valid_to: null
-
-turpe:
-  # TURPE 7 — Tarif d'Utilisation des Reseaux Publics d'Electricite
-  # Source: CRE Deliberation n.2025-78, applicable 1er aout 2025
-  # Reference croisee: backend/config/tarifs_reglementaires.yaml (source CRE brute)
-  # Valeurs pour profil HTA CU poste 5-50, composante soutirage energie variable.
-  source: "CRE Deliberation TURPE 7 n.2025-78"
-  source_url: "https://www.cre.fr/electricite/tarifs-dacheminement"
-  notes: |
-    Composantes soutirage energie (variable) pour profil HTA CU poste.
-    Pour le detail complet par option tarifaire, voir tarifs_reglementaires.yaml.
-    Valeurs en EUR/MWh pour coherence avec le referentiel market_tariffs_2026.
-  rates:
-    - component: TURPE_SOUTIRAGE_HPH
-      value: 63.70
-      unit: EUR_MWH
-      applies_to_voltage: "HTA"
-      notes: "Heures Pleines Hiver — soutirage energie variable"
-    - component: TURPE_SOUTIRAGE_HCH
-      value: 44.40
-      unit: EUR_MWH
-      applies_to_voltage: "HTA"
-      notes: "Heures Creuses Hiver — soutirage energie variable"
-    - component: TURPE_SOUTIRAGE_HPB
-      value: 14.30
-      unit: EUR_MWH
-      applies_to_voltage: "HTA"
-      notes: "Heures Pleines Ete — soutirage energie variable"
-    - component: TURPE_SOUTIRAGE_HCB
-      value: 10.40
-      unit: EUR_MWH
-      applies_to_voltage: "HTA"
-      notes: "Heures Creuses Ete — soutirage energie variable"
-    - component: TURPE_PART_FIXE
-      value: 9.84
-      unit: EUR_KW_AN
-      applies_to_voltage: "HTA"
-      notes: "Part fixe annuelle par kW souscrit — prime fixe CU poste HTA"
-    - component: TURPE_COMPTAGE
-      value: 312.12
-      unit: EUR_AN
-      applies_to_voltage: "HTA"
-      notes: "Composante comptage annuelle HTA — CC deliberation TURPE 7"
-  valid_from: "2025-08-01"
-  valid_to: null
+# ── TVA ──────────────────────────────────────────────────────────────────────
 
 tva:
   source: "Code general des impots"
@@ -160,5 +318,5 @@ tva:
     - component: TVA_NORMAL
       value: 20.0
       unit: PCT
-  valid_from: "2025-08-01"
+  valid_from: "2020-01-01"
   valid_to: null

@@ -121,6 +121,8 @@ class PriceDecompositionService:
         now = datetime.now(timezone.utc)
         period_start = period_start or now
         period_end = period_end or now
+        # Date de reference pour le lookup tarifs (milieu de periode ou period_start)
+        self._at_date = period_start
 
         # -- Brique 1: Energie (commodity) --
         energy = self._compute_energy(energy_price_eur_mwh)
@@ -211,6 +213,10 @@ class PriceDecompositionService:
     # Briques individuelles
     # ======================================================================
 
+    def _tariff(self, tariff_type: TariffType, component: TariffComponent):
+        """Lookup un tarif en vigueur a self._at_date."""
+        return get_current_tariff(self.db, tariff_type, component, at_date=self._at_date)
+
     def _compute_energy(self, forced_price: float = None) -> float:
         """Brique 1: prix energie (commodity)."""
         if forced_price is not None:
@@ -237,7 +243,7 @@ class PriceDecompositionService:
 
         turpe_variable = 0.0
         for plage, poids in weights.items():
-            tariff = get_current_tariff(self.db, TariffType.TURPE, component_map[plage])
+            tariff = self._tariff(TariffType.TURPE, component_map[plage])
             if tariff:
                 turpe_variable += poids * tariff.value
             else:
@@ -246,7 +252,7 @@ class PriceDecompositionService:
         # Part fixe ramenee au MWh (si puissance et volume connus)
         turpe_fixe_mwh = 0.0
         if power_kw and volume_mwh and volume_mwh > 0:
-            pf_tariff = get_current_tariff(self.db, TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
+            pf_tariff = self._tariff(TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
             if pf_tariff:
                 # part_fixe_total = power_kw * tarif_eur_kw_an
                 # ramenee au MWh = part_fixe_total / volume_mwh
@@ -263,7 +269,7 @@ class PriceDecompositionService:
             "HTA": TariffComponent.CSPE_C2,  # HTA = meme taux que C2
         }
         component = cspe_map.get(profile, TariffComponent.CSPE_C4)
-        tariff = get_current_tariff(self.db, TariffType.CSPE, component)
+        tariff = self._tariff(TariffType.CSPE, component)
         if tariff:
             return tariff.value
         self._warnings.append(f"CSPE non trouvee pour profil {profile}")
@@ -276,8 +282,8 @@ class PriceDecompositionService:
         Formule simplifiee: prix_enchere_eur_mw * coeff / 8760 heures
         98.6 EUR/MW * 1.0 / 8760 = ~0.011 EUR/MWh (quasi nul en 2026)
         """
-        price_tariff = get_current_tariff(self.db, TariffType.CAPACITY, TariffComponent.CAPACITY_PRICE_MW)
-        coeff_tariff = get_current_tariff(self.db, TariffType.CAPACITY, TariffComponent.CAPACITY_COEFFICIENT)
+        price_tariff = self._tariff(TariffType.CAPACITY, TariffComponent.CAPACITY_PRICE_MW)
+        coeff_tariff = self._tariff(TariffType.CAPACITY, TariffComponent.CAPACITY_COEFFICIENT)
         if price_tariff and coeff_tariff:
             # EUR/MW * coeff / 8760h = EUR/MWh
             return (price_tariff.value * coeff_tariff.value) / 8760
@@ -286,7 +292,7 @@ class PriceDecompositionService:
 
     def _compute_cee(self) -> float:
         """Brique 5: CEE (pass-through fournisseur)."""
-        tariff = get_current_tariff(self.db, TariffType.CEE, TariffComponent.CEE_OBLIGATION)
+        tariff = self._tariff(TariffType.CEE, TariffComponent.CEE_OBLIGATION)
         if tariff:
             return tariff.value
         self._warnings.append("CEE: tarif non trouve")
@@ -299,14 +305,14 @@ class PriceDecompositionService:
         Formule: taux_cta * part_fixe_turpe_eur_kw_an * power_kw / volume_mwh
         Si pas de puissance/volume, approximation via ratio moyen.
         """
-        cta_tariff = get_current_tariff(self.db, TariffType.CTA, TariffComponent.CTA_TAUX)
+        cta_tariff = self._tariff(TariffType.CTA, TariffComponent.CTA_TAUX)
         if not cta_tariff:
             self._warnings.append("CTA: taux non trouve")
             return 0.0
 
         taux_pct = cta_tariff.value / 100  # 27.04% -> 0.2704
 
-        pf_tariff = get_current_tariff(self.db, TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
+        pf_tariff = self._tariff(TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
         if not pf_tariff:
             self._warnings.append("CTA: TURPE part fixe non trouvee")
             return 0.0
@@ -324,7 +330,7 @@ class PriceDecompositionService:
 
     def _compute_tva(self, total_ht: float) -> float:
         """Brique 7: TVA a taux normal sur la totalite."""
-        tariff = get_current_tariff(self.db, TariffType.TVA, TariffComponent.TVA_NORMAL)
+        tariff = self._tariff(TariffType.TVA, TariffComponent.TVA_NORMAL)
         if tariff:
             return total_ht * tariff.value / 100
         self._warnings.append("TVA: taux non trouve, fallback 20%")
@@ -344,7 +350,7 @@ class PriceDecompositionService:
 
     def _get_tariff_version(self) -> str:
         """Version du jeu de tarifs utilise."""
-        cspe = get_current_tariff(self.db, TariffType.CSPE, TariffComponent.CSPE_C4)
+        cspe = self._tariff(TariffType.CSPE, TariffComponent.CSPE_C4)
         if cspe:
             return cspe.version
         return "unknown"
