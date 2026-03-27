@@ -116,6 +116,7 @@ def ingest_file(
             logger.info("Retrying previously failed %s (hash=%s…)", filename, file_hash[:12])
             _archive_error(session, existing)
             existing.error_message = None
+            session.commit()  # persist error history before retry attempt
             pre_registered = existing  # reuse same record in-place
         elif existing.status == FluxStatus.RECEIVED:
             logger.info("Processing pre-registered %s (hash=%s…)", filename, file_hash[:12])

@@ -1137,6 +1137,41 @@ class TestErrorHistoryPreserved:
         assert f.errors[0].error_message == "previous decrypt error"
         assert f.error_message is None  # cleared on retry
 
+    def test_error_history_survives_store_failure_on_retry(self, db, tmp_path, test_keys):
+        """Error history is preserved even when the retry itself fails at DB storage."""
+        from unittest.mock import patch
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        # Create valid R4H file
+        ct = make_encrypted_zip(R4H_XML, "test.xml", TEST_KEY, TEST_IV)
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_STORE_FAIL.zip"
+        path.write_bytes(ct)
+        file_hash = _hash_file(path)
+
+        # Pre-seed ERROR record
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="previous decrypt error",
+        )
+        db.add(error_record)
+        db.commit()
+
+        # Retry with store failure → rollback path
+        with patch.object(db, "bulk_save_objects", side_effect=Exception("disk full")):
+            status = ingest_file(path, db, test_keys)
+
+        assert status == FluxStatus.ERROR
+
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        assert f.status == FluxStatus.ERROR
+        assert "disk full" in f.error_message
+        # Error history survived the rollback (committed before retry)
+        assert len(f.errors) == 1
+        assert f.errors[0].error_message == "previous decrypt error"
+
     def test_decrypt_then_parse_error_distinct_messages(self, db, tmp_path, test_keys):
         """Two different error types produce distinct error messages in history."""
         from data_ingestion.enedis.pipeline import _hash_file
