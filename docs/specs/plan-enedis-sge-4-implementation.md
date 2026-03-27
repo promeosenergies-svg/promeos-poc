@@ -49,9 +49,9 @@ SF4 rend le pipeline **fiable, complet et auditable** en livrant : config, error
 
 ---
 
-## Phase 1 — Configuration externalisee
+## Phase 1 — Configuration externalisee [DONE]
 
-**Commit** : `feat(enedis): externalize flux directory config (SF4)`
+**Commit** : `feat(enedis): externalize flux directory config (SF4)` (78adbe8)
 
 ### Creer
 
