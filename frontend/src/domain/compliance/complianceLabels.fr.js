@@ -30,10 +30,10 @@ export const STATUT_LABELS = {
   non_conforme: 'Non conforme',
   a_risque: 'À risque',
   a_qualifier: 'À qualifier',
-  evaluation_incomplete: 'Evaluation incomplete',
-  preparation_en_cours: 'Preparation en cours',
-  classe_a_verifier: 'Classe systeme a verifier',
-  preuves_non_tracables: 'Preuves non tracables',
+  evaluation_incomplete: 'Évaluation incomplète',
+  preparation_en_cours: 'Préparation en cours',
+  classe_a_verifier: 'Classe système à vérifier',
+  preuves_non_tracables: 'Preuves non traçables',
   derogation: 'Dérogation',
   hors_perimetre: 'Hors périmètre',
 };
@@ -51,14 +51,14 @@ export const BACKEND_STATUS_MAP = {
 /** Avertissements de securite conformite — affiches quand la preuve est insuffisante */
 export const CONFORMITE_WARNINGS = {
   operat_simulation:
-    "Simulation de dossier OPERAT — aucun depot ADEME/OPERAT reel n'a ete effectue. PROMEOS prepare le dossier ; le depot reglementaire reste a confirmer.",
+    "Simulation de dossier OPERAT — aucun dépôt ADEME/OPERAT réel n'a été effectué. PROMEOS prépare le dossier ; le dépôt réglementaire reste à confirmer.",
   baseline_absente:
-    'Consommation de reference absente — impossible de valider la trajectoire reglementaire.',
+    'Consommation de référence absente — impossible de valider la trajectoire réglementaire.',
   trajectoire_non_validee:
-    'Trajectoire de reduction non validee — le statut de conformite ne peut pas etre confirme.',
+    'Trajectoire de réduction non validée — le statut de conformité ne peut pas être confirmé.',
   preuves_non_tracees: "Les preuves documentaires ne disposent pas d'un audit-trail complet.",
   classe_gtb_inconnue:
-    "La classe du systeme GTB/GTC (A ou B) n'est pas renseignee — la conformite BACS ne peut pas etre confirmee.",
+    "La classe du système GTB/GTC (A ou B) n'est pas renseignée — la conformité BACS ne peut pas être confirmée.",
 };
 
 /** Statuts declaration OPERAT en labels FR explicites */
