@@ -106,7 +106,7 @@ function CockpitTabs({ active }) {
             : 'border-transparent text-gray-500 hover:text-gray-700'
         }`}
       >
-        Vue exécutive — /cockpit
+        Vue exécutive
       </button>
       <button
         onClick={() => nav('/')}
@@ -116,7 +116,7 @@ function CockpitTabs({ active }) {
             : 'border-transparent text-gray-500 hover:text-gray-700'
         }`}
       >
-        Tableau de bord — /
+        Tableau de bord
       </button>
     </div>
   );
@@ -235,8 +235,8 @@ export default function CommandCenter() {
       for (const f of findings) {
         items.push({
           id: `comp-${f.id || f.rule_id}`,
-          titre: f.description || f.rule_code || 'Non-conformite',
-          source_label: `Conformite — ${f.site_nom}`,
+          titre: f.description || f.rule_code || 'Non-conformité',
+          source_label: `Conformité — ${f.site_nom}`,
           impact_eur: f.impact_eur || 0,
           priorite: f.severity || 'medium',
           route: '/conformite',
@@ -535,7 +535,7 @@ export default function CommandCenter() {
                 {trajectoire.reductionPctActuelle != null
                   ? `${trajectoire.reductionPctActuelle}%`
                   : '—'}{' '}
-                objectif {trajectoire.objectifPremierJalonPct ?? -25}%
+                objectif {trajectoire.objectifPremierJalonPct ?? -40}%
               </span>
             </div>
             <div className="mb-3">
@@ -564,7 +564,7 @@ export default function CommandCenter() {
                         ? Math.min(
                             100,
                             (Math.abs(trajectoire.reductionPctActuelle) /
-                              Math.abs(trajectoire.objectifPremierJalonPct ?? -25)) *
+                              Math.abs(trajectoire.objectifPremierJalonPct ?? -40)) *
                               100
                           )
                         : 0
@@ -575,7 +575,7 @@ export default function CommandCenter() {
               <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>0%</span>
                 <span className="text-blue-600 font-medium">
-                  Obj. {trajectoire.objectifPremierJalonPct ?? -25}%
+                  Obj. {trajectoire.objectifPremierJalonPct ?? -40}%
                 </span>
                 <span>-40%</span>
               </div>

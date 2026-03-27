@@ -70,7 +70,7 @@ describe('complianceLabels.fr.js — garde-fous statuts', () => {
     expect(LABELS_SRC).toMatch(/Simulation non déposée/);
   });
 
-  test('DECLARATION_STATUS_LABELS mappe "exported" en "Pack preparatoire genere"', () => {
-    expect(LABELS_SRC).toMatch(/exported.*Pack preparatoire/);
+  test('DECLARATION_STATUS_LABELS mappe "exported" en "Pack préparatoire généré"', () => {
+    expect(LABELS_SRC).toMatch(/exported.*Pack pr[ée]paratoire/);
   });
 });

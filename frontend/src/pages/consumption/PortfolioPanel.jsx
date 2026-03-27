@@ -16,7 +16,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { colorForSite } from './helpers';
 import { Card, CardBody } from '../../ui';
 
-const _EUR_FACTOR = 0.18;
+const _EUR_FACTOR = 0.068; // EUR/kWh — spot moyen 30j bridgé, aligné backend
 
 /** Compute a single site's KPIs from its tunnel data */
 function computeSiteKPIs(tunnel) {

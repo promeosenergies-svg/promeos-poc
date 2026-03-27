@@ -119,14 +119,15 @@ export function aggregateSeries(seriesBySite, mode) {
   });
 }
 
-/** Price per kWh used for EUR conversion when none provided */
-const DEFAULT_PRICE_EUR_KWH = 0.18;
+/** Price per kWh used for EUR conversion when none provided.
+ *  Aligné sur le backend (0.068 EUR/kWh ≈ spot moyen 30j bridgé). */
+const DEFAULT_PRICE_EUR_KWH = 0.068;
 
 /**
  * Convert a kWh value to the target unit.
  * @param {number} kwh
  * @param {'kwh'|'kw'|'eur'} unit
- * @param {number} [pricePerKwh]  — EUR/kWh (default 0.18)
+ * @param {number} [pricePerKwh]  — EUR/kWh (default 0.068)
  * @param {number} [hoursPerInterval] — interval duration (default 1 for hourly data)
  * @returns {number}
  */

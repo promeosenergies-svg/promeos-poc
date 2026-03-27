@@ -59,7 +59,7 @@ export default function CockpitHero({
     return (
       <ErrorState
         title="Données cockpit indisponibles"
-        description="Impossible de charger les KPIs exécutifs."
+        message="Impossible de charger les KPIs exécutifs."
       />
     );
   }
@@ -93,7 +93,10 @@ export default function CockpitHero({
           </span>
           {onEvidence && (
             <button
-              onClick={(e) => { e.stopPropagation(); onEvidence('conformite'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEvidence('conformite');
+              }}
               className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               aria-label="Pourquoi ce chiffre ?"
             >
@@ -104,20 +107,41 @@ export default function CockpitHero({
         <div className="flex items-center gap-3">
           {/* Jauge SVG conservée */}
           <svg viewBox="0 0 120 70" width={48} height={28} className="shrink-0">
-            <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="#e5e7eb" strokeWidth={10} strokeLinecap="round" />
-            <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke={color} strokeWidth={10} strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE} strokeDashoffset={dashOffset} className="transition-all duration-700" />
+            <path
+              d="M 15 60 A 45 45 0 0 1 105 60"
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth={10}
+              strokeLinecap="round"
+            />
+            <path
+              d="M 15 60 A 45 45 0 0 1 105 60"
+              fill="none"
+              stroke={color}
+              strokeWidth={10}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={dashOffset}
+              className="transition-all duration-700"
+            />
           </svg>
           <div className="flex items-center gap-1.5">
             <span className="text-xl font-bold text-gray-900">{score ?? '—'} / 100</span>
-            <span className={`w-2 h-2 rounded-full shrink-0 ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} />
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+            />
           </div>
         </div>
         <p className="text-xs text-gray-500">
-          DT 45% · BACS 30% · APER 25% · {kpis?.totalSites ?? 0} sites
+          DT {kpis?.weightDt ?? 45}% · BACS {kpis?.weightBacs ?? 30}% · APER{' '}
+          {kpis?.weightAper ?? 25}% · {kpis?.totalSites ?? 0} sites
         </p>
         <p className="text-[10px] text-gray-400">
-          Source : {kpis?.conformiteSource ?? 'compliance_engine'} · Confiance : moyenne
+          Source :{' '}
+          {kpis?.conformiteSource === 'RegAssessment'
+            ? 'Moteur conformité'
+            : (kpis?.conformiteSource ?? 'Moteur conformité')}{' '}
+          · Confiance : {kpis?.conformiteConfidence ?? 'moyenne'}
         </p>
       </div>
 
@@ -135,7 +159,10 @@ export default function CockpitHero({
           </span>
           {onEvidence && (
             <button
-              onClick={(e) => { e.stopPropagation(); onEvidence('risque'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEvidence('risque');
+              }}
               className="text-gray-400 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               aria-label="Détail risque"
             >
@@ -145,7 +172,9 @@ export default function CockpitHero({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-xl font-bold text-amber-600">{fmtEur(kpis?.risqueTotal)}</span>
-          <span className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`} />
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${(kpis?.risqueTotal ?? 0) > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
+          />
         </div>
         <p className="text-xs text-gray-500">
           {kpis?.totalSites ?? 0} sites concernés (périmètre sélectionné)
@@ -156,7 +185,11 @@ export default function CockpitHero({
           </p>
         )}
         <p className="text-[10px] text-gray-400">
-          Source : {kpis?.conformiteSource ?? 'compliance_engine'} · Confiance : moyenne
+          Source :{' '}
+          {kpis?.conformiteSource === 'RegAssessment'
+            ? 'Moteur conformité'
+            : (kpis?.conformiteSource ?? 'Moteur conformité')}{' '}
+          · Confiance : {kpis?.conformiteConfidence ?? 'moyenne'}
         </p>
       </div>
 
@@ -173,7 +206,8 @@ export default function CockpitHero({
             'Données annuelles en cours de collecte'
           ) : (
             <>
-              Objectif 2030 : <span className="text-blue-600">{trajectoire?.objectifPremierJalonPct ?? -40}%</span>
+              Objectif 2030 :{' '}
+              <span className="text-blue-600">{trajectoire?.objectifPremierJalonPct ?? -40}%</span>
               {isRetard && <span className="text-red-500 ml-1">· retard</span>}
             </>
           )}
