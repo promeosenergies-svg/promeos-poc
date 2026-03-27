@@ -56,6 +56,7 @@ import DataActivationPanel from './cockpit/DataActivationPanel';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
 import { MarketContextCompact } from '../components/purchase/MarketContextBanner';
+import MarketWidget from './cockpit/MarketWidget';
 import { READINESS_WEIGHTS, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 import { RiskBadge } from '../lib/risk/normalizeRisk';
 import {
@@ -624,7 +625,8 @@ const Cockpit = () => {
                   Trajectoire DT 2030 en retard de{' '}
                   {/* Écart en pts = soustraction de 2 valeurs backend (présentation) */}
                   {Math.abs(
-                    (trajectoire.reductionPctActuelle ?? 0) - (trajectoire.objectifPremierJalonPct ?? -25)
+                    (trajectoire.reductionPctActuelle ?? 0) -
+                      (trajectoire.objectifPremierJalonPct ?? -25)
                   ).toFixed(1)}{' '}
                   pts
                 </span>
@@ -756,6 +758,9 @@ const Cockpit = () => {
             <div className="space-y-4">
               {/* Impact & Décision */}
               <ImpactDecisionPanel kpis={kpis} />
+
+              {/* Market Intelligence Widget */}
+              <MarketWidget profile="C4" />
 
               {/* Market context */}
               <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />
