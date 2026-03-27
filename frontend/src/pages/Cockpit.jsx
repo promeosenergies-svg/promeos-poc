@@ -538,13 +538,13 @@ const Cockpit = () => {
       {/* ── Tabs navigation ── */}
       <div className="flex gap-6 border-b border-gray-200 mb-4">
         <button className="pb-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
-          Vue exécutive — /cockpit
+          Vue exécutive
         </button>
         <button
           onClick={() => navigate('/')}
           className="pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
         >
-          Tableau de bord — /
+          Tableau de bord
         </button>
       </div>
 
@@ -626,7 +626,7 @@ const Cockpit = () => {
                   {/* Écart en pts = soustraction de 2 valeurs backend (présentation) */}
                   {Math.abs(
                     (trajectoire.reductionPctActuelle ?? 0) -
-                      (trajectoire.objectifPremierJalonPct ?? -25)
+                      (trajectoire.objectifPremierJalonPct ?? -40)
                   ).toFixed(1)}{' '}
                   pts
                 </span>
