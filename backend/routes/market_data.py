@@ -16,7 +16,15 @@ from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.market_data_service import MarketDataService
 from services.market_tariff_loader import get_current_tariff, load_tariffs_from_yaml
-from models.market_models import PriceZone, MarketType, TariffType, TariffComponent, ProductType
+from services.price_decomposition_service import PriceDecompositionService
+from models.market_models import (
+    PriceZone,
+    MarketType,
+    TariffType,
+    TariffComponent,
+    ProductType,
+    PriceDecomposition,
+)
 
 router = APIRouter(prefix="/api/market", tags=["Market Data V2"])
 
@@ -141,6 +149,146 @@ def get_data_freshness(db: Session = Depends(get_db)):
     """Etat de fraicheur des donnees marche."""
     svc = MarketDataService(db)
     return svc.get_data_freshness()
+
+
+# ======================================================================
+# Decomposition prix
+# ======================================================================
+
+
+@router.get("/decomposition/compute")
+def decomposition_compute(
+    profile: str = Query("C4", description="Profil: C5, C4, C2, HTA"),
+    energy_price: Optional[float] = Query(None, description="Prix energie force (EUR/MWh)"),
+    power_kw: Optional[float] = Query(None, description="Puissance souscrite (kW)"),
+    volume_mwh: Optional[float] = Query(None, description="Volume annuel (MWh)"),
+    db: Session = Depends(get_db),
+):
+    """Decomposition prix temps reel — pas de persistance."""
+    svc = PriceDecompositionService(db)
+    result = svc.compute(
+        profile=profile,
+        energy_price_eur_mwh=energy_price,
+        power_kw=power_kw,
+        volume_mwh=volume_mwh,
+    )
+    return result.to_dict()
+
+
+@router.post("/decomposition/store")
+def decomposition_store(
+    org_id: int = Query(..., description="ID organisation"),
+    site_id: Optional[int] = Query(None, description="ID site"),
+    profile: str = Query("C4"),
+    energy_price: Optional[float] = Query(None),
+    power_kw: Optional[float] = Query(None),
+    volume_mwh: Optional[float] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Calcul + persistance dans price_decompositions."""
+    svc = PriceDecompositionService(db)
+    result = svc.compute_and_store(
+        org_id=org_id,
+        site_id=site_id,
+        profile=profile,
+        energy_price_eur_mwh=energy_price,
+        power_kw=power_kw,
+        volume_mwh=volume_mwh,
+    )
+    return {"status": "ok", **result.to_dict()}
+
+
+@router.get("/decomposition/latest")
+def decomposition_latest(
+    org_id: int = Query(...),
+    site_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Derniere decomposition stockee pour un org/site."""
+    q = db.query(PriceDecomposition).filter(PriceDecomposition.org_id == org_id)
+    if site_id:
+        q = q.filter(PriceDecomposition.site_id == site_id)
+    record = q.order_by(PriceDecomposition.calculated_at.desc()).first()
+    if not record:
+        return {"status": "no_data", "message": "Aucune decomposition stockee"}
+    return {
+        "id": record.id,
+        "profile": record.profile,
+        "energy_eur_mwh": record.energy_eur_mwh,
+        "turpe_eur_mwh": record.turpe_eur_mwh,
+        "cspe_eur_mwh": record.cspe_eur_mwh,
+        "capacity_eur_mwh": record.capacity_eur_mwh,
+        "cee_eur_mwh": record.cee_eur_mwh,
+        "cta_eur_mwh": record.cta_eur_mwh,
+        "total_ht_eur_mwh": record.total_ht_eur_mwh,
+        "tva_eur_mwh": record.tva_eur_mwh,
+        "total_ttc_eur_mwh": record.total_ttc_eur_mwh,
+        "calculation_method": record.calculation_method,
+        "tariff_version": record.tariff_version,
+        "calculated_at": record.calculated_at.isoformat() if record.calculated_at else None,
+    }
+
+
+@router.get("/decomposition/history")
+def decomposition_history(
+    org_id: int = Query(...),
+    site_id: Optional[int] = Query(None),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    """Historique des decompositions pour un org/site."""
+    q = db.query(PriceDecomposition).filter(PriceDecomposition.org_id == org_id)
+    if site_id:
+        q = q.filter(PriceDecomposition.site_id == site_id)
+    records = q.order_by(PriceDecomposition.calculated_at.desc()).limit(limit).all()
+    return {
+        "count": len(records),
+        "decompositions": [
+            {
+                "id": r.id,
+                "profile": r.profile,
+                "total_ttc_eur_mwh": r.total_ttc_eur_mwh,
+                "total_ht_eur_mwh": r.total_ht_eur_mwh,
+                "tariff_version": r.tariff_version,
+                "calculated_at": r.calculated_at.isoformat() if r.calculated_at else None,
+            }
+            for r in records
+        ],
+    }
+
+
+@router.get("/decomposition/compare")
+def decomposition_compare(
+    energy_price: Optional[float] = Query(None, description="Prix energie (EUR/MWh)"),
+    power_kw: Optional[float] = Query(None),
+    volume_mwh: Optional[float] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Comparaison C5/C4/C2 cote a cote — endpoint differenciant pour prospect."""
+    svc = PriceDecompositionService(db)
+    profiles = ["C5", "C4", "C2"]
+    results = {}
+    for p in profiles:
+        r = svc.compute(
+            profile=p,
+            energy_price_eur_mwh=energy_price,
+            power_kw=power_kw,
+            volume_mwh=volume_mwh,
+        )
+        results[p] = r.to_dict()
+
+    return {
+        "profiles": profiles,
+        "decompositions": results,
+        "summary": {
+            p: {
+                "total_ht_eur_mwh": results[p]["total_ht_eur_mwh"],
+                "total_ttc_eur_mwh": results[p]["total_ttc_eur_mwh"],
+            }
+            for p in profiles
+        },
+    }
 
 
 @router.post("/tariffs/reload")
