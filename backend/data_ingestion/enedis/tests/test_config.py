@@ -1,16 +1,9 @@
 """Tests for Enedis SGE pipeline configuration (SF4 Phase 1)."""
 
 import os
-import sys
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
-sys.path.insert(
-    0,
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
-)
 
 from data_ingestion.enedis.config import MAX_RETRIES, get_flux_dir
 
