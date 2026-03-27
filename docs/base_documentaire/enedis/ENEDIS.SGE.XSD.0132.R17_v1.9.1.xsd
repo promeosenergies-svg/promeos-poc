@@ -1,0 +1,712 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="Index_C2_C3_C4" type="Index_C2_C3_C4"/>
+	<xs:complexType name="Index_C2_C3_C4" mixed="false">
+		<xs:sequence>
+			<xs:element name="En_Tete_Flux" type="Entete"/>
+			<xs:element name="Corps_PRM" type="Corps" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Entete" mixed="false">
+		<xs:sequence>
+			<xs:element name="Identifiant_Flux">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+						<xs:enumeration value="R17"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle_Flux">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="250"/>
+						<xs:enumeration value="Index et consommations des PRM des segments C2, C3 et C4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Version_XSD">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Identifiant_Emetteur">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+						<xs:enumeration value="Enedis"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Identifiant_Destinataire">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Date_Creation" type="xs:dateTime"/>
+			<xs:element name="Identifiant_Contrat">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Coordonnees_Emetteur" type="Coordonnees_Emetteur"/>
+			<xs:element name="Coordonnees_Destinataire" type="Coordonnees_Destinataire"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Coordonnees_Emetteur" mixed="false">
+		<xs:sequence>
+			<xs:element name="Nom">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Complement" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="90"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Num" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Voie" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Code_Postal" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="7"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Cedex" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="38"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Commune" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="38"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Pays" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Coordonnees_Destinataire" mixed="false">
+		<xs:sequence>
+			<xs:element name="Nom">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Complement" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="90"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Num" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Voie" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Code_Postal" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="7"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Cedex" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="38"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Commune" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="38"/>
+						<xs:minLength value="1"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Pays" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Corps" mixed="false">
+		<xs:sequence>
+			<xs:element name="Id_PRM">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="14"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Id_Historique" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Type_PRM" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Hebergeur"/>
+						<xs:enumeration value="Decomptant"/>
+						<xs:enumeration value="Regroupement"/>
+						<xs:enumeration value="Regroupement-Hebergeur"/>
+						<xs:enumeration value="AutoconsommationCollective"/>
+						<xs:enumeration value="Autoconso-Regroupement"/>
+						<xs:enumeration value="Autoconso-Hebergeur"/>
+						<xs:enumeration value="Autoconso-Regroup-Hebergeur"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Num_Sous_Lot">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="12"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Date_Sous_Lot" type="xs:date"/>
+			<xs:element name="Segment">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="2"/>
+						<xs:enumeration value="C2"/>
+						<xs:enumeration value="C3"/>
+						<xs:enumeration value="C4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Donnees_Releve" type="Donnees_Index" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Donnees_Index" mixed="false">
+		<xs:sequence>
+			<xs:element name="Id_PRM">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="14"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Numero_Installation_De_Comptage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Tarif_Souscrit" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="12"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Code_Structure_Fournisseur" type="xs:string" minOccurs="0"/>
+			<xs:element name="Type_Programmation_Compteur">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="1"/>
+						<xs:enumeration value="4"/>
+						<xs:enumeration value="5"/>
+						<xs:enumeration value="6"/>
+						<xs:enumeration value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Statut_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="INITIAL"/>
+						<xs:enumeration value="RECTIFICATIF"/>
+						<xs:enumeration value="ANNULE"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nature_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="REEL"/>
+						<xs:enumeration value="ESTIME"/>
+						<xs:enumeration value="REGULARISE"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Motif_Rectif" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="MESURE_ERRONEE"/>
+						<xs:enumeration value="PARAMETRE_CONTRACTUEL_ERRONE"/>
+						<xs:enumeration value="ANOMALIE_COMPTAGE"/>
+						<xs:enumeration value="FRAUDE"/>
+						<xs:enumeration value="CAS_ATYPIQUES"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Motif_Releve_Precedent" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nature_Index_Precedents" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="REEL"/>
+						<xs:enumeration value="ESTIME"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Motif_Releve_Nouveau">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nature_Index_Nouveaux" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="REEL"/>
+						<xs:enumeration value="ESTIME"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Date_Debut_Mesure" type="xs:date"/>
+			<xs:element name="Date_Fin_Mesure" type="xs:date"/>
+			<xs:element name="Donnees_Par_Type_Mesure" type="Donnees_par_Type_Mesure" maxOccurs="unbounded"/>
+			<xs:element name="Donnees_Par_Type_Mesure_Fournisseur" type="Donnees_par_Type_Mesure_Fournisseur" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Donnees_par_Type_Mesure" mixed="false">
+		<xs:sequence>
+			<xs:element name="Type_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="EA"/>
+						<xs:enumeration value="ER"/>
+						<xs:enumeration value="ERN"/>
+						<xs:enumeration value="DD"/>
+						<xs:enumeration value="TF"/>
+						<xs:enumeration value="DQ"/>
+						<xs:enumeration value="PA"/>
+						<xs:enumeration value="DP"/>
+						<xs:enumeration value="DE"/>
+						<xs:enumeration value="EAAUTO"/>
+						<xs:enumeration value="EAALLO"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Unite_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="kWh"/>
+						<xs:enumeration value="kVArh"/>
+						<xs:enumeration value="h"/>
+						<xs:enumeration value="kVA"/>
+						<xs:enumeration value="kW"/>
+						<xs:enumeration value="Nombre"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Index_Par_Classe_Temporelle" type="Index_par_Classe_Temporelle" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Conso_Par_Classe_Temporelle" type="Conso_Par_Classe_TemporelleType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Donnees_par_Type_Mesure_Fournisseur" mixed="false">
+		<xs:sequence>
+			<xs:element name="Type_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="EA"/>
+						<xs:enumeration value="ER"/>
+						<xs:enumeration value="ERN"/>
+						<xs:enumeration value="DD"/>
+						<xs:enumeration value="TF"/>
+						<xs:enumeration value="DQ"/>
+						<xs:enumeration value="PA"/>
+						<xs:enumeration value="DP"/>
+						<xs:enumeration value="DE"/>
+						<xs:enumeration value="EAAUTO"/>
+						<xs:enumeration value="EAALLO"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Unite_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="kWh"/>
+						<xs:enumeration value="kVArh"/>
+						<xs:enumeration value="h"/>
+						<xs:enumeration value="kVA"/>
+						<xs:enumeration value="kW"/>
+						<xs:enumeration value="Nombre"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Index_Par_Classe_Temporelle" type="Index_par_Classe_Temporelle_Fournisseur" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Conso_Par_Classe_Temporelle" type="Conso_Par_Classe_Temporelle_Fournisseur" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Index_par_Classe_Temporelle" mixed="false">
+		<xs:sequence>
+			<xs:element name="Classe_Temporelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Pointe"/>
+						<xs:enumeration value="HP"/>
+						<xs:enumeration value="HC"/>
+						<xs:enumeration value="HPH"/>
+						<xs:enumeration value="HCH"/>
+						<xs:enumeration value="HPE"/>
+						<xs:enumeration value="HCE"/>
+						<xs:enumeration value="HCDemiSaison"/>
+						<xs:enumeration value="HPDemiSaison"/>
+						<xs:enumeration value="JA"/>
+						<xs:enumeration value="P+HP"/>
+						<xs:enumeration value="HP+HC"/>
+						<xs:enumeration value="P+HP+HC"/>
+						<xs:enumeration value="NHDB"/>
+						<xs:enumeration value="NHDH"/>
+						<xs:enumeration value="PAH"/>
+						<xs:enumeration value="PAB"/>
+						<xs:enumeration value="Base"/>
+						<xs:enumeration value="PM"/>
+						<xs:enumeration value="HH"/>
+						<xs:enumeration value="HD"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Valeur_Forfait" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="9"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="Index_Phase">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Index_Phase_1_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_1_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_2_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_2_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_3_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_3_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Index">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Index_Precedent" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="11"/>
+										<xs:fractionDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Nouveau" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="11"/>
+										<xs:fractionDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Conso_Par_Classe_TemporelleType">
+		<xs:sequence>
+			<xs:element name="Classe_Temporelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Pointe"/>
+						<xs:enumeration value="HP"/>
+						<xs:enumeration value="HC"/>
+						<xs:enumeration value="HPH"/>
+						<xs:enumeration value="HCH"/>
+						<xs:enumeration value="HPE"/>
+						<xs:enumeration value="HCE"/>
+						<xs:enumeration value="HCDemiSaison"/>
+						<xs:enumeration value="HPDemiSaison"/>
+						<xs:enumeration value="JA"/>
+						<xs:enumeration value="P+HP"/>
+						<xs:enumeration value="HP+HC"/>
+						<xs:enumeration value="P+HP+HC"/>
+						<xs:enumeration value="NHDB"/>
+						<xs:enumeration value="NHDH"/>
+						<xs:enumeration value="PAH"/>
+						<xs:enumeration value="PAB"/>
+						<xs:enumeration value="Base"/>
+						<xs:enumeration value="PM"/>
+						<xs:enumeration value="HH"/>
+						<xs:enumeration value="HD"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Quantite_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="9"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Index_par_Classe_Temporelle_Fournisseur" mixed="false">
+		<xs:sequence>
+			<xs:element name="Classe_Temporelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Pointe"/>
+						<xs:enumeration value="HP"/>
+						<xs:enumeration value="HC"/>
+						<xs:enumeration value="HPH"/>
+						<xs:enumeration value="HCH"/>
+						<xs:enumeration value="HPE"/>
+						<xs:enumeration value="HCE"/>
+						<xs:enumeration value="HCDemiSaison"/>
+						<xs:enumeration value="HPDemiSaison"/>
+						<xs:enumeration value="JA"/>
+						<xs:enumeration value="P+HP"/>
+						<xs:enumeration value="HP+HC"/>
+						<xs:enumeration value="P+HP+HC"/>
+						<xs:enumeration value="NHDB"/>
+						<xs:enumeration value="NHDH"/>
+						<xs:enumeration value="PAH"/>
+						<xs:enumeration value="PAB"/>
+						<xs:enumeration value="Base"/>
+						<xs:enumeration value="PM"/>
+						<xs:enumeration value="HH"/>
+						<xs:enumeration value="HD"/>
+						<xs:enumeration value="EA1"/>
+						<xs:enumeration value="EA2"/>
+						<xs:enumeration value="EA3"/>
+						<xs:enumeration value="EA4"/>
+						<xs:enumeration value="EA5"/>
+						<xs:enumeration value="EA6"/>
+						<xs:enumeration value="EA7"/>
+						<xs:enumeration value="EA8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Valeur_Forfait" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="9"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="Index_Phase">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Index_Phase_1_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_1_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_2_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_2_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_3_Precedent">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Phase_3_Nouveau">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="9"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Index">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Index_Precedent" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="11"/>
+										<xs:fractionDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Index_Nouveau" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="11"/>
+										<xs:fractionDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Conso_Par_Classe_Temporelle_Fournisseur">
+		<xs:sequence>
+			<xs:element name="Classe_Temporelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string"/>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Correspondance_Index" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="EA1"/>
+						<xs:enumeration value="EA2"/>
+						<xs:enumeration value="EA3"/>
+						<xs:enumeration value="EA4"/>
+						<xs:enumeration value="EA5"/>
+						<xs:enumeration value="EA6"/>
+						<xs:enumeration value="EA7"/>
+						<xs:enumeration value="EA8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Quantite_Mesure">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="9"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

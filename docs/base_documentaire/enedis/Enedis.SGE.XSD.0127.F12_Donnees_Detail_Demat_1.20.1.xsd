@@ -1,0 +1,1228 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<!--=============== 20/07/2023 | Incrément 16 : Génération d'un nouveau fichier FX pour la dématérialisation des factures suite à la nouvelle loi finance ==================-->
+	<!--=============== 05/07/2024 | Incrément 2024.1 SP1: Ajout de nouvelles balises dans le cadre du LDF24" ==================-->
+	<!--=============== 03/10/2024 | Incrément 2024.3 SP1: Ajout des données d'adressage de factures LDF24" ==================-->
+	<!--=============== 27/01/2025 | Incrément 2025.1 SP1: Ajout de l'agrégation par type de tarif LDF24" ==================-->
+	<!--=============== 15/04/2025 | Incrément 2025.2 SP1: Rework XSD réforme facturation" ==================-->
+	<xsd:element name="Detail_Facturation_Demat" type="Detail"/>
+	<xsd:complexType name="Detail" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_Flux" type="En_Tete_Flux"/>
+			<xsd:element name="Rappel_En_Tete" type="Rappel_En_Tete"/>
+			<xsd:element name="Donnees_Generales_Demat" type="Donnees_Generales_Demat"/>
+			<xsd:element name="Detail_Recapitulatif_Demat" type="Detail_Recapitulatif_Demat"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="En_Tete_Flux" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Identifiant_Flux">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="F12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Libelle_Flux">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="250"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="Flux de facture F12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Version_XSD">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="10"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Identifiant_Emetteur">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+						<xsd:enumeration value="Enedis"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Identifiant_Destinataire" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="20"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Creation" type="xsd:dateTime"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Rappel_En_Tete" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Num_Facture">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Facture" type="xsd:date"/>
+			<xsd:element name="Devise" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="3"/>
+						<xsd:enumeration value="EUR"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Generales_Demat" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Type_Profil" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="70"/>
+						<xsd:enumeration value="e-invoicing"/>
+						<xsd:enumeration value="e-reporting"/>
+						<xsd:enumeration value="hors champs"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Type_Facture" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+						<xsd:enumeration value="380"/>
+						<xsd:enumeration value="381"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ref_Facture_Anterieur" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Date_Facture_Anterieur" type="xsd:date" minOccurs="0"/>
+			<xsd:element name="Code_Type_Facture_Anterieur" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+						<xsd:enumeration value="380"/>
+						<xsd:enumeration value="381"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Libelle_Mode_De_Reglement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="Avoir"/>
+						<xsd:enumeration value="Chèque"/>
+						<xsd:enumeration value="Prélèvement"/>
+						<xsd:enumeration value="Ecriture intra-groupe"/>
+						<xsd:enumeration value="Remboursement"/>
+						<xsd:enumeration value="Remboursement intra-groupe"/>
+						<xsd:enumeration value="Paiement par virement"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ref_Bon_Commande" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="100"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Donnees_Vendeur" type="Donnees_Vendeur"/>
+			<xsd:element name="Donnees_Acheteur" type="Donnees_Acheteur"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Acheteur" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Donnees_Contractant" type="Donnees_Contractant"/>
+			<xsd:element name="Donnees_Destinataire_Facture" type="Donnees_Destinataire_Facture" minOccurs="0"/>
+			<xsd:element name="Donnees_Payeur_Facture" type="Donnees_Payeur_Facture" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Vendeur" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Titre" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="15"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Nom">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="90"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Postal">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="7"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ville">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Pays" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIREN">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIRET">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_TVA">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="13"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Registre_Commerce">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Capital">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:positiveInteger">
+						<xsd:totalDigits value="15"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="E_Mail_Contact_ENEDIS" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Donnees_Bancaires" type="Donnees_Bancaires" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Contractant" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Id_Contrat">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="9"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_RUM" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="35"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Nom">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Destinataire_Service_Escalier_Etage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="90"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Bat_Zi_Residence_Immeuble" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Lieudit_Mentionspeciale_Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Postal">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="7"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ville">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Pays" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Maille_Adressage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="30"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIREN" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIRET" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Routage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="100"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Adressage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="50"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Registre_Commerce" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="54"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_TVA">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type_Taux" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="1"/>
+						<xsd:enumeration value="0"/>
+						<xsd:enumeration value="1"/>
+						<xsd:enumeration value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="E_Mail" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Telephone" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Donnees_Bancaires" type="Donnees_Bancaires" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Destinataire_Facture" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Nom">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Prenom" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Destinataire_Service_Escalier_Etage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="90"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Bat_Zi_Residence_Immeuble" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Lieudit_Mentionspeciale_Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Postal">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="7"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ville">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Pays" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Telephone" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Maille_Adressage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="30"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIREN" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIRET" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Routage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="100"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Adressage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="50"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="E_Mail" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Payeur_Facture" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Nom">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Prenom" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SIREN" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="48"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_TVA" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="13"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Destinataire_Service_Escalier_Etage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="90"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Bat_Zi_Residence_Immeuble" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Lieudit_Mentionspeciale_Complement" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Rue" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="60"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Postal">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="7"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Ville">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="38"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Pays" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Telephone" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Donnees_Bancaires">
+		<xsd:sequence>
+			<xsd:element name="Code_Pays_Banque">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Cle_Bancaire" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="10"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Compte_Bancaire" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="18"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Cle_RIB" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Swift" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:length value="11"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Iban" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="34"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Detail_Recapitulatif_Demat" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Periode_Facturation" type="Periode_Facturation" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Note_de_Facture" type="Note_de_Facture" maxOccurs="unbounded"/>
+			<xsd:element name="Montant_Total" type="Montant_Total"/>
+			<xsd:element name="Detail_Montant_Total" type="Detail_Montant_Total"/>
+			<xsd:element name="Recapitulatif_Demat" type="Recapitulatif_Demat"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Date_Debut" type="xsd:date"/>
+			<xsd:element name="Date_Fin" type="xsd:date"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Note_de_Facture" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Code_Sujet">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="3"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Note">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="1024"/>
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Montant_Total" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_Total_TTC">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="TVA" type="TVA" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Detail_Montant_Total" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Hors_RC" type="Montant_Hors_RC"/>
+			<xsd:element name="Remises" type="Remises" minOccurs="0"/>
+			<xsd:element name="Charges" type="Charges" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Montant_Hors_RC" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Remises" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Charges" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Recapitulatif_Demat" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Type_Tarif" type="Type_Tarif" minOccurs="0" maxOccurs="15"/>
+			<xsd:element name="Autres_Montants" type="Autres_Montants" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Type_Tarif" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Tarif_Souscrit">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="12"/>
+						<xsd:enumeration value="BTSUPLU"/>
+						<xsd:enumeration value="BTSUPMU"/>
+						<xsd:enumeration value="HTA5"/>
+						<xsd:enumeration value="HTA8"/>
+						<xsd:enumeration value="HTASansDiff"/>
+						<xsd:enumeration value="BTINFCUST"/>
+						<xsd:enumeration value="BTINFMUDT"/>
+						<xsd:enumeration value="BTINFLU"/>
+						<xsd:enumeration value="BTINFMUST"/>
+						<xsd:enumeration value="HTACU5"/>
+						<xsd:enumeration value="HTALU5"/>
+						<xsd:enumeration value="HTACUPM5"/>
+						<xsd:enumeration value="HTALUPM5"/>
+						<xsd:enumeration value="BTSUPLU4"/>
+						<xsd:enumeration value="BTSUPCU4"/>
+						<xsd:enumeration value="BTSUPLUACC"/>
+						<xsd:enumeration value="BTSUPCUACC"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Acheminement" type="Acheminement" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Prestations_Options_Frais" type="Prestations_Options_Frais" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Prestations_Options_Frais" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Prestation" type="Prestation" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Option" type="Option" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Frais" type="Frais" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Autres_Montants" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Contribution" type="Contribution" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Mino_Majo" type="Mino_Majo" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Interets_Retard" type="Interets_Retard" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="Autres" type="Autres" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Acheminement" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Prestation" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Option" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Frais" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Contribution" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Mino_Majo" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Interets_Retard" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Autres" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="En_Tete_EVD_Recap" type="En_Tete_EVD_Recap"/>
+			<xsd:element name="Element_Valorise_Demat" type="Element_Valorise_Demat" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="En_Tete_EVD_Recap" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Code_Recapitulatif_Demat" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="ACH"/>
+						<xsd:enumeration value="PREST"/>
+						<xsd:enumeration value="OPT"/>
+						<xsd:enumeration value="FRAIS"/>
+						<xsd:enumeration value="CONT"/>
+						<xsd:enumeration value="MINO_MAJO"/>
+						<xsd:enumeration value="INT_RET"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_Total_HT" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Base_Ventilation_TVA" type="Base_Ventilation_TVA" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Base_Ventilation_TVA" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Taux_TVA_Applicable">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="6"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Type_TVA" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="2"/>
+						<xsd:enumeration value="S"/>
+						<xsd:enumeration value="E"/>
+						<xsd:enumeration value="AE"/>
+						<xsd:enumeration value="O"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Element_Valorise_Demat" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Id_EV_Demat">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Libelle_EV_Demat">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="250"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Recapitulatif" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="CGEST"/>
+						<xsd:enumeration value="CCOMP"/>
+						<xsd:enumeration value="CAC"/>
+						<xsd:enumeration value="CAS"/>
+						<xsd:enumeration value="CSF"/>
+						<xsd:enumeration value="CSV"/>
+						<xsd:enumeration value="CMDPS"/>
+						<xsd:enumeration value="CREAC"/>
+						<xsd:enumeration value="CSPE"/>
+						<xsd:enumeration value="PREST"/>
+						<xsd:enumeration value="FRAIS"/>
+						<xsd:enumeration value="REM"/>
+						<xsd:enumeration value="AUTRE"/>
+						<xsd:enumeration value="CRGPT"/>
+						<xsd:enumeration value="CGCU"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Quantite" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Unite_Quantite" type="Unite_Quantite" minOccurs="0"/>
+			<xsd:element name="Prix_Unitaire_Affichage" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Type" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="3"/>
+						<xsd:maxLength value="4"/>
+						<xsd:enumeration value="MINO"/>
+						<xsd:enumeration value="MAJO"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Assiette" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Num_Facture_Impayee" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="12"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_Base" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Nb_Jours" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:integer">
+						<xsd:totalDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Taux" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="6"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Sous_Total_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Taux_TVA_Applicable">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="6"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Type_TVA" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="2"/>
+						<xsd:enumeration value="S"/>
+						<xsd:enumeration value="E"/>
+						<xsd:enumeration value="AE"/>
+						<xsd:enumeration value="O"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>	
+	<xsd:complexType name="TVA" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Montant_Taxe">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Detail_TVA" type="Detail_TVA" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Detail_TVA" mixed="false">
+		<xsd:sequence>
+			<xsd:element name="Taux_TVA_Applicable">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="6"/>
+						<xsd:fractionDigits value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Type_TVA" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="2"/>
+						<xsd:enumeration value="S"/>
+						<xsd:enumeration value="E"/>
+						<xsd:enumeration value="AE"/>
+						<xsd:enumeration value="O"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Code_Motif_Exoneration" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="10"/>
+						<xsd:enumeration value="VATEX-EU-AE"/>
+						<xsd:enumeration value="VATEX-EU-E"/>
+						<xsd:enumeration value="VATEX-EU-O"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Motif_Exoneration" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="70"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_HT">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="Montant_Taxe">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:decimal">
+						<xsd:totalDigits value="18"/>
+						<xsd:fractionDigits value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="Unite_Quantite">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="c.j"/>
+			<xsd:enumeration value="EUR"/>
+			<xsd:enumeration value="h"/>
+			<xsd:enumeration value="j"/>
+			<xsd:enumeration value="kVA"/>
+			<xsd:enumeration value="kVA.j"/>
+			<xsd:enumeration value="kVArh"/>
+			<xsd:enumeration value="kW"/>
+			<xsd:enumeration value="kW.j"/>
+			<xsd:enumeration value="kWh"/>
+			<xsd:enumeration value="m"/>
+			<xsd:enumeration value="p.j"/>
+			<xsd:enumeration value="unite"/>
+			<xsd:enumeration value="cellule"/>
+			<xsd:enumeration value="km"/>
+			<xsd:enumeration value="kW.km.j"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:schema>

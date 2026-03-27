@@ -1,0 +1,224 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "siDemandeur": {
+          "type": "string"
+        },
+        "typeDestinataire": {
+          "type": "string"
+        },
+        "idDestinataire": {
+          "type": "string"
+        },
+        "codeFlux": {
+          "type": "string"
+        },
+        "idDemande": {
+          "type": "string"
+        },
+        "modePublication": {
+          "type": "string"
+        },
+        "idCanalContact": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+		"publicationCrp":{
+			"type":"string"
+		}
+      },
+      "required": [
+        "siDemandeur",
+        "typeDestinataire",
+        "idDestinataire",
+        "codeFlux",
+        "idDemande",
+        "modePublication",
+        "idCanalContact",
+        "format"
+      ]
+    },
+    "mesures": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "idPrm": {
+              "type": "string"
+            },
+            "periode": {
+              "type": "object",
+              "properties": {
+                "dateDebut": {
+                  "type": "string"
+                },
+                "dateFin": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "dateDebut",
+                "dateFin"
+              ]
+            },
+            "contexte": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "etapeMetier": {
+                      "type": "string"
+                    },
+                    "idMotifReleve": {
+                      "type": "string"
+                    },
+                    "libelleMotifReleve": {
+                      "type": "string"
+                    },
+                    "grandeur": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "grandeurMetier": {
+                              "type": "string"
+                            },
+                            "grandeurPhysique": {
+                              "type": "string"
+                            },
+                            "unite": {
+                              "type": "string"
+                            },
+                            "calendrier": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "codeGrille": {
+                                      "type": "string"
+                                    },
+                                    "libelleGrille": {
+                                      "type": "string"
+                                    },
+                                    "codeCalendrier": {
+                                      "type": "string"
+                                    },
+                                    "libelleCalendrier": {
+                                      "type": "string"
+                                    },
+                                    "classeTemporelle": {
+                                      "type": "array",
+                                      "items": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "idClasseTemporelle": {
+                                              "type": "string"
+                                            },
+                                            "libelleClasseTemporelle": {
+                                              "type": "string"
+                                            },
+                                            "quantite": {
+                                              "type": "array",
+                                              "items": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "dateCreation": {
+                                                      "type": "string"
+                                                    },
+                                                    "dbtMesure": {
+                                                      "type": "string"
+                                                    },
+                                                    "finMesure": {
+                                                      "type": "string"
+                                                    },
+                                                    "quantite": {
+                                                      "type": "integer"
+                                                    },
+                                                    "codeNature": {
+                                                      "type": "string"
+                                                    },
+                                                    "libelleNature": {
+                                                      "type": "string"
+                                                    },
+                                                    "codeStatut": {
+                                                      "type": "string"
+                                                    },
+                                                    "libelleStatut": {
+                                                      "type": "string"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "dateCreation",
+                                                    "dbtMesure",
+                                                    "finMesure",
+                                                    "quantite",
+                                                    "libelleNature",
+                                                    "libelleStatut"
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "idClasseTemporelle",
+                                            "libelleClasseTemporelle",
+                                            "quantite"
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "libelleGrille",
+                                    "classeTemporelle"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "grandeurMetier",
+                            "grandeurPhysique",
+                            "unite",
+                            "calendrier"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "etapeMetier",
+                    "idMotifReleve",
+                    "libelleMotifReleve",
+                    "grandeur"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "idPrm",
+            "periode",
+            "contexte"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "header",
+    "mesures"
+  ]
+}

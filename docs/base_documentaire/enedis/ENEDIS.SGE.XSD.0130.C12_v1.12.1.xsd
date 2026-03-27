@@ -1,0 +1,1052 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="C12">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="En_Tete_Flux" type="En_Tete_Flux"/>
+				<xs:element name="Contrat">
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="Contrat"/>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="En_Tete_Flux">
+		<xs:sequence>
+			<xs:element name="Identifiant_Flux">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="C12"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle_Flux">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Description contractuelle des PRM du segment C2-C4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Version_XSD" type="xs:string"/>
+			<xs:element name="Identifiant_Emetteur">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Enedis"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Identifiant_Destinataire" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Date_Creation" type="xs:dateTime"/>
+			<xs:element name="Mode_Generation">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="COMPLET"/>
+						<xs:enumeration value="DELTA"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Client_Contractant">
+		<xs:sequence>
+			<xs:element name="Code_EIC">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="16"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Raison_Sociale">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PRM">
+		<xs:sequence>
+			<xs:element name="Identifiant">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="14"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle_Usuel" type="xs:string" minOccurs="0"/>
+			<xs:element name="Type" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Hebergeur"/>
+						<xs:enumeration value="Decomptant"/>
+						<xs:enumeration value="Regroupement"/>
+						<xs:enumeration value="Regroupement-Hebergeur"/>
+						<xs:enumeration value="AutoconsommationCollective"/>
+						<xs:enumeration value="Autoconso-Regroupement"/>
+						<xs:enumeration value="Autoconso-Hebergeur"/>
+						<xs:enumeration value="Autoconso-Regroup-Hebergeur"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Autoproducteur" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="SI_Contractuel" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="Identifiant_Historique" type="xs:string" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="SI_Comptage" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="Identifiant_Historique" type="xs:string" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Type_Evenement" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Contractuel" type="xs:boolean"/>
+						<xs:element name="Comptage" type="xs:boolean"/>
+						<xs:element name="Reseau" type="xs:boolean"/>
+						<xs:element name="Administratif" type="xs:boolean"/>
+						<xs:element name="Date_Evenement" type="xs:date"/>
+						<xs:element name="Adresse_Postale" type="Adresse_Postale_PRM"/>
+						<xs:element name="CAD" type="CAD"/>
+						<xs:element name="Situation_Contractuelle" type="Situation_Contractuelle" maxOccurs="unbounded"/>
+						<xs:element name="Alimentation" type="Alimentation" minOccurs="0"/>
+						<xs:element name="Dispositif_De_Comptage" type="Dispositif_De_Comptage" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Dispositif_De_Comptage">
+		<xs:sequence>
+			<xs:element name="Donnees_Releve" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Plage_De_Releve">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="10"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="Mode_De_Traitement_Du_Compteur">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="CdC"/>
+									<xs:enumeration value="Index"/>
+									<xs:enumeration value="Mixte"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Donnees_Comptage" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Pertes" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="Fact_Corr_Pertes_Fer" minOccurs="0">
+										<xs:simpleType>
+											<xs:restriction base="xs:decimal">
+												<xs:totalDigits value="9"/>
+												<xs:fractionDigits value="4"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+									<xs:element name="Fact_Corr_Pertes_Joule" minOccurs="0">
+										<xs:simpleType>
+											<xs:restriction base="xs:decimal">
+												<xs:totalDigits value="9"/>
+												<xs:fractionDigits value="4"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+									<xs:element name="Fact_Corr_Pertes_Reactives" minOccurs="0">
+										<xs:simpleType>
+											<xs:restriction base="xs:decimal">
+												<xs:totalDigits value="7"/>
+												<xs:fractionDigits value="2"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Compteur" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Structure_De_Comptage">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="35"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="Numero_De_Serie">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="20"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="Regime_De_Propriete">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="Loue"/>
+									<xs:enumeration value="ProprieteClient"/>
+									<xs:enumeration value="ProprieteAvecRefusClient"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Transformateur_Courant" type="Transformateur_Courant" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Transformateur_Tension" type="Transformateur_Tension" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Transformateur_Courant">
+		<xs:sequence>
+			<xs:element name="Position" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Secondaire"/>
+						<xs:enumeration value="Primaire"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Couplage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string"/>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Classe_Precision" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="0.2"/>
+						<xs:enumeration value="0.2s"/>
+						<xs:enumeration value="0.5"/>
+						<xs:enumeration value="0.5s"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Transformateur_Tension">
+		<xs:sequence>
+			<xs:element name="Couplage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string"/>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Classe_Precision" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="0.2"/>
+						<xs:enumeration value="0.5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Responsable_Equilibre">
+		<xs:sequence>
+			<xs:element name="Date_Debut" type="xs:date"/>
+			<xs:element name="Date_Fin" type="xs:date" minOccurs="0"/>
+			<xs:element name="Code_EIC">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="16"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Raison_Sociale">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Contrat">
+		<xs:sequence>
+			<xs:element name="Identifiant" type="xs:string"/>
+			<xs:element name="Date_Debut" type="xs:date"/>
+			<xs:element name="Responsable_Equilibre" type="Responsable_Equilibre" maxOccurs="unbounded"/>
+			<xs:element name="Client_Contractant" type="Client_Contractant"/>
+			<xs:element name="PRM" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="PRM"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Adresse_Postale_PRM">
+		<xs:sequence>
+			<xs:element name="Numero_Voie" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nom_Voie" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Complement" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="90"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Code_Postal">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="7"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle_Du_Bureau_CEDEX" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="38"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Commune">
+				<xs:complexType>
+					<xs:attribute name="Code_INSEE" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:length value="5"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Pays" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="Code" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:length value="2"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Utilisateur_Reseau">
+		<xs:sequence>
+			<xs:element name="Personne_Morale" type="Personne_Morale"/>
+			<xs:element name="Interlocuteur_Technique" type="Interlocuteur_Technique" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Personne_Morale">
+		<xs:sequence>
+			<xs:element name="Raison_Sociale">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="80"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Code_APE" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Interlocuteur_Technique">
+		<xs:sequence>
+			<xs:element name="Nom">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="40"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Telephone">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="25"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Fax" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="25"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="E_Mail" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Situation_Contractuelle">
+		<xs:sequence>
+			<xs:element name="Synthese_Contractuelle">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Date_De_Premiere_Mise_En_Service" type="xs:date" minOccurs="0"/>
+						<xs:element name="Date_Der_Modif_PS" type="xs:date" minOccurs="0"/>
+						<xs:element name="Date_Der_Modif_Tarif" type="xs:date" minOccurs="0"/>
+						<xs:element name="Date_Der_Modif_CCF" type="xs:date" minOccurs="0"/>
+						<xs:element name="Date_Der_Modif_CGPM" type="xs:date" minOccurs="0"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Numero_Sequence" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Date_Debut_Situ_Precedente" type="xs:date" minOccurs="0"/>
+			<xs:element name="Date_Debut" type="xs:date"/>
+			<xs:element name="Date_Fin" type="xs:date" minOccurs="0"/>
+			<xs:element name="Evenement" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Nature_Evenement" minOccurs="0" maxOccurs="unbounded">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="CFN"/>
+									<xs:enumeration value="CPS"/>
+									<xs:enumeration value="CTF"/>
+									<xs:enumeration value="MES"/>
+									<xs:enumeration value="PMES"/>
+									<xs:enumeration value="RES"/>
+									<xs:enumeration value="RELSPE"/>
+									<xs:enumeration value="INIT"/>
+									<xs:enumeration value="CGF"/>
+									<xs:enumeration value="PROV"/>
+									<xs:enumeration value="CCF"/>
+									<xs:enumeration value="CGPM"/>
+									<xs:enumeration value="PROVCD"/>
+									<xs:enumeration value="CTU"/>
+									<xs:enumeration value="ENT_ACC"/>
+									<xs:enumeration value="SOR_ACC"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name="Numero_Affaire" minOccurs="0">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="10"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Option_Contractuelle_Souscrite" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="Option_Contractuelle_Souscrite"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Utilisateur_Reseau" type="Utilisateur_Reseau"/>
+			<xs:element name="Option_Tarifaire_TURPE_Souscrite" type="Option_Tarifaire_TURPE_Souscrite"/>
+			<xs:element name="Structure_Fournisseur_Souscrite" type="Structure_Fournisseur_Souscrite" minOccurs="0"/>
+			<xs:element name="Profil">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="ENT1"/>
+						<xs:enumeration value="ENT2"/>
+						<xs:enumeration value="ENT3"/>
+						<xs:enumeration value="ENT4"/>
+						<xs:enumeration value="ENT5"/>
+						<xs:enumeration value="ENT6"/>
+						<xs:enumeration value="ENT7"/>
+						<xs:enumeration value="ENT2_NORD"/>
+						<xs:enumeration value="ENT2_SUD"/>
+						<xs:enumeration value="ENT2_BRET"/>
+						<xs:enumeration value="ENT2_PACA"/>
+						<xs:enumeration value="ENT4_NORD"/>
+						<xs:enumeration value="ENT4_SUD"/>
+						<xs:enumeration value="ENT4_BRET"/>
+						<xs:enumeration value="ENT4_PACA"/>
+						<xs:enumeration value="ENT6_NORD"/>
+						<xs:enumeration value="ENT6_SUD"/>
+						<xs:enumeration value="ENT6_BRET"/>
+						<xs:enumeration value="ENT6_PACA"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Option_Tarifaire_TURPE">
+		<xs:sequence>
+			<xs:element name="Libelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="BTSUPLU"/>
+						<xs:enumeration value="BTSUPMU"/>
+						<xs:enumeration value="HTA5"/>
+						<xs:enumeration value="HTA8"/>
+						<xs:enumeration value="HTASansDiff"/>
+						<xs:enumeration value="BTINFCUST"/>
+						<xs:enumeration value="BTINFMUDT"/>
+						<xs:enumeration value="BTINFLU"/>
+						<xs:enumeration value="BTINFMUST"/>
+						<xs:enumeration value="HTALU5"/>
+						<xs:enumeration value="HTACU5"/>
+						<xs:enumeration value="HTALUPM5"/>
+						<xs:enumeration value="HTACUPM5"/>
+						<xs:enumeration value="BTSUPLU4"/>
+						<xs:enumeration value="BTSUPCU4"/>
+						<xs:enumeration value="BTSUPCUACC"/>
+						<xs:enumeration value="BTSUPLUACC"/>
+						<xs:enumeration value="HTAST5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Option_Tarifaire_TURPE_Souscrite">
+		<xs:sequence>
+			<xs:element name="Option_Tarifaire_TURPE" type="Option_Tarifaire_TURPE"/>
+			<xs:element name="Classe_Temporelle_TURPE_Souscrite" type="Classe_Temporelle_TURPE_Souscrite" maxOccurs="unbounded"/>
+			<xs:element name="Groupe_Periode_Mobile_Distributeur" type="Groupe_Periode_Mobile_DistributeurType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Classe_Temporelle_TURPE_Souscrite">
+		<xs:sequence>
+			<xs:element name="Libelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Pointe"/>
+						<xs:enumeration value="HPH"/>
+						<xs:enumeration value="HPDemiSaison"/>
+						<xs:enumeration value="HCH"/>
+						<xs:enumeration value="HCDemiSaison"/>
+						<xs:enumeration value="HPE"/>
+						<xs:enumeration value="HCE"/>
+						<xs:enumeration value="JA"/>
+						<xs:enumeration value="Base"/>
+						<xs:enumeration value="HP"/>
+						<xs:enumeration value="HC"/>
+						<xs:enumeration value="PM"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Puissance_Souscrite">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Classe_Temporelle_Fournisseur_Souscrite">
+		<xs:sequence>
+			<xs:element name="Libelle">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Puissance_Souscrite">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Option_Contractuelle_Souscrite">
+		<xs:sequence>
+			<xs:element name="Date_Debut" type="xs:date"/>
+			<xs:element name="Date_Fin" type="xs:date" minOccurs="0"/>
+			<xs:element name="Identifiant_Option_Contractuelle_Souscrite" type="xs:string" minOccurs="0"/>
+			<xs:element name="Option_Contractuelle">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Libelle" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="Continuite_De_Fourniture">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Periodicite" type="PeriodiciteType"/>
+							<xs:element name="Type_De_Bilan">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="Standard"/>
+										<xs:enumeration value="Personnalise"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Mois_Reference_Coupures" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:pattern value="[0-3][0-9]/[0-1][0-9]/[0-9]{4}"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Type_Coupures">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="Breve_Longue"/>
+										<xs:enumeration value="Total"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Nombre_Total_De_Coupures" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="10" fixed="false"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Nombre_De_Coupures_Breves" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="10"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Nombre_De_Coupures_Longues" minOccurs="0">
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:totalDigits value="10"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Qualite_De_Fourniture">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Periodicite" type="PeriodiciteType"/>
+							<xs:element name="Mois_De_Reference_Creux">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:pattern value="[0-3][0-9]/[0-1][0-9]/[0-9]{4}"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Nb_Creux" type="xs:integer" minOccurs="0"/>
+							<xs:element name="Profondeur_Creux" type="xs:decimal" minOccurs="0"/>
+							<xs:element name="Duree_Creux" type="xs:decimal" minOccurs="0"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Periode_Observation">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Nombre_De_Mois">
+								<xs:simpleType>
+									<xs:restriction base="xs:positiveInteger">
+										<xs:totalDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Telecommande">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Nombre_Directions">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="2DIR"/>
+										<xs:enumeration value="34DIR"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Protection_De_Chantier">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Nombre_De_Portees">
+								<xs:simpleType>
+									<xs:restriction base="xs:positiveInteger">
+										<xs:totalDigits value="3"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Transmission_CDC">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Frequence">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="Ponctuelle"/>
+										<xs:enumeration value="Quotidienne"/>
+										<xs:enumeration value="Hebdomadaire"/>
+										<xs:enumeration value="Mensuelle"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="Nature_De_Courbe">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="Brute"/>
+										<xs:enumeration value="Corrigee"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Transmission_Hebdo_CDC" type="xs:boolean"/>
+				<xs:element name="Synchronisation_Materiel_Comptage" type="xs:boolean"/>
+				<xs:element name="Utilisation_CDC_Pour_Reconstitution_Flux" type="xs:boolean"/>
+				<xs:element name="Location_De_Coffret" type="xs:boolean"/>
+				<xs:element name="Location_De_Compteur" type="xs:boolean"/>
+				<xs:element name="Calendrier_Fournisseur">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Profilable" type="xs:boolean"/>
+							<xs:element name="Periode_Mobile" type="xs:boolean"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Alimentation">
+		<xs:sequence>
+			<xs:element name="Alimentation_Principale" type="Alimentation_Principale" minOccurs="0"/>
+			<xs:element name="Alimentation_Secours" type="Alimentation_Secours" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Alimentation_Complementaire" type="Alimentation_Complementaire" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Alimentation_Principale">
+		<xs:sequence>
+			<xs:element name="Reference_Poste" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Troncon" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Depart" type="xs:string" minOccurs="0"/>
+			<xs:element name="Zone_Qualite_Desserte" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="Zone1"/>
+						<xs:enumeration value="Zone2"/>
+						<xs:enumeration value="Zone3"/>
+						<xs:enumeration value="Zone4"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Tension_De_Livraison">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="10kV"/>
+						<xs:enumeration value="127_220V"/>
+						<xs:enumeration value="12kV"/>
+						<xs:enumeration value="13.2kV"/>
+						<xs:enumeration value="13.5kV"/>
+						<xs:enumeration value="13kV"/>
+						<xs:enumeration value="150kV"/>
+						<xs:enumeration value="15kV"/>
+						<xs:enumeration value="20kV"/>
+						<xs:enumeration value="21kV"/>
+						<xs:enumeration value="220_380V"/>
+						<xs:enumeration value="225kV"/>
+						<xs:enumeration value="230_400V"/>
+						<xs:enumeration value="23kV"/>
+						<xs:enumeration value="30kV"/>
+						<xs:enumeration value="33kV"/>
+						<xs:enumeration value="35kV"/>
+						<xs:enumeration value="3kV"/>
+						<xs:enumeration value="400kV"/>
+						<xs:enumeration value="45kV"/>
+						<xs:enumeration value="5.5kV"/>
+						<xs:enumeration value="5kV"/>
+						<xs:enumeration value="63kV"/>
+						<xs:enumeration value="6kV"/>
+						<xs:enumeration value="90kV"/>
+						<xs:enumeration value="8.5kV"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="P_Raccordement_Soutirage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Domaine_De_Tension">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="BTSUP"/>
+						<xs:enumeration value="HTA"/>
+						<xs:enumeration value="BTINF"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="P_Limite_Soutirage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Alimentation_Secours">
+		<xs:sequence>
+			<xs:element name="Reference_Poste" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Troncon" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Depart" type="xs:string" minOccurs="0"/>
+			<xs:element name="Tension_De_Livraison">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="10kV"/>
+						<xs:enumeration value="127_220V"/>
+						<xs:enumeration value="12kV"/>
+						<xs:enumeration value="13.2kV"/>
+						<xs:enumeration value="13.5kV"/>
+						<xs:enumeration value="13kV"/>
+						<xs:enumeration value="150kV"/>
+						<xs:enumeration value="15kV"/>
+						<xs:enumeration value="20kV"/>
+						<xs:enumeration value="21kV"/>
+						<xs:enumeration value="220_380V"/>
+						<xs:enumeration value="225kV"/>
+						<xs:enumeration value="230_400V"/>
+						<xs:enumeration value="23kV"/>
+						<xs:enumeration value="30kV"/>
+						<xs:enumeration value="33kV"/>
+						<xs:enumeration value="35kV"/>
+						<xs:enumeration value="3kV"/>
+						<xs:enumeration value="400kV"/>
+						<xs:enumeration value="45kV"/>
+						<xs:enumeration value="5.5kV"/>
+						<xs:enumeration value="5kV"/>
+						<xs:enumeration value="63kV"/>
+						<xs:enumeration value="6kV"/>
+						<xs:enumeration value="90kV"/>
+						<xs:enumeration value="8.5kV"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Domaine_De_Tension">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="BTSUP"/>
+						<xs:enumeration value="HTA"/>
+						<xs:enumeration value="BTINF"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Long_Liaison_Aerienne" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="6"/>
+						<xs:fractionDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Long_Liaison_Souterraine" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="6"/>
+						<xs:fractionDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nombre_Cellules" type="xs:positiveInteger" minOccurs="0"/>
+			<xs:element name="P_Reservee_HT" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="P_Reservee_BT" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Ratio_PS_CACS" type="xs:decimal" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Alimentation_Complementaire">
+		<xs:sequence>
+			<xs:element name="Reference_Poste" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Troncon" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reference_Depart" type="xs:string" minOccurs="0"/>
+			<xs:element name="Tension_De_Livraison">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="10kV"/>
+						<xs:enumeration value="127_220V"/>
+						<xs:enumeration value="12kV"/>
+						<xs:enumeration value="13.2kV"/>
+						<xs:enumeration value="13.5kV"/>
+						<xs:enumeration value="13kV"/>
+						<xs:enumeration value="150kV"/>
+						<xs:enumeration value="15kV"/>
+						<xs:enumeration value="20kV"/>
+						<xs:enumeration value="21kV"/>
+						<xs:enumeration value="220_380V"/>
+						<xs:enumeration value="225kV"/>
+						<xs:enumeration value="230_400V"/>
+						<xs:enumeration value="23kV"/>
+						<xs:enumeration value="30kV"/>
+						<xs:enumeration value="33kV"/>
+						<xs:enumeration value="35kV"/>
+						<xs:enumeration value="3kV"/>
+						<xs:enumeration value="400kV"/>
+						<xs:enumeration value="45kV"/>
+						<xs:enumeration value="5.5kV"/>
+						<xs:enumeration value="5kV"/>
+						<xs:enumeration value="63kV"/>
+						<xs:enumeration value="6kV"/>
+						<xs:enumeration value="90kV"/>
+						<xs:enumeration value="8.5kV"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="P_Raccordement_Soutirage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:totalDigits value="6"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Domaine_De_Tension">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="BTSUP"/>
+						<xs:enumeration value="HTA"/>
+						<xs:enumeration value="BTINF"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Long_Liaison_Aerienne" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="6"/>
+						<xs:fractionDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Long_Liaison_Souterraine" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:totalDigits value="6"/>
+						<xs:fractionDigits value="3"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Nombre_Cellules" type="xs:positiveInteger" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CAD">
+		<xs:sequence>
+			<xs:element name="Num_Depan_24">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="25"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Structure_Fournisseur_Souscrite">
+		<xs:sequence>
+			<xs:element name="Structure_Fournisseur" type="Structure_Fournisseur"/>
+			<xs:element name="Classe_Temporelle_Fournisseur_Souscrite" type="Classe_Temporelle_Fournisseur_Souscrite" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Structure_Fournisseur">
+		<xs:sequence>
+			<xs:element name="Code" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string"/>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Groupe_Periode_Mobile" type="Groupe_Periode_Mobile" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Groupe_Periode_Mobile">
+		<xs:sequence>
+			<xs:element name="Code">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="15"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Libelle" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="PeriodiciteType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Semestriel"/>
+			<xs:enumeration value="Annuel"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Groupe_Periode_Mobile_DistributeurType">
+		<xs:sequence>
+			<xs:element name="Code" type="xs:string"/>
+			<xs:element name="Libelle" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
