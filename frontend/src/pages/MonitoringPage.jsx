@@ -247,10 +247,10 @@ export const LF_THRESHOLDS_BY_ARCHETYPE = {
  * Estimate off-hours cost in EUR/year.
  * Extrapolates from a 90-day measurement period to annual.
  * @param {number|null} kwh - off-hours kWh over the measurement period
- * @param {number} price - EUR/kWh (default 0.18)
+ * @param {number} price - EUR/kWh (default 0.068, aligné backend spot bridgé)
  * @returns {{ eur: number, label: string, price: number }}
  */
-export function computeOffHoursEstimate(kwh, price = 0.18) {
+export function computeOffHoursEstimate(kwh, price = 0.068) {
   if (kwh == null || kwh <= 0) return { eur: 0, label: '-', price };
   const annualized = kwh * (365 / 90);
   const eur = Math.round(annualized * price);

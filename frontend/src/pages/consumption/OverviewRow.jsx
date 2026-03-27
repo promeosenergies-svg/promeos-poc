@@ -13,7 +13,7 @@
 import { CO2E_FACTOR_KG_PER_KWH } from './constants';
 import { fmtNum } from '../../utils/format';
 
-const EUR_FACTOR = 0.18; // €/kWh estimate
+const EUR_FACTOR = 0.068; // €/kWh — spot moyen 30j bridgé, aligné backend
 
 function fmt(value, decimals = 0) {
   if (value == null || isNaN(value)) return null;

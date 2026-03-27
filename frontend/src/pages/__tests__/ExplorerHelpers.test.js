@@ -105,8 +105,8 @@ describe('convertUnit', () => {
     expect(convertUnit(100, 'eur', 0.25)).toBe(25);
   });
 
-  it('eur: default price 0.18', () => {
-    expect(convertUnit(100, 'eur')).toBe(18);
+  it('eur: default price 0.068 (spot bridgé)', () => {
+    expect(convertUnit(100, 'eur')).toBeCloseTo(6.8, 1);
   });
 
   it('kw: zero hoursPerInterval => 0 (no division by zero)', () => {

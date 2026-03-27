@@ -29,7 +29,8 @@ describe('Step4 — Glossary CO2 entry', () => {
   });
 
   it('mentions both electricity and gas factors', () => {
-    expect(src).toMatch(/0[,.]057/);
+    // 0.052 kgCO₂/kWh = ADEME Base Empreinte V23.6 (élec France mix ACV)
+    expect(src).toMatch(/0[,.]052/);
     expect(src).toMatch(/0[,.]227/);
   });
 });
@@ -47,8 +48,8 @@ describe('Step4 — Backend emission_factors.py config', () => {
     const src = readFileSync(configPath, 'utf-8');
     expect(src).toContain('ELEC');
     expect(src).toContain('GAZ');
-    expect(src).toContain('0.0569');
-    expect(src).toContain('0.2270');
+    expect(src).toContain('0.052');
+    expect(src).toContain('0.227');
   });
 
   it('exports get_emission_factor function', () => {

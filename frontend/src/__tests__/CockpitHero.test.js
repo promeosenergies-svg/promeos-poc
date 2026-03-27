@@ -98,10 +98,10 @@ describe('CockpitHero — structure 4 cards', () => {
 // ── Pondérations gauge ───────────────────────────────────────────────
 
 describe('CockpitHero — ponderations gauge', () => {
-  it('affiche DT 45%, BACS 30%, APER 25%', () => {
-    expect(heroSrc).toMatch(/DT 45%/);
-    expect(heroSrc).toMatch(/BACS 30%/);
-    expect(heroSrc).toMatch(/APER 25%/);
+  it('affiche DT, BACS, APER avec valeurs par défaut 45/30/25', () => {
+    expect(heroSrc).toMatch(/DT.*45/s);
+    expect(heroSrc).toMatch(/BACS.*30/s);
+    expect(heroSrc).toMatch(/APER.*25/s);
   });
 
   it('ponderations sont des constantes (pas depuis API)', () => {

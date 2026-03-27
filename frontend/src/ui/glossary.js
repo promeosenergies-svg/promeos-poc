@@ -21,7 +21,8 @@ export const GLOSSARY = {
     term: 'TURPE',
     short:
       "Tarif d'Utilisation des Réseaux Publics d'Électricité. Coût d'acheminement de l'électricité via le réseau, fixé par la CRE.",
-    long: 'Le TURPE 7 (depuis fév. 2025) comprend une composante énergie (EUR/kWh, variable selon segment C5/C4/C3) et une composante gestion (EUR/mois, fixe). Les segments : C5 BT ≤36 kVA, C4 BT >36 kVA, C3 HTA. Taux chargés depuis le référentiel tarifs_reglementaires.yaml.',
+    // Source : CRE délibération n°2025-78 du 23 janvier 2025. TURPE 7 en vigueur depuis 1er août 2025.
+    long: 'Le TURPE 7 (depuis 1er août 2025, CRE n°2025-78) comprend une composante énergie (EUR/kWh, variable selon segment C5/C4/C3) et une composante gestion (EUR/mois, fixe). Les segments : C5 BT ≤36 kVA, C4 BT >36 kVA, C3 HTA. Taux chargés depuis le référentiel tarifs_reglementaires.yaml.',
   },
   atrd: {
     term: 'ATRD',
@@ -36,8 +37,9 @@ export const GLOSSARY = {
   accise_electricite: {
     term: 'Accise électricité (TIEE)',
     short:
-      "Taxe intérieure sur l'électricité (ex-CSPE/TICFE), rebaptisée TIEE depuis 2022. Taux 2025 : 22,50 EUR/MWh.",
-    long: "L'accise sur l'électricité (TIEE) est fixée par la Loi de finances. Depuis 2025 : 0,02250 EUR/kWh. Elle s'applique sur la consommation totale (kWh). TVA 20 % applicable. Source : Loi de finances 2025 art. 92.",
+      "Taxe intérieure sur l'électricité (ex-CSPE/TICFE), rebaptisée TIEE depuis 2022. Taux 2026 : 26,58 EUR/MWh (C4 pro).",
+    // Source : Code des impositions sur les biens et services, arrêté février 2026. Taux C5 ménages : 25,09 EUR/MWh.
+    long: "L'accise sur l'électricité (TIEE) est fixée par la Loi de finances. Depuis février 2026 : 26,58 EUR/MWh pour les professionnels C4 (0,02658 EUR/kWh). Elle s'applique sur la consommation totale (kWh). TVA 20 % applicable. Source : LFI 2026, Code des impositions.",
   },
   cspe: {
     term: 'CSPE',
@@ -52,7 +54,8 @@ export const GLOSSARY = {
   tva: {
     term: 'TVA',
     short:
-      "Taxe sur la Valeur Ajoutée. Appliquée à 5,5 % sur l'abonnement et la CTA, et 20 % sur la consommation et les taxes.",
+      'Taxe sur la Valeur Ajoutée. CTA : 5,5 %. Abonnement et consommation : 20 % (depuis août 2025 pour les ≤36 kVA, toujours 20 % pour les professionnels).',
+    // Source : LFI 2025. TVA 20% sur abonnement ménages ≤36 kVA depuis 1er août 2025. CTA reste à 5,5%.
   },
   ht: {
     term: 'HT',
@@ -154,7 +157,8 @@ export const GLOSSARY = {
   arenh: {
     term: 'ARENH',
     short:
-      "Accès Régulé à l'Électricité Nucléaire Historique. Mécanisme permettant aux fournisseurs alternatifs d'acheter de l'électricité nucléaire à prix fixe (42 €/MWh).",
+      "Accès Régulé à l'Électricité Nucléaire Historique. Prix fixe 42 €/MWh. Dispositif terminé le 31/12/2025, remplacé par le mécanisme VNU (Ventes au Nucléaire Unifié).",
+    // Source : Loi Énergie-Climat 2019, fin ARENH confirmée LFI 2023. VNU : PPE3 2026-2035.
   },
 
   // ── Pricing achat ────────────────────────────────────────────────────────────
@@ -306,8 +310,9 @@ export const GLOSSARY = {
   emissions_co2: {
     term: 'Émissions CO₂',
     short:
-      "Émissions de gaz à effet de serre calculées à partir de la consommation et du facteur d'émission ADEME par vecteur énergétique (électricité : 0,057 kgCO₂e/kWh, gaz : 0,227 kgCO₂e/kWh).",
-    long: 'Formule : kWh × facteur ADEME (différencié par vecteur). Unité : kgCO₂e ou tCO₂e. Source : ADEME Base Carbone 2024.',
+      "Émissions de gaz à effet de serre calculées à partir de la consommation et du facteur d'émission ADEME par vecteur énergétique (électricité : 0,052 kgCO₂e/kWh, gaz : 0,227 kgCO₂e/kWh).",
+    // Source : ADEME Base Empreinte V23.6 (2024). Note : 0,0569 est un tarif TURPE HPH en EUR/kWh, pas un facteur CO₂.
+    long: 'Formule : kWh × facteur ADEME (différencié par vecteur). Unité : kgCO₂e ou tCO₂e. Source : ADEME Base Empreinte V23.6 (2024). Électricité mix France ACV : 0,052. Gaz naturel PCI combustion + amont : 0,227.',
   },
   timeline_reglementaire: {
     term: 'Frise réglementaire',
