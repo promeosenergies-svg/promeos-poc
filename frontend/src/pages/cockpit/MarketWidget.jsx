@@ -280,7 +280,8 @@ export default function MarketWidget({ profile = 'C4' }) {
             >
               <Info size={10} />
               <span className="text-[10px]">
-                {data.decomposition.warnings.length} avertissement(s)
+                {data.decomposition.warnings.length} avertissement
+                {data.decomposition.warnings.length > 1 ? 's' : ''}
               </span>
             </div>
           )}

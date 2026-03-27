@@ -212,6 +212,43 @@ export function toUsagesHoraires(opts = {}) {
 }
 
 /**
+ * Conformité — vue portefeuille avec filtres tab et site.
+ * @param {object} opts
+ * @param {string} [opts.tab] — onglet (obligations, donnees, preuves)
+ * @param {number|string} [opts.site_id]
+ */
+export function toConformite(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.tab) p.set('tab', opts.tab);
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  const qs = p.toString();
+  return `/conformite${qs ? '?' + qs : ''}`;
+}
+
+/**
+ * Renouvellements contrats — radar échéances.
+ * @param {object} opts
+ * @param {number|string} [opts.site_id]
+ */
+export function toRenewals(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  const qs = p.toString();
+  return `/renouvellements${qs ? '?' + qs : ''}`;
+}
+
+/**
+ * Fiche site 360.
+ * @param {number|string} id — ID du site
+ * @param {object} [opts]
+ * @param {string} [opts.tab] — onglet (conso, factures, conformite, actions)
+ */
+export function toSite(id, opts = {}) {
+  const base = `/sites/${id}`;
+  return opts.tab ? `${base}#${opts.tab}` : base;
+}
+
+/**
  * Performance Electrique — dashboard monitoring.
  * @param {object} opts
  * @param {number|string} [opts.site_id]

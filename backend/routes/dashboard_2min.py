@@ -262,14 +262,14 @@ def _get_top_action(db: Session, obligations) -> dict:
         (
             TypeObligation.DECRET_TERTIAIRE,
             StatutConformite.NON_CONFORME,
-            "Declarer vos consommations sur OPERAT",
+            "Déclarer vos consommations sur OPERAT",
             "critical",
         ),
-        (TypeObligation.BACS, StatutConformite.NON_CONFORME, "Installer un systeme GTB/GTC conforme", "critical"),
+        (TypeObligation.BACS, StatutConformite.NON_CONFORME, "Installer un système GTB/GTC conforme", "critical"),
         (
             TypeObligation.DECRET_TERTIAIRE,
             StatutConformite.A_RISQUE,
-            "Accelerer votre trajectoire Decret Tertiaire 2030",
+            "Accélérer votre trajectoire Décret Tertiaire 2030",
             "high",
         ),
         (TypeObligation.BACS, StatutConformite.A_RISQUE, "Planifier la mise en conformite BACS", "high"),

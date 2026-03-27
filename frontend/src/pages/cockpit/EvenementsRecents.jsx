@@ -22,6 +22,7 @@ const SOURCE_LABELS = {
   monitoring: 'Monitoring',
   insight: 'Insight',
   manual: 'Manuel',
+  action_hub: 'Actions',
 };
 
 function relativeDate(dateStr) {

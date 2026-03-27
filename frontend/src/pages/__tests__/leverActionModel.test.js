@@ -21,7 +21,7 @@ import {
 const makeLever = (overrides = {}) => ({
   type: 'conformite',
   actionKey: 'lev-conf-nc',
-  label: 'Regulariser 2 sites non conformes',
+  label: 'Régulariser 2 sites non conformes',
   impactEur: 20000,
   ctaPath: '/conformite',
   ...overrides,
@@ -35,7 +35,7 @@ describe('buildActionPayload', () => {
   it('genere un payload conformite (non conforme)', () => {
     const payload = buildActionPayload(makeLever());
 
-    expect(payload.title).toBe('Regulariser 2 sites non conformes');
+    expect(payload.title).toBe('Régulariser 2 sites non conformes');
     expect(payload.source_type).toBe('lever_engine');
     expect(payload.source_id).toBe('lev-conf-nc');
     expect(payload.severity).toBe('high');

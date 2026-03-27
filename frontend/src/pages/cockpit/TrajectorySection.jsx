@@ -50,6 +50,19 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
     });
   }, [trajectoire]);
 
+  // Domaine Y intelligent en mode kWh pour ne pas écraser le graphique
+  const yDomain = useMemo(() => {
+    if (mode !== 'kwh' || !chartData.length) return undefined;
+    const allValues = chartData.flatMap((d) =>
+      [d.reel, d.objectif, d.projection].filter((v) => v != null)
+    );
+    if (!allValues.length) return undefined;
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    const padding = (max - min) * 0.15 || 500;
+    return [Math.max(0, Math.floor((min - padding) / 500) * 500), undefined];
+  }, [chartData, mode]);
+
   // ── Loading ──
   if (loading) {
     return (
@@ -78,7 +91,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
             <span className="text-gray-400">Jalons DT ·</span>
             {trajectoire.jalons.map((j) => (
               <span key={j.annee} className="text-blue-600 font-medium">
-                {j.annee} {j.reduction_pct}%
+                {j.annee} {Math.abs(j.reduction_pct)}%
               </span>
             ))}
           </div>
@@ -141,7 +154,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
           <span>
             Objectif DT
             {trajectoire.jalons?.length > 0
-              ? ` (${trajectoire.jalons[0].reduction_pct}% ${trajectoire.jalons[0].annee})`
+              ? ` (${Math.abs(trajectoire.jalons[0].reduction_pct)}% ${trajectoire.jalons[0].annee})`
               : ''}
           </span>
         </span>
@@ -162,8 +175,9 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
           <YAxis
             tick={{ fontSize: 11, fill: '#6b7280' }}
             tickFormatter={(v) => (mode === 'pct' ? `${v}%` : `${v.toLocaleString('fr-FR')} MWh`)}
+            domain={yDomain}
             label={{
-              value: mode === 'pct' ? 'Réduction (%)' : 'MWh',
+              value: mode === 'pct' ? 'Réduction vs réf. (%)' : 'MWh',
               angle: -90,
               position: 'insideLeft',
               style: { fontSize: 10, fill: '#9ca3af' },
@@ -179,6 +193,16 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
             }}
             labelFormatter={(l) => `Année ${l}`}
           />
+
+          {/* Zone de référence 0% en mode réduction */}
+          {mode === 'pct' && (
+            <ReferenceLine
+              y={0}
+              stroke="#d1d5db"
+              strokeWidth={1}
+              label={{ value: 'Réf.', position: 'right', fontSize: 9, fill: '#9ca3af' }}
+            />
+          )}
 
           {/* Réel HELIOS */}
           <Area
@@ -234,7 +258,7 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
           {trajectoire.jalons?.map((j, i) => (
             <span key={j.annee}>
               <span className="text-blue-600 font-medium">
-                {j.annee} {j.reduction_pct}%
+                {j.annee} {Math.abs(j.reduction_pct)}%
               </span>
               {i < trajectoire.jalons.length - 1 && <span className="text-gray-300 mx-0.5">·</span>}
             </span>

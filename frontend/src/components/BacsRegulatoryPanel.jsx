@@ -256,7 +256,7 @@ export default function BacsRegulatoryPanel({ siteId }) {
         {elig.tier && <Row label="Seuil" value={elig.tier} />}
         {elig.putile_kw && <Row label="Putile" value={`${Math.round(elig.putile_kw)} kW`} />}
         {elig.deadline && (
-          <Row label="Echeance" value={elig.deadline} warn={new Date(elig.deadline) < new Date()} />
+          <Row label="Échéance" value={elig.deadline} warn={new Date(elig.deadline) < new Date()} />
         )}
         {elig.tri_exemption_possible && <Row label="Exemption TRI" value="Possible (> 10 ans)" />}
       </Section>

@@ -68,7 +68,7 @@ def seed_tertiaire_efa(db, helios_sites: dict) -> list:
     efas_created = []
 
     # ── EFA 1 : Paris Bureaux — mono-occupation, en cours ──────────────
-    nom_paris = "EFA Siege HELIOS Paris"
+    nom_paris = "EFA Siège HELIOS Paris"
     if not db.query(TertiaireEfa).filter_by(nom=nom_paris).first():
         org_id = _resolve_org_id(paris)
 

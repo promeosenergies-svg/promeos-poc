@@ -17,10 +17,10 @@ const EVIDENCE_KPIS = new Set(['conformite', 'risque', 'maturite', 'couverture']
 // ── Expert source / confidence per KPI ────────────────────────────────────────
 
 const EXPERT_SOURCE = {
-  conformite: { source: 'compliance_engine v2', confiance: 'moyenne' },
-  risque: { source: 'compliance_engine v2', confiance: 'moyenne' },
-  maturite: { source: 'base PROMEOS', confiance: 'haute' },
-  couverture: { source: 'factures importées', confiance: 'variable' },
+  conformite: { source: 'Moteur conformité v2', confiance: 'moyenne' },
+  risque: { source: 'Moteur conformité v2', confiance: 'moyenne' },
+  maturite: { source: 'Données PROMEOS', confiance: 'haute' },
+  couverture: { source: 'Factures importées', confiance: 'variable' },
 };
 
 // ── Icon map ──────────────────────────────────────────────────────────────────

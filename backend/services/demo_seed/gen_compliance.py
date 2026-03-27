@@ -67,10 +67,10 @@ def generate_compliance(db, org, sites: list, rng: random.Random) -> dict:
                     status="NOK" if is_nok else "OK",
                     severity="critical" if is_nok else "low",
                     deadline=date(2025, 1, 1),
-                    evidence="CVC > 290 kW, echeance 01/01/2025"
-                    + (" — attestation BACS manquante" if is_nok else " — GTB classe A installee"),
+                    evidence="CVC > 290 kW, échéance 01/01/2025"
+                    + (" — attestation BACS manquante" if is_nok else " — GTB classe A installée"),
                     recommended_actions_json=json.dumps(
-                        ["Installer un systeme GTB classe A ou B", "Obtenir attestation BACS"]
+                        ["Installer un système GTB classe A ou B", "Obtenir attestation BACS"]
                     )
                     if is_nok
                     else None,
@@ -149,7 +149,7 @@ def generate_compliance(db, org, sites: list, rng: random.Random) -> dict:
                         status="NOK",
                         severity="high",
                         deadline=date(2026, 9, 30),
-                        evidence="Trajectoire -40% non atteinte, echeance proche",
+                        evidence="Trajectoire -40% non atteinte, échéance proche",
                         recommended_actions_json=json.dumps(
                             [
                                 "Mettre en place un plan de sobriete energetique",
@@ -185,10 +185,10 @@ def generate_compliance(db, org, sites: list, rng: random.Random) -> dict:
                     severity="low" if is_ok else "high",
                     deadline=date(2026, 7, 1),
                     evidence="Parking > 1500 m2"
-                    + (" — ombriere PV installee" if is_ok else " — installation ombriere PV a evaluer"),
+                    + (" — ombrière PV installée" if is_ok else " — installation ombrière PV à évaluer"),
                     recommended_actions_json=None
                     if is_ok
-                    else json.dumps(["Realiser une etude de faisabilite ombriere PV"]),
+                    else json.dumps(["Réaliser une étude de faisabilité ombrière PV"]),
                     run_batch_id=batch.id,
                     insight_status=InsightStatus.RESOLVED if is_ok else InsightStatus.OPEN,
                 )

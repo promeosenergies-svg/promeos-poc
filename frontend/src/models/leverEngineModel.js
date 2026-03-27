@@ -70,8 +70,8 @@ export function computeActionableLevers({
   if (nonConformes > 0) {
     const enrichedLabel =
       hasCompliance && compHighCount > 0
-        ? `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''} (${compHighCount} signal${compHighCount > 1 ? 's' : ''} critique${compHighCount > 1 ? 's' : ''})`
-        : `Regulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''}`;
+        ? `Régulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''} (${compHighCount} signal${compHighCount > 1 ? 's' : ''} critique${compHighCount > 1 ? 's' : ''})`
+        : `Régulariser ${nonConformes} site${nonConformes > 1 ? 's' : ''} non conforme${nonConformes > 1 ? 's' : ''}`;
     levers.push({
       type: 'conformite',
       actionKey: 'lev-conf-nc',

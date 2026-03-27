@@ -47,7 +47,7 @@ const HANDLERS = {
       const nc = sitesNonConformes + sitesAtRisk;
       return {
         simple: `Score ${v}/100 — ${nc} site${nc > 1 ? 's' : ''} à traiter.${sitesNonConformes > 0 ? ` ${sitesNonConformes} non conforme${sitesNonConformes > 1 ? 's' : ''}.` : ''}`,
-        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes, ${sitesAtRisk} à risque sur ${totalSites} site${totalSites > 1 ? 's' : ''}.`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conforme${sitesNonConformes > 1 ? 's' : ''}, ${sitesAtRisk} à risque sur ${totalSites} site${totalSites > 1 ? 's' : ''}.`,
         severity: sitesNonConformes > 0 ? 'warn' : 'ok',
         action:
           sitesNonConformes > 0 ? { label: 'Voir conformité', path: '/conformite' } : undefined,
@@ -56,14 +56,14 @@ const HANDLERS = {
     if (v >= 40) {
       return {
         simple: `Conformité moyenne (${v}/100). ${sitesAtRisk + sitesNonConformes} site${sitesAtRisk + sitesNonConformes > 1 ? 's' : ''} nécessite${sitesAtRisk + sitesNonConformes > 1 ? 'nt' : ''} attention.`,
-        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes sur ${totalSites}. Priorisez les échéances proches.`,
+        expert: `Score ${v}/100 (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conforme${sitesNonConformes > 1 ? 's' : ''} sur ${totalSites}. Priorisez les échéances proches.`,
         severity: 'warn',
         action: { label: 'Voir les sites à risque', path: '/conformite' },
       };
     }
     return {
       simple: `Conformité faible (${v}/100). Actions urgentes requises.`,
-      expert: `Score ${v}/100 seulement (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conformes sur ${totalSites}. Risque d'amende.`,
+      expert: `Score ${v}/100 seulement (DT 45% + BACS 30% + APER 25%). ${sitesNonConformes} non conforme${sitesNonConformes > 1 ? 's' : ''} sur ${totalSites}. Risque d'amende.`,
       severity: 'crit',
       action: { label: 'Plan de mise en conformité', path: '/conformite' },
     };
@@ -80,8 +80,8 @@ const HANDLERS = {
     }
     if (v === 0) {
       return {
-        simple: 'Aucune penalite reglementaire identifiee.',
-        expert: 'Penalite reglementaire = 0 €. Verifier le statut des anomalies separement.',
+        simple: 'Aucune pénalité réglementaire identifiée.',
+        expert: 'Pénalité réglementaire = 0 €. Vérifier le statut des anomalies séparément.',
         severity: 'ok',
       };
     }

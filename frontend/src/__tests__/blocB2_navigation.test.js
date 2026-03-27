@@ -105,8 +105,8 @@ describe('B.2 — Breadcrumb contextuel', () => {
     expect(src).toContain('resolveSectionLabel');
   });
 
-  it('contains TABLEAU reference for section mapping', () => {
-    expect(src).toMatch(/TABLEAU/);
+  it('contains Tableau de bord reference for section mapping', () => {
+    expect(src).toMatch(/Tableau de bord/i);
   });
 });
 

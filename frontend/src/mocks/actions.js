@@ -56,7 +56,7 @@ export const mockActions = [
     owner: 'S. Bernard',
     due_date: '2026-03-10',
     created_at: '2026-01-15',
-    description: 'Le site Toulouse est non conforme au Decret Tertiaire. Regulariser en urgence.',
+    description: 'Le site Toulouse est non conforme au Décret Tertiaire. Régulariser en urgence.',
     comments: [],
   },
   // ── High — Conformite + Conso ──────────────────────────────────────────

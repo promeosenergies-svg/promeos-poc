@@ -158,7 +158,7 @@ DEFAULT_TEMPLATES = [
     {
         "code": "TPL_BACS_INSTALL",
         "title": "Installation GTB/GTC (BACS)",
-        "description": "Installer un systeme BACS conforme au decret n°2020-887.",
+        "description": "Installer un système BACS conforme au décret n°2020-887.",
         "category": "conformite",
         "priority": 1,
         "estimated_gain_kwh": 40000,

@@ -80,7 +80,7 @@ export default function DataQualityWidget() {
             <div>
               <p className="text-sm font-semibold text-gray-900">Qualité des données</p>
               <p className="text-[10px] text-gray-400">
-                {sites_count} site{sites_count > 1 ? 's' : ''} analyses
+                {sites_count} site{sites_count > 1 ? 's' : ''} analysé{sites_count > 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -110,6 +110,7 @@ export default function DataQualityWidget() {
                 <Icon size={12} className={cfg.color} />
                 <span className={`text-xs font-medium ${cfg.color}`}>
                   {count} {cfg.label.toLowerCase()}
+                  {count > 1 ? 's' : ''}
                 </span>
               </div>
             );

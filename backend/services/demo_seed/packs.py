@@ -52,7 +52,7 @@ PACKS = {
         ],
         "portefeuilles": [
             {"nom": "Bureaux & Services", "description": "Bureaux et services tertiaires"},
-            {"nom": "Equipements publics", "description": "Ecoles, hopital, hotel"},
+            {"nom": "Équipements publics", "description": "Écoles, hôpital, hôtel"},
         ],
         "sizes": {
             "S": {"sites_per_pf": [5, 5]},  # 10 sites
@@ -127,14 +127,14 @@ PACKS = {
             },
         ],
         "portefeuilles": [
-            {"nom": "Siege & Bureaux", "description": "Siege social et bureaux regionaux", "entite_idx": 0},
-            {"nom": "Sites Industriels", "description": "Usines et entrepots", "entite_idx": 1},
-            {"nom": "Patrimoine Tertiaire", "description": "Hotels, ecoles", "entite_idx": 2},
+            {"nom": "Siège & Bureaux", "description": "Siège social et bureaux régionaux", "entite_idx": 0},
+            {"nom": "Sites Industriels", "description": "Usines et entrepôts", "entite_idx": 1},
+            {"nom": "Patrimoine Tertiaire", "description": "Hôtels, écoles", "entite_idx": 2},
         ],
         "sizes": {"S": {}},
         "sites_explicit": [
             {
-                "nom": "Siege HELIOS Paris",
+                "nom": "Siège HELIOS Paris",
                 "portefeuille_idx": 0,
                 "ville": "Paris",
                 "cp": "75008",
@@ -155,18 +155,18 @@ PACKS = {
                 "parking_type": "underground",
                 "operat_status": "SUBMITTED",
                 "buildings": [
-                    {"nom": "Batiment A — Siege", "surface_m2": 2000, "annee": 1995, "cvc_kw": 200},
-                    {"nom": "Batiment B — Annexe", "surface_m2": 1500, "annee": 2010, "cvc_kw": 100},
+                    {"nom": "Bâtiment A — Siège", "surface_m2": 2000, "annee": 1995, "cvc_kw": 200},
+                    {"nom": "Bâtiment B — Annexe", "surface_m2": 1500, "annee": 2010, "cvc_kw": 100},
                 ],
                 "gas": True,
                 "sub_meters": [
-                    {"suffix": "CVC", "name": "Siege — CVC", "pct": 0.35},
-                    {"suffix": "ECLAIRAGE", "name": "Siege — Eclairage", "pct": 0.20},
-                    {"suffix": "IT", "name": "Siege — IT & Bureautique", "pct": 0.15},
+                    {"suffix": "CVC", "name": "Siège — CVC", "pct": 0.35},
+                    {"suffix": "ECLAIRAGE", "name": "Siège — Éclairage", "pct": 0.20},
+                    {"suffix": "IT", "name": "Siège — IT & Bureautique", "pct": 0.15},
                 ],
             },
             {
-                "nom": "Bureau Regional Lyon",
+                "nom": "Bureau Régional Lyon",
                 "portefeuille_idx": 0,
                 "ville": "Lyon",
                 "cp": "69002",
@@ -187,7 +187,7 @@ PACKS = {
                 "parking_type": "outdoor",
                 "operat_status": "IN_PROGRESS",
                 "buildings": [
-                    {"nom": "Batiment principal", "surface_m2": 1200, "annee": 2005, "cvc_kw": 50},
+                    {"nom": "Bâtiment principal", "surface_m2": 1200, "annee": 2005, "cvc_kw": 50},
                 ],
                 "gas": False,
                 "sub_meters": [
@@ -217,7 +217,7 @@ PACKS = {
                 "parking_type": "outdoor",
                 "operat_status": None,
                 "buildings": [
-                    {"nom": "Batiment industriel", "surface_m2": 6000, "annee": 1988, "cvc_kw": 150},
+                    {"nom": "Bâtiment industriel", "surface_m2": 6000, "annee": 1988, "cvc_kw": 150},
                 ],
                 "gas": True,
                 "sub_meters": [
@@ -227,7 +227,7 @@ PACKS = {
                 ],
             },
             {
-                "nom": "Hotel Helios Nice",
+                "nom": "Hôtel HELIOS Nice",
                 "portefeuille_idx": 2,
                 "ville": "Nice",
                 "cp": "06000",
@@ -248,7 +248,7 @@ PACKS = {
                 "parking_type": "underground",
                 "operat_status": "NOT_STARTED",
                 "buildings": [
-                    {"nom": "Batiment hotel", "surface_m2": 4000, "annee": 2000, "cvc_kw": 280},
+                    {"nom": "Bâtiment hôtel", "surface_m2": 4000, "annee": 2000, "cvc_kw": 280},
                 ],
                 "gas": True,
                 "sub_meters": [
@@ -258,7 +258,7 @@ PACKS = {
                 ],
             },
             {
-                "nom": "Ecole Jules Ferry Marseille",
+                "nom": "École Jules Ferry Marseille",
                 "portefeuille_idx": 2,
                 "ville": "Marseille",
                 "cp": "13005",
@@ -279,7 +279,7 @@ PACKS = {
                 "parking_type": "outdoor",
                 "operat_status": "IN_PROGRESS",
                 "buildings": [
-                    {"nom": "Batiment principal — Ecole", "surface_m2": 2000, "annee": 1975, "cvc_kw": 80},
+                    {"nom": "Bâtiment principal — École", "surface_m2": 2000, "annee": 1975, "cvc_kw": 80},
                     {"nom": "Gymnase", "surface_m2": 800, "annee": 2015, "cvc_kw": 40},
                 ],
                 "gas": False,
@@ -287,7 +287,7 @@ PACKS = {
         ],
         # Billing: explicit contracts per site
         "contracts_spec": [
-            # S0 Siege Paris — elec fixe long, C4 BT 108 kVA LU
+            # S0 Siège Paris — elec fixe long, C4 BT 108 kVA LU
             {
                 "site_idx": 0,
                 "type": "elec",
@@ -367,7 +367,7 @@ PACKS = {
                 "fee": 50,
                 "auto_renew": False,
             },
-            # S3 Hotel Nice — elec fixe 180j, C5 BT 36 kVA HP/HC
+            # S3 Hôtel Nice — elec fixe 180j, C5 BT 36 kVA HP/HC
             {
                 "site_idx": 3,
                 "type": "elec",
@@ -394,7 +394,7 @@ PACKS = {
                 "fee": 40,
                 "auto_renew": False,
             },
-            # S4 Ecole Marseille — elec fixe long, C4 BT 150 kVA MU
+            # S4 École Marseille — elec fixe long, C4 BT 150 kVA MU
             {
                 "site_idx": 4,
                 "type": "elec",
@@ -463,7 +463,7 @@ PACKS = {
                 "parking_type": "underground",
                 "operat_status": "SUBMITTED",
                 "buildings": [
-                    {"nom": "Batiment principal", "surface_m2": 2200, "annee": 2008, "cvc_kw": 180},
+                    {"nom": "Bâtiment principal", "surface_m2": 2200, "annee": 2008, "cvc_kw": 180},
                 ],
                 "gas": False,
             },
@@ -494,7 +494,7 @@ PACKS = {
                 "gas": False,
             },
             {
-                "nom": "Entrepot MERIDIAN Gennevilliers",
+                "nom": "Entrepôt MERIDIAN Gennevilliers",
                 "portefeuille_idx": 0,
                 "ville": "Gennevilliers",
                 "cp": "92230",
@@ -515,7 +515,7 @@ PACKS = {
                 "parking_type": "outdoor",
                 "operat_status": None,
                 "buildings": [
-                    {"nom": "Entrepot logistique", "surface_m2": 4500, "annee": 2001, "cvc_kw": 80},
+                    {"nom": "Entrepôt logistique", "surface_m2": 4500, "annee": 2001, "cvc_kw": 80},
                 ],
                 "gas": True,
             },

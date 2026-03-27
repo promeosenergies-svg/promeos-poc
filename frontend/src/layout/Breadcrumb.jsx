@@ -84,22 +84,12 @@ export function resolveBreadcrumbLabel(segment, parentSegment) {
 }
 
 /**
- * Resolve section label from pathname for breadcrumb prefix.
- * Tries exact match first, then longest prefix match.
+ * Resolve section label from pathname.
+ * Only uses exact match from ROUTE_SECTION_MAP — no prefix matching
+ * to avoid false positives with nested routes.
  */
 function resolveSectionLabel(pathname) {
-  // Exact match
-  if (ROUTE_SECTION_MAP[pathname]) return ROUTE_SECTION_MAP[pathname];
-  // Prefix match (longest first)
-  const sorted = Object.keys(ROUTE_SECTION_MAP).sort((a, b) => b.length - a.length);
-  for (const route of sorted) {
-    if (pathname === route || pathname.startsWith(route + '/')) {
-      return ROUTE_SECTION_MAP[route];
-    }
-  }
-  // Fallback: check NAV_MAIN_SECTIONS for root section
-  if (pathname === '/') return 'TABLEAU DE BORD';
-  return null;
+  return ROUTE_SECTION_MAP[pathname] || null;
 }
 
 /** Get the first route of a section (for clickable breadcrumb) */
@@ -122,22 +112,28 @@ export default function Breadcrumb() {
 
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
 
-  // B.2: Add section crumb (Section > Page > Context)
+  // Root path → simple breadcrumb
+  if (parts.length === 0) {
+    crumbs.push({ label: 'Tableau de bord', to: '/' });
+    return <BreadcrumbNav crumbs={crumbs} />;
+  }
+
+  // Add section crumb if the page belongs to a known section
   const sectionLabel = resolveSectionLabel(pathname);
   if (sectionLabel) {
     const sectionRoute = getSectionRoute(sectionLabel);
-    // Only add section crumb if it's not the same as the page itself
-    const pageLabel = parts.length > 0 ? resolveBreadcrumbLabel(parts[0], null) : null;
+    const pageLabel = resolveBreadcrumbLabel(parts[0], null);
+    // Only add if section label differs from the page label
     if (pageLabel !== sectionLabel) {
       crumbs.push({ label: sectionLabel, to: sectionRoute });
     }
   }
 
+  // Build crumbs from URL segments
   let path = '';
   for (let i = 0; i < parts.length; i++) {
     path += '/' + parts[i];
     const parent = i > 0 ? parts[i - 1] : null;
-    // Resolve actual entity names for dynamic IDs (e.g. /sites/4 → "Siege HELIOS Paris")
     let label;
     if (parent === 'sites' && isDynamicSegment(parts[i]) && siteNameById[parts[i]]) {
       label = siteNameById[parts[i]];
@@ -147,15 +143,25 @@ export default function Breadcrumb() {
     crumbs.push({ label, to: path });
   }
 
-  // Déduplication : supprimer les crumbs consécutifs avec le même label
-  const deduped = crumbs.filter((c, i) => i === 0 || c.label !== crumbs[i - 1].label);
+  // Deduplicate: remove any crumb whose label already appeared earlier
+  const seen = new Set();
+  const deduped = crumbs.filter((c) => {
+    const key = c.label.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
+  return <BreadcrumbNav crumbs={deduped} />;
+}
+
+function BreadcrumbNav({ crumbs }) {
   return (
     <nav className="flex items-center gap-1 text-sm text-gray-500">
-      {deduped.map((c, i) => (
-        <span key={c.to} className="flex items-center gap-1">
+      {crumbs.map((c, i) => (
+        <span key={`${c.to}-${i}`} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
-          {i < deduped.length - 1 ? (
+          {i < crumbs.length - 1 ? (
             <Link
               to={c.to}
               className="hover:text-blue-600 hover:underline underline-offset-2 transition"
