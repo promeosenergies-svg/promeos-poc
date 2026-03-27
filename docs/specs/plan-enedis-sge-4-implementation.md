@@ -38,14 +38,14 @@ SF4 rend le pipeline **fiable, complet et auditable** en livrant : config, error
 
 ---
 
-## Phase 0 — Mise a jour de la spec
+## Phase 0 — Mise a jour de la spec [DONE]
 
-**Commit** : `docs(enedis): update SF4 spec v6 with final architecture decisions`
+**Commit** : `docs(enedis): update SF4 spec v7 and plan v4 with review decisions` (c00738b)
 
-| Fichier | Action |
-|---------|--------|
-| `docs/specs/feature-enedis-sge-4-operationalization.md` | Aligner sur spec v6 (toutes decisions finales integrees) |
-| `docs/specs/plan-enedis-sge-4-implementation.md` | Aligner sur plan v3 |
+| Fichier | Action | Statut |
+|---------|--------|--------|
+| `docs/specs/feature-enedis-sge-4-operationalization.md` | Aligner sur spec v7 (toutes decisions finales integrees) | Done |
+| `docs/specs/plan-enedis-sge-4-implementation.md` | Aligner sur plan v4 | Done |
 
 ---
 
