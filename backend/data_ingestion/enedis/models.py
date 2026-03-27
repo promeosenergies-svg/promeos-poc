@@ -29,7 +29,9 @@ Design decisions:
 import json
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -75,6 +77,12 @@ class EnedisFluxFile(Base, TimestampMixin):
     mesures_r171 = relationship("EnedisFluxMesureR171", back_populates="flux_file", cascade="all, delete-orphan")
     mesures_r50 = relationship("EnedisFluxMesureR50", back_populates="flux_file", cascade="all, delete-orphan")
     mesures_r151 = relationship("EnedisFluxMesureR151", back_populates="flux_file", cascade="all, delete-orphan")
+    errors = relationship(
+        "EnedisFluxFileError",
+        back_populates="flux_file",
+        order_by="EnedisFluxFileError.created_at",
+        cascade="all, delete-orphan",
+    )
 
     def set_header_raw(self, header_dict: dict) -> None:
         self.header_raw = json.dumps(header_dict, ensure_ascii=False)
@@ -265,3 +273,68 @@ class EnedisFluxMesureR151(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<EnedisFluxMesureR151 {self.point_id} {self.date_releve} {self.valeur}>"
+
+
+class EnedisFluxFileError(Base, TimestampMixin):
+    """Archived error entry for an Enedis flux file.
+
+    Each row represents one failed processing attempt. The number of
+    errors for a file gives the retry count (no dedicated column needed).
+    """
+
+    __tablename__ = "enedis_flux_file_error"
+    __table_args__ = (
+        Index("ix_enedis_flux_file_error_flux_file", "flux_file_id"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    flux_file_id = Column(
+        Integer,
+        ForeignKey("enedis_flux_file.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="FK vers enedis_flux_file",
+    )
+    error_message = Column(Text, nullable=False, comment="Message d'erreur de la tentative")
+
+    flux_file = relationship("EnedisFluxFile", back_populates="errors")
+
+    def __repr__(self) -> str:
+        return f"<EnedisFluxFileError file={self.flux_file_id} msg={self.error_message[:50]}>"
+
+
+class IngestionRun(Base, TimestampMixin):
+    """Tracks a single execution of the ingestion pipeline.
+
+    Counters are updated incrementally (per-file) so that a crash
+    mid-run still reflects the work actually completed.
+    """
+
+    __tablename__ = "enedis_ingestion_run"
+
+    id = Column(Integer, primary_key=True, index=True)
+    started_at = Column(DateTime, nullable=False, comment="Debut du run")
+    finished_at = Column(DateTime, nullable=True, comment="Fin du run (null si en cours)")
+    directory = Column(String(500), nullable=False, comment="Repertoire source scanne")
+    recursive = Column(Boolean, nullable=False, default=True, comment="Scan recursif")
+    dry_run = Column(Boolean, nullable=False, default=False, comment="Mode dry-run (pas de mutation)")
+    status = Column(
+        String(20), nullable=False, default="running",
+        comment="running / completed / failed",
+    )
+    triggered_by = Column(String(10), nullable=False, comment="cli / api")
+
+    # Counters — incremental updates
+    files_received = Column(Integer, default=0, comment="Fichiers nouveaux a traiter")
+    files_parsed = Column(Integer, default=0, comment="Fichiers parses avec succes")
+    files_skipped = Column(Integer, default=0, comment="Fichiers flux hors scope (R172, X14, HDM)")
+    files_error = Column(Integer, default=0, comment="Fichiers en erreur")
+    files_needs_review = Column(Integer, default=0, comment="Fichiers en attente de review (republication)")
+    files_already_processed = Column(Integer, default=0, comment="Fichiers deja traites (PARSED/SKIPPED)")
+    files_retried = Column(Integer, default=0, comment="Fichiers ERROR retentes dans ce run")
+    files_max_retries = Column(Integer, default=0, comment="Fichiers PERMANENTLY_FAILED (nouveau + existant)")
+
+    # Run-level error
+    error_message = Column(Text, nullable=True, comment="Erreur ayant interrompu le run")
+
+    def __repr__(self) -> str:
+        return f"<IngestionRun #{self.id} {self.status} triggered_by={self.triggered_by}>"

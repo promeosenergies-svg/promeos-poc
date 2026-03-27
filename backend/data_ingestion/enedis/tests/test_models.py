@@ -3,12 +3,15 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxFileError,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR171,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
+    IngestionRun,
 )
 
 
@@ -589,3 +592,237 @@ class TestEnedisFluxMesureR151:
         db.commit()
         db.refresh(f)
         assert len(f.mesures_r151) == 3
+
+
+# ---------------------------------------------------------------------------
+# FluxStatus.PERMANENTLY_FAILED + IngestionRunStatus
+# ---------------------------------------------------------------------------
+
+
+class TestFluxStatusPermanentlyFailed:
+    def test_permanently_failed_value(self):
+        assert FluxStatus.PERMANENTLY_FAILED == "permanently_failed"
+        assert FluxStatus.PERMANENTLY_FAILED.value == "permanently_failed"
+
+    def test_permanently_failed_distinct_from_error(self):
+        assert FluxStatus.PERMANENTLY_FAILED != FluxStatus.ERROR
+
+
+class TestIngestionRunStatus:
+    def test_running_value(self):
+        assert IngestionRunStatus.RUNNING == "running"
+
+    def test_completed_value(self):
+        assert IngestionRunStatus.COMPLETED == "completed"
+
+    def test_failed_value(self):
+        assert IngestionRunStatus.FAILED == "failed"
+
+    def test_all_values(self):
+        values = {s.value for s in IngestionRunStatus}
+        assert values == {"running", "completed", "failed"}
+
+
+# ---------------------------------------------------------------------------
+# EnedisFluxFileError
+# ---------------------------------------------------------------------------
+
+
+class TestEnedisFluxFileError:
+    def _make_file(self, db, file_hash="h_err"):
+        f = EnedisFluxFile(filename="err.zip", file_hash=file_hash, flux_type="R4H", status="error")
+        db.add(f)
+        db.flush()
+        return f
+
+    def test_create_error(self, db):
+        f = self._make_file(db)
+        err = EnedisFluxFileError(flux_file_id=f.id, error_message="decrypt failed")
+        db.add(err)
+        db.commit()
+
+        result = db.query(EnedisFluxFileError).first()
+        assert result.flux_file_id == f.id
+        assert result.error_message == "decrypt failed"
+        assert result.created_at is not None
+
+    def test_cascade_delete(self, db):
+        f = self._make_file(db)
+        db.add(EnedisFluxFileError(flux_file_id=f.id, error_message="err1"))
+        db.add(EnedisFluxFileError(flux_file_id=f.id, error_message="err2"))
+        db.commit()
+        assert db.query(EnedisFluxFileError).count() == 2
+
+        db.delete(f)
+        db.commit()
+        assert db.query(EnedisFluxFileError).count() == 0
+
+    def test_ordering_by_created_at(self, db):
+        """Errors are ordered by created_at via the relationship."""
+        import time
+
+        f = self._make_file(db)
+        err1 = EnedisFluxFileError(flux_file_id=f.id, error_message="first error")
+        db.add(err1)
+        db.commit()
+
+        # Small delay to ensure different timestamps
+        time.sleep(0.05)
+
+        err2 = EnedisFluxFileError(flux_file_id=f.id, error_message="second error")
+        db.add(err2)
+        db.commit()
+
+        db.refresh(f)
+        assert len(f.errors) == 2
+        assert f.errors[0].error_message == "first error"
+        assert f.errors[1].error_message == "second error"
+
+    def test_relationship_via_flux_file(self, db):
+        f = self._make_file(db)
+        db.add(EnedisFluxFileError(flux_file_id=f.id, error_message="attempt 1"))
+        db.add(EnedisFluxFileError(flux_file_id=f.id, error_message="attempt 2"))
+        db.add(EnedisFluxFileError(flux_file_id=f.id, error_message="attempt 3"))
+        db.commit()
+
+        db.refresh(f)
+        assert len(f.errors) == 3
+        # Retry count derived from len(errors)
+        assert len(f.errors) == 3
+
+
+# ---------------------------------------------------------------------------
+# IngestionRun
+# ---------------------------------------------------------------------------
+
+
+class TestIngestionRun:
+    def test_create_run(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="cli",
+        )
+        db.add(run)
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.status == "running"
+        assert result.triggered_by == "cli"
+        assert result.directory == "/tmp/flux"
+        assert result.recursive is True
+        assert result.dry_run is False
+        assert result.finished_at is None
+        assert result.error_message is None
+        assert result.created_at is not None
+
+    def test_default_counters(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="api",
+        )
+        db.add(run)
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.files_received == 0
+        assert result.files_parsed == 0
+        assert result.files_skipped == 0
+        assert result.files_error == 0
+        assert result.files_needs_review == 0
+        assert result.files_already_processed == 0
+        assert result.files_retried == 0
+        assert result.files_max_retries == 0
+
+    def test_status_transition_running_to_completed(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="cli",
+        )
+        db.add(run)
+        db.commit()
+        assert run.status == "running"
+
+        run.status = IngestionRunStatus.COMPLETED
+        run.finished_at = datetime.now(timezone.utc)
+        run.files_parsed = 10
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.status == "completed"
+        assert result.finished_at is not None
+        assert result.files_parsed == 10
+
+    def test_status_transition_running_to_failed(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="api",
+        )
+        db.add(run)
+        db.commit()
+
+        run.status = IngestionRunStatus.FAILED
+        run.finished_at = datetime.now(timezone.utc)
+        run.error_message = "KeyError: missing decryption key"
+        run.files_parsed = 3  # partial progress before crash
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.status == "failed"
+        assert result.error_message == "KeyError: missing decryption key"
+        assert result.files_parsed == 3
+
+    def test_all_counter_columns(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="cli",
+            files_received=45,
+            files_parsed=38,
+            files_skipped=5,
+            files_error=1,
+            files_needs_review=1,
+            files_already_processed=46,
+            files_retried=2,
+            files_max_retries=0,
+        )
+        db.add(run)
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.files_received == 45
+        assert result.files_parsed == 38
+        assert result.files_skipped == 5
+        assert result.files_error == 1
+        assert result.files_needs_review == 1
+        assert result.files_already_processed == 46
+        assert result.files_retried == 2
+        assert result.files_max_retries == 0
+
+    def test_dry_run_flag(self, db):
+        from datetime import datetime, timezone
+
+        run = IngestionRun(
+            started_at=datetime.now(timezone.utc),
+            directory="/tmp/flux",
+            triggered_by="api",
+            dry_run=True,
+        )
+        db.add(run)
+        db.commit()
+
+        result = db.query(IngestionRun).first()
+        assert result.dry_run is True
