@@ -1,5 +1,10 @@
 """Ingest real Enedis SGE files into promeos.db.
 
+.. deprecated:: SF4
+    This script is deprecated. Use the CLI instead:
+        python -m data_ingestion.enedis.cli ingest [--dir PATH] [--dry-run]
+    Will be removed after SF4 validation is complete.
+
 Runs the full pipeline (decrypt -> parse -> store) against the real database.
 Displays a summary report at the end.
 
