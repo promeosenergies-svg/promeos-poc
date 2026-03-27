@@ -100,7 +100,7 @@ def get_flux_dir(override: str | None = None) -> Path:
 
 ---
 
-## Phase 2 — Modeles d'audit (erreurs + suivi d'execution)
+## Phase 2 — Modeles d'audit (erreurs + suivi d'execution) [DONE]
 
 **Commit** : `feat(enedis): add EnedisFluxFileError, IngestionRun models and PERMANENTLY_FAILED status (SF4)`
 
