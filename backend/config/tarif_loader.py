@@ -95,8 +95,15 @@ def get_tva_normale() -> float:
     return load_tarifs()["tva"]["normale"]["taux"]
 
 
-def get_tva_reduite() -> float:
-    """TVA taux réduit (0.055)."""
+def get_tva_reduite(at_date=None) -> float:
+    """TVA taux réduit (0.055 avant août 2025, 0.20 après — suppression LFI 2025)."""
+    from datetime import date
+
+    ref = at_date or date.today()
+    if isinstance(ref, date):
+        supprime = date(2025, 8, 1)
+        if ref >= supprime:
+            return load_tarifs()["tva"]["normale"]["taux"]  # 0.20 uniforme
     return load_tarifs()["tva"]["reduite"]["taux"]
 
 

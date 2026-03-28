@@ -107,11 +107,11 @@ accise_elec_2024_haute_puissance:
 
 # 2025-2026 : Loi de finances 2025 + 2026
 accise_elec:
-  label: "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév-jul 2025"
-  rate_eur_kwh: 0.02623
-  source: "Loi de finances 2025 — accise PME 26.23 EUR/MWh (fév-jul 2025)"
-  valid_from: "2025-02-01"
-  valid_to: "2025-07-31"
+  label: "Accise sur l'électricité (ex-CSPE/TIEE) — PME fév 2026+"
+  rate_eur_kwh: 0.02658
+  source: "Loi de finances 2026 — accise PME 26.58 EUR/MWh (fév 2026+)"
+  valid_from: "2026-02-01"
+  valid_to: null
 
 accise_elec_2026_t1:
   label: "Accise électricité 2026 — T1 ménages & assimilés (≤250 MWh)"
@@ -147,11 +147,11 @@ accise_gaz:
 # ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
 cta:
   elec:
-    taux_pct: 21.93
+    taux_pct: 27.04
     assiette: "turpe_fixe_ht"
-    source: "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%"
-    valid_from: "2021-08-01"
-    valid_to: "2026-01-31"
+    source: "LFI 2025 — CTA distribution élec 27.04% (depuis 01/01/2026, était 21.93%)"
+    valid_from: "2026-01-01"
+    valid_to: null
   gaz:
     taux_pct: 20.80
     assiette: "atrd_fixe_ht"
