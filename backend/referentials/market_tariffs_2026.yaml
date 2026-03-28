@@ -320,3 +320,46 @@ tva:
       unit: PCT
   valid_from: "2020-01-01"
   valid_to: null
+
+# ── GAZ — ATRD 7 (Acces Tiers Reseaux Distribution) ───────────────────────
+# Source: CRE Deliberation n.2024-40 — ATRD 7 GRDF
+# Tarif T2 (PME/tertiaire, 6-300 MWh/an) — part proportionnelle
+atrd_2024:
+  source: "CRE Deliberation n.2024-40 — ATRD 7 GRDF (juil 2024)"
+  source_url: "https://www.cre.fr/gaz/tarifs-dacheminement"
+  notes: |
+    ATRD 7 applicable depuis juillet 2024.
+    Variable T2 : 11.39 EUR/MWh (brochure GRDF grille 2024).
+    Valeur simplifiee pour POC : 25 EUR/MWh (variable + quote-part fixe).
+  rates:
+    - component: ATRD_VARIABLE_T2
+      value: 25.0
+      unit: EUR_MWH
+      notes: "Part proportionnelle T2 simplifiee (variable + quote-part fixe)"
+  valid_from: "2024-07-01"
+  valid_to: null
+
+# ── GAZ — ATRT (Transport GRTgaz/Terega) ──────────────────────────────────
+atrt:
+  source: "CRE — ATRT GRTgaz"
+  notes: "Part proportionnelle transport gaz"
+  rates:
+    - component: ATRT_VARIABLE
+      value: 12.0
+      unit: EUR_MWH
+      notes: "Transport gaz simplifie"
+  valid_from: "2024-07-01"
+  valid_to: null
+
+# ── GAZ — TICGN / Accise gaz ──────────────────────────────────────────────
+# Source: Code des impositions, art. L312-36
+ticgn_2025:
+  source: "Code des impositions — accise gaz naturel 2025+"
+  notes: "TICGN professionnels = 16.37 EUR/MWh (inchange depuis 2024)"
+  rates:
+    - component: TICGN_PRO
+      value: 16.37
+      unit: EUR_MWH
+      notes: "Professionnels — 1.637 cEUR/kWh"
+  valid_from: "2025-01-01"
+  valid_to: null

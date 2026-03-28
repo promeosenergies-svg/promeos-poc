@@ -96,6 +96,8 @@ class TariffType(str, enum.Enum):
     TVA = "TVA"  # TVA (5.5% abo, 20% conso)
     VNU = "VNU"  # Versement Nucleaire Universel (post-ARENH)
     ATRD = "ATRD"  # Acheminement distribution gaz
+    ATRT = "ATRT"  # Acheminement transport gaz
+    TICGN = "TICGN"  # Accise gaz (ex-TICGN)
 
 
 class TariffComponent(str, enum.Enum):
@@ -129,6 +131,10 @@ class TariffComponent(str, enum.Enum):
     # TVA
     TVA_REDUIT = "TVA_REDUIT"
     TVA_NORMAL = "TVA_NORMAL"
+    # Gaz — ATRD / ATRT / TICGN
+    ATRD_VARIABLE_T2 = "ATRD_VARIABLE_T2"
+    ATRT_VARIABLE = "ATRT_VARIABLE"
+    TICGN_PRO = "TICGN_PRO"
 
 
 class SignalType(str, enum.Enum):
