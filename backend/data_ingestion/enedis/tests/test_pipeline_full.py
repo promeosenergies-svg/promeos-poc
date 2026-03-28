@@ -284,7 +284,7 @@ class TestReceivedStale:
         # Run ingest_directory — should re-process the stale file
         counters = ingest_directory(tmp_path, db, test_keys)
 
-        assert counters["received"] == 1  # stale RECEIVED counted
+        assert counters["received"] == 0  # stale RECEIVED is not a new file
         assert counters["parsed"] == 1
         assert counters["already_processed"] == 0
 
@@ -757,7 +757,7 @@ class TestIncrementalCounters:
 
         db.refresh(run)
         assert run.files_retried == 1
-        assert run.files_received == 2  # new + retried
+        assert run.files_received == 1  # new files only, retried tracked separately
 
     def test_dry_run_with_run_sets_completed(self, db, tmp_path, test_keys):
         """Even in dry-run mode, the IngestionRun is marked completed."""

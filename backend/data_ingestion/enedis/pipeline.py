@@ -264,9 +264,11 @@ def ingest_directory(
         run: Optional IngestionRun for incremental counter updates.
 
     Returns:
-        Dict of counters: received, parsed, needs_review, skipped, error,
-        already_processed, retried, max_retries_reached.
-        ``received == parsed + needs_review + skipped + error`` (in non-dry-run mode).
+        Dict of counters: received (new files only), parsed, needs_review,
+        skipped, error, permanently_failed, already_processed, retried,
+        max_retries_reached.
+        ``received + retried == parsed + needs_review + skipped + error + permanently_failed``
+        (in non-dry-run mode).
     """
     counters: dict[str, int] = {
         "received": 0,
@@ -341,10 +343,10 @@ def ingest_directory(
             to_process.append((file_path, file_hash, flux_file))
         else:
             to_process.append((file_path, file_hash, None))
+        counters["received"] += 1
 
     if to_process and not dry_run:
         session.commit()  # Single commit for all RECEIVED registrations
-    counters["received"] = len(to_process)
 
     # Update run scan counters after Phase 1
     if run:
