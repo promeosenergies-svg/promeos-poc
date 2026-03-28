@@ -212,12 +212,6 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
 
     duration = time.monotonic() - t0
 
-    # --- Safety net: finalize run if pipeline didn't ---
-    if run.status == IngestionRunStatus.RUNNING:
-        run.status = IngestionRunStatus.COMPLETED
-        run.finished_at = datetime.now(timezone.utc)
-        db.commit()
-
     # --- Collect error files from this run ---
     # Refresh run from DB so started_at has the same type as updated_at
     # (naive on SQLite, tz-aware on PostgreSQL with timezone=True columns),
