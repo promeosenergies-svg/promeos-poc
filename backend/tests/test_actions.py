@@ -507,7 +507,9 @@ class TestDirectCreate:
             },
         )
         assert r.status_code == 400
-        assert "manual" in r.json()["detail"] or "insight" in r.json()["detail"]
+        body = r.json()
+        detail_str = str(body.get("message", body.get("detail", ""))).lower()
+        assert "manual" in detail_str or "insight" in detail_str
 
     def test_auto_compute_priority(self, client, db_session):
         """Priority auto-computed when omitted, using severity + gain."""
