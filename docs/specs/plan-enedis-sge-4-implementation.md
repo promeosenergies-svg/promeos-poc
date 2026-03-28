@@ -183,9 +183,9 @@ class IngestionRunStatus(str, Enum):
 
 ---
 
-## Phase 3 — Correction audit d'erreurs + retry batch + dry-run + compteurs incrementaux
+## Phase 3 — Correction audit d'erreurs + retry batch + dry-run + compteurs incrementaux [DONE]
 
-**Commit** : `fix(enedis): preserve error history, enable batch retry, dry-run and incremental run tracking (SF4)`
+**Commit** : `fix(enedis): preserve error history, batch retry, dry-run & run tracking (SF4 P3) (#176)` (ba02560)
 
 ### Modifier
 
