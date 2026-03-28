@@ -118,7 +118,9 @@ class TestInsightStatusValidation:
             json={"status": "bogus_status"},
         )
         assert resp.status_code == 400
-        assert "invalide" in resp.json()["detail"].lower() or "Statut" in resp.json()["detail"]
+        body = resp.json()
+        detail_str = str(body.get("message", body.get("detail", ""))).lower()
+        assert "invalide" in detail_str or "statut" in detail_str
 
     def test_all_four_statuses_accepted(self, db_session, client):
         _, site, insight = _create_org_site_insight(db_session, "open")

@@ -59,8 +59,9 @@ A_RISQUE_PENALTY_RATIO = 0.5  # 50 % pour sites à risque
 A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
 # CO2 — source unique : config/emission_factors.py (ADEME Base Empreinte V23.6)
 from config.emission_factors import get_emission_factor as _get_ef
+
 CO2_FACTOR_ELEC_KG_KWH = _get_ef("ELEC")  # 0.052
-CO2_FACTOR_GAZ_KG_KWH = _get_ef("GAZ")    # 0.227
+CO2_FACTOR_GAZ_KG_KWH = _get_ef("GAZ")  # 0.227
 
 # Action text templates ordered by priority (highest first)
 _ACTION_TEMPLATES = [
@@ -969,7 +970,7 @@ def compute_mv_summary(
     """
     from models import Site
     from models.energy_models import Meter, MeterReading
-    from datetime import datetime, date, timedelta
+    from datetime import datetime, date
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -981,6 +982,7 @@ def compute_mv_summary(
     # Source de verite : Meter/MeterReading (modele Yannick)
     current_kwh = 0
     months_covered = 0
+    meter_ids = []
     try:
         from sqlalchemy import func
         from models.enums import FrequencyType
@@ -1018,6 +1020,23 @@ def compute_mv_summary(
         months_covered = 0
 
     current_monthly = round(current_kwh / max(1, months_covered), 1) if months_covered > 0 else 0
+
+    # Recent readings (last 3 months) for data completeness check
+    recent = []
+    try:
+        three_months_ago = date.today() - timedelta(days=90)
+        if meter_ids:
+            recent = (
+                db.query(MeterReading)
+                .filter(
+                    MeterReading.meter_id.in_(meter_ids),
+                    MeterReading.frequency == FrequencyType.MONTHLY,
+                    MeterReading.timestamp >= three_months_ago,
+                )
+                .all()
+            )
+    except Exception:
+        recent = []
 
     # Compute delta
     delta_pct = 0.0
@@ -1156,7 +1175,6 @@ def _resolve_site_org(db: Session, site_id: int) -> int:
         .first()
     )
     return row[0] if row else 1  # Fallback to org 1 for demo
-
 
 
 # ========================================

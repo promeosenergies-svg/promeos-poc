@@ -1,18 +1,55 @@
 /**
- * PROMEOS — InsightDrawer (V70)
+ * PROMEOS — InsightDrawer (V111)
  * Drawer "Comprendre l'écart" : breakdown facturé vs attendu + cause probable.
+ * V111 : InvoiceIdentCard, ReconstitutionBanner, hypothèses, CTAs, debug technique collapsible.
  * Props: { open, onClose, insightId }
  */
 import { useState, useEffect } from 'react';
-import { AlertTriangle, ChevronDown } from 'lucide-react';
+import { AlertTriangle, ChevronDown, FileText, Info } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Explain } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
-import { getInsightDetail, getInvoiceShadowBreakdown } from '../services/api';
+import {
+  getInsightDetail,
+  getInvoiceShadowBreakdown,
+  createActionFromBillingInsight,
+} from '../services/api';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import ShadowBreakdownCard from './billing/ShadowBreakdownCard';
 import { fmtNum } from '../utils/format';
+
+/* ── helpers ─────────────────────────────────────────── */
+
+/** Convertit "YYYY-MM-DD" → "DD/MM/YYYY" */
+function fmtDate(d) {
+  if (!d || typeof d !== 'string') return '—';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function fmt(v) {
+  return fmtNum(v, 2);
+}
+
+/* ── maps ────────────────────────────────────────────── */
+
+const CONFIDENCE_STATUS_MAP = {
+  elevee: 'ok',
+  moyenne: 'info',
+  faible: 'warn',
+  tres_faible: 'crit',
+  high: 'ok',
+  medium: 'info',
+  low: 'warn',
+};
+
+const RECON_STATUS_COLOR = {
+  complete: 'emerald',
+  partial: 'amber',
+  minimal: 'red',
+};
 
 const TYPE_LABELS = {
   shadow_gap: (
@@ -70,21 +107,17 @@ const SEVERITY_BADGE = {
   low: 'neutral',
 };
 
-function fmt(v) {
-  return fmtNum(v, 2);
-}
-
 const CAUSE_LABELS = {
   shadow_gap: (m) =>
     m.expected_ttc != null ? (
       <>
-        L'écart entre le montant facturé ({fmt(m.actual_ttc)} €) et le{' '}
+        L&apos;écart entre le montant facturé ({fmt(m.actual_ttc)} €) et le{' '}
         <Explain term="shadow_billing">facturation théorique</Explain> ({fmt(m.expected_ttc)} €)
         dépasse le seuil de {m.threshold_pct || 10}%.
       </>
     ) : (
       <>
-        L'écart entre le montant facturé ({fmt(m.actual_total_eur)} €) et le{' '}
+        L&apos;écart entre le montant facturé ({fmt(m.actual_total_eur)} €) et le{' '}
         <Explain term="shadow_billing">facturation théorique</Explain> ({fmt(m.shadow_total_eur)} €)
         dépasse le seuil de {m.threshold_pct || 10}%.
       </>
@@ -93,18 +126,18 @@ const CAUSE_LABELS = {
     <>
       Le prix unitaire ({fmtNum(m.unit_price, 4) === '—' ? '?' : fmtNum(m.unit_price, 4)}{' '}
       <Explain term="eur_kwh">€/kWh</Explain>) dépasse le seuil de {m.threshold || 0.3}{' '}
-      <Explain term="eur_kwh">€/kWh</Explain> pour ce type d'énergie.
+      <Explain term="eur_kwh">€/kWh</Explain> pour ce type d&apos;énergie.
     </>
   ),
   duplicate_invoice: () => `Cette facture est un doublon (même site, même période, même montant).`,
   missing_period: () =>
-    `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
+    `Aucune facture ne couvre cette période. Vérifiez l&apos;import ou contactez le fournisseur.`,
   period_too_long: (m) =>
     `La période de facturation (${m.days || '?'} jours) est anormalement longue.`,
   negative_kwh: () =>
-    `La consommation est négative — possible erreur de relevé ou inversion d'index.`,
+    `La consommation est négative — possible erreur de relevé ou inversion d&apos;index.`,
   zero_amount: () =>
-    `Le montant facturé est nul — vérifiez s'il s'agit d'un avoir ou d'une erreur.`,
+    `Le montant facturé est nul — vérifiez s&apos;il s&apos;agit d&apos;un avoir ou d&apos;une erreur.`,
   lines_sum_mismatch: (m) =>
     `La somme des lignes (${fmt(m.lines_total)} €) ne correspond pas au total facturé (${fmt(m.invoice_total)} €).`,
   consumption_spike: (m) => (
@@ -118,13 +151,13 @@ const CAUSE_LABELS = {
     `Le prix unitaire a dérivé de ${fmtNum(m.drift_pct, 1) === '—' ? '?' : fmtNum(m.drift_pct, 1)}% par rapport à la période précédente.`,
   reseau_mismatch: (m) => (
     <>
-      L'écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le
+      L&apos;écart réseau/<Explain term="turpe">TURPE</Explain> ({fmt(m.delta_reseau)} €) dépasse le
       seuil de 10%.
     </>
   ),
   taxes_mismatch: (m) => (
     <>
-      L'écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le
+      L&apos;écart taxes/<Explain term="accise">accise</Explain> ({fmt(m.delta_taxes)} €) dépasse le
       seuil de 5%.
     </>
   ),
@@ -166,6 +199,114 @@ function getBreakdownRows(energyType) {
   ];
 }
 
+/* ── InvoiceIdentCard ────────────────────────────────── */
+
+function InvoiceIdentCard({ detail, metrics }) {
+  const inv = detail?.invoice || {};
+  const m = metrics || {};
+  const numero = inv.numero || inv.invoice_number || m.invoice_number;
+  const period_start = inv.period_start || m.period_start;
+  const period_end = inv.period_end || m.period_end;
+  const prm = inv.prm || m.prm;
+  const kva = inv.kva || m.kva || m.puissance_souscrite;
+  const segment = inv.segment || m.segment;
+  const fournisseur = inv.fournisseur || inv.supplier || m.fournisseur || m.supplier;
+  const kwh = m.kwh ?? m.conso_kwh ?? inv.kwh;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <FileText size={14} className="text-gray-400" />
+        <span className="text-xs font-semibold text-gray-500 uppercase">Facture</span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <span className="text-gray-500">N° facture</span>
+        <span className="font-medium text-gray-800">
+          {numero || <span className="italic text-gray-400">N° non renseigné</span>}
+        </span>
+
+        {(period_start || period_end) && (
+          <>
+            <span className="text-gray-500">Période</span>
+            <span className="text-gray-800">
+              {fmtDate(period_start)} → {fmtDate(period_end)}
+            </span>
+          </>
+        )}
+
+        {prm && (
+          <>
+            <span className="text-gray-500">PRM</span>
+            <span className="text-gray-800 font-mono text-xs">{prm}</span>
+          </>
+        )}
+
+        {kva != null && (
+          <>
+            <span className="text-gray-500">Puissance</span>
+            <span className="text-gray-800">{kva} kVA</span>
+          </>
+        )}
+
+        {segment && (
+          <>
+            <span className="text-gray-500">Segment</span>
+            <span className="text-gray-800">{segment}</span>
+          </>
+        )}
+
+        {fournisseur && (
+          <>
+            <span className="text-gray-500">Fournisseur</span>
+            <span className="text-gray-800">{fournisseur}</span>
+          </>
+        )}
+
+        {kwh != null && (
+          <>
+            <span className="text-gray-500">Consommation</span>
+            <span className="text-gray-800">{fmtNum(kwh, 0)} kWh</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── ReconstitutionBanner ────────────────────────────── */
+
+function ReconstitutionBanner({ breakdown }) {
+  if (!breakdown) return null;
+  const label = breakdown.reconstitution_label || breakdown.reconstitution_status;
+  const confidence = breakdown.confidence;
+  const confidence_label = breakdown.confidence_label;
+  const confidence_rationale = breakdown.confidence_rationale;
+  if (!label && !confidence_label) return null;
+
+  const reconColor =
+    breakdown.reconstitution_status === 'complete'
+      ? 'emerald'
+      : breakdown.reconstitution_status === 'minimal'
+        ? 'red'
+        : 'amber';
+  const confStatus = CONFIDENCE_STATUS_MAP[confidence] || 'neutral';
+  const confDisplay = confidence_label || confidence || '—';
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-2 bg-${reconColor}-50 border border-${reconColor}-200 rounded-lg`}
+    >
+      <Info size={14} className={`text-${reconColor}-500`} />
+      <span className="text-xs text-gray-700">{label || 'Reconstitution'}</span>
+      <Badge status={confStatus} title={confidence_rationale || `Confiance : ${confDisplay}`}>
+        {confDisplay}
+      </Badge>
+    </div>
+  );
+}
+
+/* ── Main Component ──────────────────────────────────── */
+
 export default function InsightDrawer({ open, onClose, insightId }) {
   const { isExpert } = useExpertMode();
   const { org, portefeuille, orgSites, selectedSiteId } = useScope();
@@ -173,16 +314,20 @@ export default function InsightDrawer({ open, onClose, insightId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [breakdown, setBreakdown] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionDone, setActionDone] = useState(false);
 
   useEffect(() => {
     if (!open || !insightId) {
       setDetail(null);
       setError(null);
+      setActionDone(false);
       return;
     }
     setLoading(true);
     setError(null);
     setBreakdown(null);
+    setActionDone(false);
     getInsightDetail(insightId)
       .then((data) => {
         setDetail(data);
@@ -209,6 +354,20 @@ export default function InsightDrawer({ open, onClose, insightId }) {
   const hasBreakdown = m.expected_ttc != null || m.expected_fourniture_ht != null;
   const causeGen = CAUSE_LABELS[detail?.type];
   const cause = causeGen ? causeGen(m) : detail?.message || '';
+
+  const handleCreateAction = async () => {
+    if (!detail || actionLoading || actionDone) return;
+    setActionLoading(true);
+    try {
+      const title = `Action insight : ${typeof TYPE_LABELS[detail.type] === 'string' ? TYPE_LABELS[detail.type] : detail.type}`;
+      await createActionFromBillingInsight(insightId, title, detail.site_id);
+      setActionDone(true);
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <Drawer open={open} onClose={onClose} title="Comprendre l'écart" wide>
@@ -285,6 +444,9 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             )}
           </div>
 
+          {/* Invoice Ident Card */}
+          <InvoiceIdentCard detail={detail} metrics={m} />
+
           {/* Message */}
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-sm text-gray-700">{detail.message}</p>
@@ -296,20 +458,19 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             <p className="text-sm text-gray-800">{cause}</p>
           </div>
 
+          {/* Reconstitution Banner */}
+          <ReconstitutionBanner breakdown={breakdown} />
+
           {/* Confiance — inline badge (détails dans section diagnostics ci-dessous) */}
           {m.confidence && !m.diagnostics && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-500 uppercase">
                 <Explain term="confiance">Confiance</Explain> :
               </span>
-              <Badge
-                status={
-                  m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'
-                }
-              >
-                {m.confidence === 'high'
+              <Badge status={CONFIDENCE_STATUS_MAP[m.confidence] || 'neutral'}>
+                {m.confidence === 'high' || m.confidence === 'elevee'
                   ? 'Élevée'
-                  : m.confidence === 'medium'
+                  : m.confidence === 'medium' || m.confidence === 'moyenne'
                     ? 'Moyenne'
                     : 'Faible'}
               </Badge>
@@ -346,7 +507,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                               colSpan={3}
                               className="py-2 text-right text-xs text-gray-400 italic"
                             >
-                              <Explain term="tva">TVA</Explain> non disponible
+                              TVA non détaillée sur cette facture
                             </td>
                           </tr>
                         );
@@ -356,8 +517,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                     return (
                       <tr key={row.key} className="border-b border-gray-100">
                         <td className="py-2 text-gray-700">{row.label}</td>
-                        <td className="py-2 text-right font-medium">{fmt(actual)} €</td>
-                        <td className="py-2 text-right">{fmt(expected)} €</td>
+                        <td className="py-2 text-right font-medium">
+                          {actual != null ? `${fmt(actual)} €` : '—'}
+                        </td>
+                        <td className="py-2 text-right">
+                          {expected != null ? (
+                            `${fmt(expected)} €`
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Non reconstituable</span>
+                          )}
+                        </td>
                         <td
                           className={`py-2 text-right font-medium ${delta > 0 ? 'text-red-600' : delta < 0 ? 'text-green-600' : 'text-gray-500'}`}
                         >
@@ -371,8 +540,16 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                     <td className="py-2 text-gray-900">
                       Total <Explain term="ttc">TTC</Explain>
                     </td>
-                    <td className="py-2 text-right">{fmt(m.actual_ttc)} €</td>
-                    <td className="py-2 text-right">{fmt(m.expected_ttc)} €</td>
+                    <td className="py-2 text-right">
+                      {m.actual_ttc != null ? `${fmt(m.actual_ttc)} €` : '—'}
+                    </td>
+                    <td className="py-2 text-right">
+                      {m.expected_ttc != null ? (
+                        `${fmt(m.expected_ttc)} €`
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Non reconstituable</span>
+                      )}
+                    </td>
                     <td
                       className={`py-2 text-right ${m.delta_ttc > 0 ? 'text-red-600' : m.delta_ttc < 0 ? 'text-green-600' : 'text-gray-500'}`}
                     >
@@ -389,6 +566,26 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   </tr>
                 </tbody>
               </table>
+              <p className="text-xs text-gray-400 mt-1 italic">
+                — = non disponible / non reconstituable
+              </p>
+            </div>
+          )}
+
+          {/* Hypothèses du breakdown */}
+          {breakdown?.hypotheses?.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                Hypothèses de reconstitution
+              </h4>
+              <ul className="space-y-1">
+                {breakdown.hypotheses.map((h, i) => (
+                  <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0 mt-1.5" />
+                    {typeof h === 'string' ? h : h.label || h.text || JSON.stringify(h)}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -396,7 +593,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           {m.top_contributors?.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                Principaux contributeurs à l'écart
+                Principaux contributeurs à l&apos;écart
               </h4>
               <div className="space-y-2">
                 {m.top_contributors.map((c) => {
@@ -420,7 +617,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                         />
                       </div>
                       <p className="text-xs text-gray-500">
-                        {c.explanation_fr} ({Math.abs(c.pct_of_total)}% de l'écart)
+                        {c.explanation_fr} ({Math.abs(c.pct_of_total)}% de l&apos;écart)
                       </p>
                     </div>
                   );
@@ -440,19 +637,12 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                 <h4 className="text-xs font-semibold text-gray-500 uppercase">
                   Données &amp; hypothèses
                 </h4>
-                <Badge
-                  status={
-                    m.diagnostics.confidence === 'high'
-                      ? 'ok'
-                      : m.diagnostics.confidence === 'medium'
-                        ? 'info'
-                        : 'warn'
-                  }
-                >
+                <Badge status={CONFIDENCE_STATUS_MAP[m.diagnostics.confidence] || 'neutral'}>
                   <Explain term="confiance">Confiance</Explain> :{' '}
-                  {m.diagnostics.confidence === 'high'
+                  {m.diagnostics.confidence === 'high' || m.diagnostics.confidence === 'elevee'
                     ? 'Élevée'
-                    : m.diagnostics.confidence === 'medium'
+                    : m.diagnostics.confidence === 'medium' ||
+                        m.diagnostics.confidence === 'moyenne'
                       ? 'Moyenne'
                       : 'Basse'}
                 </Badge>
@@ -496,49 +686,98 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             </div>
           )}
 
-          {/* Mode Expert */}
+          {/* CTAs — Actions */}
+          <div className="space-y-2 pt-2 border-t border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Actions</h4>
+            <button
+              type="button"
+              disabled={actionLoading || actionDone}
+              onClick={handleCreateAction}
+              className={`w-full text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
+                actionDone
+                  ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+              }`}
+            >
+              {actionDone ? '✓ Action créée' : actionLoading ? 'Création…' : 'Créer une action'}
+            </button>
+            <button
+              type="button"
+              className="w-full text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Contester cette facture
+            </button>
+            <button
+              type="button"
+              className="w-full text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Compléter les données
+            </button>
+          </div>
+
+          {/* Debug technique — collapsible (ex Mode Expert) */}
           {isExpert && (
-            <div className="bg-slate-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
-              <p className="font-semibold text-gray-600">Expert</p>
-              {m.rule_id && <p>Règle : {m.rule_id}</p>}
-              {m.method && <p>Méthode : {m.method}</p>}
-              {m.energy_type && <p>Énergie : {m.energy_type}</p>}
-              {m.price_ref != null && (
-                <p>
-                  Prix ref : {m.price_ref} <Explain term="eur_kwh">€/kWh</Explain>
-                </p>
-              )}
-              {m.kwh != null && (
-                <p>
-                  <Explain term="kwh">kWh</Explain> : {fmtNum(m.kwh, 0)}
-                </p>
-              )}
-              {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
-              {m.price_source && <p>Source prix : {m.price_source}</p>}
-              {m.catalog_trace?.length > 0 && (
-                <div className="mt-2">
-                  <p className="font-semibold text-gray-600">
-                    Catalogue v{m.catalog_trace[0]?.catalog_version || '?'}
+            <details className="group">
+              <summary className="flex items-center gap-2 cursor-pointer select-none">
+                <ChevronDown
+                  size={14}
+                  className="text-gray-400 transition-transform group-open:rotate-180"
+                />
+                <h4 className="text-xs font-semibold text-gray-500 uppercase">Debug technique</h4>
+              </summary>
+              <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
+                <p className="font-semibold text-gray-600">Expert</p>
+                {m.rule_id && <p>Règle : {m.rule_id}</p>}
+                {m.method && <p>Méthode : {m.method}</p>}
+                {m.energy_type && <p>Énergie : {m.energy_type}</p>}
+                {m.price_ref != null && (
+                  <p>
+                    Prix ref : {m.price_ref} <Explain term="eur_kwh">€/kWh</Explain>
                   </p>
-                  {m.catalog_trace.map((t, i) => (
-                    <p key={i}>
-                      {t.code} : {t.used_rate} {t.unit || ''} ({t.source || '?'},{' '}
-                      {t.valid_from || '?'})
+                )}
+                {m.kwh != null && (
+                  <p>
+                    <Explain term="kwh">kWh</Explain> : {fmtNum(m.kwh, 0)}
+                  </p>
+                )}
+                {m.threshold_pct != null && <p>Seuil : {m.threshold_pct}%</p>}
+                {m.price_source && <p>Source prix : {m.price_source}</p>}
+                {m.catalog_trace?.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-semibold text-gray-600">
+                      Catalogue v{m.catalog_trace[0]?.catalog_version || '?'}
                     </p>
-                  ))}
-                </div>
-              )}
-              {detail.recommended_actions?.length > 0 && (
-                <div>
-                  <p className="font-semibold text-gray-600 mt-2">Actions recommandées</p>
-                  <ul className="list-disc list-inside mt-1">
-                    {detail.recommended_actions.map((a, i) => (
-                      <li key={i}>{typeof a === 'string' ? a : a.label || JSON.stringify(a)}</li>
+                    {m.catalog_trace.map((t, i) => (
+                      <p key={i}>
+                        {t.code} : {t.used_rate} {t.unit || ''} ({t.source || '?'},{' '}
+                        {t.valid_from || '?'})
+                      </p>
                     ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+                {detail.recommended_actions?.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-gray-600 mt-2">Actions recommandées</p>
+                    <ul className="list-disc list-inside mt-1">
+                      {detail.recommended_actions.map((a, i) => (
+                        <li key={i}>{typeof a === 'string' ? a : a.label || JSON.stringify(a)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* Breakdown expert fields */}
+                {breakdown?.expert && (
+                  <div className="mt-2 border-t border-gray-200 pt-2">
+                    <p className="font-semibold text-gray-600">Breakdown expert</p>
+                    {Object.entries(breakdown.expert).map(([k, v]) => (
+                      <p key={k}>
+                        {k} : {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
           )}
         </div>
       )}

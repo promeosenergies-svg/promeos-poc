@@ -89,8 +89,8 @@ class TestComponentCalculations:
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
-        # TURPE énergie C5_BT = 0.0453 EUR/kWh
-        assert result["expected_reseau_ht"] == pytest.approx(45.3, abs=0.5)
+        # TURPE 7 énergie C5_BT = 0.0282 EUR/kWh (was 0.0453 TURPE 6)
+        assert result["expected_reseau_ht"] == pytest.approx(28.2, abs=0.5)
 
     def test_taxes_accise_elec(self):
         from services.billing_shadow_v2 import shadow_billing_v2
@@ -98,8 +98,8 @@ class TestComponentCalculations:
         inv = FakeInvoice(energy_kwh=1000)
         c = FakeContract()
         result = shadow_billing_v2(inv, [], c)
-        # Accise élec = 0.02623 EUR/kWh (taux 2024)
-        assert result["expected_taxes_ht"] == pytest.approx(26.23, abs=0.5)
+        # Accise élec = 0.021 EUR/kWh pour période jan 2025 (LFI 2024, valid fév 2024 → jan 2025)
+        assert result["expected_taxes_ht"] == pytest.approx(21.0, abs=0.5)
 
     def test_taxes_ticgn_gaz(self):
         from services.billing_shadow_v2 import shadow_billing_v2
@@ -162,7 +162,7 @@ class TestComputeShadowBreakdown:
         comp = _build_breakdown_component("turpe", "TURPE", 50.0, None, "test", {})
         assert comp["invoice_eur"] is None
         assert comp["gap_eur"] is None
-        assert comp["status"] == "ok"
+        assert comp["status"] == "missing_invoice_detail"
 
 
 # ── D. _extract_invoice_component ────────────────────────────────────────────

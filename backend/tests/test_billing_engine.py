@@ -1036,7 +1036,7 @@ class TestRegression:
         assert result.prorata_factor == pytest.approx(28 / 365, abs=0.0001)
 
     def test_c4_cu_option(self):
-        """C4 CU: 4 plages HPH/HCH/HPB/HCB (TURPE 7)"""
+        """C4 CU: 4 plages horosaisonnieres HPH/HCH/HPB/HCB"""
         result = build_invoice_reconstitution(
             energy_type="ELEC",
             subscribed_power_kva=108,
@@ -1049,8 +1049,9 @@ class TestRegression:
         assert result.status == ReconstitutionStatus.RECONSTITUTED
         turpe_codes = [c.code for c in result.components if c.code.startswith("turpe_soutirage")]
         assert "turpe_soutirage_fixe" in turpe_codes
-        assert "turpe_soutirage_hp" in turpe_codes
-        assert "turpe_soutirage_hc" in turpe_codes
+        # 4 plages horosaisonnieres (HPH/HCH/HPB/HCB)
+        assert "turpe_soutirage_hph" in turpe_codes
+        assert "turpe_soutirage_hch" in turpe_codes
 
     def test_c4_cu_option_4p(self):
         """C4 CU: HP/HC avec taux differents (4 plages)"""

@@ -404,4 +404,5 @@ class TestEndToEndCompute:
             },
         )
         assert resp.status_code == 422
-        assert "non supportee" in resp.json()["detail"]
+        body = resp.json()
+        assert "non supportee" in body.get("detail", body.get("message", ""))

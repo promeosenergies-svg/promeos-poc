@@ -509,10 +509,45 @@ def _component_status(gap_pct):
     return "ok"
 
 
-def _build_breakdown_component(name, label, expected, invoice_val, methodology, detail):
-    """Construit un composant de breakdown avec gap et statut."""
+def _build_breakdown_component(
+    name,
+    label,
+    expected,
+    invoice_val,
+    methodology,
+    detail,
+    *,
+    status_override=None,
+    status_message=None,
+    formula=None,
+    source_ref=None,
+    prorata_display=None,
+):
+    """Construit un composant de breakdown avec gap, statut et métadonnées enrichies."""
+    if expected is None:
+        return {
+            "name": name,
+            "label": label,
+            "expected_eur": None,
+            "invoice_eur": round(invoice_val, 2) if invoice_val is not None else None,
+            "gap_eur": None,
+            "gap_pct": None,
+            "status": status_override or "missing_price",
+            "status_message": status_message or "Prix non disponible — contrat ou catalogue requis",
+            "methodology": methodology,
+            "detail": detail,
+            "formula": formula,
+            "source_ref": source_ref,
+            "prorata_display": prorata_display,
+        }
     gap = (invoice_val - expected) if invoice_val is not None else None
     gap_pct = (gap / expected * 100) if gap is not None and expected > 0 else None
+    if status_override:
+        computed_status = status_override
+    elif invoice_val is None:
+        computed_status = "missing_invoice_detail"
+    else:
+        computed_status = _component_status(gap_pct)
     return {
         "name": name,
         "label": label,
@@ -520,9 +555,13 @@ def _build_breakdown_component(name, label, expected, invoice_val, methodology, 
         "invoice_eur": round(invoice_val, 2) if invoice_val is not None else None,
         "gap_eur": round(gap, 2) if gap is not None else None,
         "gap_pct": round(gap_pct, 1) if gap_pct is not None else None,
-        "status": _component_status(gap_pct),
+        "status": computed_status,
+        "status_message": status_message,
         "methodology": methodology,
         "detail": detail,
+        "formula": formula,
+        "source_ref": source_ref,
+        "prorata_display": prorata_display,
     }
 
 
@@ -556,6 +595,76 @@ def _extract_invoice_component(lines, component_name):
             total += getattr(line, "amount_eur", 0) or 0
             found = True
     return total if found else None
+
+
+def _extract_pdl_prm(invoice, site=None) -> str | None:
+    """Extrait le PDL/PRM depuis raw_json ou le site."""
+    import json as _json
+
+    raw = getattr(invoice, "raw_json", None)
+    if raw:
+        try:
+            data = _json.loads(raw)
+            prm = data.get("pdl_prm") or data.get("pdl") or data.get("prm")
+            if prm:
+                return str(prm)
+        except Exception:
+            pass
+    if site:
+        prm = getattr(site, "pdl", None) or getattr(site, "prm", None) or getattr(site, "pdl_prm", None)
+        if prm:
+            return str(prm)
+    return None
+
+
+def _compute_reconstitution_meta(components: list) -> dict:
+    """Calcule le statut de reconstitution et le niveau de confiance."""
+    total = len(components)
+    missing_price = [c for c in components if c.get("status") == "missing_price"]
+    missing_labels = [c["label"] for c in missing_price]
+    total_facture = sum(c.get("invoice_eur") or 0 for c in components)
+    missing_facture = sum(c.get("invoice_eur") or 0 for c in missing_price)
+    missing_pct_value = (
+        (missing_facture / total_facture * 100) if total_facture > 0 else (len(missing_price) / max(total, 1) * 100)
+    )
+    if len(missing_price) == 0:
+        reconstitution_status = "complete"
+        reconstitution_label = "Reconstitution complète"
+    elif missing_pct_value > 50:
+        reconstitution_status = "minimal"
+        reconstitution_label = (
+            f"Reconstitution minimale — {len(missing_price)}/{total} composantes "
+            f"non reconstituables ({missing_pct_value:.0f}% du montant)"
+        )
+    else:
+        reconstitution_status = "partial"
+        s = "s" if len(missing_price) > 1 else ""
+        reconstitution_label = f"Reconstitution partielle — {len(missing_price)} composante{s} non reconstituable{s}"
+
+    if len(missing_price) == 0:
+        confidence = "elevee"
+    elif missing_pct_value <= 15:
+        confidence = "moyenne"
+    elif missing_pct_value <= 50:
+        confidence = "faible"
+    else:
+        confidence = "tres_faible"
+
+    confidence_label_map = {"elevee": "Élevée", "moyenne": "Moyenne", "faible": "Faible", "tres_faible": "Très faible"}
+    rationale_map = {
+        "elevee": "Toutes les composantes sont reconstituées avec des tarifs sourcés",
+        "moyenne": f"{len(missing_price)} composante(s) manquante(s) représentant {missing_pct_value:.0f}% du montant",
+        "faible": f"{len(missing_price)} composante(s) manquante(s) représentant {missing_pct_value:.0f}% du montant — résultat peu fiable",
+        "tres_faible": f"La majorité du montant ({missing_pct_value:.0f}%) n'est pas reconstituable — résultat non exploitable",
+    }
+    return {
+        "reconstitution_status": reconstitution_status,
+        "reconstitution_label": reconstitution_label,
+        "missing_components": missing_labels,
+        "confidence": confidence,
+        "confidence_label": confidence_label_map[confidence],
+        "confidence_rationale": rationale_map[confidence],
+    }
 
 
 def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
@@ -642,18 +751,40 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     act_ht_sum = sum(x for x in [fourniture_invoice, turpe_invoice, taxes_invoice, abonnement_invoice] if x is not None)
     tva_invoice = (act_ttc - act_ht_sum) if act_ttc and act_ht_sum > 0 else None
 
+    # ── Identification facture (P0.1) ────────────────────────────────
+    supplier_name = getattr(contract, "supplier_name", None) if contract else None
+    puissance_kva = getattr(contract, "subscribed_power_kva", None) if contract else None
+    pdl_prm = _extract_pdl_prm(invoice, site)
+    site_name = getattr(site, "nom", None) or getattr(site, "name", None) if site else None
+
     # ── Construire les composantes avec gap/status ─────────────────────
     price_ref = v2["price_ref"]
+    price_source = v2["price_source"]
     taxe_label = "Accise élec" if is_elec else "TICGN"
+    fourniture_is_missing = price_source == "catalog_default"
+
+    # Abonnement prorata lisible (P1.3)
+    fixed_fee = getattr(contract, "fixed_fee_eur_per_month", None) or 0
+    abo_monthly = turpe_gestion + fixed_fee
+    abo_expected = v2["expected_abo_ht"]
+    abo_formula = f"{abo_monthly:.2f} €/mois × {period_days}/365 jours = {abo_expected:.2f} € HT"
 
     components = [
         _build_breakdown_component(
             "fourniture",
             "Fourniture d'énergie",
-            v2["expected_fourniture_ht"],
+            None if fourniture_is_missing else v2["expected_fourniture_ht"],
             fourniture_invoice,
-            f"{kwh:.0f} kWh x {price_ref:.4f} EUR/kWh",
-            {"kwh": kwh, "price_kwh": price_ref, "source": v2["price_source"]},
+            f"{kwh:.0f} kWh × {price_ref:.4f} EUR/kWh",
+            {"kwh": kwh, "price_kwh": price_ref, "source": price_source},
+            status_override="missing_price" if fourniture_is_missing else None,
+            status_message="Prix de fourniture non disponible — contrat ou offre requis"
+            if fourniture_is_missing
+            else None,
+            formula=None
+            if fourniture_is_missing
+            else f"{kwh:,.0f} kWh × {price_ref:.4f} €/kWh = {v2['expected_fourniture_ht']:,.2f} € HT".replace(",", " "),
+            source_ref=f"Contrat #{contract.id}" if contract and not fourniture_is_missing else None,
         ),
         _build_breakdown_component(
             "turpe",
@@ -662,50 +793,140 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
             turpe_invoice,
             f"Segment {segment} — {v2['components'][1]['unit_rate']:.4f} EUR/kWh",
             {"segment": segment, "rate_kwh": v2["components"][1]["unit_rate"]},
+            formula=f"{kwh:,.0f} kWh × {v2['components'][1]['unit_rate']:.4f} €/kWh = {v2['expected_reseau_ht']:,.2f} € HT".replace(
+                ",", " "
+            ),
+            source_ref=f"CRE TURPE 7 {segment}",
         ),
         _build_breakdown_component(
             "taxes",
             f"Taxes ({taxe_label} + CTA)",
             round(taxes_expected, 2),
             taxes_invoice,
-            f"{taxe_label}: {kwh:.0f} kWh x {accise_rate:.4f} EUR/kWh + CTA: {cta_eur:.2f} EUR",
+            f"{taxe_label}: {kwh:.0f} kWh × {accise_rate:.5f} EUR/kWh + CTA: {cta_eur:.2f} EUR",
             {"taxe_energy": round(taxes_energy, 2), "cta": round(cta_eur, 2), "cta_taux_pct": round(cta_taux * 100, 2)},
+            formula=f"{taxe_label}: {kwh:,.0f} kWh × {accise_rate:.5f} €/kWh = {taxes_energy:,.2f} € + CTA: {cta_eur:,.2f} € = {taxes_expected:,.2f} € HT".replace(
+                ",", " "
+            ),
+            source_ref="Loi de finances 2026 (accise) + CRE (CTA)",
         ),
         _build_breakdown_component(
             "tva",
             "TVA",
             exp_tva,
             tva_invoice,
-            "TVA 5,5% sur abonnement/CTA + TVA 20% sur consommation",
+            "TVA 20% uniforme (depuis août 2025)",
             {
                 "tva_reduit": round(v2["components"][3]["tva"], 2),
                 "tva_normal": round(exp_tva - v2["components"][3]["tva"], 2),
             },
+            status_message="TVA non détaillée sur cette facture" if tva_invoice is None and act_ttc else None,
+            formula=f"TVA 20% sur {exp_ht:,.2f} € HT = {exp_tva:,.2f} €".replace(",", " "),
+        ),
+        _build_breakdown_component(
+            "abonnement",
+            "Abonnement & gestion",
+            abo_expected,
+            abonnement_invoice,
+            "TURPE gestion + abonnement proratisé",
+            {"turpe_gestion": turpe_gestion, "fixed_fee": fixed_fee},
+            formula=abo_formula,
+            source_ref=f"CRE TURPE 7 gestion {segment}",
+            prorata_display=f"{period_days}/365 jours",
         ),
     ]
 
-    total_expected_ht = exp_ht
+    # CEE implicite (P1.4) — informatif si ELEC
+    if is_elec:
+        cee_rate = 0.005
+        cee_estimate = kwh * cee_rate
+        components.append(
+            _build_breakdown_component(
+                "cee_implicite",
+                "CEE (coût implicite, inclus dans fourniture)",
+                None,
+                None,
+                "Estimation PROMEOS du coût CEE implicite",
+                {"cee_rate": cee_rate, "kwh": kwh},
+                status_override="informational",
+                status_message=f"Estimé à {cee_estimate:,.2f} € — inclus dans le prix de fourniture, non facturé séparément".replace(
+                    ",", " "
+                ),
+                formula=f"{kwh:,.0f} kWh × {cee_rate} €/kWh = {cee_estimate:,.2f} € (estimation PROMEOS)".replace(
+                    ",", " "
+                ),
+                source_ref="CEE P5 implicite ~5 €/MWh",
+            )
+        )
+
+    # Reconstitution meta (P0.3/P0.4)
+    recon_meta = _compute_reconstitution_meta(components)
+    total_expected_ht_r = sum(
+        c["expected_eur"] for c in components if c["expected_eur"] is not None and c.get("status") != "informational"
+    )
     total_invoice_ht = act_ht_sum if act_ht_sum > 0 else (act_ttc or 0)
+    hypotheses = list(v2["diagnostics"].get("assumptions", []))
 
     try:
         tarif_version = get_tarif_version()
     except Exception:
         tarif_version = "unknown"
 
+    tariff_source = v2.get("tariff_source", "fallback")
+
     return {
-        "total_expected_ht": round(total_expected_ht, 2),
+        # IDENTIFICATION FACTURE (P0.1)
+        "invoice_id": invoice.id,
+        "invoice_number": getattr(invoice, "invoice_number", None),
+        "period_start": str(p_start) if p_start else None,
+        "period_end": str(p_end) if p_end else None,
+        "period_days": period_days,
+        "pdl_prm": pdl_prm,
+        "supplier": supplier_name,
+        "segment": segment,
+        "puissance_kva": puissance_kva,
+        "kwh_total": kwh,
+        "energy_type": v2["energy_type"],
+        "site_name": site_name,
+        # RECONSTITUTION META (P0.3/P0.4)
+        "reconstitution_status": recon_meta["reconstitution_status"],
+        "reconstitution_label": recon_meta["reconstitution_label"],
+        "missing_components": recon_meta["missing_components"],
+        "confidence": recon_meta["confidence"],
+        "confidence_label": recon_meta["confidence_label"],
+        "confidence_rationale": recon_meta["confidence_rationale"],
+        # TOTAUX
+        "total_expected_ht": round(total_expected_ht_r, 2),
+        "total_expected_ht_label": f"{total_expected_ht_r:,.2f} € HT".replace(",", " ")
+        if recon_meta["reconstitution_status"] == "complete"
+        else f"{total_expected_ht_r:,.2f} € HT (partiel)".replace(",", " "),
         "total_expected_ttc": round(v2["expected_ttc"], 2),
         "total_invoice_ht": round(total_invoice_ht, 2),
         "total_invoice_ttc": round(act_ttc, 2) if act_ttc else None,
-        "total_gap_eur": round(total_invoice_ht - total_expected_ht, 2) if total_expected_ht else 0,
-        "total_gap_pct": round((total_invoice_ht - total_expected_ht) / total_expected_ht * 100, 2)
-        if total_expected_ht > 0
-        else 0,
+        "total_gap_eur": round(total_invoice_ht - total_expected_ht_r, 2)
+        if recon_meta["reconstitution_status"] == "complete"
+        else None,
+        "total_gap_pct": round((total_invoice_ht - total_expected_ht_r) / total_expected_ht_r * 100, 2)
+        if recon_meta["reconstitution_status"] == "complete" and total_expected_ht_r > 0
+        else None,
+        "total_gap_label": "Non calculable — reconstitution partielle"
+        if recon_meta["reconstitution_status"] != "complete"
+        else None,
+        # COMPOSANTES + META
         "components": components,
-        "confidence": v2["diagnostics"]["confidence"],
+        "hypotheses": hypotheses,
+        "expert": {
+            "engine": "shadow_billing_v1",
+            "catalog": tarif_version,
+            "segment": segment,
+            "method": v2.get("method", "shadow_v2_catalog"),
+            "prix_ref_kwh": price_ref,
+            "source_prix": price_source,
+            "tariff_source": tariff_source,
+        },
+        # BACKWARD COMPAT
         "tarif_version": tarif_version,
-        "segment": segment,
-        "energy_type": v2["energy_type"],
         "kwh": kwh,
         "days_in_period": period_days,
+        "tariff_source": tariff_source,
     }

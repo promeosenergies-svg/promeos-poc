@@ -395,7 +395,7 @@ class TestGasTicgnTemporal:
         assert ticgn.amount_ht == pytest.approx(100_000 * 0.01637, abs=0.5)
 
     def test_gas_ticgn_2026(self):
-        """Fév 2026+ : TICGN 16.39 EUR/MWh."""
+        """Fév 2026+ : accise gaz 10.73 EUR/MWh (arrêté 24/12/2025)."""
         r = build_invoice_reconstitution(
             energy_type="GAZ",
             subscribed_power_kva=None,
@@ -406,7 +406,8 @@ class TestGasTicgnTemporal:
             period_end=date(2026, 3, 31),
         )
         ticgn = next(c for c in r.components if c.code == "ticgn")
-        assert ticgn.amount_ht == pytest.approx(100_000 * 0.01639, abs=0.5)
+        # Arrêté 24/12/2025 (JORFTEXT000053229989) — 10.73 EUR/MWh
+        assert ticgn.amount_ht == pytest.approx(100_000 * 0.01073, abs=0.5)
 
 
 class TestGasCpbShadow:

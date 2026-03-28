@@ -68,6 +68,7 @@ build/
 playwright-report/
 test-results/
 e2e/node_modules/
+audit-screenshots/captures/
 
 # Runtime / local data
 backend/data/*.db

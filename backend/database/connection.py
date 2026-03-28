@@ -34,7 +34,7 @@ _engine_kwargs = {
 }
 
 if _is_sqlite:
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+    _engine_kwargs["connect_args"] = {"check_same_thread": False, "timeout": 10}
 else:
     # PostgreSQL connection pool settings
     _engine_kwargs["pool_size"] = int(os.environ.get("DB_POOL_SIZE", "5"))

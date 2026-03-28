@@ -347,6 +347,7 @@ def get_cockpit_trajectory(
             "reel_mwh": [],
             "objectif_mwh": [],
             "jalons": [
+                {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
                 {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
                 {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
                 {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
@@ -377,6 +378,7 @@ def get_cockpit_trajectory(
             "objectif_mwh": [],
             "projection_mwh": [],
             "jalons": [
+                {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
                 {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
                 {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
                 {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
@@ -508,6 +510,7 @@ def get_cockpit_trajectory(
         "projection_mwh": projection_mwh,
         "projection_savings_kwh_an": round(_savings_kwh) if _savings_kwh > 0 else 0,
         "jalons": [
+            {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
             {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
             {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
             {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
@@ -589,6 +592,7 @@ def get_co2(
 
     # Fix CRIT-2 : résolution robuste de l'org (pas org_id=0 qui bypass le filtre)
     from middleware.auth import get_optional_auth
+
     auth = None
     try:
         auth = get_optional_auth(request)

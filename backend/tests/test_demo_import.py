@@ -119,7 +119,8 @@ class TestDemoSeed:
         # Deuxieme seed: 409
         r2 = client.post("/api/demo/seed")
         assert r2.status_code == 409
-        assert "existe deja" in r2.json()["detail"]
+        body = r2.json()
+        assert "existe deja" in body.get("detail", body.get("message", ""))
 
 
 # ========================================
