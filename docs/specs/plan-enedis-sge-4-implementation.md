@@ -483,7 +483,7 @@ No data modifications made.
 
 ---
 
-## Phase 5 — API REST + Wiring applicatif
+## Phase 5 — API REST + Wiring applicatif [DONE]
 
 **Commit** : `feat(enedis): add REST API endpoints and wire router into app (SF4)`
 
