@@ -263,6 +263,20 @@ export default function ShadowBreakdownCard({ breakdown }) {
         </div>
       )}
 
+      {/* Source tarifs */}
+      {breakdown.tariff_source && (
+        <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100">
+          <span className="text-[10px] text-gray-400">
+            {breakdown.tariff_source === 'regulated_tariffs'
+              ? 'Tarifs réglementés (base CRE versionnée)'
+              : 'Estimation (constantes de secours)'}
+          </span>
+          {tarif_version && (
+            <span className="text-[10px] text-gray-300">&middot; {tarif_version}</span>
+          )}
+        </div>
+      )}
+
       {/* Meta (mode Expert) */}
       {isExpert && (
         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-400 pt-2 border-t border-gray-100">
