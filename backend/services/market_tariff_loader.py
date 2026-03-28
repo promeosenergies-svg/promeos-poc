@@ -131,6 +131,8 @@ def _map_tariff_type(key: str) -> TariffType | None:
         "tva": TariffType.TVA,
         "turpe": TariffType.TURPE,
         "atrd": TariffType.ATRD,
+        "atrt": TariffType.ATRT,
+        "ticgn": TariffType.TICGN,
     }
     # Correspondance exacte d'abord
     if key in mapping:
