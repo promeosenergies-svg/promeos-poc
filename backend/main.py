@@ -3,6 +3,7 @@ PROMEOS - Point d'entrée principal de l'API
 """
 
 import os
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,7 +13,7 @@ import uvicorn
 from middleware.request_context import RequestContextMiddleware
 
 # Register Market Data V2 models (tables created via Base.metadata.create_all)
-from models.market_models import *  # noqa: F401
+from models.market_models import *  # noqa: F401, F403
 from middleware.error_handler import register_error_handlers
 from services.json_logger import setup_logging
 
@@ -174,10 +175,11 @@ app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toiture
 app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, cost breakdown)
 app.include_router(action_center_router)  # Action Center (unified actionable issues)
 
-# Run safe schema migrations (idempotent, no drop)
+# Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
 
-_run_migrations(_engine)
+if "pytest" not in sys.modules:
+    _run_migrations(_engine)
 
 # Startup route validation: verify critical V67 billing routes are registered
 _REQUIRED_BILLING_PATHS = ["/api/billing/periods", "/api/billing/coverage-summary", "/api/billing/missing-periods"]

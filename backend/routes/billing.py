@@ -725,32 +725,77 @@ def _compute_breakdown_v2(db: Session, invoice) -> dict:
     supplier_ttc = invoice.total_eur or 0
     comparison = compare_to_supplier_invoice(result, supplier_ttc) if supplier_ttc > 0 else None
 
+    # ── Resolve site for identification ─────────────────────────────────
+    site = None
+    if invoice.site_id:
+        try:
+            from models.energy_models import Site
+
+            site = db.query(Site).filter(Site.id == invoice.site_id).first()
+        except Exception:
+            pass
+
+    from services.billing_shadow_v2 import _extract_pdl_prm, _compute_reconstitution_meta
+
+    pdl_prm = _extract_pdl_prm(invoice, site)
+    supplier_name = getattr(contract, "supplier_name", None) if contract else None
+    site_name = getattr(site, "nom", None) or getattr(site, "name", None) if site else None
+
     # ── Format response (compatible with frontend) ───────────────────────
     components_out = []
     for c in result.components:
+        comp_status = c.gap_status or "unknown"
+        comp_status_message = None
+        expected_ht = c.amount_ht
+        if c.code == "fourniture" and not supply_prices:
+            comp_status = "missing_price"
+            comp_status_message = "Prix de fourniture non disponible — contrat ou offre requis"
+            expected_ht = None
         comp = {
             "code": c.code,
             "label": c.label,
-            "expected_ht": c.amount_ht,
+            "expected_ht": expected_ht,
             "tva_rate": c.tva_rate,
             "tva": c.amount_tva,
             "ttc": c.amount_ttc,
             "formula": c.formula_used,
             "inputs": c.inputs_used,
-            "gap_eur": c.gap_eur,
-            "gap_pct": c.gap_pct,
-            "gap_status": c.gap_status or "unknown",
+            "gap_eur": c.gap_eur if expected_ht is not None else None,
+            "gap_pct": c.gap_pct if expected_ht is not None else None,
+            "gap_status": comp_status,
+            "status": comp_status,
+            "status_message": comp_status_message,
             "rate_sources": [
                 {"code": rs.code, "rate": rs.rate, "unit": rs.unit, "source": rs.source} for rs in c.rate_sources
             ],
+            "source_ref": c.rate_sources[0].source if c.rate_sources else None,
         }
         if c.supplier_amount_ht is not None:
             comp["invoice_ht"] = c.supplier_amount_ht
         components_out.append(comp)
 
+    recon_meta = _compute_reconstitution_meta(components_out)
+
     return {
         "engine_version": result.engine_version,
         "status": result.status.value,
+        # IDENTIFICATION FACTURE (P0.1)
+        "invoice_id": invoice.id,
+        "invoice_number": getattr(invoice, "invoice_number", None),
+        "period_start": str(period_start) if period_start else None,
+        "period_end": str(period_end) if period_end else None,
+        "period_days": result.prorata_days,
+        "pdl_prm": pdl_prm,
+        "supplier": supplier_name,
+        "site_name": site_name,
+        # RECONSTITUTION META (P0.3/P0.4)
+        "reconstitution_status": recon_meta["reconstitution_status"],
+        "reconstitution_label": recon_meta["reconstitution_label"],
+        "missing_components": recon_meta["missing_components"],
+        "confidence": recon_meta["confidence"],
+        "confidence_label": recon_meta["confidence_label"],
+        "confidence_rationale": recon_meta["confidence_rationale"],
+        # STANDARD
         "segment": result.segment.value,
         "tariff_option": result.tariff_option.value,
         "energy_type": result.energy_type,
@@ -769,10 +814,19 @@ def _compute_breakdown_v2(db: Session, invoice) -> dict:
         "days_in_period": result.prorata_days,
         "prorata_factor": round(result.prorata_factor, 6),
         "subscribed_power_kva": result.subscribed_power_kva,
+        "puissance_kva": result.subscribed_power_kva,
         "missing_inputs": result.missing_inputs,
         "assumptions": result.assumptions,
+        "hypotheses": result.assumptions,
         "warnings": result.warnings,
         "catalog_version": result.catalog_version,
+        "expert": {
+            "engine": result.engine_version,
+            "catalog": result.catalog_version,
+            "segment": result.segment.value,
+            "method": "billing_engine_v2",
+            "tariff_source": "regulated_tariffs",
+        },
     }
 
 
@@ -1018,6 +1072,36 @@ def get_insight_detail(
         except Exception:
             pass  # Garder métriques originales
 
+    # Invoice identification (P0.1)
+    invoice_ident = {}
+    inv = db.query(EnergyInvoice).filter(EnergyInvoice.id == insight.invoice_id).first() if insight.invoice_id else None
+    if inv:
+        from services.billing_shadow_v2 import _extract_pdl_prm, _resolve_segment
+
+        inv_site, inv_contract = None, None
+        if inv.site_id:
+            try:
+                from models.energy_models import Site
+
+                inv_site = db.query(Site).filter(Site.id == inv.site_id).first()
+            except Exception:
+                pass
+        if inv.contract_id:
+            inv_contract = db.query(EnergyContract).filter(EnergyContract.id == inv.contract_id).first()
+        p_s, p_e = inv.period_start, inv.period_end
+        invoice_ident = {
+            "invoice_number": inv.invoice_number,
+            "period_start": str(p_s) if p_s else None,
+            "period_end": str(p_e) if p_e else None,
+            "period_days": (p_e - p_s).days if p_s and p_e else None,
+            "pdl_prm": _extract_pdl_prm(inv, inv_site),
+            "supplier": getattr(inv_contract, "supplier_name", None) if inv_contract else None,
+            "segment": _resolve_segment(inv_contract, inv_site) if inv_contract else None,
+            "puissance_kva": getattr(inv_contract, "subscribed_power_kva", None) if inv_contract else None,
+            "kwh_total": inv.energy_kwh,
+            "site_name": getattr(inv_site, "nom", None) or getattr(inv_site, "name", None) if inv_site else None,
+        }
+
     return {
         "id": insight.id,
         "site_id": insight.site_id,
@@ -1031,6 +1115,7 @@ def get_insight_detail(
         "notes": insight.notes,
         "action_id": action.id if action else None,
         "metrics": metrics,
+        "invoice_identification": invoice_ident,
         "recommended_actions": json.loads(insight.recommended_actions_json or "[]"),
     }
 
