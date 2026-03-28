@@ -322,7 +322,9 @@ def ingest_directory(
                 else:
                     # Transition to PERMANENTLY_FAILED (skip in dry-run)
                     if not dry_run:
+                        _archive_error(session, existing)
                         existing.status = FluxStatus.PERMANENTLY_FAILED
+                        existing.error_message = None
                         session.commit()
                     logger.info("File %s reached MAX_RETRIES (%d) — %s",
                                 file_path.name, MAX_RETRIES,

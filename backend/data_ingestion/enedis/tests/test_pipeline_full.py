@@ -573,6 +573,9 @@ class TestErrorRetryInBatch:
 
         f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
         assert f.status == FluxStatus.PERMANENTLY_FAILED
+        assert f.error_message is None  # cleared after archive
+        # "latest error" archived alongside the pre-seeded errors
+        assert len(f.errors) == MAX_RETRIES + 1
 
     def test_permanently_failed_skipped_in_next_run(self, db, tmp_path, test_keys):
         """A PERMANENTLY_FAILED file is skipped (not retried) in subsequent runs."""
