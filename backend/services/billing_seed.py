@@ -65,8 +65,8 @@ ANOMALY_TAXES_MISMATCH = (2025, 1)  # R14: TAX line = CSPE × 1.08
 KWH_MARSEILLE = 4500
 PRICE_REF_MARSEILLE = 0.19
 MARSEILLE_ENERGY_AMT = round(KWH_MARSEILLE * 0.1133, 2)  # 509.85 fourniture
-MARSEILLE_NETWORK_AMT = round(KWH_MARSEILLE * 0.045, 2)  # 202.50 réseau
-MARSEILLE_TAX_AMT = round(KWH_MARSEILLE * 0.0225, 2)  # 101.25 taxes
+MARSEILLE_NETWORK_AMT = round(KWH_MARSEILLE * 0.0313, 2)  # réseau TURPE 6 C4 BT
+MARSEILLE_TAX_AMT = round(KWH_MARSEILLE * 0.02100, 2)  # CSPE 2024 ménages 21 EUR/MWh
 GAPS_MARSEILLE = {(2024, 8): "missing"}  # vacances scolaires
 ANOMALY_MARSEILLE_R1 = (2025, 3)  # R1 : surfacturation 35%
 ANOMALY_MARSEILLE_R3 = (2025, 10)  # R3 : spike ×2.7
@@ -77,11 +77,11 @@ KWH_NICE_GAZ = 3000
 PRICE_REF_NICE_ELEC = 0.21
 PRICE_REF_NICE_GAZ = 0.09
 NICE_ELEC_ENERGY_AMT = round(KWH_NICE_ELEC * 0.14, 2)  # 1120.00
-NICE_ELEC_NETWORK_AMT = round(KWH_NICE_ELEC * 0.045, 2)  # 360.00
-NICE_ELEC_TAX_AMT = round(KWH_NICE_ELEC * 0.0225, 2)  # 180.00
+NICE_ELEC_NETWORK_AMT = round(KWH_NICE_ELEC * 0.0313, 2)  # TURPE 6 C4 BT
+NICE_ELEC_TAX_AMT = round(KWH_NICE_ELEC * 0.02100, 2)  # CSPE 2024
 NICE_GAZ_ENERGY_AMT = round(KWH_NICE_GAZ * 0.032, 2)  # 96.00
 NICE_GAZ_NETWORK_AMT = round(KWH_NICE_GAZ * 0.037, 2)  # 111.00
-NICE_GAZ_TAX_AMT = round(KWH_NICE_GAZ * 0.022, 2)  # 66.00
+NICE_GAZ_TAX_AMT = round(KWH_NICE_GAZ * 0.01637, 2)  # TICGN 2024
 ANOMALY_NICE_R11 = (2025, 6)  # R11 : TTC ≠ HT + TVA (écart 3.5%)
 # Saisonnalité hôtel : été ×1.4 elec (clim), hiver ×1.3 gaz (chauffage)
 _NICE_ELEC_SEASON = {6: 1.4, 7: 1.4, 8: 1.4, 12: 0.9, 1: 0.9, 2: 0.9}
@@ -91,8 +91,8 @@ _NICE_GAZ_SEASON = {12: 1.3, 1: 1.3, 2: 1.3, 6: 0.7, 7: 0.7, 8: 0.7}
 KWH_TOULOUSE = 12000
 PRICE_REF_TOULOUSE = 0.17
 TOULOUSE_ENERGY_AMT = round(KWH_TOULOUSE * 0.1133, 2)  # 1359.60
-TOULOUSE_NETWORK_AMT = round(KWH_TOULOUSE * 0.04, 2)  # 480.00
-TOULOUSE_TAX_AMT = round(KWH_TOULOUSE * 0.0225, 2)  # 270.00
+TOULOUSE_NETWORK_AMT = round(KWH_TOULOUSE * 0.0313, 2)  # TURPE 6 C4 BT
+TOULOUSE_TAX_AMT = round(KWH_TOULOUSE * 0.02100, 2)  # CSPE 2024
 TOULOUSE_START_YEAR = 2024
 TOULOUSE_START_MONTH = 7
 TOULOUSE_MONTHS = 18  # Juil 2024 → Déc 2025 (couverture partielle)
@@ -134,13 +134,13 @@ def _add_elec_invoice(db: Session, site_id: int, contract_id: int, y: int, m: in
     network_line = ELEC_NETWORK_AMT
     tax_line = ELEC_TAX_AMT
 
-    # Anomalie R13 : réseau × 2.3
+    # Anomalie R13 : réseau × 2.3 (TURPE 6 C5 BT = 0.0282 EUR/kWh)
     if (y, m) == ANOMALY_RESEAU_MISMATCH:
-        network_line = round(9000 * 0.0453 * 2.3, 2)  # 937.71
+        network_line = round(9000 * 0.0282 * 2.3, 2)  # ~583.74
 
-    # Anomalie R14 : taxes × 1.08
+    # Anomalie R14 : taxes × 1.08 (CSPE 2025 = 0.02623 EUR/kWh)
     if (y, m) == ANOMALY_TAXES_MISMATCH:
-        tax_line = round(9000 * 0.0225 * 1.08, 2)  # 218.70
+        tax_line = round(9000 * 0.02623 * 1.08, 2)  # ~254.97
 
     total_eur = round(energy_line + network_line + tax_line, 2)
 
@@ -255,8 +255,8 @@ def _add_marseille_invoice(db: Session, site_id: int, contract_id: int, y: int, 
     if (y, m) == ANOMALY_MARSEILLE_R3:
         energy_kwh = round(KWH_MARSEILLE * 2.7)  # 12150
         energy_line = round(energy_kwh * 0.1133, 2)
-        network_line = round(energy_kwh * 0.045, 2)
-        tax_line = round(energy_kwh * 0.0225, 2)
+        network_line = round(energy_kwh * 0.0313, 2)  # TURPE 6 C4 BT
+        tax_line = round(energy_kwh * 0.02100, 2)  # CSPE 2024
 
     total_eur = round(energy_line + network_line + tax_line, 2)
 
