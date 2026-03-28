@@ -347,9 +347,10 @@ def ingest_directory(
 
 ---
 
-## Phase 4 — CLI
+## Phase 4 — CLI [DONE]
 
-**Commit** : `feat(enedis): add CLI for ingestion with dry-run, pre-flight validation and structured report (SF4)`
+**Commit** : `feat(enedis): add CLI for ingestion with dry-run, pre-flight validation and structured report (SF4)` (8bfee2d)
+**Fix** : `fix(enedis): display permanently_failed counter in CLI reports (SF4)` (c49fb0b)
 
 ### Creer
 
@@ -442,6 +443,7 @@ Files received:  45
   needs_review:  1
 Retried:         2  (from previous errors)
 Max retries:     0  (permanently failed — skipped)
+Perm. failed:    0  (status set this run)
 Already processed: 46
 Measures stored (staging totals):
   R4x:    98,432
@@ -462,6 +464,7 @@ Source:          /path/to/flux_enedis (recursive)
 New files:       12
 Retryable errors: 2  (eligible for retry, < MAX_RETRIES)
 Max retries:     1   (permanently failed — will be skipped)
+Perm. failed:    0  (status set this run)
 Already processed: 46
 No data modifications made.
 ```
