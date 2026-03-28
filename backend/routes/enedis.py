@@ -42,7 +42,7 @@ router = APIRouter(prefix="/api/enedis", tags=["Enedis SGE Flux"])
 
 class IngestRequest(BaseModel):
     directory: Optional[str] = Field(None, description="Override ENEDIS_FLUX_DIR")
-    recursive: bool = Field(False)
+    recursive: bool = Field(True)
     dry_run: bool = Field(False)
 
 

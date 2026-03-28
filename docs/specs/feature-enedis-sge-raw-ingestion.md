@@ -1,11 +1,12 @@
 # [ARCHIVÉ] Feature Spec : Ingestion des flux SGE Enedis — Structure de données brute
 
-> **Ce spec est archivé.** Il a été scindé en 3 sub-features ciblées après corrections factuelles.
+> **Ce spec est archivé.** Il a été scindé en sub-features ciblées après corrections factuelles.
 >
 > Consulter les specs actifs :
 > 1. [`feature-enedis-sge-1-decrypt.md`](feature-enedis-sge-1-decrypt.md) — Déchiffrement et classification — **✅ COMPLÉTÉE 2026-03-23** (PR #148)
-> 2. [`feature-enedis-sge-2-ingestion-cdc.md`](feature-enedis-sge-2-ingestion-cdc.md) — Ingestion CDC R4x — **✅ COMPLÉTÉE 2026-03-23** (branche `feat/enedis-sge-2-ingestion-cdc`)
-> 3. [`feature-enedis-sge-3-ingestion-index.md`](feature-enedis-sge-3-ingestion-index.md) — Ingestion R171 + Index (R50 + R151)
+> 2. [`feature-enedis-sge-2-ingestion-cdc.md`](feature-enedis-sge-2-ingestion-cdc.md) — Ingestion CDC R4x — **✅ COMPLÉTÉE 2026-03-23** (PR #163)
+> 3. [`feature-enedis-sge-3-ingestion-index.md`](feature-enedis-sge-3-ingestion-index.md) — Ingestion R171 + Index (R50 + R151) — **✅ COMPLÉTÉE 2026-03-27** (PRs #167–#174)
+> 4. [`feature-enedis-sge-4-operationalization.md`](feature-enedis-sge-4-operationalization.md) — Operationalization (config, audit, CLI, API) — **✅ COMPLÉTÉE 2026-03-28** (PR #177)
 >
 > **Note** : Le module vit dans `backend/data_ingestion/enedis/` (pas `backend/enedis/` comme proposé initialement).
 > Les clés de déchiffrement sont 3 paires KEY_1/IV_1..KEY_3/IV_3 (pas une seule `ENEDIS_DECRYPT_KEY`).
