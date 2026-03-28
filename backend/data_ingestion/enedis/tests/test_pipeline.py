@@ -1250,6 +1250,10 @@ class TestErrorHistoryPreserved:
 
         f = db.query(EnedisFluxFile).first()
         assert f.status == FluxStatus.PERMANENTLY_FAILED
+        assert f.error_message is None  # cleared after archiving
+        # Original MAX_RETRIES errors + the archived "latest error"
+        assert len(f.errors) == MAX_RETRIES + 1
+        assert f.errors[-1].error_message == "latest error"
 
 
 # ---------------------------------------------------------------------------

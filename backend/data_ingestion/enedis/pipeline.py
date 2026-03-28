@@ -109,7 +109,9 @@ def ingest_file(
             return FluxStatus(existing.status)
         if existing.status == FluxStatus.ERROR:
             if len(existing.errors) >= MAX_RETRIES:
+                _archive_error(session, existing)
                 existing.status = FluxStatus.PERMANENTLY_FAILED
+                existing.error_message = None
                 session.commit()
                 logger.info("File %s reached MAX_RETRIES — marked PERMANENTLY_FAILED", filename)
                 return FluxStatus.PERMANENTLY_FAILED
