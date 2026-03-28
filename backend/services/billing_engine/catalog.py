@@ -564,20 +564,20 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "tva_rate": 0.20,
     },
     # ── CTA ───────────────────────────────────────────────────────────────
-    # Historique : 27.04% → 21.93% (arrêté 1er août 2021) → 15% (arrêté 1er fév 2026)
+    # Historique : 27.04% → 21.93% (arrêté 1er août 2021) → 27.04% (LFI 2025, jan 2026)
     "CTA_ELEC": {
         "rate": 21.93,
         "unit": "PCT",
         "source": "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%",
         "valid_from": "2021-08-01",
-        "valid_to": "2026-01-31",
+        "valid_to": "2025-12-31",
         "tva_rate": 0.055,
     },
     "CTA_ELEC_2026": {
-        "rate": 15.00,
+        "rate": 27.04,
         "unit": "PCT",
-        "source": "Arrêté CTA du 30 janvier 2026 — distribution élec 15%",
-        "valid_from": "2026-02-01",
+        "source": "LFI 2025 — CTA distribution élec 27.04% (depuis 01/01/2026)",
+        "valid_from": "2026-01-01",
         "tva_rate": 0.055,
     },
     # ── Accise sur l'électricité ──────────────────────────────────────────
@@ -679,14 +679,7 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
     },
     # ── GAZ — TICGN / Accise gaz (versionnée) ────────────────────────────
     # Sources : Légifrance arrêtés constatant les tarifs d'accise
-    "TICGN_2024": {
-        "rate": 0.01637,
-        "unit": "EUR/kWh",
-        "source": "Loi de finances 2024 — TICGN usage combustible (16.37 EUR/MWh)",
-        "valid_from": "2024-01-01",
-        "valid_to": "2025-07-31",
-        "tva_rate": 0.20,
-    },
+    # Note : TICGN_2024 est défini dans la section GAZ plus bas (avec valid_from/valid_to)
     "TICGN_AOUT2025": {
         "rate": 0.01054,
         "unit": "EUR/kWh",
@@ -972,7 +965,7 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
             return atrd6_code
 
     if code == "CTA_ELEC":
-        if at_date >= date(2026, 2, 1) and "CTA_ELEC_2026" in TURPE7_RATES:
+        if at_date >= date(2026, 1, 1) and "CTA_ELEC_2026" in TURPE7_RATES:
             return "CTA_ELEC_2026"
         return "CTA_ELEC"
 
