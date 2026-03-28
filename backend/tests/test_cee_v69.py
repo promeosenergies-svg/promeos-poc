@@ -246,15 +246,13 @@ class TestMvSummary:
 
     def test_deadline_alert(self):
         """Alert when obligation deadline is within 90 days."""
+        from models import Site
+
         db = MagicMock()
         site = _make_site(annual_kwh_total=120000)
 
-        # Need separate mock chains for different query types
         mock_site_query = MagicMock()
         mock_site_query.filter.return_value.first.return_value = site
-
-        mock_conso_query = MagicMock()
-        mock_conso_query.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
 
         obl = _make_obligation(
             echeance=date(2026, 4, 1),
@@ -263,22 +261,22 @@ class TestMvSummary:
         mock_obl_query = MagicMock()
         mock_obl_query.filter.return_value.all.return_value = [obl]
 
-        call_count = [0]
-
+        # Dispatch par modèle — Meter/MeterReading peuvent échouer silencieusement,
+        # seuls Site et Obligation comptent pour ce test.
         def mock_query(model):
-            call_count[0] += 1
-            if call_count[0] == 1:
+            if model is Site:
                 return mock_site_query
-            elif call_count[0] == 2:
-                return mock_conso_query
-            else:
+            if model is Obligation:
                 return mock_obl_query
+            return MagicMock()
 
         db.query.side_effect = mock_query
 
         result = compute_mv_summary(db, site_id=1)
         alert_types = [a["type"] for a in result["alerts"]]
         assert "deadline_approaching" in alert_types
+        # data_missing aussi présent car aucun relevé récent dans ce test
+        assert "data_missing" in alert_types
 
 
 # ═══════════════════════════════════════════════

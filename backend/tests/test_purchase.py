@@ -678,8 +678,10 @@ class TestEnergyGate:
             },
         )
         assert resp.status_code == 422
-        assert "non supportee" in resp.json()["detail"]
-        assert "elec" in resp.json()["detail"]
+        body = resp.json()
+        error_msg = body.get("detail", body.get("message", ""))
+        assert "non supportee" in error_msg
+        assert "elec" in error_msg
 
     def test_put_assumptions_elec_accepted(self, client, db_session):
         """PUT assumptions with energy_type=elec succeeds."""
