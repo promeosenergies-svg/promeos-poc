@@ -1000,6 +1000,8 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
             return "TICGN_FEV2026"
         if at_date >= date(2025, 8, 1):
             return "TICGN_AOUT2025"
+        if at_date < date(2024, 1, 1):
+            return "TICGN_2023"
         return "TICGN_2024"
 
     if code == "CAPACITE_ELEC":
@@ -1023,13 +1025,6 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
         if at_date < date(2025, 4, 1):
             return "ATRT_GAZ_2023"
         return "ATRT_GAZ"
-
-    if code == "TICGN":
-        if at_date < date(2024, 1, 1):
-            return "TICGN_2023"
-        if at_date < date(2026, 2, 1):
-            return "TICGN_2024"
-        return "TICGN"
 
     if code == "CPB_SHADOW":
         if at_date >= date(2026, 1, 1):

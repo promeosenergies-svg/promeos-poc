@@ -86,6 +86,6 @@ class TestComplianceScoreDocumented:
         import services.compliance_engine as mod
 
         src_path = mod.__file__
-        with open(src_path, "r") as f:
+        with open(src_path, "r", encoding="utf-8") as f:
             content = f.read()
         assert "LEGACY" in content or "backward compat" in content
