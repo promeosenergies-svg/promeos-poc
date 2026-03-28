@@ -70,7 +70,8 @@ def ingest_file(
 ) -> FluxStatus:
     """Ingest one Enedis flux file: decrypt → parse → store in DB.
 
-    Commits the session on success or on recorded error/skip.
+    Commits the session on success, on recorded error/skip, and when
+    archiving error history before a retry or PERMANENTLY_FAILED transition.
     The caller should NOT commit separately.
 
     Args:
@@ -248,8 +249,9 @@ def ingest_directory(
     """Ingest all flux files in a directory: scan → register → process.
 
     Two-phase design for crash recovery:
-      Phase 1: scan directory, register each new file as RECEIVED (single commit).
-      Phase 2: process each RECEIVED file via ingest_file() → PARSED/ERROR/SKIPPED.
+      Phase 1: scan directory, register new files as RECEIVED, queue ERROR
+        files for retry, transition max-retried files to PERMANENTLY_FAILED.
+      Phase 2: process each RECEIVED/ERROR file via ingest_file().
     Files left in RECEIVED after a crash are re-processed on the next run.
 
     Args:
@@ -437,8 +439,8 @@ def _record_file(
 ) -> EnedisFluxFile:
     """Create or update a minimal EnedisFluxFile record for skipped/error files.
 
-    If *existing* is provided (pre-registered RECEIVED record), updates it
-    in-place instead of creating a new row.
+    If *existing* is provided (pre-registered RECEIVED or ERROR record being
+    retried), updates it in-place instead of creating a new row.
     """
     if existing is not None:
         existing.status = status
