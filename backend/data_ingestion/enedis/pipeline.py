@@ -269,8 +269,9 @@ def ingest_directory(
         Dict of counters: received (new files only), parsed, needs_review,
         skipped, error, permanently_failed, already_processed, retried,
         max_retries_reached.
-        ``received + retried == parsed + needs_review + skipped + error + permanently_failed``
-        (in non-dry-run mode).
+        ``received + retried == parsed + needs_review + skipped + error``
+        (in non-dry-run mode).  ``permanently_failed`` counts files
+        transitioned to PERMANENTLY_FAILED during this run (Phase 1).
     """
     counters: dict[str, int] = {
         "received": 0,
@@ -327,6 +328,7 @@ def ingest_directory(
                                 file_path.name, MAX_RETRIES,
                                 "marked PERMANENTLY_FAILED" if not dry_run else "would mark PERMANENTLY_FAILED (dry-run)")
                     counters["max_retries_reached"] += 1
+                    counters["permanently_failed"] += 1
             else:
                 # PARSED, SKIPPED
                 counters["already_processed"] += 1

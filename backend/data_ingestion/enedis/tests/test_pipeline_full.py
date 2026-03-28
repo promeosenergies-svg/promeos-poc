@@ -568,6 +568,7 @@ class TestErrorRetryInBatch:
         counters = ingest_directory(tmp_path, db, test_keys)
 
         assert counters["max_retries_reached"] == 1
+        assert counters["permanently_failed"] == 1
         assert counters["retried"] == 0
 
         f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
