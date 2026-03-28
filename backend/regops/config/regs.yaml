@@ -136,13 +136,13 @@ cee_p6:
 scoring:
   # Poids des frameworks réglementaires pour le score unifié (A.2)
   # Source de vérité unique — lu par compliance_score_service.py
-  # DT + BACS + APER + DPE + CSRD = 1.0 (100%)
+  # DT + BACS + APER = 1.0 (100%) — pondération canonique PROMEOS
   framework_weights:
-    tertiaire_operat: 0.35
-    bacs: 0.25
-    aper: 0.15
-    dpe_tertiaire: 0.15   # implemented: false — évaluateur non disponible, exclu du dénominateur A.2
-    csrd: 0.10             # implemented: false — évaluateur non disponible, exclu du dénominateur A.2
+    tertiaire_operat: 0.45  # Décret Tertiaire = 45%
+    bacs: 0.30              # Décret BACS = 30%
+    aper: 0.25              # Loi APER = 25%
+    # DPE et CSRD : évaluateurs non implémentés, poids exclus du score A.2
+    # Seront réintroduits quand les évaluateurs seront actifs
   # Pénalité findings critiques (A.2)
   critical_penalty:
     max_pts: 20.0
