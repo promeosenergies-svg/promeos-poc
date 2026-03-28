@@ -42,7 +42,7 @@ router = APIRouter(prefix="/api/enedis", tags=["Enedis SGE Flux"])
 
 class IngestRequest(BaseModel):
     directory: Optional[str] = Field(None, description="Override ENEDIS_FLUX_DIR")
-    recursive: bool = Field(True)
+    recursive: bool = Field(False)
     dry_run: bool = Field(False)
 
 
@@ -212,15 +212,22 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
 
     duration = time.monotonic() - t0
 
-    # --- Collect error files from this run (same query as CLI _print_report) ---
-    started_at_naive = (
-        run.started_at.replace(tzinfo=None) if run.started_at.tzinfo else run.started_at
-    )
+    # --- Safety net: finalize run if pipeline didn't ---
+    if run.status == IngestionRunStatus.RUNNING:
+        run.status = IngestionRunStatus.COMPLETED
+        run.finished_at = datetime.now(timezone.utc)
+        db.commit()
+
+    # --- Collect error files from this run ---
+    # Refresh run from DB so started_at has the same type as updated_at
+    # (naive on SQLite, tz-aware on PostgreSQL with timezone=True columns),
+    # avoiding mixed-type comparison errors.
+    db.refresh(run)
     error_files = (
         db.query(EnedisFluxFile)
         .filter(
             EnedisFluxFile.status.in_([FluxStatus.ERROR, FluxStatus.PERMANENTLY_FAILED]),
-            EnedisFluxFile.updated_at >= started_at_naive,
+            EnedisFluxFile.updated_at >= run.started_at,
         )
         .all()
     )

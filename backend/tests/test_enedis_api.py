@@ -337,6 +337,36 @@ class TestIngestPreFlight:
         assert "already in progress" in r.json()["message"]
 
 
+class TestIngestSafetyNet:
+    """POST /api/enedis/ingest — safety net when pipeline doesn't finalize run."""
+
+    def test_run_finalized_if_pipeline_forgets(self, client, tmp_path):
+        """If ingest_directory returns without setting run.status to COMPLETED,
+        the route must finalize the run itself to avoid a permanent 409 lock."""
+        c, session = client
+
+        def _mock_no_finalize(directory, session, keys, *, recursive=False,
+                              dry_run=False, run=None, **kwargs):
+            # Intentionally does NOT set run.status or run.finished_at
+            return dict(_FAKE_COUNTERS)
+
+        with (
+            patch("routes.enedis.get_flux_dir", return_value=tmp_path),
+            patch("routes.enedis.load_keys_from_env", return_value=[(b"\x00" * 16, b"\x00" * 16)]),
+            patch("routes.enedis.ingest_directory", side_effect=_mock_no_finalize),
+        ):
+            r = c.post("/api/enedis/ingest", json={})
+
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == IngestionRunStatus.COMPLETED
+
+        # Verify in DB: run is COMPLETED, not stuck as RUNNING
+        run = session.query(IngestionRun).filter_by(id=data["run_id"]).first()
+        assert run.status == IngestionRunStatus.COMPLETED
+        assert run.finished_at is not None
+
+
 class TestIngestCrash:
     """POST /api/enedis/ingest — pipeline crash sets run to failed."""
 
