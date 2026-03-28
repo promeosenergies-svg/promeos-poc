@@ -170,12 +170,13 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
     )
 
     # Index par regulation (déterminé depuis findings_json ou deterministic_version)
+    # Un RegAssessment peut contenir des findings de PLUSIEURS frameworks
     assessment_by_framework: dict[str, RegAssessment] = {}
     for a in assessments:
-        # Le framework est encodé dans deterministic_version ou findings_json
-        fw = _detect_framework(a)
-        if fw and fw not in assessment_by_framework:
-            assessment_by_framework[fw] = a
+        detected = _detect_frameworks(a)
+        for fw in detected:
+            if fw not in assessment_by_framework:
+                assessment_by_framework[fw] = a
 
     # Construire le breakdown
     breakdown: list[FrameworkScore] = []
@@ -363,15 +364,21 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
     }
 
 
-def _detect_framework(assessment) -> Optional[str]:
-    """Détecte le framework depuis un RegAssessment."""
-    # Essaie d'identifier via deterministic_version ou findings_json
+def _detect_frameworks(assessment) -> list[str]:
+    """Détecte TOUS les frameworks présents dans un RegAssessment.
+
+    Un RegAssessment peut contenir des findings de plusieurs frameworks
+    (DT + BACS + APER dans le même assessment).
+    """
+    detected: set[str] = set()
+
+    # Essaie d'identifier via deterministic_version
     version = assessment.deterministic_version or ""
     for fw in FRAMEWORK_WEIGHTS:
         if fw in version.lower():
-            return fw
+            detected.add(fw)
 
-    # Fallback: premier finding dans findings_json
+    # Scanner tous les findings dans findings_json
     if assessment.findings_json:
         try:
             findings = (
@@ -379,15 +386,24 @@ def _detect_framework(assessment) -> Optional[str]:
                 if isinstance(assessment.findings_json, str)
                 else assessment.findings_json
             )
-            if isinstance(findings, list) and findings:
-                reg = str(findings[0].get("regulation", "")).lower()
-                for fw in FRAMEWORK_WEIGHTS:
-                    if fw in reg:
-                        return fw
-        except (json.JSONDecodeError, TypeError, IndexError):
+            if isinstance(findings, list):
+                for f in findings:
+                    reg = str(f.get("regulation", "")).lower()
+                    rule = str(f.get("rule_id", "")).lower()
+                    combined = f"{reg} {rule}"
+                    for fw in FRAMEWORK_WEIGHTS:
+                        if fw in combined:
+                            detected.add(fw)
+                    # Détection spécifique APER (findings avec "parking", "toiture", "roof")
+                    if "aper" in combined or "parking" in combined or "roof" in combined:
+                        detected.add("aper")
+                    # Détection spécifique BACS
+                    if "bacs" in combined or "gtb" in combined:
+                        detected.add("bacs")
+        except (json.JSONDecodeError, TypeError):
             pass
 
-    return None
+    return list(detected)
 
 
 def _fallback_site_score(site, fw_key: str, db: Session = None) -> float:
