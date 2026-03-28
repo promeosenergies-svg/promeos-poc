@@ -29,3 +29,12 @@ class FluxStatus(str, Enum):
     ERROR = "error"
     SKIPPED = "skipped"
     NEEDS_REVIEW = "needs_review"
+    PERMANENTLY_FAILED = "permanently_failed"
+
+
+class IngestionRunStatus(str, Enum):
+    """Statut d'execution d'un run d'ingestion."""
+
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"

@@ -1,5 +1,10 @@
 """Decrypt Enedis SGE files and save XML to flux_enedis/decrypted_xml/.
 
+.. deprecated:: SF4
+    This script is deprecated. Use the CLI instead:
+        python -m data_ingestion.enedis.cli ingest [--dir PATH] [--dry-run]
+    Will be removed after SF4 validation is complete.
+
 Organizes output by flux type for easy manual inspection.
 
 Usage:

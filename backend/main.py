@@ -75,6 +75,7 @@ from routes import (
     usages_router,
     action_center_router,
     cockpit_v2_router,
+    enedis_router,
 )
 
 # Import KB router
@@ -176,6 +177,7 @@ app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toiture
 app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, cost breakdown)
 app.include_router(action_center_router)  # Action Center (unified actionable issues)
 app.include_router(cockpit_v2_router)  # Cockpit Executive V2 (hero impact + santé + actions)
+app.include_router(enedis_router)  # Enedis SGE Flux (ingestion API)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
