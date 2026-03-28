@@ -1,7 +1,10 @@
 /**
- * PROMEOS — ShadowBreakdownCard (V2 Engine)
+ * PROMEOS — ShadowBreakdownCard (V111 Refactored)
  * Décomposition reconstitution par composante : fourniture / TURPE / CTA / accise.
  * Barres empilées + écart par composante + statut reconstitution honnête.
+ * V111: enriched statuses, confidence labels, informational components, missing_price CTA,
+ *       reconstitution_label from API, formula always visible, source_ref, prorata_display,
+ *       total_gap_label, confidence_rationale tooltip, puissance_kva in expert meta.
  */
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { Explain } from '../../ui';
@@ -11,26 +14,34 @@ const STATUS_COLORS = {
   warn: { bar: 'bg-amber-400', text: 'text-amber-700', bg: 'bg-amber-50' },
   alert: { bar: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50' },
   unknown: { bar: 'bg-gray-300', text: 'text-gray-600', bg: 'bg-gray-50' },
+  missing_price: { bar: 'bg-orange-400', text: 'text-orange-700', bg: 'bg-orange-50' },
+  missing_invoice_detail: { bar: 'bg-gray-300', text: 'text-gray-500', bg: 'bg-gray-50' },
+  informational: { bar: 'bg-blue-300', text: 'text-blue-700', bg: 'bg-blue-50' },
 };
 
 const RECON_STATUS = {
   RECONSTITUTED: {
-    label: 'Reconstitution complète',
+    label: 'Complète',
     color: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   },
   PARTIAL: {
-    label: 'Reconstitution partielle',
+    label: 'Partielle',
     color: 'bg-amber-50 text-amber-700 ring-amber-200',
   },
   READ_ONLY: { label: 'Lecture seule', color: 'bg-gray-100 text-gray-600 ring-gray-200' },
   UNSUPPORTED: { label: 'Segment non supporté', color: 'bg-red-50 text-red-700 ring-red-200' },
+  unknown: { label: 'Statut inconnu', color: 'bg-gray-100 text-gray-500 ring-gray-200' },
 };
 
-// V1 legacy confidence mapping (backward compat)
+// V1 legacy confidence mapping (backward compat) + V111 enriched French keys
 const CONFIDENCE_BADGE = {
   high: { label: 'Confiance élevée', color: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
   medium: { label: 'Confiance moyenne', color: 'bg-amber-50 text-amber-700 ring-amber-200' },
   low: { label: 'Confiance faible', color: 'bg-red-50 text-red-700 ring-red-200' },
+  elevee: { label: 'Confiance élevée', color: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+  moyenne: { label: 'Confiance moyenne', color: 'bg-amber-50 text-amber-700 ring-amber-200' },
+  faible: { label: 'Confiance faible', color: 'bg-orange-50 text-orange-700 ring-orange-200' },
+  tres_faible: { label: 'Confiance très faible', color: 'bg-red-50 text-red-700 ring-red-200' },
 };
 
 function fmt(val) {
@@ -57,7 +68,12 @@ export default function ShadowBreakdownCard({ breakdown }) {
     total_gap_eur,
     total_gap_pct,
     total_gap_status,
+    total_gap_label,
     status,
+    reconstitution_status,
+    reconstitution_label,
+    confidence_label,
+    confidence_rationale,
     // V1 legacy fields
     confidence,
     total_invoice_ht,
@@ -68,14 +84,34 @@ export default function ShadowBreakdownCard({ breakdown }) {
   // V2 engine: use reconstitution status; V1 fallback: use confidence badge
   const isV2 = !!breakdown.engine_version;
   const isFallback = !!breakdown.fallback_used;
-  const statusBadge = isV2
-    ? RECON_STATUS[status] || RECON_STATUS.PARTIAL
-    : isFallback
-      ? CONFIDENCE_BADGE.low
-      : CONFIDENCE_BADGE[confidence] || CONFIDENCE_BADGE.low;
+
+  // Build status badge: prefer reconstitution_label from API when available
+  const resolvedReconStatus = reconstitution_status || status;
+  let statusBadge;
+  if (isV2) {
+    const reconEntry = RECON_STATUS[resolvedReconStatus] || RECON_STATUS.PARTIAL;
+    statusBadge = reconstitution_label
+      ? { ...reconEntry, label: reconstitution_label }
+      : reconEntry;
+  } else if (isFallback) {
+    statusBadge = CONFIDENCE_BADGE.low;
+  } else {
+    statusBadge = CONFIDENCE_BADGE[confidence] || CONFIDENCE_BADGE.low;
+  }
+
+  // Confidence badge (V111: use confidence_label from API, support French keys)
+  const confBadge = confidence_label
+    ? CONFIDENCE_BADGE[confidence_label] || CONFIDENCE_BADGE[confidence] || null
+    : CONFIDENCE_BADGE[confidence] || null;
+
+  // Filter informational components out of bar chart
+  const chartComponents = components.filter((c) => c.status !== 'informational');
 
   // Compute bar widths — handle both V2 (expected_ht) and V1 (expected_eur)
-  const totalExpected = components.reduce((s, c) => s + (c.expected_ht ?? c.expected_eur ?? 0), 0);
+  const totalExpected = chartComponents.reduce(
+    (s, c) => s + (c.expected_ht ?? c.expected_eur ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-4">
@@ -106,7 +142,7 @@ export default function ShadowBreakdownCard({ breakdown }) {
                 </span>
               </span>
             )}
-            {total_gap_eur != null && total_gap_eur !== 0 && (
+            {total_gap_eur != null && total_gap_eur !== 0 ? (
               <span
                 className={`text-sm font-bold ${total_gap_eur > 0 ? 'text-red-600' : 'text-green-600'}`}
               >
@@ -119,14 +155,28 @@ export default function ShadowBreakdownCard({ breakdown }) {
                   </span>
                 )}
               </span>
-            )}
+            ) : total_gap_eur == null && total_gap_label ? (
+              <span className="text-sm text-gray-500 italic">{total_gap_label}</span>
+            ) : null}
           </div>
         </div>
-        <span
-          className={`px-2 py-0.5 text-xs font-medium rounded-full ring-1 ${statusBadge.color}`}
-        >
-          {statusBadge.label}
-        </span>
+        <div className="flex items-center gap-2">
+          {/* Confidence badge with tooltip */}
+          {confBadge && (
+            <span
+              className={`px-2 py-0.5 text-xs font-medium rounded-full ring-1 ${confBadge.color} cursor-default`}
+              title={confidence_rationale || ''}
+            >
+              {confBadge.label}
+            </span>
+          )}
+          {/* Reconstitution status badge */}
+          <span
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ring-1 ${statusBadge.color}`}
+          >
+            {statusBadge.label}
+          </span>
+        </div>
       </div>
 
       {/* Avertissement fallback V1 */}
@@ -150,9 +200,9 @@ export default function ShadowBreakdownCard({ breakdown }) {
         </div>
       )}
 
-      {/* Barre empilée */}
+      {/* Barre empilée (informational components excluded) */}
       <div className="w-full bg-gray-100 rounded-full h-3 flex overflow-hidden">
-        {components.map((c) => {
+        {chartComponents.map((c) => {
           const val = c.expected_ht ?? c.expected_eur ?? 0;
           const pct = totalExpected > 0 ? (val / totalExpected) * 100 : 25;
           const gapStatus = c.gap_status || c.status || 'unknown';
@@ -177,42 +227,94 @@ export default function ShadowBreakdownCard({ breakdown }) {
           const invoiceVal = c.invoice_ht ?? c.invoice_eur;
           const hasInvoice = invoiceVal != null;
           const formula = c.formula || c.methodology;
+          const isMissingPrice = c.status === 'missing_price';
+          const isInformational = c.status === 'informational';
+
           return (
             <div
               key={c.code || c.name}
               className={`rounded-lg p-3 ${colors.bg} border border-gray-100`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-800">{c.label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-800">{c.label}</span>
+                  {/* Status badges for special statuses */}
+                  {isMissingPrice && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-orange-100 text-orange-700 ring-1 ring-orange-300 uppercase">
+                      Prix manquant
+                    </span>
+                  )}
+                  {isInformational && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-blue-100 text-blue-700 ring-1 ring-blue-300">
+                      Pour info
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-gray-600">
-                    Attendu : <span className="font-medium">{fmt(expectedVal)} €</span>
-                  </span>
-                  {hasInvoice ? (
+                  {isMissingPrice ? (
+                    /* Missing price: show status_message + CTA */
+                    <div className="flex items-center gap-2">
+                      {c.status_message && (
+                        <span className="text-xs text-orange-600 italic">{c.status_message}</span>
+                      )}
+                      <button
+                        className="px-2 py-0.5 text-xs font-medium rounded bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                        onClick={() => {
+                          /* Navigate to contract data completion — placeholder */
+                          window.dispatchEvent(
+                            new CustomEvent('promeos:navigate', {
+                              detail: { to: 'contract-edit', component: c.code },
+                            })
+                          );
+                        }}
+                      >
+                        Compléter les données du contrat
+                      </button>
+                    </div>
+                  ) : isInformational ? (
+                    /* Informational: show status_message only */
+                    <span className="text-xs text-blue-600 italic">
+                      {c.status_message || 'Information'}
+                    </span>
+                  ) : (
+                    /* Normal: Attendu / Facturé / Écart — show "—" if null */
                     <>
                       <span className="text-gray-600">
-                        Facturé : <span className="font-medium">{fmt(invoiceVal)} €</span>
+                        Attendu : <span className="font-medium">{fmt(expectedVal)} €</span>
                       </span>
-                      <span
-                        className={`font-bold ${c.gap_eur > 0 ? 'text-red-600' : c.gap_eur < 0 ? 'text-green-600' : 'text-gray-500'}`}
-                      >
-                        {c.gap_eur > 0 ? '+' : ''}
-                        {fmt(c.gap_eur)} €
-                        {c.gap_pct != null && (
-                          <span className="ml-1 text-xs font-normal">
-                            ({c.gap_pct > 0 ? '+' : ''}
-                            {c.gap_pct}%)
+                      {hasInvoice ? (
+                        <>
+                          <span className="text-gray-600">
+                            Facturé : <span className="font-medium">{fmt(invoiceVal)} €</span>
                           </span>
-                        )}
-                      </span>
+                          <span
+                            className={`font-bold ${c.gap_eur > 0 ? 'text-red-600' : c.gap_eur < 0 ? 'text-green-600' : 'text-gray-500'}`}
+                          >
+                            {c.gap_eur != null ? (
+                              <>
+                                {c.gap_eur > 0 ? '+' : ''}
+                                {fmt(c.gap_eur)} €
+                                {c.gap_pct != null && (
+                                  <span className="ml-1 text-xs font-normal">
+                                    ({c.gap_pct > 0 ? '+' : ''}
+                                    {c.gap_pct}%)
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Détail non disponible</span>
+                      )}
                     </>
-                  ) : (
-                    <span className="text-xs text-gray-400 italic">Détail non disponible</span>
                   )}
                 </div>
               </div>
-              {/* Barre de gap */}
-              {hasInvoice && c.gap_pct != null && (
+              {/* Barre de gap (skip for informational and missing_price) */}
+              {!isMissingPrice && !isInformational && hasInvoice && c.gap_pct != null && (
                 <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
                   <div
                     className={`h-1 rounded-full transition-all ${c.gap_eur > 0 ? 'bg-red-400' : 'bg-green-400'}`}
@@ -220,9 +322,13 @@ export default function ShadowBreakdownCard({ breakdown }) {
                   />
                 </div>
               )}
-              {/* Formule de calcul (mode Expert) */}
-              {isExpert && formula && (
-                <p className="text-xs text-gray-500 mt-1 font-mono">{formula}</p>
+              {/* Formule de calcul (always visible in V111, not just expert mode) */}
+              {formula && <p className="text-xs text-gray-500 mt-1 font-mono">{formula}</p>}
+              {/* Source ref (small gray text) */}
+              {c.source_ref && <p className="text-[10px] text-gray-400 mt-0.5">{c.source_ref}</p>}
+              {/* Prorata display */}
+              {c.prorata_display && (
+                <p className="text-[10px] text-gray-400 mt-0.5 italic">{c.prorata_display}</p>
               )}
               {/* Sources des taux (mode Expert, V2 only) */}
               {isExpert && c.rate_sources?.length > 0 && (
@@ -287,8 +393,8 @@ export default function ShadowBreakdownCard({ breakdown }) {
           {breakdown.tariff_option && <span>Option : {breakdown.tariff_option}</span>}
           {breakdown.energy_type && <span>Énergie : {breakdown.energy_type}</span>}
           {breakdown.days_in_period && <span>Période : {breakdown.days_in_period} jours</span>}
-          {breakdown.subscribed_power_kva > 0 && (
-            <span>Puissance : {breakdown.subscribed_power_kva} kVA</span>
+          {(breakdown.puissance_kva > 0 || breakdown.subscribed_power_kva > 0) && (
+            <span>Puissance : {breakdown.puissance_kva || breakdown.subscribed_power_kva} kVA</span>
           )}
         </div>
       )}
