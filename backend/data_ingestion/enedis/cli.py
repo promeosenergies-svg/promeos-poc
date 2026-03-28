@@ -117,6 +117,7 @@ def _print_report(
     print(f"  needs_review:  {counters['needs_review']}")
     print(f"Retried:         {counters['retried']}  (from previous errors)")
     print(f"Max retries:     {counters['max_retries_reached']}  (permanently failed — skipped)")
+    print(f"Perm. failed:    {counters['permanently_failed']}  (status set this run)")
     print(f"Already processed: {counters['already_processed']}")
 
     # Staging totals (all rows in each measure table)
@@ -165,6 +166,7 @@ def _dry_run_report(
     print(f"New files:       {counters['received']}")
     print(f"Retryable errors: {counters['retried']}  (eligible for retry, < MAX_RETRIES)")
     print(f"Max retries:     {counters['max_retries_reached']}  (permanently failed — will be skipped)")
+    print(f"Perm. failed:    {counters['permanently_failed']}  (status set this run)")
     print(f"Already processed: {counters['already_processed']}")
     print(f"No data modifications made.")
 
