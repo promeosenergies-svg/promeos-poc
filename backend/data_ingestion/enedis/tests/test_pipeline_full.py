@@ -284,7 +284,7 @@ class TestReceivedStale:
         # Run ingest_directory — should re-process the stale file
         counters = ingest_directory(tmp_path, db, test_keys)
 
-        assert counters["received"] == 0  # stale RECEIVED is not a new file
+        assert counters["received"] == 1  # stale RECEIVED counted to maintain invariant
         assert counters["parsed"] == 1
         assert counters["already_processed"] == 0
 

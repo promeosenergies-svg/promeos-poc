@@ -266,7 +266,7 @@ def ingest_directory(
         run: Optional IngestionRun for incremental counter updates.
 
     Returns:
-        Dict of counters: received (new files only), parsed, needs_review,
+        Dict of counters: received (new + stale RECEIVED files), parsed, needs_review,
         skipped, error, permanently_failed, already_processed, retried,
         max_retries_reached.
         ``received + retried == parsed + needs_review + skipped + error``
@@ -306,6 +306,7 @@ def ingest_directory(
                 # Stale from a previous interrupted run — re-process
                 logger.info("Found stale RECEIVED %s, will re-process", file_path.name)
                 to_process.append((file_path, file_hash, existing))
+                counters["received"] += 1
             elif existing.status == FluxStatus.NEEDS_REVIEW:
                 # Data loaded, awaiting human review (republication) — no retry
                 counters["already_processed"] += 1
