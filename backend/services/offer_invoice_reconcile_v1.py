@@ -74,7 +74,7 @@ def reconcile_offer_vs_invoice(
         fixed_fee = getattr(contract, "fixed_fee_eur_per_month", None) or 0.0
 
     # ── Compute shadow billing (what invoice should be) ──────────
-    shadow = shadow_billing_v2(invoice, lines, contract)
+    shadow = shadow_billing_v2(invoice, lines, contract, db=db)
 
     # ── Compute offer quote (what offer would cost) ──────────────
     offer = compute_offer_quote(

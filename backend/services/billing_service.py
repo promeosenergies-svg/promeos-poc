@@ -237,7 +237,7 @@ def _rule_shadow_gap(
             try:
                 from services.billing_shadow_v2 import shadow_billing_v2
 
-                v2 = shadow_billing_v2(invoice, lines, contract)
+                v2 = shadow_billing_v2(invoice, lines, contract, db=db)
                 metrics.update(v2)
                 # Phase 2: top contributors explainability
                 from services.billing_explainability import compute_contributors

@@ -30,10 +30,24 @@ export default function TrajectorySection({ trajectoire, loading, sites }) {
   const chartData = useMemo(() => {
     if (!trajectoire?.annees?.length) return [];
     const ref = trajectoire.refKwh;
+
+    // Trouver le dernier index avec donnée réelle pour prolonger la projection
+    const lastReelIdx = trajectoire.reelMwh
+      ? trajectoire.reelMwh.reduce((last, v, i) => (v != null ? i : last), -1)
+      : -1;
+    // Vérifier qu'il y a une projection qui démarre après le dernier réel
+    const hasProjectionAfter =
+      lastReelIdx >= 0 && trajectoire.projectionMwh?.some((v, i) => i > lastReelIdx && v != null);
+
     return trajectoire.annees.map((annee, i) => {
       const reel = trajectoire.reelMwh[i] ?? null;
       const objectif = trajectoire.objectifMwh[i] ?? null;
-      const projection = trajectoire.projectionMwh[i] ?? null;
+      let projection = trajectoire.projectionMwh[i] ?? null;
+
+      // Prolonger la projection jusqu'au dernier point réel pour éviter un gap visuel
+      if (projection == null && i === lastReelIdx && hasProjectionAfter && reel != null) {
+        projection = reel;
+      }
 
       return {
         annee,

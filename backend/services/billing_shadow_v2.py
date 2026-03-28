@@ -1,13 +1,26 @@
 """
-PROMEOS — Shadow Billing V2 (V68 → V100 Catalog integration)
+PROMEOS — Shadow Billing V2 (V68 → V111 regulated_tariffs bridge)
 Décomposition 5 composantes : fourniture_ht, reseau_ht, taxes_ht, abonnement_ht, tva.
-Taux depuis tax_catalog.json (avec fallback hardcodé).
-TVA per-composante : 20 % énergie/réseau/taxes, 5.5 % abonnement.
-Prorata jours : days_in_period / 30.
-Comparaison vs lignes réelles → deltas pour R13/R14.
+
+Architecture tarifs (ordre de priorité) :
+1. regulated_tariffs (DB versionnée par date) — si db fourni
+2. tarifs_reglementaires.yaml (YAML référentiel) — via tarif_loader
+3. Constantes hardcodées à jour (dernier recours)
+
+Sources réglementaires :
+- TURPE 7 : CRE Délibération n°2025-78, depuis 1er août 2025
+- CSPE : Loi de finances 2026 — 26.58 EUR/MWh PME (fév 2026+)
+- CTA : 27.04% depuis janvier 2026 (était 21.93%)
+- TVA : 20% uniforme depuis août 2025 (suppression 5.5% sur abo/CTA)
+
+Relation avec price_decomposition_service.py :
+- PriceDecompositionService = construire un prix théorique (simulation d'offres)
+- shadow_billing_v2 = reconstituer une facture existante (audit)
+- Les deux utilisent regulated_tariffs comme source de tarifs
 """
 
 import logging
+from datetime import date, datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +45,15 @@ except Exception:
     TURPE_EUR_KWH_ELEC = 0.0453
     ATRD_EUR_KWH_GAZ = 0.025
     ATRT_EUR_KWH_GAZ = 0.012
-    CSPE_EUR_KWH_ELEC = 0.02623
-    # TICGN fallback : utilise le catalog versionné si disponible, sinon taux fév 2026
+    CSPE_EUR_KWH_ELEC = 0.02658
     try:
         from services.billing_engine.catalog import get_rate
         from datetime import date as _d
+
         _ticgn_rate = get_rate("TICGN", _d.today())
         TICGN_EUR_KWH_GAZ = _ticgn_rate["rate"] if _ticgn_rate else 0.01073
     except Exception:
-        TICGN_EUR_KWH_GAZ = 0.01073  # Taux fév 2026+ (arrêté 24/12/2025)
+        TICGN_EUR_KWH_GAZ = 0.01073
     TVA_RATE_20 = 0.20
 
 
@@ -69,7 +82,6 @@ def _load_fallback() -> dict:
             "DEFAULT_PRICE_ELEC": get_prix_reference("elec"),
             "DEFAULT_PRICE_GAZ": get_prix_reference("gaz"),
         }
-        # Charger les taux TURPE pour chaque segment disponible
         for seg in ("C5_BT", "C4_BT", "C3_HTA"):
             try:
                 result[f"TURPE_ENERGIE_{seg}"] = get_turpe_moyen_kwh(seg)
@@ -78,6 +90,7 @@ def _load_fallback() -> dict:
                 pass
         return result
     except Exception:
+        # Dernier recours — valeurs TURPE 7 / CSPE 2026 / CTA 27.04%
         return {
             "TURPE_ENERGIE_C5_BT": 0.0453,
             "TURPE_GESTION_C5_BT": 18.48,
@@ -87,10 +100,10 @@ def _load_fallback() -> dict:
             "TURPE_GESTION_C3_HTA": 58.44,
             "ATRD_GAZ": 0.025,
             "ATRT_GAZ": 0.012,
-            "ACCISE_ELEC": 0.02623,
+            "ACCISE_ELEC": 0.02658,
             "ACCISE_GAZ": 0.01637,
             "TVA_NORMALE": 0.20,
-            "TVA_REDUITE": 0.055,
+            "TVA_REDUITE": 0.20,  # Supprimée depuis août 2025 — TVA 20% uniforme
             "DEFAULT_PRICE_ELEC": 0.068,
             "DEFAULT_PRICE_GAZ": 0.045,
         }
@@ -98,15 +111,114 @@ def _load_fallback() -> dict:
 
 _FALLBACK = _load_fallback()
 
+# ── Mapping codes shadow → (TariffType, TariffComponent) pour la DB ──
+_DB_TARIFF_MAP = {
+    "TURPE_ENERGIE_C5_BT": ("TURPE", "TURPE_SOUTIRAGE_HPB"),  # weighted avg via _resolve_turpe_from_db
+    "TURPE_ENERGIE_C4_BT": ("TURPE", "TURPE_SOUTIRAGE_HPB"),
+    "TURPE_ENERGIE_C3_HTA": ("TURPE", "TURPE_SOUTIRAGE_HPB"),
+    "ACCISE_ELEC": ("CSPE", "CSPE_C4"),
+    "ACCISE_GAZ": None,  # Pas encore en DB
+    "TVA_NORMALE": ("TVA", "TVA_NORMAL"),
+    "TVA_REDUITE": ("TVA", "TVA_REDUIT"),
+}
 
-def _safe_rate(code: str, at_date=None) -> float:
-    """Get rate from tax catalog with hardcoded fallback."""
+
+def _resolve_from_db(db, code: str, at_date=None) -> float | None:
+    """Tente de résoudre un tarif depuis regulated_tariffs (DB versionnée)."""
+    if db is None:
+        return None
+    try:
+        from models.market_models import TariffType, TariffComponent
+        from services.market_tariff_loader import get_current_tariff
+
+        mapping = _DB_TARIFF_MAP.get(code)
+        if mapping is None:
+            return None
+
+        tt = TariffType(mapping[0])
+        tc = TariffComponent(mapping[1])
+
+        if at_date and isinstance(at_date, date) and not isinstance(at_date, datetime):
+            at_date = datetime(at_date.year, at_date.month, at_date.day, tzinfo=timezone.utc)
+
+        tariff = get_current_tariff(db, tt, tc, at_date)
+        if tariff is None:
+            return None
+
+        # Convertir EUR/MWh → EUR/kWh si nécessaire (DB stocke en EUR/MWh pour TURPE/CSPE)
+        if tariff.unit in ("EUR_MWH", "EUR/MWh") and code.startswith(("TURPE_ENERGIE", "ACCISE")):
+            return tariff.value / 1000.0
+        # PCT → ratio pour TVA
+        if tariff.unit == "PCT":
+            return tariff.value / 100.0
+        return tariff.value
+    except Exception as e:
+        logger.debug(f"DB tariff lookup failed for {code}: {e}")
+        return None
+
+
+def _resolve_turpe_from_db(db, segment: str, at_date=None) -> float | None:
+    """Résout le TURPE énergie moyen pondéré depuis les composantes DB par segment."""
+    if db is None:
+        return None
+    try:
+        from models.market_models import TariffType, TariffComponent
+        from services.market_tariff_loader import get_current_tariff
+
+        if at_date and isinstance(at_date, date) and not isinstance(at_date, datetime):
+            at_date = datetime(at_date.year, at_date.month, at_date.day, tzinfo=timezone.utc)
+
+        # Pondérations type par segment (profil consommation simplifié)
+        weights = {
+            "C5_BT": {"HPB": 0.60, "HCB": 0.40},
+            "C4_BT": {"HPH": 0.20, "HCH": 0.15, "HPB": 0.40, "HCB": 0.25},
+            "C3_HTA": {"HPH": 0.18, "HCH": 0.12, "HPB": 0.42, "HCB": 0.28},
+        }
+        w = weights.get(segment, weights["C4_BT"])
+
+        total = 0.0
+        found_any = False
+        for plage, weight in w.items():
+            comp_name = f"TURPE_SOUTIRAGE_{plage}"
+            tariff = get_current_tariff(db, TariffType.TURPE, TariffComponent(comp_name), at_date)
+            if tariff:
+                total += (tariff.value / 1000.0) * weight  # EUR/MWh → EUR/kWh
+                found_any = True
+
+        return total if found_any else None
+    except Exception as e:
+        logger.debug(f"TURPE DB weighted lookup failed: {e}")
+        return None
+
+
+def _safe_rate(code: str, at_date=None, db=None) -> float:
+    """
+    Résout un tarif : DB versionnée → YAML référentiel → hardcodé.
+    Retourne la valeur en EUR/kWh (ou ratio pour TVA).
+    """
+    # 1. Essayer regulated_tariffs (DB versionnée)
+    if db is not None:
+        # Cas spécial TURPE énergie : résolution pondérée par segment
+        if code.startswith("TURPE_ENERGIE_"):
+            segment = code.replace("TURPE_ENERGIE_", "")
+            db_val = _resolve_turpe_from_db(db, segment, at_date)
+            if db_val is not None:
+                return db_val
+        else:
+            db_val = _resolve_from_db(db, code, at_date)
+            if db_val is not None:
+                return db_val
+
+    # 2. Essayer le catalog (app.referential)
     try:
         from app.referential.tax_catalog_service import get_rate
 
         return get_rate(code, at_date)
     except Exception:
-        return _FALLBACK.get(code, 0.0)
+        pass
+
+    # 3. Fallback YAML / hardcodé
+    return _FALLBACK.get(code, 0.0)
 
 
 def _safe_trace(code: str, at_date=None) -> dict:
@@ -119,20 +231,33 @@ def _safe_trace(code: str, at_date=None) -> dict:
         return {}
 
 
-def shadow_billing_v2(invoice, lines: list, contract) -> dict:
+def _has_db_tariffs(db) -> bool:
+    """Vérifie si la DB contient des tarifs réglementés."""
+    if db is None:
+        return False
+    try:
+        from models.market_models import RegulatedTariff
+
+        return db.query(RegulatedTariff).limit(1).first() is not None
+    except Exception:
+        return False
+
+
+def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
     """
     Calcule la facture attendue sur 5 composantes avec TVA per-composante.
 
     Components:
-      fourniture_ht : kwh × price_ref                       (TVA 20 %)
-      reseau_ht     : kwh × TURPE énergie                   (TVA 20 %)
-      taxes_ht      : kwh × accise                           (TVA 20 %)
-      abonnement_ht : (TURPE gestion + fixed_fee) × prorata  (TVA 5.5 %)
+      fourniture_ht : kwh x price_ref                       (TVA 20 %)
+      reseau_ht     : kwh x TURPE énergie                   (TVA 20 %)
+      taxes_ht      : kwh x accise                           (TVA 20 %)
+      abonnement_ht : (TURPE gestion + fixed_fee) x prorata  (TVA 20 % depuis août 2025)
 
     Args:
         invoice:  EnergyInvoice (energy_kwh, total_eur, period_start, period_end)
         lines:    liste d'EnergyInvoiceLine (line_type, amount_eur)
         contract: EnergyContract ou None
+        db:       Session SQLAlchemy (optionnel — active le bridge regulated_tariffs)
 
     Returns:
         dict avec expected_* + actual_* + delta_* + components[] + totals{} + meta
@@ -140,12 +265,15 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     kwh = invoice.energy_kwh or 0.0
     is_elec = (contract.energy_type.value == "elec") if contract else True
 
+    # Date de la facture pour le versionnement temporel des tarifs
+    at_date = getattr(invoice, "period_start", None)
+
     # ── Reference price ──────────────────────────────────────────────
     has_contract_price = contract and contract.price_ref_eur_per_kwh
     price_ref = (
         contract.price_ref_eur_per_kwh
         if has_contract_price
-        else _safe_rate("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ")
+        else _safe_rate("DEFAULT_PRICE_ELEC" if is_elec else "DEFAULT_PRICE_GAZ", at_date, db)
     )
     price_source = f"contract:{contract.id}" if has_contract_price else "catalog_default"
 
@@ -159,21 +287,27 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     prorata_factor = days_in_period / 30.0
 
     # ── TVA rates ────────────────────────────────────────────────────
-    tva_normal = _safe_rate("TVA_NORMALE")
-    tva_reduit = _safe_rate("TVA_REDUITE")
+    tva_normal = _safe_rate("TVA_NORMALE", at_date, db)
+    # TVA réduite supprimée depuis août 2025 — vérification temporelle
+    tva_reduit = _safe_rate("TVA_REDUITE", at_date, db)
+    # Post août 2025 : TVA uniforme 20% (suppression 5.5% sur abo/CTA)
+    if at_date:
+        ref_date = at_date if isinstance(at_date, date) else at_date.date() if hasattr(at_date, "date") else None
+        if ref_date and ref_date >= date(2025, 8, 1):
+            tva_reduit = tva_normal
 
     # ── Segment TURPE depuis puissance souscrite du contrat ──────────
     segment = _resolve_segment(contract)
 
-    # ── Component rates from catalog ─────────────────────────────────
+    # ── Component rates (DB versionnée → YAML → hardcodé) ────────────
     if is_elec:
-        turpe_energie = _safe_rate(f"TURPE_ENERGIE_{segment}")
-        turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}")
-        accise = _safe_rate("ACCISE_ELEC")
+        turpe_energie = _safe_rate(f"TURPE_ENERGIE_{segment}", at_date, db)
+        turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}", at_date, db)
+        accise = _safe_rate("ACCISE_ELEC", at_date, db)
     else:
-        turpe_energie = _safe_rate("ATRD_GAZ") + _safe_rate("ATRT_GAZ")
-        turpe_gestion = 0.0  # Simplifié pour le gaz
-        accise = _safe_rate("ACCISE_GAZ")
+        turpe_energie = _safe_rate("ATRD_GAZ", at_date, db) + _safe_rate("ATRT_GAZ", at_date, db)
+        turpe_gestion = 0.0
+        accise = _safe_rate("ACCISE_GAZ", at_date, db)
 
     # ── Expected HT components ───────────────────────────────────────
     exp_fourniture = kwh * price_ref
@@ -206,6 +340,9 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     delta_taxes = act_taxes - exp_taxes
     delta_ttc = act_ttc - exp_ttc
     delta_pct = (delta_ttc / exp_ttc * 100) if exp_ttc else 0.0
+
+    # ── Tariff source traceability ───────────────────────────────────
+    tariff_source = "regulated_tariffs" if _has_db_tariffs(db) else "fallback"
 
     # ── Structured breakdown ─────────────────────────────────────────
     components = [
@@ -263,7 +400,6 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     }
 
     # ── Catalog audit trace ────────────────────────────────────────────
-    at_date = getattr(invoice, "period_start", None)
     catalog_trace = [
         _safe_trace(f"TURPE_ENERGIE_{segment}" if is_elec else "ATRD_GAZ", at_date),
         _safe_trace("ACCISE_ELEC" if is_elec else "ACCISE_GAZ", at_date),
@@ -272,7 +408,6 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
     ]
     if is_elec:
         catalog_trace.append(_safe_trace(f"TURPE_GESTION_{segment}", at_date))
-    # Filter out empty traces (catalog unavailable)
     catalog_trace = [t for t in catalog_trace if t]
 
     # ── Diagnostics ─────────────────────────────────────────────────
@@ -296,8 +431,8 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         assumptions.append(f"Réseau : TURPE {segment} (profil simplifié)")
     else:
         assumptions.append("Réseau : ATRD+ATRT (profil simplifié)")
+    assumptions.append(f"Source tarifs : {tariff_source}")
 
-    # Confidence: V1 shadow is approximate — cap at "medium", never "high"
     if has_contract_price and has_lines and len(line_types) >= 2:
         confidence = "medium"
     elif has_contract_price or (has_lines and len(line_types) >= 2):
@@ -338,6 +473,7 @@ def shadow_billing_v2(invoice, lines: list, contract) -> dict:
         "method": "shadow_v2_catalog",
         "segment": segment,
         "price_source": price_source,
+        "tariff_source": tariff_source,
         # Structured (new)
         "components": components,
         "totals": totals,
@@ -465,8 +601,8 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     except Exception:
         lines = []
 
-    # Appeler shadow_billing_v2 pour le calcul de base
-    v2 = shadow_billing_v2(invoice, lines, contract)
+    # Appeler shadow_billing_v2 pour le calcul de base (avec bridge DB)
+    v2 = shadow_billing_v2(invoice, lines, contract, db=db)
 
     # Segment TURPE dynamique
     segment = _resolve_segment(contract, site)

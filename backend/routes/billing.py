@@ -1002,7 +1002,7 @@ def get_insight_detail(
                 if invoice.contract_id:
                     contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
                 if lines:
-                    v2 = shadow_billing_v2(invoice, lines, contract)
+                    v2 = shadow_billing_v2(invoice, lines, contract, db=db)
                     metrics.update(v2)
                     # Ajouter confidence/assumptions si absents
                     if "confidence" not in metrics:
