@@ -274,6 +274,7 @@ def ingest_directory(
         "needs_review": 0,
         "skipped": 0,
         "error": 0,
+        "permanently_failed": 0,
         "already_processed": 0,
         "retried": 0,
         "max_retries_reached": 0,
@@ -388,6 +389,8 @@ def ingest_directory(
                     run.files_skipped += 1
                 elif status == FluxStatus.NEEDS_REVIEW:
                     run.files_needs_review += 1
+                elif status == FluxStatus.PERMANENTLY_FAILED:
+                    run.files_max_retries += 1
                 session.commit()
 
     if run:

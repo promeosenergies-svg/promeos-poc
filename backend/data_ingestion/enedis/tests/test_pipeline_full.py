@@ -205,7 +205,8 @@ class TestEmptyDirectory:
 
         assert counters == {
             "received": 0, "parsed": 0, "needs_review": 0,
-            "skipped": 0, "error": 0, "already_processed": 0,
+            "skipped": 0, "error": 0, "permanently_failed": 0,
+            "already_processed": 0,
             "retried": 0, "max_retries_reached": 0,
         }
         assert db.query(EnedisFluxFile).count() == 0
@@ -597,6 +598,42 @@ class TestErrorRetryInBatch:
         # Status unchanged
         f = db.query(EnedisFluxFile).first()
         assert f.status == FluxStatus.PERMANENTLY_FAILED
+
+
+class TestPermanentlyFailedInPhase2:
+    """ingest_file() returning PERMANENTLY_FAILED in Phase 2 must not crash counters."""
+
+    def test_permanently_failed_from_ingest_file_no_keyerror(self, db, tmp_path, test_keys):
+        """If ingest_file() returns PERMANENTLY_FAILED during Phase 2,
+        counters['permanently_failed'] is incremented without KeyError."""
+        path = _write_corrupt(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_PF2.zip")
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed ERROR record eligible for retry (errors < MAX_RETRIES)
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="some error",
+        )
+        db.add(error_record)
+        db.flush()
+        db.add(EnedisFluxFileError(
+            flux_file_id=error_record.id,
+            error_message="past error",
+        ))
+        db.commit()
+
+        # Mock ingest_file to return PERMANENTLY_FAILED (simulates concurrency)
+        with patch(
+            "data_ingestion.enedis.pipeline.ingest_file",
+            return_value=FluxStatus.PERMANENTLY_FAILED,
+        ):
+            counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["permanently_failed"] == 1
+        assert counters["retried"] == 1
 
 
 class TestNeedsReviewNoRetry:
