@@ -4,12 +4,18 @@ Full BACS assessment, CVC system management, data quality, seed demo.
 """
 
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth
+from services.scope_utils import resolve_org_id
 
 from models import (
     Site,
+    Portefeuille,
+    EntiteJuridique,
     BacsAsset,
     BacsCvcSystem,
     BacsAssessment,
@@ -32,15 +38,43 @@ from services.bacs_engine import (
 router = APIRouter(prefix="/api/regops/bacs", tags=["BACS Expert"])
 
 
+# ── Org-scoping helper ──
+
+
+def _verify_site_access(db: Session, site_id: int, request: Request, auth) -> Site:
+    """Vérifie que le site existe et appartient à l'org de l'utilisateur.
+
+    En DEMO_MODE sans auth, toutes les orgs sont accessibles (org_id résolu via fallback).
+    Si aucune org n'est résolue (ex: DB de test vide), l'accès est autorisé en DEMO_MODE.
+    """
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    try:
+        org_id = resolve_org_id(request, auth, db)
+    except HTTPException:
+        # En mode test ou DEMO sans org en DB, on autorise l'accès
+        return site
+
+    # Vérifier chaîne site → portefeuille → entité → org
+    if site.portefeuille_id:
+        pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
+        if pf:
+            ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
+            if ej and ej.organisation_id != org_id:
+                raise HTTPException(status_code=404, detail="Site not found")
+
+    return site
+
+
 # ── Full assessment ──
 
 
 @router.get("/site/{site_id}")
-def get_bacs_assessment(site_id: int, db: Session = Depends(get_db)):
+def get_bacs_assessment(site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)):
     """Full BACS assessment for a site: asset + systems + assessment + inspections + DQ."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
+    _verify_site_access(db, site_id, request, auth)
 
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
@@ -72,11 +106,9 @@ def get_bacs_assessment(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/recompute/{site_id}")
-def recompute_bacs(site_id: int, db: Session = Depends(get_db)):
+def recompute_bacs(site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)):
     """Recompute BACS assessment, persist result."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
+    _verify_site_access(db, site_id, request, auth)
 
     assessment = evaluate_bacs(db, site_id)
     if not assessment:
@@ -93,8 +125,9 @@ def recompute_bacs(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/score_explain/{site_id}")
-def get_score_explain(site_id: int, db: Session = Depends(get_db)):
+def get_score_explain(site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)):
     """Putile steps + threshold + TRI + penalties breakdown."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="No BacsAsset for this site")
@@ -129,8 +162,11 @@ def get_score_explain(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/data_quality/{site_id}")
-def get_bacs_data_quality(site_id: int, db: Session = Depends(get_db)):
+def get_bacs_data_quality(
+    site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)
+):
     """BACS-specific DQ gate: BLOCKED / WARNING / OK."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         return {
@@ -150,14 +186,14 @@ def get_bacs_data_quality(site_id: int, db: Session = Depends(get_db)):
 @router.post("/asset")
 def create_bacs_asset(
     site_id: int,
+    request: Request,
     is_tertiary: bool = True,
     pc_date: str = None,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Create BacsAsset for a site."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
+    _verify_site_access(db, site_id, request, auth)
 
     existing = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if existing:
@@ -259,11 +295,9 @@ def delete_cvc_system(system_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/site/{site_id}/ops")
-def get_bacs_ops(site_id: int, db: Session = Depends(get_db)):
+def get_bacs_ops(site_id: int, request: Request, db: Session = Depends(get_db), auth=Depends(get_optional_auth)):
     """BACS operational monitoring panel: KPIs, consumption links, heatmap."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
+    _verify_site_access(db, site_id, request, auth)
 
     from services.bacs_ops_monitor import get_bacs_ops_panel
 
@@ -382,12 +416,15 @@ def _compute_bacs_dq(asset: BacsAsset, systems: list[BacsCvcSystem]) -> dict:
 @router.get("/site/{site_id}/compliance-gate")
 def get_bacs_compliance_gate(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Evaluation prudente du statut BACS d'un site.
 
     JAMAIS de statut affirmatif sans preuve.
     """
+    _verify_site_access(db, site_id, request, auth)
     from services.bacs_compliance_gate import evaluate_bacs_status
 
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
@@ -410,9 +447,12 @@ def get_bacs_compliance_gate(
 @router.get("/site/{site_id}/regulatory-assessment")
 def get_bacs_regulatory_assessment(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Evaluation reglementaire BACS complete (eligibilite + exigences + inspection + preuves)."""
+    _verify_site_access(db, site_id, request, auth)
     from services.bacs_regulatory_engine import evaluate_full_bacs
 
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
@@ -435,7 +475,6 @@ def get_bacs_regulatory_assessment(
 # ═══════════════════════════════════════════════════════════════════════
 
 from pydantic import BaseModel as PydanticBase
-from typing import Optional
 from models.bacs_remediation import BacsRemediationAction
 from models.bacs_regulatory import BacsProofDocument
 
@@ -466,9 +505,12 @@ class ReviewProofRequest(PydanticBase):
 def create_remediation_action(
     site_id: int,
     body: CreateRemediationRequest,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Creer une action corrective BACS depuis un blocker."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         raise HTTPException(404, "Actif BACS introuvable")
@@ -496,9 +538,12 @@ def create_remediation_action(
 @router.get("/site/{site_id}/remediation")
 def list_remediation_actions(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Lister les actions correctives BACS d'un site."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         return {"actions": []}
@@ -639,9 +684,12 @@ VALID_TRANSITIONS = {
 def create_exemption(
     site_id: int,
     body: CreateExemptionRequest,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Creer une demande de derogation BACS (art. R.175-6)."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         raise HTTPException(404, "Actif BACS introuvable")
@@ -705,9 +753,12 @@ def create_exemption(
 @router.get("/site/{site_id}/exemptions")
 def list_exemptions(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Lister les derogations BACS d'un site."""
+    _verify_site_access(db, site_id, request, auth)
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
     if not asset:
         return {"exemptions": []}
@@ -925,9 +976,12 @@ def get_coherence_check(db: Session = Depends(get_db)):
 @router.get("/site/{site_id}/alerts")
 def get_bacs_alerts(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth=Depends(get_optional_auth),
 ):
     """Alertes BACS structurees pour un site (echeances, preuves, actions, formation)."""
+    _verify_site_access(db, site_id, request, auth)
     from services.bacs_alerts import compute_bacs_alerts
 
     asset = db.query(BacsAsset).filter(BacsAsset.site_id == site_id).first()
