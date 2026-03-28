@@ -70,6 +70,7 @@ from routes import (
     geocoding_router,
     usages_router,
     action_center_router,
+    enedis_router,
 )
 
 # Import KB router
@@ -166,6 +167,7 @@ app.include_router(geocoding_router)  # Géocodage BAN (sites → lat/lng)
 app.include_router(aper_router)  # Step 29 APER Solarisation (parkings & toitures)
 app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, cost breakdown)
 app.include_router(action_center_router)  # Action Center (unified actionable issues)
+app.include_router(enedis_router)  # Enedis SGE Flux (ingestion API)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations

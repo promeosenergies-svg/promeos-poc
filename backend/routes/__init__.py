@@ -54,6 +54,7 @@ from .aper import router as aper_router
 from .geocoding import router as geocoding_router
 from .usages import router as usages_router
 from .action_center import router as action_center_router
+from .enedis import router as enedis_router
 
 __all__ = [
     "sites_router",
@@ -108,4 +109,5 @@ __all__ = [
     "geocoding_router",
     "usages_router",
     "action_center_router",
+    "enedis_router",
 ]
