@@ -26,6 +26,7 @@ Usage:
 
 import hashlib
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -37,13 +38,16 @@ from data_ingestion.enedis.decrypt import (
     classify_flux,
     decrypt_file,
 )
-from data_ingestion.enedis.enums import FluxStatus, FluxType
+from data_ingestion.enedis.config import MAX_RETRIES
+from data_ingestion.enedis.enums import FluxStatus, FluxType, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxFileError,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
+    IngestionRun,
 )
 from data_ingestion.enedis.parsers.r4 import R4xParseError, parse_r4x
 from data_ingestion.enedis.parsers.r50 import R50ParseError, parse_r50
@@ -66,7 +70,8 @@ def ingest_file(
 ) -> FluxStatus:
     """Ingest one Enedis flux file: decrypt → parse → store in DB.
 
-    Commits the session on success or on recorded error/skip.
+    Commits the session on success, on recorded error/skip, and when
+    archiving error history before a retry or PERMANENTLY_FAILED transition.
     The caller should NOT commit separately.
 
     Args:
@@ -98,15 +103,24 @@ def ingest_file(
 
     existing = session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
     if existing is not None:
-        if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED, FluxStatus.NEEDS_REVIEW):
+        if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED, FluxStatus.NEEDS_REVIEW, FluxStatus.PERMANENTLY_FAILED):
             logger.info(
                 "Already processed %s (hash=%s…, status=%s), skipping", filename, file_hash[:12], existing.status
             )
             return FluxStatus(existing.status)
         if existing.status == FluxStatus.ERROR:
+            if len(existing.errors) >= MAX_RETRIES:
+                _archive_error(session, existing)
+                existing.status = FluxStatus.PERMANENTLY_FAILED
+                existing.error_message = None
+                session.commit()
+                logger.info("File %s reached MAX_RETRIES — marked PERMANENTLY_FAILED", filename)
+                return FluxStatus.PERMANENTLY_FAILED
             logger.info("Retrying previously failed %s (hash=%s…)", filename, file_hash[:12])
-            session.delete(existing)
-            session.flush()
+            _archive_error(session, existing)
+            existing.error_message = None
+            session.commit()  # persist error history before retry attempt
+            pre_registered = existing  # reuse same record in-place
         elif existing.status == FluxStatus.RECEIVED:
             logger.info("Processing pre-registered %s (hash=%s…)", filename, file_hash[:12])
             pre_registered = existing
@@ -228,12 +242,16 @@ def ingest_directory(
     archive_dir: Path | None = None,
     recursive: bool = False,
     pattern: str = "*.zip",
+    *,
+    dry_run: bool = False,
+    run: IngestionRun | None = None,
 ) -> dict[str, int]:
     """Ingest all flux files in a directory: scan → register → process.
 
     Two-phase design for crash recovery:
-      Phase 1: scan directory, register each new file as RECEIVED (single commit).
-      Phase 2: process each RECEIVED file via ingest_file() → PARSED/ERROR/SKIPPED.
+      Phase 1: scan directory, register new files as RECEIVED, queue ERROR
+        files for retry, transition max-retried files to PERMANENTLY_FAILED.
+      Phase 2: process each RECEIVED/ERROR file via ingest_file().
     Files left in RECEIVED after a crash are re-processed on the next run.
 
     Args:
@@ -244,11 +262,15 @@ def ingest_directory(
         archive_dir: Optional directory to write decrypted XML for audit.
         recursive: If True, scan subdirectories recursively.
         pattern: Glob pattern for file matching (default ``*.zip``).
+        dry_run: If True, scan and classify without ingesting (no DB mutations).
+        run: Optional IngestionRun for incremental counter updates.
 
     Returns:
-        Dict of counters: received, parsed, needs_review, skipped, error,
-        already_processed.
-        ``received == parsed + needs_review + skipped + error``.
+        Dict of counters: received (new files only), parsed, needs_review,
+        skipped, error, permanently_failed, already_processed, retried,
+        max_retries_reached.
+        ``received + retried == parsed + needs_review + skipped + error + permanently_failed``
+        (in non-dry-run mode).
     """
     counters: dict[str, int] = {
         "received": 0,
@@ -256,7 +278,10 @@ def ingest_directory(
         "needs_review": 0,
         "skipped": 0,
         "error": 0,
+        "permanently_failed": 0,
         "already_processed": 0,
+        "retried": 0,
+        "max_retries_reached": 0,
     }
 
     if not directory.is_dir():
@@ -280,25 +305,58 @@ def ingest_directory(
                 # Stale from a previous interrupted run — re-process
                 logger.info("Found stale RECEIVED %s, will re-process", file_path.name)
                 to_process.append((file_path, file_hash, existing))
+            elif existing.status == FluxStatus.NEEDS_REVIEW:
+                # Data loaded, awaiting human review (republication) — no retry
+                counters["already_processed"] += 1
+            elif existing.status == FluxStatus.PERMANENTLY_FAILED:
+                # Max retries reached — skip, needs manual intervention
+                counters["max_retries_reached"] += 1
+            elif existing.status == FluxStatus.ERROR:
+                error_count = len(existing.errors)
+                if error_count < MAX_RETRIES:
+                    logger.info("Retrying ERROR file %s (attempt %d/%d)",
+                                file_path.name, error_count + 1, MAX_RETRIES)
+                    to_process.append((file_path, file_hash, existing))
+                    counters["retried"] += 1
+                else:
+                    # Transition to PERMANENTLY_FAILED (skip in dry-run)
+                    if not dry_run:
+                        existing.status = FluxStatus.PERMANENTLY_FAILED
+                        session.commit()
+                    logger.info("File %s reached MAX_RETRIES (%d) — %s",
+                                file_path.name, MAX_RETRIES,
+                                "marked PERMANENTLY_FAILED" if not dry_run else "would mark PERMANENTLY_FAILED (dry-run)")
+                    counters["max_retries_reached"] += 1
             else:
-                # Already processed (PARSED/ERROR/SKIPPED/NEEDS_REVIEW)
+                # PARSED, SKIPPED
                 counters["already_processed"] += 1
             continue
 
         # New file — register as RECEIVED
-        flux_file = EnedisFluxFile(
-            filename=file_path.name,
-            file_hash=file_hash,
-            flux_type=classify_flux(file_path.name).value,
-            status=FluxStatus.RECEIVED,
-            measures_count=0,
-        )
-        session.add(flux_file)
-        to_process.append((file_path, file_hash, flux_file))
+        if not dry_run:
+            flux_file = EnedisFluxFile(
+                filename=file_path.name,
+                file_hash=file_hash,
+                flux_type=classify_flux(file_path.name).value,
+                status=FluxStatus.RECEIVED,
+                measures_count=0,
+            )
+            session.add(flux_file)
+            to_process.append((file_path, file_hash, flux_file))
+        else:
+            to_process.append((file_path, file_hash, None))
+        counters["received"] += 1
 
-    if to_process:
+    if to_process and not dry_run:
         session.commit()  # Single commit for all RECEIVED registrations
-    counters["received"] = len(to_process)
+
+    # Update run scan counters after Phase 1
+    if run:
+        run.files_received = counters["received"]
+        run.files_already_processed = counters["already_processed"]
+        run.files_retried = counters["retried"]
+        run.files_max_retries = counters["max_retries_reached"]
+        session.commit()
 
     logger.info(
         "ingest_directory: %d files to process, %d already processed",
@@ -306,23 +364,43 @@ def ingest_directory(
         counters["already_processed"],
     )
 
-    # Phase 2 — Process each RECEIVED file
-    for file_path, phase1_hash, flux_file in to_process:
-        try:
-            status = ingest_file(file_path, session, keys, chunk_size, archive_dir)
-        except Exception as exc:
-            # ingest_file raises FileNotFoundError/MissingKeyError without recording;
-            # update the RECEIVED record to ERROR so it doesn't stay stale.
-            logger.error("Unhandled error processing %s: %s", file_path.name, exc)
-            # Use Phase 1 hash — the file may no longer exist on disk.
-            record = session.query(EnedisFluxFile).filter_by(file_hash=phase1_hash).first()
-            if record is not None and record.status == FluxStatus.RECEIVED:
-                record.status = FluxStatus.ERROR
-                record.error_message = str(exc)
-                session.commit()
-            status = FluxStatus.ERROR
+    # Phase 2 — Process each RECEIVED file (skipped entirely in dry-run)
+    if not dry_run:
+        for file_path, phase1_hash, flux_file in to_process:
+            try:
+                status = ingest_file(file_path, session, keys, chunk_size, archive_dir)
+            except Exception as exc:
+                # ingest_file raises FileNotFoundError/MissingKeyError without recording;
+                # update the RECEIVED record to ERROR so it doesn't stay stale.
+                logger.error("Unhandled error processing %s: %s", file_path.name, exc)
+                # Use Phase 1 hash — the file may no longer exist on disk.
+                record = session.query(EnedisFluxFile).filter_by(file_hash=phase1_hash).first()
+                if record is not None and record.status == FluxStatus.RECEIVED:
+                    record.status = FluxStatus.ERROR
+                    record.error_message = str(exc)
+                    session.commit()
+                status = FluxStatus.ERROR
 
-        counters[status.value] += 1
+            counters[status.value] += 1
+
+            # Incremental run counter update after each file
+            if run:
+                if status == FluxStatus.PARSED:
+                    run.files_parsed += 1
+                elif status == FluxStatus.ERROR:
+                    run.files_error += 1
+                elif status == FluxStatus.SKIPPED:
+                    run.files_skipped += 1
+                elif status == FluxStatus.NEEDS_REVIEW:
+                    run.files_needs_review += 1
+                elif status == FluxStatus.PERMANENTLY_FAILED:
+                    run.files_max_retries += 1
+                session.commit()
+
+    if run:
+        run.status = IngestionRunStatus.COMPLETED
+        run.finished_at = datetime.now(timezone.utc)
+        session.commit()
 
     return counters
 
@@ -337,6 +415,19 @@ def _hash_file(file_path: Path) -> str:
     return hashlib.sha256(file_path.read_bytes()).hexdigest()
 
 
+def _archive_error(session: Session, flux_file: EnedisFluxFile) -> None:
+    """Archive the current error_message into EnedisFluxFileError before retry.
+
+    No-op if error_message is empty or None.
+    """
+    if flux_file.error_message:
+        session.add(EnedisFluxFileError(
+            flux_file_id=flux_file.id,
+            error_message=flux_file.error_message,
+        ))
+        session.flush()
+
+
 def _record_file(
     session: Session,
     filename: str,
@@ -348,8 +439,8 @@ def _record_file(
 ) -> EnedisFluxFile:
     """Create or update a minimal EnedisFluxFile record for skipped/error files.
 
-    If *existing* is provided (pre-registered RECEIVED record), updates it
-    in-place instead of creating a new row.
+    If *existing* is provided (pre-registered RECEIVED or ERROR record being
+    retried), updates it in-place instead of creating a new row.
     """
     if existing is not None:
         existing.status = status

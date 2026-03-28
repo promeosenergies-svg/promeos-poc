@@ -2,18 +2,22 @@
 
 import hashlib
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from data_ingestion.enedis.enums import FluxStatus
+from data_ingestion.enedis.config import MAX_RETRIES
+from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxFileError,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
+    IngestionRun,
 )
 from data_ingestion.enedis.pipeline import ingest_directory, ingest_file
 
@@ -201,7 +205,9 @@ class TestEmptyDirectory:
 
         assert counters == {
             "received": 0, "parsed": 0, "needs_review": 0,
-            "skipped": 0, "error": 0, "already_processed": 0,
+            "skipped": 0, "error": 0, "permanently_failed": 0,
+            "already_processed": 0,
+            "retried": 0, "max_retries_reached": 0,
         }
         assert db.query(EnedisFluxFile).count() == 0
 
@@ -278,7 +284,7 @@ class TestReceivedStale:
         # Run ingest_directory — should re-process the stale file
         counters = ingest_directory(tmp_path, db, test_keys)
 
-        assert counters["received"] == 1  # stale RECEIVED counted
+        assert counters["received"] == 0  # stale RECEIVED is not a new file
         assert counters["parsed"] == 1
         assert counters["already_processed"] == 0
 
@@ -494,3 +500,276 @@ class TestRepublicationInBatch:
         assert files[0].status == FluxStatus.PARSED
         assert files[1].version == 2
         assert files[1].status == FluxStatus.NEEDS_REVIEW
+
+
+# ===========================================================================
+# SF4 Phase 3 — Error retry in batch
+# ===========================================================================
+
+
+class TestErrorRetryInBatch:
+    """ERROR files are retried in ingest_directory(), with error history preserved."""
+
+    def test_error_file_retried_and_history_preserved(self, db, tmp_path, test_keys):
+        """An ERROR file is retried in a subsequent ingest_directory() run.
+        Error history is preserved via EnedisFluxFileError."""
+        path = _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed an ERROR record for this file (simulating a prior failed run)
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="previous decrypt error",
+        )
+        db.add(error_record)
+        db.commit()
+        original_id = error_record.id
+
+        # Run ingest_directory — should retry the ERROR file
+        counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["retried"] == 1
+        assert counters["parsed"] == 1
+        assert counters["already_processed"] == 0
+
+        # Record updated in-place
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        assert f.id == original_id
+        assert f.status == FluxStatus.PARSED
+        # Error history preserved
+        assert len(f.errors) == 1
+        assert f.errors[0].error_message == "previous decrypt error"
+
+    def test_max_retries_reached_transitions_to_permanently_failed(self, db, tmp_path, test_keys):
+        """File at MAX_RETRIES errors → PERMANENTLY_FAILED, counted in max_retries_reached."""
+        path = _write_corrupt(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_MAXR.zip")
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed ERROR record with MAX_RETRIES error entries
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="latest error",
+        )
+        db.add(error_record)
+        db.flush()
+        for i in range(MAX_RETRIES):
+            db.add(EnedisFluxFileError(
+                flux_file_id=error_record.id,
+                error_message=f"error attempt {i+1}",
+            ))
+        db.commit()
+
+        counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["max_retries_reached"] == 1
+        assert counters["retried"] == 0
+
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        assert f.status == FluxStatus.PERMANENTLY_FAILED
+
+    def test_permanently_failed_skipped_in_next_run(self, db, tmp_path, test_keys):
+        """A PERMANENTLY_FAILED file is skipped (not retried) in subsequent runs."""
+        path = _write_corrupt(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_PF.zip")
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed as PERMANENTLY_FAILED
+        pf = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.PERMANENTLY_FAILED,
+            error_message="gave up",
+        )
+        db.add(pf)
+        db.commit()
+
+        counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["max_retries_reached"] == 1
+        assert counters["retried"] == 0
+        assert counters["received"] == 0
+
+        # Status unchanged
+        f = db.query(EnedisFluxFile).first()
+        assert f.status == FluxStatus.PERMANENTLY_FAILED
+
+
+class TestPermanentlyFailedInPhase2:
+    """ingest_file() returning PERMANENTLY_FAILED in Phase 2 must not crash counters."""
+
+    def test_permanently_failed_from_ingest_file_no_keyerror(self, db, tmp_path, test_keys):
+        """If ingest_file() returns PERMANENTLY_FAILED during Phase 2,
+        counters['permanently_failed'] is incremented without KeyError."""
+        path = _write_corrupt(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_PF2.zip")
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed ERROR record eligible for retry (errors < MAX_RETRIES)
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="some error",
+        )
+        db.add(error_record)
+        db.flush()
+        db.add(EnedisFluxFileError(
+            flux_file_id=error_record.id,
+            error_message="past error",
+        ))
+        db.commit()
+
+        # Mock ingest_file to return PERMANENTLY_FAILED (simulates concurrency)
+        with patch(
+            "data_ingestion.enedis.pipeline.ingest_file",
+            return_value=FluxStatus.PERMANENTLY_FAILED,
+        ):
+            counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["permanently_failed"] == 1
+        assert counters["retried"] == 1
+
+
+class TestNeedsReviewNoRetry:
+    """NEEDS_REVIEW files are not retried — counted as already_processed."""
+
+    def test_needs_review_not_retried(self, db, tmp_path, test_keys):
+        path = _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_NR.zip", R4H_XML)
+        file_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+        # Pre-seed as NEEDS_REVIEW
+        nr = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.NEEDS_REVIEW,
+            measures_count=1,
+        )
+        db.add(nr)
+        db.commit()
+
+        counters = ingest_directory(tmp_path, db, test_keys)
+
+        assert counters["already_processed"] == 1
+        assert counters["received"] == 0
+        assert counters["retried"] == 0
+
+        # Status unchanged
+        f = db.query(EnedisFluxFile).first()
+        assert f.status == FluxStatus.NEEDS_REVIEW
+
+
+# ===========================================================================
+# SF4 Phase 3 — Incremental counters (IngestionRun)
+# ===========================================================================
+
+
+class TestIncrementalCounters:
+    """IngestionRun counters are updated incrementally during ingest_directory()."""
+
+    def _make_run(self, db, tmp_path, *, dry_run=False):
+        """Create an IngestionRun for testing."""
+        run = IngestionRun(
+            triggered_by="cli",
+            directory=str(tmp_path),
+            recursive=False,
+            dry_run=dry_run,
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(run)
+        db.commit()
+        return run
+
+    def test_run_counters_updated_after_each_file(self, db, tmp_path, test_keys):
+        """Counters on the IngestionRun reflect per-file updates, not batch."""
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260301.zip", R171_XML)
+        # R172 → skipped
+        (tmp_path / "ENEDIS_23X--TEST_R172_20260301.zip").write_bytes(os.urandom(64))
+
+        run = self._make_run(db, tmp_path)
+
+        counters = ingest_directory(tmp_path, db, test_keys, run=run)
+
+        db.refresh(run)
+        assert run.status == IngestionRunStatus.COMPLETED
+        assert run.finished_at is not None
+        assert run.files_received == 3
+        assert run.files_parsed == 2
+        assert run.files_skipped == 1
+        assert run.files_error == 0
+        assert run.files_needs_review == 0
+
+    def test_run_counters_reflect_partial_work_on_crash(self, db, tmp_path, test_keys):
+        """If processing crashes mid-run, counters reflect the work completed so far."""
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260302.zip", R171_XML)
+
+        run = self._make_run(db, tmp_path)
+
+        call_count = 0
+        original_ingest = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
+
+        def crash_on_second(file_path, session, keys, chunk_size=1000, archive_dir=None):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise RuntimeError("simulated crash")
+            return original_ingest(file_path, session, keys, chunk_size, archive_dir)
+
+        with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=crash_on_second):
+            counters = ingest_directory(tmp_path, db, test_keys, run=run)
+
+        db.refresh(run)
+        # First file parsed successfully, second crashed → error
+        assert run.files_parsed == 1
+        assert run.files_error == 1
+        assert run.files_received == 2
+        # Run completed (crash was caught by ingest_directory's except block)
+        assert run.status == IngestionRunStatus.COMPLETED
+
+    def test_run_scan_counters_include_retried_and_max_retries(self, db, tmp_path, test_keys):
+        """Scan phase counters include retried and max_retries_reached."""
+        # Valid file
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+
+        # ERROR file eligible for retry (0 previous errors)
+        retry_path = _write_corrupt(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_RETRY.zip")
+        retry_hash = hashlib.sha256(retry_path.read_bytes()).hexdigest()
+        retry_record = EnedisFluxFile(
+            filename=retry_path.name,
+            file_hash=retry_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="previous error",
+        )
+        db.add(retry_record)
+        db.commit()
+
+        run = self._make_run(db, tmp_path)
+        counters = ingest_directory(tmp_path, db, test_keys, run=run)
+
+        db.refresh(run)
+        assert run.files_retried == 1
+        assert run.files_received == 1  # new files only, retried tracked separately
+
+    def test_dry_run_with_run_sets_completed(self, db, tmp_path, test_keys):
+        """Even in dry-run mode, the IngestionRun is marked completed."""
+        _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R4H_CDC_20260301.zip", R4H_XML)
+
+        run = self._make_run(db, tmp_path, dry_run=True)
+
+        counters = ingest_directory(tmp_path, db, test_keys, dry_run=True, run=run)
+
+        db.refresh(run)
+        assert run.status == IngestionRunStatus.COMPLETED
+        assert run.finished_at is not None
+        assert run.files_received == 1
+        # Phase 2 skipped → processing counters stay 0
+        assert run.files_parsed == 0

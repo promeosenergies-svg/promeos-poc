@@ -4,15 +4,17 @@ import os
 
 import pytest
 
+from data_ingestion.enedis.config import MAX_RETRIES
 from data_ingestion.enedis.enums import FluxStatus
 from data_ingestion.enedis.models import (
     EnedisFluxFile,
+    EnedisFluxFileError,
     EnedisFluxMesureR4x,
     EnedisFluxMesureR50,
     EnedisFluxMesureR151,
     EnedisFluxMesureR171,
 )
-from data_ingestion.enedis.pipeline import ingest_file
+from data_ingestion.enedis.pipeline import ingest_file, ingest_directory
 
 from .conftest import TEST_IV, TEST_KEY, make_encrypted_zip
 
@@ -1049,3 +1051,268 @@ class TestIngestR151Pipeline:
         status = ingest_file(path, db, test_keys)
         assert status == FluxStatus.ERROR
         assert db.query(EnedisFluxFile).first().error_message is not None
+
+
+# ---------------------------------------------------------------------------
+# Tests — Error history preservation (SF4 Phase 3)
+# ---------------------------------------------------------------------------
+
+
+class TestErrorHistoryPreserved:
+    """Error history is preserved across retries via EnedisFluxFileError."""
+
+    def test_two_failures_create_two_error_entries(self, db, tmp_path, test_keys):
+        """File fails 2x → 2 error history entries, len(errors)==2."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        # Create a corrupt file → first failure
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_ERR.zip"
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        status1 = ingest_file(path, db, test_keys)
+        assert status1 == FluxStatus.ERROR
+
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        assert f.error_message is not None
+        assert len(f.errors) == 0  # first failure: error_message on record, no history yet
+
+        # Second failure — write different corrupt bytes to same filename
+        # but same hash won't work, we need to retry the same file
+        status2 = ingest_file(path, db, test_keys)
+        assert status2 == FluxStatus.ERROR
+
+        db.refresh(f)
+        assert len(f.errors) == 1  # first error archived
+        assert f.error_message is not None  # new error on record
+
+    def test_failure_then_success_preserves_history(self, db, tmp_path, test_keys):
+        """File fails once, then succeeds → error history preserved, status=PARSED."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        # First: create corrupt file with R4H filename
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_RETRY.zip"
+
+        # Create valid R4H content as bytes (for the eventual success)
+        valid_ct = make_encrypted_zip(R4H_XML, "test.xml", TEST_KEY, TEST_IV)
+        # But first write corrupt data
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        status1 = ingest_file(path, db, test_keys)
+        assert status1 == FluxStatus.ERROR
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        first_error_msg = f.error_message
+
+        # Now replace with valid content — BUT same hash won't match.
+        # We need to keep the same file hash for retry. So we reprocess
+        # the same corrupt file, which will fail again. Then we need a
+        # different approach: pre-seed an ERROR record with the hash of
+        # the valid file.
+
+        # Actually, the retry path is: same file_hash triggers retry.
+        # So let's write the valid file, compute its hash, pre-seed ERROR.
+        path.write_bytes(valid_ct)
+        valid_hash = _hash_file(path)
+
+        # Pre-seed an ERROR record with the valid file's hash
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=valid_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="previous decrypt error",
+        )
+        db.add(error_record)
+        db.commit()
+
+        # Now ingest the valid file — it should retry and succeed
+        status2 = ingest_file(path, db, test_keys)
+        assert status2 == FluxStatus.PARSED
+
+        f = db.query(EnedisFluxFile).filter_by(file_hash=valid_hash).first()
+        assert f.status == FluxStatus.PARSED
+        # Error history preserved
+        assert len(f.errors) == 1
+        assert f.errors[0].error_message == "previous decrypt error"
+        assert f.error_message is None  # cleared on retry
+
+    def test_error_history_survives_store_failure_on_retry(self, db, tmp_path, test_keys):
+        """Error history is preserved even when the retry itself fails at DB storage."""
+        from unittest.mock import patch
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        # Create valid R4H file
+        ct = make_encrypted_zip(R4H_XML, "test.xml", TEST_KEY, TEST_IV)
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_STORE_FAIL.zip"
+        path.write_bytes(ct)
+        file_hash = _hash_file(path)
+
+        # Pre-seed ERROR record
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="previous decrypt error",
+        )
+        db.add(error_record)
+        db.commit()
+
+        # Retry with store failure → rollback path
+        with patch.object(db, "bulk_save_objects", side_effect=Exception("disk full")):
+            status = ingest_file(path, db, test_keys)
+
+        assert status == FluxStatus.ERROR
+
+        f = db.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
+        assert f.status == FluxStatus.ERROR
+        assert "disk full" in f.error_message
+        # Error history survived the rollback (committed before retry)
+        assert len(f.errors) == 1
+        assert f.errors[0].error_message == "previous decrypt error"
+
+    def test_decrypt_then_parse_error_distinct_messages(self, db, tmp_path, test_keys):
+        """Two different error types produce distinct error messages in history."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        # Create corrupt file (decrypt error)
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_MULTI_ERR.zip"
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        status1 = ingest_file(path, db, test_keys)
+        assert status1 == FluxStatus.ERROR
+        f = db.query(EnedisFluxFile).first()
+        decrypt_error_msg = f.error_message
+        assert decrypt_error_msg is not None
+
+        # Second attempt — same file, different error (still decrypt but same type)
+        status2 = ingest_file(path, db, test_keys)
+        assert status2 == FluxStatus.ERROR
+
+        db.refresh(f)
+        assert len(f.errors) == 1
+        assert f.errors[0].error_message == decrypt_error_msg  # archived first error
+
+    def test_permanently_failed_skipped_on_retry(self, db, tmp_path, test_keys):
+        """PERMANENTLY_FAILED files are skipped immediately on re-ingestion."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_PERM.zip"
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        # Pre-seed as PERMANENTLY_FAILED
+        pf = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.PERMANENTLY_FAILED,
+        )
+        db.add(pf)
+        db.commit()
+
+        status = ingest_file(path, db, test_keys)
+        assert status == FluxStatus.PERMANENTLY_FAILED
+        # No change in DB
+        assert db.query(EnedisFluxFile).count() == 1
+        assert db.query(EnedisFluxFile).first().status == FluxStatus.PERMANENTLY_FAILED
+
+    def test_max_retries_triggers_permanently_failed(self, db, tmp_path, test_keys):
+        """After MAX_RETRIES errors in history, ingest_file marks PERMANENTLY_FAILED."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_MAXR.zip"
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        # Pre-seed an ERROR record with MAX_RETRIES error entries
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="latest error",
+        )
+        db.add(error_record)
+        db.flush()
+
+        for i in range(MAX_RETRIES):
+            db.add(EnedisFluxFileError(
+                flux_file_id=error_record.id,
+                error_message=f"error attempt {i+1}",
+            ))
+        db.commit()
+
+        status = ingest_file(path, db, test_keys)
+        assert status == FluxStatus.PERMANENTLY_FAILED
+
+        f = db.query(EnedisFluxFile).first()
+        assert f.status == FluxStatus.PERMANENTLY_FAILED
+        assert f.error_message is None  # cleared after archiving
+        # Original MAX_RETRIES errors + the archived "latest error"
+        assert len(f.errors) == MAX_RETRIES + 1
+        assert f.errors[-1].error_message == "latest error"
+
+
+# ---------------------------------------------------------------------------
+# Tests — Dry-run mode (SF4 Phase 3)
+# ---------------------------------------------------------------------------
+
+
+class TestDryRun:
+    """dry_run=True scans and classifies without mutating the DB."""
+
+    def test_dry_run_returns_counters_without_db_changes(self, db, tmp_path, test_keys):
+        """ingest_directory(dry_run=True) returns correct counters without DB writes."""
+        # Write valid files
+        ct1 = make_encrypted_zip(R4H_XML, "a.xml", TEST_KEY, TEST_IV)
+        (tmp_path / "ENEDIS_23X--TEST_R4H_CDC_20260301.zip").write_bytes(ct1)
+
+        # Write a skippable R172 file
+        (tmp_path / "ENEDIS_23X--TEST_R172_20260301.zip").write_bytes(os.urandom(64))
+
+        counters = ingest_directory(tmp_path, db, test_keys, dry_run=True)
+
+        # Counters reflect what would happen
+        assert counters["received"] == 2
+        # Processing counters should be 0 (Phase 2 skipped)
+        assert counters["parsed"] == 0
+        assert counters["skipped"] == 0
+        assert counters["error"] == 0
+
+        # No DB modifications
+        assert db.query(EnedisFluxFile).count() == 0
+
+    def test_dry_run_does_not_transition_error_to_permanently_failed(self, db, tmp_path, test_keys):
+        """In dry-run, ERROR files at MAX_RETRIES are counted but not transitioned."""
+        from data_ingestion.enedis.pipeline import _hash_file
+
+        path = tmp_path / "ENEDIS_23X--TEST_R4H_CDC_DRYERR.zip"
+        path.write_bytes(os.urandom(256))
+        file_hash = _hash_file(path)
+
+        # Pre-seed ERROR record at MAX_RETRIES
+        error_record = EnedisFluxFile(
+            filename=path.name,
+            file_hash=file_hash,
+            flux_type="R4H",
+            status=FluxStatus.ERROR,
+            error_message="err",
+        )
+        db.add(error_record)
+        db.flush()
+        for i in range(MAX_RETRIES):
+            db.add(EnedisFluxFileError(
+                flux_file_id=error_record.id,
+                error_message=f"error {i}",
+            ))
+        db.commit()
+
+        counters = ingest_directory(tmp_path, db, test_keys, dry_run=True)
+
+        assert counters["max_retries_reached"] == 1
+        # Status NOT changed in dry-run
+        db.refresh(error_record)
+        assert error_record.status == FluxStatus.ERROR
