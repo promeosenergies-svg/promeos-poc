@@ -1,0 +1,35 @@
+{
+  "doc_id": "NAF_ARCHETYPE_MAPPING_v1",
+  "version": "1.0",
+  "date": "2026-03-29",
+  "author": "PROMEOS Energy Intelligence",
+  "status": "canonical",
+  "description": "Mapping complet 732 codes NAF Rev2 INSEE → 15 archétypes énergétiques PROMEOS + profils détaillés",
+  "files": [
+    {
+      "name": "naf_to_archetype_v1.json",
+      "description": "732 codes NAF sous-classes → archétype avec confidence et notes",
+      "records": 732
+    },
+    {
+      "name": "archetypes_energy_v1.json",
+      "description": "15 archétypes avec profils kWh/m², répartition usages, signatures temporelles, seuils anomalies, leviers",
+      "records": 15
+    }
+  ],
+  "sources": [
+    "int_courts_naf_rev_2.xls (INSEE, NAF Rev2, 732 sous-classes)",
+    "guide_naf_cpf_rev_2.pdf (INSEE, méthodologie NAF/CPF)",
+    "USAGES_ENERGETIQUES_B2B_v1.html (PROMEOS canonical, 6 archétypes v1)",
+    "ELMAS dataset (Mines Paris, 55730 clients, 18 clusters)",
+    "ADEME Base Empreinte V23.6",
+    "OID 2022 (25300 bâtiments, 70M m²)"
+  ],
+  "destination_git": "docs/base_documentaire/naf_archetype_mapping/",
+  "notes": [
+    "Document IMMUTABLE après publication",
+    "Toute évolution = nouvelle version v2 avec nouveau SHA256",
+    "15 archétypes couvrent 100% des 732 codes NAF",
+    "Confidence HIGH=355, MEDIUM=256, LOW=121 codes"
+  ]
+}
