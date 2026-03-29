@@ -78,3 +78,32 @@ describe('Step4 — No hardcoded 0.052 in backend', () => {
     expect(codeLines.join('\n')).not.toContain('0.052');
   });
 });
+
+// ── D. VecteurEnergetiqueCard — source guard + N-1 delta display ──────────
+
+describe('Step4 — VecteurEnergetiqueCard architecture', () => {
+  const cardPath = join(__dirname, '..', 'pages', 'cockpit', 'VecteurEnergetiqueCard.jsx');
+  const src = readFileSync(cardPath, 'utf-8');
+
+  it('ne contient aucun facteur CO₂ hardcodé', () => {
+    expect(src).not.toMatch(/\*\s*0\.052/);
+    expect(src).not.toMatch(/\*\s*0\.0569/);
+    expect(src).not.toMatch(/\*\s*0\.227/);
+  });
+
+  it('utilise getCockpitCo2 depuis le backend', () => {
+    expect(src).toMatch(/getCockpitCo2/);
+  });
+
+  it('affiche les deltas N-1 via DeltaLine', () => {
+    expect(src).toMatch(/DeltaLine/);
+    expect(src).toMatch(/delta_total_pct|delta_scope/);
+    expect(src).toMatch(/prev_total_tco2|prev_scope/);
+  });
+
+  it('affiche la légende période et source ADEME', () => {
+    expect(src).toMatch(/period_label/);
+    expect(src).toMatch(/prev_period_label/);
+    expect(src).toMatch(/co2_factors/);
+  });
+});

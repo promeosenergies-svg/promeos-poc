@@ -259,7 +259,7 @@ def get_portfolio_summary(
     kwh_total = 0.0
     sites_total = len(sites)
     sites_with_data = 0
-    confidence_split = {"high": 0, "medium": 0, "low": 0}
+    confidence_split = {"high": 0, "medium": 0, "low": 0, "none": 0}
     site_rows = []
 
     for site in sites:

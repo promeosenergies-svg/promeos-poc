@@ -770,8 +770,8 @@ from models.enums import (
     MVAlertType,
     ActionSourceType,
     ActionStatus,
-    FrequencyType,
 )
+from models.energy_models import FrequencyType
 
 
 # Required evidence pieces for a CEE dossier

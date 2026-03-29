@@ -13,10 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from services.market_data_service import MarketDataService
-from models.market_models import (
-    MarketDataSource, MarketType, ProductType,
-    PriceZone, Resolution
-)
+from models.market_models import MarketDataSource, MarketType, ProductType, PriceZone, Resolution
 
 
 @pytest.fixture
@@ -60,7 +57,6 @@ def sample_prices():
 
 
 class TestIngestion:
-
     def test_ingest_inserts_records(self, service, sample_prices):
         result = service.ingest_prices(sample_prices)
         assert result["inserted"] == 24
@@ -80,7 +76,6 @@ class TestIngestion:
 
 
 class TestQueries:
-
     def test_get_spot_prices(self, service, sample_prices):
         service.ingest_prices(sample_prices)
         prices = service.get_spot_prices(limit=10)
@@ -120,7 +115,6 @@ class TestQueries:
 
 
 class TestFetchLog:
-
     def test_log_fetch_success(self, service):
         log = service.log_fetch(
             connector_name="entsoe",

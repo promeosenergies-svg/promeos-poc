@@ -348,8 +348,8 @@ describe('DataActivationPanel — V37 guards', () => {
     expect(src).toContain('dataActivationModel');
   });
 
-  it('uses useActivationData hook (shared fetch)', () => {
-    expect(src).toContain('useActivationData');
+  it('receives activationData as prop (I4: hoisted to Cockpit.jsx)', () => {
+    expect(src).toContain('activationData');
     expect(src).toContain('billingSummary');
     expect(src).toContain('purchaseSignals');
     expect(src).toContain('loading');
@@ -373,8 +373,8 @@ describe('DataActivationPanel — V37 guards', () => {
     expect(src).toContain('/activation');
   });
 
-  it('activation data fetched via shared hook', () => {
-    expect(src).toContain('useActivationData');
+  it('activation data received via prop (I4: hoisted to Cockpit.jsx)', () => {
+    expect(src).toContain('activationData');
   });
 
   it('affiche activatedCount/totalDimensions', () => {

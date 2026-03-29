@@ -42,6 +42,8 @@ function normalizeCockpitKpis(raw) {
     sitesActifs: s.sites_actifs ?? 0,
     avancementDecretPct: s.avancement_decret_pct ?? null,
     orgNom: raw.organisation?.nom ?? null,
+    // I3 FIX: exposer consoSource pour éviter un double fetch /api/cockpit
+    consoSource: s.conso_source && s.conso_source !== 'none' ? s.conso_source : null,
   };
 }
 
@@ -74,6 +76,8 @@ function normalizeTrajectory(raw) {
     refYear: raw.ref_year,
     refKwh: raw.ref_kwh,
     reductionPctActuelle: raw.reduction_pct_actuelle,
+    // C3 FIX: toujours extraire objectifPremierJalonPct (sinon bannière retard jamais affichée)
+    objectifPremierJalonPct: raw.objectif_2030_pct ?? raw.jalons?.[0]?.pct ?? -40.0,
     objectif2026Pct: raw.objectif_2026_pct ?? -25.0,
     annees: raw.annees ?? [],
     reelMwh: raw.reel_mwh ?? [],

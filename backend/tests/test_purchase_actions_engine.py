@@ -259,16 +259,24 @@ class TestPriorityAndOrdering:
         site = db_session.query(Site).first()
 
         # Créer 2 contrats : un urgent (prio 100) + un plan (prio 40)
-        db_session.add(EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="Urgent", end_date=date.today() + timedelta(days=30),
-            notice_period_days=90,
-        ))
-        db_session.add(EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name="Plan", end_date=date.today() + timedelta(days=165),
-            notice_period_days=90,
-        ))
+        db_session.add(
+            EnergyContract(
+                site_id=site.id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="Urgent",
+                end_date=date.today() + timedelta(days=30),
+                notice_period_days=90,
+            )
+        )
+        db_session.add(
+            EnergyContract(
+                site_id=site.id,
+                energy_type=BillingEnergyType.ELEC,
+                supplier_name="Plan",
+                end_date=date.today() + timedelta(days=165),
+                notice_period_days=90,
+            )
+        )
         db_session.flush()
 
         result = compute_purchase_actions(db_session)

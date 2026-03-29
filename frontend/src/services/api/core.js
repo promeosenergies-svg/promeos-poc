@@ -21,9 +21,11 @@ const _getCache = new Map();
 const GET_CACHE_TTL_MS = 60_000; // 60 seconds — historical consumption data changes rarely
 
 function _cacheKey(url, params) {
-  if (!params || Object.keys(params).length === 0) return url;
+  // C1 FIX: inclure orgId dans la clé pour éviter le cross-tenant
+  const scopePrefix = _apiScope.orgId != null ? `org:${_apiScope.orgId}|` : '';
+  if (!params || Object.keys(params).length === 0) return `${scopePrefix}${url}`;
   const sorted = JSON.stringify(params, Object.keys(params).sort());
-  return `${url}|${sorted}`;
+  return `${scopePrefix}${url}|${sorted}`;
 }
 
 /**

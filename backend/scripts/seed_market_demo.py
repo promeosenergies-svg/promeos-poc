@@ -15,10 +15,16 @@ from datetime import datetime, timezone, timedelta
 from database.connection import SessionLocal, engine
 from models.base import Base
 from models.market_models import (  # noqa: F401 — register models on Base
-    MktPrice, RegulatedTariff, PriceSignal,
-    MarketDataFetchLog, PriceDecomposition,
-    MarketDataSource, MarketType,
-    ProductType, PriceZone, Resolution,
+    MktPrice,
+    RegulatedTariff,
+    PriceSignal,
+    MarketDataFetchLog,
+    PriceDecomposition,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    Resolution,
 )
 from services.market_data_service import MarketDataService
 from services.market_tariff_loader import load_tariffs_from_yaml
@@ -30,9 +36,7 @@ def generate_spot_prices(days: int = 90) -> list[dict]:
     Pattern: base ~70 EUR/MWh, pointe matin/soir, bruit, saisonnalite.
     """
     records = []
-    base_date = datetime.now(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    ) - timedelta(days=days)
+    base_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days)
 
     for day in range(days):
         date = base_date + timedelta(days=day)
@@ -65,18 +69,20 @@ def generate_spot_prices(days: int = 90) -> list[dict]:
             if is_weekend and 11 <= hour <= 14 and random.random() < 0.05:
                 price = round(random.uniform(-20, -1), 2)
 
-            records.append({
-                "source": MarketDataSource.ENTSOE,
-                "market_type": MarketType.SPOT_DAY_AHEAD,
-                "product_type": ProductType.HOURLY,
-                "zone": PriceZone.FR,
-                "delivery_start": date + timedelta(hours=hour),
-                "delivery_end": date + timedelta(hours=hour + 1),
-                "price_eur_mwh": price,
-                "resolution": Resolution.PT60M,
-                "fetched_at": datetime.now(timezone.utc),
-                "quality_flag": "GOOD",
-            })
+            records.append(
+                {
+                    "source": MarketDataSource.ENTSOE,
+                    "market_type": MarketType.SPOT_DAY_AHEAD,
+                    "product_type": ProductType.HOURLY,
+                    "zone": PriceZone.FR,
+                    "delivery_start": date + timedelta(hours=hour),
+                    "delivery_end": date + timedelta(hours=hour + 1),
+                    "price_eur_mwh": price,
+                    "resolution": Resolution.PT60M,
+                    "fetched_at": datetime.now(timezone.utc),
+                    "quality_flag": "GOOD",
+                }
+            )
 
     return records
 
@@ -99,21 +105,25 @@ def generate_forward_curves() -> list[dict]:
     ]
 
     for mtype, start, end, price, product in forwards:
-        records.append({
-            "source": MarketDataSource.MANUAL,
-            "market_type": mtype,
-            "product_type": product,
-            "zone": PriceZone.FR,
-            "delivery_start": datetime.fromisoformat(start).replace(tzinfo=timezone.utc),
-            "delivery_end": datetime.fromisoformat(end).replace(tzinfo=timezone.utc),
-            "price_eur_mwh": price,
-            "resolution": Resolution.P1Y if mtype == MarketType.FORWARD_YEAR
-                         else Resolution.P3M if mtype == MarketType.FORWARD_QUARTER
-                         else Resolution.P1M,
-            "fetched_at": now,
-            "quality_flag": "GOOD",
-            "source_reference": "Pilott/Sirenergies freemium -- mars 2026",
-        })
+        records.append(
+            {
+                "source": MarketDataSource.MANUAL,
+                "market_type": mtype,
+                "product_type": product,
+                "zone": PriceZone.FR,
+                "delivery_start": datetime.fromisoformat(start).replace(tzinfo=timezone.utc),
+                "delivery_end": datetime.fromisoformat(end).replace(tzinfo=timezone.utc),
+                "price_eur_mwh": price,
+                "resolution": Resolution.P1Y
+                if mtype == MarketType.FORWARD_YEAR
+                else Resolution.P3M
+                if mtype == MarketType.FORWARD_QUARTER
+                else Resolution.P1M,
+                "fetched_at": now,
+                "quality_flag": "GOOD",
+                "source_reference": "Pilott/Sirenergies freemium -- mars 2026",
+            }
+        )
 
     return records
 

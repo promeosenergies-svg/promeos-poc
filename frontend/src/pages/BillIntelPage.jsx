@@ -345,7 +345,17 @@ export default function BillIntelPage() {
     try {
       const result = await importInvoicesCsv(file);
       track('billing_csv_import', { filename: file.name });
-      toast(`Import CSV réussi : ${result?.imported ?? '?'} facture(s) importée(s)`, 'success');
+      const imported = result?.imported ?? result?.rows_inserted ?? 0;
+      const skipped = result?.skipped ?? result?.rows_skipped ?? 0;
+      if (skipped > 0 && imported === 0) {
+        toast(`${skipped} facture(s) déjà importée(s) — aucun doublon créé.`, 'info');
+      } else if (skipped > 0) {
+        toast(`${imported} facture(s) importée(s), ${skipped} doublon(s) ignoré(s).`, 'success');
+      } else if (imported > 0) {
+        toast(`Import CSV réussi : ${imported} facture(s) importée(s)`, 'success');
+      } else {
+        toast('Import CSV terminé — aucune facture à importer.', 'info');
+      }
       await fetchData();
     } catch {
       toast("Erreur lors de l'import CSV", 'error');
@@ -838,19 +848,27 @@ export default function BillIntelPage() {
               <Explain term="anomalie">Anomalies</Explain> détectées ({insights.length})
             </h3>
             <div className="flex items-center gap-1">
-              {INSIGHT_FILTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setInsightFilter(opt.value)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    insightFilter === opt.value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              {INSIGHT_FILTER_OPTIONS.map((opt) => {
+                const count =
+                  opt.value === 'all'
+                    ? allInsights.length
+                    : allInsights.filter((i) => (i.insight_status || i.status) === opt.value)
+                        .length;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setInsightFilter(opt.value)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      insightFilter === opt.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {opt.label}
+                    <span className="ml-1 opacity-70">{count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="space-y-2">
@@ -905,6 +923,9 @@ export default function BillIntelPage() {
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
                           {SEVERITY_LABELS[insight.severity] || insight.severity}
                         </Badge>
+                        {insight.supplier && (
+                          <span className="text-xs text-zinc-500">{insight.supplier}</span>
+                        )}
                         {isExpert && (
                           <span className="text-[10px] font-mono text-gray-400">#{insight.id}</span>
                         )}

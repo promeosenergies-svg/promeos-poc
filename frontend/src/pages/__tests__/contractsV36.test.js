@@ -371,8 +371,8 @@ describe("V36: ImpactDecisionPanel — achats d'energie", () => {
     expect(panelSrc).toContain('ShoppingCart');
   });
 
-  it('uses useActivationData hook for purchase signals', () => {
-    expect(panelSrc).toContain('useActivationData');
+  it('receives activationData as prop (I4: hoisted to Cockpit.jsx)', () => {
+    expect(panelSrc).toContain('activationData');
     expect(panelSrc).toContain('purchaseSignals');
   });
 

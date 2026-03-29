@@ -11,11 +11,11 @@ import { Database, CheckCircle2, Circle, ArrowRight, Loader2 } from 'lucide-reac
 import { Card, CardBody, InfoTip, Button, Progress } from '../../ui';
 import { TOOLTIPS } from '../../ui/tooltips';
 import { buildActivationChecklist } from '../../models/dataActivationModel';
-import useActivationData from '../../hooks/useActivationData';
 
-export default function DataActivationPanel({ kpis }) {
+export default function DataActivationPanel({ kpis, activationData }) {
   const navigate = useNavigate();
-  const { billingSummary, purchaseSignals, loading } = useActivationData(kpis?.total);
+  // I4 FIX: activationData passé en prop depuis Cockpit.jsx (plus de double hook)
+  const { billingSummary, purchaseSignals, loading } = activationData ?? {};
 
   const activation = useMemo(
     () =>

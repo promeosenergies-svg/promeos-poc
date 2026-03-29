@@ -253,9 +253,7 @@ class TestSyncActionsDedup:
         sync_actions(db_session, org.id)
 
         # L'utilisateur change le status de l'action
-        action = db_session.query(ActionItem).filter(
-            ActionItem.source_type == ActionSourceType.COMPLIANCE
-        ).first()
+        action = db_session.query(ActionItem).filter(ActionItem.source_type == ActionSourceType.COMPLIANCE).first()
         assert action is not None
         action.status = ActionStatus.IN_PROGRESS
         action.owner = "jean@promeos.io"
@@ -268,9 +266,9 @@ class TestSyncActionsDedup:
         r = sync_actions(db_session, org.id)
 
         # L'action est mise à jour MAIS le status/owner sont préservés
-        action_after = db_session.query(ActionItem).filter(
-            ActionItem.source_type == ActionSourceType.COMPLIANCE
-        ).first()
+        action_after = (
+            db_session.query(ActionItem).filter(ActionItem.source_type == ActionSourceType.COMPLIANCE).first()
+        )
         assert action_after.severity == "critical"  # Mis à jour
         assert action_after.status == ActionStatus.IN_PROGRESS  # Préservé
         assert action_after.owner == "jean@promeos.io"  # Préservé

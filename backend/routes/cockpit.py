@@ -277,6 +277,7 @@ def get_kpi_catalog():
 def get_benchmark(
     db: Session = Depends(get_db),
     request: Request = None,
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     [V110] Positionnement des sites par rapport aux benchmarks ADEME (kWh/m²/an).
@@ -284,9 +285,9 @@ def get_benchmark(
     from config.patrimoine_assumptions import BENCHMARK_ADEME_KWH_M2_AN
     from models import not_deleted
 
-    org_id = int(request.headers.get("X-Org-Id", "0")) if request else 0
-    # Scoper aux sites de l'org demandée (fix data leak multi-tenant CRIT-1)
-    site_ids = [s.id for s in _sites_for_org(db, org_id if org_id else None).with_entities(Site.id).all()]
+    # I8 FIX: utiliser resolve_org_id (chaîne de fallback standard)
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
     sites = not_deleted(db.query(Site), Site).filter(Site.id.in_(site_ids), Site.actif == True).all()
 
     # Unified consumption for each site (single source of truth for IPE)

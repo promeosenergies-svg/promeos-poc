@@ -29,6 +29,7 @@ import {
   X,
   ChevronRight,
   Briefcase,
+  BarChart3,
 } from 'lucide-react';
 import {
   Card,
@@ -71,6 +72,8 @@ import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
+import TabConsoSite from '../components/TabConsoSite';
+import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
@@ -982,14 +985,6 @@ function TabReconciliation({ site }) {
   );
 }
 
-function TabStub({ title, text }) {
-  return (
-    <div className="pt-6">
-      <EmptyState title={title} text={text} ctaLabel="Bientôt disponible" />
-    </div>
-  );
-}
-
 const KB_SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function TabConformite({ site }) {
@@ -1567,6 +1562,16 @@ export default function Site360() {
           value={`${site.anomalies_count ?? 0}`}
           color="text-amber-600"
         />
+        <MiniKpi
+          icon={BarChart3}
+          label="Intensité"
+          value={
+            site.surface_m2 > 0
+              ? `${Math.round((site.conso_kwh_an || 0) / site.surface_m2)} kWh/m²`
+              : '—'
+          }
+          color="text-indigo-600"
+        />
       </div>
 
       {/* Tabs */}
@@ -1576,9 +1581,7 @@ export default function Site360() {
       {activeTab === 'resume' && (
         <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />
       )}
-      {activeTab === 'conso' && (
-        <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />
-      )}
+      {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}
       {activeTab === 'factures' && (
         <div className="space-y-4 pt-6">
           <SiteContractsSummary siteId={site.id} />
@@ -1602,9 +1605,7 @@ export default function Site360() {
       )}
       {activeTab === 'reconciliation' && <TabReconciliation site={site} />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
-      {activeTab === 'actions' && (
-        <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />
-      )}
+      {activeTab === 'actions' && <TabActionsSite siteId={site.id} />}
 
       {/* BACS Wizard modal */}
       {showBacs && <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />}

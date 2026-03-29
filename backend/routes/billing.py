@@ -997,6 +997,18 @@ def list_insights(
         )
         action_map = {a.source_id: a.id for a in actions}
 
+    # P1.5: Resolve supplier name for each insight via invoice → contract
+    supplier_map = {}
+    invoice_ids = [i.invoice_id for i in insights if i.invoice_id]
+    if invoice_ids:
+        inv_rows = (
+            db.query(EnergyInvoice.id, EnergyContract.supplier_name)
+            .outerjoin(EnergyContract, EnergyInvoice.contract_id == EnergyContract.id)
+            .filter(EnergyInvoice.id.in_(invoice_ids))
+            .all()
+        )
+        supplier_map = {r[0]: r[1] for r in inv_rows if r[1]}
+
     return {
         "insights": [
             {
@@ -1011,6 +1023,7 @@ def list_insights(
                 "owner": i.owner,
                 "notes": i.notes,
                 "action_id": action_map.get(str(i.id)),
+                "supplier": supplier_map.get(i.invoice_id),
             }
             for i in insights
         ],
@@ -1588,6 +1601,7 @@ def get_billing_periods(
     }
 
 
+@router.get("/coverage")
 @router.get("/coverage-summary")
 def get_coverage_summary(
     request: Request,

@@ -13,10 +13,19 @@ from sqlalchemy.pool import StaticPool
 
 from models.base import Base
 from models.market_models import (
-    MktPrice, RegulatedTariff, PriceSignal,
-    MarketDataFetchLog, PriceDecomposition,
-    MarketDataSource, MarketType, ProductType, PriceZone,
-    TariffType, TariffComponent, SignalType, Resolution,
+    MktPrice,
+    RegulatedTariff,
+    PriceSignal,
+    MarketDataFetchLog,
+    PriceDecomposition,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    TariffType,
+    TariffComponent,
+    SignalType,
+    Resolution,
 )
 
 
@@ -145,22 +154,33 @@ class TestRegulatedTariffCRUD:
             source_name="LOI_FINANCES",
         )
         # Version 2025
-        db_session.add(RegulatedTariff(
-            **base, value=25.79, version="2025-08",
-            valid_from=datetime(2025, 8, 1, tzinfo=timezone.utc),
-            valid_to=datetime(2026, 1, 31, tzinfo=timezone.utc),
-        ))
+        db_session.add(
+            RegulatedTariff(
+                **base,
+                value=25.79,
+                version="2025-08",
+                valid_from=datetime(2025, 8, 1, tzinfo=timezone.utc),
+                valid_to=datetime(2026, 1, 31, tzinfo=timezone.utc),
+            )
+        )
         # Version 2026
-        db_session.add(RegulatedTariff(
-            **base, value=26.58, version="2026-02",
-            valid_from=datetime(2026, 2, 1, tzinfo=timezone.utc),
-            valid_to=None,
-        ))
+        db_session.add(
+            RegulatedTariff(
+                **base,
+                value=26.58,
+                version="2026-02",
+                valid_from=datetime(2026, 2, 1, tzinfo=timezone.utc),
+                valid_to=None,
+            )
+        )
         db_session.commit()
         from sqlalchemy import func
-        count = db_session.query(func.count(RegulatedTariff.id)).filter(
-            RegulatedTariff.component == TariffComponent.CSPE_C4
-        ).scalar()
+
+        count = (
+            db_session.query(func.count(RegulatedTariff.id))
+            .filter(RegulatedTariff.component == TariffComponent.CSPE_C4)
+            .scalar()
+        )
         assert count == 2
 
 
@@ -177,7 +197,7 @@ class TestEnumsCompleteness:
 
     def test_tariff_types_cover_post_arenh(self):
         names = [e.value for e in TariffType]
-        assert "VNU" in names       # Post-ARENH 2026
+        assert "VNU" in names  # Post-ARENH 2026
         assert "TURPE" in names
         assert "CSPE" in names
         assert "CAPACITY" in names

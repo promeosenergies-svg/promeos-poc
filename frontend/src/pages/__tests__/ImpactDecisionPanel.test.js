@@ -152,10 +152,9 @@ describe('GUARD: Impact panel uses scoped data only', () => {
   const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
   const modelSrc = readSrc('models/impactDecisionModel.js');
 
-  it('panel reçoit kpis en prop (pas de fetch direct de sites)', () => {
-    // Le composant prend kpis en prop — il ne fait pas de useScope() direct pour les sites
+  it('panel reçoit kpis et activationData en props (I4: plus de hook local)', () => {
     expect(panelSrc).toMatch(
-      /export\s+default\s+function\s+ImpactDecisionPanel\(\s*\{\s*kpis\s*\}/
+      /export\s+default\s+function\s+ImpactDecisionPanel\(\s*\{\s*kpis\s*,\s*activationData\s*\}/
     );
   });
 
@@ -320,9 +319,9 @@ describe('V32: Compteurs contextuels', () => {
     expect(panelSrc).toContain('available && subLabel');
   });
 
-  it('uses useActivationData hook instead of direct API calls (V32)', () => {
-    expect(panelSrc).toContain('useActivationData');
-    // No direct API import — all fetches delegated to shared hook
+  it('receives activationData as prop (I4: hoisted to Cockpit.jsx)', () => {
+    expect(panelSrc).toContain('activationData');
+    // No direct API import — all fetches delegated to parent via props
     const apiCalls = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
     expect(apiCalls).toHaveLength(0);
   });
@@ -382,8 +381,8 @@ describe('V33: Leviers activables', () => {
     expect(modelSrc).not.toContain('computeActionableLevers');
   });
 
-  it('no direct API imports — uses shared hook (contrainte V33)', () => {
-    expect(panelSrc).toContain('useActivationData');
+  it('no direct API imports — receives activationData as prop (I4)', () => {
+    expect(panelSrc).toContain('activationData');
     const apiImports = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
     expect(apiImports).toHaveLength(0);
   });
