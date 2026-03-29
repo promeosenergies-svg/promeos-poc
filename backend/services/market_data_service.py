@@ -10,16 +10,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models.market_models import (
-    MktPrice, MarketDataSource, MarketType,
-    ProductType, PriceZone, Resolution,
-    MarketDataFetchLog
+    MktPrice,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    Resolution,
+    MarketDataFetchLog,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class MarketDataService:
-
     def __init__(self, db: Session):
         self.db = db
 
@@ -34,14 +37,18 @@ class MarketDataService:
         skipped = 0
 
         for record in records:
-            existing = self.db.query(MktPrice).filter(
-                MktPrice.source == record["source"],
-                MktPrice.market_type == record["market_type"],
-                MktPrice.product_type == record["product_type"],
-                MktPrice.zone == record["zone"],
-                MktPrice.delivery_start == record["delivery_start"],
-                MktPrice.resolution == record["resolution"],
-            ).first()
+            existing = (
+                self.db.query(MktPrice)
+                .filter(
+                    MktPrice.source == record["source"],
+                    MktPrice.market_type == record["market_type"],
+                    MktPrice.product_type == record["product_type"],
+                    MktPrice.zone == record["zone"],
+                    MktPrice.delivery_start == record["delivery_start"],
+                    MktPrice.resolution == record["resolution"],
+                )
+                .first()
+            )
 
             if existing:
                 skipped += 1
@@ -55,10 +62,15 @@ class MarketDataService:
         return {"inserted": inserted, "skipped": skipped}
 
     def log_fetch(
-        self, connector_name: str, fetch_type: str,
-        zone: PriceZone, status: str,
-        records_fetched: int = 0, records_inserted: int = 0,
-        period_start: datetime = None, period_end: datetime = None,
+        self,
+        connector_name: str,
+        fetch_type: str,
+        zone: PriceZone,
+        status: str,
+        records_fetched: int = 0,
+        records_inserted: int = 0,
+        period_start: datetime = None,
+        period_end: datetime = None,
         error_message: str = None,
     ) -> MarketDataFetchLog:
         """Enregistre un log de fetch."""
@@ -106,11 +118,15 @@ class MarketDataService:
     ) -> Optional[float]:
         """Moyenne spot sur N jours glissants."""
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        result = self.db.query(func.avg(MktPrice.price_eur_mwh)).filter(
-            MktPrice.zone == zone,
-            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
-            MktPrice.delivery_start >= cutoff,
-        ).scalar()
+        result = (
+            self.db.query(func.avg(MktPrice.price_eur_mwh))
+            .filter(
+                MktPrice.zone == zone,
+                MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+                MktPrice.delivery_start >= cutoff,
+            )
+            .scalar()
+        )
         return round(result, 2) if result else None
 
     def get_forward_curves(
@@ -119,15 +135,22 @@ class MarketDataService:
         product: ProductType = ProductType.BASELOAD,
     ) -> list[MktPrice]:
         """Retourne les forward curves (CAL, Q, M)."""
-        return self.db.query(MktPrice).filter(
-            MktPrice.zone == zone,
-            MktPrice.product_type == product,
-            MktPrice.market_type.in_([
-                MarketType.FORWARD_YEAR,
-                MarketType.FORWARD_QUARTER,
-                MarketType.FORWARD_MONTH,
-            ]),
-        ).order_by(MktPrice.delivery_start.asc()).all()
+        return (
+            self.db.query(MktPrice)
+            .filter(
+                MktPrice.zone == zone,
+                MktPrice.product_type == product,
+                MktPrice.market_type.in_(
+                    [
+                        MarketType.FORWARD_YEAR,
+                        MarketType.FORWARD_QUARTER,
+                        MarketType.FORWARD_MONTH,
+                    ]
+                ),
+            )
+            .order_by(MktPrice.delivery_start.asc())
+            .all()
+        )
 
     def get_latest_price(
         self,
@@ -135,10 +158,15 @@ class MarketDataService:
         market_type: MarketType = MarketType.SPOT_DAY_AHEAD,
     ) -> Optional[MktPrice]:
         """Retourne le dernier prix connu."""
-        return self.db.query(MktPrice).filter(
-            MktPrice.zone == zone,
-            MktPrice.market_type == market_type,
-        ).order_by(MktPrice.delivery_start.desc()).first()
+        return (
+            self.db.query(MktPrice)
+            .filter(
+                MktPrice.zone == zone,
+                MktPrice.market_type == market_type,
+            )
+            .order_by(MktPrice.delivery_start.desc())
+            .first()
+        )
 
     def get_price_stats(
         self,
@@ -147,16 +175,20 @@ class MarketDataService:
     ) -> dict:
         """Statistiques prix spot sur N jours."""
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        q = self.db.query(
-            func.avg(MktPrice.price_eur_mwh).label("avg"),
-            func.min(MktPrice.price_eur_mwh).label("min"),
-            func.max(MktPrice.price_eur_mwh).label("max"),
-            func.count(MktPrice.id).label("count"),
-        ).filter(
-            MktPrice.zone == zone,
-            MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
-            MktPrice.delivery_start >= cutoff,
-        ).first()
+        q = (
+            self.db.query(
+                func.avg(MktPrice.price_eur_mwh).label("avg"),
+                func.min(MktPrice.price_eur_mwh).label("min"),
+                func.max(MktPrice.price_eur_mwh).label("max"),
+                func.count(MktPrice.id).label("count"),
+            )
+            .filter(
+                MktPrice.zone == zone,
+                MktPrice.market_type == MarketType.SPOT_DAY_AHEAD,
+                MktPrice.delivery_start >= cutoff,
+            )
+            .first()
+        )
 
         return {
             "zone": zone.value,
@@ -169,11 +201,15 @@ class MarketDataService:
 
     def get_data_freshness(self) -> dict:
         """Verifie la fraicheur des donnees par source."""
-        sources = self.db.query(
-            MktPrice.source,
-            func.max(MktPrice.fetched_at).label("last_fetch"),
-            func.count(MktPrice.id).label("total"),
-        ).group_by(MktPrice.source).all()
+        sources = (
+            self.db.query(
+                MktPrice.source,
+                func.max(MktPrice.fetched_at).label("last_fetch"),
+                func.count(MktPrice.id).label("total"),
+            )
+            .group_by(MktPrice.source)
+            .all()
+        )
 
         return {
             s.source.value: {

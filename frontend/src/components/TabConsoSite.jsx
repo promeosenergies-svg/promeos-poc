@@ -38,7 +38,7 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function TabConsoSite({ siteId, siteName }) {
+export default function TabConsoSite({ siteId }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // loading | ready | empty | error
   const [rawSeries, setRawSeries] = useState([]);

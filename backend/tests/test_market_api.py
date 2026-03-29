@@ -44,7 +44,6 @@ def client(db_session):
 
 
 class TestMarketAPI:
-
     def test_spot_latest_empty(self, client):
         resp = client.get("/api/market/spot/latest")
         assert resp.status_code == 200

@@ -13,9 +13,13 @@ from typing import Optional
 import pandas as pd
 
 from models.market_models import (
-    MktPrice, MarketDataSource, MarketType,
-    ProductType, PriceZone, Resolution,
-    MarketDataFetchLog
+    MktPrice,
+    MarketDataSource,
+    MarketType,
+    ProductType,
+    PriceZone,
+    Resolution,
+    MarketDataFetchLog,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +45,7 @@ class EntsoeConnector:
 
     def __init__(self, api_key: str):
         from entsoe import EntsoePandasClient
+
         self.client = EntsoePandasClient(api_key=api_key)
         self.source = MarketDataSource.ENTSOE
 
@@ -59,9 +64,7 @@ class EntsoeConnector:
         end_ts = pd.Timestamp(end, tz="Europe/Paris")
 
         try:
-            series = self.client.query_day_ahead_prices(
-                country_code, start=start_ts, end=end_ts
-            )
+            series = self.client.query_day_ahead_prices(country_code, start=start_ts, end=end_ts)
         except Exception as e:
             logger.error(f"ENTSO-E fetch failed: {e}")
             raise
@@ -71,21 +74,22 @@ class EntsoeConnector:
             dt = ts.to_pydatetime()
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            records.append({
-                "source": self.source,
-                "market_type": MarketType.SPOT_DAY_AHEAD,
-                "product_type": ProductType.HOURLY,
-                "zone": zone,
-                "delivery_start": dt,
-                "delivery_end": dt + timedelta(hours=1),
-                "price_eur_mwh": float(price),
-                "resolution": Resolution.PT60M,
-                "fetched_at": datetime.now(timezone.utc),
-                "quality_flag": "GOOD",
-            })
+            records.append(
+                {
+                    "source": self.source,
+                    "market_type": MarketType.SPOT_DAY_AHEAD,
+                    "product_type": ProductType.HOURLY,
+                    "zone": zone,
+                    "delivery_start": dt,
+                    "delivery_end": dt + timedelta(hours=1),
+                    "price_eur_mwh": float(price),
+                    "resolution": Resolution.PT60M,
+                    "fetched_at": datetime.now(timezone.utc),
+                    "quality_flag": "GOOD",
+                }
+            )
 
-        logger.info(f"ENTSO-E: fetched {len(records)} prices for {zone.value} "
-                     f"from {start.date()} to {end.date()}")
+        logger.info(f"ENTSO-E: fetched {len(records)} prices for {zone.value} from {start.date()} to {end.date()}")
         return records
 
     def fetch_generation_by_type(

@@ -25,6 +25,7 @@ from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_GAZ_
 
 EUR_PER_KWH = {"electricity": DEFAULT_PRICE_ELEC_EUR_KWH, "gas": DEFAULT_PRICE_GAZ_EUR_KWH}
 from config.emission_factors import get_emission_factor
+
 CO2_KG_PER_KWH = {"electricity": get_emission_factor("ELEC"), "gas": get_emission_factor("GAZ")}
 
 # ── Seasonal weight profiles (Jan-Dec, sum ~12.0) ─────────────────────────────

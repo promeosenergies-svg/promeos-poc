@@ -1581,7 +1581,7 @@ export default function Site360() {
       {activeTab === 'resume' && (
         <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />
       )}
-      {activeTab === 'conso' && <TabConsoSite siteId={site.id} siteName={site.nom} />}
+      {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}
       {activeTab === 'factures' && (
         <div className="space-y-4 pt-6">
           <SiteContractsSummary siteId={site.id} />
