@@ -920,7 +920,7 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Prix base spot (EUR/MWh)
+                  Prix base spot (€/MWh)
                 </label>
                 <input
                   type="number"
@@ -1100,7 +1100,7 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
           {(offer.structure === OfferStructure.FIXE ||
             offer.structure === OfferStructure.HYBRIDE) && (
             <div>
-              <label className="text-xs text-gray-500">Prix fixe (EUR/MWh)</label>
+              <label className="text-xs text-gray-500">Prix fixe (€/MWh)</label>
               <input
                 type="number"
                 className="block w-24 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
@@ -1115,7 +1115,7 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
             offer.structure === OfferStructure.HYBRIDE) && (
             <>
               <div>
-                <label className="text-xs text-gray-500">Spread (EUR/MWh)</label>
+                <label className="text-xs text-gray-500">Spread (€/MWh)</label>
                 <input
                   type="number"
                   className="block w-20 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
@@ -1126,7 +1126,7 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500">Cap (EUR/MWh)</label>
+                <label className="text-xs text-gray-500">Cap (€/MWh)</label>
                 <input
                   type="number"
                   placeholder="—"
@@ -1202,7 +1202,7 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highl
           <div>
             <strong>Intermediation:</strong>{' '}
             {offer.intermediation?.hasIntermediary
-              ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' EUR/MWh' : 'Non divulgué'})`
+              ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' €/MWh' : 'Non divulgué'})`
               : 'Non'}
           </div>
           <div>
@@ -1315,7 +1315,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
           label="Meilleur P50"
           value={
             scoredOffers.length > 0 && scoredOffers.some((s) => s.corridor?.p50 != null)
-              ? `${fmtNum(Math.min(...scoredOffers.filter((s) => s.corridor?.p50 != null).map((s) => s.corridor.p50)), 1)} EUR/MWh`
+              ? `${fmtNum(Math.min(...scoredOffers.filter((s) => s.corridor?.p50 != null).map((s) => s.corridor.p50)), 1)} €/MWh`
               : '—'
           }
           icon={<TrendingUp size={18} />}
@@ -1535,7 +1535,7 @@ function StepScoring({ scoredOffers, recommendation }) {
                   <div className="flex items-center gap-4 text-xs">
                     <span className="text-gray-500">{fmtPct(b.sharePct, true, 1)}</span>
                     <span className="text-gray-700 font-medium w-20 text-right">
-                      {b.eurPerMwh != null ? `${fmtNum(b.eurPerMwh, 2)} EUR/MWh` : 'est.'}
+                      {b.eurPerMwh != null ? `${fmtNum(b.eurPerMwh, 2)} €/MWh` : 'est.'}
                     </span>
                     <Badge
                       variant={
@@ -1681,7 +1681,7 @@ function StepDecision({
             <div className="text-right">
               <div className="text-2xl font-bold text-gray-900">
                 {fmtNum(bestScored.corridor.p50, 1)}{' '}
-                <span className="text-sm font-normal text-gray-500">EUR/MWh</span>
+                <span className="text-sm font-normal text-gray-500">€/MWh</span>
               </div>
               <div className="text-sm text-gray-500">
                 {Math.round(bestScored.annualCostP50).toLocaleString('fr-FR')} €/an

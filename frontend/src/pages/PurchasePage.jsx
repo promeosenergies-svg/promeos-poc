@@ -755,7 +755,7 @@ export default function PurchasePage() {
                     <Lock size={12} className="text-gray-400 ml-auto" />
                   </div>
                   <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                    <Info size={10} /> Post-ARENH — élec uniquement
+                    <Info size={10} /> Marché de gros — élec uniquement
                   </p>
                 </div>
               </div>
