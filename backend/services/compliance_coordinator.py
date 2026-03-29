@@ -40,11 +40,13 @@ def recompute_site_full(db: Session, site_id: int) -> dict:
     _logger.info("recompute_site_full site=%d: étape 1 (legacy snapshot) done", site_id)
 
     # ── Étape 1b : avancement DT dynamique (conso réelle vs référence) ───
+    # Ne PAS écraser l'avancement issu de l'étape 1 (obligations) si la trajectoire
+    # retourne 0 à cause de données manquantes (org_id, consommation...).
     try:
         from services.dt_trajectory_service import update_site_avancement
 
         avancement = update_site_avancement(db, site_id)
-        if avancement is not None:
+        if avancement is not None and avancement > 0:
             snapshot["avancement_decret_pct"] = avancement
             _logger.info(
                 "recompute_site_full site=%d: étape 1b (avancement DT) = %.1f%%",
@@ -52,7 +54,11 @@ def recompute_site_full(db: Session, site_id: int) -> dict:
                 avancement,
             )
         else:
-            _logger.debug("recompute_site_full site=%d: étape 1b — avancement incalculable", site_id)
+            _logger.debug(
+                "recompute_site_full site=%d: étape 1b — trajectoire non calculable, conserve avancement obligations (%.1f%%)",
+                site_id,
+                snapshot.get("avancement_decret_pct", 0),
+            )
     except Exception as exc:
         _logger.warning(
             "recompute_site_full site=%d: étape 1b (avancement DT) failed (%s) — skipping",

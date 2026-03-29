@@ -9,17 +9,24 @@ from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
 from regops.data_quality_specs import DATA_QUALITY_SPECS
-from models import RegAssessment, Site, not_deleted
-from services.compliance_score_service import compute_site_compliance_score, compute_portfolio_compliance
+from models import RegAssessment, Site, Portefeuille, EntiteJuridique, not_deleted
+from services.compliance_score_service import (
+    compute_site_compliance_score,
+    compute_portfolio_compliance,
+    sync_site_unified_score,
+)
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
 
 
 @router.get("/site/{site_id}")
 def get_site_assessment(site_id: int, db: Session = Depends(get_db)):
-    """Evaluation RegOps complete d'un site (fresh compute)."""
+    """Evaluation RegOps complete d'un site (fresh compute + persist + sync A.2)."""
     try:
         summary = evaluate_site(db, site_id)
+        persist_assessment(db, summary)
+        sync_site_unified_score(db, site_id)
+        db.commit()
         return {
             "site_id": summary.site_id,
             "global_status": summary.global_status,
@@ -191,8 +198,22 @@ def get_org_dashboard(
     db: Session = Depends(get_db),
 ):
     """KPIs org-level — score from unified A.2 service."""
+    # Resolve site_ids for the org (same join chain as cockpit)
+    site_query = not_deleted(db.query(Site.id), Site)
+    if org_id:
+        site_query = (
+            site_query.join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+            .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+            .filter(EntiteJuridique.organisation_id == org_id)
+        )
+    site_ids = [row[0] for row in site_query.all()]
+
     # Status counts from RegAssessment cache (findings-level, fast)
-    assessments = db.query(RegAssessment).filter(RegAssessment.object_type == "site").all()
+    assessments = (
+        db.query(RegAssessment).filter(RegAssessment.object_type == "site", RegAssessment.object_id.in_(site_ids)).all()
+        if site_ids
+        else []
+    )
 
     total = len(assessments)
     compliant = sum(1 for a in assessments if "COMPLIANT" in str(a.global_status))
@@ -204,7 +225,6 @@ def get_org_dashboard(
         portfolio = compute_portfolio_compliance(db, org_id)
         avg_score = portfolio["avg_score"]
     else:
-        # Fallback: compute from cached assessments (legacy compat)
         avg_score = sum(a.compliance_score for a in assessments if a.compliance_score) / max(1, total)
 
     return {

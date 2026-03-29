@@ -182,11 +182,13 @@ def update_site_avancement(db: Session, site_id: int) -> Optional[float]:
     """
     Recalcule et persiste avancement_decret_pct sur le Site.
     Retourne la nouvelle valeur ou None si incalculable.
+    Ne persiste pas si la trajectoire retourne 0 avec une confiance basse
+    (evite d'écraser l'avancement issu des obligations).
     """
     from models import Site
 
     result = compute_site_trajectory(db, site_id)
-    if result.avancement_2030 is not None:
+    if result.avancement_2030 is not None and result.avancement_2030 > 0:
         site = db.query(Site).filter(Site.id == site_id).first()
         if site:
             site.avancement_decret_pct = result.avancement_2030
