@@ -63,12 +63,12 @@ describe('Cockpit.jsx — sections existantes conservees', () => {
     expect(cockpitSrc).toMatch(/useState\(null\).*KPI id or null|evidenceOpen/);
   });
 
-  it('conserve ExecutiveKpiRow', () => {
-    expect(cockpitSrc).toMatch(/<ExecutiveKpiRow/);
+  it('conserve HeroImpactBar (V1+ remplace ExecutiveKpiRow)', () => {
+    expect(cockpitSrc).toMatch(/<HeroImpactBar/);
   });
 
-  it('conserve EssentialsRow', () => {
-    expect(cockpitSrc).toMatch(/<EssentialsRow/);
+  it('conserve SanteKpiGrid (V1+ remplace EssentialsRow)', () => {
+    expect(cockpitSrc).toMatch(/<SanteKpiGrid/);
   });
 
   it('conserve ModuleLaunchers', () => {

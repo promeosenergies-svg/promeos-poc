@@ -119,8 +119,12 @@ describe('D. Cockpit compact market info', () => {
     ).toBe(true);
   });
 
-  it('imports MarketContextCompact or getMarketContext', () => {
-    expect(src.includes('MarketContextCompact') || src.includes('getMarketContext')).toBe(true);
+  it('imports market or executive V2 data (V1+ refactor)', () => {
+    expect(
+      src.includes('MarketContextCompact') ||
+        src.includes('getMarketContext') ||
+        src.includes('useExecutiveV2')
+    ).toBe(true);
   });
 });
 

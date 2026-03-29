@@ -485,9 +485,8 @@ describe('Guard: modules purs V37', () => {
     expect(src).not.toContain('dataActivation');
   });
 
-  it('Cockpit.jsx importe DataActivationPanel', () => {
+  it('Cockpit.jsx importe SanteKpiGrid (V1+ remplace DataActivationPanel)', () => {
     const src = readSrc('pages/Cockpit.jsx');
-    expect(src).toContain('DataActivationPanel');
-    expect(src).toContain("'./cockpit/DataActivationPanel'");
+    expect(src).toContain('SanteKpiGrid');
   });
 });

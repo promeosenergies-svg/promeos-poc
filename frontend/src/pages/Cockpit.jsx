@@ -1,7 +1,6 @@
 /**
- * PROMEOS — Vue exécutive (/cockpit) Cockpit V2
- * Résumé exécutif + KPIs décideur + Briefing + Risques + Opportunités.
- * EssentialsRow + données relégués en bas.
+ * PROMEOS — Vue exécutive (/cockpit) V1+
+ * Hero Impact + 4 KPI Santé + Actions Prioritaires + Explorer + Table sites.
  */
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,15 +11,12 @@ import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import {
   getNotificationsSummary,
   getComplianceTimeline,
-  getMarketContext,
   getComplianceScoreTrend,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtKwh, fmtEur } from '../utils/format';
 import { toActionsList } from '../services/routes';
 import {
-  Button,
-  Card,
   PageShell,
   Progress,
   Modal,
@@ -35,28 +31,13 @@ import {
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import ErrorState from '../ui/ErrorState';
-// Cockpit V3 — model + sub-components
-import {
-  buildTopSites,
-  buildOpportunities,
-  checkConsistency,
-  buildExecutiveKpis,
-} from '../models/dashboardEssentials';
-// V3: removed imports — buildWatchlist, buildBriefing, buildTodayActions,
-// buildExecutiveSummary, computeHealthState (replaced by PriorityHero + topActions)
+import { buildTopSites, buildOpportunities, checkConsistency } from '../models/dashboardEssentials';
 import CockpitHeaderSignals from './cockpit/CockpitHeaderSignals';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
-import EssentialsRow from './cockpit/EssentialsRow';
-import OpportunitiesCard from './cockpit/OpportunitiesCard';
 import TopSitesCard from './cockpit/TopSitesCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
-import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
-import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
-import DataActivationPanel from './cockpit/DataActivationPanel';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
-import { MarketContextCompact } from '../components/purchase/MarketContextBanner';
-import MarketWidget from './cockpit/MarketWidget';
 import { READINESS_WEIGHTS, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 import { RiskBadge } from '../lib/risk/normalizeRisk';
 import {
@@ -67,7 +48,6 @@ import {
 } from '../ui/evidence.fixtures';
 import { useComplianceMeta } from '../hooks/useComplianceMeta';
 import { useCockpitData } from '../hooks/useCockpitData';
-import useActivationData from '../hooks/useActivationData';
 import CockpitHero from './cockpit/CockpitHero';
 import TrajectorySection from './cockpit/TrajectorySection';
 import ActionsImpact from './cockpit/ActionsImpact';
@@ -75,6 +55,11 @@ import PerformanceSitesCard from './cockpit/PerformanceSitesCard';
 import VecteurEnergetiqueCard from './cockpit/VecteurEnergetiqueCard';
 import AlertesPrioritaires from './cockpit/AlertesPrioritaires';
 import EvenementsRecents from './cockpit/EvenementsRecents';
+// V1+ Executive — hero impact + santé + actions (backend-driven)
+import { useExecutiveV2 } from '../hooks/useExecutiveV2';
+import HeroImpactBar from './cockpit/HeroImpactBar';
+import SanteKpiGrid from './cockpit/SanteKpiGrid';
+import PriorityActions from './cockpit/PriorityActions';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -110,8 +95,6 @@ const Cockpit = () => {
   const [nextDeadline, setNextDeadline] = useState(null);
   const [_totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   // A.1: consoSource — now from useCockpitData (I3 FIX: no double fetch)
-  // Step 24: Market context compact
-  const [marketContext, setMarketContext] = useState(null);
   // Step 33: Compliance score trend (6 months)
   const [scoreTrend, setScoreTrend] = useState(null);
 
@@ -124,8 +107,8 @@ const Cockpit = () => {
     loading: cockpitLoading,
   } = useCockpitData();
 
-  // I4 FIX: un seul appel useActivationData, passé en props aux sous-composants
-  const activationData = useActivationData(scopedSites.length);
+  // ── V1+ Executive data (single backend call) ──
+  const { data: execV2, loading: execV2Loading } = useExecutiveV2();
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -165,13 +148,6 @@ const Cockpit = () => {
         setTotalPenaltyExposure(null);
       });
   }, [org?.id]);
-
-  // Step 24: Fetch market context
-  useEffect(() => {
-    getMarketContext('ELEC')
-      .then(setMarketContext)
-      .catch(() => setMarketContext(null));
-  }, []);
 
   // Step 33: Fetch compliance score trend
   useEffect(() => {
@@ -253,7 +229,6 @@ const Cockpit = () => {
     [kpis, scopedSites, isExpert]
   ); // eslint-disable-line react-hooks/exhaustive-deps
   const topSites = useMemo(() => buildTopSites(scopedSites), [scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
-  const executiveKpis = useMemo(() => buildExecutiveKpis(kpis, scopedSites), [kpis, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Societe'} / ${portefeuille.nom}`
@@ -533,8 +508,8 @@ const Cockpit = () => {
         </div>
       )}
 
-      {/* ── Tabs navigation ── */}
-      <div className="flex gap-6 border-b border-gray-200 mb-4">
+      {/* ── Tabs navigation (sticky sous le header) ── */}
+      <div className="flex gap-6 border-b border-gray-200 mb-4 sticky top-0 z-10 bg-white -mx-6 px-6 pt-2">
         <button className="pb-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
           Vue exécutive
         </button>
@@ -545,56 +520,6 @@ const Cockpit = () => {
           Tableau de bord
         </button>
       </div>
-
-      {/* ═══════════ ZONE 1 : PRIORITÉ #1 (expert only — remplacé par CockpitHero+Alertes) ═══════════ */}
-      {isExpert && (
-        <div
-          className={`rounded-xl border-l-4 p-5 cursor-pointer hover:shadow-md transition ${
-            priority1.type === 'critical'
-              ? 'bg-red-50 border-red-500'
-              : priority1.type === 'warning'
-                ? 'bg-amber-50 border-amber-500'
-                : priority1.type === 'info'
-                  ? 'bg-blue-50 border-blue-500'
-                  : 'bg-green-50 border-green-500'
-          }`}
-          onClick={() => navigate(priority1.cta.path)}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p
-                className={`text-base font-semibold ${
-                  priority1.type === 'critical'
-                    ? 'text-red-900'
-                    : priority1.type === 'warning'
-                      ? 'text-amber-900'
-                      : priority1.type === 'info'
-                        ? 'text-blue-900'
-                        : 'text-green-900'
-                }`}
-              >
-                {priority1.title}
-              </p>
-              <div className="flex items-center gap-3 mt-1.5 text-sm">
-                {priority1.impact && (
-                  <span className="font-medium text-red-700">{priority1.impact}</span>
-                )}
-                {priority1.deadline && <span className="text-gray-600">{priority1.deadline}</span>}
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(priority1.cta.path);
-              }}
-            >
-              {priority1.cta.label} <ArrowRight size={14} />
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* ═══════════ STEP 6: COCKPIT HERO + TRAJECTOIRE + ACTIONS ═══════════ */}
       <CockpitHero
@@ -718,236 +643,271 @@ const Cockpit = () => {
       )}
 
       {/* ═══════════ ZONE 4 : ANALYSE DÉTAILLÉE (I9: visible pour tous) ═══════════ */}
-      <div className="flex justify-center pt-2">
-        <button
-          onClick={() => setShowDetail((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition"
-        >
-          {showDetail ? 'Masquer le détail' : 'Plus de détails'}
-          <svg
-            className={`w-4 h-4 transition-transform ${showDetail ? 'rotate-180' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      {/* ── Toggle détail V1+ ── */}
+      <button
+        onClick={() => setShowDetail((v) => !v)}
+        className={`w-full group flex items-center justify-between px-5 py-3 rounded-xl border transition-all duration-200 ${
+          showDetail
+            ? 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+            : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200/60 hover:border-blue-300 hover:shadow-sm'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              showDetail ? 'bg-gray-200' : 'bg-blue-100 group-hover:bg-blue-200'
+            }`}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
+            <svg
+              className={`w-4 h-4 transition-transform duration-200 ${showDetail ? 'rotate-180 text-gray-500' : 'text-blue-600'}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+          <div className="text-left">
+            <p
+              className={`text-sm font-semibold ${showDetail ? 'text-gray-600' : 'text-gray-800'}`}
+            >
+              {showDetail ? 'Masquer le détail' : 'Voir le détail complet'}
+            </p>
+            {!showDetail && (
+              <p className="text-xs text-gray-400">
+                Impact financier · KPIs santé · Actions prioritaires · Sites
+              </p>
+            )}
+          </div>
+        </div>
+        {!showDetail && (
+          <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+            Explorer →
+          </span>
+        )}
+      </button>
 
       {showDetail && (
-        <div className="space-y-4">
-          {/* KPI Décideur — visible pour tous */}
-          <div data-tour="step-1">
-            <ExecutiveKpiRow
-              kpis={executiveKpis}
-              onNavigate={navigate}
-              onEvidence={setEvidenceOpen}
-              isExpert={isExpert}
-              scoreTrend={scoreTrend}
+        <div className="space-y-4" data-tour="step-1">
+          {/* ═══════════ V1+ ZONE 1 : HERO IMPACT FINANCIER ═══════════ */}
+          {execV2 && (
+            <HeroImpactBar
+              totalEur={execV2.impact.total_eur}
+              conformiteEur={execV2.impact.conformite_eur}
+              facturesEur={execV2.impact.factures_eur}
+              optimisationEur={execV2.impact.optimisation_eur}
+              sitesConcernes={execV2.impact.sites_concernes}
             />
-          </div>
+          )}
 
-          {/* Impact & Décision — visible pour tous */}
-          <ImpactDecisionPanel kpis={kpis} activationData={activationData} />
+          {/* ═══════════ V1+ ZONE 2 : 4 KPI SANTÉ ═══════════ */}
+          {execV2 && <SanteKpiGrid sante={execV2.sante} />}
 
-          {/* Expert only — sections techniques */}
-          {isExpert && <MarketWidget profile="C4" />}
-          {isExpert && <MarketContextCompact marketContext={marketContext} onNavigate={navigate} />}
+          {/* ═══════════ V1+ ZONE 3 : ACTIONS PRIORITAIRES ═══════════ */}
+          {execV2 && <PriorityActions actions={execV2.actions} />}
 
-          {/* Top Sites (multi-site only) */}
-          {!isSingleSite && <TopSitesCard topSites={topSites} onNavigate={navigate} />}
-
-          {/* Module Launchers (replié) */}
+          {/* ═══════════ ZONE 4 : EXPLORER — 1 seule instance ═══════════ */}
           <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
 
-          {/* Données & connexions — expert only */}
-          {isExpert && (
-            <EssentialsRow
-              kpis={kpis}
-              sites={scopedSites}
-              onOpenMaturite={() => setShowMaturiteModal(true)}
-              onNavigate={navigate}
-              consoSource={consoSource}
-            />
+          {/* ═══════════ ZONE 5 : TABLE SITES — accordion fermé ═══════════ */}
+          {!isSingleSite && (
+            <details className="rounded-xl border border-blue-200/60 bg-gradient-to-r from-blue-50/40 to-indigo-50/40 group open:bg-white open:from-white open:to-white open:border-gray-200">
+              <summary className="px-5 py-3.5 cursor-pointer select-none flex items-center justify-between gap-3 hover:shadow-sm transition-all duration-200 list-none [&::-webkit-details-marker]:hidden">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-100 group-open:bg-gray-200 transition-colors">
+                    <Search
+                      size={15}
+                      className="text-blue-600 group-open:text-gray-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 group-open:text-gray-600">
+                      <Explain term="distribution_sites">Analyse détaillée des sites</Explain>
+                    </p>
+                    <p className="text-xs text-gray-400 group-open:hidden">
+                      {filteredSites.length} site{filteredSites.length > 1 ? 's' : ''} · tri,
+                      recherche, navigation
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full group-open:hidden">
+                    Voir les sites →
+                  </span>
+                  <svg
+                    className="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 group-open:rotate-180"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </summary>
+              <div className="border-t border-gray-100">
+                {/* Portfolio tabs */}
+                {!portefeuille && ptfWithCounts.length > 1 && (
+                  <div className="px-6 pt-3">
+                    <Tabs
+                      tabs={ptfTabs}
+                      active={activePtf}
+                      onChange={(id) => {
+                        setActivePtf(id);
+                        setSitePage(1);
+                        setSiteSearch('');
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="px-6 py-4 flex items-center justify-between gap-4">
+                  <span className="text-sm text-gray-500">
+                    {filteredSites.length} site{filteredSites.length > 1 ? 's' : ''}
+                  </span>
+                  <div className="relative w-64">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Rechercher un site…"
+                      value={siteSearch}
+                      onChange={(e) => {
+                        setSiteSearch(e.target.value);
+                        setSitePage(1);
+                      }}
+                      className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {filteredSites.length === 0 ? (
+                  <div className="py-12">
+                    <EmptyState
+                      icon={Search}
+                      title="Aucun site trouvé"
+                      text={
+                        siteSearch
+                          ? 'Essayez un autre terme de recherche.'
+                          : 'Aucun site dans ce périmètre.'
+                      }
+                      ctaLabel={siteSearch ? 'Effacer' : undefined}
+                      onCta={siteSearch ? () => setSiteSearch('') : undefined}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <Table>
+                      <Thead>
+                        <tr>
+                          <Th
+                            sortable
+                            sorted={siteSort.col === 'nom' ? siteSort.dir : ''}
+                            onSort={() => handleSiteSort('nom')}
+                          >
+                            Site
+                          </Th>
+                          <Th
+                            sortable
+                            sorted={siteSort.col === 'ville' ? siteSort.dir : ''}
+                            onSort={() => handleSiteSort('ville')}
+                          >
+                            Ville
+                          </Th>
+                          <Th
+                            sortable
+                            sorted={siteSort.col === 'surface_m2' ? siteSort.dir : ''}
+                            onSort={() => handleSiteSort('surface_m2')}
+                          >
+                            Surface
+                          </Th>
+                          <Th
+                            sortable
+                            sorted={siteSort.col === 'statut_conformite' ? siteSort.dir : ''}
+                            onSort={() => handleSiteSort('statut_conformite')}
+                          >
+                            <Explain term="statut_conformite">Conformité</Explain>
+                          </Th>
+                          <Th
+                            sortable
+                            sorted={siteSort.col === 'conso_kwh_an' ? siteSort.dir : ''}
+                            onSort={() => handleSiteSort('conso_kwh_an')}
+                            className="text-right"
+                          >
+                            Conso kWh/an
+                          </Th>
+                          <Th className="w-10" />
+                        </tr>
+                      </Thead>
+                      <Tbody>
+                        {sitesPageData.map((site) => {
+                          const si = getStatusInfo(site.statut_conformite);
+                          return (
+                            <Tr
+                              key={site.id}
+                              onClick={() => navigate(`/sites/${site.id}`)}
+                              className="group cursor-pointer hover:bg-blue-50/40"
+                            >
+                              <Td>
+                                <div className="font-medium text-gray-900">{site.nom}</div>
+                                <div className="text-xs text-gray-400">{site.usage}</div>
+                              </Td>
+                              <Td>{site.ville}</Td>
+                              <Td>
+                                {site.surface_m2?.toLocaleString('fr-FR')}
+                                {'\u00A0'}m²
+                              </Td>
+                              <Td>
+                                <div className="flex items-center gap-1.5">
+                                  <StatusDot status={si.dot} />
+                                  <span className="text-xs text-gray-600">{si.label}</span>
+                                </div>
+                              </Td>
+                              <Td className="text-right text-gray-600">
+                                {site.conso_kwh_an > 0
+                                  ? site.conso_kwh_an.toLocaleString('fr-FR')
+                                  : '-'}
+                              </Td>
+                              <Td className="text-right">
+                                <ArrowRight
+                                  size={14}
+                                  className="text-gray-300 group-hover:text-gray-500 transition"
+                                />
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                      </Tbody>
+                    </Table>
+                    <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
+                      <Pagination
+                        page={sitePage}
+                        pageSize={sitePageSize}
+                        total={filteredSites.length}
+                        onChange={setSitePage}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </details>
           )}
 
-          {/* Data Activation — masqué si tout activé, expert only */}
-          {isExpert && kpis.couvertureDonnees < 100 && (
-            <DataActivationPanel kpis={kpis} activationData={activationData} />
-          )}
-
-          {/* Expert only */}
-          {isExpert && opportunities.length > 0 && (
-            <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
-          )}
+          {/* Expert only — sections techniques avancées */}
           {isExpert && <DataQualityWidget />}
           {isExpert && !consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
         </div>
-      )}
-
-      {/* Portfolio tabs + Sites Table — inside detail zone, expert only */}
-      {isExpert && showDetail && !portefeuille && !isSingleSite && ptfWithCounts.length > 1 && (
-        <Tabs
-          tabs={ptfTabs}
-          active={activePtf}
-          onChange={(id) => {
-            setActivePtf(id);
-            setSitePage(1);
-            setSiteSearch('');
-          }}
-        />
-      )}
-
-      {isExpert && showDetail && !isSingleSite && (
-        <Card>
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              <Explain term="distribution_sites">Sites</Explain> ({filteredSites.length})
-            </h3>
-            <div className="relative w-64">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Rechercher un site…"
-                value={siteSearch}
-                onChange={(e) => {
-                  setSiteSearch(e.target.value);
-                  setSitePage(1);
-                }}
-                className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {filteredSites.length === 0 ? (
-            <div className="py-12">
-              <EmptyState
-                icon={Search}
-                title="Aucun site trouvé"
-                text={
-                  siteSearch
-                    ? 'Essayez un autre terme de recherche.'
-                    : 'Aucun site dans ce périmètre.'
-                }
-                ctaLabel={siteSearch ? 'Effacer' : undefined}
-                onCta={siteSearch ? () => setSiteSearch('') : undefined}
-              />
-            </div>
-          ) : (
-            <>
-              <Table>
-                <Thead>
-                  <tr>
-                    <Th
-                      sortable
-                      sorted={siteSort.col === 'nom' ? siteSort.dir : ''}
-                      onSort={() => handleSiteSort('nom')}
-                    >
-                      Site
-                    </Th>
-                    <Th
-                      sortable
-                      sorted={siteSort.col === 'ville' ? siteSort.dir : ''}
-                      onSort={() => handleSiteSort('ville')}
-                    >
-                      Ville
-                    </Th>
-                    <Th
-                      sortable
-                      sorted={siteSort.col === 'surface_m2' ? siteSort.dir : ''}
-                      onSort={() => handleSiteSort('surface_m2')}
-                    >
-                      Surface
-                    </Th>
-                    <Th
-                      sortable
-                      sorted={siteSort.col === 'statut_conformite' ? siteSort.dir : ''}
-                      onSort={() => handleSiteSort('statut_conformite')}
-                    >
-                      <Explain term="statut_conformite">Conformité</Explain>
-                    </Th>
-                    <Th
-                      sortable
-                      sorted={siteSort.col === 'risque_eur' ? siteSort.dir : ''}
-                      onSort={() => handleSiteSort('risque_eur')}
-                      className="text-right"
-                    >
-                      Risque
-                    </Th>
-                    {isExpert && (
-                      <Th
-                        sortable
-                        sorted={siteSort.col === 'conso_kwh_an' ? siteSort.dir : ''}
-                        onSort={() => handleSiteSort('conso_kwh_an')}
-                        className="text-right"
-                      >
-                        Conso kWh/an
-                      </Th>
-                    )}
-                    <Th className="w-10" />
-                  </tr>
-                </Thead>
-                <Tbody>
-                  {sitesPageData.map((site) => {
-                    const si = getStatusInfo(site.statut_conformite);
-                    return (
-                      <Tr
-                        key={site.id}
-                        onClick={() => navigate(`/sites/${site.id}`)}
-                        className="group cursor-pointer hover:bg-blue-50/40"
-                      >
-                        <Td>
-                          <div className="font-medium text-gray-900">{site.nom}</div>
-                          <div className="text-xs text-gray-400">{site.usage}</div>
-                        </Td>
-                        <Td>{site.ville}</Td>
-                        <Td>
-                          {site.surface_m2?.toLocaleString('fr-FR')}
-                          {'\u00A0'}m²
-                        </Td>
-                        <Td>
-                          <div className="flex items-center gap-1.5">
-                            <StatusDot status={si.dot} />
-                            <span className="text-xs text-gray-600">{si.label}</span>
-                          </div>
-                        </Td>
-                        <Td className="text-right text-sm font-medium">
-                          <RiskBadge riskEur={site.risque_eur} size="sm" />
-                        </Td>
-                        {isExpert && (
-                          <Td className="text-right text-gray-600">
-                            {site.conso_kwh_an > 0
-                              ? site.conso_kwh_an.toLocaleString('fr-FR')
-                              : '-'}
-                          </Td>
-                        )}
-                        <Td className="text-right">
-                          <ArrowRight
-                            size={14}
-                            className="text-gray-300 group-hover:text-gray-500 transition"
-                          />
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-              <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
-                <Pagination
-                  page={sitePage}
-                  pageSize={sitePageSize}
-                  total={filteredSites.length}
-                  onChange={setSitePage}
-                />
-              </div>
-            </>
-          )}
-        </Card>
       )}
 
       {/* Maturité de pilotage — détail modal */}

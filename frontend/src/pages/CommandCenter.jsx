@@ -97,7 +97,7 @@ function KpiJ1Card({ label, value, sub, accent = 'neutral', loading: isLoading }
 function CockpitTabs({ active }) {
   const nav = useNavigate();
   return (
-    <div className="flex gap-6 border-b border-gray-200 mb-4">
+    <div className="flex gap-6 border-b border-gray-200 mb-4 sticky top-0 z-10 bg-white -mx-6 px-6 pt-2">
       <button
         onClick={() => nav('/cockpit')}
         className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
