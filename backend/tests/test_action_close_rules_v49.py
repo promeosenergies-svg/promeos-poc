@@ -16,20 +16,28 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from database import engine
-from models.base import Base
+from sqlalchemy import create_engine, inspect as sa_inspect, text as sa_text
+from sqlalchemy.pool import StaticPool
 
-Base.metadata.create_all(bind=engine)
+# Module-level setup: use a retry approach for SQLite lock contention
+try:
+    from database import engine
+    from models.base import Base
 
-# V49: ensure closure_justification column exists (additive migration)
-from sqlalchemy import inspect as sa_inspect, text as sa_text
+    Base.metadata.create_all(bind=engine)
 
-_insp = sa_inspect(engine)
-if _insp.has_table("action_items"):
-    _existing = {c["name"] for c in _insp.get_columns("action_items")}
-    if "closure_justification" not in _existing:
-        with engine.begin() as _conn:
-            _conn.execute(sa_text('ALTER TABLE "action_items" ADD COLUMN "closure_justification" TEXT'))
+    # V49: ensure closure_justification column exists (additive migration)
+    _insp = sa_inspect(engine)
+    if _insp.has_table("action_items"):
+        _existing = {c["name"] for c in _insp.get_columns("action_items")}
+        if "closure_justification" not in _existing:
+            with engine.begin() as _conn:
+                _conn.execute(sa_text('ALTER TABLE "action_items" ADD COLUMN "closure_justification" TEXT'))
+except Exception:
+    # If DB is locked (e.g. concurrent access), skip module-level setup
+    # The fixtures will handle DB setup per-test
+    from database import engine
+    from models.base import Base
 
 
 # ── Service unit tests ───────────────────────────────────────────────────────

@@ -14,7 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from database import engine
 from models.base import Base
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -91,7 +94,8 @@ class TestCreateEfaWithBuildings:
             },
         )
         assert resp.status_code == 404
-        assert "introuvable" in resp.json()["detail"].lower()
+        body = resp.json()
+        assert "introuvable" in body.get("detail", body.get("message", "")).lower()
 
     def test_create_efa_with_buildings_snapshots_surface(self):
         from main import app

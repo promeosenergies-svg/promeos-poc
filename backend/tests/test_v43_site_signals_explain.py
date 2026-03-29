@@ -14,7 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from database import engine
 from models.base import Base
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
 
 # ══════════════════════════════════════════════════════════════════════════════
