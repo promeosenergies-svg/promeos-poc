@@ -24,8 +24,8 @@ export default function FlexPortfolioSummary() {
         <h3 className="text-sm font-semibold text-gray-700">Potentiel flex portefeuille</h3>
         <div className="flex gap-3 text-xs text-gray-500">
           <span>{data.total_sites} sites</span>
-          <span>{Math.round(data.total_potential_kw)} kW total</span>
-          <span>Score moy. {data.avg_flex_score}/100</span>
+          <span>{Math.round(data.total_potential_kw ?? 0)} kW total</span>
+          <span>Score moy. {Math.round(data.avg_flex_score ?? 0)}/100</span>
         </div>
       </div>
 
@@ -38,11 +38,11 @@ export default function FlexPortfolioSummary() {
               <span className="text-gray-400">({r.asset_count} assets)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-gray-600">{Math.round(r.potential_kw)} kW</span>
+              <span className="text-gray-600">{Math.round(r.potential_kw ?? 0)} kW</span>
               <span
-                className={`font-medium ${r.flex_score >= 50 ? 'text-green-700' : 'text-gray-500'}`}
+                className={`font-medium ${(r.flex_score ?? 0) >= 50 ? 'text-green-700' : 'text-gray-500'}`}
               >
-                {r.flex_score}/100
+                {Math.round(r.flex_score ?? 0)}/100
               </span>
               <span className="text-gray-400">{r.confidence}</span>
             </div>

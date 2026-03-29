@@ -396,6 +396,12 @@ class SeedOrchestrator:
         market = generate_market_prices(self.db)
         result["market_prices"] = market
 
+        # 13b. Tarifs réglementaires (TURPE 7, CSPE, CEE, CTA, TVA, Capacité, VNU)
+        from services.market_tariff_loader import load_tariffs_from_yaml
+
+        tariff_result = load_tariffs_from_yaml(self.db)
+        result["market_tariffs"] = tariff_result
+
         # 14b. Geocode all sites via BAN
         from services.geocoding_service import geocode_org_sites
 
@@ -865,7 +871,7 @@ class SeedOrchestrator:
         return {"status": "ok", "mode": mode, "deleted": deleted}
 
     def _sync_site_compliance_statuses(self, sites):
-        """Update Site.statut_decret_tertiaire/bacs + risque_financier_euro from Obligation records."""
+        """Update Site.statut_decret_tertiaire/bacs + risque_financier_euro + avancement from Obligation records."""
         from models import Obligation, TypeObligation, StatutConformite
         from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
@@ -879,6 +885,12 @@ class SeedOrchestrator:
                     setattr(site, attr, obl.statut)
                 else:
                     setattr(site, attr, None)
+
+            # Sync avancement_decret_pct from DT obligation
+            dt_obl = self.db.query(Obligation).filter_by(site_id=site.id, type=TypeObligation.DECRET_TERTIAIRE).first()
+            if dt_obl and dt_obl.avancement_pct is not None:
+                site.avancement_decret_pct = dt_obl.avancement_pct
+
             # Compute risque_financier_euro from all obligations
             obls = self.db.query(Obligation).filter_by(site_id=site.id).all()
             risque = 0.0
