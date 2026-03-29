@@ -8,6 +8,45 @@ import { useState, useEffect } from 'react';
 import { getCockpitCo2 } from '../../services/api';
 import { Skeleton } from '../../ui';
 
+/**
+ * DeltaLine — Affiche la valeur N-1 et l'écart en % sous un KPI CO₂.
+ * Vert ▼ = amélioration (baisse émissions), Rouge ▲ = dégradation (hausse).
+ * « — » si données N-1 indisponibles. Zéro calcul : deltaPct vient du backend.
+ */
+function DeltaLine({ prevValue, deltaPct, co2Factors }) {
+  if (prevValue == null || deltaPct == null) {
+    return (
+      <div className="mt-1.5 pt-1.5 border-t border-gray-100">
+        <span className="text-[11px] text-gray-400">—</span>
+      </div>
+    );
+  }
+
+  const isImprovement = deltaPct < 0;
+  const colorClass = isImprovement ? 'text-green-600' : 'text-red-500';
+  const arrow = isImprovement ? '▼' : '▲';
+  const sign = deltaPct > 0 ? '+' : '';
+
+  return (
+    <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-gray-100">
+      <span className="text-[11px] text-gray-500">
+        {prevValue.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} N-1
+      </span>
+      <span
+        className={`text-[11px] font-medium ${colorClass}`}
+        title={
+          co2Factors
+            ? `Comparaison même période calendaire. Facteurs ADEME : élec ${co2Factors.elec_kgco2_per_kwh}, gaz ${co2Factors.gaz_kgco2_per_kwh} kgCO₂/kWh`
+            : undefined
+        }
+      >
+        {arrow} {sign}
+        {deltaPct.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}%
+      </span>
+    </div>
+  );
+}
+
 const VECTOR_CONFIG = {
   elec: { label: 'Électricité', color: 'bg-blue-500', scopeLabel: 'Scope 2 (élec)' },
   gaz: { label: 'Gaz naturel', color: 'bg-amber-500', scopeLabel: 'Scope 1 (gaz)' },
@@ -120,28 +159,55 @@ export default function VecteurEnergetiqueCard() {
         ))}
       </div>
 
-      {/* CO₂ totaux */}
+      {/* CO₂ totaux + comparaison N-1 — données 100% backend */}
       <div className="border-t border-gray-100 pt-3">
         <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Émissions CO₂ cumulées {data.annee_ref ?? new Date().getFullYear()}
+          Émissions CO₂ cumulées {data.year ?? data.annee_ref ?? new Date().getFullYear()}
         </div>
-        <div className="flex items-baseline gap-4">
-          <div>
+        <div className="flex items-baseline gap-4 flex-wrap">
+          <div className="min-w-[100px]">
             <span className="text-lg font-bold text-gray-900">{totalTco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Total</div>
+            <DeltaLine
+              prevValue={data.prev_total_tco2}
+              deltaPct={data.delta_total_pct}
+              co2Factors={data.co2_factors}
+            />
           </div>
-          <div>
+          <div className="min-w-[100px]">
             <span className="text-base font-semibold text-blue-600">{scope2Tco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Scope 2 (élec)</div>
+            <DeltaLine
+              prevValue={data.prev_scope2_tco2}
+              deltaPct={data.delta_scope2_pct}
+              co2Factors={data.co2_factors}
+            />
           </div>
-          <div>
+          <div className="min-w-[100px]">
             <span className="text-base font-semibold text-amber-600">{scope1Tco2}</span>
             <span className="text-xs text-gray-500 ml-1">tCO₂eq</span>
             <div className="text-[10px] text-gray-400">Scope 1 (gaz)</div>
+            <DeltaLine
+              prevValue={data.prev_scope1_tco2}
+              deltaPct={data.delta_scope1_pct}
+              co2Factors={data.co2_factors}
+            />
           </div>
         </div>
+        {data.period_label && data.prev_period_label && (
+          <div className="text-[10px] text-gray-400 mt-2 leading-relaxed">
+            Comparaison {data.period_label} vs {data.prev_period_label}
+            {data.co2_factors && (
+              <>
+                {' '}
+                · Facteurs ADEME : élec {data.co2_factors.elec_kgco2_per_kwh} · gaz{' '}
+                {data.co2_factors.gaz_kgco2_per_kwh} kgCO₂/kWh
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -100,3 +100,88 @@ class TestBenchmarkAssumptions:
         assert 120 <= bench["bon"]
         # Site au-dessus : 250 kWh/m²/an
         assert 250 > bench["median"]
+
+
+class TestCo2N1Comparison:
+    """Comparaison N-1 — helpers et shape de réponse."""
+
+    def test_delta_pct_improvement(self):
+        """Baisse = delta négatif."""
+        from services.co2_service import _delta_pct
+
+        assert _delta_pct(90, 100) == pytest.approx(-10.0)
+
+    def test_delta_pct_degradation(self):
+        """Hausse = delta positif."""
+        from services.co2_service import _delta_pct
+
+        assert _delta_pct(110, 100) == pytest.approx(10.0)
+
+    def test_delta_pct_no_change(self):
+        """Aucun changement = 0."""
+        from services.co2_service import _delta_pct
+
+        assert _delta_pct(100, 100) == pytest.approx(0.0)
+
+    def test_delta_pct_no_prev_data(self):
+        """Pas de données N-1 → None."""
+        from services.co2_service import _delta_pct
+
+        assert _delta_pct(100, None) is None
+        assert _delta_pct(100, 0) is None
+        assert _delta_pct(None, 100) is None
+
+    def test_safe_prev_date_normal(self):
+        """Date normale → OK."""
+        from services.co2_service import _safe_prev_date
+        from datetime import date
+
+        assert _safe_prev_date(2025, 3, 15) == date(2025, 3, 15)
+
+    def test_safe_prev_date_leap_year(self):
+        """29 février N-1 non bissextile → fallback 28."""
+        from services.co2_service import _safe_prev_date
+        from datetime import date
+
+        # 2025 n'est pas bissextile
+        assert _safe_prev_date(2025, 2, 29) == date(2025, 2, 28)
+
+    def test_safe_prev_date_leap_year_ok(self):
+        """29 février année bissextile → OK."""
+        from services.co2_service import _safe_prev_date
+        from datetime import date
+
+        # 2024 est bissextile
+        assert _safe_prev_date(2024, 2, 29) == date(2024, 2, 29)
+
+    def test_month_names_fr_complete(self):
+        """12 mois en français."""
+        from services.co2_service import MONTH_NAMES_FR
+
+        assert len(MONTH_NAMES_FR) == 12
+        assert MONTH_NAMES_FR[1] == "Janv"
+        assert MONTH_NAMES_FR[12] == "Déc"
+
+    def test_aggregate_co2_results_scopes(self):
+        """Scope 1 = gaz/fioul, Scope 2 = elec/réseau chaleur."""
+        from services.co2_service import _aggregate_co2_results
+
+        results = [
+            {
+                "total_kg_co2": 100.0,
+                "breakdown": [
+                    {"energy_type": "elec", "kwh": 1000, "kg_co2": 52.0},
+                    {"energy_type": "gaz", "kwh": 200, "kg_co2": 45.4},
+                ],
+            },
+        ]
+        agg = _aggregate_co2_results(results)
+        assert agg["scope2_kg"] == pytest.approx(52.0)
+        assert agg["scope1_kg"] == pytest.approx(45.4)
+        assert agg["total_kg"] == pytest.approx(100.0)
+
+    def test_co2_factors_in_portfolio_response(self):
+        """La réponse portfolio doit contenir les facteurs ADEME traçables."""
+        # Vérification statique des facteurs exposés
+        assert EMISSION_FACTORS["elec"]["factor_kg_per_kwh"] == pytest.approx(0.052)
+        assert EMISSION_FACTORS["gaz"]["factor_kg_per_kwh"] == pytest.approx(0.227)

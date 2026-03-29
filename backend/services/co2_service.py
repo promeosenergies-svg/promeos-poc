@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, asdict
+from datetime import date
 from typing import Optional, List
 
 from sqlalchemy.orm import Session
@@ -67,12 +68,15 @@ class Co2Result:
         return asdict(self)
 
 
-def compute_site_co2(db: Session, site_id: int) -> Co2Result:
+def compute_site_co2(db: Session, site_id: int, start: date = None, end: date = None) -> Co2Result:
     """
-    Calcule l'empreinte CO₂ annuelle d'un site.
+    Calcule l'empreinte CO₂ d'un site sur une période.
 
     Utilise le modele Meter (source de verite) pour decouvrir les vecteurs
     energetiques et lire les MeterReading. Fallback Site.annual_kwh_total.
+
+    Args:
+        start/end: période de calcul. Si None → 365 derniers jours.
     """
     from models import Site
     from models.energy_models import Meter, MeterReading
@@ -83,11 +87,17 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
         return Co2Result(site_id=site_id, total_kg_co2=0, total_t_co2=0, breakdown=[], confidence="low")
 
     # Consommation par vecteur via unified service (single source of truth)
-    from datetime import date, timedelta
+    from datetime import timedelta
     from services.consumption_unified_service import get_consumption_summary
 
-    today = date.today()
-    y_ago = today - timedelta(days=365)
+    if end is None:
+        end = date.today()
+    if start is None:
+        start = end - timedelta(days=365)
+
+    # Alias pour le reste du code (y_ago/today → start/end)
+    y_ago = start
+    today = end
 
     # Vecteurs a calculer : elec toujours, gaz si compteur present
     vector_map = {"elec": EnergyVector.ELECTRICITY, "gaz": EnergyVector.GAS}
@@ -150,38 +160,18 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
     )
 
 
-def compute_portfolio_co2(db: Session, org_id: int) -> dict:
-    """Calcule l'empreinte CO₂ portfolio (tous sites actifs)."""
-    from models import Site, not_deleted
-
-    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
-    if org_id:
-        # Filter by org via portefeuille chain
-        site_ids_in_org = _get_org_site_ids(db, org_id)
-        sites = [s for s in sites if s.id in site_ids_in_org]
-
-    results = []
-    total_kg = 0
-    for site in sites:
-        r = compute_site_co2(db, site.id)
-        total_kg += r.total_kg_co2
-        results.append(
-            {
-                "site_id": site.id,
-                "site_nom": site.nom,
-                "t_co2": r.total_t_co2,
-                "breakdown": r.breakdown,
-                "confidence": r.confidence,
-            }
-        )
-
-    # Agrégats par vecteur — calculés backend (le front ne doit PAS agréger)
+def _aggregate_co2_results(results: list) -> dict:
+    """Agrège les résultats CO₂ par vecteur et scope. Retourne les totaux."""
     vectors_agg: dict[str, dict] = {}
     scope1_kg = 0.0
     scope2_kg = 0.0
+    total_kg = 0.0
     total_kwh_all = 0.0
+
     for r in results:
-        for bd in r.get("breakdown", []):
+        total_kg += r.get("total_kg_co2", 0) if isinstance(r, dict) else r.total_kg_co2
+        breakdowns = r.get("breakdown", []) if isinstance(r, dict) else r.breakdown
+        for bd in breakdowns:
             key = bd.get("energy_type", "autres")
             if key not in vectors_agg:
                 vectors_agg[key] = {"kwh": 0.0, "kg_co2": 0.0}
@@ -194,10 +184,96 @@ def compute_portfolio_co2(db: Session, org_id: int) -> dict:
             else:
                 scope2_kg += bd.get("kg_co2", 0)
 
+    return {
+        "total_kg": total_kg,
+        "scope1_kg": scope1_kg,
+        "scope2_kg": scope2_kg,
+        "total_kwh": total_kwh_all,
+        "vectors_agg": vectors_agg,
+    }
+
+
+def _delta_pct(current: float, previous: float) -> float | None:
+    """Écart en %. Négatif = amélioration (baisse). None si données manquantes."""
+    if previous is None or previous == 0 or current is None:
+        return None
+    return round((current - previous) / previous * 100, 1)
+
+
+def _safe_prev_date(year: int, month: int, day: int) -> date:
+    """Construit une date en gérant le 29 février (fallback au 28)."""
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return date(year, month, 28)
+
+
+MONTH_NAMES_FR = {
+    1: "Janv",
+    2: "Fév",
+    3: "Mars",
+    4: "Avr",
+    5: "Mai",
+    6: "Juin",
+    7: "Juil",
+    8: "Août",
+    9: "Sept",
+    10: "Oct",
+    11: "Nov",
+    12: "Déc",
+}
+
+
+def compute_portfolio_co2(db: Session, org_id: int) -> dict:
+    """
+    Calcule l'empreinte CO₂ portfolio (tous sites actifs) + comparaison N-1.
+
+    Comparaison sur même période calendaire : janv→aujourd'hui N vs janv→même jour N-1.
+    Facteurs ADEME centralisés — zéro calcul côté frontend.
+    """
+    from models import Site, not_deleted
+
+    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
+    if org_id:
+        site_ids_in_org = _get_org_site_ids(db, org_id)
+        sites = [s for s in sites if s.id in site_ids_in_org]
+
+    # ── Périodes N et N-1 (même plage calendaire) ──
+    today = date.today()
+    year_n = today.year
+    start_n = date(year_n, 1, 1)
+    end_n = today
+
+    start_n1 = date(year_n - 1, 1, 1)
+    end_n1 = _safe_prev_date(year_n - 1, today.month, today.day)
+
+    # ── Calcul CO₂ par site pour N et N-1 ──
+    results_n = []
+    results_n1 = []
+    for site in sites:
+        r_n = compute_site_co2(db, site.id, start=start_n, end=end_n)
+        results_n.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "t_co2": r_n.total_t_co2,
+                "total_kg_co2": r_n.total_kg_co2,
+                "breakdown": r_n.breakdown,
+                "confidence": r_n.confidence,
+            }
+        )
+
+        r_n1 = compute_site_co2(db, site.id, start=start_n1, end=end_n1)
+        results_n1.append(r_n1)
+
+    # ── Agrégation N ──
+    agg_n = _aggregate_co2_results(results_n)
+
+    # Vecteurs display (pour les barres du frontend)
     vectors_display = []
-    for key, val in sorted(vectors_agg.items(), key=lambda x: -x[1]["kwh"]):
+    for key, val in sorted(agg_n["vectors_agg"].items(), key=lambda x: -x[1]["kwh"]):
         mwh = round(val["kwh"] / 1000, 1) if val["kwh"] else 0
-        pct = round((val["kwh"] / total_kwh_all) * 100) if total_kwh_all > 0 else 0
+        pct = round((val["kwh"] / agg_n["total_kwh"]) * 100) if agg_n["total_kwh"] > 0 else 0
         vectors_display.append(
             {
                 "key": key,
@@ -207,17 +283,54 @@ def compute_portfolio_co2(db: Session, org_id: int) -> dict:
             }
         )
 
+    # ── Agrégation N-1 ──
+    agg_n1 = _aggregate_co2_results(results_n1)
+    has_n1 = agg_n1["total_kg"] > 0
+
+    # ── Deltas (négatif = amélioration = baisse des émissions) ──
+    total_t_n = round(agg_n["total_kg"] / 1000, 1)
+    scope1_t_n = round(agg_n["scope1_kg"] / 1000, 1)
+    scope2_t_n = round(agg_n["scope2_kg"] / 1000, 1)
+
+    total_t_n1 = round(agg_n1["total_kg"] / 1000, 1) if has_n1 else None
+    scope1_t_n1 = round(agg_n1["scope1_kg"] / 1000, 1) if has_n1 else None
+    scope2_t_n1 = round(agg_n1["scope2_kg"] / 1000, 1) if has_n1 else None
+
+    # ── Labels de période ──
+    month_end = MONTH_NAMES_FR.get(today.month, str(today.month))
+    period_label_n = f"Janv – {month_end} {year_n}"
+    period_label_n1 = f"Janv – {month_end} {year_n - 1}"
+
     return {
         "org_id": org_id,
-        "total_t_co2": round(total_kg / 1000, 1),
-        "total_kg_co2": round(total_kg, 1),
-        "scope1_t_co2": round(scope1_kg / 1000, 1),
-        "scope2_t_co2": round(scope2_kg / 1000, 1),
+        # Champs existants (rétro-compatibilité)
+        "total_t_co2": total_t_n,
+        "total_kg_co2": round(agg_n["total_kg"], 1),
+        "scope1_t_co2": scope1_t_n,
+        "scope2_t_co2": scope2_t_n,
         "vectors": vectors_display,
-        "total_kwh": round(total_kwh_all, 0),
-        "sites": results,
+        "total_kwh": round(agg_n["total_kwh"], 0),
+        "sites": results_n,
         "emission_factors": {k: v["factor_kg_per_kwh"] for k, v in EMISSION_FACTORS.items()},
         "source": "ADEME Base Carbone 2024",
+        # Nouveaux champs N-1
+        "year": year_n,
+        "period_label": period_label_n,
+        "prev_year": year_n - 1,
+        "prev_period_label": period_label_n1,
+        "prev_total_tco2": total_t_n1,
+        "prev_scope1_tco2": scope1_t_n1,
+        "prev_scope2_tco2": scope2_t_n1,
+        # Deltas (négatif = amélioration)
+        "delta_total_pct": _delta_pct(total_t_n, total_t_n1),
+        "delta_scope1_pct": _delta_pct(scope1_t_n, scope1_t_n1),
+        "delta_scope2_pct": _delta_pct(scope2_t_n, scope2_t_n1),
+        # Traçabilité facteurs
+        "co2_factors": {
+            "elec_kgco2_per_kwh": EMISSION_FACTORS["elec"]["factor_kg_per_kwh"],
+            "gaz_kgco2_per_kwh": EMISSION_FACTORS["gaz"]["factor_kg_per_kwh"],
+            "source": "ADEME Base Empreinte V23.6",
+        },
     }
 
 

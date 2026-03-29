@@ -182,3 +182,74 @@ class TestCo2Factor:
 
         assert CO2_FACTOR_ELEC_KG_KWH == get_emission_factor("ELEC")
         assert CO2_FACTOR_GAZ_KG_KWH == get_emission_factor("GAZ")
+
+
+# ── P0-5 : CO2 N-1 Comparison ────────────────────────────────────────
+
+
+class TestCo2N1Endpoint:
+    """Vérifie la shape enrichie de GET /api/cockpit/co2 avec N-1."""
+
+    def test_co2_endpoint_returns_n1_fields(self, client):
+        """L'endpoint retourne les champs N-1 et deltas."""
+        response = client.get("/api/cockpit/co2", headers={"X-Org-Id": "1"})
+        assert response.status_code == 200
+        data = response.json()
+
+        # Champs N existants
+        assert "total_t_co2" in data
+        assert "scope1_t_co2" in data
+        assert "scope2_t_co2" in data
+
+        # Champs N-1 (nouveaux)
+        assert "prev_total_tco2" in data
+        assert "prev_scope1_tco2" in data
+        assert "prev_scope2_tco2" in data
+
+        # Deltas (nouveaux)
+        assert "delta_total_pct" in data
+        assert "delta_scope1_pct" in data
+        assert "delta_scope2_pct" in data
+
+        # Métadonnées période
+        assert "year" in data
+        assert "period_label" in data
+        assert "prev_year" in data
+        assert "prev_period_label" in data
+        assert data["prev_year"] == data["year"] - 1
+
+    def test_co2_endpoint_factors_tracability(self, client):
+        """La réponse contient les facteurs ADEME pour traçabilité."""
+        data = client.get("/api/cockpit/co2", headers={"X-Org-Id": "1"}).json()
+
+        assert "co2_factors" in data
+        assert data["co2_factors"]["elec_kgco2_per_kwh"] == 0.052
+        assert data["co2_factors"]["gaz_kgco2_per_kwh"] == 0.227
+        assert "ADEME" in data["co2_factors"]["source"]
+
+    def test_co2_endpoint_coherence_total_eq_scopes(self, client):
+        """total = scope1 + scope2 (à 0.2 tCO₂ près pour arrondis)."""
+        data = client.get("/api/cockpit/co2", headers={"X-Org-Id": "1"}).json()
+
+        if data["total_t_co2"] > 0:
+            assert abs(data["total_t_co2"] - (data["scope1_t_co2"] + data["scope2_t_co2"])) < 0.2
+
+    def test_co2_endpoint_delta_formula(self, client):
+        """delta = (N - N-1) / N-1 × 100, arrondi à 1 décimale."""
+        data = client.get("/api/cockpit/co2", headers={"X-Org-Id": "1"}).json()
+
+        if data.get("prev_total_tco2") and data["prev_total_tco2"] > 0:
+            expected = round((data["total_t_co2"] - data["prev_total_tco2"]) / data["prev_total_tco2"] * 100, 1)
+            assert data["delta_total_pct"] == pytest.approx(expected, abs=0.1)
+
+    def test_co2_endpoint_period_labels_same_months(self, client):
+        """Les labels N et N-1 couvrent les mêmes mois."""
+        data = client.get("/api/cockpit/co2", headers={"X-Org-Id": "1"}).json()
+
+        # Les deux labels commencent par "Janv" et finissent par le même mois
+        assert data["period_label"].startswith("Janv")
+        assert data["prev_period_label"].startswith("Janv")
+        # Même mois fin (ex: "Janv – Mars 2026" vs "Janv – Mars 2025")
+        month_n = data["period_label"].split(" – ")[1].split(" ")[0]
+        month_n1 = data["prev_period_label"].split(" – ")[1].split(" ")[0]
+        assert month_n == month_n1
