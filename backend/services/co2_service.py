@@ -76,77 +76,54 @@ def compute_site_co2(db: Session, site_id: int) -> Co2Result:
     """
     from models import Site
     from models.energy_models import Meter, MeterReading
-    from models.enums import EnergyVector
+    from models.enums import EnergyVector  # noqa: F811
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         return Co2Result(site_id=site_id, total_kg_co2=0, total_t_co2=0, breakdown=[], confidence="low")
 
-    # Source de verite : modele Meter (Yannick) — exclut sous-compteurs
+    # Consommation par vecteur via unified service (single source of truth)
+    from datetime import date, timedelta
+    from services.consumption_unified_service import get_consumption_summary
+
+    today = date.today()
+    y_ago = today - timedelta(days=365)
+
+    # Vecteurs a calculer : elec toujours, gaz si compteur present
+    vector_map = {"elec": EnergyVector.ELECTRICITY, "gaz": EnergyVector.GAS}
+
+    # Detecter les vecteurs presents via Meter
     meters = (
         db.query(Meter)
         .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
         .all()
     )
-
-    # Grouper par vecteur energetique
-    vectors: dict[str, list[int]] = {}
+    present_vectors = set()
     for m in meters:
-        ev = m.energy_vector.value.lower() if m.energy_vector else "elec"
+        ev = m.energy_vector.value.lower() if m.energy_vector else "electricity"
         if ev in ("electricity", "elec"):
-            ev = "elec"
+            present_vectors.add("elec")
         elif ev in ("gas", "gaz"):
-            ev = "gaz"
-        vectors.setdefault(ev, []).append(m.id)
+            present_vectors.add("gaz")
 
-    # Si pas de Meter, utiliser le site.annual_kwh_total comme elec
-    if not vectors:
-        annual = getattr(site, "annual_kwh_total", None) or 0
-        if annual > 0:
-            vectors = {"elec": []}
+    # Toujours inclure elec (fallback via annual_kwh_total)
+    if not present_vectors:
+        present_vectors.add("elec")
 
-    # Calculer par vecteur
     breakdown = []
     total_kg = 0
 
-    for energy_type, meter_ids in vectors.items():
+    for energy_type in present_vectors:
         factor_info = EMISSION_FACTORS.get(energy_type, EMISSION_FACTORS.get("elec"))
         factor = factor_info["factor_kg_per_kwh"]
 
-        # Conso du vecteur via MeterReading (modele Yannick)
-        kwh = 0
-        if meter_ids:
-            try:
-                from sqlalchemy import func
-                from datetime import date, timedelta
-
-                today = date.today()
-                y_ago = today - timedelta(days=365)
-
-                from models.energy_models import FrequencyType
-
-                # Accepter MONTHLY et DAILY (gaz = daily, elec = monthly)
-                result = (
-                    db.query(func.sum(MeterReading.value_kwh))
-                    .filter(
-                        MeterReading.meter_id.in_(meter_ids),
-                        MeterReading.frequency.in_(
-                            [
-                                FrequencyType.MONTHLY,
-                                FrequencyType.DAILY,
-                            ]
-                        ),
-                        MeterReading.timestamp >= y_ago,
-                    )
-                    .scalar()
-                )
-                kwh = float(result or 0)
-            except Exception as e:
-                logger.warning("MeterReading query failed for site %d: %s", site_id, e)
-
-        # Fallback si pas de meter readings
-        if kwh <= 0 and energy_type == "elec":
-            kwh = float(getattr(site, "annual_kwh_total", 0) or 0)
+        try:
+            ev_enum = vector_map.get(energy_type, EnergyVector.ELECTRICITY)
+            summary = get_consumption_summary(db, site_id, y_ago, today, energy_vector=ev_enum)
+            kwh = float(summary.get("value_kwh", 0) or 0)
+        except Exception as e:
+            logger.warning("Unified consumption query failed for site %d: %s", site_id, e)
+            kwh = 0
 
         if kwh > 0:
             kg_co2 = round(kwh * factor, 1)

@@ -3,6 +3,8 @@ PROMEOS - Routes API Cockpit & Portefeuilles
 Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
 
+from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -138,10 +140,16 @@ def get_cockpit(
         conso_kwh = conso_portfolio["total_kwh"]
         conso_confidence = conso_portfolio["confidence"]
         conso_sites_with_data = conso_portfolio["sites_with_data"]
+        # Dominant source across portfolio sites
+        from collections import Counter
+
+        _src_counts = Counter(s["source_used"] for s in conso_portfolio.get("sites", []) if s.get("value_kwh", 0) > 0)
+        _conso_dominant_source = _src_counts.most_common(1)[0][0] if _src_counts else "none"
     except Exception:
         conso_kwh = 0
         conso_confidence = "none"
         conso_sites_with_data = 0
+        _conso_dominant_source = "none"
 
     # Billing anomalies loss for risque_breakdown (P0-2: excl. resolved + false_positive)
     _billing_loss = 0.0
@@ -206,6 +214,7 @@ def get_cockpit(
                 "conso_kwh_total": round(conso_kwh, 2),
                 "conso_confidence": conso_confidence,
                 "conso_sites_with_data": conso_sites_with_data,
+                "conso_source": _conso_dominant_source,
             },
             "kpi_details": kpi_details,
             "action_center": action_center_data,
@@ -280,11 +289,23 @@ def get_benchmark(
     site_ids = [s.id for s in _sites_for_org(db, org_id if org_id else None).with_entities(Site.id).all()]
     sites = not_deleted(db.query(Site), Site).filter(Site.id.in_(site_ids), Site.actif == True).all()
 
+    # Unified consumption for each site (single source of truth for IPE)
+    from services.consumption_unified_service import get_consumption_summary
+
+    today_bench = date.today()
+    y_ago_bench = today_bench - timedelta(days=365)
+
     results = []
     for site in sites:
         usage = str(site.type.value if hasattr(site.type, "value") else (site.type or "bureau")).lower()
         surface = site.surface_m2 or 0
-        conso = getattr(site, "annual_kwh_total", None) or getattr(site, "conso_kwh_an", None) or 0
+
+        # Consommation via unified service (metered > billed > estimated)
+        try:
+            conso_summary = get_consumption_summary(db, site.id, y_ago_bench, today_bench)
+            conso = conso_summary.get("value_kwh", 0) or 0
+        except Exception:
+            conso = getattr(site, "annual_kwh_total", None) or 0
 
         ipe = round(conso / surface, 1) if surface > 0 else None
         bench = BENCHMARK_ADEME_KWH_M2_AN.get(usage, BENCHMARK_ADEME_KWH_M2_AN.get("bureau", {}))
@@ -400,32 +421,19 @@ def get_cockpit_trajectory(
             y = t.year
             reel_by_year[y] = reel_by_year.get(y, 0) + t.actual_kwh
 
-    # Fallback lent : MeterReading uniquement si aucun actual_kwh trouvé
+    # Fallback : unified consumption service si aucun actual_kwh trouvé
     if not reel_by_year:
-        meter_ids = [m.id for m in db.query(Meter.id).filter(Meter.site_id.in_(site_ids)).all()]
-        if meter_ids:
-            from sqlalchemy import extract
+        from services.consumption_unified_service import get_consumption_summary as _get_conso
 
-            rows = (
-                db.query(
-                    extract("year", MeterReading.timestamp).label("yr"),
-                    func.sum(MeterReading.value_kwh),
-                )
-                .filter(
-                    MeterReading.meter_id.in_(meter_ids),
-                    MeterReading.frequency.in_(
-                        [
-                            FrequencyType.MIN_15,
-                            FrequencyType.MIN_30,
-                            FrequencyType.HOURLY,
-                        ]
-                    ),
-                )
-                .group_by("yr")
-                .all()
-            )
-            for yr, total in rows:
-                reel_by_year[int(yr)] = total
+        for sid in site_ids:
+            for yr in range(ref_year, date.today().year + 1):
+                try:
+                    s = _get_conso(db, sid, date(yr, 1, 1), date(yr, 12, 31))
+                    v = s.get("value_kwh", 0) or 0
+                    if v > 0:
+                        reel_by_year[yr] = reel_by_year.get(yr, 0) + v
+                except Exception:
+                    pass
 
     # 5. Jalons réglementaires DT (décret n°2019-771 — Art. R131-39 CCH)
     # Source : legifrance.gouv.fr/jorf/id/JORFTEXT000038812251

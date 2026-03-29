@@ -156,33 +156,36 @@ def _site_open_actions(db: Session, site_id: int) -> int:
 
 def _build_site_row(db, site, dt_from, dt_to, days):
     """Build a single site row dict with all metrics (patrimoine-first)."""
-    # Resolve best frequency ONCE per site — used for filtering + display
-    # Use helper to exclude sub-meters whose parent is already counted (avoid double-counting)
-    meter_ids = get_site_meter_ids(db, site.id, EnergyVector.ELECTRICITY)
-    best = resolve_best_freq(db, meter_ids, dt_from, dt_to) if meter_ids else None
+    from services.consumption_unified_service import get_consumption_summary
 
-    conso = _site_consumption(db, meter_ids, dt_from, dt_to, best_freq=best)
-    kwh = conso.kwh or 0
-    n = conso.n_readings or 0
-    last_reading = conso.last_reading
+    # Unified consumption (single source of truth)
+    conso_summary = get_consumption_summary(
+        db,
+        site.id,
+        dt_from.date() if hasattr(dt_from, "date") else dt_from,
+        dt_to.date() if hasattr(dt_to, "date") else dt_to,
+    )
+    kwh = conso_summary.get("value_kwh", 0) or 0
     has_data = kwh > 0
-
-    freq_str = best[0].value if best else "hourly"
-    rpd = READINGS_PER_DAY.get(freq_str, 24)
-
-    conf = _confidence_for_readings(n, days, freq_str) if has_data else "low"
-
-    # V2: coverage_pct per site + data_status badge
-    expected = days * rpd  # adapted to meter frequency
-    coverage_pct = round(n / expected * 100) if expected > 0 else 0
+    conf = conso_summary.get("confidence", "low")
+    coverage_pct = round(conso_summary.get("coverage_pct", 0))
     if coverage_pct > 100:
         coverage_pct = 100
+    source_used = conso_summary.get("source_used", "estimated")
+
+    # Supplementary metadata (readings count, last reading) for portfolio table
+    meter_ids = get_site_meter_ids(db, site.id, EnergyVector.ELECTRICITY)
+    best = resolve_best_freq(db, meter_ids, dt_from, dt_to) if meter_ids else None
+    conso_meta = _site_consumption(db, meter_ids, dt_from, dt_to, best_freq=best)
+    n = conso_meta.n_readings or 0
+    last_reading = conso_meta.last_reading
+
     if not has_data:
-        data_status = "none"  # Aucune donnee
+        data_status = "none"
     elif coverage_pct >= 80:
-        data_status = "ok"  # Donnees completes
+        data_status = "ok"
     else:
-        data_status = "partial"  # Donnees partielles
+        data_status = "partial"
 
     price, price_src = get_reference_price(db, site.id, "elec")
     eur = round(kwh * price, 2)
@@ -220,6 +223,7 @@ def _build_site_row(db, site, dt_from, dt_to, days):
         "last_reading_date": last_reading.isoformat() if last_reading else None,
         "n_readings": n,
         "eur_source": price_src,
+        "conso_source": source_used,
     }
 
 

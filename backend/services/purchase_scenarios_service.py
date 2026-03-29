@@ -119,20 +119,14 @@ _INDEXATION_TO_SCENARIO = {
 
 
 def _estimate_annual_volume(db: Session, site_id: int) -> float | None:
-    """Estimate annual kWh from recent invoices, or None if no data."""
-    from sqlalchemy import func
+    """Estimate annual kWh via unified consumption service (single source of truth)."""
     from datetime import date, timedelta
+    from services.consumption_unified_service import get_consumption_summary
 
     one_year_ago = date.today() - timedelta(days=365)
-    total = (
-        db.query(func.sum(EnergyInvoice.energy_kwh))
-        .filter(
-            EnergyInvoice.site_id == site_id,
-            EnergyInvoice.period_start >= one_year_ago,
-        )
-        .scalar()
-    )
-    return float(total) if total else None
+    summary = get_consumption_summary(db, site_id, one_year_ago, date.today())
+    kwh = summary.get("value_kwh", 0)
+    return float(kwh) if kwh else None
 
 
 def compute_purchase_scenarios(db: Session, contract_id: int) -> dict:

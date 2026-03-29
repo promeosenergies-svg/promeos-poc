@@ -73,37 +73,22 @@ def compute_bacs_ops_kpis(db: Session, site_id: int, period_days: int = 30) -> d
     if assessment and assessment.compliance_score and assessment.compliance_score > 50:
         kpis["has_attestation"] = True
 
-    # Gains vs baseline (compare last 30 days vs previous 30 days from MeterReading)
+    # Gains vs baseline via unified consumption service (single source of truth)
     try:
-        meter = db.query(Meter).filter(Meter.site_id == site_id).first()
-        if meter:
-            now = datetime.now(timezone.utc).replace(tzinfo=None)
-            current_start = now - timedelta(days=period_days)
-            prev_start = now - timedelta(days=period_days * 2)
+        from services.consumption_unified_service import get_consumption_summary
 
-            current_sum = (
-                db.query(func.sum(MeterReading.value_kwh))
-                .filter(
-                    MeterReading.meter_id == meter.id,
-                    MeterReading.timestamp >= current_start,
-                )
-                .scalar()
-                or 0
-            )
+        today_dt = date.today()
+        current_start = today_dt - timedelta(days=period_days)
+        prev_start = today_dt - timedelta(days=period_days * 2)
 
-            prev_sum = (
-                db.query(func.sum(MeterReading.value_kwh))
-                .filter(
-                    MeterReading.meter_id == meter.id,
-                    MeterReading.timestamp >= prev_start,
-                    MeterReading.timestamp < current_start,
-                )
-                .scalar()
-                or 0
-            )
+        current = get_consumption_summary(db, site_id, current_start, today_dt)
+        prev = get_consumption_summary(db, site_id, prev_start, current_start)
 
-            if prev_sum > 0:
-                kpis["gains_vs_baseline_pct"] = round((current_sum - prev_sum) / prev_sum * 100, 1)
+        current_kwh = current.get("value_kwh", 0) or 0
+        prev_kwh = prev.get("value_kwh", 0) or 0
+
+        if prev_kwh > 0:
+            kpis["gains_vs_baseline_pct"] = round((current_kwh - prev_kwh) / prev_kwh * 100, 1)
     except Exception:
         pass  # Best-effort
 
@@ -142,27 +127,28 @@ def link_consumption_findings(db: Session, site_id: int) -> list[dict]:
 
 
 def get_monthly_consumption(db: Session, site_id: int, months: int = 12) -> list[dict]:
-    """Get monthly consumption data for chart display."""
+    """Get monthly consumption data for chart display (via unified service)."""
     try:
-        meter = db.query(Meter).filter(Meter.site_id == site_id).first()
-        if not meter:
-            return []
+        from services.consumption_unified_service import get_consumption_summary
 
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        start = now - timedelta(days=months * 30)
+        today_dt = date.today()
+        results = []
+        for i in range(months - 1, -1, -1):
+            # Compute month boundaries
+            ref = today_dt - timedelta(days=i * 30)
+            m_start = ref.replace(day=1)
+            if m_start.month == 12:
+                m_end = m_start.replace(year=m_start.year + 1, month=1)
+            else:
+                m_end = m_start.replace(month=m_start.month + 1)
+            m_end = m_end - timedelta(days=1)
 
-        readings = (
-            db.query(
-                func.strftime("%Y-%m", MeterReading.timestamp).label("month"),
-                func.sum(MeterReading.value_kwh).label("total_kwh"),
-            )
-            .filter(MeterReading.meter_id == meter.id, MeterReading.timestamp >= start)
-            .group_by("month")
-            .order_by("month")
-            .all()
-        )
+            summary = get_consumption_summary(db, site_id, m_start, m_end)
+            kwh = summary.get("value_kwh", 0) or 0
+            if kwh > 0:
+                results.append({"month": m_start.strftime("%Y-%m"), "kwh": round(kwh, 1)})
 
-        return [{"month": r.month, "kwh": round(r.total_kwh or 0, 1)} for r in readings]
+        return results
     except Exception:
         return []
 

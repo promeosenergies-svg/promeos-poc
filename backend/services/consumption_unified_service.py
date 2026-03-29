@@ -375,3 +375,85 @@ def reconcile_metered_billed(
         }
     )
     return result
+
+
+def check_reconciliation_alert(
+    db: Session,
+    site_id: int,
+    start: date,
+    end: date,
+    energy_vector: EnergyVector = EnergyVector.ELECTRICITY,
+) -> Optional[dict]:
+    """
+    Cree un BillingInsight si l'ecart metered/billed depasse le seuil.
+    Idempotent : ne cree pas de doublon pour le meme site + periode.
+    """
+    period_days = max(1, (end - start).days)
+
+    meter_ids = _get_meter_ids(db, site_id, energy_vector)
+    metered_kwh, _, metered_days = _metered_kwh(db, meter_ids, start, end)
+    billed_kwh, _, _ = _billed_kwh(db, site_id, start, end)
+
+    if metered_kwh <= 0 or billed_kwh <= 0:
+        return None
+
+    delta_pct = abs(metered_kwh - billed_kwh) / max(metered_kwh, billed_kwh) * 100
+
+    if delta_pct <= RECONCILIATION_ALERT_THRESHOLD * 100:
+        return None
+
+    try:
+        from models.billing_models import BillingInsight
+        from models.enums import InsightStatus
+
+        # Dedup : check for existing open insight of same type for this site
+        existing = (
+            db.query(BillingInsight)
+            .filter(
+                BillingInsight.site_id == site_id,
+                BillingInsight.type == "reconciliation_metered_billed",
+                BillingInsight.insight_status.in_([InsightStatus.OPEN, InsightStatus.ACK]),
+            )
+            .first()
+        )
+        if existing:
+            return {"insight_id": existing.id, "status": "already_exists"}
+
+        severity = "high" if delta_pct > 20 else "medium"
+        message = (
+            f"Ecart compteur/facture = {delta_pct:.1f}% sur {start} - {end}. "
+            f"Metered={metered_kwh:.0f} kWh, Billed={billed_kwh:.0f} kWh."
+        )
+
+        import json
+
+        insight = BillingInsight(
+            site_id=site_id,
+            type="reconciliation_metered_billed",
+            severity=severity,
+            message=message,
+            metrics_json=json.dumps(
+                {
+                    "period_start": start.isoformat(),
+                    "period_end": end.isoformat(),
+                    "metered_kwh": round(metered_kwh, 2),
+                    "billed_kwh": round(billed_kwh, 2),
+                    "delta_pct": round(delta_pct, 1),
+                }
+            ),
+            estimated_loss_eur=None,
+        )
+        db.add(insight)
+        db.commit()
+
+        logger.info(
+            "Reconciliation alert created for site %d: delta=%.1f%%",
+            site_id,
+            delta_pct,
+        )
+        return {"insight_id": insight.id, "status": "created", "delta_pct": round(delta_pct, 1)}
+
+    except Exception as e:
+        logger.warning("Failed to create reconciliation alert for site %d: %s", site_id, e)
+        db.rollback()
+        return None

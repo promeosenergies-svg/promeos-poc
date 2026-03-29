@@ -13,11 +13,8 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from models import (
-    MeterReading,
-    EnergyInvoice,
     SiteOperatingSchedule,
     PurchaseStrategy,
     Site,
@@ -38,64 +35,44 @@ PROFILE_DEFAULT = 1.0  # Standard profile
 
 def estimate_consumption(db: Session, site_id: int) -> dict:
     """
-    Estimate annual consumption for a site.
-    Priority: MeterReading > EnergyInvoice > default fallback.
+    Estimate annual consumption for a site via unified consumption service.
+    Single source of truth — replaces direct MeterReading/Invoice queries.
     """
-    twelve_months_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
+    from datetime import date
+    from services.consumption_unified_service import get_consumption_summary
 
-    # Priority 1: MeterReading (sum last 12 months)
-    meter_sum = (
-        db.query(func.sum(MeterReading.value_kwh))
-        .filter(
-            MeterReading.meter_id == site_id,
-            MeterReading.timestamp >= twelve_months_ago,
+    today = date.today()
+    twelve_months_ago = today - timedelta(days=365)
+
+    summary = get_consumption_summary(db, site_id, twelve_months_ago, today)
+    value_kwh = summary.get("value_kwh", 0)
+    source_used = summary.get("source_used", "estimated")
+    coverage_pct = summary.get("coverage_pct", 0)
+    details = summary.get("details", {})
+
+    if value_kwh and value_kwh > 0:
+        # Annualize if partial coverage
+        if coverage_pct and coverage_pct < 95:
+            period_days = summary.get("period", {}).get("days", 365)
+            covered_days = period_days * (coverage_pct / 100)
+            volume = value_kwh * (365 / covered_days) if covered_days > 0 else value_kwh
+        else:
+            volume = value_kwh
+
+        # Map source to legacy format
+        source_map = {"metered": "meter_readings", "billed": "invoices", "estimated": "default"}
+        months_covered = max(
+            details.get("metered_days", 0) // 30,
+            details.get("billed_months", 0),
         )
-        .scalar()
-    )
-    if meter_sum and meter_sum > 0:
-        # Count distinct months covered
-        months_covered = (
-            db.query(func.count(func.distinct(func.strftime("%Y-%m", MeterReading.timestamp))))
-            .filter(
-                MeterReading.meter_id == site_id,
-                MeterReading.timestamp >= twelve_months_ago,
-            )
-            .scalar()
-        ) or 1
-        # Annualize if partial
-        volume = meter_sum * (12 / months_covered) if months_covered < 12 else meter_sum
+
         return {
             "volume_kwh_an": round(volume, 0),
-            "source": "meter_readings",
+            "source": source_map.get(source_used, "default"),
             "months_covered": months_covered,
         }
 
-    # Priority 2: EnergyInvoice (sum energy_kwh last 12 months)
-    invoice_sum = (
-        db.query(func.sum(EnergyInvoice.energy_kwh))
-        .filter(
-            EnergyInvoice.site_id == site_id,
-            EnergyInvoice.period_start >= twelve_months_ago.date(),
-        )
-        .scalar()
-    )
-    if invoice_sum and invoice_sum > 0:
-        invoice_months = (
-            db.query(func.count(func.distinct(func.strftime("%Y-%m", EnergyInvoice.period_start))))
-            .filter(
-                EnergyInvoice.site_id == site_id,
-                EnergyInvoice.period_start >= twelve_months_ago.date(),
-            )
-            .scalar()
-        ) or 1
-        volume = invoice_sum * (12 / invoice_months) if invoice_months < 12 else invoice_sum
-        return {
-            "volume_kwh_an": round(volume, 0),
-            "source": "invoices",
-            "months_covered": invoice_months,
-        }
-
-    # Priority 3: Default fallback
+    # No data at all
     return {
         "volume_kwh_an": DEFAULT_VOLUME_KWH_AN,
         "source": "default",

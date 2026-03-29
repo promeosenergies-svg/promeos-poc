@@ -35,12 +35,6 @@ def register_error_handlers(app: FastAPI):
         }
         error_code = code_map.get(exc.status_code, f"HTTP_{exc.status_code}")
 
-        error = APIError(
-            code=error_code,
-            message=str(exc.detail),
-            correlation_id=correlation_id,
-        )
-
         logger.warning(
             "HTTP %d [%s] %s %s — %s",
             exc.status_code,
@@ -48,6 +42,19 @@ def register_error_handlers(app: FastAPI):
             request.method,
             request.url.path,
             exc.detail,
+        )
+
+        # When detail is a dict, preserve it as structured detail for API consumers
+        if isinstance(exc.detail, dict):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail, "code": error_code, "correlation_id": correlation_id},
+            )
+
+        error = APIError(
+            code=error_code,
+            message=str(exc.detail),
+            correlation_id=correlation_id,
         )
 
         return JSONResponse(

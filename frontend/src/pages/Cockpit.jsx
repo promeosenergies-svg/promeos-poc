@@ -186,8 +186,8 @@ const Cockpit = () => {
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const conf = data?.stats?.conso_confidence;
-        if (conf && conf !== 'none') setConsoSource('metered');
+        const src = data?.stats?.conso_source;
+        if (src && src !== 'none') setConsoSource(src);
         else setConsoSource(null);
       })
       .catch(() => setConsoSource(null));

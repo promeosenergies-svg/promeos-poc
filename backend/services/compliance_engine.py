@@ -770,6 +770,7 @@ from models.enums import (
     MVAlertType,
     ActionSourceType,
     ActionStatus,
+    FrequencyType,
 )
 
 
@@ -979,13 +980,22 @@ def compute_mv_summary(
     baseline_kwh = site.annual_kwh_total or 0
     baseline_monthly = round(baseline_kwh / 12, 1) if baseline_kwh else 0
 
-    # Source de verite : Meter/MeterReading (modele Yannick)
+    # Source de verite : unified consumption service (single source of truth)
     current_kwh = 0
     months_covered = 0
     meter_ids = []
     try:
-        from sqlalchemy import func
-        from models.enums import FrequencyType
+        from services.consumption_unified_service import get_consumption_summary
+
+        y_ago = date.today() - timedelta(days=365)
+        summary = get_consumption_summary(db, site_id, y_ago, date.today())
+        current_kwh = float(summary.get("value_kwh", 0) or 0)
+        details = summary.get("details", {})
+        metered_days = details.get("metered_days", 0)
+        months_covered = max(metered_days // 30, details.get("billed_months", 0))
+
+        # Recover meter_ids for data completeness check below
+        from models import Meter
 
         meter_ids = [
             m.id
@@ -993,28 +1003,6 @@ def compute_mv_summary(
             .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
             .all()
         ]
-        if meter_ids:
-            y_ago = date.today() - timedelta(days=365)
-            result = (
-                db.query(func.sum(MeterReading.value_kwh))
-                .filter(
-                    MeterReading.meter_id.in_(meter_ids),
-                    MeterReading.frequency == FrequencyType.MONTHLY,
-                    MeterReading.timestamp >= y_ago,
-                )
-                .scalar()
-            )
-            current_kwh = float(result or 0)
-            # Nombre de mois couverts
-            months_covered = (
-                db.query(func.count(func.distinct(func.strftime("%Y-%m", MeterReading.timestamp))))
-                .filter(
-                    MeterReading.meter_id.in_(meter_ids),
-                    MeterReading.frequency == FrequencyType.MONTHLY,
-                    MeterReading.timestamp >= y_ago,
-                )
-                .scalar()
-            ) or 0
     except Exception:
         current_kwh = 0
         months_covered = 0
