@@ -272,6 +272,36 @@ class SeedOrchestrator:
         self.db.flush()
         result["billing_audit"] = {"audited": audit_count}
 
+        # 6c. Vary insight statuses for demo realism (60% open, 15% ack, 15% resolved, 10% false_positive)
+        from models.billing_models import BillingInsight
+        from models.enums import InsightStatus
+
+        all_insights = (
+            self.db.query(BillingInsight).filter(BillingInsight.site_id.in_([s.id for s in master["sites"]])).all()
+        )
+        for bi in all_insights:
+            roll = rng.random()
+            if roll < 0.60:
+                bi.insight_status = InsightStatus.OPEN
+            elif roll < 0.75:
+                bi.insight_status = InsightStatus.ACK
+                bi.owner = rng.choice(["claire@atlas.demo", "lucas@atlas.demo"])
+            elif roll < 0.90:
+                bi.insight_status = InsightStatus.RESOLVED
+                bi.owner = rng.choice(["claire@atlas.demo", "lucas@atlas.demo"])
+                bi.notes = rng.choice(
+                    [
+                        "Verifie - facture correcte apres rapprochement compteur",
+                        "Ecart justifie par changement tarifaire",
+                        "Regularisation obtenue du fournisseur",
+                    ]
+                )
+            else:
+                bi.insight_status = InsightStatus.FALSE_POSITIVE
+                bi.owner = "lucas@atlas.demo"
+                bi.notes = "Faux positif - estimation fournisseur"
+        self.db.flush()
+
         # 7. Actions (pass compliance findings for linking)
         from .gen_actions import generate_actions
         from models import ComplianceFinding

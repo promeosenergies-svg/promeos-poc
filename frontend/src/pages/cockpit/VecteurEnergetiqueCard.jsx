@@ -6,7 +6,8 @@
  */
 import { useState, useEffect } from 'react';
 import { getCockpitCo2 } from '../../services/api';
-import { Skeleton } from '../../ui';
+import { useScope } from '../../contexts/ScopeContext';
+import { Skeleton, InfoTip } from '../../ui';
 
 /**
  * DeltaLine — Affiche la valeur N-1 et l'écart en % sous un KPI CO₂.
@@ -55,15 +56,19 @@ const VECTOR_CONFIG = {
 };
 
 export default function VecteurEnergetiqueCard() {
+  const { org } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!org?.id) return;
+    setData(null);
+    setLoading(true);
     getCockpitCo2()
       .then((d) => setData(d))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [org?.id]);
 
   if (loading) {
     return (
@@ -161,8 +166,9 @@ export default function VecteurEnergetiqueCard() {
 
       {/* CO₂ totaux + comparaison N-1 — données 100% backend */}
       <div className="border-t border-gray-100 pt-3">
-        <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        <div className="flex items-center gap-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
           Émissions CO₂ cumulées {data.year ?? data.annee_ref ?? new Date().getFullYear()}
+          <InfoTip content="Facteurs ADEME Base Empreinte V23.6 : élec 0,052 kgCO₂/kWh · gaz 0,227 kgCO₂/kWh. Comparaison même période calendaire N vs N-1." />
         </div>
         <div className="flex items-baseline gap-4 flex-wrap">
           <div className="min-w-[100px]">

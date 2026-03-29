@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { getActionsList } from '../../services/api';
+import { useScope } from '../../contexts/ScopeContext';
 import { fmtEur } from '../../utils/format';
 
 // ── PriorityBadge ────────────────────────────────────────────────────
@@ -114,20 +115,34 @@ function ActionRow({ action, totalGainEur }) {
 
 export default function ActionsImpact({ actions, loading }) {
   const navigate = useNavigate();
+  const { org } = useScope();
   const [actionsList, setActionsList] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
 
   useEffect(() => {
+    if (!org?.id) return;
+    setActionsList([]);
     setListLoading(true);
-    getActionsList({ status: 'open,in_progress', limit: 6 })
+    setListError(null);
+    getActionsList({ status: 'open,in_progress', limit: 12 })
       .then((data) => {
         const items = data?.actions ?? data?.items ?? data ?? [];
-        setActionsList(Array.isArray(items) ? items : []);
+        const list = Array.isArray(items) ? items : [];
+        // C6 FIX: exclure les alertes P0/critical déjà montrées dans AlertesPrioritaires
+        const filtered = list.filter(
+          (a) =>
+            !(
+              a.priority != null &&
+              a.priority <= 2 &&
+              (a.severity === 'critical' || a.severity === 'high')
+            )
+        );
+        setActionsList(filtered.slice(0, 6));
       })
       .catch((err) => setListError(err.message))
       .finally(() => setListLoading(false));
-  }, []);
+  }, [org?.id]);
 
   const isLoading = loading || listLoading;
   // Total gain pour la barre de proportion (présentation, pas un KPI)
@@ -175,11 +190,11 @@ export default function ActionsImpact({ actions, loading }) {
       {/* Footer — toujours visible (maquette) */}
       <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          {actions?.potentielEur > 0 ? (
+          {actions?.potentielEur > 0 || totalGainEur > 0 ? (
             <>
               Actions planifiées · Économie potentielle :
-              <span className="text-green-700 font-medium ml-1">
-                {fmtEur(actions.potentielEur)}/an
+              <span className="text-emerald-700 font-semibold ml-1">
+                {fmtEur(actions?.potentielEur || totalGainEur)}/an
               </span>
             </>
           ) : (

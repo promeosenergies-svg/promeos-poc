@@ -346,6 +346,7 @@ def sync_action_hub(
     return {"status": "ok", **result}
 
 
+@router.get("")
 @router.get("/list")
 def list_actions(
     request: Request,

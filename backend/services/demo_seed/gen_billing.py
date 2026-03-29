@@ -38,7 +38,7 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
 
     _ENERGY_TYPE_MAP = {"elec": BillingEnergyType.ELEC, "gaz": BillingEnergyType.GAZ}
 
-    contract_map = {}  # site_id → contract (first per site, for invoices)
+    contract_map = {}  # site_id → list[contract] (all contracts per site, for invoices)
 
     if pack_def and "contracts_spec" in pack_def:
         # ── Explicit contracts (helios) ──────────────────────────────
@@ -128,9 +128,8 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 if not existing:
                     db.add(ContractDeliveryPoint(contract_id=contract.id, delivery_point_id=dp.id))
 
-            # Keep first contract per site for invoice generation
-            if site.id not in contract_map:
-                contract_map[site.id] = contract
+            # Store all contracts per site for invoice generation (ELEC + GAZ)
+            contract_map.setdefault(site.id, []).append(contract)
             contracts_created += 1
     else:
         # ── Randomized contracts (tertiaire) ────────────────
@@ -150,14 +149,20 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             )
             db.add(contract)
             db.flush()
-            contract_map[site.id] = contract
+            contract_map.setdefault(site.id, []).append(contract)
             contracts_created += 1
 
-    # Generate invoices — spread across sites
-    sites_for_inv = rng.sample(sites, min(invoices_count, len(sites)))
+    # Generate invoices — spread across sites and ALL their contracts (ELEC + GAZ)
+    # Build flat list of (site, contract) pairs
+    site_contract_pairs = []
+    for site in sites:
+        for ct in contract_map.get(site.id, []):
+            site_contract_pairs.append((site, ct))
+    if not site_contract_pairs:
+        site_contract_pairs = [(s, None) for s in sites]
+
     for inv_idx in range(invoices_count):
-        site = sites_for_inv[inv_idx % len(sites_for_inv)]
-        contract = contract_map.get(site.id)
+        site, contract = site_contract_pairs[inv_idx % len(site_contract_pairs)]
         if not contract:
             continue
 
@@ -189,16 +194,23 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             continue
 
         # Realistic energy — aligned with shadow billing rates to avoid false anomalies
+        is_gaz = contract.energy_type == BillingEnergyType.GAZ if contract.energy_type else False
         annual = site.annual_kwh_total or 500000
-        monthly_kwh = round(annual / 12 * rng.uniform(0.8, 1.2), 0)
-        price = contract.price_ref_eur_per_kwh or 0.15
+        # GAZ: lower volume (~30-40% of ELEC for tertiaire)
+        annual_for_vector = annual * 0.35 if is_gaz else annual
+        monthly_kwh = round(annual_for_vector / 12 * rng.uniform(0.8, 1.2), 0)
+        price = contract.price_ref_eur_per_kwh or (0.08 if is_gaz else 0.15)
         energy_eur = round(monthly_kwh * price, 2)
-        # Use realistic TURPE/accise rates (aligned with shadow billing V2 expectations)
-        turpe_rate = 0.0453  # TURPE C5 BT
-        accise_rate = 0.0225  # Accise ELEC (TIEE)
+        # Rates differ by energy vector
+        if is_gaz:
+            network_rate = 0.032  # ATRD/ATRT gaz
+            tax_rate = 0.016  # TICGN
+        else:
+            network_rate = 0.0453  # TURPE C5 BT
+            tax_rate = 0.0225  # Accise ELEC (TIEE)
         # Add small variance ±8% to look realistic without triggering 20% shadow_gap
-        network_eur = round(monthly_kwh * turpe_rate * rng.uniform(0.92, 1.08), 2)
-        tax_eur = round(monthly_kwh * accise_rate * rng.uniform(0.92, 1.08), 2)
+        network_eur = round(monthly_kwh * network_rate * rng.uniform(0.92, 1.08), 2)
+        tax_eur = round(monthly_kwh * tax_rate * rng.uniform(0.92, 1.08), 2)
         abo_eur = contract.fixed_fee_eur_per_month or 0
         # TTC = HT components + TVA (20% on energy/network/taxes, 5.5% on abonnement)
         ht = energy_eur + network_eur + tax_eur + abo_eur
@@ -271,7 +283,7 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 EnergyInvoiceLine(
                     invoice_id=invoice.id,
                     line_type=InvoiceLineType.ENERGY,
-                    label="Fourniture electricite",
+                    label="Fourniture gaz naturel" if is_gaz else "Fourniture electricite",
                     amount_eur=energy_eur,
                     qty=monthly_kwh,
                     unit="kWh",
@@ -281,8 +293,8 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             lines_created += 1
 
         for lt, label, amount in [
-            (InvoiceLineType.NETWORK, "Acheminement (TURPE)", network_eur),
-            (InvoiceLineType.TAX, "Taxes et contributions", tax_eur),
+            (InvoiceLineType.NETWORK, "Acheminement (ATRD)" if is_gaz else "Acheminement (TURPE)", network_eur),
+            (InvoiceLineType.TAX, "TICGN" if is_gaz else "Taxes et contributions", tax_eur),
             (InvoiceLineType.OTHER, "Abonnement mensuel", contract.fixed_fee_eur_per_month or 0),
             (InvoiceLineType.OTHER, "TVA", tva_line),
         ]:
@@ -328,6 +340,29 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                 },
             }
             tpl = _ANOMALY_TEMPLATES[anomaly_type]
+            # P1.3: Statuts variés — 60% OPEN, 15% ACK, 15% RESOLVED, 10% FALSE_POSITIVE
+            _status_roll = rng.random()
+            if _status_roll < 0.60:
+                _insight_status = InsightStatus.OPEN
+                _owner, _notes = None, None
+            elif _status_roll < 0.75:
+                _insight_status = InsightStatus.ACK
+                _owner = rng.choice(["claire@atlas.demo", "lucas@atlas.demo"])
+                _notes = None
+            elif _status_roll < 0.90:
+                _insight_status = InsightStatus.RESOLVED
+                _owner = rng.choice(["claire@atlas.demo", "lucas@atlas.demo"])
+                _notes = rng.choice(
+                    [
+                        "Verifie — facture correcte apres rapprochement compteur",
+                        "Ecart justifie par changement tarifaire",
+                        "Regularisation obtenue du fournisseur",
+                    ]
+                )
+            else:
+                _insight_status = InsightStatus.FALSE_POSITIVE
+                _owner = "lucas@atlas.demo"
+                _notes = "Faux positif — ecart lie a une estimation fournisseur"
             db.add(
                 BillingInsight(
                     site_id=site.id,
@@ -336,7 +371,9 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
                     severity=tpl["severity"],
                     message=tpl["msg"],
                     estimated_loss_eur=round(total * rng.uniform(0.05, 0.20), 2),
-                    insight_status=InsightStatus.OPEN,
+                    insight_status=_insight_status,
+                    owner=_owner,
+                    notes=_notes,
                 )
             )
             insights_created += 1

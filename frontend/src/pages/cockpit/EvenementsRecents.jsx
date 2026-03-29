@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import { getNotificationsList } from '../../services/api';
+import { useScope } from '../../contexts/ScopeContext';
 import { Skeleton } from '../../ui';
 
 const SEVERITY_DOTS = {
@@ -40,10 +41,14 @@ function relativeDate(dateStr) {
 }
 
 export default function EvenementsRecents() {
+  const { org } = useScope();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!org?.id) return;
+    setEvents([]);
+    setLoading(true);
     getNotificationsList({ limit: 4 })
       .then((data) => {
         const items = data?.notifications ?? data?.items ?? data ?? [];
@@ -51,7 +56,7 @@ export default function EvenementsRecents() {
       })
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [org?.id]);
 
   return (
     <div

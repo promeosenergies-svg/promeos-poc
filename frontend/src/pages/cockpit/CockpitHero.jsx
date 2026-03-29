@@ -41,6 +41,7 @@ export default function CockpitHero({
   loading,
   error,
   orgNom,
+  sitesARisque,
   onEvidence,
 }) {
   const navigate = useNavigate();
@@ -104,37 +105,57 @@ export default function CockpitHero({
             </button>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          {/* Jauge SVG conservée */}
-          <svg viewBox="0 0 120 70" width={48} height={28} className="shrink-0">
+        <div className="flex items-center gap-2">
+          {/* V1: Gauge SVG agrandie avec score intégré */}
+          <svg viewBox="0 0 120 76" width={72} height={46} className="shrink-0">
+            {/* Track */}
             <path
-              d="M 15 60 A 45 45 0 0 1 105 60"
+              d="M 12 64 A 48 48 0 0 1 108 64"
               fill="none"
               stroke="#e5e7eb"
-              strokeWidth={10}
+              strokeWidth={9}
               strokeLinecap="round"
             />
+            {/* Value arc */}
             <path
-              d="M 15 60 A 45 45 0 0 1 105 60"
+              d="M 12 64 A 48 48 0 0 1 108 64"
               fill="none"
               stroke={color}
-              strokeWidth={10}
+              strokeWidth={9}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
               strokeDashoffset={dashOffset}
-              className="transition-all duration-700"
+              className="transition-all duration-1000 ease-out"
             />
+            {/* Score number inside arc */}
+            <text
+              x="60"
+              y="56"
+              textAnchor="middle"
+              className="fill-gray-900"
+              style={{ fontSize: '22px', fontWeight: 700 }}
+            >
+              {score != null ? Math.round(score) : '—'}
+            </text>
+            <text
+              x="60"
+              y="72"
+              textAnchor="middle"
+              className="fill-gray-400"
+              style={{ fontSize: '9px' }}
+            >
+              /100
+            </text>
           </svg>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xl font-bold text-gray-900">{score ?? '—'} / 100</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-gray-900">{label}</span>
             <span
-              className={`w-2 h-2 rounded-full shrink-0 ${score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+              className={`w-2 h-2 rounded-full shrink-0 ${score == null ? 'bg-gray-300' : score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
             />
           </div>
         </div>
         <p className="text-xs text-gray-500">
-          DT {kpis?.weightDt ?? 45}% · BACS {kpis?.weightBacs ?? 30}% · APER{' '}
-          {kpis?.weightAper ?? 25}% · {kpis?.totalSites ?? 0} sites
+          Pondération standard : DT 45% · BACS 30% · APER 25% · {kpis?.totalSites ?? 0} sites
         </p>
         <p className="text-[10px] text-gray-400">
           Source :{' '}
@@ -177,12 +198,11 @@ export default function CockpitHero({
           />
         </div>
         <p className="text-xs text-gray-500">
-          {kpis?.totalSites ?? 0} sites concernés (périmètre sélectionné)
+          {sitesARisque ?? 0} site{(sitesARisque ?? 0) > 1 ? 's' : ''} concerné
+          {(sitesARisque ?? 0) > 1 ? 's' : ''} (périmètre sélectionné)
         </p>
         {(kpis?.risqueTotal ?? 0) > 0 && (
-          <p className="text-[10px] text-red-600">
-            Risque total {fmtEur(kpis?.risqueTotal)}. Actions correctives urgentes.
-          </p>
+          <p className="text-[10px] text-red-600">Actions correctives urgentes.</p>
         )}
         <p className="text-[10px] text-gray-400">
           Source :{' '}

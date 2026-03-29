@@ -182,6 +182,11 @@ def get_consumption_summary(
             value_kwh = billed_kwh
             source_used = "billed"
             coverage = billed_coverage
+        elif metered_kwh > 0:
+            # Metered data exists but coverage < threshold — use it with low confidence
+            value_kwh = metered_kwh
+            source_used = "metered"
+            coverage = metered_coverage
         else:
             # Fallback: use site.annual_kwh_total as estimate
             site = db.query(Site).filter(Site.id == site_id).first()

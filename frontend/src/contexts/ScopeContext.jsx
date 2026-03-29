@@ -90,6 +90,7 @@ export function ScopeProvider({ children }) {
   // ── child useEffects, ensuring _apiScope.orgId is set before any child   ──
   // ── effect fetches data. No render-time side-effects.                    ──
   useLayoutEffect(() => {
+    clearApiCache(); // C1 FIX: flush cache au changement de scope (évite cross-tenant)
     setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
   }, [effectiveOrgId, scope.siteId]);
 

@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Receipt, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { getActionsList } from '../../services/api';
+import { useScope } from '../../contexts/ScopeContext';
 import { fmtEur } from '../../utils/format';
 import { Skeleton } from '../../ui';
 
@@ -25,18 +26,31 @@ function daysUntil(dateStr) {
 
 export default function AlertesPrioritaires() {
   const navigate = useNavigate();
+  const { org } = useScope();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getActionsList({ status: 'open,in_progress', limit: 3 })
+    if (!org?.id) return;
+    setItems([]);
+    setLoading(true);
+    getActionsList({ status: 'open,in_progress', limit: 10 })
       .then((data) => {
         const actions = data?.actions ?? data?.items ?? data ?? [];
-        setItems(Array.isArray(actions) ? actions.slice(0, 3) : []);
+        const list = Array.isArray(actions) ? actions : [];
+        // C6 FIX: ne garder que les alertes urgentes (P0/P1, severity critical/high)
+        // pour éviter le doublon avec ActionsImpact qui affiche toutes les actions
+        const urgent = list.filter(
+          (a) =>
+            (a.priority != null && a.priority <= 2) ||
+            a.severity === 'critical' ||
+            a.severity === 'high'
+        );
+        setItems(urgent.slice(0, 3));
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [org?.id]);
 
   return (
     <div
@@ -87,15 +101,17 @@ export default function AlertesPrioritaires() {
                   )}
                   {days != null && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        days <= 7
-                          ? 'bg-red-50 text-red-700'
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        days <= 0
+                          ? 'bg-red-50 text-red-700 border-red-200'
                           : days <= 30
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : days <= 90
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
                       }`}
                     >
-                      {days <= 0 ? 'Échu' : `${days} j`}
+                      {days <= 0 ? 'Dépassé' : `J-${days}`}
                     </span>
                   )}
                 </div>

@@ -561,7 +561,13 @@ export function buildExecutiveKpis(kpis, sites = []) {
       messageCtx: {},
       subShort: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} couvert${sitesWithData !== 1 ? 's' : ''}`,
       sub: `${sitesWithData}/${total} site${total !== 1 ? 's' : ''} avec données de consommation`,
-      status: couvertureDonnees < COVERAGE_THRESHOLDS.warn ? 'warn' : 'ok',
+      // I5 FIX: crit si couverture nulle ou très basse
+      status:
+        couvertureDonnees == null || couvertureDonnees <= 0
+          ? 'crit'
+          : couvertureDonnees < COVERAGE_THRESHOLDS.warn
+            ? 'warn'
+            : 'ok',
       path: '/consommations/import',
     },
   ];

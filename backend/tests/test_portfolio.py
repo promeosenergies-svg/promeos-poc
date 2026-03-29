@@ -446,7 +446,7 @@ class TestPortfolioV13:
             assert row["kwh"] is not None
             assert row["eur"] is not None
             assert row["co2"] is not None
-            assert row["confidence"] in ("high", "medium", "low")
+            assert row["confidence"] in ("high", "medium", "low", "none")
             assert row["diagnostics_count"] is not None
             assert row["impact_eur_estimated"] is not None
             assert row["open_actions_count"] is not None

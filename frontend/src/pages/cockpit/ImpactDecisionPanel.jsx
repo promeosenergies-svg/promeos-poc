@@ -29,7 +29,6 @@ import { buildLeverDeepLink } from '../../models/leverActionModel';
 import { hasProofData, buildProofLink, getProofLabel } from '../../models/proofLinkModel';
 import { isPurchaseAvailable } from '../../models/purchaseSignalsContract';
 import { toPurchase } from '../../services/routes';
-import useActivationData from '../../hooks/useActivationData';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -88,9 +87,10 @@ function ImpactKpiTile({
 
 // ── Main Panel ───────────────────────────────────────────────────────────────
 
-export default function ImpactDecisionPanel({ kpis }) {
+export default function ImpactDecisionPanel({ kpis, activationData }) {
   const navigate = useNavigate();
-  const { billingSummary, purchaseSignals, loading } = useActivationData(kpis?.total);
+  // I4 FIX: activationData passé en prop depuis Cockpit.jsx (plus de double hook)
+  const { billingSummary, purchaseSignals, loading } = activationData ?? {};
 
   const impact = useMemo(
     () => computeImpactKpis(kpis, billingSummary || {}),
