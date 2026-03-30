@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import Base
 from database import engine, DATABASE_URL
+import data_ingestion.enedis.models  # noqa: F401 — register Enedis tables with Base
 
 
 def init_database():

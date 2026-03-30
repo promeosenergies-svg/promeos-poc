@@ -1,247 +1,151 @@
 # Feature Spec : Déchiffrement et classification des flux SGE Enedis
 
-> **Sub-feature 1/3** — Aucune dépendance. First mover.
-> Chaîne : **SF1 (decrypt)** → SF2 (ingestion CDC) → SF3 (ingestion Index)
+> **Sub-feature 1/3** — **COMPLÉTÉE le 2026-03-23**
+> PR : [#148](https://github.com/promeosenergies-svg/promeos-poc/pull/148) (`feat/enedis-sge-1-decrypt` → `feat/enedis-sge-ingestion`)
+> Chaîne : **SF1 (decrypt)** ✅ → SF2 (ingestion CDC) → SF3 (ingestion Index)
 
-## Contexte
+---
 
-Promeos reçoit les flux SGE Enedis sous forme de fichiers chiffrés en AES symétrique. Cette sub-feature est la brique fondatrice : elle déchiffre les fichiers, classifie le type de flux, et produit les fixtures XML sanitisées nécessaires aux sub-features suivantes.
+## Résultat de l'implémentation
 
-### Ce que cette sub-feature doit livrer
+### Ce qui a été livré
 
-Une fonction qui prend un fichier chiffré et retourne `(FluxType, xml_bytes)`.
+| Livrable | Statut | Détail |
+|----------|--------|--------|
+| Module `backend/data_ingestion/enedis/` | ✅ | Nouveau module isolé sous `data_ingestion/` (pas `backend/enedis/` comme le spec initial proposait) |
+| `decrypt_file()` | ✅ | AES-128-CBC + PKCS7, essai séquentiel de 3 paires KEY/IV |
+| `classify_flux()` | ✅ | Pattern matching sur le nom de fichier → `FluxType` |
+| `load_keys_from_env()` | ✅ | Chargement KEY_1/IV_1..KEY_3/IV_3 avec validation paires partielles |
+| `FluxType` enum | ✅ | 10 valeurs (6 in-scope + 4 skip) |
+| Tests unitaires | ✅ | 26 tests avec fixtures AES synthétiques |
+| Tests intégration | ✅ | 8 tests sur les 91 vrais fichiers (skip si pas de clés) |
+| Fixtures XML commitées | ❌ | **Décision utilisateur** : ne pas committer les fichiers déchiffrés. Les tests d'intégration utilisent les vrais fichiers avec skip si non disponibles. |
 
-## Vocabulaire Enedis
+### Discovery AES (2026-03-23)
 
-| Terme | Signification |
-|-------|--------------|
-| **PRM** | Point de Référence Mesure — identifiant unique 14 chiffres d'un point de livraison électrique |
-| **CDC** | Courbe De Charge — série temporelle de puissance/énergie à pas fin |
-| **SGE** | Système de Gestion des Echanges — plateforme Enedis de publication des flux B2B |
-| **C1-C4** | Segments de comptage haute puissance (télérelevés, CDC disponible) |
-| **C5** | Segment résidentiel/petit tertiaire (index mensuels) |
+| Propriété | Valeur trouvée |
+|-----------|---------------|
+| Algorithme | **AES-128-CBC** avec padding **PKCS7** |
+| Clés | **3 paires KEY/IV** (hex-encoded, 16 bytes chacune) |
+| Post-decrypt | **Toujours un ZIP** contenant un seul XML (jamais du XML direct dans les fichiers réels) |
+| Mapping clé→flux | **Non déterministe** — R4Q utilise KEY_2 ou KEY_3 selon le fichier. Le code essaie les 3 clés séquentiellement. |
+| Taux de succès | **91/91 fichiers** in-scope (100%) |
 
-## Flux concernés par le déchiffrement
+Mapping observé (non garanti stable) :
 
-| Flux | Segment | Statut dans cette SF |
-|------|---------|---------------------|
-| **R4H, R4M, R4Q** | C1-C4 | Déchiffrer + classifier |
-| **R171** | C1-C4 | Déchiffrer + classifier |
-| **R50** | C5 | Déchiffrer + classifier |
-| **R151** | C5 | Déchiffrer + classifier |
-| **R172** | C1-C4 | Classifier → **skipped** (binaire non-XML) |
-| **X14** | C1-C4 | Classifier → **skipped** (hors scope) |
-| **HDM CSV** | — | Classifier → **skipped** (chiffré PGP, hors scope) |
+| Clé | Flux types |
+|-----|-----------|
+| KEY_1 / IV_1 | R151 |
+| KEY_2 / IV_2 | R4Q (4/8), R50 |
+| KEY_3 / IV_3 | R4H, R4M, R4Q (4/8), R171 |
 
-## Fichiers d'exemple
+### Variables d'environnement (réalité vs spec)
 
-Répertoire : `Promeos/flux_enedis/` (~114 fichiers)
+Le spec initial prévoyait une seule `ENEDIS_DECRYPT_KEY`. La réalité est **6 variables** :
+
+| Variable | Format | Description |
+|----------|--------|-------------|
+| `KEY_1` | hex 32 chars | Clé AES #1 |
+| `IV_1` | hex 32 chars | IV #1 |
+| `KEY_2` | hex 32 chars | Clé AES #2 |
+| `IV_2` | hex 32 chars | IV #2 |
+| `KEY_3` | hex 32 chars | Clé AES #3 |
+| `IV_3` | hex 32 chars | IV #3 |
+| `ENEDIS_ARCHIVE_DIR` | chemin (optionnel) | Répertoire d'archivage XML |
+
+Les clés sont dans `backend/.env` (non committées, `.gitignore`).
+
+### Comptage réel des fichiers
 
 ```
 flux_enedis/
-  C1-C4/
-    ENEDIS_R171_C_*.zip          # ~57 fichiers — CDC journalière par PRM
-    ENEDIS_R172_*.zip            # ~17 fichiers — réconciliation (binaire, hors scope)
-    ENEDIS_23X--*_R4H_CDC_*.zip  # R4H horaire
-    ENEDIS_23X--*_R4M_CDC_*.zip  # R4M mensuel
-    ENEDIS_23X--*_R4Q_CDC_*.zip  # R4Q trimestriel
-    X14_*.zip                    # ~3 fichiers (hors scope)
-  C5/
-    ERDF_R50_*.zip               # ~5 fichiers — index mensuels (préfixe historique ERDF)
-    ERDF_R151_*.zip              # ~5 fichiers — relevés trimestriels (préfixe historique ERDF)
-    HDM_*.csv                    # ~3 fichiers — CSV chiffrés PGP (hors scope)
+  C1-C4/  (98 fichiers)
+    R4H:   5 fichiers
+    R4M:   4 fichiers
+    R4Q:   8 fichiers
+    R171: 64 fichiers
+    R172: 15 fichiers (skip — binaire)
+  C5/     (10 fichiers)
+    R50:   5 fichiers
+    R151:  5 fichiers
+  (root)  (6 fichiers)
+    X14:   3 fichiers (skip)
+    HDM:   3 fichiers CSV (skip — PGP)
 ```
 
-### Réalité du chiffrement (corrections factuelles)
+### Structure XML découverte
 
-Les fichiers `.zip` **ne sont pas des archives ZIP**. La commande `file` retourne `"data"`, pas `"Zip archive"`. Ce sont du **ciphertext AES brut**. Les tailles sont des multiples de 16 octets, confirmant un block cipher AES (ECB ou CBC).
+| Flux | Racine XML | Namespace | Taille typique |
+|------|-----------|-----------|---------------|
+| R4H/R4M/R4Q | `<Courbe>` | Aucun | 25 Ko – 700 Ko |
+| R171 | `<ns2:R171>` | `http://www.enedis.fr/stm/R171` | ~58 Ko |
+| R50 | `<R50>` | xsi schema | ~668 Ko |
+| R151 | `<R151>` | xsi schema | ~3 Ko |
 
-**Séquence réelle** : déchiffrement AES → résultat. Le résultat post-décrypt peut être :
-- Du XML directement
-- Un ZIP contenant du XML
-
-L'agent doit tester les deux cas après déchiffrement et adapter le code en conséquence.
-
-**Il n'y a pas d'étape de "dézip" avant le déchiffrement.**
-
-## Implémentation
-
-### 1. Discovery du mode AES (première étape obligatoire)
-
-L'agent doit déterminer empiriquement le mode AES en testant les fichiers réels de `Promeos/flux_enedis/`. Voici la procédure :
-
-1. Lire la clé depuis `ENEDIS_DECRYPT_KEY` (tester les formats : hex string, base64, raw bytes)
-2. Tester les modes AES dans cet ordre de probabilité :
-   - **AES-CBC** avec IV = premiers 16 octets du fichier
-   - **AES-ECB** (pas d'IV)
-   - **AES-CBC** avec IV zéro
-   - **AES-CBC** avec IV dérivé de la clé
-3. Après déchiffrement, vérifier :
-   - Le résultat commence par `<?xml` ou `PK` (signature ZIP)
-   - Si `PK` : extraire le ZIP en mémoire, puis obtenir le XML
-   - Si `<?xml` : utiliser tel quel
-4. Valider sur au moins un fichier de **chaque** type de flux (R4H, R4M, R4Q, R171, R50, R151)
-5. Documenter le mode trouvé dans un commentaire en tête de `decrypt.py`
-
-**Critère de succès** : TOUS les fichiers d'un type donné déchiffrent avec succès, pas "au moins 1". Si certains fichiers d'un même type échouent, investiguer la raison (variante de format, fichier corrompu, etc.).
-
-### 2. Module de déchiffrement (`decrypt.py`)
-
-```python
-def decrypt_file(file_path: Path, key: bytes) -> bytes:
-    """Déchiffre un fichier SGE Enedis.
-
-    Returns: contenu déchiffré (XML bytes ou ZIP bytes)
-    Raises: DecryptError si le déchiffrement échoue
-    """
-```
-
-- Lire la clé depuis l'env var `ENEDIS_DECRYPT_KEY`
-- Appliquer le mode AES découvert en étape 1
-- Gérer le padding PKCS7 (standard pour AES-CBC) ou absence de padding (ECB)
-- Si le résultat post-décrypt est un ZIP → extraire le XML en mémoire
-- **Validation post-décrypt** : vérifier que le contenu final est du XML valide (commence par `<?xml` ou `<` et est parsable). Si non → lever `DecryptError`
-
-### 3. Classification des flux (`classify.py` ou dans `decrypt.py`)
-
-```python
-def classify_flux(filename: str) -> FluxType:
-    """Identifie le type de flux à partir du nom de fichier."""
-```
-
-Règles de classification basées sur le nom de fichier :
-
-| Pattern dans le nom | FluxType |
-|---------------------|----------|
-| `_R4H_CDC_` | `R4H` |
-| `_R4M_CDC_` | `R4M` |
-| `_R4Q_CDC_` | `R4Q` |
-| `_R171_` ou `R171_C_` | `R171` |
-| `_R50_` | `R50` |
-| `_R151_` | `R151` |
-| `_R172_` | `R172` (→ skipped) |
-| `X14_` | `X14` (→ skipped) |
-| `HDM_` | `HDM` (→ skipped) |
-| Aucun match | `UNKNOWN` (→ skipped) |
-
-Les types R172, X14, HDM et UNKNOWN sont des flux reconnus mais hors scope de parsing. Le pipeline les classifie sans tenter de les déchiffrer ni de les parser.
-
-### 4. Archivage optionnel du XML déchiffré
-
-Si la variable d'environnement `ENEDIS_ARCHIVE_DIR` est définie :
-- Écrire le XML déchiffré dans ce répertoire
-- Nom du fichier : même nom que l'original, extension remplacée par `.xml`
-- Si `ENEDIS_ARCHIVE_DIR` est absente → pas d'archivage (comportement par défaut)
-
-### 5. Production de fixtures XML
-
-**Livrable critique pour les sub-features suivantes** : l'agent doit produire des fixtures XML déchiffrées et sanitisées (PRM anonymisés si nécessaire) pour chaque type de flux en scope. Ces fixtures seront commitées dans le repo pour servir de base aux tests des SF2 et SF3.
-
-Emplacement : `backend/enedis/tests/fixtures/`
-
-Fixtures attendues :
-- `r4h_sample.xml`
-- `r4m_sample.xml`
-- `r4q_sample.xml`
-- `r171_sample.xml`
-- `r50_sample.xml`
-- `r151_sample.xml`
-
-### 6. Enums
-
-```python
-# backend/enedis/enums.py
-
-class FluxType(str, Enum):
-    R4H = "R4H"
-    R4M = "R4M"
-    R4Q = "R4Q"
-    R171 = "R171"
-    R50 = "R50"
-    R151 = "R151"
-    R172 = "R172"      # hors scope parsing
-    X14 = "X14"        # hors scope parsing
-    HDM = "HDM"        # hors scope parsing
-    UNKNOWN = "UNKNOWN" # non reconnu
-```
-
-## Variables d'environnement
-
-| Variable | Obligatoire | Description |
-|----------|------------|-------------|
-| `ENEDIS_DECRYPT_KEY` | Oui | Clé AES de déchiffrement. Format à déterminer lors de la discovery (hex, base64, raw) |
-| `ENEDIS_ARCHIVE_DIR` | Non | Répertoire d'archivage des XML déchiffrés. Si absent, pas d'archivage |
-
-## Dépendances Python
-
-Le package `cryptography` est référencé dans `requirements.lock.txt` mais **n'est pas installé** dans le venv. L'agent doit :
-1. Vérifier avec `pip list | grep cryptography`
-2. Si absent : `pip install cryptography` et s'assurer qu'il est dans les requirements
-
-## Matrice d'erreurs
-
-| Scénario | Comportement | Status |
-|----------|-------------|--------|
-| Fichier introuvable | Lever `FileNotFoundError` (laisser l'appelant gérer) | n/a |
-| `ENEDIS_DECRYPT_KEY` absente | Lever une exception claire (`MissingKeyError` ou `ValueError`) | n/a |
-| Mauvaise clé (garbage post-décrypt) | Lever `DecryptError` | n/a |
-| XML invalide après décrypt | Lever `DecryptError` | n/a |
-| Type de flux R172 / X14 / HDM / UNKNOWN | Retourner le type, ne pas tenter de déchiffrer | skipped |
-
-## Arborescence cible
+### Arborescence livrée
 
 ```
 backend/
-  enedis/
+  data_ingestion/
     __init__.py
-    enums.py           # FluxType (+ placeholder pour les enums des SF suivantes)
-    decrypt.py         # decrypt_file(), classify_flux()
-    tests/
+    enedis/
       __init__.py
-      test_decrypt.py
-      conftest.py      # Fixtures : clé de test, fichiers chiffrés de test
-      fixtures/
-        r4h_sample.xml
-        r4m_sample.xml
-        r4q_sample.xml
-        r171_sample.xml
-        r50_sample.xml
-        r151_sample.xml
+      enums.py             # FluxType (10 valeurs)
+      decrypt.py           # decrypt_file(), classify_flux(), load_keys_from_env()
+                           # + DecryptError, MissingKeyError, SKIP_FLUX_TYPES
+      tests/
+        __init__.py
+        conftest.py        # Fixtures AES synthétiques, load_dotenv
+        test_decrypt.py    # 26 tests unitaires
+        test_integration.py # 8 tests intégration (vrais fichiers)
 ```
 
-## Tests
-
-### Tests unitaires (`test_decrypt.py`)
-
-1. **Test decrypt avec clé de test connue** : créer une fixture chiffrée avec une clé de test, vérifier que `decrypt_file` retourne le XML attendu
-2. **Test classify_flux** : vérifier chaque pattern de nom de fichier → bon FluxType
-3. **Test fichier corrompu** : contenu aléatoire → `DecryptError`
-4. **Test mauvaise clé** : chiffrer avec clé A, déchiffrer avec clé B → `DecryptError`
-5. **Test archivage** : avec `ENEDIS_ARCHIVE_DIR` défini, vérifier que le XML est écrit au bon endroit
-6. **Test sans archivage** : sans `ENEDIS_ARCHIVE_DIR`, vérifier qu'aucun fichier n'est écrit
-
-### Tests d'intégration (fichiers réels)
+### API publique pour SF2/SF3
 
 ```python
-@pytest.mark.skipif(not os.environ.get("ENEDIS_DECRYPT_KEY"), reason="No decrypt key")
-def test_decrypt_real_files():
-    """Déchiffre les fichiers réels de flux_enedis/ et vérifie le résultat."""
+from data_ingestion.enedis.enums import FluxType
+from data_ingestion.enedis.decrypt import (
+    decrypt_file,       # (Path, keys: list[tuple[bytes,bytes]], archive_dir?) -> bytes (XML)
+    classify_flux,      # (filename: str) -> FluxType
+    load_keys_from_env, # () -> list[tuple[bytes,bytes]]  (lève MissingKeyError)
+    SKIP_FLUX_TYPES,    # frozenset{R172, X14, HDM, UNKNOWN}
+    DecryptError,       # déchiffrement échoué
+    MissingKeyError,    # clés absentes ou invalides
+)
 ```
 
-- Tester sur au moins un fichier de chaque type
-- Vérifier que le résultat est du XML valide (parsable par `xml.etree.ElementTree`)
+### Commandes de test
 
-## Contraintes d'architecture
+```bash
+# Tests SF1 uniquement (unitaires + intégration)
+cd promeos-poc && ./backend/venv/bin/pytest backend/data_ingestion/ -x -v
 
-1. **Isolation totale** : nouveau module `backend/enedis/` — aucune dépendance ni modification des modèles existants
-2. **Pas de routes API** dans cette feature
-3. **Pas de modèle SQLAlchemy** dans cette sub-feature (introduit en SF2)
-4. **Les tests existants du POC ne doivent pas casser** : `pytest backend/tests/ -x`
+# Vérifier non-régression backend existant
+cd promeos-poc && ./backend/venv/bin/pytest backend/tests/ -x
+```
 
-## Challenges intégrés
+### Dépendances ajoutées
 
-| Pattern | Point de vigilance |
-|---------|-------------------|
-| **Metric Validity** | Le critère est "TOUS les fichiers d'un type déchiffrent", pas "au moins 1". Si un R171 sur 57 échoue, investiguer pourquoi |
-| **Misuse Surface** | Toujours valider que le contenu déchiffré est du XML avant de le retourner. Ne jamais passer du garbage aux parsers |
-| **Boundary Behavior** | Un fichier R172 ou X14 ne doit pas provoquer d'erreur — il est classifié et ignoré proprement |
+- `cryptography>=42.0.0` ajouté dans `backend/requirements.txt`
+- `data_ingestion` ajouté dans `known-first-party` de `pyproject.toml`
+
+---
+
+## Spec original (pour référence)
+
+Le reste du document ci-dessous est le spec original tel qu'il a été rédigé avant implémentation. Les sections marquées `[CORRIGÉ]` indiquent les écarts avec la réalité.
+
+### Contexte
+
+Promeos reçoit les flux SGE Enedis sous forme de fichiers chiffrés en AES symétrique. Cette sub-feature est la brique fondatrice : elle déchiffre les fichiers, classifie le type de flux, et produit les fixtures XML sanitisées nécessaires aux sub-features suivantes.
+
+### Écarts entre le spec et l'implémentation
+
+| Spec original | Réalité |
+|--------------|---------|
+| Module dans `backend/enedis/` | `backend/data_ingestion/enedis/` (préparation pour d'autres sources futures) |
+| Une seule clé `ENEDIS_DECRYPT_KEY` | 3 paires KEY_1/IV_1..KEY_3/IV_3 |
+| Mode AES à découvrir (ECB, CBC...) | AES-128-CBC confirmé |
+| Fichiers séparés `decrypt.py` + `classify.py` + `exceptions.py` | Tout dans `decrypt.py` (YAGNI) |
+| Fixtures XML commitées dans le repo | Non commitées (décision utilisateur — fichiers sensibles) |
+| Post-decrypt peut être XML direct ou ZIP | Toujours ZIP dans les vrais fichiers (mais le code gère les deux cas) |

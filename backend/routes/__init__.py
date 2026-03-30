@@ -55,6 +55,7 @@ from .geocoding import router as geocoding_router
 from .usages import router as usages_router
 from .action_center import router as action_center_router
 from .cockpit_v2 import router as cockpit_v2_router
+from .enedis import router as enedis_router
 
 __all__ = [
     "sites_router",
@@ -110,4 +111,5 @@ __all__ = [
     "usages_router",
     "action_center_router",
     "cockpit_v2_router",
+    "enedis_router",
 ]
