@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from sqlalchemy import insert
+from sqlalchemy import func, insert
 from sqlalchemy.orm import Session
 
 from data_ingestion.enedis.decrypt import (
@@ -113,7 +113,8 @@ def ingest_file(
             )
             return FluxStatus(existing.status)
         if existing.status == FluxStatus.ERROR:
-            if len(existing.errors) >= MAX_RETRIES:
+            error_count = session.query(func.count(EnedisFluxFileError.id)).filter_by(flux_file_id=existing.id).scalar()
+            if error_count >= MAX_RETRIES:
                 _archive_error(session, existing)
                 existing.status = FluxStatus.PERMANENTLY_FAILED
                 existing.error_message = None
@@ -318,7 +319,7 @@ def ingest_directory(
                 # Max retries reached — skip, needs manual intervention
                 counters["max_retries_reached"] += 1
             elif existing.status == FluxStatus.ERROR:
-                error_count = len(existing.errors)
+                error_count = session.query(func.count(EnedisFluxFileError.id)).filter_by(flux_file_id=existing.id).scalar()
                 if error_count < MAX_RETRIES:
                     logger.info("Retrying ERROR file %s (attempt %d/%d)",
                                 file_path.name, error_count + 1, MAX_RETRIES)
@@ -552,137 +553,113 @@ def _prm_summary(parsed: Any) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _store_r4x(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    """Store R4x CDC measures. Returns total rows inserted."""
-    total_inserted = 0
+def _batch_insert(session: Session, model_cls, rows, chunk_size: int) -> int:
+    """Flush *rows* (iterable of dicts) into *model_cls* in chunks. Returns total inserted."""
+    total = 0
     batch: list[dict] = []
+    for row in rows:
+        batch.append(row)
+        if len(batch) >= chunk_size:
+            session.execute(insert(model_cls), batch)
+            total += len(batch)
+            batch = []
+    if batch:
+        session.execute(insert(model_cls), batch)
+        total += len(batch)
+    return total
+
+
+def _iter_r4x(parsed: Any, flux_file: EnedisFluxFile):
     for courbe in parsed.courbes:
         for point in courbe.points:
-            batch.append(
-                dict(
-                    flux_file_id=flux_file.id,
-                    flux_type=flux_file.flux_type,
-                    point_id=parsed.point_id,
-                    grandeur_physique=courbe.grandeur_physique,
-                    grandeur_metier=courbe.grandeur_metier,
-                    unite_mesure=courbe.unite_mesure,
-                    granularite=courbe.granularite,
-                    horodatage_debut=courbe.horodatage_debut,
-                    horodatage_fin=courbe.horodatage_fin,
-                    horodatage=point.horodatage,
-                    valeur_point=point.valeur_point,
-                    statut_point=point.statut_point,
-                )
+            yield dict(
+                flux_file_id=flux_file.id,
+                flux_type=flux_file.flux_type,
+                point_id=parsed.point_id,
+                grandeur_physique=courbe.grandeur_physique,
+                grandeur_metier=courbe.grandeur_metier,
+                unite_mesure=courbe.unite_mesure,
+                granularite=courbe.granularite,
+                horodatage_debut=courbe.horodatage_debut,
+                horodatage_fin=courbe.horodatage_fin,
+                horodatage=point.horodatage,
+                valeur_point=point.valeur_point,
+                statut_point=point.statut_point,
             )
-            if len(batch) >= chunk_size:
-                session.execute(insert(EnedisFluxMesureR4x), batch)
-                total_inserted += len(batch)
-                batch = []
 
-    if batch:
-        session.execute(insert(EnedisFluxMesureR4x), batch)
-        total_inserted += len(batch)
-    return total_inserted
+
+def _store_r4x(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
+    return _batch_insert(session, EnedisFluxMesureR4x, _iter_r4x(parsed, flux_file), chunk_size)
+
+
+def _iter_r171(parsed: Any, flux_file: EnedisFluxFile):
+    for serie in parsed.series:
+        for mesure in serie.mesures:
+            yield dict(
+                flux_file_id=flux_file.id,
+                flux_type=flux_file.flux_type,
+                point_id=serie.point_id,
+                type_mesure=serie.type_mesure,
+                grandeur_metier=serie.grandeur_metier,
+                grandeur_physique=serie.grandeur_physique,
+                type_calendrier=serie.type_calendrier,
+                code_classe_temporelle=serie.code_classe_temporelle,
+                libelle_classe_temporelle=serie.libelle_classe_temporelle,
+                unite=serie.unite,
+                date_fin=mesure.date_fin,
+                valeur=mesure.valeur,
+            )
 
 
 def _store_r171(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    """Store R171 index measures. Returns total rows inserted."""
-    total_inserted = 0
-    batch: list[dict] = []
-    for serie in parsed.series:
-        for mesure in serie.mesures:
-            batch.append(
-                dict(
-                    flux_file_id=flux_file.id,
-                    flux_type=flux_file.flux_type,
-                    point_id=serie.point_id,
-                    type_mesure=serie.type_mesure,
-                    grandeur_metier=serie.grandeur_metier,
-                    grandeur_physique=serie.grandeur_physique,
-                    type_calendrier=serie.type_calendrier,
-                    code_classe_temporelle=serie.code_classe_temporelle,
-                    libelle_classe_temporelle=serie.libelle_classe_temporelle,
-                    unite=serie.unite,
-                    date_fin=mesure.date_fin,
-                    valeur=mesure.valeur,
-                )
-            )
-            if len(batch) >= chunk_size:
-                session.execute(insert(EnedisFluxMesureR171), batch)
-                total_inserted += len(batch)
-                batch = []
-
-    if batch:
-        session.execute(insert(EnedisFluxMesureR171), batch)
-        total_inserted += len(batch)
-    return total_inserted
+    return _batch_insert(session, EnedisFluxMesureR171, _iter_r171(parsed, flux_file), chunk_size)
 
 
-def _store_r50(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    """Store R50 CDC C5 measures. Returns total rows inserted."""
-    total_inserted = 0
-    batch: list[dict] = []
+def _iter_r50(parsed: Any, flux_file: EnedisFluxFile):
     for prm in parsed.prms:
         for releve in prm.releves:
             for point in releve.points:
-                batch.append(
-                    dict(
-                        flux_file_id=flux_file.id,
-                        flux_type=flux_file.flux_type,
-                        point_id=prm.point_id,
-                        date_releve=releve.date_releve,
-                        id_affaire=releve.id_affaire,
-                        horodatage=point.horodatage,
-                        valeur=point.valeur,
-                        indice_vraisemblance=point.indice_vraisemblance,
-                    )
+                yield dict(
+                    flux_file_id=flux_file.id,
+                    flux_type=flux_file.flux_type,
+                    point_id=prm.point_id,
+                    date_releve=releve.date_releve,
+                    id_affaire=releve.id_affaire,
+                    horodatage=point.horodatage,
+                    valeur=point.valeur,
+                    indice_vraisemblance=point.indice_vraisemblance,
                 )
-                if len(batch) >= chunk_size:
-                    session.execute(insert(EnedisFluxMesureR50), batch)
-                    total_inserted += len(batch)
-                    batch = []
-
-    if batch:
-        session.execute(insert(EnedisFluxMesureR50), batch)
-        total_inserted += len(batch)
-    return total_inserted
 
 
-def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
-    """Store R151 index + puissance max C5 measures. Returns total rows inserted."""
-    total_inserted = 0
-    batch: list[dict] = []
+def _store_r50(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
+    return _batch_insert(session, EnedisFluxMesureR50, _iter_r50(parsed, flux_file), chunk_size)
+
+
+def _iter_r151(parsed: Any, flux_file: EnedisFluxFile):
     for prm in parsed.prms:
         for releve in prm.releves:
             for donnee in releve.donnees:
-                batch.append(
-                    dict(
-                        flux_file_id=flux_file.id,
-                        flux_type=flux_file.flux_type,
-                        point_id=prm.point_id,
-                        date_releve=releve.date_releve,
-                        id_calendrier_fournisseur=releve.id_calendrier_fournisseur,
-                        libelle_calendrier_fournisseur=releve.libelle_calendrier_fournisseur,
-                        id_calendrier_distributeur=releve.id_calendrier_distributeur,
-                        libelle_calendrier_distributeur=releve.libelle_calendrier_distributeur,
-                        id_affaire=releve.id_affaire,
-                        type_donnee=donnee.type_donnee,
-                        id_classe_temporelle=donnee.id_classe_temporelle,
-                        libelle_classe_temporelle=donnee.libelle_classe_temporelle,
-                        rang_cadran=donnee.rang_cadran,
-                        valeur=donnee.valeur,
-                        indice_vraisemblance=donnee.indice_vraisemblance,
-                    )
+                yield dict(
+                    flux_file_id=flux_file.id,
+                    flux_type=flux_file.flux_type,
+                    point_id=prm.point_id,
+                    date_releve=releve.date_releve,
+                    id_calendrier_fournisseur=releve.id_calendrier_fournisseur,
+                    libelle_calendrier_fournisseur=releve.libelle_calendrier_fournisseur,
+                    id_calendrier_distributeur=releve.id_calendrier_distributeur,
+                    libelle_calendrier_distributeur=releve.libelle_calendrier_distributeur,
+                    id_affaire=releve.id_affaire,
+                    type_donnee=donnee.type_donnee,
+                    id_classe_temporelle=donnee.id_classe_temporelle,
+                    libelle_classe_temporelle=donnee.libelle_classe_temporelle,
+                    rang_cadran=donnee.rang_cadran,
+                    valeur=donnee.valeur,
+                    indice_vraisemblance=donnee.indice_vraisemblance,
                 )
-                if len(batch) >= chunk_size:
-                    session.execute(insert(EnedisFluxMesureR151), batch)
-                    total_inserted += len(batch)
-                    batch = []
 
-    if batch:
-        session.execute(insert(EnedisFluxMesureR151), batch)
-        total_inserted += len(batch)
-    return total_inserted
+
+def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
+    return _batch_insert(session, EnedisFluxMesureR151, _iter_r151(parsed, flux_file), chunk_size)
 
 
 # ---------------------------------------------------------------------------

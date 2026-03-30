@@ -46,6 +46,19 @@ SKIP_FLUX_TYPES = frozenset({FluxType.R172, FluxType.X14, FluxType.HDM, FluxType
 # ---------------------------------------------------------------------------
 
 
+_CLASSIFY_RULES: tuple[tuple[str, FluxType], ...] = (
+    ("_R4H_CDC_", FluxType.R4H),
+    ("_R4M_CDC_", FluxType.R4M),
+    ("_R4Q_CDC_", FluxType.R4Q),
+    ("_R171_", FluxType.R171),
+    ("_R50_", FluxType.R50),
+    ("_R151_", FluxType.R151),
+    ("_R172_", FluxType.R172),
+    ("_X14_", FluxType.X14),
+    ("_HDM_", FluxType.HDM),
+)
+
+
 def classify_flux(filename: str) -> FluxType:
     """Identify flux type from filename pattern.
 
@@ -54,18 +67,7 @@ def classify_flux(filename: str) -> FluxType:
     >>> classify_flux("ERDF_R50_23X--130624--EE1_GRD-F121.zip")
     <FluxType.R50: 'R50'>
     """
-    rules = [
-        ("_R4H_CDC_", FluxType.R4H),
-        ("_R4M_CDC_", FluxType.R4M),
-        ("_R4Q_CDC_", FluxType.R4Q),
-        ("_R171_", FluxType.R171),
-        ("_R50_", FluxType.R50),
-        ("_R151_", FluxType.R151),
-        ("_R172_", FluxType.R172),
-        ("_X14_", FluxType.X14),
-        ("_HDM_", FluxType.HDM),
-    ]
-    for pattern, flux_type in rules:
+    for pattern, flux_type in _CLASSIFY_RULES:
         if pattern in filename:
             return flux_type
     return FluxType.UNKNOWN

@@ -327,18 +327,28 @@ def get_stats(db: Session = Depends(get_db)):
     )
     by_flux_type = {row[0]: row[1] for row in type_rows}
 
-    # --- Measures per staging table ---
-    r4x = db.query(func.count()).select_from(EnedisFluxMesureR4x).scalar() or 0
-    r171 = db.query(func.count()).select_from(EnedisFluxMesureR171).scalar() or 0
-    r50 = db.query(func.count()).select_from(EnedisFluxMesureR50).scalar() or 0
-    r151 = db.query(func.count()).select_from(EnedisFluxMesureR151).scalar() or 0
+    # --- Measures: use denormalized measures_count from flux file registry ---
+    measure_rows = (
+        db.query(
+            EnedisFluxFile.flux_type,
+            func.sum(EnedisFluxFile.measures_count),
+        )
+        .filter(EnedisFluxFile.status.in_([FluxStatus.PARSED, FluxStatus.NEEDS_REVIEW]))
+        .group_by(EnedisFluxFile.flux_type)
+        .all()
+    )
+    measure_by_type: dict[str, int] = {row[0]: int(row[1] or 0) for row in measure_rows}
+    r4x = sum(v for k, v in measure_by_type.items() if k in ("R4H", "R4M", "R4Q"))
+    r171 = measure_by_type.get("R171", 0)
+    r50 = measure_by_type.get("R50", 0)
+    r151 = measure_by_type.get("R151", 0)
 
-    # --- PRMs: UNION DISTINCT across 4 measure tables ---
+    # --- PRMs: UNION DISTINCT across 4 measure tables (distinct point_id only) ---
     prm_union = union(
-        db.query(EnedisFluxMesureR4x.point_id),
-        db.query(EnedisFluxMesureR171.point_id),
-        db.query(EnedisFluxMesureR50.point_id),
-        db.query(EnedisFluxMesureR151.point_id),
+        db.query(EnedisFluxMesureR4x.point_id.distinct()),
+        db.query(EnedisFluxMesureR171.point_id.distinct()),
+        db.query(EnedisFluxMesureR50.point_id.distinct()),
+        db.query(EnedisFluxMesureR151.point_id.distinct()),
     )
     prm_rows = db.execute(prm_union).fetchall()
     prm_identifiers = sorted(row[0] for row in prm_rows)

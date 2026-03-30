@@ -38,7 +38,9 @@ Tolerances:
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-from data_ingestion.enedis.parsers._helpers import child_text, find_child, strip_ns
+from data_ingestion.enedis.parsers._helpers import (
+    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+)
 
 
 class R4xParseError(Exception):
@@ -103,25 +105,13 @@ def parse_r4x(xml_bytes: bytes) -> ParsedR4xFile:
         R4xParseError: XML structure is not valid R4x (missing root, Entete,
             Corps, or Identifiant_PRM).
     """
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError as exc:
-        raise R4xParseError(f"Invalid XML: {exc}") from exc
+    root = parse_xml_root(xml_bytes, "Courbe", R4xParseError)
 
-    # Root must be <Courbe>
-    root_tag = strip_ns(root.tag)
-    if root_tag != "Courbe":
-        raise R4xParseError(f"Expected root <Courbe>, got <{root_tag}>")
-
-    # Parse Entete
     entete = find_child(root, "Entete")
     if entete is None:
         raise R4xParseError("Missing <Entete> element")
 
-    header_raw = {}
-    for child in entete:
-        tag = strip_ns(child.tag)
-        header_raw[tag] = (child.text or "").strip()
+    header_raw = header_to_dict(entete)
 
     header = ParsedR4xHeader(
         raw=header_raw,

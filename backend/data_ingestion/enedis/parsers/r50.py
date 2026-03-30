@@ -40,7 +40,9 @@ Tolerances:
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-from data_ingestion.enedis.parsers._helpers import child_text, find_child, strip_ns
+from data_ingestion.enedis.parsers._helpers import (
+    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+)
 
 
 class R50ParseError(Exception):
@@ -105,25 +107,13 @@ def parse_r50(xml_bytes: bytes) -> ParsedR50File:
         R50ParseError: XML structure is not valid R50 (missing root,
             En_Tete_Flux, Id_PRM, Date_Releve, or H in PDC).
     """
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError as exc:
-        raise R50ParseError(f"Invalid XML: {exc}") from exc
+    root = parse_xml_root(xml_bytes, "R50", R50ParseError)
 
-    # Root must be <R50>
-    root_tag = strip_ns(root.tag)
-    if root_tag != "R50":
-        raise R50ParseError(f"Expected root <R50>, got <{root_tag}>")
-
-    # Parse En_Tete_Flux
     en_tete = find_child(root, "En_Tete_Flux")
     if en_tete is None:
         raise R50ParseError("Missing <En_Tete_Flux> element")
 
-    header_raw: dict = {}
-    for child in en_tete:
-        tag = strip_ns(child.tag)
-        header_raw[tag] = (child.text or "").strip()
+    header_raw = header_to_dict(en_tete)
 
     header = ParsedR50Header(raw=header_raw)
 

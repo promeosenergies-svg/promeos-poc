@@ -42,7 +42,9 @@ Tolerances:
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-from data_ingestion.enedis.parsers._helpers import child_text, find_child, strip_ns
+from data_ingestion.enedis.parsers._helpers import (
+    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+)
 
 
 class R171ParseError(Exception):
@@ -104,25 +106,13 @@ def parse_r171(xml_bytes: bytes) -> ParsedR171File:
         R171ParseError: XML structure is not valid R171 (missing root, entete,
             serieMesuresDateesListe, or prmId).
     """
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError as exc:
-        raise R171ParseError(f"Invalid XML: {exc}") from exc
+    root = parse_xml_root(xml_bytes, "R171", R171ParseError)
 
-    # Root must be <R171> (namespace-stripped)
-    root_tag = strip_ns(root.tag)
-    if root_tag != "R171":
-        raise R171ParseError(f"Expected root <R171>, got <{root_tag}>")
-
-    # Parse entete
     entete = find_child(root, "entete")
     if entete is None:
         raise R171ParseError("Missing <entete> element")
 
-    header_raw: dict = {}
-    for child in entete:
-        tag = strip_ns(child.tag)
-        header_raw[tag] = (child.text or "").strip()
+    header_raw = header_to_dict(entete)
 
     header = ParsedR171Header(raw=header_raw)
 

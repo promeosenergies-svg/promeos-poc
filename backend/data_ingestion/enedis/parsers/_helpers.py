@@ -28,3 +28,31 @@ def child_text(parent: ET.Element, tag_name: str) -> str | None:
     if elem is not None and elem.text:
         return elem.text.strip()
     return None
+
+
+def parse_xml_root(
+    xml_bytes: bytes,
+    expected_tag: str,
+    error_cls: type[Exception],
+) -> ET.Element:
+    """Parse XML bytes, validate root tag, return root element.
+
+    Raises error_cls on invalid XML or unexpected root tag.
+    """
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError as exc:
+        raise error_cls(f"Invalid XML: {exc}") from exc
+
+    root_tag = strip_ns(root.tag)
+    if root_tag != expected_tag:
+        raise error_cls(f"Expected root <{expected_tag}>, got <{root_tag}>")
+    return root
+
+
+def header_to_dict(header_elem: ET.Element) -> dict:
+    """Extract all direct children of a header element into {tag: text}."""
+    return {
+        strip_ns(child.tag): (child.text or "").strip()
+        for child in header_elem
+    }

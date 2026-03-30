@@ -40,6 +40,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 from models.base import Base, TimestampMixin
 
 
@@ -52,7 +53,7 @@ class EnedisFluxFile(Base, TimestampMixin):
     filename = Column(String(255), nullable=False, comment="Nom du fichier .zip original")
     file_hash = Column(String(64), nullable=False, unique=True, comment="SHA256 du fichier chiffré")
     flux_type = Column(String(10), nullable=False, comment="R4H, R4M, R4Q, etc.")
-    status = Column(String(20), nullable=False, default="received", comment="received/parsed/error/skipped")
+    status = Column(String(20), nullable=False, default=FluxStatus.RECEIVED, comment="received/parsed/error/skipped")
     error_message = Column(Text, nullable=True, comment="Message d'erreur si status=error")
     measures_count = Column(Integer, nullable=True, default=0, comment="Nombre de mesures extraites")
 
@@ -315,7 +316,7 @@ class IngestionRun(Base, TimestampMixin):
             "ix_ingestion_run_single_running",
             "status",
             unique=True,
-            sqlite_where=Column("status") == "running",
+            sqlite_where=Column("status") == "running",  # DDL literal — must match IngestionRunStatus.RUNNING.value
             postgresql_where=Column("status") == "running",
         ),
     )
@@ -327,7 +328,7 @@ class IngestionRun(Base, TimestampMixin):
     recursive = Column(Boolean, nullable=False, default=True, comment="Scan recursif")
     dry_run = Column(Boolean, nullable=False, default=False, comment="Mode dry-run (pas de mutation)")
     status = Column(
-        String(20), nullable=False, default="running",
+        String(20), nullable=False, default=IngestionRunStatus.RUNNING,
         comment="running / completed / failed",
     )
     triggered_by = Column(String(10), nullable=False, comment="cli / api")

@@ -517,10 +517,10 @@ class TestStatsEndpoint:
     def test_stats_with_data(self, client):
         c, session = client
 
-        # Seed 2 PARSED + 1 ERROR files
-        f1 = _seed_flux_file(session, "f1.zip", file_hash="h1", status=FluxStatus.PARSED)
+        # Seed 2 PARSED + 1 ERROR files (measures_count must match seeded rows)
+        f1 = _seed_flux_file(session, "f1.zip", file_hash="h1", status=FluxStatus.PARSED, measures_count=1)
         f2 = _seed_flux_file(session, "f2.zip", file_hash="h2", status=FluxStatus.PARSED,
-                             flux_type="R171")
+                             flux_type="R171", measures_count=1)
         _seed_flux_file(session, "f3.zip", file_hash="h3", status=FluxStatus.ERROR,
                         measures_count=0, error_message="fail")
 

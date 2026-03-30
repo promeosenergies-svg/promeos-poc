@@ -56,7 +56,9 @@ Tolerances:
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-from data_ingestion.enedis.parsers._helpers import child_text, find_child, strip_ns
+from data_ingestion.enedis.parsers._helpers import (
+    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+)
 
 
 class R151ParseError(Exception):
@@ -128,25 +130,13 @@ def parse_r151(xml_bytes: bytes) -> ParsedR151File:
         R151ParseError: XML structure is not valid R151 (missing root,
             En_Tete_Flux, Id_PRM, or Date_Releve).
     """
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError as exc:
-        raise R151ParseError(f"Invalid XML: {exc}") from exc
+    root = parse_xml_root(xml_bytes, "R151", R151ParseError)
 
-    # Root must be <R151>
-    root_tag = strip_ns(root.tag)
-    if root_tag != "R151":
-        raise R151ParseError(f"Expected root <R151>, got <{root_tag}>")
-
-    # Parse En_Tete_Flux
     en_tete = find_child(root, "En_Tete_Flux")
     if en_tete is None:
         raise R151ParseError("Missing <En_Tete_Flux> element")
 
-    header_raw = {}
-    for child in en_tete:
-        tag = strip_ns(child.tag)
-        header_raw[tag] = (child.text or "").strip()
+    header_raw = header_to_dict(en_tete)
 
     header = ParsedR151Header(raw=header_raw)
 
