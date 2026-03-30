@@ -145,6 +145,10 @@ class TestCliIngest:
 
         assert exit_code == 0
 
+        # Verify critical mocks were actually invoked (guard against import path drift)
+        patches["data_ingestion.enedis.cli.get_flux_dir"].assert_called_once()
+        patches["data_ingestion.enedis.cli.load_keys_from_env"].assert_called_once()
+
         # IngestionRun created with status=completed
         run = db.query(IngestionRun).first()
         assert run is not None

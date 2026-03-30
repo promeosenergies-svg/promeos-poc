@@ -68,6 +68,8 @@ build/
 playwright-report/
 test-results/
 e2e/node_modules/
+e2e/ux-report/
+e2e/UX_REVIEW_*/
 audit-screenshots/captures/
 
 # Runtime / local data

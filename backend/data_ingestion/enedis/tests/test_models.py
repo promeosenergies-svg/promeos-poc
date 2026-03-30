@@ -659,18 +659,18 @@ class TestEnedisFluxFileError:
 
     def test_ordering_by_created_at(self, db):
         """Errors are ordered by created_at via the relationship."""
-        import time
+        from datetime import datetime
 
         f = self._make_file(db)
-        err1 = EnedisFluxFileError(flux_file_id=f.id, error_message="first error")
-        db.add(err1)
-        db.commit()
-
-        # Small delay to ensure different timestamps
-        time.sleep(0.05)
-
-        err2 = EnedisFluxFileError(flux_file_id=f.id, error_message="second error")
-        db.add(err2)
+        err1 = EnedisFluxFileError(
+            flux_file_id=f.id, error_message="first error",
+            created_at=datetime(2026, 3, 1, 10, 0, 0),
+        )
+        err2 = EnedisFluxFileError(
+            flux_file_id=f.id, error_message="second error",
+            created_at=datetime(2026, 3, 1, 10, 0, 1),
+        )
+        db.add_all([err1, err2])
         db.commit()
 
         db.refresh(f)
@@ -687,8 +687,8 @@ class TestEnedisFluxFileError:
 
         db.refresh(f)
         assert len(f.errors) == 3
-        # Retry count derived from len(errors)
-        assert len(f.errors) == 3
+        # Retry count matches direct DB query
+        assert db.query(EnedisFluxFileError).filter_by(flux_file_id=f.id).count() == 3
 
 
 # ---------------------------------------------------------------------------

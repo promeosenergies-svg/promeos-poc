@@ -249,6 +249,10 @@ class TestIngestIdempotence:
         assert db.query(EnedisFluxFile).count() == 1
         assert db.query(EnedisFluxFile).first().status == FluxStatus.PARSED
 
+        # Error history was archived before retry
+        assert db.query(EnedisFluxFileError).count() == 1
+        assert "bad key" in db.query(EnedisFluxFileError).first().error_message
+
 
 # ---------------------------------------------------------------------------
 # Tests — Error handling
