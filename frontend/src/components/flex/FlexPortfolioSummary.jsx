@@ -18,6 +18,16 @@ export default function FlexPortfolioSummary() {
   if (loading) return <div className="animate-pulse h-24 bg-gray-50 rounded-lg" />;
   if (!data || data.total_sites === 0) return null;
 
+  // Masquer si toutes les valeurs flex sont à 0 (feature non alimentée)
+  const hasFlexData = (data.total_potential_kw ?? 0) > 0 || (data.avg_flex_score ?? 0) > 0;
+  if (!hasFlexData) {
+    return (
+      <div className="border rounded-lg p-4 text-center text-xs text-gray-400">
+        Potentiel flex portefeuille — <span className="italic">À venir</span>
+      </div>
+    );
+  }
+
   return (
     <div className="border rounded-lg p-4">
       <div className="flex items-center justify-between mb-3">

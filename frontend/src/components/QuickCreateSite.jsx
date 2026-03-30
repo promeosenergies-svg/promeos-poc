@@ -213,14 +213,14 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
             </div>
           </div>
 
-          {/* Plus de details (collapsible) */}
+          {/* Plus de détails (collapsible) */}
           <button
             type="button"
             onClick={() => setShowMore(!showMore)}
             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
           >
             {showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {showMore ? 'Moins de details' : 'Plus de details'}
+            {showMore ? 'Moins de détails' : 'Plus de détails'}
           </button>
 
           {showMore && (
@@ -320,7 +320,7 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
           {/* Footer */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <div className="flex flex-col gap-1">
-              <p className="text-xs text-gray-400">Batiment et obligations auto-generes</p>
+              <p className="text-xs text-gray-400">Bâtiment et obligations auto-générés</p>
               {onAdvanced && (
                 <button
                   type="button"
@@ -331,7 +331,7 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
                   className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600"
                 >
                   <Settings2 size={12} />
-                  Creation avancee (multi-entites)
+                  Création avancée (multi-entités)
                 </button>
               )}
             </div>
@@ -350,10 +350,10 @@ export default function QuickCreateSite({ onClose, onSuccess, onAdvanced }) {
               >
                 {loading ? (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Creation...
+                    <Loader2 size={14} className="animate-spin" /> Création...
                   </>
                 ) : (
-                  'Creer le site'
+                  'Créer le site'
                 )}
               </button>
             </div>

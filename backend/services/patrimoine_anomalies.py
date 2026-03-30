@@ -307,6 +307,29 @@ def _rule_orphans_detected(
     )
 
 
+def _rule_tertiaire_surface_exceeds_total(site: Site) -> Optional[Dict[str, Any]]:
+    """TERTIAIRE_SURFACE_EXCEEDS_TOTAL : surface tertiaire > surface totale (+5% tolérance)."""
+    if not site.tertiaire_area_m2 or not site.surface_m2 or site.surface_m2 == 0:
+        return None
+    if site.tertiaire_area_m2 <= site.surface_m2 * 1.05:
+        return None
+    ecart_pct = round((site.tertiaire_area_m2 / site.surface_m2 - 1) * 100, 1)
+    return _anomaly(
+        code="TERTIAIRE_SURFACE_EXCEEDS_TOTAL",
+        severity="HIGH",
+        title_fr="Surface tertiaire supérieure à la surface totale",
+        detail_fr=f"Tertiaire : {site.tertiaire_area_m2} m² · Total : {site.surface_m2} m² · Écart : {ecart_pct} %",
+        evidence={
+            "tertiaire_area_m2": site.tertiaire_area_m2,
+            "surface_m2": site.surface_m2,
+            "ecart_pct": ecart_pct,
+        },
+        cta_label="Corriger les surfaces",
+        cta_to="/patrimoine",
+        fix_hint_fr="Vérifiez la cohérence entre surface tertiaire assujettie et surface totale du site.",
+    )
+
+
 # ── Fonction principale ───────────────────────────────────────────────────────
 
 
@@ -370,6 +393,10 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
     anomalies.extend(_rule_contract_overlap(contracts))
 
     r = _rule_orphans_detected(site, batiments, compteurs, delivery_points)
+    if r:
+        anomalies.append(r)
+
+    r = _rule_tertiaire_surface_exceeds_total(site)
     if r:
         anomalies.append(r)
 

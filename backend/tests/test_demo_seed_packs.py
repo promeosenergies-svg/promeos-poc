@@ -171,6 +171,14 @@ class TestSeedTertiairePack:
         result = _seed(db_session, "tertiaire", "S")
         assert result["actions"]["actions_count"] == 8
 
+    def test_tertiaire_s_has_delivery_points(self, db_session):
+        """V110: chaque site tertiaire doit avoir au moins 1 DeliveryPoint ELEC."""
+        from models.patrimoine import DeliveryPoint
+
+        _seed(db_session, "tertiaire", "S")
+        dp_count = db_session.query(DeliveryPoint).count()
+        assert dp_count >= 10, f"Expected ≥10 DPs (1 ELEC/site), got {dp_count}"
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # Status / Reset / Validation

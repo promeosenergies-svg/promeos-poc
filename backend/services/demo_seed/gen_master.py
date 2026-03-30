@@ -15,6 +15,9 @@ from models import (
     Compteur,
     Meter,
     SiteOperatingSchedule,
+    DeliveryPoint,
+    DeliveryPointEnergyType,
+    DeliveryPointStatus,
     TypeSite,
     TypeCompteur,
     EnergyVector,
@@ -342,6 +345,28 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     )
                 )
 
+            # V110: Créer DeliveryPoints (PRM/PCE réalistes) pour chaque compteur principal
+            prm_code = f"{30000000000000 + site.id:014d}"
+            dp_elec = DeliveryPoint(
+                code=prm_code,
+                energy_type=DeliveryPointEnergyType.ELEC,
+                status=DeliveryPointStatus.ACTIVE,
+                site_id=site.id,
+            )
+            db.add(dp_elec)
+            db.flush()
+
+            if spec.get("gas"):
+                pce_code = f"{70000000000000 + site.id:014d}"
+                dp_gaz = DeliveryPoint(
+                    code=pce_code,
+                    energy_type=DeliveryPointEnergyType.GAZ,
+                    status=DeliveryPointStatus.ACTIVE,
+                    site_id=site.id,
+                )
+                db.add(dp_gaz)
+                db.flush()
+
             # Step 26 + V1.1: Sous-compteurs lies aux usages
             sub_meter_specs = spec.get("sub_meters")
             if sub_meter_specs:
@@ -512,6 +537,17 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     )
                 )
 
+                # DeliveryPoint ELEC (PRM) — base 5xxx pour éviter collision HELIOS 3xxx
+                prm_code = f"{50000000000000 + site.id:014d}"
+                dp_elec = DeliveryPoint(
+                    code=prm_code,
+                    energy_type=DeliveryPointEnergyType.ELEC,
+                    status=DeliveryPointStatus.ACTIVE,
+                    site_id=site.id,
+                )
+                db.add(dp_elec)
+                db.flush()
+
                 # Gas meter for some sites
                 if rng.random() < group.get("gas_pct", 0):
                     db.add(
@@ -525,6 +561,16 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                             data_source="demo",
                         )
                     )
+                    # DeliveryPoint GAZ (PCE) — base 8xxx
+                    pce_code = f"{80000000000000 + site.id:014d}"
+                    dp_gaz = DeliveryPoint(
+                        code=pce_code,
+                        energy_type=DeliveryPointEnergyType.GAZ,
+                        status=DeliveryPointStatus.ACTIVE,
+                        site_id=site.id,
+                    )
+                    db.add(dp_gaz)
+                    db.flush()
 
                 # Operating schedule
                 sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])

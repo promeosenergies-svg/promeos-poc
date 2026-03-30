@@ -37,6 +37,7 @@ from models import (
 )
 from database import get_db
 from main import app
+from services.demo_state import DemoState
 from services.import_mapping import (
     normalize_header,
     normalize_headers,
@@ -609,3 +610,72 @@ class TestMappingPreviewEndpoint:
         data = resp.json()
         assert data["is_valid"] is False
         assert "nom" in data["missing_required"]
+
+
+# ── V110 : Tests validation PATCH sites ──────────────────────────────────────
+
+
+class TestPatchSiteValidation:
+    """Tests pour la validation stricte du PATCH /patrimoine/sites/{id}."""
+
+    def test_patch_site_surface_negative(self, db, client):
+        """surface_m2 ≤ 0 → 422."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(f"/api/patrimoine/sites/{site.id}", json={"surface_m2": -100})
+        assert r.status_code == 422
+
+    def test_patch_site_code_postal_invalid(self, db, client):
+        """Code postal non numérique → 422."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(f"/api/patrimoine/sites/{site.id}", json={"code_postal": "ABC"})
+        assert r.status_code == 422
+
+    def test_patch_site_siret_short(self, db, client):
+        """SIRET trop court → 422."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(f"/api/patrimoine/sites/{site.id}", json={"siret": "12345"})
+        assert r.status_code == 422
+
+    def test_patch_site_extra_field_rejected(self, db, client):
+        """Champ inconnu → 422 (extra=forbid)."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(f"/api/patrimoine/sites/{site.id}", json={"hacked_field": "injection"})
+        assert r.status_code == 422
+
+    def test_patch_site_tertiaire_exceeds_surface(self, db, client):
+        """tertiaire_area_m2 > surface_m2 → 422."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(
+            f"/api/patrimoine/sites/{site.id}",
+            json={"surface_m2": 1000, "tertiaire_area_m2": 2000},
+        )
+        assert r.status_code == 422
+
+    def test_patch_site_valid_update(self, db, client):
+        """PATCH valide → 200 + valeurs MAJ."""
+        org, _, pf = _create_org(db)
+        site = _create_site(db, pf)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.patch(
+            f"/api/patrimoine/sites/{site.id}",
+            json={"nom": "Nouveau Nom", "surface_m2": 2000, "code_postal": "69001"},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["nom"] == "Nouveau Nom"

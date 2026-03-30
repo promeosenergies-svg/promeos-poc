@@ -128,8 +128,8 @@ def _make_full_site(db, pf, nom="Site", surface=5000.0):
 class TestPatrimoineAssumptions:
     def test_defaults_valid(self):
         a = PatrimoineAssumptions()
-        assert a.prix_elec_eur_mwh == 180.0
-        assert a.prix_gaz_eur_mwh == 90.0
+        assert a.prix_elec_eur_mwh == 68.0  # 0.068 €/kWh centralisé (default_prices.py)
+        assert a.prix_gaz_eur_mwh == 45.0  # 0.045 €/kWh centralisé (default_prices.py)
         assert a.conso_fallback_kwh_an == 300_000.0
         assert a.horizon_factor == 1.0
 
@@ -144,7 +144,7 @@ class TestPatrimoineAssumptions:
     def test_override_partial(self):
         a = PatrimoineAssumptions(prix_elec_eur_mwh=150.0)
         assert a.prix_elec_eur_mwh == 150.0
-        assert a.prix_gaz_eur_mwh == 90.0  # unchanged (default from centralized pricing)
+        assert a.prix_gaz_eur_mwh == 45.0  # unchanged (default from centralized pricing)
 
     def test_conso_for_usage_bureaux(self):
         a = PatrimoineAssumptions()
@@ -418,8 +418,8 @@ class TestAnomaliesEndpointsV59:
         r = client.get("/api/patrimoine/assumptions")
         assert r.status_code == 200
         data = r.json()
-        assert data["prix_elec_eur_mwh"] == 180.0
-        assert data["prix_gaz_eur_mwh"] == 90.0
+        assert data["prix_elec_eur_mwh"] == 68.0
+        assert data["prix_gaz_eur_mwh"] == 45.0
         assert data["conso_fallback_kwh_an"] == 300_000.0
         assert "conso_fallback_by_usage" in data
 

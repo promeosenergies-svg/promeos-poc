@@ -623,6 +623,15 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "segments": ["IT", "datacenter"],
             "conf": KBConfidence.HIGH,
         },
+        {
+            "code": "HOTEL_STANDARD",
+            "title": "Hotel & hebergement",
+            "kwh_m2_min": 200,
+            "kwh_m2_max": 350,
+            "kwh_m2_avg": 275,
+            "segments": ["hotellerie", "hebergement"],
+            "conf": KBConfidence.HIGH,
+        },
     ]
 
     archetypes_seeded = 0
@@ -682,6 +691,10 @@ def seed_demo_kb(db: Session = Depends(get_db)):
         ("85.20Z", "ENSEIGNEMENT"),
         ("63.11Z", "DATACENTER"),
         ("63.12Z", "DATACENTER"),
+        ("68.20A", "BUREAU_STANDARD"),
+        ("68.20B", "BUREAU_STANDARD"),
+        ("55.10Z", "HOTEL_STANDARD"),
+        ("55.20Z", "HOTEL_STANDARD"),
     ]
 
     naf_seeded = 0

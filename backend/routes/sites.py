@@ -58,7 +58,9 @@ class QuickCreateRequest(BaseModel):
     skip_duplicate_check: bool = Field(False, description="Forcer la creation meme si doublon detecte")
 
 
-@router.post("/quick-create", status_code=201)
+@router.post(
+    "/quick-create", status_code=201, deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites/quick-create"
+)
 def quick_create_site(
     body: StrictQuickCreateRequest,
     request: Request,
@@ -242,7 +244,7 @@ def quick_create_site(
     }
 
 
-@router.post("")
+@router.post("", deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites")
 def create_site(
     req: SiteCreateRequest,
     request: Request,
@@ -294,7 +296,7 @@ def create_site(
     }
 
 
-@router.get("", response_model=SiteListResponse)
+@router.get("", response_model=SiteListResponse, deprecated=True, summary="[DEPRECATED] Use /api/patrimoine/sites")
 def get_sites(
     request: Request,
     skip: int = 0,
@@ -339,7 +341,12 @@ def get_sites(
     return {"total": total, "sites": sites}
 
 
-@router.get("/{site_id}", response_model=SiteResponse)
+@router.get(
+    "/{site_id}",
+    response_model=SiteResponse,
+    deprecated=True,
+    summary="[DEPRECATED] Use /api/patrimoine/sites/{site_id}",
+)
 def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Récupère les détails d'un site spécifique
@@ -362,7 +369,7 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
     return site
 
 
-@router.get("/{site_id}/stats", response_model=SiteStats)
+@router.get("/{site_id}/stats", response_model=SiteStats, deprecated=True)
 def get_site_stats(
     site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
 ):
@@ -401,7 +408,7 @@ def get_site_stats(
     }
 
 
-@router.get("/{site_id}/compliance", response_model=SiteComplianceResponse)
+@router.get("/{site_id}/compliance", response_model=SiteComplianceResponse, deprecated=True)
 def get_site_compliance(
     site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
 ):
@@ -477,7 +484,7 @@ def get_site_compliance(
     }
 
 
-@router.get("/{site_id}/guardrails")
+@router.get("/{site_id}/guardrails", deprecated=True)
 def get_site_guardrails(
     site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
 ):

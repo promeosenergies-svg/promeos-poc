@@ -22,7 +22,7 @@ class TestFreshnessStatus:
         db = MagicMock()
         # Mock meter_ids query
         if last_reading:
-            db.query.return_value.filter.return_value.all.return_value = [(1,)]
+            db.query.return_value.filter.return_value.all.return_value = [MagicMock(id=1, parent_meter_id=None)]
             # Mock max(MeterReading.timestamp)
             db.query.return_value.filter.return_value.scalar.side_effect = [
                 last_reading,  # meter reading
@@ -41,7 +41,8 @@ class TestFreshnessStatus:
         yesterday = today - timedelta(days=1)
 
         db = MagicMock()
-        db.query.return_value.filter.return_value.all.return_value = [(1,)]
+        _fake_meter = MagicMock(id=1, parent_meter_id=None)
+        db.query.return_value.filter.return_value.all.return_value = [_fake_meter]
 
         # Simulate: last reading = yesterday, last invoice = 10 days ago
         call_count = [0]
@@ -142,7 +143,7 @@ class TestFreshnessRecommendations:
     def test_fresh_has_no_recommendations(self):
         db = MagicMock()
         today = date(2025, 6, 15)
-        db.query.return_value.filter.return_value.all.return_value = [(1,)]
+        db.query.return_value.filter.return_value.all.return_value = [MagicMock(id=1, parent_meter_id=None)]
 
         call_count = [0]
 

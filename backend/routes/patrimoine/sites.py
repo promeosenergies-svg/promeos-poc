@@ -42,6 +42,10 @@ from routes.patrimoine._helpers import (
     SiteAnomaliesResponse,
     OrgAnomaliesResponse,
     PortfolioSummaryResponse,
+    PatrimoineKpisResponse,
+    DeliveryPointItemResponse,
+    CompletenessResponse,
+    SiteMetersResponse,
 )
 
 router = APIRouter(tags=["Patrimoine"])
@@ -54,7 +58,7 @@ _SORT_WHITELIST = {"nom", "ville", "surface_m2", "risque_financier_euro", "type"
 # ========================================
 
 
-@router.get("/sites/{site_id}/delivery-points")
+@router.get("/sites/{site_id}/delivery-points", response_model=List[DeliveryPointItemResponse])
 def site_delivery_points(
     site_id: int,
     request: Request,
@@ -92,7 +96,7 @@ def site_delivery_points(
 # ========================================
 
 
-@router.get("/kpis")
+@router.get("/kpis", response_model=PatrimoineKpisResponse)
 def patrimoine_kpis(
     request: Request,
     site_id: Optional[int] = Query(None, description="Filter KPIs to a single site"),
@@ -376,7 +380,7 @@ def get_site_detail(
     }
 
 
-@router.get("/sites/{site_id}/meters")
+@router.get("/sites/{site_id}/meters", response_model=SiteMetersResponse)
 def list_site_meters_unified(
     site_id: int,
     request: Request,
@@ -468,12 +472,21 @@ def update_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Update a site (partial update)."""
+    """Update a site (partial update). V110: audit trail before/after."""
+    import json as _json
+    from models.iam import AuditLog
+
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
 
+    changes = body.model_dump(exclude_unset=True)
+    before = {}
+    for field in changes:
+        val = getattr(site, field, None)
+        before[field] = val.value if hasattr(val, "value") else val
+
     updated_fields = []
-    for field, value in body.model_dump(exclude_unset=True).items():
+    for field, value in changes.items():
         if field == "type" and value is not None:
             try:
                 value = TypeSite(value)
@@ -481,6 +494,24 @@ def update_site(
                 raise HTTPException(status_code=400, detail=f"Type invalide: {value}")
         setattr(site, field, value)
         updated_fields.append(field)
+
+    after = {}
+    for field in changes:
+        val = getattr(site, field, None)
+        after[field] = val.value if hasattr(val, "value") else val
+
+    diff = {k: {"before": before.get(k), "after": after[k]} for k in after if before.get(k) != after[k]}
+    if diff:
+        db.add(
+            AuditLog(
+                user_id=auth.user_id if auth else None,
+                action="site.update",
+                resource_type="site",
+                resource_id=str(site_id),
+                detail_json=_json.dumps(diff, default=str, ensure_ascii=False),
+                ip_address=request.client.host if request.client else None,
+            )
+        )
 
     db.commit()
 
@@ -504,7 +535,9 @@ def archive_site(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Soft-delete a site."""
+    """Soft-delete a site. V110: audit trail."""
+    from models.iam import AuditLog
+
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
     if site.is_deleted:
@@ -515,6 +548,16 @@ def archive_site(
     from services.patrimoine_conformite_sync import cascade_site_archive
 
     cascade_result = cascade_site_archive(db, site_id)
+    db.add(
+        AuditLog(
+            user_id=auth.user_id if auth else None,
+            action="site.archive",
+            resource_type="site",
+            resource_id=str(site_id),
+            detail_json=f'{{"nom": "{site.nom}"}}',
+            ip_address=request.client.host if request.client else None,
+        )
+    )
     db.commit()
     return {"detail": "Site archive", "site_id": site_id, "cascade": cascade_result}
 
@@ -633,6 +676,55 @@ def get_site_anomalies_endpoint(
     }
 
 
+@router.get("/anomalies/batch")
+def get_anomalies_batch(
+    request: Request,
+    site_ids: str = Query(..., description="Comma-separated site IDs, max 50"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Anomalies batch : retourne anomalies + score + risque pour N sites en un appel.
+    V110 : remplace N appels /sites/{id}/anomalies depuis le frontend heatmap.
+    """
+    from services.patrimoine_anomalies import compute_site_anomalies
+    from services.patrimoine_impact import enrich_anomalies_with_impact
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
+    org_id = _get_org_id(request, auth, db)
+    ids = [int(x) for x in site_ids.split(",") if x.strip().isdigit()][:50]
+    if not ids:
+        return {}
+
+    # Charger tous les sites de l'org en un seul query pour éviter N queries
+    org_sites = (
+        db.query(Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.id.in_(ids), not_deleted(Site))
+        .all()
+    )
+    site_map = {s.id: s for s in org_sites}
+
+    results = {}
+    for sid in ids:
+        if sid not in site_map:
+            continue
+        result = compute_site_anomalies(sid, db)
+        enriched = enrich_anomalies_with_impact(result["anomalies"], {}, DEFAULT_ASSUMPTIONS)
+        total_risk = sum((a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0 for a in enriched)
+        results[str(sid)] = {
+            "completude_score": result.get("completude_score", 0),
+            "nb_anomalies": result.get("nb_anomalies", 0),
+            "total_estimated_risk_eur": round(total_risk, 0),
+            "top_severity": enriched[0]["severity"] if enriched else None,
+            "top_anomalies": [
+                {"code": a["code"], "severity": a["severity"], "title_fr": a.get("title_fr", "")} for a in enriched[:3]
+            ],
+        }
+    return results
+
+
 @router.get("/anomalies", response_model=OrgAnomaliesResponse)
 def list_org_anomalies(
     request: Request,
@@ -650,11 +742,16 @@ def list_org_anomalies(
     from services.patrimoine_anomalies import compute_site_anomalies
     from services.patrimoine_impact import enrich_anomalies_with_impact
     from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+    from sqlalchemy.orm import joinedload
 
     org_id = _get_org_id(request, auth, db)
 
     sites_q = (
         db.query(Site)
+        .options(
+            joinedload(Site.batiments),
+            joinedload(Site.delivery_points),
+        )
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
@@ -924,7 +1021,7 @@ def get_portfolio_summary(
 # ========================================
 
 
-@router.get("/sites/{site_id}/completeness")
+@router.get("/sites/{site_id}/completeness", response_model=CompletenessResponse)
 def get_site_completeness(
     site_id: int,
     request: Request,

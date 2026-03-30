@@ -198,9 +198,12 @@ class AnalyticsEngine:
 
     def _retrieve_archetype(self, site: Optional[Site], features: Dict) -> tuple:
         """Step 2: Retrieve best-matching archetype from KB"""
-        # Method 1: NAF code match
-        if site and site.naf_code:
-            naf_code = site.naf_code.strip()
+        # Method 1: NAF code match (V110: cascade Site → EJ)
+        from utils.naf_resolver import resolve_naf_code
+
+        resolved_naf = resolve_naf_code(site, self.db) if site else None
+        if site and resolved_naf:
+            naf_code = resolved_naf.strip()
             naf_no_dot = naf_code.replace(".", "")
 
             # Try exact match (with dot)

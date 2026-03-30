@@ -714,3 +714,119 @@ class TestAnomaliesEndpoints:
             assert not re.search(r"Organisation\s*\)\s*\.first\(\)", content), (
                 f"{fname} contient Organisation.first() — interdit (V57)"
             )
+
+
+# ── V110 : Tests batch anomalies endpoint ────────────────────────────────────
+
+
+class TestTertiaireSurfaceExceedsTotal:
+    """Tests pour la règle TERTIAIRE_SURFACE_EXCEEDS_TOTAL."""
+
+    def test_tertiaire_exceeds_surface_generates_anomaly(self, db):
+        """tertiaire_area_m2 > surface_m2 * 1.05 → anomalie HIGH."""
+        from services.patrimoine_anomalies import compute_site_anomalies
+
+        _, _, site = _make_org_site(db, "TertExceed")
+        site.surface_m2 = 3000.0
+        site.tertiaire_area_m2 = 5000.0
+        db.commit()
+
+        result = compute_site_anomalies(site.id, db)
+        codes = [a["code"] for a in result["anomalies"]]
+        assert "TERTIAIRE_SURFACE_EXCEEDS_TOTAL" in codes
+        anom = next(a for a in result["anomalies"] if a["code"] == "TERTIAIRE_SURFACE_EXCEEDS_TOTAL")
+        assert anom["severity"] == "HIGH"
+        assert anom["evidence"]["ecart_pct"] > 0
+
+    def test_tertiaire_within_tolerance_no_anomaly(self, db):
+        """tertiaire_area_m2 ≤ surface_m2 * 1.05 → pas d'anomalie."""
+        from services.patrimoine_anomalies import compute_site_anomalies
+
+        _, _, site = _make_org_site(db, "TertOK")
+        site.surface_m2 = 3000.0
+        site.tertiaire_area_m2 = 3100.0  # 3.3% < 5% tolérance
+        db.commit()
+
+        result = compute_site_anomalies(site.id, db)
+        codes = [a["code"] for a in result["anomalies"]]
+        assert "TERTIAIRE_SURFACE_EXCEEDS_TOTAL" not in codes
+
+    def test_tertiaire_null_no_crash(self, db):
+        """tertiaire_area_m2 = None → pas de crash, pas d'anomalie."""
+        from services.patrimoine_anomalies import compute_site_anomalies
+
+        _, _, site = _make_org_site(db, "TertNull")
+        site.surface_m2 = 3000.0
+        site.tertiaire_area_m2 = None
+        db.commit()
+
+        result = compute_site_anomalies(site.id, db)
+        codes = [a["code"] for a in result["anomalies"]]
+        assert "TERTIAIRE_SURFACE_EXCEEDS_TOTAL" not in codes
+
+    def test_completude_score_with_tertiaire_anomaly(self, db):
+        """Le score perd 15 points (HIGH penalty) quand l'anomalie est présente."""
+        from services.patrimoine_anomalies import compute_site_anomalies
+
+        _, _, site = _make_org_site(db, "TertScore")
+        site.surface_m2 = 1000.0
+        site.tertiaire_area_m2 = 3000.0
+        db.commit()
+
+        result = compute_site_anomalies(site.id, db)
+        # TERTIAIRE_SURFACE_EXCEEDS_TOTAL (HIGH = -15) + potentiellement SURFACE_MISSING/BUILDING_MISSING
+        assert result["completude_score"] <= 85  # au moins -15
+
+
+class TestAnomaliesBatch:
+    """Tests pour GET /api/patrimoine/anomalies/batch."""
+
+    def test_batch_happy_path(self, db, client):
+        """Batch avec 2 sites valides retourne les deux."""
+        org, _, site1 = _make_org_site(db, "Batch1")
+        site1.surface_m2 = None  # déclenche SURFACE_MISSING
+        db.commit()
+        site2 = Site(
+            nom="Site Batch2", type=TypeSite.BUREAU, portefeuille_id=site1.portefeuille_id, actif=True, surface_m2=500.0
+        )
+        db.add(site2)
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        r = client.get(f"/api/patrimoine/anomalies/batch?site_ids={site1.id},{site2.id}")
+        assert r.status_code == 200
+        data = r.json()
+        assert str(site1.id) in data
+        assert str(site2.id) in data
+        assert data[str(site1.id)]["nb_anomalies"] >= 1  # SURFACE_MISSING au minimum
+
+    def test_batch_cross_org_excluded(self, db, client):
+        """Sites d'une autre org ne sont pas retournés."""
+        org_a, _, site_a = _make_org_site(db, "BatchOrgA")
+        org_b, _, site_b = _make_org_site(db, "BatchOrgB")
+        DemoState.set_demo_org(org_a.id)
+        r = client.get(f"/api/patrimoine/anomalies/batch?site_ids={site_a.id},{site_b.id}")
+        assert r.status_code == 200
+        data = r.json()
+        assert str(site_a.id) in data
+        assert str(site_b.id) not in data  # site_b appartient à org_b
+
+    def test_batch_empty_ids(self, db, client):
+        """Aucun ID → 200 {}."""
+        org, _, _ = _make_org_site(db, "BatchEmpty")
+        DemoState.set_demo_org(org.id)
+        r = client.get("/api/patrimoine/anomalies/batch?site_ids=")
+        assert r.status_code == 200
+        assert r.json() == {}
+
+    def test_batch_max_50_cap(self, db, client):
+        """Plus de 50 IDs → seuls les 50 premiers sont traités."""
+        org, _, site = _make_org_site(db, "BatchCap")
+        site.surface_m2 = 100.0
+        db.commit()
+        DemoState.set_demo_org(org.id)
+        ids = ",".join([str(site.id)] + [str(9000 + i) for i in range(60)])
+        r = client.get(f"/api/patrimoine/anomalies/batch?site_ids={ids}")
+        assert r.status_code == 200
+        data = r.json()
+        # site.id devrait être dans les 50 premiers
+        assert str(site.id) in data

@@ -63,6 +63,7 @@ import { FlexPortfolioSummary } from '../components/flex';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import {
   getPatrimoineAnomalies,
+  getPatrimoineAnomaliesBatch,
   getPortfolioReconciliation,
   patrimoineSiteMeters as _patrimoineSiteMeters,
   getSiteMetersTree,
@@ -199,13 +200,23 @@ export default function Patrimoine() {
   const [hmError, setHmError] = useState(null);
   const hmFetchIdRef = useRef(0);
 
+  const favKey = scope?.orgId ? `promeos_fav_sites_${scope.orgId}` : 'promeos_fav_sites';
   const [favorites, setFavorites] = useState(() => {
     try {
-      return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]'));
+      return new Set(JSON.parse(localStorage.getItem(favKey) || '[]'));
     } catch {
       return new Set();
     }
   });
+
+  // Re-sync favoris quand l'org change
+  useEffect(() => {
+    try {
+      setFavorites(new Set(JSON.parse(localStorage.getItem(favKey) || '[]')));
+    } catch {
+      setFavorites(new Set());
+    }
+  }, [favKey]);
 
   // V96 — Reconciliation badge per site
   const [reconMap, setReconMap] = useState({});
@@ -301,9 +312,9 @@ export default function Patrimoine() {
     }
   }, [location.state, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const HEATMAP_MAX_SITES = 10;
+  const HEATMAP_MAX_SITES = 15;
 
-  // V63 — Enrichissement heatmap : anomalies par site (Promise.all, max 10 sites, guard stale)
+  // V110 — Enrichissement heatmap : 1 seul appel batch au lieu de N appels
   useEffect(() => {
     if (scopedSites.length === 0) {
       setHmTiles([]);
@@ -316,52 +327,22 @@ export default function Patrimoine() {
     setHmError(null);
 
     const fetchId = ++hmFetchIdRef.current;
+    const siteIds = sitesToFetch.map((s) => s.id);
 
-    const SEV_ORDER_MAP = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
-
-    Promise.all(
-      sitesToFetch.map((site) =>
-        getPatrimoineAnomalies(site.id)
-          .then((data) => ({ site, data, ok: true }))
-          .catch(() => ({ site, data: null, ok: false }))
-      )
-    )
-      .then((results) => {
-        if (hmFetchIdRef.current !== fetchId) return; // réponse périmée
-        const tiles = results.map(({ site, data, ok }) => {
-          const anomalies = ok && data ? (data.anomalies ?? []) : [];
-
-          // Mode framework dominant
-          const fwCounts = {};
-          for (const a of anomalies) {
-            const fw = a.regulatory_impact?.framework ?? 'NONE';
-            if (fw !== 'NONE') fwCounts[fw] = (fwCounts[fw] ?? 0) + 1;
-          }
-          const dominant_framework =
-            Object.keys(fwCounts).length > 0
-              ? Object.entries(fwCounts).sort((a, b) => b[1] - a[1])[0][0]
-              : null;
-
-          // Sévérité max
-          const max_severity = anomalies.reduce((mx, a) => {
-            const o = SEV_ORDER_MAP[a.severity] ?? 0;
-            const mxo = SEV_ORDER_MAP[mx] ?? 0;
-            return o > mxo ? a.severity : mx;
-          }, null);
-
+    getPatrimoineAnomaliesBatch(siteIds)
+      .then((batchData) => {
+        if (hmFetchIdRef.current !== fetchId) return;
+        const tiles = sitesToFetch.map((site) => {
+          const data = batchData[String(site.id)];
           return {
             site_id: site.id,
             site_nom: site.nom,
-            total_risk_eur: ok && data ? data.total_estimated_risk_eur : (site.risque_eur ?? 0),
-            anomalies_count: ok && data ? data.nb_anomalies : (site.anomalies_count ?? 0),
-            max_severity,
-            dominant_framework,
-            completude_score: ok && data ? data.completude_score : 0,
-            top_anomalies: anomalies.slice(0, 2).map((a) => ({
-              code: a.code,
-              severity: a.severity,
-              title_fr: a.title_fr,
-            })),
+            total_risk_eur: data ? data.total_estimated_risk_eur : (site.risque_eur ?? 0),
+            anomalies_count: data ? data.nb_anomalies : 0,
+            max_severity: data ? data.top_severity : null,
+            dominant_framework: null,
+            completude_score: data ? data.completude_score : 0,
+            top_anomalies: data ? (data.top_anomalies ?? []) : [],
           };
         });
         setHmTiles(tiles);
@@ -373,6 +354,22 @@ export default function Patrimoine() {
         setHmLoading(false);
       });
   }, [scopedSites]);
+
+  // V110 — Enrichir scopedSites avec anomalies/risque issus du heatmap fetch
+  const enrichedSites = useMemo(() => {
+    if (hmTiles.length === 0) return scopedSites;
+    const tileMap = {};
+    for (const t of hmTiles) tileMap[t.site_id] = t;
+    return scopedSites.map((s) => {
+      const t = tileMap[s.id];
+      if (!t) return s;
+      return {
+        ...s,
+        anomalies_count: t.anomalies_count,
+        risque_eur: t.total_risk_eur,
+      };
+    });
+  }, [scopedSites, hmTiles]);
 
   /* ─── Computed data ─── */
 
@@ -456,20 +453,20 @@ export default function Patrimoine() {
   }, [scopedSites]);
 
   const stats = useMemo(() => {
-    const t = scopedSites.length;
-    const conformes = scopedSites.filter((s) => s.statut_conformite === 'conforme').length;
-    const nc = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
-    const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
-    const needsReview = scopedSites.filter((s) => s.compliance_needs_review).length;
-    const risque = scopedSites.reduce((a, s) => a + (s.risque_eur || 0), 0);
-    const surface = scopedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
-    const anomalies = scopedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
-    const withAno = scopedSites.filter((s) => (s.anomalies_count || 0) > 0).length;
+    const t = enrichedSites.length;
+    const conformes = enrichedSites.filter((s) => s.statut_conformite === 'conforme').length;
+    const nc = enrichedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const aRisque = enrichedSites.filter((s) => s.statut_conformite === 'a_risque').length;
+    const needsReview = enrichedSites.filter((s) => s.compliance_needs_review).length;
+    const risque = enrichedSites.reduce((a, s) => a + (s.risque_eur || 0), 0);
+    const surface = enrichedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
+    const anomalies = enrichedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
+    const withAno = enrichedSites.filter((s) => (s.anomalies_count || 0) > 0).length;
     return { total: t, conformes, nc, aRisque, needsReview, risque, surface, anomalies, withAno };
-  }, [scopedSites]);
+  }, [enrichedSites]);
 
   const filtered = useMemo(() => {
-    let r = [...scopedSites];
+    let r = [...enrichedSites];
     if (search) {
       const q = search.toLowerCase();
       r = r.filter(
@@ -504,7 +501,7 @@ export default function Patrimoine() {
     }
     return r;
   }, [
-    scopedSites,
+    enrichedSites,
     search,
     filterUsage,
     filterStatut,
@@ -600,7 +597,7 @@ export default function Patrimoine() {
       n.has(id) ? n.delete(id) : n.add(id);
     }
     setFavorites(n);
-    localStorage.setItem('promeos_fav_sites', JSON.stringify([...n]));
+    localStorage.setItem(favKey, JSON.stringify([...n]));
     setSelected(new Set());
   }
 
@@ -614,7 +611,7 @@ export default function Patrimoine() {
   const openDrawerOnAnomalies = useCallback(
     (site_id) => {
       // Try exact match first, then coerce to string (handles number/string mismatch)
-      const site = scopedSites.find((s) => s.id === site_id || String(s.id) === String(site_id));
+      const site = enrichedSites.find((s) => s.id === site_id || String(s.id) === String(site_id));
       if (site) {
         setDrawerSite(site);
         setDrawerInitialTab('anomalies');
@@ -624,7 +621,7 @@ export default function Patrimoine() {
         navigate(`/compliance/sites/${site_id}`);
       }
     },
-    [scopedSites, navigate]
+    [enrichedSites, navigate]
   );
   const openActionFromDrawer = useCallback(
     (siteName, siteId) => {
@@ -820,7 +817,7 @@ export default function Patrimoine() {
                     ? 'bg-amber-600'
                     : 'bg-red-600'
               }
-              label="Complétude"
+              label="Complétude moy."
               value={registreKpis ? `${registreKpis.completude_moyenne_pct}%` : '—'}
               detail={
                 registreKpis?.completude_moyenne_pct >= 80
@@ -839,8 +836,9 @@ export default function Patrimoine() {
             </div>
           </div>
 
-          {/* Flex portfolio ranking */}
+          {/* Flex portfolio ranking — masqué tant que la feature n'est pas implémentée
           <FlexPortfolioSummary />
+          */}
 
           {/* ── Toolbar ── */}
           <div className="flex items-center gap-2 flex-wrap">

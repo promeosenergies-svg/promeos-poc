@@ -112,10 +112,13 @@ def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
     profile_name = "office"
     reasons = []
 
-    # 1. Try NAF mapping via KBMappingCode → KBArchetype
-    if site.naf_code:
+    # 1. Try NAF mapping via KBMappingCode → KBArchetype (V110: cascade Site → EJ)
+    from utils.naf_resolver import resolve_naf_code
+
+    resolved_naf = resolve_naf_code(site, db)
+    if resolved_naf:
         mapping = (
-            db.query(KBMappingCode).filter_by(naf_code=site.naf_code).order_by(KBMappingCode.priority.desc()).first()
+            db.query(KBMappingCode).filter_by(naf_code=resolved_naf).order_by(KBMappingCode.priority.desc()).first()
         )
         if mapping and mapping.archetype:
             arch = mapping.archetype
@@ -124,7 +127,7 @@ def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
             archetype_source = "naf"
             confidence = "high"
             profile_name = _archetype_to_profile(arch.code)
-            reasons.append(f"NAF {site.naf_code} → {arch.code}")
+            reasons.append(f"NAF {resolved_naf} → {arch.code}")
 
     # 2. Fallback to site type
     _TYPE_FALLBACK = {

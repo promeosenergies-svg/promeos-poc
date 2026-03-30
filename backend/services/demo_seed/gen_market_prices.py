@@ -1,7 +1,9 @@
 """
 PROMEOS — Demo Seed: Market Prices (EPEX Spot FR)
-Generates 24 months of deterministic daily EPEX Spot FR prices.
-Period: 2024-01-01 → 2025-12-31 (730 days).
+Generates 36 months of deterministic daily EPEX Spot FR prices.
+Period: 2024-01-01 → 2026-12-31 (1096 days).
+
+Includes forward curves (CAL, Q, M) for cockpit display.
 
 Source de vérité : table mkt_prices (MktPrice) via market_models.py.
 """
@@ -26,11 +28,12 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
     prices = []
     base_2024 = 82.0  # EUR/MWh moyenne 2024 (post-crise, normalisation)
     base_2025 = 68.0  # EUR/MWh moyenne 2025 (tendance baissière)
+    base_2026 = 62.0  # EUR/MWh moyenne 2026 (stabilisation)
 
     current = start_date
     day_index = 0
     while current <= end_date:
-        year_base = base_2024 if current.year == 2024 else base_2025
+        year_base = base_2024 if current.year == 2024 else base_2025 if current.year == 2025 else base_2026
 
         # Saisonnalité (sinusoïde, pic en janvier, creux en juillet)
         day_of_year = current.timetuple().tm_yday
@@ -59,7 +62,7 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
                 "price_eur_mwh": price,
                 "resolution": Resolution.P1D,
                 "fetched_at": datetime.now(timezone.utc),
-                "source_reference": "Seed PROMEOS — basé sur tendances EPEX 2024-2025",
+                "source_reference": "Seed PROMEOS — basé sur tendances EPEX 2024-2026",
             }
         )
 
@@ -69,14 +72,70 @@ def _generate_prices(start_date: date, end_date: date) -> list[dict]:
     return prices
 
 
+def _generate_forward_curves() -> list[dict]:
+    """Generate forward curve records (CAL, Q, M) for cockpit display."""
+    now = datetime.now(timezone.utc)
+    curves = [
+        # CAL 2027
+        {
+            "market_type": MarketType.FORWARD_YEAR,
+            "delivery_start": datetime(2027, 1, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2027, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 58.0,
+            "resolution": Resolution.P1Y,
+        },
+        # Q2 2026
+        {
+            "market_type": MarketType.FORWARD_QUARTER,
+            "delivery_start": datetime(2026, 4, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2026, 6, 30, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 55.0,
+            "resolution": Resolution.P3M,
+        },
+        # Q3 2026
+        {
+            "market_type": MarketType.FORWARD_QUARTER,
+            "delivery_start": datetime(2026, 7, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2026, 9, 30, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 48.0,
+            "resolution": Resolution.P3M,
+        },
+        # Q4 2026
+        {
+            "market_type": MarketType.FORWARD_QUARTER,
+            "delivery_start": datetime(2026, 10, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2026, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 65.0,
+            "resolution": Resolution.P3M,
+        },
+        # M04 2026
+        {
+            "market_type": MarketType.FORWARD_MONTH,
+            "delivery_start": datetime(2026, 4, 1, tzinfo=timezone.utc),
+            "delivery_end": datetime(2026, 4, 30, 23, 59, 59, tzinfo=timezone.utc),
+            "price_eur_mwh": 54.0,
+            "resolution": Resolution.P1M,
+        },
+    ]
+    common = {
+        "source": MarketDataSource.MANUAL,
+        "product_type": ProductType.BASELOAD,
+        "zone": PriceZone.FR,
+        "fetched_at": now,
+        "source_reference": "Seed PROMEOS — forward curves estimées 2026-2027",
+    }
+    return [{**common, **c} for c in curves]
+
+
 def generate_market_prices(db: Session) -> dict:
     """Seed EPEX Spot FR prices into mkt_prices. Idempotent via dedup check."""
     start = date(2024, 1, 1)
-    end = date(2025, 12, 31)
+    end = date(2026, 12, 31)
     prices = _generate_prices(start, end)
+    forwards = _generate_forward_curves()
 
     inserted = 0
-    for p in prices:
+    for p in prices + forwards:
         existing = (
             db.query(MktPrice)
             .filter(
@@ -94,4 +153,5 @@ def generate_market_prices(db: Session) -> dict:
             inserted += 1
 
     db.flush()
-    return {"market_prices_total": len(prices), "market_prices_inserted": inserted}
+    total = len(prices) + len(forwards)
+    return {"market_prices_total": total, "market_prices_inserted": inserted}

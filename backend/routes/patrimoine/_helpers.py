@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Optional, List
 
 from fastapi import HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
@@ -238,6 +238,7 @@ def _serialize_site(site: Site) -> dict:
         "id": site.id,
         "nom": site.nom,
         "type": site.type.value if site.type else None,
+        "usage": site.type.value if site.type else None,
         "adresse": site.adresse,
         "code_postal": site.code_postal,
         "ville": site.ville,
@@ -468,16 +469,50 @@ class UpdateFieldRequest(BaseModel):
 
 
 class SiteUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     nom: Optional[str] = None
     adresse: Optional[str] = None
     code_postal: Optional[str] = None
     ville: Optional[str] = None
     region: Optional[str] = None
-    surface_m2: Optional[float] = None
-    nombre_employes: Optional[int] = None
+    surface_m2: Optional[float] = Field(None, gt=0, le=1_000_000)
+    tertiaire_area_m2: Optional[float] = Field(None, ge=0)
+    roof_area_m2: Optional[float] = Field(None, ge=0)
+    parking_area_m2: Optional[float] = Field(None, ge=0)
+    parking_type: Optional[str] = None
+    nombre_employes: Optional[int] = Field(None, ge=0)
     naf_code: Optional[str] = None
     siret: Optional[str] = None
     type: Optional[str] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    is_multi_occupied: Optional[bool] = None
+
+    @field_validator("code_postal")
+    @classmethod
+    def validate_cp(cls, v):
+        import re
+
+        if v is not None and not re.match(r"^\d{5}$", v):
+            raise ValueError("Code postal invalide (5 chiffres attendus)")
+        return v
+
+    @field_validator("siret")
+    @classmethod
+    def validate_siret(cls, v):
+        import re
+
+        if v is not None and not re.match(r"^\d{14}$", v):
+            raise ValueError("SIRET invalide (14 chiffres attendus)")
+        return v
+
+    @model_validator(mode="after")
+    def check_surfaces(self):
+        if self.tertiaire_area_m2 is not None and self.surface_m2 is not None:
+            if self.tertiaire_area_m2 > self.surface_m2:
+                raise ValueError("tertiaire_area_m2 ne peut pas dépasser surface_m2")
+        return self
 
 
 class SiteMergeRequest(BaseModel):
@@ -574,6 +609,49 @@ class SubMeterCreateRequest(BaseModel):
     numero_serie: Optional[str] = None
     type_compteur: Optional[str] = None
     subscribed_power_kva: Optional[float] = None
+
+
+# ── Response models — KPIs & DeliveryPoints (V110) ──
+
+
+class PatrimoineKpisResponse(BaseModel):
+    total: int
+    conformes: int
+    aRisque: int
+    nonConformes: int
+    totalRisque: float
+    totalSurface: float
+    totalAnomalies: int
+    nb_organisations: int
+    nb_entites_juridiques: int
+    nb_portefeuilles: int
+    nb_sites: int
+    nb_batiments: int
+    nb_delivery_points: int
+    nb_contrats: int
+    nb_contrats_actifs: int
+    nb_contrats_expiring_90j: int
+    surface_totale_m2: float
+    completude_moyenne_pct: int
+
+
+class DeliveryPointItemResponse(BaseModel):
+    id: int
+    code: Optional[str] = None
+    energy_type: Optional[str] = None
+    status: Optional[str] = None
+    compteurs_count: int = 0
+    data_source: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class CompletenessResponse(BaseModel):
+    score: int
+    level: str
+    filled: int
+    total: int
+    missing: List[str]
+    checks: Dict[str, Any]
 
 
 # ── Response models — Snapshot & Anomalies (V59) ──
@@ -687,3 +765,36 @@ class PortfolioSummaryResponse(BaseModel):
     top_sites: List[PortfolioTopSiteItem]
     trend: Optional[PortfolioTrend] = None  # V61 NEW (null — pas d'historique encore)
     computed_at: str
+
+
+# ── Response models — Meters unified (V110) ──
+
+
+class SubMeterItemResponse(BaseModel):
+    id: int
+    meter_id: Optional[str] = None
+    name: Optional[str] = None
+    energy_vector: Optional[str] = None
+
+
+class MeterItemResponse(BaseModel):
+    id: int
+    source: str = "meter"
+    meter_id: Optional[str] = None
+    numero_serie: Optional[str] = None
+    energy_vector: Optional[str] = None
+    type_compteur: Optional[str] = None
+    subscribed_power_kva: Optional[float] = None
+    site_id: Optional[int] = None
+    parent_meter_id: Optional[int] = None
+    delivery_point_id: Optional[int] = None
+    has_readings: bool = False
+    is_active: bool = True
+    name: Optional[str] = None
+    marque: Optional[str] = None
+    modele: Optional[str] = None
+    sub_meters: List[SubMeterItemResponse] = []
+
+
+class SiteMetersResponse(BaseModel):
+    meters: List[MeterItemResponse]
