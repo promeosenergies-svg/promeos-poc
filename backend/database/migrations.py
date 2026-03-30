@@ -1676,6 +1676,8 @@ def _create_enedis_tables(engine):
         "enedis_flux_mesure_r171",
         "enedis_flux_mesure_r50",
         "enedis_flux_mesure_r151",
+        "enedis_flux_file_error",
+        "enedis_ingestion_run",
     )
     insp = inspect(engine)
     missing = [t for t in all_enedis_tables if not insp.has_table(t)]
@@ -1694,6 +1696,13 @@ def _create_enedis_tables(engine):
         checkfirst=True,
     )
     logger.info("migration: created Enedis SGE staging tables: %s", missing)
+
+    # Ensure partial unique index for concurrency guard exists
+    with engine.begin() as conn:
+        conn.execute(text(
+            'CREATE UNIQUE INDEX IF NOT EXISTS "ix_ingestion_run_single_running" '
+            'ON "enedis_ingestion_run" ("status") WHERE "status" = \'running\''
+        ))
 
 
 def _add_enedis_columns(engine):

@@ -239,12 +239,12 @@ class TestLifecycleReceived:
         intermediate_statuses: list[str] = []
         original_ingest_file = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
 
-        def capturing_ingest_file(file_path, session, keys, chunk_size=1000, archive_dir=None):
+        def capturing_ingest_file(file_path, session, keys, chunk_size=1000, archive_dir=None, file_hash=None):
             # On first call, capture the state of ALL files (both should be RECEIVED)
             if not intermediate_statuses:
                 for f in session.query(EnedisFluxFile).all():
                     intermediate_statuses.append(f.status)
-            return original_ingest_file(file_path, session, keys, chunk_size, archive_dir)
+            return original_ingest_file(file_path, session, keys, chunk_size, archive_dir, file_hash=file_hash)
 
         with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=capturing_ingest_file):
             counters = ingest_directory(tmp_path, db, test_keys)
@@ -382,13 +382,13 @@ class TestFileDisappears:
         call_count = 0
         original_ingest = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
 
-        def delete_first_then_ingest(file_path, session, keys, chunk_size=1000, archive_dir=None):
+        def delete_first_then_ingest(file_path, session, keys, chunk_size=1000, archive_dir=None, file_hash=None):
             nonlocal call_count
             call_count += 1
             if call_count == 1:
                 # Delete the file before ingest_file reads it
                 file_path.unlink()
-            return original_ingest(file_path, session, keys, chunk_size, archive_dir)
+            return original_ingest(file_path, session, keys, chunk_size, archive_dir, file_hash=file_hash)
 
         with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=delete_first_then_ingest):
             counters = ingest_directory(tmp_path, db, test_keys)
@@ -415,16 +415,18 @@ class TestDbStorageErrorInBatch:
         _write_encrypted(tmp_path, "ENEDIS_23X--TEST_R171_20260302.zip", R171_XML)
 
         call_count = 0
-        original_bulk_save = db.bulk_save_objects
+        original_execute = db.execute
 
-        def fail_first_bulk_save(objects):
+        def fail_first_insert(stmt, *args, **kwargs):
+            from sqlalchemy import Insert
             nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                raise Exception("simulated disk full")
-            return original_bulk_save(objects)
+            if isinstance(stmt, Insert):
+                call_count += 1
+                if call_count == 1:
+                    raise Exception("simulated disk full")
+            return original_execute(stmt, *args, **kwargs)
 
-        with patch.object(db, "bulk_save_objects", side_effect=fail_first_bulk_save):
+        with patch.object(db, "execute", side_effect=fail_first_insert):
             counters = ingest_directory(tmp_path, db, test_keys)
 
         # First file fails at storage, second succeeds
@@ -720,12 +722,12 @@ class TestIncrementalCounters:
         call_count = 0
         original_ingest = ingest_file.__wrapped__ if hasattr(ingest_file, "__wrapped__") else ingest_file
 
-        def crash_on_second(file_path, session, keys, chunk_size=1000, archive_dir=None):
+        def crash_on_second(file_path, session, keys, chunk_size=1000, archive_dir=None, file_hash=None):
             nonlocal call_count
             call_count += 1
             if call_count == 2:
                 raise RuntimeError("simulated crash")
-            return original_ingest(file_path, session, keys, chunk_size, archive_dir)
+            return original_ingest(file_path, session, keys, chunk_size, archive_dir, file_hash=file_hash)
 
         with patch("data_ingestion.enedis.pipeline.ingest_file", side_effect=crash_on_second):
             counters = ingest_directory(tmp_path, db, test_keys, run=run)

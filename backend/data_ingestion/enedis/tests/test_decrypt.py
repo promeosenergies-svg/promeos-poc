@@ -113,6 +113,26 @@ class TestDecryptFile:
         decrypt_file(encrypted_zip_file, test_keys)
         assert not archive_dir.exists()
 
+    def test_archive_path_traversal_blocked(self, test_keys, tmp_path):
+        """A filename with '..' components must not escape archive_dir."""
+        from .conftest import make_encrypted_zip
+
+        ciphertext = make_encrypted_zip(SAMPLE_XML, "payload.xml", TEST_KEY, TEST_IV)
+        malicious_dir = tmp_path / "source"
+        malicious_dir.mkdir()
+        malicious_path = malicious_dir / "..%2F..%2Fetc%2Fevil.zip"
+        malicious_path.write_bytes(ciphertext)
+
+        archive_dir = tmp_path / "archive"
+        # Should succeed — the safe_stem stripping prevents escape
+        result = decrypt_file(malicious_path, test_keys, archive_dir=archive_dir)
+        assert result == SAMPLE_XML
+
+        # Verify the XML was written inside archive_dir, not elsewhere
+        archived_files = list(archive_dir.iterdir())
+        assert len(archived_files) == 1
+        assert archived_files[0].parent.resolve() == archive_dir.resolve()
+
 
 # ========================================================================
 # load_keys_from_env
@@ -120,12 +140,17 @@ class TestDecryptFile:
 
 
 class TestLoadKeysFromEnv:
+    @pytest.fixture(autouse=True)
+    def _clear_all_keys(self, monkeypatch):
+        """Clear all KEY_*/IV_* env vars so tests are isolated."""
+        for i in range(1, 10):
+            monkeypatch.delenv(f"KEY_{i}", raising=False)
+            monkeypatch.delenv(f"IV_{i}", raising=False)
+
     def test_loads_keys(self, monkeypatch):
         """Reads KEY_1/IV_1 from environment."""
         monkeypatch.setenv("KEY_1", "00112233445566778899aabbccddeeff")
         monkeypatch.setenv("IV_1", "aabbccddeeff00112233445566778899")
-        monkeypatch.delenv("KEY_2", raising=False)
-        monkeypatch.delenv("IV_2", raising=False)
 
         keys = load_keys_from_env()
         assert len(keys) == 1
@@ -137,17 +162,12 @@ class TestLoadKeysFromEnv:
         monkeypatch.setenv("IV_1", "aabbccddeeff00112233445566778899")
         monkeypatch.setenv("KEY_2", "ffeeddccbbaa99887766554433221100")
         monkeypatch.setenv("IV_2", "99887766554433221100ffeeddccbbaa")
-        monkeypatch.delenv("KEY_3", raising=False)
-        monkeypatch.delenv("IV_3", raising=False)
 
         keys = load_keys_from_env()
         assert len(keys) == 2
 
     def test_missing_keys_raises(self, monkeypatch):
         """No KEY_1/IV_1 in env -> MissingKeyError."""
-        monkeypatch.delenv("KEY_1", raising=False)
-        monkeypatch.delenv("IV_1", raising=False)
-
         with pytest.raises(MissingKeyError, match="No decryption keys"):
             load_keys_from_env()
 
@@ -159,17 +179,25 @@ class TestLoadKeysFromEnv:
         with pytest.raises(MissingKeyError, match="not valid hex"):
             load_keys_from_env()
 
+    def test_gap_in_key_numbering(self, monkeypatch):
+        """KEY_1 + KEY_3 set (KEY_2 missing) -> both loaded, gap skipped."""
+        monkeypatch.setenv("KEY_1", "00112233445566778899aabbccddeeff")
+        monkeypatch.setenv("IV_1", "aabbccddeeff00112233445566778899")
+        monkeypatch.setenv("KEY_3", "ffeeddccbbaa99887766554433221100")
+        monkeypatch.setenv("IV_3", "99887766554433221100ffeeddccbbaa")
+
+        keys = load_keys_from_env()
+        assert len(keys) == 2
+
     def test_partial_pair_key_without_iv(self, monkeypatch):
         """KEY_1 set but IV_1 missing -> MissingKeyError."""
         monkeypatch.setenv("KEY_1", "00112233445566778899aabbccddeeff")
-        monkeypatch.delenv("IV_1", raising=False)
 
         with pytest.raises(MissingKeyError, match="IV_1"):
             load_keys_from_env()
 
     def test_partial_pair_iv_without_key(self, monkeypatch):
         """IV_1 set but KEY_1 missing -> MissingKeyError."""
-        monkeypatch.delenv("KEY_1", raising=False)
         monkeypatch.setenv("IV_1", "aabbccddeeff00112233445566778899")
 
         with pytest.raises(MissingKeyError, match="KEY_1"):

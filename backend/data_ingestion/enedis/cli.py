@@ -24,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 # database import triggers load_dotenv() via connection.py
+from sqlalchemy.exc import IntegrityError  # noqa: E402
 from database import SessionLocal, engine, run_migrations  # noqa: E402
 from models.base import Base  # noqa: E402
 
@@ -208,18 +209,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     # --- Open session ---
     session = SessionLocal()
     try:
-        # --- Concurrency guard ---
-        existing_run = session.query(IngestionRun).filter_by(status=IngestionRunStatus.RUNNING).first()
-        if existing_run is not None:
-            print(
-                f"ERROR: another ingestion run is already in progress "
-                f"(run #{existing_run.id}, started {existing_run.started_at}). "
-                f"If the previous run crashed, update its status manually.",
-                file=sys.stderr,
-            )
-            return 1
-
-        # --- Create IngestionRun (always, even dry-run — for audit) ---
+        # --- Concurrency guard (atomic via partial unique index) ---
         run = IngestionRun(
             started_at=datetime.now(timezone.utc),
             directory=str(flux_dir),
@@ -229,6 +219,23 @@ def cmd_ingest(args: argparse.Namespace) -> int:
             triggered_by="cli",
         )
         session.add(run)
+        try:
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            existing_run = session.query(IngestionRun).filter_by(status=IngestionRunStatus.RUNNING).first()
+            detail = "another ingestion run is already in progress"
+            if existing_run:
+                detail = (
+                    f"another ingestion run is already in progress "
+                    f"(run #{existing_run.id}, started {existing_run.started_at})"
+                )
+            print(
+                f"ERROR: {detail}. "
+                f"If the previous run crashed, update its status manually.",
+                file=sys.stderr,
+            )
+            return 1
         session.commit()
 
         # --- Execute pipeline ---

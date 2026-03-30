@@ -91,7 +91,7 @@ def load_keys_from_env() -> list[tuple[bytes, bytes]]:
         if iv_hex and not key_hex:
             raise MissingKeyError(f"IV_{i} is set but KEY_{i} is missing")
         if not key_hex and not iv_hex:
-            break
+            continue
         try:
             pairs.append((bytes.fromhex(key_hex.strip()), bytes.fromhex(iv_hex.strip())))
         except ValueError as exc:
@@ -186,8 +186,12 @@ def decrypt_file(
         # Optional archiving
         if archive_dir is not None:
             archive_dir.mkdir(parents=True, exist_ok=True)
-            archive_name = file_path.stem + ".xml"
-            (archive_dir / archive_name).write_bytes(xml_bytes)
+            safe_stem = Path(file_path.name).stem
+            archive_name = safe_stem + ".xml"
+            resolved = (archive_dir / archive_name).resolve()
+            if not str(resolved).startswith(str(archive_dir.resolve())):
+                raise DecryptError(f"Archive path escape attempt: {archive_name}")
+            resolved.write_bytes(xml_bytes)
 
         return xml_bytes
 

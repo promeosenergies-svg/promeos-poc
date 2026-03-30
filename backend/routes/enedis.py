@@ -12,7 +12,8 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import func, text
+from sqlalchemy import func, text, union
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -41,7 +42,6 @@ router = APIRouter(prefix="/api/enedis", tags=["Enedis SGE Flux"])
 
 
 class IngestRequest(BaseModel):
-    directory: Optional[str] = Field(None, description="Override ENEDIS_FLUX_DIR")
     recursive: bool = Field(True)
     dry_run: bool = Field(False)
 
@@ -158,7 +158,7 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
     """Trigger the Enedis SGE ingestion pipeline (synchronous)."""
     # --- Pre-flight validation ---
     try:
-        flux_dir = get_flux_dir(override=body.directory)
+        flux_dir = get_flux_dir()
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -167,16 +167,7 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
     except MissingKeyError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
-    # --- Concurrency guard ---
-    existing_run = db.query(IngestionRun).filter_by(status=IngestionRunStatus.RUNNING).first()
-    if existing_run is not None:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Run #{existing_run.id} is already in progress "
-                   f"(started {existing_run.started_at})",
-        )
-
-    # --- Create IngestionRun (only after all validations pass) ---
+    # --- Concurrency guard (atomic via partial unique index) ---
     run = IngestionRun(
         started_at=datetime.now(timezone.utc),
         directory=str(flux_dir),
@@ -186,6 +177,18 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
         triggered_by="api",
     )
     db.add(run)
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        existing_run = db.query(IngestionRun).filter_by(status=IngestionRunStatus.RUNNING).first()
+        detail = "An ingestion run is already in progress"
+        if existing_run:
+            detail = (
+                f"Run #{existing_run.id} is already in progress "
+                f"(started {existing_run.started_at})"
+            )
+        raise HTTPException(status_code=409, detail=detail)
     db.commit()
 
     # --- Execute pipeline ---
@@ -331,12 +334,13 @@ def get_stats(db: Session = Depends(get_db)):
     r151 = db.query(func.count()).select_from(EnedisFluxMesureR151).scalar() or 0
 
     # --- PRMs: UNION DISTINCT across 4 measure tables ---
-    prm_rows = db.execute(text(
-        "SELECT point_id FROM enedis_flux_mesure_r4x"
-        " UNION SELECT point_id FROM enedis_flux_mesure_r171"
-        " UNION SELECT point_id FROM enedis_flux_mesure_r50"
-        " UNION SELECT point_id FROM enedis_flux_mesure_r151"
-    )).fetchall()
+    prm_union = union(
+        db.query(EnedisFluxMesureR4x.point_id),
+        db.query(EnedisFluxMesureR171.point_id),
+        db.query(EnedisFluxMesureR50.point_id),
+        db.query(EnedisFluxMesureR151.point_id),
+    )
+    prm_rows = db.execute(prm_union).fetchall()
     prm_identifiers = sorted(row[0] for row in prm_rows)
 
     # --- Last completed ingestion (non-dry-run) ---

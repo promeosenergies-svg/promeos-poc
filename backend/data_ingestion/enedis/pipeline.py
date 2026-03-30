@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from data_ingestion.enedis.decrypt import (
@@ -67,6 +68,7 @@ def ingest_file(
     keys: list[tuple[bytes, bytes]],
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     archive_dir: Path | None = None,
+    file_hash: str | None = None,
 ) -> FluxStatus:
     """Ingest one Enedis flux file: decrypt → parse → store in DB.
 
@@ -80,6 +82,7 @@ def ingest_file(
         keys: Decryption key/IV pairs from load_keys_from_env().
         chunk_size: Number of mesure rows per batch insert.
         archive_dir: Optional directory to write decrypted XML for audit.
+        file_hash: Pre-computed SHA256 hash (avoids re-reading the file).
 
     Returns:
         FluxStatus indicating the outcome.
@@ -94,8 +97,9 @@ def ingest_file(
     filename = file_path.name
     flux_type = classify_flux(filename)
 
-    # Compute hash once, used for all paths
-    file_hash = _hash_file(file_path)
+    # Use pre-computed hash if available, otherwise compute
+    if file_hash is None:
+        file_hash = _hash_file(file_path)
 
     # Idempotence check — applies to all flux types
     # pre_registered tracks a RECEIVED record to update in-place
@@ -373,7 +377,7 @@ def ingest_directory(
     if not dry_run:
         for file_path, phase1_hash, flux_file in to_process:
             try:
-                status = ingest_file(file_path, session, keys, chunk_size, archive_dir)
+                status = ingest_file(file_path, session, keys, chunk_size, archive_dir, file_hash=phase1_hash)
             except Exception as exc:
                 # ingest_file raises FileNotFoundError/MissingKeyError without recording;
                 # update the RECEIVED record to ERROR so it doesn't stay stale.
@@ -551,11 +555,11 @@ def _prm_summary(parsed: Any) -> str:
 def _store_r4x(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     """Store R4x CDC measures. Returns total rows inserted."""
     total_inserted = 0
-    batch: list[EnedisFluxMesureR4x] = []
+    batch: list[dict] = []
     for courbe in parsed.courbes:
         for point in courbe.points:
             batch.append(
-                EnedisFluxMesureR4x(
+                dict(
                     flux_file_id=flux_file.id,
                     flux_type=flux_file.flux_type,
                     point_id=parsed.point_id,
@@ -571,12 +575,12 @@ def _store_r4x(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_s
                 )
             )
             if len(batch) >= chunk_size:
-                session.bulk_save_objects(batch)
+                session.execute(insert(EnedisFluxMesureR4x), batch)
                 total_inserted += len(batch)
                 batch = []
 
     if batch:
-        session.bulk_save_objects(batch)
+        session.execute(insert(EnedisFluxMesureR4x), batch)
         total_inserted += len(batch)
     return total_inserted
 
@@ -584,11 +588,11 @@ def _store_r4x(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_s
 def _store_r171(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     """Store R171 index measures. Returns total rows inserted."""
     total_inserted = 0
-    batch: list[EnedisFluxMesureR171] = []
+    batch: list[dict] = []
     for serie in parsed.series:
         for mesure in serie.mesures:
             batch.append(
-                EnedisFluxMesureR171(
+                dict(
                     flux_file_id=flux_file.id,
                     flux_type=flux_file.flux_type,
                     point_id=serie.point_id,
@@ -604,12 +608,12 @@ def _store_r171(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_
                 )
             )
             if len(batch) >= chunk_size:
-                session.bulk_save_objects(batch)
+                session.execute(insert(EnedisFluxMesureR171), batch)
                 total_inserted += len(batch)
                 batch = []
 
     if batch:
-        session.bulk_save_objects(batch)
+        session.execute(insert(EnedisFluxMesureR171), batch)
         total_inserted += len(batch)
     return total_inserted
 
@@ -617,12 +621,12 @@ def _store_r171(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_
 def _store_r50(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     """Store R50 CDC C5 measures. Returns total rows inserted."""
     total_inserted = 0
-    batch: list[EnedisFluxMesureR50] = []
+    batch: list[dict] = []
     for prm in parsed.prms:
         for releve in prm.releves:
             for point in releve.points:
                 batch.append(
-                    EnedisFluxMesureR50(
+                    dict(
                         flux_file_id=flux_file.id,
                         flux_type=flux_file.flux_type,
                         point_id=prm.point_id,
@@ -634,12 +638,12 @@ def _store_r50(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_s
                     )
                 )
                 if len(batch) >= chunk_size:
-                    session.bulk_save_objects(batch)
+                    session.execute(insert(EnedisFluxMesureR50), batch)
                     total_inserted += len(batch)
                     batch = []
 
     if batch:
-        session.bulk_save_objects(batch)
+        session.execute(insert(EnedisFluxMesureR50), batch)
         total_inserted += len(batch)
     return total_inserted
 
@@ -647,12 +651,12 @@ def _store_r50(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_s
 def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_size: int) -> int:
     """Store R151 index + puissance max C5 measures. Returns total rows inserted."""
     total_inserted = 0
-    batch: list[EnedisFluxMesureR151] = []
+    batch: list[dict] = []
     for prm in parsed.prms:
         for releve in prm.releves:
             for donnee in releve.donnees:
                 batch.append(
-                    EnedisFluxMesureR151(
+                    dict(
                         flux_file_id=flux_file.id,
                         flux_type=flux_file.flux_type,
                         point_id=prm.point_id,
@@ -671,12 +675,12 @@ def _store_r151(parsed: Any, flux_file: EnedisFluxFile, session: Session, chunk_
                     )
                 )
                 if len(batch) >= chunk_size:
-                    session.bulk_save_objects(batch)
+                    session.execute(insert(EnedisFluxMesureR151), batch)
                     total_inserted += len(batch)
                     batch = []
 
     if batch:
-        session.bulk_save_objects(batch)
+        session.execute(insert(EnedisFluxMesureR151), batch)
         total_inserted += len(batch)
     return total_inserted
 

@@ -310,6 +310,15 @@ class IngestionRun(Base, TimestampMixin):
     """
 
     __tablename__ = "enedis_ingestion_run"
+    __table_args__ = (
+        Index(
+            "ix_ingestion_run_single_running",
+            "status",
+            unique=True,
+            sqlite_where=Column("status") == "running",
+            postgresql_where=Column("status") == "running",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     started_at = Column(DateTime, nullable=False, comment="Debut du run")

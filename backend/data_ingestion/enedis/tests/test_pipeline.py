@@ -282,7 +282,15 @@ class TestIngestErrors:
         """DB error during storage → rollback, record error, return ERROR."""
         from unittest.mock import patch
 
-        with patch.object(db, "bulk_save_objects", side_effect=Exception("disk full")):
+        original_execute = db.execute
+
+        def execute_that_fails_on_insert(stmt, *args, **kwargs):
+            from sqlalchemy import Insert
+            if isinstance(stmt, Insert):
+                raise Exception("disk full")
+            return original_execute(stmt, *args, **kwargs)
+
+        with patch.object(db, "execute", side_effect=execute_that_fails_on_insert):
             status = ingest_file(r4h_encrypted_file, db, test_keys)
 
         assert status == FluxStatus.ERROR
@@ -1160,7 +1168,15 @@ class TestErrorHistoryPreserved:
         db.commit()
 
         # Retry with store failure → rollback path
-        with patch.object(db, "bulk_save_objects", side_effect=Exception("disk full")):
+        original_execute = db.execute
+
+        def execute_that_fails_on_insert(stmt, *args, **kwargs):
+            from sqlalchemy import Insert
+            if isinstance(stmt, Insert):
+                raise Exception("disk full")
+            return original_execute(stmt, *args, **kwargs)
+
+        with patch.object(db, "execute", side_effect=execute_that_fails_on_insert):
             status = ingest_file(path, db, test_keys)
 
         assert status == FluxStatus.ERROR
