@@ -338,4 +338,54 @@ export const GLOSSARY = {
       "Mode d'import qui met à jour les sites existants au lieu de créer des doublons. Le matching se fait par SIRET (prioritaire), PRM/PCE, ou nom + code postal.",
     long: "Le mode update du pipeline d'import patrimoine compare chaque site du fichier aux sites existants. Priorité de matching : 1) SIRET exact (confiance haute), 2) PRM/PCE du compteur (confiance haute), 3) Nom + code postal (confiance moyenne). Les champs non-null du fichier écrasent les valeurs existantes. Les sites non matchés sont créés normalement.",
   },
+
+  // ── Décret Tertiaire — termes spécifiques ────────────────────────────────
+  efa: {
+    term: 'EFA',
+    short:
+      'Entite Fonctionnelle Assujettie. Unite de base du Decret Tertiaire : un batiment ou partie de batiment de meme usage, assujetti aux obligations de reduction.',
+    long: "L'EFA est definie par l'arrete du 10 avril 2020 (art. 2). Elle correspond a un perimetre homogene (meme activite, meme assujetti) au sein d'un batiment ou ensemble de batiments. C'est l'entite declaree sur OPERAT.",
+  },
+  iiu: {
+    term: 'IIU',
+    short:
+      "Indicateur d'Intensite d'Usage. Facteur de correction de l'objectif DT en fonction de l'usage reel (occupants, horaires, intensite d'activite).",
+    long: "L'IIU est defini par l'arrete du 10 avril 2020 (annexe II). Il permet d'ajuster les objectifs de reduction si l'usage du batiment a change depuis l'annee de reference. Exemple : un hotel qui augmente son nombre de chambres exploitees.",
+  },
+  dju: {
+    term: 'DJU',
+    short:
+      'Degres-Jours Unifies. Indicateur climatique pour corriger les consommations des variations meteo. Base 18 C, methode COSTIC.',
+    long: "Les DJU mesurent l'ecart entre la temperature exterieure et 18 C sur une periode. Plus les DJU sont eleves, plus le besoin de chauffage est important. La normalisation DJU permet de comparer les consommations entre annees a climat equivalent.",
+  },
+  crefabs: {
+    term: 'CRefAbs',
+    short:
+      "Consommation de Reference Absolue. Seuil maximal par categorie d'activite. Si le batiment est deja en-dessous, il est conforme sans reduction supplementaire.",
+    long: "Les valeurs absolues (Cabs) sont definies par l'arrete du 10 avril 2020 modifie (annexe VI). Elles varient par categorie fonctionnelle et zone climatique (H1a a H3). C'est une alternative a la trajectoire relative (-40%/-50%/-60%).",
+  },
+  modulation_dt: {
+    term: 'Modulation',
+    short:
+      "Dossier de modulation DT. Demande d'ajustement d'objectif quand celui-ci est techniquement ou economiquement impossible. Depot OPERAT avant le 30/09/2026.",
+    long: "La modulation est prevue par le decret n 2019-771 (art. 3). L'assujetti doit justifier de contraintes techniques, architecturales ou de disproportion economique, et documenter les actions envisagees avec leur TRI.",
+  },
+  mutualisation_dt: {
+    term: 'Mutualisation',
+    short:
+      'Compensation inter-sites DT. Un site performant compense un site en retard au sein du meme portefeuille. Fonctionnalite a venir dans OPERAT.',
+    long: "La mutualisation est prevue par le decret n 2019-771 (art. 3). Elle permet d'evaluer la conformite au niveau du portefeuille plutot que site par site, reduisant potentiellement les penalites.",
+  },
+  operat: {
+    term: 'OPERAT',
+    short:
+      'Observatoire de la Performance Energetique, de la Renovation et des Actions du Tertiaire. Plateforme ADEME pour les declarations DT.',
+    long: 'OPERAT (operat.ademe.fr) est la plateforme officielle ou les assujettis au Decret Tertiaire declarent leurs consommations, choisissent leur annee de reference, et suivent leur trajectoire de conformite.',
+  },
+  tri_investissement: {
+    term: 'TRI',
+    short:
+      "Temps de Retour sur Investissement. Duree necessaire pour que les economies d'energie remboursent le cout d'un investissement. TRI = cout / economie annuelle.",
+    long: "Le TRI est un critere essentiel du dossier de modulation DT et de l'exemption BACS. Un TRI > 10 ans (BACS) ou disproportionne (DT) peut justifier un ajustement d'objectif. Norme NF EN 15459.",
+  },
 };

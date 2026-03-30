@@ -348,6 +348,8 @@ class SeedOrchestrator:
                 helios_sites["nice"] = s
             elif "lyon" in name_lower:
                 helios_sites["lyon"] = s
+            elif "marseille" in name_lower:
+                helios_sites["marseille"] = s
         efa_list = seed_tertiaire_efa(self.db, helios_sites)
         result["tertiaire_efa"] = {"efas_created": len(efa_list)}
 
@@ -457,6 +459,25 @@ class SeedOrchestrator:
             result["kb_items"] = {"seeded": True}
         except Exception as e:
             result["kb_items"] = {"seeded": False, "error": str(e)}
+
+        # 15d. Run analytics engine on all meters (KB-driven: archetype, anomalies, recommendations)
+        try:
+            from services.analytics_engine import AnalyticsEngine
+            from models import Meter
+
+            engine = AnalyticsEngine(self.db)
+            meters = self.db.query(Meter).filter(Meter.site_id.in_([s.id for s in master["sites"]])).all()
+            analyzed = 0
+            for m in meters:
+                try:
+                    engine.analyze(m.id)
+                    analyzed += 1
+                except Exception:
+                    pass  # Non-bloquant par meter
+            self.db.flush()
+            result["analytics"] = {"meters_analyzed": analyzed, "total": len(meters)}
+        except Exception as e:
+            result["analytics"] = {"error": str(e)}
 
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
@@ -585,6 +606,9 @@ class SeedOrchestrator:
             MeterReading,
             MonitoringSnapshot,
             MonitoringAlert,
+            UsageProfile,
+            Anomaly as AnomalyModel,
+            Recommendation as RecommendationModel,
             EnergyContract,
             EnergyInvoice,
             EnergyInvoiceLine,
@@ -602,6 +626,7 @@ class SeedOrchestrator:
             SiteOperatingSchedule,
             Alerte,
         )
+        from models.patrimoine import DeliveryPoint, ContractDeliveryPoint
         from models.usage import Usage
         from models.bacs_models import BacsInspection, BacsAssessment, BacsCvcSystem, BacsAsset
         from models.consumption_target import ConsumptionTarget
@@ -663,6 +688,10 @@ class SeedOrchestrator:
             ("monitoring_alerts", MonitoringAlert),
             ("monitoring_snapshots", MonitoringSnapshot),
             ("meter_readings", MeterReading),
+            # Analytics engine results (FK to meter, kb_archetype, kb_anomaly_rule, kb_recommendation)
+            ("usage_profiles", UsageProfile),
+            ("anomalies", AnomalyModel),
+            ("recommendations", RecommendationModel),
             ("weather_cache", EmsWeatherCache),
             ("compliance_score_history", ComplianceScoreHistory),
             ("compliance_findings", ComplianceFinding),
@@ -682,6 +711,9 @@ class SeedOrchestrator:
             ("users", User),
             ("alertes", Alerte),
             ("usages", Usage),  # V107: FK to batiments, must delete before
+            # DeliveryPoints (FK to sites, referenced by contract_delivery_points)
+            ("contract_delivery_points", ContractDeliveryPoint),
+            ("delivery_points", DeliveryPoint),
             ("meters", Meter),
             ("compteurs", Compteur),
             ("batiments", Batiment),
@@ -873,7 +905,7 @@ class SeedOrchestrator:
     def _sync_site_compliance_statuses(self, sites):
         """Update Site.statut_decret_tertiaire/bacs + risque_financier_euro + avancement from Obligation records."""
         from models import Obligation, TypeObligation, StatutConformite
-        from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
+        from config.emission_factors import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
         for site in sites:
             for type_obl, attr in [
@@ -1150,6 +1182,51 @@ class SeedOrchestrator:
                 "summary": "La puissance souscrite doit être dimensionnée au plus juste : un dépassement ponctuel coûte 2× le tarif normal (CMDPS), mais un surdimensionnement gaspille l'abonnement fixe.",
                 "content_md": "## Optimisation de la puissance souscrite\n\n**Règle PROMEOS** : La puissance souscrite optimale = P90 de la courbe de charge + 5% de marge.\n\n**Risques** :\n- Sous-dimensionnement : CMDPS à 2× le tarif → surcoût immédiat\n- Surdimensionnement : Abonnement fixe trop élevé → 500-2000 €/an gaspillés\n\n**Calcul** :\n1. Extraire la courbe de charge 10 min sur 12 mois\n2. Calculer le percentile 90 (P90)\n3. Ajouter 5% de marge de sécurité\n4. Arrondir au palier supérieur du TURPE\n\n**Fréquence de révision** : Annuelle ou après tout changement d'équipement.",
                 "tags": {"puissance": True, "turpe": True, "optimisation": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            # ── Phase 5 : Items KB réglementaires DT enrichis ──────────────
+            {
+                "id": "reg-sanctions-cch-l174",
+                "type": "rule",
+                "domain": "reglementaire",
+                "title": "Sanctions DT — Code de la construction Art. L174-1",
+                "summary": "Pénalités administratives pour non-conformité au Décret Tertiaire : 7 500 EUR pour non-déclaration OPERAT, 1 500 EUR pour non-affichage de l'attestation. Publication name & shame sur le site ADEME.",
+                "content_md": "## Sanctions Décret Tertiaire\n\n**Art. L174-1 Code de la construction** :\n- Non-déclaration OPERAT : **7 500 EUR** d'amende administrative\n- Non-affichage attestation : **1 500 EUR**\n- Name & shame : Publication sur le site de l'ADEME\n\n**Procédure** :\n1. Mise en demeure par le préfet (délai 3 mois)\n2. Amende administrative si non-régularisation\n3. Publication du nom de l'assujetti défaillant\n\n**Calcul PROMEOS** : Risque = 7 500 × nb(NON_CONFORME) + 3 750 × nb(A_RISQUE)",
+                "tags": {"regulation": "tertiaire", "sanctions": True, "penalites": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "reg-arrete-2020-04-10",
+                "type": "rule",
+                "domain": "reglementaire",
+                "title": "Arrêté du 10 avril 2020 — Modalités DT",
+                "summary": "Définit les catégories d'activité OPERAT, les valeurs absolues (Cabs), les modalités de déclaration, les cas de modulation et l'ajustement climatique DJU.",
+                "content_md": "## Arrêté du 10 avril 2020\n\n**Contenu clé** :\n- Art. 2 : Définition de l'EFA (Entité Fonctionnelle Assujettie)\n- Art. 3 : Année de référence (2010-2020), déclaration annuelle sur OPERAT\n- Art. 4 : Rénovation majeure → nouvelle année de référence possible\n- Art. 5 : Affichage public de l'attestation (depuis 01/07/2026)\n- Art. 6-2 : Dossier de modulation (dépôt avant 30/09/2026)\n- Annexe I : Nomenclature catégories d'activité OPERAT\n- Annexe II : Indicateur d'Intensité d'Usage (IIU)\n- Annexe VI : Valeurs absolues Cabs par catégorie + zone climatique\n\n**URL** : legifrance.gouv.fr/jorf/id/JORFTEXT000041842389",
+                "tags": {"regulation": "tertiaire", "arrete": True, "modulation": True, "cabs": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "kb-dt-modulation",
+                "type": "knowledge",
+                "domain": "reglementaire",
+                "title": "Modulation DT — Préparer son dossier avant le 30/09/2026",
+                "summary": "Un assujetti peut demander un ajustement de son objectif DT s'il justifie de contraintes techniques, architecturales ou de disproportion économique. Le dossier doit être déposé sur OPERAT.",
+                "content_md": "## Dossier de modulation — Décret Tertiaire\n\n**Base légale** : Arrêté du 10 avril 2020, Art. 6-2\n\n**Cas de modulation** :\n- Contrainte technique : impossibilité d'isoler (bâtiment classé, etc.)\n- Contrainte architecturale : patrimoine historique\n- Disproportion économique : TRI > seuil raisonnable\n\n**Pièces du dossier** :\n1. Périmètre précis (EFA + surface)\n2. Données de consommation fiables (couverture > 80%)\n3. Actions déjà engagées avec justificatifs\n4. Justification technique par contrainte\n5. Calcul TRI par action envisagée\n6. Cohérence avec la stratégie patrimoniale\n\n**Deadline** : 30 septembre 2026\n\n**Astuce PROMEOS** : Utilisez le simulateur de modulation pour évaluer votre score de readiness.",
+                "tags": {"regulation": "tertiaire", "modulation": True, "deadline": True},
+                "confidence": "high",
+                "priority": 1,
+            },
+            {
+                "id": "kb-dt-mutualisation",
+                "type": "knowledge",
+                "domain": "reglementaire",
+                "title": "Mutualisation DT — Compenser entre sites du même portefeuille",
+                "summary": "La mutualisation permet d'évaluer la conformité au niveau du portefeuille plutôt que site par site. Un site performant compense un site en retard. Fonctionnalité prévue dans OPERAT.",
+                "content_md": "## Mutualisation — Décret Tertiaire\n\n**Base légale** : Décret n°2019-771, Art. 3\n\n**Principe** :\n- Un propriétaire avec N sites peut compenser les sites en déficit avec les sites en surplus\n- L'objectif est évalué au niveau portefeuille (somme des écarts)\n- Si le portefeuille est conforme en mutualisé, aucune pénalité\n\n**Calcul** :\n- Par site : écart = conso_actuelle - objectif_kwh\n- Portefeuille : écart_total = Σ(écart par site)\n- Conforme si écart_total ≤ 0\n\n**Économie** :\n- Sans mutualisation : 7 500 € × nb sites en déficit\n- Avec mutualisation : 7 500 € si déficit résiduel, sinon 0 €\n\n**Statut OPERAT** : Fonctionnalité non encore disponible — PROMEOS permet de l'anticiper.\n\n**Astuce** : Le simulateur PROMEOS calcule l'économie potentielle en 1 clic.",
+                "tags": {"regulation": "tertiaire", "mutualisation": True, "portefeuille": True},
                 "confidence": "high",
                 "priority": 1,
             },

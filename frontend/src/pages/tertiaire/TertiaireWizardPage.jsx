@@ -322,9 +322,14 @@ export default function TertiaireWizardPage() {
               {catalog && catalog.total_buildings > 0 && (
                 <>
                   <p className="text-sm text-gray-600">
-                    Sélectionnez un ou plusieurs bâtiments, puis choisissez l'usage OPERAT pour
+                    Selectionnez un ou plusieurs batiments, puis choisissez l'usage OPERAT pour
                     chacun :
                   </p>
+                  <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700">
+                    <span className="font-medium">Benchmarks ADEME (kWh/m2/an) :</span> Bureaux 170
+                    | Hotels 280 | Ecoles 110 | Entrepots 120{' '}
+                    <span className="text-blue-500">(source : OID 2022, 25 300 batiments)</span>
+                  </div>
                   {catalog.sites.map(
                     (site) =>
                       site.batiments.length > 0 && (

@@ -1,8 +1,8 @@
-# Décret tertiaire — Mapping traçable des sources
+# Decret tertiaire — Mapping tracable des sources
 
-**Date** : 2026-02-20
-**Auteurs** : Équipe PROMEOS
-**Statut** : En cours (V1)
+**Date** : 2026-03-30 (mise a jour Phase 4)
+**Auteurs** : Equipe PROMEOS
+**Statut** : V2 — references legales completees
 
 ---
 
@@ -10,75 +10,82 @@
 
 | Colonne | Description |
 |---------|-------------|
-| Règle | Identifiant de la règle métier implémentée |
-| Source | Document réglementaire de référence |
-| Page/Section | Localisation dans le document (À CLARIFIER si non extrait) |
-| Confiance | high = texte de loi explicite, med = interprétation raisonnable, low = heuristique PROMEOS |
-| Statut | OK = implémenté et tracé, À CLARIFIER = nécessite extraction/validation |
+| Regle | Identifiant de la regle metier implementee |
+| Source | Document reglementaire de reference |
+| Article | Article exact du texte de loi |
+| URL | Lien Legifrance (si disponible) |
+| Confiance | high = texte de loi explicite, med = interpretation raisonnable, low = heuristique PROMEOS |
+| Statut | OK = implemente et trace, TODO = a implementer |
 
 ---
 
-## Règles implémentées (regops/rules/tertiaire_operat.py)
+## Regles implementees (regops/rules/tertiaire_operat.py)
 
-| Règle | Source | Page/Section | Confiance | Statut |
-|-------|--------|--------------|-----------|--------|
-| SCOPE_UNKNOWN | Décret n°2019-771 art. 1 | À CLARIFIER (page/section) | high | À CLARIFIER |
-| OUT_OF_SCOPE (< 1000 m²) | Décret n°2019-771 art. 1 — seuil d'assujettissement | À CLARIFIER (page/section) | high | À CLARIFIER |
-| OPERAT_NOT_STARTED | Arrêté du 10 avril 2020 — plateforme OPERAT | À CLARIFIER (page/section) | high | À CLARIFIER |
-| ENERGY_DATA_MISSING | Décret n°2019-771 art. 3 — transmission des consommations | À CLARIFIER (page/section) | high | À CLARIFIER |
-| MULTI_OCCUPIED_GOVERNANCE | Décret n°2019-771 art. 4 — parties communes / privatives | À CLARIFIER (page/section) | med | À CLARIFIER |
+| Regle | Source | Article | URL | Confiance | Statut |
+|-------|--------|---------|-----|-----------|--------|
+| SCOPE_UNKNOWN | Decret n2019-771 du 23/07/2019 | Art. R174-22 du CCH (seuil 1000 m2) | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| OUT_OF_SCOPE (< 1000 m2) | Decret n2019-771 | Art. R174-22 — assujettissement >= 1000 m2 surface plancher | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| OPERAT_NOT_STARTED | Arrete du 10 avril 2020 | Art. 3 — declaration sur plateforme OPERAT | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389) | high | OK |
+| ENERGY_DATA_MISSING | Decret n2019-771 | Art. R174-23 — transmission des consommations annuelles | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| MULTI_OCCUPIED_GOVERNANCE | Decret n2019-771 | Art. R174-24 — repartition obligations proprietaire/locataire | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | med | OK |
 
-## Seuils et paramètres (regops/config/regs.yaml)
+## Seuils et parametres (regops/config/regs.yaml)
 
-| Paramètre | Valeur | Source | Page/Section | Confiance | Statut |
-|-----------|--------|--------|--------------|-----------|--------|
-| scope_threshold_m2 | 1000 | Décret n°2019-771 art. 1 | À CLARIFIER | high | À CLARIFIER |
-| attestation_display deadline | 2026-07-01 | Arrêté du 10 avril 2020 | À CLARIFIER | med | À CLARIFIER |
-| declaration_2025 deadline | 2026-09-30 | Arrêté du 10 avril 2020 | À CLARIFIER | med | À CLARIFIER |
-| penalty non_declaration | 7500 € | Code de la construction art. L174-1 | À CLARIFIER | high | À CLARIFIER |
-| penalty non_affichage | 1500 € | Code de la construction art. L174-1 | À CLARIFIER | high | À CLARIFIER |
+| Parametre | Valeur | Source | Article | URL | Confiance | Statut |
+|-----------|--------|--------|---------|-----|-----------|--------|
+| scope_threshold_m2 | 1000 | Decret n2019-771 | Art. R174-22 CCH | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| attestation_display | 2026-07-01 | Arrete du 10 avril 2020 modifie | Art. 5 — affichage public attestation | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389) | high | OK |
+| declaration_2025 | 2026-09-30 | Arrete du 10 avril 2020 modifie | Art. 3 — echeance declaration annuelle | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389) | high | OK |
+| penalty non_declaration | 7 500 EUR | Code de la construction | Art. L174-1 — sanction administrative | — | high | OK |
+| penalty non_affichage | 1 500 EUR | Code de la construction | Art. L174-1 — defaut d'affichage | — | high | OK |
+| reduction_2030 | -40% | Decret n2019-771 | Art. R174-23 — objectifs par palier | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| reduction_2040 | -50% | Decret n2019-771 | Art. R174-23 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| reduction_2050 | -60% | Decret n2019-771 | Art. R174-23 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | high | OK |
+| annee_reference | 2010-2020 | Arrete du 10 avril 2020 | Art. 3 — choix de l'annee de reference | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389) | high | OK |
 
-## Règles à ajouter (V39)
+## BACS
 
-| Règle | Source | Page/Section | Confiance | Statut |
-|-------|--------|--------------|-----------|--------|
-| EFA_COMPLETENESS | Décret n°2019-771 + Arrêté 2020 — définition de l'EFA | À CLARIFIER (page/section) | med | TODO |
-| SURFACE_USAGE_COHERENCE | Arrêté du 10 avril 2020 — catégories d'activité | À CLARIFIER (page/section) | med | TODO |
-| RESPONSIBILITY_REQUIRED | Décret n°2019-771 art. 4 — répartition des obligations | À CLARIFIER (page/section) | med | TODO |
-| TRAJECTORY_2030 (-40%) | Décret n°2019-771 art. 3 — objectifs de réduction | À CLARIFIER (page/section) | high | TODO |
-| TRAJECTORY_2040 (-50%) | Décret n°2019-771 art. 3 | À CLARIFIER (page/section) | high | TODO |
-| TRAJECTORY_2050 (-60%) | Décret n°2019-771 art. 3 | À CLARIFIER (page/section) | high | TODO |
-| MODULATION_ELIGIBLE | Arrêté du 10 avril 2020 — cas de modulation | À CLARIFIER (page/section) | low | TODO |
-| VACANCY_PERIOD | Décret n°2019-771 — périodes d'inoccupation | À CLARIFIER (page/section) | low | TODO |
-| RENOVATION_TRIGGER | Arrêté du 10 avril 2020 — rénovation majeure | À CLARIFIER (page/section) | low | TODO |
+| Parametre | Valeur | Source | Article | URL | Confiance | Statut |
+|-----------|--------|--------|---------|-----|-----------|--------|
+| BACS seuil tier 1 | > 290 kW CVC | Decret n2020-887 du 20/07/2020 | Art. R175-2 CCH | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | high | OK |
+| BACS seuil tier 2 | > 70 kW CVC | Decret n2020-887 modifie | Art. R175-2 — echeance repoussee a 2030 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | high | OK |
+| BACS deadline tier 1 | 2025-01-01 | Decret n2020-887 | Art. R175-2 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | high | OK |
+| BACS deadline tier 2 | 2030-01-01 | Decret n2020-887 modifie (2025) | Art. R175-2 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | high | OK |
+| BACS derogation TRI | > 10 ans | Decret n2020-887 | Art. R175-6 — exemption etude TRI | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | high | OK |
+
+## APER
+
+| Parametre | Valeur | Source | Article | URL | Confiance | Statut |
+|-----------|--------|--------|---------|-----|-----------|--------|
+| Parking solaire large | >= 10 000 m2 | Loi n2023-175 (APER) du 10/03/2023 | Art. 40 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244) | high | OK |
+| Parking solaire medium | >= 1 500 m2 | Loi APER | Art. 40 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244) | high | OK |
+| Toiture ENR | >= 500 m2 | Loi APER | Art. 41 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244) | high | OK |
+| Coverage minimal | 50% surface | Loi APER | Art. 40 al. 3 | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244) | high | OK |
+
+## Regles a implementer (backlog)
+
+| Regle | Source | Article | Confiance | Statut |
+|-------|--------|---------|-----------|--------|
+| EFA_COMPLETENESS | Arrete du 10 avril 2020 | Art. 2 — definition EFA | med | TODO |
+| SURFACE_USAGE_COHERENCE | Arrete du 10 avril 2020 | Annexe I — nomenclature OPERAT | med | TODO |
+| RESPONSIBILITY_REQUIRED | Decret n2019-771 | Art. R174-24 — repartition obligations | med | TODO |
+| MODULATION_ELIGIBLE | Arrete du 10 avril 2020 | Art. 6-2 — dossier de modulation | low | TODO |
+| VACANCY_PERIOD | Decret n2019-771 | Art. R174-25 — periodes d'inoccupation | low | TODO |
+| RENOVATION_TRIGGER | Arrete du 10 avril 2020 | Art. 4 — renovation majeure | low | TODO |
+
+**Note** : Le jalon 2026 (-25%) n'est PAS un objectif reglementaire au sens strict du decret.
+C'est la date de premiere declaration obligatoire sur OPERAT. Le premier objectif de reduction
+est -40% en 2030 (art. R174-23).
 
 ---
 
-## Documents réglementaires à ingérer dans Memobox
+## Documents reglementaires de reference
 
-| Document | Type | Domain KB | Statut initial | TODO |
-|----------|------|-----------|----------------|------|
-| Décret n°2019-771 (texte consolidé) | PDF | conformite/tertiaire-operat | review | TODO: extract_pages_from_pdf |
-| Arrêté du 10 avril 2020 (modalités) | PDF | conformite/tertiaire-operat | review | TODO: extract_pages_from_pdf |
-| FAQ ADEME — Décret tertiaire | PDF/HTML | conformite/tertiaire-operat | review | TODO: locate source |
-| Guide OPERAT — Manuel utilisateur | PDF | conformite/tertiaire-operat | review | TODO: locate source |
-
----
-
-## À CLARIFIER (actions requises)
-
-1. **Pages/sections exactes** : Tous les mappings ci-dessus indiquent "À CLARIFIER (page/section)" car les PDFs réglementaires n'ont pas encore été ingérés et indexés dans Memobox. Action : ingérer les docs, extraire les sections, mettre à jour ce mapping.
-
-2. **Trajectoire 2030/2040/2050** : Les pourcentages de réduction (-40%/-50%/-60%) sont bien connus mais la méthode de calcul exacte (année de référence, ajustements climatiques, modulations) nécessite extraction détaillée de l'Arrêté du 10 avril 2020.
-
-3. **Modulation** : Les cas de modulation (contraintes techniques, patrimoniales, architecturales, coût disproportionné) sont listés dans l'Arrêté mais les seuils exacts de déclenchement ne sont pas encore extraits. → TODO: extract from Arrêté, sections "modulation".
-
-4. **Vacance** : La définition exacte d'une période de vacance (durée minimale, justificatifs requis) n'est pas encore tracée. → TODO: extract from Décret, article relatif à l'inoccupation.
-
-5. **Multi-occupation** : Les règles de répartition entre propriétaire et locataire(s) pour les parties communes vs privatives nécessitent clarification. Confiance "med" car l'interprétation varie selon les sources.
-
-6. **Données externes V2** : Pour une implémentation complète, il faudra :
-   - Récupération automatique des consommations via Enedis/GRDF (API)
-   - Données climatiques pour ajustement DJU (Degree-Day Units)
-   - Catégories d'activité OPERAT (nomenclature exacte)
-   - Valeurs de référence par catégorie (CRef, CRefAbs)
+| Document | Type | URL | Statut |
+|----------|------|-----|--------|
+| Decret n2019-771 du 23/07/2019 (consolide) | Decret | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000038812251) | Reference |
+| Arrete du 10 avril 2020 (modalites) | Arrete | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041842389) | Reference |
+| Decret n2020-887 du 20/07/2020 (BACS) | Decret | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042121844) | Reference |
+| Loi n2023-175 du 10/03/2023 (APER) | Loi | [Legifrance](https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047294244) | Reference |
+| Code de la construction (L174-1) | Code | — | Reference |
+| FAQ ADEME — Decret tertiaire | Guide | operat.ademe.fr | Consulte |

@@ -34,6 +34,7 @@ from .completeness import check_required_inputs
 from .versioning import compute_deterministic_version, compute_data_version
 from .scoring import compute_regops_score  # kept for score_explain detail only
 from .rules import tertiaire_operat, bacs, aper, cee_p6
+from .config.legal_refs import get_legal_ref
 
 
 # Cache for YAML configs
@@ -219,6 +220,7 @@ def persist_assessment(db: Session, summary: SiteSummary):
                 "estimated_penalty_eur": getattr(f, "estimated_penalty_eur", None),
                 "penalty_source": getattr(f, "penalty_source", None),
                 "penalty_basis": getattr(f, "penalty_basis", None),
+                "legal_ref": getattr(f, "legal_ref", None) or get_legal_ref(f.rule_id),
             }
             for f in summary.findings
         ]

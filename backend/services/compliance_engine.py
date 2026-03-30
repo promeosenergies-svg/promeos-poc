@@ -1,5 +1,5 @@
 """
-PROMEOS - Compliance Engine (LEGACY)
+PROMEOS - Compliance Engine (LEGACY — 23 fichiers dependants)
 
 ⚠️  DÉPRÉCIÉ — Ce moteur est conservé pour backward-compat (snapshots Site).
     La source de vérité est désormais RegOps (regops/engine.py) qui orchestre
@@ -9,8 +9,15 @@ PROMEOS - Compliance Engine (LEGACY)
     - recompute_site() : écrit les snapshots statut_decret_tertiaire/statut_bacs sur Site
     - est appelé par POST /api/compliance/recompute (endpoint legacy)
     - sert de fallback pour compliance_score_service.py si RegAssessment absent
+    - Exporte BASE_PENALTY_EURO, CO2_FACTOR_* utilises par 23 fichiers (tests, migrations, routes)
 
     NE PAS ajouter de nouvelles règles ici — utiliser regops/rules/*.py + YAML.
+
+    PLAN DE MIGRATION (Phase 6+) :
+    1. Migrer les imports de constantes vers config/emission_factors.py et regops/config/regs.yaml
+    2. Migrer les tests test_compliance_engine.py vers les services A.2
+    3. Migrer compliance_coordinator.py vers regops/engine.py
+    4. Supprimer ce fichier (objectif : < 1 300 lignes → 0 lignes)
 
 V68: Data Readiness Gate — compute_readiness, compute_applicability,
 compute_scores, compute_deadlines, compute_data_trust, site/portfolio summaries.
@@ -46,19 +53,18 @@ _STATUS_SEVERITY = {
     StatutConformite.NON_CONFORME: 3,
 }
 
-# BACS thresholds (kW CVC nominal)
-BACS_SEUIL_HAUT = 290.0  # deadline 2025-01-01
-BACS_SEUIL_BAS = 70.0  # deadline 2030-01-01
+# ── Constantes importees depuis source canonique (config/emission_factors.py) ──
+from config.emission_factors import (
+    BASE_PENALTY_EURO,
+    A_RISQUE_PENALTY_EURO,
+    BACS_SEUIL_HAUT,
+    BACS_SEUIL_BAS,
+    get_emission_factor as _get_ef,
+)
+
+A_RISQUE_PENALTY_RATIO = 0.5  # re-export pour backward compat
 BACS_DEADLINE_290 = date(2025, 1, 1)
 BACS_DEADLINE_70 = date(2030, 1, 1)
-
-# ── Constantes réglementaires ────────────────────────────────────────
-# Source : Code de la construction L174-1 / ADEME Base Empreinte V23.6
-BASE_PENALTY_EURO = 7_500  # Pénalité non-conformité
-A_RISQUE_PENALTY_RATIO = 0.5  # 50 % pour sites à risque
-A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
-# CO2 — source unique : config/emission_factors.py (ADEME Base Empreinte V23.6)
-from config.emission_factors import get_emission_factor as _get_ef
 
 CO2_FACTOR_ELEC_KG_KWH = _get_ef("ELEC")  # 0.052
 CO2_FACTOR_GAZ_KG_KWH = _get_ef("GAZ")  # 0.227

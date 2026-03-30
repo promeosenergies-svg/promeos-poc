@@ -162,6 +162,12 @@ export const getExportManifests = (orgId) =>
 export const getExportManifest = (manifestId) =>
   api.get(`/operat/export-manifests/${manifestId}`).then((r) => r.data);
 
+// ── Mutualisation & Modulation DT (Phase 3) ──
+export const getMutualisation = (orgId, jalon = 2030) =>
+  api.get(`${TERT_BASE}/mutualisation`, { params: { org_id: orgId, jalon } }).then((r) => r.data);
+export const simulateModulation = (body) =>
+  api.post(`${TERT_BASE}/modulation-simulation`, body).then((r) => r.data);
+
 // ── BACS Expert ──
 export const getBacsAssessment = (siteId) =>
   api.get(`/regops/bacs/site/${siteId}`).then((r) => r.data);

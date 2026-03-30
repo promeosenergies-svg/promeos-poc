@@ -20,6 +20,7 @@ import {
   Zap,
   Link2,
   Plus,
+  Calculator,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import { useToast } from '../../ui/ToastProvider';
@@ -39,6 +40,7 @@ import {
 } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
 import DossierPrintView from '../../components/DossierPrintView';
+import ModulationDrawer from '../../components/conformite/ModulationDrawer';
 import { getExportManifests } from '../../services/api';
 
 // ── Bloc Trajectoire OPERAT (compact, B2B) ──────────────────────────
@@ -337,6 +339,7 @@ export default function TertiaireEfaDetailPage() {
   const [actionFeedback, setActionFeedback] = useState(null);
   const [creatingActionFor, setCreatingActionFor] = useState(null);
   const [showDossier, setShowDossier] = useState(false);
+  const [showModulation, setShowModulation] = useState(false);
 
   const handleCreateAction = async (issue) => {
     setCreatingActionFor(issue.code);
@@ -1085,6 +1088,15 @@ export default function TertiaireEfaDetailPage() {
         </div>
       )}
 
+      {/* Bouton modulation */}
+      {efa && (
+        <div className="mt-6">
+          <Button variant="secondary" onClick={() => setShowModulation(true)}>
+            <Calculator size={14} className="mr-1" /> Simuler une modulation
+          </Button>
+        </div>
+      )}
+
       {/* Dossier print view (Étape 5) */}
       <DossierPrintView
         open={showDossier}
@@ -1094,6 +1106,16 @@ export default function TertiaireEfaDetailPage() {
         sourceLabel={efa?.nom ? `EFA — ${efa.nom}` : `EFA #${id}`}
         period={String(new Date().getFullYear())}
       />
+
+      {/* Modulation drawer (Phase 3) */}
+      {efa && (
+        <ModulationDrawer
+          open={showModulation}
+          onClose={() => setShowModulation(false)}
+          efaId={efa.id}
+          efaNom={efa.nom}
+        />
+      )}
     </PageShell>
   );
 }

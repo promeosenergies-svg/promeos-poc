@@ -39,6 +39,7 @@ import useExplorerPresets from './consumption/useExplorerPresets';
 import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
+import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
 import { fmtCo2, fmtKwh } from '../utils/format';
@@ -340,8 +341,8 @@ export default function ConsumptionExplorerPage() {
     const hphc = motor.primaryHphc;
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
-    // Facteur ADEME Base Empreinte V23.6 : 0.052 kgCO₂e/kWh (source : config/emission_factors.py)
-    const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.052) : null;
+    // Facteur CO₂ centralisé (source : backend/config/emission_factors.py — ADEME Base Empreinte V23.6)
+    const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),

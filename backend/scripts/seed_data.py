@@ -303,7 +303,8 @@ def create_batiments_usages(db: Session, sites: list):
 def create_obligations(db: Session, sites: list, batiments: list):
     """Créer obligations réglementaires basées sur cvc_power_kw réel"""
     print("  Création des obligations...")
-    from services.compliance_engine import bacs_deadline_for_power, BACS_SEUIL_HAUT
+    from services.compliance_engine import bacs_deadline_for_power
+    from config.emission_factors import BACS_SEUIL_HAUT
 
     # Build site_id -> batiment lookup
     bat_by_site = {b.site_id: b for b in batiments}

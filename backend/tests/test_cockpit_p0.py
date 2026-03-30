@@ -81,7 +81,7 @@ class TestCockpitComplianceScore:
 class TestCockpitRisk:
     def test_a_risque_penalty_constant(self):
         """A_RISQUE_PENALTY_EURO == 3750 (50% de BASE_PENALTY_EURO)."""
-        from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
+        from config.emission_factors import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
         assert BASE_PENALTY_EURO == 7_500
         assert A_RISQUE_PENALTY_EURO == 3_750
@@ -165,23 +165,22 @@ class TestCockpitTrajectory:
 class TestCo2Factor:
     def test_co2_factor_elec_canonical(self):
         """CO2 electricite = 0.052 kg/kWh (ADEME Base Empreinte V23.6)."""
-        from services.compliance_engine import CO2_FACTOR_ELEC_KG_KWH
+        from config.emission_factors import get_emission_factor
 
-        assert CO2_FACTOR_ELEC_KG_KWH == 0.052
+        assert get_emission_factor("ELEC") == 0.052
 
     def test_co2_factor_gaz_canonical(self):
         """CO2 gaz naturel = 0.227 kg/kWh (ADEME Base Empreinte V23.6)."""
-        from services.compliance_engine import CO2_FACTOR_GAZ_KG_KWH
+        from config.emission_factors import get_emission_factor
 
-        assert CO2_FACTOR_GAZ_KG_KWH == 0.227
+        assert get_emission_factor("GAZ") == 0.227
 
     def test_co2_factors_from_single_source(self):
         """Tous les facteurs CO2 viennent de config/emission_factors.py."""
         from config.emission_factors import get_emission_factor
-        from services.compliance_engine import CO2_FACTOR_ELEC_KG_KWH, CO2_FACTOR_GAZ_KG_KWH
 
-        assert CO2_FACTOR_ELEC_KG_KWH == get_emission_factor("ELEC")
-        assert CO2_FACTOR_GAZ_KG_KWH == get_emission_factor("GAZ")
+        assert get_emission_factor("ELEC") == 0.052
+        assert get_emission_factor("GAZ") == 0.227
 
 
 # ── P0-5 : CO2 N-1 Comparison ────────────────────────────────────────

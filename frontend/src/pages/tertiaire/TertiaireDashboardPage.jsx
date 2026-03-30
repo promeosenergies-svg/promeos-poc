@@ -22,7 +22,7 @@ import {
   Check,
   Filter,
 } from 'lucide-react';
-import { Download } from 'lucide-react';
+import { Download, Clock } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge, KpiCard, Drawer } from '../../ui';
 import {
   getTertiaireDashboard,
@@ -30,6 +30,8 @@ import {
   getTertiaireSiteSignals,
 } from '../../services/api';
 import ExportOperatModal from '../../components/ExportOperatModal';
+import MutualisationSection from '../../components/conformite/MutualisationSection';
+import Explain from '../../ui/Explain';
 
 const STATUS_LABELS = {
   active: 'Active',
@@ -152,6 +154,8 @@ export default function TertiaireDashboardPage() {
     critical_issues: 0,
   };
 
+  const daysToOperat = Math.max(0, Math.ceil((new Date('2026-09-30') - new Date()) / 86_400_000));
+
   return (
     <PageShell
       title="Décret tertiaire / OPERAT"
@@ -180,8 +184,7 @@ export default function TertiaireDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="EFA enregistrées" value={kpis.total_efa} icon={Building2} accent="blue" />
-        <KpiCard label="EFA actives" value={kpis.active} icon={Building2} accent="emerald" />
+        <KpiCard label="EFA enregistrees" value={kpis.total_efa} icon={Building2} accent="blue" />
         <KpiCard
           label="Anomalies ouvertes"
           value={kpis.open_issues}
@@ -194,6 +197,12 @@ export default function TertiaireDashboardPage() {
           value={kpis.critical_issues}
           icon={ShieldAlert}
           accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
+        />
+        <KpiCard
+          label="Deadline OPERAT"
+          value={`J-${daysToOperat}`}
+          icon={Clock}
+          accent={daysToOperat < 90 ? 'red' : 'amber'}
         />
       </div>
 
@@ -385,7 +394,7 @@ export default function TertiaireDashboardPage() {
       {/* Liste EFA */}
       <div className="mt-6 space-y-3">
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Entités Fonctionnelles Assujetties
+          <Explain term="efa">Entités Fonctionnelles Assujetties</Explain>
         </h3>
         {efas.length === 0 ? (
           <Card>
@@ -434,6 +443,13 @@ export default function TertiaireDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Mutualisation (Phase 3) */}
+      {kpis.total_efa > 0 && (
+        <div className="mt-6">
+          <MutualisationSection orgId={efas[0]?.org_id || 1} />
+        </div>
+      )}
 
       {/* V43: Drawer "Pourquoi ce classement ?" */}
       <Drawer open={!!whySite} onClose={() => setWhySite(null)} title="Pourquoi ce classement ?">

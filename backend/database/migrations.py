@@ -7,7 +7,7 @@ SQLite supports ALTER TABLE ADD COLUMN for nullable columns.
 import logging
 from sqlalchemy import inspect, text
 
-from services.compliance_engine import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
+from config.emission_factors import BASE_PENALTY_EURO, A_RISQUE_PENALTY_EURO
 
 logger = logging.getLogger(__name__)
 
@@ -1698,10 +1698,12 @@ def _create_enedis_tables(engine):
     # Ensure partial unique index for concurrency guard exists (always run,
     # even if all tables already exist, to cover upgraded DBs from SF2/SF3).
     with engine.begin() as conn:
-        conn.execute(text(
-            'CREATE UNIQUE INDEX IF NOT EXISTS "ix_ingestion_run_single_running" '
-            'ON "enedis_ingestion_run" ("status") WHERE "status" = \'running\''
-        ))
+        conn.execute(
+            text(
+                'CREATE UNIQUE INDEX IF NOT EXISTS "ix_ingestion_run_single_running" '
+                'ON "enedis_ingestion_run" ("status") WHERE "status" = \'running\''
+            )
+        )
 
 
 def _add_enedis_columns(engine):

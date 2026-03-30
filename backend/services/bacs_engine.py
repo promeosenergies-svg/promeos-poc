@@ -469,7 +469,7 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
             status = "AT_RISK"
             severity = "MEDIUM"
 
-    from services.compliance_engine import BASE_PENALTY_EURO
+    from config.emission_factors import BASE_PENALTY_EURO
 
     bacs_penalty = float(BASE_PENALTY_EURO)  # CRIT-7: constante centralisée
 

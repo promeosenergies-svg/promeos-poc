@@ -1049,3 +1049,61 @@ def auto_normalize_efa_consumption(
         }
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+# ── MUTUALISATION (simulateur inter-sites) ──────────────────────────────
+
+
+@router.get("/mutualisation")
+def get_mutualisation_simulation(
+    org_id: int = Query(..., description="ID de l'organisation"),
+    jalon: int = Query(2030, description="Jalon cible (2030, 2040 ou 2050)"),
+    db: Session = Depends(get_db),
+):
+    """Simulation de mutualisation DT pour un portefeuille."""
+    from services.tertiaire_mutualisation_service import compute_mutualisation
+
+    if jalon not in (2030, 2040, 2050):
+        raise HTTPException(400, "Jalon invalide (2030, 2040 ou 2050)")
+
+    result = compute_mutualisation(db, org_id, jalon)
+    return result.to_dict()
+
+
+# ── MODULATION (simulateur dossier) ─────────────────────────────────────
+
+
+class ModulationActionInput(BaseModel):
+    label: str
+    cout_eur: float
+    economie_annuelle_kwh: float
+    economie_annuelle_eur: float
+    duree_vie_ans: int = 0
+
+
+class ModulationConstraintInput(BaseModel):
+    type: str  # technique | architecturale | economique
+    description: str = ""
+    actions: List[ModulationActionInput] = []
+
+
+class ModulationSimulationInput(BaseModel):
+    efa_id: int
+    contraintes: List[ModulationConstraintInput]
+
+
+@router.post("/modulation-simulation")
+def post_modulation_simulation(
+    body: ModulationSimulationInput,
+    db: Session = Depends(get_db),
+):
+    """Simulation de modulation DT pour une EFA."""
+    from services.tertiaire_modulation_service import simulate_modulation
+
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == body.efa_id, not_deleted(TertiaireEfa)).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    contraintes_dict = [c.model_dump() for c in body.contraintes]
+    result = simulate_modulation(db, body.efa_id, contraintes_dict)
+    return result.to_dict()

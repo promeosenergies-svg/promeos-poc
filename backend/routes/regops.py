@@ -107,6 +107,13 @@ def recompute_assessments(
         raise HTTPException(status_code=400, detail="Invalid scope or missing site_id")
 
 
+_FRAMEWORK_LABELS = {
+    "tertiaire_operat": {"label": "Decret Tertiaire", "next_deadline": "2026-09-30"},
+    "bacs": {"label": "Decret BACS (GTB)", "next_deadline": "2030-01-01"},
+    "aper": {"label": "Loi APER (solaire)", "next_deadline": "2028-07-01"},
+}
+
+
 @router.get("/score_explain")
 def get_score_explain(
     scope_type: str = Query("site"),
@@ -137,11 +144,52 @@ def get_score_explain(
             }
         )
 
+    # Findings par framework (pour worst_finding et penalties_count)
+    findings_by_fw = {}
+    if hasattr(summary, "findings"):
+        for f in summary.findings:
+            fw = f.regulation.lower() if hasattr(f, "regulation") else "unknown"
+            # Normaliser le nom
+            for key in _FRAMEWORK_LABELS:
+                if key.split("_")[0] in fw:
+                    fw = key
+                    break
+            findings_by_fw.setdefault(fw, []).append(f)
+
+    per_regulation = []
+    formula_parts = []
+    for fs in a2_result.breakdown:
+        meta = _FRAMEWORK_LABELS.get(fs.framework, {"label": fs.framework, "next_deadline": None})
+        fw_findings = findings_by_fw.get(fs.framework, [])
+        penalties_count = len(fw_findings)
+        worst_label = None
+        if fw_findings:
+            worst = max(fw_findings, key=lambda f: getattr(f, "priority_score", 0))
+            worst_label = getattr(worst, "label", getattr(worst, "rule_id", None))
+
+        per_regulation.append(
+            {
+                "regulation": fs.framework,
+                "label": meta["label"],
+                "weight": fs.weight,
+                "sub_score": fs.score,
+                "available": fs.available,
+                "source": fs.source,
+                "penalties_count": penalties_count,
+                "worst_finding_label": worst_label,
+                "next_deadline": meta["next_deadline"],
+            }
+        )
+        formula_parts.append(f"{fs.score}x{fs.weight}")
+
+    formula_str = f"Score = sum({' + '.join(formula_parts)}) - {a2_result.critical_penalty} penalty = {a2_result.score}"
+
     return {
         "scope": {"type": scope_type, "id": scope_id},
         "score": a2_result.score,
         "confidence": a2_result.confidence,
         "formula": a2_result.formula,
+        "formula_explain": formula_str,
         "breakdown": [
             {
                 "framework": fs.framework,
@@ -152,6 +200,7 @@ def get_score_explain(
             }
             for fs in a2_result.breakdown
         ],
+        "per_regulation": per_regulation,
         "critical_penalty": a2_result.critical_penalty,
         "frameworks_evaluated": a2_result.frameworks_evaluated,
         "frameworks_total": a2_result.frameworks_total,

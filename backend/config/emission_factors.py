@@ -34,6 +34,16 @@ EMISSION_FACTORS = {
 }
 
 
+# ── Penalites reglementaires (Code de la construction, Art. L174-1) ──────
+BASE_PENALTY_EURO = 7_500  # Non-declaration OPERAT
+A_RISQUE_PENALTY_RATIO = 0.5  # 50% pour sites a risque
+A_RISQUE_PENALTY_EURO = int(BASE_PENALTY_EURO * A_RISQUE_PENALTY_RATIO)  # 3 750
+
+# ── Seuils BACS (Decret n2020-887, Art. R175-2) ────────────────────────
+BACS_SEUIL_HAUT = 290.0  # kW CVC, deadline 2025-01-01
+BACS_SEUIL_BAS = 70.0  # kW CVC, deadline 2030-01-01
+
+
 def get_emission_factor(energy_vector: str) -> float:
     """Retourne le facteur en kgCO2e/kWh. Fallback ELEC si vecteur inconnu."""
     entry = EMISSION_FACTORS.get(energy_vector.upper(), EMISSION_FACTORS["ELEC"])

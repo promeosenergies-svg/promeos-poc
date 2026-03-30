@@ -24,6 +24,7 @@ class Finding:
     estimated_penalty_eur: Optional[float] = None
     penalty_source: Optional[str] = None  # ex: "regs.yaml", "estimation"
     penalty_basis: Optional[str] = None  # ex: "non_declaration: 7 500 EUR/site"
+    legal_ref: Optional[dict] = None  # {"ref": str, "label": str, "url": Optional[str]}
 
 
 @dataclass

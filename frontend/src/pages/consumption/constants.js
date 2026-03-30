@@ -9,7 +9,12 @@ export const CONFIDENCE_BADGE = {
   low: { label: 'Basse', variant: 'crit' },
 };
 
-/** kgCO₂e per kWh — ADEME 2024 France electricity mix */
+/**
+ * kgCO₂e per kWh — ADEME Base Empreinte V23.6, France electricity mix ACV.
+ * Source unique backend : backend/config/emission_factors.py (ELEC = 0.052).
+ * Utilise cote frontend uniquement pour l'affichage (presentation-layer).
+ * Si la valeur change, mettre a jour ICI et dans emission_factors.py.
+ */
 export const CO2E_FACTOR_KG_PER_KWH = 0.052;
 
 export const ALERT_COLOR = {
