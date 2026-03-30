@@ -1681,23 +1681,22 @@ def _create_enedis_tables(engine):
     )
     insp = inspect(engine)
     missing = [t for t in all_enedis_tables if not insp.has_table(t)]
-    if not missing:
-        return
+    if missing:
+        # Import models to register them with Base.metadata
+        import data_ingestion.enedis.models  # noqa: F401
+        from models.base import Base
 
-    # Import models to register them with Base.metadata
-    import data_ingestion.enedis.models  # noqa: F401
-    from models.base import Base
+        # Use checkfirst=True with the full table list so SQLAlchemy handles
+        # FK-dependency ordering correctly (matters for PostgreSQL).
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[Base.metadata.tables[t] for t in all_enedis_tables if t in Base.metadata.tables],
+            checkfirst=True,
+        )
+        logger.info("migration: created Enedis SGE staging tables: %s", missing)
 
-    # Use checkfirst=True with the full table list so SQLAlchemy handles
-    # FK-dependency ordering correctly (matters for PostgreSQL).
-    Base.metadata.create_all(
-        bind=engine,
-        tables=[Base.metadata.tables[t] for t in all_enedis_tables if t in Base.metadata.tables],
-        checkfirst=True,
-    )
-    logger.info("migration: created Enedis SGE staging tables: %s", missing)
-
-    # Ensure partial unique index for concurrency guard exists
+    # Ensure partial unique index for concurrency guard exists (always run,
+    # even if all tables already exist, to cover upgraded DBs from SF2/SF3).
     with engine.begin() as conn:
         conn.execute(text(
             'CREATE UNIQUE INDEX IF NOT EXISTS "ix_ingestion_run_single_running" '
@@ -1719,6 +1718,10 @@ def _add_enedis_columns(engine):
     enedis_flux_file_columns = [
         ("version", "INTEGER DEFAULT 1"),
         ("supersedes_file_id", "INTEGER REFERENCES enedis_flux_file(id) ON DELETE SET NULL"),
+        ("frequence_publication", "VARCHAR(5)"),
+        ("nature_courbe_demandee", "VARCHAR(20)"),
+        ("identifiant_destinataire", "VARCHAR(100)"),
+        ("header_raw", "TEXT"),
     ]
 
     # --- enedis_flux_mesure_r4x columns ---
