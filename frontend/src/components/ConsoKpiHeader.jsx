@@ -7,7 +7,7 @@
  *
  * P1.1: confidence tooltip "Comment calcule ?", EUR source tooltip.
  */
-import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-react';
+import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle, Building2 } from 'lucide-react';
 import { TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 import { fmtNum, fmtKwh } from '../utils/format';
@@ -98,6 +98,7 @@ export default function ConsoKpiHeader({
   days,
   startDate,
   endDate,
+  surfaceM2,
   loading = false,
 }) {
   const { isExpert } = useExpertMode();
@@ -108,18 +109,28 @@ export default function ConsoKpiHeader({
   const totalKwh = hphc?.total_kwh ?? tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
   const kwhLabel = totalKwh != null ? fmtKwh(totalKwh) : '—';
 
-  // --- EUR total (from hphc or progression) ---
+  // --- EUR total (from hphc, includes gas when aggregated — #144) ---
   const totalEur = hphc?.total_cost_eur ?? null;
   const eurLabel = totalEur != null ? fmtNum(Math.round(totalEur), 0, '€') : '—';
-  const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
+  const eurSource = hphc?.total_cost_eur != null ? 'Estimé multi-énergie' : 'Non disponible';
 
   // --- EUR/MWh reel ---
-  // Use hphc.total_kwh (not the fallback totalKwh) so numerator (EUR from hphc)
-  // and denominator (kWh) always come from the same source.
+  // Use elec-only cost and kWh so numerator and denominator always come from
+  // the same energy source. total_cost_eur may include gas (#144).
+  const elecEur = hphc?.elec_cost_eur ?? totalEur;
   const hphcKwh = hphc?.total_kwh ?? null;
   const eurMwh =
-    totalEur != null && hphcKwh > 0 ? Math.round((totalEur / hphcKwh) * 1000 * 100) / 100 : null;
+    elecEur != null && hphcKwh > 0 ? Math.round((elecEur / hphcKwh) * 1000 * 100) / 100 : null;
   const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, '€/MWh') : '—';
+
+  // --- EUR/m²/an (#144) ---
+  // Annualize observed cost then divide by surface. Guard against null/zero surface.
+  const effectiveDays = (days != null && days > 0) ? days : null;
+  const eurPerM2Year =
+    totalEur != null && surfaceM2 > 0 && effectiveDays != null
+      ? Math.round(((totalEur / effectiveDays) * 365) / surfaceM2 * 100) / 100
+      : null;
+  const eurPerM2Label = eurPerM2Year != null ? fmtNum(eurPerM2Year, 1, '€/m²/an') : '—';
 
   // --- CO2e ---
   const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
@@ -213,7 +224,7 @@ export default function ConsoKpiHeader({
       </div>
       <div
         className="flex items-center gap-2"
-        title={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`}
+        title={`Calcul : ${eurSource}. Basé sur les prix contrat ou estimés (élec + gaz).`}
       >
         <Euro size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
@@ -229,6 +240,16 @@ export default function ConsoKpiHeader({
         <div className="flex flex-col">
           <span className="text-gray-400">Prix moyen</span>
           <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && eurMwh == null ? <KpiShimmer /> : eurMwhLabel}</span>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-2"
+        title="Coût annualisé / surface totale des sites sélectionnés"
+      >
+        <Building2 size={14} className="text-gray-400 shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-gray-400">EUR/m²/an</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && eurPerM2Year == null ? <KpiShimmer /> : eurPerM2Label}</span>
         </div>
       </div>
       <div

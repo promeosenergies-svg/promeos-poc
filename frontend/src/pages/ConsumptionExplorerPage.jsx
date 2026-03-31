@@ -255,7 +255,7 @@ export default function ConsumptionExplorerPage() {
     mergedAvailability,
     primarySiteId,
     primaryAvailability,
-    data: { availabilityBySite, tunnelBySite, hphcBySite, progressionBySite },
+    data: { availabilityBySite, tunnelBySite, hphcBySite, progressionBySite, gasBySite },
     loading,
     error: motorError,
   } = motor;
@@ -263,16 +263,29 @@ export default function ConsumptionExplorerPage() {
   // ── Multi-site KPI aggregation (issue #38) ────────────────────────────
   // Aggregate hphc, tunnel, and progression across all selected sites so
   // ConsoKpiHeader shows totals rather than only the primary site.
+  // #144: also aggregate gas cost for multi-energy total, respecting energy filter.
   const aggregatedHphc = useMemo(() => {
     const entries = siteIds.map((sid) => hphcBySite[sid]).filter(Boolean);
-    if (!entries.length) return null;
-    if (entries.length === 1) return entries[0];
+    const includeElec = energyType !== 'gas';
+    const includeGas = energyType !== 'electricity';
+    const elecCost = includeElec ? entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0) : 0;
+    const gasCost = includeGas ? siteIds.reduce((s, sid) => s + (gasBySite[sid]?.total_cost_eur ?? 0), 0) : 0;
+    const totalCost = elecCost + gasCost;
+    if (!entries.length && !includeGas) return null;
+    if (!entries.length && includeGas) {
+      // No elec data loaded (or gas-only filter). Return gas cost if available,
+      // otherwise null — suppressing the KPI tile is correct here since there's
+      // no kWh denominator for derived metrics either.
+      return totalCost > 0 ? { total_kwh: null, total_cost_eur: totalCost, elec_cost_eur: 0 } : null;
+    }
+    if (entries.length === 1 && !includeGas) return entries[0];
     return {
       ...entries[0],
-      total_kwh: entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0),
-      total_cost_eur: entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0),
+      total_kwh: includeElec ? entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0) : null,
+      total_cost_eur: totalCost,
+      elec_cost_eur: elecCost,
     };
-  }, [siteIds, hphcBySite]);
+  }, [siteIds, hphcBySite, gasBySite, energyType]);
 
   const aggregatedTunnel = useMemo(() => {
     const entries = siteIds.map((sid) => tunnelBySite[sid]).filter(Boolean);
@@ -308,6 +321,13 @@ export default function ConsumptionExplorerPage() {
       ytd_actual_kwh: entries.reduce((s, p) => s + (p.ytd_actual_kwh ?? 0), 0),
     };
   }, [siteIds, progressionBySite]);
+
+  // #144: total surface for selected sites (EUR/m²/an KPI)
+  const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.id, s])), [sites]);
+  const surfaceM2Total = useMemo(() => {
+    const total = siteIds.reduce((s, sid) => s + (siteById[sid]?.surface_m2 ?? 0), 0);
+    return total > 0 ? total : null;
+  }, [siteIds, siteById]);
 
   // ── User-initiated period flag (issue #23) ────────────────────────────
   // Prevents auto-calibration from overwriting a period the user explicitly chose.
@@ -683,6 +703,7 @@ export default function ConsumptionExplorerPage() {
           days={days}
           startDate={startDate}
           endDate={endDate}
+          surfaceM2={surfaceM2Total}
           loading={loading}
         />
       )}
