@@ -223,7 +223,7 @@ class AnalyticsEngine:
 
             if mapping:
                 archetype = mapping.archetype
-                return archetype, 0.85  # High confidence for NAF match
+                return archetype, self._compute_match_score(features, archetype)
 
         # Method 2: Feature-based matching (kWh/m2 range)
         if features.get("kwh_m2_year"):
@@ -254,6 +254,47 @@ class AnalyticsEngine:
         default = self.db.query(KBArchetype).filter_by(code="BUREAU_STANDARD").first()
 
         return default, 0.3  # Low confidence default
+
+    def _compute_match_score(self, features: Dict, archetype: KBArchetype) -> float:
+        """Compute archetype match score based on real meter features."""
+        base = 0.70
+        bonus = 0.0
+        arch_code = archetype.code or ""
+
+        # 1. kWh/m²/an vs archetype range
+        kwh_m2 = features.get("kwh_m2_year")
+        if kwh_m2 and archetype.kwh_m2_min and archetype.kwh_m2_max:
+            if archetype.kwh_m2_min <= kwh_m2 <= archetype.kwh_m2_max:
+                bonus += 0.15
+            elif kwh_m2 < archetype.kwh_m2_min * 0.7 or kwh_m2 > archetype.kwh_m2_max * 1.3:
+                bonus -= 0.10
+            else:
+                bonus += 0.05
+
+        # 2. Weekend ratio coherence
+        weekend_ratio = features.get("weekend_ratio")
+        if weekend_ratio is not None:
+            if "BUREAU" in arch_code and weekend_ratio < 0.40:
+                bonus += 0.10
+            elif "BUREAU" in arch_code and weekend_ratio > 0.70:
+                bonus -= 0.05
+            elif "HOTEL" in arch_code and weekend_ratio > 0.65:
+                bonus += 0.10
+            elif "ENSEIGNEMENT" in arch_code and weekend_ratio < 0.35:
+                bonus += 0.10
+            elif "ENTREPOT" in arch_code or "LOGISTIQUE" in arch_code or "INDUSTRIE" in arch_code:
+                if 0.30 <= weekend_ratio <= 0.60:
+                    bonus += 0.05
+
+        # 3. Night ratio coherence
+        night_ratio = features.get("night_ratio")
+        if night_ratio is not None:
+            if "BUREAU" in arch_code and night_ratio < 0.25:
+                bonus += 0.05
+            elif "HOTEL" in arch_code and night_ratio > 0.40:
+                bonus += 0.05
+
+        return round(min(max(base + bonus, 0.40), 0.98), 2)
 
     def _apply_anomaly_rules(self, meter: Meter, features: Dict, archetype: Optional[KBArchetype]) -> List[Dict]:
         """Step 3: Apply KB anomaly rules against computed features"""

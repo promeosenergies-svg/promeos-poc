@@ -77,6 +77,7 @@ import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
+import SiteIntelligencePanel from '../components/SiteIntelligencePanel';
 import { getDataQualityScore, getSiteFreshness, getSiteCompleteness } from '../services/api';
 
 const _sb = (k) => {
@@ -289,6 +290,9 @@ function TabResume({ site, onSegmentationClick }) {
               </Table>
             )}
           </Card>
+
+          {/* B2-3b: Intelligence KB (archetype, anomalies KB, recommandations) */}
+          <SiteIntelligencePanel siteId={site.id} />
 
           {/* B2-4: Points de livraison (PDL) */}
           <Card>

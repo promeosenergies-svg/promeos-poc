@@ -56,6 +56,7 @@ from .usages import router as usages_router
 from .action_center import router as action_center_router
 from .cockpit_v2 import router as cockpit_v2_router
 from .enedis import router as enedis_router
+from .site_intelligence import router as site_intelligence_router
 
 __all__ = [
     "sites_router",
@@ -112,4 +113,5 @@ __all__ = [
     "action_center_router",
     "cockpit_v2_router",
     "enedis_router",
+    "site_intelligence_router",
 ]

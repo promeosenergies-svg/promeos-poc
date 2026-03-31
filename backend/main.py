@@ -76,6 +76,7 @@ from routes import (
     action_center_router,
     cockpit_v2_router,
     enedis_router,
+    site_intelligence_router,
 )
 
 # Import KB router
@@ -178,6 +179,7 @@ app.include_router(usages_router)  # V1.1 Usage (readiness, metering plan, UES, 
 app.include_router(action_center_router)  # Action Center (unified actionable issues)
 app.include_router(cockpit_v2_router)  # Cockpit Executive V2 (hero impact + santé + actions)
 app.include_router(enedis_router)  # Enedis SGE Flux (ingestion API)
+app.include_router(site_intelligence_router)  # KB Site Intelligence (archetype, anomalies, recos)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations

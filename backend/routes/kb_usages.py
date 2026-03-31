@@ -857,6 +857,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 7,
             "C": 9,
             "E": 8,
+            "anomaly_codes": ["RULE-BASE-NUIT-001", "RULE-BASE-NUIT-002"],
         },
         {
             "code": "RECO-CVC-REGULATION",
@@ -868,6 +869,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 8,
             "C": 7,
             "E": 5,
+            "anomaly_codes": ["RULE-BASE-NUIT-001", "RULE-SAISONNIER-002"],
         },
         {
             "code": "RECO-BACS-CLASSE-B",
@@ -879,6 +881,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 7,
             "C": 8,
             "E": 4,
+            "anomaly_codes": ["RULE-BASE-NUIT-001", "RULE-WEEKEND-001"],
         },
         {
             "code": "RECO-ARRET-WEEKEND",
@@ -890,6 +893,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 5,
             "C": 8,
             "E": 9,
+            "anomaly_codes": ["RULE-WEEKEND-001", "RULE-WEEKEND-002"],
         },
         {
             "code": "RECO-FROID-MAINTENANCE",
@@ -901,6 +905,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 6,
             "C": 7,
             "E": 6,
+            "anomaly_codes": ["RULE-BASE-NUIT-001", "RULE-TENDANCE-001"],
         },
         {
             "code": "RECO-PUISSANCE-OPTIM",
@@ -912,6 +917,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 4,
             "C": 9,
             "E": 9,
+            "anomaly_codes": ["RULE-PUISSANCE-001", "RULE-PUISSANCE-002"],
         },
         {
             "code": "RECO-ISOLATION-COMBLES",
@@ -923,6 +929,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 7,
             "C": 6,
             "E": 3,
+            "anomaly_codes": ["RULE-SAISONNIER-001", "RULE-SAISONNIER-002"],
         },
         {
             "code": "RECO-AUTOCONSO-PV",
@@ -934,6 +941,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 8,
             "C": 5,
             "E": 3,
+            "anomaly_codes": ["RULE-BENCHMARK-001", "RULE-TENDANCE-001"],
         },
         {
             "code": "RECO-SOBRIETE-SENSIB",
@@ -945,6 +953,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 5,
             "C": 6,
             "E": 8,
+            "anomaly_codes": ["RULE-BASE-NUIT-001", "RULE-WEEKEND-001", "RULE-TENDANCE-001"],
         },
         {
             "code": "RECO-CONTRAT-OPTIM",
@@ -956,6 +965,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "I": 6,
             "C": 7,
             "E": 7,
+            "anomaly_codes": ["RULE-FACTURATION-001", "RULE-FACTURATION-002"],
         },
     ]
 
@@ -977,6 +987,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
                 confidence_score=r["C"],
                 ease_score=r["E"],
                 ice_score=ice,
+                anomaly_codes=r.get("anomaly_codes", []),
                 confidence=KBConfidence.MEDIUM,
                 status=KBStatus.VALIDATED,
                 kb_version_id=vid,

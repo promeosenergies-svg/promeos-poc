@@ -115,7 +115,7 @@ PACKS = {
                 "nom": "HELIOS Industrie SARL",
                 "siren": "234567890",
                 "siret": "23456789000028",
-                "naf_code": "2511Z",
+                "naf_code": "5210B",
                 "region_code": "ARA",
             },
             {
@@ -205,7 +205,7 @@ PACKS = {
                 "lon": 1.4020,
                 "type_site": "entrepot",
                 "profile": "warehouse",
-                "naf": "2511Z",
+                "naf": "5210B",
                 "surface_m2": 6000,
                 "tertiaire_area_m2": None,
                 "employees": 85,

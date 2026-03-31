@@ -358,3 +358,7 @@ export const getUsageCostBreakdown = (siteId, days = 365) =>
   cachedGet(`/usages/cost-breakdown/${siteId}`, { params: { days } }).then((r) => r.data);
 export const getUsageTaxonomy = () => cachedGet('/usages/taxonomy').then((r) => r.data);
 export const getSiteUsages = (siteId) => cachedGet(`/usages/site/${siteId}`).then((r) => r.data);
+
+// ── Site Intelligence (KB-driven) ──
+export const getSiteIntelligence = (siteId) =>
+  api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
