@@ -21,7 +21,7 @@ from models import (
     not_deleted,
 )
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
-from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
+from services.compliance_utils import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access, apply_scope_filter
 from services.scope_utils import resolve_org_id

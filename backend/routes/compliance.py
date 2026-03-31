@@ -24,12 +24,16 @@ from models import (
     Portefeuille,
     EntiteJuridique,
 )
-from services.compliance_coordinator import recompute_site_full as recompute_site
-from services.compliance_engine import (
+from services.compliance_coordinator import (
+    recompute_site_full as recompute_site,
     recompute_portfolio,
     recompute_organisation,
+)
+from services.compliance_readiness_service import (
     compute_site_compliance_summary,
     compute_portfolio_compliance_summary,
+)
+from services.cee_service import (
     create_cee_dossier,
     advance_cee_step,
     compute_mv_summary,

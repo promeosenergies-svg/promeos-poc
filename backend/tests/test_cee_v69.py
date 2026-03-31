@@ -25,7 +25,7 @@ from models import (
 )
 from models.cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
 from models.enums import WorkPackageSize, CeeDossierStep, CeeStatus, MVAlertType
-from services.compliance_engine import (
+from services.cee_service import (
     create_cee_dossier,
     advance_cee_step,
     compute_mv_summary,

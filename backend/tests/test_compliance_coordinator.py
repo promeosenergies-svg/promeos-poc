@@ -39,7 +39,7 @@ def db_session():
 class TestRecomputeSiteFull:
     """Vérifie que recompute_site_full orchestre correctement les 4 étapes."""
 
-    @patch("services.compliance_engine.recompute_site")
+    @patch("services.compliance_coordinator.recompute_site")
     @patch("services.dt_trajectory_service.update_site_avancement")
     @patch("regops.engine.evaluate_site")
     @patch("regops.engine.persist_assessment")
@@ -68,7 +68,7 @@ class TestRecomputeSiteFull:
         mock_persist.assert_called_once_with(db_session, mock_summary)
         mock_sync.assert_called_once_with(db_session, 42)
 
-    @patch("services.compliance_engine.recompute_site")
+    @patch("services.compliance_coordinator.recompute_site")
     @patch("services.dt_trajectory_service.update_site_avancement")
     @patch("regops.engine.evaluate_site")
     @patch("regops.engine.persist_assessment")
@@ -88,7 +88,7 @@ class TestRecomputeSiteFull:
 
         assert result["avancement_decret_pct"] == 42.5
 
-    @patch("services.compliance_engine.recompute_site")
+    @patch("services.compliance_coordinator.recompute_site")
     @patch("services.dt_trajectory_service.update_site_avancement")
     @patch("regops.engine.evaluate_site")
     @patch("regops.engine.persist_assessment")
@@ -113,7 +113,7 @@ class TestRecomputeSiteFull:
         mock_persist.assert_not_called()
         mock_sync.assert_called_once()
 
-    @patch("services.compliance_engine.recompute_site")
+    @patch("services.compliance_coordinator.recompute_site")
     @patch("services.dt_trajectory_service.update_site_avancement")
     @patch("regops.engine.evaluate_site")
     @patch("regops.engine.persist_assessment")
@@ -133,7 +133,7 @@ class TestRecomputeSiteFull:
 
         assert result["avancement_decret_pct"] == 15.0
 
-    @patch("services.compliance_engine.recompute_site")
+    @patch("services.compliance_coordinator.recompute_site")
     @patch("services.dt_trajectory_service.update_site_avancement")
     @patch("regops.engine.evaluate_site")
     @patch("regops.engine.persist_assessment")

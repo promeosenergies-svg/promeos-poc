@@ -4,7 +4,7 @@ PROMEOS — Coordinateur Conformité  ★ POINT D'ENTRÉE UNIQUE ★
 Remplace les appels directs à recompute_site() dispersés dans l'application.
 Garantit que les deux chemins de calcul conformité sont toujours mis à jour ensemble :
 
-  1. compliance_engine.recompute_site()  → snapshots Site (statut_decret_tertiaire, statut_bacs, ...)
+  1. recompute_site()                   → snapshots Site (statut_decret_tertiaire, statut_bacs, ...)
   2. regops.engine.evaluate_site()       → RegAssessment rows (score détaillé par framework)
   3. compliance_score_service.sync()     → Site.compliance_score_composite (score A.2 unifié)
 
@@ -14,28 +14,112 @@ USAGE :
 """
 
 import logging
+from collections import defaultdict
+from typing import List
+
 from sqlalchemy.orm import Session
 
+from models import Obligation, Site, Portefeuille, EntiteJuridique, Organisation, Evidence
+from services.compliance_readiness_service import compute_site_snapshot
+
 _logger = logging.getLogger(__name__)
+
+
+# ── Fonctions recompute (persistence layer, ex-compliance_engine.py) ──
+
+
+def _apply_snapshot(site: Site, snapshot: dict):
+    """Apply a computed snapshot dict to a Site ORM object."""
+    for key, value in snapshot.items():
+        setattr(site, key, value)
+
+
+def recompute_site(db: Session, site_id: int) -> dict:
+    """Recompute and persist compliance snapshot for a single Site."""
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise ValueError(f"Site {site_id} not found")
+
+    obligations = db.query(Obligation).filter(Obligation.site_id == site_id).all()
+    evidences = db.query(Evidence).filter(Evidence.site_id == site_id).all()
+    snapshot = compute_site_snapshot(obligations, evidences)
+    _apply_snapshot(site, snapshot)
+    db.flush()
+    return snapshot
+
+
+def _bulk_recompute(db: Session, sites: List[Site]):
+    """Recompute snapshots for a list of sites (3 queries total, no N+1)."""
+    if not sites:
+        return
+
+    site_ids = [s.id for s in sites]
+    all_obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
+    all_evidences = db.query(Evidence).filter(Evidence.site_id.in_(site_ids)).all()
+
+    obs_by_site = defaultdict(list)
+    for ob in all_obligations:
+        obs_by_site[ob.site_id].append(ob)
+    evs_by_site = defaultdict(list)
+    for ev in all_evidences:
+        evs_by_site[ev.site_id].append(ev)
+
+    for site in sites:
+        snapshot = compute_site_snapshot(obs_by_site[site.id], evs_by_site[site.id])
+        _apply_snapshot(site, snapshot)
+
+
+def recompute_portfolio(db: Session, portefeuille_id: int) -> dict:
+    """Recompute compliance for all sites in a portfolio."""
+    portefeuille = db.query(Portefeuille).filter(Portefeuille.id == portefeuille_id).first()
+    if not portefeuille:
+        raise ValueError(f"Portefeuille {portefeuille_id} not found")
+
+    sites = db.query(Site).filter(Site.portefeuille_id == portefeuille_id).all()
+    _bulk_recompute(db, sites)
+    db.commit()
+    return {
+        "portefeuille_id": portefeuille_id,
+        "portefeuille_nom": portefeuille.nom,
+        "sites_recomputed": len(sites),
+    }
+
+
+def recompute_organisation(db: Session, organisation_id: int) -> dict:
+    """Recompute compliance for ALL sites in an organisation."""
+    org = db.query(Organisation).filter(Organisation.id == organisation_id).first()
+    if not org:
+        raise ValueError(f"Organisation {organisation_id} not found")
+
+    portefeuille_ids = [
+        row[0]
+        for row in db.query(Portefeuille.id)
+        .join(EntiteJuridique)
+        .filter(EntiteJuridique.organisation_id == organisation_id)
+        .all()
+    ]
+
+    sites = db.query(Site).filter(Site.portefeuille_id.in_(portefeuille_ids)).all()
+    _bulk_recompute(db, sites)
+    db.commit()
+    return {
+        "organisation_id": organisation_id,
+        "organisation_nom": org.nom,
+        "sites_recomputed": len(sites),
+    }
+
+
+# ── Orchestration complète ──
 
 
 def recompute_site_full(db: Session, site_id: int) -> dict:
     """Recompute complet d'un site — trois chemins synchronisés.
 
     Étapes :
-    1. compliance_engine.recompute_site()
-       → Site.statut_decret_tertiaire, statut_bacs, risque_financier_euro, avancement_decret_pct
-    2. regops.engine.evaluate_site() + persist_assessment()
-       → RegAssessment up-to-date (source pour compliance_score_service)
-    3. compliance_score_service.sync_site_unified_score()
-       → Site.compliance_score_composite, compliance_score_breakdown_json, compliance_score_confidence
-
-    Chaque étape est indépendante : une erreur dans 2 ou 3 ne bloque pas les autres.
-    Returns : snapshot dict de l'étape 1 (backward-compatible avec recompute_site).
+    1. recompute_site() → snapshots legacy
+    2. regops.engine.evaluate_site() → RegAssessment
+    3. compliance_score_service.sync() → score A.2 unifié
     """
-    # ── Étape 1 : snapshots legacy (obligations + evidences → statuts Site) ──
-    from services.compliance_engine import recompute_site
-
     snapshot = recompute_site(db, site_id)
     _logger.info("recompute_site_full site=%d: étape 1 (legacy snapshot) done", site_id)
 

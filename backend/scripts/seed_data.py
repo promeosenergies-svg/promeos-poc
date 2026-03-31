@@ -303,7 +303,7 @@ def create_batiments_usages(db: Session, sites: list):
 def create_obligations(db: Session, sites: list, batiments: list):
     """Créer obligations réglementaires basées sur cvc_power_kw réel"""
     print("  Création des obligations...")
-    from services.compliance_engine import bacs_deadline_for_power
+    from services.compliance_utils import bacs_deadline_for_power
     from config.emission_factors import BACS_SEUIL_HAUT
 
     # Build site_id -> batiment lookup
@@ -418,7 +418,7 @@ def create_compteurs_consommations(db: Session, sites: list):
 def create_evidences(db: Session, sites: list, batiments: list):
     """Créer evidences de conformité dont BACS-spécifiques"""
     print("  Création des evidences...")
-    from services.compliance_engine import bacs_deadline_for_power
+    from services.compliance_utils import bacs_deadline_for_power
 
     bat_by_site = {b.site_id: b for b in batiments}
 
@@ -1223,7 +1223,7 @@ def main():
         create_evidences(db, sites, batiments)
 
         # Compute compliance snapshots from obligations + evidences (engine)
-        from services.compliance_engine import recompute_site
+        from services.compliance_coordinator import recompute_site_full as recompute_site
 
         print("  Calcul des snapshots conformite...")
         for site in sites:

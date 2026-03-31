@@ -26,22 +26,26 @@ from models import (
     TypeEvidence,
     StatutEvidence,
 )
-from services.compliance_engine import (
+from services.compliance_utils import (
     worst_status,
     average_avancement,
     compute_risque_financier,
     compute_action_recommandee,
-    compute_site_snapshot,
     compute_bacs_statut,
     bacs_deadline_for_power,
+    BACS_DEADLINE_290,
+    BACS_DEADLINE_70,
+)
+from services.compliance_engine import (
+    compute_site_snapshot,
     recompute_site,
     recompute_portfolio,
     recompute_organisation,
+)
+from config.emission_factors import (
     BASE_PENALTY_EURO,
     BACS_SEUIL_HAUT,
     BACS_SEUIL_BAS,
-    BACS_DEADLINE_290,
-    BACS_DEADLINE_70,
 )
 
 
