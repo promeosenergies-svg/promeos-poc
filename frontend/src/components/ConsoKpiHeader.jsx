@@ -115,11 +115,12 @@ export default function ConsoKpiHeader({
   const eurSource = hphc?.total_cost_eur != null ? 'Estimé multi-énergie' : 'Non disponible';
 
   // --- EUR/MWh reel ---
-  // Use hphc.total_kwh (not the fallback totalKwh) so numerator (EUR from hphc)
-  // and denominator (kWh) always come from the same source.
+  // Use elec-only cost and kWh so numerator and denominator always come from
+  // the same energy source. total_cost_eur may include gas (#144).
+  const elecEur = hphc?.elec_cost_eur ?? totalEur;
   const hphcKwh = hphc?.total_kwh ?? null;
   const eurMwh =
-    totalEur != null && hphcKwh > 0 ? Math.round((totalEur / hphcKwh) * 1000 * 100) / 100 : null;
+    elecEur != null && hphcKwh > 0 ? Math.round((elecEur / hphcKwh) * 1000 * 100) / 100 : null;
   const eurMwhLabel = eurMwh != null ? fmtNum(eurMwh, 2, '€/MWh') : '—';
 
   // --- EUR/m²/an (#144) ---

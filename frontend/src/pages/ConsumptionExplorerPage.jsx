@@ -276,13 +276,14 @@ export default function ConsumptionExplorerPage() {
       // No elec data loaded (or gas-only filter). Return gas cost if available,
       // otherwise null — suppressing the KPI tile is correct here since there's
       // no kWh denominator for derived metrics either.
-      return totalCost > 0 ? { total_kwh: 0, total_cost_eur: totalCost } : null;
+      return totalCost > 0 ? { total_kwh: 0, total_cost_eur: totalCost, elec_cost_eur: 0 } : null;
     }
     if (entries.length === 1 && !includeGas) return entries[0];
     return {
       ...entries[0],
       total_kwh: includeElec ? entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0) : 0,
       total_cost_eur: totalCost,
+      elec_cost_eur: elecCost,
     };
   }, [siteIds, hphcBySite, gasBySite, energyType]);
 
