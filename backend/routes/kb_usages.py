@@ -724,6 +724,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "base_nuit",
             "severity": "high",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_ratio": 0.40},
         },
         {
             "code": "RULE-BASE-NUIT-002",
@@ -731,6 +732,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "base_nuit",
             "severity": "medium",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_ratio": 0.80},
         },
         {
             "code": "RULE-WEEKEND-001",
@@ -738,6 +740,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "weekend",
             "severity": "medium",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_ratio": 0.40},
         },
         {
             "code": "RULE-WEEKEND-002",
@@ -745,6 +748,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "weekend",
             "severity": "high",
             "conf": KBConfidence.MEDIUM,
+            "thresholds": {"max_ratio": 0.90},
         },
         {
             "code": "RULE-PUISSANCE-001",
@@ -752,6 +756,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "puissance",
             "severity": "medium",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"under_ratio": 0.30},
         },
         {
             "code": "RULE-PUISSANCE-002",
@@ -759,6 +764,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "puissance",
             "severity": "critical",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"over_ratio": 0.95},
         },
         {
             "code": "RULE-SAISONNIER-001",
@@ -766,6 +772,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "saisonnier",
             "severity": "low",
             "conf": KBConfidence.MEDIUM,
+            "thresholds": {"min_cv": 0.10},
         },
         {
             "code": "RULE-SAISONNIER-002",
@@ -773,6 +780,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "saisonnier",
             "severity": "medium",
             "conf": KBConfidence.MEDIUM,
+            "thresholds": {"max_summer_ratio": 0.35},
         },
         {
             "code": "RULE-TENDANCE-001",
@@ -780,6 +788,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "tendance",
             "severity": "medium",
             "conf": KBConfidence.MEDIUM,
+            "thresholds": {"max_drift_pct": 10.0},
         },
         {
             "code": "RULE-TENDANCE-002",
@@ -787,6 +796,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "tendance",
             "severity": "low",
             "conf": KBConfidence.LOW,
+            "thresholds": {"max_drift_pct": 3.0},
         },
         {
             "code": "RULE-FACTURATION-001",
@@ -794,6 +804,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "facturation",
             "severity": "high",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_delta_pct": 5.0},
         },
         {
             "code": "RULE-FACTURATION-002",
@@ -801,6 +812,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "facturation",
             "severity": "critical",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_delta_pct": 2.0},
         },
         {
             "code": "RULE-QUALITE-001",
@@ -808,6 +820,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "qualite",
             "severity": "medium",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"max_gap_hours": 48},
         },
         {
             "code": "RULE-QUALITE-002",
@@ -815,6 +828,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "qualite",
             "severity": "high",
             "conf": KBConfidence.HIGH,
+            "thresholds": {"min_value": 0},
         },
         {
             "code": "RULE-BENCHMARK-001",
@@ -822,6 +836,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
             "rule_type": "benchmark",
             "severity": "medium",
             "conf": KBConfidence.MEDIUM,
+            "thresholds": {"p90_margin": 1.5, "p10_margin": 0.5},
         },
     ]
 
@@ -836,6 +851,7 @@ def seed_demo_kb(db: Session = Depends(get_db)):
                 description=f"Regle demo: {r['title']}",
                 rule_type=r["rule_type"],
                 severity=r["severity"],
+                thresholds_json=r.get("thresholds"),
                 confidence=r["conf"],
                 status=KBStatus.VALIDATED,
                 kb_version_id=vid,

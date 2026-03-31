@@ -323,136 +323,9 @@ class AnalyticsEngine:
         return anomalies
 
     def _evaluate_rule(self, rule: KBAnomalyRule, features: Dict, archetype: Optional[KBArchetype]) -> Dict:
-        """Evaluate a single anomaly rule"""
-        # Default thresholds by rule type (from KB / base doc)
-        if rule.rule_type == "base_nuit":
-            # Night base should be < 25% for offices
-            threshold = 0.25
-            if archetype and archetype.code in ("COMMERCE_ALIMENTAIRE", "LOGISTIQUE_FROID"):
-                threshold = 0.70  # Cold chains run 24/7
-            elif archetype and archetype.code == "HOPITAL_STANDARD":
-                threshold = 0.50  # Hospitals run 24/7
-
-            measured = features.get("base_nuit_ratio", 0)
-            triggered = measured > threshold
-            deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
-
-            return {
-                "triggered": triggered,
-                "severity": "high" if deviation > 50 else "medium",
-                "confidence": 0.85,
-                "measured": round(measured, 3),
-                "threshold": threshold,
-                "deviation_pct": round(deviation, 1),
-                "explanation": f"Base nuit ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})"
-                if triggered
-                else "",
-            }
-
-        elif rule.rule_type == "weekend":
-            threshold = 0.40
-            if archetype and archetype.code in ("COMMERCE_ALIMENTAIRE", "RESTAURATION_SERVICE"):
-                threshold = 0.80
-
-            measured = features.get("weekend_ratio", 0)
-            triggered = measured > threshold
-            deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
-
-            return {
-                "triggered": triggered,
-                "severity": "medium" if deviation < 30 else "high",
-                "confidence": 0.80,
-                "measured": round(measured, 3),
-                "threshold": threshold,
-                "deviation_pct": round(deviation, 1),
-                "explanation": f"Weekend ratio ({measured:.1%}) depasse le seuil ({threshold:.0%})"
-                if triggered
-                else "",
-            }
-
-        elif rule.rule_type == "puissance":
-            measured = features.get("load_factor", 0)
-            threshold_low = 0.30
-            threshold_high = 0.95
-            triggered = measured < threshold_low or measured > threshold_high
-
-            return {
-                "triggered": triggered,
-                "severity": "medium",
-                "confidence": 0.75,
-                "measured": round(measured, 3),
-                "threshold": threshold_low if measured < threshold_low else threshold_high,
-                "deviation_pct": 0,
-                "explanation": f"Load factor ({measured:.1%}) hors plage optimale ({threshold_low:.0%}-{threshold_high:.0%})"
-                if triggered
-                else "",
-            }
-
-        elif rule.rule_type == "saisonnalite":
-            threshold = 0.10
-            measured = features.get("seasonality_cv", 0)
-            triggered = measured < threshold
-
-            return {
-                "triggered": triggered,
-                "severity": "low",
-                "confidence": 0.70,
-                "measured": round(measured, 3),
-                "threshold": threshold,
-                "deviation_pct": 0,
-                "explanation": f"CV saisonnalite ({measured:.3f}) trop faible - pas de variation saisonniere"
-                if triggered
-                else "",
-            }
-
-        elif rule.rule_type == "ratio_m2":
-            measured = features.get("kwh_m2_year")
-            if not measured or not archetype:
-                return {
-                    "triggered": False,
-                    "severity": "low",
-                    "confidence": 0,
-                    "measured": 0,
-                    "threshold": 0,
-                    "deviation_pct": 0,
-                    "explanation": "",
-                }
-
-            threshold_low = archetype.kwh_m2_min * 0.5 if archetype.kwh_m2_min else 50
-            threshold_high = archetype.kwh_m2_max * 1.5 if archetype.kwh_m2_max else 500
-            triggered = measured < threshold_low or measured > threshold_high
-            closest = threshold_low if measured < threshold_low else threshold_high
-
-            return {
-                "triggered": triggered,
-                "severity": "high" if triggered else "low",
-                "confidence": 0.80,
-                "measured": round(measured, 1),
-                "threshold": closest,
-                "deviation_pct": round(abs(measured - closest) / closest * 100, 1) if closest else 0,
-                "explanation": f"kWh/m2/an ({measured:.0f}) hors range archetype ({threshold_low:.0f}-{threshold_high:.0f})"
-                if triggered
-                else "",
-            }
-
-        elif rule.rule_type == "gaz_ete":
-            threshold = 0.10
-            measured = features.get("summer_ratio", 0)
-            triggered = measured > threshold
-
-            return {
-                "triggered": triggered,
-                "severity": "medium",
-                "confidence": 0.70,
-                "measured": round(measured, 3),
-                "threshold": threshold,
-                "deviation_pct": round((measured - threshold) / threshold * 100, 1)
-                if threshold > 0 and triggered
-                else 0,
-                "explanation": f"Consommation ete ({measured:.1%} du total) trop elevee" if triggered else "",
-            }
-
-        return {
+        """Evaluate a single anomaly rule using thresholds_json when available."""
+        t = rule.thresholds_json or {}
+        not_triggered = {
             "triggered": False,
             "severity": "low",
             "confidence": 0,
@@ -461,6 +334,155 @@ class AnalyticsEngine:
             "deviation_pct": 0,
             "explanation": "",
         }
+
+        if rule.rule_type == "base_nuit":
+            threshold = t.get("max_ratio", 0.25)
+            if archetype and archetype.code in ("COMMERCE_ALIMENTAIRE", "LOGISTIQUE_FROID"):
+                threshold = max(threshold, 0.70)
+            elif archetype and archetype.code in ("HOTEL_STANDARD", "HOPITAL_STANDARD"):
+                threshold = max(threshold, 0.50)
+            measured = (
+                features.get("weekend_ratio", 0)
+                if features.get("base_nuit_ratio", 0) > 1
+                else features.get("base_nuit_ratio", 0)
+            )
+            # Fallback: use night_ratio synonym
+            if measured == 0:
+                measured = features.get("night_ratio", 0)
+            triggered = measured > threshold
+            deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
+
+        elif rule.rule_type == "weekend":
+            threshold = t.get("max_ratio", 0.40)
+            if archetype and archetype.code in ("COMMERCE_ALIMENTAIRE", "RESTAURATION_SERVICE"):
+                threshold = max(threshold, 0.80)
+            measured = features.get("weekend_ratio", 0)
+            triggered = measured > threshold
+            deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
+
+        elif rule.rule_type == "puissance":
+            measured = features.get("load_factor", 0)
+            over = t.get("over_ratio", 0.95)
+            under = t.get("under_ratio", 0.30)
+            if measured > over:
+                triggered, threshold = True, over
+                deviation = (measured - over) / over * 100
+            elif measured < under and measured > 0:
+                triggered, threshold = True, under
+                deviation = (under - measured) / under * 100
+            else:
+                return not_triggered
+
+        elif rule.rule_type in ("saisonnier", "saisonnalite"):
+            # RULE-SAISONNIER-001: CV too low (no seasonality)
+            min_cv = t.get("min_cv")
+            max_summer = t.get("max_summer_ratio")
+            if min_cv is not None:
+                measured = features.get("seasonality_cv", 0)
+                threshold = min_cv
+                triggered = measured < threshold
+                deviation = ((threshold - measured) / threshold * 100) if threshold > 0 and triggered else 0
+            elif max_summer is not None:
+                measured = features.get("summer_ratio", 0)
+                threshold = max_summer
+                triggered = measured > threshold
+                deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
+            else:
+                return not_triggered
+
+        elif rule.rule_type == "tendance":
+            max_drift = t.get("max_drift_pct", 10.0)
+            # Compute drift from monthly averages
+            monthly = features.get("monthly_averages", {})
+            if len(monthly) >= 6:
+                vals = list(monthly.values())
+                first_half = sum(vals[: len(vals) // 2]) / max(len(vals) // 2, 1)
+                second_half = sum(vals[len(vals) // 2 :]) / max(len(vals) - len(vals) // 2, 1)
+                drift = ((second_half - first_half) / first_half * 100) if first_half > 0 else 0
+                measured = round(drift, 1)
+                threshold = max_drift
+                triggered = abs(measured) > threshold
+                deviation = abs(measured) - threshold if triggered else 0
+            else:
+                return not_triggered
+
+        elif rule.rule_type in ("benchmark", "ratio_m2"):
+            measured = features.get("kwh_m2_year")
+            if not measured or not archetype:
+                return not_triggered
+            p90_margin = t.get("p90_margin", 1.5)
+            p10_margin = t.get("p10_margin", 0.5)
+            threshold_high = archetype.kwh_m2_max * p90_margin if archetype.kwh_m2_max else 500
+            threshold_low = archetype.kwh_m2_min * p10_margin if archetype.kwh_m2_min else 50
+            if measured > threshold_high:
+                triggered, threshold = True, threshold_high
+                deviation = (measured - threshold_high) / threshold_high * 100
+            elif measured < threshold_low:
+                triggered, threshold = True, threshold_low
+                deviation = (threshold_low - measured) / threshold_low * 100
+            else:
+                return not_triggered
+
+        elif rule.rule_type == "qualite":
+            # Data quality: check readings_count vs expected
+            max_gap = t.get("max_gap_hours", 48)
+            min_val = t.get("min_value", 0)
+            readings = features.get("readings_count", 0)
+            days = features.get("date_range_days", 0)
+            expected = days  # 1 reading/day minimum
+            if expected > 0 and readings < expected * 0.9:
+                measured = readings
+                threshold = expected * 0.9
+                triggered = True
+                deviation = (threshold - readings) / threshold * 100
+            else:
+                return not_triggered
+
+        elif rule.rule_type == "facturation":
+            # Billing vs metering — not available in demo features, skip
+            return not_triggered
+
+        elif rule.rule_type == "gaz_ete":
+            threshold = t.get("max_summer_ratio", 0.10)
+            measured = features.get("summer_ratio", 0)
+            triggered = measured > threshold
+            deviation = ((measured - threshold) / threshold * 100) if threshold > 0 and triggered else 0
+
+        else:
+            return not_triggered
+
+        if not triggered:
+            return not_triggered
+
+        # Dynamic severity
+        severity = self._dynamic_severity(rule.severity, round(deviation, 1))
+
+        return {
+            "triggered": True,
+            "severity": severity,
+            "confidence": 0.85
+            if rule.confidence.value == "HIGH"
+            else 0.70
+            if rule.confidence.value == "MEDIUM"
+            else 0.55,
+            "measured": round(measured, 3) if isinstance(measured, float) else measured,
+            "threshold": round(threshold, 3) if isinstance(threshold, float) else threshold,
+            "deviation_pct": round(deviation, 1),
+            "explanation": f"{rule.title} (mesure={measured:.3g}, seuil={threshold:.3g}, ecart={deviation:.1f}%)",
+        }
+
+    def _dynamic_severity(self, base_severity: str, deviation_pct: float) -> str:
+        """Adjust severity based on deviation amplitude."""
+        abs_dev = abs(deviation_pct) if deviation_pct else 0
+        if abs_dev > 100:
+            return "critical"
+        elif abs_dev > 50:
+            return "high"
+        elif abs_dev > 20:
+            return base_severity  # keep KB severity
+        else:
+            down = {"critical": "high", "high": "medium", "medium": "low"}
+            return down.get(base_severity, base_severity)
 
     def _generate_recommendations(
         self, meter: Meter, anomalies: List[Dict], archetype: Optional[KBArchetype], features: Dict

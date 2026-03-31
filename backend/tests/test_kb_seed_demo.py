@@ -108,10 +108,10 @@ class TestKBSeedDemo:
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "ok"
-        assert data["archetypes_seeded"] == 10
+        assert data["archetypes_seeded"] == 11
         assert data["rules_seeded"] == 15
         assert data["recommendations_seeded"] == 10
-        assert data["naf_mappings_seeded"] == 30
+        assert data["naf_mappings_seeded"] == 34
 
     def test_seed_idempotent(self, client, db_session):
         # First call seeds
@@ -134,7 +134,7 @@ class TestKBSeedDemo:
         r = client.get("/api/kb/archetypes")
         assert r.status_code == 200
         archetypes = r.json()
-        assert len(archetypes) == 10
+        assert len(archetypes) == 11
         codes = {a["code"] for a in archetypes}
         assert "BUREAU_STANDARD" in codes
         assert "DATACENTER" in codes
@@ -164,10 +164,10 @@ class TestKBSeedDemo:
         r = client.get("/api/kb/usages-stats")
         assert r.status_code == 200
         data = r.json()
-        assert data["archetypes_count"] == 10
+        assert data["archetypes_count"] == 11
         assert data["anomaly_rules_count"] == 15
         assert data["recommendations_count"] == 10
-        assert data["naf_mappings_count"] == 30
+        assert data["naf_mappings_count"] == 34
         assert data["kb_doc_id"] == "PROMEOS_DEMO_KB"
 
     def test_seed_naf_mappings(self, client, db_session):
@@ -175,7 +175,7 @@ class TestKBSeedDemo:
         # Bureau Standard should have 3 NAF codes
         r = client.get("/api/kb/archetypes")
         bureau = next(a for a in r.json() if a["code"] == "BUREAU_STANDARD")
-        assert len(bureau["naf_codes"]) == 3
+        assert len(bureau["naf_codes"]) == 5  # 3 original + 68.20A + 68.20B (Phase 1)
 
     def test_seed_then_search(self, client, db_session):
         client.post("/api/kb/seed_demo")
