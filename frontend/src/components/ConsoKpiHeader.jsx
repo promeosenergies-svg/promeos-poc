@@ -124,9 +124,9 @@ export default function ConsoKpiHeader({
 
   // --- EUR/m²/an (#144) ---
   // Annualize observed cost then divide by surface. Guard against null/zero surface.
-  const effectiveDays = days ?? 30;
+  const effectiveDays = (days != null && days > 0) ? days : null;
   const eurPerM2Year =
-    totalEur != null && surfaceM2 > 0 && effectiveDays > 0
+    totalEur != null && surfaceM2 > 0 && effectiveDays != null
       ? Math.round(((totalEur / effectiveDays) * 365) / surfaceM2 * 100) / 100
       : null;
   const eurPerM2Label = eurPerM2Year != null ? fmtNum(eurPerM2Year, 1, '€/m²/an') : '—';
