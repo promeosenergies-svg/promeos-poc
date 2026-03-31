@@ -320,13 +320,11 @@ export default function ConsumptionExplorerPage() {
   }, [siteIds, progressionBySite]);
 
   // #144: total surface for selected sites (EUR/m²/an KPI)
+  const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.id, s])), [sites]);
   const surfaceM2Total = useMemo(() => {
-    const total = siteIds.reduce((s, sid) => {
-      const site = sites.find((st) => st.id === sid);
-      return s + (site?.surface_m2 ?? 0);
-    }, 0);
+    const total = siteIds.reduce((s, sid) => s + (siteById[sid]?.surface_m2 ?? 0), 0);
     return total > 0 ? total : null;
-  }, [siteIds, sites]);
+  }, [siteIds, siteById]);
 
   // ── User-initiated period flag (issue #23) ────────────────────────────
   // Prevents auto-calibration from overwriting a period the user explicitly chose.
