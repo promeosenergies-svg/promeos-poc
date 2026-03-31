@@ -849,6 +849,7 @@ def gas_summary(
     from models.energy_models import EnergyVector
     from collections import defaultdict
     from services.ems.timeseries_service import get_site_meter_ids as _get_gas_ids
+    from services.billing_service import get_reference_price
 
     if start_date_param and end_date_param:
         start_date = datetime.combine(start_date_param, datetime.min.time(), tzinfo=timezone.utc)
@@ -867,6 +868,7 @@ def gas_summary(
             "readings_count": 0,
             "daily_kwh": [],
             "total_kwh": 0,
+            "total_cost_eur": 0,
             "avg_daily_kwh": 0,
             "summer_base_kwh": 0,
             "confidence": "low",
@@ -904,6 +906,10 @@ def gas_summary(
 
     confidence = "high" if len(readings) >= days * 20 else ("medium" if len(readings) >= days * 5 else "low")
 
+    # Resolve gas price for cost estimation
+    gas_price, _price_src = get_reference_price(db, site_id, "gaz")
+    total_cost_eur = round(total_kwh * gas_price, 2)
+
     return {
         "site_id": site_id,
         "energy_type": "gas",
@@ -911,6 +917,7 @@ def gas_summary(
         "readings_count": len(readings),
         "daily_kwh": daily_list,
         "total_kwh": round(total_kwh, 1),
+        "total_cost_eur": total_cost_eur,
         "avg_daily_kwh": round(avg_daily, 1),
         "summer_base_kwh": round(summer_base, 1),
         "confidence": confidence,
