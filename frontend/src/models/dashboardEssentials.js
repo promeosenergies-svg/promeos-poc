@@ -363,7 +363,8 @@ export function buildTodayActions(kpis, watchlist = [], opportunities = []) {
 export function buildExecutiveSummary(kpis, _topSites = {}) {
   const bullets = [];
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
-  const pctConf = total > 0 ? Math.round((conformes / total) * 100) : 0;
+  // Source unique backend — pas de fallback conformes/total (règle no-calc-in-front)
+  const pctConf = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : 0;
 
   // 1. Positive — what's going well
   if (total === 0) {
