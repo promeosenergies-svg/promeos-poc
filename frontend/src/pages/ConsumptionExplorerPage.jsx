@@ -263,19 +263,26 @@ export default function ConsumptionExplorerPage() {
   // ── Multi-site KPI aggregation (issue #38) ────────────────────────────
   // Aggregate hphc, tunnel, and progression across all selected sites so
   // ConsoKpiHeader shows totals rather than only the primary site.
-  // #144: also aggregate gas cost for multi-energy total.
+  // #144: also aggregate gas cost for multi-energy total, respecting energy filter.
   const aggregatedHphc = useMemo(() => {
     const entries = siteIds.map((sid) => hphcBySite[sid]).filter(Boolean);
-    if (!entries.length) return null;
-    const elecCost = entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0);
-    const gasCost = siteIds.reduce((s, sid) => s + (gasBySite[sid]?.total_cost_eur ?? 0), 0);
+    const includeElec = energyType !== 'gas';
+    const includeGas = energyType !== 'electricity';
+    const elecCost = includeElec ? entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0) : 0;
+    const gasCost = includeGas ? siteIds.reduce((s, sid) => s + (gasBySite[sid]?.total_cost_eur ?? 0), 0) : 0;
+    const totalCost = elecCost + gasCost;
+    if (!entries.length && !includeGas) return null;
+    if (!entries.length && includeGas) {
+      // Gas-only filter: build a minimal object with gas cost
+      return totalCost > 0 ? { total_kwh: 0, total_cost_eur: totalCost } : null;
+    }
     if (entries.length === 1 && gasCost === 0) return entries[0];
     return {
       ...entries[0],
-      total_kwh: entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0),
-      total_cost_eur: elecCost + gasCost,
+      total_kwh: includeElec ? entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0) : 0,
+      total_cost_eur: totalCost,
     };
-  }, [siteIds, hphcBySite, gasBySite]);
+  }, [siteIds, hphcBySite, gasBySite, energyType]);
 
   const aggregatedTunnel = useMemo(() => {
     const entries = siteIds.map((sid) => tunnelBySite[sid]).filter(Boolean);
