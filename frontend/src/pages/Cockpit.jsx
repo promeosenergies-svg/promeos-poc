@@ -175,12 +175,8 @@ const Cockpit = () => {
     // I2 FIX: même cascade que compliance_score et buildExecutiveKpis
     const complianceScoreUnified = cockpitKpis?.conformiteScore ?? complianceApi?.avg_score ?? null;
     const suiviConformite = complianceScoreUnified ?? 0;
-    const pctConf =
-      complianceScoreUnified != null
-        ? Math.round(complianceScoreUnified)
-        : total > 0
-          ? Math.round((conformes / total) * 100)
-          : 0;
+    // Source unique backend — pas de fallback conformes/total (règle no-calc-in-front)
+    const pctConf = complianceScoreUnified != null ? Math.round(complianceScoreUnified) : 0;
 
     const actionsActives =
       total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;

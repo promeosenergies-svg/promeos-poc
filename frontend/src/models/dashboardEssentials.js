@@ -474,14 +474,9 @@ export function buildExecutiveSummary(kpis, _topSites = {}) {
  */
 export function buildExecutiveKpis(kpis, sites = []) {
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
-  // A.2: Score unifié (0-100) si fourni par l'API, sinon fallback % conformes
+  // A.2: Score unifié (0-100) — source unique backend (règle no-calc-in-front)
   const complianceScore = kpis.compliance_score != null ? Math.round(kpis.compliance_score) : null;
-  const pctConf =
-    complianceScore != null
-      ? complianceScore
-      : total > 0
-        ? Math.round((conformes / total) * 100)
-        : 0;
+  const pctConf = complianceScore != null ? complianceScore : 0;
   // Maturité score — continuous action readiness (0-100)
   const actionsActives =
     total > 0 ? Math.round((conformes / total) * 60 + ((total - nonConformes) / total) * 40) : 80;
