@@ -276,7 +276,7 @@ export default function ConsumptionExplorerPage() {
       // Gas-only filter: build a minimal object with gas cost
       return totalCost > 0 ? { total_kwh: 0, total_cost_eur: totalCost } : null;
     }
-    if (entries.length === 1 && gasCost === 0) return entries[0];
+    if (entries.length === 1 && !includeGas) return entries[0];
     return {
       ...entries[0],
       total_kwh: includeElec ? entries.reduce((s, h) => s + (h.total_kwh ?? 0), 0) : 0,
