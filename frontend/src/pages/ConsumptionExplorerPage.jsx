@@ -273,7 +273,9 @@ export default function ConsumptionExplorerPage() {
     const totalCost = elecCost + gasCost;
     if (!entries.length && !includeGas) return null;
     if (!entries.length && includeGas) {
-      // Gas-only filter: build a minimal object with gas cost
+      // No elec data loaded (or gas-only filter). Return gas cost if available,
+      // otherwise null — suppressing the KPI tile is correct here since there's
+      // no kWh denominator for derived metrics either.
       return totalCost > 0 ? { total_kwh: 0, total_cost_eur: totalCost } : null;
     }
     if (entries.length === 1 && !includeGas) return entries[0];
