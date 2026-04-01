@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
+from routes.patrimoine._helpers import _check_portfolio_belongs_to_org
 from models import (
     Site,
     Meter,
@@ -727,4 +728,6 @@ def get_energy_intensity(
         check_site_access(auth, site_id)
         return get_site_intensity(db, site_id, year)
 
+    if auth is not None:
+        _check_portfolio_belongs_to_org(db, portfolio_id, auth.org_id)
     return get_portfolio_intensity(db, portfolio_id, year)
