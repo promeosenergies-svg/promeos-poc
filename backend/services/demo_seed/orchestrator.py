@@ -485,6 +485,7 @@ class SeedOrchestrator:
             from models import ActionItem, Site as SiteModel
             from models.enums import ActionSourceType, ActionStatus
             from datetime import date, timedelta
+            from config.emission_factors import get_emission_factor
 
             top_recos = self.db.query(RecoModel).order_by(RecoModel.ice_score.desc().nullslast()).limit(10).all()
             kb_actions_created = 0
@@ -513,7 +514,7 @@ class SeedOrchestrator:
                         priority=3,
                         severity="medium",
                         estimated_gain_eur=reco.estimated_savings_eur_year,
-                        co2e_savings_est_kg=round(reco.estimated_savings_kwh_year * 0.052)
+                        co2e_savings_est_kg=round(reco.estimated_savings_kwh_year * get_emission_factor("ELEC"))
                         if reco.estimated_savings_kwh_year
                         else None,
                         due_date=date.today() + timedelta(days=60),

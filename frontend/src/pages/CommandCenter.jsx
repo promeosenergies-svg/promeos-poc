@@ -155,7 +155,7 @@ export default function CommandCenter() {
 
   // ── Hooks enrichissement Step 5 ──
   const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
-  const { trajectoire, cockpitKpis } = useCockpitData();
+  const { trajectoire, kpis: cockpitKpis } = useCockpitData();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -218,7 +218,7 @@ export default function CommandCenter() {
       compStatus,
       risqueStatus,
     };
-  }, [scopedSites]);
+  }, [scopedSites, cockpitKpis]);
 
   // Top actions — merge compliance + action plan
   const rawTopActions = useMemo(() => {

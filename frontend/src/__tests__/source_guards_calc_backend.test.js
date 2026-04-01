@@ -42,53 +42,45 @@ function scanProductionFiles(dir) {
 }
 
 const files = scanProductionFiles(SRC_DIR);
+// Cache file contents once — avoids 4× redundant readFileSync per file
+const fileCache = new Map(files.map((f) => [f, readFileSync(f, 'utf-8')]));
+
+function findViolations(predicate) {
+  const violations = [];
+  for (const [f, content] of fileCache) {
+    if (predicate(f, content)) {
+      violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
+    }
+  }
+  return violations;
+}
 
 describe('Source guards — no business calc in frontend', () => {
   it('aucun fichier source ne contient 0.0569 (TURPE ≠ CO₂)', () => {
-    const violations = [];
-    for (const f of files) {
-      const content = readFileSync(f, 'utf-8');
-      if (/0\.0569/.test(content)) {
-        violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
-      }
-    }
-    expect(violations).toEqual([]);
+    expect(findViolations((_f, c) => /0\.0569/.test(c))).toEqual([]);
   });
 
   it('aucun fichier source ne calcule * 7500 ou * 3750 (pénalités)', () => {
-    const violations = [];
-    for (const f of files) {
-      const content = readFileSync(f, 'utf-8');
-      if (/\*\s*(7500|3750)/.test(content) && !f.includes('constants')) {
-        violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
-      }
-    }
-    expect(violations).toEqual([]);
+    expect(
+      findViolations((f, c) => /\*\s*(7500|3750)/.test(c) && !f.includes('constants'))
+    ).toEqual([]);
   });
 
   it('aucun fichier source ne recalcule pctConf depuis un ratio', () => {
-    const violations = [];
-    for (const f of files) {
-      const content = readFileSync(f, 'utf-8');
-      if (
-        /\bconformes\s*\/\s*(?:total|count)\s*\)\s*\*\s*100/.test(content) ||
-        /pctConf\s*[:=]\s*(?:Math\.round|parseInt)\s*\(\s*\(?\s*conformes/.test(content)
-      ) {
-        violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
-      }
-    }
-    expect(violations).toEqual([]);
+    expect(
+      findViolations(
+        (_f, c) =>
+          /\bconformes\s*\/\s*(?:total|count)\s*\)\s*\*\s*100/.test(c) ||
+          /pctConf\s*[:=]\s*(?:Math\.round|parseInt)\s*\(\s*\(?\s*conformes/.test(c)
+      )
+    ).toEqual([]);
   });
 
   it('CO₂ brut (* 0.052 ou * 0.227) absent hors constants/', () => {
-    const violations = [];
-    for (const f of files) {
-      if (f.includes('constants')) continue;
-      const content = readFileSync(f, 'utf-8');
-      if (/\*\s*0\.052\b/.test(content) || /\*\s*0\.227\b/.test(content)) {
-        violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
-      }
-    }
-    expect(violations).toEqual([]);
+    expect(
+      findViolations(
+        (f, c) => !f.includes('constants') && (/\*\s*0\.052\b/.test(c) || /\*\s*0\.227\b/.test(c))
+      )
+    ).toEqual([]);
   });
 });
