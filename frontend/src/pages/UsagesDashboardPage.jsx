@@ -10,6 +10,7 @@ import {
   getScopedUsageTimeline,
   getPortfolioUsageComparison,
   getCostByPeriod,
+  getFlexNebef,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -20,6 +21,7 @@ import BaselineTab from '../components/usages/BaselineTab';
 import ComptageTab from '../components/usages/ComptageTab';
 import HeatmapCard from '../components/usages/HeatmapCard';
 import ComplianceCard from '../components/usages/ComplianceCard';
+import FlexNebefCard from '../components/usages/FlexNebefCard';
 import CostCard from '../components/usages/CostCard';
 import FooterLinks from '../components/usages/FooterLinks';
 
@@ -35,6 +37,7 @@ export default function UsagesDashboardPage() {
   const [timeline, setTimeline] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
   const [costByPeriod, setCostByPeriod] = useState(null);
+  const [flexData, setFlexData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -100,14 +103,18 @@ export default function UsagesDashboardPage() {
     }
   }, [scope?.orgId, scopedSites?.length]);
 
-  // Cost by period (site mode only)
+  // Cost by period + flex NEBEF (site mode only)
   useEffect(() => {
     if (scopeLevel === 'site' && siteId) {
       getCostByPeriod(siteId)
         .then(setCostByPeriod)
         .catch(() => setCostByPeriod(null));
+      getFlexNebef(siteId)
+        .then(setFlexData)
+        .catch(() => setFlexData(null));
     } else {
       setCostByPeriod(null);
+      setFlexData(null);
     }
   }, [siteId, scopeLevel]);
 
@@ -240,6 +247,7 @@ export default function UsagesDashboardPage() {
         <div className="flex flex-col gap-3.5">
           <HeatmapCard data={portfolio} currentSiteId={siteId} />
           {data?.compliance && <ComplianceCard data={data.compliance} />}
+          <FlexNebefCard data={flexData} />
           <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
         </div>
       </div>
