@@ -21,11 +21,14 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
     if not site:
         raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
 
+    org_id = _resolve_org_id(db, site)
+
     meters = db.query(Meter).filter(Meter.site_id == site_id).all()
     if not meters:
         return {
             "site_id": site_id,
             "site_name": site.nom,
+            "org_id": org_id,
             "archetype": None,
             "anomalies": [],
             "recommendations": [],
@@ -118,6 +121,7 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
     return {
         "site_id": site_id,
         "site_name": site.nom,
+        "org_id": org_id,
         "archetype": archetype_data,
         "anomalies": anomalies_data,
         "recommendations": recos_data,
@@ -130,6 +134,21 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
         },
         "status": "analyzed" if profile else "pending_analysis",
     }
+
+
+def _resolve_org_id(db, site):
+    """Resolve org_id via site → portefeuille → entite_juridique → organisation."""
+    if hasattr(site, "org_id") and site.org_id:
+        return site.org_id
+    if site.portefeuille_id:
+        from models import Portefeuille, EntiteJuridique
+
+        pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
+        if pf and hasattr(pf, "entite_juridique_id") and pf.entite_juridique_id:
+            ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
+            if ej:
+                return getattr(ej, "organisation_id", None)
+    return None
 
 
 def _empty_summary():

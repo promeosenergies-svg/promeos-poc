@@ -292,7 +292,7 @@ function TabResume({ site, onSegmentationClick }) {
           </Card>
 
           {/* B2-3b: Intelligence KB (archetype, anomalies KB, recommandations) */}
-          <SiteIntelligencePanel siteId={site.id} />
+          <SiteIntelligencePanel siteId={site.id} site={site} />
 
           {/* B2-4: Points de livraison (PDL) */}
           <Card>

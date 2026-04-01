@@ -24,6 +24,7 @@ function makeKpis(overrides = {}) {
     aRisque: 1,
     risqueTotal: 15000,
     couvertureDonnees: 70,
+    compliance_score: 70,
     ...overrides,
   };
 }
@@ -155,6 +156,7 @@ describe('buildExecutiveSummary', () => {
       aRisque: 0,
       risqueTotal: 0,
       couvertureDonnees: 90,
+      compliance_score: 95,
     });
     const result = buildExecutiveSummary(kpis, {});
     const positive = result.find((b) => b.type === 'positive' && b.id === 'conforme_ok');
@@ -217,13 +219,26 @@ describe('buildExecutiveKpis', () => {
 
   it('conformite tile status is "crit" when score < 40 (A.2 thresholds)', () => {
     // A.2: status based on score thresholds (< 40 → crit), not nonConformes count
-    const kpis = makeKpis({ total: 10, conformes: 1, nonConformes: 8, aRisque: 1 });
+    const kpis = makeKpis({
+      total: 10,
+      conformes: 1,
+      nonConformes: 8,
+      aRisque: 1,
+      compliance_score: 10,
+    });
     const result = buildExecutiveKpis(kpis, makeSites());
     expect(result[0].status).toBe('crit');
   });
 
   it('conformite tile status is "ok" when all conformes', () => {
-    const kpis = makeKpis({ total: 5, conformes: 5, nonConformes: 0, aRisque: 0, risqueTotal: 0 });
+    const kpis = makeKpis({
+      total: 5,
+      conformes: 5,
+      nonConformes: 0,
+      aRisque: 0,
+      risqueTotal: 0,
+      compliance_score: 95,
+    });
     const result = buildExecutiveKpis(kpis, makeSites(5));
     expect(result[0].status).toBe('ok');
   });
