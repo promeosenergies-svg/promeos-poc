@@ -225,10 +225,10 @@ def get_portfolio_intensity(
 
         if surface and surface > 0:
             sites_with_surface += 1
-            total_surface += surface
 
             if kwh_final and kwh_final > 0:
                 sites_with_data += 1
+                total_surface += surface
                 total_kwh_final += kwh_final
                 # Sum EP kWh from ep_detail
                 for vec_data in result.get("ep_detail", {}).values():
