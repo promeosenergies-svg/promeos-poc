@@ -54,20 +54,8 @@ CONSO_KWH_M2_AN_BY_USAGE: Dict[str, float] = {
 #: Consommation par m² fallback global (kWh/m²/an)
 CONSO_KWH_M2_AN_DEFAULT: float = 200.0
 
-#: Benchmarks ADEME — consommation médiane par type (kWh/m²/an, énergie finale)
-#: Source : ADEME Observatoire DPE + Décret Tertiaire — valeurs indicatives POC
-BENCHMARK_ADEME_KWH_M2_AN: Dict[str, Dict[str, float]] = {
-    "bureau": {"median": 210, "bon": 150, "performant": 100, "source": "ADEME ODP Bureaux 2024"},
-    "bureaux": {"median": 210, "bon": 150, "performant": 100, "source": "ADEME ODP Bureaux 2024"},
-    "commerce": {"median": 330, "bon": 250, "performant": 180, "source": "ADEME ODP Commerce 2024"},
-    "logistique": {"median": 80, "bon": 50, "performant": 30, "source": "ADEME ODP Logistique 2024"},
-    "entrepot": {"median": 80, "bon": 50, "performant": 30, "source": "ADEME ODP Logistique 2024"},
-    "industrie": {"median": 180, "bon": 120, "performant": 80, "source": "ADEME ODP Industrie 2024"},
-    "hotellerie": {"median": 280, "bon": 200, "performant": 140, "source": "ADEME ODP Hôtellerie 2024"},
-    "hotel": {"median": 280, "bon": 200, "performant": 140, "source": "ADEME ODP Hôtellerie 2024"},
-    "sante": {"median": 250, "bon": 180, "performant": 120, "source": "ADEME ODP Santé 2024"},
-    "enseignement": {"median": 140, "bon": 100, "performant": 70, "source": "ADEME ODP Enseignement 2024"},
-}
+#: Benchmarks ADEME — source unique : config/ademe_benchmarks.py
+from config.ademe_benchmarks import BENCHMARK_BY_BUILDING_TYPE as BENCHMARK_ADEME_KWH_M2_AN  # noqa: E402
 
 #: CEE — prix moyen du MWhc cumac (EUR/MWhc) pour estimation ROI
 #: Source : Registre national CEE, cotation moyenne 2024

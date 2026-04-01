@@ -260,6 +260,7 @@ export default function PurchasePage() {
     green_preference: false,
   });
   const [scenarios, setScenarios] = useState([]);
+  const [archetypeReco, setArchetypeReco] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [computing, setComputing] = useState(false);
@@ -464,6 +465,7 @@ export default function PurchasePage() {
         report_pct: reportEnabled ? reportPct : 0,
       });
       setScenarios(result.scenarios || []);
+      setArchetypeReco(result.archetype_recommendation || null);
       setAcceptedId(null);
     } catch {
       toast('Erreur lors du calcul des scenarios', 'error');
@@ -960,6 +962,45 @@ export default function PurchasePage() {
                     </div>
                   );
                 })()}
+
+                {/* Recommandation archétype */}
+                {archetypeReco && (
+                  <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <span className="font-medium text-indigo-800">
+                          Profil de charge :{' '}
+                          {archetypeReco.archetype
+                            ?.replace('_', ' ')
+                            .replace(/^\w/, (c) => c.toUpperCase())}
+                        </span>
+                        <span className="text-indigo-600 ml-2">
+                          HP {archetypeReco.profil_hp_hc?.hp_pct}% / HC{' '}
+                          {archetypeReco.profil_hp_hc?.hc_pct}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {archetypeReco.profil_hp_hc?.ths_pertinent ? (
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
+                            THS pertinent
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500">
+                            THS non optimal
+                          </span>
+                        )}
+                        {archetypeReco.strategie_recommandee && (
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700">
+                            Stratégie : {archetypeReco.strategie_recommandee}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {archetypeReco.conseil && (
+                      <div className="text-xs text-indigo-500 mt-1.5">{archetypeReco.conseil}</div>
+                    )}
+                  </div>
+                )}
 
                 {/* Scenario cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
