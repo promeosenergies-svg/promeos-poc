@@ -424,6 +424,18 @@ export const getEnergyIntensity = (siteId, year = null) =>
 export const getCostByPeriod = (siteId, months = 12) =>
   cachedGet(`/usages/cost-by-period/${siteId}`, { params: { months } }).then((r) => r.data);
 
+// ── Flex NEBEF ──
+export const getFlexNebef = (siteId) =>
+  cachedGet(`/usages/flex-potential/${siteId}`).then((r) => r.data);
+
+export const getFlexNebefPortfolio = ({ entityId, portefeuilleId } = {}) =>
+  cachedGet('/usages/flex-portfolio', {
+    params: {
+      entity_id: entityId || undefined,
+      portefeuille_id: portefeuilleId || undefined,
+    },
+  }).then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);

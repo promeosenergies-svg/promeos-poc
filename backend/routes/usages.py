@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
-from services.scope_utils import resolve_org_id
+from services.scope_utils import resolve_org_id, resolve_site_ids
 from services.usage_service import (
     compute_usage_readiness,
     get_metering_plan,
@@ -110,6 +110,37 @@ def api_archetypes_in_scope(
         reverse=True,
     )
     return {"archetypes": archetypes}
+
+
+# ── Flex NEBEF + BACS↔Flex ────────────────────────────────────────────────
+
+
+@router.get("/flex-potential/{site_id}")
+def api_flex_potential(
+    site_id: int,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Scoring flex NEBEF + lien BACS↔Flex pour un site."""
+    from services.flex_nebef_service import compute_flex_nebef
+
+    return compute_flex_nebef(db, site_id)
+
+
+@router.get("/flex-portfolio")
+def api_flex_portfolio(
+    request: Request,
+    entity_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Agrège le potentiel flex de tous les sites du périmètre."""
+    from services.flex_nebef_service import compute_flex_portfolio
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id)
+    return compute_flex_portfolio(db, site_ids)
 
 
 # ── Coût par période tarifaire × usage ───────────────────────────────────

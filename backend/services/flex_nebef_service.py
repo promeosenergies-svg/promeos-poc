@@ -1,0 +1,222 @@
+"""
+PROMEOS — NEBEF eligibility + BACS↔Flex ROI.
+Enrichit flex_assessment avec scoring NEBEF et lien BACS.
+
+NEBEF : ≥ 100 kW pilotable agrégé → éligible.
+Revenus : 80-200 €/kW/an (NEBEF) + 45 €/kW/an (capacité 2026).
+BACS↔Flex : coût GTB 15-30k€/site → revenu NEBEF → ROI mois.
+"""
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from models.energy_models import Meter, MeterReading
+from models.usage import Usage, USAGE_LABELS_FR
+from services.flex_assessment_service import compute_flex_assessment
+
+# Seuils et prix
+NEBEF_MIN_KW = 100
+NEBEF_REVENUE_LOW = 80  # €/kW/an conservateur
+NEBEF_REVENUE_HIGH = 200  # €/kW/an optimiste
+CAPACITY_REVENUE = 45  # €/kW/an mécanisme capacité 2026
+BACS_COST_PER_SITE = 25_000  # coût moyen GTB classe C
+
+# Pilotabilité par type d'usage (shiftable_pct du kW max)
+FLEX_BY_USAGE = {
+    "Chauffage": {"shiftable_pct": 0.60, "pilotability": "haute", "inertia_min": 45, "requires_gtb": True},
+    "CVC": {"shiftable_pct": 0.60, "pilotability": "haute", "inertia_min": 45, "requires_gtb": True},
+    "Climatisation": {"shiftable_pct": 0.55, "pilotability": "haute", "inertia_min": 20, "requires_gtb": True},
+    "ECS": {"shiftable_pct": 0.90, "pilotability": "haute", "inertia_min": 180, "requires_gtb": False},
+    "Ventilation": {"shiftable_pct": 0.40, "pilotability": "moyenne", "inertia_min": 15, "requires_gtb": True},
+    "Éclairage": {"shiftable_pct": 0.30, "pilotability": "moyenne", "inertia_min": 0, "requires_gtb": False},
+    "IT & Bureautique": {"shiftable_pct": 0.05, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False},
+    "Process": {"shiftable_pct": 0.15, "pilotability": "variable", "inertia_min": 0, "requires_gtb": False},
+    "Cuisine": {"shiftable_pct": 0.10, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False},
+}
+
+
+def compute_flex_nebef(db: Session, site_id: int) -> dict:
+    """Scoring flex NEBEF + lien BACS pour un site."""
+    from models.site import Site as SiteModel
+    from datetime import datetime, timedelta, timezone
+
+    site = db.query(SiteModel).filter(SiteModel.id == site_id).first()
+    if not site:
+        return {"site_id": site_id, "error": "site_not_found"}
+
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
+
+    # Récupérer flex_assessment existant (pour le score global)
+    base_assessment = compute_flex_assessment(db, site_id)
+
+    # Calculer kW par sous-compteur/usage
+    subs = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active.is_(True),
+            Meter.usage_id.isnot(None),
+            Meter.parent_meter_id.isnot(None),
+        )
+        .all()
+    )
+
+    by_usage = []
+    total_pilotable_kw = 0
+    kw_needing_gtb = 0
+    usages_needing_gtb = []
+
+    for sub in subs:
+        usage = db.query(Usage).filter(Usage.id == sub.usage_id).first()
+        label = (usage.label or USAGE_LABELS_FR.get(usage.type, usage.type.value)) if usage else "?"
+
+        # kW max = max(kWh_reading) × 4 (si 15min) ou × 2 (si 30min)
+        max_kwh = (
+            db.query(func.max(MeterReading.value_kwh))
+            .filter(MeterReading.meter_id == sub.id, MeterReading.timestamp >= cutoff)
+            .scalar()
+            or 0
+        )
+        max_kw = max_kwh * 4  # assume 15min readings
+
+        profile = FLEX_BY_USAGE.get(
+            label, {"shiftable_pct": 0.10, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False}
+        )
+        kw_pilotable = round(max_kw * profile["shiftable_pct"], 1)
+        total_pilotable_kw += kw_pilotable
+
+        # BACS status from compliance
+        bacs_status = "Non concerné"
+        if profile["requires_gtb"]:
+            bacs_status = "Manquant"  # default
+            kw_needing_gtb += kw_pilotable
+            if label not in usages_needing_gtb:
+                usages_needing_gtb.append(label)
+
+        by_usage.append(
+            {
+                "usage": label,
+                "max_kw": round(max_kw, 1),
+                "shiftable_pct": round(profile["shiftable_pct"] * 100),
+                "kw_pilotable": kw_pilotable,
+                "inertia_minutes": profile["inertia_min"],
+                "pilotability": profile["pilotability"],
+                "requires_gtb": profile["requires_gtb"],
+                "bacs_status": bacs_status,
+            }
+        )
+
+    by_usage.sort(key=lambda u: u["kw_pilotable"], reverse=True)
+    total_pilotable_kw = round(total_pilotable_kw, 1)
+
+    # NEBEF eligibility
+    nebef_eligible = total_pilotable_kw >= NEBEF_MIN_KW
+
+    # Revenue estimation
+    revenue = {
+        "nebef_low": round(total_pilotable_kw * NEBEF_REVENUE_LOW),
+        "nebef_high": round(total_pilotable_kw * NEBEF_REVENUE_HIGH),
+        "capacity": round(total_pilotable_kw * CAPACITY_REVENUE),
+    }
+
+    # BACS↔Flex link
+    bacs_cost = BACS_COST_PER_SITE
+    flex_revenue_mid = round(kw_needing_gtb * (NEBEF_REVENUE_LOW + NEBEF_REVENUE_HIGH) / 2)
+    roi_months = round(bacs_cost / max(flex_revenue_mid / 12, 1)) if flex_revenue_mid > 0 else 0
+
+    bacs_flex_link = {
+        "usages_needing_gtb": usages_needing_gtb,
+        "kw_unlocked_by_bacs": round(kw_needing_gtb, 1),
+        "bacs_cost_estimate_eur": bacs_cost,
+        "flex_revenue_unlocked_eur_year": flex_revenue_mid,
+        "roi_months": roi_months,
+        "verdict": (
+            f"Mise en conformité BACS débloque {round(kw_needing_gtb)} kW flex → ROI {roi_months} mois"
+            if kw_needing_gtb > 0
+            else "Aucun usage nécessitant GTB"
+        ),
+    }
+
+    # Go/No-Go checklist
+    has_12m = (
+        db.query(func.count(MeterReading.id))
+        .join(Meter)
+        .filter(Meter.site_id == site_id, Meter.parent_meter_id.is_(None), MeterReading.timestamp >= cutoff)
+        .scalar()
+        or 0
+    ) > 365 * 24  # au moins 1 reading/h sur 12 mois
+
+    go_nogo = {
+        "puissance_100kw": total_pilotable_kw >= 100,
+        "telereleve_enedis": True,  # assume true si CDC en DB
+        "gtb_installed": False,
+        "historique_12m": has_12m,
+        "disponibilite_80pct": True,  # assume 85% per spec
+        "agregateur_contact": False,
+    }
+
+    return {
+        "site_id": site_id,
+        "site_name": site.nom,
+        "flex_score": base_assessment.get("flex_potential_score", 0),
+        "flex_summary": {
+            "total_pilotable_kw": total_pilotable_kw,
+            "nebef_eligible": nebef_eligible,
+            "estimated_revenue_eur_year": revenue,
+        },
+        "by_usage": by_usage,
+        "bacs_flex_link": bacs_flex_link,
+        "go_nogo_checklist": go_nogo,
+    }
+
+
+def compute_flex_portfolio(db: Session, site_ids: list[int]) -> dict:
+    """Agrège le potentiel flex de plusieurs sites."""
+    results = []
+    for sid in site_ids:
+        try:
+            r = compute_flex_nebef(db, sid)
+            if "error" not in r:
+                results.append(r)
+        except Exception:
+            continue
+
+    total_kw = sum(r["flex_summary"]["total_pilotable_kw"] for r in results)
+    nebef_sites = sum(1 for r in results if r["flex_summary"]["nebef_eligible"])
+    revenue_mid = sum(
+        (
+            r["flex_summary"]["estimated_revenue_eur_year"]["nebef_low"]
+            + r["flex_summary"]["estimated_revenue_eur_year"]["nebef_high"]
+        )
+        / 2
+        for r in results
+    )
+    total_bacs_kw = sum(r["bacs_flex_link"]["kw_unlocked_by_bacs"] for r in results)
+    total_bacs_cost = sum(
+        r["bacs_flex_link"]["bacs_cost_estimate_eur"] for r in results if r["bacs_flex_link"]["kw_unlocked_by_bacs"] > 0
+    )
+    total_bacs_revenue = sum(r["bacs_flex_link"]["flex_revenue_unlocked_eur_year"] for r in results)
+
+    return {
+        "total_kw": round(total_kw, 1),
+        "total_sites": len(results),
+        "nebef_sites": nebef_sites,
+        "revenue_mid_eur": round(revenue_mid),
+        "bacs_portfolio": {
+            "total_kw_unlockable": round(total_bacs_kw, 1),
+            "total_cost_eur": total_bacs_cost,
+            "total_revenue_eur_year": total_bacs_revenue,
+            "portfolio_roi_months": round(total_bacs_cost / max(total_bacs_revenue / 12, 1))
+            if total_bacs_revenue > 0
+            else 0,
+        },
+        "sites": [
+            {
+                "site_id": r["site_id"],
+                "site_name": r["site_name"],
+                "kw": r["flex_summary"]["total_pilotable_kw"],
+                "nebef": r["flex_summary"]["nebef_eligible"],
+            }
+            for r in results
+        ],
+    }
