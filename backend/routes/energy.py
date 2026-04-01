@@ -693,3 +693,38 @@ def _parse_timestamp(ts_str: str) -> datetime:
             continue
 
     return None
+
+
+# --- Energy Intensity endpoints (#146) ---
+
+
+@router.get("/intensity")
+def get_energy_intensity(
+    site_id: Optional[int] = None,
+    portfolio_id: Optional[int] = None,
+    year: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Intensité énergétique (kWh/m²/an) — finale et primaire.
+
+    - site_id : intensité d'un site unique
+    - portfolio_id : intensité agrégée portefeuille (moyenne pondérée par surface)
+    - year : année de référence (défaut = année en cours, calcul sur année N-1)
+
+    Retourne kWh_m2_final, kWh_m2_primary, détail EP par vecteur, couverture.
+    """
+    from services.energy_intensity_service import get_site_intensity, get_portfolio_intensity
+
+    if not site_id and not portfolio_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Paramètre site_id ou portfolio_id requis",
+        )
+
+    if site_id:
+        check_site_access(auth, site_id)
+        return get_site_intensity(db, site_id, year)
+
+    return get_portfolio_intensity(db, portfolio_id, year)
