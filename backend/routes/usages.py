@@ -112,6 +112,22 @@ def api_archetypes_in_scope(
     return {"archetypes": archetypes}
 
 
+# ── Coût par période tarifaire × usage ───────────────────────────────────
+
+
+@router.get("/cost-by-period/{site_id}")
+def api_cost_by_period(
+    site_id: int,
+    months: int = Query(12, ge=1, le=36),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Ventilation du coût par usage × période tarifaire TURPE 7 (HPH/HCH/HPB/HCB)."""
+    from services.cost_by_period_service import get_cost_by_period
+
+    return get_cost_by_period(db, site_id, months)
+
+
 # ── Dashboard agrege (legacy mono-site) ──────────────────────────────────
 
 

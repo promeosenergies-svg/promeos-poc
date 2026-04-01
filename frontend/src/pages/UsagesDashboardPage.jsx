@@ -9,6 +9,7 @@ import {
   getScopedUsagesDashboard,
   getScopedUsageTimeline,
   getPortfolioUsageComparison,
+  getCostByPeriod,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -33,6 +34,7 @@ export default function UsagesDashboardPage() {
   const [data, setData] = useState(null);
   const [timeline, setTimeline] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
+  const [costByPeriod, setCostByPeriod] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -97,6 +99,17 @@ export default function UsagesDashboardPage() {
         .catch(() => {});
     }
   }, [scope?.orgId, scopedSites?.length]);
+
+  // Cost by period (site mode only)
+  useEffect(() => {
+    if (scopeLevel === 'site' && siteId) {
+      getCostByPeriod(siteId)
+        .then(setCostByPeriod)
+        .catch(() => setCostByPeriod(null));
+    } else {
+      setCostByPeriod(null);
+    }
+  }, [siteId, scopeLevel]);
 
   // Export Excel (dynamic import)
   const handleExportExcel = async () => {
@@ -227,7 +240,7 @@ export default function UsagesDashboardPage() {
         <div className="flex flex-col gap-3.5">
           <HeatmapCard data={portfolio} currentSiteId={siteId} />
           {data?.compliance && <ComplianceCard data={data.compliance} />}
-          <CostCard data={data?.cost_breakdown} />
+          <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
         </div>
       </div>
 
