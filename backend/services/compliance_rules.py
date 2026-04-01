@@ -471,19 +471,10 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
 def _resolve_site_ids(
     db: Session, org_id: int, entity_id: int = None, site_id: int = None, portefeuille_id: int = None
 ) -> list:
-    """Resolve site IDs from scope filters (site > portefeuille > entity > org)."""
-    if site_id:
-        return [site_id]
-    if portefeuille_id:
-        rows = db.query(Site.id).filter(Site.portefeuille_id == portefeuille_id).all()
-        return [row[0] for row in rows]
-    q = db.query(Site.id).join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-    if entity_id:
-        q = q.filter(Portefeuille.entite_juridique_id == entity_id)
-    else:
-        q = q.join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        q = q.filter(EntiteJuridique.organisation_id == org_id)
-    return [row[0] for row in q.all()]
+    """Resolve site IDs from scope filters — delegates to shared scope_utils."""
+    from services.scope_utils import resolve_site_ids
+
+    return resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
 
 
 def get_summary(

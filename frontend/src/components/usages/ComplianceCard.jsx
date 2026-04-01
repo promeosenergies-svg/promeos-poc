@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ComplianceCard({ data }) {
+  const navigate = useNavigate();
   if (!data) return null;
 
   const items = data.items || [];
@@ -56,6 +58,12 @@ export default function ComplianceCard({ data }) {
           {uncoveredThermal > 1 ? 's' : ''} sans BACS
         </div>
       )}
+      <button
+        onClick={() => navigate('/conformite/tertiaire')}
+        className="mt-2.5 w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium hover:border-blue-400 hover:text-blue-600 transition text-center"
+      >
+        Conformité détaillée →
+      </button>
     </div>
   );
 }

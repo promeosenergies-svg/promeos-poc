@@ -45,7 +45,7 @@ function loadScope() {
     /* ignore */
   }
   // Default to null — auto-sync from backend will resolve the correct org
-  return { orgId: null, portefeuilleId: null, siteId: null };
+  return { orgId: null, entiteId: null, portefeuilleId: null, siteId: null };
 }
 
 function saveScope(scope) {
@@ -160,9 +160,17 @@ export function ScopeProvider({ children }) {
   }, [effectiveOrgId, fetchTrigger]);
 
   const setOrg = useCallback((orgId) => {
-    const next = { orgId, portefeuilleId: null, siteId: null };
+    const next = { orgId, entiteId: null, portefeuilleId: null, siteId: null };
     setScope(next);
     saveScope(next);
+  }, []);
+
+  const setEntite = useCallback((entiteId) => {
+    setScope((prev) => {
+      const next = { ...prev, entiteId, portefeuilleId: null, siteId: null };
+      saveScope(next);
+      return next;
+    });
   }, []);
 
   const setPortefeuille = useCallback((portefeuilleId) => {
@@ -182,13 +190,13 @@ export function ScopeProvider({ children }) {
   }, []);
 
   const resetScope = useCallback(() => {
-    const next = { orgId: effectiveOrgId, portefeuilleId: null, siteId: null };
+    const next = { orgId: effectiveOrgId, entiteId: null, portefeuilleId: null, siteId: null };
     setScope(next);
     saveScope(next);
   }, [effectiveOrgId]);
 
   const clearScope = useCallback(() => {
-    const next = { orgId: null, portefeuilleId: null, siteId: null };
+    const next = { orgId: null, entiteId: null, portefeuilleId: null, siteId: null };
     setScope(next);
     setApiSites([]); // clear stale site data
     localStorage.removeItem(STORAGE_KEY);
@@ -218,7 +226,7 @@ export function ScopeProvider({ children }) {
         return next;
       });
       // Switch scope: always siteId=null => "Tous les sites" in demo mode
-      const next = { orgId, portefeuilleId: null, siteId: null };
+      const next = { orgId, entiteId: null, portefeuilleId: null, siteId: null };
       setScope(next);
       saveScope(next);
       // eslint-disable-next-line no-unused-expressions
@@ -342,6 +350,7 @@ export function ScopeProvider({ children }) {
     selectedSiteId,
     scopeLabel,
     setOrg,
+    setEntite,
     setPortefeuille,
     setSite,
     resetScope,

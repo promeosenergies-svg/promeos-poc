@@ -85,7 +85,7 @@ export default function HeatmapCard({ data, currentSiteId }) {
         <div className="py-1.5 text-[9px] text-gray-400">Réf. ADEME</div>
         {usages.map((u) => (
           <div key={u} className="text-center py-1.5 text-[9px] text-gray-400 italic">
-            —
+            {data.ademe_ref_by_usage?.[u] || '—'}
           </div>
         ))}
         <div className="text-center py-1.5 text-[9px] text-gray-400 italic">
