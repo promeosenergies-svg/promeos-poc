@@ -80,12 +80,17 @@ def _resolve_org_id(site):
 
 
 def _seed_consumptions(db, efa_id, ref_kwh, conso_2023, conso_2024):
-    """Cree les TertiaireEfaConsumption pour reference (2020), 2023 et 2024.
+    """Cree les TertiaireEfaConsumption pour reference (2020), 2021-2024.
 
+    2021-2022 interpoles lineairement entre ref_kwh (2020) et conso_2023.
     Repartition vecteur : 70% elec, 30% gaz (approx realiste tertiaire France).
     """
+    conso_2021 = round(ref_kwh + (conso_2023 - ref_kwh) * 1 / 3)
+    conso_2022 = round(ref_kwh + (conso_2023 - ref_kwh) * 2 / 3)
     rows = [
         (2020, ref_kwh, True),
+        (2021, conso_2021, False),
+        (2022, conso_2022, False),
         (2023, conso_2023, False),
         (2024, conso_2024, False),
     ]
