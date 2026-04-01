@@ -52,20 +52,6 @@ export default function SiteIntelligencePanel({ siteId, site }) {
     }
   };
 
-  const handlePlanAll = async () => {
-    if (bulkInProgress) return;
-    const pending = recommendations.filter((r) => {
-      const st = createdActions[r.recommendation_code];
-      return !st || st === 'error';
-    });
-    if (pending.length === 0) return;
-    setBulkInProgress(true);
-    for (const reco of pending) {
-      await handleCreateAction(reco);
-    }
-    setBulkInProgress(false);
-  };
-
   if (loading) return <SkeletonCard />;
 
   if (!data || data.status === 'no_meters') {
@@ -89,6 +75,20 @@ export default function SiteIntelligencePanel({ siteId, site }) {
   }
 
   const { archetype, anomalies = [], recommendations = [], summary = {} } = data;
+
+  const handlePlanAll = async () => {
+    if (bulkInProgress) return;
+    const pending = recommendations.filter((r) => {
+      const st = createdActions[r.recommendation_code];
+      return !st || st === 'error';
+    });
+    if (pending.length === 0) return;
+    setBulkInProgress(true);
+    for (const reco of pending) {
+      await handleCreateAction(reco);
+    }
+    setBulkInProgress(false);
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

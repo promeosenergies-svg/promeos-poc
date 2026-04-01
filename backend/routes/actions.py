@@ -211,20 +211,21 @@ def _create_event(
 
 
 def _mark_reco_in_progress(db: Session, source_id: str):
-    """Mark the KB recommendation as IN_PROGRESS after action creation."""
-    try:
-        reco_id_str = source_id.split("kb-reco:", 1)[1]
-        reco_id = int(reco_id_str)
-    except (IndexError, ValueError):
-        return
+    """Mark the KB recommendation as IN_PROGRESS after action creation.
+
+    Best-effort: never blocks action creation even if reco lookup fails.
+    Caller must ensure source_id starts with "kb-reco:".
+    """
     try:
         from models.energy_models import Recommendation, RecommendationStatus
 
+        reco_id = int(source_id.removeprefix("kb-reco:"))
         reco = db.query(Recommendation).filter(Recommendation.id == reco_id).first()
         if reco and reco.status == RecommendationStatus.PENDING:
             reco.status = RecommendationStatus.IN_PROGRESS
+            db.flush()
     except Exception:
-        pass  # Non-blocking: reco status update is best-effort
+        pass
 
 
 # ========================================
@@ -340,8 +341,8 @@ def create_action(
     _create_event(db, item.id, "created", new_value="open")
 
     # KB bridge hook: mark source recommendation as IN_PROGRESS
-    if source_id and source_id.startswith("kb-reco:"):
-        _mark_reco_in_progress(db, source_id)
+    if data.source_id and data.source_id.startswith("kb-reco:"):
+        _mark_reco_in_progress(db, data.source_id)
 
     db.commit()
 

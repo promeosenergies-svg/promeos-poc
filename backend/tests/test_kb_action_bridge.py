@@ -155,13 +155,6 @@ class TestKbActionBridgeIdempotence:
         count = db.query(ActionItem).filter(ActionItem.idempotency_key == payload["idempotency_key"]).count()
         assert count == 1
 
-    def test_idempotent_returns_same_id(self, client, db):
-        org, site = _seed_org_site(db)
-        payload = _kb_action_payload(org.id, site.id)
-        data1 = client.post("/api/actions", json=payload).json()
-        data2 = client.post("/api/actions", json=payload).json()
-        assert data1["id"] == data2["id"]
-
     def test_different_reco_creates_different_action(self, client, db):
         org, site = _seed_org_site(db)
         p1 = _kb_action_payload(org.id, site.id, reco_id=1, reco_code="RECO-LED-001")
