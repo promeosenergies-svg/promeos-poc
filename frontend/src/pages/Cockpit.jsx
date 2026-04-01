@@ -15,7 +15,7 @@ import {
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtKwh, fmtEur } from '../utils/format';
-import { toActionsList } from '../services/routes';
+import { toActionsList, toUsages } from '../services/routes';
 import {
   PageShell,
   Progress,
@@ -1009,6 +1009,16 @@ const Cockpit = () => {
         onClose={() => setEvidenceOpen(null)}
         evidence={evidenceOpen ? evidenceMap[evidenceOpen] : null}
       />
+
+      {/* Lien cross-brique vers Usages */}
+      <div className="flex items-center gap-2 mt-3 print:hidden">
+        <button
+          onClick={() => navigate(toUsages())}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
+        >
+          Explorer les usages énergétiques <ArrowRight size={14} />
+        </button>
+      </div>
 
       {/* ── Onboarding spotlight (C.2b) ── */}
       <DemoSpotlight />

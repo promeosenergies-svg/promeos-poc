@@ -40,6 +40,7 @@ from routes.patrimoine._helpers import (
     SiteMergeRequest,
     SubMeterCreateRequest,
     SiteAnomaliesResponse,
+    UnifiedAnomaliesResponse,
     OrgAnomaliesResponse,
     PortfolioSummaryResponse,
     PatrimoineKpisResponse,
@@ -673,6 +674,118 @@ def get_site_anomalies_endpoint(
         "anomalies": enriched,
         "total_estimated_risk_eur": round(total_risk_eur, 0),
         "assumptions_used": DEFAULT_ASSUMPTIONS.to_dict(),
+    }
+
+
+def _normalize_kb_severity(raw: str) -> str:
+    """Normalise la sévérité KB vers l'échelle patrimoine."""
+    mapping = {
+        "critical": "critical",
+        "high": "high",
+        "medium": "medium",
+        "warning": "medium",
+        "low": "low",
+        "info": "low",
+    }
+    return mapping.get(raw.lower() if raw else "", "medium")
+
+
+@router.get("/sites/{site_id}/anomalies-unified", response_model=UnifiedAnomaliesResponse)
+def get_unified_anomalies(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Anomalies unifiées : patrimoine (intégrité données) + KB analytique (conso).
+    Graceful degradation : si KB indisponible, retourne patrimoine seul.
+    """
+    import logging
+
+    from services.patrimoine_anomalies import compute_site_anomalies
+    from services.patrimoine_impact import enrich_anomalies_with_impact
+    from services.patrimoine_snapshot import get_site_snapshot
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+
+    # 1. Anomalies patrimoine (toujours disponibles)
+    pat_result = compute_site_anomalies(site_id, db)
+    snapshot = get_site_snapshot(site_id, org_id, db) or {}
+    enriched = enrich_anomalies_with_impact(pat_result["anomalies"], snapshot, DEFAULT_ASSUMPTIONS)
+
+    unified = []
+    for a in enriched:
+        unified.append(
+            {
+                "source": "patrimoine",
+                "code": a["code"],
+                "severity": a["severity"].lower(),
+                "title_fr": a["title_fr"],
+                "detail_fr": a.get("detail_fr"),
+                "evidence": a.get("evidence"),
+                "cta": a.get("cta"),
+                "fix_hint_fr": a.get("fix_hint_fr"),
+                "regulatory_impact": a.get("regulatory_impact"),
+                "business_impact": a.get("business_impact"),
+                "priority_score": a.get("priority_score"),
+            }
+        )
+
+    # 2. Anomalies KB analytiques (graceful degradation)
+    kb_anomalies = []
+    try:
+        from models.energy_models import Anomaly as KBAnomaly, Meter
+
+        meter_ids_subq = db.query(Meter.id).filter(Meter.site_id == site_id)
+        kb_rows = (
+            db.query(KBAnomaly)
+            .filter(
+                KBAnomaly.meter_id.in_(meter_ids_subq),
+                KBAnomaly.is_active == True,  # noqa: E712
+            )
+            .all()
+        )
+        if kb_rows:
+            for a in kb_rows:
+                sev = a.severity.value if hasattr(a.severity, "value") else str(a.severity)
+                kb_anomalies.append(
+                    {
+                        "source": "analytique",
+                        "code": a.anomaly_code,
+                        "severity": _normalize_kb_severity(sev),
+                        "title_fr": a.title or a.anomaly_code,
+                        "detail_fr": a.description,
+                        "confidence": round(a.confidence, 2) if a.confidence else None,
+                        "deviation_pct": round(a.deviation_pct, 1) if a.deviation_pct else None,
+                        "measured_value": a.measured_value,
+                        "threshold_value": a.threshold_value,
+                    }
+                )
+    except Exception:
+        logging.getLogger(__name__).warning("KB anomalies indisponibles pour site %s, patrimoine seul", site_id)
+
+    unified.extend(kb_anomalies)
+
+    # Tri par sévérité puis priority_score desc
+    _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    unified.sort(
+        key=lambda x: (
+            _SEV_ORDER.get(x.get("severity", "low"), 99),
+            -(x.get("priority_score") or 0),
+        )
+    )
+
+    return {
+        "site_id": site_id,
+        "anomalies": unified,
+        "total": len(unified),
+        "patrimoine_count": len(enriched),
+        "analytique_count": len(kb_anomalies),
+        "completude_score": pat_result.get("completude_score"),
+        "computed_at": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 

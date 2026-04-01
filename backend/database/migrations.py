@@ -86,6 +86,8 @@ def run_migrations(engine):
     _rename_enedis_mesure_table(engine)
     _create_enedis_tables(engine)
     _add_enedis_columns(engine)
+    # TURPE 7 / HC reprog — delivery_points enrichment
+    _add_delivery_point_turpe_columns(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1767,3 +1769,45 @@ def _add_enedis_columns(engine):
         logger.info("migration: added %d Enedis column(s)", added)
     else:
         logger.debug("migration: Enedis columns already present — no changes")
+
+
+def _add_delivery_point_turpe_columns(engine):
+    """Add TURPE 7 / HC reprogrammation columns to delivery_points if missing."""
+    insp = inspect(engine)
+    if not insp.has_table("delivery_points"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("delivery_points")}
+
+    new_cols = [
+        ("tariff_segment", "VARCHAR(10)"),
+        ("puissance_souscrite_kva", "FLOAT"),
+        ("hc_reprog_phase", "VARCHAR(20)"),
+        ("hc_reprog_status", "VARCHAR(20)"),
+        ("hc_reprog_date_prevue", "DATE"),
+        ("hc_reprog_date_effective", "DATE"),
+        ("hc_code_actuel", "VARCHAR(20)"),
+        ("hc_code_futur", "VARCHAR(20)"),
+        ("hc_libelle_actuel", "VARCHAR(100)"),
+        ("hc_libelle_futur", "VARCHAR(100)"),
+        ("hc_code_futur_ete", "VARCHAR(20)"),
+        ("hc_code_futur_hiver", "VARCHAR(20)"),
+        ("hc_saisonnalise", "BOOLEAN DEFAULT 0"),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in new_cols:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "delivery_points" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: added delivery_points.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: could not add delivery_points.%s: %s", col_name, e)
+
+    if added > 0:
+        logger.info("migration: added %d TURPE/HC column(s) to delivery_points", added)
+    else:
+        logger.debug("migration: delivery_points TURPE/HC columns already present")

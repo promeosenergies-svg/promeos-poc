@@ -6,8 +6,8 @@ Baseline auto-compute, Compliance par usage, Billing links.
 Entite pivot reliant Patrimoine → Usage → Derive → Action → Conformite → Facture → Achat.
 """
 
+import hashlib
 import json
-import random
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -312,6 +312,8 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
                 usage_objs[u.id] = u
 
     # Phase 2 : grouper par TypeUsage (merge multi-batiments)
+    _cached_site_surface = _resolve_site_surface(db, site_id)
+
     by_type = {}  # TypeUsage -> {kwh, surface, usage_ids, has_measured, ...}
     for uid, kwh in usage_kwh.items():
         u = usage_objs.get(uid)
@@ -319,7 +321,10 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
             continue
         t = u.type
         is_measured = uid in measured_usage_ids
-        bat_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else 0
+        # Surface site (pas batiment proportionnel) pour IPE correct
+        _site_surface = _cached_site_surface
+        if not _site_surface:
+            _site_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else 0
         if t not in by_type:
             by_type[t] = {
                 "type": t,
@@ -333,7 +338,7 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
             }
         row = by_type[t]
         row["kwh"] += kwh
-        row["surface_m2"] += bat_surface
+        row["surface_m2"] = max(row["surface_m2"], _site_surface)  # surface site, pas cumul
         row["is_significant"] = row["is_significant"] or u.is_significant
         row["has_measured"] = row["has_measured"] or is_measured
         row["usage_ids"].append(uid)
@@ -390,11 +395,10 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
 def get_usage_cost_breakdown(db: Session, site_id: int, days: int = 365) -> dict:
     """Ventile le cout energetique par usage, pro-rata sous-compteur.
 
-    Utilise le prix moyen EUR/kWh du site ou le default.
+    Utilise la meme cascade prix que billing_links :
+    contrat actif → moyenne factures 12m → SiteTariffProfile → fallback 0.068.
     """
-    from routes.site_config import get_site_price_ref
-
-    price_ref = get_site_price_ref(db, site_id)
+    price_ref = _resolve_site_price(db, site_id)
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     # Conso totale
@@ -606,6 +610,8 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
     usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=site_id)).all()
     results = []
 
+    _cached_site_surface = _resolve_site_surface(db, site_id)
+
     for u in usages:
         # Sous-compteurs lies
         meters = db.query(Meter).filter(Meter.usage_id == u.id, Meter.is_active.is_(True)).all()
@@ -615,6 +621,7 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
         kwh_baseline = 0
         kwh_current = 0
         from_stored = False
+        is_estimated = False
 
         if meter_ids:
             kwh_baseline = (
@@ -699,17 +706,24 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
             if stored:
                 kwh_baseline = stored.kwh_total
                 from_stored = True
-                # Simuler variation actuelle si pas de readings
+                # Estimer variation actuelle (deterministe) si pas de readings
                 if kwh_current <= 0 and u.pct_of_total:
-                    kwh_current = round(kwh_baseline * random.uniform(0.88, 1.08), 1)
+                    seed_str = f"{u.id}:{current_end.year}"
+                    hash_val = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+                    drift = -0.05 + (hash_val % 1000) / 1000 * 0.10
+                    kwh_current = round(kwh_baseline * (1 + drift), 1)
+                    is_estimated = True
 
         if kwh_baseline <= 0 and kwh_current <= 0:
             continue
 
-        # IPE — utiliser la surface du batiment (pas la zone proportionnelle)
-        bat_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else u.surface_m2
-        ipe_baseline = round(kwh_baseline / bat_surface, 1) if bat_surface and bat_surface > 0 else None
-        ipe_current = round(kwh_current / bat_surface, 1) if bat_surface and bat_surface > 0 else None
+        # IPE — denominateur = surface du SITE (pas batiment proportionnel)
+        site_surface = _cached_site_surface or None
+        # Fallback batiment si pas de surface site
+        if not site_surface or site_surface <= 0:
+            site_surface = u.batiment.surface_m2 if u.batiment and u.batiment.surface_m2 else None
+        ipe_baseline = round(kwh_baseline / site_surface, 1) if site_surface and site_surface > 0 else None
+        ipe_current = round(kwh_current / site_surface, 1) if site_surface and site_surface > 0 else None
 
         # Ecart
         ecart_kwh = kwh_current - kwh_baseline if kwh_baseline > 0 else None
@@ -763,11 +777,15 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 "ecart_kwh": round(ecart_kwh, 1) if ecart_kwh is not None else None,
                 "ecart_pct": ecart_pct,
                 "trend": trend,
-                "surface_m2": bat_surface,
+                "surface_m2": site_surface,
                 "is_significant": u.is_significant,
-                "data_source": "mesure_directe"
-                if meter_ids and not from_stored
-                else ("baseline_stockee" if from_stored else "estimation_prorata"),
+                "data_source": "estimation_deterministe"
+                if is_estimated
+                else (
+                    "mesure_directe"
+                    if meter_ids and not from_stored
+                    else ("baseline_stockee" if from_stored else "estimation_prorata")
+                ),
                 "actions_completed": len(actions),
             }
         )
@@ -968,6 +986,54 @@ def get_usage_billing_links(db: Session, site_id: int) -> dict:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────
+
+
+def _resolve_site_surface(db: Session, site_id: int) -> float:
+    """Retourne la surface du site (surface_m2 ou tertiaire_area_m2), 0 si absent."""
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return 0
+    return getattr(site, "surface_m2", 0) or getattr(site, "tertiaire_area_m2", 0) or 0
+
+
+def _resolve_site_price(db: Session, site_id: int) -> float:
+    """Cascade unique de resolution du prix pour un site.
+
+    Meme logique que billing_links pour garantir la coherence :
+    1. Contrat actif (price_ref_eur_per_kwh)
+    2. Moyenne factures 12 derniers mois
+    3. SiteTariffProfile
+    4. Fallback DEFAULT_PRICE_ELEC_EUR_KWH (0.068)
+    """
+    from models.billing_models import EnergyContract, EnergyInvoice
+
+    # 1. Contrat actif
+    contract = (
+        db.query(EnergyContract)
+        .filter(EnergyContract.site_id == site_id, EnergyContract.contract_status == "active")
+        .first()
+    )
+    if contract and getattr(contract, "price_ref_eur_per_kwh", None):
+        return contract.price_ref_eur_per_kwh
+
+    # 2. Moyenne factures 12m
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
+    invoices = (
+        db.query(EnergyInvoice)
+        .filter(EnergyInvoice.site_id == site_id, EnergyInvoice.period_start >= cutoff)
+        .order_by(EnergyInvoice.period_start.desc())
+        .limit(12)
+        .all()
+    )
+    total_eur = sum(inv.total_eur or 0 for inv in invoices)
+    total_kwh = sum(inv.energy_kwh or 0 for inv in invoices)
+    if total_kwh > 0:
+        return round(total_eur / total_kwh, 4)
+
+    # 3. SiteTariffProfile (inclut son propre fallback vers DEFAULT)
+    from routes.site_config import get_site_price_ref
+
+    return get_site_price_ref(db, site_id)
 
 
 def _resolve_usage(db: Session, meter: Meter) -> Optional[dict]:

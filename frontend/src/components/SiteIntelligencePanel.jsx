@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getSiteIntelligence, createAction } from '../services/api';
 import { buildKbRecoActionPayload, buildKbRecoActionDeepLink } from '../models/kbRecoActionModel';
 import Badge from '../ui/Badge';
@@ -26,6 +26,28 @@ export default function SiteIntelligencePanel({ siteId, site }) {
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [siteId]);
+
+  // Dedup côté frontend (ceinture + bretelles — le backend déduplique aussi)
+  // Must be before early returns to maintain consistent hook order
+  const recommendations = useMemo(() => {
+    const raw = data?.recommendations || [];
+    const seen = new Map();
+    for (const r of raw) {
+      const key = r.recommendation_code || r.title;
+      if (!seen.has(key)) {
+        seen.set(key, { ...r, count: 1 });
+      } else {
+        const existing = seen.get(key);
+        existing.count += 1;
+        existing.estimated_savings_eur_year =
+          (existing.estimated_savings_eur_year || 0) + (r.estimated_savings_eur_year || 0);
+        existing.estimated_savings_kwh_year =
+          (existing.estimated_savings_kwh_year || 0) + (r.estimated_savings_kwh_year || 0);
+        if ((r.ice_score || 0) > (existing.ice_score || 0)) existing.ice_score = r.ice_score;
+      }
+    }
+    return [...seen.values()].sort((a, b) => (b.ice_score || 0) - (a.ice_score || 0));
+  }, [data]);
 
   const handleCreateAction = async (reco) => {
     const status = createdActions[reco.recommendation_code];
@@ -74,7 +96,7 @@ export default function SiteIntelligencePanel({ siteId, site }) {
     );
   }
 
-  const { archetype, anomalies = [], recommendations = [], summary = {} } = data;
+  const { archetype, anomalies = [], summary = {} } = data;
 
   const handlePlanAll = async () => {
     if (bulkInProgress) return;
@@ -205,7 +227,14 @@ export default function SiteIntelligencePanel({ siteId, site }) {
                     className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{r.title}</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {r.title}
+                        {r.count > 1 && (
+                          <span className="ml-1 text-xs text-gray-400 font-normal">
+                            (×{r.count} compteurs)
+                          </span>
+                        )}
+                      </p>
                       {r.estimated_savings_eur_year > 0 && (
                         <p className="text-xs text-green-600">
                           ~{Math.round(r.estimated_savings_eur_year).toLocaleString('fr-FR')}{' '}

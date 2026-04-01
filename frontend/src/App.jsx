@@ -135,6 +135,7 @@ function App() {
                       path="/patrimoine/nouveau"
                       element={<Navigate to="/patrimoine?wizard=open" replace />}
                     />
+                    <Route path="/sites" element={<Navigate to="/patrimoine" replace />} />
                     <Route
                       path="/sites/:id"
                       element={
