@@ -358,6 +358,12 @@ export const getUsageCostBreakdown = (siteId, days = 365) =>
   cachedGet(`/usages/cost-breakdown/${siteId}`, { params: { days } }).then((r) => r.data);
 export const getUsageTaxonomy = () => cachedGet('/usages/taxonomy').then((r) => r.data);
 export const getSiteUsages = (siteId) => cachedGet(`/usages/site/${siteId}`).then((r) => r.data);
+export const getUsageTimeline = (siteId, months = 12) =>
+  cachedGet(`/usages/timeline/${siteId}`, { params: { months } }).then((r) => r.data);
+export const getPortfolioUsageComparison = (orgId) =>
+  cachedGet('/usages/portfolio-compare', { params: { org_id: orgId } }).then((r) => r.data);
+export const getMeterReadingsPreview = (meterId, days = 7) =>
+  cachedGet(`/usages/meter-readings/${meterId}`, { params: { days } }).then((r) => r.data);
 
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>

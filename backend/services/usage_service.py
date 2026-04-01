@@ -1034,6 +1034,252 @@ def get_usage_billing_links(db: Session, site_id: int) -> dict:
     }
 
 
+# ── V2 — Timeline mensuelle par usage ───────────────────────────────────
+
+
+def get_usage_timeline(db: Session, site_id: int, months: int = 12) -> dict:
+    """Consommation mensuelle par usage pour AreaChart empile."""
+    from sqlalchemy import extract
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    cutoff = now - timedelta(days=months * 31)
+    cutoff_prev = cutoff - timedelta(days=365)
+
+    site_surface = _resolve_site_surface(db, site_id)
+
+    # Sous-compteurs avec usage
+    subs = (
+        db.query(Meter)
+        .filter(
+            Meter.site_id == site_id,
+            Meter.is_active.is_(True),
+            Meter.parent_meter_id.isnot(None),
+            Meter.usage_id.isnot(None),
+        )
+        .all()
+    )
+    # Principal(s)
+    principals = (
+        db.query(Meter)
+        .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
+        .all()
+    )
+    principal_ids = [m.id for m in principals]
+
+    # Conso mensuelle du principal
+    principal_monthly = {}
+    if principal_ids:
+        rows = (
+            db.query(
+                extract("year", MeterReading.timestamp).label("yr"),
+                extract("month", MeterReading.timestamp).label("mo"),
+                func.sum(MeterReading.value_kwh),
+            )
+            .filter(MeterReading.meter_id.in_(principal_ids), MeterReading.timestamp >= cutoff)
+            .group_by("yr", "mo")
+            .all()
+        )
+        for yr, mo, kwh in rows:
+            principal_monthly[(int(yr), int(mo))] = kwh or 0
+
+    # Baseline N-1 (principal)
+    baseline_monthly = {}
+    if principal_ids:
+        rows = (
+            db.query(
+                extract("year", MeterReading.timestamp).label("yr"),
+                extract("month", MeterReading.timestamp).label("mo"),
+                func.sum(MeterReading.value_kwh),
+            )
+            .filter(
+                MeterReading.meter_id.in_(principal_ids),
+                MeterReading.timestamp >= cutoff_prev,
+                MeterReading.timestamp < cutoff,
+            )
+            .group_by("yr", "mo")
+            .all()
+        )
+        for yr, mo, kwh in rows:
+            baseline_monthly[(int(yr), int(mo))] = kwh or 0
+
+    # Conso mensuelle par sous-compteur
+    # Batch load usages to avoid N+1
+    _usage_ids = list({s.usage_id for s in subs if s.usage_id})
+    _usage_map = {u.id: u for u in db.query(Usage).filter(Usage.id.in_(_usage_ids)).all()} if _usage_ids else {}
+
+    usage_monthly = {}  # usage_label -> {(yr, mo): kwh}
+    for s in subs:
+        u = _usage_map.get(s.usage_id)
+        label = (u.label or USAGE_LABELS_FR.get(u.type, u.type.value)) if u else f"Compteur {s.id}"
+        if label not in usage_monthly:
+            usage_monthly[label] = {}
+        rows = (
+            db.query(
+                extract("year", MeterReading.timestamp).label("yr"),
+                extract("month", MeterReading.timestamp).label("mo"),
+                func.sum(MeterReading.value_kwh),
+            )
+            .filter(MeterReading.meter_id == s.id, MeterReading.timestamp >= cutoff)
+            .group_by("yr", "mo")
+            .all()
+        )
+        for yr, mo, kwh in rows:
+            key = (int(yr), int(mo))
+            usage_monthly[label][key] = usage_monthly[label].get(key, 0) + (kwh or 0)
+
+    # Construire les mois ordonnés
+    all_keys = sorted(principal_monthly.keys())
+    month_labels = [f"{yr}-{mo:02d}" for yr, mo in all_keys]
+
+    # Séries
+    series = []
+    usage_colors = {
+        "Chauffage": "#E57373",
+        "Climatisation": "#64B5F6",
+        "Éclairage": "#FFD54F",
+        "IT & Bureautique": "#7986CB",
+        "Ventilation": "#81C784",
+        "CVC": "#E57373",
+        "Process": "#FF8A65",
+        "Cuisine": "#FFAB91",
+        "Parties communes": "#A5D6A7",
+    }
+    for label, monthly in usage_monthly.items():
+        series.append(
+            {
+                "usage": label,
+                "color": usage_colors.get(label, "#BDBDBD"),
+                "data": [round(monthly.get(k, 0), 0) for k in all_keys],
+            }
+        )
+
+    # Non affecté
+    non_affecte = []
+    for k in all_keys:
+        total_sub = sum(monthly.get(k, 0) for monthly in usage_monthly.values())
+        non_affecte.append(round(max(0, principal_monthly.get(k, 0) - total_sub), 0))
+    if any(v > 0 for v in non_affecte):
+        series.append({"usage": "Non affecté", "color": "#E0E0E0", "data": non_affecte})
+
+    return {
+        "months": month_labels,
+        "series": series,
+        "total": [round(principal_monthly.get(k, 0), 0) for k in all_keys],
+        "baseline_total": [round(baseline_monthly.get((k[0] - 1, k[1]), 0), 0) for k in all_keys],
+    }
+
+
+# ── V2 — Comparaison inter-sites ───────────────────────────────────────
+
+
+def get_portfolio_usage_comparison(db: Session, org_id: int) -> dict:
+    """Compare les IPE par usage pour tous les sites d'une organisation."""
+    from models.site import Site as SiteModel
+    from models.portefeuille import Portefeuille
+    from models.entite_juridique import EntiteJuridique
+
+    sites = (
+        db.query(SiteModel)
+        .join(Portefeuille, SiteModel.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .all()
+    )
+    if len(sites) < 2:
+        return {"usages": [], "sites": []}
+
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
+    all_usage_labels = set()
+    site_results = []
+
+    for s in sites:
+        surface = getattr(s, "surface_m2", 0) or getattr(s, "tertiaire_area_m2", 0) or 0
+        if surface <= 0:
+            continue
+
+        # Total site kWh
+        principal_ids = [
+            m.id
+            for m in db.query(Meter)
+            .filter(Meter.site_id == s.id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
+            .all()
+        ]
+        total_kwh = (
+            sum(
+                db.query(func.sum(MeterReading.value_kwh))
+                .filter(MeterReading.meter_id == mid, MeterReading.timestamp >= cutoff)
+                .scalar()
+                or 0
+                for mid in principal_ids
+            )
+            if principal_ids
+            else 0
+        )
+
+        # IPE par usage
+        usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=s.id)).all()
+        ipe_by_usage = {}
+        for u in usages:
+            label = u.label or USAGE_LABELS_FR.get(u.type, u.type.value)
+            meters = db.query(Meter).filter(Meter.usage_id == u.id, Meter.is_active.is_(True)).all()
+            kwh = (
+                sum(
+                    db.query(func.sum(MeterReading.value_kwh))
+                    .filter(MeterReading.meter_id == m.id, MeterReading.timestamp >= cutoff)
+                    .scalar()
+                    or 0
+                    for m in meters
+                )
+                if meters
+                else (total_kwh * (u.pct_of_total or 0) / 100 if u.pct_of_total else 0)
+            )
+            ipe_by_usage[label] = round(kwh / surface, 1) if surface > 0 else 0
+            all_usage_labels.add(label)
+
+        type_site = getattr(s, "type_site", "bureau") or "bureau"
+        benchmarks = {"bureau": 170, "hotel": 280, "enseignement": 110, "entrepot": 120, "commerce": 200}
+
+        site_results.append(
+            {
+                "site_id": s.id,
+                "site_name": s.nom,
+                "surface_m2": surface,
+                "ipe_by_usage": ipe_by_usage,
+                "ipe_total": round(total_kwh / surface, 1) if surface > 0 else 0,
+                "benchmark_ademe": benchmarks.get(type_site, 170),
+            }
+        )
+
+    site_results.sort(key=lambda x: x["ipe_total"], reverse=True)
+    return {"usages": sorted(all_usage_labels), "sites": site_results}
+
+
+# ── V2 — Meter readings preview ────────────────────────────────────────
+
+
+def get_meter_readings_preview(db: Session, meter_id: int, days: int = 7) -> dict:
+    """Relevés récents d'un compteur pour mini-graphe inline."""
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+    readings = (
+        db.query(MeterReading)
+        .filter(MeterReading.meter_id == meter_id, MeterReading.timestamp >= cutoff)
+        .order_by(MeterReading.timestamp)
+        .all()
+    )
+    total = sum(r.value_kwh or 0 for r in readings)
+    # Agréger par heure pour réduire le volume
+    hourly = {}
+    for r in readings:
+        key = r.timestamp.replace(minute=0, second=0, microsecond=0).isoformat()
+        hourly[key] = hourly.get(key, 0) + (r.value_kwh or 0)
+
+    return {
+        "meter_id": meter_id,
+        "readings": [{"ts": ts, "kwh": round(kwh, 2)} for ts, kwh in sorted(hourly.items())],
+        "total_kwh": round(total, 1),
+    }
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 
