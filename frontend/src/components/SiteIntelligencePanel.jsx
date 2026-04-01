@@ -27,7 +27,8 @@ export default function SiteIntelligencePanel({ siteId, site }) {
   }, [siteId]);
 
   const handleCreateAction = async (reco) => {
-    if (createdActions[reco.recommendation_code]) return;
+    const status = createdActions[reco.recommendation_code];
+    if (status && status !== 'error') return;
     setCreatingAction(reco.recommendation_code);
     try {
       const topSeverity = data?.anomalies?.[0]?.severity || 'medium';
