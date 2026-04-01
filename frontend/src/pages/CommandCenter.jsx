@@ -155,7 +155,7 @@ export default function CommandCenter() {
 
   // ── Hooks enrichissement Step 5 ──
   const { weekSeries, hourlyProfile, kpisJ1, loading: cmdLoading } = useCommandCenterData();
-  const { trajectoire } = useCockpitData();
+  const { trajectoire, kpis: cockpitKpis } = useCockpitData();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -197,7 +197,9 @@ export default function CommandCenter() {
     const nonConformes = scopedSites.filter((s) => s.statut_conformite === 'non_conforme').length;
     const aRisque = scopedSites.filter((s) => s.statut_conformite === 'a_risque').length;
     const risque = scopedSites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
-    const pctConf = total > 0 ? Math.round((conformes / total) * 100) : 0;
+    // Source unique backend — pas de fallback conformes/total (règle no-calc-in-front)
+    const pctConf =
+      cockpitKpis?.conformiteScore != null ? Math.round(cockpitKpis.conformiteScore) : 0;
     const couvertureDonnees =
       total > 0
         ? Math.round((scopedSites.filter((s) => s.conso_kwh_an > 0).length / total) * 100)
@@ -216,7 +218,7 @@ export default function CommandCenter() {
       compStatus,
       risqueStatus,
     };
-  }, [scopedSites]);
+  }, [scopedSites, cockpitKpis]);
 
   // Top actions — merge compliance + action plan
   const rawTopActions = useMemo(() => {

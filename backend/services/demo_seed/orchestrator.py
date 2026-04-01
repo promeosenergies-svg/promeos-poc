@@ -479,6 +479,55 @@ class SeedOrchestrator:
         except Exception as e:
             result["analytics"] = {"error": str(e)}
 
+        # 15e. Create ActionItems from top KB recommendations
+        try:
+            from models.energy_models import Recommendation as RecoModel
+            from models import ActionItem, Site as SiteModel
+            from models.enums import ActionSourceType, ActionStatus
+            from datetime import date, timedelta
+            from config.emission_factors import get_emission_factor
+
+            top_recos = self.db.query(RecoModel).order_by(RecoModel.ice_score.desc().nullslast()).limit(10).all()
+            kb_actions_created = 0
+            seen_keys = set()
+            for reco in top_recos:
+                meter_obj = self.db.query(Meter).filter(Meter.id == reco.meter_id).first()
+                if not meter_obj:
+                    continue
+                site_obj = self.db.query(SiteModel).filter(SiteModel.id == meter_obj.site_id).first()
+                if not site_obj:
+                    continue
+                key = f"kb-reco:{site_obj.id}:{reco.recommendation_code}"
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                self.db.add(
+                    ActionItem(
+                        org_id=master["org"].id,
+                        site_id=site_obj.id,
+                        source_type=ActionSourceType.INSIGHT,
+                        source_id=f"kb-reco:{reco.id}",
+                        source_key=f"{site_obj.id}:{reco.recommendation_code}",
+                        idempotency_key=key,
+                        title=f"{reco.title} \u2014 {site_obj.nom}",
+                        rationale=reco.title,
+                        priority=3,
+                        severity="medium",
+                        estimated_gain_eur=reco.estimated_savings_eur_year,
+                        co2e_savings_est_kg=round(reco.estimated_savings_kwh_year * get_emission_factor("ELEC"))
+                        if reco.estimated_savings_kwh_year
+                        else None,
+                        due_date=date.today() + timedelta(days=60),
+                        category="energie",
+                        status=ActionStatus.OPEN,
+                    )
+                )
+                kb_actions_created += 1
+            self.db.flush()
+            result["kb_actions"] = {"created": kb_actions_created}
+        except Exception as e:
+            result["kb_actions"] = {"error": str(e)}
+
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
 

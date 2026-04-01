@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getSiteIntelligence } from '../services/api';
+import { getSiteIntelligence, createAction } from '../services/api';
+import { buildKbRecoActionPayload, buildKbRecoActionDeepLink } from '../models/kbRecoActionModel';
 import Badge from '../ui/Badge';
 import { SkeletonCard } from '../ui/Skeleton';
 import EmptyState from '../ui/EmptyState';
@@ -10,9 +11,11 @@ const severityBadge = (sev) => {
   return map[sev] || 'neutral';
 };
 
-export default function SiteIntelligencePanel({ siteId }) {
+export default function SiteIntelligencePanel({ siteId, site }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [createdActions, setCreatedActions] = useState({});
+  const [creatingAction, setCreatingAction] = useState(null);
 
   useEffect(() => {
     if (!siteId) return;
@@ -22,6 +25,31 @@ export default function SiteIntelligencePanel({ siteId }) {
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [siteId]);
+
+  const handleCreateAction = async (reco) => {
+    const status = createdActions[reco.recommendation_code];
+    if (status && status !== 'error') return;
+    setCreatingAction(reco.recommendation_code);
+    try {
+      const topSeverity = data?.anomalies?.[0]?.severity || 'medium';
+      const payload = buildKbRecoActionPayload({
+        orgId: data?.org_id || site?.org_id,
+        siteId,
+        siteName: data?.site_name || site?.nom || `Site ${siteId}`,
+        reco,
+        topSeverity,
+      });
+      const result = await createAction(payload);
+      setCreatedActions((prev) => ({
+        ...prev,
+        [reco.recommendation_code]: result.status || 'created',
+      }));
+    } catch {
+      setCreatedActions((prev) => ({ ...prev, [reco.recommendation_code]: 'error' }));
+    } finally {
+      setCreatingAction(null);
+    }
+  };
 
   if (loading) return <SkeletonCard />;
 
@@ -120,34 +148,67 @@ export default function SiteIntelligencePanel({ siteId }) {
           </div>
         )}
 
-        {/* Top recommendations */}
+        {/* Top recommendations with CTA */}
         {recommendations.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Recommandations
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Recommandations
+              </p>
+              <a
+                href={buildKbRecoActionDeepLink(siteId)}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Voir les actions &rarr;
+              </a>
+            </div>
             <div className="space-y-1.5">
-              {recommendations.slice(0, 5).map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{r.title}</p>
-                    {r.estimated_savings_eur_year > 0 && (
-                      <p className="text-xs text-green-600">
-                        ~{Math.round(r.estimated_savings_eur_year).toLocaleString('fr-FR')}{' '}
-                        \u20ac/an
-                      </p>
+              {recommendations.slice(0, 5).map((r) => {
+                const actionStatus = createdActions[r.recommendation_code];
+                const isCreating = creatingAction === r.recommendation_code;
+
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-3 p-2 rounded-lg border border-gray-100 hover:bg-gray-50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{r.title}</p>
+                      {r.estimated_savings_eur_year > 0 && (
+                        <p className="text-xs text-green-600">
+                          ~{Math.round(r.estimated_savings_eur_year).toLocaleString('fr-FR')}{' '}
+                          {'\u20ac'}/an
+                        </p>
+                      )}
+                    </div>
+                    {r.ice_score != null && (
+                      <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-medium shrink-0">
+                        ICE {r.ice_score.toFixed(2)}
+                      </span>
+                    )}
+                    {actionStatus === 'created' || actionStatus === 'existing' ? (
+                      <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded shrink-0">
+                        {'\u2713'} Action
+                      </span>
+                    ) : actionStatus === 'error' ? (
+                      <button
+                        onClick={() => handleCreateAction(r)}
+                        className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 shrink-0"
+                      >
+                        Reessayer
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleCreateAction(r)}
+                        disabled={isCreating}
+                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 disabled:opacity-50 shrink-0"
+                      >
+                        {isCreating ? 'Creation\u2026' : '+ Action'}
+                      </button>
                     )}
                   </div>
-                  {r.ice_score != null && (
-                    <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-medium">
-                      ICE {r.ice_score.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
