@@ -695,6 +695,40 @@ class SiteAnomaliesResponse(BaseModel):
     assumptions_used: Dict[str, Any]
 
 
+class UnifiedAnomalyItem(BaseModel):
+    """Anomalie unifiée (patrimoine ou analytique KB)."""
+
+    source: str  # "patrimoine" | "analytique"
+    code: str
+    severity: str  # "critical" | "high" | "medium" | "low"
+    title_fr: str
+    detail_fr: Optional[str] = None
+    evidence: Optional[Dict[str, Any]] = None
+    # Patrimoine-specific
+    cta: Optional[Dict[str, str]] = None
+    fix_hint_fr: Optional[str] = None
+    regulatory_impact: Optional[RegulatoryImpact] = None
+    business_impact: Optional[BusinessImpact] = None
+    priority_score: Optional[int] = None
+    # Analytique KB-specific
+    confidence: Optional[float] = None
+    deviation_pct: Optional[float] = None
+    measured_value: Optional[float] = None
+    threshold_value: Optional[float] = None
+
+
+class UnifiedAnomaliesResponse(BaseModel):
+    """Réponse endpoint anomalies-unified : patrimoine + KB combinés."""
+
+    site_id: int
+    anomalies: List[UnifiedAnomalyItem]
+    total: int
+    patrimoine_count: int
+    analytique_count: int
+    completude_score: Optional[int] = None
+    computed_at: str
+
+
 class OrgAnomaliesSiteItem(BaseModel):
     site_id: int
     nom: str

@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Plus, RotateCcw, RefreshCw, Coins } from 'lucide-react';
+import { toUsages } from '../services/routes';
 import { Button, PageShell, ActiveFiltersBar, Explain } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
@@ -784,6 +785,16 @@ export default function ConformitePage() {
           handleUploadProof={handleUploadProof}
         />
       )}
+
+      {/* Lien cross-brique vers Usages */}
+      <div className="flex items-center gap-2 mt-3 print:hidden">
+        <button
+          onClick={() => navigate(toUsages())}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
+        >
+          Voir les UES du site →
+        </button>
+      </div>
 
       {/* Finding Audit Drawer */}
       <FindingAuditDrawer findingId={auditFindingId} onClose={() => setAuditFindingId(null)} />

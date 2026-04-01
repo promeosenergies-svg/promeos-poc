@@ -170,7 +170,7 @@ describe('D - Site360 has compliance score badge', () => {
   });
 
   it('shows grade letter', () => {
-    expect(code).toContain('grade.letter');
+    expect(code).toContain('complianceGrade.letter');
   });
 });
 

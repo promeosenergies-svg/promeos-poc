@@ -14,11 +14,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Zap, TrendingUp, Activity } from 'lucide-react';
+import { Zap, TrendingUp, Activity, Grid3X3 } from 'lucide-react';
 import { Card, CardBody, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { getEmsTimeseries } from '../services/api';
 import { fmtNum } from '../utils/format';
+import CarpetPlot from './CarpetPlot';
 
 function formatDateLabel(isoStr) {
   if (!isoStr) return '';
@@ -43,6 +44,8 @@ export default function TabConsoSite({ siteId }) {
   const [status, setStatus] = useState('loading'); // loading | ready | empty | error
   const [rawSeries, setRawSeries] = useState([]);
   const [meta, setMeta] = useState(null);
+  const [hourlyData, setHourlyData] = useState(null);
+  const [hourlyStatus, setHourlyStatus] = useState('loading');
 
   useEffect(() => {
     if (!siteId) return;
@@ -70,6 +73,38 @@ export default function TabConsoSite({ siteId }) {
       .catch(() => setStatus('error'));
   }, [siteId]);
 
+  useEffect(() => {
+    if (!siteId) return;
+    let stale = false;
+    setHourlyStatus('loading');
+
+    const dateTo = new Date();
+    const dateFrom = new Date();
+    dateFrom.setDate(dateFrom.getDate() - 30);
+
+    getEmsTimeseries({
+      site_ids: String(siteId),
+      date_from: dateFrom.toISOString(),
+      date_to: dateTo.toISOString(),
+      granularity: 'hourly',
+      mode: 'aggregate',
+      metric: 'kwh',
+    })
+      .then((res) => {
+        if (stale) return;
+        const series = res?.series ?? [];
+        const pts = series[0]?.data ?? [];
+        setHourlyData(pts.length > 0 ? pts : null);
+        setHourlyStatus(pts.length > 0 ? 'ready' : 'empty');
+      })
+      .catch(() => {
+        if (!stale) setHourlyStatus('error');
+      });
+    return () => {
+      stale = true;
+    };
+  }, [siteId]);
+
   const chartData = useMemo(() => {
     if (!rawSeries.length) return [];
     // Aggregate series : une seule série
@@ -83,7 +118,7 @@ export default function TabConsoSite({ siteId }) {
   }, [rawSeries]);
 
   const kpis = useMemo(() => {
-    if (!chartData.length) return { totalKwh: 0, peakKw: 0 };
+    if (!chartData.length) return { totalKwh: 0, peakKwhDay: 0 };
     const totalKwh = chartData.reduce((sum, pt) => sum + (pt.value || 0), 0);
     // Pic journalier (kWh/jour max)
     const peakKwhDay = Math.max(...chartData.map((pt) => pt.value || 0));
@@ -185,6 +220,27 @@ export default function TabConsoSite({ siteId }) {
               />
             </AreaChart>
           </ResponsiveContainer>
+        </CardBody>
+      </Card>
+
+      {/* Carpet Plot — heatmap horaire */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center gap-2 mb-4">
+            <Grid3X3 size={16} className="text-indigo-600" />
+            <h3 className="text-sm font-semibold text-gray-700">
+              Carpet plot — profil horaire 30 jours
+            </h3>
+          </div>
+          {hourlyStatus === 'loading' ? (
+            <SkeletonCard lines={4} />
+          ) : hourlyStatus === 'ready' && hourlyData ? (
+            <CarpetPlot data={hourlyData} days={30} />
+          ) : (
+            <div className="text-center py-6 text-gray-400 text-sm">
+              Données horaires non disponibles pour ce site.
+            </div>
+          )}
         </CardBody>
       </Card>
 

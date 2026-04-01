@@ -362,3 +362,5 @@ export const getSiteUsages = (siteId) => cachedGet(`/usages/site/${siteId}`).the
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
+export const getTopRecommendation = (siteId) =>
+  api.get(`/sites/${siteId}/top-recommendation`).then((r) => r.data);

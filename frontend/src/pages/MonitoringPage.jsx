@@ -76,6 +76,7 @@ import {
   toActionsList,
   toPatrimoine,
   toPurchase,
+  toUsages,
 } from '../services/routes';
 import {
   getMonitoringKpis,
@@ -3058,6 +3059,17 @@ export default function MonitoringPage() {
           </div>
         </>
       )}
+
+      {/* Lien cross-brique vers Usages */}
+      <div className="flex items-center gap-2 mt-3 print:hidden">
+        <button
+          onClick={() => navigate(toUsages())}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
+        >
+          <BarChart3 size={14} />
+          Décomposer par usage
+        </button>
+      </div>
 
       {/* ConfidenceDrawer */}
       <ConfidenceDrawer

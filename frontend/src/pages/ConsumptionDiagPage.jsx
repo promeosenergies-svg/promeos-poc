@@ -40,7 +40,7 @@ import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtCo2, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
-import { toConsoExplorer, toMonitoring } from '../services/routes';
+import { toConsoExplorer, toMonitoring, toUsages } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
@@ -943,6 +943,13 @@ export default function ConsumptionDiagPage() {
           >
             <Activity size={14} />
             Performance
+          </Link>
+          <Link
+            to={toUsages()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+          >
+            <BarChart3 size={14} />
+            Usages
           </Link>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
             {seeding ? 'Génération...' : 'Générer conso démo'}

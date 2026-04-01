@@ -153,6 +153,8 @@ export const getPatrimoineSnapshot = (siteId) =>
   api.get(`/patrimoine/sites/${siteId}/snapshot`).then((r) => r.data);
 export const getPatrimoineAnomalies = (siteId) =>
   api.get(`/patrimoine/sites/${siteId}/anomalies`).then((r) => r.data);
+export const getUnifiedAnomalies = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/anomalies-unified`).then((r) => r.data);
 export const getPatrimoineAnomaliesBatch = (siteIds) =>
   api
     .get('/patrimoine/anomalies/batch', { params: { site_ids: siteIds.join(',') } })

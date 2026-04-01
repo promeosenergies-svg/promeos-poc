@@ -197,6 +197,13 @@ export function toPurchaseAssistant(opts = {}) {
   return `/achat-assistant${qs ? '?' + qs : ''}`;
 }
 
+export function toUsages(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  const qs = p.toString();
+  return `/usages${qs ? '?' + qs : ''}`;
+}
+
 /**
  * Usages & Horaires — contexte consommation, profil, anomalies.
  * @param {object} opts

@@ -49,6 +49,7 @@ import { useScope } from '../contexts/ScopeContext';
 import {
   applyKB,
   getPatrimoineAnomalies,
+  getUnifiedAnomalies,
   getSitePaymentInfo,
   getReconciliation,
   applyReconciliationFix,
@@ -56,6 +57,7 @@ import {
   getReconciliationEvidenceCsv,
   getReconciliationEvidenceSummary,
   patrimoineDeliveryPoints,
+  getTopRecommendation,
 } from '../services/api';
 import {
   getStatusBadgeProps,
@@ -75,6 +77,7 @@ import SegmentationQuestionnaireModal from '../components/SegmentationQuestionna
 import TabConsoSite from '../components/TabConsoSite';
 import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
+import { getBenchmark, getIntensityRatio } from '../utils/benchmarks';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
 import SiteIntelligencePanel from '../components/SiteIntelligencePanel';
@@ -112,32 +115,46 @@ function MiniKpi({ icon: Icon, label, value, color }) {
   );
 }
 
-function TabResume({ site, onSegmentationClick }) {
-  const [anomalies, setAnomalies] = useState([]);
-  const [anomLoading, setAnomLoading] = useState(true);
+function TabResume({
+  site,
+  unifiedCount,
+  anomalies = [],
+  anomLoading = false,
+  onSegmentationClick,
+}) {
   const [deliveryPoints, setDeliveryPoints] = useState([]);
   const [dpLoading, setDpLoading] = useState(true);
+  const [topReco, setTopReco] = useState(null);
+  const [showAllAnomalies, setShowAllAnomalies] = useState(false);
 
   useEffect(() => {
+    if (!site?.id) return;
     let stale = false;
-    setAnomLoading(true);
-    getPatrimoineAnomalies(site.id)
+    getTopRecommendation(site.id)
       .then((data) => {
-        if (!stale) setAnomalies(data.anomalies || []);
+        if (!stale) setTopReco(data);
       })
       .catch(() => {
-        if (!stale) setAnomalies([]);
-      })
-      .finally(() => {
-        if (!stale) setAnomLoading(false);
+        if (!stale)
+          setTopReco({
+            available: false,
+            label:
+              site.statut_conformite === 'non_conforme'
+                ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
+                : site.statut_conformite === 'a_risque'
+                  ? 'Planifier la mise en conformité BACS pour ce site'
+                  : 'Maintenir la surveillance et optimiser la consommation',
+            source: 'fallback',
+          });
       });
     return () => {
       stale = true;
     };
-  }, [site.id]);
+  }, [site?.id]);
 
   // B2-4: Fetch delivery points
   useEffect(() => {
+    if (!site?.id) return;
     let stale = false;
     setDpLoading(true);
     patrimoineDeliveryPoints(site.id)
@@ -154,6 +171,12 @@ function TabResume({ site, onSegmentationClick }) {
       stale = true;
     };
   }, [site.id]);
+
+  const hasIntensity = site.surface_m2 > 0 && site.conso_kwh_an > 0;
+  const intensity = hasIntensity ? Math.round(site.conso_kwh_an / site.surface_m2) : 0;
+  const benchmark = hasIntensity ? getBenchmark(site.usage) : 0;
+  const intensityRatio = hasIntensity ? (getIntensityRatio(intensity, site.usage) ?? 0) : 0;
+  const intensityPct = Math.min(intensityRatio / 3, 1) * 100;
 
   return (
     <div className="space-y-4 pt-6">
@@ -208,37 +231,116 @@ function TabResume({ site, onSegmentationClick }) {
                   <p className="text-xs text-gray-500">
                     <Explain term="anomalie">Anomalies</Explain>
                   </p>
-                  <p className="text-lg font-bold text-amber-700">{site.anomalies_count ?? 0}</p>
+                  <p className="text-lg font-bold text-amber-700">
+                    {unifiedCount ?? site.anomalies_count ?? 0}
+                  </p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-xs text-gray-500">Compteurs</p>
-                  <p className="text-lg font-bold text-green-700">{site.nb_compteurs}</p>
+                  <p className="text-xs text-gray-500">Points de livraison</p>
+                  <p className="text-lg font-bold text-green-700">
+                    {deliveryPoints.length || site.nb_compteurs || '—'}
+                  </p>
                 </div>
               </div>
+              {/* EXCEPTION DOCUMENTÉE : calcul intensité = presentation-layer,
+                  division conso/surface pour affichage seul, pas un KPI exporté */}
+              {hasIntensity && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500">
+                    <Explain term="intensite_energetique">Intensité énergétique</Explain>
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-lg font-bold text-gray-800">{intensity}</span>
+                    <span className="text-sm text-gray-500">kWh/m²</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-1.5 rounded bg-gray-200 overflow-hidden">
+                      <div
+                        className={`h-full rounded ${
+                          intensityRatio <= 1
+                            ? 'bg-green-500'
+                            : intensityRatio <= 1.5
+                              ? 'bg-amber-500'
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${intensityPct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {intensityRatio <= 1 ? '✓ ' : ''}
+                    {intensityRatio.toFixed(1)}× benchmark OID ({benchmark} kWh/m²)
+                  </p>
+                </div>
+              )}
             </CardBody>
           </Card>
 
           {/* V96: Payment info */}
           <PaymentInfoCard siteId={site.id} />
 
-          {/* Reco principale */}
+          {/* Reco principale — KB-driven */}
           <Card className="border-l-4 border-l-blue-500">
             <CardBody>
               <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
                 Recommandation principale
               </p>
               <p className="text-sm text-gray-800 font-medium">
-                {site.statut_conformite === 'non_conforme'
-                  ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
-                  : site.statut_conformite === 'a_risque'
-                    ? 'Planifier la mise en conformité BACS pour ce site'
-                    : 'Maintenir la surveillance et optimiser la consommation'}
+                {topReco?.label || 'Chargement...'}
               </p>
+              {topReco?.detail && <p className="text-xs text-gray-500 mt-1">{topReco.detail}</p>}
+              {topReco?.source === 'kb' && (
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  {topReco.ice_score != null && (
+                    <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 font-medium">
+                      ICE {topReco.ice_score.toFixed(2)}
+                    </span>
+                  )}
+                  {topReco.savings_eur > 0 && (
+                    <span>~{Math.round(topReco.savings_eur).toLocaleString('fr-FR')} €/an</span>
+                  )}
+                  <span>Source : KB</span>
+                </div>
+              )}
               <Button size="sm" className="mt-3">
                 Créer une action
               </Button>
+              {topReco?.total_recos > 1 && (
+                <span className="ml-2 text-xs text-gray-400">
+                  + {topReco.total_recos - 1} autres recommandations
+                </span>
+              )}
             </CardBody>
           </Card>
+
+          {/* Accès rapide cross-module */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase">Accès rapide</h3>
+            </div>
+            <CardBody className="py-2">
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  { to: 'usages', icon: BarChart3, label: 'Usages énergétiques' },
+                  { to: 'billing', icon: Zap, label: 'Bill Intelligence' },
+                  { to: 'conformite', icon: ShieldCheck, label: 'Conformité' },
+                  { to: 'achat-assistant', icon: FileText, label: 'Radar contrats' },
+                  { to: 'actions', icon: Wrench, label: 'Actions' },
+                ].map(({ to, icon: Icon, label }) => (
+                  <Link
+                    key={to}
+                    to={`/${to}?site_id=${site.id}`}
+                    className="flex items-center gap-2 px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                  >
+                    <Icon size={14} /> {label}
+                  </Link>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Intelligence KB — colonne gauche pour équilibrer le layout */}
+          <SiteIntelligencePanel siteId={site.id} site={site} />
         </div>
 
         {/* Right column */}
@@ -260,39 +362,68 @@ function TabResume({ site, onSegmentationClick }) {
                 text="Ce site ne présente aucune anomalie détectée."
               />
             ) : (
-              <Table>
-                <Thead>
-                  <tr>
-                    <Th>Type</Th>
-                    <Th>Sévérité</Th>
-                    <Th>Message</Th>
-                    <Th className="text-right">Perte</Th>
-                  </tr>
-                </Thead>
-                <Tbody>
-                  {anomalies.map((a, idx) => (
-                    <Tr key={a.id || idx}>
-                      <Td>
-                        <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
-                          {a.anomaly_type}
-                        </span>
-                      </Td>
-                      <Td>
-                        <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
-                      </Td>
-                      <Td className="text-sm">{a.title_fr}</Td>
-                      <Td className="text-right text-red-600 font-medium">
-                        {fmtEurFull(a.business_impact?.estimated_risk_eur)}
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
+              <>
+                <Table>
+                  <Thead>
+                    <tr>
+                      <Th>Type</Th>
+                      <Th>Sévérité</Th>
+                      <Th>Message</Th>
+                      <Th className="text-right">Impact</Th>
+                    </tr>
+                  </Thead>
+                  <Tbody>
+                    {anomalies.slice(0, showAllAnomalies ? undefined : 8).map((a, idx) => (
+                      <Tr key={a.id || idx}>
+                        <Td>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                a.source === 'analytique'
+                                  ? 'bg-purple-50 text-purple-600'
+                                  : 'bg-blue-50 text-blue-600'
+                              }`}
+                            >
+                              {a.source === 'analytique' ? 'Analyse' : 'Données'}
+                            </span>
+                            <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                              {a.code || a.anomaly_type}
+                            </span>
+                          </div>
+                        </Td>
+                        <Td>
+                          <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
+                        </Td>
+                        <Td className="text-sm">{a.title_fr}</Td>
+                        <Td className="text-right font-medium">
+                          {a.business_impact?.estimated_risk_eur ? (
+                            <span className="text-red-600">
+                              {fmtEurFull(a.business_impact.estimated_risk_eur)}
+                            </span>
+                          ) : a.deviation_pct != null ? (
+                            <span className="text-gray-500">
+                              {a.deviation_pct > 0 ? '+' : ''}
+                              {a.deviation_pct}%
+                            </span>
+                          ) : null}
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+                {anomalies.length > 8 && !showAllAnomalies && (
+                  <div className="px-5 py-2 border-t border-gray-100">
+                    <button
+                      onClick={() => setShowAllAnomalies(true)}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Voir les {anomalies.length} anomalies
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </Card>
-
-          {/* B2-3b: Intelligence KB (archetype, anomalies KB, recommandations) */}
-          <SiteIntelligencePanel siteId={site.id} site={site} />
 
           {/* B2-4: Points de livraison (PDL) */}
           <Card>
@@ -352,41 +483,6 @@ function TabResume({ site, onSegmentationClick }) {
 
           {/* V100: Segmentation profile & recommendations */}
           <SegmentationWidget onSegmentationClick={onSegmentationClick} />
-
-          {/* V-registre: Cross-module links */}
-          <Card>
-            <div className="px-5 py-3 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-800">Accès rapide</h3>
-            </div>
-            <CardBody>
-              <div className="space-y-2">
-                <Link
-                  to={`/billing?site_id=${site.id}`}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  <BadgeEuro size={14} /> Bill Intelligence
-                </Link>
-                <Link
-                  to="/conformite"
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  <ShieldCheck size={14} /> Conformité réglementaire
-                </Link>
-                <Link
-                  to={`/contract-radar?site_id=${site.id}`}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  <FileText size={14} /> Radar contrats
-                </Link>
-                <Link
-                  to="/actions"
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  <Wrench size={14} /> Actions
-                </Link>
-              </div>
-            </CardBody>
-          </Card>
         </div>
       </div>
       {/* /grid-cols-2 */}
@@ -481,10 +577,18 @@ function EvidenceSummaryModal({ site, onClose }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let stale = false;
     getReconciliationEvidenceSummary(site.id)
-      .then(setSummary)
+      .then((data) => {
+        if (!stale) setSummary(data);
+      })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
   }, [site.id]);
 
   const STATUS_LABEL = { ok: 'Conforme', warn: 'Attention', fail: 'À corriger' };
@@ -665,8 +769,10 @@ function TabReconciliation({ site }) {
       const a = document.createElement('a');
       a.href = url;
       a.download = `evidence_site_${site.id}.csv`;
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch {
       /* ignore */
     }
@@ -1343,8 +1449,47 @@ export default function Site360() {
   const [dataQuality, setDataQuality] = useState(null); // D.1
   const [freshness, setFreshness] = useState(null); // D.2
   const [completeness, setCompleteness] = useState(null); // V-registre
+  const [unifiedCount, setUnifiedCount] = useState(null);
+  const [unifiedAnomalies, setUnifiedAnomalies] = useState([]);
+  const [unifiedAnomLoading, setUnifiedAnomLoading] = useState(true);
 
   const site = scopedSites.find((s) => String(s.id) === String(id));
+
+  // Unified anomalies (patrimoine + KB) — single fetch, shared by MiniKpi + TabResume
+  useEffect(() => {
+    if (!site?.id) return;
+    let stale = false;
+    setUnifiedAnomLoading(true);
+    getUnifiedAnomalies(site.id)
+      .then((data) => {
+        if (!stale) {
+          setUnifiedCount(data.total);
+          setUnifiedAnomalies(data.anomalies || []);
+        }
+      })
+      .catch(() => {
+        return getPatrimoineAnomalies(site.id)
+          .then((data) => {
+            if (!stale) {
+              const anoms = (data.anomalies || []).map((a) => ({ ...a, source: 'patrimoine' }));
+              setUnifiedAnomalies(anoms);
+              setUnifiedCount(anoms.length);
+            }
+          })
+          .catch(() => {
+            if (!stale) {
+              setUnifiedAnomalies([]);
+              setUnifiedCount(0);
+            }
+          });
+      })
+      .finally(() => {
+        if (!stale) setUnifiedAnomLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [site?.id]);
 
   // A.2: Fetch site-level unified compliance score
   useEffect(() => {
@@ -1404,24 +1549,43 @@ export default function Site360() {
   }
 
   const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+  const complianceRounded =
+    siteComplianceScore?.score != null ? Math.round(siteComplianceScore.score) : null;
+  const complianceGrade = complianceRounded != null ? getComplianceGrade(complianceRounded) : null;
+
+  const COMPLETENESS_STYLES = {
+    complet: 'bg-green-50 text-green-700',
+    partiel: 'bg-amber-50 text-amber-700',
+  };
 
   return (
     <div className="px-6 py-6 space-y-4">
-      {/* Breadcrumb — Patrimoine > [Portefeuille] > Site */}
-      <nav className="flex items-center gap-1.5 text-sm text-gray-500">
-        <button
-          onClick={() => navigate('/patrimoine')}
-          className="hover:text-gray-700 transition flex items-center gap-1"
+      {/* Breadcrumb — Org > Entité > Portefeuille > Site */}
+      <nav className="flex items-center gap-1.5 text-sm text-gray-500" aria-label="Fil d'Ariane">
+        <Link
+          to="/patrimoine"
+          className="hover:text-blue-600 hover:underline transition flex items-center gap-1"
         >
-          <ArrowLeft size={14} /> Patrimoine
-        </button>
-        {site.portefeuille_nom && (
+          <ArrowLeft size={14} />
+          {site.organisation_nom || 'Patrimoine'}
+        </Link>
+        {site.entite_juridique_nom && (
           <>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-600">{site.portefeuille_nom}</span>
+            <ChevronRight size={12} className="text-gray-300" />
+            <Link to="/patrimoine" className="hover:text-blue-600 hover:underline">
+              {site.entite_juridique_nom}
+            </Link>
           </>
         )}
-        <span className="text-gray-300">/</span>
+        {site.portefeuille_nom && (
+          <>
+            <ChevronRight size={12} className="text-gray-300" />
+            <Link to="/patrimoine" className="hover:text-blue-600 hover:underline">
+              {site.portefeuille_nom}
+            </Link>
+          </>
+        )}
+        <ChevronRight size={12} className="text-gray-300" />
         <span className="font-medium text-gray-800">{site.nom}</span>
       </nav>
 
@@ -1430,23 +1594,23 @@ export default function Site360() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900">{site.nom}</h2>
             <Badge status={badge.status}>{badge.label}</Badge>
-            {siteComplianceScore?.score != null &&
-              (() => {
-                const s = Math.round(siteComplianceScore.score);
-                const grade = getComplianceGrade(s);
-                return (
-                  <span className="flex items-center gap-1.5" data-testid="compliance-score-badge">
-                    <span className={`text-sm font-bold ${getComplianceScoreColor(s)}`}>
-                      {s}/100
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-1.5 py-0.5 rounded ${grade.color} bg-gray-50 border border-gray-200`}
-                    >
-                      {grade.letter}
-                    </span>
-                  </span>
-                );
-              })()}
+            {complianceRounded != null && (
+              <span
+                className="flex items-center gap-1.5"
+                data-testid="compliance-score-badge"
+                title="Score de conformité réglementaire (DT + BACS + APER)"
+              >
+                <span className="text-xs text-gray-500 font-medium">Conformité</span>
+                <span className={`text-sm font-bold ${getComplianceScoreColor(complianceRounded)}`}>
+                  {complianceRounded}/100
+                </span>
+                <span
+                  className={`text-xs font-bold px-1.5 py-0.5 rounded ${complianceGrade.color} bg-gray-50 border border-gray-200`}
+                >
+                  {complianceGrade.letter}
+                </span>
+              </span>
+            )}
             {dataQuality && (
               <DataQualityBadge
                 score={dataQuality.score}
@@ -1459,11 +1623,7 @@ export default function Site360() {
               <span
                 data-testid="completeness-badge"
                 className={`text-xs font-medium px-2 py-0.5 rounded ${
-                  completeness.level === 'complet'
-                    ? 'bg-green-50 text-green-700'
-                    : completeness.level === 'partiel'
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-red-50 text-red-700'
+                  COMPLETENESS_STYLES[completeness.level] || 'bg-red-50 text-red-700'
                 }`}
                 title={
                   completeness.missing?.length
@@ -1471,7 +1631,7 @@ export default function Site360() {
                     : 'Registre complet'
                 }
               >
-                {completeness.score}% complet
+                Registre {completeness.score}% complet
               </span>
             )}
             <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
@@ -1563,15 +1723,15 @@ export default function Site360() {
         <MiniKpi
           icon={AlertTriangle}
           label="Anomalies"
-          value={`${site.anomalies_count ?? 0}`}
+          value={`${unifiedCount ?? site.anomalies_count ?? 0}`}
           color="text-amber-600"
         />
         <MiniKpi
           icon={BarChart3}
           label="Intensité"
           value={
-            site.surface_m2 > 0
-              ? `${Math.round((site.conso_kwh_an || 0) / site.surface_m2)} kWh/m²`
+            site.surface_m2 > 0 && site.conso_kwh_an > 0
+              ? `${Math.round(site.conso_kwh_an / site.surface_m2)} kWh/m²`
               : '—'
           }
           color="text-indigo-600"
@@ -1583,7 +1743,13 @@ export default function Site360() {
 
       {/* Tab content */}
       {activeTab === 'resume' && (
-        <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />
+        <TabResume
+          site={site}
+          unifiedCount={unifiedCount}
+          anomalies={unifiedAnomalies}
+          anomLoading={unifiedAnomLoading}
+          onSegmentationClick={() => setShowSegModal(true)}
+        />
       )}
       {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}
       {activeTab === 'factures' && (

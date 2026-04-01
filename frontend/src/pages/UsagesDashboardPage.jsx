@@ -43,6 +43,7 @@ const dataSourceLabel = (src) =>
   ({
     mesure_directe: 'Mesuré',
     estimation_prorata: 'Estimé',
+    estimation_deterministe: 'Estimé',
     baseline_stockee: 'Baseline',
     import_csv: 'Import',
     gtb_api: 'GTB',
@@ -56,6 +57,7 @@ const dataSourceColor = (src) =>
   ({
     mesure_directe: '#166534',
     estimation_prorata: '#92400e',
+    estimation_deterministe: '#92400e',
     baseline_stockee: '#7c3aed',
     import_csv: '#1e40af',
     gtb_api: '#6d28d9',
@@ -408,6 +410,39 @@ function UesTable({ ues }) {
               </td>
             </tr>
           ))}
+          {/* Ligne résiduelle "Non affecté" si somme UES < 100% */}
+          {(() => {
+            const totalPct = ues.reduce((s, u) => s + (u.pct_of_total || 0), 0);
+            const residualPct = 100 - totalPct;
+            if (residualPct > 1) {
+              const totalKwh =
+                totalPct > 0 ? ues.reduce((s, u) => s + (u.kwh || 0), 0) / (totalPct / 100) : 0;
+              const residualKwh = (totalKwh * residualPct) / 100;
+              return (
+                <tr style={{ borderBottom: '1px solid #f3f4f6', color: '#9ca3af' }}>
+                  <td style={{ padding: '8px 6px', fontStyle: 'italic' }}>Non affecté</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(residualKwh)}</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(residualPct, 1)}%</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'right' }}>—</td>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        background: '#f3f4f6',
+                        color: '#6b7280',
+                      }}
+                    >
+                      Résiduel
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 6px', textAlign: 'center' }}>—</td>
+                </tr>
+              );
+            }
+            return null;
+          })()}
         </tbody>
       </table>
       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 8, fontStyle: 'italic' }}>
@@ -1078,7 +1113,7 @@ export default function UsagesDashboardPage() {
         />
         <KpiCard label="Dérives actives" value={summary.active_drifts_count} />
         <KpiCard
-          label="Prix réf."
+          label="Prix moyen"
           value={fmt(billing_links?.price_ref?.value * 100, 1)}
           unit="c€/kWh"
           sub={priceSourceLabel(summary.price_source)}
