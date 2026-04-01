@@ -173,6 +173,58 @@ class TestKbActionBridgeIdempotence:
         assert d2["source_type"] == "insight"
 
 
+class TestKbRecoStatusUpdate:
+    """Creation d'action KB marque la reco comme IN_PROGRESS."""
+
+    def test_reco_status_updated_to_in_progress(self, client, db):
+        from models.energy_models import Recommendation, RecommendationStatus, Meter
+
+        org, site = _seed_org_site(db)
+        # Seed a meter + recommendation
+        meter = Meter(site_id=site.id, meter_id="PDL-TEST-001", name="Meter Test")
+        db.add(meter)
+        db.flush()
+        reco = Recommendation(
+            meter_id=meter.id,
+            recommendation_code="RECO-TEST-STATUS",
+            title="Test reco status",
+            status=RecommendationStatus.PENDING,
+        )
+        db.add(reco)
+        db.commit()
+
+        payload = _kb_action_payload(
+            org.id,
+            site.id,
+            reco_id=reco.id,
+            reco_code="RECO-TEST-STATUS",
+        )
+        client.post("/api/actions", json=payload)
+        db.refresh(reco)
+        assert reco.status == RecommendationStatus.IN_PROGRESS
+
+    def test_reco_already_in_progress_not_changed(self, client, db):
+        from models.energy_models import Recommendation, RecommendationStatus, Meter
+
+        org, site = _seed_org_site(db)
+        meter = Meter(site_id=site.id, meter_id="PDL-TEST-002", name="Meter Test 2")
+        db.add(meter)
+        db.flush()
+        reco = Recommendation(
+            meter_id=meter.id,
+            recommendation_code="RECO-TEST-NOOP",
+            title="Test reco noop",
+            status=RecommendationStatus.IN_PROGRESS,
+        )
+        db.add(reco)
+        db.commit()
+
+        payload = _kb_action_payload(org.id, site.id, reco_id=reco.id, reco_code="RECO-TEST-NOOP")
+        client.post("/api/actions", json=payload)
+        db.refresh(reco)
+        assert reco.status == RecommendationStatus.IN_PROGRESS
+
+
 class TestKbActionBridgeSourceGuard:
     """Le facteur CO₂ est bien 0.052 (ADEME), pas 0.0569 (TURPE)."""
 
