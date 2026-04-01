@@ -96,8 +96,8 @@ def get_site_intensity(
         kwh = summary.get("value_kwh", 0) or 0
         if kwh <= 0:
             continue
-        # Skip estimated fallback — it uses total site kWh, not per-vector
-        if summary.get("source_used") == "estimated":
+        # Skip billed/estimated — they use total site kWh, not per-vector
+        if summary.get("source_used") in ("billed", "estimated"):
             continue
 
         coeff = EP_COEFFICIENTS.get(vector, 1.0)
