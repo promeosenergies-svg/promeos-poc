@@ -97,24 +97,82 @@ const h2Style = {
 
 // ── Components ───────────────────────────────────────────────────────────
 
-function ReadinessBadge({ score, level }) {
+const READINESS_LABELS = {
+  usages_declared: 'Usages déclarés',
+  sub_metering_coverage: 'Couverture comptage',
+  data_quality: 'Qualité données',
+  data_depth: 'Ancienneté données',
+};
+
+function ReadinessBadge({ score, level, details, recommendations }) {
   const badge = levelBadge(level);
+  const [showTooltip, setShowTooltip] = useState(false);
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '6px 14px',
-        borderRadius: 8,
-        background: badge.bg,
-        color: badge.color,
-        fontWeight: 600,
-        fontSize: 14,
-      }}
-    >
-      <span style={{ fontSize: 18, fontWeight: 700 }}>{score}/100</span>
-      <span>{badge.label}</span>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 14px',
+          borderRadius: 8,
+          background: badge.bg,
+          color: badge.color,
+          fontWeight: 600,
+          fontSize: 14,
+          cursor: details ? 'help' : 'default',
+        }}
+      >
+        <span style={{ fontSize: 18, fontWeight: 700 }}>{score}/100</span>
+        <span>{badge.label}</span>
+      </div>
+      {showTooltip && details && (
+        <div
+          style={{
+            position: 'absolute',
+            zIndex: 50,
+            top: '100%',
+            right: 0,
+            marginTop: 8,
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            padding: 16,
+            width: 300,
+            fontSize: 13,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Décomposition du score</div>
+          {Object.entries(details).map(([key, d]) => (
+            <div
+              key={key}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '4px 0',
+                borderBottom: '1px solid #f3f4f6',
+              }}
+            >
+              <span style={{ color: '#6b7280' }}>{READINESS_LABELS[key] || key}</span>
+              <span style={{ fontWeight: 600 }}>
+                {d.score}/{d.max}
+              </span>
+            </div>
+          ))}
+          {recommendations && recommendations.length > 0 && (
+            <div style={{ marginTop: 10, fontSize: 11, color: '#92400e' }}>
+              {recommendations.map((r, i) => (
+                <p key={i} style={{ padding: '2px 0' }}>
+                  ▸ {r}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -289,6 +347,7 @@ function BaselineTable({ baselines }) {
             <th style={{ padding: '8px 6px', textAlign: 'right' }}>Écart</th>
             <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE base</th>
             <th style={{ padding: '8px 6px', textAlign: 'right' }}>IPE actuel</th>
+            <th style={{ padding: '8px 6px', textAlign: 'right' }}>Obj. DT 2030</th>
             <th style={{ padding: '8px 6px', textAlign: 'center' }}>Tendance</th>
             <th style={{ padding: '8px 6px', textAlign: 'center' }}>Source</th>
           </tr>
@@ -330,10 +389,35 @@ function BaselineTable({ baselines }) {
                 {b.ecart_kwh != null ? `${b.ecart_kwh > 0 ? '+' : ''}${fmt(b.ecart_kwh)}` : '—'}
               </td>
               <td style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
-                {b.ipe_baseline ? `${fmt(b.ipe_baseline, 1)}` : '—'}
+                {b.ipe_baseline != null ? `${fmt(b.ipe_baseline, 1)}` : '—'}
               </td>
               <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 500 }}>
-                {b.ipe_current ? `${fmt(b.ipe_current, 1)}` : '—'}
+                {b.ipe_current != null ? `${fmt(b.ipe_current, 1)}` : '—'}
+              </td>
+              <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                {b.dt_target_kwh_m2 ? (
+                  <span>
+                    <span
+                      style={{
+                        color:
+                          b.ipe_current != null && b.ipe_current > b.dt_target_kwh_m2
+                            ? '#dc2626'
+                            : '#16a34a',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {fmt(b.dt_target_kwh_m2, 0)}
+                    </span>
+                    {b.dt_gap_pct != null && (
+                      <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 4 }}>
+                        ({b.dt_gap_pct > 0 ? '+' : ''}
+                        {fmt(b.dt_gap_pct, 0)}%)
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span style={{ color: '#d1d5db' }}>—</span>
+                )}
               </td>
               <td style={{ padding: '8px 6px', textAlign: 'center' }}>
                 <TrendBadge trend={b.trend} ecart_pct={b.ecart_pct} />
@@ -1074,7 +1158,12 @@ export default function UsagesDashboardPage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <ReadinessBadge score={readiness.score} level={readiness.level} />
+          <ReadinessBadge
+            score={readiness.score}
+            level={readiness.level}
+            details={readiness.details}
+            recommendations={readiness.recommendations}
+          />
           <button
             onClick={handleExport}
             className="print-hide"

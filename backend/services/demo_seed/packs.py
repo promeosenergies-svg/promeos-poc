@@ -148,7 +148,7 @@ PACKS = {
                 "tertiaire_area_m2": 3500,
                 "employees": 120,
                 "psub_kva": 200,
-                "annual_kwh": 800000,
+                "annual_kwh": 595000,  # ADEME bureau 170 kWh/m² × 3500 m²
                 "cvc_kw": 300,
                 "parking_m2": 1200,
                 "roof_m2": 800,
@@ -180,7 +180,7 @@ PACKS = {
                 "tertiaire_area_m2": 1200,
                 "employees": 35,
                 "psub_kva": 80,
-                "annual_kwh": 350000,
+                "annual_kwh": 204000,  # ADEME bureau 170 kWh/m² × 1200 m²
                 "cvc_kw": 50,
                 "parking_m2": 400,
                 "roof_m2": 300,
@@ -210,7 +210,7 @@ PACKS = {
                 "tertiaire_area_m2": None,
                 "employees": 85,
                 "psub_kva": 400,
-                "annual_kwh": 2500000,
+                "annual_kwh": 720000,  # ADEME entrepôt 120 kWh/m² × 6000 m²
                 "cvc_kw": 150,
                 "parking_m2": 2000,
                 "roof_m2": 3000,
@@ -241,7 +241,7 @@ PACKS = {
                 "tertiaire_area_m2": 4000,
                 "employees": 60,
                 "psub_kva": 250,
-                "annual_kwh": 1200000,
+                "annual_kwh": 1120000,  # ADEME hôtel 280 kWh/m² × 4000 m²
                 "cvc_kw": 280,
                 "parking_m2": 800,
                 "roof_m2": 600,
@@ -272,7 +272,7 @@ PACKS = {
                 "tertiaire_area_m2": 2800,
                 "employees": 45,
                 "psub_kva": 150,
-                "annual_kwh": 600000,
+                "annual_kwh": 308000,  # ADEME enseignement 110 kWh/m² × 2800 m²
                 "cvc_kw": 120,
                 "parking_m2": 600,
                 "roof_m2": 1200,
@@ -283,6 +283,10 @@ PACKS = {
                     {"nom": "Gymnase", "surface_m2": 800, "annee": 2015, "cvc_kw": 40},
                 ],
                 "gas": False,
+                "sub_meters": [
+                    {"suffix": "CHAUFFAGE", "name": "École — Chauffage", "pct": 0.45},
+                    {"suffix": "ECLAIRAGE", "name": "École — Éclairage", "pct": 0.20},
+                ],
             },
         ],
         # Billing: explicit contracts per site
@@ -456,7 +460,7 @@ PACKS = {
                 "tertiaire_area_m2": 2200,
                 "employees": 65,
                 "psub_kva": 120,
-                "annual_kwh": 500000,
+                "annual_kwh": 374000,  # ADEME bureau 170 kWh/m² × 2200 m²
                 "cvc_kw": 180,
                 "parking_m2": 600,
                 "roof_m2": 500,
@@ -482,7 +486,7 @@ PACKS = {
                 "tertiaire_area_m2": 800,
                 "employees": 18,
                 "psub_kva": 50,
-                "annual_kwh": 180000,
+                "annual_kwh": 136000,  # ADEME bureau 170 kWh/m² × 800 m²
                 "cvc_kw": 40,
                 "parking_m2": 200,
                 "roof_m2": 200,
@@ -508,7 +512,7 @@ PACKS = {
                 "tertiaire_area_m2": None,
                 "employees": 25,
                 "psub_kva": 300,
-                "annual_kwh": 1200000,
+                "annual_kwh": 540000,  # ADEME entrepôt 120 kWh/m² × 4500 m²
                 "cvc_kw": 80,
                 "parking_m2": 1500,
                 "roof_m2": 2500,

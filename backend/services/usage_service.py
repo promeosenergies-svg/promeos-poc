@@ -32,6 +32,19 @@ from models.energy_models import FrequencyType
 from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
 
+# Seuil UES ISO 50001 §6.3 : usage > 10% conso totale = significatif
+UES_THRESHOLD_PCT = 10.0
+
+
+def _is_ues(usage_kwh: float, total_kwh: float, manual_override: bool = False) -> bool:
+    """Usage Energetique Significatif si > 10% conso totale OU override manuel."""
+    if manual_override:
+        return True
+    if total_kwh <= 0 or usage_kwh <= 0:
+        return False
+    return (usage_kwh / total_kwh) * 100 >= UES_THRESHOLD_PCT
+
+
 # ── Usage Readiness Score ─────────────────────────────────────────────────
 
 
@@ -332,14 +345,14 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
                 "family": USAGE_FAMILY_MAP.get(t, UsageFamily.AUXILIAIRES),
                 "kwh": 0,
                 "surface_m2": 0,
-                "is_significant": False,
+                "is_significant_manual": False,
                 "has_measured": False,
                 "usage_ids": [],
             }
         row = by_type[t]
         row["kwh"] += kwh
         row["surface_m2"] = max(row["surface_m2"], _site_surface)  # surface site, pas cumul
-        row["is_significant"] = row["is_significant"] or u.is_significant
+        row["is_significant_manual"] = row.get("is_significant_manual", False) or u.is_significant
         row["has_measured"] = row["has_measured"] or is_measured
         row["usage_ids"].append(uid)
 
@@ -377,7 +390,7 @@ def get_top_ues(db: Session, site_id: int, limit: int = 5) -> list[dict]:
                 "family": row["family"].value,
                 "kwh": round(kwh, 1),
                 "pct_of_total": round(kwh / total_kwh * 100, 1) if total_kwh > 0 else 0,
-                "is_significant": row["is_significant"],
+                "is_significant": _is_ues(kwh, total_kwh, row.get("is_significant_manual", False)),
                 "data_source": data_source,
                 "has_drift": len(drift_insights) > 0,
                 "drift_pct": _extract_drift_pct(drift_insights[0]) if drift_insights else None,
@@ -612,6 +625,40 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
 
     _cached_site_surface = _resolve_site_surface(db, site_id)
 
+    # Total kWh site (periode actuelle) pour seuil UES dynamique
+    principals = (
+        db.query(Meter)
+        .filter(Meter.site_id == site_id, Meter.is_active.is_(True), Meter.parent_meter_id.is_(None))
+        .all()
+    )
+    _total_site_kwh = sum(
+        db.query(func.sum(MeterReading.value_kwh))
+        .filter(MeterReading.meter_id == m.id, MeterReading.timestamp >= current_start)
+        .scalar()
+        or 0
+        for m in principals
+    )
+
+    # Cible DT 2030 : baseline 2020 × 0.60 (-40%)
+    from models.consumption_target import ConsumptionTarget
+
+    dt_baseline_2020 = (
+        db.query(ConsumptionTarget)
+        .filter(
+            ConsumptionTarget.site_id == site_id,
+            ConsumptionTarget.year == 2020,
+            ConsumptionTarget.period == "yearly",
+            ConsumptionTarget.energy_type == "electricity",
+        )
+        .first()
+    )
+    dt_target_2030_kwh = (
+        dt_baseline_2020.target_kwh * 0.60 if dt_baseline_2020 and dt_baseline_2020.target_kwh else None
+    )
+    dt_target_2030_kwh_m2 = (
+        round(dt_target_2030_kwh / _cached_site_surface, 1) if dt_target_2030_kwh and _cached_site_surface > 0 else None
+    )
+
     for u in usages:
         # Sous-compteurs lies
         meters = db.query(Meter).filter(Meter.usage_id == u.id, Meter.is_active.is_(True)).all()
@@ -778,7 +825,7 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                 "ecart_pct": ecart_pct,
                 "trend": trend,
                 "surface_m2": site_surface,
-                "is_significant": u.is_significant,
+                "is_significant": _is_ues(kwh_current, _total_site_kwh, u.is_significant),
                 "data_source": "estimation_deterministe"
                 if is_estimated
                 else (
@@ -787,6 +834,8 @@ def compute_baselines(db: Session, site_id: int) -> list[dict]:
                     else ("baseline_stockee" if from_stored else "estimation_prorata")
                 ),
                 "actions_completed": len(actions),
+                "dt_target_kwh_m2": dt_target_2030_kwh_m2,
+                "dt_gap_pct": None,  # DT compliance = site-level, pas per-usage
             }
         )
 
