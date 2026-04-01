@@ -245,10 +245,11 @@ const Cockpit = () => {
       .map((pf) => {
         const sites = scopedSites.filter((s) => ((s.id - 1) % 5) + 1 === pf.id);
         const count = sites.length;
-        const conformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
+        const nbConformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
         const risque = sites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
-        const pctConf = count > 0 ? Math.round((conformes / count) * 100) : 0;
-        return { ...pf, nb_sites: count, conformes, risque, pctConf };
+        // Comptage UI pour onglets portefeuille (pas un KPI réglementaire)
+        const pctConformesPtf = count > 0 ? Math.round((nbConformes / count) * 100) : 0;
+        return { ...pf, nb_sites: count, conformes: nbConformes, risque, pctConf: pctConformesPtf };
       })
       .filter((pf) => pf.nb_sites > 0);
   }, [portefeuilles, scopedSites]);

@@ -71,7 +71,7 @@ describe('Source guards — no business calc in frontend', () => {
     for (const f of files) {
       const content = readFileSync(f, 'utf-8');
       if (
-        /conformes\s*\/\s*total\s*\)\s*\*\s*100/.test(content) ||
+        /\bconformes\s*\/\s*(?:total|count)\s*\)\s*\*\s*100/.test(content) ||
         /pctConf\s*[:=]\s*(?:Math\.round|parseInt)\s*\(\s*\(?\s*conformes/.test(content)
       ) {
         violations.push(f.replace(SRC_DIR + '\\', '').replace(SRC_DIR + '/', ''));
