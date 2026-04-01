@@ -230,6 +230,12 @@ class SeedOrchestrator:
         targets = generate_targets(self.db, master["sites"], rng, site_meta=site_meta)
         result["targets"] = targets
 
+        # 4d-bis. DT baseline 2020-2023 (Decret Tertiaire reference period)
+        from .gen_dt_baseline import generate_dt_baseline
+
+        dt_baseline = generate_dt_baseline(self.db, master["sites"], rng, site_meta=site_meta)
+        result["dt_baseline"] = dt_baseline
+
         # 4e. EMS Explorer pre-built views + collections (V87)
         from .gen_ems_views import generate_ems_views
 
