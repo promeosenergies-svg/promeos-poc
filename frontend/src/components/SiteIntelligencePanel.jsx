@@ -113,7 +113,10 @@ export default function SiteIntelligencePanel({ siteId, site }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div
+      className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+      data-testid="intelligence-panel"
+    >
       {/* Header */}
       <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -243,7 +246,15 @@ export default function SiteIntelligencePanel({ siteId, site }) {
                       )}
                     </div>
                     {r.ice_score != null && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-medium shrink-0">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${
+                          r.ice_score >= 0.8
+                            ? 'bg-green-50 text-green-700'
+                            : r.ice_score >= 0.5
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-amber-50 text-amber-700'
+                        }`}
+                      >
                         ICE {r.ice_score.toFixed(2)}
                       </span>
                     )}

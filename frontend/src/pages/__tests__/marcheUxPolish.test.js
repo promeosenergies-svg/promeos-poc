@@ -72,7 +72,14 @@ describe('C. Group headers — no orange dots', () => {
   it('SectionHeader does NOT render a dot span', () => {
     // Old pattern: <span className={`w-1.5 h-1.5 rounded-full ${dotClass}...`} />
     expect(navPanel).not.toMatch(/dotClass/);
-    expect(navPanel).not.toMatch(/w-1\.5 h-1\.5 rounded-full/);
+    // Note: w-1.5 h-1.5 rounded-full is now used for the contextual site status dot,
+    // but SectionHeader itself must not use it (check SectionHeader function block only)
+    const shStart = navPanel.indexOf('function SectionHeader');
+    const shEnd = navPanel.indexOf('\n}', shStart + 10);
+    if (shStart >= 0 && shEnd >= 0) {
+      const shBlock = navPanel.slice(shStart, shEnd);
+      expect(shBlock).not.toMatch(/w-1\.5 h-1\.5 rounded-full/);
+    }
   });
 
   it('SectionHeader has static label (always visible, no toggle)', () => {

@@ -459,8 +459,9 @@ export const NAV_SECTIONS = [
       {
         to: '/patrimoine',
         icon: MapPin,
-        label: 'Sites & Bâtiments',
-        keywords: ['sites', 'batiments', 'immobilier', 'patrimoine'],
+        label: 'Registre patrimonial',
+        hint: 'Cliquez sur un site pour voir sa fiche',
+        keywords: ['sites', 'batiments', 'immobilier', 'patrimoine', 'registre'],
       },
       {
         to: '/conformite',
@@ -667,8 +668,9 @@ export const NAV_MAIN_SECTIONS = [
       {
         to: '/patrimoine',
         icon: MapPin,
-        label: 'Sites & Bâtiments',
-        keywords: ['sites', 'batiments', 'immobilier', 'patrimoine'],
+        label: 'Registre patrimonial',
+        hint: 'Cliquez sur un site pour voir sa fiche',
+        keywords: ['sites', 'batiments', 'immobilier', 'patrimoine', 'registre'],
       },
       {
         to: '/conformite',

@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
+from services.billing_service import get_reference_price
 from models import Site, Meter
 from models.energy_models import UsageProfile, Anomaly, Recommendation, RecommendationStatus
 from models.kb_models import KBArchetype
@@ -43,6 +45,14 @@ def _deduplicate_recommendations(recos: list[dict]) -> list[dict]:
     return result
 
 
+def _fill_missing_eur_savings(recos: list[dict], price_eur_kwh: float = DEFAULT_PRICE_ELEC_EUR_KWH) -> None:
+    """Estimate EUR savings from kWh when EUR is missing or zero.
+    price_eur_kwh should be the site's reference price (all-in B2B tariff)."""
+    for r in recos:
+        if not r.get("estimated_savings_eur_year") and r.get("estimated_savings_kwh_year"):
+            r["estimated_savings_eur_year"] = round(r["estimated_savings_kwh_year"] * price_eur_kwh)
+
+
 @router.get("/{site_id}/intelligence")
 def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
     """Return full KB intelligence for a site: archetype, anomalies, recommendations, summary."""
@@ -64,6 +74,8 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
             "summary": _empty_summary(),
             "status": "no_meters",
         }
+
+    site_price, _price_src = get_reference_price(db, site_id)
 
     meter_ids = [m.id for m in meters]
 
@@ -154,6 +166,8 @@ def get_site_intelligence(site_id: int, db: Session = Depends(get_db)):
     ]
     recos_data = _deduplicate_recommendations(recos_raw)
 
+    _fill_missing_eur_savings(recos_data, site_price)
+
     # --- Summary ---
     severity_counts = {}
     for a in anomalies:
@@ -197,6 +211,7 @@ def get_top_recommendation(site_id: int, db: Session = Depends(get_db)):
         if not meters:
             return _fallback_reco("Aucun compteur associé", "Ajoutez des compteurs pour activer l'analyse KB.")
 
+        site_price, _ = get_reference_price(db, site_id)
         meter_ids = [m.id for m in meters]
         recos = (
             db.query(Recommendation)
@@ -221,6 +236,8 @@ def get_top_recommendation(site_id: int, db: Session = Depends(get_db)):
         ]
         deduped = _deduplicate_recommendations(recos_data)
 
+        _fill_missing_eur_savings(deduped, site_price)
+
         if not deduped:
             return _fallback_reco(
                 "Aucune recommandation disponible",
@@ -228,6 +245,7 @@ def get_top_recommendation(site_id: int, db: Session = Depends(get_db)):
             )
 
         top = deduped[0]
+        total_savings_eur = sum(r.get("estimated_savings_eur_year") or 0 for r in deduped)
         return {
             "available": True,
             "code": top.get("recommendation_code"),
@@ -236,6 +254,7 @@ def get_top_recommendation(site_id: int, db: Session = Depends(get_db)):
             "ice_score": top.get("ice_score"),
             "savings_eur": top.get("estimated_savings_eur_year"),
             "savings_kwh": top.get("estimated_savings_kwh_year"),
+            "total_savings_eur": round(total_savings_eur),
             "source": "kb",
             "total_recos": len(deduped),
         }
