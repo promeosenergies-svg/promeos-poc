@@ -16,6 +16,7 @@ export default function SiteIntelligencePanel({ siteId, site }) {
   const [loading, setLoading] = useState(true);
   const [createdActions, setCreatedActions] = useState({});
   const [creatingAction, setCreatingAction] = useState(null);
+  const [bulkInProgress, setBulkInProgress] = useState(false);
 
   useEffect(() => {
     if (!siteId) return;
@@ -49,6 +50,20 @@ export default function SiteIntelligencePanel({ siteId, site }) {
     } finally {
       setCreatingAction(null);
     }
+  };
+
+  const handlePlanAll = async () => {
+    if (bulkInProgress) return;
+    const pending = recommendations.filter((r) => {
+      const st = createdActions[r.recommendation_code];
+      return !st || st === 'error';
+    });
+    if (pending.length === 0) return;
+    setBulkInProgress(true);
+    for (const reco of pending) {
+      await handleCreateAction(reco);
+    }
+    setBulkInProgress(false);
   };
 
   if (loading) return <SkeletonCard />;
@@ -155,12 +170,29 @@ export default function SiteIntelligencePanel({ siteId, site }) {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Recommandations
               </p>
-              <a
-                href={buildKbRecoActionDeepLink(siteId)}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                Voir les actions &rarr;
-              </a>
+              <div className="flex items-center gap-3">
+                {recommendations.length > 1 && (
+                  <button
+                    onClick={handlePlanAll}
+                    disabled={
+                      bulkInProgress ||
+                      recommendations.every((r) => {
+                        const st = createdActions[r.recommendation_code];
+                        return st && st !== 'error';
+                      })
+                    }
+                    className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 disabled:opacity-50"
+                  >
+                    {bulkInProgress ? 'Planification\u2026' : 'Planifier tout'}
+                  </button>
+                )}
+                <a
+                  href={buildKbRecoActionDeepLink(siteId)}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Voir les actions &rarr;
+                </a>
+              </div>
             </div>
             <div className="space-y-1.5">
               {recommendations.slice(0, 5).map((r) => {
