@@ -420,6 +420,10 @@ export const getEnergyIntensity = (siteId, year = null) =>
     params: { site_id: siteId, year: year || undefined },
   }).then((r) => r.data);
 
+// ── Coût par période tarifaire ──
+export const getCostByPeriod = (siteId, months = 12) =>
+  cachedGet(`/usages/cost-by-period/${siteId}`, { params: { months } }).then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
