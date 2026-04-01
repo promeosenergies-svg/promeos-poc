@@ -27,8 +27,8 @@ describe('Phase 3 — TabResume refonte', () => {
     expect(SITE360).toMatch(/entite_juridique_nom/);
   });
 
-  test('Intensité calculée avec commentaire EXCEPTION DOCUMENTÉE', () => {
-    expect(SITE360).toContain('EXCEPTION DOCUMENTÉE');
+  test('Intensité utilise backend #146 avec fallback statique', () => {
+    expect(SITE360).toContain('kWh_m2_final');
     expect(SITE360).toMatch(/conso_kwh_an.*surface_m2/);
   });
 

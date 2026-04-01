@@ -46,10 +46,10 @@ def _deduplicate_recommendations(recos: list[dict]) -> list[dict]:
 
 
 def _fill_missing_eur_savings(recos: list[dict], price_eur_kwh: float = DEFAULT_PRICE_ELEC_EUR_KWH) -> None:
-    """Estimate EUR savings from kWh when EUR is missing or zero.
+    """Estimate EUR savings from kWh when EUR is missing (None).
     price_eur_kwh should be the site's reference price (all-in B2B tariff)."""
     for r in recos:
-        if not r.get("estimated_savings_eur_year") and r.get("estimated_savings_kwh_year"):
+        if r.get("estimated_savings_eur_year") is None and r.get("estimated_savings_kwh_year"):
             r["estimated_savings_eur_year"] = round(r["estimated_savings_kwh_year"] * price_eur_kwh)
 
 

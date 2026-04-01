@@ -1620,6 +1620,7 @@ export default function Site360() {
   // Top recommendation (for header KPI card + TabResume)
   useEffect(() => {
     if (!site?.id) return;
+    setTopReco(null);
     let stale = false;
     getTopRecommendation(site.id)
       .then((data) => {
