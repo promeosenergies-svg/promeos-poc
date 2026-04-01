@@ -45,6 +45,20 @@ _SEASONAL_GAS = {
 }
 
 
+def site_has_gas(db, site) -> bool:
+    """Check if site has a gas meter (shared by gen_targets + gen_dt_baseline)."""
+    try:
+        from models import Meter
+        from models.energy_models import EnergyVector
+
+        return (
+            db.query(Meter).filter(Meter.site_id == site.id, Meter.energy_vector == EnergyVector.GAS).first()
+            is not None
+        )
+    except Exception:
+        return False
+
+
 def _get_weights(type_site: str, energy_type: str) -> list:
     """Return normalized 12-month weight list (sum=12.0)."""
     if energy_type == "gas":
@@ -74,21 +88,7 @@ def generate_targets(db, sites: list, rng: random.Random, site_meta: dict = None
         surface_m2 = meta.get("surface_m2", 0) or getattr(site, "surface_m2", 0) or 0
 
         # Determine energy types for this site
-        has_gas = getattr(site, "_has_gas", False)
-        if not has_gas:
-            # Check from gen_master metadata
-            from models import Meter
-            from models.energy_models import EnergyVector
-
-            gas_meter = (
-                db.query(Meter)
-                .filter(
-                    Meter.site_id == site.id,
-                    Meter.energy_vector == EnergyVector.GAS,
-                )
-                .first()
-            )
-            has_gas = gas_meter is not None
+        has_gas = getattr(site, "_has_gas", False) or site_has_gas(db, site)
 
         energy_types = ["electricity"]
         if has_gas:
