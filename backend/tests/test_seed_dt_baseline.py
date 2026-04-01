@@ -133,7 +133,7 @@ class TestDTBaseline:
     def test_deterministic_rng_42(self, db):
         site = _seed_site(db)
         meta = {site.id: {"type_site": "bureau", "surface_m2": 3500}}
-        r1 = generate_dt_baseline(db, [site], random.Random(42), site_meta=meta)
+        generate_dt_baseline(db, [site], random.Random(42), site_meta=meta)
         db.commit()
         vals1 = [
             r.actual_kwh

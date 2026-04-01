@@ -13,7 +13,7 @@ Idempotent: skips existing (site_id, energy_type, period, year) records.
 import random
 
 from models.consumption_target import ConsumptionTarget
-from .gen_targets import ADEME_BENCHMARKS, EUR_PER_KWH, CO2_KG_PER_KWH, _get_weights
+from .gen_targets import ADEME_BENCHMARKS, EUR_PER_KWH, CO2_KG_PER_KWH, _get_weights, site_has_gas
 
 # Decret Tertiaire milestones (Decret n°2019-771)
 _DT_MILESTONES = {2030: -0.40, 2040: -0.50, 2050: -0.60}
@@ -58,6 +58,25 @@ def generate_dt_baseline(
     """
     count = 0
 
+    # Batch idempotency check: fetch all existing (site_id, energy_type, year) in one query
+    site_ids = [s.id for s in sites]
+    existing_keys = set()
+    if site_ids:
+        rows = (
+            db.query(
+                ConsumptionTarget.site_id,
+                ConsumptionTarget.energy_type,
+                ConsumptionTarget.year,
+            )
+            .filter(
+                ConsumptionTarget.site_id.in_(site_ids),
+                ConsumptionTarget.period == "yearly",
+                ConsumptionTarget.year.in_(_BASELINE_YEARS),
+            )
+            .all()
+        )
+        existing_keys = {(r[0], r[1], r[2]) for r in rows}
+
     for site in sites:
         meta = (site_meta or {}).get(site.id, {})
         type_site = meta.get("type_site", "bureau")
@@ -65,8 +84,7 @@ def generate_dt_baseline(
         if surface_m2 <= 0:
             continue
 
-        # Determine gas availability (same logic as gen_targets.py)
-        has_gas = _site_has_gas(db, site)
+        has_gas = site_has_gas(db, site)
         energy_types = ["electricity"]
         if has_gas:
             energy_types.append("gas")
@@ -81,18 +99,7 @@ def generate_dt_baseline(
             weights = _get_weights(type_site, energy_type)
 
             for year in _BASELINE_YEARS:
-                # Idempotency: skip if yearly record exists
-                existing = (
-                    db.query(ConsumptionTarget)
-                    .filter(
-                        ConsumptionTarget.site_id == site.id,
-                        ConsumptionTarget.energy_type == energy_type,
-                        ConsumptionTarget.period == "yearly",
-                        ConsumptionTarget.year == year,
-                    )
-                    .first()
-                )
-                if existing:
+                if (site.id, energy_type, year) in existing_keys:
                     continue
 
                 # Compute actual with drift + climate noise
@@ -149,17 +156,3 @@ def generate_dt_baseline(
 
     db.flush()
     return {"dt_baseline_count": count}
-
-
-def _site_has_gas(db, site) -> bool:
-    """Check if site has a gas meter."""
-    try:
-        from models import Meter
-        from models.energy_models import EnergyVector
-
-        return (
-            db.query(Meter).filter(Meter.site_id == site.id, Meter.energy_vector == EnergyVector.GAS).first()
-            is not None
-        )
-    except Exception:
-        return False
