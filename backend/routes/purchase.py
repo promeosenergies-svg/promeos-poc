@@ -716,11 +716,23 @@ def compute(
     for i, s in enumerate(scenarios):
         s["id"] = result_ids[i]
 
+    # Archetype recommendation
+    archetype_reco = None
+    if site_obj:
+        try:
+            from services.archetype_recommendation import get_archetype_recommendation
+
+            type_site = site_obj.type.value if hasattr(site_obj.type, "value") else str(site_obj.type)
+            archetype_reco = get_archetype_recommendation(type_site)
+        except Exception:
+            pass
+
     return {
         "assumption_set_id": assumption.id,
         "site_id": site_id,
         "run_id": run_id,
         "scenarios": scenarios,
+        "archetype_recommendation": archetype_reco,
     }
 
 

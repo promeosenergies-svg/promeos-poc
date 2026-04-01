@@ -219,7 +219,34 @@ function StepEntite({ data, setData, entites, loading }) {
             placeholder="SIRET (14 chiffres, optionnel)"
             value={form.siret}
             onChange={(e) => setForm((f) => ({ ...f, siret: e.target.value }))}
+            onBlur={async (e) => {
+              const val = e.target.value.replace(/\s/g, '');
+              if (val.length !== 14) return;
+              try {
+                const { lookupSiret } = await import('../services/api');
+                const res = await lookupSiret(val);
+                if (res?.found) {
+                  setForm((f) => ({
+                    ...f,
+                    siren: res.siren || f.siren,
+                    naf_code: res.naf_code || f.naf_code,
+                    nom: f.nom || res.nom || '',
+                    _sirene: res,
+                  }));
+                }
+              } catch {
+                /* API down — non bloquant */
+              }
+            }}
           />
+          {form._sirene && (
+            <div className="text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">
+              ✓ SIRENE : {form._sirene.nom} · NAF {form._sirene.naf_code} ({form._sirene.naf_label})
+              {form._sirene.archetype && (
+                <span className="ml-1 font-semibold">· {form._sirene.archetype}</span>
+              )}
+            </div>
+          )}
           <input
             className="w-full border rounded-lg px-3 py-2 text-sm"
             placeholder="Code NAF (optionnel)"

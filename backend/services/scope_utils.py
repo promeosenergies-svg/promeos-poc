@@ -124,11 +124,13 @@ def resolve_site_ids(
     entity_id: int = None,
     portefeuille_id: int = None,
     site_id: int = None,
+    archetype_code: str = None,
 ) -> List[int]:
     """
     Résout les site_ids depuis n'importe quel niveau de la hiérarchie patrimoine.
 
     Priorité : site_id > portefeuille_id > entity_id > org_id
+    Filtre optionnel par archetype_code (TypeSite value).
     """
     from models.site import Site
     from models.portefeuille import Portefeuille
@@ -148,4 +150,6 @@ def resolve_site_ids(
         q = q.filter(Site.portefeuille_id == portefeuille_id)
     elif entity_id:
         q = q.filter(Portefeuille.entite_juridique_id == entity_id)
+    if archetype_code:
+        q = q.filter(Site.type == archetype_code)
     return [row[0] for row in q.all()]

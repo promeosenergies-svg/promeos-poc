@@ -40,13 +40,19 @@ def api_scoped_usages_dashboard(
     entity_id: Optional[int] = Query(None),
     portefeuille_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
+    archetype_code: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Dashboard usages adaptatif : org → entité → portefeuille → site."""
+    """Dashboard usages adaptatif : org → entité → portefeuille → site, filtrable par archétype."""
     org_id = resolve_org_id(request, auth, db)
     return get_scoped_usages_dashboard(
-        db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id
+        db,
+        org_id,
+        entity_id=entity_id,
+        portefeuille_id=portefeuille_id,
+        site_id=site_id,
+        archetype_code=archetype_code,
     )
 
 
@@ -56,15 +62,54 @@ def api_scoped_usage_timeline(
     entity_id: Optional[int] = Query(None),
     portefeuille_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
+    archetype_code: Optional[str] = Query(None),
     months: int = Query(12, ge=3, le=36),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Timeline usages agrégée par scope."""
+    """Timeline usages agrégée par scope, filtrable par archétype."""
     org_id = resolve_org_id(request, auth, db)
     return get_scoped_usage_timeline(
-        db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id, months=months
+        db,
+        org_id,
+        entity_id=entity_id,
+        portefeuille_id=portefeuille_id,
+        site_id=site_id,
+        archetype_code=archetype_code,
+        months=months,
     )
+
+
+@router.get("/archetypes-in-scope")
+def api_archetypes_in_scope(
+    request: Request,
+    entity_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Distribution des archétypes (TypeSite) dans le scope courant, pour les chips filtre."""
+    from models.site import Site as SiteModel
+    from services.scope_utils import resolve_site_ids as _resolve
+
+    org_id = resolve_org_id(request, auth, db)
+    site_ids = _resolve(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
+    if not site_ids:
+        return {"archetypes": []}
+
+    sites = db.query(SiteModel.type).filter(SiteModel.id.in_(site_ids)).all()
+    counts = {}
+    for (t,) in sites:
+        label = t.value if hasattr(t, "value") else str(t)
+        counts[label] = counts.get(label, 0) + 1
+
+    archetypes = sorted(
+        [{"code": k, "label": k.replace("_", " ").title(), "count": v} for k, v in counts.items()],
+        key=lambda x: x["count"],
+        reverse=True,
+    )
+    return {"archetypes": archetypes}
 
 
 # ── Dashboard agrege (legacy mono-site) ──────────────────────────────────

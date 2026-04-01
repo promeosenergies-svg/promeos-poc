@@ -1160,6 +1160,29 @@ def get_site_completeness(
     return _compute_site_completeness(db, site, [site_id])
 
 
+# ── SIRENE Lookup ────────────────────────────────────────────────────────
+
+
+@router.get("/lookup-siret/{siret}")
+def lookup_siret_endpoint(
+    siret: str,
+    request: Request,
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Lookup SIRET via recherche-entreprises.api.gouv.fr (gratuit, sans clé)."""
+    from services.sirene_lookup import lookup_siret
+
+    # Validate format before any processing
+    clean = siret.strip().replace(" ", "")
+    if len(clean) != 14 or not clean.isdigit():
+        return {"found": False, "siret": clean, "error": "Format SIRET invalide (14 chiffres)"}
+
+    result = lookup_siret(clean)
+    if not result:
+        return {"found": False, "siret": clean}
+    return {"found": True, **result}
+
+
 # ── Scope Tree ───────────────────────────────────────────────────────────
 
 

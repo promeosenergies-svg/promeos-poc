@@ -924,9 +924,31 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
             "source_prix": price_source,
             "tariff_source": tariff_source,
         },
+        # BENCHMARK ANALYSIS (IPE réel vs ADEME)
+        "benchmark_analysis": _compute_benchmark_for_shadow(site, kwh, price_ref, period_days),
         # BACKWARD COMPAT
         "tarif_version": tarif_version,
         "kwh": kwh,
         "days_in_period": period_days,
         "tariff_source": tariff_source,
     }
+
+
+def _compute_benchmark_for_shadow(site, kwh, price_ref, period_days):
+    """Injecte l'analyse benchmark dans le shadow billing."""
+    if not site:
+        return None
+    surface = getattr(site, "surface_m2", 0) or 0
+    type_site = getattr(site, "type", "bureau")
+    if hasattr(type_site, "value"):
+        type_site = type_site.value
+    if surface <= 0 or kwh <= 0:
+        return None
+    # Toujours annualiser (gère année bissextile et factures multi-périodes)
+    annual_kwh = kwh * 365 / max(period_days, 1) if period_days and period_days != 365 else kwh
+    try:
+        from services.benchmark_analysis import compute_benchmark_analysis
+
+        return compute_benchmark_analysis(type_site, surface, annual_kwh, price_ref)
+    except Exception:
+        return None

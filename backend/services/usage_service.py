@@ -1403,12 +1403,19 @@ def get_scoped_usages_dashboard(
     entity_id: int = None,
     portefeuille_id: int = None,
     site_id: int = None,
+    archetype_code: str = None,
 ) -> dict:
-    """Dashboard usages adaptatif au scope (org / entité / portfolio / site)."""
-    from services.scope_utils import resolve_site_ids
+    """Dashboard usages adaptatif au scope, filtrable par archétype."""
     from models.site import Site as SiteModel
 
-    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
+    site_ids = resolve_site_ids(
+        db,
+        org_id,
+        entity_id=entity_id,
+        portefeuille_id=portefeuille_id,
+        site_id=site_id,
+        archetype_code=archetype_code,
+    )
     if not site_ids:
         return {"scope_level": "empty", "sites_count": 0, "summary": {"total_kwh": 0, "total_eur": 0}}
 
@@ -1583,11 +1590,18 @@ def get_scoped_usage_timeline(
     entity_id: int = None,
     portefeuille_id: int = None,
     site_id: int = None,
+    archetype_code: str = None,
     months: int = 12,
 ) -> dict:
-    """Timeline usages agrégée par scope."""
-
-    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
+    """Timeline usages agrégée par scope, filtrable par archétype."""
+    site_ids = resolve_site_ids(
+        db,
+        org_id,
+        entity_id=entity_id,
+        portefeuille_id=portefeuille_id,
+        site_id=site_id,
+        archetype_code=archetype_code,
+    )
     if not site_ids:
         return {"months": [], "series": []}
 

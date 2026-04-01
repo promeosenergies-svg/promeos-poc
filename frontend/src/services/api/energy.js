@@ -366,26 +366,59 @@ export const getMeterReadingsPreview = (meterId, days = 7) =>
   cachedGet(`/usages/meter-readings/${meterId}`, { params: { days } }).then((r) => r.data);
 
 // ── Usages scoped (multi-niveaux) ──
-export const getScopedUsagesDashboard = ({ entityId, portefeuilleId, siteId } = {}) =>
+export const getScopedUsagesDashboard = ({
+  entityId,
+  portefeuilleId,
+  siteId,
+  archetypeCode,
+} = {}) =>
   cachedGet('/usages/scoped-dashboard', {
     params: {
       entity_id: entityId || undefined,
       portefeuille_id: portefeuilleId || undefined,
       site_id: siteId || undefined,
+      archetype_code: archetypeCode || undefined,
     },
   }).then((r) => r.data);
 
-export const getScopedUsageTimeline = ({ entityId, portefeuilleId, siteId, months = 12 } = {}) =>
+export const getScopedUsageTimeline = ({
+  entityId,
+  portefeuilleId,
+  siteId,
+  archetypeCode,
+  months = 12,
+} = {}) =>
   cachedGet('/usages/scoped-timeline', {
     params: {
       entity_id: entityId || undefined,
       portefeuille_id: portefeuilleId || undefined,
       site_id: siteId || undefined,
+      archetype_code: archetypeCode || undefined,
       months,
     },
   }).then((r) => r.data);
 
 export const getScopeTree = () => cachedGet('/patrimoine/scope-tree').then((r) => r.data);
+
+// ── SIRENE Lookup ──
+export const lookupSiret = (siret) =>
+  api.get(`/patrimoine/lookup-siret/${siret}`).then((r) => r.data);
+
+// ── Usages archetypes in scope ──
+export const getArchetypesInScope = ({ entityId, portefeuilleId, siteId } = {}) =>
+  cachedGet('/usages/archetypes-in-scope', {
+    params: {
+      entity_id: entityId || undefined,
+      portefeuille_id: portefeuilleId || undefined,
+      site_id: siteId || undefined,
+    },
+  }).then((r) => r.data);
+
+// ── Energy Intensity (Yannick #146) ──
+export const getEnergyIntensity = (siteId, year = null) =>
+  cachedGet('/energy/intensity', {
+    params: { site_id: siteId, year: year || undefined },
+  }).then((r) => r.data);
 
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>

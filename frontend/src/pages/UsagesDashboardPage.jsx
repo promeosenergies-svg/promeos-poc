@@ -37,6 +37,7 @@ export default function UsagesDashboardPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
   const [scopeLevel, setScopeLevel] = useState(selectedSiteId ? 'site' : 'org');
+  const [archetypeFilter, setArchetypeFilter] = useState(null);
 
   const _fetchId = useRef(0);
   const siteId = selectedSiteId;
@@ -67,7 +68,7 @@ export default function UsagesDashboardPage() {
     else if (scopeLevel === 'portfolio' && scope.portefeuilleId)
       params.portefeuilleId = scope.portefeuilleId;
     else if (scopeLevel === 'entite' && scope.entiteId) params.entityId = scope.entiteId;
-    // org level: no params → backend resolves via X-Org-Id header
+    if (archetypeFilter) params.archetypeCode = archetypeFilter;
 
     getScopedUsagesDashboard(params)
       .then((d) => {
@@ -85,7 +86,7 @@ export default function UsagesDashboardPage() {
         if (myId === _fetchId.current) setTimeline(t);
       })
       .catch(() => {});
-  }, [siteId, scopeLevel, scope.portefeuilleId, scope.entiteId]);
+  }, [siteId, scopeLevel, scope.portefeuilleId, scope.entiteId, archetypeFilter]);
 
   // Portfolio comparison (heatmap sidebar)
   useEffect(() => {
@@ -148,7 +149,12 @@ export default function UsagesDashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header score={null} />
-        <ScopeBar scopeLevel={scopeLevel} onLevelChange={setScopeLevel} />
+        <ScopeBar
+          scopeLevel={scopeLevel}
+          onLevelChange={setScopeLevel}
+          archetypeFilter={archetypeFilter}
+          onArchetypeFilter={setArchetypeFilter}
+        />
         <div className="p-8 text-center text-gray-400 text-sm">Chargement des usages...</div>
       </div>
     );
@@ -158,7 +164,12 @@ export default function UsagesDashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header score={null} />
-        <ScopeBar scopeLevel={scopeLevel} onLevelChange={setScopeLevel} />
+        <ScopeBar
+          scopeLevel={scopeLevel}
+          onLevelChange={setScopeLevel}
+          archetypeFilter={archetypeFilter}
+          onArchetypeFilter={setArchetypeFilter}
+        />
         <div className="p-8">
           <div className="p-4 bg-red-50 rounded-xl text-red-700 text-sm">Erreur : {error}</div>
         </div>
@@ -178,7 +189,12 @@ export default function UsagesDashboardPage() {
       />
 
       {/* Scope Bar */}
-      <ScopeBar scopeLevel={scopeLevel} onLevelChange={setScopeLevel} />
+      <ScopeBar
+        scopeLevel={scopeLevel}
+        onLevelChange={setScopeLevel}
+        archetypeFilter={archetypeFilter}
+        onArchetypeFilter={setArchetypeFilter}
+      />
 
       {/* KPI Strip — 4 cartes */}
       <KpiStrip
