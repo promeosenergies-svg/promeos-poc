@@ -5,6 +5,7 @@ Covers: get_site_intensity, get_portfolio_intensity, EP coefficients, API endpoi
 
 import pytest
 from datetime import date, datetime
+from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -211,8 +212,9 @@ class TestSiteIntensity:
         assert any("surface_m2" in w for w in result["warnings"])
 
     def test_site_not_found(self, db):
-        result = get_site_intensity(db, site_id=999, year=2026)
-        assert result["error"] == "site_not_found"
+        with pytest.raises(HTTPException) as exc_info:
+            get_site_intensity(db, site_id=999, year=2026)
+        assert exc_info.value.status_code == 404
 
     def test_site_no_consumption_data(self, db):
         """Site 2 has surface but no meter readings — fallback to estimated."""
@@ -262,8 +264,9 @@ class TestPortfolioIntensity:
         assert abs(coverage["ratio"] - round(expected_ratio, 2)) < 0.01
 
     def test_portfolio_not_found(self, db):
-        result = get_portfolio_intensity(db, portfolio_id=999, year=2026)
-        assert result["error"] == "portfolio_not_found"
+        with pytest.raises(HTTPException) as exc_info:
+            get_portfolio_intensity(db, portfolio_id=999, year=2026)
+        assert exc_info.value.status_code == 404
 
     def test_portfolio_warns_missing_surface(self, db):
         """Sites 3 and 4 have no usable surface — should generate a warning."""
@@ -312,6 +315,4 @@ class TestIntensityEndpoint:
 
     def test_endpoint_site_not_found(self, client):
         resp = client.get("/api/energy/intensity?site_id=999999")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data.get("error") == "site_not_found"
+        assert resp.status_code == 404

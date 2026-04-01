@@ -15,6 +15,7 @@ import logging
 from datetime import date, timedelta
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from models import Site, Portefeuille
@@ -53,7 +54,7 @@ def get_site_intensity(
     """
     site = db.query(Site).filter(Site.id == site_id, Site.actif == True).first()
     if not site:
-        return {"error": "site_not_found", "site_id": site_id}
+        raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
 
     warnings = []
     surface = site.surface_m2
@@ -185,7 +186,7 @@ def get_portfolio_intensity(
     """
     portfolio = db.query(Portefeuille).filter(Portefeuille.id == portfolio_id).first()
     if not portfolio:
-        return {"error": "portfolio_not_found", "portfolio_id": portfolio_id}
+        raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
 
     sites = (
         db.query(Site)
