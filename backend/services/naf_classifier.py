@@ -1,9 +1,13 @@
 """
 PROMEOS - Classification automatique NAF → TypeSite
-Mapping des codes NAF (nomenclature INSEE) vers les segments B2B PROMEOS.
+Cascade : KB (732 mappings) → fallback hardcodé (_NAF_PREFIX_MAP).
 """
 
+import logging
+
 from models.enums import TypeSite
+
+logger = logging.getLogger(__name__)
 
 
 # Mapping prefix NAF (2 premiers chiffres) → TypeSite
@@ -37,41 +41,57 @@ _NAF_PREFIX_MAP = {
     "85": TypeSite.ENSEIGNEMENT,
     # Sante humaine et action sociale (86-88)
     **{str(i).zfill(2): TypeSite.SANTE for i in range(86, 89)},
-    # Logement social / bailleurs → mapping specifique sur sous-codes
-    # (gere via override dans classify_naf)
 }
 
 # Sous-codes NAF specifiques pour affiner le mapping
 _NAF_SPECIFIC_MAP = {
-    "68.20A": TypeSite.LOGEMENT_SOCIAL,  # Location de logements (bailleurs sociaux)
-    "68.20B": TypeSite.COPROPRIETE,  # Location de terrains et autres biens immo
-    "68.31Z": TypeSite.COPROPRIETE,  # Agences immobilieres
-    "68.32A": TypeSite.COPROPRIETE,  # Administration d'immeubles et syndics
-    "68.32B": TypeSite.COPROPRIETE,  # Supports juridiques de programmes
+    "68.20A": TypeSite.LOGEMENT_SOCIAL,
+    "68.20B": TypeSite.COPROPRIETE,
+    "68.31Z": TypeSite.COPROPRIETE,
+    "68.32A": TypeSite.COPROPRIETE,
+    "68.32B": TypeSite.COPROPRIETE,
+}
+
+# KB archetype code → TypeSite (pour résoudre depuis KBArchetype)
+_ARCHETYPE_TO_TYPE = {
+    "BUREAU_STANDARD": TypeSite.BUREAU,
+    "HOTEL_HEBERGEMENT": TypeSite.HOTEL,
+    "ENSEIGNEMENT": TypeSite.ENSEIGNEMENT,
+    "LOGISTIQUE_SEC": TypeSite.ENTREPOT,
+    "LOGISTIQUE_FROID": TypeSite.ENTREPOT,
+    "INDUSTRIE_LEGERE": TypeSite.USINE,
+    "HOPITAL_STANDARD": TypeSite.SANTE,
+    "COMMERCE_ALIMENTAIRE": TypeSite.COMMERCE,
+    "COMMERCE_NON_ALIMENTAIRE": TypeSite.COMMERCE,
+    "RESTAURATION_SERVICE": TypeSite.HOTEL,
+    "ADMINISTRATION": TypeSite.COLLECTIVITE,
+    "DATA_CENTER_IT": TypeSite.BUREAU,
+    "SPORT_LOISIRS": TypeSite.BUREAU,
+    "COPROPRIETE_LOGEMENT": TypeSite.COPROPRIETE,
+    "AUTRE_TERTIAIRE": TypeSite.BUREAU,
 }
 
 
 def classify_naf(naf_code: str) -> TypeSite:
     """Classifie un code NAF vers un TypeSite PROMEOS.
 
-    Args:
-        naf_code: Code NAF 5 caracteres (ex: "47.11A", "68.20A", "84.11Z").
-                  Accepte aussi le format sans point (ex: "4711A").
-
-    Returns:
-        TypeSite correspondant. Defaut: BUREAU si code inconnu.
+    Cascade : KB (KBMappingCode) → sous-codes spécifiques → prefix map → BUREAU.
     """
     if not naf_code or not isinstance(naf_code, str):
         return TypeSite.BUREAU
 
-    # Normaliser: retirer les espaces et mettre en majuscules
     code = naf_code.strip().upper()
 
-    # Verifier d'abord les sous-codes specifiques (ex: "68.20A")
+    # 1. Tenter la KB (source de vérité si disponible)
+    kb_result = _lookup_kb(code)
+    if kb_result:
+        return kb_result
+
+    # 2. Sous-codes spécifiques (ex: "68.20A")
     if code in _NAF_SPECIFIC_MAP:
         return _NAF_SPECIFIC_MAP[code]
 
-    # Format sans point (ex: "4711A" → "47")
+    # 3. Prefix map (2 premiers chiffres)
     code_clean = code.replace(".", "")
     if len(code_clean) >= 2:
         prefix = code_clean[:2]
@@ -79,3 +99,24 @@ def classify_naf(naf_code: str) -> TypeSite:
             return _NAF_PREFIX_MAP[prefix]
 
     return TypeSite.BUREAU
+
+
+def _lookup_kb(naf_code: str) -> TypeSite | None:
+    """Cherche le NAF dans KBMappingCode (DB). Retourne None si indisponible."""
+    try:
+        from database.connection import SessionLocal
+        from models.kb_models import KBMappingCode, KBArchetype
+
+        db = SessionLocal()
+        try:
+            mapping = db.query(KBMappingCode).filter(KBMappingCode.naf_code == naf_code).first()
+            if not mapping:
+                return None
+            archetype = db.query(KBArchetype).filter(KBArchetype.id == mapping.archetype_id).first()
+            if archetype and archetype.code in _ARCHETYPE_TO_TYPE:
+                return _ARCHETYPE_TO_TYPE[archetype.code]
+        finally:
+            db.close()
+    except Exception:
+        pass  # DB non disponible → fallback hardcodé
+    return None

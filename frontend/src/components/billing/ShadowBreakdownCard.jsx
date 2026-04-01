@@ -398,6 +398,58 @@ export default function ShadowBreakdownCard({ breakdown }) {
           )}
         </div>
       )}
+
+      {/* Benchmark ADEME */}
+      {breakdown.benchmark_analysis &&
+        (() => {
+          const ba = breakdown.benchmark_analysis;
+          const posColors = {
+            performant: 'bg-green-50 border-green-200 text-green-800',
+            bon: 'bg-blue-50 border-blue-200 text-blue-800',
+            median: 'bg-gray-50 border-gray-200 text-gray-700',
+            au_dessus: 'bg-red-50 border-red-200 text-red-800',
+          };
+          const posLabels = {
+            performant: 'Performant',
+            bon: 'Bon',
+            median: 'Médian',
+            au_dessus: 'Au-dessus',
+          };
+          return (
+            <div
+              className={`mt-4 p-3 rounded-lg text-sm border ${posColors[ba.position] || posColors.median}`}
+            >
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <span className="font-medium">Benchmark ADEME</span>
+                  <span className="text-gray-500 ml-2">
+                    IPE réel : {ba.ipe_reel_kwh_m2} kWh/m² vs médian : {ba.benchmark?.median} kWh/m²
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-semibold ${posColors[ba.position] || ''}`}
+                  >
+                    {posLabels[ba.position] || ba.position}
+                  </span>
+                  {ba.position === 'au_dessus' && ba.surcout_eur > 0 && (
+                    <span className="text-red-600 font-medium">
+                      Surcoût : {ba.surcout_eur.toLocaleString('fr-FR')} €/an
+                    </span>
+                  )}
+                  {ba.economie_potentielle_pct > 0 && (
+                    <span className="text-xs text-gray-500">
+                      Économie possible : −{ba.economie_potentielle_pct}%
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {ba.benchmark?.source || 'ADEME ODP 2024'} · Catégorie : {ba.ademe_category}
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function FlexPotentialCard({ siteId }) {
   if (loading) return <div className="border rounded-lg p-4 bg-gray-50 animate-pulse h-32" />;
   if (!data) return null;
 
-  const score = data.flex_score || 0;
+  const score = data.flex_score || data.flex_potential_score || 0;
   const dims = data.dimensions || {};
   const levers = (data.levers || []).slice(0, 3);
   const scoreColor =
@@ -75,10 +75,13 @@ export default function FlexPotentialCard({ siteId }) {
         </div>
       )}
 
-      {/* Assets count */}
+      {/* Source + confidence */}
       <div className="mt-2 text-xs text-gray-400">
-        {assets.length} asset{assets.length !== 1 ? 's' : ''} inventorié
-        {assets.length !== 1 ? 's' : ''}
+        {assets.length > 0
+          ? `${assets.length} asset${assets.length !== 1 ? 's' : ''} inventorié${assets.length !== 1 ? 's' : ''}`
+          : data.source === 'heuristic'
+            ? 'Estimation heuristique'
+            : 'Données insuffisantes'}
         {data.kpi && <span className="ml-2">· Confiance : {data.kpi.confidence || 'N/A'}</span>}
       </div>
     </div>

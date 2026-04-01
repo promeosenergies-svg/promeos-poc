@@ -44,6 +44,7 @@ def lookup_siret(siret: str) -> Optional[dict]:
     ent = results[0]
     siren = ent.get("siren", siret[:9])
     nom = ent.get("nom_complet") or ent.get("nom_raison_sociale") or ""
+    # NAF par défaut = niveau entreprise (fallback)
     naf_code = ent.get("activite_principale") or ""
     naf_label = ent.get("libelle_activite_principale") or ""
 
@@ -53,11 +54,14 @@ def lookup_siret(siret: str) -> Optional[dict]:
     ville = ""
     for etab in ent.get("matching_etablissements", []) or []:
         if etab.get("siret") == siret:
-            adr = etab.get("adresse") or ""
-            adresse = adr
-            # Tenter d'extraire CP et ville depuis le champ commune
+            adresse = etab.get("adresse") or ""
             code_postal = etab.get("code_postal") or ""
             ville = etab.get("libelle_commune") or ""
+            # Préférer le NAF de l'établissement à celui de l'entreprise
+            etab_naf = etab.get("activite_principale")
+            if etab_naf:
+                naf_code = etab_naf
+                naf_label = etab.get("libelle_activite_principale") or naf_label
             break
 
     # Si pas trouvé dans matching, fallback sur siege

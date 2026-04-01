@@ -1170,16 +1170,8 @@ def get_usage_timeline(db: Session, site_id: int, months: int = 12) -> dict:
     }
 
 
-# Refs ADEME indicatives par usage (kWh/m²/an, bureau tertiaire)
-_ADEME_REF_BY_USAGE = {
-    "Chauffage": 90,
-    "CVC": 90,
-    "Climatisation": 25,
-    "Éclairage": 30,
-    "IT & Bureautique": 18,
-    "Ventilation": 12,
-    "Cuisine": 15,
-}
+# Refs ADEME — source unique : config/ademe_benchmarks.py
+from config.ademe_benchmarks import BENCHMARK_BY_USAGE as _ADEME_REF_BY_USAGE
 
 
 # ── V2 — Comparaison inter-sites ───────────────────────────────────────

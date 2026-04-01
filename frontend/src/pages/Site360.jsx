@@ -58,7 +58,10 @@ import {
   getReconciliationEvidenceSummary,
   patrimoineDeliveryPoints,
   getTopRecommendation,
+  createAction,
+  getEnergyIntensity,
 } from '../services/api';
+import { buildKbRecoActionPayload } from '../models/kbRecoActionModel';
 import {
   getStatusBadgeProps,
   SEV_BADGE,
@@ -78,6 +81,7 @@ import TabConsoSite from '../components/TabConsoSite';
 import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 import { getBenchmark, getIntensityRatio } from '../utils/benchmarks';
+import { setActiveSite } from '../utils/activeSite';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
 import SiteIntelligencePanel from '../components/SiteIntelligencePanel';
@@ -103,7 +107,7 @@ const TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function MiniKpi({ icon: Icon, label, value, color }) {
+function MiniKpi({ icon: Icon, label, value, color, children }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
       <Icon size={18} className={color} />
@@ -111,46 +115,25 @@ function MiniKpi({ icon: Icon, label, value, color }) {
         <p className="text-xs text-gray-500">{label}</p>
         <p className="text-sm font-bold text-gray-800">{value}</p>
       </div>
+      {children}
     </div>
   );
 }
 
 function TabResume({
   site,
+  orgId,
   unifiedCount,
   anomalies = [],
   anomLoading = false,
   onSegmentationClick,
+  topReco,
+  intensityData,
 }) {
   const [deliveryPoints, setDeliveryPoints] = useState([]);
   const [dpLoading, setDpLoading] = useState(true);
-  const [topReco, setTopReco] = useState(null);
   const [showAllAnomalies, setShowAllAnomalies] = useState(false);
-
-  useEffect(() => {
-    if (!site?.id) return;
-    let stale = false;
-    getTopRecommendation(site.id)
-      .then((data) => {
-        if (!stale) setTopReco(data);
-      })
-      .catch(() => {
-        if (!stale)
-          setTopReco({
-            available: false,
-            label:
-              site.statut_conformite === 'non_conforme'
-                ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
-                : site.statut_conformite === 'a_risque'
-                  ? 'Planifier la mise en conformité BACS pour ce site'
-                  : 'Maintenir la surveillance et optimiser la consommation',
-            source: 'fallback',
-          });
-      });
-    return () => {
-      stale = true;
-    };
-  }, [site?.id]);
+  const [recoActionStatus, setRecoActionStatus] = useState(null); // null | 'creating' | 'created' | 'error'
 
   // B2-4: Fetch delivery points
   useEffect(() => {
@@ -172,11 +155,15 @@ function TabResume({
     };
   }, [site.id]);
 
-  const hasIntensity = site.surface_m2 > 0 && site.conso_kwh_an > 0;
-  const intensity = hasIntensity ? Math.round(site.conso_kwh_an / site.surface_m2) : 0;
-  const benchmark = hasIntensity ? getBenchmark(site.usage) : 0;
-  const intensityRatio = hasIntensity ? (getIntensityRatio(intensity, site.usage) ?? 0) : 0;
-  const intensityPct = Math.min(intensityRatio / 3, 1) * 100;
+  const {
+    hasIntensity,
+    intensity,
+    intensityPrimary,
+    benchmark,
+    intensityRatio,
+    intensityPct,
+    confidence,
+  } = intensityData;
 
   return (
     <div className="space-y-4 pt-6">
@@ -239,11 +226,26 @@ function TabResume({
                   <p className="text-xs text-gray-500">Points de livraison</p>
                   <p className="text-lg font-bold text-green-700">
                     {deliveryPoints.length || site.nb_compteurs || '—'}
+                    <span className="text-sm font-normal text-gray-500 ml-1">actifs</span>
                   </p>
+                  {deliveryPoints.length > 0 &&
+                    (() => {
+                      const elecCount = deliveryPoints.filter(
+                        (d) => d.energy_type === 'elec' || d.energy_type === 'electricity'
+                      ).length;
+                      const gazCount = deliveryPoints.filter(
+                        (d) => d.energy_type === 'gaz' || d.energy_type === 'gas'
+                      ).length;
+                      const parts = [];
+                      if (elecCount) parts.push(`${elecCount} élec`);
+                      if (gazCount) parts.push(`${gazCount} gaz`);
+                      return parts.length > 0 ? (
+                        <p className="text-xs text-gray-400 mt-1">{parts.join(' · ')}</p>
+                      ) : null;
+                    })()}
                 </div>
               </div>
-              {/* EXCEPTION DOCUMENTÉE : calcul intensité = presentation-layer,
-                  division conso/surface pour affichage seul, pas un KPI exporté */}
+              {/* Intensité énergétique — données backend #146 (Yannick) + ratio OID */}
               {hasIntensity && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs text-gray-500">
@@ -251,7 +253,12 @@ function TabResume({
                   </p>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-lg font-bold text-gray-800">{intensity}</span>
-                    <span className="text-sm text-gray-500">kWh/m²</span>
+                    <span className="text-sm text-gray-500">kWhEF/m²</span>
+                    {intensityPrimary != null && (
+                      <span className="text-xs text-gray-400 ml-1">
+                        ({Math.round(intensityPrimary)} kWhEP/m²)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-1.5 rounded bg-gray-200 overflow-hidden">
@@ -270,6 +277,7 @@ function TabResume({
                   <p className="text-[10px] text-gray-400 mt-1">
                     {intensityRatio <= 1 ? '✓ ' : ''}
                     {intensityRatio.toFixed(1)}× benchmark OID ({benchmark} kWh/m²)
+                    {confidence && confidence !== 'none' && <> · confiance {confidence}</>}
                   </p>
                 </div>
               )}
@@ -302,130 +310,58 @@ function TabResume({
                   <span>Source : KB</span>
                 </div>
               )}
-              <Button size="sm" className="mt-3">
-                Créer une action
+              <Button
+                size="sm"
+                className="mt-3"
+                disabled={recoActionStatus === 'creating' || recoActionStatus === 'created'}
+                onClick={async () => {
+                  if (!topReco?.code || recoActionStatus === 'created') return;
+                  setRecoActionStatus('creating');
+                  try {
+                    const payload = buildKbRecoActionPayload({
+                      orgId,
+                      siteId: site.id,
+                      siteName: site.nom,
+                      reco: {
+                        id: 0,
+                        recommendation_code: topReco.code,
+                        title: topReco.label,
+                        ice_score: topReco.ice_score,
+                        estimated_savings_eur_year: topReco.savings_eur,
+                      },
+                      topSeverity: 'medium',
+                    });
+                    await createAction(payload);
+                    setRecoActionStatus('created');
+                  } catch {
+                    setRecoActionStatus('error');
+                  }
+                }}
+              >
+                {recoActionStatus === 'creating'
+                  ? 'Création…'
+                  : recoActionStatus === 'created'
+                    ? '✓ Action créée'
+                    : recoActionStatus === 'error'
+                      ? 'Réessayer'
+                      : 'Créer une action'}
               </Button>
               {topReco?.total_recos > 1 && (
-                <span className="ml-2 text-xs text-gray-400">
-                  + {topReco.total_recos - 1} autres recommandations
-                </span>
+                <Button
+                  size="sm"
+                  className="ml-2"
+                  onClick={() => {
+                    const el = document.querySelector('[data-testid="intelligence-panel"]');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  Voir {topReco.total_recos} recommandations
+                </Button>
               )}
             </CardBody>
           </Card>
 
-          {/* Accès rapide cross-module */}
-          <Card>
-            <div className="px-5 py-3 border-b border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase">Accès rapide</h3>
-            </div>
-            <CardBody className="py-2">
-              <div className="grid grid-cols-2 gap-1">
-                {[
-                  { to: 'usages', icon: BarChart3, label: 'Usages énergétiques' },
-                  { to: 'billing', icon: Zap, label: 'Bill Intelligence' },
-                  { to: 'conformite', icon: ShieldCheck, label: 'Conformité' },
-                  { to: 'achat-assistant', icon: FileText, label: 'Radar contrats' },
-                  { to: 'actions', icon: Wrench, label: 'Actions' },
-                ].map(({ to, icon: Icon, label }) => (
-                  <Link
-                    key={to}
-                    to={`/${to}?site_id=${site.id}`}
-                    className="flex items-center gap-2 px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
-                  >
-                    <Icon size={14} /> {label}
-                  </Link>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Intelligence KB — colonne gauche pour équilibrer le layout */}
-          <SiteIntelligencePanel siteId={site.id} site={site} />
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-4">
-          {/* Anomalies list */}
-          <Card>
-            <div className="px-5 py-3 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-800">
-                <Explain term="anomalie">Anomalies</Explain> détectées
-              </h3>
-            </div>
-            {anomLoading ? (
-              <div className="p-4">
-                <SkeletonCard />
-              </div>
-            ) : anomalies.length === 0 ? (
-              <EmptyState
-                title="Aucune anomalie"
-                text="Ce site ne présente aucune anomalie détectée."
-              />
-            ) : (
-              <>
-                <Table>
-                  <Thead>
-                    <tr>
-                      <Th>Type</Th>
-                      <Th>Sévérité</Th>
-                      <Th>Message</Th>
-                      <Th className="text-right">Impact</Th>
-                    </tr>
-                  </Thead>
-                  <Tbody>
-                    {anomalies.slice(0, showAllAnomalies ? undefined : 8).map((a, idx) => (
-                      <Tr key={a.id || idx}>
-                        <Td>
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                                a.source === 'analytique'
-                                  ? 'bg-purple-50 text-purple-600'
-                                  : 'bg-blue-50 text-blue-600'
-                              }`}
-                            >
-                              {a.source === 'analytique' ? 'Analyse' : 'Données'}
-                            </span>
-                            <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
-                              {a.code || a.anomaly_type}
-                            </span>
-                          </div>
-                        </Td>
-                        <Td>
-                          <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
-                        </Td>
-                        <Td className="text-sm">{a.title_fr}</Td>
-                        <Td className="text-right font-medium">
-                          {a.business_impact?.estimated_risk_eur ? (
-                            <span className="text-red-600">
-                              {fmtEurFull(a.business_impact.estimated_risk_eur)}
-                            </span>
-                          ) : a.deviation_pct != null ? (
-                            <span className="text-gray-500">
-                              {a.deviation_pct > 0 ? '+' : ''}
-                              {a.deviation_pct}%
-                            </span>
-                          ) : null}
-                        </Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
-                {anomalies.length > 8 && !showAllAnomalies && (
-                  <div className="px-5 py-2 border-t border-gray-100">
-                    <button
-                      onClick={() => setShowAllAnomalies(true)}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      Voir les {anomalies.length} anomalies
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-
-          {/* B2-4: Points de livraison (PDL) */}
+          {/* B2-4: Points de livraison (PDL) — déplacé ici pour équilibrer */}
           <Card>
             <div className="px-5 py-3 border-b border-gray-100">
               <h3 className="font-semibold text-gray-800">Points de livraison</h3>
@@ -481,14 +417,143 @@ function TabResume({
             )}
           </Card>
 
-          {/* V100: Segmentation profile & recommendations */}
+          {/* Accès rapide cross-module */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase">Accès rapide</h3>
+            </div>
+            <CardBody className="py-2">
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  { to: 'usages', icon: BarChart3, label: 'Usages énergétiques' },
+                  { to: 'billing', icon: Zap, label: 'Bill Intelligence' },
+                  { to: 'conformite', icon: ShieldCheck, label: 'Conformité' },
+                  { to: 'achat-assistant', icon: FileText, label: 'Radar contrats' },
+                  { to: 'actions', icon: Wrench, label: 'Actions' },
+                ].map(({ to, icon: Icon, label }) => (
+                  <Link
+                    key={to}
+                    to={`/${to}?site_id=${site.id}`}
+                    className="flex items-center gap-2 px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded focus-visible:ring-2 focus-visible:ring-blue-400"
+                  >
+                    <Icon size={14} /> {label}
+                  </Link>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* V100: Segmentation profile — déplacé ici pour équilibrer */}
           <SegmentationWidget onSegmentationClick={onSegmentationClick} />
+        </div>
+
+        {/* Right column — Intelligence KB en premier (cf maquette) */}
+        <div className="space-y-4">
+          <SiteIntelligencePanel siteId={site.id} site={site} />
+
+          {/* Anomalies list */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">
+                <Explain term="anomalie">Anomalies</Explain> détectées
+              </h3>
+            </div>
+            {anomLoading ? (
+              <div className="p-4">
+                <SkeletonCard />
+              </div>
+            ) : anomalies.length === 0 ? (
+              <EmptyState
+                title="Aucune anomalie"
+                text="Ce site ne présente aucune anomalie détectée."
+              />
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table className="table-fixed w-full">
+                    <Thead>
+                      <tr>
+                        <Th className="w-[130px]">Type</Th>
+                        <Th className="w-[80px]">Sévérité</Th>
+                        <Th>Message</Th>
+                        <Th className="text-right w-[80px]">Impact</Th>
+                      </tr>
+                    </Thead>
+                    <Tbody>
+                      {anomalies.slice(0, showAllAnomalies ? undefined : 8).map((a, idx) => (
+                        <Tr key={a.id || idx}>
+                          <Td>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                  a.source === 'analytique'
+                                    ? 'bg-purple-50 text-purple-600'
+                                    : 'bg-blue-50 text-blue-600'
+                                }`}
+                              >
+                                {a.source === 'analytique' ? 'Analyse' : 'Données'}
+                              </span>
+                              <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                                {a.code || a.anomaly_type}
+                              </span>
+                            </div>
+                          </Td>
+                          <Td>
+                            <Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge>
+                          </Td>
+                          <Td className="text-sm truncate" title={a.title_fr}>
+                            {a.title_fr}
+                            {a.meter_count > 1 && (
+                              <span className="ml-1 text-xs text-gray-400">
+                                (×{a.meter_count} compteurs)
+                              </span>
+                            )}
+                          </Td>
+                          <Td className="text-right font-medium">
+                            {a.business_impact?.estimated_risk_eur ? (
+                              <span className="text-red-600">
+                                {fmtEurFull(a.business_impact.estimated_risk_eur)}
+                              </span>
+                            ) : a.deviation_pct != null ? (
+                              <span className="text-gray-500">
+                                {a.deviation_pct > 0 ? '+' : ''}
+                                {a.deviation_pct}%
+                              </span>
+                            ) : null}
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </div>
+                {anomalies.length > 8 && !showAllAnomalies && (
+                  <div className="px-5 py-2 border-t border-gray-100">
+                    <button
+                      onClick={() => setShowAllAnomalies(true)}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Voir les {anomalies.length} anomalies
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+
+          {/* Flex potential — intégré dans la colonne droite */}
+          <FlexPotentialCard siteId={site.id} />
         </div>
       </div>
       {/* /grid-cols-2 */}
 
-      {/* Flex potential */}
-      <FlexPotentialCard siteId={site.id} />
+      {/* Trust badge footer */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg mt-2">
+        <TrustBadge
+          source="PROMEOS KB"
+          period={`Analyse pour ${site.nom}`}
+          confidence={anomalies.length > 0 ? 'high' : 'medium'}
+        />
+      </div>
     </div>
   );
 }
@@ -1432,7 +1497,7 @@ function TabConformite({ site }) {
 export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { scopedSites, sitesLoading } = useScope();
+  const { scopedSites, sitesLoading, scope } = useScope();
   // Persist active tab in URL hash so it survives navigation
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#', '');
@@ -1450,10 +1515,36 @@ export default function Site360() {
   const [freshness, setFreshness] = useState(null); // D.2
   const [completeness, setCompleteness] = useState(null); // V-registre
   const [unifiedCount, setUnifiedCount] = useState(null);
+  const [unifiedPatCount, setUnifiedPatCount] = useState(0);
+  const [unifiedKbCount, setUnifiedKbCount] = useState(0);
   const [unifiedAnomalies, setUnifiedAnomalies] = useState([]);
   const [unifiedAnomLoading, setUnifiedAnomLoading] = useState(true);
+  const [topReco, setTopReco] = useState(null);
+  const [energyIntensity, setEnergyIntensity] = useState(null);
 
   const site = scopedSites.find((s) => String(s.id) === String(id));
+
+  // Intensité via backend #146 (Yannick), fallback conso_kwh_an/surface_m2
+  const intensityFinal =
+    energyIntensity?.kWh_m2_final ??
+    (site?.surface_m2 > 0 && site?.conso_kwh_an > 0 ? site.conso_kwh_an / site.surface_m2 : null);
+  const hasIntensity = intensityFinal != null && intensityFinal > 0;
+  const intensity = hasIntensity ? Math.round(intensityFinal) : 0;
+  const intensityRatio = hasIntensity ? (getIntensityRatio(intensity, site?.usage) ?? 0) : 0;
+  const intensityData = {
+    hasIntensity,
+    intensity,
+    intensityRatio,
+    intensityPrimary: energyIntensity?.kWh_m2_primary ?? null,
+    benchmark: hasIntensity ? getBenchmark(site?.usage) : 0,
+    intensityPct: Math.min(intensityRatio / 3, 1) * 100,
+    confidence: energyIntensity?.confidence ?? null,
+  };
+
+  // Persist active site for contextual nav
+  useEffect(() => {
+    if (site?.id && site?.nom) setActiveSite(site);
+  }, [site?.id, site?.nom, site?.statut_conformite]);
 
   // Unified anomalies (patrimoine + KB) — single fetch, shared by MiniKpi + TabResume
   useEffect(() => {
@@ -1464,6 +1555,8 @@ export default function Site360() {
       .then((data) => {
         if (!stale) {
           setUnifiedCount(data.total);
+          setUnifiedPatCount(data.patrimoine_count || 0);
+          setUnifiedKbCount(data.analytique_count || 0);
           setUnifiedAnomalies(data.anomalies || []);
         }
       })
@@ -1524,6 +1617,50 @@ export default function Site360() {
       .catch(() => setCompleteness(null));
   }, [id]);
 
+  // Top recommendation (for header KPI card + TabResume)
+  useEffect(() => {
+    if (!site?.id) return;
+    setTopReco(null);
+    let stale = false;
+    getTopRecommendation(site.id)
+      .then((data) => {
+        if (!stale) setTopReco(data);
+      })
+      .catch(() => {
+        if (!stale)
+          setTopReco({
+            available: false,
+            source: 'fallback',
+            label:
+              site.statut_conformite === 'non_conforme'
+                ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
+                : site.statut_conformite === 'a_risque'
+                  ? 'Planifier la mise en conformité BACS pour ce site'
+                  : 'Maintenir la surveillance et optimiser la consommation',
+          });
+      });
+    return () => {
+      stale = true;
+    };
+  }, [site?.id]);
+
+  // Energy intensity — backend #146 (Yannick)
+  useEffect(() => {
+    if (!site?.id) return;
+    setEnergyIntensity(null);
+    let stale = false;
+    getEnergyIntensity(site.id)
+      .then((data) => {
+        if (!stale) setEnergyIntensity(data?.error ? null : data);
+      })
+      .catch(() => {
+        if (!stale) setEnergyIntensity(null);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [site?.id]);
+
   if (sitesLoading) {
     return (
       <PageShell icon={Zap} title="Fiche site" subtitle="Chargement...">
@@ -1564,7 +1701,7 @@ export default function Site360() {
       <nav className="flex items-center gap-1.5 text-sm text-gray-500" aria-label="Fil d'Ariane">
         <Link
           to="/patrimoine"
-          className="hover:text-blue-600 hover:underline transition flex items-center gap-1"
+          className="hover:text-blue-600 hover:underline transition flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 rounded"
         >
           <ArrowLeft size={14} />
           {site.organisation_nom || 'Patrimoine'}
@@ -1572,7 +1709,10 @@ export default function Site360() {
         {site.entite_juridique_nom && (
           <>
             <ChevronRight size={12} className="text-gray-300" />
-            <Link to="/patrimoine" className="hover:text-blue-600 hover:underline">
+            <Link
+              to="/patrimoine"
+              className="hover:text-blue-600 hover:underline focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 rounded"
+            >
               {site.entite_juridique_nom}
             </Link>
           </>
@@ -1580,7 +1720,10 @@ export default function Site360() {
         {site.portefeuille_nom && (
           <>
             <ChevronRight size={12} className="text-gray-300" />
-            <Link to="/patrimoine" className="hover:text-blue-600 hover:underline">
+            <Link
+              to="/patrimoine"
+              className="hover:text-blue-600 hover:underline focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 rounded"
+            >
               {site.portefeuille_nom}
             </Link>
           </>
@@ -1589,75 +1732,29 @@ export default function Site360() {
         <span className="font-medium text-gray-800">{site.nom}</span>
       </nav>
 
-      <div className="flex items-start justify-between">
+      {/* ── V3 Header: Titre + 1 badge + boutons ── */}
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-gray-900">{site.nom}</h2>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-gray-900">{site.nom}</h1>
             <Badge status={badge.status}>{badge.label}</Badge>
-            {complianceRounded != null && (
-              <span
-                className="flex items-center gap-1.5"
-                data-testid="compliance-score-badge"
-                title="Score de conformité réglementaire (DT + BACS + APER)"
-              >
-                <span className="text-xs text-gray-500 font-medium">Conformité</span>
-                <span className={`text-sm font-bold ${getComplianceScoreColor(complianceRounded)}`}>
-                  {complianceRounded}/100
-                </span>
-                <span
-                  className={`text-xs font-bold px-1.5 py-0.5 rounded ${complianceGrade.color} bg-gray-50 border border-gray-200`}
-                >
-                  {complianceGrade.letter}
-                </span>
-              </span>
-            )}
-            {dataQuality && (
-              <DataQualityBadge
-                score={dataQuality.score}
-                dimensions={dataQuality.dimensions}
-                recommendations={dataQuality.recommendations}
-                size="md"
-              />
-            )}
-            {completeness && (
-              <span
-                data-testid="completeness-badge"
-                className={`text-xs font-medium px-2 py-0.5 rounded ${
-                  COMPLETENESS_STYLES[completeness.level] || 'bg-red-50 text-red-700'
-                }`}
-                title={
-                  completeness.missing?.length
-                    ? `Manquant : ${completeness.missing.join(', ')}`
-                    : 'Registre complet'
-                }
-              >
-                Registre {completeness.score}% complet
-              </span>
-            )}
-            <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-              {site.usage}
-            </span>
           </div>
-          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}
-            </span>
-            <span className="flex items-center gap-1">
-              <Ruler size={14} /> {fmtArea(site.surface_m2)}
-            </span>
-            {freshness && <FreshnessIndicator freshness={freshness} size="sm" />}
-          </div>
+          <p className="text-sm text-gray-400 flex items-center gap-2">
+            <MapPin size={13} className="shrink-0" />
+            {site.adresse}, {site.code_postal} {site.ville}
+            {freshness && freshness.status === 'up_to_date' && (
+              <span className="text-green-600 font-medium ml-1">● À jour</span>
+            )}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowBacs(true)}>
-            <ShieldCheck size={14} className="mr-1" />
-            Évaluer <Explain term="decret_bacs">BACS</Explain>
+        <div className="flex gap-2 shrink-0 pt-1">
+          <Button variant="outline" size="sm" onClick={() => setShowBacs(true)}>
+            Évaluer BACS
           </Button>
-          <Button variant="outline" onClick={() => setShowIntake(true)}>
-            <ClipboardCheck size={14} className="mr-1" />
+          <Button variant="outline" size="sm" onClick={() => setShowIntake(true)}>
             Compléter les données
           </Button>
-          <Button variant="secondary" onClick={() => navigate(`/regops/${site.id}`)}>
+          <Button size="sm" onClick={() => navigate(`/regops/${site.id}`)}>
             Evaluation RegOps
           </Button>
         </div>
@@ -1666,7 +1763,7 @@ export default function Site360() {
       {/* D.1: Bandeau données partielles */}
       {dataQuality && dataQuality.score < 50 && (
         <div
-          className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg mb-3"
           data-testid="dq-partial-banner"
         >
           <AlertTriangle size={14} className="text-amber-600 shrink-0" />
@@ -1686,7 +1783,7 @@ export default function Site360() {
       {/* D.2: Bandeau données périmées */}
       {freshness && (freshness.status === 'expired' || freshness.status === 'no_data') && (
         <div
-          className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg mb-3"
           data-testid="freshness-expired-banner"
         >
           <AlertTriangle size={14} className="text-red-600 shrink-0" />
@@ -1704,38 +1801,191 @@ export default function Site360() {
         </div>
       )}
 
-      {/* 3 Mini KPIs */}
+      {/* ── V3: 4 KPI Cards (dominant) ── */}
       <div
-        className={`flex gap-4${(dataQuality && dataQuality.score < 50) || (freshness && freshness.status === 'expired') ? ' opacity-60' : ''}`}
+        className={`grid grid-cols-4 gap-3 mb-3${(dataQuality && dataQuality.score < 50) || (freshness && freshness.status === 'expired') ? ' opacity-60' : ''}`}
       >
-        <MiniKpi
-          icon={Zap}
-          label="Conso annuelle"
-          value={fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
-          color="text-blue-600"
-        />
-        <MiniKpi
-          icon={BadgeEuro}
-          label="Risque €"
-          value={fmtEurFull(site.risque_eur)}
-          color="text-red-600"
-        />
-        <MiniKpi
-          icon={AlertTriangle}
-          label="Anomalies"
-          value={`${unifiedCount ?? site.anomalies_count ?? 0}`}
-          color="text-amber-600"
-        />
-        <MiniKpi
-          icon={BarChart3}
-          label="Intensité"
-          value={
-            site.surface_m2 > 0 && site.conso_kwh_an > 0
-              ? `${Math.round(site.conso_kwh_an / site.surface_m2)} kWh/m²`
-              : '—'
-          }
-          color="text-indigo-600"
-        />
+        {/* Conso + intensité intégrée */}
+        <div className="bg-gray-50 rounded-xl p-4">
+          <p className="text-xs text-gray-500 font-medium mb-1">Consommation annuelle</p>
+          <p className="text-xl font-bold text-blue-600">
+            {fmtNum((site.conso_kwh_an || 0) / 1000, 0, 'MWh')}
+          </p>
+          {hasIntensity && (
+            <p className="text-[10px] text-gray-400 mt-1">
+              {intensity} kWh/m²
+              {' · '}
+              <span
+                className={`font-semibold ${
+                  intensityRatio <= 1
+                    ? 'text-green-600'
+                    : intensityRatio <= 1.5
+                      ? 'text-amber-600'
+                      : 'text-red-600'
+                }`}
+              >
+                {intensityRatio.toFixed(1)}× OID
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* Risque (accent rouge) */}
+        <div className="bg-gray-50 rounded-r-xl p-4 border-l-[2.5px] border-red-600">
+          <p className="text-xs text-gray-500 font-medium mb-1">Risque financier</p>
+          <p className="text-xl font-bold text-red-600">{fmtEurFull(site.risque_eur)}</p>
+          <p className="text-[10px] text-gray-400 mt-1">Pénalité DT estimée</p>
+        </div>
+
+        {/* Anomalies */}
+        <div className="bg-gray-50 rounded-xl p-4">
+          <p className="text-xs text-gray-500 font-medium mb-1">Anomalies</p>
+          <p className="text-xl font-bold text-amber-700">
+            {unifiedCount ?? site.anomalies_count ?? 0}
+          </p>
+          {unifiedCount != null && (
+            <p className="text-[10px] mt-1">
+              <span className="text-blue-700 font-medium">{unifiedPatCount} données</span>
+              {' · '}
+              <span className="text-purple-700 font-medium">{unifiedKbCount} analyse</span>
+            </p>
+          )}
+        </div>
+
+        {/* Économies potentielles */}
+        <div className="bg-gray-50 rounded-xl p-4">
+          <p className="text-xs text-gray-500 font-medium mb-1">Économies potentielles</p>
+          <p className="text-xl font-bold text-green-700">
+            {topReco?.total_savings_eur > 0
+              ? `${Math.round(topReco.total_savings_eur / 1000)} k€`
+              : '—'}
+            <span className="text-sm font-normal text-gray-400">/an</span>
+          </p>
+          {topReco?.total_recos > 0 && (
+            <p className="text-[10px] text-gray-400 mt-1">
+              {topReco.total_recos} recommandations KB
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── V3: Scores réglementaires (compact mini-badges) ── */}
+      <div className="flex gap-2 mb-4">
+        {complianceRounded != null && (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs"
+            data-testid="compliance-score-badge"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                complianceRounded >= 80
+                  ? 'bg-green-600'
+                  : complianceRounded >= 50
+                    ? 'bg-amber-600'
+                    : 'bg-red-600'
+              }`}
+            />
+            <span className="text-gray-500">Conformité</span>
+            <span
+              className={`font-semibold text-[13px] ${getComplianceScoreColor(complianceRounded)}`}
+            >
+              {complianceRounded}/100
+            </span>
+            {complianceGrade && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${complianceGrade.color} bg-gray-50 border border-gray-200`}
+              >
+                {complianceGrade.letter}
+              </span>
+            )}
+            <div className="w-12 h-[3px] rounded bg-gray-200 overflow-hidden ml-1">
+              <div
+                className={`h-full rounded ${
+                  complianceRounded >= 80
+                    ? 'bg-green-600'
+                    : complianceRounded >= 50
+                      ? 'bg-amber-600'
+                      : 'bg-red-600'
+                }`}
+                style={{ width: `${complianceRounded}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* DT score from breakdown */}
+        {siteComplianceScore?.breakdown?.find((b) => b.framework === 'tertiaire_operat') &&
+          (() => {
+            const dt = siteComplianceScore.breakdown.find(
+              (b) => b.framework === 'tertiaire_operat'
+            );
+            const dtScore = Math.round(dt.score);
+            const dtGrade = dtScore >= 80 ? 'A' : dtScore >= 60 ? 'B' : dtScore >= 40 ? 'C' : 'D';
+            return (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs">
+                <span
+                  className={`w-2 h-2 rounded-full ${dtScore >= 80 ? 'bg-green-600' : 'bg-amber-600'}`}
+                />
+                <span className="text-gray-500">Décret Tertiaire</span>
+                <span
+                  className={`font-semibold text-[13px] ${dtScore >= 80 ? 'text-green-700' : 'text-amber-700'}`}
+                >
+                  {dtScore}/100
+                </span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                    dtScore >= 80 ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {dtGrade}
+                </span>
+                <div className="w-12 h-[3px] rounded bg-gray-200 overflow-hidden ml-1">
+                  <div
+                    className={`h-full rounded ${dtScore >= 80 ? 'bg-green-600' : 'bg-amber-600'}`}
+                    style={{ width: `${dtScore}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+        {/* Complétude */}
+        {completeness && (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs"
+            data-testid="completeness-badge"
+            title={
+              completeness.missing?.length
+                ? `Manquant : ${completeness.missing.join(', ')}`
+                : 'Registre complet'
+            }
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${completeness.score >= 80 ? 'bg-green-600' : 'bg-amber-600'}`}
+            />
+            <span className="text-gray-500">Complétude</span>
+            <span
+              className={`font-semibold text-[13px] ${completeness.score >= 80 ? 'text-green-700' : 'text-amber-700'}`}
+            >
+              {completeness.score}%
+            </span>
+            <div className="w-12 h-[3px] rounded bg-gray-200 overflow-hidden ml-1">
+              <div
+                className={`h-full rounded ${completeness.score >= 80 ? 'bg-green-600' : 'bg-amber-600'}`}
+                style={{ width: `${completeness.score}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {dataQuality && (
+          <DataQualityBadge
+            score={dataQuality.score}
+            dimensions={dataQuality.dimensions}
+            recommendations={dataQuality.recommendations}
+            size="sm"
+          />
+        )}
       </div>
 
       {/* Tabs */}
@@ -1745,10 +1995,13 @@ export default function Site360() {
       {activeTab === 'resume' && (
         <TabResume
           site={site}
+          orgId={scope.orgId}
           unifiedCount={unifiedCount}
           anomalies={unifiedAnomalies}
           anomLoading={unifiedAnomLoading}
           onSegmentationClick={() => setShowSegModal(true)}
+          topReco={topReco}
+          intensityData={intensityData}
         />
       )}
       {activeTab === 'conso' && <TabConsoSite siteId={site.id} />}

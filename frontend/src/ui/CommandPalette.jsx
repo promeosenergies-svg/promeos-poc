@@ -6,14 +6,17 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, CornerDownLeft } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import {
   ALL_NAV_ITEMS,
   QUICK_ACTIONS,
   ALL_MAIN_ITEMS,
   COMMAND_SHORTCUTS,
 } from '../layout/NavRegistry';
+import { useScope } from '../contexts/ScopeContext';
 
 export default function CommandPalette({ open, onClose, onToggleExpert }) {
+  const { orgSites: scopedSites = [] } = useScope();
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef(null);
@@ -65,7 +68,27 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
     }));
     const shortcuts = COMMAND_SHORTCUTS.filter(matchItem).map((a) => ({ type: 'shortcut', ...a }));
 
-    return [...pages, ...legacyPages, ...actions, ...shortcuts];
+    // Sites search — match by nom, ville, adresse
+    const siteResults = scopedSites
+      .filter((s) => {
+        const searchable = [s.nom, s.ville, s.adresse, s.code_postal, s.usage]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return searchable.includes(q);
+      })
+      .slice(0, 5)
+      .map((s) => ({
+        type: 'site',
+        to: `/sites/${s.id}`,
+        label: s.nom,
+        section: 'Sites',
+        icon: MapPin,
+        keywords: [s.ville, s.usage].filter(Boolean),
+        subtitle: [s.ville, s.usage].filter(Boolean).join(' · '),
+      }));
+
+    return [...siteResults, ...pages, ...legacyPages, ...actions, ...shortcuts];
   }, [query]);
 
   useEffect(() => {
@@ -172,7 +195,14 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
                       className={isSelected ? 'text-blue-500' : 'text-gray-400'}
                     />
                   )}
-                  <span className="flex-1 truncate">{item.label}</span>
+                  <span className="flex-1 truncate">
+                    {item.label}
+                    {item.subtitle && (
+                      <span className="ml-1.5 text-xs text-gray-400 font-normal">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </span>
                   {item.shortcut && (
                     <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-gray-100 rounded border border-gray-200">
                       {item.shortcut}
@@ -184,6 +214,11 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
                   {item.type === 'action' && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded font-medium">
                       Action
+                    </span>
+                  )}
+                  {item.type === 'site' && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded font-medium">
+                      Site
                     </span>
                   )}
                   {isSelected && <CornerDownLeft size={12} className="text-gray-400" />}

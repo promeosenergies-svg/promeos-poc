@@ -4,8 +4,7 @@ Compare IPE réel vs ADEME benchmarks, calcule surcoût estimé.
 Utilisé par shadow billing et dashboard usages.
 """
 
-from sqlalchemy.orm import Session
-from config.patrimoine_assumptions import BENCHMARK_ADEME_KWH_M2_AN
+from config.ademe_benchmarks import BENCHMARK_BY_BUILDING_TYPE as BENCHMARK_ADEME_KWH_M2_AN
 
 # Mapping TypeSite → clé ADEME
 _TYPE_TO_ADEME = {

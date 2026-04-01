@@ -3,9 +3,25 @@
  * Glass surface. Module-tinted header from TINT_PALETTE.
  * Quick actions, recents, pins, sections with premium hover/active.
  */
-import { useMemo, useCallback } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Star, X, Search } from 'lucide-react';
+import {
+  getActiveSite,
+  clearActiveSite,
+  setActiveSite,
+  ACTIVE_SITE_EVENT,
+} from '../utils/activeSite';
+import { fmtArea } from '../utils/format';
+
+const SITE360_RE = /^\/sites\/\d+/;
+const STATUT_DOT_COLOR = {
+  conforme: '#0F6E56',
+  non_conforme: '#E24B4A',
+  a_risque: '#E24B4A',
+  a_evaluer: '#BA7517',
+};
+
 import {
   NAV_MODULES,
   ROUTE_MODULE_MAP,
@@ -17,6 +33,7 @@ import {
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useScope } from '../contexts/ScopeContext';
 
 /* ── Badge severity styles ── */
 const BADGE_STYLES = {
@@ -112,11 +129,104 @@ function SectionHeader({ label, icon: SectionIcon, tintColor }) {
   );
 }
 
+/* ── Highlight helper for site search ── */
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-amber-100 text-inherit rounded-sm px-px">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 /* ── Main Panel ── */
 export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
   const _location = useLocation();
+  const _navigate = useNavigate();
   const { isExpert } = useExpertMode();
+
+  // Active site context (for contextual nav item in patrimoine)
+  const [activeSiteCtx, setActiveSiteCtx] = useState(() => getActiveSite());
+  useEffect(() => {
+    const handler = (e) => setActiveSiteCtx(e.detail);
+    window.addEventListener(ACTIVE_SITE_EVENT, handler);
+    return () => window.removeEventListener(ACTIVE_SITE_EVENT, handler);
+  }, []);
+  const isOnSite360 = SITE360_RE.test(_location.pathname);
   const { isAuthenticated, hasPermission } = useAuth();
+  const { orgSites } = useScope();
+
+  // ── Site search (inline in patrimoine section) ──
+  const [siteQuery, setSiteQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const searchInputRef = useRef(null);
+
+  const siteResults = useMemo(() => {
+    if (!siteQuery.trim()) return [];
+    const q = siteQuery.trim().toLowerCase();
+    return orgSites.filter((s) => {
+      const nom = (s.nom || '').toLowerCase();
+      const ville = (s.ville || s.city || '').toLowerCase();
+      const code = (s.code_postal || '').toLowerCase();
+      return nom.includes(q) || ville.includes(q) || code.includes(q);
+    });
+  }, [orgSites, siteQuery]);
+
+  // "/" keyboard shortcut to focus site search
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable)
+          return;
+        if (!activeSiteCtx && activeModule === 'patrimoine') {
+          e.preventDefault();
+          searchInputRef.current?.focus();
+        }
+      }
+      if (e.key === 'Escape' && showResults) {
+        setShowResults(false);
+        setSiteQuery('');
+        searchInputRef.current?.blur();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [activeSiteCtx, activeModule, showResults]);
+
+  // Click outside closes results (use the outer wrapper as containment boundary)
+  const searchWrapperRef = useRef(null);
+  useEffect(() => {
+    if (!showResults) return;
+    function onClickOutside(e) {
+      if (searchWrapperRef.current?.contains(e.target)) return;
+      setShowResults(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [showResults]);
+
+  const handleSelectSite = useCallback(
+    (site) => {
+      setActiveSite(site);
+      setActiveSiteCtx({
+        id: site.id,
+        nom: site.nom,
+        statut: site.statut_conformite || 'a_evaluer',
+      });
+      setSiteQuery('');
+      setShowResults(false);
+      _navigate(`/sites/${site.id}`);
+    },
+    [_navigate]
+  );
+
   // Sections are always open — no toggle state needed
 
   const mod = NAV_MODULES.find((m) => m.key === activeModule) || NAV_MODULES[0];
@@ -249,15 +359,125 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
             <div key={section.key}>
               <SectionHeader label={section.label} icon={section.icon} tintColor={sectionTint} />
               <div className="mt-0.5">
-                {section.items.map((item) => (
-                  <PanelLink
-                    key={item.to}
-                    {...item}
-                    badge={item.badgeKey ? badges[item.badgeKey] : 0}
-                    pinned={pins.includes(item.to)}
-                    onTogglePin={onTogglePin}
-                    tint={sectionTint}
-                  />
+                {section.items.map((item, idx) => (
+                  <Fragment key={item.to}>
+                    <PanelLink
+                      {...item}
+                      badge={item.badgeKey ? badges[item.badgeKey] : 0}
+                      pinned={pins.includes(item.to)}
+                      onTogglePin={onTogglePin}
+                      tint={sectionTint}
+                    />
+                    {/* Mini site search (between Registre and Conformité, hidden when active site set) */}
+                    {idx === 0 && section.key === 'patrimoine' && !activeSiteCtx && (
+                      <div ref={searchWrapperRef} className="relative mx-1 mt-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 border border-slate-200/60 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-200 transition-all">
+                          <Search size={12} className="text-slate-400 shrink-0" />
+                          <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={siteQuery}
+                            onChange={(e) => {
+                              setSiteQuery(e.target.value);
+                              setShowResults(true);
+                            }}
+                            onFocus={() => setShowResults(true)}
+                            placeholder="Rechercher un site..."
+                            className="flex-1 bg-transparent text-[11.5px] text-slate-700 placeholder:text-slate-400/70 outline-none min-w-0"
+                          />
+                          {!siteQuery && (
+                            <kbd className="text-[9px] text-slate-400 bg-slate-100 rounded px-1 py-px font-mono">
+                              /
+                            </kbd>
+                          )}
+                          {siteQuery && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSiteQuery('');
+                                searchInputRef.current?.focus();
+                              }}
+                              className="text-slate-400 hover:text-slate-600 p-0.5"
+                            >
+                              <X size={10} />
+                            </button>
+                          )}
+                        </div>
+                        {showResults && siteQuery.trim() && (
+                          <div className="mt-1 rounded-md bg-white border border-slate-200 shadow-sm max-h-48 overflow-y-auto">
+                            {siteResults.length === 0 && (
+                              <p className="text-[11px] text-slate-400 px-2.5 py-2 text-center">
+                                Aucun site trouvé
+                              </p>
+                            )}
+                            {siteResults.slice(0, 5).map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-emerald-50 transition-colors text-[11.5px]"
+                                onClick={() => handleSelectSite(s)}
+                              >
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                                  style={{
+                                    backgroundColor:
+                                      STATUT_DOT_COLOR[s.statut_conformite] || '#888',
+                                  }}
+                                />
+                                <span className="flex-1 truncate text-slate-700">
+                                  {highlightMatch(s.nom, siteQuery.trim())}
+                                </span>
+                                <span className="text-[10px] text-slate-400 shrink-0 ml-1">
+                                  {s.surface_m2 ? fmtArea(s.surface_m2) : ''}
+                                  {s.surface_m2 && s.ville ? ' \u00b7 ' : ''}
+                                  {s.ville || ''}
+                                </span>
+                              </button>
+                            ))}
+                            {siteResults.length > 5 && (
+                              <p className="text-[10px] text-slate-400 px-2.5 py-1.5 text-center border-t border-slate-100">
+                                et {siteResults.length - 5} autre
+                                {siteResults.length - 5 > 1 ? 's' : ''}&hellip;
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Item contextuel : site actif (entre Registre et Conformité) */}
+                    {idx === 0 && section.key === 'patrimoine' && activeSiteCtx && (
+                      <div
+                        className={`group flex items-center gap-2 px-3.5 py-1.5 mx-1 rounded-md cursor-pointer text-[12px] transition-all ${
+                          isOnSite360
+                            ? 'bg-emerald-50 text-emerald-700 font-medium border-l-2 border-emerald-600'
+                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                        }`}
+                        onClick={() => _navigate(`/sites/${activeSiteCtx.id}`)}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: STATUT_DOT_COLOR[activeSiteCtx.statut] || '#888',
+                          }}
+                        />
+                        <span className="truncate flex-1">{activeSiteCtx.nom}</span>
+                        <button
+                          type="button"
+                          aria-label="Fermer la fiche site"
+                          className="opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded p-0.5 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearActiveSite();
+                            setActiveSiteCtx(null);
+                            if (isOnSite360) _navigate('/patrimoine');
+                          }}
+                          title="Fermer la fiche site"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </div>
