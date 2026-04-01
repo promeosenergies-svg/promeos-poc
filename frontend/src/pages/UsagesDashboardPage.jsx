@@ -7,8 +7,26 @@
  */
 import React, { useEffect, useState, useRef } from 'react';
 import { useScope } from '../contexts/ScopeContext';
-import { getUsagesDashboard } from '../services/api';
+import {
+  getUsagesDashboard,
+  getUsageTimeline,
+  getPortfolioUsageComparison,
+  getMeterReadingsPreview,
+} from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+// XLSX loaded dynamically in handleExportExcel to avoid 800KB bundle bloat
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -435,7 +453,15 @@ function BaselineTable({ baselines }) {
 
 // ── UES Table (enrichi V1.2) ─────────────────────────────────────────────
 
-function UesTable({ ues }) {
+function UesTable({
+  ues,
+  meteringPlan,
+  expandedUsage,
+  setExpandedUsage,
+  expandedMeter,
+  toggleMeterDetail,
+  meterReadings,
+}) {
   if (!ues || ues.length === 0) {
     return (
       <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>Aucun usage significatif détecté.</p>
@@ -456,43 +482,126 @@ function UesTable({ ues }) {
         </thead>
         <tbody>
           {ues.map((u, i) => (
-            <tr key={u.usage_id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-              <td style={{ padding: '8px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{familyIcon(u.family)}</span>
-                <span style={{ fontWeight: u.is_significant ? 600 : 400 }}>{u.label}</span>
-                {u.is_significant && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      padding: '1px 5px',
-                      borderRadius: 3,
-                      background: '#dbeafe',
-                      color: '#1e40af',
-                      fontWeight: 600,
-                    }}
-                  >
-                    UES
+            <React.Fragment key={u.usage_id || i}>
+              <tr
+                style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
+                onClick={() => setExpandedUsage?.(expandedUsage === u.label ? null : u.label)}
+              >
+                <td style={{ padding: '8px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: '#9ca3af' }}>
+                    {expandedUsage === u.label ? '▼' : '▶'}
                   </span>
+                  <span>{familyIcon(u.family)}</span>
+                  <span style={{ fontWeight: u.is_significant ? 600 : 400 }}>{u.label}</span>
+                  {u.is_significant && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        background: '#dbeafe',
+                        color: '#1e40af',
+                        fontWeight: 600,
+                      }}
+                    >
+                      UES
+                    </span>
+                  )}
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
+                  {fmt(u.kwh)}
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                  {fmt(u.pct_of_total, 1)}%
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                  {u.ipe_kwh_m2 ? fmt(u.ipe_kwh_m2, 1) : '—'}
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                  <DataSourceBadge source={u.data_source} />
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+                  {u.has_drift ? (
+                    <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                      +{fmt(u.drift_pct, 1)}%
+                    </span>
+                  ) : (
+                    <span style={{ color: '#65a30d' }}>OK</span>
+                  )}
+                </td>
+              </tr>
+              {/* Drill-down: sous-compteurs du metering plan pour cet usage */}
+              {expandedUsage === u.label &&
+                meteringPlan?.meters?.map((meter) =>
+                  meter.sub_meters
+                    ?.filter((s) => s.usage?.label === u.label)
+                    .map((sub) => (
+                      <React.Fragment key={sub.id || sub.meter_id}>
+                        <tr style={{ background: '#f9fafb', fontSize: 12 }}>
+                          <td
+                            style={{
+                              padding: '6px 6px 6px 32px',
+                              color: '#6b7280',
+                              cursor: 'pointer',
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMeterDetail?.(sub.id);
+                            }}
+                          >
+                            ↳ {sub.name || sub.meter_id} {expandedMeter === sub.id ? '▼' : '▶'}
+                          </td>
+                          <td style={{ padding: '6px', textAlign: 'right', color: '#6b7280' }}>
+                            {fmt(sub.kwh)}
+                          </td>
+                          <td style={{ padding: '6px', textAlign: 'right', color: '#6b7280' }}>
+                            {sub.pct_of_principal ? `${fmt(sub.pct_of_principal, 0)}%` : '—'}
+                          </td>
+                          <td
+                            colSpan={3}
+                            style={{
+                              padding: '6px',
+                              textAlign: 'right',
+                              fontSize: 11,
+                              color: '#9ca3af',
+                            }}
+                          >
+                            <DataSourceBadge source={sub.data_source} />
+                          </td>
+                        </tr>
+                        {expandedMeter === sub.id && meterReadings?.readings?.length > 0 && (
+                          <tr>
+                            <td colSpan={6} style={{ padding: '8px 32px' }}>
+                              <div style={{ width: '100%', height: 100 }}>
+                                <ResponsiveContainer>
+                                  <LineChart data={meterReadings.readings}>
+                                    <XAxis
+                                      dataKey="ts"
+                                      tick={{ fontSize: 9 }}
+                                      tickFormatter={(v) => v?.slice(11, 16) || ''}
+                                    />
+                                    <YAxis tick={{ fontSize: 9 }} />
+                                    <RechartsTooltip formatter={(v) => [`${v} kWh`]} />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="kwh"
+                                      stroke="#3b82f6"
+                                      dot={false}
+                                      strokeWidth={1.5}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <div style={{ fontSize: 10, color: '#9ca3af', textAlign: 'right' }}>
+                                Total 7j : {fmt(meterReadings.total_kwh, 1)} kWh
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))
                 )}
-              </td>
-              <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600 }}>
-                {fmt(u.kwh)}
-              </td>
-              <td style={{ padding: '8px 6px', textAlign: 'right' }}>{fmt(u.pct_of_total, 1)}%</td>
-              <td style={{ padding: '8px 6px', textAlign: 'right' }}>
-                {u.ipe_kwh_m2 ? fmt(u.ipe_kwh_m2, 1) : '—'}
-              </td>
-              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                <DataSourceBadge source={u.data_source} />
-              </td>
-              <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                {u.has_drift ? (
-                  <span style={{ color: '#dc2626', fontWeight: 600 }}>+{fmt(u.drift_pct, 1)}%</span>
-                ) : (
-                  <span style={{ color: '#65a30d' }}>OK</span>
-                )}
-              </td>
-            </tr>
+            </React.Fragment>
           ))}
           {/* Ligne résiduelle "Non affecté" si somme UES < 100% */}
           {(() => {
@@ -1070,7 +1179,7 @@ function BillingLinksWidget({ billing, cost, navigate }) {
 // ── Main Page ────────────────────────────────────────────────────────────
 
 export default function UsagesDashboardPage() {
-  const { selectedSiteId, scopedSites } = useScope();
+  const { selectedSiteId, scopedSites, scope } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1079,6 +1188,11 @@ export default function UsagesDashboardPage() {
 
   const siteId = selectedSiteId;
   const siteName = scopedSites?.find((s) => s.id === siteId)?.nom;
+  const [timeline, setTimeline] = useState(null);
+  const [portfolio, setPortfolio] = useState(null);
+  const [expandedUsage, setExpandedUsage] = useState(null);
+  const [expandedMeter, setExpandedMeter] = useState(null);
+  const [meterReadings, setMeterReadings] = useState(null);
 
   useEffect(() => {
     if (!siteId) {
@@ -1091,10 +1205,80 @@ export default function UsagesDashboardPage() {
       .then(setData)
       .catch((err) => setError(err?.response?.data?.detail || err.message))
       .finally(() => setLoading(false));
+    getUsageTimeline(siteId)
+      .then(setTimeline)
+      .catch(() => {});
   }, [siteId]);
 
-  const handleExport = () => {
-    window.print();
+  // Portfolio comparison (org-level)
+  useEffect(() => {
+    const orgId = scope?.orgId;
+    if (orgId && scopedSites?.length >= 2) {
+      getPortfolioUsageComparison(orgId)
+        .then(setPortfolio)
+        .catch(() => {});
+    }
+  }, [scope?.orgId, scopedSites?.length]);
+
+  const toggleMeterDetail = (meterId) => {
+    if (expandedMeter === meterId) {
+      setExpandedMeter(null);
+      setMeterReadings(null);
+    } else {
+      setExpandedMeter(meterId);
+      setMeterReadings(null); // Clear stale data before fetch
+      getMeterReadingsPreview(meterId)
+        .then(setMeterReadings)
+        .catch(() => setMeterReadings(null));
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!data) return;
+    const XLSX = await import('xlsx');
+    const { summary, top_ues, baselines } = data;
+    const wb = XLSX.utils.book_new();
+    const kpiData = [
+      ['Métrique', 'Valeur', 'Unité'],
+      ['Conso totale', summary.total_kwh, 'kWh/an'],
+      ['Coût total', summary.total_eur, 'EUR/an'],
+      ['Score readiness', data.readiness?.score, '/100'],
+      ['Sous-compteurs', summary.sub_meters_count, ''],
+      ['Couverture', summary.metering_coverage_pct, '%'],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpiData), 'KPIs');
+    if (top_ues?.length) {
+      const uesData = [
+        ['Usage', 'kWh/an', 'Part %', 'IPE kWh/m²', 'Source', 'UES', 'Dérive %'],
+        ...top_ues.map((u) => [
+          u.label,
+          u.kwh,
+          u.pct_of_total,
+          u.ipe_kwh_m2,
+          u.data_source,
+          u.is_significant ? 'Oui' : 'Non',
+          u.drift_pct,
+        ]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(uesData), 'UES');
+    }
+    if (baselines?.length) {
+      const blData = [
+        ['Usage', 'Baseline kWh', 'Actuel kWh', 'Écart kWh', 'Écart %', 'Tendance', 'IPE actuel'],
+        ...baselines.map((b) => [
+          b.label,
+          b.kwh_baseline,
+          b.kwh_current,
+          b.ecart_kwh,
+          b.ecart_pct,
+          b.trend,
+          b.ipe_current,
+        ]),
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(blData), 'Baseline');
+    }
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `PROMEOS_Usages_${siteName || siteId}_${dateStr}.xlsx`);
   };
 
   if (!siteId) {
@@ -1164,21 +1348,36 @@ export default function UsagesDashboardPage() {
             details={readiness.details}
             recommendations={readiness.recommendations}
           />
-          <button
-            onClick={handleExport}
-            className="print-hide"
-            style={{
-              padding: '6px 14px',
-              fontSize: 12,
-              borderRadius: 6,
-              border: '1px solid #d1d5db',
-              background: 'white',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            Exporter / Imprimer
-          </button>
+          <div className="print-hide" style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={handleExportExcel}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                background: 'white',
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              📊 Excel
+            </button>
+            <button
+              onClick={() => window.print()}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                background: 'white',
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              🖨 PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1232,6 +1431,113 @@ export default function UsagesDashboardPage() {
         </div>
       )}
 
+      {/* V2: Timeline mensuelle par usage */}
+      {timeline && timeline.series?.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>Évolution mensuelle par usage</h2>
+          <div style={{ width: '100%', height: 320 }}>
+            <ResponsiveContainer>
+              <AreaChart
+                data={timeline.months.map((m, i) => {
+                  const row = { month: m.slice(5) };
+                  timeline.series.forEach((s) => {
+                    row[s.usage] = s.data[i] || 0;
+                  });
+                  return row;
+                })}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <RechartsTooltip
+                  formatter={(v, name) => [`${Number(v).toLocaleString()} kWh`, name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {timeline.series.map((s) => (
+                  <Area
+                    key={s.usage}
+                    type="monotone"
+                    dataKey={s.usage}
+                    stackId="1"
+                    fill={s.color}
+                    stroke={s.color}
+                    fillOpacity={0.6}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* V2: Comparaison inter-sites */}
+      {portfolio && portfolio.sites?.length >= 2 && (
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>Comparaison inter-sites (IPE kWh/m²)</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
+                  <th style={{ padding: '8px 6px' }}>Site</th>
+                  {portfolio.usages.map((u) => (
+                    <th key={u} style={{ padding: '8px 6px', textAlign: 'right' }}>
+                      {u}
+                    </th>
+                  ))}
+                  <th style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700 }}>Total</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
+                    ADEME
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {portfolio.sites.map((s) => (
+                  <tr
+                    key={s.site_id}
+                    style={{
+                      borderBottom: '1px solid #f3f4f6',
+                      fontWeight: s.site_id === siteId ? 600 : 400,
+                      background: s.site_id === siteId ? '#f0f9ff' : 'transparent',
+                    }}
+                  >
+                    <td style={{ padding: '8px 6px' }}>{s.site_name}</td>
+                    {portfolio.usages.map((u) => {
+                      const val = s.ipe_by_usage[u] || 0;
+                      const maxVal = Math.max(
+                        ...portfolio.sites.map((x) => x.ipe_by_usage[u] || 0)
+                      );
+                      const intensity = maxVal > 0 ? val / maxVal : 0;
+                      return (
+                        <td
+                          key={u}
+                          style={{
+                            padding: '8px 6px',
+                            textAlign: 'right',
+                            background: `rgba(239,68,68,${intensity * 0.15})`,
+                          }}
+                        >
+                          {val > 0 ? fmt(val, 0) : '—'}
+                        </td>
+                      );
+                    })}
+                    <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700 }}>
+                      {fmt(s.ipe_total, 0)}
+                    </td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: '#6b7280' }}>
+                      {s.benchmark_ademe}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, fontStyle: 'italic' }}>
+            IPE en kWh/m²/an. Intensité rouge = usage le plus élevé du portefeuille. Site actuel
+            surligné.
+          </p>
+        </div>
+      )}
+
       {/* V1.2: Baseline / Avant-Après */}
       <div style={sectionStyle}>
         <h2 style={h2Style}>Baseline & Avant/Après</h2>
@@ -1245,7 +1551,15 @@ export default function UsagesDashboardPage() {
       {/* Top UES */}
       <div style={sectionStyle}>
         <h2 style={h2Style}>Usages Énergétiques Significatifs (UES)</h2>
-        <UesTable ues={top_ues} />
+        <UesTable
+          ues={top_ues}
+          meteringPlan={metering_plan}
+          expandedUsage={expandedUsage}
+          setExpandedUsage={setExpandedUsage}
+          expandedMeter={expandedMeter}
+          toggleMeterDetail={toggleMeterDetail}
+          meterReadings={meterReadings}
+        />
       </div>
 
       {/* Plan de comptage */}

@@ -16,6 +16,9 @@ from services.usage_service import (
     compute_baselines,
     get_usage_compliance,
     get_usage_billing_links,
+    get_usage_timeline,
+    get_portfolio_usage_comparison,
+    get_meter_readings_preview,
 )
 from models import Usage, UsageBaseline, USAGE_LABELS_FR, USAGE_FAMILY_MAP, TypeUsage, UsageFamily, DataSourceType
 
@@ -149,3 +152,41 @@ def api_list_usages(site_id: int, db: Session = Depends(get_db)):
         }
         for u in usages
     ]
+
+
+# ── V2 — Timeline mensuelle ─────────────────────────────────────────────
+
+
+@router.get("/timeline/{site_id}")
+def api_usage_timeline(
+    site_id: int,
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+):
+    """Consommation mensuelle par usage pour AreaChart empile."""
+    return get_usage_timeline(db, site_id, months=months)
+
+
+# ── V2 — Comparaison inter-sites ────────────────────────────────────────
+
+
+@router.get("/portfolio-compare")
+def api_portfolio_usage_comparison(
+    org_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Compare les IPE par usage pour tous les sites d'une organisation."""
+    return get_portfolio_usage_comparison(db, org_id)
+
+
+# ── V2 — Meter readings preview ─────────────────────────────────────────
+
+
+@router.get("/meter-readings/{meter_id}")
+def api_meter_readings_preview(
+    meter_id: int,
+    days: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db),
+):
+    """Releves recents d'un compteur pour mini-graphe inline."""
+    return get_meter_readings_preview(db, meter_id, days=days)
