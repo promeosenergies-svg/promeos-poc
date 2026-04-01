@@ -1,11 +1,15 @@
 /**
- * PROMEOS — Page Usages Énergétiques V3
- * Layout 2 colonnes + scope switcher + 3 onglets.
- * Orchestrateur : fetch centralisé, composants dans components/usages/.
+ * PROMEOS — Page Usages Énergétiques V4
+ * Layout 2 colonnes + scope switcher multi-niveaux + 3 onglets.
+ * Orchestrateur : fetch centralisé via scoped endpoints.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useScope } from '../contexts/ScopeContext';
-import { getUsagesDashboard, getUsageTimeline, getPortfolioUsageComparison } from '../services/api';
+import {
+  getScopedUsagesDashboard,
+  getScopedUsageTimeline,
+  getPortfolioUsageComparison,
+} from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
 import KpiStrip from '../components/usages/KpiStrip';
@@ -18,7 +22,7 @@ import ComplianceCard from '../components/usages/ComplianceCard';
 import CostCard from '../components/usages/CostCard';
 import FooterLinks from '../components/usages/FooterLinks';
 
-const TABS = [
+const ALL_TABS = [
   { id: 'timeline', label: '📈 Évolution' },
   { id: 'baseline', label: '📊 Baseline' },
   { id: 'comptage', label: '🔌 Comptage' },
@@ -34,33 +38,56 @@ export default function UsagesDashboardPage() {
   const [activeTab, setActiveTab] = useState('timeline');
   const [scopeLevel, setScopeLevel] = useState(selectedSiteId ? 'site' : 'org');
 
+  const _fetchId = useRef(0);
   const siteId = selectedSiteId;
   const siteName = scopedSites?.find((s) => s.id === siteId)?.nom;
   const totalSurface = scopedSites?.reduce((s, site) => s + (site.surface_m2 || 0), 0) || 0;
+  const isMultiSite = scopeLevel !== 'site';
 
-  // Fetch dashboard data
+  // Tabs : masquer Comptage en mode multi-site
+  const visibleTabs = useMemo(
+    () => (isMultiSite ? ALL_TABS.filter((t) => t.id !== 'comptage') : ALL_TABS),
+    [isMultiSite]
+  );
+
+  // Reset active tab if it's hidden
   useEffect(() => {
-    if (!siteId) {
-      setData(null);
-      setTimeline(null);
-      setLoading(false);
-      return;
-    }
-    // Fetch per-site dashboard
-    if (siteId) {
-      setLoading(true);
-      setError(null);
-      getUsagesDashboard(siteId)
-        .then(setData)
-        .catch((err) => setError(err?.response?.data?.detail || err.message))
-        .finally(() => setLoading(false));
-      getUsageTimeline(siteId)
-        .then(setTimeline)
-        .catch(() => {});
-    }
-  }, [siteId, scopeLevel]);
+    if (activeTab === 'comptage' && isMultiSite) setActiveTab('timeline');
+  }, [isMultiSite, activeTab]);
 
-  // Portfolio comparison
+  // Fetch scoped dashboard data (with requestId guard to reject stale responses)
+  useEffect(() => {
+    const myId = ++_fetchId.current;
+    setLoading(true);
+    setError(null);
+    setTimeline(null);
+
+    const params = {};
+    if (scopeLevel === 'site' && siteId) params.siteId = siteId;
+    else if (scopeLevel === 'portfolio' && scope.portefeuilleId)
+      params.portefeuilleId = scope.portefeuilleId;
+    else if (scopeLevel === 'entite' && scope.entiteId) params.entityId = scope.entiteId;
+    // org level: no params → backend resolves via X-Org-Id header
+
+    getScopedUsagesDashboard(params)
+      .then((d) => {
+        if (myId === _fetchId.current) setData(d);
+      })
+      .catch((err) => {
+        if (myId === _fetchId.current) setError(err?.response?.data?.detail || err.message);
+      })
+      .finally(() => {
+        if (myId === _fetchId.current) setLoading(false);
+      });
+
+    getScopedUsageTimeline(params)
+      .then((t) => {
+        if (myId === _fetchId.current) setTimeline(t);
+      })
+      .catch(() => {});
+  }, [siteId, scopeLevel, scope.portefeuilleId, scope.entiteId]);
+
+  // Portfolio comparison (heatmap sidebar)
   useEffect(() => {
     const orgId = scope?.orgId;
     if (orgId && scopedSites?.length >= 2) {
@@ -113,34 +140,9 @@ export default function UsagesDashboardPage() {
     }
     XLSX.writeFile(
       wb,
-      `PROMEOS_Usages_${siteName || siteId}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `PROMEOS_Usages_${siteName || siteId || 'portfolio'}_${new Date().toISOString().slice(0, 10)}.xlsx`
     );
   };
-
-  // No site selected
-  if (!siteId && !loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header score={null} />
-        <ScopeBar scopeLevel={scopeLevel} onLevelChange={setScopeLevel} />
-        <KpiStrip
-          dashboard={null}
-          scopeLevel={scopeLevel}
-          sitesCount={scopedSites?.length || 0}
-          totalSurface={totalSurface}
-        />
-        <div className="px-7 pb-4 grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-3.5">
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 text-sm">
-            Sélectionnez un site pour afficher les usages détaillés.
-          </div>
-          <div className="flex flex-col gap-3.5">
-            <HeatmapCard data={portfolio} currentSiteId={null} />
-          </div>
-        </div>
-        <FooterLinks />
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -182,11 +184,11 @@ export default function UsagesDashboardPage() {
       <KpiStrip
         dashboard={data}
         scopeLevel={scopeLevel}
-        sitesCount={scopedSites?.length || 1}
+        sitesCount={data?.sites_count || scopedSites?.length || 1}
         totalSurface={
           scopeLevel === 'site'
             ? scopedSites?.find((s) => s.id === siteId)?.surface_m2 || 0
-            : totalSurface
+            : data?.summary?.total_surface_m2 || totalSurface
         }
       />
 
@@ -194,18 +196,21 @@ export default function UsagesDashboardPage() {
       <div className="px-7 pb-4 grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-3.5">
         {/* Colonne gauche : onglets */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <TabBar active={activeTab} onChange={setActiveTab} tabs={TABS} />
+          <TabBar active={activeTab} onChange={setActiveTab} tabs={visibleTabs} />
           {activeTab === 'timeline' && <TimelineTab data={timeline} />}
           {activeTab === 'baseline' && (
-            <BaselineTab baselines={data?.baselines} meteringPlan={data?.metering_plan} />
+            <BaselineTab
+              baselines={data?.baselines}
+              meteringPlan={isMultiSite ? null : data?.metering_plan}
+            />
           )}
-          {activeTab === 'comptage' && <ComptageTab data={data?.metering_plan} />}
+          {activeTab === 'comptage' && !isMultiSite && <ComptageTab data={data?.metering_plan} />}
         </div>
 
         {/* Colonne droite : contexte permanent */}
         <div className="flex flex-col gap-3.5">
           <HeatmapCard data={portfolio} currentSiteId={siteId} />
-          <ComplianceCard data={data?.compliance} />
+          {data?.compliance && <ComplianceCard data={data.compliance} />}
           <CostCard data={data?.cost_breakdown} />
         </div>
       </div>

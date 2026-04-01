@@ -767,10 +767,23 @@ def get_unified_anomalies(
     except Exception:
         logging.getLogger(__name__).warning("KB anomalies indisponibles pour site %s, patrimoine seul", site_id)
 
-    unified.extend(kb_anomalies)
-
-    # Tri par sévérité puis priority_score desc
     _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+    # Dédupliquer anomalies KB par code (même anomalie sur N compteurs → 1 seule)
+    kb_deduped = {}
+    for a in kb_anomalies:
+        key = a["code"]
+        if key in kb_deduped:
+            existing = kb_deduped[key]
+            existing["meter_count"] = existing.get("meter_count", 1) + 1
+            if abs(a.get("deviation_pct") or 0) > abs(existing.get("deviation_pct") or 0):
+                existing["deviation_pct"] = a["deviation_pct"]
+                existing["measured_value"] = a["measured_value"]
+            if _SEV_ORDER.get(a["severity"], 9) < _SEV_ORDER.get(existing["severity"], 9):
+                existing["severity"] = a["severity"]
+        else:
+            kb_deduped[key] = {**a, "meter_count": 1}
+    unified.extend(kb_deduped.values())
     unified.sort(
         key=lambda x: (
             _SEV_ORDER.get(x.get("severity", "low"), 99),
@@ -783,7 +796,7 @@ def get_unified_anomalies(
         "anomalies": unified,
         "total": len(unified),
         "patrimoine_count": len(enriched),
-        "analytique_count": len(kb_anomalies),
+        "analytique_count": len(kb_deduped),
         "completude_score": pat_result.get("completude_score"),
         "computed_at": datetime.now(timezone.utc).isoformat() + "Z",
     }
@@ -1145,3 +1158,52 @@ def get_site_completeness(
     org_id = _get_org_id(request, auth, db)
     site = _load_site_with_org_check(db, site_id, org_id)
     return _compute_site_completeness(db, site, [site_id])
+
+
+# ── Scope Tree ───────────────────────────────────────────────────────────
+
+
+@router.get("/scope-tree")
+def get_scope_tree(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Arbre hiérarchique Org → Entités → Portefeuilles → Sites pour le scope switcher."""
+    org_id = _get_org_id(request, auth, db)
+
+    entites = (
+        db.query(EntiteJuridique)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(EntiteJuridique))
+        .order_by(EntiteJuridique.nom)
+        .all()
+    )
+
+    tree = []
+    for ej in entites:
+        pfs = (
+            db.query(Portefeuille)
+            .filter(Portefeuille.entite_juridique_id == ej.id, not_deleted(Portefeuille))
+            .order_by(Portefeuille.nom)
+            .all()
+        )
+        pf_list = []
+        for pf in pfs:
+            sites = db.query(Site).filter(Site.portefeuille_id == pf.id, not_deleted(Site)).order_by(Site.nom).all()
+            pf_list.append(
+                {
+                    "id": pf.id,
+                    "nom": pf.nom,
+                    "sites": [{"id": s.id, "nom": s.nom} for s in sites],
+                }
+            )
+        tree.append(
+            {
+                "id": ej.id,
+                "nom": ej.nom,
+                "siren": ej.siren,
+                "portefeuilles": pf_list,
+            }
+        )
+
+    return {"org_id": org_id, "entites": tree}

@@ -365,6 +365,28 @@ export const getPortfolioUsageComparison = (orgId) =>
 export const getMeterReadingsPreview = (meterId, days = 7) =>
   cachedGet(`/usages/meter-readings/${meterId}`, { params: { days } }).then((r) => r.data);
 
+// ── Usages scoped (multi-niveaux) ──
+export const getScopedUsagesDashboard = ({ entityId, portefeuilleId, siteId } = {}) =>
+  cachedGet('/usages/scoped-dashboard', {
+    params: {
+      entity_id: entityId || undefined,
+      portefeuille_id: portefeuilleId || undefined,
+      site_id: siteId || undefined,
+    },
+  }).then((r) => r.data);
+
+export const getScopedUsageTimeline = ({ entityId, portefeuilleId, siteId, months = 12 } = {}) =>
+  cachedGet('/usages/scoped-timeline', {
+    params: {
+      entity_id: entityId || undefined,
+      portefeuille_id: portefeuilleId || undefined,
+      site_id: siteId || undefined,
+      months,
+    },
+  }).then((r) => r.data);
+
+export const getScopeTree = () => cachedGet('/patrimoine/scope-tree').then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);

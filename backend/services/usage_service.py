@@ -13,6 +13,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from services.scope_utils import resolve_site_ids
 
 from models import (
     Site,
@@ -1169,6 +1170,18 @@ def get_usage_timeline(db: Session, site_id: int, months: int = 12) -> dict:
     }
 
 
+# Refs ADEME indicatives par usage (kWh/m²/an, bureau tertiaire)
+_ADEME_REF_BY_USAGE = {
+    "Chauffage": 90,
+    "CVC": 90,
+    "Climatisation": 25,
+    "Éclairage": 30,
+    "IT & Bureautique": 18,
+    "Ventilation": 12,
+    "Cuisine": 15,
+}
+
+
 # ── V2 — Comparaison inter-sites ───────────────────────────────────────
 
 
@@ -1251,7 +1264,12 @@ def get_portfolio_usage_comparison(db: Session, org_id: int) -> dict:
         )
 
     site_results.sort(key=lambda x: x["ipe_total"], reverse=True)
-    return {"usages": sorted(all_usage_labels), "sites": site_results}
+
+    return {
+        "usages": sorted(all_usage_labels),
+        "sites": site_results,
+        "ademe_ref_by_usage": _ADEME_REF_BY_USAGE,
+    }
 
 
 # ── V2 — Meter readings preview ────────────────────────────────────────
@@ -1374,3 +1392,248 @@ def _extract_drift_pct(insight: ConsumptionInsight) -> Optional[float]:
         return metrics.get("drift_pct")
     except (json.JSONDecodeError, TypeError):
         return None
+
+
+# ── V3 — Scoped dashboard & timeline (multi-niveaux) ────────────────────
+
+
+def get_scoped_usages_dashboard(
+    db: Session,
+    org_id: int,
+    entity_id: int = None,
+    portefeuille_id: int = None,
+    site_id: int = None,
+) -> dict:
+    """Dashboard usages adaptatif au scope (org / entité / portfolio / site)."""
+    from services.scope_utils import resolve_site_ids
+    from models.site import Site as SiteModel
+
+    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
+    if not site_ids:
+        return {"scope_level": "empty", "sites_count": 0, "summary": {"total_kwh": 0, "total_eur": 0}}
+
+    # Mono-site : délègue à l'existant
+    if len(site_ids) == 1:
+        result = get_usages_dashboard(db, site_ids[0])
+        result["scope_level"] = "site"
+        result["sites_count"] = 1
+        return result
+
+    # Multi-sites : agrégation
+    scope_level = "entite" if entity_id else ("portfolio" if portefeuille_id else "org")
+
+    # Batch-fetch all site objects once
+    site_objs = {s.id: s for s in db.query(SiteModel).filter(SiteModel.id.in_(site_ids)).all()}
+
+    sites_data = []
+    for sid in site_ids:
+        try:
+            d = get_usages_dashboard(db, sid)
+            sites_data.append((sid, d))
+        except Exception:
+            continue
+
+    if not sites_data:
+        return {"scope_level": scope_level, "sites_count": 0, "summary": {"total_kwh": 0, "total_eur": 0}}
+
+    # Aggregate summary
+    total_kwh = sum(d["summary"]["total_kwh"] for _, d in sites_data)
+    total_eur = sum(d["summary"]["total_eur"] for _, d in sites_data)
+    total_surface = sum(getattr(site_objs.get(sid), "surface_m2", 0) or 0 for sid, _ in sites_data)
+    ipe = round(total_kwh / total_surface, 1) if total_surface > 0 else 0
+
+    # Aggregate baselines by label
+    baselines_map = {}
+    for _, d in sites_data:
+        for b in d.get("baselines") or []:
+            label = b.get("label", "?")
+            if label not in baselines_map:
+                baselines_map[label] = {
+                    "label": label,
+                    "kwh_baseline": 0,
+                    "kwh_current": 0,
+                    "is_significant": False,
+                    "data_source": b.get("data_source"),
+                    "dt_target_kwh_m2": b.get("dt_target_kwh_m2"),
+                }
+            baselines_map[label]["kwh_baseline"] += b.get("kwh_baseline") or 0
+            baselines_map[label]["kwh_current"] += b.get("kwh_current") or 0
+            if b.get("is_significant"):
+                baselines_map[label]["is_significant"] = True
+
+    aggregated_baselines = []
+    for label, bl in baselines_map.items():
+        ecart = bl["kwh_current"] - bl["kwh_baseline"]
+        pct = round(ecart / bl["kwh_baseline"] * 100, 1) if bl["kwh_baseline"] > 0 else 0
+        trend = "degradation" if ecart > 0 else ("amelioration" if ecart < 0 else "stable")
+        ipe_current = round(bl["kwh_current"] / total_surface, 1) if total_surface > 0 else 0
+        aggregated_baselines.append(
+            {
+                **bl,
+                "ecart_kwh": round(ecart),
+                "ecart_pct": pct,
+                "trend": trend,
+                "ipe_current": ipe_current,
+            }
+        )
+    aggregated_baselines.sort(key=lambda x: abs(x.get("ecart_kwh", 0)), reverse=True)
+
+    # Aggregate cost breakdown
+    cost_map = {}
+    total_price_weighted = 0
+    for _, d in sites_data:
+        cb = d.get("cost_breakdown") or {}
+        site_kwh = cb.get("total_kwh", 0)
+        price_ref = cb.get("price_ref_eur_kwh", 0)
+        total_price_weighted += price_ref * site_kwh
+        for item in cb.get("by_usage") or []:
+            label = item.get("label", "?")
+            if label not in cost_map:
+                cost_map[label] = {"label": label, "type": item.get("type", ""), "kwh": 0, "eur": 0}
+            cost_map[label]["kwh"] += item.get("kwh", 0)
+            cost_map[label]["eur"] += item.get("eur", 0)
+
+    cost_items = sorted(cost_map.values(), key=lambda x: x["kwh"], reverse=True)
+    for item in cost_items:
+        item["kwh"] = round(item["kwh"], 1)
+        item["eur"] = round(item["eur"], 0)
+        item["pct_of_total"] = round(item["kwh"] / total_kwh * 100, 1) if total_kwh > 0 else 0
+
+    avg_price = total_price_weighted / total_kwh if total_kwh > 0 else 0
+
+    # Aggregate top UES
+    ues_map = {}
+    for _, d in sites_data:
+        for u in d.get("top_ues") or []:
+            label = u.get("label", "?")
+            if label not in ues_map:
+                ues_map[label] = {
+                    "label": label,
+                    "type": u.get("type", ""),
+                    "kwh": 0,
+                    "is_significant": False,
+                    "data_source": u.get("data_source"),
+                }
+            ues_map[label]["kwh"] += u.get("kwh", 0)
+            if u.get("is_significant"):
+                ues_map[label]["is_significant"] = True
+    ues_list = sorted(ues_map.values(), key=lambda x: x["kwh"], reverse=True)
+    for u in ues_list:
+        u["kwh"] = round(u["kwh"], 1)
+        u["pct_of_total"] = round(u["kwh"] / total_kwh * 100, 1) if total_kwh > 0 else 0
+        u["ipe_kwh_m2"] = round(u["kwh"] / total_surface, 1) if total_surface > 0 else 0
+
+    # Per-site summary
+    per_site = []
+    for sid, d in sites_data:
+        s = site_objs.get(sid)
+        per_site.append(
+            {
+                "site_id": sid,
+                "site_name": s.nom if s else "?",
+                "total_kwh": round(d["summary"]["total_kwh"]),
+                "total_eur": round(d["summary"]["total_eur"]),
+                "ipe": round(d["summary"]["total_kwh"] / (s.surface_m2 or 1), 1) if s else 0,
+            }
+        )
+
+    surplus_kwh = sum(b["ecart_kwh"] for b in aggregated_baselines if b.get("ecart_kwh", 0) > 0)
+    degrading = sum(1 for b in aggregated_baselines if b.get("trend") == "degradation")
+
+    return {
+        "scope_level": scope_level,
+        "sites_count": len(sites_data),
+        "site_id": None,
+        "readiness": None,
+        "metering_plan": None,
+        "compliance": None,
+        "billing_links": {"price_ref": {"value": avg_price, "source": "moyenne_sites"}},
+        "top_ues": ues_list,
+        "cost_breakdown": {
+            "total_kwh": round(total_kwh, 1),
+            "total_eur": round(total_eur, 0),
+            "price_ref_eur_kwh": round(avg_price, 4),
+            "by_usage": cost_items,
+        },
+        "active_drifts": [],
+        "baselines": aggregated_baselines,
+        "summary": {
+            "total_kwh": round(total_kwh, 1),
+            "total_eur": round(total_eur, 0),
+            "total_surface_m2": round(total_surface),
+            "ipe_kwh_m2": ipe,
+            "readiness_score": None,
+            "readiness_level": None,
+            "active_drifts_count": 0,
+            "ues_count": len(ues_list),
+            "sub_meters_count": 0,
+            "principals_count": 0,
+            "baselines_count": len(aggregated_baselines),
+            "surplus_kwh": round(surplus_kwh),
+            "surplus_eur": round(surplus_kwh * avg_price),
+            "sites_degrading": degrading,
+        },
+        "per_site_summary": per_site,
+    }
+
+
+def get_scoped_usage_timeline(
+    db: Session,
+    org_id: int,
+    entity_id: int = None,
+    portefeuille_id: int = None,
+    site_id: int = None,
+    months: int = 12,
+) -> dict:
+    """Timeline usages agrégée par scope."""
+
+    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id)
+    if not site_ids:
+        return {"months": [], "series": []}
+
+    if len(site_ids) == 1:
+        return get_usage_timeline(db, site_ids[0], months)
+
+    # Merge timelines across sites
+    all_timelines = []
+    for sid in site_ids:
+        try:
+            t = get_usage_timeline(db, sid, months)
+            if t and t.get("months"):
+                all_timelines.append(t)
+        except Exception:
+            continue
+
+    if not all_timelines:
+        return {"months": [], "series": []}
+
+    # Build union of all month labels (preserves order from longest timeline)
+    ref = max(all_timelines, key=lambda t: len(t["months"]))
+    seen = set(ref["months"])
+    month_labels = list(ref["months"])
+    for t in all_timelines:
+        for m in t["months"]:
+            if m not in seen:
+                month_labels.append(m)
+                seen.add(m)
+    n = len(month_labels)
+    month_index = {m: i for i, m in enumerate(month_labels)}
+
+    # Merge series by usage label
+    series_map = {}
+    for t in all_timelines:
+        t_months = t["months"]
+        for s in t.get("series", []):
+            label = s["usage"]
+            if label not in series_map:
+                series_map[label] = {"usage": label, "color": s.get("color", "#BDBDBD"), "data": [0] * n}
+            for i, m in enumerate(t_months):
+                if m in month_index:
+                    val = s["data"][i] if i < len(s["data"]) else 0
+                    series_map[label]["data"][month_index[m]] += val
+
+    series = sorted(series_map.values(), key=lambda x: sum(x["data"]), reverse=True)
+    for s in series:
+        s["data"] = [round(v) for v in s["data"]]
+
+    return {"months": month_labels, "series": series}

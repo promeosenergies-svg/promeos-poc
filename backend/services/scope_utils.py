@@ -17,7 +17,7 @@ Usage :
 
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from middleware.auth import AuthContext, DEMO_MODE
 
 
@@ -113,3 +113,39 @@ def resolve_org_id(
         return org.id
 
     raise HTTPException(status_code=403, detail="Organisation non résolue")
+
+
+# ── Scope resolver multi-niveaux ─────────────────────────────────────────
+
+
+def resolve_site_ids(
+    db: Session,
+    org_id: int,
+    entity_id: int = None,
+    portefeuille_id: int = None,
+    site_id: int = None,
+) -> List[int]:
+    """
+    Résout les site_ids depuis n'importe quel niveau de la hiérarchie patrimoine.
+
+    Priorité : site_id > portefeuille_id > entity_id > org_id
+    """
+    from models.site import Site
+    from models.portefeuille import Portefeuille
+    from models.entite_juridique import EntiteJuridique
+    from models import not_deleted
+
+    # All branches verify org_id ownership + soft-delete filtering
+    q = (
+        db.query(Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, not_deleted(Site))
+    )
+    if site_id:
+        q = q.filter(Site.id == site_id)
+    elif portefeuille_id:
+        q = q.filter(Site.portefeuille_id == portefeuille_id)
+    elif entity_id:
+        q = q.filter(Portefeuille.entite_juridique_id == entity_id)
+    return [row[0] for row in q.all()]

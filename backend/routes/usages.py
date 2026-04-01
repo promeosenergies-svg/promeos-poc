@@ -3,10 +3,14 @@ PROMEOS — Routes API Usage V1.2
 Endpoints pour la brique Usages Energetiques.
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from services.usage_service import (
     compute_usage_readiness,
     get_metering_plan,
@@ -19,13 +23,51 @@ from services.usage_service import (
     get_usage_timeline,
     get_portfolio_usage_comparison,
     get_meter_readings_preview,
+    get_scoped_usages_dashboard,
+    get_scoped_usage_timeline,
 )
 from models import Usage, UsageBaseline, USAGE_LABELS_FR, USAGE_FAMILY_MAP, TypeUsage, UsageFamily, DataSourceType
 
 router = APIRouter(prefix="/api/usages", tags=["usages"])
 
 
-# ── Dashboard agrege ──────────────────────────────────────────────────────
+# ── Dashboard scoped (multi-niveaux) ─────────────────────────────────────
+
+
+@router.get("/scoped-dashboard")
+def api_scoped_usages_dashboard(
+    request: Request,
+    entity_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Dashboard usages adaptatif : org → entité → portefeuille → site."""
+    org_id = resolve_org_id(request, auth, db)
+    return get_scoped_usages_dashboard(
+        db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id
+    )
+
+
+@router.get("/scoped-timeline")
+def api_scoped_usage_timeline(
+    request: Request,
+    entity_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Timeline usages agrégée par scope."""
+    org_id = resolve_org_id(request, auth, db)
+    return get_scoped_usage_timeline(
+        db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, site_id=site_id, months=months
+    )
+
+
+# ── Dashboard agrege (legacy mono-site) ──────────────────────────────────
 
 
 @router.get("/dashboard/{site_id}")
