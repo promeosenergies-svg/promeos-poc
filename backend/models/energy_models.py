@@ -127,6 +127,8 @@ class Meter(Base):
     )
     usage = relationship("Usage", back_populates="meters", foreign_keys=[usage_id])
     readings = relationship("MeterReading", back_populates="meter", cascade="all, delete-orphan")
+    power_readings = relationship("PowerReading", back_populates="meter", cascade="all, delete-orphan")
+    power_contracts = relationship("PowerContract", back_populates="meter", cascade="all, delete-orphan")
     profiles = relationship("UsageProfile", back_populates="meter", cascade="all, delete-orphan")
     anomalies = relationship("Anomaly", back_populates="meter", cascade="all, delete-orphan")
     recommendations = relationship("Recommendation", back_populates="meter", cascade="all, delete-orphan")
