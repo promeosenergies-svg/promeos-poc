@@ -95,3 +95,89 @@ def api_power_contract(
             "date_debut": contract.date_debut.isoformat(),
         },
     }
+
+
+def _default_period(date_debut, date_fin, days=30):
+    if date_fin is None:
+        date_fin = date.today()
+    if date_debut is None:
+        date_debut = date_fin - timedelta(days=days)
+    return date_debut, date_fin
+
+
+@router.get("/sites/{site_id}/peaks")
+def api_power_peaks(
+    site_id: int,
+    date_debut: Optional[date] = Query(None),
+    date_fin: Optional[date] = Query(None),
+    seuil_pct: float = Query(85.0, ge=50, le=100),
+    db: Session = Depends(get_db),
+):
+    """Détection des pics >= seuil_pct% de la PS par poste + CMDPS."""
+    from services.power.peak_detection_engine import detect_peaks
+
+    date_debut, date_fin = _default_period(date_debut, date_fin)
+    meter = _get_primary_meter(db, site_id)
+    if not meter:
+        raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
+
+    result = detect_peaks(db, meter.id, date_debut, date_fin, seuil_pct)
+    result["site_id"] = site_id
+    return result
+
+
+@router.get("/sites/{site_id}/factor")
+def api_power_factor(
+    site_id: int,
+    date_debut: Optional[date] = Query(None),
+    date_fin: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Analyse facteur de puissance (tan φ). Seuil TURPE 7 = 0.4."""
+    from services.power.power_factor_analyzer import analyze_power_factor
+
+    date_debut, date_fin = _default_period(date_debut, date_fin)
+    meter = _get_primary_meter(db, site_id)
+    if not meter:
+        raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
+
+    result = analyze_power_factor(db, meter.id, date_debut, date_fin)
+    result["site_id"] = site_id
+    return result
+
+
+@router.get("/sites/{site_id}/optimize-ps")
+def api_optimize_ps(
+    site_id: int,
+    date_debut: Optional[date] = Query(None),
+    date_fin: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Optimisation PS par poste. EIR BT ≥ 36 kVA / HTA ≥ 100 kW."""
+    from services.power.subscribed_power_optimizer import optimize_subscribed_power
+
+    date_debut, date_fin = _default_period(date_debut, date_fin, days=180)
+    meter = _get_primary_meter(db, site_id)
+    if not meter:
+        raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
+
+    result = optimize_subscribed_power(db, meter.id, date_debut, date_fin)
+    result["site_id"] = site_id
+    return result
+
+
+@router.get("/sites/{site_id}/nebef")
+def api_nebef(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Éligibilité NEBEF : P_max ≥ 100 kW, checklist 9 critères."""
+    from services.power.nebef_eligibility_engine import check_nebef_eligibility
+
+    meter = _get_primary_meter(db, site_id)
+    if not meter:
+        raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
+
+    result = check_nebef_eligibility(db, meter.id)
+    result["site_id"] = site_id
+    return result

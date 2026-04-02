@@ -18,6 +18,20 @@ from sqlalchemy.orm import Session
 from models.power import PowerReading, PowerContract
 
 
+def get_active_contract(db: Session, meter_id: int, as_of: date) -> PowerContract | None:
+    """Récupère le contrat de puissance actif pour un compteur à une date donnée."""
+    return (
+        db.query(PowerContract)
+        .filter(
+            PowerContract.meter_id == meter_id,
+            PowerContract.date_debut <= as_of,
+            (PowerContract.date_fin.is_(None)) | (PowerContract.date_fin >= as_of),
+        )
+        .order_by(PowerContract.date_debut.desc())
+        .first()
+    )
+
+
 def get_power_profile(
     db: Session,
     meter_id: int,
@@ -37,7 +51,7 @@ def get_power_profile(
             PowerReading.ts_debut < dt_fin,
             PowerReading.sens == sens,
             PowerReading.P_active_kw.isnot(None),
-            PowerReading.indice_vraisemblance.in_([0, "0"]),
+            PowerReading.indice_vraisemblance == 0,
         )
         .order_by(PowerReading.ts_debut)
         .all()
