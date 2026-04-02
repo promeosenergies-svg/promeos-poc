@@ -10,7 +10,7 @@ Source Enedis :
 """
 
 import statistics
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -27,7 +27,7 @@ def get_power_profile(
 ) -> dict:
     """KPIs puissance d'un compteur sur une période."""
     dt_debut = datetime.combine(date_debut, datetime.min.time())
-    dt_fin = datetime.combine(date_fin, datetime.min.time())
+    dt_fin = datetime.combine(date_fin + timedelta(days=1), datetime.min.time())
 
     readings = (
         db.query(PowerReading)
@@ -37,7 +37,7 @@ def get_power_profile(
             PowerReading.ts_debut < dt_fin,
             PowerReading.sens == sens,
             PowerReading.P_active_kw.isnot(None),
-            PowerReading.indice_vraisemblance == 0,
+            PowerReading.indice_vraisemblance.in_([0, "0"]),
         )
         .order_by(PowerReading.ts_debut)
         .all()
@@ -47,7 +47,7 @@ def get_power_profile(
         "meter_id": meter_id,
         "period": {"debut": date_debut.isoformat(), "fin": date_fin.isoformat()},
         "source": "power_profile_service",
-        "computed_at": datetime.utcnow().isoformat(),
+        "computed_at": datetime.now(timezone.utc).isoformat(),
     }
 
     if not readings:
@@ -59,7 +59,7 @@ def get_power_profile(
     P_max = max(values)
     P_mean = statistics.mean(values)
     sorted_vals = sorted(values)
-    P_base = sorted_vals[max(0, int(len(sorted_vals) * 0.05) - 1)]
+    P_base = sorted_vals[max(0, int(len(sorted_vals) * 0.05))]
 
     E_totale_kwh = sum(values) * pas_h
     T_heures = len(values) * pas_h

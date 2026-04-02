@@ -12,7 +12,7 @@ import hashlib
 import math
 import re
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 
 from sqlalchemy.orm import Session
 
@@ -180,7 +180,7 @@ def seed_power(db: Session, days: int = 365) -> dict:
                     ps_par_poste_kva=cfg["ps_par_poste_kva"],
                     p_raccordement_kva=cfg["p_raccordement_kva"],
                     source_flux="manual",
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             stats["contracts"] += 1
@@ -231,7 +231,7 @@ def _seed_power_readings(
                 indice_vraisemblance=0,
                 periode_tarif=_classify_tariff_period(current),
                 source_flux="synthetic",
-                imported_at=datetime.utcnow(),
+                imported_at=datetime.now(timezone.utc),
             )
         )
         current += timedelta(minutes=30)
@@ -273,12 +273,11 @@ def _compute_power(archetype: str, ts: datetime, ps_max: float) -> float:
             base = 0.12
     elif archetype == "HOTEL_HEBERGEMENT":
         if 6 <= hour < 23:
-            base = 0.65 if is_summer else 0.70
+            base = 0.72 if is_summer else 0.70
         elif hour < 3 or hour >= 23:
             base = 0.35
         else:
             base = 0.45
-        base *= 1.1 if is_summer else 1.0
     elif archetype == "ENSEIGNEMENT":
         if is_weekend or ts.month in (7, 8):
             base = 0.05
@@ -311,7 +310,9 @@ def _classify_tariff_period(ts: datetime) -> str:
     is_hc = (1.0 <= heure_dec < 7.0) or (12.0 <= heure_dec < 14.0)
 
     if ts.weekday() >= 5:
-        return "HCE" if not is_hiver else "HCH"
+        if is_hiver:
+            return "HCH" if is_hc else "HPH"
+        return "HCE" if is_hc else "HPE"
 
     if is_hiver:
         if (9.0 <= heure_dec < 11.0) or (18.0 <= heure_dec < 20.0):
