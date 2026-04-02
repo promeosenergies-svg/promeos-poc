@@ -1,5 +1,5 @@
 """
-Éligibilité NEBEF (effacement de consommation).
+Éligibilité NEBCO (effacement de consommation).
 Seuil : P_max ≥ 100 kW. Checklist 9 critères. Revenu paramétrable (central 140 €/kW/an).
 """
 
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from services.power.power_profile_service import get_power_profile, get_active_contract
 
-SEUIL_NEBEF_KW = 100.0
+SEUIL_NEBCO_KW = 100.0
 REVENU_CENTRAL = 140.0
 REVENU_MIN = 80.0
 REVENU_MAX = 200.0
@@ -23,7 +23,7 @@ CVC_PILOTABLE_PCT = {
 }
 
 
-def check_nebef_eligibility(
+def check_nebco_eligibility(
     db: Session,
     meter_id: int,
     site_archetype: str = "DEFAULT",
@@ -31,7 +31,7 @@ def check_nebef_eligibility(
     tarif_min: float = REVENU_MIN,
     tarif_max: float = REVENU_MAX,
 ) -> dict:
-    """Évalue l'éligibilité NEBEF avec tarif paramétrable."""
+    """Évalue l'éligibilité NEBCO avec tarif paramétrable."""
     date_fin = date.today()
     date_debut = date_fin - timedelta(days=365)
 
@@ -40,7 +40,7 @@ def check_nebef_eligibility(
 
     base = {
         "meter_id": meter_id,
-        "source": "nebef_eligibility_engine",
+        "source": "nebco_eligibility_engine",
         "computed_at": datetime.now().isoformat(),
     }
 
@@ -52,7 +52,7 @@ def check_nebef_eligibility(
     type_compteur = contract.type_compteur if contract else None
 
     checklist = [
-        {"critere": "P_max ≥ 100 kW", "ok": P_max >= SEUIL_NEBEF_KW, "bloquant": True},
+        {"critere": "P_max ≥ 100 kW", "ok": P_max >= SEUIL_NEBCO_KW, "bloquant": True},
         {
             "critere": "Télé-relevé confirmé",
             "ok": type_compteur in {"PME-PMI", "ICE", "SAPHIR", "CVE", "CJE", "Linky"},
@@ -68,12 +68,12 @@ def check_nebef_eligibility(
     ]
 
     # eligible_technique = critères vérifiables automatiquement (True/False, ignore None)
-    eligible_technique = P_max >= SEUIL_NEBEF_KW and all(
+    eligible_technique = P_max >= SEUIL_NEBCO_KW and all(
         c["ok"] is True for c in checklist if c["bloquant"] and c["ok"] is not None
     )
     # eligible = tous les bloquants validés (inclut les manuels None → non validé)
     all_bloquants_ok = all(c["ok"] is True for c in checklist if c["bloquant"])
-    eligible = P_max >= SEUIL_NEBEF_KW and all_bloquants_ok
+    eligible = P_max >= SEUIL_NEBCO_KW and all_bloquants_ok
 
     taux_cvc = CVC_PILOTABLE_PCT.get(site_archetype, CVC_PILOTABLE_PCT["DEFAULT"])
     P_eff_cvc = round(P_max * taux_cvc, 1)
@@ -81,7 +81,7 @@ def check_nebef_eligibility(
     P_eff_total = round(P_eff_cvc + P_eff_ecl, 1)
 
     potentiel = None
-    if P_max >= SEUIL_NEBEF_KW:
+    if P_max >= SEUIL_NEBCO_KW:
         potentiel = {
             "P_effacable_cvc_kw": P_eff_cvc,
             "P_effacable_eclairage_kw": P_eff_ecl,
@@ -103,7 +103,7 @@ def check_nebef_eligibility(
         "eligible": eligible,
         "eligible_technique": eligible_technique,
         "P_max_kw": round(P_max, 1),
-        "seuil_nebef_kw": SEUIL_NEBEF_KW,
+        "seuil_nebco_kw": SEUIL_NEBCO_KW,
         "type_compteur": type_compteur,
         "checklist": checklist,
         "potentiel": potentiel,
@@ -125,4 +125,4 @@ def _build_justification(eligible, eligible_technique, P_max, potentiel, checkli
     ko = [c["critere"] for c in checklist if c["bloquant"] and c["ok"] is False]
     if ko:
         return f"Non éligible — critères bloquants : {', '.join(ko[:2])}"
-    return "Non éligible — P_max insuffisante" if P_max < SEUIL_NEBEF_KW else "Non éligible"
+    return "Non éligible — P_max insuffisante" if P_max < SEUIL_NEBCO_KW else "Non éligible"

@@ -166,8 +166,8 @@ def api_optimize_ps(
     return result
 
 
-@router.get("/sites/{site_id}/nebef")
-def api_nebef(
+@router.get("/sites/{site_id}/nebco")
+def api_nebco(
     site_id: int,
     site_archetype: str = Query("DEFAULT", description="Archétype site (BUREAU_STANDARD, HOTEL_HEBERGEMENT, etc.)"),
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
@@ -175,14 +175,14 @@ def api_nebef(
     tarif_max: float = Query(200.0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """Éligibilité NEBEF : P_max ≥ 100 kW, checklist 9 critères, tarif paramétrable."""
-    from services.power.nebef_eligibility_engine import check_nebef_eligibility
+    """Éligibilité NEBCO : P_max ≥ 100 kW, checklist 9 critères, tarif paramétrable."""
+    from services.power.nebco_eligibility_engine import check_nebco_eligibility
 
     meter = _get_primary_meter(db, site_id)
     if not meter:
         raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
 
-    result = check_nebef_eligibility(
+    result = check_nebco_eligibility(
         db,
         meter.id,
         site_archetype=site_archetype,
@@ -194,15 +194,15 @@ def api_nebef(
     return result
 
 
-@router.get("/portfolio/nebef-summary")
-def api_portfolio_nebef_summary(
+@router.get("/portfolio/nebco-summary")
+def api_portfolio_nebco_summary(
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
     tarif_min: float = Query(80.0, ge=0),
     tarif_max: float = Query(200.0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """Agrégation NEBEF sur tous les sites. Somme uniquement les éligibles techniques."""
-    from services.power.nebef_eligibility_engine import check_nebef_eligibility
+    """Agrégation NEBCO sur tous les sites. Somme uniquement les éligibles techniques."""
+    from services.power.nebco_eligibility_engine import check_nebco_eligibility
 
     sites = db.query(Site).filter(Site.actif.is_(True)).all()
     if not sites:
@@ -216,7 +216,7 @@ def api_portfolio_nebef_summary(
         meter = _get_primary_meter(db, site.id)
         if not meter:
             continue
-        result = check_nebef_eligibility(
+        result = check_nebco_eligibility(
             db,
             meter.id,
             tarif_central=tarif_central,
@@ -263,6 +263,6 @@ def api_portfolio_nebef_summary(
             "formule": f"{round(total_p_eff, 1)} kW × {tarif_central} €/kW/an = {rev_total} €/an",
         },
         "sites": sites_detail,
-        "source": "nebef_eligibility_engine (agrégation portefeuille)",
+        "source": "nebco_eligibility_engine (agrégation portefeuille)",
         "computed_at": datetime.now().isoformat(),
     }

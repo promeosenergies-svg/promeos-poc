@@ -112,7 +112,7 @@ def api_archetypes_in_scope(
     return {"archetypes": archetypes}
 
 
-# ── Flex NEBEF + BACS↔Flex ────────────────────────────────────────────────
+# ── Flex NEBCO + BACS↔Flex ────────────────────────────────────────────────
 
 
 @router.get("/flex-potential/{site_id}")
@@ -121,10 +121,10 @@ def api_flex_potential(
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Scoring flex NEBEF + lien BACS↔Flex pour un site."""
-    from services.flex_nebef_service import compute_flex_nebef
+    """Scoring flex NEBCO + lien BACS↔Flex pour un site."""
+    from services.flex_nebco_service import compute_flex_nebco
 
-    return compute_flex_nebef(db, site_id)
+    return compute_flex_nebco(db, site_id)
 
 
 @router.get("/flex-portfolio")
@@ -136,7 +136,7 @@ def api_flex_portfolio(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Agrège le potentiel flex de tous les sites du périmètre."""
-    from services.flex_nebef_service import compute_flex_portfolio
+    from services.flex_nebco_service import compute_flex_portfolio
 
     org_id = resolve_org_id(request, auth, db)
     site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id)

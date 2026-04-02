@@ -21,7 +21,7 @@ from models.site import Site
 from models.billing_models import EnergyContract
 from models.energy_models import Meter, MeterReading, FrequencyType
 from models.usage import Usage
-from services.flex_nebef_service import FLEX_BY_USAGE
+from services.flex_nebco_service import FLEX_BY_USAGE
 
 logger = logging.getLogger(__name__)
 

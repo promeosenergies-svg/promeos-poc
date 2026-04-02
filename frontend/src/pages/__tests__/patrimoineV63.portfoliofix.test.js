@@ -88,18 +88,16 @@ describe('Patrimoine.jsx — passage de scope.orgId', () => {
     expect(PATRIMOINE).toMatch(/scope\s*[,}].*useScope\s*\(\s*\)|useScope[\s\S]{0,200}scope/);
   });
 
-  test('orgId={scope.orgId} passé à PatrimoinePortfolioHealthBar', () => {
-    expect(PATRIMOINE).toMatch(
-      /PatrimoinePortfolioHealthBar[\s\S]{0,200}orgId\s*=\s*\{scope\.orgId\}/
+  test('V2: PatrimoinePortfolioHealthBar retiré du flow principal (commenté)', () => {
+    // HealthBar est commenté dans les imports, pas rendu dans le JSX
+    const uncommentedLines = PATRIMOINE.split('\n').filter(
+      (l) => l.includes('PatrimoinePortfolioHealthBar') && !l.trimStart().startsWith('//')
     );
+    expect(uncommentedLines.length).toBe(0);
   });
 
-  test('PatrimoinePortfolioHealthBar toujours rendu dans Patrimoine.jsx', () => {
-    expect(PATRIMOINE).toMatch(/<PatrimoinePortfolioHealthBar/);
-  });
-
-  test('onSiteClick toujours passé à PatrimoinePortfolioHealthBar', () => {
-    expect(PATRIMOINE).toMatch(/<PatrimoinePortfolioHealthBar[\s\S]{0,200}onSiteClick/);
+  test('V2: KpiStripItem remplace les KPI cards', () => {
+    expect(PATRIMOINE).toContain('KpiStripItem');
   });
 });
 

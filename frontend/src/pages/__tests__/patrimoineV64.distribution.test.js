@@ -167,15 +167,11 @@ describe('PatrimoineRiskDistributionBar V64 — intégration', () => {
     expect(HEATMAP_JSX).toMatch(/\{topSlot\}/);
   });
 
-  test('PatrimoineRiskDistributionBar importé dans Patrimoine.jsx', () => {
-    expect(PATRIMOINE_JSX).toMatch(/import PatrimoineRiskDistributionBar/);
-  });
-
-  test('topSlot passé à PatrimoineHeatmap dans Patrimoine.jsx', () => {
-    expect(PATRIMOINE_JSX).toMatch(/topSlot=\{<PatrimoineRiskDistributionBar/);
-  });
-
-  test('sites={filtered} passé à PatrimoineRiskDistributionBar', () => {
-    expect(PATRIMOINE_JSX).toMatch(/sites=\{filtered\}/);
+  test('V2: PatrimoineRiskDistributionBar retiré du flow principal (commenté)', () => {
+    // Composant existe toujours mais retiré du flow Patrimoine.jsx en V2
+    const uncommented = PATRIMOINE_JSX.split('\n').filter(
+      (l) => l.includes('PatrimoineRiskDistributionBar') && !l.trimStart().startsWith('//')
+    );
+    expect(uncommented.length).toBe(0);
   });
 });

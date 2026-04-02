@@ -10,10 +10,10 @@ import {
   getScopedUsageTimeline,
   getPortfolioUsageComparison,
   getCostByPeriod,
-  getFlexNebef,
+  getFlexNebco,
   getPowerOptimization,
   getCdcSimulation,
-  getFlexNebefPortfolio,
+  getFlexNebcoPortfolio,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -24,7 +24,7 @@ import BaselineTab from '../components/usages/BaselineTab';
 import ComptageTab from '../components/usages/ComptageTab';
 import HeatmapCard from '../components/usages/HeatmapCard';
 import ComplianceCard from '../components/usages/ComplianceCard';
-import FlexNebefCard from '../components/usages/FlexNebefCard';
+import FlexNebcoCard from '../components/usages/FlexNebcoCard';
 import CostCard from '../components/usages/CostCard';
 import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
 import CdcSimulationCard from '../components/usages/CdcSimulationCard';
@@ -109,7 +109,7 @@ export default function UsagesDashboardPage() {
       getPortfolioUsageComparison(orgId)
         .then(setPortfolio)
         .catch(() => {});
-      getFlexNebefPortfolio({
+      getFlexNebcoPortfolio({
         entityId: scope.entiteId,
         portefeuilleId: scope.portefeuilleId,
       })
@@ -120,13 +120,13 @@ export default function UsagesDashboardPage() {
     }
   }, [scope?.orgId, scope?.entiteId, scope?.portefeuilleId, scopedSites?.length]);
 
-  // Cost by period + flex NEBEF + power optimization (site mode only)
+  // Cost by period + flex NEBCO + power optimization (site mode only)
   useEffect(() => {
     if (scopeLevel === 'site' && siteId) {
       getCostByPeriod(siteId)
         .then(setCostByPeriod)
         .catch(() => setCostByPeriod(null));
-      getFlexNebef(siteId)
+      getFlexNebco(siteId)
         .then(setFlexData)
         .catch(() => setFlexData(null));
       getPowerOptimization(siteId)
@@ -277,7 +277,7 @@ export default function UsagesDashboardPage() {
           {isMultiSite ? (
             <FlexBubbleChart data={flexPortfolio} />
           ) : (
-            <FlexNebefCard data={flexData} />
+            <FlexNebcoCard data={flexData} />
           )}
           <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
           <PowerOptimizationCard data={powerOpt} />

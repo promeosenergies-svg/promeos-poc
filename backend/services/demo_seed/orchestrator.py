@@ -1147,7 +1147,7 @@ class SeedOrchestrator:
                 "domain": "flex",
                 "title": "Flexibilité — Mécanismes d'effacement et valorisation",
                 "summary": "L'effacement de consommation permet de valoriser la flexibilité des bâtiments tertiaires sur les marchés de capacité et d'ajustement, avec des revenus de 5-15 k€/MW/an.",
-                "content_md": "## Effacement et flexibilité\n\n**Mécanismes** :\n- Mécanisme de capacité : Obligation annuelle, certifiée par RTE\n- Appel d'offres effacement : NEBEF (valorisation sur le marché spot)\n- Réserves rapides : aFRR / mFRR via agrégateur\n\n**Potentiel tertiaire** :\n- CVC : 20-40% de la puissance pendant 2-4h\n- Éclairage : 10-15% en heures creuses\n- Process léger : variable\n\n**Revenus** : 5 000 à 15 000 €/MW/an selon le mécanisme.",
+                "content_md": "## Effacement et flexibilité\n\n**Mécanismes** :\n- Mécanisme de capacité : Obligation annuelle, certifiée par RTE\n- Appel d'offres effacement : NEBCO (valorisation sur le marché spot)\n- Réserves rapides : aFRR / mFRR via agrégateur\n\n**Potentiel tertiaire** :\n- CVC : 20-40% de la puissance pendant 2-4h\n- Éclairage : 10-15% en heures creuses\n- Process léger : variable\n\n**Revenus** : 5 000 à 15 000 €/MW/an selon le mécanisme.",
                 "tags": {"flexibilite": True, "effacement": True, "rte": True},
                 "confidence": "medium",
                 "priority": 3,

@@ -262,6 +262,7 @@ def _serialize_site(site: Site) -> dict:
         ),
         "anomalie_facture": site.anomalie_facture,
         "conso_kwh_an": site.annual_kwh_total,
+        "compliance_score": site.compliance_score_composite,
         "compliance_needs_review": review_status["needs_review"],
         "compliance_review_reasons": review_status["reasons"],
     }

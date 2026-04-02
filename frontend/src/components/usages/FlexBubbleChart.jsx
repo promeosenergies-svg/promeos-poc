@@ -30,7 +30,7 @@ export default function FlexBubbleChart({ data }) {
         z: s.kw_pilotable ?? 10,
         name: s.site_name,
         revenue: s.revenue_mid_eur ?? 0,
-        nebef: s.nebef_eligible ?? false,
+        nebco: s.nebco_eligible ?? false,
         kw: s.kw_pilotable ?? 0,
       })),
     [data?.sites]
@@ -42,7 +42,7 @@ export default function FlexBubbleChart({ data }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <div className="text-[13px] font-semibold mb-2">Portefeuille flexibilité</div>
       <div className="text-[10px] text-gray-400 mb-2">
-        {data.total_sites} sites · {fmt(data.total_kw)} kW pilotable · {data.nebef_sites} NEBEF
+        {data.total_sites} sites · {fmt(data.total_kw)} kW pilotable · {data.nebco_sites} NEBCO
       </div>
 
       <div style={{ width: '100%', height: 260 }}>
@@ -80,7 +80,7 @@ export default function FlexBubbleChart({ data }) {
                     <div className="font-medium">{d.name}</div>
                     <div>{fmt(d.kw)} kW pilotable</div>
                     <div>Revenu : {fmt(d.revenue)} €/an</div>
-                    <div>{d.nebef ? '✓ NEBEF éligible' : '✗ Non éligible'}</div>
+                    <div>{d.nebco ? '✓ NEBCO éligible' : '✗ Non éligible'}</div>
                   </div>
                 );
               }}

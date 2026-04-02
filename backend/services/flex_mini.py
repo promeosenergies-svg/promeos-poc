@@ -7,7 +7,7 @@ Levers:
   IRVE: peaks detected + site has parking/EV flag → charge shifting
   FROID: continuous consumption + cold-chain archetype → cold storage inertia
 
-No spot/NEBEF/HPHC — pure demand-side flexibility potential.
+No spot/NEBCO/HPHC — pure demand-side flexibility potential.
 """
 
 import json

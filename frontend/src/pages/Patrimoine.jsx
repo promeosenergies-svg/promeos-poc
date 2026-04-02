@@ -124,6 +124,9 @@ const USAGE_COLOR = {
   enseignement: 'bg-green-50 text-green-700 ring-green-200',
   copropriete: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
   collectivite: 'bg-teal-50 text-teal-700 ring-teal-200',
+  usine: 'bg-orange-50 text-orange-700 ring-orange-200',
+  magasin: 'bg-pink-50 text-pink-700 ring-pink-200',
+  logement_social: 'bg-cyan-50 text-cyan-700 ring-cyan-200',
 };
 
 const PRESET_VIEWS = [
