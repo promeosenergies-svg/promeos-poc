@@ -240,6 +240,9 @@ from .energy_models import (
     AlertSeverity,
 )
 
+# Power Intelligence
+from .power import PowerReading, PowerContract, HCPlageReference, FTA_SEGMENTS
+
 # Energy Copilot (V113)
 from .copilot_models import CopilotAction, CopilotActionStatus
 
@@ -546,4 +549,9 @@ __all__ = [
     "FlexAssetType",
     "ControlMethod",
     "TariffWindow",
+    # Power Intelligence
+    "PowerReading",
+    "PowerContract",
+    "HCPlageReference",
+    "FTA_SEGMENTS",
 ]
