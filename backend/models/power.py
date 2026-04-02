@@ -8,9 +8,28 @@ HCPlageReference : plages horaires heures creuses codifiées (C15 Enedis).
 Sources Enedis : R63 (CDC), C12 (contrats), C68 (données techniques), C15 (HC).
 """
 
+import enum
+
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, JSON, Date, Boolean
 from sqlalchemy.orm import relationship
 from .base import Base
+
+
+# ── Enums NEBCO (RM-5-NEBCO-V01, 01/09/2025) ────────────────────────────
+
+
+class NebcoModulationType(str, enum.Enum):
+    """Types de modulation NEBCO. NEBCO ≠ NEBEF : intègre hausses ET baisses."""
+
+    EFFACEMENT = "EFFACEMENT"
+    ANTICIPATION = "ANTICIPATION"
+    REPORT = "REPORT"
+
+
+class NebcoEligibilityStatus(str, enum.Enum):
+    ELIGIBLE = "eligible"
+    ELIGIBLE_TECHNIQUE = "eligible_technique"
+    NON_ELIGIBLE = "non_eligible"
 
 
 # ── FTA TURPE 7 complètes (XSD C12 v1.12.4) ─────────────────────────────
