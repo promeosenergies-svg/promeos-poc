@@ -56,7 +56,7 @@ def get_site_coordinates(site) -> tuple[float, float] | None:
     lat = getattr(site, "latitude", None)
     lon = getattr(site, "longitude", None)
 
-    if lat and lon:
+    if lat is not None and lon is not None:
         return (float(lat), float(lon))
 
     # Fallback code postal

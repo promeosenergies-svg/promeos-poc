@@ -185,7 +185,7 @@ def _linear_regression(x_vals: list[float], y_vals: list[float]) -> tuple[float,
         coeffs = np.polyfit(x_vals, y_vals, 1)
         a = float(coeffs[0])
         b = float(coeffs[1])
-    except ImportError:
+    except (ImportError, Exception):
         n = len(x_vals)
         sum_x = sum(x_vals)
         sum_y = sum(y_vals)

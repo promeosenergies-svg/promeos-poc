@@ -19,21 +19,17 @@ export default function TimelineTab({ data, siteId }) {
   const [signature, setSignature] = useState(null);
   const [sigLoading, setSigLoading] = useState(false);
 
-  // Fetch signature quand on bascule en mode signature
+  // Fetch signature quand on bascule en mode signature ou siteId change
   useEffect(() => {
-    if (mode === 'signature' && siteId && !signature) {
+    setSignature(null);
+    if (mode === 'signature' && siteId) {
       setSigLoading(true);
       getEnergySignature(siteId)
         .then(setSignature)
         .catch(() => setSignature(null))
         .finally(() => setSigLoading(false));
     }
-  }, [mode, siteId, signature]);
-
-  // Reset signature si siteId change
-  useEffect(() => {
-    setSignature(null);
-  }, [siteId]);
+  }, [mode, siteId]);
 
   const noTimeline = !data || !data.series?.length;
   const canShowSignature = !!siteId;
@@ -82,7 +78,7 @@ export default function TimelineTab({ data, siteId }) {
           </div>
         ) : signature?.error ? (
           <div className="text-sm text-gray-400 italic py-4">{signature.error}</div>
-        ) : signature?.signature ? (
+        ) : signature?.signature && signature?.regression_line && signature?.scatter_data ? (
           <SignatureView signature={signature} />
         ) : (
           <div className="text-sm text-gray-400 italic py-4">
