@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -19,16 +19,27 @@ export default function TimelineTab({ data, siteId }) {
   const [signature, setSignature] = useState(null);
   const [sigLoading, setSigLoading] = useState(false);
 
-  // Fetch signature quand on bascule en mode signature ou siteId change
   useEffect(() => {
-    setSignature(null);
-    if (mode === 'signature' && siteId) {
-      setSigLoading(true);
-      getEnergySignature(siteId)
-        .then(setSignature)
-        .catch(() => setSignature(null))
-        .finally(() => setSigLoading(false));
+    if (mode !== 'signature' || !siteId) {
+      setSignature(null);
+      return;
     }
+    let cancelled = false;
+    setSigLoading(true);
+    setSignature(null);
+    getEnergySignature(siteId)
+      .then((d) => {
+        if (!cancelled) setSignature(d);
+      })
+      .catch(() => {
+        if (!cancelled) setSignature(null);
+      })
+      .finally(() => {
+        if (!cancelled) setSigLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [mode, siteId]);
 
   const noTimeline = !data || !data.series?.length;
@@ -36,7 +47,6 @@ export default function TimelineTab({ data, siteId }) {
 
   return (
     <div className="p-5">
-      {/* Toggle Évolution / Signature */}
       {canShowSignature && (
         <div className="flex gap-2 mb-3">
           <button
@@ -62,7 +72,6 @@ export default function TimelineTab({ data, siteId }) {
         </div>
       )}
 
-      {/* Mode Évolution (existant) */}
       {mode === 'timeline' &&
         (noTimeline ? (
           <div className="text-sm text-gray-400 italic">Données temporelles insuffisantes.</div>
@@ -70,7 +79,6 @@ export default function TimelineTab({ data, siteId }) {
           <TimelineChart data={data} />
         ))}
 
-      {/* Mode Signature */}
       {mode === 'signature' &&
         (sigLoading ? (
           <div className="text-sm text-gray-400 italic py-8 text-center">
@@ -89,16 +97,20 @@ export default function TimelineTab({ data, siteId }) {
   );
 }
 
-/* ── AreaChart Évolution (extrait de l'ancien composant) ─────────────── */
+/* ── AreaChart Évolution ─────────────────────────────────────────────── */
 
 function TimelineChart({ data }) {
-  const chartData = data.months.map((m, i) => {
-    const row = { month: m.slice(5) };
-    data.series.forEach((s) => {
-      row[s.usage] = s.data[i] || 0;
-    });
-    return row;
-  });
+  const chartData = useMemo(
+    () =>
+      data.months.map((m, i) => {
+        const row = { month: m.slice(5) };
+        data.series.forEach((s) => {
+          row[s.usage] = s.data[i] || 0;
+        });
+        return row;
+      }),
+    [data]
+  );
 
   return (
     <div style={{ width: '100%', height: 260 }}>
@@ -134,17 +146,21 @@ function TimelineChart({ data }) {
 function SignatureView({ signature }) {
   const { signature: sig, benchmark, savings_potential, regression_line, scatter_data } = signature;
 
-  // Données pour la droite de régression (2 points)
-  const regressionData = [
-    { dju: regression_line.x_min, kwh: regression_line.y_at_x_min },
-    { dju: regression_line.x_max, kwh: regression_line.y_at_x_max },
-  ];
+  const regressionData = useMemo(
+    () => [
+      { dju: regression_line.x_min, kwh: regression_line.y_at_x_min },
+      { dju: regression_line.x_max, kwh: regression_line.y_at_x_max },
+    ],
+    [regression_line]
+  );
 
-  // Combiner scatter + régression pour ComposedChart
-  const combinedData = [
-    ...scatter_data.map((d) => ({ ...d, type: 'scatter' })),
-    ...regressionData.map((d) => ({ ...d, type: 'line' })),
-  ];
+  const combinedData = useMemo(
+    () => [
+      ...scatter_data.map((d) => ({ ...d, type: 'scatter' })),
+      ...regressionData.map((d) => ({ ...d, type: 'line' })),
+    ],
+    [scatter_data, regressionData]
+  );
 
   const baseloadExcessPct =
     benchmark.baseload_expected > 0
@@ -152,7 +168,7 @@ function SignatureView({ signature }) {
       : 0;
 
   return (
-    <div>
+    <>
       {/* KPIs signature */}
       <div className="grid grid-cols-4 gap-2 mb-3">
         <KpiCard
@@ -169,7 +185,7 @@ function SignatureView({ signature }) {
         />
         <KpiCard
           label="R²"
-          value={sig.r_squared.toFixed(3)}
+          value={sig.r_squared?.toFixed(3) ?? 'N/A'}
           sub={sig.model_quality}
           status={sig.r_squared > 0.7 ? 'normal' : 'warning'}
         />
@@ -254,7 +270,7 @@ function SignatureView({ signature }) {
         {signature.period_days} jours · {signature.dju_summary.source} ·{' '}
         {signature.dju_summary.annual_dju_chauf} DJU chauf./an
       </div>
-    </div>
+    </>
   );
 }
 
