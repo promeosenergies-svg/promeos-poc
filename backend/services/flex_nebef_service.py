@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models.energy_models import Meter, MeterReading
-from models.usage import Usage, USAGE_LABELS_FR
+from models.usage import Usage
+from models.enums import USAGE_LABELS_FR
 from services.flex_assessment_service import compute_flex_assessment
 
 # Seuils et prix
