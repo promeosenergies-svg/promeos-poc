@@ -13,6 +13,8 @@ export default function PowerOptimizationCard({ data }) {
 
   const utilizationPct = Math.min(cs.utilization_pct, 100);
   const isOverloaded = cs.actual_peak_kw > cs.subscribed_power_kva;
+  const overflowLeftPct =
+    cs.actual_peak_kw > 0 ? (cs.subscribed_power_kva / cs.actual_peak_kw) * 100 : 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -33,8 +35,8 @@ export default function PowerOptimizationCard({ data }) {
             <div
               className="absolute top-0 h-full bg-red-300 rounded-r opacity-50"
               style={{
-                left: `${(cs.subscribed_power_kva / cs.actual_peak_kw) * 100}%`,
-                width: `${100 - (cs.subscribed_power_kva / cs.actual_peak_kw) * 100}%`,
+                left: `${overflowLeftPct}%`,
+                width: `${100 - overflowLeftPct}%`,
               }}
             />
           )}
@@ -52,8 +54,8 @@ export default function PowerOptimizationCard({ data }) {
 
       {/* Décomposition pointe — mini barres */}
       <div className="text-[10px] text-gray-500 mb-1 font-medium">Décomposition de la pointe</div>
-      {decomp.map((d) => (
-        <div key={d.usage} className="flex items-center gap-2 py-0.5">
+      {decomp.map((d, i) => (
+        <div key={`${d.usage}-${i}`} className="flex items-center gap-2 py-0.5">
           <span className="w-24 text-[10px] truncate">{d.usage}</span>
           <div className="flex-1 h-2.5 bg-gray-100 rounded overflow-hidden">
             <div
@@ -82,7 +84,7 @@ export default function PowerOptimizationCard({ data }) {
       </div>
 
       {/* Recommandation */}
-      {opt && opt.net_savings_eur > 0 ? (
+      {opt && opt.net_savings_eur > 0 && (
         <div className="p-2.5 bg-green-50 border border-green-200 rounded-lg text-xs">
           <div className="font-medium text-green-800">
             PS réductible : {fmt(cs.subscribed_power_kva)} → {fmt(opt.recommended_ps_kva)} kVA
@@ -97,12 +99,14 @@ export default function PowerOptimizationCard({ data }) {
             </div>
           )}
         </div>
-      ) : isOverloaded ? (
+      )}
+      {(!opt || opt.net_savings_eur <= 0) && isOverloaded && (
         <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
           <strong>Attention :</strong> pointe réelle ({fmt(cs.actual_peak_kw)} kW) dépasse la PS (
           {fmt(cs.subscribed_power_kva)} kVA). Risque de pénalités CMDPS.
         </div>
-      ) : (
+      )}
+      {(!opt || opt.net_savings_eur <= 0) && !isOverloaded && (
         <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
           PS correctement dimensionnée. Marge : {fmt(cs.margin_kw)} kW (
           {(100 - cs.utilization_pct).toFixed(0)}%)
