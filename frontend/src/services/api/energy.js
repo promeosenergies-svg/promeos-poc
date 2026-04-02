@@ -440,6 +440,10 @@ export const getFlexNebefPortfolio = ({ entityId, portefeuilleId } = {}) =>
 export const getEnergySignature = (siteId, months = 12) =>
   cachedGet(`/usages/energy-signature/${siteId}`, { params: { months } }).then((r) => r.data);
 
+// ── Optimisation puissance souscrite ──
+export const getPowerOptimization = (siteId) =>
+  cachedGet(`/usages/power-optimization/${siteId}`).then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
