@@ -17,7 +17,6 @@ from datetime import timedelta
 from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
 
-from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 from models.site import Site
 from models.billing_models import EnergyContract
 from models.energy_models import Meter, MeterReading, FrequencyType
@@ -101,18 +100,18 @@ def optimize_subscribed_power(db: Session, site_id: int) -> dict | None:
         utilization = round(peak_kw / current_ps * 100, 1) if current_ps > 0 else 0
         margin_kw = round(current_ps - peak_kw, 1)
 
-        # CMDPS estimé (dépassements résiduels après baisse PS)
-        n_days_above = sum(1 for p in monthly_peaks if p["peak_kw"] > recommended_ps)
+        # CMDPS estimé — comparer kW des pointes avec PS convertie en kW (cos φ ≈ 0.93)
+        recommended_ps_kw = recommended_ps * 0.93
+        n_days_above = sum(1 for p in monthly_peaks if p["peak_kw"] > recommended_ps_kw)
         cmdps = round(n_days_above * 2 * price_kva * 0.5) if n_days_above > 0 else 0
         net_savings = max(0, savings_turpe - cmdps)
     else:
         # Pas de PS connue — estimation
-        estimated_ps = round(peak_kw * 1.15 / 10) * 10
-        current_ps = estimated_ps
-        savings_turpe = round((estimated_ps - recommended_ps) * price_kva)
-        annual_cost = round(estimated_ps * price_kva)
-        utilization = round(peak_kw / estimated_ps * 100, 1)
-        margin_kw = round(estimated_ps - peak_kw, 1)
+        current_ps = round(peak_kw * 1.15 / 10) * 10
+        savings_turpe = round((current_ps - recommended_ps) * price_kva)
+        annual_cost = round(current_ps * price_kva)
+        utilization = round(peak_kw / current_ps * 100, 1)
+        margin_kw = round(current_ps - peak_kw, 1)
         n_days_above = 0
         cmdps = 0
         net_savings = savings_turpe
@@ -125,17 +124,14 @@ def optimize_subscribed_power(db: Session, site_id: int) -> dict | None:
     else:
         strategy = "Optimisation limitée — pas d'usage pilotable identifié"
 
-    # Top 5 pointes formatées
-    top_peaks_formatted = []
-    for p in top_peaks[:5]:
-        kw = round(p.value_kwh * 4, 1)
-        top_peaks_formatted.append(
-            {
-                "timestamp": p.timestamp.isoformat() if p.timestamp else None,
-                "kw": kw,
-                "hour": p.timestamp.hour if p.timestamp else None,
-            }
-        )
+    top_peaks_formatted = [
+        {
+            "timestamp": p.timestamp.isoformat() if p.timestamp else None,
+            "kw": round(p.value_kwh * 4, 1),
+            "hour": p.timestamp.hour if p.timestamp else None,
+        }
+        for p in top_peaks[:5]
+    ]
 
     return {
         "site_id": site_id,
@@ -211,7 +207,7 @@ def _decompose_peak(
                         peak_ts_plus,
                     ),
                 )
-                .order_by(MeterReading.value_kwh.desc())
+                .order_by(func.abs(func.julianday(MeterReading.timestamp) - func.julianday(peak_ts_str)))
                 .first()
             )
 
