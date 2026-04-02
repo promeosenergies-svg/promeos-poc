@@ -78,6 +78,7 @@ import SiteContractsSummary from '../components/SiteContractsSummary';
 import SegmentationWidget from '../components/SegmentationWidget';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import TabConsoSite from '../components/TabConsoSite';
+import TabPuissance from '../components/power/TabPuissance';
 import TabActionsSite from '../components/TabActionsSite';
 import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
 import { getBenchmark, getIntensityRatio } from '../utils/benchmarks';
@@ -105,6 +106,7 @@ const TABS = [
   { id: 'reconciliation', label: 'Réconciliation' },
   { id: 'conformite', label: 'Conformité' },
   { id: 'actions', label: 'Actions' },
+  { id: 'puissance', label: 'Puissance' },
 ];
 
 function MiniKpi({ icon: Icon, label, value, color, children }) {
@@ -2029,6 +2031,7 @@ export default function Site360() {
       {activeTab === 'reconciliation' && <TabReconciliation site={site} />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabActionsSite siteId={site.id} />}
+      {activeTab === 'puissance' && <TabPuissance site={site} />}
 
       {/* BACS Wizard modal */}
       {showBacs && <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />}
