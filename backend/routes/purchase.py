@@ -1275,3 +1275,20 @@ def validate_purchase_perimeter_endpoint(body: ContractPerimeter, db: Session = 
     from services.purchase_perimeter import validate_purchase_perimeter
 
     return validate_purchase_perimeter(db, body.site_id, body.contract_id, body.period_start, body.period_end)
+
+
+# ── Simulation contrat CDC-aware ──────────────────────────────────────────
+
+
+@router.get("/cdc-simulation/{site_id}")
+def api_cdc_simulation(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Simule les stratégies d'achat avec la CDC réelle du site."""
+    from services.cdc_contract_simulator import simulate_contract_strategies
+
+    result = simulate_contract_strategies(db, site_id)
+    if result is None:
+        raise HTTPException(404, "Site non trouvé")
+    return result

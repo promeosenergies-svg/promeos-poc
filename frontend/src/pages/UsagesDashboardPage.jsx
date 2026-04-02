@@ -12,6 +12,7 @@ import {
   getCostByPeriod,
   getFlexNebef,
   getPowerOptimization,
+  getCdcSimulation,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -25,6 +26,7 @@ import ComplianceCard from '../components/usages/ComplianceCard';
 import FlexNebefCard from '../components/usages/FlexNebefCard';
 import CostCard from '../components/usages/CostCard';
 import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
+import CdcSimulationCard from '../components/usages/CdcSimulationCard';
 import FooterLinks from '../components/usages/FooterLinks';
 
 const ALL_TABS = [
@@ -41,6 +43,7 @@ export default function UsagesDashboardPage() {
   const [costByPeriod, setCostByPeriod] = useState(null);
   const [flexData, setFlexData] = useState(null);
   const [powerOpt, setPowerOpt] = useState(null);
+  const [cdcSim, setCdcSim] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -118,10 +121,14 @@ export default function UsagesDashboardPage() {
       getPowerOptimization(siteId)
         .then(setPowerOpt)
         .catch(() => setPowerOpt(null));
+      getCdcSimulation(siteId)
+        .then(setCdcSim)
+        .catch(() => setCdcSim(null));
     } else {
       setCostByPeriod(null);
       setFlexData(null);
       setPowerOpt(null);
+      setCdcSim(null);
     }
   }, [siteId, scopeLevel]);
 
@@ -259,6 +266,7 @@ export default function UsagesDashboardPage() {
           <FlexNebefCard data={flexData} />
           <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
           <PowerOptimizationCard data={powerOpt} />
+          <CdcSimulationCard data={cdcSim} />
         </div>
       </div>
 
