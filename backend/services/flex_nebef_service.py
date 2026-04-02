@@ -211,13 +211,45 @@ def compute_flex_portfolio(db: Session, site_ids: list[int]) -> dict:
             if total_bacs_revenue > 0
             else 0,
         },
-        "sites": [
-            {
-                "site_id": r["site_id"],
-                "site_name": r["site_name"],
-                "kw": r["flex_summary"]["total_pilotable_kw"],
-                "nebef": r["flex_summary"]["nebef_eligible"],
-            }
-            for r in results
-        ],
+        "sites": [_enrich_site_for_portfolio(r) for r in results],
+    }
+
+
+# ── Complexité et disponibilité pour le bubble chart ──────────────────────
+
+COMPLEXITY_MAP = {"haute": 1, "moyenne": 2, "variable": 3, "faible": 4}
+
+
+def _enrich_site_for_portfolio(r: dict) -> dict:
+    """Enrichit les données par site pour le bubble chart flex portfolio."""
+    fs = r["flex_summary"]
+    rev = fs["estimated_revenue_eur_year"]
+    revenue_mid = round((rev["nebef_low"] + rev["nebef_high"]) / 2 + rev.get("capacity", 0))
+
+    # Disponibilité : % des critères go/nogo remplis
+    checklist = r.get("go_nogo_checklist", {})
+    checks = [v for k, v in checklist.items() if isinstance(v, bool)]
+    availability_pct = round(sum(checks) / max(len(checks), 1) * 100) if checks else 50
+
+    # Complexité : moyenne pondérée des pilotabilités par kW
+    by_usage = r.get("by_usage", [])
+    total_kw = sum(u.get("kw_pilotable", 0) for u in by_usage)
+    if total_kw > 0:
+        weighted = sum(
+            COMPLEXITY_MAP.get(u.get("pilotability", "faible"), 4) * u.get("kw_pilotable", 0) for u in by_usage
+        )
+        complexity = round(weighted / total_kw, 1)
+    else:
+        complexity = 4
+
+    return {
+        "site_id": r["site_id"],
+        "site_name": r["site_name"],
+        "kw_pilotable": round(fs["total_pilotable_kw"], 1),
+        "kw": round(fs["total_pilotable_kw"], 1),
+        "nebef_eligible": fs["nebef_eligible"],
+        "nebef": fs["nebef_eligible"],
+        "revenue_mid_eur": revenue_mid,
+        "availability_pct": availability_pct,
+        "complexity_score": complexity,
     }
