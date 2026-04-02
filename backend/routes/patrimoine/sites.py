@@ -977,7 +977,7 @@ def get_portfolio_summary(
             "computed_at": _dt.utcnow().isoformat() + "Z",
         }
 
-    _SEV_ORDER = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+    _SEV_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 
     # Build sites query — même chaîne de jointures que list_org_anomalies
     sites_q = (
@@ -1038,14 +1038,12 @@ def get_portfolio_summary(
             if worst_sev in sites_at_risk:
                 sites_at_risk[worst_sev] += 1
 
-        # V61 — santé par score de complétude (data quality)
-        score = data.get("completude_score", 0)
-        if score >= _HEALTH_HEALTHY:
-            sites_health["healthy"] += 1
-        elif score >= _HEALTH_WARNING:
-            sites_health["warning"] += 1
-        else:
+        # V2 — santé alignée sur statut_conformite + risque (cohérent avec la table)
+        sc = getattr(site, "statut_conformite", None) or "a_evaluer"
+        if sc in ("a_risque", "non_conforme") or site_risk > 0:
             sites_health["critical"] += 1
+        else:
+            sites_health["healthy"] += 1
 
         # Breakdown par framework réglementaire
         for a in enriched:

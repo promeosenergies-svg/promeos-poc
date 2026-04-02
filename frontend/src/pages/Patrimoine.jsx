@@ -3,7 +3,7 @@
  * Risk-first table · URL-synced filters · tabbed SiteDrawer · k€/m² formatting.
  */
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import Pagination from '../ui/Pagination';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Building2,
@@ -28,23 +28,13 @@ import {
   FileText,
   Clock,
 } from 'lucide-react';
-import {
-  Card,
-  Badge,
-  Button,
-  EmptyState,
-  PageShell,
-  KpiCardCompact,
-  Drawer,
-  Tabs,
-  Tooltip,
-} from '../ui';
+import { Card, Badge, Button, EmptyState, PageShell, Drawer, Tabs, Tooltip } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useToast } from '../ui';
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { useScope } from '../contexts/ScopeContext';
-import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext'; // eslint-disable-line no-unused-vars
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
@@ -53,13 +43,14 @@ import DrawerEditSite from '../components/DrawerEditSite';
 import DrawerAddCompteur from '../components/DrawerAddCompteur';
 import DrawerAddContrat from '../components/DrawerAddContrat';
 import SitesMap from '../components/patrimoine/SitesMap';
-import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
-import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
-import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
+// V2 — composants retirés du flow principal (disponibles si besoin)
+// import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
+// import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
+// import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
+// import SegmentationWidget from '../components/SegmentationWidget';
+// import { FlexPortfolioSummary } from '../components/flex';
 import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
-import SegmentationWidget from '../components/SegmentationWidget';
-import { FlexPortfolioSummary } from '../components/flex';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import {
   getPatrimoineAnomalies,
@@ -90,8 +81,7 @@ import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-const ROW_HEIGHT = 52; // px — fixed row height for virtual scroll
-const OVERSCAN = 10; // extra rows above/below viewport
+const PAGE_SIZE = 20;
 
 const USAGE_OPTIONS = [
   { value: '', label: 'Usage' },
@@ -155,7 +145,7 @@ export default function Patrimoine() {
   const location = useLocation();
   const [sp, setSp] = useSearchParams();
   const { scopedSites, sitesLoading, scope, org, refreshSites } = useScope();
-  const { isExpert } = useExpertMode();
+  const { isExpert } = useExpertMode(); // eslint-disable-line no-unused-vars
   const searchRef = useRef(null);
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -175,7 +165,6 @@ export default function Patrimoine() {
   const sortDir = sp.get('dir') || 'desc';
   const activeView = sp.get('view') || '';
 
-  const scrollRef = useRef(null);
   const [selected, setSelected] = useState(new Set());
   const { openActionDrawer } = useActionDrawer();
   const [showWizard, setShowWizard] = useState(false);
@@ -284,7 +273,6 @@ export default function Patrimoine() {
         },
         { replace: true }
       );
-      scrollRef.current?.scrollTo({ top: 0 });
     },
     [setSp]
   );
@@ -513,30 +501,19 @@ export default function Patrimoine() {
 
   const total = filtered.length;
 
-  // Virtual scroll
-  const virtualizer = useVirtualizer({
-    count: total,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: OVERSCAN,
-  });
+  // Pagination
+  const [page, setPage] = useState(1);
 
-  // Force virtualizer re-measure when table becomes visible again
-  useEffect(() => {
-    if (!activeView && viewMode === 'table') {
-      // Small delay to let the DOM mount before measuring
-      const t = setTimeout(() => virtualizer.measure(), 50);
-      return () => clearTimeout(t);
-    }
-  }, [activeView, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Reset page on filter/search change
+  useEffect(
+    () => setPage(1),
+    [search, filterUsage, filterStatut, filterPortefeuille, filterAnomalies, sortCol, sortDir]
+  );
 
-  const virtualItems = virtualizer.getVirtualItems();
-  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
-  const paddingBottom =
-    virtualItems.length > 0
-      ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
-      : 0;
-  const colCount = isExpert ? 12 : 11;
+  const paginatedSites = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
@@ -559,7 +536,6 @@ export default function Patrimoine() {
 
   function resetFilters() {
     setSp({}, { replace: true });
-    scrollRef.current?.scrollTo({ top: 0 });
     track('filter_apply', { action: 'reset' });
   }
 
@@ -568,7 +544,6 @@ export default function Patrimoine() {
     if (view.filter.statut) p.statut = view.filter.statut;
     else p.statut = '';
     setSp(p, { replace: true });
-    scrollRef.current?.scrollTo({ top: 0 });
     track('filter_apply', { action: 'preset', name: view.id });
   }
 
@@ -580,7 +555,21 @@ export default function Patrimoine() {
     });
   }
   function toggleSelectAll() {
-    setSelected(selected.size === filtered.length ? new Set() : new Set(filtered.map((s) => s.id)));
+    const pageIds = paginatedSites.map((s) => s.id);
+    const allPageSelected = pageIds.every((id) => selected.has(id));
+    if (allPageSelected) {
+      setSelected((prev) => {
+        const n = new Set(prev);
+        pageIds.forEach((id) => n.delete(id));
+        return n;
+      });
+    } else {
+      setSelected((prev) => {
+        const n = new Set(prev);
+        pageIds.forEach((id) => n.add(id));
+        return n;
+      });
+    }
   }
 
   function exportCsv() {
@@ -731,74 +720,14 @@ export default function Patrimoine() {
           }
         />
       ) : (
-        <div className="space-y-3">
-          {/* ── Portfolio Health Bar V60 — risque global, top sites, framework ── */}
-          <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} orgId={scope.orgId} />
-
-          {/* ── V63 — Heatmap portefeuille (risque / anomalies / framework par site) ── */}
-          {/* ── V64 — Distribution du risque insérée via topSlot ── */}
-          <PatrimoineHeatmap
-            tiles={hmTiles}
-            onOpenSite={openDrawerOnAnomalies}
-            loading={hmLoading}
-            error={hmError}
-            topSlot={<PatrimoineRiskDistributionBar sites={filtered} />}
-          />
-          {scopedSites.length > HEATMAP_MAX_SITES && (
-            <p className="text-[11px] text-gray-400 text-center -mt-2">
-              Affichage limité à {HEATMAP_MAX_SITES} sites sur {scopedSites.length} — réduisez le
-              scope pour voir tous les sites.
-            </p>
-          )}
-
-          {/* ── KPI row — unified 6 cards (B2-2) ── */}
-          <div className="grid grid-cols-6 gap-2">
-            <KpiCardCompact
-              icon={Building2}
-              color="bg-blue-600"
-              label="Sites actifs"
-              value={stats.total}
-              detail={
-                registreKpis
-                  ? `${registreKpis.nb_entites_juridiques} entites · ${registreKpis.nb_portefeuilles} regr.`
-                  : fmtAreaCompact(stats.surface)
-              }
-              active={!filterStatut && !filterAnomalies && !activeView}
-              onClick={() => setParams({ statut: '', anomalies: '', view: '' })}
-            />
-            <KpiCardCompact
-              icon={Zap}
-              color="bg-cyan-600"
-              label="Points de livraison"
-              value={registreKpis?.nb_delivery_points ?? '—'}
-              detail={`${registreKpis?.nb_batiments ?? 0} bâtiment${(registreKpis?.nb_batiments ?? 0) > 1 ? 's' : ''}`}
-              active={activeView === 'pdl'}
-              onClick={() => setParams({ view: activeView === 'pdl' ? '' : 'pdl' })}
-            />
-            <KpiCardCompact
-              icon={FileText}
-              color="bg-violet-600"
-              label="Contrats actifs"
-              value={registreKpis?.nb_contrats_actifs ?? '—'}
-              detail={registreKpis ? `${registreKpis.nb_contrats} total` : '—'}
-              active={activeView === 'contracts'}
-              onClick={() => setParams({ view: activeView === 'contracts' ? '' : 'contracts' })}
-            />
-            <KpiCardCompact
-              icon={Clock}
-              color={registreKpis?.nb_contrats_expiring_90j > 0 ? 'bg-orange-600' : 'bg-gray-400'}
-              label="Expirant < 90j"
-              value={registreKpis?.nb_contrats_expiring_90j ?? 0}
-              detail={registreKpis?.nb_contrats_expiring_90j > 0 ? 'Action requise' : 'OK'}
-              onClick={() => setParams({ view: activeView === 'expiring' ? '' : 'expiring' })}
-              active={activeView === 'expiring'}
-            />
-            <KpiCardCompact
-              icon={AlertTriangle}
-              color="bg-red-600"
-              label="Sites à traiter"
-              value={stats.nc + stats.aRisque}
-              detail={`${stats.nc} non conforme${stats.nc > 1 ? 's' : ''} · ${stats.aRisque} à risque`}
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+          {/* ── V2 KPI Strip — 6 métriques inline compact ── */}
+          <div className="flex border-b border-gray-200 bg-white flex-shrink-0">
+            <KpiStripItem
+              label="Risque global"
+              value={fmtEur(stats.risque)}
+              color="red"
+              sub={`${stats.aRisque} à risque · ${stats.nc} non conforme`}
               active={filterStatut === 'nc_risque'}
               onClick={() =>
                 setParams({
@@ -808,18 +737,52 @@ export default function Patrimoine() {
                 })
               }
             />
-            <KpiCardCompact
-              icon={PieChart}
-              color={
-                registreKpis?.completude_moyenne_pct >= 80
-                  ? 'bg-emerald-600'
-                  : registreKpis?.completude_moyenne_pct >= 50
-                    ? 'bg-amber-600'
-                    : 'bg-red-600'
+            <KpiStripItem
+              label="Consommation"
+              value={fmtKwh(enrichedSites.reduce((a, s) => a + (s.conso_kwh_an || 0), 0))}
+              color="blue"
+              sub={
+                stats.surface > 0
+                  ? `${Math.round(enrichedSites.reduce((a, s) => a + (s.conso_kwh_an || 0), 0) / stats.surface)} kWh/m² moy.`
+                  : '—'
               }
-              label="Complétude moy."
+            />
+            <KpiStripItem
+              label="Conformité"
+              value={
+                stats.total > 0 ? `${Math.round((stats.conformes / stats.total) * 100)}%` : '—'
+              }
+              color={stats.conformes === stats.total ? 'green' : 'amber'}
+              sub={`${stats.conformes}/${stats.total} conformes`}
+            />
+            <KpiStripItem
+              label="Anomalies"
+              value={stats.anomalies}
+              color="amber"
+              sub={`${stats.withAno} site${stats.withAno > 1 ? 's' : ''} concerné${stats.withAno > 1 ? 's' : ''}`}
+              active={filterAnomalies}
+              onClick={() => setParams({ anomalies: filterAnomalies ? '' : '1', view: '' })}
+            />
+            <KpiStripItem
+              label="Contrats"
+              value={registreKpis?.nb_contrats_actifs ?? '—'}
+              sub={
+                registreKpis?.nb_contrats_expiring_90j > 0 ? (
+                  <span className="text-red-600 font-medium">
+                    {registreKpis.nb_contrats_expiring_90j} expirent &lt; 90j
+                  </span>
+                ) : (
+                  'Tous valides'
+                )
+              }
+              active={activeView === 'expiring'}
+              onClick={() => setParams({ view: activeView === 'expiring' ? '' : 'expiring' })}
+            />
+            <KpiStripItem
+              label="Complétude"
               value={registreKpis ? `${registreKpis.completude_moyenne_pct}%` : '—'}
-              detail={
+              color="green"
+              sub={
                 registreKpis?.completude_moyenne_pct >= 80
                   ? 'Complet'
                   : registreKpis?.completude_moyenne_pct >= 50
@@ -828,17 +791,6 @@ export default function Patrimoine() {
               }
             />
           </div>
-
-          {/* ── V100 — Segmentation Card (profil energie) ── */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-1">
-              <SegmentationWidget compact onSegmentationClick={() => setShowSegModal(true)} />
-            </div>
-          </div>
-
-          {/* Flex portfolio ranking — masqué tant que la feature n'est pas implémentée
-          <FlexPortfolioSummary />
-          */}
 
           {/* ── Toolbar ── */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -1246,14 +1198,14 @@ export default function Patrimoine() {
                       </tr>
                     </Thead>
                     <Tbody>
-                      {scopedContracts
-                        .filter((ct) => scopedSiteIds.has(ct.site_id))
-                        .map((ct) => {
-                          const siteMap = {};
-                          scopedSites.forEach((s) => {
-                            siteMap[s.id] = s.nom;
-                          });
-                          return (
+                      {(() => {
+                        const siteMap = {};
+                        scopedSites.forEach((s) => {
+                          siteMap[s.id] = s.nom;
+                        });
+                        return scopedContracts
+                          .filter((ct) => scopedSiteIds.has(ct.site_id))
+                          .map((ct) => (
                             <Tr key={ct.id}>
                               <Td>
                                 <button
@@ -1311,8 +1263,8 @@ export default function Patrimoine() {
                                 </button>
                               </Td>
                             </Tr>
-                          );
-                        })}
+                          ));
+                      })()}
                     </Tbody>
                   </Table>
                 </div>
@@ -1337,17 +1289,16 @@ export default function Patrimoine() {
                 onCta={resetFilters}
               />
             ) : (
-              <Card id="sites-table" className="flex flex-col">
-                <div
-                  ref={scrollRef}
-                  className="overflow-auto"
-                  style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '400px' }}
-                >
+              <>
+                <div className="flex-1 min-h-0 overflow-auto">
                   <Table compact pinFirst>
                     <Thead sticky>
                       <tr>
                         <ThCheckbox
-                          checked={selected.size === filtered.length && filtered.length > 0}
+                          checked={
+                            paginatedSites.length > 0 &&
+                            paginatedSites.every((s) => selected.has(s.id))
+                          }
                           onChange={toggleSelectAll}
                         />
                         <Th className="w-10 text-center text-gray-400">#</Th>
@@ -1377,16 +1328,14 @@ export default function Patrimoine() {
                         >
                           Surface
                         </Th>
-                        {isExpert && (
-                          <Th
-                            sortable
-                            sorted={sortCol === 'conso_kwh_an' ? sortDir : ''}
-                            onSort={() => handleSort('conso_kwh_an')}
-                            className="text-right"
-                          >
-                            Conso
-                          </Th>
-                        )}
+                        <Th
+                          sortable
+                          sorted={sortCol === 'conso_kwh_an' ? sortDir : ''}
+                          onSort={() => handleSort('conso_kwh_an')}
+                          className="text-right"
+                        >
+                          Conso
+                        </Th>
                         <Th
                           sortable
                           sorted={sortCol === 'anomalies_count' ? sortDir : ''}
@@ -1401,33 +1350,19 @@ export default function Patrimoine() {
                       </tr>
                     </Thead>
                     <Tbody>
-                      {paddingTop > 0 && (
-                        <tr className="!border-0">
-                          <td
-                            colSpan={colCount}
-                            style={{
-                              height: paddingTop,
-                              padding: 0,
-                              border: 'none',
-                              lineHeight: 0,
-                            }}
-                          />
-                        </tr>
-                      )}
-                      {virtualItems.map((vr) => {
-                        const site = filtered[vr.index];
+                      {paginatedSites.map((site, idx) => {
                         const badge =
                           STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
                         const usageColor =
                           USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
-                        const rank = vr.index + 1;
+                        const rank = (page - 1) * PAGE_SIZE + idx + 1;
                         const isFav = favorites.has(site.id);
                         return (
                           <Tr
                             key={site.id}
                             selected={selected.has(site.id)}
                             className="group"
-                            onClick={() => openDrawer(site)}
+                            onClick={() => navigate(`/sites/${site.id}`)}
                           >
                             <TdCheckbox
                               checked={selected.has(site.id)}
@@ -1462,7 +1397,39 @@ export default function Patrimoine() {
                               </span>
                             </Td>
                             <Td>
-                              <Badge status={badge.status}>{badge.label}</Badge>
+                              {(() => {
+                                const score = site.compliance_score ?? null;
+                                const scoreColor =
+                                  score === null
+                                    ? 'text-gray-400'
+                                    : score >= 80
+                                      ? 'text-green-600'
+                                      : score >= 50
+                                        ? 'text-amber-600'
+                                        : 'text-red-600';
+                                const barColor =
+                                  score === null
+                                    ? 'bg-gray-300'
+                                    : score >= 80
+                                      ? 'bg-green-500'
+                                      : score >= 50
+                                        ? 'bg-amber-500'
+                                        : 'bg-red-500';
+                                return (
+                                  <div className="flex items-center gap-1">
+                                    <span className={`font-semibold ${scoreColor}`}>
+                                      {score ?? '—'}
+                                    </span>
+                                    <span className="text-gray-400">/100</span>
+                                    <span className="inline-block w-12 h-1 rounded bg-gray-200 overflow-hidden ml-1">
+                                      <span
+                                        className={`block h-full rounded ${barColor}`}
+                                        style={{ width: `${score || 0}%` }}
+                                      />
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                             </Td>
                             <Td className="text-right tabular-nums">
                               <RiskBadge riskEur={getSiteRisk(site)} size="sm" />
@@ -1470,11 +1437,14 @@ export default function Patrimoine() {
                             <Td className="text-right text-sm text-gray-600 tabular-nums">
                               {fmtArea(site.surface_m2)}
                             </Td>
-                            {isExpert && (
-                              <Td className="text-right text-sm text-gray-600 tabular-nums">
-                                {fmtKwh(site.conso_kwh_an)}
-                              </Td>
-                            )}
+                            <Td className="text-right text-sm text-gray-600 tabular-nums">
+                              <div>{fmtKwh(site.conso_kwh_an)}</div>
+                              {site.surface_m2 > 0 && (
+                                <div className="text-[10px] text-gray-400">
+                                  {Math.round((site.conso_kwh_an || 0) / site.surface_m2)} kWh/m²
+                                </div>
+                              )}
+                            </Td>
                             <Td className="text-right">
                               {site.anomalies_count > 0 ? (
                                 <Tooltip
@@ -1550,32 +1520,14 @@ export default function Patrimoine() {
                           </Tr>
                         );
                       })}
-                      {paddingBottom > 0 && (
-                        <tr className="!border-0">
-                          <td
-                            colSpan={colCount}
-                            style={{
-                              height: paddingBottom,
-                              padding: 0,
-                              border: 'none',
-                              lineHeight: 0,
-                            }}
-                          />
-                        </tr>
-                      )}
                     </Tbody>
                   </Table>
                 </div>
-                <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-                  <span className="text-xs text-gray-400">
-                    {pl(total, 'site')} · Tri : {sortCol || 'défaut'}{' '}
-                    {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {total} {total > 1 ? 'sites' : 'site'}
-                  </span>
+                {/* Pagination footer */}
+                <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+                  <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
                 </div>
-              </Card>
+              </>
             ))}
         </div>
       )}
@@ -1622,6 +1574,31 @@ export default function Patrimoine() {
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *  Sub-components
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/** V2 — KPI strip item (inline, compact) */
+function KpiStripItem({ label, value, color = 'gray', sub, active, onClick }) {
+  const colorClass =
+    {
+      red: 'text-red-600',
+      blue: 'text-blue-600',
+      amber: 'text-amber-600',
+      green: 'text-green-600',
+      gray: 'text-gray-900',
+    }[color] || 'text-gray-900';
+
+  return (
+    <div
+      className={`flex-1 px-4 py-2.5 border-r border-gray-200 last:border-r-0 transition-colors ${
+        onClick ? 'cursor-pointer hover:bg-gray-50' : ''
+      } ${active ? 'bg-blue-50' : ''}`}
+      onClick={onClick}
+    >
+      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+      <p className={`text-lg font-bold leading-tight mt-0.5 ${colorClass}`}>{value}</p>
+      {sub && <div className="text-[10px] text-gray-400 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
 
 /** Compact select (filter dropdown) */
 function FilterSelect({ options, value, onChange }) {

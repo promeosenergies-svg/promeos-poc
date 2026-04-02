@@ -115,7 +115,7 @@ describe('D. Navigation — expert-only filtering', () => {
 describe('E. Pages critiques — isExpert conditionnel', () => {
   const CRITICAL_PAGES = [
     { file: 'pages/Cockpit.jsx', name: 'Cockpit' },
-    { file: 'pages/Patrimoine.jsx', name: 'Patrimoine' },
+    // Patrimoine V2 : conso toujours visible (plus de gate isExpert)
     { file: 'pages/ConformitePage.jsx', name: 'ConformitePage' },
     { file: 'pages/BillIntelPage.jsx', name: 'BillIntelPage' },
     { file: 'pages/MonitoringPage.jsx', name: 'MonitoringPage' },
