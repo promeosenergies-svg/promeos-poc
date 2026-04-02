@@ -448,6 +448,24 @@ export const getPowerOptimization = (siteId) =>
 export const getCdcSimulation = (siteId) =>
   cachedGet(`/purchase/cdc-simulation/${siteId}`).then((r) => r.data);
 
+// ── Power Intelligence ──
+export const getPowerProfile = (siteId, params = {}) =>
+  cachedGet(`/power/sites/${siteId}/profile`, { params }).then((r) => r.data);
+export const getPowerContract = (siteId) =>
+  cachedGet(`/power/sites/${siteId}/contract`).then((r) => r.data);
+export const getPowerPeaks = (siteId, params = {}) =>
+  cachedGet(`/power/sites/${siteId}/peaks`, { params }).then((r) => r.data);
+export const getPowerFactor = (siteId, params = {}) =>
+  cachedGet(`/power/sites/${siteId}/factor`, { params }).then((r) => r.data);
+export const getPowerOptimizePs = (siteId, params = {}) =>
+  cachedGet(`/power/sites/${siteId}/optimize-ps`, { params }).then((r) => r.data);
+export const getPowerNebco = (siteId, params = {}) =>
+  cachedGet(`/power/sites/${siteId}/nebco`, { params }).then((r) => r.data);
+export const createPowerAction = (siteId, actionType) =>
+  api
+    .post(`/power/sites/${siteId}/actions/create`, null, { params: { action_type: actionType } })
+    .then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
