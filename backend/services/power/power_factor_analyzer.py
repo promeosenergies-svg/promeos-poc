@@ -70,8 +70,7 @@ def analyze_power_factor(
     if not readings:
         return {**base, "data_available": False, "confidence": 0}
 
-    pas_h = readings[0].pas_minutes / 60.0
-    E_active = sum(r.P_active_kw for r in readings) * pas_h
+    E_active = sum(r.P_active_kw * (r.pas_minutes or 30) / 60.0 for r in readings)
 
     reactive_readings = [r for r in readings if r.P_reactive_ind_kvar is not None]
     if not reactive_readings or not has_reactive:
@@ -83,7 +82,7 @@ def analyze_power_factor(
             "confidence": 0,
         }
 
-    E_reactive = sum(r.P_reactive_ind_kvar for r in reactive_readings) * pas_h
+    E_reactive = sum(r.P_reactive_ind_kvar * (r.pas_minutes or 30) / 60.0 for r in reactive_readings)
     tan_phi = E_reactive / E_active if E_active > 0 else 0
     cos_phi = 1 / math.sqrt(1 + tan_phi**2) if tan_phi > 0 else 1.0
 
@@ -97,8 +96,9 @@ def analyze_power_factor(
         p = r.periode_tarif or "HPH"
         if p not in par_poste:
             par_poste[p] = {"P": 0, "Q": 0}
-        par_poste[p]["P"] += r.P_active_kw * pas_h
-        par_poste[p]["Q"] += r.P_reactive_ind_kvar * pas_h
+        ph = (r.pas_minutes or 30) / 60.0
+        par_poste[p]["P"] += r.P_active_kw * ph
+        par_poste[p]["Q"] += r.P_reactive_ind_kvar * ph
 
     detail = []
     for poste, v in par_poste.items():
