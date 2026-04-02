@@ -120,15 +120,13 @@ def compute_flex_nebef(db: Session, site_id: int) -> dict:
         "capacity": round(total_pilotable_kw * CAPACITY_REVENUE),
     }
 
-    # BACS↔Flex link
-    bacs_cost = BACS_COST_PER_SITE
     flex_revenue_mid = round(kw_needing_gtb * (NEBEF_REVENUE_LOW + NEBEF_REVENUE_HIGH) / 2)
-    roi_months = round(bacs_cost / max(flex_revenue_mid / 12, 1)) if flex_revenue_mid > 0 else 0
+    roi_months = round(BACS_COST_PER_SITE / max(flex_revenue_mid / 12, 1)) if flex_revenue_mid > 0 else 0
 
     bacs_flex_link = {
         "usages_needing_gtb": usages_needing_gtb,
         "kw_unlocked_by_bacs": round(kw_needing_gtb, 1),
-        "bacs_cost_estimate_eur": bacs_cost,
+        "bacs_cost_estimate_eur": BACS_COST_PER_SITE,
         "flex_revenue_unlocked_eur_year": flex_revenue_mid,
         "roi_months": roi_months,
         "verdict": (
@@ -190,6 +188,7 @@ def compute_flex_portfolio(db: Session, site_ids: list[int]) -> dict:
             + r["flex_summary"]["estimated_revenue_eur_year"]["nebef_high"]
         )
         / 2
+        + r["flex_summary"]["estimated_revenue_eur_year"].get("capacity", 0)
         for r in results
     )
     total_bacs_kw = sum(r["bacs_flex_link"]["kw_unlocked_by_bacs"] for r in results)
@@ -246,9 +245,7 @@ def _enrich_site_for_portfolio(r: dict) -> dict:
         "site_id": r["site_id"],
         "site_name": r["site_name"],
         "kw_pilotable": round(fs["total_pilotable_kw"], 1),
-        "kw": round(fs["total_pilotable_kw"], 1),
         "nebef_eligible": fs["nebef_eligible"],
-        "nebef": fs["nebef_eligible"],
         "revenue_mid_eur": revenue_mid,
         "availability_pct": availability_pct,
         "complexity_score": complexity,

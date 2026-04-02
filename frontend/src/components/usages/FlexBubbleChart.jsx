@@ -27,11 +27,11 @@ export default function FlexBubbleChart({ data }) {
       (data?.sites || []).map((s) => ({
         x: s.availability_pct ?? 50,
         y: 6 - (s.complexity_score ?? 3),
-        z: s.kw_pilotable ?? s.kw ?? 10,
+        z: s.kw_pilotable ?? 10,
         name: s.site_name,
         revenue: s.revenue_mid_eur ?? 0,
-        nebef: s.nebef_eligible ?? s.nebef ?? false,
-        kw: s.kw_pilotable ?? s.kw ?? 0,
+        nebef: s.nebef_eligible ?? false,
+        kw: s.kw_pilotable ?? 0,
       })),
     [data?.sites]
   );
@@ -66,9 +66,9 @@ export default function FlexBubbleChart({ data }) {
             <YAxis
               dataKey="y"
               type="number"
-              domain={[0, 5]}
+              domain={[1, 5]}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => ({ 1: 'Complexe', 3: 'Moyen', 5: 'Simple' })[v] || ''}
+              tickFormatter={(v) => ({ 2: 'Complexe', 3.5: 'Moyen', 5: 'Simple' })[v] || ''}
             />
             <ZAxis dataKey="z" range={[100, 800]} name="kW pilotable" />
             <Tooltip
@@ -86,9 +86,9 @@ export default function FlexBubbleChart({ data }) {
               }}
             />
             <Scatter data={chartData}>
-              {chartData.map((entry, i) => (
+              {chartData.map((entry) => (
                 <Cell
-                  key={i}
+                  key={entry.name}
                   fill={revenueColor(entry.revenue)}
                   fillOpacity={0.7}
                   stroke={revenueColor(entry.revenue)}

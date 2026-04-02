@@ -8,7 +8,7 @@ const RISK_STYLES = {
 };
 
 export default function CdcSimulationCard({ data }) {
-  if (!data || data.error || !data.strategies?.length) return null;
+  if (!data || data.error || !data.strategies?.length || !data.cdc_profile) return null;
 
   const profile = data.cdc_profile;
   const reco = data.recommendation;
@@ -17,8 +17,9 @@ export default function CdcSimulationCard({ data }) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <div className="text-[13px] font-semibold mb-1">Simulation achat CDC</div>
       <div className="text-[10px] text-gray-400 mb-3">
-        Profil : {profile.type.replace(/_/g, ' ')} · Baseload{' '}
-        {(profile.baseload_ratio * 100).toFixed(0)}% · HP {(profile.hp_ratio * 100).toFixed(0)}%
+        Profil : {profile?.type?.replace(/_/g, ' ') ?? '—'} · Baseload{' '}
+        {profile?.baseload_ratio != null ? (profile.baseload_ratio * 100).toFixed(0) : '—'}% · HP{' '}
+        {profile?.hp_ratio != null ? (profile.hp_ratio * 100).toFixed(0) : '—'}%
       </div>
 
       {/* Tableau compact */}
@@ -60,17 +61,15 @@ export default function CdcSimulationCard({ data }) {
       </table>
 
       {/* Recommandation */}
-      {reco && (
-        <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-[11px] text-green-700">
-          <div className="font-medium">{reco.strategy}</div>
-          <div className="mt-0.5 text-green-600">{reco.reasoning}</div>
-          {reco.savings_vs_fixe_eur > 0 && (
-            <div className="font-medium mt-1">
-              Économie : {fmt(reco.savings_vs_fixe_eur)} €/an vs fixe
-            </div>
-          )}
-        </div>
-      )}
+      <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-[11px] text-green-700">
+        <div className="font-medium">{reco.strategy}</div>
+        <div className="mt-0.5 text-green-600">{reco.reasoning}</div>
+        {reco.savings_vs_fixe_eur > 0 && (
+          <div className="font-medium mt-1">
+            Économie : {fmt(reco.savings_vs_fixe_eur)} €/an vs fixe
+          </div>
+        )}
+      </div>
     </div>
   );
 }
