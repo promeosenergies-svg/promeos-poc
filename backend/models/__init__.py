@@ -241,7 +241,14 @@ from .energy_models import (
 )
 
 # Power Intelligence
-from .power import PowerReading, PowerContract, HCPlageReference, FTA_SEGMENTS
+from .power import (
+    PowerReading,
+    PowerContract,
+    HCPlageReference,
+    FTA_SEGMENTS,
+    NebcoModulationType,
+    NebcoEligibilityStatus,
+)
 
 # Energy Copilot (V113)
 from .copilot_models import CopilotAction, CopilotActionStatus

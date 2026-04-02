@@ -104,9 +104,9 @@ describe('Dashboard V24 standardisation', () => {
 describe('Patrimoine V24 standardisation', () => {
   const src = readPage('Patrimoine.jsx');
 
-  it('imports KpiCardCompact from ../ui (not defined locally)', () => {
-    expect(src).toContain('KpiCardCompact');
-    expect(src).not.toMatch(/function\s+KpiCardCompact/);
+  it('V2: uses KpiStripItem instead of KpiCardCompact', () => {
+    expect(src).toContain('KpiStripItem');
+    expect(src).toMatch(/function\s+KpiStripItem/);
   });
 
   it('imports SkeletonCard and SkeletonTable', () => {

@@ -1,6 +1,6 @@
 /**
- * Carte compacte "Potentiel NEBEF + BACS↔Flex" pour la colonne droite Usages.
- * Affiche kW pilotable par usage, badge NEBEF, revenu estimé, lien BACS↔Flex ROI.
+ * Carte compacte "Potentiel NEBCO + BACS↔Flex" pour la colonne droite Usages.
+ * Affiche kW pilotable par usage, badge NEBCO, revenu estimé, lien BACS↔Flex ROI.
  */
 
 const fmt = (n) =>
@@ -22,11 +22,11 @@ const CHECKLIST_LABELS = {
   agregateur_contact: 'Agrégateur',
 };
 
-export default function FlexNebefCard({ data }) {
+export default function FlexNebcoCard({ data }) {
   if (!data || !data.by_usage?.length) return null;
 
   const { flex_summary: fs, by_usage, bacs_flex_link: bfl, go_nogo_checklist: gnc } = data;
-  const eligible = fs?.nebef_eligible;
+  const eligible = fs?.nebco_eligible;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 overflow-hidden">
@@ -37,7 +37,7 @@ export default function FlexNebefCard({ data }) {
             eligible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}
         >
-          {eligible ? 'NEBEF éligible' : `${fmt(fs?.total_pilotable_kw)} kW < 100 kW`}
+          {eligible ? 'NEBCO éligible' : `${fmt(fs?.total_pilotable_kw)} kW < 100 kW`}
         </span>
       </div>
 
@@ -66,8 +66,8 @@ export default function FlexNebefCard({ data }) {
       {/* Revenu estimé */}
       {fs?.estimated_revenue_eur_year && (
         <div className="mt-2.5 p-2 bg-green-50 rounded text-[11px] text-green-700 font-medium">
-          Revenu estimé : {fmt(fs.estimated_revenue_eur_year.nebef_low)} —{' '}
-          {fmt(fs.estimated_revenue_eur_year.nebef_high)} €/an
+          Revenu estimé : {fmt(fs.estimated_revenue_eur_year.nebco_low)} —{' '}
+          {fmt(fs.estimated_revenue_eur_year.nebco_high)} €/an
           <span className="text-green-500 font-normal ml-1">
             (+ {fmt(fs.estimated_revenue_eur_year.capacity)} € capacité)
           </span>

@@ -150,29 +150,29 @@ def test_optimizer_with_db():
         db.close()
 
 
-# ── NEBEF ───────────────────────────────────────────────────────────────────
+# ── NEBCO ───────────────────────────────────────────────────────────────────
 
 
-def test_nebef_seuil_100kw():
-    """Seuil NEBEF = 100 kW."""
-    from services.power.nebef_eligibility_engine import SEUIL_NEBEF_KW
+def test_nebco_seuil_100kw():
+    """Seuil NEBCO = 100 kW."""
+    from services.power.nebco_eligibility_engine import SEUIL_NEBCO_KW
 
-    assert SEUIL_NEBEF_KW == 100.0
+    assert SEUIL_NEBCO_KW == 100.0
 
 
-def test_nebef_revenu_central():
-    """Revenu central NEBEF = 140 €/kW/an."""
-    from services.power.nebef_eligibility_engine import REVENU_CENTRAL
+def test_nebco_revenu_central():
+    """Revenu central NEBCO = 140 €/kW/an."""
+    from services.power.nebco_eligibility_engine import REVENU_CENTRAL
 
     assert REVENU_CENTRAL == 140.0
 
 
-def test_nebef_with_db():
-    """check_nebef_eligibility retourne un résultat."""
+def test_nebco_with_db():
+    """check_nebco_eligibility retourne un résultat."""
     from database.connection import SessionLocal
     from models.energy_models import Meter
     from models.site import Site
-    from services.power.nebef_eligibility_engine import check_nebef_eligibility
+    from services.power.nebco_eligibility_engine import check_nebco_eligibility
 
     db = SessionLocal()
     try:
@@ -182,9 +182,9 @@ def test_nebef_with_db():
         meter = db.query(Meter).filter(Meter.site_id == site.id, Meter.parent_meter_id.is_(None)).first()
         if not meter:
             return
-        result = check_nebef_eligibility(db, meter.id)
+        result = check_nebco_eligibility(db, meter.id)
         assert "eligible" in result
         assert "source" in result
-        assert result["source"] == "nebef_eligibility_engine"
+        assert result["source"] == "nebco_eligibility_engine"
     finally:
         db.close()

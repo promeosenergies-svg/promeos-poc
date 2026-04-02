@@ -1,10 +1,10 @@
 """
-PROMEOS — NEBEF eligibility + BACS↔Flex ROI.
-Enrichit flex_assessment avec scoring NEBEF et lien BACS.
+PROMEOS — NEBCO eligibility + BACS↔Flex ROI.
+Enrichit flex_assessment avec scoring NEBCO et lien BACS.
 
-NEBEF : ≥ 100 kW pilotable agrégé → éligible.
-Revenus : 80-200 €/kW/an (NEBEF) + 45 €/kW/an (capacité 2026).
-BACS↔Flex : coût GTB 15-30k€/site → revenu NEBEF → ROI mois.
+NEBCO : ≥ 100 kW pilotable agrégé → éligible.
+Revenus : 80-200 €/kW/an (NEBCO) + 45 €/kW/an (capacité 2026).
+BACS↔Flex : coût GTB 15-30k€/site → revenu NEBCO → ROI mois.
 """
 
 from sqlalchemy.orm import Session
@@ -16,9 +16,9 @@ from models.enums import USAGE_LABELS_FR
 from services.flex_assessment_service import compute_flex_assessment
 
 # Seuils et prix
-NEBEF_MIN_KW = 100
-NEBEF_REVENUE_LOW = 80  # €/kW/an conservateur
-NEBEF_REVENUE_HIGH = 200  # €/kW/an optimiste
+NEBCO_MIN_KW = 100
+NEBCO_REVENUE_LOW = 80  # €/kW/an conservateur
+NEBCO_REVENUE_HIGH = 200  # €/kW/an optimiste
 CAPACITY_REVENUE = 45  # €/kW/an mécanisme capacité 2026
 BACS_COST_PER_SITE = 25_000  # coût moyen GTB classe C
 
@@ -36,8 +36,8 @@ FLEX_BY_USAGE = {
 }
 
 
-def compute_flex_nebef(db: Session, site_id: int) -> dict:
-    """Scoring flex NEBEF + lien BACS pour un site."""
+def compute_flex_nebco(db: Session, site_id: int) -> dict:
+    """Scoring flex NEBCO + lien BACS pour un site."""
     from models.site import Site as SiteModel
     from datetime import datetime, timedelta, timezone
 
@@ -110,17 +110,17 @@ def compute_flex_nebef(db: Session, site_id: int) -> dict:
     by_usage.sort(key=lambda u: u["kw_pilotable"], reverse=True)
     total_pilotable_kw = round(total_pilotable_kw, 1)
 
-    # NEBEF eligibility
-    nebef_eligible = total_pilotable_kw >= NEBEF_MIN_KW
+    # NEBCO eligibility
+    nebco_eligible = total_pilotable_kw >= NEBCO_MIN_KW
 
     # Revenue estimation
     revenue = {
-        "nebef_low": round(total_pilotable_kw * NEBEF_REVENUE_LOW),
-        "nebef_high": round(total_pilotable_kw * NEBEF_REVENUE_HIGH),
+        "nebco_low": round(total_pilotable_kw * NEBCO_REVENUE_LOW),
+        "nebco_high": round(total_pilotable_kw * NEBCO_REVENUE_HIGH),
         "capacity": round(total_pilotable_kw * CAPACITY_REVENUE),
     }
 
-    flex_revenue_mid = round(kw_needing_gtb * (NEBEF_REVENUE_LOW + NEBEF_REVENUE_HIGH) / 2)
+    flex_revenue_mid = round(kw_needing_gtb * (NEBCO_REVENUE_LOW + NEBCO_REVENUE_HIGH) / 2)
     roi_months = round(BACS_COST_PER_SITE / max(flex_revenue_mid / 12, 1)) if flex_revenue_mid > 0 else 0
 
     bacs_flex_link = {
@@ -160,7 +160,7 @@ def compute_flex_nebef(db: Session, site_id: int) -> dict:
         "flex_score": base_assessment.get("flex_potential_score", 0),
         "flex_summary": {
             "total_pilotable_kw": total_pilotable_kw,
-            "nebef_eligible": nebef_eligible,
+            "nebco_eligible": nebco_eligible,
             "estimated_revenue_eur_year": revenue,
         },
         "by_usage": by_usage,
@@ -174,18 +174,18 @@ def compute_flex_portfolio(db: Session, site_ids: list[int]) -> dict:
     results = []
     for sid in site_ids:
         try:
-            r = compute_flex_nebef(db, sid)
+            r = compute_flex_nebco(db, sid)
             if "error" not in r:
                 results.append(r)
         except Exception:
             continue
 
     total_kw = sum(r["flex_summary"]["total_pilotable_kw"] for r in results)
-    nebef_sites = sum(1 for r in results if r["flex_summary"]["nebef_eligible"])
+    nebco_sites = sum(1 for r in results if r["flex_summary"]["nebco_eligible"])
     revenue_mid = sum(
         (
-            r["flex_summary"]["estimated_revenue_eur_year"]["nebef_low"]
-            + r["flex_summary"]["estimated_revenue_eur_year"]["nebef_high"]
+            r["flex_summary"]["estimated_revenue_eur_year"]["nebco_low"]
+            + r["flex_summary"]["estimated_revenue_eur_year"]["nebco_high"]
         )
         / 2
         + r["flex_summary"]["estimated_revenue_eur_year"].get("capacity", 0)
@@ -200,7 +200,7 @@ def compute_flex_portfolio(db: Session, site_ids: list[int]) -> dict:
     return {
         "total_kw": round(total_kw, 1),
         "total_sites": len(results),
-        "nebef_sites": nebef_sites,
+        "nebco_sites": nebco_sites,
         "revenue_mid_eur": round(revenue_mid),
         "bacs_portfolio": {
             "total_kw_unlockable": round(total_bacs_kw, 1),
@@ -223,7 +223,7 @@ def _enrich_site_for_portfolio(r: dict) -> dict:
     """Enrichit les données par site pour le bubble chart flex portfolio."""
     fs = r["flex_summary"]
     rev = fs["estimated_revenue_eur_year"]
-    revenue_mid = round((rev["nebef_low"] + rev["nebef_high"]) / 2 + rev.get("capacity", 0))
+    revenue_mid = round((rev["nebco_low"] + rev["nebco_high"]) / 2 + rev.get("capacity", 0))
 
     # Disponibilité : % des critères go/nogo remplis
     checklist = r.get("go_nogo_checklist", {})
@@ -245,7 +245,7 @@ def _enrich_site_for_portfolio(r: dict) -> dict:
         "site_id": r["site_id"],
         "site_name": r["site_name"],
         "kw_pilotable": round(fs["total_pilotable_kw"], 1),
-        "nebef_eligible": fs["nebef_eligible"],
+        "nebco_eligible": fs["nebco_eligible"],
         "revenue_mid_eur": revenue_mid,
         "availability_pct": availability_pct,
         "complexity_score": complexity,

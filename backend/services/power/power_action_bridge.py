@@ -2,7 +2,7 @@
 Pont Power Intelligence → Centre d'action.
 Idempotency key : power:{site_id}:{type_action} — 2 clics = 1 action.
 
-Types d'actions : POWER_PS_OPTIM, POWER_TAN_PHI, POWER_NEBEF, POWER_PEAK_ALERT.
+Types d'actions : POWER_PS_OPTIM, POWER_TAN_PHI, POWER_NEBCO, POWER_PEAK_ALERT.
 """
 
 from datetime import datetime, timedelta
@@ -28,11 +28,11 @@ POWER_ACTION_TEMPLATES = {
             "Condensateurs recommandés (ROI estimé {roi} mois)."
         ),
     },
-    "POWER_NEBEF": {
-        "title": "Démarche NEBEF — {site_name} (potentiel {revenu} €/an)",
+    "POWER_NEBCO": {
+        "title": "Démarche NEBCO — {site_name} (potentiel {revenu} €/an)",
         "category": "REVENU",
         "rationale": (
-            "Site éligible NEBEF (P_max = {p_max} kW ≥ 100 kW). "
+            "Site éligible NEBCO (P_max = {p_max} kW ≥ 100 kW). "
             "Puissance effaçable : {p_effacable} kW. "
             "Revenu estimé : {revenu_min}–{revenu_max} €/an (central : {revenu} €/an)."
         ),
@@ -122,18 +122,18 @@ def create_ps_optim_action(db, site_id, site_name, optimizer_result) -> dict:
     )
 
 
-def create_nebef_action(db, site_id, site_name, nebef_result) -> dict:
-    if not nebef_result.get("eligible_technique"):
+def create_nebco_action(db, site_id, site_name, nebco_result) -> dict:
+    if not nebco_result.get("eligible_technique"):
         return {"status": "not_eligible"}
-    p = nebef_result.get("potentiel", {})
+    p = nebco_result.get("potentiel", {})
     return create_power_action(
         db,
         site_id,
         site_name,
-        "POWER_NEBEF",
+        "POWER_NEBCO",
         {
             "site_name": site_name,
-            "p_max": nebef_result.get("P_max_kw", 0),
+            "p_max": nebco_result.get("P_max_kw", 0),
             "p_effacable": p.get("P_effacable_total_kw", 0),
             "revenu": int(p.get("revenu_central_eur_an", 0)),
             "revenu_min": int(p.get("revenu_min_eur_an", 0)),

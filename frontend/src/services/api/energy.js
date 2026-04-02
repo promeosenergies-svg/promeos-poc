@@ -424,11 +424,11 @@ export const getEnergyIntensity = (siteId, year = null) =>
 export const getCostByPeriod = (siteId, months = 12) =>
   cachedGet(`/usages/cost-by-period/${siteId}`, { params: { months } }).then((r) => r.data);
 
-// ── Flex NEBEF ──
-export const getFlexNebef = (siteId) =>
+// ── Flex NEBCO ──
+export const getFlexNebco = (siteId) =>
   cachedGet(`/usages/flex-potential/${siteId}`).then((r) => r.data);
 
-export const getFlexNebefPortfolio = ({ entityId, portefeuilleId } = {}) =>
+export const getFlexNebcoPortfolio = ({ entityId, portefeuilleId } = {}) =>
   cachedGet('/usages/flex-portfolio', {
     params: {
       entity_id: entityId || undefined,
