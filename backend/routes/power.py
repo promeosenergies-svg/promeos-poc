@@ -3,7 +3,7 @@ PROMEOS — Power Intelligence API.
 Endpoints pour l'analyse de la courbe de charge (CDC) et l'optimisation puissance.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -169,15 +169,98 @@ def api_optimize_ps(
 @router.get("/sites/{site_id}/nebef")
 def api_nebef(
     site_id: int,
+    tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
+    tarif_min: float = Query(80.0, ge=0),
+    tarif_max: float = Query(200.0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """Éligibilité NEBEF : P_max ≥ 100 kW, checklist 9 critères."""
+    """Éligibilité NEBEF : P_max ≥ 100 kW, checklist 9 critères, tarif paramétrable."""
     from services.power.nebef_eligibility_engine import check_nebef_eligibility
 
     meter = _get_primary_meter(db, site_id)
     if not meter:
         raise HTTPException(404, f"Aucun compteur pour le site {site_id}")
 
-    result = check_nebef_eligibility(db, meter.id)
+    result = check_nebef_eligibility(
+        db,
+        meter.id,
+        tarif_central=tarif_central,
+        tarif_min=tarif_min,
+        tarif_max=tarif_max,
+    )
     result["site_id"] = site_id
     return result
+
+
+@router.get("/portfolio/nebef-summary")
+def api_portfolio_nebef_summary(
+    tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
+    tarif_min: float = Query(80.0, ge=0),
+    tarif_max: float = Query(200.0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Agrégation NEBEF sur tous les sites. Somme uniquement les éligibles techniques."""
+    from services.power.nebef_eligibility_engine import check_nebef_eligibility
+
+    sites = db.query(Site).filter(Site.actif.is_(True)).all()
+    if not sites:
+        raise HTTPException(404, "Aucun site actif")
+
+    sites_detail = []
+    total_p_eff = 0.0
+    n_eligible = 0
+
+    for site in sites:
+        meter = _get_primary_meter(db, site.id)
+        if not meter:
+            continue
+        result = check_nebef_eligibility(
+            db,
+            meter.id,
+            tarif_central=tarif_central,
+            tarif_min=tarif_min,
+            tarif_max=tarif_max,
+        )
+        potentiel = result.get("potentiel")
+        is_elig_tech = result.get("eligible_technique", False)
+
+        p_eff = potentiel["P_effacable_total_kw"] if potentiel else 0
+        rev_central = potentiel["revenu_central_eur_an"] if potentiel else 0
+
+        sites_detail.append(
+            {
+                "site_id": site.id,
+                "site_name": site.nom,
+                "eligible_technique": is_elig_tech,
+                "P_max_kw": result.get("P_max_kw"),
+                "P_effacable_kw": p_eff,
+                "revenu_central_eur_an": rev_central,
+                "justification": result.get("justification", ""),
+            }
+        )
+
+        if is_elig_tech and potentiel:
+            total_p_eff += p_eff
+            n_eligible += 1
+
+    rev_total = round(total_p_eff * tarif_central)
+
+    return {
+        "n_sites_evalues": len(sites_detail),
+        "n_sites_eligibles": n_eligible,
+        "parametrage_tarif": {
+            "tarif_central_eur_kw_an": tarif_central,
+            "tarif_min_eur_kw_an": tarif_min,
+            "tarif_max_eur_kw_an": tarif_max,
+        },
+        "agregation": {
+            "P_effacable_totale_kw": round(total_p_eff, 1),
+            "revenu_central_eur_an": rev_total,
+            "revenu_min_eur_an": round(total_p_eff * tarif_min),
+            "revenu_max_eur_an": round(total_p_eff * tarif_max),
+            "formule": f"{round(total_p_eff, 1)} kW × {tarif_central} €/kW/an = {rev_total} €/an",
+        },
+        "sites": sites_detail,
+        "source": "nebef_eligibility_engine (agrégation portefeuille)",
+        "computed_at": datetime.now().isoformat(),
+    }
