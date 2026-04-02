@@ -444,6 +444,10 @@ export const getEnergySignature = (siteId, months = 12) =>
 export const getPowerOptimization = (siteId) =>
   cachedGet(`/usages/power-optimization/${siteId}`).then((r) => r.data);
 
+// ── Simulation achat CDC-aware ──
+export const getCdcSimulation = (siteId) =>
+  cachedGet(`/purchase/cdc-simulation/${siteId}`).then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);

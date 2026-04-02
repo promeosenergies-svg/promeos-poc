@@ -12,6 +12,8 @@ import {
   getCostByPeriod,
   getFlexNebef,
   getPowerOptimization,
+  getCdcSimulation,
+  getFlexNebefPortfolio,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -25,6 +27,8 @@ import ComplianceCard from '../components/usages/ComplianceCard';
 import FlexNebefCard from '../components/usages/FlexNebefCard';
 import CostCard from '../components/usages/CostCard';
 import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
+import CdcSimulationCard from '../components/usages/CdcSimulationCard';
+import FlexBubbleChart from '../components/usages/FlexBubbleChart';
 import FooterLinks from '../components/usages/FooterLinks';
 
 const ALL_TABS = [
@@ -41,6 +45,8 @@ export default function UsagesDashboardPage() {
   const [costByPeriod, setCostByPeriod] = useState(null);
   const [flexData, setFlexData] = useState(null);
   const [powerOpt, setPowerOpt] = useState(null);
+  const [cdcSim, setCdcSim] = useState(null);
+  const [flexPortfolio, setFlexPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -96,15 +102,23 @@ export default function UsagesDashboardPage() {
       .catch(() => {});
   }, [siteId, scopeLevel, scope.portefeuilleId, scope.entiteId, archetypeFilter]);
 
-  // Portfolio comparison (heatmap sidebar)
+  // Portfolio comparison (heatmap sidebar) + flex portfolio (bubble chart)
   useEffect(() => {
     const orgId = scope?.orgId;
     if (orgId && scopedSites?.length >= 2) {
       getPortfolioUsageComparison(orgId)
         .then(setPortfolio)
         .catch(() => {});
+      getFlexNebefPortfolio({
+        entityId: scope.entiteId,
+        portefeuilleId: scope.portefeuilleId,
+      })
+        .then(setFlexPortfolio)
+        .catch(() => setFlexPortfolio(null));
+    } else {
+      setFlexPortfolio(null);
     }
-  }, [scope?.orgId, scopedSites?.length]);
+  }, [scope?.orgId, scope?.entiteId, scope?.portefeuilleId, scopedSites?.length]);
 
   // Cost by period + flex NEBEF + power optimization (site mode only)
   useEffect(() => {
@@ -118,10 +132,14 @@ export default function UsagesDashboardPage() {
       getPowerOptimization(siteId)
         .then(setPowerOpt)
         .catch(() => setPowerOpt(null));
+      getCdcSimulation(siteId)
+        .then(setCdcSim)
+        .catch(() => setCdcSim(null));
     } else {
       setCostByPeriod(null);
       setFlexData(null);
       setPowerOpt(null);
+      setCdcSim(null);
     }
   }, [siteId, scopeLevel]);
 
@@ -256,9 +274,14 @@ export default function UsagesDashboardPage() {
         <div className="flex flex-col gap-3.5">
           <HeatmapCard data={portfolio} currentSiteId={siteId} />
           {data?.compliance && <ComplianceCard data={data.compliance} />}
-          <FlexNebefCard data={flexData} />
+          {isMultiSite ? (
+            <FlexBubbleChart data={flexPortfolio} />
+          ) : (
+            <FlexNebefCard data={flexData} />
+          )}
           <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
           <PowerOptimizationCard data={powerOpt} />
+          <CdcSimulationCard data={cdcSim} />
         </div>
       </div>
 
