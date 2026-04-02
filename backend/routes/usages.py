@@ -324,3 +324,24 @@ def api_meter_readings_preview(
 ):
     """Releves recents d'un compteur pour mini-graphe inline."""
     return get_meter_readings_preview(db, meter_id, days=days)
+
+
+# ── Signature énergétique (corrélation DJU) ────────────────────────────────
+
+
+@router.get("/energy-signature/{site_id}")
+def api_energy_signature(
+    site_id: int,
+    months: int = Query(12, ge=3, le=36),
+    db: Session = Depends(get_db),
+):
+    """
+    Signature énergétique E = a × DJU + b.
+    Retourne : baseload, thermosensibilité, R², benchmark, potentiel économie.
+    """
+    from services.energy_signature_service import compute_energy_signature
+
+    result = compute_energy_signature(db, site_id, months)
+    if result is None:
+        raise HTTPException(404, "Site non trouvé")
+    return result

@@ -233,7 +233,9 @@ export default function UsagesDashboardPage() {
         {/* Colonne gauche : onglets */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <TabBar active={activeTab} onChange={setActiveTab} tabs={visibleTabs} />
-          {activeTab === 'timeline' && <TimelineTab data={timeline} />}
+          {activeTab === 'timeline' && (
+            <TimelineTab data={timeline} siteId={scopeLevel === 'site' ? siteId : null} />
+          )}
           {activeTab === 'baseline' && (
             <BaselineTab
               baselines={data?.baselines}
