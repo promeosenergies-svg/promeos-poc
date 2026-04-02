@@ -67,11 +67,13 @@ def check_nebef_eligibility(
         {"critere": "Assurance RC à jour", "ok": None, "bloquant": False},
     ]
 
-    auto_bloquants_ok = all(c["ok"] is True for c in checklist if c["bloquant"])
+    # eligible_technique = critères vérifiables automatiquement (True/False, ignore None)
     eligible_technique = P_max >= SEUIL_NEBEF_KW and all(
         c["ok"] is True for c in checklist if c["bloquant"] and c["ok"] is not None
     )
-    eligible = P_max >= SEUIL_NEBEF_KW and auto_bloquants_ok
+    # eligible = tous les bloquants validés (inclut les manuels None → non validé)
+    all_bloquants_ok = all(c["ok"] is True for c in checklist if c["bloquant"])
+    eligible = P_max >= SEUIL_NEBEF_KW and all_bloquants_ok
 
     taux_cvc = CVC_PILOTABLE_PCT.get(site_archetype, CVC_PILOTABLE_PCT["DEFAULT"])
     P_eff_cvc = round(P_max * taux_cvc, 1)

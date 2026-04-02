@@ -169,6 +169,7 @@ def api_optimize_ps(
 @router.get("/sites/{site_id}/nebef")
 def api_nebef(
     site_id: int,
+    site_archetype: str = Query("DEFAULT", description="Archétype site (BUREAU_STANDARD, HOTEL_HEBERGEMENT, etc.)"),
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
     tarif_min: float = Query(80.0, ge=0),
     tarif_max: float = Query(200.0, ge=0),
@@ -184,6 +185,7 @@ def api_nebef(
     result = check_nebef_eligibility(
         db,
         meter.id,
+        site_archetype=site_archetype,
         tarif_central=tarif_central,
         tarif_min=tarif_min,
         tarif_max=tarif_max,

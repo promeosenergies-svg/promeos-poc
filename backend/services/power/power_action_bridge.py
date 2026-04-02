@@ -67,21 +67,25 @@ def create_power_action(
     try:
         from models.action_plan_item import ActionPlanItem
 
-        existing = db.query(ActionPlanItem).filter(ActionPlanItem.source_id == idempotency_key).first()
+        # Idempotence via source_ref (seul champ libre disponible sur ActionPlanItem)
+        existing = db.query(ActionPlanItem).filter(ActionPlanItem.source_ref == idempotency_key).first()
         if existing:
             return {"action_id": existing.id, "status": "existing", "idempotency_key": idempotency_key}
 
         due_days = {"critical": 14, "high": 30, "medium": 60, "low": 90}.get(severity, 60)
 
         action = ActionPlanItem(
+            issue_id=idempotency_key,
+            domain="power",
+            severity=severity,
             site_id=site_id,
-            title=template["title"].format(**context),
-            description=template["rationale"].format(**context),
-            source_type="power",
-            source_id=idempotency_key,
+            issue_code=action_type,
+            issue_label=template["title"].format(**context),
+            recommended_action=template["rationale"].format(**context),
+            source_ref=idempotency_key,
             priority=severity,
             estimated_impact_eur=round(impact_eur),
-            due_date=(datetime.now() + timedelta(days=due_days)).date(),
+            due_date=(datetime.now() + timedelta(days=due_days)),
             status="open",
         )
         db.add(action)
