@@ -436,6 +436,10 @@ export const getFlexNebefPortfolio = ({ entityId, portefeuilleId } = {}) =>
     },
   }).then((r) => r.data);
 
+// ── Signature énergétique (corrélation DJU) ──
+export const getEnergySignature = (siteId, months = 12) =>
+  cachedGet(`/usages/energy-signature/${siteId}`, { params: { months } }).then((r) => r.data);
+
 // ── Site Intelligence (KB-driven) ──
 export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
