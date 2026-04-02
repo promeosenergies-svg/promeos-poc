@@ -345,3 +345,20 @@ def api_energy_signature(
     if result is None:
         raise HTTPException(404, "Site non trouvé")
     return result
+
+
+# ── Optimisation puissance souscrite ───────────────────────────────────────
+
+
+@router.get("/power-optimization/{site_id}")
+def api_power_optimization(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Analyse de la puissance souscrite et recommandation d'optimisation."""
+    from services.power_optimization_service import optimize_subscribed_power
+
+    result = optimize_subscribed_power(db, site_id)
+    if result is None:
+        raise HTTPException(404, "Site non trouvé")
+    return result

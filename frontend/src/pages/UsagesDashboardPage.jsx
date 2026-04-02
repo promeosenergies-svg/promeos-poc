@@ -11,6 +11,7 @@ import {
   getPortfolioUsageComparison,
   getCostByPeriod,
   getFlexNebef,
+  getPowerOptimization,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -23,6 +24,7 @@ import HeatmapCard from '../components/usages/HeatmapCard';
 import ComplianceCard from '../components/usages/ComplianceCard';
 import FlexNebefCard from '../components/usages/FlexNebefCard';
 import CostCard from '../components/usages/CostCard';
+import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
 import FooterLinks from '../components/usages/FooterLinks';
 
 const ALL_TABS = [
@@ -38,6 +40,7 @@ export default function UsagesDashboardPage() {
   const [portfolio, setPortfolio] = useState(null);
   const [costByPeriod, setCostByPeriod] = useState(null);
   const [flexData, setFlexData] = useState(null);
+  const [powerOpt, setPowerOpt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -103,7 +106,7 @@ export default function UsagesDashboardPage() {
     }
   }, [scope?.orgId, scopedSites?.length]);
 
-  // Cost by period + flex NEBEF (site mode only)
+  // Cost by period + flex NEBEF + power optimization (site mode only)
   useEffect(() => {
     if (scopeLevel === 'site' && siteId) {
       getCostByPeriod(siteId)
@@ -112,9 +115,13 @@ export default function UsagesDashboardPage() {
       getFlexNebef(siteId)
         .then(setFlexData)
         .catch(() => setFlexData(null));
+      getPowerOptimization(siteId)
+        .then(setPowerOpt)
+        .catch(() => setPowerOpt(null));
     } else {
       setCostByPeriod(null);
       setFlexData(null);
+      setPowerOpt(null);
     }
   }, [siteId, scopeLevel]);
 
@@ -251,6 +258,7 @@ export default function UsagesDashboardPage() {
           {data?.compliance && <ComplianceCard data={data.compliance} />}
           <FlexNebefCard data={flexData} />
           <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
+          <PowerOptimizationCard data={powerOpt} />
         </div>
       </div>
 
