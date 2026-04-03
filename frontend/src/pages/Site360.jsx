@@ -107,6 +107,7 @@ const TABS = [
   { id: 'conformite', label: 'Conformité' },
   { id: 'actions', label: 'Actions' },
   { id: 'puissance', label: 'Puissance' },
+  { id: 'usages', label: 'Usages' },
 ];
 
 function MiniKpi({ icon: Icon, label, value, color, children }) {
@@ -1538,7 +1539,7 @@ export default function Site360() {
     intensity,
     intensityRatio,
     intensityPrimary: energyIntensity?.kWh_m2_primary ?? null,
-    benchmark: hasIntensity ? getBenchmark(site?.usage) : 0,
+    benchmark: hasIntensity ? getBenchmark(site.usage) : 0,
     intensityPct: Math.min(intensityRatio / 3, 1) * 100,
     confidence: energyIntensity?.confidence ?? null,
   };
@@ -2032,6 +2033,18 @@ export default function Site360() {
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabActionsSite siteId={site.id} />}
       {activeTab === 'puissance' && <TabPuissance site={site} />}
+
+      {activeTab === 'usages' && (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-sm">Analyse des usages énergétiques par poste</p>
+          <button
+            className="mt-3 text-sm text-blue-600 hover:underline"
+            onClick={() => navigate(`/consommations?site_id=${site.id}`)}
+          >
+            Ouvrir dans Consommations →
+          </button>
+        </div>
+      )}
 
       {/* BACS Wizard modal */}
       {showBacs && <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />}
