@@ -10,7 +10,7 @@ BACS↔Flex : coût GTB 15-30k€/site → revenu NEBCO → ROI mois.
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from models.energy_models import Meter, MeterReading
+from models.energy_models import Meter, MeterReading, FrequencyType
 from models.usage import Usage
 from models.enums import USAGE_LABELS_FR
 from services.flex_assessment_service import compute_flex_assessment
@@ -21,6 +21,18 @@ NEBCO_REVENUE_LOW = 80  # €/kW/an conservateur
 NEBCO_REVENUE_HIGH = 200  # €/kW/an optimiste
 CAPACITY_REVENUE = 45  # €/kW/an mécanisme capacité 2026
 BACS_COST_PER_SITE = 25_000  # coût moyen GTB classe C
+
+# Conversion kWh → kW selon fréquence : énergie ÷ durée_heures
+# Pour DAILY/MONTHLY, on applique un ratio peak/average de 2.5 (tertiaire typique)
+# car max(kWh_période) ÷ heures = puissance moyenne, pas pic
+PEAK_TO_AVG_RATIO = 2.5
+FREQ_TO_KW_MULTIPLIER = {
+    FrequencyType.MIN_15: 4,  # 0.25h — pic réel
+    FrequencyType.MIN_30: 2,  # 0.5h — pic réel
+    FrequencyType.HOURLY: 1,  # 1h — pic réel
+    FrequencyType.DAILY: (1 / 24) * PEAK_TO_AVG_RATIO,  # 24h — estimé
+    FrequencyType.MONTHLY: (1 / 730) * PEAK_TO_AVG_RATIO,  # ~730h — estimé
+}
 
 # Pilotabilité par type d'usage (shiftable_pct du kW max)
 FLEX_BY_USAGE = {
@@ -34,6 +46,8 @@ FLEX_BY_USAGE = {
     "Process": {"shiftable_pct": 0.15, "pilotability": "variable", "inertia_min": 0, "requires_gtb": False},
     "Cuisine": {"shiftable_pct": 0.10, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False},
 }
+
+DEFAULT_FLEX_PROFILE = {"shiftable_pct": 0.10, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False}
 
 
 def compute_flex_nebco(db: Session, site_id: int) -> dict:
@@ -71,18 +85,19 @@ def compute_flex_nebco(db: Session, site_id: int) -> dict:
         usage = db.query(Usage).filter(Usage.id == sub.usage_id).first()
         label = (usage.label or USAGE_LABELS_FR.get(usage.type, usage.type.value)) if usage else "?"
 
-        # kW max = max(kWh_reading) × 4 (si 15min) ou × 2 (si 30min)
-        max_kwh = (
-            db.query(func.max(MeterReading.value_kwh))
+        # kW max = max(kWh_reading) × multiplier selon fréquence du relevé max
+        max_row = (
+            db.query(MeterReading.value_kwh, MeterReading.frequency)
             .filter(MeterReading.meter_id == sub.id, MeterReading.timestamp >= cutoff)
-            .scalar()
-            or 0
+            .order_by(MeterReading.value_kwh.desc())
+            .limit(1)
+            .first()
         )
-        max_kw = max_kwh * 4  # assume 15min readings
+        max_kwh = max_row.value_kwh if max_row else 0
+        freq = max_row.frequency if max_row else None
+        max_kw = max_kwh * FREQ_TO_KW_MULTIPLIER.get(freq, 1)
 
-        profile = FLEX_BY_USAGE.get(
-            label, {"shiftable_pct": 0.10, "pilotability": "faible", "inertia_min": 0, "requires_gtb": False}
-        )
+        profile = FLEX_BY_USAGE.get(label, DEFAULT_FLEX_PROFILE)
         kw_pilotable = round(max_kw * profile["shiftable_pct"], 1)
         total_pilotable_kw += kw_pilotable
 

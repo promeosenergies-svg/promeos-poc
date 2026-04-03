@@ -360,8 +360,10 @@ export const getUsageTaxonomy = () => cachedGet('/usages/taxonomy').then((r) => 
 export const getSiteUsages = (siteId) => cachedGet(`/usages/site/${siteId}`).then((r) => r.data);
 export const getUsageTimeline = (siteId, months = 12) =>
   cachedGet(`/usages/timeline/${siteId}`, { params: { months } }).then((r) => r.data);
-export const getPortfolioUsageComparison = (orgId) =>
-  cachedGet('/usages/portfolio-compare', { params: { org_id: orgId } }).then((r) => r.data);
+export const getPortfolioUsageComparison = (orgId, { archetypeCode } = {}) =>
+  cachedGet('/usages/portfolio-compare', {
+    params: { org_id: orgId, archetype_code: archetypeCode || undefined },
+  }).then((r) => r.data);
 export const getMeterReadingsPreview = (meterId, days = 7) =>
   cachedGet(`/usages/meter-readings/${meterId}`, { params: { days } }).then((r) => r.data);
 
@@ -428,11 +430,12 @@ export const getCostByPeriod = (siteId, months = 12) =>
 export const getFlexNebco = (siteId) =>
   cachedGet(`/usages/flex-potential/${siteId}`).then((r) => r.data);
 
-export const getFlexNebcoPortfolio = ({ entityId, portefeuilleId } = {}) =>
+export const getFlexNebcoPortfolio = ({ entityId, portefeuilleId, archetypeCode } = {}) =>
   cachedGet('/usages/flex-portfolio', {
     params: {
       entity_id: entityId || undefined,
       portefeuille_id: portefeuilleId || undefined,
+      archetype_code: archetypeCode || undefined,
     },
   }).then((r) => r.data);
 

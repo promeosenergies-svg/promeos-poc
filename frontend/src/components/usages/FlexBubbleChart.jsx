@@ -22,9 +22,11 @@ const revenueColor = (rev) => {
 };
 
 export default function FlexBubbleChart({ data }) {
+  const sites = data?.sites || [];
+
   const chartData = useMemo(
     () =>
-      (data?.sites || []).map((s) => ({
+      sites.map((s) => ({
         x: s.availability_pct ?? 50,
         y: 6 - (s.complexity_score ?? 3),
         z: s.kw_pilotable ?? 10,
@@ -33,10 +35,12 @@ export default function FlexBubbleChart({ data }) {
         nebco: s.nebco_eligible ?? false,
         kw: s.kw_pilotable ?? 0,
       })),
-    [data?.sites]
+    [sites]
   );
 
-  if (!data?.sites?.length) return null;
+  const noFlexCount = sites.filter((s) => !s.kw_pilotable).length;
+
+  if (!sites.length) return null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -98,6 +102,13 @@ export default function FlexBubbleChart({ data }) {
           </ScatterChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Note sites sans flex */}
+      {noFlexCount > 0 && (
+        <div className="text-[10px] text-gray-400 mt-1 p-1.5 bg-gray-50 rounded">
+          {noFlexCount} site{noFlexCount > 1 ? 's' : ''} sans potentiel flex identifié
+        </div>
+      )}
 
       {/* Légende */}
       <div className="flex gap-3 text-[10px] text-gray-400 mt-1">
