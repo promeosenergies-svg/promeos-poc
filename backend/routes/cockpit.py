@@ -63,7 +63,7 @@ def get_cockpit(
     # Stats sites (exclude soft-deleted, scoped to org)
     q_sites = _sites_for_org(db, effective_org_id)
     total_sites = q_sites.count()
-    sites_actifs = q_sites.count()  # not_deleted() déjà appliqué via _sites_for_org
+    sites_actifs = total_sites  # not_deleted() déjà appliqué via _sites_for_org
 
     # Stats conformite (compare to enum, not string)
     sites_tertiaire_ko = (
@@ -103,16 +103,19 @@ def get_cockpit(
     compliance_score_unified = compliance_kpi.value
     compliance_confidence = compliance_kpi.confidence
 
+    # Site IDs — single fetch, reused for RegAssessment, alertes, conso, billing
+    sites_objs = _sites_for_org(db, effective_org_id).all()
+    site_ids = [s.id for s in sites_objs]
+
     # RegAssessment — traçabilité source et computed_at (P0-1)
     _ra_computed_at = None
     _ra_sites_evaluated = 0
-    _site_ids_for_ra = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
-    if _site_ids_for_ra:
+    if site_ids:
         ra_rows = (
             db.query(RegAssessment)
             .filter(
                 RegAssessment.object_type == "site",
-                RegAssessment.object_id.in_(_site_ids_for_ra),
+                RegAssessment.object_id.in_(site_ids),
             )
             .order_by(RegAssessment.object_id, RegAssessment.computed_at.desc())
             .all()
@@ -126,7 +129,6 @@ def get_cockpit(
             _ra_computed_at = max(ra.computed_at for ra in _ra_latest.values())
 
     # Alertes actives — scoped to org's sites
-    site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
     alertes_actives = (
         (db.query(Alerte).filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids)).count()) if site_ids else 0
     )
@@ -153,7 +155,7 @@ def get_cockpit(
         _conso_dominant_source = "none"
 
     # Declared consumption (patrimoine) for transparency
-    _conso_declared_kwh = (db.query(func.sum(Site.annual_kwh_total)).filter(Site.id.in_(site_ids)).scalar()) or 0.0
+    _conso_declared_kwh = sum(s.annual_kwh_total or 0 for s in sites_objs)
 
     # Billing anomalies loss for risque_breakdown (P0-2: excl. resolved + false_positive)
     _billing_loss = 0.0

@@ -24,6 +24,7 @@ from models import (
     StatutConformite,
     TypeEvidence,
     StatutEvidence,
+    not_deleted,
 )
 from config.emission_factors import BASE_PENALTY_EURO, BACS_SEUIL_BAS
 from services.compliance_utils import (
@@ -450,11 +451,13 @@ def compute_portfolio_compliance_summary(
     """V68: Portfolio-level compliance summary."""
     site_ids = [
         row[0]
-        for row in db.query(Site.id)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
+        for row in not_deleted(
+            db.query(Site.id)
+            .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+            .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(EntiteJuridique.organisation_id == org_id),
+            Site,
+        ).all()
     ]
 
     if not site_ids:
@@ -462,7 +465,7 @@ def compute_portfolio_compliance_summary(
             "org_id": org_id,
             "total_sites": 0,
             "sites": [],
-            "kpis": {"sites_blocked": 0, "sites_warning": 0, "sites_ok": 0},
+            "kpis": {"data_blocked": 0, "data_warning": 0, "data_ready": 0},
             "top_blockers": [],
             "deadlines": {"d30": [], "d90": [], "d180": [], "beyond": []},
             "untrusted_sites": [],
@@ -488,7 +491,7 @@ def compute_portfolio_compliance_summary(
         fnd_by[f.site_id].append(f)
 
     sites_out = []
-    kpis = {"sites_blocked": 0, "sites_warning": 0, "sites_ok": 0}
+    kpis = {"data_blocked": 0, "data_warning": 0, "data_ready": 0}
     all_missing = []
     all_deadlines_items = {"d30": [], "d90": [], "d180": [], "beyond": []}
     untrusted = []
@@ -502,11 +505,11 @@ def compute_portfolio_compliance_summary(
 
         gate = readiness["gate_status"]
         if gate == "BLOCKED":
-            kpis["sites_blocked"] += 1
+            kpis["data_blocked"] += 1
         elif gate == "WARNING":
-            kpis["sites_warning"] += 1
+            kpis["data_warning"] += 1
         else:
-            kpis["sites_ok"] += 1
+            kpis["data_ready"] += 1
 
         for m in readiness["missing"]:
             if m["level"] == "blocking":

@@ -551,12 +551,25 @@ def get_summary(
         if len(top_actions) >= 5:
             break
 
+    # Compliance score composite (RegAssessment — single source of truth)
+    _compliance_score = None
+    try:
+        from services.kpi_service import KpiService, KpiScope
+
+        _kpi_svc = KpiService(db)
+        _cs = _kpi_svc.get_compliance_score(KpiScope(org_id=org_id))
+        _compliance_score = _cs.value
+    except Exception:
+        pass
+
     result = {
         "total_sites": len(site_ids),
         "sites_ok": sites_ok,
         "sites_nok": sites_nok,
         "sites_unknown": sites_unknown,
         "pct_ok": round(sites_ok / len(site_ids) * 100) if site_ids else 0,
+        "compliance_score": _compliance_score,
+        "compliance_source": "RegAssessment",
         "findings_by_regulation": by_reg,
         "top_actions": top_actions,
     }

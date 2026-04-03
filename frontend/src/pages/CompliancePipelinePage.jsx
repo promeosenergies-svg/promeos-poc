@@ -20,6 +20,7 @@ import {
 import { getPortfolioComplianceSummary } from '../services/api';
 import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
+import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 const GATE_BADGE = {
@@ -51,6 +52,7 @@ function GateBadge({ status }) {
 export default function CompliancePipelinePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sitesLoading } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const { openActionDrawer } = useActionDrawer();
@@ -63,7 +65,7 @@ export default function CompliancePipelinePage() {
       .finally(() => setLoading(false));
   }, [toast]);
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-pulse space-y-4">
@@ -131,17 +133,17 @@ export default function CompliancePipelinePage() {
       <div className="grid grid-cols-3 gap-4 mb-6" data-section="pipeline-kpis">
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
           <p className="text-xs text-gray-500 mb-1">Sites bloqués (gate)</p>
-          <p className="text-2xl font-bold text-red-600">{kpis.sites_blocked}</p>
+          <p className="text-2xl font-bold text-red-600">{kpis.data_blocked ?? 0}</p>
           <p className="text-xs text-gray-400 mt-0.5">Données manquantes critiques</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-amber-500">
           <p className="text-xs text-gray-500 mb-1">Sites incomplets</p>
-          <p className="text-2xl font-bold text-amber-600">{kpis.sites_warning}</p>
+          <p className="text-2xl font-bold text-amber-600">{kpis.data_warning ?? 0}</p>
           <p className="text-xs text-gray-400 mt-0.5">Données recommandées manquantes</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
           <p className="text-xs text-gray-500 mb-1">Sites prêts</p>
-          <p className="text-2xl font-bold text-green-600">{kpis.sites_ok}</p>
+          <p className="text-2xl font-bold text-green-600">{kpis.data_ready ?? 0}</p>
           <p className="text-xs text-gray-400 mt-0.5">Évaluation complète possible</p>
         </div>
       </div>

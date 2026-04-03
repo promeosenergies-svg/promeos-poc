@@ -61,9 +61,9 @@ class TestSeedHeliosPack:
 
     def test_helios_s_creates_meters(self, db_session):
         result = _seed(db_session, "helios", "S")
-        # 5 sites: 5 elec + 3 gas + 11 sub-meters (all sub_meters now created)
-        assert result["meters_count"] == 19
-        assert db_session.query(Meter).count() == 19
+        # 5 sites: 5 elec + 3 gas + 13 sub-meters
+        assert result["meters_count"] == 21
+        assert db_session.query(Meter).count() == 21
 
     def test_helios_s_creates_monthly_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
@@ -194,7 +194,7 @@ class TestSeedStatus:
         status = orch.status()
         assert status["organisations"] == 1
         assert status["sites"] == 5
-        assert status["meters"] == 19  # 5 elec + 3 gas + 11 sub-meters
+        assert status["meters"] == 21  # 5 elec + 3 gas + 13 sub-meters
         assert status["readings"] > 0
 
     def test_status_empty_db(self, db_session):
