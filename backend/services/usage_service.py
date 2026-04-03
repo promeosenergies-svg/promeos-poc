@@ -125,7 +125,7 @@ def compute_usage_readiness(db: Session, site_id: int) -> dict:
     if all_meter_ids:
         oldest = db.query(func.min(MeterReading.timestamp)).filter(MeterReading.meter_id.in_(all_meter_ids)).scalar()
         if oldest:
-            days_of_data = (datetime.utcnow() - oldest).days
+            days_of_data = (datetime.now(timezone.utc).replace(tzinfo=None) - oldest).days
             depth_pct = min(1.0, days_of_data / 365)
         else:
             depth_pct = 0
@@ -1154,13 +1154,13 @@ def get_usage_timeline(db: Session, site_id: int, months: int = 12) -> dict:
             }
         )
 
-    # Non affecté
+    # Non ventilé (conso non attribuée à un usage)
     non_affecte = []
     for k in all_keys:
         total_sub = sum(monthly.get(k, 0) for monthly in usage_monthly.values())
         non_affecte.append(round(max(0, principal_monthly.get(k, 0) - total_sub), 0))
     if any(v > 0 for v in non_affecte):
-        series.append({"usage": "Non affecté", "color": "#E0E0E0", "data": non_affecte})
+        series.append({"usage": "Non ventilé", "color": "#E0E0E0", "data": non_affecte})
 
     return {
         "months": month_labels,
@@ -1177,20 +1177,22 @@ from config.ademe_benchmarks import BENCHMARK_BY_USAGE as _ADEME_REF_BY_USAGE
 # ── V2 — Comparaison inter-sites ───────────────────────────────────────
 
 
-def get_portfolio_usage_comparison(db: Session, org_id: int) -> dict:
-    """Compare les IPE par usage pour tous les sites d'une organisation."""
+def get_portfolio_usage_comparison(db: Session, org_id: int, *, archetype_code: str | None = None) -> dict:
+    """Compare les IPE par usage pour tous les sites d'une organisation, filtrable par archétype."""
     from models.site import Site as SiteModel
     from models.portefeuille import Portefeuille
     from models.entite_juridique import EntiteJuridique
 
-    sites = (
+    q = (
         db.query(SiteModel)
         .join(Portefeuille, SiteModel.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
     )
-    if len(sites) < 2:
+    if archetype_code:
+        q = q.filter(SiteModel.type == archetype_code)
+    sites = q.all()
+    if not sites:
         return {"usages": [], "sites": []}
 
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
@@ -1241,7 +1243,7 @@ def get_portfolio_usage_comparison(db: Session, org_id: int) -> dict:
             ipe_by_usage[label] = round(kwh / surface, 1) if surface > 0 else 0
             all_usage_labels.add(label)
 
-        type_site = getattr(s, "type_site", "bureau") or "bureau"
+        type_site = (s.type.value if hasattr(s.type, "value") else str(s.type)) if s.type else "bureau"
         benchmarks = {"bureau": 170, "hotel": 280, "enseignement": 110, "entrepot": 120, "commerce": 200}
 
         site_results.append(
@@ -1409,13 +1411,21 @@ def get_scoped_usages_dashboard(
         archetype_code=archetype_code,
     )
     if not site_ids:
-        return {"scope_level": "empty", "sites_count": 0, "summary": {"total_kwh": 0, "total_eur": 0}}
+        return {
+            "scope_level": "empty",
+            "sites_count": 0,
+            "summary": {"total_kwh": 0, "total_eur": 0, "total_surface_m2": 0},
+        }
 
-    # Mono-site : délègue à l'existant
+    # Mono-site : délègue à l'existant + enrichit surface pour KPI strip
     if len(site_ids) == 1:
         result = get_usages_dashboard(db, site_ids[0])
         result["scope_level"] = "site"
         result["sites_count"] = 1
+        site = db.query(SiteModel).filter(SiteModel.id == site_ids[0]).first()
+        result["summary"]["total_surface_m2"] = (
+            (getattr(site, "surface_m2", 0) or getattr(site, "tertiaire_area_m2", 0) or 0) if site else 0
+        )
         return result
 
     # Multi-sites : agrégation
@@ -1433,12 +1443,19 @@ def get_scoped_usages_dashboard(
             continue
 
     if not sites_data:
-        return {"scope_level": scope_level, "sites_count": 0, "summary": {"total_kwh": 0, "total_eur": 0}}
+        return {
+            "scope_level": scope_level,
+            "sites_count": 0,
+            "summary": {"total_kwh": 0, "total_eur": 0, "total_surface_m2": 0},
+        }
 
     # Aggregate summary
     total_kwh = sum(d["summary"]["total_kwh"] for _, d in sites_data)
     total_eur = sum(d["summary"]["total_eur"] for _, d in sites_data)
-    total_surface = sum(getattr(site_objs.get(sid), "surface_m2", 0) or 0 for sid, _ in sites_data)
+    total_surface = sum(
+        (getattr(site_objs.get(sid), "surface_m2", 0) or getattr(site_objs.get(sid), "tertiaire_area_m2", 0) or 0)
+        for sid, _ in sites_data
+    )
     ipe = round(total_kwh / total_surface, 1) if total_surface > 0 else 0
 
     # Aggregate baselines by label
@@ -1480,11 +1497,15 @@ def get_scoped_usages_dashboard(
     # Aggregate cost breakdown
     cost_map = {}
     total_price_weighted = 0
+    total_uncovered_kwh = 0
+    total_uncovered_eur = 0
     for _, d in sites_data:
         cb = d.get("cost_breakdown") or {}
         site_kwh = cb.get("total_kwh", 0)
         price_ref = cb.get("price_ref_eur_kwh", 0)
         total_price_weighted += price_ref * site_kwh
+        total_uncovered_kwh += cb.get("uncovered_kwh", 0)
+        total_uncovered_eur += cb.get("uncovered_eur", 0)
         for item in cb.get("by_usage") or []:
             label = item.get("label", "?")
             if label not in cost_map:
@@ -1553,6 +1574,8 @@ def get_scoped_usages_dashboard(
             "total_eur": round(total_eur, 0),
             "price_ref_eur_kwh": round(avg_price, 4),
             "by_usage": cost_items,
+            "uncovered_kwh": round(total_uncovered_kwh, 1),
+            "uncovered_eur": round(total_uncovered_eur, 0),
         },
         "active_drifts": [],
         "baselines": aggregated_baselines,

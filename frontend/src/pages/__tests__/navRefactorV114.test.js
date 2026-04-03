@@ -22,10 +22,10 @@ describe('V114 Nav Refactor guard-rails', () => {
     expect(pilotage.items.map((i) => i.to)).toEqual(['/cockpit', '/actions', '/notifications']);
   });
 
-  it('Patrimoine has exactly 2 items (Sites & Bâtiments + Conformité)', () => {
+  it('Patrimoine has exactly 3 items (Registre + Contrats + Conformité)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
-    expect(patrimoine.items).toHaveLength(2);
-    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/conformite']);
+    expect(patrimoine.items).toHaveLength(3);
+    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/contrats', '/conformite']);
   });
 
   it('Actions & Suivi at /actions has alerts badge', () => {

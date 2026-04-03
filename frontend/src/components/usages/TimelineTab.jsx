@@ -79,21 +79,29 @@ export default function TimelineTab({ data, siteId }) {
           <TimelineChart data={data} />
         ))}
 
-      {mode === 'signature' &&
-        (sigLoading ? (
-          <div className="text-sm text-gray-400 italic py-8 text-center">
-            Calcul de la signature énergétique...
-          </div>
-        ) : signature?.error ? (
-          <div className="text-sm text-gray-400 italic py-4">{signature.error}</div>
-        ) : signature?.signature && signature?.regression_line && signature?.scatter_data ? (
-          <SignatureView signature={signature} />
-        ) : (
-          <div className="text-sm text-gray-400 italic py-4">
-            Signature non disponible pour ce site.
-          </div>
-        ))}
+      {mode === 'signature' && <SignaturePanel loading={sigLoading} signature={signature} />}
     </div>
+  );
+}
+
+/* ── Signature Panel (avoids nested ternaries) ─────────────────────── */
+
+function SignaturePanel({ loading, signature }) {
+  if (loading) {
+    return (
+      <div className="text-sm text-gray-400 italic py-8 text-center">
+        Calcul de la signature énergétique...
+      </div>
+    );
+  }
+  if (signature?.error) {
+    return <div className="text-sm text-gray-400 italic py-4">{signature.error}</div>;
+  }
+  if (signature?.signature && signature?.regression_line && signature?.scatter_data) {
+    return <SignatureView signature={signature} />;
+  }
+  return (
+    <div className="text-sm text-gray-400 italic py-4">Signature non disponible pour ce site.</div>
   );
 }
 
@@ -112,32 +120,50 @@ function TimelineChart({ data }) {
     [data]
   );
 
+  // Derive period label from months range
+  const periodLabel =
+    data.months?.length >= 2 ? `${data.months[0]} à ${data.months[data.months.length - 1]}` : '';
+
   return (
-    <div style={{ width: '100%', height: 260 }}>
-      <ResponsiveContainer>
-        <AreaChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#F5F5F3" />
-          <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-          <YAxis
-            tick={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-          />
-          <Tooltip formatter={(v, name) => [`${Number(v).toLocaleString()} kWh`, name]} />
-          <Legend wrapperStyle={{ fontSize: 10 }} />
-          {data.series.map((s) => (
-            <Area
-              key={s.usage}
-              type="monotone"
-              dataKey={s.usage}
-              stackId="1"
-              fill={s.color}
-              stroke={s.color}
-              fillOpacity={0.5}
+    <>
+      <div style={{ width: '100%', height: 260 }}>
+        <ResponsiveContainer>
+          <AreaChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F5F5F3" />
+            <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+            <YAxis
+              tick={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
+              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              label={{
+                value: 'kWh / mois',
+                angle: -90,
+                position: 'insideLeft',
+                fontSize: 10,
+                fill: '#9CA3AF',
+              }}
             />
-          ))}
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+            <Tooltip formatter={(v, name) => [`${Number(v).toLocaleString()} kWh`, name]} />
+            <Legend wrapperStyle={{ fontSize: 10 }} />
+            {data.series.map((s) => (
+              <Area
+                key={s.usage}
+                type="monotone"
+                dataKey={s.usage}
+                stackId="1"
+                fill={s.color}
+                stroke={s.color}
+                fillOpacity={0.5}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      {periodLabel && (
+        <div className="text-[10px] text-gray-400 px-2 mt-1">
+          Consommation mensuelle par usage · {periodLabel}
+        </div>
+      )}
+    </>
   );
 }
 

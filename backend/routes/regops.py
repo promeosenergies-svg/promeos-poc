@@ -2,19 +2,25 @@
 PROMEOS Routes - RegOps endpoints
 """
 
+import logging
+from datetime import date, datetime, timezone
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
 from regops.data_quality_specs import DATA_QUALITY_SPECS
-from models import RegAssessment, Site, Portefeuille, EntiteJuridique, not_deleted
+from models import RegAssessment, Site, Portefeuille, EntiteJuridique, Organisation, not_deleted
 from services.compliance_score_service import (
     compute_site_compliance_score,
     compute_portfolio_compliance,
     sync_site_unified_score,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
 
@@ -209,6 +215,11 @@ def get_score_explain(
             "missing_optional": [],
         },
         "how_to_improve": how_to_improve,
+        "_meta": {
+            "note": "Detail pedagogique — poids canoniques DT 45% / BACS 30% / APER 25% (regs.yaml)",
+            "score_global_sot": "RegAssessment.compliance_score via engine.py (S1+S3)",
+            "module": "compliance_score_service (A.2 unifie)",
+        },
     }
 
 
@@ -283,3 +294,116 @@ def get_org_dashboard(
         "sites_non_compliant": non_compliant,
         "avg_compliance_score": round(avg_score, 1),
     }
+
+
+# ── Audit Energetique / SME (Loi 2025-391) ──────────────────────────────────
+
+
+@router.get("/organisations/{organisation_id}/audit-sme")
+def get_audit_sme(
+    organisation_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Evaluation complete Audit Energetique / SME pour une organisation.
+
+    Source : Loi n 2025-391 du 30 avril 2025 (art. L.233-1 code de l'energie)
+    Deadline premier audit : 11 octobre 2026
+    """
+    from services.audit_sme_service import get_audit_sme_assessment
+
+    return get_audit_sme_assessment(db, organisation_id)
+
+
+@router.get("/audit-sme/scope")
+def get_audit_sme_scope(db: Session = Depends(get_db)):
+    """
+    Liste toutes les organisations dans le perimetre Audit/SME avec leur statut.
+    Pre-fetches AuditEnergetique records to avoid N+1.
+    """
+    from models.audit_sme import AuditEnergetique
+    from services.audit_sme_service import get_audit_sme_assessment
+
+    organisations = db.query(Organisation).filter(Organisation.actif == True).all()  # noqa: E712
+
+    # Bulk-fetch all AuditEnergetique records (avoids N individual queries)
+    org_ids = [org.id for org in organisations]
+    all_audits = (
+        db.query(AuditEnergetique).filter(AuditEnergetique.organisation_id.in_(org_ids)).all() if org_ids else []
+    )
+    audit_by_org = {a.organisation_id: a for a in all_audits}
+
+    results = []
+    for org in organisations:
+        try:
+            assessment = get_audit_sme_assessment(db, org.id, _prefetched_audit=audit_by_org.get(org.id))
+            if assessment["obligation"] != "AUCUNE":
+                results.append(
+                    {
+                        "organisation_id": org.id,
+                        "organisation_nom": org.nom,
+                        "obligation": assessment["obligation"],
+                        "statut": assessment["statut"],
+                        "conso_gwh": assessment["conso"]["annuelle_moy_gwh"],
+                        "jours_restants": assessment["jours_restants"],
+                        "urgence": assessment["urgence"],
+                        "score": assessment["score_audit_sme"],
+                    }
+                )
+        except Exception as exc:
+            logger.warning("Audit/SME assessment failed for org %d: %s", org.id, exc)
+
+    ordre = {"EN_RETARD": 0, "A_REALISER": 1, "EN_COURS": 2, "CONFORME": 3, "NON_CONCERNE": 4}
+    results.sort(key=lambda r: ordre.get(r["statut"], 5))
+
+    return {
+        "n_organisations": len(organisations),
+        "n_concernees": len(results),
+        "organisations": results,
+        "source": "audit_sme_service",
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+class AuditSmeUpdate(BaseModel):
+    auditeur_identifie: Optional[bool] = None
+    audit_realise: Optional[bool] = None
+    date_dernier_audit: Optional[date] = None
+    plan_action_publie: Optional[bool] = None
+    transmission_realisee: Optional[bool] = None
+    sme_certifie_iso50001: Optional[bool] = None
+    date_certification_sme: Optional[date] = None
+    organisme_certificateur: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
+
+
+@router.patch("/organisations/{organisation_id}/audit-sme")
+def update_audit_sme_record(
+    organisation_id: int,
+    payload: AuditSmeUpdate,
+    db: Session = Depends(get_db),
+):
+    """
+    Met a jour le statut Audit/SME d'une organisation (action manuelle).
+    """
+    from models.audit_sme import AuditEnergetique
+    from services.audit_sme_service import get_audit_sme_assessment
+
+    audit = db.query(AuditEnergetique).filter_by(organisation_id=organisation_id).first()
+
+    if not audit:
+        audit = AuditEnergetique(
+            organisation_id=organisation_id,
+            date_premier_audit_limite=date(2026, 10, 11),
+        )
+        db.add(audit)
+
+    updates = payload.model_dump(exclude_unset=True)
+    for field, val in updates.items():
+        setattr(audit, field, val)
+
+    db.commit()
+    db.refresh(audit)
+
+    return get_audit_sme_assessment(db, organisation_id)

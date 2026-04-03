@@ -136,15 +136,16 @@ class TestCockpitTrajectory:
             assert field in data, f"Champ manquant : {field}"
 
     def test_trajectory_jalons_correct(self, client):
-        """Les jalons DT sont conformes au décret n°2019-771."""
+        """Les jalons DT sont conformes au décret n°2019-771 (pas de jalon 2026)."""
         response = client.get("/api/cockpit/trajectory", headers={"X-Org-Id": "1"})
         data = response.json()
         if "error" in data:
             pytest.skip("Pas de targets en base de test")
         jalons = {j["annee"]: j["reduction_pct"] for j in data["jalons"]}
-        assert jalons.get(2026) == -25.0
+        assert 2026 not in jalons, "Le jalon 2026 n'existe pas dans le Decret n°2019-771"
         assert jalons.get(2030) == -40.0
         assert jalons.get(2040) == -50.0
+        assert jalons.get(2050) == -60.0
 
     def test_no_calc_in_frontend_trajectory(self):
         """Vérification structurelle : le front ne calcule pas la trajectoire."""

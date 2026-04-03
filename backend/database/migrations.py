@@ -88,6 +88,10 @@ def run_migrations(engine):
     _add_enedis_columns(engine)
     # TURPE 7 / HC reprog — delivery_points enrichment
     _add_delivery_point_turpe_columns(engine)
+    # Audit Energetique / SME (Loi 2025-391)
+    _create_audit_energetique_table(engine)
+    # V2 Contrats Cadre+Annexe
+    _migrate_contracts_v2(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1811,3 +1815,228 @@ def _add_delivery_point_turpe_columns(engine):
         logger.info("migration: added %d TURPE/HC column(s) to delivery_points", added)
     else:
         logger.debug("migration: delivery_points TURPE/HC columns already present")
+
+
+def _create_audit_energetique_table(engine):
+    """Create audit_energetique table if not exists (Loi 2025-391)."""
+    insp = inspect(engine)
+    if insp.has_table("audit_energetique"):
+        logger.debug("migration: audit_energetique table already exists")
+        # Table exists but may lack SoftDelete columns (added after initial creation)
+        _add_audit_energetique_soft_delete_columns(engine)
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+            CREATE TABLE IF NOT EXISTS audit_energetique (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                organisation_id INTEGER REFERENCES organisations(id),
+                organisation_libelle VARCHAR(255),
+                annee_ref_debut INTEGER,
+                annee_ref_fin INTEGER,
+                conso_annuelle_moy_kwh FLOAT,
+                conso_annuelle_moy_gwh FLOAT,
+                detail_vecteurs TEXT,
+                obligation VARCHAR(30) NOT NULL DEFAULT 'NON_DETERMINE',
+                statut VARCHAR(20) NOT NULL DEFAULT 'NON_DETERMINE',
+                date_premier_audit_limite DATE,
+                date_dernier_audit DATE,
+                date_prochain_audit DATE,
+                date_transmission_admin DATE,
+                auditeur_identifie BOOLEAN DEFAULT 0,
+                audit_realise BOOLEAN DEFAULT 0,
+                plan_action_publie BOOLEAN DEFAULT 0,
+                transmission_realisee BOOLEAN DEFAULT 0,
+                sme_certifie_iso50001 BOOLEAN DEFAULT 0,
+                date_certification_sme DATE,
+                organisme_certificateur VARCHAR(100),
+                score_audit_sme FLOAT,
+                source VARCHAR(20) DEFAULT 'manual',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                deleted_at DATETIME,
+                deleted_by VARCHAR(200),
+                delete_reason VARCHAR(500)
+            )
+        """)
+        )
+        conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_audit_energetique_org_id ON audit_energetique(organisation_id)")
+        )
+    logger.info("migration: created audit_energetique table")
+
+    # Backfill: add SoftDelete columns if table was created before SoftDeleteMixin was added
+    _add_audit_energetique_soft_delete_columns(engine)
+
+
+def _add_audit_energetique_soft_delete_columns(engine):
+    """Add deleted_at/deleted_by/delete_reason if table exists but columns are missing."""
+    insp = inspect(engine)
+    if not insp.has_table("audit_energetique"):
+        return
+    existing_cols = {c["name"] for c in insp.get_columns("audit_energetique")}
+    new_cols = [
+        ("deleted_at", "DATETIME"),
+        ("deleted_by", "VARCHAR(200)"),
+        ("delete_reason", "VARCHAR(500)"),
+    ]
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in new_cols:
+            if col_name in existing_cols:
+                continue
+            try:
+                conn.execute(text(f'ALTER TABLE "audit_energetique" ADD COLUMN "{col_name}" {col_type}'))
+                added += 1
+                logger.info("migration: added audit_energetique.%s (%s)", col_name, col_type)
+            except Exception as e:
+                logger.warning("migration: could not add audit_energetique.%s: %s", col_name, e)
+    if added > 0:
+        logger.info("migration: added %d SoftDelete column(s) to audit_energetique", added)
+
+
+# ---------------------------------------------------------------------------
+# V2 Contrats Cadre + Annexes
+# ---------------------------------------------------------------------------
+
+
+def _migrate_contracts_v2(engine):
+    """V2 Contrats Cadre+Annexe — add cadre columns + 4 new tables. Idempotent."""
+    insp = inspect(engine)
+
+    # 1. Add columns to energy_contracts
+    if insp.has_table("energy_contracts"):
+        existing = {c["name"] for c in insp.get_columns("energy_contracts")}
+        new_cols = [
+            ("is_cadre", "BOOLEAN DEFAULT 0"),
+            ("contract_type", "VARCHAR(20) DEFAULT 'UNIQUE'"),
+            ("entite_juridique_id", "INTEGER REFERENCES entites_juridiques(id)"),
+            ("notice_period_months", "INTEGER"),
+            ("is_green", "BOOLEAN DEFAULT 0"),
+            ("green_percentage", "FLOAT"),
+            ("notes", "TEXT"),
+        ]
+        with engine.begin() as conn:
+            for col_name, col_type in new_cols:
+                if col_name in existing:
+                    continue
+                try:
+                    conn.execute(text(f'ALTER TABLE "energy_contracts" ADD COLUMN "{col_name}" {col_type}'))
+                    logger.info("migration: added energy_contracts.%s", col_name)
+                except Exception as e:
+                    logger.warning("migration: could not add energy_contracts.%s: %s", col_name, e)
+
+    # 2. Create contract_annexes
+    if not insp.has_table("contract_annexes"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE contract_annexes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contrat_cadre_id INTEGER NOT NULL REFERENCES energy_contracts(id) ON DELETE CASCADE,
+                    site_id INTEGER NOT NULL REFERENCES sites(id),
+                    delivery_point_id INTEGER REFERENCES delivery_points(id),
+                    annexe_ref VARCHAR(100),
+                    tariff_option VARCHAR(10),
+                    subscribed_power_kva FLOAT,
+                    segment_enedis VARCHAR(10),
+                    has_price_override BOOLEAN DEFAULT 0,
+                    override_pricing_model VARCHAR(30),
+                    start_date_override DATE,
+                    end_date_override DATE,
+                    status VARCHAR(20) DEFAULT 'active',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at DATETIME,
+                    deleted_by VARCHAR(200),
+                    delete_reason VARCHAR(500),
+                    UNIQUE(contrat_cadre_id, site_id)
+                )
+            """)
+            )
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_contract_annexes_cadre ON contract_annexes(contrat_cadre_id)")
+            )
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_contract_annexes_site ON contract_annexes(site_id)"))
+        logger.info("migration: created contract_annexes table")
+
+    # 3. Create contract_pricing
+    if not insp.has_table("contract_pricing"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE contract_pricing (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contract_id INTEGER REFERENCES energy_contracts(id) ON DELETE CASCADE,
+                    annexe_id INTEGER REFERENCES contract_annexes(id) ON DELETE CASCADE,
+                    period_code VARCHAR(10) NOT NULL,
+                    season VARCHAR(10) DEFAULT 'ANNUEL',
+                    unit_price_eur_kwh FLOAT,
+                    subscription_eur_month FLOAT,
+                    effective_from DATE,
+                    effective_to DATE,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CHECK (
+                        (contract_id IS NOT NULL AND annexe_id IS NULL)
+                        OR (contract_id IS NULL AND annexe_id IS NOT NULL)
+                    )
+                )
+            """)
+            )
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_contract_pricing_contract ON contract_pricing(contract_id)")
+            )
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_contract_pricing_annexe ON contract_pricing(annexe_id)"))
+        logger.info("migration: created contract_pricing table")
+
+    # 4. Create volume_commitments
+    if not insp.has_table("volume_commitments"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE volume_commitments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    annexe_id INTEGER NOT NULL UNIQUE REFERENCES contract_annexes(id) ON DELETE CASCADE,
+                    annual_kwh FLOAT NOT NULL,
+                    tolerance_pct_up FLOAT DEFAULT 10.0,
+                    tolerance_pct_down FLOAT DEFAULT 10.0,
+                    penalty_eur_kwh_above FLOAT,
+                    penalty_eur_kwh_below FLOAT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_volume_commitments_annexe ON volume_commitments(annexe_id)")
+            )
+        logger.info("migration: created volume_commitments table")
+
+    # 5. Create contract_events
+    if not insp.has_table("contract_events"):
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                CREATE TABLE contract_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contract_id INTEGER NOT NULL REFERENCES energy_contracts(id) ON DELETE CASCADE,
+                    event_type VARCHAR(30) NOT NULL,
+                    event_date DATE NOT NULL,
+                    description VARCHAR(500),
+                    meta_json TEXT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            )
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_contract_events_contract ON contract_events(contract_id)"))
+        logger.info("migration: created contract_events table")
+
+    # 6. Backfill existing contracts
+    if insp.has_table("energy_contracts"):
+        with engine.begin() as conn:
+            conn.execute(text("UPDATE energy_contracts SET is_cadre = 0 WHERE is_cadre IS NULL"))
+            conn.execute(text("UPDATE energy_contracts SET contract_type = 'UNIQUE' WHERE contract_type IS NULL"))
+        logger.info("migration: backfilled energy_contracts V2 defaults")

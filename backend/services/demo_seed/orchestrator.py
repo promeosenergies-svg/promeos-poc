@@ -270,6 +270,17 @@ class SeedOrchestrator:
         )
         result["billing"] = billing
 
+        # 6a. V2 Cadre+Annexe contracts
+        from .gen_billing import generate_cadre_contracts
+
+        cadre_result = generate_cadre_contracts(
+            self.db,
+            master["org"],
+            master["sites"],
+            rng,
+        )
+        result["cadre_contracts"] = cadre_result
+
         # 6b. Billing audit-all → génère insights/anomalies post-seed
         from services.billing_service import audit_invoice_full
         from models import EnergyInvoice

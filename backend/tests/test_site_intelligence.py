@@ -13,7 +13,7 @@ from models import Site, Meter
 from models.energy_models import UsageProfile, Anomaly, Recommendation
 from models.kb_models import KBArchetype, KBVersion, KBStatus, KBConfidence
 from models.energy_models import AnomalySeverity, RecommendationStatus
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ def _seed_site_with_intelligence(db):
     db.flush()
 
     # Usage profile
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     profile = UsageProfile(
         meter_id=meter.id,
         archetype_id=arch.id,

@@ -57,6 +57,7 @@ export const ROUTE_MODULE_MAP = {
   '/onboarding': 'pilotage',
   '/patrimoine': 'patrimoine',
   '/sites/:id': 'patrimoine',
+  '/contrats': 'patrimoine',
   '/conformite': 'patrimoine',
   '/conformite/tertiaire': 'patrimoine',
   '/conformite/tertiaire/wizard': 'patrimoine',
@@ -464,6 +465,12 @@ export const NAV_SECTIONS = [
         keywords: ['sites', 'batiments', 'immobilier', 'patrimoine', 'registre'],
       },
       {
+        to: '/contrats',
+        icon: FileText,
+        label: 'Contrats',
+        keywords: ['contrats', 'cadre', 'annexe', 'fournisseur', 'tarif', 'pricing'],
+      },
+      {
         to: '/conformite',
         icon: ShieldCheck,
         label: 'Conformité',
@@ -671,6 +678,12 @@ export const NAV_MAIN_SECTIONS = [
         label: 'Registre patrimonial',
         hint: 'Cliquez sur un site pour voir sa fiche',
         keywords: ['sites', 'batiments', 'immobilier', 'patrimoine', 'registre'],
+      },
+      {
+        to: '/contrats',
+        icon: FileText,
+        label: 'Contrats',
+        keywords: ['contrats', 'cadre', 'annexe', 'fournisseur', 'tarif', 'pricing'],
       },
       {
         to: '/conformite',

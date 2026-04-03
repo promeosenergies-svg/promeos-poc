@@ -27,3 +27,4 @@ export * from './energy';
 export * from './cockpit';
 export * from './admin';
 export * from './market';
+export * from './contractsV2';

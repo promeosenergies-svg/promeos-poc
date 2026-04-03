@@ -196,7 +196,7 @@ PACKS = {
                 ],
             },
             {
-                "nom": "Usine HELIOS Toulouse",
+                "nom": "Entrepôt HELIOS Toulouse",
                 "portefeuille_idx": 1,
                 "ville": "Toulouse",
                 "cp": "31100",
@@ -207,7 +207,7 @@ PACKS = {
                 "profile": "warehouse",
                 "naf": "5210B",
                 "surface_m2": 6000,
-                "tertiaire_area_m2": None,
+                "tertiaire_area_m2": 6000,  # Entrepôt logistique tertiaire >= 1000m² → assujetti DT
                 "employees": 85,
                 "psub_kva": 400,
                 "annual_kwh": 720000,  # ADEME entrepôt 120 kWh/m² × 6000 m²
@@ -215,7 +215,7 @@ PACKS = {
                 "parking_m2": 2000,
                 "roof_m2": 3000,
                 "parking_type": "outdoor",
-                "operat_status": None,
+                "operat_status": "NOT_STARTED",  # Non déclaré → risque pénalité 7500€
                 "buildings": [
                     {"nom": "Bâtiment industriel", "surface_m2": 6000, "annee": 1988, "cvc_kw": 150},
                 ],

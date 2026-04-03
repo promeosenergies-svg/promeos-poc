@@ -9,7 +9,7 @@ PROMEOS — Energy Copilot Rule Engine (Chantier 3)
 
 import json
 import logging
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import func
@@ -435,7 +435,7 @@ def validate_copilot_action(
 
     action.status = CopilotActionStatus.CONVERTED
     action.validated_by = user_email
-    action.validated_at = datetime.utcnow()
+    action.validated_at = datetime.now(timezone.utc)
     action.action_item_id = ai.id
 
     # Audit log

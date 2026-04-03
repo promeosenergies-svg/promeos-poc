@@ -1,6 +1,20 @@
 """
-PROMEOS RegOps - Scoring module
-Extracted scoring logic with dedup, clamp, profiling, and score_explain.
+PROMEOS RegOps - Scoring module (S2 — DEPRECIE pour le score principal)
+
+⚠️ Ce module N'EST PAS la source de verite pour le score global.
+La SoT est : engine.py → compliance_score_service (S1) → RegAssessment.compliance_score
+
+Ce module est conserve pour :
+- Logique de dedup, clamp, et profiling reutilisable
+- Tests de hardening du scoring
+- Usage potentiel futur pour score_explain detaille
+
+Les poids dans scoring_profile.json sont alignes avec regs.yaml (0.45/0.30/0.25)
+depuis la Phase 2 DT (03/04/2026).
+
+Source canonique poids :
+- Sans Audit/SME : DT 45% / BACS 30% / APER 25% (regs.yaml)
+- Avec Audit/SME : DT 39% / BACS 28% / APER 17% / AUDIT 16% (engine.py)
 """
 
 import json

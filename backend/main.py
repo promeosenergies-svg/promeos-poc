@@ -78,6 +78,7 @@ from routes import (
     enedis_router,
     site_intelligence_router,
     power_router,
+    flex_score_router,
 )
 
 # Import KB router
@@ -88,6 +89,9 @@ from app.bill_intelligence.router import router as bill_router
 
 # Import Market Data V2 router (spot, forwards, tariffs, freshness)
 from routes.market_data import router as market_data_router
+
+# Import Contracts V2 (Cadre+Annexe) router
+from routes.contracts_v2 import router as contracts_v2_router
 
 # Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
@@ -158,11 +162,15 @@ app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 app.include_router(ems_router)  # EMS Consumption Explorer
 app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
 app.include_router(flex_foundation_router)  # Flex Foundations Sprint 21 (assets, assessment)
+app.include_router(flex_score_router)  # Flex Score Engine (15 usages, NEBCO, prix negatifs)
 if os.environ.get("PROMEOS_ENV") != "production":
     app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
 app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 app.include_router(consumption_context_router)  # Consumption Context V0 (usages & horaires)
+app.include_router(
+    contracts_v2_router
+)  # V2 Contrats Cadre+Annexe (17 endpoints) — MUST be before radar (prefix conflict)
 app.include_router(contracts_radar_router)  # V99 Contract Renewal Radar + Purchase Scenarios
 app.include_router(data_quality_router)  # V113 Data Quality Dashboard
 app.include_router(operat_router)  # V113 OPERAT CSV Export

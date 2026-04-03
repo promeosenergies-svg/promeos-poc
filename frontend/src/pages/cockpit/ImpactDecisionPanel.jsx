@@ -108,7 +108,7 @@ export default function ImpactDecisionPanel({ kpis, activationData }) {
   const handleDrillDown = (type) => {
     if (type === 'risque') navigate('/patrimoine?filter=risque');
     if (type === 'surcout') navigate('/bill-intel?filter=anomalies');
-    if (type === 'optimisation') navigate('/consommations?filter=energivores');
+    if (type === 'optimisation') navigate('/consommations/portfolio?filter=energivores');
   };
 
   // V32 — KPI dominant (max € parmi les 3)

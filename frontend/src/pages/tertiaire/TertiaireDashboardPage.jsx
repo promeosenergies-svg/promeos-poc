@@ -31,6 +31,7 @@ import {
 } from '../../services/api';
 import ExportOperatModal from '../../components/ExportOperatModal';
 import MutualisationSection from '../../components/conformite/MutualisationSection';
+import DtProgressMultiSite from '../../components/conformite/DtProgressMultiSite';
 import Explain from '../../ui/Explain';
 
 const STATUS_LABELS = {
@@ -204,6 +205,11 @@ export default function TertiaireDashboardPage() {
           icon={Clock}
           accent={daysToOperat < 90 ? 'red' : 'amber'}
         />
+      </div>
+
+      {/* Vue multi-site trajectoire DT */}
+      <div className="mt-6">
+        <DtProgressMultiSite orgId={efas[0]?.org_id || 1} />
       </div>
 
       {/* V42+V43: Sites à traiter */}

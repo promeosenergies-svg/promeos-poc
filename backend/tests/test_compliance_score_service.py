@@ -5,7 +5,7 @@ Covers: site scoring, portfolio aggregation, confidence levels, critical penalty
 
 import json
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -181,7 +181,7 @@ class TestCriticalPenalty:
         ra = RegAssessment(
             object_type="site",
             object_id=1,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
             global_status=RegStatus.AT_RISK,
             compliance_score=80.0,
             deterministic_version="tertiaire_operat_v1",
@@ -205,7 +205,7 @@ class TestCriticalPenalty:
         ra = RegAssessment(
             object_type="site",
             object_id=1,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
             global_status=RegStatus.AT_RISK,
             compliance_score=90.0,
             deterministic_version="tertiaire_operat_v1",
@@ -227,7 +227,7 @@ class TestRegAssessmentScoring:
         ra = RegAssessment(
             object_type="site",
             object_id=1,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
             global_status=RegStatus.COMPLIANT,
             compliance_score=60.0,
             deterministic_version="tertiaire_operat_v1",
@@ -248,7 +248,7 @@ class TestRegAssessmentScoring:
         ra = RegAssessment(
             object_type="site",
             object_id=1,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
             global_status=RegStatus.AT_RISK,
             compliance_score=10.0,
             deterministic_version="tertiaire_operat_v1",

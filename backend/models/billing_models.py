@@ -172,6 +172,46 @@ class EnergyContract(Base, TimestampMixin):
         comment="Prix fourniture Base EUR HT/kWh (= price_ref si tarif unique)",
     )
 
+    # V2 Cadre+Annexe — colonnes cadre
+    is_cadre = Column(
+        Boolean,
+        default=False,
+        comment="True si contrat cadre multi-sites",
+    )
+    contract_type = Column(
+        String(20),
+        nullable=True,
+        default="UNIQUE",
+        comment="UNIQUE (mono-site) ou CADRE (multi-sites)",
+    )
+    entite_juridique_id = Column(
+        Integer,
+        ForeignKey("entites_juridiques.id"),
+        nullable=True,
+        index=True,
+        comment="Entite juridique signataire (cadre)",
+    )
+    notice_period_months = Column(
+        Integer,
+        nullable=True,
+        comment="Preavis de resiliation en mois",
+    )
+    is_green = Column(
+        Boolean,
+        default=False,
+        comment="Offre verte (Garantie d'Origine)",
+    )
+    green_percentage = Column(
+        Float,
+        nullable=True,
+        comment="Pourcentage couverture GO (0-100)",
+    )
+    notes = Column(
+        Text,
+        nullable=True,
+        comment="Notes libres sur le contrat",
+    )
+
     # Relations
     site = relationship("Site", backref="energy_contracts")
     invoices = relationship(
@@ -184,6 +224,24 @@ class EnergyContract(Base, TimestampMixin):
         "DeliveryPoint",
         secondary="contract_delivery_points",
         backref="contracts",
+    )
+    # V2 Cadre+Annexe — relations
+    entite_juridique = relationship("EntiteJuridique")
+    annexes = relationship(
+        "ContractAnnexe",
+        back_populates="contrat_cadre",
+        cascade="all, delete-orphan",
+    )
+    pricing_lines = relationship(
+        "ContractPricing",
+        back_populates="contract",
+        cascade="all, delete-orphan",
+        foreign_keys="ContractPricing.contract_id",
+    )
+    events = relationship(
+        "ContractEvent",
+        back_populates="contract",
+        cascade="all, delete-orphan",
     )
 
 

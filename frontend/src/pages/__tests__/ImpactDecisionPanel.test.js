@@ -192,8 +192,8 @@ describe('GUARD: Drill-down KPI navigation', () => {
     expect(panelSrc).toContain('/bill-intel?filter=anomalies');
   });
 
-  it('navigue vers /consommations?filter=energivores pour le KPI optimisation', () => {
-    expect(panelSrc).toContain('/consommations?filter=energivores');
+  it('navigue vers /consommations/portfolio?filter=energivores pour le KPI optimisation', () => {
+    expect(panelSrc).toContain('/consommations/portfolio?filter=energivores');
   });
 
   it('chaque KPI tile reçoit un onClick', () => {

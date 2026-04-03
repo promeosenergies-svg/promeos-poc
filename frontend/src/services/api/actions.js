@@ -197,6 +197,16 @@ export const syncBacsToFlexAssets = (siteId) =>
 export const getFlexAssessment = (siteId) =>
   cachedGet('/flex/assessment', { params: { site_id: siteId } }, 15000);
 
+// ── Flex Score Engine ──
+export const getFlexScore = (siteId) =>
+  cachedGet(`/flex/score/sites/${siteId}`, {}, 30000).then((r) => r.data);
+export const getFlexUsages = (P_max_kw = 0) =>
+  cachedGet('/flex/score/usages', { params: { P_max_kw } }, 60000).then((r) => r.data);
+export const getFlexPrixSignal = (prixSpot) =>
+  cachedGet('/flex/score/prix-signal', { params: { prix_spot_eur_mwh: prixSpot } }, 10000).then(
+    (r) => r.data
+  );
+
 // ── Flex v2 (Sprint 21 corrections) ──
 export const getRegulatoryOpportunities = (params = {}) =>
   cachedGet('/flex/regulatory-opportunities', { params }, 15000);

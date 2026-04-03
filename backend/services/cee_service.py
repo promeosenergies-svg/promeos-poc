@@ -36,14 +36,9 @@ from models.energy_models import FrequencyType
 
 def _resolve_site_org(db: Session, site_id: int) -> int:
     """Resolve org_id from site_id."""
-    row = (
-        db.query(EntiteJuridique.organisation_id)
-        .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .join(Site, Site.portefeuille_id == Portefeuille.id)
-        .filter(Site.id == site_id)
-        .first()
-    )
-    return row[0] if row else 1  # Fallback to org 1 for demo
+    from services.scope_utils import resolve_org_id_from_site
+
+    return resolve_org_id_from_site(db, site_id) or 1  # Fallback to org 1 for demo
 
 
 _CEE_EVIDENCE_TEMPLATE = [
@@ -69,7 +64,7 @@ def create_cee_dossier(
     - Action items in Action Center for each kanban step
     Returns the dossier dict with evidence_items and action_ids.
     """
-    from models import ActionItem, Site
+    from models import ActionItem
 
     wp = db.query(WorkPackage).filter(WorkPackage.id == work_package_id).first()
     if not wp:
@@ -237,7 +232,6 @@ def compute_mv_summary(
     Baseline from consumption data, current from recent, delta + alerts.
     MVP heuristic — uses annual_kwh_total as baseline reference.
     """
-    from models import Site
     from models.energy_models import Meter, MeterReading
     from datetime import datetime
 

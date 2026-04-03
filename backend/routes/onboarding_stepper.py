@@ -6,7 +6,7 @@ POST /api/onboarding-progress/dismiss  — dismiss stepper
 POST /api/onboarding-progress/auto     — auto-detect completed steps
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
@@ -151,7 +151,7 @@ def update_step(
     # Check if all done + compute TTFV
     if all(getattr(progress, f) for f in STEP_FIELDS):
         if not progress.completed_at:
-            progress.completed_at = datetime.utcnow()
+            progress.completed_at = datetime.now(timezone.utc)
             if progress.created_at:
                 progress.ttfv_seconds = int((progress.completed_at - progress.created_at).total_seconds())
     else:
@@ -176,7 +176,7 @@ def dismiss_stepper(
         raise HTTPException(400, "org_id requis")
 
     progress = _get_or_create(db, oid)
-    progress.dismissed_at = datetime.utcnow()
+    progress.dismissed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(progress)
     return _serialize(progress)
@@ -234,7 +234,7 @@ def _auto_detect(db: Session, oid: int, progress: OnboardingProgress):
     # Check if all done
     if all(getattr(progress, f) for f in STEP_FIELDS):
         if not progress.completed_at:
-            progress.completed_at = datetime.utcnow()
+            progress.completed_at = datetime.now(timezone.utc)
 
 
 @router.post("/auto")

@@ -58,6 +58,7 @@ from .cockpit_v2 import router as cockpit_v2_router
 from .enedis import router as enedis_router
 from .site_intelligence import router as site_intelligence_router
 from .power import router as power_router
+from .flex_score import router as flex_score_router
 
 __all__ = [
     "sites_router",
@@ -116,4 +117,5 @@ __all__ = [
     "enedis_router",
     "site_intelligence_router",
     "power_router",
+    "flex_score_router",
 ]

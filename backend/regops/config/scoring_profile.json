@@ -1,11 +1,12 @@
 {
   "id": "default_v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "_comment": "Poids alignes avec regs.yaml. Source : Decret n2019-771 (DT), Decret BACS, Loi APER.",
   "regulation_weights": {
-    "tertiaire_operat": 1.0,
-    "bacs": 1.0,
-    "aper": 1.0,
-    "cee_p6": 1.0
+    "tertiaire_operat": 0.45,
+    "bacs": 0.30,
+    "aper": 0.25,
+    "cee_p6": 0.0
   },
   "severity_multipliers": {
     "critical": 1.0,

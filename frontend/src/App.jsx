@@ -62,6 +62,7 @@ const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
 const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconciliationPage'));
 const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
+const Contrats = lazy(() => import('./pages/Contrats'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AperPage = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
@@ -452,6 +453,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <PortfolioReconciliationPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/contrats"
+                      element={
+                        <PageSuspense>
+                          <Contrats />
                         </PageSuspense>
                       }
                     />

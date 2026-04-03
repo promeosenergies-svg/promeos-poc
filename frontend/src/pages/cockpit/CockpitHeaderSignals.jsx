@@ -1,14 +1,25 @@
+import { useState, useEffect } from 'react';
 import { Zap, Leaf, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCockpitSignals } from '../../hooks/useCockpitSignals';
+import { getFlexPrixSignal } from '../../services/api';
 
 /**
  * Pills de signaux marché affichées dans le header du cockpit.
- * Zéro calcul — display-only depuis le hook.
+ * Zéro calcul — display-only depuis le hook + API.
  */
 export default function CockpitHeaderSignals() {
   const { epexEurMwh, co2GKwh, alertesCount, loading } = useCockpitSignals();
   const navigate = useNavigate();
+  const [prixSignal, setPrixSignal] = useState(null);
+
+  // Signal prix spot — utilise le prix EPEX si disponible, sinon valeur demo neutre
+  useEffect(() => {
+    const prix = epexEurMwh ?? 45;
+    getFlexPrixSignal(prix)
+      .then(setPrixSignal)
+      .catch(() => setPrixSignal(null));
+  }, [epexEurMwh]);
 
   if (loading) {
     return (
@@ -53,6 +64,23 @@ export default function CockpitHeaderSignals() {
           <Bell size={11} />
           {alertesCount} alerte{alertesCount > 1 ? 's' : ''}
         </button>
+      )}
+
+      {/* Signal prix spot NEBCO */}
+      {prixSignal && (
+        <span
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium border cursor-default ${
+            prixSignal.signal === 'PRIX_NEGATIF'
+              ? 'bg-blue-50 text-blue-700 border-blue-200'
+              : prixSignal.signal === 'PRIX_ELEVE'
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : 'bg-gray-50 text-gray-600 border-gray-200'
+          }`}
+          title={prixSignal.message}
+        >
+          <Zap size={11} />
+          Spot {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh
+        </span>
       )}
     </div>
   );

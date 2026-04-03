@@ -269,15 +269,9 @@ def _resolve_org_id(db, site):
     """Resolve org_id via site → portefeuille → entite_juridique → organisation."""
     if hasattr(site, "org_id") and site.org_id:
         return site.org_id
-    if site.portefeuille_id:
-        from models import Portefeuille, EntiteJuridique
+    from services.scope_utils import resolve_org_id_from_site
 
-        pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
-        if pf and hasattr(pf, "entite_juridique_id") and pf.entite_juridique_id:
-            ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
-            if ej:
-                return getattr(ej, "organisation_id", None)
-    return None
+    return resolve_org_id_from_site(db, site.id)
 
 
 def _empty_summary():

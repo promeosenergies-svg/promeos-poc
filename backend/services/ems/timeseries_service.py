@@ -3,7 +3,7 @@ PROMEOS - EMS Timeseries Service
 SQL-level bucket aggregation for consumption timeseries.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Set, Tuple, Dict, Any
 
 from sqlalchemy.orm import Session
@@ -131,7 +131,7 @@ def resolve_best_freq(db, meter_ids, date_from, date_to, granularity="daily"):
     if date_from is None:
         date_from = datetime(2000, 1, 1)
     if date_to is None:
-        date_to = datetime.utcnow()
+        date_to = datetime.now(timezone.utc)
     if hasattr(date_from, "tzinfo") and date_from.tzinfo:
         date_from = date_from.replace(tzinfo=None)
     if hasattr(date_to, "tzinfo") and date_to.tzinfo:

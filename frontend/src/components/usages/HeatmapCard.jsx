@@ -1,8 +1,23 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const fmt = (n) => (n == null ? '—' : Math.round(n));
 
+const USAGE_ABBREVS = {
+  Chauffage: 'Chauff.',
+  Climatisation: 'Clim.',
+  Ventilation: 'Ventil.',
+  Éclairage: 'Éclair.',
+  'IT & Bureautique': 'IT',
+  Process: 'Process',
+  Cuisine: 'Cuisine',
+  CVC: 'CVC',
+  ECS: 'ECS',
+};
+
 export default function HeatmapCard({ data, currentSiteId }) {
+  const navigate = useNavigate();
+
   if (!data?.sites?.length) return null;
 
   const usages = data.usages?.slice(0, 4) || [];
@@ -11,22 +26,13 @@ export default function HeatmapCard({ data, currentSiteId }) {
     maxByUsage[u] = Math.max(...data.sites.map((s) => s.ipe_by_usage[u] || 0));
   });
 
-  const cellBg = (val, maxVal) => {
-    if (!val || !maxVal) return '#F3F4F6';
+  const cellStyle = (val, maxVal) => {
+    if (!val || !maxVal) return { bg: '#F3F4F6', color: '#9CA3AF' };
     const intensity = val / maxVal;
-    if (intensity > 0.8) return '#FEE2E2';
-    if (intensity > 0.5) return '#FED7AA';
-    if (intensity > 0.2) return '#FEF9C3';
-    return '#DBEAFE';
-  };
-
-  const cellColor = (val, maxVal) => {
-    if (!val || !maxVal) return '#9CA3AF';
-    const intensity = val / maxVal;
-    if (intensity > 0.8) return '#991B1B';
-    if (intensity > 0.5) return '#9A3412';
-    if (intensity > 0.2) return '#854D0E';
-    return '#1E40AF';
+    if (intensity > 0.8) return { bg: '#FEE2E2', color: '#991B1B' };
+    if (intensity > 0.5) return { bg: '#FED7AA', color: '#9A3412' };
+    if (intensity > 0.2) return { bg: '#FEF9C3', color: '#854D0E' };
+    return { bg: '#DBEAFE', color: '#1E40AF' };
   };
 
   return (
@@ -39,43 +45,58 @@ export default function HeatmapCard({ data, currentSiteId }) {
       </div>
       <div
         className="grid gap-px text-[10px]"
-        style={{ gridTemplateColumns: `80px repeat(${usages.length + 1}, 1fr)` }}
+        style={{ gridTemplateColumns: `minmax(110px, auto) repeat(${usages.length + 1}, 1fr)` }}
       >
         <div />
         {usages.map((u) => (
-          <div key={u} className="text-center font-semibold text-gray-400 py-1.5">
-            {u.slice(0, 7)}
+          <div key={u} className="text-center font-semibold text-gray-400 py-1.5" title={u}>
+            {USAGE_ABBREVS[u] || u.slice(0, 7)}
           </div>
         ))}
         <div className="text-center font-semibold text-gray-400 py-1.5">Total</div>
         {data.sites.map((s) => (
           <React.Fragment key={s.site_id}>
             <div
-              className={`py-1.5 font-medium text-[11px] ${s.site_id === currentSiteId ? 'text-blue-600 font-semibold' : ''}`}
+              className={`py-1.5 font-medium text-[11px] truncate cursor-pointer hover:text-blue-600 hover:underline ${
+                s.site_id === currentSiteId ? 'text-blue-600 font-semibold' : ''
+              }`}
+              title={`${s.site_name} — Cliquer pour ouvrir Site360`}
+              onClick={() => navigate(`/site360/${s.site_id}#usages`)}
+              style={{ minWidth: 110 }}
             >
-              {s.site_name.length > 10 ? s.site_name.slice(0, 10) + '…' : s.site_name}
+              {s.site_name.length > 16 ? s.site_name.slice(0, 16) + '…' : s.site_name}
             </div>
             {usages.map((u) => {
               const val = s.ipe_by_usage[u];
+              const ademeRef = data.ademe_ref_by_usage?.[u];
+              const ratioNum = ademeRef && val ? Math.round((val / ademeRef - 1) * 100) : null;
+              const style = cellStyle(val, maxByUsage[u]);
               return (
                 <div
                   key={u}
                   className="text-center py-1.5 rounded cursor-pointer font-mono font-medium transition-transform hover:scale-105"
                   style={{
-                    background: cellBg(val, maxByUsage[u]),
-                    color: cellColor(val, maxByUsage[u]),
+                    background: style.bg,
+                    color: style.color,
                   }}
+                  title={
+                    val && ademeRef
+                      ? `${s.site_name} : ${u} = ${fmt(val)} kWh/m² (Réf. ADEME : ${ademeRef} kWh/m²) → ${ratioNum > 0 ? '+' : ''}${ratioNum}%`
+                      : `${s.site_name} : ${u} = ${val ? fmt(val) : '—'} kWh/m²`
+                  }
                 >
                   {val ? fmt(val) : '—'}
                 </div>
               );
             })}
             <div
-              className="text-center py-1.5 font-mono font-bold"
+              className="text-center py-1.5 font-mono font-bold cursor-pointer"
               style={{
                 background: '#F3F4F6',
                 color: s.ipe_total > s.benchmark_ademe ? '#DC2626' : '#1A1A1A',
               }}
+              title={`IPE total : ${fmt(s.ipe_total)} kWh/m² (benchmark ADEME : ${s.benchmark_ademe})`}
+              onClick={() => navigate(`/site360/${s.site_id}#usages`)}
             >
               {fmt(s.ipe_total)}
             </div>
@@ -91,6 +112,9 @@ export default function HeatmapCard({ data, currentSiteId }) {
         <div className="text-center py-1.5 text-[9px] text-gray-400 italic">
           {data.sites[0]?.benchmark_ademe || '—'}
         </div>
+      </div>
+      <div className="text-[9px] text-gray-400 mt-2">
+        {data.sites.length} site{data.sites.length > 1 ? 's' : ''} · Cliquer le nom → Site360
       </div>
     </div>
   );

@@ -62,15 +62,11 @@ ALLOWED_ENERGY_TYPES = {"elec"}
 
 def _resolve_org_id(db: Session, site: "Site") -> int | None:
     """Resolve org_id from Site → Portefeuille → EntiteJuridique → Organisation."""
-    if not site or not site.portefeuille_id:
+    if not site:
         return None
-    from models import Portefeuille, EntiteJuridique
+    from services.scope_utils import resolve_org_id_from_site
 
-    pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
-    if not pf:
-        return None
-    ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
-    return ej.organisation_id if ej else None
+    return resolve_org_id_from_site(db, site.id)
 
 
 def _get_latest_assumption(db: Session, site_id: int) -> Optional["PurchaseAssumptionSet"]:

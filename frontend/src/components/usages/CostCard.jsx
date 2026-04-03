@@ -27,9 +27,24 @@ export default function CostCard({ data, costByPeriod }) {
 
   if (!data?.by_usage?.length) return null;
 
-  const maxEur = Math.max(...data.by_usage.map((u) => u.eur || 0));
+  // Build display list: usages + "Autres / non ventilé" if uncovered > 0
+  const uncoveredEur = data.uncovered_eur || 0;
+  const displayUsages = [...data.by_usage];
+  if (uncoveredEur > 0) {
+    const totalEurAll = data.by_usage.reduce((s, u) => s + (u.eur || 0), 0) + uncoveredEur;
+    displayUsages.push({
+      label: 'Autres / non ventilé',
+      type: 'autres',
+      eur: uncoveredEur,
+      kwh: data.uncovered_kwh || 0,
+      pct_of_total: totalEurAll > 0 ? Math.round((uncoveredEur / totalEurAll) * 100) : 0,
+    });
+  }
+
+  const maxEur = Math.max(...displayUsages.map((u) => u.eur || 0));
   const priceRef = data.price_ref_eur_kwh || 0;
   const hasPeriodData = costByPeriod?.usages?.length > 0;
+  const totalCostEur = displayUsages.reduce((s, u) => s + (u.eur || 0), 0);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 overflow-hidden">
@@ -67,24 +82,41 @@ export default function CostCard({ data, costByPeriod }) {
       </div>
 
       {/* Vue par usage (défaut) */}
-      {view === 'usage' &&
-        data.by_usage.slice(0, 5).map((u) => {
-          const pct = maxEur > 0 ? (u.eur / maxEur) * 100 : 0;
-          return (
-            <div key={u.label || u.type} className="flex items-center gap-2 py-1">
-              <div className="w-[80px] text-[11px] font-medium truncate">{u.label || u.type}</div>
-              <div className="flex-1 h-3.5 bg-gray-100 rounded overflow-hidden">
+      {view === 'usage' && (
+        <>
+          {displayUsages.slice(0, 6).map((u) => {
+            const pct = maxEur > 0 ? (u.eur / maxEur) * 100 : 0;
+            const isAutres = u.type === 'autres';
+            return (
+              <div key={u.label || u.type} className="flex items-center gap-2 py-1">
                 <div
-                  className="h-full rounded"
-                  style={{ width: `${pct}%`, background: COLORS[u.label] || '#BDBDBD' }}
-                />
+                  className={`w-[80px] text-[11px] font-medium truncate ${isAutres ? 'text-gray-400' : ''}`}
+                >
+                  {u.label || u.type}
+                </div>
+                <div className="flex-1 h-3.5 bg-gray-100 rounded overflow-hidden">
+                  <div
+                    className="h-full rounded"
+                    style={{
+                      width: `${pct}%`,
+                      background: isAutres ? '#D1D5DB' : COLORS[u.label] || '#BDBDBD',
+                    }}
+                  />
+                </div>
+                <div className="min-w-[90px] text-right text-[10px] text-gray-500 font-mono">
+                  {fmt(u.eur)} € ({u.pct_of_total ? Math.round(u.pct_of_total) : 0}%)
+                </div>
               </div>
-              <div className="min-w-[90px] text-right text-[10px] text-gray-500 font-mono">
-                {fmt(u.eur)} € ({u.pct_of_total ? Math.round(u.pct_of_total) : 0}%)
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+          <div className="flex justify-between text-[11px] font-semibold pt-2 mt-1 border-t border-gray-100">
+            <span>Total</span>
+            <span className="font-mono">
+              {fmt(totalCostEur)} €<span className="text-green-600 ml-1 text-[10px]">= KPI</span>
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Vue par période tarifaire */}
       {view === 'period' && costByPeriod?.usages && (
@@ -119,34 +151,15 @@ export default function CostCard({ data, costByPeriod }) {
           ))}
           {/* Légende */}
           <div className="flex gap-3 text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-100">
-            <span>
-              <span
-                className="inline-block w-2 h-2 rounded mr-1"
-                style={{ background: PERIOD_COLORS.HPH }}
-              />
-              HPH
-            </span>
-            <span>
-              <span
-                className="inline-block w-2 h-2 rounded mr-1"
-                style={{ background: PERIOD_COLORS.HCH }}
-              />
-              HCH
-            </span>
-            <span>
-              <span
-                className="inline-block w-2 h-2 rounded mr-1"
-                style={{ background: PERIOD_COLORS.HPB }}
-              />
-              HPB
-            </span>
-            <span>
-              <span
-                className="inline-block w-2 h-2 rounded mr-1"
-                style={{ background: PERIOD_COLORS.HCB }}
-              />
-              HCB
-            </span>
+            {['HPH', 'HCH', 'HPB', 'HCB'].map((p) => (
+              <span key={p}>
+                <span
+                  className="inline-block w-2 h-2 rounded mr-1"
+                  style={{ background: PERIOD_COLORS[p] }}
+                />
+                {p}
+              </span>
+            ))}
           </div>
           {costByPeriod.total_optimization_eur > 0 && (
             <div className="mt-2 p-2 bg-green-50 rounded text-[11px] text-green-700 font-medium">

@@ -132,14 +132,17 @@ def api_flex_portfolio(
     request: Request,
     entity_id: Optional[int] = Query(None),
     portefeuille_id: Optional[int] = Query(None),
+    archetype_code: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Agrège le potentiel flex de tous les sites du périmètre."""
+    """Agrège le potentiel flex de tous les sites du périmètre, filtrable par archétype."""
     from services.flex_nebco_service import compute_flex_portfolio
 
     org_id = resolve_org_id(request, auth, db)
-    site_ids = resolve_site_ids(db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id)
+    site_ids = resolve_site_ids(
+        db, org_id, entity_id=entity_id, portefeuille_id=portefeuille_id, archetype_code=archetype_code
+    )
     return compute_flex_portfolio(db, site_ids)
 
 
@@ -307,10 +310,11 @@ def api_usage_timeline(
 @router.get("/portfolio-compare")
 def api_portfolio_usage_comparison(
     org_id: int = Query(...),
+    archetype_code: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Compare les IPE par usage pour tous les sites d'une organisation."""
-    return get_portfolio_usage_comparison(db, org_id)
+    """Compare les IPE par usage pour tous les sites d'une organisation, filtrable par archétype."""
+    return get_portfolio_usage_comparison(db, org_id, archetype_code=archetype_code)
 
 
 # ── V2 — Meter readings preview ─────────────────────────────────────────

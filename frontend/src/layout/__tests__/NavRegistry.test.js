@@ -140,7 +140,7 @@ describe('Expert filtering', () => {
   it('normal mode shows ~9 items (excluding expertOnly items)', () => {
     const normalItems = normalSections.flatMap((s) => s.items.filter((item) => !item.expertOnly));
     expect(normalItems.length).toBeGreaterThanOrEqual(5);
-    expect(normalItems.length).toBeLessThanOrEqual(12);
+    expect(normalItems.length).toBeLessThanOrEqual(14);
   });
 
   it('Diagnostic is in ROUTE_MODULE_MAP as energie (hidden page)', () => {

@@ -299,6 +299,17 @@ from .recommendation_decision import RecommendationDecision
 # Recommendation Outcomes & Calibration Governance (Sprint 20)
 from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
 
+# Audit Energetique / SME (Loi 2025-391)
+from .audit_sme import AuditEnergetique
+
+# Contrats V2 Cadre+Annexe
+from .contract_v2_models import (
+    ContractAnnexe,
+    ContractPricing,
+    VolumeCommitment,
+    ContractEvent,
+)
+
 # Flex Foundations (Sprint 21)
 from .flex_models import (
     FlexAsset,
@@ -395,6 +406,11 @@ __all__ = [
     "InvoiceLineType",
     "BillingInvoiceStatus",
     "InsightStatus",
+    # Contrats V2 Cadre+Annexe
+    "ContractAnnexe",
+    "ContractPricing",
+    "VolumeCommitment",
+    "ContractEvent",
     # Achat Energie models
     "PurchaseAssumptionSet",
     "PurchasePreference",
@@ -548,6 +564,8 @@ __all__ = [
     # Recommendation Outcomes & Calibration Governance (Sprint 20)
     "RecommendationOutcome",
     "CalibrationVersion",
+    # Audit Energetique / SME (Loi 2025-391)
+    "AuditEnergetique",
     # Flex Foundations (Sprint 21)
     "FlexAsset",
     "FlexAssessment",

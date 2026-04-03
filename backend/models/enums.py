@@ -777,6 +777,11 @@ class ContractIndexation(str, enum.Enum):
     INDEXE = "indexe"
     SPOT = "spot"
     HYBRIDE = "hybride"
+    # V2 Cadre+Annexe — modeles prix etendus
+    FIXE_HORS_ACHEMINEMENT = "fixe_hors_acheminement"
+    INDEXE_TRVE = "indexe_trve"
+    INDEXE_PEG = "indexe_peg"
+    INDEXE_SPOT = "indexe_spot"
 
 
 class ContractStatus(str, enum.Enum):
@@ -785,6 +790,9 @@ class ContractStatus(str, enum.Enum):
     ACTIVE = "active"
     EXPIRING = "expiring"
     EXPIRED = "expired"
+    # V2 Cadre+Annexe — statuts etendus
+    DRAFT = "draft"
+    TERMINATED = "terminated"
 
 
 class ReconciliationStatus(str, enum.Enum):

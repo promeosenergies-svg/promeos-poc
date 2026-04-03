@@ -28,13 +28,18 @@ from datetime import date, datetime, timezone
 from collections import defaultdict
 from sqlalchemy.orm import Session
 
+import logging
+
 from models import Site, Batiment, Obligation, Evidence, RegAssessment, RegStatus
+from models import Portefeuille, EntiteJuridique, not_deleted
 from .schemas import Finding, Action, SiteSummary
 from .completeness import check_required_inputs
 from .versioning import compute_deterministic_version, compute_data_version
 from .scoring import compute_regops_score  # kept for score_explain detail only
 from .rules import tertiaire_operat, bacs, aper, cee_p6
 from .config.legal_refs import get_legal_ref
+
+_logger = logging.getLogger(__name__)
 
 
 # Cache for YAML configs
@@ -63,10 +68,81 @@ def _load_configs():
     return _config_cache
 
 
-def evaluate_site(db: Session, site_id: int) -> SiteSummary:
+# ── Post-scoring Audit/SME (Loi 2025-391) ────────────────────────────────────
+
+
+def _get_audit_sme_score_for_site(db: Session, site_id: int, org_id: int | None = None) -> tuple[float | None, bool]:
+    """Recupere le score Audit/SME de l'organisation du site.
+
+    Args:
+        org_id: pre-resolved org_id (avoids N+1 in batch). If None, resolved on the fly.
+    """
+    try:
+        from services.audit_sme_service import get_audit_sme_assessment
+
+        if org_id is None:
+            from services.scope_utils import resolve_org_id_from_site
+
+            org_id = resolve_org_id_from_site(db, site_id)
+        if not org_id:
+            return (None, False)
+
+        assessment = get_audit_sme_assessment(db, org_id)
+        applicable = assessment.get("obligation") not in ("AUCUNE", "NON_DETERMINE", None)
+        statut = assessment.get("statut")
+        if applicable and statut not in ("CONFORME", "A_REALISER", "EN_RETARD", "EN_COURS"):
+            return (None, False)
+        score = assessment.get("score_audit_sme")
+        return (score, applicable) if applicable else (None, False)
+
+    except Exception as exc:
+        _logger.debug("audit_sme score for site %d: %s", site_id, exc)
+        return (None, False)
+
+
+def _apply_audit_sme_to_compliance_score(
+    raw_compliance_score: float,
+    score_audit_sme: float | None,
+    audit_sme_applicable: bool,
+) -> tuple[float, dict]:
+    """Applique le score Audit/SME au score compliance RegOps."""
+    if not audit_sme_applicable or score_audit_sme is None:
+        return (
+            raw_compliance_score,
+            {
+                "audit_sme_applicable": False,
+                "raw_compliance_score": raw_compliance_score,
+                "score_audit_sme": None,
+                "composite_score": raw_compliance_score,
+            },
+        )
+
+    WEIGHT_AUDIT_SME = 0.16
+    WEIGHT_FINDINGS = 0.84
+
+    composite = raw_compliance_score * WEIGHT_FINDINGS + score_audit_sme * 100 * WEIGHT_AUDIT_SME
+    composite = round(max(0.0, min(100.0, composite)), 2)
+
+    return (
+        composite,
+        {
+            "audit_sme_applicable": True,
+            "raw_compliance_score": raw_compliance_score,
+            "score_audit_sme": score_audit_sme,
+            "weight_findings": WEIGHT_FINDINGS,
+            "weight_audit_sme": WEIGHT_AUDIT_SME,
+            "composite_score": composite,
+        },
+    )
+
+
+def evaluate_site(db: Session, site_id: int, *, org_id: int | None = None) -> SiteSummary:
     """
     Evaluate un site avec les 4 reglementations.
     Retourne un SiteSummary complet.
+
+    Args:
+        org_id: pre-resolved org_id (avoids per-site join in batch mode).
     """
     # Load site + related data
     site = db.query(Site).filter(Site.id == site_id).first()
@@ -116,6 +192,20 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
     a2_result = compute_site_compliance_score(db, site_id)
     compliance_score = a2_result.score
     confidence_score = round(a2_result.frameworks_evaluated / a2_result.frameworks_total * 100, 1)
+
+    # Post-scoring Audit/SME (Loi 2025-391) — org-level, fail-safe
+    score_audit_sme, audit_sme_applicable = _get_audit_sme_score_for_site(db, site_id, org_id=org_id)
+    compliance_score, audit_sme_detail = _apply_audit_sme_to_compliance_score(
+        compliance_score, score_audit_sme, audit_sme_applicable
+    )
+    if audit_sme_applicable:
+        _logger.info(
+            "audit_sme post-scoring site=%d: raw=%.1f composite=%.1f audit_score=%s",
+            site_id,
+            audit_sme_detail.get("raw_compliance_score", 0),
+            audit_sme_detail.get("composite_score", 0),
+            score_audit_sme,
+        )
 
     scoring = regs.get("scoring", {})
     severity_weights = scoring.get("severity_weights", {})
@@ -175,17 +265,39 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
 
 def evaluate_batch(db: Session, site_ids: list[int] = None) -> list[SiteSummary]:
     """
-    Bulk evaluation (3 queries total, no N+1).
+    Bulk evaluation — pre-fetches org_ids to avoid N+1 on Site→Org join.
     """
+    base_q = not_deleted(db.query(Site), Site)
     if site_ids is None:
-        sites = db.query(Site).all()
+        sites = base_q.all()
     else:
-        sites = db.query(Site).filter(Site.id.in_(site_ids)).all()
+        sites = base_q.filter(Site.id.in_(site_ids)).all()
+
+    # Pre-fetch org_id for all sites in one query (avoids N+1 in _get_audit_sme_score_for_site)
+    batch_site_ids = [s.id for s in sites]
+    org_rows = (
+        (
+            not_deleted(
+                not_deleted(
+                    db.query(Site.id, EntiteJuridique.organisation_id).join(
+                        Portefeuille, Portefeuille.id == Site.portefeuille_id
+                    ),
+                    Portefeuille,
+                ).join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id),
+                EntiteJuridique,
+            )
+            .filter(Site.id.in_(batch_site_ids))
+            .all()
+        )
+        if batch_site_ids
+        else []
+    )
+    org_id_by_site = {row[0]: row[1] for row in org_rows}
 
     summaries = []
     for site in sites:
         try:
-            summary = evaluate_site(db, site.id)
+            summary = evaluate_site(db, site.id, org_id=org_id_by_site.get(site.id))
             summaries.append(summary)
         except Exception as e:
             print(f"Error evaluating site {site.id}: {e}")

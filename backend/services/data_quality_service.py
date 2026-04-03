@@ -5,7 +5,7 @@ Returns coverage_pct, freshness_days, cause, next_step for each row.
 """
 
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlalchemy import func
@@ -603,7 +603,7 @@ def compute_site_data_quality(
         "grade": _grade(global_score),
         "dimensions": dims,
         "recommendations": recommendations,
-        "computed_at": datetime.utcnow().isoformat(),
+        "computed_at": datetime.now(timezone.utc).isoformat(),
     }
 
 

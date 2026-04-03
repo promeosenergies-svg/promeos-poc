@@ -1,30 +1,30 @@
 """
-PROMEOS — Test configuration.
+PROMEOS - Test conftest: ensure DB state is consistent between test files.
 
-Sets DEMO_MODE=true for the test suite so that unauthenticated
-API requests fall back to demo mode (matching dev/CI behavior).
-
-This file MUST be loaded before any backend module import — pytest
-discovers conftest.py before test collection, which triggers os.environ
-before middleware/auth.py reads the variable at import time.
+Re-seeds HELIOS demo data before the test session to guarantee site_id=1 exists
+for all tests using TestClient(app) against the real DB.
 """
 
-import os
 import pytest
 
-os.environ.setdefault("PROMEOS_DEMO_MODE", "true")
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_demo_data():
+    """Seed HELIOS S once at the start of the test session."""
+    from database import SessionLocal
 
-@pytest.fixture(autouse=True)
-def _clear_portfolio_cache():
-    """Vide le cache portfolio trend avant chaque test pour éviter les interférences.
+    db = SessionLocal()
+    try:
+        from models import Site
 
-    Le cache est un dict module-level partagé dans tout le process pytest.
-    Sans ce reset, un test qui peuple le cache pour org_id=1 contaminerait
-    le test suivant qui recréerait une DB fraîche dont l'org aurait aussi id=1.
-    """
-    import services.patrimoine_portfolio_cache as _cache
+        site_count = db.query(Site).count()
+        if site_count < 5:
+            from services.demo_seed import SeedOrchestrator
 
-    _cache.clear_all()
-    yield
-    _cache.clear_all()
+            orch = SeedOrchestrator(db)
+            orch.seed("helios", "S", reset=True)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
