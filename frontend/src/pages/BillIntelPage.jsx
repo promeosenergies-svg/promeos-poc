@@ -145,7 +145,9 @@ export default function BillIntelPage() {
   const [loadError, setLoadError] = useState(null);
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
-  const [insightFilter, setInsightFilter] = useState('all');
+  const [insightFilter, setInsightFilter] = useState(
+    searchParams.get('filter') === 'anomalies' ? 'open' : 'all'
+  );
   const [actionMap, setActionMap] = useState(new Map());
   const { openActionDrawer } = useActionDrawer();
   const [viewActionId, setViewActionId] = useState(null);
@@ -207,6 +209,14 @@ export default function BillIntelPage() {
   useEffect(() => {
     setSiteFilter(scopeSiteId ? String(scopeSiteId) : '');
   }, [scopeSiteId]);
+
+  // Auto-scroll to anomalies section when deep-linked with ?filter=anomalies
+  const filterParam = searchParams.get('filter');
+  useEffect(() => {
+    if (filterParam === 'anomalies' && !loading && anomaliesRef.current) {
+      anomaliesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [loading, filterParam]);
 
   useEffect(() => {
     getSites({ limit: 200 })
@@ -537,7 +547,7 @@ export default function BillIntelPage() {
     >
       {/* CTA vers achat énergie */}
       <button
-        onClick={() => navigate('/achat')}
+        onClick={() => navigate('/achat-energie')}
         className="text-sm text-blue-600 hover:underline flex items-center gap-1"
       >
         Optimiser l'achat énergie →

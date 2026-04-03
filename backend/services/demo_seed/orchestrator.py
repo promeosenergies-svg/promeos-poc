@@ -5,7 +5,7 @@ Coordinates all generators in the correct order.
 
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -236,6 +236,15 @@ class SeedOrchestrator:
         dt_baseline = generate_dt_baseline(self.db, master["sites"], rng, site_meta=site_meta)
         result["dt_baseline"] = dt_baseline
 
+        # 4d-ter. Audit Energetique / SME (Loi 2025-391)
+        from .gen_audit_sme import seed_audit_sme
+
+        # Estimation conso totale org = somme conso sites
+        total_conso_kwh = sum(getattr(s, "conso_kwh_an", 0) or 0 for s in master["sites"])
+        if total_conso_kwh > 0:
+            audit_sme = seed_audit_sme(self.db, master["org"].id, master["org"].nom, total_conso_kwh)
+            result["audit_sme_obligation"] = audit_sme.obligation if audit_sme else None
+
         # 4e. EMS Explorer pre-built views + collections (V87)
         from .gen_ems_views import generate_ems_views
 
@@ -356,6 +365,8 @@ class SeedOrchestrator:
                 helios_sites["lyon"] = s
             elif "marseille" in name_lower:
                 helios_sites["marseille"] = s
+            elif "toulouse" in name_lower:
+                helios_sites["toulouse"] = s
         efa_list = seed_tertiaire_efa(self.db, helios_sites)
         result["tertiaire_efa"] = {"efas_created": len(efa_list)}
 
@@ -441,9 +452,9 @@ class SeedOrchestrator:
             progress.step_invoices_imported = True  # seed creates invoices
             progress.step_users_invited = True  # superuser just created
             progress.step_first_action = True  # actions seeded above
-            from datetime import datetime as dt
+            from datetime import datetime as dt, timezone
 
-            progress.completed_at = dt.utcnow()
+            progress.completed_at = dt.now(timezone.utc)
             self.db.flush()
             result["onboarding"] = {"completed": True}
         except Exception as e:
@@ -1072,7 +1083,7 @@ class SeedOrchestrator:
         from app.kb.store import KBStore
 
         store = KBStore()
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         ITEMS = [
             {

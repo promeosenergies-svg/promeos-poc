@@ -963,7 +963,7 @@ def get_portfolio_summary(
     except HTTPException:
         # Org non résolue : pas d'auth, pas de DemoState, pas d'org active en DB.
         # Retourner une réponse vide valide plutôt qu'une erreur 401/403.
-        from datetime import datetime as _dt
+        from datetime import datetime as _dt, timezone as _tz
 
         return {
             "scope": {"org_id": None, "portefeuille_id": portefeuille_id, "site_id": site_id},
@@ -974,7 +974,7 @@ def get_portfolio_summary(
             "framework_breakdown": [],
             "top_sites": [],
             "trend": None,
-            "computed_at": _dt.utcnow().isoformat() + "Z",
+            "computed_at": _dt.now(_tz.utc).isoformat(),
         }
 
     _SEV_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}

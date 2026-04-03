@@ -704,7 +704,7 @@ def get_compliance_bundle(
     severity: str = None,
 ) -> dict:
     """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone as _tz
 
     trace_id = str(uuid.uuid4())[:12]
     try:
@@ -746,7 +746,7 @@ def get_compliance_bundle(
             "sites": [],
             "bacs_v2": {},
             "meta": {
-                "generated_at": _dt.utcnow().isoformat(),
+                "generated_at": _dt.now(_tz.utc).isoformat(),
                 "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
             },
             "empty_reason_code": code,
@@ -769,7 +769,7 @@ def get_compliance_bundle(
         "sites": sites,
         "bacs_v2": bacs_meta,
         "meta": {
-            "generated_at": _dt.utcnow().isoformat(),
+            "generated_at": _dt.now(_tz.utc).isoformat(),
             "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
         },
         "empty_reason_code": code,
