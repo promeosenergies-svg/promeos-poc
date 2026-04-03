@@ -6,15 +6,29 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { BarChart3, Upload, Database, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
+import { useScope } from '../contexts/ScopeContext';
 
 const TABS = [
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/import', label: 'Import', icon: Upload },
-  { to: '/consommations/kb', label: 'Memobox', icon: Database },
+  { to: '/kb', label: 'Memobox', icon: Database },
 ];
 
 export default function ConsommationsPage() {
+  const { sitesLoading } = useScope();
+
+  if (sitesLoading) {
+    return (
+      <PageShell icon={Zap} title="Consommations" subtitle="Chargement...">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 bg-gray-200 rounded" />
+          <div className="h-60 bg-gray-200 rounded-lg" />
+        </div>
+      </PageShell>
+    );
+  }
+
   const tabBar = (
     <div className="flex gap-1 ml-4">
       {TABS.map(({ to, label, icon: Icon }) => (

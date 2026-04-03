@@ -11,6 +11,7 @@ import {
   getAiDataQuality,
 } from '../services/api';
 import { useToast } from '../ui/ToastProvider';
+import { useScope } from '../contexts/ScopeContext';
 import { fmtNum, fmtEur } from '../utils/format';
 import {
   REGOPS_STATUS_LABELS,
@@ -27,6 +28,7 @@ export default function RegOps() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sitesLoading } = useScope();
 
   const [assessment, setAssessment] = useState(null);
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -88,7 +90,7 @@ export default function RegOps() {
   // A.2: use shared thresholds from constants
   const getComplianceScoreColor = _getComplianceScoreColor;
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>

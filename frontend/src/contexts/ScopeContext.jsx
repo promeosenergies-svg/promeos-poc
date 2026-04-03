@@ -117,11 +117,10 @@ export function ScopeProvider({ children }) {
         if (myId !== _fetchId.current) return; // stale response — ignore
         const raw = Array.isArray(data) ? data : data.sites || data.items || [];
         // Normalize: compute worst-of statut_conformite from DT + BACS + composite score
+        const RANK = { non_conforme: 0, a_risque: 1, conforme: 2 };
         const list = raw.map((s) => {
           const dt = s.statut_conformite ?? s.statut_decret_tertiaire ?? null;
           const bacs = s.statut_bacs ?? null;
-          // Worst-of logic: non_conforme > a_risque > conforme > null
-          const RANK = { non_conforme: 0, a_risque: 1, conforme: 2 };
           const dtRank = RANK[dt] ?? 3;
           const bacsRank = RANK[bacs] ?? 3;
           const worstRank = Math.min(dtRank, bacsRank);
@@ -133,12 +132,20 @@ export function ScopeProvider({ children }) {
                 : worstRank === 2
                   ? 'conforme'
                   : dt; // fallback to DT if both null
+          const complianceScore = s.compliance_score ?? s.compliance_score_composite ?? null;
           return {
             ...s,
             statut_conformite: worstStatut,
             statut_bacs: bacs,
             statut_decret_tertiaire: dt,
             risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
+            usage: s.usage ?? (typeof s.type === 'string' ? s.type : null),
+            compliance_score: complianceScore,
+            compliance_needs_review:
+              s.compliance_needs_review ??
+              (worstStatut === 'non_conforme' ||
+                worstStatut === 'a_risque' ||
+                (complianceScore != null && complianceScore < 50)),
           };
         });
         setApiSites(list);
@@ -271,13 +278,20 @@ export function ScopeProvider({ children }) {
     return all;
   }, [isAuth, auth, demoOrgs]);
 
-  const org = effectiveOrgId
-    ? orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0] || null
-    : null;
-  const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId);
-  const portefeuille = scope.portefeuilleId
-    ? MOCK_PORTEFEUILLES.find((p) => p.id === scope.portefeuilleId)
-    : null;
+  const org = useMemo(
+    () =>
+      effectiveOrgId ? orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0] || null : null,
+    [effectiveOrgId, orgsData]
+  );
+  const portefeuilles = useMemo(
+    () => MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId),
+    [effectiveOrgId]
+  );
+  const portefeuille = useMemo(
+    () =>
+      scope.portefeuilleId ? MOCK_PORTEFEUILLES.find((p) => p.id === scope.portefeuilleId) : null,
+    [scope.portefeuilleId]
+  );
 
   // Filter sites by scope — real API sites take priority over mock fallback
   const scopedSites = useMemo(() => {
@@ -335,28 +349,51 @@ export function ScopeProvider({ children }) {
   /** sitesCount — total sites for current org (from API or mock fallback) */
   const sitesCount = orgSites.length;
 
-  const value = {
-    scope: { ...scope, orgId: effectiveOrgId },
-    org,
-    portefeuille,
-    portefeuilles,
-    scopedSites,
-    orgSites,
-    orgs: orgsData,
-    sitesCount,
-    sitesLoading, // V18: exposed for pages to show skeleton during fetch
-    sitesError, // V19: error message when getSites fails
-    refreshSites, // V19: trigger re-fetch without full page reload
-    selectedSiteId,
-    scopeLabel,
-    setOrg,
-    setEntite,
-    setPortefeuille,
-    setSite,
-    resetScope,
-    clearScope,
-    applyDemoScope,
-  };
+  const value = useMemo(
+    () => ({
+      scope: { ...scope, orgId: effectiveOrgId },
+      org,
+      portefeuille,
+      portefeuilles,
+      scopedSites,
+      orgSites,
+      orgs: orgsData,
+      sitesCount,
+      sitesLoading, // V18: exposed for pages to show skeleton during fetch
+      sitesError, // V19: error message when getSites fails
+      refreshSites, // V19: trigger re-fetch without full page reload
+      selectedSiteId,
+      scopeLabel,
+      setOrg,
+      setEntite,
+      setPortefeuille,
+      setSite,
+      resetScope,
+      clearScope,
+      applyDemoScope,
+    }),
+    [
+      scope,
+      effectiveOrgId,
+      org,
+      portefeuille,
+      portefeuilles,
+      scopedSites,
+      orgSites,
+      orgsData,
+      sitesLoading,
+      sitesError,
+      refreshSites,
+      scopeLabel,
+      setOrg,
+      setEntite,
+      setPortefeuille,
+      setSite,
+      resetScope,
+      clearScope,
+      applyDemoScope,
+    ]
+  );
 
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;
 }

@@ -17,6 +17,7 @@ import {
 import { Card, Badge, Button, PageShell, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioReconciliation, getPortfolioReconciliationCsv } from '../services/api';
 
 const STATUS_CFG = {
@@ -27,6 +28,7 @@ const STATUS_CFG = {
 
 export default function PortfolioReconciliationPage() {
   const navigate = useNavigate();
+  const { sitesLoading } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -128,7 +130,7 @@ export default function PortfolioReconciliationPage() {
       </div>
 
       {/* Table */}
-      {loading ? (
+      {loading || sitesLoading ? (
         <SkeletonTable rows={8} cols={4} />
       ) : !data || filtered.length === 0 ? (
         <EmptyState title="Aucun site" text="Aucun site ne correspond aux filtres sélectionnés." />

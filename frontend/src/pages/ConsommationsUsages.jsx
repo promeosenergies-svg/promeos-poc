@@ -540,7 +540,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                 </ul>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => navigate('/consommations/kb')}
+                    onClick={() => navigate('/kb')}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition"
                   >
                     <Database size={12} /> Vérifier la KB
@@ -751,7 +751,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                   icon: SlidersHorizontal,
                   label: 'Affiner les seuils KB',
                   desc: 'Ajuster les regles a votre contexte',
-                  to: '/consommations/kb',
+                  to: '/kb',
                 },
                 {
                   icon: GitCompareArrows,
@@ -818,7 +818,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                   icon: Database,
                   label: 'Enrichir la KB',
                   desc: 'Ajouter des recommandations liees a vos archetypes',
-                  to: '/consommations/kb',
+                  to: '/kb',
                 },
                 {
                   icon: ArrowRight,

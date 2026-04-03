@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Shield, Search, Eye, MapPin, Building2, ChevronUp, RefreshCw } from 'lucide-react';
 import { getAdminUsers, getEffectiveAccess } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useScope } from '../contexts/ScopeContext';
 import { PageShell, Button, EmptyState } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 
@@ -146,6 +147,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
   const { hasPermission } = useAuth();
+  const { sitesLoading } = useScope();
   const { toast } = useToast();
 
   const load = () => {
@@ -164,6 +166,22 @@ export default function AdminUsersPage() {
   const filtered = users.filter((u) =>
     `${u.prenom} ${u.nom} ${u.email} ${u.role}`.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading || sitesLoading) {
+    return (
+      <PageShell icon={Users} title="Utilisateurs" subtitle="Chargement...">
+        <div className="animate-pulse space-y-3">
+          <div className="grid grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded-lg" />
+            ))}
+          </div>
+          <div className="h-8 w-64 bg-gray-200 rounded" />
+          <div className="h-60 bg-gray-200 rounded-lg" />
+        </div>
+      </PageShell>
+    );
+  }
 
   if (!hasPermission('admin')) {
     return (

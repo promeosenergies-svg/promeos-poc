@@ -64,6 +64,20 @@ def get_scope_site_id(request: Request, auth: Optional[AuthContext]) -> Optional
     return None
 
 
+def resolve_org_id_from_site(db: Session, site_id: int) -> int | None:
+    """Resolve organisation_id from a site_id via Site->Portefeuille->EntiteJuridique chain."""
+    from models import Site, Portefeuille, EntiteJuridique
+
+    row = (
+        db.query(EntiteJuridique.organisation_id)
+        .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .join(Site, Site.portefeuille_id == Portefeuille.id)
+        .filter(Site.id == site_id)
+        .first()
+    )
+    return row[0] if row else None
+
+
 def resolve_org_id(
     request: Request,
     auth: Optional[AuthContext],

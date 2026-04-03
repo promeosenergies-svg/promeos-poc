@@ -364,15 +364,12 @@ def patch_finding(
     if not finding:
         raise HTTPException(status_code=404, detail="Finding non trouve")
     # Verify finding belongs to user's org
+    from services.scope_utils import resolve_org_id_from_site
+
     site = db.query(Site).filter(Site.id == finding.site_id).first()
     if site:
-        org_match = (
-            db.query(EntiteJuridique.organisation_id)
-            .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(Portefeuille.id == site.portefeuille_id)
-            .first()
-        )
-        if not org_match or org_match[0] != org_id:
+        finding_org_id = resolve_org_id_from_site(db, site.id)
+        if not finding_org_id or finding_org_id != org_id:
             raise HTTPException(status_code=403, detail="Accès interdit à ce finding")
 
     if data.status is not None:
@@ -444,15 +441,12 @@ def get_finding_detail(
     if not f:
         raise HTTPException(status_code=404, detail="Finding not found")
     # Verify finding belongs to user's org
+    from services.scope_utils import resolve_org_id_from_site
+
     site = db.query(Site).filter(Site.id == f.site_id).first()
     if site:
-        org_match = (
-            db.query(EntiteJuridique.organisation_id)
-            .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-            .filter(Portefeuille.id == site.portefeuille_id)
-            .first()
-        )
-        if not org_match or org_match[0] != org_id:
+        finding_org_id = resolve_org_id_from_site(db, site.id)
+        if not finding_org_id or finding_org_id != org_id:
             raise HTTPException(status_code=403, detail="Accès interdit à ce finding")
 
     site = db.query(Site).filter(Site.id == f.site_id).first()

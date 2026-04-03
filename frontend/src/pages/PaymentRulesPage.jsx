@@ -7,6 +7,7 @@ import { BadgeEuro, Trash2 } from 'lucide-react';
 import { Card, CardBody, Badge, EmptyState, PageShell } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { getPaymentRules, deletePaymentRule } from '../services/api';
 
 const LEVEL_BADGE = {
@@ -16,6 +17,7 @@ const LEVEL_BADGE = {
 };
 
 export default function PaymentRulesPage() {
+  const { sitesLoading } = useScope();
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,7 @@ export default function PaymentRulesPage() {
       title="Paiement & Refacturation"
       subtitle="Matrice facturé / payeur / centre de coûts"
     >
-      {loading ? (
+      {loading || sitesLoading ? (
         <div className="space-y-4">
           <SkeletonCard />
           <SkeletonCard />

@@ -24,6 +24,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, TrustBadge } from '../ui';
+import { useScope } from '../contexts/ScopeContext';
 import {
   searchKBItems,
   getKBFullStats,
@@ -70,6 +71,7 @@ const DOMAIN_COLORS = {
 };
 
 export default function KBExplorerPage() {
+  const { sitesLoading } = useScope();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -236,6 +238,22 @@ export default function KBExplorerPage() {
 
   function toggleExpand(id) {
     setExpandedId(expandedId === id ? null : id);
+  }
+
+  if (sitesLoading) {
+    return (
+      <PageShell icon={BookOpen} title="Mémobox" subtitle="Chargement...">
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 w-full bg-gray-200 rounded-xl" />
+          <div className="flex gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-8 w-24 bg-gray-200 rounded-lg" />
+            ))}
+          </div>
+          <div className="h-40 bg-gray-200 rounded-lg" />
+        </div>
+      </PageShell>
+    );
   }
 
   return (

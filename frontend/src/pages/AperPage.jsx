@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Sun, MapPin, Calendar, Zap, Leaf, Euro, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
 import { Explain, KpiCardInline } from '../ui';
 import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
 import { getAperDashboard, getAperEstimate } from '../services/api';
@@ -57,6 +58,7 @@ function DeadlineBadge({ deadline }) {
 
 export default function AperPage() {
   const { isExpert } = useExpertMode();
+  const { sitesLoading } = useScope();
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -82,7 +84,7 @@ export default function AperPage() {
       .finally(() => setEstimating(false));
   };
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />

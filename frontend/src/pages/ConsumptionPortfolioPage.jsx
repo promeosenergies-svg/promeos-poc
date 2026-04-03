@@ -168,7 +168,9 @@ export default function ConsumptionPortfolioPage() {
   const [sites, setSites] = useState([]);
   const [sitesTotal, setSitesTotal] = useState(0);
   const [sitesLoading, setSitesLoading] = useState(true);
-  const [sort, setSort] = useState('impact_desc');
+  const [sort, setSort] = useState(
+    searchParams.get('filter') === 'energivores' ? 'kwh_desc' : 'impact_desc'
+  );
   const [search, setSearch] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState(null);
   const [anomalyFilter, setAnomalyFilter] = useState(false);

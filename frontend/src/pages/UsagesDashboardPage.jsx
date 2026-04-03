@@ -103,22 +103,24 @@ export default function UsagesDashboardPage() {
   }, [siteId, scopeLevel, scope.portefeuilleId, scope.entiteId, archetypeFilter]);
 
   // Portfolio comparison (heatmap sidebar) + flex portfolio (bubble chart)
+  // Re-fetch when archetypeFilter changes to show only filtered sites
   useEffect(() => {
     const orgId = scope?.orgId;
-    if (orgId && scopedSites?.length >= 2) {
-      getPortfolioUsageComparison(orgId)
+    if (orgId && scopedSites?.length >= 1) {
+      getPortfolioUsageComparison(orgId, { archetypeCode: archetypeFilter })
         .then(setPortfolio)
         .catch(() => {});
       getFlexNebcoPortfolio({
         entityId: scope.entiteId,
         portefeuilleId: scope.portefeuilleId,
+        archetypeCode: archetypeFilter,
       })
         .then(setFlexPortfolio)
         .catch(() => setFlexPortfolio(null));
     } else {
       setFlexPortfolio(null);
     }
-  }, [scope?.orgId, scope?.entiteId, scope?.portefeuilleId, scopedSites?.length]);
+  }, [scope?.orgId, scope?.entiteId, scope?.portefeuilleId, scopedSites?.length, archetypeFilter]);
 
   // Cost by period + flex NEBCO + power optimization (site mode only)
   useEffect(() => {
@@ -184,9 +186,12 @@ export default function UsagesDashboardPage() {
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(blData), 'Baseline');
     }
+    const scopeLabel = archetypeFilter
+      ? `${siteName || siteId || 'portfolio'}_${archetypeFilter}`
+      : siteName || siteId || 'portfolio';
     XLSX.writeFile(
       wb,
-      `PROMEOS_Usages_${siteName || siteId || 'portfolio'}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `PROMEOS_Usages_${scopeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`
     );
   };
 
@@ -245,15 +250,15 @@ export default function UsagesDashboardPage() {
       <KpiStrip
         dashboard={data}
         scopeLevel={scopeLevel}
-        sitesCount={data?.sites_count || scopedSites?.length || 1}
+        sitesCount={data?.sites_count ?? scopedSites?.length ?? 1}
         totalSurface={
           scopeLevel === 'site'
-            ? scopedSites?.find((s) => s.id === siteId)?.surface_m2 || 0
-            : data?.summary?.total_surface_m2 || totalSurface
+            ? (scopedSites?.find((s) => s.id === siteId)?.surface_m2 ?? 0)
+            : (data?.summary?.total_surface_m2 ?? totalSurface)
         }
       />
 
-      {/* Main 2 colonnes */}
+      {/* Top 2 colonnes : onglets + heatmap */}
       <div className="px-7 pb-4 grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-3.5">
         {/* Colonne gauche : onglets */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -270,23 +275,31 @@ export default function UsagesDashboardPage() {
           {activeTab === 'comptage' && !isMultiSite && <ComptageTab data={data?.metering_plan} />}
         </div>
 
-        {/* Colonne droite : contexte permanent */}
+        {/* Colonne droite : heatmap IPE */}
         <div className="flex flex-col gap-3.5">
           <HeatmapCard data={portfolio} currentSiteId={siteId} />
-          {data?.compliance && <ComplianceCard data={data.compliance} />}
-          {isMultiSite ? (
-            <FlexBubbleChart data={flexPortfolio} />
-          ) : (
-            <FlexNebcoCard data={flexData} />
-          )}
-          <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
-          <PowerOptimizationCard data={powerOpt} />
-          <CdcSimulationCard data={cdcSim} />
         </div>
       </div>
 
-      {/* Footer links */}
-      <FooterLinks />
+      {/* Grille 3 colonnes pleine largeur : Conformité + Coût + Flexibilité */}
+      <div className="px-7 pb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {data?.compliance && (
+          <ComplianceCard data={data.compliance} archetypeFilter={archetypeFilter} />
+        )}
+        <CostCard data={data?.cost_breakdown} costByPeriod={costByPeriod} />
+        {isMultiSite ? <FlexBubbleChart data={flexPortfolio} /> : <FlexNebcoCard data={flexData} />}
+      </div>
+
+      {/* Widgets additionnels site-level */}
+      {(powerOpt || cdcSim) && (
+        <div className="px-7 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <PowerOptimizationCard data={powerOpt} />
+          <CdcSimulationCard data={cdcSim} />
+        </div>
+      )}
+
+      {/* Footer links contextuels */}
+      <FooterLinks archetypeFilter={archetypeFilter} dashboard={data} />
     </div>
   );
 }

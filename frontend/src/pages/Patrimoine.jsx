@@ -3,7 +3,7 @@
  * Risk-first table · URL-synced filters · tabbed SiteDrawer · k€/m² formatting.
  */
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import Pagination from '../ui/Pagination';
+import Pagination, { PAGE_SIZE_OPTIONS } from '../ui/Pagination';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Building2,
@@ -81,7 +81,7 @@ import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = PAGE_SIZE_OPTIONS[0];
 
 const USAGE_OPTIONS = [
   { value: '', label: 'Usage' },
@@ -506,17 +506,27 @@ export default function Patrimoine() {
 
   // Pagination
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  // Reset page on filter/search change
+  // Reset page on filter/search/pageSize change
   useEffect(
     () => setPage(1),
-    [search, filterUsage, filterStatut, filterPortefeuille, filterAnomalies, sortCol, sortDir]
+    [
+      search,
+      filterUsage,
+      filterStatut,
+      filterPortefeuille,
+      filterAnomalies,
+      sortCol,
+      sortDir,
+      pageSize,
+    ]
   );
 
   const paginatedSites = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, page]);
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
@@ -1358,7 +1368,7 @@ export default function Patrimoine() {
                           STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
                         const usageColor =
                           USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
-                        const rank = (page - 1) * PAGE_SIZE + idx + 1;
+                        const rank = (page - 1) * pageSize + idx + 1;
                         const isFav = favorites.has(site.id);
                         return (
                           <Tr
@@ -1528,7 +1538,13 @@ export default function Patrimoine() {
                 </div>
                 {/* Pagination footer */}
                 <div className="flex-shrink-0 border-t border-gray-200 bg-white">
-                  <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+                  <Pagination
+                    page={page}
+                    pageSize={pageSize}
+                    total={total}
+                    onChange={setPage}
+                    onPageSizeChange={setPageSize}
+                  />
                 </div>
               </>
             ))}

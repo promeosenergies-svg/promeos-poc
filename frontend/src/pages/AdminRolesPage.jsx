@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Check, X } from 'lucide-react';
 import { getAdminRoles } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useScope } from '../contexts/ScopeContext';
 import { PageShell, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
@@ -78,6 +79,7 @@ function PermCell({ value }) {
 
 export default function AdminRolesPage() {
   const { hasPermission } = useAuth();
+  const { sitesLoading } = useScope();
   const { toast } = useToast();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function AdminRolesPage() {
     );
   }
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <PageShell icon={Shield} title="Rôles & Permissions" subtitle="Chargement...">
         <SkeletonCard />

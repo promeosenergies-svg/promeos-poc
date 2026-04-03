@@ -24,8 +24,8 @@ describe('Patrimoine — V2 pagination guards', () => {
     expect(src).not.toMatch(/import\s+.*useVirtualizer.*from/);
   });
 
-  it('uses PAGE_SIZE constant for pagination', () => {
-    expect(src).toMatch(/const\s+PAGE_SIZE\s*=/);
+  it('uses DEFAULT_PAGE_SIZE constant for pagination', () => {
+    expect(src).toMatch(/const\s+DEFAULT_PAGE_SIZE\s*=/);
   });
 
   it('imports Pagination component', () => {

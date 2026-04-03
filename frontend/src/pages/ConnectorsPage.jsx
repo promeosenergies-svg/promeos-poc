@@ -7,6 +7,7 @@ import { Link2, Play, RefreshCw, CheckCircle, XCircle, Lock, Globe } from 'lucid
 import { listConnectors, testConnector, syncConnector } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal, Input, Select } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 
 const SYNC_OBJECT_TYPES = [
@@ -25,6 +26,7 @@ const CONNECTOR_LABELS = {
 };
 
 export default function ConnectorsPage() {
+  const { sitesLoading } = useScope();
   const [connectors, setConnectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [testResults, setTestResults] = useState({});
@@ -98,7 +100,7 @@ export default function ConnectorsPage() {
     return null;
   };
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <PageShell icon={Link2} title="Connexions" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

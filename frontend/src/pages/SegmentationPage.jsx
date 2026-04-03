@@ -11,6 +11,7 @@ import {
 } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Progress } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 
 const TYPO_LABELS = {
@@ -28,6 +29,7 @@ const TYPO_LABELS = {
 };
 
 export default function SegmentationPage() {
+  const { sitesLoading } = useScope();
   const [questions, setQuestions] = useState([]);
   const [profile, setProfile] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -81,7 +83,7 @@ export default function SegmentationPage() {
   const progressPct =
     questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <PageShell icon={UserCheck} title="Segmentation B2B" subtitle="Chargement...">
         <SkeletonCard />

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getAdminUsers, getAdminRoles, setAdminScopes, changeAdminRole } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useScope } from '../contexts/ScopeContext';
 import { PageShell, Button, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
@@ -345,6 +346,7 @@ function MatrixView({ users, roles: _roles }) {
 
 export default function AdminAssignmentsPage() {
   const { hasPermission } = useAuth();
+  const { sitesLoading } = useScope();
   const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -379,7 +381,7 @@ export default function AdminAssignmentsPage() {
     );
   }
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <PageShell icon={Users} title="Affectations" subtitle="Chargement...">
         <SkeletonCard />

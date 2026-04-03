@@ -14,6 +14,7 @@ import {
 import ActionDetailPanel from '../components/ActionDetailPanel';
 import { RiskBadge } from '../lib/risk/normalizeRisk';
 import EmptyState from '../ui/EmptyState';
+import { useScope } from '../contexts/ScopeContext';
 
 const PRIORITY_COLORS = {
   critical: 'bg-red-100 text-red-800 border-red-300',
@@ -45,6 +46,7 @@ const DOMAIN_LABELS = {
 };
 
 export default function ActionCenterPage() {
+  const { sitesLoading } = useScope();
   const [issues, setIssues] = useState([]);
   const [actions, setActions] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -124,6 +126,22 @@ export default function ActionCenterPage() {
     }
     return list;
   }, [currentList, filterOwner, tab]);
+
+  if (loading || sitesLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-64 bg-gray-200 rounded" />
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded-lg" />
+            ))}
+          </div>
+          <div className="h-60 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -235,11 +253,8 @@ export default function ActionCenterPage() {
       {/* Error */}
       {error && <div className="bg-red-50 text-red-700 p-3 rounded mb-4">{error}</div>}
 
-      {/* Loading */}
-      {loading && <div className="text-center py-8 text-gray-400">Chargement...</div>}
-
       {/* Empty */}
-      {!loading && filteredList.length === 0 && (
+      {filteredList.length === 0 && (
         <EmptyState
           variant="empty"
           title="Aucun signal"
@@ -248,7 +263,7 @@ export default function ActionCenterPage() {
       )}
 
       {/* List */}
-      {!loading && filteredList.length > 0 && (
+      {filteredList.length > 0 && (
         <div className="space-y-2">
           {filteredList.map((item, idx) => {
             const priority = item.priority || item.severity || 'medium';

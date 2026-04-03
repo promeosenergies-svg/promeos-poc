@@ -8,6 +8,7 @@ import { Eye, Play, RefreshCw, ExternalLink } from 'lucide-react';
 import { listWatchers, runWatcher, listRegEvents, reviewRegEvent } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal, Tabs } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 
 const STATUS_TABS = [
@@ -26,6 +27,7 @@ const STATUS_BADGE = {
 };
 
 export default function WatchersPage() {
+  const { sitesLoading } = useScope();
   const [watchers, setWatchers] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ export default function WatchersPage() {
     }
   };
 
-  if (loading && watchers.length === 0) {
+  if ((loading && watchers.length === 0) || sitesLoading) {
     return (
       <PageShell icon={Eye} title="Veille" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

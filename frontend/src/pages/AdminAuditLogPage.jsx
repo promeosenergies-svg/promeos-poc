@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { getAuditLogs } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useScope } from '../contexts/ScopeContext';
 import { PageShell, EmptyState } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 
@@ -78,6 +79,7 @@ function DetailPanel({ detail }) {
 
 export default function AdminAuditLogPage() {
   const { hasPermission } = useAuth();
+  const { sitesLoading } = useScope();
   const { toast } = useToast();
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
@@ -108,6 +110,18 @@ export default function AdminAuditLogPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  if (loading || sitesLoading) {
+    return (
+      <PageShell icon={ClipboardList} title="Audit Log" subtitle="Chargement...">
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 bg-gray-200 rounded-lg" />
+          ))}
+        </div>
+      </PageShell>
+    );
+  }
 
   if (!hasPermission('admin')) {
     return (
