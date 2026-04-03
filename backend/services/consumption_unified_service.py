@@ -106,16 +106,30 @@ def _billed_kwh(db: Session, site_id: int, start: date, end: date):
     total_kwh = float(result[0])
     invoice_count = int(result[1])
 
-    # Coverage: count months with invoices
-    months_with_invoices = (
-        db.query(func.count(func.distinct(func.strftime("%Y-%m", EnergyInvoice.period_start))))
+    # Coverage: count all months between period_start and period_end (Python-side, portable)
+    invoices_periods = (
+        db.query(EnergyInvoice.period_start, EnergyInvoice.period_end)
         .filter(
             EnergyInvoice.site_id == site_id,
             EnergyInvoice.period_start >= start,
             EnergyInvoice.period_end <= end,
         )
-        .scalar()
-    ) or 0
+        .all()
+    )
+    covered_months = set()
+    for inv in invoices_periods:
+        if inv.period_start and inv.period_end:
+            current = inv.period_start.replace(day=1)
+            end_month = inv.period_end.replace(day=1)
+            while current <= end_month:
+                covered_months.add(current.strftime("%Y-%m"))
+                if current.month == 12:
+                    current = current.replace(year=current.year + 1, month=1)
+                else:
+                    current = current.replace(month=current.month + 1)
+        elif inv.period_start:
+            covered_months.add(inv.period_start.strftime("%Y-%m"))
+    months_with_invoices = len(covered_months)
 
     return total_kwh, invoice_count, months_with_invoices
 
