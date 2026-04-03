@@ -26,6 +26,7 @@ from services.scope_utils import resolve_org_id
 from services.kpi_service import KpiService, KpiScope
 from services.consumption_unified_service import get_portfolio_consumption, ConsumptionSource
 from schemas.kpi_catalog import wrap_kpi_runtime
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
@@ -151,6 +152,9 @@ def get_cockpit(
         conso_sites_with_data = 0
         _conso_dominant_source = "none"
 
+    # Declared consumption (patrimoine) for transparency
+    _conso_declared_kwh = (db.query(func.sum(Site.annual_kwh_total)).filter(Site.id.in_(site_ids)).scalar()) or 0.0
+
     # Billing anomalies loss for risque_breakdown (P0-2: excl. resolved + false_positive)
     _billing_loss = 0.0
     try:
@@ -212,6 +216,7 @@ def get_cockpit(
                     "total_eur": round(risque_total + _billing_loss, 2),
                 },
                 "conso_kwh_total": round(conso_kwh, 2),
+                "conso_declared_kwh": round(_conso_declared_kwh, 2),
                 "conso_confidence": conso_confidence,
                 "conso_sites_with_data": conso_sites_with_data,
                 "conso_source": _conso_dominant_source,
@@ -368,11 +373,11 @@ def get_cockpit_trajectory(
             "annees": [],
             "reel_mwh": [],
             "objectif_mwh": [],
+            # Jalons officiels Decret n°2019-771 (pas de jalon 2026)
             "jalons": [
-                {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
-                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
-                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
-                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
+                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31", "is_official": True},
+                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31", "is_official": True},
+                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31", "is_official": True},
             ],
         }
 
@@ -399,11 +404,11 @@ def get_cockpit_trajectory(
             "reel_mwh": [],
             "objectif_mwh": [],
             "projection_mwh": [],
+            # Jalons officiels Decret n°2019-771 (pas de jalon 2026)
             "jalons": [
-                {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
-                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
-                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
-                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
+                {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31", "is_official": True},
+                {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31", "is_official": True},
+                {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31", "is_official": True},
             ],
         }
 
@@ -494,7 +499,9 @@ def get_cockpit_trajectory(
         .filter(ActionItem.site_id.in_(site_ids), ActionItem.status.in_(["open", "in_progress"]))
         .all()
     )
-    _savings_kwh = sum(a.estimated_gain_eur or 0 for a in _proj_actions) / 0.068 if _proj_actions else 0
+    _savings_kwh = (
+        sum(a.estimated_gain_eur or 0 for a in _proj_actions) / DEFAULT_PRICE_ELEC_EUR_KWH if _proj_actions else 0
+    )
     projection_mwh = []
     _cy = datetime.now(tz=None).year
     if _savings_kwh > 0:
@@ -518,11 +525,12 @@ def get_cockpit_trajectory(
         "objectif_mwh": objectif_mwh,
         "projection_mwh": projection_mwh,
         "projection_savings_kwh_an": round(_savings_kwh) if _savings_kwh > 0 else 0,
+        # Jalons officiels Decret n°2019-771, art. R131-39 CCH
+        # Il n'existe PAS de jalon 2026 dans le texte reglementaire
         "jalons": [
-            {"annee": 2026, "reduction_pct": -25.0, "deadline": "2027-12-31"},
-            {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31"},
-            {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31"},
-            {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31"},
+            {"annee": 2030, "reduction_pct": -40.0, "deadline": "2031-12-31", "is_official": True},
+            {"annee": 2040, "reduction_pct": -50.0, "deadline": "2041-12-31", "is_official": True},
+            {"annee": 2050, "reduction_pct": -60.0, "deadline": "2051-12-31", "is_official": True},
         ],
         "source_reglementaire": "Décret n°2019-771, Art. R131-39 CCH",
         "surface_m2_total": round(surface_total, 1),
@@ -591,21 +599,14 @@ def get_cockpit_conso_month(
 
 @router.get("/cockpit/co2")
 def get_co2(
+    request: Request,
     db: Session = Depends(get_db),
-    request: Request = None,
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     [V110] Empreinte CO₂ portfolio — facteurs ADEME Base Carbone 2024.
     """
     from services.co2_service import compute_portfolio_co2
 
-    # Fix CRIT-2 : résolution robuste de l'org (pas org_id=0 qui bypass le filtre)
-    from middleware.auth import get_optional_auth
-
-    auth = None
-    try:
-        auth = get_optional_auth(request)
-    except Exception:
-        pass
     effective_org_id = resolve_org_id(request, auth, db)
     return compute_portfolio_co2(db, effective_org_id)
