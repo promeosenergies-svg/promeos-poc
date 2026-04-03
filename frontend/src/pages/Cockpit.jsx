@@ -4,7 +4,7 @@
  */
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, ArrowRight, Search, AlertTriangle } from 'lucide-react';
+import { FileText, ArrowRight, Search, AlertTriangle, Clock } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -12,6 +12,8 @@ import {
   getNotificationsSummary,
   getComplianceTimeline,
   getComplianceScoreTrend,
+  getAuditSmeAssessment,
+  getFlexPrixSignal,
 } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { fmtKwh, fmtEur } from '../utils/format';
@@ -97,6 +99,8 @@ const Cockpit = () => {
   // A.1: consoSource — now from useCockpitData (I3 FIX: no double fetch)
   // Step 33: Compliance score trend (6 months)
   const [scoreTrend, setScoreTrend] = useState(null);
+  const [auditSme, setAuditSme] = useState(null);
+  const [prixSignal, setPrixSignal] = useState(null);
 
   // ── Step 6: Cockpit world-class data (backend-driven) ──
   const {
@@ -156,6 +160,21 @@ const Cockpit = () => {
       .then((data) => setScoreTrend(data?.trend || null))
       .catch(() => setScoreTrend(null));
   }, [org?.id]);
+
+  // Audit Energetique / SME (Loi 2025-391)
+  useEffect(() => {
+    if (!org?.id) return;
+    getAuditSmeAssessment(org.id)
+      .then(setAuditSme)
+      .catch(() => setAuditSme(null));
+  }, [org?.id]);
+
+  // Signal prix spot J-1 (demo: 45 €/MWh neutre)
+  useEffect(() => {
+    getFlexPrixSignal(45)
+      .then(setPrixSignal)
+      .catch(() => setPrixSignal(null));
+  }, []);
 
   // I3 FIX: consoSource maintenant extrait de useCockpitData (plus de double fetch)
   const consoSource = cockpitKpis?.consoSource ?? null;
@@ -243,7 +262,7 @@ const Cockpit = () => {
   const ptfWithCounts = useMemo(() => {
     return portefeuilles
       .map((pf) => {
-        const sites = scopedSites.filter((s) => ((s.id - 1) % 5) + 1 === pf.id);
+        const sites = scopedSites.filter((s) => s.portefeuille_id === pf.id);
         const count = sites.length;
         const nbConformes = sites.filter((s) => s.statut_conformite === 'conforme').length;
         const risque = sites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
@@ -265,7 +284,7 @@ const Cockpit = () => {
   const portfolioFilteredSites = useMemo(() => {
     if (activePtf === 'all') return scopedSites;
     const pfId = parseInt(activePtf);
-    return scopedSites.filter((s) => ((s.id - 1) % 5) + 1 === pfId);
+    return scopedSites.filter((s) => s.portefeuille_id === pfId);
   }, [activePtf, scopedSites]);
 
   const filteredSites = useMemo(() => {
@@ -455,6 +474,70 @@ const Cockpit = () => {
         />
       )}
 
+      {/* ── Banner Audit Energetique (Loi 2025-391) ── */}
+      {auditSme?.urgence === 'CRITIQUE' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+          <AlertTriangle size={13} className="shrink-0" />
+          <span>
+            <strong>Audit Energetique obligatoire</strong> — Deadline : 11 octobre 2026 (J-
+            {auditSme.jours_restants}) —{' '}
+            <button
+              onClick={() => navigate('/conformite')}
+              className="underline font-medium hover:text-red-900"
+            >
+              Voir detail
+            </button>
+          </span>
+        </div>
+      )}
+      {auditSme?.urgence === 'ELEVEE' && auditSme?.statut === 'A_REALISER' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          <AlertTriangle size={13} className="shrink-0" />
+          <span>
+            <strong>Audit Energetique</strong> — Deadline dans {auditSme.jours_restants} jours —{' '}
+            <button
+              onClick={() => navigate('/conformite')}
+              className="underline font-medium hover:text-amber-900"
+            >
+              Planifier
+            </button>
+          </span>
+        </div>
+      )}
+
+      {/* ── Banner signal prix NEBCO ── */}
+      {prixSignal?.signal === 'PRIX_NEGATIF' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+          <AlertTriangle size={13} className="shrink-0" />
+          <span>
+            <strong>Prix spot negatif</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Opportunite NEBCO anticipation :{' '}
+            {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+            <button
+              onClick={() => navigate(toActionsList())}
+              className="underline font-medium hover:text-blue-900"
+            >
+              Voir actions
+            </button>
+          </span>
+        </div>
+      )}
+      {prixSignal?.signal === 'PRIX_ELEVE' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          <AlertTriangle size={13} className="shrink-0" />
+          <span>
+            <strong>Prix spot eleve</strong> — {prixSignal.valeur_eur_mwh?.toFixed(0)} &euro;/MWh{' '}
+            &middot; Signal effacement NEBCO : {prixSignal.usages_cibles?.slice(0, 3).join(', ')}.{' '}
+            <button
+              onClick={() => navigate(toActionsList())}
+              className="underline font-medium hover:text-amber-900"
+            >
+              Voir actions
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* ═══════════ SCOPE INDICATOR (expert only — absent des maquettes) ═══════════ */}
       {isExpert && (
         <div
@@ -567,6 +650,43 @@ const Cockpit = () => {
             </button>
           </div>
         )}
+
+      {/* Bannière deadline OPERAT 30/09/2026 (conditionnelle) */}
+      {(() => {
+        const deadline = new Date('2026-09-30');
+        const today = new Date();
+        const joursRestants = Math.round((deadline - today) / (1000 * 60 * 60 * 24));
+        const isUrgent = joursRestants < 90;
+        if (joursRestants < 0) return null;
+        return (
+          <div
+            className={`flex items-center justify-between px-4 py-2.5 border rounded-lg text-sm ${
+              isUrgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+            }`}
+            data-testid="banner-deadline-operat"
+          >
+            <div className="flex items-center gap-2">
+              <Clock
+                size={14}
+                className={isUrgent ? 'text-red-600 shrink-0' : 'text-blue-600 shrink-0'}
+              />
+              <span className={isUrgent ? 'text-red-800 font-medium' : 'text-blue-800 font-medium'}>
+                Déclaration OPERAT 2025 obligatoire avant le 30/09/2026 — J-{joursRestants}
+              </span>
+            </div>
+            <button
+              onClick={() => navigate('/conformite/tertiaire')}
+              className={`text-xs font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 rounded ${
+                isUrgent
+                  ? 'text-red-700 hover:text-red-900 focus-visible:ring-red-500'
+                  : 'text-blue-700 hover:text-blue-900 focus-visible:ring-blue-500'
+              }`}
+            >
+              Accéder aux déclarations <ArrowRight size={12} />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── Alertes + Événements (2 colonnes) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
