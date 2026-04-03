@@ -304,9 +304,9 @@ class TestEvidenceSummaryEndpoint:
         assert callable(get_reconciliation_evidence_summary)
 
     def test_routes_import_get_evidence_summary(self):
-        source = open(inspect.getfile(__import__("routes.patrimoine", fromlist=["patrimoine"]))).read()
+        source = open(inspect.getfile(__import__("routes.patrimoine.billing", fromlist=["billing"]))).read()
         assert "get_evidence_summary" in source
 
     def test_routes_has_evidence_summary_path(self):
-        source = open(inspect.getfile(__import__("routes.patrimoine", fromlist=["patrimoine"]))).read()
+        source = open(inspect.getfile(__import__("routes.patrimoine.billing", fromlist=["billing"]))).read()
         assert "evidence/summary" in source
