@@ -22,6 +22,13 @@ export const getDataQuality = (scopeType, scopeId) =>
     .then((r) => r.data);
 export const getDataQualitySpecs = () => api.get('/regops/data_quality/specs').then((r) => r.data);
 
+// ── Audit Energetique / SME (Loi 2025-391) ──
+export const getAuditSmeAssessment = (orgId) =>
+  api.get(`/regops/organisations/${orgId}/audit-sme`).then((r) => r.data);
+export const getAuditSmeScope = () => api.get('/regops/audit-sme/scope').then((r) => r.data);
+export const updateAuditSme = (orgId, payload) =>
+  api.patch(`/regops/organisations/${orgId}/audit-sme`, payload).then((r) => r.data);
+
 // ── Compliance (Rules-based) ──
 export const getComplianceSummary = (params = {}) =>
   api.get('/compliance/summary', { params }).then((r) => r.data);
@@ -167,6 +174,16 @@ export const getMutualisation = (orgId, jalon = 2030) =>
   api.get(`${TERT_BASE}/mutualisation`, { params: { org_id: orgId, jalon } }).then((r) => r.data);
 export const simulateModulation = (body) =>
   api.post(`${TERT_BASE}/modulation-simulation`, body).then((r) => r.data);
+
+// ── DT Progress — Progression Décret Tertiaire ──
+export const getSiteDtProgress = (siteId, annee = null) =>
+  api
+    .get(`${TERT_BASE}/sites/${siteId}/dt-progress`, { params: annee ? { annee } : {} })
+    .then((r) => r.data);
+export const getPortfolioDtProgress = (orgId, annee = null) =>
+  api
+    .get(`${TERT_BASE}/portfolio/${orgId}/dt-progress`, { params: annee ? { annee } : {} })
+    .then((r) => r.data);
 
 // ── BACS Expert ──
 export const getBacsAssessment = (siteId) =>

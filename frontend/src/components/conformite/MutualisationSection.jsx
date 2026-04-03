@@ -55,6 +55,18 @@ export default function MutualisationSection({ orgId }) {
         Simulation <Explain term="mutualisation_dt">mutualisation</Explain> — Jalon 2030 (−40 %)
       </h3>
 
+      {/* Disclaimer reglementaire — toujours affiche */}
+      <div
+        className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800"
+        data-testid="mutualisation-disclaimer"
+      >
+        <Info size={14} className="text-amber-500 shrink-0 mt-0.5" />
+        <span>
+          {data.disclaimer ||
+            "Simulation uniquement — La fonctionnalité de mutualisation n'est pas encore disponible dans OPERAT (2026). PROMEOS anticipe cette fonctionnalité pour préparer votre stratégie patrimoniale."}
+        </span>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="Sites evalues" value={data.sites.length} icon={BarChart3} accent="blue" />

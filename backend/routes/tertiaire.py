@@ -1107,3 +1107,240 @@ def post_modulation_simulation(
     contraintes_dict = [c.model_dump() for c in body.contraintes]
     result = simulate_modulation(db, body.efa_id, contraintes_dict)
     return result.to_dict()
+
+
+# ── DT Progress — Progression Décret Tertiaire ──────────────────────────
+
+# Jalons officiels — Décret n°2019-771, art. R131-39 CCH
+# Il n'existe PAS de jalon 2026 dans le texte réglementaire
+_JALONS_OFFICIELS = [
+    {"annee": 2030, "reduction_cible_pct": 40.0, "is_official": True, "source": "Décret n°2019-771 du 23/07/2019"},
+    {"annee": 2040, "reduction_cible_pct": 50.0, "is_official": True, "source": "Décret n°2019-771 du 23/07/2019"},
+    {"annee": 2050, "reduction_cible_pct": 60.0, "is_official": True, "source": "Décret n°2019-771 du 23/07/2019"},
+]
+
+
+def _compute_site_dt_progress(db: Session, site_id: int, annee: int, *, site=None) -> dict:
+    """Calcule la progression DT pour un site en agregeant ses EFA actives.
+
+    Delegue a operat_trajectory via dt_trajectory_service (SoT avec DJU).
+
+    Args:
+        site: optional pre-loaded Site object to avoid redundant query.
+    """
+    import datetime as _dt
+    from services.dt_trajectory_service import compute_site_trajectory
+    from services.operat_trajectory import validate_trajectory
+
+    if site is None:
+        site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return {"error": "not_found", "site_id": site_id}
+
+    now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+
+    if not site.tertiaire_area_m2 or site.tertiaire_area_m2 < 1000:
+        return {
+            "site_id": site_id,
+            "site_nom": site.nom,
+            "assujetti": False,
+            "message": f"Surface assujettie {site.tertiaire_area_m2 or 0}m² < 1000m²",
+            "source": "dt_trajectory_service",
+            "computed_at": now_iso,
+        }
+
+    efas = db.query(TertiaireEfa).filter(TertiaireEfa.site_id == site_id, not_deleted(TertiaireEfa)).all()
+
+    if not efas:
+        return {
+            "site_id": site_id,
+            "site_nom": site.nom,
+            "assujetti": True,
+            "n_efa_actives": 0,
+            "on_track": None,
+            "reduction_pct": None,
+            "message": "Aucune EFA active",
+            "jalons_officiels": _JALONS_OFFICIELS,
+            "source": "dt_trajectory_service",
+            "computed_at": now_iso,
+        }
+
+    # Agreger les trajectoires via operat_trajectory (SoT avec DJU)
+    efa_results = []
+    for efa in efas:
+        try:
+            r = validate_trajectory(db, efa.id, annee)
+            baseline = r.get("baseline") or {}
+            current = r.get("current") or {}
+            baseline_kwh = baseline.get("kwh")
+            current_kwh = current.get("kwh")
+            norm_kwh = current.get("normalized_kwh")
+            effective_kwh = norm_kwh or current_kwh
+
+            reduction = None
+            if baseline_kwh and baseline_kwh > 0 and effective_kwh is not None:
+                reduction = round((1 - effective_kwh / baseline_kwh) * 100, 1)
+
+            efa_results.append(
+                {
+                    "efa_id": efa.id,
+                    "efa_nom": efa.nom,
+                    "conso_ref_kwh": baseline_kwh,
+                    "conso_actuelle_kwh": current_kwh,
+                    "conso_normalisee_kwh": norm_kwh,
+                    "reduction_pct": reduction,
+                    "on_track": r.get("final_status") == "on_track",
+                    "status": r.get("final_status", "not_evaluable"),
+                    "is_dju_applied": r.get("is_normalized", False),
+                }
+            )
+        except Exception:
+            pass
+
+    if not efa_results:
+        return {
+            "site_id": site_id,
+            "site_nom": site.nom,
+            "assujetti": True,
+            "n_efa_actives": len(efas),
+            "on_track": None,
+            "reduction_pct": None,
+            "message": "Donnees insuffisantes pour calculer la trajectoire",
+            "jalons_officiels": _JALONS_OFFICIELS,
+            "source": "operat_trajectory",
+            "computed_at": now_iso,
+        }
+
+    total_ref = sum(r["conso_ref_kwh"] or 0 for r in efa_results)
+    total_act = sum(r["conso_actuelle_kwh"] or 0 for r in efa_results)
+    total_norm = sum(r["conso_normalisee_kwh"] or 0 for r in efa_results if r["conso_normalisee_kwh"])
+    is_dju = any(r["is_dju_applied"] for r in efa_results)
+    reduction_agg = round((1 - total_act / total_ref) * 100, 1) if total_ref > 0 else None
+    on_track_all = all(r["on_track"] for r in efa_results if r["on_track"] is not None)
+
+    # Prochain jalon
+    prochain_jalon = None
+    for j in _JALONS_OFFICIELS:
+        if annee <= j["annee"]:
+            ecart = round((reduction_agg or 0) - j["reduction_cible_pct"], 1) if reduction_agg is not None else None
+            prochain_jalon = {
+                "annee": j["annee"],
+                "reduction_cible_pct": j["reduction_cible_pct"],
+                "reduction_actuelle_pct": reduction_agg,
+                "ecart_pts": ecart,
+                "on_track": ecart >= 0 if ecart is not None else None,
+                "is_official": True,
+            }
+            break
+
+    return {
+        "site_id": site_id,
+        "site_nom": site.nom,
+        "assujetti": True,
+        "n_efa_actives": len(efa_results),
+        "conso_ref_kwh": round(total_ref, 0),
+        "conso_actuelle_kwh": round(total_act, 0),
+        "conso_normalisee_kwh": round(total_norm, 0) if is_dju else None,
+        "reduction_pct": reduction_agg,
+        "is_dju_applied": is_dju,
+        "on_track": on_track_all,
+        "prochain_jalon": prochain_jalon,
+        "jalons_officiels": _JALONS_OFFICIELS,
+        "detail_efa": efa_results,
+        "source": "operat_trajectory",
+        "computed_at": now_iso,
+    }
+
+
+@router.get("/sites/{site_id}/dt-progress")
+def get_site_dt_progress(
+    site_id: int,
+    annee: int = None,
+    db: Session = Depends(get_db),
+):
+    """Progression DT pour un site — agrégation de ses EFA actives.
+
+    Délègue à operat_trajectory.validate_trajectory() (SoT avec DJU).
+    Jalons officiels : -40% 2030 / -50% 2040 / -60% 2050.
+    """
+    import datetime as _dt
+
+    if annee is None:
+        annee = _dt.date.today().year
+
+    result = _compute_site_dt_progress(db, site_id, annee)
+    if result.get("error") == "not_found":
+        raise HTTPException(404, f"Site {site_id} introuvable")
+    return result
+
+
+@router.get("/portfolio/{org_id}/dt-progress")
+def get_portfolio_dt_progress(
+    org_id: int,
+    annee: int = None,
+    db: Session = Depends(get_db),
+):
+    """Vue multi-site trajectoire DT pour une organisation.
+
+    Tri : off_track en premier (sites en retard prioritaires).
+    Jalons officiels : -40% 2030 / -50% 2040 / -60% 2050.
+    """
+    import datetime as _dt
+
+    if annee is None:
+        annee = _dt.date.today().year
+
+    from models import Portefeuille, EntiteJuridique, not_deleted as _nd
+
+    sites = (
+        _nd(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.tertiaire_area_m2 >= 1000)
+        .all()
+    )
+
+    resultats = []
+    n_on = n_off = n_nodata = 0
+
+    for site in sites:
+        progress = _compute_site_dt_progress(db, site.id, annee, site=site)
+        on_track = progress.get("on_track")
+        status = "on_track" if on_track is True else "off_track" if on_track is False else "no_data"
+        if status == "on_track":
+            n_on += 1
+        elif status == "off_track":
+            n_off += 1
+        else:
+            n_nodata += 1
+
+        resultats.append(
+            {
+                "site_id": site.id,
+                "site_nom": site.nom,
+                "surface_m2": site.tertiaire_area_m2,
+                "reduction_pct": progress.get("reduction_pct"),
+                "on_track": on_track,
+                "status": status,
+                "prochain_jalon": progress.get("prochain_jalon"),
+                "is_dju_applied": progress.get("is_dju_applied", False),
+                "n_efa": progress.get("n_efa_actives", 0),
+            }
+        )
+
+    # Tri : off_track → no_data → on_track
+    order = {"off_track": 0, "no_data": 1, "on_track": 2}
+    resultats.sort(key=lambda r: (order.get(r["status"], 3), -(r["reduction_pct"] or -999)))
+
+    return {
+        "org_id": org_id,
+        "annee": annee,
+        "n_sites_assujettis": len(sites),
+        "n_on_track": n_on,
+        "n_off_track": n_off,
+        "n_no_data": n_nodata,
+        "sites": resultats,
+        "jalons_officiels": _JALONS_OFFICIELS,
+        "source": "operat_trajectory",
+        "computed_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+    }

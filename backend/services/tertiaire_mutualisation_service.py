@@ -4,7 +4,15 @@ PROMEOS — Simulateur de mutualisation Decret Tertiaire.
 Principe : un proprietaire avec N sites peut compenser les sites en retard
 avec les sites en avance. L'objectif est evalue au niveau portefeuille.
 
-Source : Decret n2019-771, art. 3 (non encore implemente dans OPERAT).
+STATUT REGLEMENTAIRE (2026) :
+- La mutualisation est reconnue dans le texte (Art. L111-10-3 code construction)
+- MAIS la fonctionnalite n'est PAS encore disponible dans OPERAT
+- Les modalites d'application ne sont pas encore stabilisees
+- Source : Advizeo 2026 — "Fonctionnalite non disponible a ce stade dans OPERAT"
+
+PROMEOS est le premier outil a anticiper la mutualisation avant qu'OPERAT ne la supporte.
+
+Source : Decret n2019-771, art. 3 / Art. L111-10-3 code construction.
 """
 
 import logging
@@ -18,6 +26,13 @@ logger = logging.getLogger("promeos.tertiaire.mutualisation")
 # Constantes importees depuis sources canoniques
 from config.emission_factors import BASE_PENALTY_EURO
 from services.operat_trajectory import TARGETS as _OT_TARGETS
+
+DISCLAIMER_MUTUALISATION = (
+    "Simulation uniquement — La fonctionnalite de mutualisation n'est pas encore "
+    "disponible dans OPERAT (2026). PROMEOS anticipe cette fonctionnalite pour vous "
+    "permettre de preparer votre strategie patrimoniale. "
+    "Source : Advizeo 2026 / Art. L111-10-3 code construction."
+)
 
 # Conversion : operat_trajectory stocke le *reste* (0.60 = garder 60% = -40%)
 # On veut la *reduction* (0.40 = reduire de 40%)
@@ -53,6 +68,8 @@ class MutualisationResult:
 
     def to_dict(self) -> dict:
         d = asdict(self)
+        d["simulation"] = True
+        d["disclaimer"] = DISCLAIMER_MUTUALISATION
         d["portefeuille"] = {
             "ecart_total_kwh": self.ecart_total_kwh,
             "conforme_mutualise": self.conforme_mutualise,

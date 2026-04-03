@@ -275,8 +275,8 @@ def run_coherence_check(db: Session) -> Dict:
                     )
 
     # Detecter BACS avec evaluation trop ancienne (> 30 jours)
-    # Use naive datetime for SQLite compatibility
-    cutoff = datetime.utcnow() - timedelta(days=30)
+    # Strip tzinfo for SQLite naive-datetime compatibility
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
     from models.bacs_models import BacsAssessment
 
     assets = db.query(BacsAsset).filter(not_deleted(BacsAsset)).all()

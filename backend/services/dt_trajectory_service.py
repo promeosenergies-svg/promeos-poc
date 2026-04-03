@@ -1,27 +1,29 @@
 """
 PROMEOS V110 — Calcul dynamique de la trajectoire Décret Tertiaire.
 
-Formule :
-  reduction_pct = (1 − conso_actuelle / conso_reference) × 100
-  avancement_2030 = reduction_pct / 40 × 100  (objectif -40% en 2030)
-  avancement_2040 = reduction_pct / 50 × 100  (objectif -50% en 2040)
+SoT : operat_trajectory.validate_trajectory() (seul service avec correction DJU).
+Ce module DELEGUE a operat_trajectory quand une EFA existe pour le site.
+Fallback sur calcul simplifie (sans DJU) si aucune EFA.
 
-Sources :
-  - conso_reference : TertiaireEfaConsumption (is_reference=True) ou Site.conso_kwh_an seedée
-  - conso_actuelle : consumption_unified_service (12 derniers mois mesurés)
+Jalons officiels (Décret n°2019-771, art. R131-39 CCH) :
+  -40% en 2030 / -50% en 2040 / -60% en 2050
+  Il n'existe PAS de jalon 2026 dans le texte réglementaire.
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy.orm import Session
 
+if TYPE_CHECKING:
+    from models import TertiaireEfa
+
 logger = logging.getLogger("promeos.dt_trajectory")
 
-# Objectifs réglementaires
+# Objectifs réglementaires — Décret n°2019-771, art. R131-39 CCH
 OBJECTIF_2030_PCT = 40.0  # -40% vs référence
 OBJECTIF_2040_PCT = 50.0  # -50% vs référence
 OBJECTIF_2050_PCT = 60.0  # -60% vs référence
@@ -40,6 +42,8 @@ class TrajectoryResult:
     source_reference: str  # "efa_declaration" | "site_static" | "none"
     source_actuelle: str  # "metered" | "estimated" | "none"
     confidence: str  # "high" | "medium" | "low"
+    is_dju_applied: bool = False  # True si normalisation DJU appliquee
+    source_service: str = "dt_trajectory_service"  # service ayant produit le calcul
     message: Optional[str] = None
 
 
@@ -47,15 +51,9 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
     """
     Calcule la trajectoire DT dynamique pour un site.
 
-    Priorité conso référence :
-    1. TertiaireEfaConsumption avec is_reference=True
-    2. ConsumptionTarget annuelle la plus ancienne
-    3. Aucune → avancement incalculable
-
-    Priorité conso actuelle :
-    1. consumption_unified_service (12 mois mesurés)
-    2. Site.conso_kwh_an (statique)
-    3. Aucune → avancement incalculable
+    Strategie :
+    1. Si le site a une EFA → DELEGUE a operat_trajectory.validate_trajectory() (SoT avec DJU)
+    2. Sinon → fallback simplifie (sans DJU) via ConsumptionTarget / Site.conso_kwh_an
     """
     from models import Site, TertiaireEfa, TertiaireEfaConsumption, not_deleted
 
@@ -74,41 +72,94 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
             message="Site introuvable",
         )
 
-    # 1. Chercher la conso de référence
+    # Priorite 1 : delegation a operat_trajectory si EFA presente
+    efa = db.query(TertiaireEfa).filter(TertiaireEfa.site_id == site_id, not_deleted(TertiaireEfa)).first()
+    if efa:
+        return _compute_via_operat_trajectory(db, site_id, efa)
+
+    # Priorite 2 : fallback simplifie (pas d'EFA → pas de DJU possible)
+    return _compute_fallback(db, site_id, site)
+
+
+def _compute_via_operat_trajectory(db: Session, site_id: int, efa: "TertiaireEfa") -> TrajectoryResult:
+    """Delegue a operat_trajectory.validate_trajectory() — SoT avec DJU."""
+    import datetime
+    from services.operat_trajectory import validate_trajectory
+
+    try:
+        observation_year = datetime.date.today().year
+        result = validate_trajectory(db, efa.id, observation_year)
+
+        baseline = result.get("baseline") or {}
+        current = result.get("current") or {}
+        baseline_kwh = baseline.get("kwh")
+        current_kwh = current.get("kwh")
+
+        # Calculer reduction_pct depuis les donnees operat_trajectory
+        reduction_pct = None
+        if baseline_kwh and baseline_kwh > 0 and current_kwh is not None:
+            # Utiliser la conso normalisee si disponible
+            effective_kwh = current.get("normalized_kwh") or current_kwh
+            reduction_pct = round((1 - effective_kwh / baseline_kwh) * 100, 1)
+
+        avancement_2030 = None
+        avancement_2040 = None
+        if reduction_pct is not None:
+            avancement_2030 = round(min(100, max(0, reduction_pct / OBJECTIF_2030_PCT * 100)), 1)
+            avancement_2040 = round(min(100, max(0, reduction_pct / OBJECTIF_2040_PCT * 100)), 1)
+
+        is_normalized = result.get("is_normalized", False)
+
+        return TrajectoryResult(
+            site_id=site_id,
+            conso_reference_kwh=round(baseline_kwh, 0) if baseline_kwh else None,
+            conso_actuelle_kwh=round(current_kwh, 0) if current_kwh else None,
+            reduction_pct=reduction_pct,
+            avancement_2030=avancement_2030,
+            avancement_2040=avancement_2040,
+            source_reference="efa_declaration",
+            source_actuelle=current.get("source") or "unknown",
+            confidence="high" if baseline.get("reliability") in ("high", "medium") else "medium",
+            is_dju_applied=is_normalized,
+            source_service="operat_trajectory",
+        )
+    except Exception as e:
+        logger.warning("operat_trajectory failed for site %d (efa %d): %s", site_id, efa.id, e)
+        return TrajectoryResult(
+            site_id=site_id,
+            conso_reference_kwh=None,
+            conso_actuelle_kwh=None,
+            reduction_pct=None,
+            avancement_2030=None,
+            avancement_2040=None,
+            source_reference="efa_declaration",
+            source_actuelle="none",
+            confidence="low",
+            source_service="operat_trajectory",
+            message=f"Erreur operat_trajectory: {e}",
+        )
+
+
+def _compute_fallback(db: Session, site_id: int, site) -> TrajectoryResult:
+    """Fallback simplifie quand aucune EFA n'existe (pas de DJU possible)."""
+    from models import ConsumptionTarget
+
+    # Conso de reference : ConsumptionTarget la plus ancienne
     conso_ref = None
     source_ref = "none"
+    oldest_target = (
+        db.query(ConsumptionTarget)
+        .filter(ConsumptionTarget.site_id == site_id)
+        .order_by(ConsumptionTarget.year.asc())
+        .first()
+    )
+    if oldest_target and oldest_target.target_kwh and oldest_target.target_kwh > 0:
+        conso_ref = oldest_target.target_kwh
+        source_ref = "consumption_target"
 
-    # Priorité 1 : EFA déclaration de référence
-    efas = db.query(TertiaireEfa).filter(TertiaireEfa.site_id == site_id, not_deleted(TertiaireEfa)).all()
-    for efa in efas:
-        ref_conso = (
-            db.query(TertiaireEfaConsumption)
-            .filter(TertiaireEfaConsumption.efa_id == efa.id, TertiaireEfaConsumption.is_reference == True)
-            .first()
-        )
-        if ref_conso and ref_conso.kwh_total and ref_conso.kwh_total > 0:
-            conso_ref = ref_conso.kwh_total
-            source_ref = "efa_declaration"
-            break
-
-    # Priorité 2 : consommation historique la plus ancienne (proxy de référence)
-    if conso_ref is None:
-        from models import ConsumptionTarget
-
-        oldest_target = (
-            db.query(ConsumptionTarget)
-            .filter(ConsumptionTarget.site_id == site_id)
-            .order_by(ConsumptionTarget.year.asc())
-            .first()
-        )
-        if oldest_target and oldest_target.target_kwh and oldest_target.target_kwh > 0:
-            conso_ref = oldest_target.target_kwh
-            source_ref = "consumption_target"
-
-    # 2. Conso actuelle (12 derniers mois mesurés)
+    # Conso actuelle
     conso_actuelle = None
     source_act = "none"
-
     try:
         from services.consumption_unified_service import get_portfolio_consumption
         from datetime import date, timedelta
@@ -123,14 +174,12 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
     except Exception as e:
         logger.warning("consumption_unified_service failed for site %d: %s", site_id, e)
 
-    # Fallback : Site.conso_kwh_an
     if conso_actuelle is None:
         annual = getattr(site, "annual_kwh_total", None) or getattr(site, "conso_kwh_an", None)
         if annual and annual > 0:
             conso_actuelle = annual
             source_act = "site_static"
 
-    # 3. Calcul trajectoire
     if conso_ref is None or conso_ref <= 0:
         return TrajectoryResult(
             site_id=site_id,
@@ -142,7 +191,7 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
             source_reference=source_ref,
             source_actuelle=source_act,
             confidence="low",
-            message="Consommation de référence non disponible — trajectoire incalculable",
+            message="Consommation de reference non disponible — trajectoire incalculable",
         )
 
     if conso_actuelle is None or conso_actuelle <= 0:
@@ -163,8 +212,6 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
     avancement_2030 = round(min(100, max(0, reduction_pct / OBJECTIF_2030_PCT * 100)), 1)
     avancement_2040 = round(min(100, max(0, reduction_pct / OBJECTIF_2040_PCT * 100)), 1)
 
-    confidence = "high" if source_ref == "efa_declaration" and source_act == "metered" else "medium"
-
     return TrajectoryResult(
         site_id=site_id,
         conso_reference_kwh=round(conso_ref, 0),
@@ -174,7 +221,7 @@ def compute_site_trajectory(db: Session, site_id: int) -> TrajectoryResult:
         avancement_2040=avancement_2040,
         source_reference=source_ref,
         source_actuelle=source_act,
-        confidence=confidence,
+        confidence="medium",
     )
 
 

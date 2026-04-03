@@ -45,6 +45,7 @@ import {
   resetDb,
   getComplianceTimeline,
   getSegmentationProfile,
+  getAuditSmeAssessment,
 } from '../services/api';
 
 // Extracted sub-components
@@ -52,6 +53,7 @@ import { DevApiBadge, DevScopeBadge } from '../components/conformite/DevBadges';
 import FindingAuditDrawer from '../components/conformite/FindingAuditDrawer';
 import ComplianceSummaryBanner from '../components/conformite/ComplianceSummaryBanner';
 import ComplianceScoreHeader from '../components/conformite/ComplianceScoreHeader';
+import AuditSmeCard from '../components/conformite/AuditSmeCard';
 import {
   buildScopeParams,
   parseBundleError,
@@ -104,6 +106,7 @@ export default function ConformitePage() {
   const [timeline, setTimeline] = useState(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [segProfile, setSegProfile] = useState(null);
+  const [auditSme, setAuditSme] = useState(null);
 
   const loadData = useCallback(() => {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
@@ -175,6 +178,14 @@ export default function ConformitePage() {
       .then((p) => setSegProfile(p))
       .catch(() => setSegProfile(null));
   }, []);
+
+  // Audit Energetique / SME (Loi 2025-391)
+  useEffect(() => {
+    if (!org?.id) return;
+    getAuditSmeAssessment(org.id)
+      .then(setAuditSme)
+      .catch(() => setAuditSme(null));
+  }, [org?.id]);
 
   // Load intake questions for Donnees tab
   useEffect(() => {
@@ -643,6 +654,13 @@ export default function ConformitePage() {
 
       {/* A.2: Unified compliance score header */}
       <ComplianceScoreHeader complianceScore={complianceScore} segProfile={segProfile} />
+
+      {/* Audit Energetique / SME (Loi 2025-391) */}
+      {auditSme && auditSme.obligation !== 'AUCUNE' && (
+        <div id="audit-sme">
+          <AuditSmeCard assessment={auditSme} />
+        </div>
+      )}
 
       {/* Step 13: Frise reglementaire */}
       <RegulatoryTimeline

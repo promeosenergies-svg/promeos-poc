@@ -37,6 +37,7 @@ import {
 } from '../services/api';
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
+import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR, fmtKwh } from '../utils/format';
 
@@ -584,6 +585,7 @@ export default function SiteCompliancePage() {
   const { siteId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sitesLoading } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('obligations');
@@ -598,7 +600,7 @@ export default function SiteCompliancePage() {
       .finally(() => setLoading(false));
   }, [siteId, toast]);
 
-  if (loading) {
+  if (loading || sitesLoading) {
     return (
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="animate-pulse space-y-4">
