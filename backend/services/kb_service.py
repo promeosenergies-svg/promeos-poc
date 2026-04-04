@@ -6,11 +6,14 @@ Load KB from YAML files, query archetypes, rules, recommendations
 import yaml
 import hashlib
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
+
+_logger = logging.getLogger("promeos.kb")
 
 from models import (
     KBVersion,
@@ -42,7 +45,7 @@ class KBService:
         existing = self.db.query(KBVersion).filter_by(doc_id=manifest["doc_id"]).first()
 
         if existing and existing.source_sha256 == manifest["sha256"]:
-            print(f"[KB] Version {manifest['doc_id']} already loaded (SHA256 match)")
+            _logger.debug("KB: version %s déjà en cache (SHA256 match)", manifest["doc_id"])
             return existing
 
         # Create/update version
@@ -70,7 +73,7 @@ class KBService:
         self.db.commit()
         self.db.refresh(kb_version)
 
-        print(f"[KB] Loaded version {kb_version.doc_id} v{kb_version.version}")
+        _logger.info("KB: version %s v%s chargée", kb_version.doc_id, kb_version.version)
         return kb_version
 
     def load_archetypes_from_yaml(self, yaml_dir: Path, kb_version_id: int) -> int:
@@ -129,10 +132,10 @@ class KBService:
                 loaded_count += 1
 
             except Exception as e:
-                print(f"[WARN] Failed to load {yaml_file.name}: {e}")
+                _logger.warning("KB: échec chargement %s — %s", yaml_file.name, e)
 
         self.db.commit()
-        print(f"[KB] Loaded {loaded_count} archetypes")
+        _logger.info("KB chargé : %d archétypes", loaded_count)
         return loaded_count
 
     def load_anomaly_rules_from_yaml(self, yaml_dir: Path, kb_version_id: int) -> int:
@@ -181,10 +184,10 @@ class KBService:
                 loaded_count += 1
 
             except Exception as e:
-                print(f"[WARN] Failed to load {yaml_file.name}: {e}")
+                _logger.warning("KB: échec chargement %s — %s", yaml_file.name, e)
 
         self.db.commit()
-        print(f"[KB] Loaded {loaded_count} anomaly rules")
+        _logger.info("KB chargé : %d anomaly rules", loaded_count)
         return loaded_count
 
     def load_recommendations_from_yaml(self, yaml_dir: Path, kb_version_id: int) -> int:
@@ -245,10 +248,10 @@ class KBService:
                 loaded_count += 1
 
             except Exception as e:
-                print(f"[WARN] Failed to load {yaml_file.name}: {e}")
+                _logger.warning("KB: échec chargement %s — %s", yaml_file.name, e)
 
         self.db.commit()
-        print(f"[KB] Loaded {loaded_count} recommendations")
+        _logger.info("KB chargé : %d recommendations", loaded_count)
         return loaded_count
 
     def _load_naf_mappings(self, archetype_id: int, naf_codes: List[str], kb_version_id: int):
