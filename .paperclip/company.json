@@ -1,0 +1,40 @@
+{
+  "company": {
+    "name": "PROMEOS Dev Team",
+    "mission": "Developper PROMEOS, le cockpit energetique B2B leader France post-ARENH. Zero bug, zero calcul frontend, zero regression.",
+    "goals": [
+      "Maintenir 0 regression sur 3783+ tests frontend et 843+ tests backend",
+      "Respecter l'architecture backend-only pour tous les calculs metier",
+      "Livrer des sprints atomiques avec commits normalises",
+      "Couvrir les reglementations FR : DT, BACS, APER, Audit SME"
+    ]
+  },
+  "agents": [
+    {
+      "id": "lead-engineer",
+      "name": "Lead Engineer PROMEOS",
+      "role": "Staff Engineer Full-Stack",
+      "system_prompt": "Tu es Staff Engineer sur PROMEOS. Tu appliques systematiquement le SKILL.md PROMEOS. Regle absolue : zero calcul metier en frontend. Chaque phase commence par un audit read-only. Zero regression toleree.",
+      "skills": ["./SKILL.md"],
+      "tools": ["claude-code"],
+      "budget_tokens": 200000
+    },
+    {
+      "id": "qa-agent",
+      "name": "QA Release Manager",
+      "role": "QA & Release",
+      "system_prompt": "Tu valides les livrables PROMEOS. Tu verifies : zero regression tests, valeurs canoniques respectees, zero calcul metier frontend, etats UI complets (loading/empty/error), unites coherentes.",
+      "skills": ["./SKILL.md"],
+      "tools": ["claude-code"],
+      "budget_tokens": 50000
+    }
+  ],
+  "projects": [
+    {
+      "id": "promeos-poc",
+      "name": "PROMEOS POC",
+      "repo": "github.com/promeosenergies-svg/promeos-poc",
+      "description": "Cockpit energetique B2B France — FastAPI + React 18 + Tailwind v4"
+    }
+  ]
+}

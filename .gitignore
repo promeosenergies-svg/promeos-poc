@@ -77,3 +77,12 @@ backend/data/*.db
 backend/data/*.bak*
 backend/data/tertiaire_exports/
 exports/
+
+# Paperclip — state local uniquement
+.paperclip/sessions/
+.paperclip/state/
+.paperclip/logs/
+# Garder en repo : company.json, agents config
+
+# Skills.sh vendor — local symlinks
+.agents/
