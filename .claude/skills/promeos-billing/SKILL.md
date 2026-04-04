@@ -1,0 +1,204 @@
+---
+name: promeos-billing
+description: "Expertise facture énergie France B2B : shadow billing, TURPE 6/7, accise, TICGN, CTA, TVA, CEE, VNU, capacité, structure facture EDF/Engie, audit anomalies, reclaim, prorata, régularisation, grilles chiffrées. Utiliser ce skill dès qu'il est question de factures d'énergie, shadow billing, vérification de facture, composantes tarifaires, TURPE, acheminement, taxes énergie, anomalies facture, recalcul facture, détection d'erreurs facture, prix énergie, ou toute ligne de facture électricité/gaz."
+---
+
+# PROMEOS Billing Intelligence
+
+## Routing — Quand lire quel fichier
+
+| Question / Contexte | Fichier reference à lire |
+|---|---|
+| Grilles tarifaires TURPE, valeurs €/kWh | `references/turpe7-grilles.md` |
+| Vérification de facture, checklist, reclaim | `references/shadow-billing-checklist.md` |
+| Tout le reste (pipeline, anomalies, cascade prix) | Ce SKILL.md suffit |
+
+## Proactive triggers — Alerter sans qu'on demande
+
+- Facture avec TURPE 6 après 01/08/2025 → "Cette facture utilise encore les tarifs TURPE 6. Vérifier si la transition TURPE 7 a été appliquée."
+- Prix unitaire > 0.20 €/kWh sur contrat fixe → "Prix anormalement élevé pour un contrat fixe B2B. Benchmark CRE T4 2025 = 0.12-0.16 €/kWh."
+- Accise ≠ 25.79 €/MWh → "L'accise appliquée ne correspond pas au taux en vigueur (25.79 €/MWh depuis 01/08/2025, art. L312-35 CGI)."
+- Écart shadow billing > 5% → "Anomalie BILL_001 détectée. Écart significatif entre recalcul et facture."
+- Doublon PRM + même période → "CRITICAL BILL_006 : doublon de facturation potentiel."
+
+## Architecture Shadow Billing
+
+Pipeline: Données Enedis (CDC 30min/10min ou index) → Classification période tarifaire (HP/HC/HPH/HCH/HPB/HCB/Pointe) → Multiplication par prix contractuel (resolve_pricing(annexe)) → + Acheminement TURPE → + Taxes → = Facture recalculée → Δ vs facture réelle → Anomalies
+
+## Composantes facture électricité B2B
+
+| Composante | Calcul | Unité | Poids typique |
+|---|---|---|---|
+| Fourniture (énergie) | prix × volume par période tarifaire | €/MWh | ~35-45% |
+| Abonnement fourniture | fixe mensuel | €/mois | ~2-5% |
+| Acheminement (TURPE) | soutirage + gestion + comptage | €/kWh + €/kW/an | ~25-30% |
+| Accise sur l'électricité | **25.79 €/MWh** (depuis 01/08/2025) | €/MWh | ~10-12% |
+| CTA | **27.04%** de la part fixe TURPE | € | ~2-3% |
+| TVA | 5.5% sur abonnement+CTA, 20% sur conso+taxes | % | ~15-20% (TTC) |
+| CEE | variable ~0.3-0.5 €/MWh | €/MWh | ~1-2% |
+| Capacité | coût certificats × profil pointe | €/MWh | ~2-4% |
+
+## Composantes facture gaz B2B
+
+| Composante | Calcul | Unité | Poids typique |
+|---|---|---|---|
+| Fourniture (molécule) | prix × volume | €/MWh PCS | ~40-55% |
+| Acheminement (ATRD+ATRT) | transport + distribution | €/MWh + €/an | ~20-25% |
+| TICGN | **15.43 €/MWh** | €/MWh | ~8-12% |
+| CTA gaz | % part fixe acheminement | € | ~2-3% |
+| TVA | 5.5% abo+CTA, 20% conso+taxes | % | ~15-20% (TTC) |
+| Stockage | contribution stockage souterrain | €/MWh | ~1-2% |
+
+## Historique accise électricité
+
+| Période | Taux | Contexte |
+|---|---|---|
+| Avant 2022 | 22.50 €/MWh | CSPE pré-bouclier |
+| 01/02/2022 - 31/01/2024 | 1.00 €/MWh | Bouclier tarifaire |
+| 01/02/2024 - 31/01/2025 | 21.00 €/MWh | Sortie progressive bouclier |
+| 01/02/2025 - 31/07/2025 | 22.50 €/MWh | Retour pré-crise |
+| **Depuis 01/08/2025** | **25.79 €/MWh** | LFI 2025 + alignement TURPE 7 |
+
+⚠️ Le versioning temporel est critique : appliquer le bon taux à la bonne période de consommation.
+
+## TURPE 7 — Grille complète (depuis 01/08/2025, CRE n°2025-77/78)
+
+### Composante soutirage (c€/kWh)
+
+| Option | Pointe | HPH | HCH | HPB | HCB |
+|---|---|---|---|---|---|
+| BTINF ≤36kVA Base | — | 5.69 | 3.53 | 4.44 | 2.85 |
+| BTINF HP/HC | — | 6.12 | 3.21 | 4.77 | 2.50 |
+| BTSUP >36kVA | 7.40 | 5.69 | 3.53 | 4.44 | 2.85 |
+| HTA courte | 5.51 | 4.24 | 2.63 | 3.31 | 2.12 |
+| HTA longue | 4.03 | 3.10 | 1.92 | 2.42 | 1.55 |
+
+### Composante gestion (€/an par point)
+
+| Segment | Tarif |
+|---|---|
+| BTINF ≤36kVA | ~18-25 €/an |
+| BTSUP >36kVA | ~150-300 €/an |
+| HTA | ~500-1500 €/an |
+
+### Composante comptage (€/an)
+
+BTINF: inclus. BTSUP: ~200-600 €/an. HTA: ~800-2500 €/an (selon puissance).
+
+### Dépassement puissance (CMDPS)
+
+CMDPS = **12.65 × h** (€/kW dépassé × nombre d'heures de dépassement dans le mois).
+Calculé sur chaque période de 10min (C1-C4) ou intégré mensuel (C5).
+
+### Périodes tarifaires TURPE 7 (5 classes)
+
+| Période | Ratio prix | Mois | Heures |
+|---|---|---|---|
+| Pointe | 1.30 | Nov-Mars | PP1/PP2 (10-15j mobiles RTE) |
+| HPH | 1.00 (réf) | Nov-Mars | 7h-23h lun-sam hors pointe |
+| HCH | 0.62 | Nov-Mars | 23h-7h + dim + jours fériés |
+| HPB | 0.78 | Avr-Oct | 7h-23h lun-sam |
+| HCB | 0.50 | Avr-Oct | 23h-7h + dim + jours fériés |
+
+HC méridiennes 11h-14h pour nouveaux contrats (CRE 2026-33).
+
+## Cascade de prix (resolve_pricing)
+
+1. AnnexeSite.price_overrides → source: 'override'
+2. ContratCadre.base_tariff_grid → source: 'cadre'
+3. Spot 30 jours (si indexé) → source: 'spot'
+4. SiteTariffProfile → source: 'profile'
+5. Fallback: **0.068 €/kWh** (⚠️ PAS 0.18) → source: 'fallback'
+
+## Prorata et régularisation
+
+### Prorata temporel
+
+Facture = volume_période × (nb_jours_facturés / nb_jours_période_standard).
+Abonnement : prorata jour calendaire exact. Première/dernière facture toujours proratisées.
+
+### Régularisation
+
+- **Estimation → Réel** : quand relevé réel remplace estimation, facture de régul = (réel - estimé) × prix.
+- **Changement tarif en cours de mois** : split au jour du changement, chaque portion au tarif applicable.
+- **Régul annuelle TURPE** : ajustement composante puissance souscrite vs atteinte.
+- Seuil d'alerte PROMEOS : régul > 50% du montant mensuel → investigation.
+
+## Checklist Shadow Billing Mensuel
+
+Phase 1 (M+7) — Structurel: PDL/PCE = registre? Puissance souscrite = Enedis? Option tarifaire (Base/HP-HC/BTINF/BTSUP/HTA) OK? Période 28-31j? Dates cohérentes?
+Phase 2 (M+10) — Conso: Index fin - index début = conso? ±3% vs même mois N-1? Index estimé vs réel? Doublons période? Consommation négative?
+Phase 3 (M+12) — Financier: Énergie = prix×volume par période? TURPE = grille en vigueur à la date? Accise = taux de la période (historique ci-dessus)? CEE? Capacité? CTA = 27.04% × part fixe? TVA 5.5/20% correctement appliquée?
+Phase 4 (M+14) — Alertes: Écart >2€/MWh → erreur probable. Conso >baseline+10% → investigation dérive. Régul >50% → vérification estimation. Montant TTC >N-1+15% → alerte budget.
+
+## Anomalies types
+
+| Code | Description | Sévérité | Seuil |
+|---|---|---|---|
+| BILL_001 | Écart fourniture vs shadow | HIGH | >5% |
+| BILL_002 | Puissance facturée ≠ Enedis | HIGH | Tout écart |
+| BILL_003 | Période tarifaire incorrecte | MEDIUM | Mauvaise classe HP/HC |
+| BILL_004 | Accise ≠ taux en vigueur | HIGH | Tout écart |
+| BILL_005 | Facturation sur estimé (relevé dispo) | LOW | Estimation alors que réel existe |
+| BILL_006 | Doublon facturation (même période) | CRITICAL | Deux factures même PDL+période |
+| BILL_007 | TVA taux incorrect | MEDIUM | ≠5.5% ou ≠20% selon ligne |
+| BILL_008 | TURPE version obsolète | HIGH | Grille TURPE 6 après 01/08/2025 |
+| BILL_009 | CTA calcul incorrect | MEDIUM | ≠27.04% × part fixe |
+| BILL_010 | Régularisation anormale | MEDIUM | >50% du montant mensuel |
+| BILL_011 | Capacité absente ou aberrante | MEDIUM | Manquante ou >5€/MWh |
+| BILL_012 | Période facture chevauchante | HIGH | Overlap avec facture précédente |
+
+## Structure type facture fournisseur (EDF/Engie)
+
+```
+FACTURE D'ÉLECTRICITÉ
+├── En-tête: n° facture, PDL, dates, puissance souscrite
+├── Fourniture
+│   ├── Abonnement (fixe)
+│   └── Consommation (par période: HPH, HCH, HPB, HCB, Pointe)
+├── Acheminement (TURPE)
+│   ├── Composante gestion
+│   ├── Composante comptage
+│   ├── Composante soutirage (par période)
+│   └── Dépassement puissance (CMDPS si applicable)
+├── Taxes et contributions
+│   ├── Accise sur l'électricité (25.79 €/MWh)
+│   ├── CTA (27.04% × part fixe)
+│   └── CEE (si visible)
+├── Sous-total HT
+├── TVA
+│   ├── 5.5% sur (abonnement + CTA)
+│   └── 20% sur (consommation + taxes)
+└── Total TTC
+```
+
+## Reclaim (récupération trop-perçus)
+
+Processus : détection anomalie → quantification écart → lettre de réclamation → négociation → avoir/remboursement.
+Prescription : 14 mois (consommateur) / 5 ans (professionnel, Code civil).
+Montants typiques B2B : 1-5% de la facture annuelle en erreurs récupérables.
+Types fréquents : mauvaise puissance, TURPE obsolète, accise incorrecte, double facturation.
+
+## Fichiers backend
+
+- `backend/config/tarifs_reglementaires.yaml` — 300 lignes, tarifs versionnés (TURPE 6/7, accise, CTA)
+- `backend/config/default_prices.py` — Fallback 0.068 €/kWh
+- `backend/services/tariff_period_classifier.py` — 5 classes TURPE 7
+- `backend/services/cost_by_period_service.py` — Ventilation kWh×€
+- `backend/models/tou_schedule.py` — Fenêtres HP/HC
+- `docs/bill_intelligence/` — Templates factures EDF/Engie
+
+## Règles non-négociables
+
+- Toujours HT dans les calculs, TTC uniquement en affichage final
+- 0.068 €/kWh = fallback, jamais 0.18
+- 0.0569 €/kWh = tarif TURPE 7 HPH, JAMAIS un facteur CO₂
+- Accise = taux en vigueur à la date de consommation (pas de la facture)
+- TICGN = 15.43 €/MWh
+- Versioning temporel : bon tarif à la bonne date
+- Prorata au jour calendaire pour factures partielles
+- CTA = 27.04% de la part fixe TURPE, pas du total TURPE
+
+## Disclaimer
+
+Les informations réglementaires de ce skill sont fournies à titre informatif et ne constituent pas un conseil juridique. Les valeurs tarifaires et seuils réglementaires sont basés sur les textes officiels en vigueur à la date de création du skill (avril 2026). Vérifier les sources officielles (CRE, Legifrance, ADEME/OPERAT) pour les valeurs à jour. PROMEOS n'est pas un cabinet de conseil réglementaire.

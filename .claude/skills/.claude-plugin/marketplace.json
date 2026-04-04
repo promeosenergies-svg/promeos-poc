@@ -1,0 +1,19 @@
+{
+  "name": "promeos-energy-skills",
+  "version": "1.0.0",
+  "description": "11 skills énergie B2B France : billing, réglementation, Enedis, marché, fondamentaux, architecture, flexibilité, autoconsommation, contrats, veille, seed data.",
+  "author": "PROMEOS Energies",
+  "skills": [
+    {"name": "promeos-billing", "path": "promeos-billing"},
+    {"name": "promeos-regulatory", "path": "promeos-regulatory"},
+    {"name": "promeos-enedis", "path": "promeos-enedis"},
+    {"name": "promeos-seed", "path": "promeos-seed"},
+    {"name": "promeos-energy-market", "path": "promeos-energy-market"},
+    {"name": "promeos-energy-fundamentals", "path": "promeos-energy-fundamentals"},
+    {"name": "promeos-architecture", "path": "promeos-architecture"},
+    {"name": "energy-france-veille", "path": "energy-france-veille"},
+    {"name": "energy-flexibility-dr", "path": "energy-flexibility-dr"},
+    {"name": "energy-autoconsommation", "path": "energy-autoconsommation"},
+    {"name": "energy-contracts-b2b", "path": "energy-contracts-b2b"}
+  ]
+}
