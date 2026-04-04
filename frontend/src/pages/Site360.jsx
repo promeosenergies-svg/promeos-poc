@@ -2035,14 +2035,22 @@ export default function Site360() {
       {activeTab === 'puissance' && <TabPuissance site={site} />}
 
       {activeTab === 'usages' && (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-sm">Analyse des usages énergétiques par poste</p>
-          <button
-            className="mt-3 text-sm text-blue-600 hover:underline"
-            onClick={() => navigate(`/consommations?site_id=${site.id}`)}
-          >
-            Ouvrir dans Consommations →
-          </button>
+        <div className="space-y-4 pt-4">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 text-sm text-gray-600">
+            <p className="font-medium text-gray-800 mb-1">Décomposition des usages énergétiques</p>
+            <p>
+              La vue détaillée par poste (CVC, éclairage, process, mobilité) est disponible dans le
+              module Consommations avec les courbes de charge 30 min.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <button
+              className="text-sm text-blue-600 hover:underline font-medium"
+              onClick={() => navigate(`/consommations?site_id=${site.id}`)}
+            >
+              Ouvrir l'analyse complète →
+            </button>
+          </div>
         </div>
       )}
 
