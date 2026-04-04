@@ -296,3 +296,7 @@ class TestDevResetDb:
         data = r.json()
         assert data["status"] == "ok"
         assert data["schema"] == "recreated"
+
+        # Re-seed demo data so subsequent tests have a valid DB
+        r2 = client.post("/api/demo/seed-pack", json={"pack": "helios", "size": "S"})
+        assert r2.status_code == 200
