@@ -209,6 +209,12 @@ class SeedOrchestrator:
         if sub_count:
             result["sub_meter_readings_count"] = sub_count
 
+        # 3c. Power Intelligence (CDC, contrats PS, plages HC)
+        from .gen_power import seed_power
+
+        power_stats = seed_power(self.db, days=days)
+        result["power"] = power_stats
+
         # 4. Compliance
         from .gen_compliance import generate_compliance
 
@@ -558,6 +564,12 @@ class SeedOrchestrator:
 
         # 11. Segmentation profile (V101: seeded for demo coherence)
         self._seed_segmentation(master["org"])
+
+        # Phase 1 completion: fill remaining gaps (APER, DataPoints, RegEvents, Purchase, Actions, Notifs, Evidence)
+        from .gen_seed_completion import seed_completion
+
+        completion = seed_completion(self.db, master["org"], master["sites"], rng)
+        result["seed_completion"] = completion
 
         # Enable demo mode and register current org in DemoState (single source of truth)
         from services.demo_state import DemoState
