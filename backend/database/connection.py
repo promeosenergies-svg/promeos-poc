@@ -43,6 +43,18 @@ else:
 
 engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
+# SQLite WAL mode — permet lectures concurrentes et réduit "database is locked"
+if _is_sqlite:
+    from sqlalchemy import event, text
+
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_conn, _connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
+
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

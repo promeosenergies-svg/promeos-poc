@@ -35,7 +35,8 @@ const ALL_PAGES = [
   // PATRIMOINE
   { name: '04-patrimoine',         path: '/patrimoine',             section: 'patrimoine' },
   { name: '05-conformite',         path: '/conformite',             section: 'patrimoine' },
-  { name: '06-conformite-tertiaire', path: '/conformite/tertiaire', section: 'patrimoine' },
+  { name: '06-contrats',             path: '/contrats',             section: 'patrimoine' },
+  { name: '06b-conformite-tertiaire', path: '/conformite/tertiaire', section: 'patrimoine' },
 
   // ÉNERGIE — Consommations
   { name: '07-consommations',      path: '/consommations',          section: 'energie' },
@@ -272,7 +273,8 @@ Options:
   }, loginResp.access_token);
 
   // Navigate to cockpit to validate auth
-  await page.goto(FRONTEND_URL + '/cockpit', { waitUntil: 'networkidle', timeout: 15000 });
+  await page.goto(FRONTEND_URL + '/cockpit', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(2000);
 
   const isAuth = page.url().includes('/cockpit');

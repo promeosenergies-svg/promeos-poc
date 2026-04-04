@@ -29,6 +29,24 @@ from schemas.contract_v2_schemas import (
 
 logger = logging.getLogger(__name__)
 
+# Poids typiques par poste tarifaire (source: profils Enedis C5/C4)
+# Utilises pour le prix moyen pondere dans les KPIs cadre.
+PERIOD_WEIGHTS = {
+    "BASE": 1.0,
+    "HP": 0.62,
+    "HC": 0.38,
+    "HPH": 0.25,
+    "HCH": 0.15,
+    "HPB": 0.37,
+    "HCB": 0.23,
+    "POINTE": 0.02,
+}
+
+# Classification des lignes de facture B2B par composante
+SUPPLY_TYPES = frozenset({"SUPPLY", "ENERGY", "FOURNITURE"})
+NETWORK_TYPES = frozenset({"NETWORK", "TURPE", "ACHEMINEMENT", "TRANSPORT"})
+TAX_TYPES = frozenset({"TAX", "ACCISE", "CTA", "CSPE", "TVA", "CAPACITY"})
+
 
 # ============================================================
 # CRUD CADRE
@@ -136,6 +154,14 @@ def create_cadre(db: Session, data: CadreCreateSchema) -> Dict[str, Any]:
         notice_period_months=data.notice_period_months,
         is_green=data.is_green,
         green_percentage=data.green_percentage,
+        segment_enedis=data.segment_enedis,
+        annual_consumption_kwh=data.annual_consumption_kwh,
+        indexation_formula=data.indexation_formula,
+        indexation_reference=data.indexation_reference,
+        indexation_spread_eur_mwh=data.indexation_spread_eur_mwh,
+        price_revision_clause=data.price_revision_clause,
+        price_cap_eur_mwh=data.price_cap_eur_mwh,
+        price_floor_eur_mwh=data.price_floor_eur_mwh,
         notes=data.notes,
     )
     db.add(contract)
@@ -235,6 +261,15 @@ def update_cadre(db: Session, cadre_id: int, data: CadreUpdateSchema) -> Optiona
         "is_green": "is_green",
         "green_percentage": "green_percentage",
         "notes": "notes",
+        # V2.1 — champs metier
+        "segment_enedis": "segment_enedis",
+        "annual_consumption_kwh": "annual_consumption_kwh",
+        "indexation_formula": "indexation_formula",
+        "indexation_reference": "indexation_reference",
+        "indexation_spread_eur_mwh": "indexation_spread_eur_mwh",
+        "price_revision_clause": "price_revision_clause",
+        "price_cap_eur_mwh": "price_cap_eur_mwh",
+        "price_floor_eur_mwh": "price_floor_eur_mwh",
     }
 
     for schema_field, model_field in field_map.items():
@@ -553,12 +588,12 @@ def refresh_all_statuses(db: Session, org_id: int) -> int:
 
 
 # ============================================================
-# COHERENCE (12 regles)
+# COHERENCE (16 regles)
 # ============================================================
 
 
 def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
-    """12 regles de coherence. Retourne list[{rule_id, level, message}]."""
+    """16 regles de coherence (R1-R16). Retourne list[{rule_id, level, message}]."""
     contract = (
         db.query(EnergyContract)
         .options(
@@ -586,15 +621,19 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
                 {"rule_id": "R2", "level": "warning", "message": f"Annexe {a.annexe_ref or a.id} sans PDL/PRM"}
             )
 
-    # R3: Chevauchement contrats sur meme PDL
+    # R3: Chevauchement contrats sur meme PDL (date-aware)
     dp_ids = [a.delivery_point_id for a in annexes if a.delivery_point_id]
-    if dp_ids:
+    if dp_ids and contract.start_date and contract.end_date:
         other_annexes = (
             db.query(ContractAnnexe)
+            .join(EnergyContract, EnergyContract.id == ContractAnnexe.contrat_cadre_id)
             .filter(
                 ContractAnnexe.delivery_point_id.in_(dp_ids),
                 ContractAnnexe.contrat_cadre_id != cadre_id,
                 ContractAnnexe.deleted_at.is_(None),
+                # Overlap temporel NULL-safe (contrats ouverts = end_date NULL = toujours actif)
+                EnergyContract.start_date <= contract.end_date,
+                (EnergyContract.end_date.is_(None) | (EnergyContract.end_date >= contract.start_date)),
             )
             .all()
         )
@@ -603,7 +642,7 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
                 {
                     "rule_id": "R3",
                     "level": "error",
-                    "message": f"Chevauchement PDL avec {len(other_annexes)} autre(s) contrat(s)",
+                    "message": f"Chevauchement PDL avec {len(other_annexes)} autre(s) contrat(s) actif(s) sur la meme periode",
                 }
             )
 
@@ -624,9 +663,13 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
                 {"rule_id": "R5", "level": "error", "message": "Contrat indexe sans grille tarifaire de reference"}
             )
 
-    # R6: Puissance manquante si HP/HC
+    # R6: Puissance manquante si option multi-postes
     for a in annexes:
-        if a.tariff_option and a.tariff_option.value in ("hp_hc", "cu", "mu", "lu") and not a.subscribed_power_kva:
+        if (
+            a.tariff_option
+            and a.tariff_option.value in ("hp_hc", "cu4", "mu4", "cu", "lu")
+            and not a.subscribed_power_kva
+        ):
             results.append(
                 {
                     "rule_id": "R6",
@@ -653,17 +696,19 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
     if contract.start_date and contract.end_date and contract.end_date <= contract.start_date:
         results.append({"rule_id": "R8", "level": "error", "message": "Date fin avant date debut"})
 
-    # R9: Prix unitaire anormal
+    # R9: Prix unitaire fourniture HT anormal (seuils marche B2B France 2026)
+    # Elec fourniture HT: marche forward Y+1 ~80-120 EUR/MWh = 0.08-0.12 EUR/kWh → seuil 0.25
+    # Gaz fourniture HT: PEG ~30-50 EUR/MWh = 0.03-0.05 EUR/kWh → seuil 0.10
     for p in contract.pricing_lines:
         if p.unit_price_eur_kwh:
             energy = contract.energy_type.value if contract.energy_type else "elec"
-            threshold = 0.30 if energy == "elec" else 0.15
+            threshold = 0.25 if energy == "elec" else 0.10
             if p.unit_price_eur_kwh > threshold:
                 results.append(
                     {
                         "rule_id": "R9",
                         "level": "warning",
-                        "message": f"Prix {p.period_code} anormalement eleve: {p.unit_price_eur_kwh} EUR/kWh",
+                        "message": f"Prix {p.period_code} anormalement eleve: {p.unit_price_eur_kwh:.4f} EUR/kWh (seuil {threshold} EUR/kWh fourniture HT)",
                     }
                 )
 
@@ -695,6 +740,80 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
                 }
             )
 
+    # R13: Coherence segment Enedis / puissance souscrite (TURPE 7)
+    for a in annexes:
+        seg = (a.segment_enedis or "").upper()
+        ps = a.subscribed_power_kva
+        if seg and ps:
+            if seg == "C5" and ps > 36:
+                results.append(
+                    {
+                        "rule_id": "R13",
+                        "level": "error",
+                        "message": f"Annexe {a.annexe_ref or a.id}: segment C5 mais PS={ps} kVA > 36 kVA",
+                    }
+                )
+            elif seg == "C4" and (ps <= 36 or ps > 250):
+                results.append(
+                    {
+                        "rule_id": "R13",
+                        "level": "warning",
+                        "message": f"Annexe {a.annexe_ref or a.id}: segment C4 mais PS={ps} kVA (attendu 37-250 kVA)",
+                    }
+                )
+
+    # R14: Coherence option tarifaire / segment (derive de TARIFF_OPTIONS_BY_SEGMENT)
+    from schemas.contract_v2_schemas import TARIFF_OPTIONS_BY_SEGMENT
+
+    _valid_options = {seg: {o["value"] for o in opts} for seg, opts in TARIFF_OPTIONS_BY_SEGMENT.items()}
+    for a in annexes:
+        seg = (a.segment_enedis or "").upper()
+        opt = a.tariff_option.value if a.tariff_option else None
+        if seg and opt and seg in _valid_options:
+            if opt not in _valid_options[seg]:
+                results.append(
+                    {
+                        "rule_id": "R14",
+                        "level": "error",
+                        "message": f"Annexe {a.annexe_ref or a.id}: option {opt.upper()} incompatible avec segment {seg}",
+                    }
+                )
+
+    # R15: Duree / modele prix incoherent
+    if contract.start_date and contract.end_date and contract.offer_indexation:
+        months = (contract.end_date.year - contract.start_date.year) * 12 + (
+            contract.end_date.month - contract.start_date.month
+        )
+        idx = contract.offer_indexation.value
+        if idx == "indexe_spot" and months > 24:
+            results.append(
+                {
+                    "rule_id": "R15",
+                    "level": "warning",
+                    "message": f"Contrat spot sur {months} mois — risque de volatilite eleve, verifier couverture",
+                }
+            )
+        if idx == "fixe" and months < 3:
+            results.append(
+                {
+                    "rule_id": "R15",
+                    "level": "info",
+                    "message": f"Contrat fixe sur {months} mois — duree inhabituellement courte",
+                }
+            )
+
+    # R16: Contrat gaz sans option tarifaire gaz (ATRD T1-T4 non gere)
+    if contract.energy_type and contract.energy_type.value == "gaz":
+        for a in annexes:
+            if a.tariff_option and a.tariff_option.value in ("hp_hc", "cu4", "mu4", "cu", "lu"):
+                results.append(
+                    {
+                        "rule_id": "R16",
+                        "level": "warning",
+                        "message": f"Annexe {a.annexe_ref or a.id}: option tarifaire elec ({a.tariff_option.value}) sur contrat gaz",
+                    }
+                )
+
     return results
 
 
@@ -704,19 +823,33 @@ def coherence_check(db: Session, cadre_id: int) -> List[Dict[str, str]]:
 
 
 def compute_cadre_kpis(db: Session, cadre: EnergyContract) -> Dict[str, Any]:
-    """KPIs pour un cadre: avg_price, total_volume, budget, days_to_expiry, nb_annexes, coherence_count."""
+    """KPIs pour un cadre avec prix moyen pondere par volume."""
     annexes = [a for a in cadre.annexes if a.deleted_at is None]
     total_vol = sum((a.volume_commitment.annual_kwh if a.volume_commitment else 0) for a in annexes)
-    # Avg price from pricing lines
-    prices = [p.unit_price_eur_kwh for p in cadre.pricing_lines if p.unit_price_eur_kwh]
-    avg_price = sum(prices) / len(prices) if prices else 0
+
+    # Prix moyen pondere : chaque ligne pricing contribue proportionnellement
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for p in cadre.pricing_lines:
+        if p.unit_price_eur_kwh:
+            w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
+            weighted_sum += p.unit_price_eur_kwh * w
+            weight_total += w
+    avg_price = (weighted_sum / weight_total) if weight_total else 0
+
+    # Budget = prix moyen pondere * volume total
+    budget = avg_price * total_vol if avg_price and total_vol else 0
+
+    # Fallback: si pas de pricing lines, utiliser annual_consumption_kwh du cadre
+    if not total_vol and cadre.annual_consumption_kwh:
+        total_vol = cadre.annual_consumption_kwh
 
     days_to_expiry = (cadre.end_date - date.today()).days if cadre.end_date else None
 
     return {
-        "avg_price_eur_mwh": round(avg_price * 1000, 2),  # EUR/kWh → EUR/MWh
+        "avg_price_eur_mwh": round(avg_price * 1000, 2),
         "total_volume_mwh": round(total_vol / 1000, 2) if total_vol else 0,
-        "budget_eur": round(avg_price * total_vol, 0) if avg_price and total_vol else 0,
+        "budget_eur": round(budget, 0),
         "days_to_expiry": days_to_expiry,
         "nb_annexes": len(annexes),
         "coherence_count": len(coherence_check(db, cadre.id)),
@@ -748,7 +881,7 @@ def compute_portfolio_kpis(db: Session, org_id: int) -> Dict[str, Any]:
 
 
 def compute_shadow_gap(db: Session, annexe_id: int) -> Dict[str, Any]:
-    """Ecart shadow billing pour une annexe."""
+    """Ecart shadow billing pour une annexe — decompose par composante facture."""
     from models.billing_models import EnergyInvoice, EnergyInvoiceLine
 
     annexe = (
@@ -767,45 +900,67 @@ def compute_shadow_gap(db: Session, annexe_id: int) -> Dict[str, Any]:
     if not pricing:
         return {"total_gap_eur": 0, "detail": [], "note": "Pas de pricing"}
 
-    # Get invoices for this site
     invoices = db.query(EnergyInvoice).filter(EnergyInvoice.site_id == annexe.site_id).all()
 
     total_gap = 0
+    total_supply_gap = 0
     details = []
+
     for inv in invoices:
-        lines = (
-            db.query(EnergyInvoiceLine)
-            .filter(
-                EnergyInvoiceLine.invoice_id == inv.id,
-                EnergyInvoiceLine.line_type == "SUPPLY",
-            )
-            .all()
-        )
+        lines = db.query(EnergyInvoiceLine).filter(EnergyInvoiceLine.invoice_id == inv.id).all()
 
-        shadow_total = 0
+        inv_supply = 0
+        inv_network = 0
+        inv_tax = 0
+        inv_other = 0
+        shadow_supply = 0
+
         for line in lines:
-            # Find matching price
-            for p in pricing:
-                if p.get("unit_price_eur_kwh") and line.quantity:
-                    shadow_total += line.quantity * p["unit_price_eur_kwh"]
-                    break
+            lt = (line.line_type or "").upper()
+            amount = line.amount_eur or 0
+            if lt in SUPPLY_TYPES:
+                inv_supply += amount
+                # Shadow : match par period_code
+                for p in pricing:
+                    pc = p.get("period_code", "")
+                    if line.qty and p.get("unit_price_eur_kwh"):
+                        if not pc or pc == (getattr(line, "period_code", None) or ""):
+                            shadow_supply += line.qty * p["unit_price_eur_kwh"]
+                            break
+            elif lt in NETWORK_TYPES:
+                inv_network += amount
+            elif lt in TAX_TYPES:
+                inv_tax += amount
+            else:
+                inv_other += amount
 
-        if inv.total_amount_eur and shadow_total:
-            gap = inv.total_amount_eur - shadow_total
-            total_gap += gap
+        supply_gap = inv_supply - shadow_supply if shadow_supply else 0
+        total_gap += supply_gap
+        total_supply_gap += supply_gap
+
+        if inv.total_eur:
             details.append(
                 {
                     "invoice_id": inv.id,
-                    "invoice_amount": inv.total_amount_eur,
-                    "shadow_amount": round(shadow_total, 2),
-                    "gap_eur": round(gap, 2),
+                    "invoice_ref": inv.invoice_number,
+                    "invoice_total_eur": round(inv.total_eur, 2),
+                    "decomposition": {
+                        "fourniture_facturee": round(inv_supply, 2),
+                        "fourniture_shadow": round(shadow_supply, 2),
+                        "ecart_fourniture": round(supply_gap, 2),
+                        "acheminement": round(inv_network, 2),
+                        "taxes_contributions": round(inv_tax, 2),
+                        "autres": round(inv_other, 2),
+                    },
                 }
             )
 
     return {
         "annexe_id": annexe_id,
         "total_gap_eur": round(total_gap, 2),
+        "supply_gap_eur": round(total_supply_gap, 2),
         "invoices_checked": len(invoices),
+        "note": "Ecart calcule sur la composante fourniture uniquement. Acheminement et taxes affiches a titre informatif.",
         "detail": details,
     }
 
@@ -897,8 +1052,21 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     """Serialize cadre + stats."""
     annexes = [a for a in c.annexes if a.deleted_at is None]
     total_vol = sum((a.volume_commitment.annual_kwh / 1000 if a.volume_commitment else 0) for a in annexes)
-    prices = [p.unit_price_eur_kwh for p in c.pricing_lines if p.unit_price_eur_kwh]
-    avg_price_mwh = round(sum(prices) / len(prices) * 1000, 2) if prices else 0
+
+    # Prix moyen pondere (meme formule que compute_cadre_kpis)
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for p in c.pricing_lines:
+        if p.unit_price_eur_kwh:
+            w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
+            weighted_sum += p.unit_price_eur_kwh * w
+            weight_total += w
+    avg_price = (weighted_sum / weight_total) if weight_total else 0
+    avg_price_mwh = round(avg_price * 1000, 2)
+
+    # Fallback volume
+    if not total_vol and c.annual_consumption_kwh:
+        total_vol = c.annual_consumption_kwh / 1000
 
     days_to_expiry = (c.end_date - date.today()).days if c.end_date else None
     status_val = c.contract_status.value if c.contract_status else compute_status(c).value
@@ -918,12 +1086,16 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
         "notice_period_months": c.notice_period_months,
         "is_green": c.is_green,
         "green_percentage": c.green_percentage,
+        "segment_enedis": c.segment_enedis,
+        "indexation_formula": c.indexation_formula,
+        "indexation_reference": c.indexation_reference,
+        "price_revision_clause": c.price_revision_clause,
         "notes": c.notes,
         "entite_juridique_id": c.entite_juridique_id,
         "nb_annexes": len(annexes),
         "total_volume_mwh": round(total_vol, 2),
         "avg_price_eur_mwh": avg_price_mwh,
-        "budget_eur": round(avg_price_mwh / 1000 * total_vol * 1000, 0) if avg_price_mwh and total_vol else 0,
+        "budget_eur": round(avg_price * total_vol * 1000, 0) if avg_price and total_vol else 0,
         "pricing": [
             {
                 "period_code": p.period_code,
@@ -958,8 +1130,6 @@ def _serialize_annexe_summary(a: ContractAnnexe) -> Dict[str, Any]:
 
 def _serialize_annexe(a: ContractAnnexe) -> Dict[str, Any]:
     """Serialize annexe with resolved pricing."""
-    from services.contract_v2_service import resolve_pricing as _rp
-
     summary = _serialize_annexe_summary(a)
     summary["cadre_id"] = a.contrat_cadre_id
     summary["cadre_ref"] = a.contrat_cadre.reference_fournisseur if a.contrat_cadre else None

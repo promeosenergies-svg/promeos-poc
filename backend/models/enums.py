@@ -806,13 +806,13 @@ class ReconciliationStatus(str, enum.Enum):
 class TariffOptionEnum(str, enum.Enum):
     """Option tarifaire d'un point de livraison / contrat."""
 
-    BASE = "base"  # C5 tarif de base (CU dérogatoire, sans différenciation)
-    HP_HC = "hp_hc"  # C5 Heures Pleines / Heures Creuses (MUDT dérogatoire)
-    CU4 = "cu4"  # C5 Courte Utilisation 4 plages (HPH/HCH/HPB/HCB)
-    MU4 = "mu4"  # C5 Moyenne Utilisation 4 plages (HPH/HCH/HPB/HCB)
-    CU = "cu"  # C4 Courte Utilisation
-    MU = "mu"  # C4 Moyenne Utilisation (legacy, pas dans TURPE 7 C4)
-    LU = "lu"  # C4/C5 Longue Utilisation
+    BASE = "base"  # C5 BT <=36 kVA — tarif unique (pas de differentiation horaire)
+    HP_HC = "hp_hc"  # C5 BT <=36 kVA — Heures Pleines / Heures Creuses
+    CU4 = "cu4"  # C4 BT >36 kVA — Courte Utilisation 4 postes (HPH/HCH/HPB/HCB)
+    MU4 = "mu4"  # C4 BT >36 kVA — Moyenne Utilisation 4 postes (HPH/HCH/HPB/HCB)
+    CU = "cu"  # C3 HTA — Courte Utilisation 5 postes (+POINTE)
+    MU = "mu"  # C4 legacy TURPE 6 (deprecated — utiliser MU4 pour TURPE 7)
+    LU = "lu"  # C3/C4 — Longue Utilisation 5 postes (+POINTE)
 
 
 class TariffSegmentEnum(str, enum.Enum):

@@ -426,6 +426,12 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
         entite_juridique_id=ej_id,
         notice_period_months=3,
         is_green=False,
+        segment_enedis="C4",
+        annual_consumption_kwh=2_100_000.0,
+        indexation_formula="TRVE-5%",
+        indexation_reference="TRVE",
+        indexation_spread_eur_mwh=-5.0,
+        price_revision_clause="ANNUAL_REVIEW",
         notes="Contrat cadre EDF 3 sites — demo HELIOS",
     )
     db.add(cadre1)
@@ -463,7 +469,7 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
         annexe_ref="ANX-Paris-001",
         tariff_option=TariffOptionEnum.LU,
         subscribed_power_kva=108,
-        segment_enedis="C5",
+        segment_enedis="C4",
         has_price_override=False,
         status=ContractStatus.ACTIVE,
     )
@@ -486,9 +492,9 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
         contrat_cadre_id=cadre1.id,
         site_id=sites[1].id,
         annexe_ref="ANX-Lyon-002",
-        tariff_option=TariffOptionEnum.HP_HC,
+        tariff_option=TariffOptionEnum.MU4,
         subscribed_power_kva=60,
-        segment_enedis="C5",
+        segment_enedis="C4",
         has_price_override=True,
         override_pricing_model="FIXE",
         end_date_override=date(2026, 6, 28),
@@ -519,9 +525,9 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
         contrat_cadre_id=cadre1.id,
         site_id=sites[2].id if len(sites) > 2 else sites[0].id,
         annexe_ref="ANX-Toulouse-003",
-        tariff_option=TariffOptionEnum.BASE,
+        tariff_option=TariffOptionEnum.CU4,
         subscribed_power_kva=72,
-        segment_enedis="C5",
+        segment_enedis="C4",
         has_price_override=False,
         status=ContractStatus.ACTIVE,
     )
@@ -572,6 +578,11 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
             contract_type="UNIQUE",
             entite_juridique_id=ej_id,
             notice_period_months=3,
+            annual_consumption_kwh=320_000.0,
+            indexation_formula="PEG_DA+3",
+            indexation_reference="PEG_DA",
+            indexation_spread_eur_mwh=3.0,
+            price_revision_clause="ANNUAL_REVIEW",
         )
         db.add(cadre2)
         db.flush()
@@ -590,7 +601,7 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
             site_id=sites[3].id,
             annexe_ref="ANX-Marseille-001",
             subscribed_power_kva=45,
-            segment_enedis="C5",
+            segment_enedis=None,
             has_price_override=False,
             status=ContractStatus.ACTIVE,
         )
@@ -630,6 +641,10 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
             contract_type="UNIQUE",
             entite_juridique_id=ej_id,
             notice_period_months=3,
+            segment_enedis="C4",
+            annual_consumption_kwh=720_000.0,
+            price_revision_clause="CAP",
+            price_cap_eur_mwh=180.0,
         )
         db.add(cadre3)
         db.flush()
@@ -694,6 +709,9 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
         contract_type="UNIQUE",
         entite_juridique_id=ej_id,
         notice_period_months=3,
+        annual_consumption_kwh=150_000.0,
+        indexation_formula="FIXE",
+        price_revision_clause="NONE",
     )
     db.add(cadre4)
     db.flush()

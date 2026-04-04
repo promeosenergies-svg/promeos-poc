@@ -19,7 +19,13 @@ from schemas.contract_v2_schemas import (
     CadreUpdateSchema,
     EventSchema,
     SUPPLIERS_CRE,
+    SUPPLIERS_BY_CATEGORY,
     PRICING_MODELS,
+    PRICING_MODELS_ELEC,
+    PRICING_MODELS_GAZ,
+    TARIFF_OPTIONS_BY_SEGMENT,
+    PRICING_GRID_BY_TARIFF,
+    CONTRACT_DURATIONS,
 )
 from services import contract_v2_service as svc
 
@@ -59,8 +65,17 @@ def portfolio_kpis(
 
 @router.get("/cadres/suppliers")
 def suppliers_list():
-    """Liste fournisseurs CRE T4 2025."""
-    return {"suppliers": SUPPLIERS_CRE, "pricing_models": PRICING_MODELS}
+    """Referentiels fournisseurs, modeles de prix, options tarifaires."""
+    return {
+        "suppliers": SUPPLIERS_CRE,
+        "suppliers_by_category": SUPPLIERS_BY_CATEGORY,
+        "pricing_models": PRICING_MODELS,
+        "pricing_models_elec": PRICING_MODELS_ELEC,
+        "pricing_models_gaz": PRICING_MODELS_GAZ,
+        "tariff_options_by_segment": TARIFF_OPTIONS_BY_SEGMENT,
+        "pricing_grid_by_tariff": PRICING_GRID_BY_TARIFF,
+        "contract_durations": CONTRACT_DURATIONS,
+    }
 
 
 @router.get("/cadres/{cadre_id}")

@@ -136,12 +136,28 @@ accise_gaz_2024:
   valid_from: "2024-01-01"
   valid_to: "2024-12-31"
 
-# 2025
-accise_gaz:
-  label: "Accise sur le gaz naturel (ex-TICGN)"
+# 2025 jan-jul (taux 2024 reconduit)
+accise_gaz_2025_jan:
+  label: "Accise gaz naturel jan-jul 2025 (ex-TICGN)"
   rate_eur_kwh: 0.01637
-  source: "Loi de finances 2025 (TICGN)"
+  source: "LFI 2025 — 16.37 EUR/MWh"
   valid_from: "2025-01-01"
+  valid_to: "2025-07-31"
+
+# 2025 aout+ (baisse post-bouclier)
+accise_gaz_2025_aout:
+  label: "Accise gaz naturel aout 2025 — jan 2026"
+  rate_eur_kwh: 0.01054
+  source: "Arrete 24/07/2025 (Legifrance JORFTEXT000052009319) — 10.54 EUR/MWh"
+  valid_from: "2025-08-01"
+  valid_to: "2026-01-31"
+
+# 2026 fev+ (indexe inflation)
+accise_gaz:
+  label: "Accise gaz naturel fev 2026+ (ex-TICGN)"
+  rate_eur_kwh: 0.01073
+  source: "Arrete 27/01/2026 (Legifrance JORFTEXT000053407616) — 10.73 EUR/MWh"
+  valid_from: "2026-02-01"
   valid_to: null
 
 # ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
@@ -159,12 +175,12 @@ cta:
     valid_from: "2025-01-01"
     valid_to: null
 
-# ── TICGN (historique, absorbé dans accise_gaz depuis 2025) ─────────────────
+# ── TICGN (historique, remplace par accise_gaz_* temporalisees ci-dessus) ────
 ticgn:
   rate_eur_kwh: 0.01637
-  source: "Loi de finances 2025"
+  source: "Loi de finances 2025 — DEPRECATED, utiliser accise_gaz_*"
   valid_from: "2025-01-01"
-  valid_to: null
+  valid_to: "2025-07-31"
 
 # ── ATRD / ATRT gaz ─────────────────────────────────────────────────────────
 # ATRD6 — grille au 01/07/2023 (CRE délibération n°2023-123 du 10 mai 2023)

@@ -212,6 +212,48 @@ class EnergyContract(Base, TimestampMixin):
         comment="Notes libres sur le contrat",
     )
 
+    # V2.1 — champs metier manquants (audit avril 2026)
+    segment_enedis = Column(
+        String(10),
+        nullable=True,
+        comment="Segment TURPE cadre (C5/C4/C3/C2/C1) — repris si mono-site",
+    )
+    annual_consumption_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Consommation annuelle previsionnelle kWh (hors engagement volume)",
+    )
+    indexation_formula = Column(
+        String(200),
+        nullable=True,
+        comment="Formule indexation (ex: 'TRVE-5%', 'SPOT+3', 'PEG_M+1+spread')",
+    )
+    indexation_reference = Column(
+        String(100),
+        nullable=True,
+        comment="Index de reference (TRVE, EPEX_SPOT_FR, PEG_DA, PEG_M+1)",
+    )
+    indexation_spread_eur_mwh = Column(
+        Float,
+        nullable=True,
+        comment="Spread en EUR/MWh par rapport a l'index de reference",
+    )
+    price_revision_clause = Column(
+        String(50),
+        nullable=True,
+        comment="Clause revision prix: NONE/CAP/FLOOR/TUNNEL/ANNUAL_REVIEW",
+    )
+    price_cap_eur_mwh = Column(
+        Float,
+        nullable=True,
+        comment="Plafond prix EUR/MWh (clause cap/tunnel)",
+    )
+    price_floor_eur_mwh = Column(
+        Float,
+        nullable=True,
+        comment="Plancher prix EUR/MWh (clause floor/tunnel)",
+    )
+
     # Relations
     site = relationship("Site", backref="energy_contracts")
     invoices = relationship(

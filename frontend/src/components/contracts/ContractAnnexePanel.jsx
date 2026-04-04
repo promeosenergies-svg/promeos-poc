@@ -67,7 +67,9 @@ export default function ContractAnnexePanel({ cadreId, annexeId, onClose, onOpen
                 <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                 {st.label}
               </span>
-              <span className="text-xs font-semibold">⚡ Electricite</span>
+              <span className="text-xs font-semibold">
+                {annexe?.energy_type === 'gaz' ? '🔥 Gaz' : '⚡ Electricite'}
+              </span>
             </div>
           </div>
           <button

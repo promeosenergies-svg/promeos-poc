@@ -736,7 +736,15 @@ class SeedOrchestrator:
             TertiaireEfaBuilding,
             TertiaireEfaLink,
             TertiaireEfa,
+            CsrdAssujettissementSite,
         )
+        from models.audit_sme import AuditEnergetique
+        from models.copilot_models import CopilotAction
+        from models.intake import IntakeSession
+        from models.onboarding_progress import OnboardingProgress
+        from models.patrimoine import OrgEntiteLink, StagingBatch
+        from models.market_models import PriceDecomposition, PriceSignal
+        from models.notification import DigestPreference, WebhookSubscription
 
         deleted = {}
 
@@ -808,23 +816,41 @@ class SeedOrchestrator:
             ("batiments", Batiment),
             ("sites", Site),
             ("portefeuilles", Portefeuille),
+            # Tables avec FK org_id manquantes — doivent précéder organisations
+            ("audit_energetique", AuditEnergetique),
+            ("copilot_actions", CopilotAction),
+            ("csrd_site_reporting", CsrdAssujettissementSite),
+            ("digest_preferences", DigestPreference),
+            ("intake_sessions", IntakeSession),
+            ("onboarding_progress", OnboardingProgress),
+            ("org_entite_links", OrgEntiteLink),
+            ("price_decompositions", PriceDecomposition),
+            ("price_signals", PriceSignal),
+            ("staging_batches", StagingBatch),
+            ("webhook_subscriptions", WebhookSubscription),
             ("entites_juridiques", EntiteJuridique),
             ("organisations", Organisation),
         ]
 
         if mode == "hard":
-            # Hard: purge ALL rows
-            for label, model in delete_order:
-                try:
-                    count = self.db.query(model).delete(synchronize_session=False)
-                    deleted[label] = count
-                except Exception as exc:
-                    # Log the error instead of silently swallowing it
-                    import logging
+            # Hard: purge ALL tables via metadata (FK-safe reverse order)
+            # Chaque table dans sa propre transaction pour éviter qu'un rollback
+            # annule les suppressions précédentes (ex: tables enedis absentes).
+            from sqlalchemy import text
+            from models.base import Base as _Base
 
-                    logging.getLogger("demo_seed").warning("reset hard: failed to delete %s: %s", label, exc)
+            self.db.execute(text("PRAGMA foreign_keys = OFF"))
+            self.db.commit()
+            for table in reversed(_Base.metadata.sorted_tables):
+                try:
+                    count = self.db.execute(table.delete()).rowcount
+                    self.db.commit()
+                    if count:
+                        deleted[table.name] = count
+                except Exception:
                     self.db.rollback()
-                    deleted[label] = f"error: {exc}"
+            self.db.execute(text("PRAGMA foreign_keys = ON"))
+            self.db.commit()
         else:
             # Soft: only delete data linked to is_demo=True orgs/sites
             demo_org_ids = [r[0] for r in self.db.query(Organisation.id).filter_by(is_demo=True).all()]
