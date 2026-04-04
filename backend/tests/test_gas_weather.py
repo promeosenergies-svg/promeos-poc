@@ -7,6 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -18,7 +19,17 @@ from models.enums import TypeSite
 from models.energy_models import EnergyVector
 from database import get_db
 from main import app
-from services.gas_weather_service import _mock_dju, _linear_regression, compute_weather_normalized
+from services.gas_weather_service import _dju_seasonal_fallback, _linear_regression, compute_weather_normalized
+
+
+@pytest.fixture(autouse=True)
+def _patch_openmeteo():
+    """Empêche les appels réseau Open-Meteo dans les tests — utilise le fallback saisonnier."""
+    with patch(
+        "services.gas_weather_service._fetch_dju_openmeteo",
+        side_effect=lambda lat, lon, date_str: _dju_seasonal_fallback(date_str),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -52,8 +63,7 @@ def seeded_gas_db(db):
     now = datetime.now(timezone.utc)
     for day_offset in range(90):
         dt_base = now - timedelta(days=90 - day_offset)
-        doy = dt_base.timetuple().tm_yday
-        dju = _mock_dju(doy)
+        dju = _dju_seasonal_fallback(dt_base.strftime("%Y-%m-%d"))
         # Simulate: base 20 kWh/day + 5 * DJU kWh/day, split into 24 hourly readings
         daily_kwh = 20 + 5 * dju
         hourly_kwh = daily_kwh / 24
@@ -85,19 +95,19 @@ def client(seeded_gas_db):
 
 
 class TestDJUModel:
-    def test_mock_dju_winter(self):
+    def test_dju_fallback_winter(self):
         """Winter days should have high DJU."""
-        dju = _mock_dju(15)  # January
+        dju = _dju_seasonal_fallback("2025-01-15")
         assert dju > 0
 
-    def test_mock_dju_summer(self):
+    def test_dju_fallback_summer(self):
         """Summer days should have low or zero DJU."""
-        dju = _mock_dju(200)  # mid-July
-        assert dju >= 0  # can be 0
+        dju = _dju_seasonal_fallback("2025-07-19")
+        assert dju >= 0
 
-    def test_mock_dju_deterministic(self):
-        """Same doy should give same DJU."""
-        assert _mock_dju(100) == _mock_dju(100)
+    def test_dju_fallback_deterministic(self):
+        """Same date should give same DJU."""
+        assert _dju_seasonal_fallback("2025-04-10") == _dju_seasonal_fallback("2025-04-10")
 
     def test_linear_regression_basic(self):
         """Simple linear regression."""

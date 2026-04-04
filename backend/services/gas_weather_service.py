@@ -1,31 +1,75 @@
 """
 PROMEOS — Gas Weather Service (DJU model + alerts)
 Weather-normalized gas consumption analysis.
-Uses mock DJU (deterministic seasonal formula) for POC scope.
+DJU via Open-Meteo Historical API (fallback saisonnier si réseau indispo).
 """
 
 import math
-import random
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
+from functools import lru_cache
+
+import httpx
 from sqlalchemy.orm import Session
 
 from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
 from services.ems.timeseries_service import resolve_best_freq, get_site_meter_ids
 
+_logger = logging.getLogger("promeos.gas_weather")
 
-def _mock_dju(doy: int) -> float:
-    """Generate mock DJU (Degree-Day Unit) from day of year.
-    T_avg = 12 + 10*sin(2*pi*(doy-80)/365) + noise
-    DJU = max(0, 18 - T_avg)
+
+@lru_cache(maxsize=512)
+def _fetch_dju_openmeteo(lat: float, lon: float, date_str: str) -> float:
     """
-    t_avg = 12 + 10 * math.sin(2 * math.pi * (doy - 80) / 365)
-    # Deterministic noise based on doy (reproducible)
-    noise = math.sin(doy * 17.3) * 2
+    Récupère le DJU réel depuis Open-Meteo Historical API.
+    DJU = max(0, 18 - T_mean_journalière).
+    Cache LRU par (lat, lon, date) — 512 entrées max.
+    """
+    url = "https://archive-api.open-meteo.com/v1/archive"
+    params = {
+        "latitude": round(lat, 4),
+        "longitude": round(lon, 4),
+        "start_date": date_str,
+        "end_date": date_str,
+        "daily": "temperature_2m_mean",
+        "timezone": "Europe/Paris",
+    }
+    try:
+        r = httpx.get(url, params=params, timeout=5.0)
+        r.raise_for_status()
+        t_mean = r.json()["daily"]["temperature_2m_mean"][0]
+        if t_mean is None:
+            _logger.warning("Open-Meteo: T_mean null pour %s (%s, %s) — fallback saisonnier", date_str, lat, lon)
+            return _dju_seasonal_fallback(date_str)
+        dju = round(max(0.0, 18.0 - float(t_mean)), 2)
+        return dju
+    except Exception as exc:
+        _logger.warning(
+            "Open-Meteo DJU indisponible pour %s (%s,%s): %s — fallback saisonnier",
+            date_str,
+            lat,
+            lon,
+            exc,
+        )
+        return _dju_seasonal_fallback(date_str)
+
+
+def _dju_seasonal_fallback(date_str: str) -> float:
+    """
+    Fallback saisonnier (formule sinusoïdale) si Open-Meteo indisponible.
+    UNIQUEMENT appelé en cas d'erreur réseau/API. Jamais en nominal.
+    """
+    try:
+        doy = datetime.strptime(date_str, "%Y-%m-%d").timetuple().tm_yday
+    except Exception:
+        doy = 180  # été par défaut si date invalide
+    t_avg = 12.0 + 10.0 * math.sin(2 * math.pi * (doy - 80) / 365)
+    noise = math.sin(doy * 17.3) * 2.0
     t_avg += noise
-    return round(max(0, 18 - t_avg), 2)
+    return round(max(0.0, 18.0 - t_avg), 2)
 
 
 def _linear_regression(x_vals, y_vals):
@@ -80,6 +124,11 @@ def compute_weather_normalized(
         end_date = datetime.now(timezone.utc).replace(tzinfo=None)
         start_date = end_date - timedelta(days=days)
 
+    # Récupérer coordonnées GPS du site (fallback Paris si absent)
+    site = db.query(Site).filter_by(id=site_id).first()
+    site_lat = float(getattr(site, "latitude", None) or 48.8566)
+    site_lon = float(getattr(site, "longitude", None) or 2.3522)
+
     meter_ids = get_site_meter_ids(db, site_id, EnergyVector.GAS)
 
     if not meter_ids:
@@ -117,9 +166,7 @@ def compute_weather_normalized(
     y_vals = []
 
     for date_str, kwh in sorted(daily.items()):
-        dt = datetime.strptime(date_str, "%Y-%m-%d")
-        doy = dt.timetuple().tm_yday
-        dju = _mock_dju(doy)
+        dju = _fetch_dju_openmeteo(site_lat, site_lon, date_str)
         dju_data.append({"date": date_str, "dju": dju, "kwh": round(kwh, 1)})
         x_vals.append(dju)
         y_vals.append(kwh)
@@ -205,6 +252,7 @@ def compute_weather_normalized(
         },
         "alerts": alerts,
         "confidence": confidence,
+        "is_dju_real": True,
     }
 
 
