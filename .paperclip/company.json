@@ -3,7 +3,7 @@
     "name": "PROMEOS Dev Team",
     "mission": "Developper PROMEOS, le cockpit energetique B2B leader France post-ARENH. Zero bug, zero calcul frontend, zero regression.",
     "goals": [
-      "Maintenir 0 regression sur 3783+ tests frontend et 843+ tests backend",
+      "Maintenir 0 regression sur 3793+ tests frontend et 843+ tests backend",
       "Respecter l'architecture backend-only pour tous les calculs metier",
       "Livrer des sprints atomiques avec commits normalises",
       "Couvrir les reglementations FR : DT, BACS, APER, Audit SME"
@@ -17,7 +17,14 @@
       "paperclip_id": "f8c4a6d0-2984-44fd-a962-afb8815cebee",
       "reports_to": null,
       "delegates_to": ["cto", "pm"],
-      "capabilities": "Strategie produit, priorisation roadmap, coordination cross-team, decisions tradeoffs metier/technique"
+      "skills": ["energy-france-veille", "energy-contracts-b2b"],
+      "routines": [
+        {
+          "name": "Veille concurrentielle",
+          "schedule": "weekly",
+          "task": "Surveiller Deepki, Trinergy, Spacewell, Energisme. Rapporter toute nouvelle feature concurrente."
+        }
+      ]
     },
     {
       "id": "cto",
@@ -25,8 +32,8 @@
       "role": "cto",
       "paperclip_id": "d36cc695-e20f-4144-9fd7-041cc730d3e2",
       "reports_to": "ceo",
-      "delegates_to": ["lead-engineer", "devops"],
-      "capabilities": "Architecture backend-only, decisions SoT uniques, coordination engineering, revue technique sprints"
+      "delegates_to": ["lead-engineer", "devops", "data-infra", "energy-analytics"],
+      "skills": ["promeos-architecture"]
     },
     {
       "id": "lead-engineer",
@@ -34,7 +41,7 @@
       "role": "engineer",
       "paperclip_id": "ec4cb5c9-6d36-40bb-8b42-fada784648aa",
       "reports_to": "cto",
-      "capabilities": "FastAPI, React 18, scoring conformite, shadow billing, seed demo, audit read-only, zero calcul frontend"
+      "skills": ["promeos-architecture", "writing-plans", "brainstorming"]
     },
     {
       "id": "qa-agent",
@@ -42,7 +49,14 @@
       "role": "qa",
       "paperclip_id": "55018bc0-f19a-4aad-ae4a-df446726470e",
       "reports_to": "cto",
-      "capabilities": "Validation livrables, zero regression tests (FE>=3783, BE>=843), valeurs canoniques, Playwright audit screenshots"
+      "skills": ["promeos-architecture", "webapp-testing", "security-scan"],
+      "routines": [
+        {
+          "name": "Regression quotidienne",
+          "schedule": "daily",
+          "task": "Lancer pytest backend/ + vitest frontend. Verifier source guards. Reporter tout test failed dans un ticket Paperclip."
+        }
+      ]
     },
     {
       "id": "devops",
@@ -50,7 +64,14 @@
       "role": "devops",
       "paperclip_id": "8f2bfaf1-2ebc-4549-a678-76e57f5c93e5",
       "reports_to": "cto",
-      "capabilities": "Docker-compose, GitHub Actions CI, monitoring, loadtest k6, Playwright E2E, scripts demo-up/reset/seed/test"
+      "skills": ["deploy-checklist", "supabase-postgres-best-practices"],
+      "routines": [
+        {
+          "name": "Healthcheck endpoints",
+          "schedule": "hourly",
+          "task": "Verifier /api/health + /api/ready. Alerter si downtime > 5 min."
+        }
+      ]
     },
     {
       "id": "pm",
@@ -59,7 +80,7 @@
       "paperclip_id": "5acf5b94-4273-4758-a95e-7ea7edb7be41",
       "reports_to": "ceo",
       "delegates_to": ["ux-designer", "regulatory-analyst"],
-      "capabilities": "Priorisation roadmap, specs fonctionnelles, pitch data, competitive intelligence, business cases flexibilite"
+      "skills": ["promeos-billing", "energy-contracts-b2b", "brainstorming"]
     },
     {
       "id": "ux-designer",
@@ -67,7 +88,7 @@
       "role": "designer",
       "paperclip_id": "078479f2",
       "reports_to": "pm",
-      "capabilities": "Maquettes cockpit, rapprochement maquettes/implementation, audit UX, design system Tailwind v4, accessibilite RGAA"
+      "skills": ["frontend-design", "ui-ux-pro-max"]
     },
     {
       "id": "regulatory-analyst",
@@ -75,7 +96,37 @@
       "role": "researcher",
       "paperclip_id": "863ac918-b030-4348-9ea2-6cb161b03a06",
       "reports_to": "pm",
-      "capabilities": "Veille reglementaire 17 mecanismes, TURPE 7, VNU post-ARENH, accises, CEE P6, tarifs_reglementaires.yaml"
+      "skills": ["promeos-regulatory", "energy-flexibility-dr", "energy-autoconsommation", "energy-france-veille", "promeos-billing"],
+      "routines": [
+        {
+          "name": "Veille CRE/Legifrance",
+          "schedule": "weekly",
+          "task": "Lire les flux CRE, Legifrance, RTE. Creer un ticket si nouvelle deliberation impacte : TURPE, accise elec, DT jalons, BACS seuils, VNU."
+        }
+      ]
+    },
+    {
+      "id": "data-infra",
+      "name": "Data Infra Agent",
+      "role": "engineer",
+      "paperclip_id": "06067b5c-baee-46ee-b02f-0e6a8749efc5",
+      "reports_to": "cto",
+      "skills": ["promeos-enedis", "promeos-seed", "promeos-architecture"],
+      "routines": [
+        {
+          "name": "Renouvellement consentements Enedis",
+          "schedule": "monthly",
+          "task": "Verifier et renouveler les consentements DataConnect OAuth2 arrivant a expiration dans les 30 jours."
+        }
+      ]
+    },
+    {
+      "id": "energy-analytics",
+      "name": "Energy Analytics Agent",
+      "role": "researcher",
+      "paperclip_id": "4ab7954d-fae0-4f33-85a1-9e6565cc92e5",
+      "reports_to": "cto",
+      "skills": ["promeos-energy-fundamentals", "promeos-energy-market", "energy-flexibility-dr", "promeos-architecture", "systematic-debugging", "test-driven-development"]
     }
   ],
   "org_chart": {
@@ -83,7 +134,9 @@
       "CTO": {
         "Lead Engineer": null,
         "QA Release Manager": null,
-        "DevOps Engineer": null
+        "DevOps Engineer": null,
+        "Data Infra Agent": null,
+        "Energy Analytics Agent": null
       },
       "Product Manager": {
         "UX Designer": null,
