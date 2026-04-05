@@ -29,6 +29,9 @@ data/*.db
 data/*.sqlite
 data/*.sqlite3
 data/raw/
+*.db-wal
+*.db-shm
+*.db-journal
 *.csv
 
 # IDE
