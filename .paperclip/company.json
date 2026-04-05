@@ -11,24 +11,86 @@
   },
   "agents": [
     {
+      "id": "ceo",
+      "name": "CEO",
+      "role": "ceo",
+      "paperclip_id": "f8c4a6d0-2984-44fd-a962-afb8815cebee",
+      "reports_to": null,
+      "delegates_to": ["cto", "pm"],
+      "capabilities": "Strategie produit, priorisation roadmap, coordination cross-team, decisions tradeoffs metier/technique"
+    },
+    {
+      "id": "cto",
+      "name": "CTO",
+      "role": "cto",
+      "paperclip_id": "d36cc695-e20f-4144-9fd7-041cc730d3e2",
+      "reports_to": "ceo",
+      "delegates_to": ["lead-engineer", "devops"],
+      "capabilities": "Architecture backend-only, decisions SoT uniques, coordination engineering, revue technique sprints"
+    },
+    {
       "id": "lead-engineer",
-      "name": "Lead Engineer PROMEOS",
-      "role": "Staff Engineer Full-Stack",
-      "system_prompt": "Tu es Staff Engineer sur PROMEOS. Tu appliques systematiquement le SKILL.md PROMEOS. Regle absolue : zero calcul metier en frontend. Chaque phase commence par un audit read-only. Zero regression toleree.",
-      "skills": ["./SKILL.md"],
-      "tools": ["claude-code"],
-      "budget_tokens": 200000
+      "name": "Lead Engineer",
+      "role": "engineer",
+      "paperclip_id": "ec4cb5c9-6d36-40bb-8b42-fada784648aa",
+      "reports_to": "cto",
+      "capabilities": "FastAPI, React 18, scoring conformite, shadow billing, seed demo, audit read-only, zero calcul frontend"
     },
     {
       "id": "qa-agent",
       "name": "QA Release Manager",
-      "role": "QA & Release",
-      "system_prompt": "Tu valides les livrables PROMEOS. Tu verifies : zero regression tests, valeurs canoniques respectees, zero calcul metier frontend, etats UI complets (loading/empty/error), unites coherentes.",
-      "skills": ["./SKILL.md"],
-      "tools": ["claude-code"],
-      "budget_tokens": 50000
+      "role": "qa",
+      "paperclip_id": "55018bc0-f19a-4aad-ae4a-df446726470e",
+      "reports_to": "cto",
+      "capabilities": "Validation livrables, zero regression tests (FE>=3783, BE>=843), valeurs canoniques, Playwright audit screenshots"
+    },
+    {
+      "id": "devops",
+      "name": "DevOps Engineer",
+      "role": "devops",
+      "paperclip_id": "8f2bfaf1-2ebc-4549-a678-76e57f5c93e5",
+      "reports_to": "cto",
+      "capabilities": "Docker-compose, GitHub Actions CI, monitoring, loadtest k6, Playwright E2E, scripts demo-up/reset/seed/test"
+    },
+    {
+      "id": "pm",
+      "name": "Product Manager",
+      "role": "pm",
+      "paperclip_id": "5acf5b94-4273-4758-a95e-7ea7edb7be41",
+      "reports_to": "ceo",
+      "delegates_to": ["ux-designer", "regulatory-analyst"],
+      "capabilities": "Priorisation roadmap, specs fonctionnelles, pitch data, competitive intelligence, business cases flexibilite"
+    },
+    {
+      "id": "ux-designer",
+      "name": "UX Designer",
+      "role": "designer",
+      "paperclip_id": "078479f2",
+      "reports_to": "pm",
+      "capabilities": "Maquettes cockpit, rapprochement maquettes/implementation, audit UX, design system Tailwind v4, accessibilite RGAA"
+    },
+    {
+      "id": "regulatory-analyst",
+      "name": "Regulatory Analyst",
+      "role": "researcher",
+      "paperclip_id": "863ac918-b030-4348-9ea2-6cb161b03a06",
+      "reports_to": "pm",
+      "capabilities": "Veille reglementaire 17 mecanismes, TURPE 7, VNU post-ARENH, accises, CEE P6, tarifs_reglementaires.yaml"
     }
   ],
+  "org_chart": {
+    "CEO": {
+      "CTO": {
+        "Lead Engineer": null,
+        "QA Release Manager": null,
+        "DevOps Engineer": null
+      },
+      "Product Manager": {
+        "UX Designer": null,
+        "Regulatory Analyst": null
+      }
+    }
+  },
   "projects": [
     {
       "id": "promeos-poc",

@@ -16,6 +16,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import time
 from sqlalchemy import inspect as sa_inspect, text as sa_text
 
 from database import engine
@@ -24,14 +25,22 @@ from models.base import Base
 
 @pytest.fixture(scope="module", autouse=True)
 def _ensure_v49_schema():
-    """Crée les tables et ajoute closure_justification si manquante (une seule fois par module)."""
-    Base.metadata.create_all(bind=engine)
-    insp = sa_inspect(engine)
-    if insp.has_table("action_items"):
-        existing = {c["name"] for c in insp.get_columns("action_items")}
-        if "closure_justification" not in existing:
-            with engine.begin() as conn:
-                conn.execute(sa_text('ALTER TABLE "action_items" ADD COLUMN "closure_justification" TEXT'))
+    """Crée les tables et ajoute closure_justification si manquante (retry si DB locked)."""
+    for attempt in range(5):
+        try:
+            Base.metadata.create_all(bind=engine)
+            insp = sa_inspect(engine)
+            if insp.has_table("action_items"):
+                existing = {c["name"] for c in insp.get_columns("action_items")}
+                if "closure_justification" not in existing:
+                    with engine.begin() as conn:
+                        conn.execute(sa_text('ALTER TABLE "action_items" ADD COLUMN "closure_justification" TEXT'))
+            return
+        except Exception:
+            if attempt < 4:
+                time.sleep(1)
+            else:
+                raise
 
 
 # ── Service unit tests ───────────────────────────────────────────────────────
