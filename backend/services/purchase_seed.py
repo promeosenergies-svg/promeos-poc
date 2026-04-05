@@ -43,26 +43,34 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
         db.flush()
 
     # ── Assumptions site A (elec, 600k kWh/an) ──
-    assumptions_a = PurchaseAssumptionSet(
-        site_id=site_a.id,
-        energy_type=BillingEnergyType.ELEC,
-        volume_kwh_an=600_000,
-        profile_factor=1.25,
-        horizon_months=24,
+    assumptions_a = (
+        db.query(PurchaseAssumptionSet).filter_by(site_id=site_a.id, energy_type=BillingEnergyType.ELEC).first()
     )
-    db.add(assumptions_a)
-    db.flush()
+    if not assumptions_a:
+        assumptions_a = PurchaseAssumptionSet(
+            site_id=site_a.id,
+            energy_type=BillingEnergyType.ELEC,
+            volume_kwh_an=600_000,
+            profile_factor=1.25,
+            horizon_months=24,
+        )
+        db.add(assumptions_a)
+        db.flush()
 
     # ── Assumptions site B (elec, 300k kWh/an — Energy Gate: ELEC-only) ──
-    assumptions_b = PurchaseAssumptionSet(
-        site_id=site_b.id,
-        energy_type=BillingEnergyType.ELEC,
-        volume_kwh_an=300_000,
-        profile_factor=0.85,
-        horizon_months=24,
+    assumptions_b = (
+        db.query(PurchaseAssumptionSet).filter_by(site_id=site_b.id, energy_type=BillingEnergyType.ELEC).first()
     )
-    db.add(assumptions_b)
-    db.flush()
+    if not assumptions_b:
+        assumptions_b = PurchaseAssumptionSet(
+            site_id=site_b.id,
+            energy_type=BillingEnergyType.ELEC,
+            volume_kwh_an=300_000,
+            profile_factor=0.85,
+            horizon_months=24,
+        )
+        db.add(assumptions_b)
+        db.flush()
 
     scenarios_created = 0
 
@@ -74,6 +82,11 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
         (PurchaseStrategy.SPOT, 0.88, 75, 0.70, 1.45, False),
         (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
+        existing = (
+            db.query(PurchaseScenarioResult).filter_by(assumption_set_id=assumptions_a.id, strategy=strategy).first()
+        )
+        if existing:
+            continue
         price = round(ref_a * price_mult, 4)
         total = round(price * 600_000, 2)
         current_total = round(ref_a * 600_000, 2)
@@ -103,6 +116,11 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
         (PurchaseStrategy.SPOT, 0.88, 75, 0.70, 1.45, False),
         (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
+        existing = (
+            db.query(PurchaseScenarioResult).filter_by(assumption_set_id=assumptions_b.id, strategy=strategy).first()
+        )
+        if existing:
+            continue
         price = round(ref_b * price_mult, 4)
         total = round(price * 300_000, 2)
         current_total = round(ref_b * 300_000, 2)
@@ -131,34 +149,38 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
     contracts_created = 0
 
     # Contract 1: near expiry (~45 days), auto_renew=False
-    contract_near = EnergyContract(
-        site_id=site_a.id,
-        energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF Entreprises",
-        start_date=today - timedelta(days=335),
-        end_date=today + timedelta(days=45),
-        price_ref_eur_per_kwh=0.18,
-        fixed_fee_eur_per_month=45.0,
-        notice_period_days=60,
-        auto_renew=False,
-    )
-    db.add(contract_near)
-    contracts_created += 1
+    existing_c1 = db.query(EnergyContract).filter_by(site_id=site_a.id, supplier_name="EDF Entreprises").first()
+    if not existing_c1:
+        contract_near = EnergyContract(
+            site_id=site_a.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF Entreprises",
+            start_date=today - timedelta(days=335),
+            end_date=today + timedelta(days=45),
+            price_ref_eur_per_kwh=0.18,
+            fixed_fee_eur_per_month=45.0,
+            notice_period_days=60,
+            auto_renew=False,
+        )
+        db.add(contract_near)
+        contracts_created += 1
 
     # Contract 2: far expiry (~180 days), auto_renew=True
-    contract_far = EnergyContract(
-        site_id=site_b.id,
-        energy_type=BillingEnergyType.ELEC,
-        supplier_name="Engie Elec Pro",
-        start_date=today - timedelta(days=185),
-        end_date=today + timedelta(days=180),
-        price_ref_eur_per_kwh=0.09,
-        fixed_fee_eur_per_month=30.0,
-        notice_period_days=90,
-        auto_renew=True,
-    )
-    db.add(contract_far)
-    contracts_created += 1
+    existing_c2 = db.query(EnergyContract).filter_by(site_id=site_b.id, supplier_name="Engie Elec Pro").first()
+    if not existing_c2:
+        contract_far = EnergyContract(
+            site_id=site_b.id,
+            energy_type=BillingEnergyType.ELEC,
+            supplier_name="Engie Elec Pro",
+            start_date=today - timedelta(days=185),
+            end_date=today + timedelta(days=180),
+            price_ref_eur_per_kwh=0.09,
+            fixed_fee_eur_per_month=30.0,
+            notice_period_days=90,
+            auto_renew=True,
+        )
+        db.add(contract_far)
+        contracts_created += 1
 
     db.commit()
 
