@@ -52,36 +52,40 @@ def db_session():
 
 def test_ai_client_stub_mode():
     """Test AI client defaults to stub mode without API key"""
-    # Clear environment variable if it exists
-    old_key = os.environ.get("AI_API_KEY")
-    if "AI_API_KEY" in os.environ:
-        del os.environ["AI_API_KEY"]
+    import ai_layer.client as _mod
 
-    client = AIClient()
+    # Clear both env var and module-level cached value
+    old_key = os.environ.pop("AI_API_KEY", None)
+    old_mod = _mod.AI_API_KEY
+    _mod.AI_API_KEY = None
 
-    assert client.stub_mode is True
-
-    # Restore old key if it existed
-    if old_key:
-        os.environ["AI_API_KEY"] = old_key
+    try:
+        client = AIClient()
+        assert client.stub_mode is True
+    finally:
+        _mod.AI_API_KEY = old_mod
+        if old_key:
+            os.environ["AI_API_KEY"] = old_key
 
 
 def test_ai_client_stub_response():
     """Test stub mode returns expected response format"""
-    # Ensure stub mode
-    old_key = os.environ.get("AI_API_KEY")
-    if "AI_API_KEY" in os.environ:
-        del os.environ["AI_API_KEY"]
+    import ai_layer.client as _mod
 
-    client = AIClient()
-    response = client.complete("system prompt", "user prompt")
+    old_key = os.environ.pop("AI_API_KEY", None)
+    old_mod = _mod.AI_API_KEY
+    _mod.AI_API_KEY = None
 
-    assert isinstance(response, str)
-    assert "[AI Stub Mode]" in response or "stub" in response.lower()
+    try:
+        client = AIClient()
+        response = client.complete("system prompt", "user prompt")
 
-    # Restore
-    if old_key:
-        os.environ["AI_API_KEY"] = old_key
+        assert isinstance(response, str)
+        assert "[AI Stub Mode]" in response or "stub" in response.lower()
+    finally:
+        _mod.AI_API_KEY = old_mod
+        if old_key:
+            os.environ["AI_API_KEY"] = old_key
 
 
 def test_agent_creates_ai_insight(db_session):

@@ -17,33 +17,47 @@ class TestAIClientStubMode:
 
     def test_stub_mode_when_no_key(self):
         """Client should be in stub mode without API key."""
+        import ai_layer.client as mod
+
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AI_API_KEY", None)
-            # Reimport to get fresh singleton
-            import ai_layer.client as mod
-
-            client = mod.AIClient()
-            assert client.stub_mode is True
+            old_mod = mod.AI_API_KEY
+            mod.AI_API_KEY = None
+            try:
+                client = mod.AIClient()
+                assert client.stub_mode is True
+            finally:
+                mod.AI_API_KEY = old_mod
 
     def test_stub_response_contains_marker(self):
         """Stub response should contain [AI Stub Mode] marker."""
+        import ai_layer.client as mod
+
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AI_API_KEY", None)
-            import ai_layer.client as mod
-
-            client = mod.AIClient()
-            result = client.complete("system", "user prompt")
-            assert "[AI Stub Mode]" in result
+            old_mod = mod.AI_API_KEY
+            mod.AI_API_KEY = None
+            try:
+                client = mod.AIClient()
+                result = client.complete("system", "user prompt")
+                assert "[AI Stub Mode]" in result
+            finally:
+                mod.AI_API_KEY = old_mod
 
     def test_stub_includes_prompt_preview(self):
         """Stub response should include a preview of the prompt."""
+        import ai_layer.client as mod
+
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("AI_API_KEY", None)
-            import ai_layer.client as mod
-
-            client = mod.AIClient()
-            result = client.complete("system", "analyse du site Lyon")
-            assert "analyse du site Lyon" in result
+            old_mod = mod.AI_API_KEY
+            mod.AI_API_KEY = None
+            try:
+                client = mod.AIClient()
+                result = client.complete("system", "analyse du site Lyon")
+                assert "analyse du site Lyon" in result
+            finally:
+                mod.AI_API_KEY = old_mod
 
 
 class TestAIClientLiveMode:

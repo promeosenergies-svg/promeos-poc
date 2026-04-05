@@ -26,6 +26,10 @@ from models.base import Base
 @pytest.fixture(scope="module", autouse=True)
 def _ensure_v49_schema():
     """Crée les tables et ajoute closure_justification si manquante (retry si DB locked)."""
+    # Release any stale connections from prior test modules
+    engine.dispose()
+    time.sleep(0.5)
+
     for attempt in range(5):
         try:
             Base.metadata.create_all(bind=engine)
@@ -37,8 +41,9 @@ def _ensure_v49_schema():
                         conn.execute(sa_text('ALTER TABLE "action_items" ADD COLUMN "closure_justification" TEXT'))
             return
         except Exception:
+            engine.dispose()
             if attempt < 4:
-                time.sleep(1)
+                time.sleep(2)
             else:
                 raise
 
@@ -99,18 +104,26 @@ class TestPatchCloseRules:
             from database import SessionLocal
             from models import Organisation
 
-            db = SessionLocal()
-            try:
-                org = db.query(Organisation).first()
-                if not org:
-                    org = Organisation(
-                        nom="V49 Test Org", type_client="tertiaire", actif=True, siren="999999999", is_demo=True
-                    )
-                    db.add(org)
-                    db.commit()
-                DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
-            finally:
-                db.close()
+            for _attempt in range(5):
+                db = SessionLocal()
+                try:
+                    org = db.query(Organisation).first()
+                    if not org:
+                        org = Organisation(
+                            nom="V49 Test Org", type_client="tertiaire", actif=True, siren="999999999", is_demo=True
+                        )
+                        db.add(org)
+                        db.commit()
+                    DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
+                    break
+                except Exception:
+                    db.rollback()
+                    if _attempt < 4:
+                        time.sleep(2)
+                    else:
+                        raise
+                finally:
+                    db.close()
 
     def _create_operat_action(self, suffix=""):
         """Create a fresh OPERAT action via POST."""
@@ -201,18 +214,26 @@ class TestCloseabilityEndpoint:
             from database import SessionLocal
             from models import Organisation
 
-            db = SessionLocal()
-            try:
-                org = db.query(Organisation).first()
-                if not org:
-                    org = Organisation(
-                        nom="V49 Test Org", type_client="tertiaire", actif=True, siren="999999999", is_demo=True
-                    )
-                    db.add(org)
-                    db.commit()
-                DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
-            finally:
-                db.close()
+            for _attempt in range(5):
+                db = SessionLocal()
+                try:
+                    org = db.query(Organisation).first()
+                    if not org:
+                        org = Organisation(
+                            nom="V49 Test Org", type_client="tertiaire", actif=True, siren="999999999", is_demo=True
+                        )
+                        db.add(org)
+                        db.commit()
+                    DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
+                    break
+                except Exception:
+                    db.rollback()
+                    if _attempt < 4:
+                        time.sleep(2)
+                    else:
+                        raise
+                finally:
+                    db.close()
 
     def test_closeability_returns_shape(self):
         """Closeability endpoint returns expected fields."""
