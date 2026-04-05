@@ -16,6 +16,7 @@ from models import (
     PurchaseRecoStatus,
     BillingEnergyType,
 )
+from config.default_prices import DEFAULT_PRICE_ELEC_EUR_KWH
 
 
 def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
@@ -74,8 +75,8 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
 
     scenarios_created = 0
 
-    # ── Site A scenarios (elec @ 0.18 ref) ──
-    ref_a = 0.18
+    # ── Site A scenarios (elec @ DEFAULT_PRICE_ELEC_EUR_KWH ref) ──
+    ref_a = DEFAULT_PRICE_ELEC_EUR_KWH
     for strategy, price_mult, risk, p10_mult, p90_mult, is_reco in [
         (PurchaseStrategy.FIXE, 1.05, 15, 1.0, 1.0, False),
         (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, True),  # Recommended
@@ -157,7 +158,7 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
             supplier_name="EDF Entreprises",
             start_date=today - timedelta(days=335),
             end_date=today + timedelta(days=45),
-            price_ref_eur_per_kwh=0.18,
+            price_ref_eur_per_kwh=DEFAULT_PRICE_ELEC_EUR_KWH,
             fixed_fee_eur_per_month=45.0,
             notice_period_days=60,
             auto_renew=False,
