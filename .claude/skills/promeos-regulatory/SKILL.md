@@ -18,7 +18,7 @@ description: "Réglementation énergie B2B France : Décret Tertiaire, OPERAT, B
 - Site > 1000m² sans scoring DT → "Ce site est assujetti au Décret Tertiaire (Décret n°2019-771, art. R174-22) mais n'a pas de scoring conformité."
 - Deadline modulation < 6 mois (30/09/2026) → "Deadline modulation DT dans moins de 6 mois. Dossier OPERAT à préparer."
 - Score conformité < 50% → "Score conformité critique. Actions correctives prioritaires nécessaires."
-- BACS seuil 70kW applicable dès 01/01/2027 → "Le seuil BACS passe à 70kW au 01/01/2027. Vérifier les sites qui deviennent assujettis."
+- BACS seuil 70kW applicable dès 01/01/2030 → "Le seuil BACS passe à 70kW au 01/01/2030 (report décret 27/12/2025). Vérifier les sites qui deviennent assujettis."
 - CO₂ factor utilisé ≠ 0.052 → "Le facteur CO₂ électricité doit être 0.052 kgCO₂/kWh (ADEME V23.6). Valeur incorrecte détectée."
 
 ## Cadres réglementaires
@@ -26,7 +26,7 @@ description: "Réglementation énergie B2B France : Décret Tertiaire, OPERAT, B
 | Cadre | Texte | Cible | Deadline | Sanctions |
 |---|---|---|---|---|
 | Décret Tertiaire | Décret n°2019-771 | Bâtiments ≥1,000m² | -40% 2030 / -50% 2040 / -60% 2050 | Publish & shame (OPERAT) + 7,500€/bâtiment |
-| BACS | Décret n°2025-1343 | CVC > seuils kW | 01/01/2025 (290kW), 01/01/2027 (70kW) | Contrôle DREAL, amende administrative |
+| BACS | Décret n°2025-1343 | CVC > seuils kW | 01/01/2025 (290kW), **01/01/2030** (70kW, report déc. 2025) | Contrôle DREAL, amende administrative |
 | APER | Loi n°2023-175 | Parkings ≥1,500m², toitures ≥500m² | Progressif 2025-2028 | 40,000€/an + 200€/place |
 | Audit/SMÉ | Loi n°2025-391 | Orgs > 2.75 GWh | 11/10/2026 | 1,500€/an (audit), 3,000€/an (SMÉ) |
 | DPE tertiaire | EPBD recast | Bâtiments tertiaires | 2026-2027 (transposition) | À définir |
@@ -89,7 +89,7 @@ Mapping NAF→OPERAT via `utils/naf_resolver.py` : 70.10Z→BUREAU_STANDARD, 85.
 | Seuil CVC | Date | Classe min | Cible |
 |---|---|---|---|
 | >290 kW | 01/01/2025 | Classe C | Existants |
-| >70 kW | 01/01/2027 | Classe C | Existants |
+| >70 kW | **01/01/2030** (report décret 27/12/2025) | Classe C | Existants |
 | Tout neuf | Immédiat | Classe B | Neuf RT2020/RE2020 |
 
 ### Classes NF EN ISO 52120-1:2022
@@ -103,7 +103,7 @@ Mapping NAF→OPERAT via `utils/naf_resolver.py` : 70.10Z→BUREAU_STANDARD, 85.
 
 ### Exemption
 
-TRI (temps de retour investissement) >6 ans → exemption documentée.
+TRI (temps de retour investissement) **>10 ans** → exemption documentée (après déduction aides/CEE).
 Calcul TRI : CAPEX GTB / économies annuelles estimées (méthode ADEME).
 Pas de plateforme centralisée (≠ OPERAT), contrôle par DREAL sur demande.
 
@@ -131,7 +131,7 @@ Neuf et rénovations lourdes, surface ≥500m² : 50% végétalisée ou PV ou mi
 | Org > 2.75 GWh | Audit énergétique (NF EN 16247) | Tous les 4 ans |
 | Org > 23.6 GWh | ISO 50001 (SMÉ certifié) | Continu + audit externe 3 ans |
 
-Seule règle **org-level** (pas site-level). Deadline : **11/10/2026**.
+Seule règle **org-level** (pas site-level). Deadlines : **11/10/2026** (audit >2.75 GWh) / **11/10/2027** (SMÉ >23.6 GWh).
 Auditeurs qualifiés COFRAC ou équivalent.
 Contenu audit : bilan énergétique, plan d'actions chiffré, ROI par action, priorisation.
 
@@ -164,7 +164,7 @@ Avec Audit: DT 39% / BACS 28% / APER 17% / Audit 16%.
 
 Chaque règle est applicable SI le site/org remplit les critères :
 - DT si surface ≥1,000m²
-- BACS si CVC >290kW (2025) ou >70kW (2027)
+- BACS si CVC >290kW (2025) ou >70kW (2030)
 - APER si parking ≥1,500m² ou toiture ≥500m²
 - Audit si org >2.75 GWh
 

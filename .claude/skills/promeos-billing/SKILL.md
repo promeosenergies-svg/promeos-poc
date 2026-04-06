@@ -17,7 +17,7 @@ description: "Expertise facture énergie France B2B : shadow billing, TURPE 6/7,
 
 - Facture avec TURPE 6 après 01/08/2025 → "Cette facture utilise encore les tarifs TURPE 6. Vérifier si la transition TURPE 7 a été appliquée."
 - Prix unitaire > 0.20 €/kWh sur contrat fixe → "Prix anormalement élevé pour un contrat fixe B2B. Benchmark CRE T4 2025 = 0.12-0.16 €/kWh."
-- Accise ≠ 25.79 €/MWh → "L'accise appliquée ne correspond pas au taux en vigueur (25.79 €/MWh depuis 01/08/2025, art. L312-35 CGI)."
+- Accise ≠ taux en vigueur → "Vérifier le taux accise : T1=30.85 €/MWh (ménages), T2=26.58 €/MWh (PME/pro) depuis 01/02/2026. Ancien taux 25.79 €/MWh valable 01/08/2025-31/01/2026."
 - Écart shadow billing > 5% → "Anomalie BILL_001 détectée. Écart significatif entre recalcul et facture."
 - Doublon PRM + même période → "CRITICAL BILL_006 : doublon de facturation potentiel."
 
@@ -32,8 +32,8 @@ Pipeline: Données Enedis (CDC 30min/10min ou index) → Classification période
 | Fourniture (énergie) | prix × volume par période tarifaire | €/MWh | ~35-45% |
 | Abonnement fourniture | fixe mensuel | €/mois | ~2-5% |
 | Acheminement (TURPE) | soutirage + gestion + comptage | €/kWh + €/kW/an | ~25-30% |
-| Accise sur l'électricité | **25.79 €/MWh** (depuis 01/08/2025) | €/MWh | ~10-12% |
-| CTA | **27.04%** de la part fixe TURPE | € | ~2-3% |
+| Accise sur l'électricité | **T1=30.85 / T2=26.58 €/MWh** (depuis 01/02/2026) | €/MWh | ~10-12% |
+| CTA | **15%** de la part fixe TURPE (depuis 01/02/2026) | € | ~2-3% |
 | TVA | 5.5% sur abonnement+CTA, 20% sur conso+taxes | % | ~15-20% (TTC) |
 | CEE | variable ~0.3-0.5 €/MWh | €/MWh | ~1-2% |
 | Capacité | coût certificats × profil pointe | €/MWh | ~2-4% |
@@ -44,7 +44,7 @@ Pipeline: Données Enedis (CDC 30min/10min ou index) → Classification période
 |---|---|---|---|
 | Fourniture (molécule) | prix × volume | €/MWh PCS | ~40-55% |
 | Acheminement (ATRD+ATRT) | transport + distribution | €/MWh + €/an | ~20-25% |
-| TICGN | **15.43 €/MWh** | €/MWh | ~8-12% |
+| Accise gaz (ex-TICGN) | **16.39 €/MWh** (10.73 accise + 5.66 ZNI, depuis 01/02/2026) | €/MWh | ~8-12% |
 | CTA gaz | % part fixe acheminement | € | ~2-3% |
 | TVA | 5.5% abo+CTA, 20% conso+taxes | % | ~15-20% (TTC) |
 | Stockage | contribution stockage souterrain | €/MWh | ~1-2% |
@@ -57,7 +57,8 @@ Pipeline: Données Enedis (CDC 30min/10min ou index) → Classification période
 | 01/02/2022 - 31/01/2024 | 1.00 €/MWh | Bouclier tarifaire |
 | 01/02/2024 - 31/01/2025 | 21.00 €/MWh | Sortie progressive bouclier |
 | 01/02/2025 - 31/07/2025 | 22.50 €/MWh | Retour pré-crise |
-| **Depuis 01/08/2025** | **25.79 €/MWh** | LFI 2025 + alignement TURPE 7 |
+| 01/08/2025 - 31/01/2026 | 25.79 €/MWh | LFI 2025 + alignement TURPE 7 |
+| **Depuis 01/02/2026** | **T1=30.85 / T2=26.58 €/MWh** | Taux par catégorie (ménages/PME) |
 
 ⚠️ Le versioning temporel est critique : appliquer le bon taux à la bonne période de consommation.
 
@@ -128,7 +129,7 @@ Abonnement : prorata jour calendaire exact. Première/dernière facture toujours
 
 Phase 1 (M+7) — Structurel: PDL/PCE = registre? Puissance souscrite = Enedis? Option tarifaire (Base/HP-HC/BTINF/BTSUP/HTA) OK? Période 28-31j? Dates cohérentes?
 Phase 2 (M+10) — Conso: Index fin - index début = conso? ±3% vs même mois N-1? Index estimé vs réel? Doublons période? Consommation négative?
-Phase 3 (M+12) — Financier: Énergie = prix×volume par période? TURPE = grille en vigueur à la date? Accise = taux de la période (historique ci-dessus)? CEE? Capacité? CTA = 27.04% × part fixe? TVA 5.5/20% correctement appliquée?
+Phase 3 (M+12) — Financier: Énergie = prix×volume par période? TURPE = grille en vigueur à la date? Accise = taux de la période (historique ci-dessus)? CEE? Capacité? CTA = **15%** × part fixe (depuis 02/2026)? TVA 5.5/20% correctement appliquée?
 Phase 4 (M+14) — Alertes: Écart >2€/MWh → erreur probable. Conso >baseline+10% → investigation dérive. Régul >50% → vérification estimation. Montant TTC >N-1+15% → alerte budget.
 
 ## Anomalies types
@@ -143,7 +144,7 @@ Phase 4 (M+14) — Alertes: Écart >2€/MWh → erreur probable. Conso >baselin
 | BILL_006 | Doublon facturation (même période) | CRITICAL | Deux factures même PDL+période |
 | BILL_007 | TVA taux incorrect | MEDIUM | ≠5.5% ou ≠20% selon ligne |
 | BILL_008 | TURPE version obsolète | HIGH | Grille TURPE 6 après 01/08/2025 |
-| BILL_009 | CTA calcul incorrect | MEDIUM | ≠27.04% × part fixe |
+| BILL_009 | CTA calcul incorrect | MEDIUM | ≠15% × part fixe (depuis 02/2026) |
 | BILL_010 | Régularisation anormale | MEDIUM | >50% du montant mensuel |
 | BILL_011 | Capacité absente ou aberrante | MEDIUM | Manquante ou >5€/MWh |
 | BILL_012 | Période facture chevauchante | HIGH | Overlap avec facture précédente |
@@ -162,8 +163,8 @@ FACTURE D'ÉLECTRICITÉ
 │   ├── Composante soutirage (par période)
 │   └── Dépassement puissance (CMDPS si applicable)
 ├── Taxes et contributions
-│   ├── Accise sur l'électricité (25.79 €/MWh)
-│   ├── CTA (27.04% × part fixe)
+│   ├── Accise sur l'électricité (T1=30.85 / T2=26.58 €/MWh depuis 02/2026)
+│   ├── CTA (15% × part fixe depuis 02/2026)
 │   └── CEE (si visible)
 ├── Sous-total HT
 ├── TVA
@@ -194,10 +195,10 @@ Types fréquents : mauvaise puissance, TURPE obsolète, accise incorrecte, doubl
 - 0.068 €/kWh = fallback, jamais 0.18
 - 0.0569 €/kWh = tarif TURPE 7 HPH, JAMAIS un facteur CO₂
 - Accise = taux en vigueur à la date de consommation (pas de la facture)
-- TICGN = 15.43 €/MWh
+- Accise gaz = 16.39 €/MWh total (10.73 accise + 5.66 ZNI) depuis 02/2026
 - Versioning temporel : bon tarif à la bonne date
 - Prorata au jour calendaire pour factures partielles
-- CTA = 27.04% de la part fixe TURPE, pas du total TURPE
+- CTA = **15%** de la part fixe TURPE depuis 02/2026 (ancien: 27.04% avant 08/2021, 21.93% avant 02/2026)
 
 ## Disclaimer
 
