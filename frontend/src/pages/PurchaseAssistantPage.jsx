@@ -623,8 +623,8 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
         <Card>
           <CardBody>
             <p className="text-sm text-gray-500">
-              Connectez-vous a votre patrimoine (Brique 1) pour charger les sites reels. En
-              attendant, activez le mode demo pour tester l'assistant.
+              Connectez-vous à votre patrimoine pour charger les sites réels. En attendant, activez
+              le mode démo pour tester l'assistant.
             </p>
           </CardBody>
         </Card>

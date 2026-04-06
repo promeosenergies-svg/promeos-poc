@@ -32,6 +32,7 @@ from models.enums import (
     ActionStatus,
 )
 from models.energy_models import FrequencyType
+from config.patrimoine_assumptions import CEE_PRIX_MWHC_CUMAC_EUR
 
 
 def _resolve_site_org(db: Session, site_id: int) -> int:
@@ -89,6 +90,22 @@ def create_cee_dossier(
     )
     db.add(dossier)
     db.flush()  # get dossier.id
+
+    # 1b. Auto-compute kWhc cumac if fiche_ref is set
+    if wp.fiche_ref and site.surface_m2 and site.surface_m2 > 0:
+        try:
+            from regops.rules.cee_p6 import compute_cee_kwh_cumac
+
+            result = compute_cee_kwh_cumac(
+                fiche_ref=wp.fiche_ref,
+                surface_m2=site.surface_m2,
+                code_postal=site.code_postal,
+                prix_mwhc_cumac_eur=CEE_PRIX_MWHC_CUMAC_EUR,
+            )
+            dossier.amount_cee_kwh = result.kwh_cumac
+            dossier.amount_cee_eur = result.amount_eur
+        except ValueError:
+            pass  # Fiche inconnue ou données insuffisantes — on laisse NULL
 
     # 2. Create evidence items (proof template)
     evidence_items = []
@@ -409,3 +426,58 @@ def get_site_work_packages(
         result.append(item)
 
     return result
+
+
+def compute_dossier_cee_amount(
+    db: Session,
+    dossier_id: int,
+) -> dict:
+    """
+    (Re)compute the kWhc cumac amount for an existing CeeDossier.
+    Uses: work_package.fiche_ref × site.surface_m2 × zone_coeff × duree_vie.
+    Persists the result on the dossier row.
+    """
+    from regops.rules.cee_p6 import compute_cee_kwh_cumac
+
+    dossier = db.query(CeeDossier).filter(CeeDossier.id == dossier_id).first()
+    if not dossier:
+        raise ValueError(f"CeeDossier {dossier_id} not found")
+
+    wp = db.query(WorkPackage).filter(WorkPackage.id == dossier.work_package_id).first()
+    if not wp:
+        raise ValueError(f"WorkPackage {dossier.work_package_id} not found for dossier {dossier_id}")
+
+    if not wp.fiche_ref:
+        raise ValueError(f"WorkPackage {wp.id} has no fiche_ref — cannot compute CEE amount")
+
+    site = db.query(Site).filter(Site.id == dossier.site_id).first()
+    if not site:
+        raise ValueError(f"Site {dossier.site_id} not found")
+
+    surface = site.surface_m2
+    if not surface or surface <= 0:
+        raise ValueError(f"Site {site.id} has no valid surface_m2")
+
+    result = compute_cee_kwh_cumac(
+        fiche_ref=wp.fiche_ref,
+        surface_m2=surface,
+        code_postal=site.code_postal,
+        prix_mwhc_cumac_eur=CEE_PRIX_MWHC_CUMAC_EUR,
+    )
+
+    dossier.amount_cee_kwh = result.kwh_cumac
+    dossier.amount_cee_eur = result.amount_eur
+    db.commit()
+
+    return {
+        "dossier_id": dossier.id,
+        "fiche_ref": result.fiche_ref,
+        "fiche_label": result.fiche_label,
+        "surface_m2": result.surface_m2,
+        "zone_climatique": result.zone_climatique,
+        "zone_coefficient": result.zone_coefficient,
+        "typical_savings_kwh_m2": result.typical_savings_kwh_m2,
+        "duree_vie_ans": result.duree_vie_ans,
+        "kwh_cumac": result.kwh_cumac,
+        "amount_eur": result.amount_eur,
+    }

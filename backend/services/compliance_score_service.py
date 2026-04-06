@@ -189,7 +189,17 @@ def compute_site_compliance_score(db: Session, site_id: int) -> ComplianceScoreR
         ra = assessment_by_framework.get(fw_key)
 
         if ra and ra.compliance_score is not None:
-            fw_score = max(0.0, min(100.0, ra.compliance_score))
+            # Check if this RA covers multiple frameworks (shared assessment)
+            detected_fws = _detect_frameworks(ra)
+            if len(detected_fws) > 1:
+                # Multi-framework RA → compute sub-score from findings
+                sub_score = _compute_framework_score_from_findings(ra, fw_key)
+                if sub_score is not None:
+                    fw_score = sub_score
+                else:
+                    fw_score = max(0.0, min(100.0, ra.compliance_score))
+            else:
+                fw_score = max(0.0, min(100.0, ra.compliance_score))
             source = "regops"
             available = True
             frameworks_evaluated += 1
@@ -362,6 +372,83 @@ def compute_portfolio_compliance(db: Session, org_id: int) -> dict:
         "worst_sites": worst_sites,
         "breakdown_avg": breakdown_avg,
     }
+
+
+def _compute_framework_score_from_findings(assessment, fw_key: str) -> float | None:
+    """Calcule un sous-score pour UN framework à partir des findings du RegAssessment.
+
+    Filtre les findings par regulation == fw_key, puis calcule :
+      score = (nb_compliant / nb_relevant) * 100
+    avec pondération par sévérité pour les findings non-compliant.
+
+    Returns None si aucun finding pertinent n'existe pour ce framework.
+    """
+    if not assessment.findings_json:
+        return None
+
+    try:
+        findings = (
+            json.loads(assessment.findings_json)
+            if isinstance(assessment.findings_json, str)
+            else assessment.findings_json
+        )
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+    if not isinstance(findings, list):
+        return None
+
+    # Alias mapping: findings may use different regulation labels
+    fw_aliases = {
+        "tertiaire_operat": {"tertiaire_operat", "decret_tertiaire_operat", "dt"},
+        "bacs": {"bacs", "gtb"},
+        "aper": {"aper"},
+    }
+    aliases = fw_aliases.get(fw_key, {fw_key})
+
+    # Filter findings belonging to this framework
+    fw_findings = []
+    for f in findings:
+        if not isinstance(f, dict):
+            continue
+        reg = str(f.get("regulation", "")).lower()
+        rule = str(f.get("rule_id", "")).lower()
+        # Check if the finding matches this framework
+        matched = any(a in reg for a in aliases) or any(a in rule for a in aliases)
+        # APER-specific keywords
+        if fw_key == "aper" and not matched:
+            combined = f"{reg} {rule}"
+            if "parking" in combined or "roof" in combined or "toiture" in combined:
+                matched = True
+        if matched:
+            fw_findings.append(f)
+
+    if not fw_findings:
+        return None
+
+    # Exclude OUT_OF_SCOPE
+    relevant = [f for f in fw_findings if str(f.get("status", "")).upper() != "OUT_OF_SCOPE"]
+    if not relevant:
+        return None  # all out of scope → not applicable
+
+    # Score: ratio of compliant findings, weighted by severity
+    _sev_cfg = _scoring_cfg.get("severity_weights", {"critical": 100, "high": 70, "medium": 40, "low": 10})
+    total_weight = 0.0
+    compliant_weight = 0.0
+    for f in relevant:
+        sev = str(f.get("severity", "medium")).lower()
+        w = float(_sev_cfg.get(sev, 10))
+        total_weight += w
+        status = str(f.get("status", "")).upper()
+        if status == "COMPLIANT":
+            compliant_weight += w
+        elif status in ("AT_RISK", "UNKNOWN", "EN_COURS"):
+            compliant_weight += w * 0.5  # partial credit
+
+    if total_weight == 0:
+        return 50.0
+
+    return round(max(0.0, min(100.0, (compliant_weight / total_weight) * 100.0)), 1)
 
 
 def _detect_frameworks(assessment) -> list[str]:

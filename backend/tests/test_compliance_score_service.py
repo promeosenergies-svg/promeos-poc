@@ -264,6 +264,107 @@ class TestRegAssessmentScoring:
         assert r.score >= 80.0
 
 
+class TestPerFrameworkGranularity:
+    """PRO-19: When a single RegAssessment covers DT+BACS+APER,
+    each framework should get its own sub-score from findings, not reuse
+    the same compliance_score."""
+
+    def test_multi_framework_ra_gives_different_scores(self, db):
+        """A multi-framework RA with mixed findings should produce distinct per-fw scores."""
+        findings = [
+            # DT: 1 compliant, 1 non-compliant → ~50%
+            {"regulation": "tertiaire_operat", "rule_id": "dt_declaration", "status": "COMPLIANT", "severity": "high"},
+            {
+                "regulation": "tertiaire_operat",
+                "rule_id": "dt_reduction",
+                "status": "NON_COMPLIANT",
+                "severity": "high",
+            },
+            # BACS: all compliant → ~100%
+            {"regulation": "bacs", "rule_id": "bacs_gtb_installed", "status": "COMPLIANT", "severity": "high"},
+            {"regulation": "bacs", "rule_id": "bacs_inspection", "status": "COMPLIANT", "severity": "medium"},
+            # APER: all non-compliant → ~0%
+            {"regulation": "aper", "rule_id": "aper_parking_large", "status": "NON_COMPLIANT", "severity": "critical"},
+        ]
+        ra = RegAssessment(
+            object_type="site",
+            object_id=1,
+            computed_at=datetime.now(timezone.utc),
+            global_status=RegStatus.AT_RISK,
+            compliance_score=60.0,  # unified score — should NOT be reused for all 3
+            deterministic_version="tertiaire_operat_bacs_aper_v1",
+            data_version="v1",
+            findings_json=json.dumps(findings),
+        )
+        db.add(ra)
+        db.commit()
+
+        r = compute_site_compliance_score(db, 1)
+        scores_by_fw = {fs.framework: fs.score for fs in r.breakdown}
+
+        # DT should be ~50 (half compliant, same severity)
+        assert 40.0 <= scores_by_fw["tertiaire_operat"] <= 60.0
+        # BACS should be 100 (all compliant)
+        assert scores_by_fw["bacs"] == 100.0
+        # APER should be 0 (all non-compliant)
+        assert scores_by_fw["aper"] == 0.0
+
+        # They must NOT all be the same (the old bug)
+        unique_scores = set(scores_by_fw.values())
+        assert len(unique_scores) >= 2, "Per-framework scores should differ, not reuse the same RA score"
+
+    def test_single_framework_ra_uses_compliance_score(self, db):
+        """A single-framework RA should still use ra.compliance_score directly."""
+        ra = RegAssessment(
+            object_type="site",
+            object_id=1,
+            computed_at=datetime.now(timezone.utc),
+            global_status=RegStatus.COMPLIANT,
+            compliance_score=75.0,
+            deterministic_version="tertiaire_operat_v1",
+            data_version="v1",
+            findings_json=json.dumps(
+                [
+                    {"regulation": "tertiaire_operat", "rule_id": "dt_decl", "status": "AT_RISK", "severity": "medium"},
+                ]
+            ),
+        )
+        db.add(ra)
+        db.commit()
+
+        r = compute_site_compliance_score(db, 1)
+        dt_score = next(fs for fs in r.breakdown if fs.framework == "tertiaire_operat")
+        assert dt_score.score == 75.0  # directly from ra.compliance_score
+
+    def test_multi_framework_ra_no_findings_for_one_fw(self, db):
+        """If a multi-fw RA has no findings for a specific framework, fall back to ra.compliance_score."""
+        findings = [
+            {"regulation": "tertiaire_operat", "rule_id": "dt_decl", "status": "COMPLIANT", "severity": "high"},
+            {"regulation": "bacs", "rule_id": "bacs_gtb", "status": "NON_COMPLIANT", "severity": "high"},
+            # No APER findings at all — but APER is detected via deterministic_version
+        ]
+        ra = RegAssessment(
+            object_type="site",
+            object_id=1,
+            computed_at=datetime.now(timezone.utc),
+            global_status=RegStatus.AT_RISK,
+            compliance_score=55.0,
+            deterministic_version="tertiaire_operat_bacs_aper_v1",
+            data_version="v1",
+            findings_json=json.dumps(findings),
+        )
+        db.add(ra)
+        db.commit()
+
+        r = compute_site_compliance_score(db, 1)
+        scores_by_fw = {fs.framework: fs.score for fs in r.breakdown}
+        # DT = 100 (compliant), BACS = 0 (non-compliant)
+        assert scores_by_fw["tertiaire_operat"] == 100.0
+        assert scores_by_fw["bacs"] == 0.0
+        # APER has no findings → falls back to ra.compliance_score (55.0)
+        assert scores_by_fw["aper"] == 55.0
+
+
 class TestPortfolioCompliance:
     def test_portfolio_avg_score(self, db):
         """Portfolio score should be surface-weighted average of site scores."""

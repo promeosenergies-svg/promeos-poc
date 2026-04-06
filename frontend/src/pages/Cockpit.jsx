@@ -128,53 +128,29 @@ const Cockpit = () => {
       });
   }, [org, scopedSites]);
 
-  // A.2: Fetch unified compliance score
+  // Batch fetch: compliance score, timeline, trend, audit SME, prix signal
+  // Consolidated from 5 separate useEffects to avoid popcorn loading
   useEffect(() => {
     if (!org?.id) return;
-    fetch(`/api/compliance/portfolio/score`, {
-      headers: { 'X-Org-Id': String(org.id) },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setComplianceApi(data))
-      .catch(() => setComplianceApi(null));
-  }, [org?.id]);
-
-  // Step 13: Fetch next regulatory deadline
-  useEffect(() => {
-    if (!org?.id) return;
-    getComplianceTimeline()
-      .then((data) => {
-        setNextDeadline(data?.next_deadline || null);
-        setTotalPenaltyExposure(data?.total_penalty_exposure_eur || null);
+    Promise.all([
+      fetch(`/api/compliance/portfolio/score`, {
+        headers: { 'X-Org-Id': String(org.id) },
       })
-      .catch(() => {
-        setNextDeadline(null);
-        setTotalPenaltyExposure(null);
-      });
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      getComplianceTimeline().catch(() => null),
+      getComplianceScoreTrend({ months: 6 }).catch(() => null),
+      getAuditSmeAssessment(org.id).catch(() => null),
+      getFlexPrixSignal(45).catch(() => null),
+    ]).then(([compScore, timeline, trend, sme, prix]) => {
+      setComplianceApi(compScore);
+      setNextDeadline(timeline?.next_deadline || null);
+      setTotalPenaltyExposure(timeline?.total_penalty_exposure_eur || null);
+      setScoreTrend(trend?.trend || null);
+      setAuditSme(sme);
+      setPrixSignal(prix);
+    });
   }, [org?.id]);
-
-  // Step 33: Fetch compliance score trend
-  useEffect(() => {
-    if (!org?.id) return;
-    getComplianceScoreTrend({ months: 6 })
-      .then((data) => setScoreTrend(data?.trend || null))
-      .catch(() => setScoreTrend(null));
-  }, [org?.id]);
-
-  // Audit Energetique / SME (Loi 2025-391)
-  useEffect(() => {
-    if (!org?.id) return;
-    getAuditSmeAssessment(org.id)
-      .then(setAuditSme)
-      .catch(() => setAuditSme(null));
-  }, [org?.id]);
-
-  // Signal prix spot J-1 (demo: 45 €/MWh neutre)
-  useEffect(() => {
-    getFlexPrixSignal(45)
-      .then(setPrixSignal)
-      .catch(() => setPrixSignal(null));
-  }, []);
 
   // I3 FIX: consoSource maintenant extrait de useCockpitData (plus de double fetch)
   const consoSource = cockpitKpis?.consoSource ?? null;
@@ -435,7 +411,18 @@ const Cockpit = () => {
   // V18-B: guard — don't show empty state while sites are loading
   if (sitesLoading) {
     return (
-      <PageShell icon={FileText} title="Vue exécutive" subtitle={<ScopeSummary />}>
+      <PageShell
+        icon={FileText}
+        title={
+          <>
+            Vue exécutive
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+              Stratégique
+            </span>
+          </>
+        }
+        subtitle={<ScopeSummary />}
+      >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <SkeletonCard />
           <SkeletonCard />
@@ -450,7 +437,14 @@ const Cockpit = () => {
   return (
     <PageShell
       icon={FileText}
-      title="Vue exécutive"
+      title={
+        <>
+          Vue exécutive
+          <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+            Stratégique
+          </span>
+        </>
+      }
       subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-3">

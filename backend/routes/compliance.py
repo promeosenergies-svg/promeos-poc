@@ -38,6 +38,7 @@ from services.cee_service import (
     advance_cee_step,
     compute_mv_summary,
     get_site_work_packages,
+    compute_dossier_cee_amount,
 )
 from models import WorkPackage
 from models.enums import WorkPackageSize, CeeStatus
@@ -530,6 +531,7 @@ class WorkPackageCreate(BaseModel):
     savings_eur_year: Optional[float] = None
     payback_years: Optional[float] = None
     complexity: Optional[str] = "medium"
+    fiche_ref: Optional[str] = None
     description: Optional[str] = None
 
 
@@ -571,6 +573,7 @@ def create_work_package(
         payback_years=data.payback_years,
         complexity=data.complexity,
         cee_status=CeeStatus.A_QUALIFIER,
+        fiche_ref=data.fiche_ref,
         description=data.description,
     )
     db.add(wp)
@@ -640,6 +643,23 @@ def mv_summary_endpoint(
         return compute_mv_summary(db, site_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/cee/dossier/{dossier_id}/compute")
+def compute_cee_amount_endpoint(
+    dossier_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/compliance/cee/dossier/{dossier_id}/compute
+
+    (Re)compute kWhc cumac for a CEE dossier.
+    Uses: fiche_ref × surface × zone_climatique × durée_vie.
+    """
+    try:
+        return compute_dossier_cee_amount(db, dossier_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ========================================

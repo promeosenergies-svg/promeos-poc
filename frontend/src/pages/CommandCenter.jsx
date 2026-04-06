@@ -323,7 +323,18 @@ export default function CommandCenter() {
 
   if (loading) {
     return (
-      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle="Chargement...">
+      <PageShell
+        icon={LayoutDashboard}
+        title={
+          <>
+            Tableau de bord
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+              Opérationnel
+            </span>
+          </>
+        }
+        subtitle="Chargement..."
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SkeletonCard />
           <SkeletonCard />
@@ -335,7 +346,18 @@ export default function CommandCenter() {
 
   if (error) {
     return (
-      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={<ScopeSummary />}>
+      <PageShell
+        icon={LayoutDashboard}
+        title={
+          <>
+            Tableau de bord
+            <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+              Opérationnel
+            </span>
+          </>
+        }
+        subtitle={<ScopeSummary />}
+      >
         <ErrorState title="Erreur de chargement" message={error} onRetry={loadData} />
       </PageShell>
     );
@@ -344,7 +366,14 @@ export default function CommandCenter() {
   return (
     <PageShell
       icon={LayoutDashboard}
-      title="Tableau de bord"
+      title={
+        <>
+          Tableau de bord
+          <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+            Opérationnel
+          </span>
+        </>
+      }
       subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-2">

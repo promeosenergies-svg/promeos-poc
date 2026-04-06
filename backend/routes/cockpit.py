@@ -174,6 +174,16 @@ def get_cockpit(
     except Exception:
         _billing_loss = 0.0
 
+    # Contract risk (P1-A2: renewal + price gap + volume penalties)
+    _contract_risk = 0.0
+    try:
+        from services.contract_risk_service import compute_contract_risk_eur
+
+        _contract_risk_data = compute_contract_risk_eur(db, site_ids)
+        _contract_risk = _contract_risk_data["total_eur"]
+    except Exception:
+        _contract_risk = 0.0
+
     # KPI runtime metadata for critical KPIs
     kpi_details = [
         wrap_kpi_runtime("compliance_score_composite", compliance_score_unified, perimeter="organisation"),
@@ -214,8 +224,8 @@ def get_cockpit(
                 "risque_breakdown": {
                     "reglementaire_eur": round(risque_total, 2),
                     "billing_anomalies_eur": round(_billing_loss, 2),
-                    "contract_risk_eur": 0,
-                    "total_eur": round(risque_total + _billing_loss, 2),
+                    "contract_risk_eur": round(_contract_risk, 2),
+                    "total_eur": round(risque_total + _billing_loss + _contract_risk, 2),
                 },
                 "conso_kwh_total": round(conso_kwh, 2),
                 "conso_declared_kwh": round(_conso_declared_kwh, 2),

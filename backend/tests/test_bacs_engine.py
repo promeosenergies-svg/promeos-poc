@@ -343,6 +343,82 @@ class TestEvaluateBacs:
 
 
 # ════════════════════════════════════════════
+# EN 15232 system class tests (PRO-7)
+# ════════════════════════════════════════════
+
+
+class TestEN15232SystemClass:
+    """Verify EN 15232 class B minimum check in BACS findings and scoring."""
+
+    def _seed_site_with_class(self, db, system_class, cvc_kw=300):
+        site = Site(id=1, nom="Test Site", type=TypeSite.BUREAU)
+        db.add(site)
+        db.flush()
+        asset = BacsAsset(site_id=1, is_tertiary_non_residential=True)
+        db.add(asset)
+        db.flush()
+        sys = BacsCvcSystem(
+            asset_id=asset.id,
+            system_type=CvcSystemType.HEATING,
+            architecture=CvcArchitecture.CASCADE,
+            units_json=json.dumps([{"label": "PAC", "kw": cvc_kw}]),
+            system_class=system_class,
+        )
+        db.add(sys)
+        db.flush()
+        return site, asset
+
+    def test_class_d_marked_non_compliant(self, db):
+        """A site with system_class=D must be NON_COMPLIANT."""
+        self._seed_site_with_class(db, "D", cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        findings = json.loads(result.findings_json)
+        rule_ids = [f["rule_id"] for f in findings]
+        assert "BACS_V2_CLASS_INSUFFICIENT" in rule_ids
+        class_finding = [f for f in findings if f["rule_id"] == "BACS_V2_CLASS_INSUFFICIENT"][0]
+        assert class_finding["status"] == "NON_COMPLIANT"
+        assert class_finding["severity"] == "HIGH"
+
+    def test_class_c_marked_non_compliant(self, db):
+        """A site with system_class=C must be NON_COMPLIANT."""
+        self._seed_site_with_class(db, "C", cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        findings = json.loads(result.findings_json)
+        rule_ids = [f["rule_id"] for f in findings]
+        assert "BACS_V2_CLASS_INSUFFICIENT" in rule_ids
+
+    def test_class_b_is_compliant(self, db):
+        """A site with system_class=B must NOT produce a class finding."""
+        self._seed_site_with_class(db, "B", cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        findings = json.loads(result.findings_json)
+        rule_ids = [f["rule_id"] for f in findings]
+        assert "BACS_V2_CLASS_INSUFFICIENT" not in rule_ids
+
+    def test_class_a_is_compliant(self, db):
+        """A site with system_class=A must NOT produce a class finding."""
+        self._seed_site_with_class(db, "A", cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        findings = json.loads(result.findings_json)
+        rule_ids = [f["rule_id"] for f in findings]
+        assert "BACS_V2_CLASS_INSUFFICIENT" not in rule_ids
+
+    def test_class_null_no_finding(self, db):
+        """A site with system_class=None must NOT produce a class finding (unknown)."""
+        self._seed_site_with_class(db, None, cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        findings = json.loads(result.findings_json)
+        rule_ids = [f["rule_id"] for f in findings]
+        assert "BACS_V2_CLASS_INSUFFICIENT" not in rule_ids
+
+    def test_class_d_caps_compliance_score(self, db):
+        """A site with system_class=D must have compliance_score capped at 20."""
+        self._seed_site_with_class(db, "D", cvc_kw=300)
+        result = evaluate_bacs(db, site_id=1)
+        assert result.compliance_score <= 20.0
+
+
+# ════════════════════════════════════════════
 # Legacy wrapper test
 # ════════════════════════════════════════════
 

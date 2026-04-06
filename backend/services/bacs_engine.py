@@ -381,10 +381,10 @@ def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None)
     inspection_sched = compute_inspection_schedule(obligation["deadline"], inspections)
 
     # 5. Generate findings
-    findings = _generate_findings(asset, putile_result, obligation, tri_result, inspection_sched)
+    findings = _generate_findings(asset, putile_result, obligation, tri_result, inspection_sched, systems)
 
     # 6. Compute scores
-    compliance_score = _compute_compliance_score(obligation, tri_result, inspection_sched)
+    compliance_score = _compute_compliance_score(obligation, tri_result, inspection_sched, systems)
     confidence = _compute_confidence(systems, asset, tri_result)
 
     # 7. Persist assessment (upsert)
@@ -428,7 +428,7 @@ def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None)
     return assessment
 
 
-def _generate_findings(asset, putile_result, obligation, tri_result, inspection_sched) -> list[Finding]:
+def _generate_findings(asset, putile_result, obligation, tri_result, inspection_sched, systems=None) -> list[Finding]:
     """Generate Finding list from engine results."""
     findings = []
     putile_kw = putile_result["putile_kw"]
@@ -558,10 +558,46 @@ def _generate_findings(asset, putile_result, obligation, tri_result, inspection_
             )
         )
 
+    # EN 15232 system class check: class B minimum required
+    _CLASS_RANK = {"A": 4, "B": 3, "C": 2, "D": 1}
+    _MIN_CLASS = "B"
+    if systems:
+        insufficient_systems = []
+        for sys in systems:
+            if sys.system_class and sys.system_class.upper() in _CLASS_RANK:
+                if _CLASS_RANK[sys.system_class.upper()] < _CLASS_RANK[_MIN_CLASS]:
+                    insufficient_systems.append(sys)
+        if insufficient_systems:
+            classes_detail = ", ".join(
+                f"system id={s.id} classe {s.system_class.upper()}" for s in insufficient_systems
+            )
+            findings.append(
+                Finding(
+                    regulation="BACS",
+                    rule_id="BACS_V2_CLASS_INSUFFICIENT",
+                    status="NON_COMPLIANT",
+                    severity="HIGH",
+                    confidence="HIGH",
+                    legal_deadline=deadline,
+                    trigger_condition=f"system_class < B (EN 15232): {classes_detail}",
+                    config_params_used={"min_class": _MIN_CLASS},
+                    inputs_used=["system_class"],
+                    missing_inputs=[],
+                    explanation=(
+                        f"GTB classe insuffisante: {len(insufficient_systems)} systeme(s) "
+                        f"sous la classe B minimum exigee par EN 15232. "
+                        f"Detail: {classes_detail}."
+                    ),
+                    estimated_penalty_eur=bacs_penalty,
+                    penalty_source="regs.yaml",
+                    penalty_basis=f"non_compliance: {int(bacs_penalty)} EUR/site (classe GTB)",
+                )
+            )
+
     return findings
 
 
-def _compute_compliance_score(obligation, tri_result, inspection_sched) -> float:
+def _compute_compliance_score(obligation, tri_result, inspection_sched, systems=None) -> float:
     """Compute a 0-100 BACS sub-score (composante du score unifie A.2).
     Le score GLOBAL du site est calcule par compliance_score_service.py.
     Ne PAS confondre avec le compliance_score_composite du site."""
@@ -582,6 +618,15 @@ def _compute_compliance_score(obligation, tri_result, inspection_sched) -> float
     deadline = obligation.get("deadline")
     if deadline and date.today() <= deadline:
         score += 20.0
+
+    # EN 15232 class penalty: any system below class B caps score
+    _CLASS_RANK = {"A": 4, "B": 3, "C": 2, "D": 1}
+    if systems:
+        for sys in systems:
+            if sys.system_class and sys.system_class.upper() in _CLASS_RANK:
+                if _CLASS_RANK[sys.system_class.upper()] < _CLASS_RANK["B"]:
+                    score = min(score, 20.0)
+                    break
 
     return min(100.0, score)
 

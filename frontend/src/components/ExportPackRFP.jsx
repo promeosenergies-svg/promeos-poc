@@ -160,8 +160,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
               <strong>{fmtNum(Math.round(totalVolume), 0)} kWh/an</strong>. Le risque moyen pondéré
               du portefeuille est de <strong>{portfolio.weighted_risk_score}/100</strong> avec un
               potentiel d'économies de <strong>{Math.abs(portfolio.weighted_savings_pct)}%</strong>{' '}
-              par rapport aux tarifs actuels. Toutes les recommandations portent sur l'électricité
-              (contexte post-ARENH).
+              par rapport aux tarifs actuels. Toutes les recommandations portent sur l'électricité.
             </p>
           </div>
 

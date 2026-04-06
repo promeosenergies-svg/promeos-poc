@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   CalendarRange,
   ArrowRight,
+  Download,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
@@ -435,6 +436,15 @@ export default function BillIntelPage() {
         },
       }
     );
+  }
+
+  function handleExportCsv() {
+    const params = new URLSearchParams();
+    if (siteFilter) params.set('site_id', siteFilter);
+    if (insightFilter !== 'all') params.set('status', insightFilter);
+    const qs = params.toString();
+    window.open(`/api/bill/anomalies/csv${qs ? '?' + qs : ''}`, '_blank');
+    track('billing_export_csv');
   }
 
   const hasData = summary && summary.total_invoices > 0;
@@ -854,9 +864,14 @@ export default function BillIntelPage() {
       {insights.length > 0 || insightFilter !== 'all' ? (
         <div ref={anomaliesRef}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700">
-              <Explain term="anomalie">Anomalies</Explain> détectées ({insights.length})
-            </h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-gray-700">
+                <Explain term="anomalie">Anomalies</Explain> détectées ({insights.length})
+              </h3>
+              <Button variant="secondary" size="sm" onClick={handleExportCsv}>
+                <Download size={14} /> Exporter CSV
+              </Button>
+            </div>
             <div className="flex items-center gap-1">
               {INSIGHT_FILTER_OPTIONS.map((opt) => {
                 const count =

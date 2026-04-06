@@ -745,6 +745,7 @@ class SeedOrchestrator:
         from models.patrimoine import OrgEntiteLink, StagingBatch
         from models.market_models import PriceDecomposition, PriceSignal
         from models.notification import DigestPreference, WebhookSubscription
+        from models.contract_v2_models import ContractAnnexe, ContractPricing, VolumeCommitment, ContractEvent
 
         deleted = {}
 
@@ -960,6 +961,21 @@ class SeedOrchestrator:
             _del("billing_insights", BillingInsight, BillingInsight.invoice_id, demo_invoice_ids)
             _del("invoice_lines", EnergyInvoiceLine, EnergyInvoiceLine.invoice_id, demo_invoice_ids)
             _del("invoices", EnergyInvoice, EnergyInvoice.site_id, demo_site_ids)
+            # V2 Contrats : annexes + children avant contrats cadre
+            demo_contract_ids = (
+                [r[0] for r in self.db.query(EnergyContract.id).filter(EnergyContract.site_id.in_(demo_site_ids)).all()]
+                if demo_site_ids
+                else []
+            )
+            demo_annexe_ids = (
+                [r[0] for r in self.db.query(ContractAnnexe.id).filter(ContractAnnexe.site_id.in_(demo_site_ids)).all()]
+                if demo_site_ids
+                else []
+            )
+            _del("contract_events", ContractEvent, ContractEvent.contract_id, demo_contract_ids)
+            _del("volume_commitments", VolumeCommitment, VolumeCommitment.annexe_id, demo_annexe_ids)
+            _del("contract_pricing", ContractPricing, ContractPricing.annexe_id, demo_annexe_ids)
+            _del("contract_annexes", ContractAnnexe, ContractAnnexe.site_id, demo_site_ids)
             _del("contracts", EnergyContract, EnergyContract.site_id, demo_site_ids)
             _del("consumption_insights", ConsumptionInsight, ConsumptionInsight.site_id, demo_site_ids)
             _del("monitoring_alerts", MonitoringAlert, MonitoringAlert.snapshot_id, demo_snapshot_ids)

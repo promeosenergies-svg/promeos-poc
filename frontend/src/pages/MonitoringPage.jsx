@@ -917,6 +917,7 @@ function UsagePanel({
   onSuggestSchedule,
   onApplySchedule,
   suggestLoading,
+  toast,
 }) {
   if (usageLoading)
     return (
@@ -1010,11 +1011,19 @@ function UsagePanel({
           </div>
           <div className="shrink-0 flex flex-col gap-1">
             {current ? (
-              <Button variant="ghost" size="sm" onClick={() => {}}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toast('Modification des horaires à venir', 'info')}
+              >
                 Modifier
               </Button>
             ) : (
-              <Button variant="secondary" size="sm" onClick={() => {}}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => toast('Application des horaires à venir', 'info')}
+              >
                 Appliquer
               </Button>
             )}
@@ -2093,6 +2102,7 @@ export default function MonitoringPage() {
                 onSuggestSchedule={handleSuggestSchedule}
                 onApplySchedule={handleApplySchedule}
                 suggestLoading={suggestLoading}
+                toast={toast}
               />
             )}
 

@@ -92,6 +92,8 @@ def run_migrations(engine):
     _create_audit_energetique_table(engine)
     # V2 Contrats Cadre+Annexe
     _migrate_contracts_v2(engine)
+    # APER couverture partielle — champ coverage_pct sur evidences
+    _add_evidence_coverage_pct_column(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -2040,3 +2042,16 @@ def _migrate_contracts_v2(engine):
             conn.execute(text("UPDATE energy_contracts SET is_cadre = 0 WHERE is_cadre IS NULL"))
             conn.execute(text("UPDATE energy_contracts SET contract_type = 'UNIQUE' WHERE contract_type IS NULL"))
         logger.info("migration: backfilled energy_contracts V2 defaults")
+
+
+def _add_evidence_coverage_pct_column(engine):
+    """Add coverage_pct (FLOAT, nullable) to evidences table for APER partial coverage."""
+    insp = inspect(engine)
+    if not insp.has_table("evidences"):
+        return
+    existing = {c["name"] for c in insp.get_columns("evidences")}
+    if "coverage_pct" in existing:
+        return
+    with engine.begin() as conn:
+        conn.execute(text('ALTER TABLE "evidences" ADD COLUMN "coverage_pct" FLOAT'))
+    logger.info("migration: added evidences.coverage_pct column (APER partial coverage)")

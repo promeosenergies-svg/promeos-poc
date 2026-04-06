@@ -1,11 +1,127 @@
 # CEE Period 6 action catalog (simplified)
-"BAT-EN-101": {label: "Isolation combles/toiture", category: "envelope", typical_savings_kwh_m2: 50}
-"BAT-EN-102": {label: "Isolation murs", category: "envelope", typical_savings_kwh_m2: 30}
-"BAT-EN-103": {label: "Isolation planchers bas", category: "envelope", typical_savings_kwh_m2: 20}
-"BAT-TH-104": {label: "Chaudiere condensation gaz", category: "heating", typical_savings_kwh_m2: 40}
-"BAT-TH-113": {label: "Pompe a chaleur air/eau", category: "heating", typical_savings_kwh_m2: 80}
-"BAT-TH-127": {label: "Ventilation double flux", category: "ventilation", typical_savings_kwh_m2: 25}
-"BAT-EQ-127": {label: "Eclairage LED", category: "lighting", typical_savings_kwh_m2: 15}
-"BAT-TH-158": {label: "Systeme GTB BACS", category: "controls", typical_savings_kwh_m2: 35}
-"BAT-TH-116": {label: "Systeme solaire thermique", category: "renewables", typical_savings_kwh_m2: 60}
-"BAT-SE-06": {label: "Contrat performance energetique CPE", category: "services", typical_savings_pct: 15}
+# duree_vie_ans: duree de vie conventionnelle CEE (annees)
+# typical_savings_kwh_m2: economies unitaires par m2 traite
+
+"BAT-EN-101": {label: "Isolation combles/toiture", category: "envelope", typical_savings_kwh_m2: 50, duree_vie_ans: 30}
+"BAT-EN-102": {label: "Isolation murs", category: "envelope", typical_savings_kwh_m2: 30, duree_vie_ans: 30}
+"BAT-EN-103": {label: "Isolation planchers bas", category: "envelope", typical_savings_kwh_m2: 20, duree_vie_ans: 30}
+"BAT-TH-104": {label: "Chaudiere condensation gaz", category: "heating", typical_savings_kwh_m2: 40, duree_vie_ans: 17}
+"BAT-TH-113": {label: "Pompe a chaleur air/eau", category: "heating", typical_savings_kwh_m2: 80, duree_vie_ans: 17}
+"BAT-TH-127": {label: "Ventilation double flux", category: "ventilation", typical_savings_kwh_m2: 25, duree_vie_ans: 17}
+"BAT-EQ-127": {label: "Eclairage LED", category: "lighting", typical_savings_kwh_m2: 15, duree_vie_ans: 12}
+"BAT-TH-158": {label: "Systeme GTB BACS", category: "controls", typical_savings_kwh_m2: 35, duree_vie_ans: 15}
+"BAT-TH-116": {label: "Systeme solaire thermique", category: "renewables", typical_savings_kwh_m2: 60, duree_vie_ans: 20}
+"BAT-SE-06": {label: "Contrat performance energetique CPE", category: "services", typical_savings_pct: 15, duree_vie_ans: 4}
+
+# Coefficients zone climatique pour ponderation des economies CEE
+# Source: arrete CEE, coefficients simplifies tertiaire
+zone_climatique_coefficients:
+  H1a: 1.3
+  H1b: 1.3
+  H1c: 1.2
+  H2a: 1.1
+  H2b: 1.0
+  H2c: 1.0
+  H2d: 0.9
+  H3: 0.8
+
+# Correspondance departement -> zone climatique (prefixes 2 chiffres)
+departement_zone_map:
+  "01": "H1c"
+  "02": "H1a"
+  "03": "H1c"
+  "04": "H2d"
+  "05": "H1c"
+  "06": "H3"
+  "07": "H2d"
+  "08": "H1b"
+  "09": "H2c"
+  "10": "H1b"
+  "11": "H3"
+  "12": "H2c"
+  "13": "H3"
+  "14": "H2a"
+  "15": "H1c"
+  "16": "H2b"
+  "17": "H2b"
+  "18": "H2b"
+  "19": "H1c"
+  "20": "H3"
+  "21": "H1c"
+  "22": "H2a"
+  "23": "H1c"
+  "24": "H2c"
+  "25": "H1c"
+  "26": "H2d"
+  "27": "H1a"
+  "28": "H1a"
+  "29": "H2a"
+  "30": "H3"
+  "31": "H2c"
+  "32": "H2c"
+  "33": "H2b"
+  "34": "H3"
+  "35": "H2a"
+  "36": "H2b"
+  "37": "H2b"
+  "38": "H1c"
+  "39": "H1c"
+  "40": "H2c"
+  "41": "H2b"
+  "42": "H1c"
+  "43": "H1c"
+  "44": "H2b"
+  "45": "H1a"
+  "46": "H2c"
+  "47": "H2c"
+  "48": "H2d"
+  "49": "H2b"
+  "50": "H2a"
+  "51": "H1b"
+  "52": "H1b"
+  "53": "H2b"
+  "54": "H1b"
+  "55": "H1b"
+  "56": "H2a"
+  "57": "H1b"
+  "58": "H1c"
+  "59": "H1a"
+  "60": "H1a"
+  "61": "H2a"
+  "62": "H1a"
+  "63": "H1c"
+  "64": "H2c"
+  "65": "H2c"
+  "66": "H3"
+  "67": "H1b"
+  "68": "H1b"
+  "69": "H1c"
+  "70": "H1c"
+  "71": "H1c"
+  "72": "H2b"
+  "73": "H1c"
+  "74": "H1c"
+  "75": "H1a"
+  "76": "H1a"
+  "77": "H1a"
+  "78": "H1a"
+  "79": "H2b"
+  "80": "H1a"
+  "81": "H2c"
+  "82": "H2c"
+  "83": "H3"
+  "84": "H2d"
+  "85": "H2b"
+  "86": "H2b"
+  "87": "H1c"
+  "88": "H1b"
+  "89": "H1c"
+  "90": "H1b"
+  "91": "H1a"
+  "92": "H1a"
+  "93": "H1a"
+  "94": "H1a"
+  "95": "H1a"
+  "2A": "H3"
+  "2B": "H3"
+  "97": "H3"

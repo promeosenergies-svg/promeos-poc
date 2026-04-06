@@ -6,6 +6,7 @@
  *       reconstitution_label from API, formula always visible, source_ref, prorata_display,
  *       total_gap_label, confidence_rationale tooltip, puissance_kva in expert meta.
  */
+import { useNavigate } from 'react-router-dom';
 import { useExpertMode } from '../../contexts/ExpertModeContext';
 import { Explain } from '../../ui';
 
@@ -50,6 +51,7 @@ function fmt(val) {
 }
 
 export default function ShadowBreakdownCard({ breakdown }) {
+  const navigate = useNavigate();
   const { isExpert } = useExpertMode();
 
   if (!breakdown || !breakdown.components) {
@@ -259,14 +261,7 @@ export default function ShadowBreakdownCard({ breakdown }) {
                       )}
                       <button
                         className="px-2 py-0.5 text-xs font-medium rounded bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-                        onClick={() => {
-                          /* Navigate to contract data completion — placeholder */
-                          window.dispatchEvent(
-                            new CustomEvent('promeos:navigate', {
-                              detail: { to: 'contract-edit', component: c.code },
-                            })
-                          );
-                        }}
+                        onClick={() => navigate('/contrats')}
                       >
                         Compléter les données du contrat
                       </button>

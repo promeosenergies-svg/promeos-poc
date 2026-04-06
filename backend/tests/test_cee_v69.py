@@ -32,6 +32,13 @@ from services.cee_service import (
     get_site_work_packages,
     _CEE_EVIDENCE_TEMPLATE,
 )
+from regops.rules.cee_p6 import (
+    compute_cee_kwh_cumac,
+    get_fiche,
+    get_zone_coefficient,
+    resolve_zone_from_code_postal,
+    CeeCalculResult,
+)
 
 
 # ── Helpers ──────────────────────────────────────────────────
@@ -341,3 +348,157 @@ class TestV69Models:
         assert "type_key" in cols
         assert "statut" in cols
         assert "evidence_id" in cols
+
+    def test_work_package_has_fiche_ref(self):
+        """WorkPackage has fiche_ref column for CEE fiche reference."""
+        cols = {c.name for c in WorkPackage.__table__.columns}
+        assert "fiche_ref" in cols
+
+
+# ═══════════════════════════════════════════════
+# Test: CEE kWhc cumac calculation engine
+# ═══════════════════════════════════════════════
+
+
+class TestCeeCatalog:
+    def test_get_fiche_known(self):
+        """get_fiche returns data for a known fiche code."""
+        fiche = get_fiche("BAT-EN-101")
+        assert fiche is not None
+        assert fiche["label"] == "Isolation combles/toiture"
+        assert fiche["typical_savings_kwh_m2"] == 50
+        assert fiche["duree_vie_ans"] == 30
+
+    def test_get_fiche_unknown(self):
+        """get_fiche returns None for unknown codes."""
+        assert get_fiche("UNKNOWN-999") is None
+
+    def test_all_fiches_have_duree_vie(self):
+        """Every fiche in catalog has duree_vie_ans."""
+        known_fiches = [
+            "BAT-EN-101",
+            "BAT-EN-102",
+            "BAT-EN-103",
+            "BAT-TH-104",
+            "BAT-TH-113",
+            "BAT-TH-127",
+            "BAT-EQ-127",
+            "BAT-TH-158",
+            "BAT-TH-116",
+            "BAT-SE-06",
+        ]
+        for ref in known_fiches:
+            fiche = get_fiche(ref)
+            assert fiche is not None, f"Missing fiche: {ref}"
+            assert "duree_vie_ans" in fiche, f"Missing duree_vie_ans for {ref}"
+            assert fiche["duree_vie_ans"] > 0, f"duree_vie_ans must be > 0 for {ref}"
+
+
+class TestZoneClimatique:
+    def test_known_zone_coefficient(self):
+        """Known zones return the correct coefficient."""
+        assert get_zone_coefficient("H1a") == 1.3
+        assert get_zone_coefficient("H3") == 0.8
+        assert get_zone_coefficient("H2b") == 1.0
+
+    def test_unknown_zone_defaults_1(self):
+        """Unknown zones default to 1.0."""
+        assert get_zone_coefficient("UNKNOWN") == 1.0
+
+    def test_resolve_zone_paris(self):
+        """Paris (75) → H1a."""
+        assert resolve_zone_from_code_postal("75001") == "H1a"
+
+    def test_resolve_zone_marseille(self):
+        """Marseille (13) → H3."""
+        assert resolve_zone_from_code_postal("13001") == "H3"
+
+    def test_resolve_zone_lyon(self):
+        """Lyon (69) → H1c."""
+        assert resolve_zone_from_code_postal("69000") == "H1c"
+
+    def test_resolve_zone_none(self):
+        """None or empty postal code returns None."""
+        assert resolve_zone_from_code_postal(None) is None
+        assert resolve_zone_from_code_postal("") is None
+
+
+class TestComputeCeeKwhCumac:
+    def test_basic_calculation(self):
+        """BAT-EN-101, 1000m², zone H2b → expected kWhc cumac."""
+        result = compute_cee_kwh_cumac(
+            fiche_ref="BAT-EN-101",
+            surface_m2=1000,
+            zone_climatique="H2b",
+        )
+        # 50 kWh/m² × 1000 m² × 1.0 (H2b) × 30 ans = 1_500_000
+        assert result.kwh_cumac == 1_500_000.0
+        assert result.fiche_ref == "BAT-EN-101"
+        assert result.zone_climatique == "H2b"
+        assert result.zone_coefficient == 1.0
+        assert result.duree_vie_ans == 30
+
+    def test_zone_h1a_increases_volume(self):
+        """Zone H1a (coeff 1.3) increases volume vs H2b (1.0)."""
+        r_h2b = compute_cee_kwh_cumac("BAT-EN-101", 1000, zone_climatique="H2b")
+        r_h1a = compute_cee_kwh_cumac("BAT-EN-101", 1000, zone_climatique="H1a")
+        assert r_h1a.kwh_cumac > r_h2b.kwh_cumac
+        assert r_h1a.zone_coefficient == 1.3
+
+    def test_zone_from_code_postal(self):
+        """Zone resolved from code postal when not explicitly provided."""
+        result = compute_cee_kwh_cumac(
+            fiche_ref="BAT-EN-101",
+            surface_m2=500,
+            code_postal="75001",  # Paris → H1a (1.3)
+        )
+        assert result.zone_climatique == "H1a"
+        assert result.zone_coefficient == 1.3
+        # 50 × 500 × 1.3 × 30 = 975_000
+        assert result.kwh_cumac == 975_000.0
+
+    def test_amount_eur_computed(self):
+        """EUR amount = kWhc × prix_MWhc / 1000."""
+        result = compute_cee_kwh_cumac(
+            fiche_ref="BAT-EN-101",
+            surface_m2=1000,
+            zone_climatique="H2b",
+            prix_mwhc_cumac_eur=8.50,
+        )
+        expected_eur = 1_500_000.0 * 8.50 / 1000
+        assert result.amount_eur == expected_eur
+
+    def test_unknown_fiche_raises(self):
+        """Unknown fiche code raises ValueError."""
+        with pytest.raises(ValueError, match="Fiche CEE inconnue"):
+            compute_cee_kwh_cumac("FAKE-999", 1000, zone_climatique="H2b")
+
+    def test_zero_surface_raises(self):
+        """Zero or negative surface raises ValueError."""
+        with pytest.raises(ValueError, match="Surface invalide"):
+            compute_cee_kwh_cumac("BAT-EN-101", 0, zone_climatique="H2b")
+
+    def test_services_fiche_no_savings_kwh_m2(self):
+        """BAT-SE-06 (services) has no typical_savings_kwh_m2 → ValueError."""
+        with pytest.raises(ValueError, match="typical_savings_kwh_m2"):
+            compute_cee_kwh_cumac("BAT-SE-06", 1000, zone_climatique="H2b")
+
+    def test_fallback_zone_when_none(self):
+        """When no zone and no postal code, defaults to H2b."""
+        result = compute_cee_kwh_cumac("BAT-EN-101", 1000)
+        assert result.zone_climatique == "H2b"
+        assert result.zone_coefficient == 1.0
+
+    def test_heating_fiche_duree_vie(self):
+        """Heating fiches have 17 years durée de vie."""
+        result = compute_cee_kwh_cumac("BAT-TH-113", 1000, zone_climatique="H2b")
+        assert result.duree_vie_ans == 17
+        # 80 × 1000 × 1.0 × 17 = 1_360_000
+        assert result.kwh_cumac == 1_360_000.0
+
+    def test_led_fiche(self):
+        """LED fiche has 12 years durée de vie."""
+        result = compute_cee_kwh_cumac("BAT-EQ-127", 500, zone_climatique="H3")
+        assert result.duree_vie_ans == 12
+        # 15 × 500 × 0.8 × 12 = 72_000
+        assert result.kwh_cumac == 72_000.0

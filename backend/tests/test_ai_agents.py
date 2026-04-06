@@ -52,40 +52,37 @@ def db_session():
 
 def test_ai_client_stub_mode():
     """Test AI client defaults to stub mode without API key"""
+    from unittest.mock import patch
     import ai_layer.client as _mod
 
-    # Clear both env var and module-level cached value
-    old_key = os.environ.pop("AI_API_KEY", None)
-    old_mod = _mod.AI_API_KEY
-    _mod.AI_API_KEY = None
-
-    try:
-        client = AIClient()
-        assert client.stub_mode is True
-    finally:
-        _mod.AI_API_KEY = old_mod
-        if old_key:
-            os.environ["AI_API_KEY"] = old_key
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("AI_API_KEY", None)
+        old_mod = _mod.AI_API_KEY
+        _mod.AI_API_KEY = None
+        try:
+            client = AIClient()
+            assert client.stub_mode is True
+        finally:
+            _mod.AI_API_KEY = old_mod
 
 
 def test_ai_client_stub_response():
     """Test stub mode returns expected response format"""
+    from unittest.mock import patch
     import ai_layer.client as _mod
 
-    old_key = os.environ.pop("AI_API_KEY", None)
-    old_mod = _mod.AI_API_KEY
-    _mod.AI_API_KEY = None
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("AI_API_KEY", None)
+        old_mod = _mod.AI_API_KEY
+        _mod.AI_API_KEY = None
+        try:
+            client = AIClient()
+            response = client.complete("system prompt", "user prompt")
 
-    try:
-        client = AIClient()
-        response = client.complete("system prompt", "user prompt")
-
-        assert isinstance(response, str)
-        assert "[AI Stub Mode]" in response or "stub" in response.lower()
-    finally:
-        _mod.AI_API_KEY = old_mod
-        if old_key:
-            os.environ["AI_API_KEY"] = old_key
+            assert isinstance(response, str)
+            assert "[AI Stub Mode]" in response or "stub" in response.lower()
+        finally:
+            _mod.AI_API_KEY = old_mod
 
 
 def test_agent_creates_ai_insight(db_session):

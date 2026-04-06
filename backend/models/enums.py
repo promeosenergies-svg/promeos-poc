@@ -183,6 +183,9 @@ class TypeEvidence(str, enum.Enum):
     DECLARATION = "declaration"
     ATTESTATION_BACS = "attestation_bacs"
     DEROGATION_BACS = "derogation_bacs"
+    ATTESTATION_OMBRIERE_PV = "attestation_ombriere_pv"
+    ATTESTATION_TOITURE_PV = "attestation_toiture_pv"
+    ATTESTATION_TOITURE_VEGETALISEE = "attestation_toiture_vegetalisee"
 
 
 class StatutEvidence(str, enum.Enum):

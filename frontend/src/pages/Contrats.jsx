@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FileText, Download, Plus, Search } from 'lucide-react';
-import { PageShell, Badge, Button, EmptyState } from '../ui';
+import { PageShell, Badge, Button, EmptyState, ErrorState } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
 import { listCadres, getCadreKpis } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
@@ -46,6 +46,7 @@ export default function Contrats() {
   const [cadres, setCadres] = useState([]);
   const [kpis, setKpis] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [chipFilter, setChipFilter] = useState('all');
 
@@ -57,10 +58,14 @@ export default function Contrats() {
 
   const fetchData = useCallback(() => {
     setLoading(true);
+    setError(null);
     Promise.all([listCadres(), getCadreKpis()])
       .then(([c, k]) => {
         setCadres(c || []);
         setKpis(k || {});
+      })
+      .catch(() => {
+        setError('Impossible de charger les contrats. Verifiez votre connexion et reessayez.');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -197,6 +202,19 @@ export default function Contrats() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         {loading ? (
           <SkeletonTable rows={6} cols={9} />
+        ) : error ? (
+          <ErrorState message={error} onRetry={fetchData} />
+        ) : filtered.length === 0 && (search.trim() || chipFilter !== 'all') ? (
+          <EmptyState
+            icon={Search}
+            title="Aucun contrat correspondant"
+            text="Aucun resultat pour ces criteres de recherche. Modifiez votre filtre ou votre recherche."
+            ctaLabel="Reinitialiser"
+            onCta={() => {
+              setSearch('');
+              setChipFilter('all');
+            }}
+          />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={FileText}

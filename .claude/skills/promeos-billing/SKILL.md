@@ -11,6 +11,9 @@ description: "Expertise facture énergie France B2B : shadow billing, TURPE 6/7,
 |---|---|
 | Grilles tarifaires TURPE, valeurs €/kWh | `references/turpe7-grilles.md` |
 | Vérification de facture, checklist, reclaim | `references/shadow-billing-checklist.md` |
+| Benchmark marché, prix de gros, concurrence, ARENH, post-ARENH, CPPA | `references/benchmark-marche-2024.md` |
+| Stockage batteries, flexibilité, autoconsommation, FCR, agrégation | `references/benchmark-stockage-2023.md` |
+| Photovoltaïque, autoconsommation, PPA, soutien PV, agrivoltaïsme, panneaux | `references/benchmark-photovoltaique-2024.md` |
 | Tout le reste (pipeline, anomalies, cascade prix) | Ce SKILL.md suffit |
 
 ## Proactive triggers — Alerter sans qu'on demande
@@ -20,6 +23,88 @@ description: "Expertise facture énergie France B2B : shadow billing, TURPE 6/7,
 - Accise ≠ taux en vigueur → "Vérifier le taux accise : T1=30.85 €/MWh (ménages), T2=26.58 €/MWh (PME/pro) depuis 01/02/2026. Ancien taux 25.79 €/MWh valable 01/08/2025-31/01/2026."
 - Écart shadow billing > 5% → "Anomalie BILL_001 détectée. Écart significatif entre recalcul et facture."
 - Doublon PRM + même période → "CRITICAL BILL_006 : doublon de facturation potentiel."
+
+## Contexte marché 2024 — Vision Les Echos Études (déc 2024)
+
+### Prix de référence fin 2024
+
+| Indicateur | Valeur | Tendance |
+|---|---|---|
+| Prix spot day-ahead (nov 2024) | 100 €/MWh | Élevé vs 2010-2020, mais 5x moins qu'août 2022 (492 €/MWh) |
+| Calendaire Y+1 moy 2024 | 77 €/MWh | Baisse rapide depuis pic 365 €/MWh (2022) |
+| Calendaire Y+2 moy 2024 | 67 €/MWh | Convergence vers ~70 €/MWh cible post-ARENH |
+| TRVE résidentiel base | 251,6 €/MWh TTC | Baisse ~10% attendue fév 2025 |
+| GO (garanties d'origine) | 0,45 €/MWh | Quasi-gratuit — offre verte = pas de surcoût |
+| Garanties de capacité (9e enchère 2025) | 0 €/MW | Nucléaire rétabli, surcapacité |
+| Prix B2B fin 2023 vs 2021 | +50% | Inertie contrats, normalisation en cours |
+| ARENH (dernière année) | 42 €/MWh | Fin définitive 31/12/2025 |
+
+### Décomposition facture résidentielle TRVE (CRE 2024)
+
+| Composante | % facture TTC | Impact shadow billing |
+|---|---|---|
+| Fourniture | **54%** | Variable clé — prix spot ou fixe |
+| TURPE | **22%** | Réglementé, stable intra-période |
+| TVA | **15%** | Calculable (5.5% + 20%) |
+| Accise | **7%** | Taux temporel critique |
+| CTA | **2%** | % part fixe TURPE |
+
+### Brique énergie dans le TRVE (CRE, €/MWh)
+
+| Année | ARENH | Marché lissé | Complément écrêtement | Total énergie |
+|---|---|---|---|---|
+| 2019 | 21.4 | 17.6 | 10.0 | 49.0 |
+| 2020 | 19.3 | 19.9 | 10.1 | 49.3 |
+| 2021 | 19.5 | 18.9 | 10.3 | 48.7 |
+| 2022 | 17.5 | 28.8 | 63.9 | 110.2 |
+| 2023 | 18.9 | 124.2 | 89.8 | 232.9 |
+| 2024 | 18.8 | 91.1 | 13.9 | 123.8 |
+
+> Ces données calibrent le module de benchmark prix PROMEOS : un prix fourniture < 60 €/MWh est attractif post-ARENH, > 90 €/MWh signale un contrat à renégocier.
+
+### Post-ARENH — Nouvelles règles d'approvisionnement (2026+)
+
+| Mécanisme | Détail | Impact PROMEOS |
+|---|---|---|
+| CAPN (Contrats Allocation Production Nucléaire) | 10-15 ans, partage risque dispo nucléaire, cible électro-intensifs | Nouveau type contrat à modéliser |
+| Contrats moyen terme EDF | 4-5 ans, ~60 €/MWh, B2B pro+collectivités | Benchmark pricing pour shadow billing |
+| Enchères calendaires Y+4/Y+5 | Baseload, maturités longues, fournisseurs alternatifs | Référence approvisionnement alternatifs |
+| Prélèvement État | 50% > 78 €/MWh, 90% > 110 €/MWh | Plafond prix de marché indirect |
+| Prix cible | ~70 €₂₀₂₂/MWh en moyenne 15 ans | Ancrage shadow billing long terme |
+
+### Concurrence et parts de marché 2024
+
+| Segment | Historiques | Alternatifs | Observations |
+|---|---|---|---|
+| Grands sites non résidentiels | 48% | **52%** | Équilibre atteint |
+| Sites moyens non résidentiels | 48% | **52%** | Idem |
+| Petits sites non résidentiels | 57% (dont 29% TRVE) | **43%** | Marge progression alternatifs |
+| Résidentiels | 72% (dont 62% TRVE) | **28%** | Fort potentiel |
+| **Global volume** | **57%** | **43%** | Tendance → 50/50 en 2030 |
+
+> 55 offres sur 67 moins chères que le TRVE (déc 2024). Discounts de -25% à -30%. Le TRVE sert de plafond de référence.
+
+### CPPA — Tendance structurante
+
+- 4,9 TWh cumulés depuis 2019, 26 CPPA signés jan-sept 2024
+- 84% greenfield, prix attractifs (< marché spot)
+- PROMEOS doit modéliser les CPPA dans la cascade de prix (entre contrat cadre et spot)
+
+### CEE — Poids dans la facture
+
+- Électricité = **27%** de l'obligation totale CEE (5e période)
+- Coefficient : 0,478 kWh cumac/kWh vendu
+- Poids dans tarif bleu : **2,9%**
+- Pénalité max : 0,015 €/kWh cumac
+
+### Consommation France — Trajectoire
+
+- 2023 : **439 TWh** (point bas historique)
+- 2024 estimé : ~445-450 TWh (léger rebond)
+- 2030 cible : ~500 TWh
+- 2035 cible RTE : **590-640 TWh** (scénario "fit for 55")
+- Vecteurs : data centers, VE, industrie (H2 décarboné)
+- 40M sites : 34,7M résidentiels, 4,8M petits pro, 447K moyens, 99K grands
 
 ## Architecture Shadow Billing
 

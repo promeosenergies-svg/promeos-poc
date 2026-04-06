@@ -54,6 +54,7 @@ export const ROUTE_MODULE_MAP = {
   '/actions/new': 'pilotage',
   '/actions/:actionId': 'pilotage',
   '/anomalies': 'pilotage',
+  '/action-center': 'pilotage',
   '/onboarding': 'pilotage',
   '/patrimoine': 'patrimoine',
   '/sites/:id': 'patrimoine',
@@ -429,10 +430,16 @@ export const NAV_SECTIONS = [
     order: 1,
     items: [
       {
+        to: '/',
+        icon: LayoutDashboard,
+        label: 'Tableau de bord',
+        keywords: ['dashboard', 'accueil', 'home', 'tableau'],
+      },
+      {
         to: '/cockpit',
         icon: BarChart3,
-        label: 'Cockpit',
-        keywords: ['cockpit', 'executive', 'synthese', 'dashboard'],
+        label: 'Synthèse exécutive',
+        keywords: ['cockpit', 'executive', 'synthese', 'strategique'],
       },
       {
         to: '/actions',
@@ -644,10 +651,16 @@ export const NAV_MAIN_SECTIONS = [
     order: 1,
     items: [
       {
+        to: '/',
+        icon: LayoutDashboard,
+        label: 'Tableau de bord',
+        keywords: ['dashboard', 'accueil', 'home', 'tableau'],
+      },
+      {
         to: '/cockpit',
         icon: BarChart3,
-        label: 'Cockpit',
-        keywords: ['cockpit', 'executive', 'synthese', 'dashboard', 'accueil'],
+        label: 'Synthèse exécutive',
+        keywords: ['cockpit', 'executive', 'synthese', 'strategique'],
       },
       {
         to: '/actions',
@@ -880,15 +893,14 @@ export const HIDDEN_PAGES = [
     section: 'Patrimoine',
     hidden: true,
   },
-  // Tableau de bord (CommandCenter) masqué — doublon avec Cockpit
-  // {
-  //   to: '/',
-  //   icon: LayoutDashboard,
-  //   label: 'Tableau de bord',
-  //   keywords: ['dashboard', 'accueil', 'home'],
-  //   section: 'Pilotage',
-  //   hidden: true,
-  // },
+  {
+    to: '/',
+    icon: LayoutDashboard,
+    label: 'Tableau de bord',
+    keywords: ['dashboard', 'accueil', 'home', 'tableau', 'operationnel'],
+    section: 'Pilotage',
+    hidden: true,
+  },
   {
     to: '/anomalies',
     icon: AlertTriangle,

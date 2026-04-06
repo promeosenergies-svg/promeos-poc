@@ -23,6 +23,8 @@ from models import (
     Site,
     Batiment,
     EnergyInvoice,
+    EnergyContract,
+    BillingEnergyType,
     AuditLog,
     Portefeuille,
     EntiteJuridique,
@@ -56,7 +58,8 @@ OPERAT_COLUMNS = [
 def _get_site_conso(db: Session, site_id: int, year: int) -> dict:
     """Get annual consumption for a site by energy type from invoices."""
     invoices = (
-        db.query(EnergyInvoice)
+        db.query(EnergyInvoice, EnergyContract.energy_type)
+        .outerjoin(EnergyContract, EnergyInvoice.contract_id == EnergyContract.id)
         .filter(
             EnergyInvoice.site_id == site_id,
         )
@@ -66,7 +69,7 @@ def _get_site_conso(db: Session, site_id: int, year: int) -> dict:
     elec_kwh = 0.0
     gaz_kwh = 0.0
 
-    for inv in invoices:
+    for inv, energy_type in invoices:
         inv_year = None
         if inv.period_start:
             inv_year = inv.period_start.year
@@ -75,7 +78,10 @@ def _get_site_conso(db: Session, site_id: int, year: int) -> dict:
         if inv_year != year:
             continue
         kwh = inv.energy_kwh or 0
-        elec_kwh += kwh  # Default to electricity
+        if energy_type == BillingEnergyType.GAZ:
+            gaz_kwh += kwh
+        else:
+            elec_kwh += kwh
 
     return {"elec": round(elec_kwh), "gaz": round(gaz_kwh), "reseau": 0}
 

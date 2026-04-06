@@ -20,6 +20,7 @@ import {
 import { getPortfolioComplianceSummary } from '../services/api';
 import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
+import ErrorState from '../ui/ErrorState';
 import { useScope } from '../contexts/ScopeContext';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
@@ -55,15 +56,25 @@ export default function CompliancePipelinePage() {
   const { sitesLoading } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { openActionDrawer } = useActionDrawer();
 
-  useEffect(() => {
+  function fetchData() {
     setLoading(true);
+    setError(null);
     getPortfolioComplianceSummary()
       .then(setData)
-      .catch(() => toast('Erreur lors du chargement du pipeline conformité', 'error'))
+      .catch((err) => {
+        setError(err?.message || 'Erreur lors du chargement du pipeline conformité');
+        toast('Erreur lors du chargement du pipeline conformité', 'error');
+      })
       .finally(() => setLoading(false));
-  }, [toast]);
+  }
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading || sitesLoading) {
     return (
@@ -77,6 +88,18 @@ export default function CompliancePipelinePage() {
           </div>
           <div className="h-60 bg-gray-200 rounded-lg" />
         </div>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <ShieldCheck size={24} className="text-blue-600" />
+          Pipeline Conformité
+        </h1>
+        <ErrorState message={error} onRetry={fetchData} />
       </div>
     );
   }

@@ -25,8 +25,8 @@ import { normalizeDashboardModel } from '../CommandCenter';
 // ── NavRegistry: routes canoniques ───────────────────────────────────────────
 
 describe('NavRegistry — routes canoniques', () => {
-  it('"Cockpit" pointe vers "/cockpit"', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Cockpit');
+  it('"Synthèse exécutive" pointe vers "/cockpit"', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.label === 'Synthèse exécutive');
     expect(item).toBeDefined();
     expect(item.to).toBe('/cockpit');
   });
@@ -62,9 +62,9 @@ describe('NavRegistry — routes canoniques', () => {
 // ── Labels français avec accents ─────────────────────────────────────────────
 
 describe('NavRegistry — labels FR avec accents', () => {
-  it('label "Cockpit" pour /cockpit', () => {
+  it('label "Synthèse exécutive" pour /cockpit', () => {
     const item = ALL_NAV_ITEMS.find((i) => i.to === '/cockpit');
-    expect(item?.label).toBe('Cockpit');
+    expect(item?.label).toBe('Synthèse exécutive');
   });
 
   it('module Achat has correct label', () => {

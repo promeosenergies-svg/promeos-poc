@@ -21,8 +21,16 @@ def _ensure_seeded():
             from services.demo_seed import SeedOrchestrator
 
             orch = SeedOrchestrator(db)
-            orch.seed("helios", "S", reset=True)
+            orch.reset(mode="hard")
+            result = orch.seed("helios", "S", rng_seed=42)
             db.commit()
+            # Réactiver DemoState pour les tests qui en dépendent
+            from services.demo_state import DemoState
+            from models import Organisation
+
+            org = db.query(Organisation).first()
+            if org:
+                DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
     except Exception:
         db.rollback()
     finally:

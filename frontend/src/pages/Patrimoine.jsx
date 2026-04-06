@@ -453,7 +453,23 @@ export default function Patrimoine() {
     const surface = enrichedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
     const anomalies = enrichedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
     const withAno = enrichedSites.filter((s) => (s.anomalies_count || 0) > 0).length;
-    return { total: t, conformes, nc, aRisque, needsReview, risque, surface, anomalies, withAno };
+    const scoredSites = enrichedSites.filter((s) => s.compliance_score != null);
+    const avgComplianceScore =
+      scoredSites.length > 0
+        ? Math.round(scoredSites.reduce((a, s) => a + s.compliance_score, 0) / scoredSites.length)
+        : null;
+    return {
+      total: t,
+      conformes,
+      nc,
+      aRisque,
+      needsReview,
+      risque,
+      surface,
+      anomalies,
+      withAno,
+      avgComplianceScore,
+    };
   }, [enrichedSites]);
 
   const filtered = useMemo(() => {
@@ -762,10 +778,12 @@ export default function Patrimoine() {
             />
             <KpiStripItem
               label="Conformité"
-              value={
-                stats.total > 0 ? `${Math.round((stats.conformes / stats.total) * 100)}%` : '—'
+              value={stats.avgComplianceScore != null ? `${stats.avgComplianceScore}%` : '—'}
+              color={
+                stats.avgComplianceScore != null && stats.avgComplianceScore >= 80
+                  ? 'green'
+                  : 'amber'
               }
-              color={stats.conformes === stats.total ? 'green' : 'amber'}
               sub={`${stats.conformes}/${stats.total} conformes`}
             />
             <KpiStripItem

@@ -256,6 +256,147 @@ def test_aper_non_outdoor_parking(configs):
 
 
 # ========================================
+# APER Evidence Consultation Tests (PRO-18)
+# ========================================
+
+
+def test_aper_parking_large_with_valid_ombriere_evidence(configs):
+    """Large outdoor parking with valid ombriere PV attestation → no AT_RISK finding"""
+    site = make_site(parking_area_m2=12000, parking_type=ParkingType.OUTDOOR)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_OMBRIERE_PV,
+            statut=StatutEvidence.VALIDE,
+            note="Ombriere PV installee 2025",
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    # No parking AT_RISK finding should be emitted
+    parking_at_risk = [f for f in findings if f.rule_id.startswith("PARKING_") and f.status == "AT_RISK"]
+    assert len(parking_at_risk) == 0
+
+
+def test_aper_parking_medium_with_valid_ombriere_evidence(configs):
+    """Medium outdoor parking with valid ombriere PV attestation → no AT_RISK finding"""
+    site = make_site(parking_area_m2=5000, parking_type=ParkingType.OUTDOOR)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_OMBRIERE_PV,
+            statut=StatutEvidence.VALIDE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    parking_at_risk = [f for f in findings if f.rule_id.startswith("PARKING_") and f.status == "AT_RISK"]
+    assert len(parking_at_risk) == 0
+
+
+def test_aper_parking_with_expired_evidence_still_at_risk(configs):
+    """Outdoor parking with EXPIRE ombriere evidence → still AT_RISK"""
+    site = make_site(parking_area_m2=12000, parking_type=ParkingType.OUTDOOR)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_OMBRIERE_PV,
+            statut=StatutEvidence.EXPIRE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    parking_at_risk = [f for f in findings if f.rule_id.startswith("PARKING_") and f.status == "AT_RISK"]
+    assert len(parking_at_risk) > 0
+
+
+def test_aper_parking_with_pending_evidence_still_at_risk(configs):
+    """Outdoor parking with EN_ATTENTE ombriere evidence → still AT_RISK"""
+    site = make_site(parking_area_m2=12000, parking_type=ParkingType.OUTDOOR)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_OMBRIERE_PV,
+            statut=StatutEvidence.EN_ATTENTE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    parking_at_risk = [f for f in findings if f.rule_id.startswith("PARKING_") and f.status == "AT_RISK"]
+    assert len(parking_at_risk) > 0
+
+
+def test_aper_roof_with_valid_pv_evidence(configs):
+    """Roof ≥ 500m² with valid PV attestation → no AT_RISK finding"""
+    site = make_site(parking_type=ParkingType.INDOOR, roof_area_m2=800)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_TOITURE_PV,
+            statut=StatutEvidence.VALIDE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    roof_at_risk = [f for f in findings if f.rule_id == "ROOF_APER" and f.status == "AT_RISK"]
+    assert len(roof_at_risk) == 0
+
+
+def test_aper_roof_with_valid_vegetalisation_evidence(configs):
+    """Roof ≥ 500m² with valid vegetalisation attestation → no AT_RISK finding"""
+    site = make_site(parking_type=ParkingType.INDOOR, roof_area_m2=800)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_TOITURE_VEGETALISEE,
+            statut=StatutEvidence.VALIDE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    roof_at_risk = [f for f in findings if f.rule_id == "ROOF_APER" and f.status == "AT_RISK"]
+    assert len(roof_at_risk) == 0
+
+
+def test_aper_roof_with_expired_evidence_still_at_risk(configs):
+    """Roof ≥ 500m² with expired PV evidence → still AT_RISK"""
+    site = make_site(parking_type=ParkingType.INDOOR, roof_area_m2=800)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(
+            type=TypeEvidence.ATTESTATION_TOITURE_PV,
+            statut=StatutEvidence.EXPIRE,
+        )
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    roof_at_risk = [f for f in findings if f.rule_id == "ROOF_APER" and f.status == "AT_RISK"]
+    assert len(roof_at_risk) > 0
+
+
+def test_aper_parking_and_roof_both_covered(configs):
+    """Site with both parking and roof covered by valid evidence → zero AT_RISK findings"""
+    site = make_site(parking_area_m2=12000, parking_type=ParkingType.OUTDOOR, roof_area_m2=800)
+    batiments = [make_batiment()]
+    evidences = [
+        make_evidence(id=1, type=TypeEvidence.ATTESTATION_OMBRIERE_PV, statut=StatutEvidence.VALIDE),
+        make_evidence(id=2, type=TypeEvidence.ATTESTATION_TOITURE_PV, statut=StatutEvidence.VALIDE),
+    ]
+
+    findings = aper.evaluate(site, batiments, evidences, configs["aper"])
+
+    at_risk = [f for f in findings if f.status == "AT_RISK"]
+    assert len(at_risk) == 0
+
+
+# ========================================
 # CEE P6 Tests (4 cases)
 # ========================================
 

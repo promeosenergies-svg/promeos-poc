@@ -16,10 +16,15 @@ import {
 } from '../../layout/NavRegistry';
 
 describe('V114 Nav Refactor guard-rails', () => {
-  it("Pilotage has exactly 3 items (Cockpit + Centre d'actions + Notifications)", () => {
+  it('Pilotage has exactly 4 items (Tableau de bord + Synthèse exécutive + Actions & Suivi + Notifications)', () => {
     const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
-    expect(pilotage.items).toHaveLength(3);
-    expect(pilotage.items.map((i) => i.to)).toEqual(['/cockpit', '/actions', '/notifications']);
+    expect(pilotage.items).toHaveLength(4);
+    expect(pilotage.items.map((i) => i.to)).toEqual([
+      '/',
+      '/cockpit',
+      '/actions',
+      '/notifications',
+    ]);
   });
 
   it('Patrimoine has exactly 3 items (Registre + Contrats + Conformité)', () => {

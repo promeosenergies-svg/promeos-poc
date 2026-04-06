@@ -234,7 +234,14 @@ function App() {
                       path="/sites-legacy/:id"
                       element={<Navigate to="/patrimoine" replace />}
                     />
-                    <Route path="/action-center" element={<ActionCenterPage />} />
+                    <Route
+                      path="/action-center"
+                      element={
+                        <PageSuspense>
+                          <ActionCenterPage />
+                        </PageSuspense>
+                      }
+                    />
                     <Route path="/action-plan" element={<Navigate to="/anomalies" replace />} />
                     <Route
                       path="/regops/:id"

@@ -66,6 +66,11 @@ class WorkPackage(Base, TimestampMixin):
         default=CeeStatus.A_QUALIFIER,
         comment="Statut CEE: a_qualifier, ok, non",
     )
+    fiche_ref = Column(
+        String(20),
+        nullable=True,
+        comment="Code fiche CEE (ex: BAT-EN-101)",
+    )
     description = Column(Text, nullable=True)
 
     # Relations
