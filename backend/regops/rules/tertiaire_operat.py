@@ -2,11 +2,18 @@
 PROMEOS RegOps - Regle Tertiaire/OPERAT
 """
 
+import logging
 from datetime import date, datetime
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
 from ..schemas import Finding
 
+_logger = logging.getLogger(__name__)
 
-def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Finding]:
+
+def evaluate(site, batiments: list, evidences: list, config: dict, *, db: Optional[Session] = None) -> list[Finding]:
     findings = []
 
     # Check scope
@@ -123,4 +130,84 @@ def evaluate(site, batiments: list, evidences: list, config: dict) -> list[Findi
             )
         )
 
+    # Check trajectory (on_track / off_track for 2030)
+    if db is not None:
+        trajectory_finding = _evaluate_trajectory(db, site, config, declaration_deadline, penalty_non_declaration)
+        if trajectory_finding is not None:
+            findings.append(trajectory_finding)
+
     return findings
+
+
+def _evaluate_trajectory(
+    db: Session, site, config: dict, declaration_deadline: date, penalty_non_declaration: float
+) -> Optional[Finding]:
+    """Call dt_trajectory_service to compute on_track/off_track status for 2030."""
+    try:
+        from services.dt_trajectory_service import compute_site_trajectory
+
+        result = compute_site_trajectory(db, site.id)
+
+        avancement = result.avancement_2030
+        reduction_pct = result.reduction_pct
+
+        # Skip if trajectory cannot be evaluated (no baseline or no current data)
+        if avancement is None:
+            return Finding(
+                regulation="TERTIAIRE_OPERAT",
+                rule_id="TRAJECTORY_NOT_EVALUABLE",
+                status="UNKNOWN",
+                severity="MEDIUM",
+                confidence="LOW",
+                legal_deadline=declaration_deadline,
+                trigger_condition="trajectory compute returned avancement_2030=None",
+                config_params_used={},
+                inputs_used=["site_id"],
+                missing_inputs=["conso_reference_kwh", "conso_actuelle_kwh"],
+                explanation=f"Trajectoire 2030 non evaluable: {result.message or 'donnees insuffisantes'}.",
+            )
+
+        if avancement >= 100:
+            # On track — informational finding
+            return Finding(
+                regulation="TERTIAIRE_OPERAT",
+                rule_id="TRAJECTORY_ON_TRACK",
+                status="COMPLIANT",
+                severity="LOW",
+                confidence=result.confidence.upper(),
+                legal_deadline=None,
+                trigger_condition=f"avancement_2030={avancement}% >= 100%",
+                config_params_used={},
+                inputs_used=["conso_reference_kwh", "conso_actuelle_kwh"],
+                missing_inputs=[],
+                explanation=(
+                    f"Trajectoire 2030 respectee: reduction {reduction_pct}% "
+                    f"(avancement {avancement}% de l'objectif -40%)."
+                ),
+            )
+        else:
+            # Off track — site is behind the -40% target for 2030
+            return Finding(
+                regulation="TERTIAIRE_OPERAT",
+                rule_id="TRAJECTORY_OFF_TRACK",
+                status="AT_RISK",
+                severity="HIGH",
+                confidence=result.confidence.upper(),
+                legal_deadline=declaration_deadline,
+                trigger_condition=f"avancement_2030={avancement}% < 100%",
+                config_params_used={},
+                inputs_used=["conso_reference_kwh", "conso_actuelle_kwh"],
+                missing_inputs=[],
+                explanation=(
+                    f"Trajectoire 2030 non respectee: reduction {reduction_pct}% "
+                    f"(avancement {avancement}% de l'objectif -40%). "
+                    f"Ecart a combler avant {declaration_deadline.isoformat()}."
+                ),
+                estimated_penalty_eur=float(penalty_non_declaration),
+                penalty_source="regs.yaml",
+                penalty_basis=f"non_declaration: {penalty_non_declaration} EUR/site (risque trajectoire)",
+            )
+
+    except Exception as exc:
+        _logger.warning("trajectory evaluation failed for site %d: %s", site.id, exc, exc_info=True)
+        return None

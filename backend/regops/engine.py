@@ -159,7 +159,7 @@ def evaluate_site(db: Session, site_id: int, *, org_id: int | None = None) -> Si
 
     # Run 4 rule engines
     all_findings = []
-    all_findings.extend(tertiaire_operat.evaluate(site, batiments, evidences, regs.get("tertiaire_operat", {})))
+    all_findings.extend(tertiaire_operat.evaluate(site, batiments, evidences, regs.get("tertiaire_operat", {}), db=db))
     all_findings.extend(bacs.evaluate(site, batiments, evidences, regs.get("bacs", {})))
     all_findings.extend(aper.evaluate(site, batiments, evidences, regs.get("aper", {})))
     all_findings.extend(cee_p6.evaluate(site, batiments, evidences, regs.get("cee_p6", {})))
