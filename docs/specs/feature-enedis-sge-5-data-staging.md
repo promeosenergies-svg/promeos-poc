@@ -1,6 +1,6 @@
 # SF5 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
-> **Status**: PRD v2 — Separate functional tables (CDC / Energy Index / Power Peak)
+> **Status**: PRD v2.1 — Review decisions integrated
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — all complete and merged
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 
@@ -13,6 +13,8 @@ SF1-SF4 delivered a complete raw ingestion pipeline: 6 flux types parsed, 5 stag
 However, **no bridge exists** between the raw staging tables and the functional layer that powers every downstream service: consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation.
 
 Today, `MeterReading` is populated exclusively by synthetic seed data. The raw staging data — real Enedis measurements — is invisible to the application.
+
+This is intentional for the prototype: the current seeded/demo metering universe stays live during SF5 so we do not break the platform while the Enedis backbone is being built. SF5 creates a **parallel real-data promotion layer**. The later migration of services and calculations from dummy tables to real Enedis-promoted tables is a **separate feature wave**, not part of SF5 itself.
 
 Furthermore, the existing `MeterReading` model conflates two fundamentally different physical quantities:
 - **Power (kW)** — instantaneous demand at a point in time (what CDC load curves measure)
@@ -46,9 +48,10 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  
                                      │              │  2. Republication Res. │
                                      │              │  3. Value Conversion   │
                                      │              │  4. Quality Scoring    │
-                                     │              │  5. Gap Detection      │
-                                     │              │  6. Route & UPSERT    │
-                                     │              │  7. Audit Trail        │
+                                     │              │  5. Gap Visibility     │
+                                     │              │  6. Backlog Replay     │
+                                     │              │  7. Route & UPSERT     │
+                                     │              │  8. Audit Trail        │
                                      │              └────┬───────┬───────┬───┘
                                      │                   │       │       │
                                 PromotionRun       ┌─────▼──┐ ┌─▼────┐ ┌▼──────────┐
@@ -63,11 +66,15 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  
                                                               (Wh)
 ```
 
+SF5 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for future real-data migration.
+
+Gap detection remains an important downstream objective of this architecture. SF5 v2 preserves **gap visibility** by keeping missing periods as visible absences in promoted tables and by auditing skipped invalid rows, but a fuller completeness / gap-detection layer is deferred to a later follow-up session.
+
 ### Three Functional Tables
 
 | Table | Physical quantity | Unit | Source flux | Downstream consumers |
 |-------|------------------|------|-------------|---------------------|
-| **`meter_load_curve`** | Power at each interval (CDC) | kW (kVAr for reactive) | R4x, R50 | Monitoring, anomaly detection, peak analysis, off-hours, load profile |
+| **`meter_load_curve`** | Power state at each interval (merged CDC interval row) | kW / kVAr / V | R4x, R50 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
 | **`meter_energy_index`** | Cumulative energy per tariff class | Wh | R171, R151 (CT/CT_DIST) | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
 | **`meter_power_peak`** | Max power demand per period | VA | R151 (PMAX) | Subscribed power optimization, depassement alerts |
 
@@ -85,11 +92,16 @@ Meter.delivery_point_id  (FK → delivery_points.id)
         ▼
 meter_load_curve.meter_id  (FK → meter.id)
         with:
-          timestamp     = parsed datetime (UTC-naive from ISO8601+TZ)
-          value_kw      = parsed float from raw string (power, not energy)
-          frequency     = mapped FrequencyType from flux granularity
-          quality_score = mapped from statut_point / indice_vraisemblance
-          is_estimated  = True if statut_point not in (R, C, K, H)
+          timestamp                = parsed datetime (UTC-naive from ISO8601+TZ)
+          pas_minutes              = exact Enedis interval size (5 / 10 / 30)
+          active_power_kw          = populated when grandeur_physique=EA
+          reactive_inductive_kvar  = populated when grandeur_physique=ERI
+          reactive_capacitive_kvar = populated when grandeur_physique=ERC
+          voltage_v                = populated when grandeur_physique=E and unit=V
+          quality_score            = mapped from statut_point / indice_vraisemblance
+          is_estimated             = True if statut_point not in (R, C, K, H)
+
+Rows with the same `(meter_id, timestamp, pas_minutes)` are merged into one logical promoted interval row before UPSERT.
 ```
 
 ### Data flow per index reading (R171 / R151 → `meter_energy_index`)
@@ -118,23 +130,24 @@ meter_energy_index.meter_id  (FK → meter.id)
 | # | Question | Decision | Justification |
 |---|----------|----------|---------------|
 | D1 | Scope | CDC (R4x, R50) **and** Index (R171, R151) | Both are in scope. Implementation phases will separate them, but the PRD and architecture cover both |
-| D2 | Unmatched PRMs | **Flag and block** — never promote unidentified data | No data leaks to production. Data manager review screen shows unmatched PRMs. Once resolved, next promotion run picks them up |
-| D3 | Pipeline mode | **Incremental** — only process new/changed staging data since last promotion | Designed for scale. Easier to evolve to production-grade. Tracks a high-water mark per flux table |
-| D4 | Republication strategy | **Auto-promote if quality improves**, flag if quality degrades | If newer version has equal or better `statut_point`, auto-replace. If worse, flag for human review. Full audit trail in both cases |
+| D2 | Blocked PRMs | **Flag and block** — never promote unidentified or ambiguously linked data | No data leaks to production. The PRM backlog captures missing DeliveryPoints, missing active meters, and ambiguous meter matches. Once resolved, the next promotion run picks them up |
+| D3 | Pipeline mode | **Incremental + backlog replay** | Each run processes new staging rows beyond the high-water mark **and** previously blocked PRMs still pending resolution. This avoids missing historical data after a PRM is fixed |
+| D4 | Republication strategy | **Quality-first overwrite policy** | Better quality auto-promotes. Equal quality uses the latest republication. Worse quality is flagged and does not overwrite the current promoted row |
 | D5 | Production versioning | **Option A — Current truth + audit trail** | Functional tables always hold the latest best value (UPSERT). Staging keeps full history. `PromotionEvent` table provides full traceability. No `WHERE is_current` tax on all downstream queries |
 | D6 | Quality gate | **Promote all data with correct quality flags** | No minimum threshold blocking promotion. Even poor-quality data is promoted with appropriate `quality_score` and `is_estimated` flags. Downstream services already compute quality scores from these fields |
-| D7 | Gap handling | **Promote transparently** — gaps are visible as missing MeterReading rows | Downstream gap detection (monitoring, diagnostic) naturally picks up missing periods. Future feature may add interpolation/estimation |
+| D7 | Gap handling | **Preserve gap visibility now; explicit gap detection later** | Null or unparsable values are never converted to synthetic zeroes. Gaps stay visible as missing promoted rows, with audit events explaining why they were skipped. Completeness scoring and richer gap detection remain planned follow-up work |
 | D8 | Quality score mapping | **Enedis statut_point → 0-1 float** (see Section 5) | Research-based mapping from official Enedis SGE documentation. Refinement planned when official docs are available |
 | D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. Will grow to handle GRDF, GTB, sub-meters, other ELDs. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion |
-| D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + API endpoint | Natural break point: ingest → data manager reviews unmatched PRMs → promote. Decoupled failure domains. POC: CLI `promote` command. Prod: orchestrator chains them |
+| D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + minimal API | Natural break point: ingest → data backlog review → promote. Decoupled failure domains. POC: CLI `promote` command + minimal `/api/enedis/promotion/*` API |
 | D11 | Atomicity | **Per-PRM** | Each PRM is fully promoted or not at all. One bad PRM doesn't block the fleet. Prevents misleading partial data. Aligns with business unit (site managers care about their PRMs) |
 | D12 | Audit trail | **Yes — `PromotionRun` + `PromotionEvent` tables** | Core MOAT. Every promoted reading traceable to source staging row, flux file, and promotion run. Every replacement logged |
-| D13 | API surface | **CLI + API scaffolding** (no UX yet) | POST `/api/staging/promote`, GET `/api/staging/runs`, GET `/api/staging/unmatched-prms`, GET `/api/staging/stats` |
+| D13 | API surface | **CLI + minimal API scaffolding** (no review UX yet) | POST `/api/enedis/promotion/promote`, GET `/api/enedis/promotion/runs`, GET `/api/enedis/promotion/stats` |
 | D14 | Scale target | **175M rows** (10,000 PRMs x 2 years hourly) | Code must handle this volume even if POC runs on SQLite. Batch processing, chunked inserts, indexed lookups |
 | D15 | Initial run | **Full backfill** — promote all historical staging data | First run processes everything. Subsequent runs are incremental |
-| D16 | Functional data model | **Three separate tables**: `meter_load_curve` (CDC power kW), `meter_energy_index` (cumulative energy Wh per tariff class), `meter_power_peak` (max demand VA) | Power and energy are different physical quantities with different units, granularities, and consumers. Mixing them in one table creates semantic confusion. `meter_reading` (legacy) remains for seed data until services are migrated |
-| D17 | Legacy `meter_reading` | **Coexist then migrate** — new tables are canonical for real data, `meter_reading` stays for seed/legacy until services migrate | Don't break what works. Services migrate to new tables incrementally after SF5 is complete |
-| D18 | `meter_load_curve` value column | **TBD** — `value_kw` with separate `unit` column, or `value_kw` + `value_kvar` | Needs deeper analysis of reactive power (ERC/ERI) use cases before deciding |
+| D16 | Functional data model | **Three separate promoted tables**: `meter_load_curve`, `meter_energy_index`, `meter_power_peak` | Power and energy are different physical quantities with different units, granularities, and consumers. Mixing them in one table creates semantic confusion |
+| D17 | Legacy/demo coexistence | **Coexist then migrate** — promoted Enedis tables are canonical for real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe until later migration | Don't break what works. SF5 builds the real backbone first; service migration happens later |
+| D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
+| D19 | PRM matching ambiguity | **Exact-one-meter rule** | A PRM is promotable only when it resolves to exactly one valid active electricity meter. No active meter or multiple candidates both block promotion and create backlog entries |
 
 ---
 
@@ -144,16 +157,18 @@ meter_energy_index.meter_id  (FK → meter.id)
 
 #### `meter_load_curve` — CDC time-series power data
 
-The canonical table for load curve (courbe de charge) data. Stores power measurements at regular intervals.
+The canonical promoted table for real Enedis load curve (courbe de charge) data. It is built in parallel to the current seeded/demo tables and will become the future real-data source for downstream migration. Each row represents **one logical interval** for one meter.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter (resolved from PRM via DeliveryPoint) |
 | `timestamp` | DateTime | Measurement instant (UTC-naive, converted from ISO8601+TZ) |
-| `frequency` | Enum FrequencyType | `15min` / `30min` / `hourly` |
-| `value_kw` | Float | Active power in kW |
-| `grandeur_physique` | String(10) | nullable — `EA`/`ERI`/`ERC`/`E` from Enedis (for future reactive power support) |
+| `pas_minutes` | Integer | Exact Enedis interval size (`5`, `10`, `30`) |
+| `active_power_kw` | Float | nullable — active power (`EA`) in kW |
+| `reactive_inductive_kvar` | Float | nullable — inductive reactive power (`ERI`) in kVAr |
+| `reactive_capacitive_kvar` | Float | nullable — capacitive reactive power (`ERC`) in kVAr |
+| `voltage_v` | Float | nullable — voltage (`E`) in volts when present |
 | `quality_score` | Float | 0-1 confidence (mapped from statut_point / indice_vraisemblance) |
 | `is_estimated` | Boolean | True if not a real measurement |
 | `source_flux_type` | String(10) | `R4H`/`R4M`/`R4Q`/`R50` — provenance |
@@ -161,11 +176,11 @@ The canonical table for load curve (courbe de charge) data. Stores power measure
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
 
-**Unique constraint**: `(meter_id, timestamp, frequency)` — same pattern as MeterReading.
+**Unique constraint**: `(meter_id, timestamp, pas_minutes)` — one promoted CDC interval per meter and cadence.
 
-**Indexes**: `(meter_id, timestamp)`, `(meter_id, frequency)`, `promotion_run_id`.
+**Indexes**: `(meter_id, timestamp)`, `(meter_id, pas_minutes)`, `promotion_run_id`.
 
-> **D18 (TBD)**: The `value_kw` column handles active power (EA). For reactive power (ERI/ERC), we may later add `value_kvar` or use the `grandeur_physique` column to distinguish. The `grandeur_physique` column is stored from staging to preserve this information for future use.
+**Merge rule**: when the raw staging layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)` with different `grandeur_physique` values, SF5 merges them into one promoted row before UPSERT. Staging remains the place where the original row-per-grandeur fidelity is preserved.
 
 #### `meter_energy_index` — Cumulative energy index per tariff class
 
@@ -233,7 +248,7 @@ Mirrors `IngestionRun` pattern from SF4.
 | `high_water_mark_after` | JSON | Per-table high-water marks at end of run |
 | `prms_total` | Integer | Distinct PRMs found in staging data to process |
 | `prms_matched` | Integer | PRMs successfully matched to a Meter |
-| `prms_unmatched` | Integer | PRMs with no matching DeliveryPoint/Meter |
+| `prms_unmatched` | Integer | PRMs blocked for unresolved matching reasons (`no_delivery_point`, `no_active_meter`, `multiple_active_meters`) |
 | `prms_promoted` | Integer | PRMs whose readings were successfully promoted |
 | `prms_failed` | Integer | PRMs that failed during promotion |
 | `rows_load_curve` | Integer | Total `meter_load_curve` rows upserted |
@@ -259,16 +274,18 @@ One row per functional table row that was created, updated, or flagged during a 
 | `source_table` | String | `enedis_flux_mesure_r4x` / `r50` / `r171` / `r151` |
 | `source_row_id` | Integer | PK of the staging row that produced this |
 | `source_flux_file_id` | FK → `enedis_flux_file.id` | The originating flux file |
-| `previous_value` | Float | nullable — old value if action=updated |
+| `previous_payload_json` | JSON | nullable — prior promoted payload for the target row before update |
 | `previous_quality_score` | Float | nullable — old quality if action=updated |
-| `new_value` | Float | The promoted value |
+| `new_payload_json` | JSON | Snapshot of the promoted payload written to the target row |
 | `new_quality_score` | Float | The promoted quality score |
 | `reason` | String | nullable — human-readable (e.g. "republication with better quality R>E") |
 | `created_at` | DateTime | |
 
 > **Note on scale**: At 175M readings, this table could grow very large. For the POC, we store all events. For production, we may evolve to: (a) only store `updated`/`flagged` events (not `created` on first load), or (b) partition by date, or (c) move to a separate audit database.
 
-#### `unmatched_prm` — PRMs found in staging with no matching DeliveryPoint
+#### `unmatched_prm` — Backlog of PRMs that cannot yet be safely promoted
+
+Historical name kept for the POC. In practice this table covers both truly unmatched PRMs and PRMs blocked by ambiguous meter linkage.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -279,22 +296,26 @@ One row per functional table row that was created, updated, or flagged during a 
 | `flux_types` | String | Comma-separated flux types where this PRM appears |
 | `measures_count` | Integer | Total staging measures for this PRM (across all flux types) |
 | `status` | String | `pending` / `resolved` / `ignored` |
+| `block_reason` | String | `no_delivery_point` / `no_active_meter` / `multiple_active_meters` |
 | `resolved_at` | DateTime | nullable |
 | `resolved_by` | String | nullable — user or "auto" |
 | `resolved_meter_id` | FK → `meter.id` | nullable — the Meter it was linked to |
 | `notes` | Text | nullable — data manager comments |
 
-### 4.3 Existing Table: `meter_reading` (legacy)
+### 4.3 Existing Legacy Tables
 
-`meter_reading` remains unchanged. It continues to serve existing services (consumption dashboards, monitoring, anomaly detection) with seed data. After SF5 is complete, a dedicated migration effort will transition these services to read from `meter_load_curve` and `meter_energy_index` instead.
+`meter_reading` remains unchanged. It continues to serve existing services with seed/demo consumption data during SF5. `power_readings` also remains part of the current prototype universe for existing power-focused services.
+
+SF5 does **not** migrate product services to the new promoted tables. It creates the canonical real-data targets first. A later migration effort will transition services to read from `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`.
 
 During the transition period:
-- **`meter_reading`** = seed data + CSV imports (legacy)
-- **`meter_load_curve`** = real Enedis CDC power data (new, canonical)
-- **`meter_energy_index`** = real Enedis index data (new, canonical)
-- **`meter_power_peak`** = real Enedis PMAX data (new, canonical)
+- **`meter_reading`** = seed/demo consumption data + CSV imports (legacy/demo)
+- **`power_readings`** = current prototype power dataset for existing power services (legacy/demo)
+- **`meter_load_curve`** = real Enedis promoted CDC data (new, canonical for future migration)
+- **`meter_energy_index`** = real Enedis promoted index data (new, canonical for future migration)
+- **`meter_power_peak`** = real Enedis promoted PMAX data (new, canonical for future migration)
 
-No service reads from both — there is no cross-contamination risk.
+During SF5, there is no product cutover. Existing services stay on the legacy/demo universe while the promoted Enedis layer is validated in parallel.
 
 ---
 
@@ -341,21 +362,23 @@ R171 does not carry a per-value quality indicator. All R171 values are assumed m
 
 ---
 
-## 6. Routing & Frequency Mapping
+## 6. Routing & Cadence Mapping
 
 Each staging flux type routes to a specific functional table:
 
-| Staging source | Flux type | Target table | Frequency / Granularity | Unit |
+| Staging source | Flux type | Target table | Cadence / `pas_minutes` | Unit |
 |----------------|-----------|-------------|------------------------|------|
-| `enedis_flux_mesure_r4x` | R4H | **`meter_load_curve`** | `HOURLY` | kW |
-| `enedis_flux_mesure_r4x` | R4M | **`meter_load_curve`** | `MIN_30` | kW |
-| `enedis_flux_mesure_r4x` | R4Q | **`meter_load_curve`** | `MIN_15` | kW |
-| `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `MIN_30` | kW |
+| `enedis_flux_mesure_r4x` | R4H | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
+| `enedis_flux_mesure_r4x` | R4M | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
+| `enedis_flux_mesure_r4x` | R4Q | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
+| `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `30` | kW |
 | `enedis_flux_mesure_r171` | R171 | **`meter_energy_index`** | Per `date_fin` (daily) | Wh |
 | `enedis_flux_mesure_r151` | R151 (CT/CT_DIST) | **`meter_energy_index`** | Per `date_releve` | Wh |
 | `enedis_flux_mesure_r151` | R151 (PMAX) | **`meter_power_peak`** | Per `date_releve` | VA |
 
-> **Note on R4x units**: Enedis CDC values are instantaneous power (kW), not energy (kWh). They are stored as-is in `meter_load_curve.value_kw`. Downstream services that need energy (kWh) compute it as: `value_kw × interval_hours` (e.g., hourly: ×1, 30min: ×0.5, 15min: ×0.25).
+> **Important**: R4x publication cadence (`R4H`, `R4M`, `R4Q`) is **not** the same as measurement cadence. The promoted CDC row stores the exact interval size in `pas_minutes`, not a shared `FrequencyType`.
+
+> **Note on CDC units**: Enedis CDC values are instantaneous power states, not consumption deltas. Downstream services that need energy (kWh) compute it from the relevant power column and `pas_minutes`.
 
 ---
 
@@ -365,27 +388,40 @@ Each staging flux type routes to a specific functional table:
 
 ```
 For each staging table (r4x, r50, r171, r151):
-    SELECT DISTINCT point_id, flux_file_id, COUNT(*)
-    FROM enedis_flux_mesure_<table>
-    WHERE id > high_water_mark[table]
-      AND flux_file.status IN ('parsed', 'needs_review')
-    GROUP BY point_id, flux_file_id
+    1. Discover new candidates:
+        SELECT DISTINCT point_id, flux_file_id, COUNT(*)
+        FROM enedis_flux_mesure_<table>
+        WHERE id > high_water_mark[table]
+          AND flux_file.status IN ('parsed', 'needs_review')
+        GROUP BY point_id, flux_file_id
+
+    2. Replay backlog candidates:
+        SELECT DISTINCT point_id
+        FROM unmatched_prm
+        WHERE status = 'pending'
 ```
 
-The high-water mark (last promoted staging row ID per table) is stored in `promotion_run.high_water_mark_after` (JSON). First run: high-water mark = 0 (process everything).
+The high-water mark (last promoted staging row ID per table) is stored in `promotion_run.high_water_mark_after` (JSON). First run: high-water mark = 0 (process everything). Incremental runs always combine **new candidates** with **still-pending backlog PRMs** so historical raw data is replayed when a PRM is later resolved.
 
 ### Stage 2: Match — Resolve PRMs to Meters
 
 ```
 For each distinct point_id found in Stage 1:
-    DeliveryPoint = SELECT * FROM delivery_points WHERE code = point_id
+    DeliveryPoint = SELECT * FROM delivery_points WHERE code = point_id AND deleted_at IS NULL
     IF NOT FOUND:
-        → INSERT or UPDATE unmatched_prm (status=pending)
+        → INSERT or UPDATE unmatched_prm (status=pending, block_reason=no_delivery_point)
         → Skip this PRM entirely
-    Meter = SELECT * FROM meter WHERE delivery_point_id = DeliveryPoint.id AND is_active = True
-    IF NOT FOUND:
-        → Same: flag as unmatched (DeliveryPoint exists but no active Meter)
+    Meters = SELECT * FROM meter
+             WHERE delivery_point_id = DeliveryPoint.id
+               AND is_active = True
+               AND energy_vector = 'ELECTRICITY'
+    IF COUNT(Meters) = 0:
+        → INSERT or UPDATE unmatched_prm (status=pending, block_reason=no_active_meter)
         → Skip
+    IF COUNT(Meters) > 1:
+        → INSERT or UPDATE unmatched_prm (status=pending, block_reason=multiple_active_meters)
+        → Skip
+    Meter = the single matching meter
     → PRM is matched: proceed to Stage 3
 ```
 
@@ -399,12 +435,14 @@ For each group:
     IF single row → use it
     IF multiple rows (republications):
         Sort by flux_file.version DESC (latest first)
-        Compare quality: latest vs current MeterReading (if exists)
-        IF latest quality >= current quality:
+        Compare quality: latest vs current promoted row (if exists)
+        IF latest quality > current quality:
             → Auto-promote latest (action=updated, reason logged)
+        ELSE IF latest quality = current quality:
+            → Latest wins (action=updated, reason logged)
         ELSE:
             → Flag for review (action=flagged)
-            → Do NOT overwrite current MeterReading
+            → Do NOT overwrite current promoted row
 ```
 
 Quality comparison uses the hierarchy from Section 5: R > C/K > H > S > G > E > T > F > P > D.
@@ -415,13 +453,23 @@ For each staging row to promote, determine the target table and convert values:
 
 **CDC rows (R4x, R50) → `meter_load_curve`:**
 ```
-timestamp   = parse_iso8601_to_naive_utc(horodatage)
-value_kw    = float(valeur_point)
-frequency   = FREQUENCY_MAP[flux_type]  # Section 6
+timestamp     = parse_iso8601_to_naive_utc(horodatage)
+pas_minutes   = int(granularite) for R4x, 30 for R50
 quality_score = QUALITY_MAP[statut_point or indice_vraisemblance]  # Section 5
 is_estimated  = statut_point not in ('R', 'C', 'K', 'H')
-grandeur_physique = from staging row (EA/ERI/ERC/E)
-source_flux_type  = flux_type
+source_flux_type = flux_type
+
+if grandeur_physique == 'EA':
+    active_power_kw = float(raw_value)
+if grandeur_physique == 'ERI':
+    reactive_inductive_kvar = float(raw_value)
+if grandeur_physique == 'ERC':
+    reactive_capacitive_kvar = float(raw_value)
+if grandeur_physique == 'E' and unite_mesure == 'V':
+    voltage_v = float(raw_value)
+
+Merge all CDC rows sharing (meter_id, timestamp, pas_minutes) into one promoted interval row
+before UPSERT.
 ```
 
 **Index rows (R171, R151 CT/CT_DIST) → `meter_energy_index`:**
@@ -448,7 +496,7 @@ source_flux_type = 'R151'
 **Error handling per value:**
 - Unparseable float → skip row, log in promotion_event (action=skipped, reason="unparseable value: '{raw}'")
 - Unparseable timestamp/date → skip row, log
-- Null value with non-null timestamp → promote with `value=0.0`, `quality_score=0.05`, `is_estimated=True` (explicit zero, not silent gap)
+- Null value with non-null timestamp → skip row, log (never synthesize `0.0`)
 - Value conversion errors do NOT fail the entire PRM (per-PRM atomicity applies to DB writes, not individual parse errors — but if >50% of readings for a PRM fail to parse, flag the PRM for review)
 
 ### Stage 5: Promote — UPSERT into target tables
@@ -456,7 +504,7 @@ source_flux_type = 'R151'
 ```
 For each PRM (within a DB transaction):
     # Route batches to correct tables
-    load_curve_batch = []    # CDC rows → meter_load_curve
+    load_curve_batch = []    # merged CDC interval rows → meter_load_curve
     energy_index_batch = []  # Index rows → meter_energy_index
     power_peak_batch = []    # PMAX rows → meter_power_peak
     
@@ -464,10 +512,11 @@ For each PRM (within a DB transaction):
         route to appropriate batch based on Stage 4 routing
     
     # Bulk UPSERT each table
-    # meter_load_curve: conflict on (meter_id, timestamp, frequency)
+    # meter_load_curve: conflict on (meter_id, timestamp, pas_minutes)
     # meter_energy_index: conflict on (meter_id, date_releve, tariff_class_code, tariff_grid)
     # meter_power_peak: conflict on (meter_id, date_releve)
-    # On conflict: UPDATE value, quality_score, is_estimated, promotion_run_id, updated_at
+    # On conflict: UPDATE the merged interval columns, quality_score, is_estimated,
+    # promotion_run_id, updated_at
     
     for table, batch in [(meter_load_curve, lc_batch), ...]:
         session.execute(upsert_statement(table), batch, chunk_size=1000)
@@ -481,10 +530,10 @@ For each reading processed in Stage 5:
 
 ```
 INSERT INTO promotion_event (
-    promotion_run_id, meter_reading_id, action,
+    promotion_run_id, target_table, target_row_id, action,
     source_table, source_row_id, source_flux_file_id,
-    previous_value_kwh, previous_quality_score,
-    new_value_kwh, new_quality_score, reason
+    previous_payload_json, previous_quality_score,
+    new_payload_json, new_quality_score, reason
 )
 ```
 
@@ -497,6 +546,12 @@ UPDATE promotion_run SET
     high_water_mark_after = {updated marks per table},
     prms_promoted = ..., readings_promoted = ..., etc.
 ```
+
+**Gap detection note:** SF5 v2 does not yet compute completeness windows, expected-interval counts, or gap-alert objects during promotion. Instead, it preserves the raw conditions needed for a later gap-detection layer:
+- missing periods remain visible as absent promoted rows
+- invalid values are skipped with audit reasons
+- exact CDC cadence is stored in `pas_minutes`
+- backlog replay prevents historical gaps caused by late PRM resolution from being silently forgotten
 
 ---
 
@@ -541,30 +596,18 @@ PMAX has no `indice_vraisemblance` in R151, so `quality_score` defaults to 0.90.
 
 ---
 
-## 9. Unmatched PRM Workflow
+## 9. Blocked / Unmatched PRM Workflow
 
-### Data manager screen (future UX, API scaffolded in SF5)
+### Operational backlog (future UX, no dedicated review endpoints in SF5)
 
-```
-GET /api/staging/unmatched-prms
-→ [
-    {
-      "point_id": "30001234567890",
-      "first_seen_at": "2024-01-15T10:00:00",
-      "flux_types": ["R4H", "R50"],
-      "measures_count": 8760,
-      "status": "pending"
-    },
-    ...
-  ]
-```
+`unmatched_prm` acts as an operational backlog for PRMs that cannot yet be safely promoted. In SF5, this backlog is stored in the database and replayed by each incremental run, but the dedicated manual review UX/API is deferred.
 
 The data manager can:
 1. **Link to existing**: If the PRM belongs to an existing site, create/update the DeliveryPoint + Meter link
 2. **Onboard new site**: Create a new Site + DeliveryPoint + Meter for this PRM
 3. **Ignore**: Mark as `ignored` (e.g., test PRM, competitor data)
 
-Once resolved, the next promotion run automatically picks up the pending staging data for that PRM.
+Once resolved, the next promotion run automatically replays the pending historical staging data for that PRM from the backlog.
 
 ### Auto-resolution (future evolution)
 
@@ -582,7 +625,7 @@ python -m data_staging.cli promote [OPTIONS]
 |--------|---------|-------------|
 | `--mode` | `incremental` | `incremental` (new data only) or `full` (rebuild from scratch) |
 | `--flux-types` | All | Comma-separated: `R4H,R4M,R4Q,R50,R171,R151` |
-| `--dry-run` | Off | Analyze without writing to MeterReading |
+| `--dry-run` | Off | Analyze without writing to promoted tables |
 | `--verbose` | Off | Detailed per-PRM logging |
 
 ### Output
@@ -596,7 +639,7 @@ Duration:      4.1s
 PRMs:
   Total found:    142
   Matched:        138
-  Unmatched:       4  (see /api/staging/unmatched-prms)
+  Blocked:          4  (pending backlog for manual resolution)
   Promoted:       138
   Failed:           0
 
@@ -619,12 +662,12 @@ Quality breakdown (CDC):
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/staging/promote` | Trigger promotion run. Body: `{mode, flux_types, dry_run}` |
-| GET | `/api/staging/runs` | List promotion runs with pagination |
-| GET | `/api/staging/runs/{id}` | Run detail + counters |
-| GET | `/api/staging/unmatched-prms` | List unmatched PRMs with filters (status, flux_type) |
-| PATCH | `/api/staging/unmatched-prms/{id}` | Update status (resolve, ignore) |
-| GET | `/api/staging/stats` | Aggregated stats: promoted readings by flux type, quality distribution, gap summary |
+| POST | `/api/enedis/promotion/promote` | Trigger promotion run. Body: `{mode, flux_types, dry_run}` |
+| GET | `/api/enedis/promotion/runs` | List promotion runs with pagination |
+| GET | `/api/enedis/promotion/runs/{id}` | Run detail + counters |
+| GET | `/api/enedis/promotion/stats` | Aggregated stats: promoted rows by target table, quality distribution, backlog summary |
+
+Manual review workflows for blocked PRMs remain out of scope for SF5.
 
 ---
 
@@ -636,17 +679,19 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Create `backend/data_staging/` module skeleton
 - New functional tables: `meter_load_curve`, `meter_energy_index`, `meter_power_peak`
 - Operational tables: `PromotionRun`, `PromotionEvent`, `UnmatchedPrm`
-- PRM matching logic (point_id → DeliveryPoint → Meter)
+- PRM matching logic (point_id → DeliveryPoint → exactly one active electricity Meter)
 - High-water mark tracking
+- Backlog replay for pending PRMs
 - CLI skeleton with `--dry-run`
 - Migration script for new tables
 - Tests: matching logic, unmatched PRM detection, model creation
 
 ### Phase B: CDC Promotion — R4x (2-3 sessions)
 - R4x promotion pipeline (R4H/R4M/R4Q → `meter_load_curve`)
-- Value conversion (string → float kW, ISO8601 → datetime UTC-naive)
+- Value conversion (string → typed power columns, ISO8601 → datetime UTC-naive)
 - Quality score mapping (statut_point → quality_score)
-- Frequency mapping (granularity → FrequencyType)
+- `pas_minutes` fidelity (preserve raw `granularite`, do not map to `FrequencyType`)
+- Merge multi-grandeur CDC rows into one promoted interval row
 - Bulk UPSERT with per-PRM atomicity
 - Audit trail (PromotionEvent for created/updated)
 - Tests: full pipeline with fixtures
@@ -657,7 +702,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Tests
 
 ### Phase D: Republication Handling (1-2 sessions)
-- Republication resolution logic (compare quality, auto-promote or flag)
+- Republication resolution logic (better quality auto-promote, equal quality latest wins, worse quality flags)
 - Quality degradation detection and flagging
 - PromotionEvent logging for updates
 - Tests: republication scenarios
@@ -669,8 +714,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Tests: index promotion, PMAX routing, tariff class handling
 
 ### Phase F: API + Operations (1 session)
-- REST endpoints (scaffolding)
-- Unmatched PRM list/update endpoints
+- Minimal REST endpoints (trigger, runs, stats)
 - Stats endpoint (per-table breakdowns)
 - Wiring into `main.py`
 - Tests
@@ -680,7 +724,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Performance profiling on full dataset
 - Documentation update
 
-### Phase H: Service Migration (2-3 sessions) — post-SF5
+### Post-SF5 follow-up — Service Migration (separate feature wave)
 - Migrate monitoring/anomaly services from `meter_reading` → `meter_load_curve`
 - Migrate billing/regulatory services to consume `meter_energy_index`
 - Migrate power analysis to consume `meter_power_peak`
@@ -699,33 +743,32 @@ This feature is too large for a single implementation session. Proposed phasing:
 | OQ2 | ~~R151 PMAX: separate table or metadata in MeterReading?~~ | **Resolved (D16)** | Separate `meter_power_peak` table |
 | OQ3 | ~~R171 tariff class columns: extend MeterReading or new model?~~ | **Resolved (D16)** | `meter_energy_index` has `tariff_class_code` and `tariff_grid` columns |
 | OQ4 | `promotion_event` table growth at scale (175M+ rows) | Open | May need partitioning, archival, or selective logging strategy |
-| OQ5 | `meter_load_curve` reactive power columns (D18) | **TBD** | `value_kw` + `unit` column, or `value_kw` + `value_kvar`? Depends on ERI/ERC use cases |
-| OQ6 | Gap interpolation / estimation service | Open | Future feature to fill gaps with statistical estimates |
-| OQ7 | Enedis `statut_point` quality mapping refinement | Open | Needs validation against official SGE documentation |
-| OQ8 | Auto-resolution of unmatched PRMs when new DeliveryPoints are onboarded | Open | Natural extension of the unmatched PRM workflow |
-| OQ9 | ~~R4x units: kW vs kWh conversion strategy~~ | **Resolved (D16)** | `meter_load_curve.value_kw` stores power. kW→kWh conversion is downstream |
-| OQ10 | Service migration scope and sequencing (Phase H) | Open | Which services to migrate first? Priority by real-data impact |
-| OQ11 | `meter_reading` deprecation timeline | Open | When can the legacy table be dropped? Depends on Phase H completion |
+| OQ5 | Gap detection, completeness scoring, and interpolation / estimation service | Open | Future feature to detect missing intervals explicitly, score completeness, and optionally fill gaps with statistical estimates |
+| OQ6 | Enedis `statut_point` quality mapping refinement | Open | Needs validation against official SGE documentation |
+| OQ7 | Auto-resolution of unmatched PRMs when new DeliveryPoints are onboarded | Open | Natural extension of the unmatched PRM workflow |
 
 ---
 
 ## 14. Success Criteria
 
-- [ ] CDC data (R4x, R50) promoted to `meter_load_curve` with correct kW values and frequency
+- [ ] CDC data (R4x, R50) promoted to `meter_load_curve` with correct typed power columns and exact `pas_minutes`
 - [ ] Index data (R171, R151 CT/CT_DIST) promoted to `meter_energy_index` with tariff class granularity
 - [ ] PMAX data (R151) promoted to `meter_power_peak`
 - [ ] Unmatched PRMs are flagged, zero unidentified data in production
+- [ ] Ambiguous PRM mappings are blocked and replayed from backlog once resolved
 - [ ] Every promoted row is traceable to its source staging row via `promotion_event`
-- [ ] Republications with better quality auto-replace, worse quality flagged
-- [ ] Incremental mode processes only new data (high-water mark works)
+- [ ] Republications with better quality auto-replace, equal-quality ties use latest version, worse quality is flagged without overwrite
+- [ ] Incremental mode processes both new data and pending backlog
 - [ ] Full backfill mode can rebuild from scratch
 - [ ] Per-PRM atomicity: one bad PRM doesn't block others
 - [ ] CLI provides clear per-table promotion report
-- [ ] API scaffolding endpoints functional
+- [ ] API scaffolding endpoints functional for trigger, runs, and stats
 - [ ] Quality scores correctly mapped from Enedis status codes
 - [ ] Pipeline handles 175M-row scale (batch processing, chunked inserts)
 - [ ] All promotion runs audited with full counters
-- [ ] Existing `meter_reading` and downstream services unaffected (no breaking changes)
+- [ ] Null or unparsable Enedis values never produce synthetic zero rows in promoted tables
+- [ ] Existing `meter_reading`, `power_readings`, and downstream services remain unaffected during SF5
+- [ ] SF5 prepares canonical real-data tables for later service migration
 
 ---
 
@@ -742,7 +785,8 @@ This feature is too large for a single implementation session. Proposed phasing:
 | **Staging** | Raw Enedis data stored as-is (strings, no transformation) in `enedis_flux_mesure_*` tables |
 | **Promotion** | Transforming and writing staging data into functional tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`) |
 | **Republication** | When Enedis sends a new version of previously-sent data (corrections) |
-| **High-water mark** | The last staging row ID processed per table, used for incremental runs |
+| **High-water mark** | The last staging row ID processed per table for newly discovered data. Pending backlog PRMs are replayed separately during incremental runs |
+| **`pas_minutes`** | Exact CDC interval size stored on promoted `meter_load_curve` rows (`5`, `10`, `30`) |
 | **Statut_point** | Enedis quality code (R/H/P/S/T/F/G/E/C/K/D) indicating measurement reliability |
 | **Indice_vraisemblance** | R50/R151 quality indicator (0=measured, 1=estimated) |
 | **Tariff class** | Time-of-use period (HCE=heures creuses ete, HPH=heures pleines hiver, etc.) |
