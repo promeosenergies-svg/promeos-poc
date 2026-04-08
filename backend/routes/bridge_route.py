@@ -10,11 +10,13 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 
 logger = logging.getLogger("promeos.routes.bridge")
 
@@ -58,12 +60,16 @@ class CoverageItem(BaseModel):
 
 @router.post("/run", response_model=BridgeRunResponse)
 def run_bridge(
+    request: Request,
     body: BridgeRunRequest = BridgeRunRequest(),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Lance le bridge staging → MeterReading pour tous ou certains PRMs."""
+    """Lance le bridge staging → MeterReading pour les PRMs de l'org."""
     from services.staging_bridge import bridge_all_prms
     from models.energy_models import DataImportJob, ImportStatus
+
+    org_id = resolve_org_id(request, auth, db)
 
     # Créer un job d'import
     job = DataImportJob(
@@ -120,9 +126,12 @@ def run_bridge(
 @router.get("/status/{job_id}")
 def get_bridge_status(
     job_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Retourne le statut d'un job de bridge."""
+    resolve_org_id(request, auth, db)  # Ensure authenticated
     from models.energy_models import DataImportJob
 
     job = db.query(DataImportJob).filter_by(id=job_id).first()
@@ -146,16 +155,34 @@ def get_bridge_status(
 @router.get("/gaps/{prm}", response_model=list[GapItem])
 def get_gaps(
     prm: str,
+    request: Request,
     start: Optional[str] = Query(None, description="Date début ISO (défaut: J-90)"),
     end: Optional[str] = Query(None, description="Date fin ISO (défaut: aujourd'hui)"),
     freq_minutes: int = Query(30, description="Fréquence attendue en minutes (30, 60)"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Détecte les trous de données pour un PRM."""
     from services.staging_bridge import detect_gaps, resolve_meter_for_prm
+    from models.energy_models import Meter
+    from models import Site, Portefeuille, EntiteJuridique
+
+    org_id = resolve_org_id(request, auth, db)
 
     meter = resolve_meter_for_prm(prm, db)
     if not meter:
+        raise HTTPException(status_code=404, detail=f"Aucun Meter pour PRM {prm}")
+
+    # Verify meter belongs to org
+    org_check = (
+        db.query(Meter)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Meter.id == meter.id, EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
+    if not org_check:
         raise HTTPException(status_code=404, detail=f"Aucun Meter pour PRM {prm}")
 
     now = datetime.utcnow()
@@ -178,11 +205,16 @@ def get_gaps(
 
 @router.get("/coverage", response_model=list[CoverageItem])
 def get_coverage(
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Résumé de couverture des données par PRM/compteur."""
+    """Résumé de couverture des données par PRM/compteur, scoped to org."""
     from sqlalchemy import func
     from models.energy_models import Meter, MeterReading
+    from models import Site, Portefeuille, EntiteJuridique
+
+    org_id = resolve_org_id(request, auth, db)
 
     # Sous-requête: stats par meter_id
     stats = (
@@ -199,7 +231,10 @@ def get_coverage(
     rows = (
         db.query(Meter.meter_id, Meter.id, stats.c.total, stats.c.first_ts, stats.c.last_ts)
         .outerjoin(stats, Meter.id == stats.c.meter_id)
-        .filter(Meter.is_active == True)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Meter.is_active == True, EntiteJuridique.organisation_id == org_id)
         .order_by(Meter.meter_id)
         .all()
     )

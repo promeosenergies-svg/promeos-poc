@@ -3,7 +3,7 @@ PROMEOS - EMS Consumption Explorer Routes
 Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from typing import Optional, List
 from datetime import datetime, timezone
 import json
@@ -11,8 +11,63 @@ import json
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
+
+
+def _check_site_org(db: Session, site_id: int, org_id: int):
+    """Verify site belongs to org. Raises 404/403."""
+    from models import Site, Portefeuille, EntiteJuridique
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site non trouvé")
+    if not site.portefeuille_id:
+        raise HTTPException(403, "Site hors périmètre")
+    pf = db.get(Portefeuille, site.portefeuille_id)
+    if not pf:
+        raise HTTPException(403, "Site hors périmètre")
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(403, "Site hors périmètre")
+    return site
+
+
+def _check_sites_org(db: Session, site_ids: list[int], org_id: int):
+    """Verify all site_ids belong to org. Raises 403 on mismatch."""
+    from models import Site, Portefeuille, EntiteJuridique
+
+    valid_ids = set(
+        row[0]
+        for row in db.query(Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Site.id.in_(site_ids), EntiteJuridique.organisation_id == org_id)
+        .all()
+    )
+    invalid = set(site_ids) - valid_ids
+    if invalid:
+        raise HTTPException(403, f"Sites hors périmètre: {sorted(invalid)}")
+
+
+def _check_meter_org(db: Session, meter_id: int, org_id: int):
+    """Verify meter belongs to org via Site→PF→EJ chain. Raises 404/403."""
+    from models.energy_models import Meter
+    from models import Site, Portefeuille, EntiteJuridique
+
+    meter = (
+        db.query(Meter)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Meter.id == meter_id, EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
+    if not meter:
+        raise HTTPException(404, "Compteur non trouvé")
+    return meter
 
 
 # -------------------------------------------------------------------
@@ -84,8 +139,15 @@ def _archetype_to_profile(code: str) -> str:
 
 
 @router.get("/usage_suggest")
-def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
+def usage_suggest(
+    request: Request,
+    site_id: int = Query(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Suggest archetype + operating schedule for a site based on NAF code or site type."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     from models import Site, SiteOperatingSchedule, KBMappingCode, TypeSite
     from services.demo_seed.gen_master import _PROFILE_SCHEDULES
 
@@ -179,8 +241,15 @@ def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
 # Benchmark by archetype
 # -------------------------------------------------------------------
 @router.get("/benchmark")
-def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
+def ems_benchmark(
+    request: Request,
+    site_id: int = Query(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Benchmark a site's KPIs against peers of the same archetype."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     from models import Site, MonitoringSnapshot, KBMappingCode, TypeSite
     from services.electric_monitoring.benchmark import build_benchmark
 
@@ -245,11 +314,15 @@ def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
 # -------------------------------------------------------------------
 @router.get("/schedule_suggest")
 def schedule_suggest(
+    request: Request,
     site_id: int = Query(...),
     days: int = Query(90, ge=7, le=365),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Suggest operating schedule from actual consumption data."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     from services.ems.schedule_suggest_service import suggest_schedule_from_consumption
 
     try:
@@ -263,6 +336,7 @@ def schedule_suggest(
 # -------------------------------------------------------------------
 @router.get("/timeseries", response_model=TimeseriesResponse)
 def get_timeseries(
+    request: Request,
     site_ids: str = Query(..., description="Comma-separated site IDs"),
     date_from: str = Query(...),
     date_to: str = Query(...),
@@ -273,6 +347,7 @@ def get_timeseries(
     energy_vector: Optional[str] = None,
     compare: Optional[str] = Query(None, description="Comparison mode: 'yoy' for year-over-year"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     from services.ems.timeseries_service import (
         query_timeseries,
@@ -281,9 +356,13 @@ def get_timeseries(
         VALID_GRANULARITIES,
     )
 
+    org_id = resolve_org_id(request, auth, db)
+
     parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
     if len(parsed_site_ids) > 100:
         raise HTTPException(status_code=400, detail="Maximum 100 site IDs allowed")
+    _check_sites_org(db, parsed_site_ids, org_id)
+
     parsed_meter_ids = [int(x) for x in meter_ids.split(",") if x.strip()] if meter_ids else None
     dt_from = datetime.fromisoformat(date_from)
     dt_to = datetime.fromisoformat(date_to)
@@ -338,16 +417,20 @@ def suggest_timeseries_granularity(
 
 @router.get("/timeseries/compare-summary")
 def get_timeseries_compare_summary(
+    request: Request,
     site_ids: str = Query(..., description="Comma-separated site IDs"),
     date_from: str = Query(...),
     date_to: str = Query(...),
     energy_vector: Optional[str] = None,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """N vs N-1 summary totals (kWh + delta %) for KPI cards."""
     from services.ems.timeseries_service import compare_summary
 
+    org_id = resolve_org_id(request, auth, db)
     parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+    _check_sites_org(db, parsed_site_ids, org_id)
     dt_from = datetime.fromisoformat(date_from)
     dt_to = datetime.fromisoformat(date_to)
     return compare_summary(db, parsed_site_ids, dt_from, dt_to, energy_vector)
@@ -358,23 +441,29 @@ def get_timeseries_compare_summary(
 # -------------------------------------------------------------------
 @router.get("/weather")
 def get_weather_data(
+    request: Request,
     site_id: Optional[int] = Query(None),
     site_ids: Optional[str] = Query(None, description="Comma-separated site IDs for multi-site average"),
     date_from: str = Query(...),
     date_to: str = Query(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     from services.ems.weather_service import get_weather, get_weather_multi
     from datetime import date as date_cls
+
+    org_id = resolve_org_id(request, auth, db)
 
     df = date_cls.fromisoformat(date_from)
     dt = date_cls.fromisoformat(date_to)
 
     if site_ids:
         parsed_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+        _check_sites_org(db, parsed_ids, org_id)
         result = get_weather_multi(db, parsed_ids, df, dt)
         return {"site_ids": parsed_ids, "days": result["days"], "meta": result["meta"], "mode": "average"}
     elif site_id:
+        _check_site_org(db, site_id, org_id)
         data = get_weather(db, site_id, df, dt)
         return {"site_id": site_id, "days": data}
     else:
@@ -386,12 +475,17 @@ def get_weather_data(
 # -------------------------------------------------------------------
 @router.post("/signature/run")
 def run_energy_signature(
+    request: Request,
     site_id: int = Query(...),
     date_from: str = Query(...),
     date_to: str = Query(...),
     meter_ids: Optional[str] = None,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
+
     from services.ems.weather_service import get_weather
     from services.ems.signature_service import run_signature
     from services.ems.timeseries_service import query_timeseries
@@ -437,11 +531,13 @@ def run_energy_signature(
 
 @router.post("/signature/portfolio")
 def run_portfolio_signature(
+    request: Request,
     site_ids: str = Query(..., description="Comma-separated site IDs"),
     date_from: str = Query(...),
     date_to: str = Query(...),
     meter_ids: Optional[str] = None,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Run energy signature on aggregated consumption across multiple sites.
     Uses averaged weather and summed consumption for the portfolio.
@@ -451,9 +547,11 @@ def run_portfolio_signature(
     from services.ems.timeseries_service import query_timeseries
     from datetime import date as date_cls
 
+    org_id = resolve_org_id(request, auth, db)
     parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
     if not parsed_site_ids:
         raise HTTPException(400, "No site IDs provided")
+    _check_sites_org(db, parsed_site_ids, org_id)
 
     df = date_cls.fromisoformat(date_from)
     dt_to = date_cls.fromisoformat(date_to)
@@ -660,11 +758,13 @@ def delete_collection(col_id: int, db: Session = Depends(get_db)):
 # -------------------------------------------------------------------
 @router.post("/demo/generate")
 def generate_ems_demo(
+    request: Request,
     portfolio_size: int = Query(12),
     days: int = Query(365),
     seed: int = Query(123),
     force: bool = Query(False),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Generate realistic multi-site demo data with anomalies and weather."""
     import math
@@ -693,8 +793,20 @@ def generate_ems_demo(
             ).delete()
         db.flush()
 
-    # Resolve sites from scope (use first N available)
-    sites = db.query(Site).order_by(Site.id).limit(portfolio_size).all()
+    # Resolve sites from org scope (use first N available)
+    from models.portefeuille import Portefeuille as Pf
+    from models.entite_juridique import EntiteJuridique as EJ
+
+    org_id = resolve_org_id(request, auth, db)
+    sites = (
+        db.query(Site)
+        .join(Pf, Site.portefeuille_id == Pf.id)
+        .join(EJ, Pf.entite_juridique_id == EJ.id)
+        .filter(EJ.organisation_id == org_id)
+        .order_by(Site.id)
+        .limit(portfolio_size)
+        .all()
+    )
     if not sites:
         raise HTTPException(400, "No sites found. Seed basic data first.")
 
@@ -959,12 +1071,16 @@ class TimeseriesDemoResponse(BaseModel):
 
 @router.post("/demo/generate_timeseries", response_model=TimeseriesDemoResponse)
 def generate_timeseries_demo(
+    request: Request,
     site_id: int = Query(..., description="Site ID to generate demo timeseries for"),
     days: int = Query(default=90, ge=7, le=365),
     anomaly: bool = Query(default=True),
     energy_vector: str = Query(default="electricity", description="Energy vector: electricity|gas|heat|water"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     """Generate synthetic consumption (MeterReading) for a specific site.
     Supports electricity (hourly, bureau pattern) and gas (daily, seasonal pattern).
     Writes rows queryable by GET /api/ems/timeseries immediately after this call.
@@ -1058,6 +1174,7 @@ REFERENCE_PROFILES = {
 
 @router.get("/reference_profile")
 def get_reference_profile(
+    request: Request,
     site_id: int = Query(...),
     date_from: str = Query(...),
     date_to: str = Query(...),
@@ -1065,7 +1182,10 @@ def get_reference_profile(
     puissance: str = Query("9-12", description="0-6 | 6-9 | 9-12 | 12-36 | >36"),
     granularity: str = Query("hourly", description="hourly | daily"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     """
     Generate a reference profile curve for the requested period.
     Returns a timeseries of expected consumption based on (famille, puissance class).
@@ -1161,11 +1281,15 @@ def get_reference_profile(
 # -------------------------------------------------------------------
 @router.get("/weather_hourly")
 def get_weather_hourly(
+    request: Request,
     site_id: int = Query(...),
     date_from: str = Query(...),
     date_to: str = Query(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     """
     Returns hourly temperature data in UTC for consumption overlay.
     Interpolates from daily min/max with sinusoidal intraday pattern.
@@ -1290,8 +1414,9 @@ class DataQualityResponse(BaseModel):
 
 @router.get("/hierarchy", response_model=EmsHierarchyResponse)
 def get_ems_hierarchy(
-    org_id: Optional[int] = Query(None),
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Arbre hiérarchique Org → Portefeuille → Site → Meter.
@@ -1302,13 +1427,7 @@ def get_ems_hierarchy(
     from models.portefeuille import Portefeuille
     from models.entite_juridique import EntiteJuridique
 
-    # Résoudre org_id (simplifié : header ou param ou première org)
-    effective_org_id = org_id
-    if not effective_org_id:
-        first_org = db.query(Organisation).filter(Organisation.actif == True).first()  # noqa: E712
-        if not first_org:
-            return EmsHierarchyResponse(org_id=0, org_name="Aucune", portefeuilles=[])
-        effective_org_id = first_org.id
+    effective_org_id = resolve_org_id(request, auth, db)
 
     org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
     org_name = org.nom if org else "Inconnue"
@@ -1381,12 +1500,16 @@ def get_ems_hierarchy(
 @router.get("/cdc/{meter_id}", response_model=CdcResponse)
 def get_ems_cdc(
     meter_id: int,
+    request: Request,
     start: str = Query(..., description="Date début ISO (YYYY-MM-DD)"),
     end: str = Query(..., description="Date fin ISO (YYYY-MM-DD)"),
     granularity: str = Query("30min"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Courbe de charge d'un compteur avec classification TURPE."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_meter_org(db, meter_id, org_id)
     from datetime import date as date_cls
     from services.ems.cdc_service import query_cdc
 
@@ -1405,9 +1528,13 @@ def get_ems_cdc(
 @router.get("/data-quality/{site_id}", response_model=DataQualityResponse)
 def get_ems_data_quality(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Score qualité données par compteur pour un site."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     from services.ems.data_quality_service import compute_data_quality
 
     result = compute_data_quality(db, site_id)
@@ -1426,10 +1553,14 @@ class ReportRequest(BaseModel):
 
 @router.post("/reports/generate")
 def generate_ems_report(
+    request: Request,
     req: ReportRequest,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Génère un rapport PDF pour un site sur une période."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, req.site_id, org_id)
     from datetime import date as date_cls
     from services.ems.report_service import generate_site_report
     from fastapi.responses import StreamingResponse

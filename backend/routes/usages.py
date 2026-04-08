@@ -36,6 +36,24 @@ from schemas.usages_schemas import (
 router = APIRouter(prefix="/api/usages", tags=["usages"])
 
 
+def _check_site_org(db: Session, site_id: int, org_id: int):
+    """Verify site belongs to org. Raises 404/403."""
+    from models import Site, Portefeuille, EntiteJuridique
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site non trouvé")
+    if not site.portefeuille_id:
+        raise HTTPException(403, "Site hors périmètre")
+    pf = db.get(Portefeuille, site.portefeuille_id)
+    if not pf:
+        raise HTTPException(403, "Site hors périmètre")
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(403, "Site hors périmètre")
+    return site
+
+
 # ── Dashboard scoped (multi-niveaux) ─────────────────────────────────────
 
 
@@ -123,12 +141,15 @@ def api_archetypes_in_scope(
 @router.get("/flex-potential/{site_id}")
 def api_flex_potential(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Scoring flex NEBCO + lien BACS↔Flex pour un site."""
     from services.flex_nebco_service import compute_flex_nebco
 
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return compute_flex_nebco(db, site_id)
 
 
@@ -157,6 +178,7 @@ def api_flex_portfolio(
 @router.get("/cost-by-period/{site_id}")
 def api_cost_by_period(
     site_id: int,
+    request: Request,
     months: int = Query(12, ge=1, le=36),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -164,6 +186,8 @@ def api_cost_by_period(
     """Ventilation du coût par usage × période tarifaire TURPE 7 (HPH/HCH/HPB/HCB)."""
     from services.cost_by_period_service import get_cost_by_period
 
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_cost_by_period(db, site_id, months)
 
 
@@ -171,8 +195,15 @@ def api_cost_by_period(
 
 
 @router.get("/dashboard/{site_id}")
-def api_usages_dashboard(site_id: int, db: Session = Depends(get_db)):
+def api_usages_dashboard(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Endpoint principal de la page /usages : readiness + plan + UES + derives + cout."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_usages_dashboard(db, site_id)
 
 
@@ -180,8 +211,15 @@ def api_usages_dashboard(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/readiness/{site_id}")
-def api_usage_readiness(site_id: int, db: Session = Depends(get_db)):
+def api_usage_readiness(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Score de readiness usage d'un site (/100)."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return compute_usage_readiness(db, site_id)
 
 
@@ -189,8 +227,15 @@ def api_usage_readiness(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/metering-plan/{site_id}")
-def api_metering_plan(site_id: int, db: Session = Depends(get_db)):
+def api_metering_plan(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Plan de comptage dynamique d'un site."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_metering_plan(db, site_id)
 
 
@@ -200,10 +245,14 @@ def api_metering_plan(site_id: int, db: Session = Depends(get_db)):
 @router.get("/top-ues/{site_id}")
 def api_top_ues(
     site_id: int,
+    request: Request,
     limit: int = Query(5, ge=1, le=20),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Top usages energetiques significatifs, tries par kWh."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_top_ues(db, site_id, limit=limit)
 
 
@@ -213,10 +262,14 @@ def api_top_ues(
 @router.get("/cost-breakdown/{site_id}")
 def api_usage_cost_breakdown(
     site_id: int,
+    request: Request,
     days: int = Query(365, ge=30, le=1095),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Ventilation du cout energetique par usage."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_usage_cost_breakdown(db, site_id, days=days)
 
 
@@ -248,8 +301,15 @@ def api_usage_taxonomy():
 
 
 @router.get("/baselines/{site_id}")
-def api_usage_baselines(site_id: int, db: Session = Depends(get_db)):
+def api_usage_baselines(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Baselines auto-calculees avec comparaison avant/apres."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return compute_baselines(db, site_id)
 
 
@@ -257,8 +317,15 @@ def api_usage_baselines(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/compliance/{site_id}")
-def api_usage_compliance(site_id: int, db: Session = Depends(get_db)):
+def api_usage_compliance(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Widget conformite par usage (BACS, DT, ISO 50001)."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_usage_compliance(db, site_id)
 
 
@@ -266,8 +333,15 @@ def api_usage_compliance(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/billing-links/{site_id}")
-def api_usage_billing_links(site_id: int, db: Session = Depends(get_db)):
+def api_usage_billing_links(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Liens usage → facture → contrat → achat."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_usage_billing_links(db, site_id)
 
 
@@ -275,8 +349,15 @@ def api_usage_billing_links(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/site/{site_id}", response_model=list[UsageItemResponse])
-def api_list_usages(site_id: int, db: Session = Depends(get_db)):
+def api_list_usages(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Liste les usages declares pour un site."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=site_id)).all()
 
     return [
@@ -302,10 +383,14 @@ def api_list_usages(site_id: int, db: Session = Depends(get_db)):
 @router.get("/timeline/{site_id}")
 def api_usage_timeline(
     site_id: int,
+    request: Request,
     months: int = Query(12, ge=3, le=36),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Consommation mensuelle par usage pour AreaChart empile."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return get_usage_timeline(db, site_id, months=months)
 
 
@@ -314,11 +399,13 @@ def api_usage_timeline(
 
 @router.get("/portfolio-compare")
 def api_portfolio_usage_comparison(
-    org_id: int = Query(...),
+    request: Request,
     archetype_code: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Compare les IPE par usage pour tous les sites d'une organisation, filtrable par archétype."""
+    org_id = resolve_org_id(request, auth, db)
     return get_portfolio_usage_comparison(db, org_id, archetype_code=archetype_code)
 
 
@@ -328,10 +415,26 @@ def api_portfolio_usage_comparison(
 @router.get("/meter-readings/{meter_id}")
 def api_meter_readings_preview(
     meter_id: int,
+    request: Request,
     days: int = Query(7, ge=1, le=30),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Releves recents d'un compteur pour mini-graphe inline."""
+    from models.energy_models import Meter
+    from models import Site, Portefeuille, EntiteJuridique
+
+    org_id = resolve_org_id(request, auth, db)
+    meter = (
+        db.query(Meter)
+        .join(Site, Meter.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(Meter.id == meter_id, EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
+    if not meter:
+        raise HTTPException(404, "Compteur non trouvé")
     return get_meter_readings_preview(db, meter_id, days=days)
 
 
@@ -341,8 +444,10 @@ def api_meter_readings_preview(
 @router.get("/energy-signature/{site_id}")
 def api_energy_signature(
     site_id: int,
+    request: Request,
     months: int = Query(12, ge=3, le=36),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Signature énergétique E = a × DJU + b.
@@ -350,6 +455,8 @@ def api_energy_signature(
     """
     from services.energy_signature_service import compute_energy_signature
 
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     result = compute_energy_signature(db, site_id, months)
     if result is None:
         raise HTTPException(404, "Site non trouvé")
@@ -362,11 +469,15 @@ def api_energy_signature(
 @router.get("/power-optimization/{site_id}")
 def api_power_optimization(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Analyse de la puissance souscrite et recommandation d'optimisation."""
     from services.power_optimization_service import optimize_subscribed_power
 
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     result = optimize_subscribed_power(db, site_id)
     if result is None:
         raise HTTPException(404, "Site non trouvé")

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from services.flex_mini import compute_flex_mini
+from services.scope_utils import resolve_org_id
 from middleware.auth import get_optional_auth, AuthContext
 from schemas.flex_schemas import (
     FlexAssetResponse,
@@ -28,6 +29,26 @@ from schemas.flex_schemas import (
     FlexPortfolioResponse,
 )
 
+
+# --- Org-scoping helper ---
+def _check_site_org(db: Session, site_id: int, org_id: int):
+    """Verify site belongs to org. Raises 404/403."""
+    from models import Site, Portefeuille, EntiteJuridique
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site non trouvé")
+    if not site.portefeuille_id:
+        raise HTTPException(403, "Site hors périmètre")
+    pf = db.get(Portefeuille, site.portefeuille_id)
+    if not pf:
+        raise HTTPException(403, "Site hors périmètre")
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(403, "Site hors périmètre")
+    return site
+
+
 # --- Original router: /api/sites prefix (flex mini) ---
 router = APIRouter(prefix="/api/sites", tags=["Flex Mini"])
 
@@ -35,11 +56,15 @@ router = APIRouter(prefix="/api/sites", tags=["Flex Mini"])
 @router.get("/{site_id}/flex/mini")  # dict libre, structure variable
 def flex_mini(
     site_id: int,
+    request: Request,
     start: Optional[str] = Query(None, description="Period start (YYYY-MM-DD)"),
     end: Optional[str] = Query(None, description="Period end (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Mini flex potential: score 0-100 + top 3 levers with justification."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return compute_flex_mini(db, site_id, start, end)
 
 
@@ -49,14 +74,27 @@ flex_foundation_router = APIRouter(prefix="/api/flex", tags=["Flex Foundations"]
 
 @flex_foundation_router.get("/assets", response_model=FlexAssetListResponse)
 def list_flex_assets(
+    request: Request,
     site_id: Optional[int] = Query(None),
     asset_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List flex assets, optionally filtered by site."""
+    """List flex assets, scoped to org and optionally filtered by site."""
     from models.flex_models import FlexAsset
+    from models import Site, Portefeuille, EntiteJuridique
 
-    q = db.query(FlexAsset).filter(FlexAsset.status == "active")
+    org_id = resolve_org_id(request, auth, db)
+    if site_id:
+        _check_site_org(db, site_id, org_id)
+
+    q = (
+        db.query(FlexAsset)
+        .join(Site, FlexAsset.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(FlexAsset.status == "active", EntiteJuridique.organisation_id == org_id)
+    )
     if site_id:
         q = q.filter(FlexAsset.site_id == site_id)
     if asset_type:
@@ -67,11 +105,15 @@ def list_flex_assets(
 
 @flex_foundation_router.post("/assets", response_model=FlexAssetResponse)
 def create_flex_asset(
+    request: Request,
     body: dict = Body(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
     idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
 ):
     """Create a flex asset. Supporte idempotency_key."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, body["site_id"], org_id)
     from models.flex_models import FlexAsset
 
     # Idempotence : retourne l'asset existant si meme cle
@@ -114,13 +156,21 @@ def create_flex_asset(
 
 
 @flex_foundation_router.patch("/assets/{asset_id}", response_model=FlexAssetResponse)
-def update_flex_asset(asset_id: int, body: dict = Body(...), db: Session = Depends(get_db)):
+def update_flex_asset(
+    asset_id: int,
+    request: Request,
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Update a flex asset."""
     from models.flex_models import FlexAsset
 
+    org_id = resolve_org_id(request, auth, db)
     asset = db.query(FlexAsset).filter(FlexAsset.id == asset_id).first()
     if not asset:
         raise HTTPException(status_code=404, detail="Asset non trouve")
+    _check_site_org(db, asset.site_id, org_id)
     for key in (
         "label",
         "power_kw",
@@ -143,11 +193,15 @@ def update_flex_asset(asset_id: int, body: dict = Body(...), db: Session = Depen
 
 @flex_foundation_router.post("/assets/sync-from-bacs", response_model=BacsSyncResponse)
 def sync_bacs(
+    request: Request,
     body: dict = Body(...),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
     idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
 ):
     """Sync CVC systems from BACS to FlexAsset inventory. Supporte idempotency_key."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, body["site_id"], org_id)
     from services.flex_assessment_service import sync_bacs_to_flex_assets
 
     # Idempotence simple : si la cle est fournie, on verifie qu'un sync recent existe
@@ -172,23 +226,43 @@ def sync_bacs(
 
 
 @flex_foundation_router.get("/assessment", response_model=FlexAssessmentResponse)
-def get_flex_assessment(site_id: int = Query(...), db: Session = Depends(get_db)):
+def get_flex_assessment(
+    request: Request,
+    site_id: int = Query(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Get flex assessment for a site (asset-based or heuristic fallback)."""
     from services.flex_assessment_service import compute_flex_assessment
 
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, site_id, org_id)
     return compute_flex_assessment(db, site_id)
 
 
 @flex_foundation_router.get("/regulatory-opportunities", response_model=RegOppListResponse)
 def list_regulatory_opportunities(
+    request: Request,
     site_id: Optional[int] = Query(None),
     regulation: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List regulatory opportunities (APER, CEE, BACS flex, NEBCO)."""
     from models.flex_models import RegulatoryOpportunity
+    from models import Site, Portefeuille, EntiteJuridique
 
-    q = db.query(RegulatoryOpportunity)
+    org_id = resolve_org_id(request, auth, db)
+    if site_id:
+        _check_site_org(db, site_id, org_id)
+
+    q = (
+        db.query(RegulatoryOpportunity)
+        .join(Site, RegulatoryOpportunity.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if site_id:
         q = q.filter(RegulatoryOpportunity.site_id == site_id)
     if regulation:
@@ -198,8 +272,15 @@ def list_regulatory_opportunities(
 
 
 @flex_foundation_router.post("/regulatory-opportunities", response_model=RegOppResponse)
-def create_regulatory_opportunity(body: dict = Body(...), db: Session = Depends(get_db)):
+def create_regulatory_opportunity(
+    request: Request,
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create a regulatory opportunity for a site."""
+    org_id = resolve_org_id(request, auth, db)
+    _check_site_org(db, body["site_id"], org_id)
     from datetime import datetime
     from models.flex_models import RegulatoryOpportunity
 
@@ -355,14 +436,20 @@ def flex_prioritization(
     db: Session = Depends(get_db),
 ):
     """Portfolio-scoped flex prioritization — PROMEOS canonical path."""
-    from models import Site, Portefeuille
+    from models import Site, Portefeuille, EntiteJuridique
     from models.flex_models import FlexAsset
     from models.base import not_deleted
     from services.flex_assessment_service import compute_flex_assessment
 
+    org_id = resolve_org_id(request, auth, db)
+
     portfolio = db.query(Portefeuille).filter(Portefeuille.id == portfolio_id).first()
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portefeuille non trouvé")
+    # Verify portfolio belongs to org
+    ej = db.get(EntiteJuridique, portfolio.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(status_code=403, detail="Portefeuille hors périmètre")
 
     sites = (
         db.query(Site)
@@ -414,8 +501,7 @@ def flex_portfolio(
     from models.base import not_deleted
     from services.flex_assessment_service import compute_flex_assessment
 
-    org_header = request.headers.get("X-Org-Id")
-    org_id = int(org_header) if org_header else (auth.org_id if auth and auth.org_id else 1)
+    org_id = resolve_org_id(request, auth, db)
 
     sites = (
         db.query(Site)

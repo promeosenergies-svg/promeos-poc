@@ -6,10 +6,11 @@ Endpoints pour l'analyse de la courbe de charge (CDC) et l'optimisation puissanc
 from datetime import date, datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from models.energy_models import Meter
 from models.site import Site
 from schemas.power_schemas import (
@@ -21,6 +22,7 @@ from schemas.power_schemas import (
     NebcoResponse,
     NebcoPortfolioResponse,
 )
+from services.scope_utils import resolve_org_id, resolve_site_ids
 
 router = APIRouter(prefix="/api/power", tags=["Power Intelligence"])
 
@@ -37,12 +39,32 @@ def _get_primary_meter(db: Session, site_id: int) -> Meter | None:
     )
 
 
+def _load_site_with_org_check(db: Session, site_id: int, org_id: int) -> Site:
+    """Load site and verify it belongs to the resolved org. Raises 404/403."""
+    from models import Portefeuille, EntiteJuridique
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site non trouvé")
+    if not site.portefeuille_id:
+        raise HTTPException(403, "Site hors périmètre")
+    pf = db.get(Portefeuille, site.portefeuille_id)
+    if not pf:
+        raise HTTPException(403, "Site hors périmètre")
+    ej = db.get(EntiteJuridique, pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(403, "Site hors périmètre")
+    return site
+
+
 @router.get("/sites/{site_id}/profile", response_model=PowerProfileResponse)
 def api_power_profile(
     site_id: int,
+    request: Request,
     date_debut: Optional[date] = Query(None),
     date_fin: Optional[date] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     KPIs puissance : P_max, P_mean, P_base (p5%), E_totale,
@@ -50,14 +72,14 @@ def api_power_profile(
     """
     from services.power.power_profile_service import get_power_profile
 
+    org_id = resolve_org_id(request, auth, db)
+
     if date_fin is None:
         date_fin = date.today()
     if date_debut is None:
         date_debut = date_fin - timedelta(days=30)
 
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(404, "Site non trouvé")
+    site = _load_site_with_org_check(db, site_id, org_id)
 
     meter = _get_primary_meter(db, site_id)
     if not meter:
@@ -72,10 +94,15 @@ def api_power_profile(
 @router.get("/sites/{site_id}/contract", response_model=PowerContractResponse)
 def api_power_contract(
     site_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Paramètres contractuels de puissance (PS par poste, FTA, type compteur)."""
     from models.power import PowerContract
+
+    org_id = resolve_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
 
     meter = _get_primary_meter(db, site_id)
     if not meter:
@@ -117,13 +144,18 @@ def _default_period(date_debut, date_fin, days=30):
 @router.get("/sites/{site_id}/peaks", response_model=PowerPeaksResponse)
 def api_power_peaks(
     site_id: int,
+    request: Request,
     date_debut: Optional[date] = Query(None),
     date_fin: Optional[date] = Query(None),
     seuil_pct: float = Query(85.0, ge=50, le=100),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Détection des pics >= seuil_pct% de la PS par poste + CMDPS."""
     from services.power.peak_detection_engine import detect_peaks
+
+    org_id = resolve_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
 
     date_debut, date_fin = _default_period(date_debut, date_fin)
     meter = _get_primary_meter(db, site_id)
@@ -138,12 +170,17 @@ def api_power_peaks(
 @router.get("/sites/{site_id}/factor", response_model=PowerFactorResponse)
 def api_power_factor(
     site_id: int,
+    request: Request,
     date_debut: Optional[date] = Query(None),
     date_fin: Optional[date] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Analyse facteur de puissance (tan φ). Seuil TURPE 7 = 0.4."""
     from services.power.power_factor_analyzer import analyze_power_factor
+
+    org_id = resolve_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
 
     date_debut, date_fin = _default_period(date_debut, date_fin)
     meter = _get_primary_meter(db, site_id)
@@ -158,12 +195,17 @@ def api_power_factor(
 @router.get("/sites/{site_id}/optimize-ps", response_model=OptimizePsResponse)
 def api_optimize_ps(
     site_id: int,
+    request: Request,
     date_debut: Optional[date] = Query(None),
     date_fin: Optional[date] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Optimisation PS par poste. EIR BT ≥ 36 kVA / HTA ≥ 100 kW."""
     from services.power.subscribed_power_optimizer import optimize_subscribed_power
+
+    org_id = resolve_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
 
     date_debut, date_fin = _default_period(date_debut, date_fin, days=180)
     meter = _get_primary_meter(db, site_id)
@@ -178,14 +220,19 @@ def api_optimize_ps(
 @router.get("/sites/{site_id}/nebco", response_model=NebcoResponse)
 def api_nebco(
     site_id: int,
+    request: Request,
     site_archetype: str = Query("DEFAULT", description="Archétype site (BUREAU_STANDARD, HOTEL_HEBERGEMENT, etc.)"),
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
     tarif_min: float = Query(80.0, ge=0),
     tarif_max: float = Query(200.0, ge=0),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Éligibilité NEBCO : P_max ≥ 100 kW, checklist 9 critères, tarif paramétrable."""
     from services.power.nebco_eligibility_engine import check_nebco_eligibility
+
+    org_id = resolve_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
 
     meter = _get_primary_meter(db, site_id)
     if not meter:
@@ -205,15 +252,25 @@ def api_nebco(
 
 @router.get("/portfolio/nebco-summary", response_model=NebcoPortfolioResponse)
 def api_portfolio_nebco_summary(
+    request: Request,
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
     tarif_min: float = Query(80.0, ge=0),
     tarif_max: float = Query(200.0, ge=0),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Agrégation NEBCO sur tous les sites. Somme uniquement les éligibles techniques."""
+    """Agrégation NEBCO sur tous les sites de l'org. Somme uniquement les éligibles techniques."""
     from services.power.nebco_eligibility_engine import check_nebco_eligibility
+    from models import Portefeuille, EntiteJuridique
 
-    sites = db.query(Site).filter(Site.actif.is_(True)).all()
+    org_id = resolve_org_id(request, auth, db)
+    sites = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.actif.is_(True))
+        .all()
+    )
     if not sites:
         raise HTTPException(404, "Aucun site actif")
 
