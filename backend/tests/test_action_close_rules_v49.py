@@ -30,6 +30,9 @@ def _ensure_v49_schema():
 
     for attempt in range(5):
         try:
+            # Increase busy_timeout to avoid DB locked errors during test suite
+            with engine.begin() as conn:
+                conn.execute(sa_text("PRAGMA busy_timeout = 10000"))
             insp = sa_inspect(engine)
             if insp.has_table("action_items"):
                 existing = {c["name"] for c in insp.get_columns("action_items")}
