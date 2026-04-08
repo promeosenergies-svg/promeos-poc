@@ -230,7 +230,7 @@ class TestResetHard:
         result = orch.reset(mode="hard")
 
         assert db.query(MeterReading).count() == 0
-        assert "meter_readings" in result.get("deleted", {})
+        assert "meter_reading" in result.get("deleted", {})
 
     def test_reset_hard_no_silent_failures(self, seeded_db):
         """reset(mode='hard') result must not contain 'error:' values."""
