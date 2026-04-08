@@ -107,8 +107,30 @@ def process_photo_file(
     schedules_updated = 0
     alerts: List[Dict[str, Any]] = []
 
+    # Batch-load all DeliveryPoints for PRMs in the file (avoid N+1)
+    all_prms = parsed.prm_list
+    dp_map: Dict[str, DeliveryPoint] = {}
+    if all_prms:
+        dps = db.query(DeliveryPoint).filter(DeliveryPoint.code.in_(all_prms)).all()
+        dp_map = {dp.code: dp for dp in dps}
+
+    # Batch-load active reprog schedules for matched sites
+    matched_site_ids = {dp.site_id for dp in dp_map.values()}
+    sched_by_site: Dict[int, TOUSchedule] = {}
+    if matched_site_ids:
+        active_scheds = (
+            db.query(TOUSchedule)
+            .filter(
+                TOUSchedule.site_id.in_(matched_site_ids),
+                TOUSchedule.source == "reprog_hc",
+                TOUSchedule.is_active.is_(True),
+            )
+            .all()
+        )
+        sched_by_site = {s.site_id: s for s in active_scheds}
+
     for row in parsed.rows:
-        dp = db.query(DeliveryPoint).filter(DeliveryPoint.code == row.prm).first()
+        dp = dp_map.get(row.prm)
         if not dp:
             prms_not_found += 1
             continue
@@ -123,7 +145,7 @@ def process_photo_file(
         _update_delivery_point(dp, row, parsed.photo_type, phase)
 
         # Créer/mettre à jour le TOUSchedule si on a les codes cibles
-        sched_result = _upsert_tou_schedule(db, dp, row, parsed.photo_type)
+        sched_result = _upsert_tou_schedule(db, dp, row, parsed.photo_type, sched_by_site)
         if sched_result == "created":
             schedules_created += 1
         elif sched_result == "updated":
@@ -192,8 +214,13 @@ def _upsert_tou_schedule(
     dp: DeliveryPoint,
     row: ParsedPhotoRow,
     photo_type: PhotoType,
+    sched_by_site: Optional[Dict[int, TOUSchedule]] = None,
 ) -> Optional[str]:
     """Crée ou met à jour le TOUSchedule du PRM.
+
+    Args:
+        sched_by_site: Pre-fetched active reprog schedules keyed by site_id
+                       (avoids N+1 queries).
 
     Returns: "created", "updated", or None
     """
@@ -215,16 +242,18 @@ def _upsert_tou_schedule(
     if not effective_date:
         effective_date = date.today()
 
-    # Chercher un TOUSchedule existant pour ce PRM (via site_id)
-    existing = (
-        db.query(TOUSchedule)
-        .filter(
-            TOUSchedule.site_id == dp.site_id,
-            TOUSchedule.source == "reprog_hc",
-            TOUSchedule.is_active == True,
+    # Chercher un TOUSchedule existant (pre-fetched or query fallback)
+    existing = (sched_by_site or {}).get(dp.site_id)
+    if existing is None and sched_by_site is None:
+        existing = (
+            db.query(TOUSchedule)
+            .filter(
+                TOUSchedule.site_id == dp.site_id,
+                TOUSchedule.source == "reprog_hc",
+                TOUSchedule.is_active.is_(True),
+            )
+            .first()
         )
-        .first()
-    )
 
     if existing:
         # Si CR-M TRAITE : mettre à jour les fenêtres et la date effective
