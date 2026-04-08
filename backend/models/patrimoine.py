@@ -273,6 +273,14 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     hc_code_futur_hiver = Column(String(20), nullable=True, comment="Code HC cible hiver (phase 2)")
     hc_saisonnalise = Column(Boolean, default=False, comment="True si HC saisonnalisées activées")
 
+    # ── Lien vers TOUSchedule actif (résultat de la reprog) ──
+    tou_schedule_id = Column(
+        Integer,
+        ForeignKey("tou_schedules.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="TOUSchedule actif issu de la reprogrammation HC",
+    )
+
     # Data lineage (coherent with Site/Compteur)
     data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
     data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")
@@ -282,3 +290,4 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
     # Relations
     site = relationship("Site", back_populates="delivery_points")
     compteurs = relationship("Compteur", back_populates="delivery_point")
+    tou_schedule = relationship("TOUSchedule", foreign_keys=[tou_schedule_id])
