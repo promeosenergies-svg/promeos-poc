@@ -96,10 +96,16 @@ def get_active_schedule(
         "effective_to": None,
         "is_active": True,
         "windows": DEFAULT_WINDOWS,
+        "windows_ete": None,
+        "is_seasonal": False,
         "source": "default",
         "source_ref": None,
         "price_hp_eur_kwh": DEFAULT_PRICE_ELEC_EUR_KWH,
         "price_hc_eur_kwh": DEFAULT_PRICE_HC_EUR_KWH,
+        "price_hph_eur_kwh": None,
+        "price_hch_eur_kwh": None,
+        "price_hpb_eur_kwh": None,
+        "price_hcb_eur_kwh": None,
         "is_default": True,
     }
 
@@ -244,22 +250,18 @@ def compute_hp_hc_ratio(
     if not readings:
         return _empty_hp_hc(site_id)
 
-    # Pre-compute 7x24 period lookup table
-    period_lookup = {}
-    for dow in range(7):
-        for hour in range(24):
-            ref = datetime(2024, 1, 1 + dow, hour, 0)  # 2024-01-01 is Monday (weekday=0)
-            period_lookup[(dow, hour)] = _classify_period(ref, windows)
+    # Pre-compute month-aware period lookup table (seasonal support)
+    period_lookup = _build_seasonal_lookup(active, DEFAULT_WINDOWS)
 
     hp_kwh = 0.0
     hc_kwh = 0.0
 
     for r in readings:
-        period = period_lookup[(r.timestamp.weekday(), r.timestamp.hour)]
-        if period == "HP":
-            hp_kwh += r.value_kwh
-        else:
+        period = period_lookup[(r.timestamp.month, r.timestamp.weekday(), r.timestamp.hour)]
+        if "HC" in period:
             hc_kwh += r.value_kwh
+        else:
+            hp_kwh += r.value_kwh
 
     total_kwh = hp_kwh + hc_kwh
     hp_ratio = hp_kwh / total_kwh if total_kwh > 0 else 0
@@ -281,7 +283,11 @@ def compute_hp_hc_ratio(
 
 
 def _classify_period(ts: datetime, windows: List[Dict]) -> str:
-    """Classify a timestamp as HP or HC based on TOU windows."""
+    """Classify a timestamp as HP or HC based on TOU windows.
+
+    Kept as local helper for backward compat (used in lookup tables).
+    For new code, prefer period_resolver.resolve_period().
+    """
     is_weekend = ts.weekday() >= 5
     day_type = "weekend" if is_weekend else "weekday"
     hour_str = f"{ts.hour:02d}:{ts.minute:02d}"
@@ -302,6 +308,44 @@ def _classify_period(ts: datetime, windows: List[Dict]) -> str:
                 return w.get("period", "HC")
 
     return "HC"  # default
+
+
+def _build_seasonal_lookup(
+    schedule_dict: Optional[Dict[str, Any]],
+    windows_fallback: List[Dict],
+) -> Dict:
+    """Build a month-aware (month, dow, hour) → period lookup table.
+
+    Si le schedule est saisonnalisé, utilise les fenêtres été (avr-oct)
+    et hiver (nov-mars) séparément. Sinon, une seule grille pour tous les mois.
+
+    Returns:
+        Dict[(month, dow, hour)] → period string ("HP", "HC", "HPH", etc.)
+    """
+    from services.billing_engine.period_resolver import select_windows
+
+    lookup = {}
+    if schedule_dict and schedule_dict.get("is_seasonal"):
+        # Construire 2 sets de windows (hiver / été) puis mapper par mois
+        for month in range(1, 13):
+            windows = select_windows(schedule_dict, month)
+            for dow in range(7):
+                for hour in range(24):
+                    ref = datetime(2024, 1, 1 + dow, hour, 0)
+                    lookup[(month, dow, hour)] = _classify_period(ref, windows)
+    else:
+        # Non-saisonnalisé : une seule grille pour tous les mois
+        windows = (schedule_dict or {}).get("windows") or windows_fallback
+        base_lookup = {}
+        for dow in range(7):
+            for hour in range(24):
+                ref = datetime(2024, 1, 1 + dow, hour, 0)
+                base_lookup[(dow, hour)] = _classify_period(ref, windows)
+        for month in range(1, 13):
+            for dow in range(7):
+                for hour in range(24):
+                    lookup[(month, dow, hour)] = base_lookup[(dow, hour)]
+    return lookup
 
 
 def _empty_hp_hc(site_id: int) -> Dict:
@@ -359,12 +403,11 @@ def compute_hphc_breakdown_v2(
     else:
         active = get_active_schedule(db, site_id)
         if active:
-            windows = active.get("windows", DEFAULT_WINDOWS)
             cal_name = active.get("name", "Defaut")
             price_hp = active.get("price_hp_eur_kwh") or DEFAULT_PRICE_ELEC_EUR_KWH
             price_hc = active.get("price_hc_eur_kwh") or DEFAULT_PRICE_HC_EUR_KWH
         else:
-            windows = DEFAULT_WINDOWS
+            active = None
             cal_name = "TURPE standard"
             price_hp, price_hc = DEFAULT_PRICE_ELEC_EUR_KWH, DEFAULT_PRICE_HC_EUR_KWH
 
@@ -397,12 +440,13 @@ def compute_hphc_breakdown_v2(
     if not readings:
         return _empty_hphc_v2(site_id, cal_name)
 
-    # Pre-compute 7x24 period lookup table (avoids per-reading window iteration)
-    period_lookup = {}
-    for dow in range(7):
-        for hour in range(24):
-            ref = datetime(2024, 1, 1 + dow, hour, 0)  # 2024-01-01 is Monday (weekday=0)
-            period_lookup[(dow, hour)] = _classify_period(ref, windows)
+    # Pre-compute month-aware period lookup table (seasonal support G5)
+    if calendar_id:
+        # TariffCalendar doesn't have seasonal windows, use as-is
+        schedule_for_lookup = {"windows": windows, "is_seasonal": False}
+    else:
+        schedule_for_lookup = active  # may be None → fallback to DEFAULT_WINDOWS
+    period_lookup = _build_seasonal_lookup(schedule_for_lookup, DEFAULT_WINDOWS)
 
     # Classify + build heatmap using lookup table
     hp_kwh = 0.0
@@ -412,11 +456,12 @@ def compute_hphc_breakdown_v2(
     for r in readings:
         dow = r.timestamp.weekday()
         hour = r.timestamp.hour
-        period = period_lookup[(dow, hour)]
-        if period == "HP":
-            hp_kwh += r.value_kwh
-        else:
+        month = r.timestamp.month
+        period = period_lookup[(month, dow, hour)]
+        if "HC" in period:
             hc_kwh += r.value_kwh
+        else:
+            hp_kwh += r.value_kwh
 
         key = (dow, hour)
         heatmap_data[key]["sum_kwh"] += r.value_kwh
@@ -521,6 +566,11 @@ def _serialize_schedule(s: TOUSchedule) -> Dict[str, Any]:
     except (json.JSONDecodeError, TypeError):
         windows = []
 
+    try:
+        windows_ete = json.loads(s.windows_ete_json) if s.windows_ete_json else None
+    except (json.JSONDecodeError, TypeError):
+        windows_ete = None
+
     return {
         "id": s.id,
         "site_id": s.site_id,
@@ -530,9 +580,15 @@ def _serialize_schedule(s: TOUSchedule) -> Dict[str, Any]:
         "effective_to": s.effective_to.isoformat() if s.effective_to else None,
         "is_active": s.is_active,
         "windows": windows,
+        "windows_ete": windows_ete,
+        "is_seasonal": s.is_seasonal,
         "source": s.source,
         "source_ref": s.source_ref,
         "price_hp_eur_kwh": s.price_hp_eur_kwh,
         "price_hc_eur_kwh": s.price_hc_eur_kwh,
+        "price_hph_eur_kwh": s.price_hph_eur_kwh,
+        "price_hch_eur_kwh": s.price_hch_eur_kwh,
+        "price_hpb_eur_kwh": s.price_hpb_eur_kwh,
+        "price_hcb_eur_kwh": s.price_hcb_eur_kwh,
         "is_default": False,
     }

@@ -3,11 +3,15 @@ PROMEOS — Classifieur de période tarifaire TURPE 7.
 Réutilisable par : billing_shadow_v2, cost_by_period, power_optimizer.
 
 Périodes TURPE 7 (option C4/C5 horosaisonnalisée) :
-  HPH = Heures Pleines Hiver (nov-mars, 7h-23h jours ouvrés)
-  HCH = Heures Creuses Hiver (nov-mars, 23h-7h + weekends)
-  HPB = Heures Pleines Été (avr-oct, 7h-23h jours ouvrés)
-  HCB = Heures Creuses Été (avr-oct, 23h-7h + weekends)
+  HPH = Heures Pleines Hiver (nov-mars, postes TURPE)
+  HCH = Heures Creuses Hiver (nov-mars, postes TURPE)
+  HPB = Heures Pleines Été (avr-oct, postes TURPE)
+  HCB = Heures Creuses Été (avr-oct, postes TURPE)
   P   = Pointe (déc-fév, jours ouvrés, 9h-11h et 18h-20h)
+
+Délègue au résolveur unifié (period_resolver) qui utilise les postes
+horosaisonniers TURPE 7 officiels via turpe_calendar, avec support
+des jours fériés et distinction samedi/dimanche.
 
 Source : CRE Délibération n°2025-78 (TURPE 7, 1er août 2025)
 """
@@ -24,11 +28,10 @@ class TariffPeriod(str, Enum):
     POINTE = "P"
 
 
+# ── Constantes rétro-compatibles (utilisées par d'autres modules) ──────────
 WINTER_MONTHS = frozenset({11, 12, 1, 2, 3})
 POINTE_MONTHS = frozenset({12, 1, 2})
 POINTE_HOURS = frozenset({9, 10, 18, 19})
-HP_START = 7
-HP_END = 23
 
 # Labels français pour l'affichage
 PERIOD_LABELS = {
@@ -49,19 +52,35 @@ PERIOD_PRICE_RATIO = {
     "P": 1.30,
 }
 
+# Mapping str → TariffPeriod enum
+_STR_TO_PERIOD = {
+    "HPH": TariffPeriod.HPH,
+    "HCH": TariffPeriod.HCH,
+    "HPB": TariffPeriod.HPB,
+    "HCB": TariffPeriod.HCB,
+    "P": TariffPeriod.POINTE,
+}
+
 
 def classify_period(ts: datetime, has_pointe: bool = False) -> TariffPeriod:
-    """Retourne la période tarifaire pour un timestamp."""
-    month = ts.month
-    hour = ts.hour
-    is_weekend = ts.weekday() >= 5
-    is_winter = month in WINTER_MONTHS
-    is_hp = HP_START <= hour < HP_END and not is_weekend
+    """Retourne la période tarifaire pour un timestamp.
 
-    if has_pointe and month in POINTE_MONTHS and not is_weekend and hour in POINTE_HOURS:
-        return TariffPeriod.POINTE
+    Délègue au résolveur unifié (turpe_calendar) pour une classification
+    correcte avec jours fériés et postes horosaisonniers TURPE 7.
 
-    if is_winter:
-        return TariffPeriod.HPH if is_hp else TariffPeriod.HCH
-    else:
-        return TariffPeriod.HPB if is_hp else TariffPeriod.HCB
+    La période POINTE (déc-fév, 9h-11h et 18h-20h) est gérée ici car
+    elle n'existe que pour les segments C3+ et n'est pas dans turpe_calendar.
+    """
+    # Pointe : gestion spéciale (C3+ uniquement, pas dans turpe_calendar)
+    if has_pointe:
+        month = ts.month
+        hour = ts.hour
+        is_weekend = ts.weekday() >= 5
+        if month in POINTE_MONTHS and not is_weekend and hour in POINTE_HOURS:
+            return TariffPeriod.POINTE
+
+    # Résolution via turpe_calendar (postes horosaisonniers officiels)
+    from services.billing_engine.period_resolver import resolve_period_no_db
+
+    period_str = resolve_period_no_db(ts)
+    return _STR_TO_PERIOD.get(period_str, TariffPeriod.HPH)

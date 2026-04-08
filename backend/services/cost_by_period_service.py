@@ -13,11 +13,11 @@ from sqlalchemy import func
 from models.energy_models import Meter, MeterReading
 from models.usage import Usage, USAGE_LABELS_FR
 from services.tariff_period_classifier import (
-    classify_period,
     TariffPeriod,
     PERIOD_LABELS,
     PERIOD_PRICE_RATIO,
 )
+from services.billing_engine.period_resolver import resolve_period
 
 # Seuil de détection d'optimisation : si > 70% en HP, proposer shift
 _HP_THRESHOLD_PCT = 70
@@ -33,6 +33,11 @@ def get_cost_by_period(db: Session, site_id: int, months: int = 12) -> dict:
     from services.usage_service import _resolve_site_price
 
     price_ref = _resolve_site_price(db, site_id)
+
+    # Charger le TOUSchedule du site une seule fois (évite N queries)
+    from services.tou_service import get_active_schedule
+
+    site_tou = get_active_schedule(db, site_id)
 
     # Sous-compteurs avec usage
     subs = (
@@ -65,9 +70,9 @@ def get_cost_by_period(db: Session, site_id: int, months: int = 12) -> dict:
         total_kwh = 0.0
 
         for ts, kwh in readings:
-            period = classify_period(ts)
-            by_period[period.value]["kwh"] += kwh
-            by_period[period.value]["count"] += 1
+            period_str = resolve_period(ts, site_id=site_id, tou_schedule=site_tou)
+            by_period[period_str]["kwh"] += kwh
+            by_period[period_str]["count"] += 1
             total_kwh += kwh
 
         if total_kwh <= 0:
