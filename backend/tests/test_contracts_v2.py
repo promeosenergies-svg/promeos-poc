@@ -330,9 +330,9 @@ class TestCoherence:
         db.add(cadre)
         db.flush()
         results = coherence_check(db, cadre.id)
-        r1 = [r for r in results if r["rule_id"] == "R1"]
-        assert len(r1) == 1
-        assert r1[0]["level"] == "warning"
+        r4 = [r for r in results if r["rule_id"] == "R4"]
+        assert len(r4) == 1
+        assert r4[0]["level"] == "warning"
 
     def test_coherence_override_sans_pricing(self, db, org_hierarchy):
         from services.contract_v2_service import coherence_check
@@ -358,9 +358,9 @@ class TestCoherence:
         db.add(a)
         db.flush()
         results = coherence_check(db, cadre.id)
-        r11 = [r for r in results if r["rule_id"] == "R11"]
-        assert len(r11) == 1
-        assert r11[0]["level"] == "error"
+        r16 = [r for r in results if r["rule_id"] == "R16" and "override" in r["message"]]
+        assert len(r16) == 1
+        assert r16[0]["level"] == "error"
 
     def test_coherence_prix_anormal(self, db, org_hierarchy):
         from services.contract_v2_service import coherence_check
@@ -394,8 +394,8 @@ class TestCoherence:
         )
         db.flush()
         results = coherence_check(db, cadre.id)
-        r9 = [r for r in results if r["rule_id"] == "R9"]
-        assert len(r9) >= 1
+        r7 = [r for r in results if r["rule_id"] == "R7" and "anormal" in r["message"]]
+        assert len(r7) >= 1
 
     def test_coherence_dates_incoherentes(self, db, org_hierarchy):
         from services.contract_v2_service import coherence_check
@@ -421,9 +421,9 @@ class TestCoherence:
         )
         db.flush()
         results = coherence_check(db, cadre.id)
-        r8 = [r for r in results if r["rule_id"] == "R8"]
-        assert len(r8) == 1
-        assert r8[0]["level"] == "error"
+        r1 = [r for r in results if r["rule_id"] == "R1"]
+        assert len(r1) == 1
+        assert r1[0]["level"] == "error"
 
 
 # ── KPIs ──────────────────────────────────────────────────────────

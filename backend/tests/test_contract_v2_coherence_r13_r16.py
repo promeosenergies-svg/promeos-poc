@@ -27,7 +27,7 @@ from models import (
     TariffOptionEnum,
 )
 from models.contract_v2_models import ContractAnnexe, ContractPricing
-from services.contract_v2_service import coherence_check
+from services.contrat_coherence import validate_contrat as coherence_check
 
 
 @pytest.fixture
@@ -112,7 +112,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C5", subscribed_power_kva=42.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 1
         assert r13[0]["level"] == "error"
 
@@ -122,7 +122,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C5", subscribed_power_kva=36.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 0
 
     def test_c4_over_250kva_warning(self, db, setup):
@@ -131,7 +131,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", subscribed_power_kva=300.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 1
         assert r13[0]["level"] == "warning"
 
@@ -141,7 +141,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", subscribed_power_kva=100.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 0
 
     def test_no_segment_skip(self, db, setup):
@@ -150,7 +150,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, subscribed_power_kva=500.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 0
 
     def test_c4_under_37kva_warning(self, db, setup):
@@ -159,7 +159,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", subscribed_power_kva=30.0)
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 1
         assert r13[0]["level"] == "warning"
 
@@ -169,7 +169,7 @@ class TestR13SegmentPuissance:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C5")
         db.commit()
         results = coherence_check(db, c.id)
-        r13 = [r for r in results if r["rule_id"] == "R13"]
+        r13 = [r for r in results if r["rule_id"] == "R10"]
         assert len(r13) == 0
 
 
@@ -185,7 +185,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C5", tariff_option=TariffOptionEnum.CU4)
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 1
         assert r14[0]["level"] == "error"
 
@@ -195,7 +195,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", tariff_option=TariffOptionEnum.CU4)
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 0
 
     def test_hphc_on_c5_ok(self, db, setup):
@@ -204,7 +204,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C5", tariff_option=TariffOptionEnum.HP_HC)
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 0
 
     def test_base_on_c4_error(self, db, setup):
@@ -213,7 +213,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", tariff_option=TariffOptionEnum.BASE)
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 1
         assert r14[0]["level"] == "error"
 
@@ -223,7 +223,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4", tariff_option=TariffOptionEnum.LU)
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 0
 
     def test_no_option_skip(self, db, setup):
@@ -232,7 +232,7 @@ class TestR14OptionSegment:
         _make_annexe(db, c.id, setup["sites"][0].id, segment_enedis="C4")
         db.commit()
         results = coherence_check(db, c.id)
-        r14 = [r for r in results if r["rule_id"] == "R14"]
+        r14 = [r for r in results if r["rule_id"] == "R15"]
         assert len(r14) == 0
 
 
@@ -242,8 +242,10 @@ class TestR14OptionSegment:
 
 
 class TestR15DureePrix:
+    """Duree/prix now R2 in contrat_coherence.py."""
+
     def test_spot_36_months_warning(self, db, setup):
-        """Contrat SPOT de 36 mois -> WARNING."""
+        """Contrat SPOT de 36 mois -> WARNING (R2)."""
         c = _make_cadre(
             db,
             setup,
@@ -254,12 +256,11 @@ class TestR15DureePrix:
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = coherence_check(db, c.id)
-        r15 = [r for r in results if r["rule_id"] == "R15"]
-        assert len(r15) == 1
-        assert r15[0]["level"] == "warning"
+        r2 = [r for r in results if r["rule_id"] == "R2"]
+        assert any(r["level"] == "warning" for r in r2)
 
     def test_spot_12_months_ok(self, db, setup):
-        """Contrat SPOT de 12 mois -> pas de R15."""
+        """Contrat SPOT de 12 mois -> pas de R2 duree."""
         c = _make_cadre(
             db,
             setup,
@@ -270,31 +271,30 @@ class TestR15DureePrix:
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = coherence_check(db, c.id)
-        r15 = [r for r in results if r["rule_id"] == "R15"]
-        assert len(r15) == 0
+        r2 = [r for r in results if r["rule_id"] == "R2"]
+        assert len(r2) == 0
 
     def test_fixe_48_months_ok(self, db, setup):
-        """Contrat FIXE de 48 mois -> pas de R15."""
+        """Contrat FIXE de 48 mois -> pas de R2."""
         c = _make_cadre(
             db, setup, offer_indexation=ContractIndexation.FIXE, start_date=date(2025, 1, 1), end_date=date(2029, 1, 1)
         )
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = coherence_check(db, c.id)
-        r15 = [r for r in results if r["rule_id"] == "R15"]
-        assert len(r15) == 0
+        r2 = [r for r in results if r["rule_id"] == "R2"]
+        assert len(r2) == 0
 
     def test_fixe_2_months_info(self, db, setup):
-        """Contrat FIXE de 2 mois -> INFO."""
+        """Contrat FIXE de 2 mois -> INFO (R2)."""
         c = _make_cadre(
             db, setup, offer_indexation=ContractIndexation.FIXE, start_date=date(2025, 1, 1), end_date=date(2025, 3, 1)
         )
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = coherence_check(db, c.id)
-        r15 = [r for r in results if r["rule_id"] == "R15"]
-        assert len(r15) == 1
-        assert r15[0]["level"] == "info"
+        r2 = [r for r in results if r["rule_id"] == "R2"]
+        assert any(r["level"] == "info" for r in r2)
 
 
 # ============================================================
@@ -303,39 +303,41 @@ class TestR15DureePrix:
 
 
 class TestR16OptionElecSurGaz:
+    """Gaz + elec option now merged into R15 in contrat_coherence.py."""
+
     def test_hphc_on_gaz_warning(self, db, setup):
-        """HP/HC sur contrat gaz -> WARNING."""
+        """HP/HC sur contrat gaz -> WARNING (R15, gaz)."""
         c = _make_cadre(db, setup, energy_type=BillingEnergyType.GAZ)
         _make_annexe(db, c.id, setup["sites"][0].id, tariff_option=TariffOptionEnum.HP_HC)
         db.commit()
         results = coherence_check(db, c.id)
-        r16 = [r for r in results if r["rule_id"] == "R16"]
-        assert len(r16) == 1
-        assert r16[0]["level"] == "warning"
+        r15_gaz = [r for r in results if r["rule_id"] == "R15" and "gaz" in r["message"]]
+        assert len(r15_gaz) == 1
+        assert r15_gaz[0]["level"] == "warning"
 
     def test_hphc_on_elec_ok(self, db, setup):
-        """HP/HC sur contrat elec -> pas de R16."""
+        """HP/HC sur contrat elec -> pas de R15 gaz."""
         c = _make_cadre(db, setup, energy_type=BillingEnergyType.ELEC)
         _make_annexe(db, c.id, setup["sites"][0].id, tariff_option=TariffOptionEnum.HP_HC)
         db.commit()
         results = coherence_check(db, c.id)
-        r16 = [r for r in results if r["rule_id"] == "R16"]
-        assert len(r16) == 0
+        r15_gaz = [r for r in results if r["rule_id"] == "R15" and "gaz" in r["message"]]
+        assert len(r15_gaz) == 0
 
     def test_cu4_on_gaz_warning(self, db, setup):
-        """CU4 (TURPE C4) sur contrat gaz -> WARNING."""
+        """CU4 (TURPE C4) sur contrat gaz -> WARNING (R15)."""
         c = _make_cadre(db, setup, energy_type=BillingEnergyType.GAZ)
         _make_annexe(db, c.id, setup["sites"][0].id, tariff_option=TariffOptionEnum.CU4)
         db.commit()
         results = coherence_check(db, c.id)
-        r16 = [r for r in results if r["rule_id"] == "R16"]
-        assert len(r16) == 1
+        r15_gaz = [r for r in results if r["rule_id"] == "R15" and "gaz" in r["message"]]
+        assert len(r15_gaz) == 1
 
     def test_no_option_on_gaz_ok(self, db, setup):
-        """Pas d'option sur contrat gaz -> pas de R16."""
+        """Pas d'option sur contrat gaz -> pas de R15."""
         c = _make_cadre(db, setup, energy_type=BillingEnergyType.GAZ)
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = coherence_check(db, c.id)
-        r16 = [r for r in results if r["rule_id"] == "R16"]
-        assert len(r16) == 0
+        r15_gaz = [r for r in results if r["rule_id"] == "R15" and "gaz" in r["message"]]
+        assert len(r15_gaz) == 0
