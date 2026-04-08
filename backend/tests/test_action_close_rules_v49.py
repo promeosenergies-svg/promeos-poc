@@ -25,14 +25,11 @@ from models.base import Base
 
 @pytest.fixture(scope="module", autouse=True)
 def _ensure_v49_schema():
-    """Crée les tables et ajoute closure_justification si manquante (retry si DB locked)."""
-    # Release any stale connections from prior test modules
+    """Ajoute closure_justification si manquante (retry si DB locked)."""
     engine.dispose()
-    time.sleep(0.5)
 
     for attempt in range(5):
         try:
-            Base.metadata.create_all(bind=engine)
             insp = sa_inspect(engine)
             if insp.has_table("action_items"):
                 existing = {c["name"] for c in insp.get_columns("action_items")}
@@ -43,7 +40,7 @@ def _ensure_v49_schema():
         except Exception:
             engine.dispose()
             if attempt < 4:
-                time.sleep(2)
+                time.sleep(1)
             else:
                 raise
 

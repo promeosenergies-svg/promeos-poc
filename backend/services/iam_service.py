@@ -32,15 +32,17 @@ _logger = logging.getLogger("promeos.iam")
 # Config
 # ========================================
 
-JWT_SECRET = os.environ.get("PROMEOS_JWT_SECRET", "dev-secret-change-me-in-prod")
+JWT_SECRET = os.environ.get("PROMEOS_JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 30
 
-if os.environ.get("PROMEOS_ENV") == "production" and JWT_SECRET == "dev-secret-change-me-in-prod":
-    raise RuntimeError("CRITICAL: PROMEOS_JWT_SECRET must be set in production")
-
-if JWT_SECRET == "dev-secret-change-me-in-prod":
-    _logger.warning("PROMEOS_JWT_SECRET is using the default dev value. Set PROMEOS_JWT_SECRET env var for production.")
+if not JWT_SECRET:
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        JWT_SECRET = "test-only-secret"
+    else:
+        raise RuntimeError(
+            "PROMEOS_JWT_SECRET environment variable is required. Set it in your .env file or environment."
+        )
 
 # Sentinel for "all modules"
 ALL = "__ALL__"

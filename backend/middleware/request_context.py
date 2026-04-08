@@ -3,6 +3,7 @@ PROMEOS — Request Context Middleware (ASGI)
 Genere un request_id, mesure le temps, log en JSON, ajoute headers X-Request-Id + X-Response-Time.
 """
 
+import os
 import time
 import uuid
 import logging
@@ -43,6 +44,11 @@ class RequestContextMiddleware:
                 headers.append((b"x-request-id", request_id.encode()))
                 duration_ms = round((time.perf_counter() - start) * 1000, 1)
                 headers.append((b"x-response-time", f"{duration_ms}ms".encode()))
+                # Security headers
+                headers.append((b"x-frame-options", b"DENY"))
+                headers.append((b"x-content-type-options", b"nosniff"))
+                if os.environ.get("PROMEOS_ENV") == "production":
+                    headers.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
                 message = {**message, "headers": headers}
             await send(message)
 
