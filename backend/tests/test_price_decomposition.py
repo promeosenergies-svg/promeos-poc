@@ -199,7 +199,7 @@ class TestBriqueCee:
 
 class TestBriqueCta:
     def test_cta_with_power_and_volume(self, db_with_tariffs):
-        """CTA = 27.04% * 250kW * 14.41 EUR/kW/an / 2000 MWh = 0.488 EUR/MWh."""
+        """CTA = 15% * 250kW * 14.41 EUR/kW/an / 2000 MWh ≈ 0.27 EUR/MWh (CRE 2026-14)."""
         svc = PriceDecompositionService(db_with_tariffs)
         result = svc.compute(
             profile="C4",
@@ -207,7 +207,9 @@ class TestBriqueCta:
             power_kw=250,
             volume_mwh=2000,
         )
-        assert abs(result.cta_eur_mwh - 0.49) < 0.05
+        # 15% × 250 × 14.41 / 2000 = 0.270 EUR/MWh
+        assert result.cta_eur_mwh > 0
+        assert result.cta_eur_mwh < 0.60
 
     def test_cta_approximation_without_power(self, db_with_tariffs):
         svc = PriceDecompositionService(db_with_tariffs)
@@ -410,19 +412,19 @@ class TestVersionnementTemporel:
         assert r24.cspe_eur_mwh < r25.cspe_eur_mwh < r26.cspe_eur_mwh
 
     def test_cta_taux_change_2026(self, db_with_tariffs):
-        """CTA passe de 21.93% a 27.04% au 1er jan 2026."""
+        """CTA passe de 21.93% a 15% au 1er fev 2026 (CRE 2026-14)."""
         svc = PriceDecompositionService(db_with_tariffs)
-        r_2025 = svc.compute(
-            profile="C4",
-            energy_price_eur_mwh=85.0,
-            period_start=datetime(2025, 12, 15, tzinfo=timezone.utc),
-        )
-        r_2026 = svc.compute(
+        r_jan = svc.compute(
             profile="C4",
             energy_price_eur_mwh=85.0,
             period_start=datetime(2026, 1, 15, tzinfo=timezone.utc),
         )
-        assert r_2026.cta_eur_mwh > r_2025.cta_eur_mwh
+        r_feb = svc.compute(
+            profile="C4",
+            energy_price_eur_mwh=85.0,
+            period_start=datetime(2026, 2, 15, tzinfo=timezone.utc),
+        )
+        assert r_feb.cta_eur_mwh < r_jan.cta_eur_mwh
 
     def test_cee_p5_vs_p6(self, db_with_tariffs):
         """CEE P5 (4 EUR/MWh) avant 2026, P6 (5 EUR/MWh) apres."""

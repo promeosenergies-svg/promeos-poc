@@ -564,21 +564,38 @@ TURPE7_RATES: Dict[str, Dict[str, Any]] = {
         "tva_rate": 0.20,
     },
     # ── CTA ───────────────────────────────────────────────────────────────
-    # Historique : 27.04% → 21.93% (arrêté 1er août 2021) → 27.04% (LFI 2025, jan 2026)
+    # Arrêté CTA 2021 : 21.93% distribution, 10.11% transport
+    # Arrêté CTA 2026 (JORF 28/01/2026, CRE 2026-14) : 15% distribution, 5% transport
+    # Effective 1er février 2026
     "CTA_ELEC": {
         "rate": 21.93,
         "unit": "PCT",
         "source": "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%",
         "valid_from": "2021-08-01",
-        "valid_to": "2025-12-31",
+        "valid_to": "2026-01-31",
         "tva_rate": 0.055,
     },
     "CTA_ELEC_2026": {
-        "rate": 27.04,
+        "rate": 15.0,
         "unit": "PCT",
-        "source": "LFI 2025 — CTA distribution élec 27.04% (depuis 01/01/2026)",
-        "valid_from": "2026-01-01",
+        "source": "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — distribution élec 15% (fév 2026+)",
+        "valid_from": "2026-02-01",
+        "tva_rate": 0.20,
+    },
+    "CTA_ELEC_TRANSPORT": {
+        "rate": 10.11,
+        "unit": "PCT",
+        "source": "Arrêté CTA du 26 juillet 2021 — transport élec ≥50kV 10.11%",
+        "valid_from": "2021-08-01",
+        "valid_to": "2026-01-31",
         "tva_rate": 0.055,
+    },
+    "CTA_ELEC_TRANSPORT_2026": {
+        "rate": 5.0,
+        "unit": "PCT",
+        "source": "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — transport élec ≥50kV 5% (fév 2026+)",
+        "valid_from": "2026-02-01",
+        "tva_rate": 0.20,
     },
     # ── Accise sur l'électricité ──────────────────────────────────────────
     # L'accise dépend de la tranche de consommation annuelle du site:
@@ -965,9 +982,14 @@ def _resolve_temporal_code(code: str, at_date: Optional[date]) -> str:
             return atrd6_code
 
     if code == "CTA_ELEC":
-        if at_date >= date(2026, 1, 1) and "CTA_ELEC_2026" in TURPE7_RATES:
+        if at_date >= date(2026, 2, 1) and "CTA_ELEC_2026" in TURPE7_RATES:
             return "CTA_ELEC_2026"
         return "CTA_ELEC"
+
+    if code == "CTA_ELEC_TRANSPORT":
+        if at_date >= date(2026, 2, 1) and "CTA_ELEC_TRANSPORT_2026" in TURPE7_RATES:
+            return "CTA_ELEC_TRANSPORT_2026"
+        return "CTA_ELEC_TRANSPORT"
 
     if code == "ACCISE_ELEC":
         if at_date < date(2024, 2, 1):

@@ -310,7 +310,7 @@ class PriceDecompositionService:
             self._warnings.append("CTA: taux non trouve")
             return 0.0
 
-        taux_pct = cta_tariff.value / 100  # 27.04% -> 0.2704
+        taux_pct = cta_tariff.value / 100  # 15% -> 0.15 (fév 2026+, CRE 2026-14)
 
         pf_tariff = self._tariff(TariffType.TURPE, TariffComponent.TURPE_PART_FIXE)
         if not pf_tariff:

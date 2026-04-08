@@ -749,6 +749,123 @@ def import_csv(db: Session, org_id: int, file_content: str) -> Dict[str, Any]:
 # ============================================================
 
 
+def get_site_active_contract(db: Session, site_id: int) -> Optional[Dict[str, Any]]:
+    """Return the active contract annexe (+ cadre info) for a given site."""
+    today = date.today()
+    annexe = (
+        db.query(ContractAnnexe)
+        .options(
+            joinedload(ContractAnnexe.contrat_cadre).joinedload(EnergyContract.pricing_lines),
+            joinedload(ContractAnnexe.pricing_overrides),
+            joinedload(ContractAnnexe.volume_commitment),
+            joinedload(ContractAnnexe.site),
+        )
+        .join(EnergyContract, ContractAnnexe.contrat_cadre_id == EnergyContract.id)
+        .filter(
+            ContractAnnexe.site_id == site_id,
+            ContractAnnexe.deleted_at.is_(None),
+            EnergyContract.is_cadre == True,  # noqa: E712
+            EnergyContract.start_date <= today,
+            EnergyContract.end_date >= today,
+        )
+        .order_by(EnergyContract.end_date.desc())
+        .first()
+    )
+    if not annexe:
+        return None
+    return _serialize_annexe(annexe)
+
+
+def list_expiring(db: Session, org_id: int, *, days: int = 90) -> List[Dict[str, Any]]:
+    """List cadre contracts expiring within N days for an org."""
+    from models import EntiteJuridique
+
+    today = date.today()
+    horizon = today + timedelta(days=days)
+
+    ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
+
+    q = (
+        db.query(EnergyContract)
+        .options(
+            joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.site),
+            joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.volume_commitment),
+            joinedload(EnergyContract.pricing_lines),
+        )
+        .filter(
+            EnergyContract.is_cadre == True,  # noqa: E712
+            EnergyContract.end_date >= today,
+            EnergyContract.end_date <= horizon,
+        )
+    )
+    if ej_ids:
+        q = q.filter(EnergyContract.entite_juridique_id.in_(ej_ids))
+
+    cadres = q.order_by(EnergyContract.end_date.asc()).all()
+    return [_serialize_cadre(c) for c in cadres]
+
+
+def get_cadre_for_org(db: Session, cadre_id: int, org_id: int) -> Optional[Dict[str, Any]]:
+    """Cadre complet, scoped to org. Returns None if not found or not in org.
+
+    Org matching via entite_juridique_id OR via annexe site chain.
+    """
+    from models import EntiteJuridique, Site, Portefeuille
+    from sqlalchemy import or_
+
+    ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
+
+    # Site IDs belonging to this org (for cadres without EJ link)
+    site_ids = [
+        s.id
+        for s in db.query(Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .all()
+    ]
+
+    c = (
+        db.query(EnergyContract)
+        .options(
+            joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.site),
+            joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.volume_commitment),
+            joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.pricing_overrides),
+            joinedload(EnergyContract.pricing_lines),
+            joinedload(EnergyContract.events),
+        )
+        .filter(
+            EnergyContract.id == cadre_id,
+            EnergyContract.is_cadre == True,  # noqa: E712
+        )
+    )
+
+    # Scope: EJ match OR reference site belongs to org
+    org_filters = []
+    if ej_ids:
+        org_filters.append(EnergyContract.entite_juridique_id.in_(ej_ids))
+    if site_ids:
+        org_filters.append(EnergyContract.site_id.in_(site_ids))
+    if org_filters:
+        c = c.filter(or_(*org_filters))
+
+    c = c.first()
+    if not c:
+        return None
+    result = _serialize_cadre(c)
+    result["events"] = [
+        {
+            "id": e.id,
+            "event_type": e.event_type,
+            "event_date": str(e.event_date) if e.event_date else None,
+            "description": e.description,
+        }
+        for e in sorted(c.events, key=lambda x: x.event_date or date.min)
+    ]
+    result["coherence"] = coherence_check(db, cadre_id)
+    return result
+
+
 def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     """Serialize cadre + stats."""
     annexes = [a for a in c.annexes if a.deleted_at is None]

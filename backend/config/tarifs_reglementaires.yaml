@@ -163,10 +163,16 @@ accise_gaz:
 # ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
 cta:
   elec:
-    taux_pct: 27.04
+    taux_pct: 15.0
     assiette: "turpe_fixe_ht"
-    source: "LFI 2025 — CTA distribution élec 27.04% (depuis 01/01/2026, était 21.93%)"
-    valid_from: "2026-01-01"
+    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — distribution élec 15% (fév 2026+, était 21.93%)"
+    valid_from: "2026-02-01"
+    valid_to: null
+  elec_transport:
+    taux_pct: 5.0
+    assiette: "turpe_fixe_ht"
+    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — transport élec ≥50kV 5% (fév 2026+, était 10.11%)"
+    valid_from: "2026-02-01"
     valid_to: null
   gaz:
     taux_pct: 20.80

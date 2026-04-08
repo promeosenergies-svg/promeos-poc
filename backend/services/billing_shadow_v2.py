@@ -10,7 +10,7 @@ Architecture tarifs (ordre de priorité) :
 Sources réglementaires :
 - TURPE 7 : CRE Délibération n°2025-78, depuis 1er août 2025
 - CSPE : Loi de finances 2026 — 26.58 EUR/MWh PME (fév 2026+)
-- CTA : 27.04% depuis janvier 2026 (était 21.93%)
+- CTA : 15% distribution depuis février 2026, 5% transport ≥50kV (CRE 2026-14)
 - TVA : 20% uniforme depuis août 2025 (suppression 5.5% sur abo/CTA)
 
 Relation avec price_decomposition_service.py :
@@ -90,7 +90,7 @@ def _load_fallback() -> dict:
                 pass
         return result
     except Exception:
-        # Dernier recours — valeurs TURPE 7 / CSPE 2026 / CTA 27.04%
+        # Dernier recours — valeurs TURPE 7 / CSPE 2026 / CTA 15% (CRE 2026-14)
         return {
             "TURPE_ENERGIE_C5_BT": 0.0453,
             "TURPE_GESTION_C5_BT": 18.48,

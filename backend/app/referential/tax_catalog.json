@@ -220,15 +220,15 @@
     },
     {
       "code": "CTA_ELEC",
-      "label": "Contribution Tarifaire d'Acheminement (élec)",
-      "rate": 21.93,
+      "label": "Contribution Tarifaire d'Acheminement (élec distribution)",
+      "rate": 15.0,
       "unit": "PCT",
       "assiette": "turpe_fixe_ht",
-      "tva_rate": 0.055,
-      "valid_from": "2021-08-01",
-      "valid_to": "2026-01-31",
-      "source": "Arrêté CTA du 26 juillet 2021 — distribution élec 21.93%",
-      "fallback": 21.93
+      "tva_rate": 0.20,
+      "valid_from": "2026-02-01",
+      "valid_to": null,
+      "source": "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — distribution élec 15%",
+      "fallback": 15.0
     },
     {
       "code": "CTA_GAZ",

@@ -87,12 +87,12 @@ class TestAccise:
     def test_accise_elec(self):
         from config.tarif_loader import get_accise_kwh
 
-        assert get_accise_kwh("elec") == 0.02623
+        assert get_accise_kwh("elec") == 0.02658  # 26.58 EUR/MWh PME T2 (fév 2026+, JO 28/01/2026)
 
     def test_accise_gaz(self):
         from config.tarif_loader import get_accise_kwh
 
-        assert get_accise_kwh("gaz") == 0.01637
+        assert get_accise_kwh("gaz") == 0.01073  # 10.73 EUR/MWh (fév 2026+, JO 28/01/2026)
 
     def test_accise_unknown_raises(self):
         from config.tarif_loader import get_accise_kwh
@@ -112,7 +112,7 @@ class TestOtherHelpers:
     def test_cta_elec(self):
         from config.tarif_loader import get_cta_taux
 
-        assert get_cta_taux("elec") == 21.93
+        assert get_cta_taux("elec") == 15.0  # CRE 2026-14, arrêté JORF fév 2026
 
     def test_cta_gaz(self):
         from config.tarif_loader import get_cta_taux
@@ -127,7 +127,7 @@ class TestOtherHelpers:
     def test_tva_reduite(self):
         from config.tarif_loader import get_tva_reduite
 
-        assert get_tva_reduite() == 0.055
+        assert get_tva_reduite() == 0.20  # TVA réduite supprimée août 2025, uniforme 20%
 
     def test_prix_reference_elec(self):
         from config.tarif_loader import get_prix_reference
@@ -181,7 +181,7 @@ class TestTarifSummary:
         from config.tarif_loader import get_tarif_summary
 
         s = get_tarif_summary()
-        assert s["accise_elec"]["rate_eur_kwh"] == 0.02623
+        assert s["accise_elec"]["rate_eur_kwh"] == 0.02658  # 26.58 EUR/MWh fév 2026+
 
     def test_summary_has_tva(self):
         from config.tarif_loader import get_tarif_summary

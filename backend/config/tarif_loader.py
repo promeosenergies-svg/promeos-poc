@@ -64,7 +64,7 @@ def get_accise_kwh(energy_type: str = "elec") -> float:
 
 
 def get_cta_taux(energy_type: str = "elec") -> float:
-    """CTA en % (27.04 pour élec, 20.80 pour gaz)."""
+    """CTA en % (15.0 pour élec distribution fév 2026+, 20.80 pour gaz)."""
     tarifs = load_tarifs()
     return tarifs["cta"][energy_type]["taux_pct"]
 

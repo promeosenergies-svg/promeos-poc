@@ -171,11 +171,11 @@ class TestShadowBillingSourceGuards:
     """Guards anti-régression sur les constantes."""
 
     def test_no_old_cta_rate_in_yaml(self):
-        """Le YAML CTA doit être 27.04% (pas 21.93%)."""
+        """Le YAML CTA doit être 15% (CRE 2026-14, pas 21.93% ni 27.04%)."""
         from config.tarif_loader import reload_tarifs, get_cta_taux
 
         reload_tarifs()
-        assert get_cta_taux("elec") == pytest.approx(27.04, abs=0.01)
+        assert get_cta_taux("elec") == pytest.approx(15.0, abs=0.01)
 
     def test_no_old_cspe_in_yaml(self):
         """Le YAML accise elec doit être 0.02658 (pas 0.02623)."""

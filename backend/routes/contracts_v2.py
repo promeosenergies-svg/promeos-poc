@@ -1,6 +1,6 @@
 """
 PROMEOS — Contrats V2 (Cadre + Annexes) API Routes.
-17 endpoints pour CRUD cadre/annexe, coherence, KPIs, events, import.
+20 endpoints pour CRUD cadre/annexe, coherence, KPIs, events, import — org-scoped.
 """
 
 import logging
@@ -42,6 +42,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/contracts/v2", tags=["Contracts V2 – Cadre+Annexe"])
 
 
+# ── helpers ───────────────────────────────────────────────────────────
+
+
+def _check_cadre_org(db: Session, cadre_id: int, org_id: int):
+    """Verify cadre belongs to org. Returns cadre dict or raises 404."""
+    result = svc.get_cadre_for_org(db, cadre_id, org_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
+    return result
+
+
 # ── Cadres ─────────────────────────────────────────────────────────────
 
 
@@ -71,6 +82,18 @@ def portfolio_kpis(
     return svc.compute_portfolio_kpis(db, org_id)
 
 
+@router.get("/cadres/expiring", response_model=list[CadreResponse])
+def expiring_cadres(
+    request: Request,
+    days: int = Query(90, ge=1, le=365, description="Horizon en jours"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Contrats cadre expirant dans N jours (defaut 90)."""
+    org_id = _get_org_id(request, auth, db)
+    return svc.list_expiring(db, org_id, days=days)
+
+
 @router.get("/cadres/suppliers", response_model=SuppliersResponse)
 def suppliers_list():
     """Referentiels fournisseurs, modeles de prix, options tarifaires."""
@@ -89,13 +112,13 @@ def suppliers_list():
 @router.get("/cadres/{cadre_id}", response_model=CadreResponse)
 def get_cadre(
     cadre_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Detail cadre + annexes + pricing + events + coherence."""
-    result = svc.get_cadre(db, cadre_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
-    return result
+    """Detail cadre + annexes + pricing + events + coherence (org-scoped)."""
+    org_id = _get_org_id(request, auth, db)
+    return _check_cadre_org(db, cadre_id, org_id)
 
 
 @router.post("/cadres", status_code=201, response_model=CadreResponse)
@@ -125,9 +148,13 @@ def create_cadre(
 def update_cadre(
     cadre_id: int,
     data: CadreUpdateSchema,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """MAJ partielle cadre."""
+    """MAJ partielle cadre (org-scoped)."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
     result = svc.update_cadre(db, cadre_id, data)
     if not result:
         raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
@@ -137,9 +164,13 @@ def update_cadre(
 @router.delete("/cadres/{cadre_id}", response_model=DeleteResponse)
 def delete_cadre(
     cadre_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Soft-delete cadre + annexes."""
+    """Soft-delete cadre + annexes (org-scoped)."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
     ok = svc.delete_cadre(db, cadre_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
@@ -149,13 +180,17 @@ def delete_cadre(
 # ── Annexes ────────────────────────────────────────────────────────────
 
 
-@router.get("/cadres/{cadre_id}/annexes/{annexe_id}")  # dict libre, structure variable
+@router.get("/cadres/{cadre_id}/annexes/{annexe_id}")
 def get_annexe(
     cadre_id: int,
     annexe_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Annexe + resolved pricing (merge cadre + override)."""
+    """Annexe + resolved pricing (org-scoped via cadre)."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
     result = svc.get_annexe(db, annexe_id)
     if not result or result.get("cadre_id") != cadre_id:
         raise HTTPException(status_code=404, detail="Annexe non trouvee")
@@ -166,10 +201,14 @@ def get_annexe(
 def create_annexe(
     cadre_id: int,
     data: AnnexeCreateSchema,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
     idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
 ):
-    """Ajouter annexe a un cadre existant. Supporte idempotency_key."""
+    """Ajouter annexe a un cadre existant (org-scoped). Supporte idempotency_key."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
     if idempotency_key:
         from models.contract_v2_models import ContractAnnexe
 
@@ -189,13 +228,21 @@ def create_annexe(
     return result
 
 
-@router.patch("/annexes/{annexe_id}")  # dict libre
+@router.patch("/annexes/{annexe_id}")
 def update_annexe(
     annexe_id: int,
     data: AnnexeUpdateSchema,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """MAJ annexe."""
+    """MAJ annexe (org-scoped via cadre)."""
+    org_id = _get_org_id(request, auth, db)
+    # Verify annexe's cadre belongs to org
+    existing = svc.get_annexe(db, annexe_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Annexe non trouvee")
+    _check_cadre_org(db, existing["cadre_id"], org_id)
     result = svc.update_annexe(db, annexe_id, data)
     if not result:
         raise HTTPException(status_code=404, detail="Annexe non trouvee")
@@ -205,13 +252,54 @@ def update_annexe(
 @router.delete("/annexes/{annexe_id}", response_model=DeleteResponse)
 def delete_annexe(
     annexe_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Soft-delete annexe."""
+    """Soft-delete annexe (org-scoped via cadre)."""
+    org_id = _get_org_id(request, auth, db)
+    existing = svc.get_annexe(db, annexe_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Annexe non trouvee")
+    _check_cadre_org(db, existing["cadre_id"], org_id)
     ok = svc.delete_annexe(db, annexe_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Annexe non trouvee")
     return {"status": "deleted", "annexe_id": annexe_id}
+
+
+# ── Site active contract ──────────────────────────────────────────────
+
+
+@router.get("/site/{site_id}/active")
+def site_active_contract(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Contrat actif (annexe + cadre) pour un site donne."""
+    result = svc.get_site_active_contract(db, site_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Aucun contrat actif pour ce site")
+    return result
+
+
+# ── Pricing resolve ───────────────────────────────────────────────────
+
+
+@router.get("/annexes/{annexe_id}/pricing")
+def pricing_resolve(
+    annexe_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Resolve pricing cascade pour une annexe (override > cadre structured > cadre flat)."""
+    org_id = _get_org_id(request, auth, db)
+    existing = svc.get_annexe(db, annexe_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Annexe non trouvee")
+    _check_cadre_org(db, existing["cadre_id"], org_id)
+    return {"annexe_id": annexe_id, "pricing": existing.get("resolved_pricing", [])}
 
 
 # ── Events ─────────────────────────────────────────────────────────────
@@ -221,22 +309,15 @@ def delete_annexe(
 def add_event(
     cadre_id: int,
     data: EventSchema,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Ajouter evenement lifecycle au cadre."""
-    from models.contract_v2_models import ContractEvent
-    from models.billing_models import EnergyContract
+    """Ajouter evenement lifecycle au cadre (org-scoped)."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
 
-    cadre = (
-        db.query(EnergyContract)
-        .filter(
-            EnergyContract.id == cadre_id,
-            EnergyContract.is_cadre == True,  # noqa: E712
-        )
-        .first()
-    )
-    if not cadre:
-        raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
+    from models.contract_v2_models import ContractEvent
 
     event = ContractEvent(
         contract_id=cadre_id,
@@ -256,19 +337,30 @@ def add_event(
 @router.get("/cadres/{cadre_id}/coherence", response_model=CoherenceCheckResponse)
 def coherence_check(
     cadre_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Check coherence 12 regles."""
+    """Check coherence R1-R16 (org-scoped)."""
+    org_id = _get_org_id(request, auth, db)
+    _check_cadre_org(db, cadre_id, org_id)
     results = svc.coherence_check(db, cadre_id)
     return {"cadre_id": cadre_id, "rules": results, "total": len(results)}
 
 
-@router.get("/annexes/{annexe_id}/shadow-gap")  # dict libre, structure variable
+@router.get("/annexes/{annexe_id}/shadow-gap")
 def shadow_gap(
     annexe_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Ecart shadow billing pour une annexe."""
+    """Ecart shadow billing pour une annexe (org-scoped via cadre)."""
+    org_id = _get_org_id(request, auth, db)
+    existing = svc.get_annexe(db, annexe_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Annexe non trouvee")
+    _check_cadre_org(db, existing["cadre_id"], org_id)
     return svc.compute_shadow_gap(db, annexe_id)
 
 
