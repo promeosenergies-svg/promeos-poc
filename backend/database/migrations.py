@@ -88,12 +88,16 @@ def run_migrations(engine):
     _add_enedis_columns(engine)
     # TURPE 7 / HC reprog — delivery_points enrichment
     _add_delivery_point_turpe_columns(engine)
+    # P1: FK delivery_points → tou_schedules
+    _add_delivery_point_tou_schedule_fk(engine)
     # Audit Energetique / SME (Loi 2025-391)
     _create_audit_energetique_table(engine)
     # V2 Contrats Cadre+Annexe
     _migrate_contracts_v2(engine)
     # APER couverture partielle — champ coverage_pct sur evidences
     _add_evidence_coverage_pct_column(engine)
+    # Sprint F — ConnectorToken (OAuth2 tokens for Enedis/GRDF)
+    _create_connector_tokens_table(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -1819,6 +1823,29 @@ def _add_delivery_point_turpe_columns(engine):
         logger.debug("migration: delivery_points TURPE/HC columns already present")
 
 
+def _add_delivery_point_tou_schedule_fk(engine):
+    """Add tou_schedule_id FK column to delivery_points if missing (P1 HC reprog)."""
+    insp = inspect(engine)
+    if not insp.has_table("delivery_points"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("delivery_points")}
+    if "tou_schedule_id" in existing_cols:
+        logger.debug("migration: delivery_points.tou_schedule_id already present")
+        return
+
+    with engine.begin() as conn:
+        try:
+            conn.execute(
+                text(
+                    'ALTER TABLE "delivery_points" ADD COLUMN "tou_schedule_id" INTEGER REFERENCES "tou_schedules"("id") ON DELETE SET NULL'
+                )
+            )
+            logger.info("migration: added delivery_points.tou_schedule_id (FK → tou_schedules)")
+        except Exception as e:
+            logger.warning("migration: could not add delivery_points.tou_schedule_id: %s", e)
+
+
 def _create_audit_energetique_table(engine):
     """Create audit_energetique table if not exists (Loi 2025-391)."""
     insp = inspect(engine)
@@ -2055,3 +2082,40 @@ def _add_evidence_coverage_pct_column(engine):
     with engine.begin() as conn:
         conn.execute(text('ALTER TABLE "evidences" ADD COLUMN "coverage_pct" FLOAT'))
     logger.info("migration: added evidences.coverage_pct column (APER partial coverage)")
+
+
+# ---------------------------------------------------------------------------
+# Sprint F — ConnectorToken (OAuth2 tokens for Enedis DataConnect / GRDF ADICT)
+# ---------------------------------------------------------------------------
+
+
+def _create_connector_tokens_table(engine):
+    """Create connector_tokens table if missing. Idempotent."""
+    insp = inspect(engine)
+    if insp.has_table("connector_tokens"):
+        return
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                CREATE TABLE connector_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    connector_name VARCHAR(50) NOT NULL,
+                    prm VARCHAR(14) NOT NULL,
+                    access_token TEXT NOT NULL,
+                    refresh_token TEXT,
+                    token_type VARCHAR(20) DEFAULT 'Bearer',
+                    expires_at DATETIME NOT NULL,
+                    scope VARCHAR(200),
+                    consent_expiry DATE,
+                    consent_status VARCHAR(20) DEFAULT 'unknown',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT uq_connector_token_prm UNIQUE (connector_name, prm)
+                )
+            """)
+        )
+        conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_connector_tokens_connector_name ON connector_tokens(connector_name)")
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_connector_tokens_prm ON connector_tokens(prm)"))
+    logger.info("migration: created connector_tokens table (Sprint F)")
