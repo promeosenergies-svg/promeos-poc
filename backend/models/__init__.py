@@ -80,6 +80,9 @@ from .enums import (
     DataSourceType,
     USAGE_FAMILY_MAP,
     USAGE_LABELS_FR,
+    # Market Intelligence
+    ArticleCategory,
+    ArticleSource,
 )
 
 # Hierarchie organisation
@@ -281,6 +284,10 @@ from .market_models import (
     Resolution,
 )
 
+# Market Intelligence (articles + indicateurs)
+from .market_article import MarketArticle
+from .market_indicator import MarketIndicator
+
 # Compliance Score History (Step 33)
 from .compliance_score_history import ComplianceScoreHistory
 
@@ -304,6 +311,7 @@ from .audit_sme import AuditEnergetique
 
 # Contrats V2 Cadre+Annexe
 from .contract_v2_models import (
+    ContratCadre,
     ContractAnnexe,
     ContractPricing,
     VolumeCommitment,
@@ -410,6 +418,7 @@ __all__ = [
     "BillingInvoiceStatus",
     "InsightStatus",
     # Contrats V2 Cadre+Annexe
+    "ContratCadre",
     "ContractAnnexe",
     "ContractPricing",
     "VolumeCommitment",
@@ -553,6 +562,11 @@ __all__ = [
     "SignalType",
     "SignalSeverity",
     "Resolution",
+    # Market Intelligence
+    "MarketArticle",
+    "MarketIndicator",
+    "ArticleCategory",
+    "ArticleSource",
     # Compliance Score History (Step 33)
     "ComplianceScoreHistory",
     # Action Plan Items (Workflow)

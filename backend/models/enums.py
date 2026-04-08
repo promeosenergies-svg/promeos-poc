@@ -785,6 +785,9 @@ class ContractIndexation(str, enum.Enum):
     INDEXE_TRVE = "indexe_trve"
     INDEXE_PEG = "indexe_peg"
     INDEXE_SPOT = "indexe_spot"
+    # V2 Phase 1 — modeles cadre
+    TUNNEL = "tunnel"  # Prix encadre plancher/plafond
+    CLIC = "clic"  # Fixation progressive par clicks
 
 
 class ContractStatus(str, enum.Enum):
@@ -885,3 +888,34 @@ class DismissReason(str, enum.Enum):
     OUT_OF_SCOPE = "out_of_scope"
     DUPLICATE = "duplicate"
     OTHER = "other"
+
+
+# ========================================
+# Enums Market Intelligence
+# ========================================
+
+
+class ArticleCategory(str, enum.Enum):
+    """Catégories d'articles EuropEnergies / veille marché."""
+
+    FLASH = "flash"
+    GROS_PLAN = "gros_plan"
+    EDITORIAL = "editorial"
+    MARKET_REVIEW = "market_review"
+    GO_AUCTION = "go_auction"
+    GEOPOLITICS = "geopolitics"
+    REGULATORY = "regulatory"
+    BUYER_PROFILE = "buyer_profile"
+    SELLER_PROFILE = "seller_profile"
+    EXPERT_OPINION = "expert_opinion"
+    TECHNICAL = "technical"
+
+
+class ArticleSource(str, enum.Enum):
+    """Sources de veille marché."""
+
+    EUROP_ENERGIES = "europ_energies"
+    CRE = "cre"
+    RTE = "rte"
+    LEGIFRANCE = "legifrance"
+    MANUAL = "manual"

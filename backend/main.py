@@ -87,6 +87,9 @@ from routes import (
 # Import KB router
 from app.kb.router import router as kb_router
 
+# Market Intelligence
+from routes.market_intelligence import router as market_intelligence_router
+
 # Import Bill Intelligence router
 from app.bill_intelligence.router import router as bill_router
 
@@ -196,6 +199,7 @@ app.include_router(power_router)  # Power Intelligence (CDC, PS, facteur puissan
 app.include_router(dataconnect_router)  # Sprint F: Enedis Data Connect OAuth2 (PKCE)
 app.include_router(grdf_router)  # Sprint F: GRDF ADICT (consommation gaz PCE)
 app.include_router(bridge_router)  # Sprint F: Staging Bridge (flux Enedis → MeterReading)
+app.include_router(market_intelligence_router)  # Market Intelligence (articles, indicators, search)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
