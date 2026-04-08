@@ -11,6 +11,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
 from database import get_db
+from schemas.cockpit_schemas import (
+    CockpitResponse,
+    PortefeuillesResponse,
+    KpiCatalogResponse,
+    BenchmarkResponse,
+    TrajectoryResponse,
+    ConsoMonthResponse,
+    Co2Response,
+)
 from models import (
     Organisation,
     Portefeuille,
@@ -43,7 +52,7 @@ def _sites_for_org(db: Session, org_id: int | None):
     return q
 
 
-@router.get("/cockpit")
+@router.get("/cockpit", responses={200: {"model": CockpitResponse}})
 def get_cockpit(
     request: Request,
     db: Session = Depends(get_db),
@@ -253,7 +262,7 @@ def get_cockpit(
     )
 
 
-@router.get("/portefeuilles")
+@router.get("/portefeuilles", response_model=PortefeuillesResponse)
 def get_portefeuilles(
     request: Request,
     db: Session = Depends(get_db),
@@ -294,7 +303,7 @@ def get_portefeuilles(
     return {"portefeuilles": result, "total": len(result)}
 
 
-@router.get("/kpi-catalog")
+@router.get("/kpi-catalog", response_model=KpiCatalogResponse)
 def get_kpi_catalog():
     """GET /api/kpi-catalog — Catalogue machine-readable des KPIs canoniques PROMEOS."""
     from schemas.kpi_catalog import list_kpis, KPI_CATALOG
@@ -302,7 +311,7 @@ def get_kpi_catalog():
     return {"count": len(KPI_CATALOG), "kpis": list_kpis()}
 
 
-@router.get("/cockpit/benchmark")
+@router.get("/cockpit/benchmark", response_model=BenchmarkResponse)
 def get_benchmark(
     db: Session = Depends(get_db),
     request: Request = None,
@@ -372,7 +381,7 @@ def get_benchmark(
     }
 
 
-@router.get("/cockpit/trajectory")
+@router.get("/cockpit/trajectory", response_model=TrajectoryResponse)
 def get_cockpit_trajectory(
     request: Request,
     db: Session = Depends(get_db),
@@ -562,7 +571,7 @@ def get_cockpit_trajectory(
     }
 
 
-@router.get("/cockpit/conso-month")
+@router.get("/cockpit/conso-month", response_model=ConsoMonthResponse)
 def get_cockpit_conso_month(
     request: Request,
     db: Session = Depends(get_db),
@@ -621,7 +630,7 @@ def get_cockpit_conso_month(
     }
 
 
-@router.get("/cockpit/co2")
+@router.get("/cockpit/co2", response_model=Co2Response)
 def get_co2(
     request: Request,
     db: Session = Depends(get_db),

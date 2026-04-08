@@ -49,7 +49,7 @@ def _get_site_ids(db: Session, org_id: int | None) -> list[int]:
     return [s.id for s in _sites_for_org(db, org_id).with_entities(Site.id).all()]
 
 
-@router.get("/executive-v2")
+@router.get("/executive-v2", tags=["cockpit-v2"])
 def get_executive_v2(
     request: Request,
     db: Session = Depends(get_db),
