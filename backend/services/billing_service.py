@@ -31,8 +31,10 @@ from models import (
     ActionItem,
     Portefeuille,
     EntiteJuridique,
+    ContractAnnexe,
 )
-from models.enums import ActionSourceType, ActionStatus
+from models.contract_v2_models import ContratCadre
+from models.enums import ActionSourceType, ActionStatus, ContractStatus
 from config.default_prices import (
     DEFAULT_PRICE_ELEC_EUR_KWH,
     DEFAULT_PRICE_GAZ_EUR_KWH,
@@ -41,9 +43,104 @@ from config.default_prices import (
 
 
 # ========================================
-# Price reference resolution (V1.1)
+# Price reference resolution (V1.1 + V2 Phase 5)
 # Source unique : config/default_prices.py
 # ========================================
+
+
+def find_active_annexe(
+    db: Session,
+    site_id: int,
+    energy_type: str = "elec",
+    ref_date: Optional[date] = None,
+) -> Optional[ContractAnnexe]:
+    """Find the active ContractAnnexe for a site+energy+date via ContratCadre.
+
+    Lookup chain:
+      1. ContractAnnexe.site_id == site_id
+      2. ContractAnnexe.cadre_id is not null (V2 cadre, not legacy)
+      3. ContratCadre.energie matches energy_type
+      4. ContratCadre.statut is active
+      5. ref_date within [date_debut, date_fin] (if provided)
+      6. Soft-deleted annexes excluded
+
+    Returns the first matching annexe or None.
+    """
+    try:
+        energy_enum = BillingEnergyType(energy_type)
+    except ValueError:
+        return None
+
+    q = (
+        db.query(ContractAnnexe)
+        .join(ContratCadre, ContratCadre.id == ContractAnnexe.cadre_id)
+        .filter(
+            ContractAnnexe.site_id == site_id,
+            ContractAnnexe.cadre_id.isnot(None),
+            ContractAnnexe.deleted_at.is_(None),
+            ContratCadre.energie == energy_enum,
+            ContratCadre.statut == ContractStatus.ACTIVE,
+            ContratCadre.deleted_at.is_(None),
+        )
+    )
+
+    if ref_date:
+        q = q.filter(
+            ContratCadre.date_debut <= ref_date,
+            ContratCadre.date_fin >= ref_date,
+        )
+
+    return q.first()
+
+
+def _resolve_cadre_weighted_price(
+    db: Optional[Session],
+    annexe: ContractAnnexe,
+) -> Optional[Tuple[float, str]]:
+    """Resolve a single weighted price from a V2 cadre annexe using resolve_pricing().
+
+    Cascade: override annexe > cadre structured > cadre flat columns.
+    For HP/HC contracts: prix_moyen = poids_hp * prix_hp + poids_hc * prix_hc.
+    For BASE contracts: prix_base directly.
+
+    Returns (price_eur_per_kwh, source_label) or None if no pricing found.
+    """
+    from services.contrat_coherence import resolve_pricing
+
+    pricing_lines = resolve_pricing(db, annexe)
+    if not pricing_lines:
+        return None
+
+    # Build price map: period_code → unit_price_eur_kwh
+    price_map = {}
+    for line in pricing_lines:
+        pc = line.get("period_code", "")
+        price = line.get("unit_price_eur_kwh")
+        if price is not None and pc:
+            price_map[pc] = price
+
+    # Case 1: BASE price available → direct
+    if "BASE" in price_map:
+        source = f"cadre_annexe:{annexe.id}"
+        return (price_map["BASE"], source)
+
+    # Case 2: HP/HC → weighted average
+    hp_price = price_map.get("HP")
+    hc_price = price_map.get("HC")
+    if hp_price is not None and hc_price is not None:
+        cadre = annexe.cadre
+        poids_hp = (cadre.poids_hp if cadre and cadre.poids_hp else 62.0) / 100.0
+        poids_hc = (cadre.poids_hc if cadre and cadre.poids_hc else 38.0) / 100.0
+        weighted = round(hp_price * poids_hp + hc_price * poids_hc, 6)
+        source = f"cadre_annexe:{annexe.id}"
+        return (weighted, source)
+
+    # Case 3: any single price available
+    if price_map:
+        first_price = next(iter(price_map.values()))
+        return (first_price, f"cadre_annexe:{annexe.id}")
+
+    return None
 
 
 def get_reference_price(
@@ -55,13 +152,22 @@ def get_reference_price(
 ) -> Tuple[float, str]:
     """
     Resolve the reference price for a site, with clear priority:
+      0. Active V2 ContratCadre annexe → resolve_pricing() cascade
       1. Active EnergyContract covering the invoice period
       2. MarketPrice moyenne 30 jours (EPEX Spot FR)
       3. SiteTariffProfile for the site
       4. Config fallback (0.068 elec, 0.045 gaz)
     Returns: (price_eur_per_kwh, source_label)
     """
-    # Priority 1: Active contract
+    # Priority 0: V2 ContratCadre annexe (Phase 5)
+    ref_date = period_start or period_end or date.today()
+    annexe = find_active_annexe(db, site_id, energy_type, ref_date)
+    if annexe:
+        result = _resolve_cadre_weighted_price(db, annexe)
+        if result:
+            return result
+
+    # Priority 1: Active contract (legacy)
     q = db.query(EnergyContract).filter(
         EnergyContract.site_id == site_id,
         EnergyContract.price_ref_eur_per_kwh.isnot(None),
@@ -122,6 +228,93 @@ def get_reference_price(
 # ========================================
 
 
+def _shadow_billing_cadre_hphc(
+    invoice: EnergyInvoice,
+    annexe: ContractAnnexe,
+    db: Session,
+) -> Optional[Dict[str, Any]]:
+    """Shadow billing with HP/HC decomposition using cadre annexe pricing.
+
+    Uses period_resolver to estimate HP/HC split, then applies the resolved
+    pricing grid from the cadre/annexe for a more accurate shadow total.
+
+    Returns shadow result dict or None if pricing grid lacks HP/HC prices.
+    """
+    from services.contrat_coherence import resolve_pricing
+
+    pricing_lines = resolve_pricing(db, annexe)
+    if not pricing_lines:
+        return None
+
+    price_map = {}
+    for line in pricing_lines:
+        pc = line.get("period_code", "")
+        price = line.get("unit_price_eur_kwh")
+        if price is not None and pc:
+            price_map[pc] = price
+
+    hp_price = price_map.get("HP")
+    hc_price = price_map.get("HC")
+
+    # Only use HP/HC decomposition if both prices are available
+    if hp_price is None or hc_price is None:
+        return None
+
+    # Get HP/HC weights from cadre or defaults
+    cadre = annexe.cadre
+    poids_hp = (cadre.poids_hp if cadre and cadre.poids_hp else 62.0) / 100.0
+    poids_hc = (cadre.poids_hc if cadre and cadre.poids_hc else 38.0) / 100.0
+
+    kwh = invoice.energy_kwh
+    kwh_hp = round(kwh * poids_hp, 1)
+    kwh_hc = round(kwh * poids_hc, 1)
+
+    shadow_hp = round(kwh_hp * hp_price, 2)
+    shadow_hc = round(kwh_hc * hc_price, 2)
+    shadow_total = round(shadow_hp + shadow_hc, 2)
+
+    # Compare against energy line total when available
+    actual_total = invoice.total_eur or 0
+    energy_line_total = (
+        db.query(func.sum(EnergyInvoiceLine.amount_eur))
+        .filter(
+            EnergyInvoiceLine.invoice_id == invoice.id,
+            EnergyInvoiceLine.line_type == InvoiceLineType.ENERGY,
+        )
+        .scalar()
+    )
+    if energy_line_total and energy_line_total > 0:
+        actual_total = float(energy_line_total)
+
+    delta = round(actual_total - shadow_total, 2)
+    delta_pct = round(delta / shadow_total * 100, 2) if shadow_total > 0 else None
+
+    weighted_price = round(hp_price * poids_hp + hc_price * poids_hc, 6)
+
+    return {
+        "shadow_total_eur": shadow_total,
+        "actual_total_eur": actual_total,
+        "delta_eur": delta,
+        "delta_pct": delta_pct,
+        "price_ref_eur_kwh": weighted_price,
+        "ref_price_source": f"cadre_annexe:{annexe.id}",
+        "energy_kwh": kwh,
+        "method": "cadre_hphc",
+        "cadre_detail": {
+            "annexe_id": annexe.id,
+            "cadre_id": annexe.cadre_id,
+            "hp_price": hp_price,
+            "hc_price": hc_price,
+            "poids_hp_pct": round(poids_hp * 100, 1),
+            "poids_hc_pct": round(poids_hc * 100, 1),
+            "kwh_hp": kwh_hp,
+            "kwh_hc": kwh_hc,
+            "shadow_hp_eur": shadow_hp,
+            "shadow_hc_eur": shadow_hc,
+        },
+    }
+
+
 def shadow_billing_simple(
     invoice: EnergyInvoice,
     contract: Optional[EnergyContract] = None,
@@ -130,6 +323,7 @@ def shadow_billing_simple(
     """
     Shadow billing simplifie: energy_kwh * price_ref.
     V1.1: uses get_reference_price when db is provided.
+    V2 Phase 5: tries cadre HP/HC decomposition first when annexe available.
     """
     if not invoice.energy_kwh or invoice.energy_kwh <= 0:
         return {
@@ -140,6 +334,17 @@ def shadow_billing_simple(
             "reason": "energy_kwh manquant ou <= 0",
         }
 
+    # Phase 5: Try cadre HP/HC shadow billing first
+    if db:
+        energy_type_str = _energy_type(invoice, contract)
+        ref_date = invoice.period_start or invoice.period_end or date.today()
+        annexe = find_active_annexe(db, invoice.site_id, energy_type_str, ref_date)
+        if annexe:
+            cadre_result = _shadow_billing_cadre_hphc(invoice, annexe, db)
+            if cadre_result:
+                return cadre_result
+
+    # Fallback: simple weighted shadow billing
     # Resolve price reference
     price_ref = None
     ref_source = "fallback"
