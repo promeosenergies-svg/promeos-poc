@@ -4,7 +4,7 @@ PROMEOS Connectors - Registry avec auto-discovery
 
 from typing import Dict, Optional
 from .base import Connector
-from . import rte_eco2mix, pvgis, meteofrance, enedis_opendata, enedis_dataconnect
+from . import rte_eco2mix, pvgis, meteofrance, enedis_opendata, enedis_dataconnect, grdf_adict
 
 
 _CONNECTORS: Dict[str, Connector] = {}
@@ -21,6 +21,7 @@ def _register_all():
         meteofrance.MeteoFranceConnector(),
         enedis_opendata.EnedisOpenDataConnector(),
         enedis_dataconnect.EnedisDataConnectConnector(),
+        grdf_adict.GrdfAdictConnector(),
     ]
 
     for connector in connectors:

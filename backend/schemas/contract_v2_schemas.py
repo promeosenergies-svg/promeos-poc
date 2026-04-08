@@ -340,3 +340,108 @@ class CadreKpisResponse(BaseModel):
     total_volume_mwh: float = 0
     total_budget_eur: float = 0
     total_shadow_gap_eur: float = 0
+
+
+class AnnexeResponse(BaseModel):
+    """Reponse annexe serialisee."""
+
+    id: Optional[int] = None
+    contrat_cadre_id: Optional[int] = None
+    cadre_id: Optional[int] = None
+    site_id: Optional[int] = None
+    annexe_ref: Optional[str] = None
+    tariff_option: Optional[str] = None
+    subscribed_power_kva: Optional[float] = None
+    segment_enedis: Optional[str] = None
+    has_price_override: Optional[bool] = None
+    override_pricing_model: Optional[str] = None
+    status: Optional[str] = None
+    pricing: Optional[list] = None
+    volume_commitment: Optional[dict] = None
+    start_date_override: Optional[str] = None
+    end_date_override: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class CadreResponse(BaseModel):
+    """Reponse cadre serialisee (detail + annexes)."""
+
+    id: Optional[int] = None
+    supplier_name: Optional[str] = None
+    energy_type: Optional[str] = None
+    contract_ref: Optional[str] = None
+    contract_type: Optional[str] = None
+    pricing_model: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    tacit_renewal: Optional[bool] = None
+    notice_period_months: Optional[int] = None
+    is_green: Optional[bool] = None
+    green_percentage: Optional[float] = None
+    segment_enedis: Optional[str] = None
+    annual_consumption_kwh: Optional[float] = None
+    nb_annexes: Optional[int] = None
+    annexes: Optional[list] = None
+    pricing: Optional[list] = None
+    kpis: Optional[dict] = None
+    coherence: Optional[list] = None
+    events: Optional[list] = None
+    notes: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class SuppliersResponse(BaseModel):
+    """Referentiels fournisseurs."""
+
+    suppliers: list[str]
+    suppliers_by_category: dict
+    pricing_models: list[str]
+    pricing_models_elec: list
+    pricing_models_gaz: list
+    tariff_options_by_segment: dict
+    pricing_grid_by_tariff: dict
+    contract_durations: list
+
+
+class DeleteResponse(BaseModel):
+    """Reponse suppression."""
+
+    status: str
+    cadre_id: Optional[int] = None
+    annexe_id: Optional[int] = None
+
+
+class EventResponse(BaseModel):
+    """Reponse creation evenement."""
+
+    id: int
+    event_type: str
+    event_date: str
+
+
+class CoherenceCheckResponse(BaseModel):
+    """Resultat check coherence."""
+
+    cadre_id: int
+    rules: list[CoherenceResult]
+    total: int
+
+
+class ShadowGapResponse(BaseModel):
+    """Ecart shadow billing pour une annexe."""
+
+    annexe_id: Optional[int] = None
+    gap_eur: Optional[float] = None
+    details: Optional[dict] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ImportCsvResponse(BaseModel):
+    """Resultat import CSV."""
+
+    cadres_created: Optional[int] = None
+    annexes_created: Optional[int] = None
+    errors: Optional[list] = None

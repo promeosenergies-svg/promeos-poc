@@ -161,7 +161,9 @@ describe('Expert filtering', () => {
 describe('Route mapping', () => {
   it('every nav item route exists in ROUTE_MODULE_MAP', () => {
     for (const item of ALL_NAV_ITEMS) {
-      expect(ROUTE_MODULE_MAP).toHaveProperty(item.to);
+      // Strip query params for matching (e.g. /achat-energie?tab=assistant → /achat-energie)
+      const basePath = item.to.split('?')[0];
+      expect(ROUTE_MODULE_MAP).toHaveProperty(basePath);
     }
   });
 
@@ -457,7 +459,9 @@ describe('Route coverage guard-rails', () => {
   it('all nav item routes are in ROUTE_MODULE_MAP', () => {
     const knownRoutes = Object.keys(ROUTE_MODULE_MAP);
     for (const item of ALL_NAV_ITEMS) {
-      expect(knownRoutes).toContain(item.to);
+      // Strip query params for matching
+      const basePath = item.to.split('?')[0];
+      expect(knownRoutes).toContain(basePath);
     }
   });
 

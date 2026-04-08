@@ -98,8 +98,9 @@ describe('C · Route helper toPurchaseAssistant', () => {
     expect(match).not.toBeNull();
   });
 
-  it('returns /achat-assistant path', () => {
-    expect(routes).toContain('/achat-assistant');
+  it('returns /achat-energie?tab=assistant path (fused route)', () => {
+    expect(routes).toContain('/achat-energie');
+    expect(routes).toContain("tab', 'assistant'");
   });
 });
 

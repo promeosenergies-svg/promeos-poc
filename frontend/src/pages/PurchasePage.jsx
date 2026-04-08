@@ -99,7 +99,9 @@ import {
   ArrowUpDown,
   Activity,
   Rocket,
+  Wand2,
 } from 'lucide-react';
+import PurchaseAssistantWizard from '../components/purchase/PurchaseAssistantWizard';
 
 const STRATEGY_META = {
   fixe: {
@@ -158,6 +160,7 @@ function riskLevel(score) {
 
 const TABS = [
   { key: 'simulation', label: 'Simulation', icon: Calculator },
+  { key: 'assistant', label: 'Assistant', icon: Wand2 },
   { key: 'portefeuille', label: 'Portefeuille', icon: Building2 },
   { key: 'echeances', label: 'Échéances', icon: Clock },
   { key: 'historique', label: 'Historique', icon: History },
@@ -233,8 +236,10 @@ export default function PurchasePage() {
       const filterEntry = Object.entries(FILTER_TO_TAB).find(([, v]) => v === tabKey);
       if (filterEntry) {
         setSearchParams({ filter: filterEntry[0] }, { replace: true });
+      } else if (tabKey !== 'simulation') {
+        setSearchParams({ tab: tabKey }, { replace: true });
       } else {
-        // Remove filter param for tabs without a deep-link alias
+        // Remove filter/tab param for default simulation tab
         setSearchParams({}, { replace: true });
       }
     },
@@ -648,7 +653,9 @@ export default function PurchasePage() {
                         {fmtKwh(Math.round(estimate.volume_kwh_an))}/an
                       </div>
                       <div className="text-xs text-blue-500 mt-1">
-                        Source: {estimate.source} ({estimate.months_covered} mois)
+                        {isExpert
+                          ? `Source: ${estimate.source} (${estimate.months_covered} mois)`
+                          : `Basé sur vos relevés (${estimate.months_covered} mois)`}
                       </div>
                       {/* V72: confidence badges */}
                       <div className="flex gap-1.5 mt-2" data-testid="confidence-badges">
@@ -672,12 +679,23 @@ export default function PurchasePage() {
                       <div className="text-2xl font-bold text-purple-900">
                         {fmtNum(estimate.profile_factor, 2)}
                       </div>
-                      <div className="text-xs text-purple-500 mt-1">
+                      <div className="text-xs text-purple-500 mt-1 flex items-center gap-1">
                         {estimate.profile_factor > 1
                           ? 'Profil pointe'
                           : estimate.profile_factor < 1
                             ? 'Profil plat'
                             : 'Standard'}
+                        <Tooltip
+                          text={
+                            estimate.profile_factor > 1
+                              ? 'Consommation concentrée sur les heures de pointe — tarifs plus élevés'
+                              : estimate.profile_factor < 1
+                                ? 'Consommation régulière et étalée — tarifs plus favorables'
+                                : 'Consommation standard sans pic particulier'
+                          }
+                        >
+                          <HelpCircle size={10} className="text-purple-400 cursor-help" />
+                        </Tooltip>
                       </div>
                     </div>
                   </>
@@ -917,15 +935,32 @@ export default function PurchasePage() {
                       className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
                       data-testid="scenario-kpi-strip"
                     >
-                      <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                      <div
+                        className={`bg-white rounded-lg shadow p-4 border-l-4 ${
+                          reco?.budget_badge === 'green'
+                            ? 'border-green-500'
+                            : reco?.budget_badge === 'red'
+                              ? 'border-red-500'
+                              : reco?.budget_badge === 'amber'
+                                ? 'border-amber-500'
+                                : 'border-blue-500'
+                        }`}
+                      >
                         <div className="text-xs text-gray-500 uppercase font-medium">
-                          Budget annuel
+                          Budget annuel{' '}
+                          {reco?.budget_badge === 'green'
+                            ? '— Maîtrisé'
+                            : reco?.budget_badge === 'red'
+                              ? '— Critique'
+                              : reco?.budget_badge === 'amber'
+                                ? '— À surveiller'
+                                : ''}
                         </div>
                         <div className="text-2xl font-bold text-gray-900 mt-1">
                           {cheapest && mostExpensive
                             ? `${fmtNum(cheapest.total_annual_eur, 0)} — ${fmtNum(mostExpensive.total_annual_eur, 0)}`
                             : '—'}{' '}
-                          €
+                          € HT
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
                           Fourchette des {scenarios.length} scénarios
@@ -933,13 +968,15 @@ export default function PurchasePage() {
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
                         <div className="text-xs text-gray-500 uppercase font-medium">
-                          Risque moyen
+                          Risque recommandé
                         </div>
                         <div className="text-2xl font-bold text-gray-900 mt-1">
                           {reco ? `${reco.risk_score}/100` : '—'}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          Score de la stratégie recommandée
+                          {recoMeta
+                            ? `Stratégie ${recoMeta.label}`
+                            : 'Calculez les scénarios pour obtenir une recommandation'}
                         </div>
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
@@ -1063,11 +1100,11 @@ export default function PurchasePage() {
                               ? fmtNum(s.price_eur_per_kwh * 1000, 2)
                               : fmtNum(s.price_eur_per_kwh, 4)}{' '}
                             <span className="text-sm font-normal text-gray-500">
-                              €/{assumptions.volume_kwh_an >= 1000 ? 'MWh' : 'kWh'}
+                              € HT/{assumptions.volume_kwh_an >= 1000 ? 'MWh' : 'kWh'}
                             </span>
                           </div>
                           <div className="text-sm text-gray-600 mt-1">
-                            {fmtNum(s.total_annual_eur, 0, '€/an')}
+                            {fmtNum(s.total_annual_eur, 0, '€ HT/an')}
                           </div>
                         </div>
                         {s.savings_vs_current_pct != null && (
@@ -1075,7 +1112,8 @@ export default function PurchasePage() {
                             className={`text-sm font-medium mb-3 ${s.savings_vs_current_pct > 0 ? 'text-green-600' : 'text-red-600'}`}
                           >
                             {s.savings_vs_current_pct > 0 ? '-' : '+'}
-                            {Math.abs(s.savings_vs_current_pct)}% vs prix actuel
+                            {Math.abs(s.savings_vs_current_pct)}%{' '}
+                            {s.benchmark_label || 'vs prix actuel'}
                           </div>
                         )}
                         <div className="mb-3">
@@ -1101,8 +1139,13 @@ export default function PurchasePage() {
                         {s.p10_eur != null && s.p90_eur != null && (
                           <div className="text-xs text-gray-500 mb-3">
                             <AlertTriangle size={12} className="inline mr-1" />
-                            Fourchette: {fmtNum(s.p10_eur, 0)} — {fmtNum(s.p90_eur, 0)} €/an
+                            Fourchette: {fmtNum(s.p10_eur, 0)} — {fmtNum(s.p90_eur, 0)} € HT/an
                           </div>
+                        )}
+                        {s.explanation_text && (
+                          <p className="text-xs text-gray-500 italic mb-3 bg-gray-50 rounded p-2">
+                            {s.explanation_text}
+                          </p>
                         )}
 
                         {/* V71: "Pourquoi ?" — explication de la stratégie */}
@@ -1223,8 +1266,8 @@ export default function PurchasePage() {
                                         <span className="font-mono text-gray-600">
                                           {fmtNum(b.weight_pct, 0)}% —{' '}
                                           {assumptions.volume_kwh_an >= 1000
-                                            ? `${fmtNum(b.price_eur_kwh * 1000, 2)} €/MWh`
-                                            : `${fmtNum(b.price_eur_kwh, 4)} €/kWh`}
+                                            ? `${fmtNum(b.price_eur_kwh * 1000, 2)} € HT/MWh`
+                                            : `${fmtNum(b.price_eur_kwh, 4)} € HT/kWh`}
                                         </span>
                                       </div>
                                     ))}
@@ -1260,8 +1303,8 @@ export default function PurchasePage() {
                                     <TrendingDown size={12} className="text-green-600" />
                                     <span className="text-green-700">
                                       {deltaEur > 0
-                                        ? `-${fmtNum(deltaEur, 0, '€/an')}`
-                                        : `+${fmtNum(Math.abs(deltaEur), 0, '€/an')}`}{' '}
+                                        ? `-${fmtNum(deltaEur, 0, '€ HT/an')}`
+                                        : `+${fmtNum(Math.abs(deltaEur), 0, '€ HT/an')}`}{' '}
                                       ({deltaPct > 0 ? '-' : '+'}
                                       {Math.abs(deltaPct)}%) vs Prix Fixe standard
                                     </span>
@@ -1321,7 +1364,7 @@ export default function PurchasePage() {
                                       source: 'purchase',
                                       source_type: 'achat',
                                       site_id: selectedSiteId,
-                                      title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an`,
+                                      title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} € HT/an`,
                                       scenario_label: 'Tarif Heures Solaires',
                                       impact_eur:
                                         s.savings_vs_current_pct > 0 && s.total_annual_eur
@@ -1394,7 +1437,7 @@ export default function PurchasePage() {
                                   : undefined;
                               openActionDrawer({
                                 prefill: {
-                                  titre: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} €/an)`,
+                                  titre: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString('fr-FR')} € HT/an)`,
                                   type: 'achat',
                                   impact_eur: impactEur,
                                 },
@@ -1464,8 +1507,31 @@ export default function PurchasePage() {
                   title="Aucun scénario"
                   text="Sélectionnez un site et configurez vos hypothèses pour comparer les offres."
                   ctaLabel="Lancer l'Assistant Achat"
-                  onCta={() => navigate(toPurchaseAssistant())}
+                  onCta={() => handleTabChange('assistant')}
                 />
+              </div>
+            )}
+            {/* CTA Assistant dans simulation */}
+            {!loading && scenarios.length > 0 && (
+              <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wand2 size={20} className="text-indigo-600" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-800">
+                      Besoin d'une analyse approfondie ?
+                    </p>
+                    <p className="text-xs text-indigo-600">
+                      L'assistant compare vos offres en 8 étapes avec scoring et recommandation.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  data-testid="cta-open-assistant"
+                  onClick={() => handleTabChange('assistant')}
+                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+                >
+                  <Wand2 size={14} /> Ouvrir l'Assistant
+                </button>
               </div>
             )}
             {loading && (
@@ -1476,6 +1542,23 @@ export default function PurchasePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* ══ TAB: Assistant (wizard 8 étapes) ══ */}
+        {activeTab === 'assistant' && (
+          <PurchaseAssistantWizard
+            scopedSites={scopedSites}
+            orgId={scope?.orgId}
+            expertMode={isExpert}
+            initialStep={searchParams.get('step')}
+            initialSiteId={
+              searchParams.get('site_id') ? Number(searchParams.get('site_id')) : undefined
+            }
+            initialOffer={searchParams.get('offer')}
+            onComplete={() => {
+              handleTabChange('simulation');
+            }}
+          />
         )}
 
         {/* ══ TAB: Portefeuille (V1.1) ══ */}
@@ -1540,13 +1623,13 @@ export default function PurchasePage() {
                   </div>
                   <div className="bg-white rounded-lg shadow p-5">
                     <div className="text-xs text-gray-500 uppercase font-medium">
-                      Cout annuel total
+                      Coût annuel total
                     </div>
                     <div className="text-3xl font-bold text-blue-700 mt-1">
                       {Math.round(portfolioData.portfolio.total_annual_cost_eur).toLocaleString(
                         'fr-FR'
                       )}{' '}
-                      €
+                      € HT
                     </div>
                   </div>
                   <div className="bg-white rounded-lg shadow p-5">
@@ -1748,10 +1831,10 @@ export default function PurchasePage() {
                                     {site.site_nom || `Site ${site.site_id}`}
                                   </td>
                                   <td className="px-4 py-3 text-right text-gray-600">
-                                    {fmtNum(site.baseline, 0, '€')}
+                                    {fmtNum(site.baseline, 0, '€ HT')}
                                   </td>
                                   <td className="px-4 py-3 text-right font-medium text-amber-700">
-                                    {site.reflex ? fmtNum(site.reflexCost, 0, '€') : '—'}
+                                    {site.reflex ? fmtNum(site.reflexCost, 0, '€ HT') : '—'}
                                   </td>
                                   <td className="px-4 py-3 text-right">
                                     {site.gain > 0 ? (
@@ -2015,7 +2098,7 @@ export default function PurchasePage() {
                         )}
                         {run.summary?.recommended_total_eur && (
                           <div className="text-sm font-medium text-gray-700 mt-1">
-                            {fmtNum(run.summary.recommended_total_eur, 0, '€/an')}
+                            {fmtNum(run.summary.recommended_total_eur, 0, '€ HT/an')}
                           </div>
                         )}
                       </div>
@@ -2031,10 +2114,10 @@ export default function PurchasePage() {
                               {s.strategy}
                             </div>
                             <div className="text-lg font-bold text-gray-900 mt-1">
-                              {fmtNum(s.price_eur_per_kwh, 4)} €/kWh
+                              {fmtNum(s.price_eur_per_kwh, 4)} € HT/kWh
                             </div>
                             <div className="text-xs text-gray-500">
-                              {fmtNum(s.total_annual_eur, 0, '€/an')} | Risque: {s.risk_score}
+                              {fmtNum(s.total_annual_eur, 0, '€ HT/an')} | Risque: {s.risk_score}
                             </div>
                             {s.is_recommended && (
                               <span className="inline-block mt-1 px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full">

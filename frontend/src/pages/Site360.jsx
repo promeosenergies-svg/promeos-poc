@@ -86,7 +86,12 @@ import { setActiveSite } from '../utils/activeSite';
 import DataQualityBadge from '../components/DataQualityBadge';
 import FreshnessIndicator from '../components/FreshnessIndicator';
 import SiteIntelligencePanel from '../components/SiteIntelligencePanel';
-import { getDataQualityScore, getSiteFreshness, getSiteCompleteness } from '../services/api';
+import {
+  getDataQualityScore,
+  getSiteFreshness,
+  getSiteCompleteness,
+  getEnergySignature,
+} from '../services/api';
 
 const _sb = (k) => {
   const { variant, label } = getStatusBadgeProps(k);
@@ -1497,6 +1502,107 @@ function TabConformite({ site }) {
   );
 }
 
+/** Mini panneau signature énergétique pour l'onglet Usages */
+function MiniSignaturePanel({ siteId, navigate }) {
+  const [sig, setSig] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!siteId) return;
+    setLoading(true);
+    getEnergySignature(siteId)
+      .then(setSig)
+      .catch(() => setSig(null))
+      .finally(() => setLoading(false));
+  }, [siteId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4 pt-4">
+        <div className="rounded-xl border border-gray-100 bg-white p-5 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4" />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="h-16 bg-gray-100 rounded-lg" />
+            <div className="h-16 bg-gray-100 rounded-lg" />
+            <div className="h-16 bg-gray-100 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const data = sig?.signature;
+  const benchmark = sig?.benchmark;
+
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="rounded-xl border border-gray-100 bg-white p-5">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          Signature énergétique
+        </p>
+        {data ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Baseload */}
+            <div className="rounded-lg bg-blue-50 px-4 py-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-blue-500 mb-0.5">
+                Baseload
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                {data.baseload_kwh_day?.toLocaleString('fr-FR') ?? '--'}{' '}
+                <span className="text-xs font-normal text-gray-500">kWh/j</span>
+              </p>
+              {benchmark?.baseload_expected != null && (
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  réf. {benchmark.baseload_expected} kWh/j
+                </p>
+              )}
+            </div>
+            {/* Thermosensibilité */}
+            <div className="rounded-lg bg-amber-50 px-4 py-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-amber-500 mb-0.5">
+                Thermosensibilité
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                {data.thermosensitivity_kwh_dju ?? '--'}{' '}
+                <span className="text-xs font-normal text-gray-500">kWh/DJU</span>
+              </p>
+              {benchmark?.thermo_expected != null && (
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  réf. {benchmark.thermo_expected} kWh/DJU
+                </p>
+              )}
+            </div>
+            {/* R² */}
+            <div className="rounded-lg bg-emerald-50 px-4 py-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500 mb-0.5">
+                R² modèle
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                {data.r_squared?.toFixed(3) ?? 'N/A'}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {data.model_quality ?? 'Qualité inconnue'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400 italic py-3">
+            Signature non disponible — importez les données de consommation pour activer l'analyse.
+          </div>
+        )}
+      </div>
+      <div className="flex justify-end">
+        <button
+          className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+          onClick={() => navigate(`/consommations?site_id=${siteId}`)}
+        >
+          Ouvrir l'analyse complète <ChevronRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -2034,25 +2140,7 @@ export default function Site360() {
       {activeTab === 'actions' && <TabActionsSite siteId={site.id} />}
       {activeTab === 'puissance' && <TabPuissance site={site} />}
 
-      {activeTab === 'usages' && (
-        <div className="space-y-4 pt-4">
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 text-sm text-gray-600">
-            <p className="font-medium text-gray-800 mb-1">Décomposition des usages énergétiques</p>
-            <p>
-              La vue détaillée par poste (CVC, éclairage, process, mobilité) est disponible dans le
-              module Consommations avec les courbes de charge 30 min.
-            </p>
-          </div>
-          <div className="flex justify-end">
-            <button
-              className="text-sm text-blue-600 hover:underline font-medium"
-              onClick={() => navigate(`/consommations?site_id=${site.id}`)}
-            >
-              Ouvrir l'analyse complète →
-            </button>
-          </div>
-        </div>
-      )}
+      {activeTab === 'usages' && <MiniSignaturePanel siteId={site.id} navigate={navigate} />}
 
       {/* BACS Wizard modal */}
       {showBacs && <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />}

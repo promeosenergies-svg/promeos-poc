@@ -35,8 +35,17 @@ export default function TariffWindowsCard({ segment }) {
   if (loading) return null;
   if (windows.length === 0)
     return (
-      <div className="border rounded-lg p-3 text-xs text-gray-400">
-        Aucune fenêtre tarifaire configurée. Ajoutez une grille TURPE 7 pour activer l'optimisation.
+      <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-xs text-amber-700 flex items-center justify-between">
+        <span>
+          Aucune fenêtre tarifaire configurée. Configurez la grille TURPE 7 pour optimiser vos
+          créneaux HP/HC.
+        </span>
+        <a
+          href="/contrats"
+          className="ml-3 text-amber-800 underline hover:text-amber-900 font-medium whitespace-nowrap"
+        >
+          Configurer les contrats
+        </a>
       </div>
     );
 

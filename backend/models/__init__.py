@@ -310,6 +310,9 @@ from .contract_v2_models import (
     ContractEvent,
 )
 
+# Connector Tokens (Sprint F)
+from .connector_token import ConnectorToken
+
 # Flex Foundations (Sprint 21)
 from .flex_models import (
     FlexAsset,
@@ -574,6 +577,8 @@ __all__ = [
     "FlexAssetType",
     "ControlMethod",
     "TariffWindow",
+    # Connector Tokens (Sprint F)
+    "ConnectorToken",
     # Power Intelligence
     "PowerReading",
     "PowerContract",

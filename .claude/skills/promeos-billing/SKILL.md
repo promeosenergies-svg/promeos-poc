@@ -14,6 +14,7 @@ description: "Expertise facture énergie France B2B : shadow billing, TURPE 6/7,
 | Benchmark marché, prix de gros, concurrence, ARENH, post-ARENH, CPPA | `references/benchmark-marche-2024.md` |
 | Stockage batteries, flexibilité, autoconsommation, FCR, agrégation | `references/benchmark-stockage-2023.md` |
 | Photovoltaïque, autoconsommation, PPA, soutien PV, agrivoltaïsme, panneaux | `references/benchmark-photovoltaique-2024.md` |
+| Stratégie produit, positionnement, moats, pricing, GTM, concurrence | `docs/PROMEOS_STRATEGIE_FOURNISSEUR_4.0.md` |
 | Tout le reste (pipeline, anomalies, cascade prix) | Ce SKILL.md suffit |
 
 ## Proactive triggers — Alerter sans qu'on demande

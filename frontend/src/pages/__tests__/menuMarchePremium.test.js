@@ -59,13 +59,13 @@ describe('B. Labels in new modules', () => {
     expect(item.label).toBe("Stratégies d'achat");
   });
 
-  it('/achat-assistant is in main nav', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-assistant');
+  it('/achat-energie?tab=assistant is in main nav (fused)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie?tab=assistant');
     expect(item).toBeDefined();
   });
 
-  it('/renouvellements is in main nav', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/renouvellements');
+  it('/achat-energie?tab=echeances is in main nav (fused from /renouvellements)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie?tab=echeances');
     expect(item).toBeDefined();
   });
 });

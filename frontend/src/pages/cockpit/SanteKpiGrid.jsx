@@ -2,7 +2,15 @@
  * SanteKpiGrid — 4 KPI cards santé (Conformité, Qualité données, Contrats, Consommation).
  * Données 100% backend via /cockpit/executive-v2 → sante.
  */
-import { ShieldCheck, Database, FileSignature, Zap, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ShieldCheck,
+  Database,
+  FileSignature,
+  Zap,
+  AlertTriangle,
+  ChevronRight,
+} from 'lucide-react';
 
 const STATUS_DOT = {
   ok: 'bg-emerald-500',
@@ -17,6 +25,7 @@ const CARDS = [
     icon: ShieldCheck,
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-600',
+    navigateTo: '/conformite',
     renderValue: (d) => `${d.score} / 100`,
     renderDetail: (d) => (
       <>
@@ -33,6 +42,7 @@ const CARDS = [
     icon: Database,
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-600',
+    navigateTo: '/activation',
     renderValue: (d) => `${d.score} / 100`,
     renderDetail: (d) =>
       `${d.sites_avec_donnees}/${d.total_sites} sites · ${d.briques_completes} briques OK`,
@@ -43,6 +53,7 @@ const CARDS = [
     icon: FileSignature,
     iconBg: 'bg-purple-50',
     iconText: 'text-purple-600',
+    navigateTo: '/contrats',
     renderValue: (d) => `${d.actifs} actif${d.actifs > 1 ? 's' : ''}`,
     renderDetail: (d) => (
       <>
@@ -62,6 +73,7 @@ const CARDS = [
     icon: Zap,
     iconBg: 'bg-indigo-50',
     iconText: 'text-indigo-600',
+    navigateTo: '/consommations/portfolio',
     renderValue: (d) => `${d.total_mwh?.toLocaleString('fr-FR')} MWh`,
     renderDetail: (d) =>
       `${d.kwh_m2_an?.toLocaleString('fr-FR')} kWh/m²/an · ${d.couverture_pct}% couvert`,
@@ -69,6 +81,7 @@ const CARDS = [
 ];
 
 export default function SanteKpiGrid({ sante }) {
+  const navigate = useNavigate();
   if (!sante) return null;
 
   return (
@@ -78,11 +91,26 @@ export default function SanteKpiGrid({ sante }) {
         if (!data) return null;
         const Icon = card.icon;
         const dotClass = STATUS_DOT[data.status] || STATUS_DOT.ok;
+        const isClickable = !!card.navigateTo;
 
         return (
           <div
             key={card.key}
-            className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-start gap-3"
+            className={`rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-start gap-3 transition-all duration-150 ${
+              isClickable
+                ? 'cursor-pointer hover:border-blue-200 hover:shadow-sm hover:bg-blue-50/30 group'
+                : ''
+            }`}
+            onClick={isClickable ? () => navigate(card.navigateTo) : undefined}
+            role={isClickable ? 'link' : undefined}
+            tabIndex={isClickable ? 0 : undefined}
+            onKeyDown={
+              isClickable
+                ? (e) => {
+                    if (e.key === 'Enter') navigate(card.navigateTo);
+                  }
+                : undefined
+            }
           >
             {/* Icon */}
             <div
@@ -108,6 +136,14 @@ export default function SanteKpiGrid({ sante }) {
                   : card.renderDetail}
               </div>
             </div>
+
+            {/* Indicateur cliquable */}
+            {isClickable && (
+              <ChevronRight
+                size={14}
+                className="text-gray-300 group-hover:text-blue-500 shrink-0 mt-1 transition-colors"
+              />
+            )}
           </div>
         );
       })}

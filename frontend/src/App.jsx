@@ -39,7 +39,7 @@ const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
-const PurchaseAssistantPage = lazy(() => import('./pages/PurchaseAssistantPage'));
+// PurchaseAssistantPage — now embedded as tab in PurchasePage, route redirects
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
@@ -217,8 +217,7 @@ function App() {
                         </PageSuspense>
                       }
                     />
-                    {/* Energy Copilot — route supprimée (Sprint B P0-7: plus de doublon avec Cockpit) */}
-                    <Route path="/energy-copilot" element={<Navigate to="/" replace />} />
+                    {/* Energy Copilot — route supprimée (Sprint B P0-7 + Sprint C cleanup) */}
 
                     {/* Legacy redirects */}
                     <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />
@@ -389,11 +388,7 @@ function App() {
                     />
                     <Route
                       path="/achat-assistant"
-                      element={
-                        <PageSuspense>
-                          <PurchaseAssistantPage />
-                        </PageSuspense>
-                      }
+                      element={<Navigate to="/achat-energie?tab=assistant" replace />}
                     />
                     <Route
                       path="/kb"

@@ -27,6 +27,11 @@ from services.usage_service import (
     get_scoped_usage_timeline,
 )
 from models import Usage, UsageBaseline, USAGE_LABELS_FR, USAGE_FAMILY_MAP, TypeUsage, UsageFamily, DataSourceType
+from schemas.usages_schemas import (
+    ArchetypesResponse,
+    UsageItemResponse,
+    UsageTaxonomyResponse,
+)
 
 router = APIRouter(prefix="/api/usages", tags=["usages"])
 
@@ -80,7 +85,7 @@ def api_scoped_usage_timeline(
     )
 
 
-@router.get("/archetypes-in-scope")
+@router.get("/archetypes-in-scope", response_model=ArchetypesResponse)
 def api_archetypes_in_scope(
     request: Request,
     entity_id: Optional[int] = Query(None),
@@ -218,7 +223,7 @@ def api_usage_cost_breakdown(
 # ── Taxonomie ─────────────────────────────────────────────────────────────
 
 
-@router.get("/taxonomy")
+@router.get("/taxonomy", response_model=UsageTaxonomyResponse)
 def api_usage_taxonomy():
     """Retourne la taxonomie des usages energetiques (familles + types + labels FR)."""
     families = {}
@@ -269,7 +274,7 @@ def api_usage_billing_links(site_id: int, db: Session = Depends(get_db)):
 # ── CRUD Usages (liste, create) ──────────────────────────────────────────
 
 
-@router.get("/site/{site_id}")
+@router.get("/site/{site_id}", response_model=list[UsageItemResponse])
 def api_list_usages(site_id: int, db: Session = Depends(get_db)):
     """Liste les usages declares pour un site."""
     usages = db.query(Usage).join(Usage.batiment).filter(Usage.batiment.has(site_id=site_id)).all()

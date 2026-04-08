@@ -51,6 +51,9 @@ from services.purchase_service import (
     get_org_site_ids,
     compute_inputs_hash,
     aggregate_portfolio_results,
+    get_current_contract_price,
+    compute_budget_badge,
+    STRATEGY_EXPLANATIONS,
 )
 from services.purchase_actions_engine import compute_purchase_actions
 
@@ -142,23 +145,37 @@ def get_scenarios(
                 .all()
             )
             if results:
+                # Enrich cached results with runtime fields
+                benchmark = get_current_contract_price(db, site_id)
+                benchmark_price_kwh = benchmark["price_eur_kwh"] if benchmark else None
+                volume = assumption.volume_kwh_an or 0
+                benchmark_total = round(benchmark_price_kwh * volume, 2) if benchmark_price_kwh else 0
+
+                enriched = []
+                for r in results:
+                    s = {
+                        "id": r.id,
+                        "strategy": r.strategy.value if r.strategy else None,
+                        "price_eur_per_kwh": r.price_eur_per_kwh,
+                        "total_annual_eur": r.total_annual_eur,
+                        "risk_score": r.risk_score,
+                        "savings_vs_current_pct": r.savings_vs_current_pct,
+                        "p10_eur": r.p10_eur,
+                        "p90_eur": r.p90_eur,
+                        "is_recommended": r.is_recommended,
+                        "benchmark_label": benchmark.get("label", "vs prix actuel") if benchmark else "vs prix actuel",
+                        "benchmark_source": benchmark.get("source", "marche") if benchmark else "marche",
+                        "explanation_text": STRATEGY_EXPLANATIONS.get(r.strategy.value if r.strategy else "", ""),
+                        "budget_badge": compute_budget_badge(r.total_annual_eur, benchmark_total)
+                        if r.total_annual_eur and benchmark_total > 0
+                        else {"label": "\u2014", "color": "gray"},
+                    }
+                    enriched.append(s)
+
                 return {
                     "site_id": site_id,
                     "run_id": latest.run_id,
-                    "scenarios": [
-                        {
-                            "id": r.id,
-                            "strategy": r.strategy.value if r.strategy else None,
-                            "price_eur_per_kwh": r.price_eur_per_kwh,
-                            "total_annual_eur": r.total_annual_eur,
-                            "risk_score": r.risk_score,
-                            "savings_vs_current_pct": r.savings_vs_current_pct,
-                            "p10_eur": r.p10_eur,
-                            "p90_eur": r.p90_eur,
-                            "is_recommended": r.is_recommended,
-                        }
-                        for r in results
-                    ],
+                    "scenarios": enriched,
                 }
 
     # No existing results — compute fresh
@@ -183,6 +200,7 @@ def get_scenarios(
         volume_kwh_an=assumption.volume_kwh_an,
         profile_factor=assumption.profile_factor,
         energy_type=energy_type_val,
+        green_preference=False,
     )
     scenarios = recommend_scenario(scenarios, "medium", 0.5, False)
 
@@ -201,11 +219,15 @@ def get_scenarios(
 
 @router.get("/estimate/{site_id}")
 def get_estimate(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
-    """Estimate annual consumption for a site."""
+    """Estimate annual consumption for a site + contrat actuel (Contrats V2)."""
     check_site_access(auth, site_id)
     result = estimate_consumption(db, site_id)
     profile = compute_profile_factor(db, site_id)
     result["profile_factor"] = profile
+    # Enrichissement avec le contrat actuel (bridge Contrats V2)
+    contract_info = get_current_contract_price(db, site_id)
+    if contract_info:
+        result["current_contract"] = contract_info
     return result
 
 
@@ -531,6 +553,7 @@ def compute_portfolio(
                 volume_kwh_an=assumption.volume_kwh_an,
                 profile_factor=assumption.profile_factor,
                 energy_type=energy_type_val,
+                green_preference=green_pref,
             )
             scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
 
@@ -646,6 +669,14 @@ def compute(
 
         # Compute scenarios
         energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+        # Get preferences for recommendation (scoped by org) — needed before compute for green_preference
+        site_obj = db.query(Site).filter(Site.id == site_id).first()
+        org_id = _resolve_org_id(db, site_obj) if site_obj else None
+        pref = (db.query(PurchasePreference).filter(PurchasePreference.org_id == org_id).first()) if org_id else None
+        risk_tol = pref.risk_tolerance if pref else "medium"
+        budget_pri = pref.budget_priority if pref else 0.5
+        green_pref = pref.green_preference if pref else False
+
         scenarios = compute_scenarios(
             db,
             site_id,
@@ -653,15 +684,8 @@ def compute(
             profile_factor=assumption.profile_factor,
             energy_type=energy_type_val,
             report_pct=report_pct,
+            green_preference=green_pref,
         )
-
-        # Get preferences for recommendation (scoped by org)
-        site_obj = db.query(Site).filter(Site.id == site_id).first()
-        org_id = _resolve_org_id(db, site_obj) if site_obj else None
-        pref = (db.query(PurchasePreference).filter(PurchasePreference.org_id == org_id).first()) if org_id else None
-        risk_tol = pref.risk_tolerance if pref else "medium"
-        budget_pri = pref.budget_priority if pref else 0.5
-        green_pref = pref.green_preference if pref else False
 
         scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
 

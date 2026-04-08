@@ -182,7 +182,7 @@ export function toPurchase(opts = {}) {
 }
 
 /**
- * Assistant Achat — wizard 8 etapes.
+ * Assistant Achat — wizard 8 etapes (now embedded as tab in PurchasePage).
  * @param {object} opts
  * @param {number|string} [opts.site_id] — pre-select site
  * @param {string} [opts.step] — jump to step key (portfolio, consumption, persona, horizon, offres, results, scoring, decision)
@@ -190,11 +190,12 @@ export function toPurchase(opts = {}) {
  */
 export function toPurchaseAssistant(opts = {}) {
   const p = new URLSearchParams();
+  p.set('tab', 'assistant');
   if (opts.site_id) p.set('site_id', String(opts.site_id));
   if (opts.step) p.set('step', opts.step);
   if (opts.offer) p.set('offer', opts.offer);
   const qs = p.toString();
-  return `/achat-assistant${qs ? '?' + qs : ''}`;
+  return `/achat-energie?${qs}`;
 }
 
 export function toUsages(opts = {}) {

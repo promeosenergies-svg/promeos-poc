@@ -184,6 +184,17 @@ def get_cockpit(
     except Exception:
         _contract_risk = 0.0
 
+    # D.3: Contrats expirant sous 90j + génération alertes automatiques
+    _contrats_expirant_90j = 0
+    try:
+        from services.contract_expiration_alerts import generate_contract_expiration_alerts
+
+        exp_result = generate_contract_expiration_alerts(db, site_ids, horizon_days=90)
+        _contrats_expirant_90j = exp_result["contrats_expirant_90j"]
+        db.commit()
+    except Exception:
+        _contrats_expirant_90j = 0
+
     # KPI runtime metadata for critical KPIs
     kpi_details = [
         wrap_kpi_runtime("compliance_score_composite", compliance_score_unified, perimeter="organisation"),
@@ -232,6 +243,7 @@ def get_cockpit(
                 "conso_confidence": conso_confidence,
                 "conso_sites_with_data": conso_sites_with_data,
                 "conso_source": _conso_dominant_source,
+                "contrats_expirant_90j": _contrats_expirant_90j,
             },
             "kpi_details": kpi_details,
             "action_center": action_center_data,

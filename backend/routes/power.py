@@ -12,6 +12,15 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.energy_models import Meter
 from models.site import Site
+from schemas.power_schemas import (
+    PowerProfileResponse,
+    PowerContractResponse,
+    PowerPeaksResponse,
+    PowerFactorResponse,
+    OptimizePsResponse,
+    NebcoResponse,
+    NebcoPortfolioResponse,
+)
 
 router = APIRouter(prefix="/api/power", tags=["Power Intelligence"])
 
@@ -28,7 +37,7 @@ def _get_primary_meter(db: Session, site_id: int) -> Meter | None:
     )
 
 
-@router.get("/sites/{site_id}/profile")
+@router.get("/sites/{site_id}/profile", response_model=PowerProfileResponse)
 def api_power_profile(
     site_id: int,
     date_debut: Optional[date] = Query(None),
@@ -60,7 +69,7 @@ def api_power_profile(
     return result
 
 
-@router.get("/sites/{site_id}/contract")
+@router.get("/sites/{site_id}/contract", response_model=PowerContractResponse)
 def api_power_contract(
     site_id: int,
     db: Session = Depends(get_db),
@@ -105,7 +114,7 @@ def _default_period(date_debut, date_fin, days=30):
     return date_debut, date_fin
 
 
-@router.get("/sites/{site_id}/peaks")
+@router.get("/sites/{site_id}/peaks", response_model=PowerPeaksResponse)
 def api_power_peaks(
     site_id: int,
     date_debut: Optional[date] = Query(None),
@@ -126,7 +135,7 @@ def api_power_peaks(
     return result
 
 
-@router.get("/sites/{site_id}/factor")
+@router.get("/sites/{site_id}/factor", response_model=PowerFactorResponse)
 def api_power_factor(
     site_id: int,
     date_debut: Optional[date] = Query(None),
@@ -146,7 +155,7 @@ def api_power_factor(
     return result
 
 
-@router.get("/sites/{site_id}/optimize-ps")
+@router.get("/sites/{site_id}/optimize-ps", response_model=OptimizePsResponse)
 def api_optimize_ps(
     site_id: int,
     date_debut: Optional[date] = Query(None),
@@ -166,7 +175,7 @@ def api_optimize_ps(
     return result
 
 
-@router.get("/sites/{site_id}/nebco")
+@router.get("/sites/{site_id}/nebco", response_model=NebcoResponse)
 def api_nebco(
     site_id: int,
     site_archetype: str = Query("DEFAULT", description="Archétype site (BUREAU_STANDARD, HOTEL_HEBERGEMENT, etc.)"),
@@ -194,7 +203,7 @@ def api_nebco(
     return result
 
 
-@router.get("/portfolio/nebco-summary")
+@router.get("/portfolio/nebco-summary", response_model=NebcoPortfolioResponse)
 def api_portfolio_nebco_summary(
     tarif_central: float = Query(140.0, ge=0, description="Revenu central €/kW/an"),
     tarif_min: float = Query(80.0, ge=0),

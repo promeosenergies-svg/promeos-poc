@@ -20,12 +20,109 @@ from models import (
     Site,
     EntiteJuridique,
     Portefeuille,
+    ContractAnnexe,
 )
+from models.billing_models import EnergyContract
 from services.billing_service import get_reference_price
 from services.purchase_pricing import get_market_context, compute_strategy_price
+from services.contract_v2_service import resolve_pricing, PERIOD_WEIGHTS
 
 # Fallback volume if no data found
 DEFAULT_VOLUME_KWH_AN = 500_000
+
+# ── Premium Garantie d'Origine (GO) ──
+GREEN_PREMIUM_EUR_MWH = 2.5
+
+# ── Explications par stratégie ──
+STRATEGY_EXPLANATIONS = {
+    "fixe": "Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.",
+    "indexe": "Prix suit un indice marché avec plafond. Potentiel d'économie si les prix baissent, risque limité par le cap.",
+    "spot": "Exposition directe au marché temps réel. Économies maximales en marché baissier, risque élevé en tension.",
+    "reflex_solar": "Report de consommation vers les heures solaires (11h-16h) où le prix spot est souvent négatif. Nécessite une flexibilité des usages.",
+}
+
+
+def get_current_contract_price(db: Session, site_id: int) -> dict:
+    """
+    Récupère le prix réel du contrat actif pour un site via Contrats V2.
+    Fallback sur la moyenne marché 12 mois si aucun contrat trouvé.
+    """
+    from datetime import date as _date
+
+    try:
+        # Chercher l'annexe active pour ce site
+        annexe = (
+            db.query(ContractAnnexe)
+            .join(EnergyContract, ContractAnnexe.contrat_cadre_id == EnergyContract.id)
+            .filter(
+                ContractAnnexe.site_id == site_id,
+                ContractAnnexe.status == "active",
+            )
+            .first()
+        )
+
+        if annexe:
+            pricing_lines = resolve_pricing(db, annexe)
+            if pricing_lines:
+                # Calcul du prix moyen pondéré (PERIOD_WEIGHTS)
+                total_weight = 0.0
+                weighted_price = 0.0
+                for line in pricing_lines:
+                    price = line.get("unit_price_eur_kwh")
+                    if price is None or price <= 0:
+                        continue
+                    period = line.get("period_code", "BASE")
+                    w = PERIOD_WEIGHTS.get(period, 0.5)
+                    weighted_price += price * w
+                    total_weight += w
+
+                if total_weight > 0:
+                    avg_price_kwh = weighted_price / total_weight
+                    # Construire le label avec fournisseur et date fin
+                    cadre = annexe.contrat_cadre
+                    supplier = cadre.supplier_name if cadre else "Fournisseur"
+                    end_dt = annexe.end_date_override or (cadre.end_date if cadre else None)
+                    exp_label = ""
+                    if end_dt:
+                        exp_label = f", exp. {end_dt.strftime('%m/%Y')}"
+
+                    return {
+                        "price_eur_mwh": round(avg_price_kwh * 1000, 2),
+                        "price_eur_kwh": round(avg_price_kwh, 6),
+                        "source": "contrat",
+                        "label": f"vs votre contrat ({supplier}{exp_label})",
+                    }
+    except Exception as e:
+        logger.warning("get_current_contract_price: erreur contrat V2 site=%d: %s", site_id, e)
+
+    # Fallback: moyenne marché 12 mois
+    try:
+        market_ctx = get_market_context(db, "ELEC")
+        market_avg = market_ctx.get("spot_avg_30d_eur_mwh", 80.0)
+        return {
+            "price_eur_mwh": round(market_avg, 2),
+            "price_eur_kwh": round(market_avg / 1000, 6),
+            "source": "marche",
+            "label": "vs moyenne marché 12 mois",
+        }
+    except Exception:
+        return {
+            "price_eur_mwh": 80.0,
+            "price_eur_kwh": 0.08,
+            "source": "marche",
+            "label": "vs moyenne marché 12 mois",
+        }
+
+
+def compute_budget_badge(total_eur: float, benchmark_eur: float) -> dict:
+    """Badge contextuel budget vs benchmark."""
+    ratio = total_eur / benchmark_eur if benchmark_eur > 0 else 1.0
+    if ratio <= 0.95:
+        return {"label": "Budget optimisé", "color": "green"}
+    if ratio <= 1.10:
+        return {"label": "Budget standard", "color": "amber"}
+    return {"label": "Budget élevé", "color": "red"}
+
 
 # ── Profile factor thresholds ──
 PROFILE_FLAT_24_7 = 0.85  # Flat/constant load profile
@@ -190,24 +287,38 @@ def compute_scenarios(
     energy_type: str = "elec",
     report_pct: float = 0.0,
     horizon_months: int = 12,
+    green_preference: bool = False,
 ) -> list:
     """
     Generate 4 purchase scenarios: Fixe, Indexe, Spot, RéFlex Solar.
     Uses market-based pricing from purchase_pricing engine.
     report_pct: fraction of HP volume shifted to solaire_ete (0.0–1.0).
+    green_preference: si True, ajoute la prime GO à chaque scénario.
     Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
     market_ctx = get_market_context(db, energy_type.upper())
+
+    # P0: Benchmark vs prix contrat réel (Contrats V2) au lieu de billing ref
+    contract_info = get_current_contract_price(db, site_id)
+    benchmark_price_kwh = contract_info["price_eur_kwh"]
+    benchmark_label = contract_info["label"]
+    benchmark_source = contract_info["source"]
+
     logger.info(
-        "compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s spot_30d=%.2f",
+        "compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s benchmark=%.4f(%s) spot_30d=%.2f",
         site_id,
         volume_kwh_an,
         profile_factor,
         ref_price,
         price_source,
+        benchmark_price_kwh,
+        benchmark_source,
         market_ctx["spot_avg_30d_eur_mwh"],
     )
+
+    # Prime verte (Garantie d'Origine)
+    green_premium_kwh = (GREEN_PREMIUM_EUR_MWH / 1000) if green_preference else 0.0
 
     scenarios = []
     strategy_map = {
@@ -240,6 +351,12 @@ def compute_scenarios(
                 reflex["risk_score"] = ths_pricing["risk_score"]
                 reflex["p10_eur"] = round(ths_pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2)
                 reflex["p90_eur"] = round(ths_pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2)
+            # Appliquer prime verte
+            if green_premium_kwh > 0:
+                new_price = reflex["price_eur_per_kwh"] + green_premium_kwh
+                reflex["total_annual_eur"] = round(new_price * volume_kwh_an, 2)
+                reflex["price_eur_per_kwh"] = round(new_price, 6)
+                reflex["green_premium_eur_mwh"] = GREEN_PREMIUM_EUR_MWH
             scenarios.append(reflex)
         else:
             pricing = compute_strategy_price(
@@ -248,32 +365,35 @@ def compute_scenarios(
                 profile_factor,
                 horizon_months,
             )
-            total = round(pricing["price_eur_kwh"] * volume_kwh_an, 2)
-            scenarios.append(
-                {
-                    "strategy": strategy_enum,
-                    "price_eur_per_kwh": pricing["price_eur_kwh"],
-                    "total_annual_eur": total,
-                    "risk_score": pricing["risk_score"],
-                    "p10_eur": round(pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2),
-                    "p90_eur": round(pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2),
-                    "ref_price": ref_price,
-                    "ref_price_source": price_source,
-                    "breakdown": pricing["breakdown"],
-                    "methodology": pricing["methodology"],
-                }
-            )
+            price_kwh = pricing["price_eur_kwh"] + green_premium_kwh
+            total = round(price_kwh * volume_kwh_an, 2)
+            scenario_dict = {
+                "strategy": strategy_enum,
+                "price_eur_per_kwh": round(price_kwh, 6),
+                "total_annual_eur": total,
+                "risk_score": pricing["risk_score"],
+                "p10_eur": round(pricing["p10_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                "p90_eur": round(pricing["p90_eur_mwh"] / 1000 * volume_kwh_an, 2),
+                "ref_price": ref_price,
+                "ref_price_source": price_source,
+                "breakdown": pricing["breakdown"],
+                "methodology": pricing["methodology"],
+            }
+            if green_premium_kwh > 0:
+                scenario_dict["green_premium_eur_mwh"] = GREEN_PREMIUM_EUR_MWH
+            scenarios.append(scenario_dict)
 
-    # Compute savings vs current (ref_price)
-    current_total = round(ref_price * volume_kwh_an, 2)
+    # Enrichir chaque scénario: savings, benchmark, badge, market context
+    benchmark_total = round(benchmark_price_kwh * volume_kwh_an, 2)
     for s in scenarios:
-        if current_total > 0:
-            s["savings_vs_current_pct"] = round((1 - s["total_annual_eur"] / current_total) * 100, 1)
+        if benchmark_total > 0:
+            s["savings_vs_current_pct"] = round((1 - s["total_annual_eur"] / benchmark_total) * 100, 1)
         else:
             s["savings_vs_current_pct"] = 0
-
-    # Attach market context to all scenarios
-    for s in scenarios:
+        s["benchmark_label"] = benchmark_label
+        s["benchmark_source"] = benchmark_source
+        s["explanation_text"] = STRATEGY_EXPLANATIONS.get(s["strategy"], "")
+        s["budget_badge"] = compute_budget_badge(s["total_annual_eur"], benchmark_total)
         s["market_context"] = market_ctx
 
     return scenarios

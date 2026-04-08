@@ -252,7 +252,8 @@ def _seed_power_readings(
 def _compute_power(archetype: str, ts: datetime, ps_max: float) -> float:
     """Puissance déterministe basée sur hash (reproductible)."""
     seed_str = f"{archetype}{ts.date()}{ts.hour}{ts.minute}"
-    noise = (int(hashlib.md5(seed_str.encode()).hexdigest()[:4], 16) / 65535) * 0.1
+    # ±15% de bruit déterministe (reproductible via hash)
+    noise = (int(hashlib.md5(seed_str.encode()).hexdigest()[:4], 16) / 65535) * 0.15
 
     hour = ts.hour
     is_weekend = ts.weekday() >= 5
@@ -272,12 +273,25 @@ def _compute_power(archetype: str, ts: datetime, ps_max: float) -> float:
         else:
             base = 0.12
     elif archetype == "HOTEL_HEBERGEMENT":
-        if 6 <= hour < 23:
-            base = 0.72 if is_summer else 0.70
-        elif hour < 3 or hour >= 23:
-            base = 0.35
+        # Profil hôtelier réaliste (spec D.1) :
+        # - Baseload ~40% de la PS
+        # - Peak (8h-20h) ~70% de la PS
+        # - Nuit (0h-6h) ~30% de la PS
+        # - Réduction weekend ~20%
+        weekend_factor = 0.80 if is_weekend else 1.0
+        if 0 <= hour < 6:
+            base = 0.30  # nuit profonde
+        elif 6 <= hour < 8:
+            base = 0.50  # montée en charge (petit-déj)
+        elif 8 <= hour < 20:
+            base = 0.70  # peak (journée, climatisation, services)
+        elif 20 <= hour < 23:
+            base = 0.55  # soirée, retour chambres
         else:
-            base = 0.45
+            base = 0.40  # baseload (23h-0h)
+        # Saisonnalité : +5% été (clim), -3% hiver
+        base += 0.05 if is_summer else -0.03
+        base *= weekend_factor
     elif archetype == "ENSEIGNEMENT":
         if is_weekend or ts.month in (7, 8):
             base = 0.05
@@ -299,7 +313,7 @@ def _compute_power(archetype: str, ts: datetime, ps_max: float) -> float:
     else:
         base = 0.30
 
-    return min(ps_max * 0.95, max(ps_max * 0.03, ps_max * (base + noise - 0.05)))
+    return min(ps_max * 0.95, max(ps_max * 0.03, ps_max * (base + noise - 0.075)))
 
 
 def _classify_tariff_period(ts: datetime) -> str:

@@ -3,6 +3,7 @@
  * Page dédiée Loi APER : sites éligibles, estimation production PV, timeline.
  */
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sun, MapPin, Calendar, Zap, Leaf, Euro, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -59,6 +60,7 @@ function DeadlineBadge({ deadline }) {
 export default function AperPage() {
   const { isExpert } = useExpertMode();
   const { sitesLoading } = useScope();
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -246,8 +248,14 @@ export default function AperPage() {
           <Sun className="w-10 h-10 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Aucun site éligible détecté</p>
           <p className="text-xs text-gray-400 mt-1">
-            Complétez les surfaces parking/toiture dans la fiche site
+            Complétez les surfaces parking/toiture dans la fiche site pour activer l'analyse APER.
           </p>
+          <button
+            onClick={() => navigate('/patrimoine')}
+            className="mt-3 text-sm bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 transition-colors"
+          >
+            Compléter le patrimoine
+          </button>
         </div>
       )}
 

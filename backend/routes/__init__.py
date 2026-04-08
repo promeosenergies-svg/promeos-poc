@@ -59,6 +59,9 @@ from .enedis import router as enedis_router
 from .site_intelligence import router as site_intelligence_router
 from .power import router as power_router
 from .flex_score import router as flex_score_router
+from .dataconnect_route import router as dataconnect_router
+from .grdf_route import router as grdf_router
+from .bridge_route import router as bridge_router
 
 __all__ = [
     "sites_router",
@@ -118,4 +121,7 @@ __all__ = [
     "site_intelligence_router",
     "power_router",
     "flex_score_router",
+    "dataconnect_router",
+    "grdf_router",
+    "bridge_router",
 ]

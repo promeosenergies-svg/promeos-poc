@@ -22,6 +22,10 @@ import {
   Lightbulb,
   ChevronDown,
   Eye,
+  Building2,
+  Gauge,
+  FileCheck,
+  FileDown,
 } from 'lucide-react';
 import { Badge, Button, EmptyState, EvidenceDrawer as GenericEvidenceDrawer } from '../ui';
 import ErrorState from '../ui/ErrorState';
@@ -51,6 +55,10 @@ import TunnelPanel from './consumption/TunnelPanel';
 import TargetsPanel from './consumption/TargetsPanel';
 import HPHCPanel from './consumption/HPHCPanel';
 import GasPanel from './consumption/GasPanel';
+import HierarchyPanel from './consumption/HierarchyPanel';
+import CDCViewerPanel from './consumption/CDCViewerPanel';
+import DataQualityPanel from './consumption/DataQualityPanel';
+import { generateEmsReport } from '../services/api/ems';
 import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
 import { toConsoDiag, toMonitoring } from '../services/routes';
 
@@ -74,6 +82,9 @@ const TABS_ANALYSIS = [
 const TABS_SPECIALIST = [
   { key: 'hphc', label: 'HP/HC', icon: Clock, desc: 'Grille tarifaire' },
   { key: 'gas', label: 'Gaz', icon: Flame, desc: 'Beta' },
+  { key: 'hierarchy', label: 'Hiérarchie', icon: Building2, desc: 'Arbre Org → Site → Compteur' },
+  { key: 'cdc', label: 'CDC', icon: Gauge, desc: 'Courbe de charge' },
+  { key: 'data_quality', label: 'Qualité', icon: FileCheck, desc: 'Qualité des données' },
 ];
 
 // Flat list for backward compat (URL deep-linking, panel routing)
@@ -269,14 +280,18 @@ export default function ConsumptionExplorerPage() {
     const includeElec = energyType !== 'gas';
     const includeGas = energyType !== 'electricity';
     const elecCost = includeElec ? entries.reduce((s, h) => s + (h.total_cost_eur ?? 0), 0) : 0;
-    const gasCost = includeGas ? siteIds.reduce((s, sid) => s + (gasBySite[sid]?.total_cost_eur ?? 0), 0) : 0;
+    const gasCost = includeGas
+      ? siteIds.reduce((s, sid) => s + (gasBySite[sid]?.total_cost_eur ?? 0), 0)
+      : 0;
     const totalCost = elecCost + gasCost;
     if (!entries.length && !includeGas) return null;
     if (!entries.length && includeGas) {
       // No elec data loaded (or gas-only filter). Return gas cost if available,
       // otherwise null — suppressing the KPI tile is correct here since there's
       // no kWh denominator for derived metrics either.
-      return totalCost > 0 ? { total_kwh: null, total_cost_eur: totalCost, elec_cost_eur: 0 } : null;
+      return totalCost > 0
+        ? { total_kwh: null, total_cost_eur: totalCost, elec_cost_eur: 0 }
+        : null;
     }
     if (entries.length === 1 && !includeGas) return entries[0];
     return {
@@ -332,6 +347,9 @@ export default function ConsumptionExplorerPage() {
   // ── User-initiated period flag (issue #23) ────────────────────────────
   // Prevents auto-calibration from overwriting a period the user explicitly chose.
   const userPickedDaysRef = useRef(false);
+
+  // ── EMS Tier 1: selected meter for CDC viewer ─────────────────────────
+  const [selectedMeterId, setSelectedMeterId] = useState(null);
 
   // ── Portfolio mode (V12-A): all sites, aggregated view ────────────────
   const [isPortfolioMode, setIsPortfolioMode] = useState(false);
@@ -960,6 +978,64 @@ export default function ConsumptionExplorerPage() {
                     startDate={startDate}
                     endDate={endDate}
                   />
+                )}
+                {/* EMS Tier 1 — Hierarchy panel */}
+                {activeTab === 'hierarchy' && (
+                  <HierarchyPanel
+                    onSiteSelect={(id) => {
+                      setSiteIds([id]);
+                      switchTab('timeseries');
+                    }}
+                    onMeterSelect={(id) => {
+                      setSelectedMeterId(id);
+                      switchTab('cdc');
+                    }}
+                  />
+                )}
+                {/* EMS Tier 1 — CDC viewer */}
+                {activeTab === 'cdc' && (
+                  <CDCViewerPanel
+                    meterId={selectedMeterId}
+                    dateFrom={
+                      startDate || new Date(Date.now() - days * 86400000).toISOString().slice(0, 10)
+                    }
+                    dateTo={endDate || new Date().toISOString().slice(0, 10)}
+                  />
+                )}
+                {/* EMS Tier 1 — Data Quality panel */}
+                {activeTab === 'data_quality' && (
+                  <div className="space-y-3">
+                    <DataQualityPanel siteId={siteId} />
+                    {/* Bouton export PDF */}
+                    {siteId && (
+                      <div className="flex justify-end">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const from =
+                                startDate ||
+                                new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+                              const to = endDate || new Date().toISOString().slice(0, 10);
+                              const res = await generateEmsReport(siteId, from, to);
+                              const url = URL.createObjectURL(res.data);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `rapport_site_${siteId}.pdf`;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                              toast('Rapport PDF téléchargé', 'success');
+                            } catch {
+                              toast('Erreur génération rapport', 'error');
+                            }
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        >
+                          <FileDown size={16} />
+                          Exporter rapport PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </>

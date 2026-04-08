@@ -160,7 +160,7 @@ def get_executive_v2(
         (couverture_sites * 0.3 + (briques_ok / max(briques_total, 1)) * 0.4 + couverture_conso * 0.3) * 100
     )
 
-    # ── 7. Contrats ──
+    # ── 7. Contrats + alertes expiration (D.3) ──
     contrats_actifs = 0
     contrats_expiring_90j = 0
     sites_sans_contrat = 0
@@ -192,6 +192,12 @@ def get_executive_v2(
             .count()
         )
         sites_sans_contrat = total_sites - sites_with_contract
+
+        # D.3: Génération automatique d'alertes pour contrats expirant sous 90j
+        from services.contract_expiration_alerts import generate_contract_expiration_alerts
+
+        generate_contract_expiration_alerts(db, site_ids, horizon_days=90)
+        db.commit()
     except Exception as e:
         _logger.warning(f"Contracts query failed: {e}")
 

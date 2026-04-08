@@ -186,6 +186,8 @@ export default function WatchersPage() {
               icon={Eye}
               title="Aucun événement"
               text="Exécutez un watcher pour détecter les événements réglementaires."
+              ctaLabel="Lancer la veille"
+              onCta={() => watchers.length > 0 && handleRunWatcher(watchers[0].name)}
             />
           ) : (
             <Card>

@@ -170,8 +170,10 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
     ctx = DemoState.get_demo_context()
     org_id = ctx.get("org_id")
 
-    # Resolve org from DemoState only — NO fallback to avoid stale org after reset
+    # Resolve org from DemoState; fallback to single org in DB (CLI seed case)
     org = db.query(Organisation).filter(Organisation.id == org_id).first() if org_id else None
+    if not org:
+        org = db.query(Organisation).first()
 
     orch = SeedOrchestrator(db)
     counts = orch.status(org_id=org.id if org else None)

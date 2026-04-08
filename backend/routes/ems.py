@@ -1209,3 +1209,244 @@ def get_weather_hourly(
         "timezone": "UTC",
         "hours": hours,
     }
+
+
+# ===================================================================
+# Sprint E — EMS Tier 1 : Hierarchy, CDC, Data Quality, Reports
+# ===================================================================
+
+# ── Pydantic response models ──────────────────────────────────────────
+
+
+class MeterKpi(BaseModel):
+    id: int
+    name: str
+    meter_ref: str
+    energy_vector: Optional[str] = None
+    is_active: bool = True
+
+
+class SiteNode(BaseModel):
+    id: int
+    nom: str
+    type: Optional[str] = None
+    compliance_status: Optional[str] = None
+    annual_kwh: Optional[float] = None
+    dq_score: Optional[float] = None
+    meters: List[MeterKpi] = []
+
+
+class PortefeuilleNode(BaseModel):
+    id: int
+    nom: str
+    sites: List[SiteNode] = []
+
+
+class EmsHierarchyResponse(BaseModel):
+    org_id: int
+    org_name: Optional[str] = None
+    portefeuilles: List[PortefeuilleNode] = []
+
+
+class CdcDataPoint(BaseModel):
+    t: str
+    kw: Optional[float] = None
+    slot: Optional[str] = None
+    quality: Optional[str] = None
+
+
+class PuissanceSouscrite(BaseModel):
+    poste: str
+    kva: int
+
+
+class CdcResponse(BaseModel):
+    points: List[CdcDataPoint] = []
+    ps: dict = {}
+    meta: dict = {}
+
+
+class MeterQuality(BaseModel):
+    meter_id: int
+    meter_ref: Optional[str] = None
+    name: Optional[str] = None
+    last_reading: Optional[str] = None
+    delay_days: int = 0
+    gaps: int = 0
+    completeness_pct: float = 0
+    score: float = 0
+    status: str = "critical"
+
+
+class DataQualityResponse(BaseModel):
+    site_id: int
+    score_global: float = 0
+    status_global: str = "critical"
+    meters: List[MeterQuality] = []
+
+
+# ── GET /hierarchy ────────────────────────────────────────────────────
+
+
+@router.get("/hierarchy", response_model=EmsHierarchyResponse)
+def get_ems_hierarchy(
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Arbre hiérarchique Org → Portefeuille → Site → Meter.
+    Inclut score qualité données (rapide) et conso annuelle.
+    """
+    from models import Site, Meter, MonitoringSnapshot
+    from models.organisation import Organisation
+    from models.portefeuille import Portefeuille
+    from models.entite_juridique import EntiteJuridique
+
+    # Résoudre org_id (simplifié : header ou param ou première org)
+    effective_org_id = org_id
+    if not effective_org_id:
+        first_org = db.query(Organisation).filter(Organisation.actif == True).first()  # noqa: E712
+        if not first_org:
+            return EmsHierarchyResponse(org_id=0, org_name="Aucune", portefeuilles=[])
+        effective_org_id = first_org.id
+
+    org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
+    org_name = org.nom if org else "Inconnue"
+
+    # Charger portefeuilles via EntiteJuridique
+    portefeuilles = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+        .all()
+    )
+
+    pf_nodes = []
+    for pf in portefeuilles:
+        sites = db.query(Site).filter(Site.portefeuille_id == pf.id, Site.actif == True).all()  # noqa: E712
+        site_nodes = []
+        for s in sites:
+            meters = db.query(Meter).filter(Meter.site_id == s.id).all()
+            meter_kpis = [
+                MeterKpi(
+                    id=m.id,
+                    name=m.name,
+                    meter_ref=m.meter_id,
+                    energy_vector=m.energy_vector.value if m.energy_vector else None,
+                    is_active=m.is_active,
+                )
+                for m in meters
+            ]
+
+            # Score conformité simplifié
+            compliance_status = None
+            if s.statut_decret_tertiaire:
+                compliance_status = s.statut_decret_tertiaire.value
+
+            # Score qualité données (rapide: basé sur date_derniere_releve des compteurs)
+            dq_scores = []
+            for m in meters:
+                if m.date_derniere_releve:
+                    delay = max(
+                        0, (datetime.now(timezone.utc) - m.date_derniere_releve.replace(tzinfo=timezone.utc)).days
+                    )
+                    sc = max(0, min(100, 100 - max(0, delay - 2) * 10))
+                    dq_scores.append(sc)
+            dq_score = round(sum(dq_scores) / len(dq_scores), 1) if dq_scores else None
+
+            site_nodes.append(
+                SiteNode(
+                    id=s.id,
+                    nom=s.nom,
+                    type=s.type.value if s.type else None,
+                    compliance_status=compliance_status,
+                    annual_kwh=s.annual_kwh_total,
+                    dq_score=dq_score,
+                    meters=meter_kpis,
+                )
+            )
+
+        pf_nodes.append(PortefeuilleNode(id=pf.id, nom=pf.nom, sites=site_nodes))
+
+    return EmsHierarchyResponse(
+        org_id=effective_org_id,
+        org_name=org_name,
+        portefeuilles=pf_nodes,
+    )
+
+
+# ── GET /cdc/{meter_id} ──────────────────────────────────────────────
+
+
+@router.get("/cdc/{meter_id}", response_model=CdcResponse)
+def get_ems_cdc(
+    meter_id: int,
+    start: str = Query(..., description="Date début ISO (YYYY-MM-DD)"),
+    end: str = Query(..., description="Date fin ISO (YYYY-MM-DD)"),
+    granularity: str = Query("30min"),
+    db: Session = Depends(get_db),
+):
+    """Courbe de charge d'un compteur avec classification TURPE."""
+    from datetime import date as date_cls
+    from services.ems.cdc_service import query_cdc
+
+    date_from = date_cls.fromisoformat(start)
+    date_to = date_cls.fromisoformat(end)
+
+    result = query_cdc(db, meter_id, date_from, date_to, granularity)
+    if result.get("error"):
+        raise HTTPException(404, result["error"])
+    return result
+
+
+# ── GET /data-quality/{site_id} ───────────────────────────────────────
+
+
+@router.get("/data-quality/{site_id}", response_model=DataQualityResponse)
+def get_ems_data_quality(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """Score qualité données par compteur pour un site."""
+    from services.ems.data_quality_service import compute_data_quality
+
+    result = compute_data_quality(db, site_id)
+    return result
+
+
+# ── POST /reports/generate ────────────────────────────────────────────
+
+
+class ReportRequest(BaseModel):
+    site_id: int
+    period_start: str
+    period_end: str
+    format: str = "pdf"
+
+
+@router.post("/reports/generate")
+def generate_ems_report(
+    req: ReportRequest,
+    db: Session = Depends(get_db),
+):
+    """Génère un rapport PDF pour un site sur une période."""
+    from datetime import date as date_cls
+    from services.ems.report_service import generate_site_report
+    from fastapi.responses import StreamingResponse
+    import io
+
+    period_start = date_cls.fromisoformat(req.period_start)
+    period_end = date_cls.fromisoformat(req.period_end)
+
+    try:
+        pdf_bytes = generate_site_report(db, req.site_id, period_start, period_end)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="rapport_site_{req.site_id}_{req.period_start}_{req.period_end}.pdf"'
+        },
+    )

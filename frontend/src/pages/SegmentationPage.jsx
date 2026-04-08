@@ -176,7 +176,9 @@ export default function SegmentationPage() {
         <EmptyState
           icon={UserCheck}
           title="Aucune question disponible"
-          text="Le questionnaire de segmentation n'est pas encore configure."
+          text="Le questionnaire de segmentation n'est pas encore configuré. Lancez le seed démo pour générer les questions."
+          ctaLabel="Actualiser"
+          onCta={() => window.location.reload()}
         />
       ) : (
         <div className="space-y-4">

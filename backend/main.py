@@ -79,6 +79,9 @@ from routes import (
     site_intelligence_router,
     power_router,
     flex_score_router,
+    dataconnect_router,
+    grdf_router,
+    bridge_router,
 )
 
 # Import KB router
@@ -190,6 +193,9 @@ app.include_router(cockpit_v2_router)  # Cockpit Executive V2 (hero impact + san
 app.include_router(enedis_router)  # Enedis SGE Flux (ingestion API)
 app.include_router(site_intelligence_router)  # KB Site Intelligence (archetype, anomalies, recos)
 app.include_router(power_router)  # Power Intelligence (CDC, PS, facteur puissance)
+app.include_router(dataconnect_router)  # Sprint F: Enedis Data Connect OAuth2 (PKCE)
+app.include_router(grdf_router)  # Sprint F: GRDF ADICT (consommation gaz PCE)
+app.include_router(bridge_router)  # Sprint F: Staging Bridge (flux Enedis → MeterReading)
 
 # Run safe schema migrations (idempotent, no drop) — skip in pytest (tests create their own schema)
 from database import engine as _engine, run_migrations as _run_migrations
@@ -362,7 +368,7 @@ def root():
 
 
 # Health check
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def api_health():
     import logging, subprocess, datetime
     from sqlalchemy import text
@@ -448,4 +454,10 @@ def health_check():
 
 # Lancement du serveur
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=int(os.environ.get("PORT", 8001)), reload=True, log_level="info")
+    uvicorn.run(
+        "main:app",
+        host=os.environ.get("API_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", 8001)),
+        reload=True,
+        log_level="info",
+    )

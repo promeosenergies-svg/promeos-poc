@@ -159,7 +159,9 @@ describe('Audit guard — routes valides', () => {
   it('ROUTE_MODULE_MAP couvre toutes les routes du menu', () => {
     const mapRoutes = Object.keys(ROUTE_MODULE_MAP);
     for (const item of ALL_NAV_ITEMS) {
-      const found = mapRoutes.some((r) => item.to === r || item.to.startsWith(r + '/'));
+      // Strip query params for matching (e.g. /achat-energie?tab=assistant → /achat-energie)
+      const basePath = item.to.split('?')[0];
+      const found = mapRoutes.some((r) => basePath === r || basePath.startsWith(r + '/'));
       expect(found).toBe(true);
     }
   });

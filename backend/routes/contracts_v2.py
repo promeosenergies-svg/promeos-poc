@@ -26,6 +26,14 @@ from schemas.contract_v2_schemas import (
     TARIFF_OPTIONS_BY_SEGMENT,
     PRICING_GRID_BY_TARIFF,
     CONTRACT_DURATIONS,
+    # Reponses
+    CadreKpisResponse,
+    CadreResponse,
+    SuppliersResponse,
+    DeleteResponse,
+    EventResponse,
+    CoherenceCheckResponse,
+    ImportCsvResponse,
 )
 from services import contract_v2_service as svc
 
@@ -37,7 +45,7 @@ router = APIRouter(prefix="/api/contracts/v2", tags=["Contracts V2 – Cadre+Ann
 # ── Cadres ─────────────────────────────────────────────────────────────
 
 
-@router.get("/cadres")
+@router.get("/cadres", response_model=list[CadreResponse])
 def list_cadres(
     request: Request,
     status: Optional[str] = Query(None),
@@ -52,7 +60,7 @@ def list_cadres(
     return svc.list_cadres(db, org_id, status=status, energy_type=energy_type, supplier=supplier, search=search)
 
 
-@router.get("/cadres/kpis")
+@router.get("/cadres/kpis", response_model=CadreKpisResponse)
 def portfolio_kpis(
     request: Request,
     db: Session = Depends(get_db),
@@ -63,7 +71,7 @@ def portfolio_kpis(
     return svc.compute_portfolio_kpis(db, org_id)
 
 
-@router.get("/cadres/suppliers")
+@router.get("/cadres/suppliers", response_model=SuppliersResponse)
 def suppliers_list():
     """Referentiels fournisseurs, modeles de prix, options tarifaires."""
     return {
@@ -78,7 +86,7 @@ def suppliers_list():
     }
 
 
-@router.get("/cadres/{cadre_id}")
+@router.get("/cadres/{cadre_id}", response_model=CadreResponse)
 def get_cadre(
     cadre_id: int,
     db: Session = Depends(get_db),
@@ -90,16 +98,30 @@ def get_cadre(
     return result
 
 
-@router.post("/cadres", status_code=201)
+@router.post("/cadres", status_code=201, response_model=CadreResponse)
 def create_cadre(
     data: CadreCreateSchema,
     db: Session = Depends(get_db),
+    idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
 ):
-    """Cree contrat cadre + N annexes + pricing."""
+    """Cree contrat cadre + N annexes + pricing. Supporte idempotency_key."""
+    if idempotency_key:
+        from models.billing_models import EnergyContract
+
+        existing = (
+            db.query(EnergyContract)
+            .filter(
+                EnergyContract.reference_fournisseur == idempotency_key,
+                EnergyContract.is_cadre == True,  # noqa: E712
+            )
+            .first()
+        )
+        if existing:
+            return svc.get_cadre(db, existing.id)
     return svc.create_cadre(db, data)
 
 
-@router.patch("/cadres/{cadre_id}")
+@router.patch("/cadres/{cadre_id}", response_model=CadreResponse)
 def update_cadre(
     cadre_id: int,
     data: CadreUpdateSchema,
@@ -112,7 +134,7 @@ def update_cadre(
     return result
 
 
-@router.delete("/cadres/{cadre_id}")
+@router.delete("/cadres/{cadre_id}", response_model=DeleteResponse)
 def delete_cadre(
     cadre_id: int,
     db: Session = Depends(get_db),
@@ -127,7 +149,7 @@ def delete_cadre(
 # ── Annexes ────────────────────────────────────────────────────────────
 
 
-@router.get("/cadres/{cadre_id}/annexes/{annexe_id}")
+@router.get("/cadres/{cadre_id}/annexes/{annexe_id}")  # dict libre, structure variable
 def get_annexe(
     cadre_id: int,
     annexe_id: int,
@@ -145,15 +167,29 @@ def create_annexe(
     cadre_id: int,
     data: AnnexeCreateSchema,
     db: Session = Depends(get_db),
+    idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
 ):
-    """Ajouter annexe a un cadre existant."""
+    """Ajouter annexe a un cadre existant. Supporte idempotency_key."""
+    if idempotency_key:
+        from models.contract_v2_models import ContractAnnexe
+
+        existing = (
+            db.query(ContractAnnexe)
+            .filter(
+                ContractAnnexe.contrat_cadre_id == cadre_id,
+                ContractAnnexe.annexe_ref == idempotency_key,
+            )
+            .first()
+        )
+        if existing:
+            return svc.get_annexe(db, existing.id)
     result = svc.create_annexe(db, cadre_id, data)
     if not result:
         raise HTTPException(status_code=404, detail="Contrat cadre non trouve")
     return result
 
 
-@router.patch("/annexes/{annexe_id}")
+@router.patch("/annexes/{annexe_id}")  # dict libre
 def update_annexe(
     annexe_id: int,
     data: AnnexeUpdateSchema,
@@ -166,7 +202,7 @@ def update_annexe(
     return result
 
 
-@router.delete("/annexes/{annexe_id}")
+@router.delete("/annexes/{annexe_id}", response_model=DeleteResponse)
 def delete_annexe(
     annexe_id: int,
     db: Session = Depends(get_db),
@@ -181,7 +217,7 @@ def delete_annexe(
 # ── Events ─────────────────────────────────────────────────────────────
 
 
-@router.post("/cadres/{cadre_id}/events", status_code=201)
+@router.post("/cadres/{cadre_id}/events", status_code=201, response_model=EventResponse)
 def add_event(
     cadre_id: int,
     data: EventSchema,
@@ -217,7 +253,7 @@ def add_event(
 # ── Analyses ───────────────────────────────────────────────────────────
 
 
-@router.get("/cadres/{cadre_id}/coherence")
+@router.get("/cadres/{cadre_id}/coherence", response_model=CoherenceCheckResponse)
 def coherence_check(
     cadre_id: int,
     db: Session = Depends(get_db),
@@ -227,7 +263,7 @@ def coherence_check(
     return {"cadre_id": cadre_id, "rules": results, "total": len(results)}
 
 
-@router.get("/annexes/{annexe_id}/shadow-gap")
+@router.get("/annexes/{annexe_id}/shadow-gap")  # dict libre, structure variable
 def shadow_gap(
     annexe_id: int,
     db: Session = Depends(get_db),
@@ -239,7 +275,7 @@ def shadow_gap(
 # ── Import ─────────────────────────────────────────────────────────────
 
 
-@router.post("/import/csv")
+@router.post("/import/csv", response_model=ImportCsvResponse)
 async def import_csv(
     request: Request,
     file: UploadFile = File(...),

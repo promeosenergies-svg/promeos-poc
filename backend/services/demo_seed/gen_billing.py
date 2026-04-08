@@ -635,16 +635,23 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
             reference_fournisseur="TE-B2B-2025-087",
             auto_renew=False,
             notice_period_days=90,
-            offer_indexation=ContractIndexation.FIXE,
+            # D.2: pricing SPOT + TUNNEL (cap+floor) pour Nice
+            offer_indexation=ContractIndexation.SPOT,
+            price_granularity="horaire",
             contract_status=ContractStatus.ACTIVE,
             is_cadre=True,
             contract_type="UNIQUE",
             entite_juridique_id=ej_id,
             notice_period_months=3,
-            segment_enedis="C4",
+            segment_enedis="C3",
             annual_consumption_kwh=720_000.0,
-            price_revision_clause="CAP",
+            # Clause TUNNEL : cap + floor
+            price_revision_clause="TUNNEL",
             price_cap_eur_mwh=180.0,
+            price_floor_eur_mwh=80.0,
+            indexation_reference="EPEX_SPOT_FR",
+            indexation_spread_eur_mwh=5.0,
+            indexation_formula="SPOT+5",
         )
         db.add(cadre3)
         db.flush()

@@ -15,12 +15,24 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.flex_mini import compute_flex_mini
 from middleware.auth import get_optional_auth, AuthContext
+from schemas.flex_schemas import (
+    FlexAssetResponse,
+    FlexAssetListResponse,
+    FlexAssessmentResponse,
+    RegOppResponse,
+    RegOppListResponse,
+    TariffWindowListResponse,
+    TariffWindowCreateResponse,
+    BacsSyncResponse,
+    FlexPrioritizationResponse,
+    FlexPortfolioResponse,
+)
 
 # --- Original router: /api/sites prefix (flex mini) ---
 router = APIRouter(prefix="/api/sites", tags=["Flex Mini"])
 
 
-@router.get("/{site_id}/flex/mini")
+@router.get("/{site_id}/flex/mini")  # dict libre, structure variable
 def flex_mini(
     site_id: int,
     start: Optional[str] = Query(None, description="Period start (YYYY-MM-DD)"),
@@ -35,7 +47,7 @@ def flex_mini(
 flex_foundation_router = APIRouter(prefix="/api/flex", tags=["Flex Foundations"])
 
 
-@flex_foundation_router.get("/assets")
+@flex_foundation_router.get("/assets", response_model=FlexAssetListResponse)
 def list_flex_assets(
     site_id: Optional[int] = Query(None),
     asset_type: Optional[str] = Query(None),
@@ -53,10 +65,28 @@ def list_flex_assets(
     return {"total": len(assets), "assets": [_serialize_flex_asset(a) for a in assets]}
 
 
-@flex_foundation_router.post("/assets")
-def create_flex_asset(body: dict = Body(...), db: Session = Depends(get_db)):
-    """Create a flex asset."""
+@flex_foundation_router.post("/assets", response_model=FlexAssetResponse)
+def create_flex_asset(
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
+):
+    """Create a flex asset. Supporte idempotency_key."""
     from models.flex_models import FlexAsset
+
+    # Idempotence : retourne l'asset existant si meme cle
+    if idempotency_key:
+        existing = (
+            db.query(FlexAsset)
+            .filter(
+                FlexAsset.label == idempotency_key,
+                FlexAsset.site_id == body.get("site_id"),
+                FlexAsset.status == "active",
+            )
+            .first()
+        )
+        if existing:
+            return _serialize_flex_asset(existing)
 
     # Validate confidence rule
     if body.get("confidence") == "high" and not body.get("data_source"):
@@ -83,7 +113,7 @@ def create_flex_asset(body: dict = Body(...), db: Session = Depends(get_db)):
     return _serialize_flex_asset(asset)
 
 
-@flex_foundation_router.patch("/assets/{asset_id}")
+@flex_foundation_router.patch("/assets/{asset_id}", response_model=FlexAssetResponse)
 def update_flex_asset(asset_id: int, body: dict = Body(...), db: Session = Depends(get_db)):
     """Update a flex asset."""
     from models.flex_models import FlexAsset
@@ -111,10 +141,29 @@ def update_flex_asset(asset_id: int, body: dict = Body(...), db: Session = Depen
     return _serialize_flex_asset(asset)
 
 
-@flex_foundation_router.post("/assets/sync-from-bacs")
-def sync_bacs(body: dict = Body(...), db: Session = Depends(get_db)):
-    """Sync CVC systems from BACS to FlexAsset inventory."""
+@flex_foundation_router.post("/assets/sync-from-bacs", response_model=BacsSyncResponse)
+def sync_bacs(
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Query(None, description="Cle d'idempotence"),
+):
+    """Sync CVC systems from BACS to FlexAsset inventory. Supporte idempotency_key."""
     from services.flex_assessment_service import sync_bacs_to_flex_assets
+
+    # Idempotence simple : si la cle est fournie, on verifie qu'un sync recent existe
+    if idempotency_key:
+        from models.flex_models import FlexAsset
+
+        recent = (
+            db.query(FlexAsset)
+            .filter(
+                FlexAsset.site_id == body["site_id"],
+                FlexAsset.data_source == "bacs_sync",
+            )
+            .first()
+        )
+        if recent:
+            return {"created": 0, "updated": 0, "skipped": 0, "errors": []}
 
     site_id = body["site_id"]
     result = sync_bacs_to_flex_assets(db, site_id)
@@ -122,7 +171,7 @@ def sync_bacs(body: dict = Body(...), db: Session = Depends(get_db)):
     return result
 
 
-@flex_foundation_router.get("/assessment")
+@flex_foundation_router.get("/assessment", response_model=FlexAssessmentResponse)
 def get_flex_assessment(site_id: int = Query(...), db: Session = Depends(get_db)):
     """Get flex assessment for a site (asset-based or heuristic fallback)."""
     from services.flex_assessment_service import compute_flex_assessment
@@ -130,7 +179,7 @@ def get_flex_assessment(site_id: int = Query(...), db: Session = Depends(get_db)
     return compute_flex_assessment(db, site_id)
 
 
-@flex_foundation_router.get("/regulatory-opportunities")
+@flex_foundation_router.get("/regulatory-opportunities", response_model=RegOppListResponse)
 def list_regulatory_opportunities(
     site_id: Optional[int] = Query(None),
     regulation: Optional[str] = Query(None),
@@ -148,7 +197,7 @@ def list_regulatory_opportunities(
     return {"total": len(items), "opportunities": [_serialize_reg_opp(o) for o in items]}
 
 
-@flex_foundation_router.post("/regulatory-opportunities")
+@flex_foundation_router.post("/regulatory-opportunities", response_model=RegOppResponse)
 def create_regulatory_opportunity(body: dict = Body(...), db: Session = Depends(get_db)):
     """Create a regulatory opportunity for a site."""
     from datetime import datetime
@@ -215,7 +264,7 @@ def create_regulatory_opportunity(body: dict = Body(...), db: Session = Depends(
     return _serialize_reg_opp(opp)
 
 
-@flex_foundation_router.get("/tariff-windows")
+@flex_foundation_router.get("/tariff-windows", response_model=TariffWindowListResponse)
 def list_tariff_windows(
     segment: Optional[str] = Query(None),
     season: Optional[str] = Query(None),
@@ -251,7 +300,7 @@ def list_tariff_windows(
     }
 
 
-@flex_foundation_router.post("/tariff-windows")
+@flex_foundation_router.post("/tariff-windows", response_model=TariffWindowCreateResponse)
 def create_tariff_window(body: dict = Body(...), db: Session = Depends(get_db)):
     """Create a tariff window."""
     import json
@@ -298,7 +347,7 @@ def create_tariff_window(body: dict = Body(...), db: Session = Depends(get_db)):
     return {"id": w.id, "name": w.name, "period_type": w.period_type}
 
 
-@flex_foundation_router.get("/portfolios/{portfolio_id}/flex-prioritization")
+@flex_foundation_router.get("/portfolios/{portfolio_id}/flex-prioritization", response_model=FlexPrioritizationResponse)
 def flex_prioritization(
     portfolio_id: int,
     request: Request,
@@ -353,7 +402,7 @@ def flex_prioritization(
     }
 
 
-@flex_foundation_router.get("/portfolio")
+@flex_foundation_router.get("/portfolio", response_model=FlexPortfolioResponse)
 def flex_portfolio(
     request: Request,
     auth: Optional[AuthContext] = Depends(get_optional_auth),

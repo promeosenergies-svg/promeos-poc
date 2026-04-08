@@ -474,3 +474,6 @@ export const getSiteIntelligence = (siteId) =>
   api.get(`/sites/${siteId}/intelligence`).then((r) => r.data);
 export const getTopRecommendation = (siteId) =>
   api.get(`/sites/${siteId}/top-recommendation`).then((r) => r.data);
+
+// ── EMS Tier 1 — re-exports ──
+export { getEmsHierarchy, getEmsCdc, getEmsDataQuality, generateEmsReport } from './ems';
