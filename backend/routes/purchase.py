@@ -1290,7 +1290,9 @@ def reconcile_endpoint(
 
 
 @router.post("/perimeter/validate")
-def validate_purchase_perimeter_endpoint(body: ContractPerimeter, db: Session = Depends(get_db)):
+def validate_purchase_perimeter_endpoint(
+    body: ContractPerimeter, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """Validate purchase perimeter consistency with billing."""
     from services.purchase_perimeter import validate_purchase_perimeter
 
@@ -1304,6 +1306,7 @@ def validate_purchase_perimeter_endpoint(body: ContractPerimeter, db: Session = 
 def api_cdc_simulation(
     site_id: int,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Simule les stratégies d'achat avec la CDC réelle du site."""
     from services.cdc_contract_simulator import simulate_contract_strategies
