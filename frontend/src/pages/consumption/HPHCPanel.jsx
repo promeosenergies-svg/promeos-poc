@@ -1,9 +1,10 @@
 /**
  * PROMEOS — HPHCPanel (extracted from ConsumptionExplorerPage)
  * HP/HC breakdown: ratio bar, KPI grid, opportunity card, 7x24 heatmap, schedule windows.
+ * V2: Support saisonnalisé (HPH/HCH/HPB/HCB) + reprog HC badge.
  */
 import { useState, useCallback, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Sun, Snowflake } from 'lucide-react';
 import { Card, CardBody, Badge, EmptyState, TrustBadge } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { track } from '../../services/tracker';
@@ -11,6 +12,15 @@ import { getHPHCBreakdownV2, getActiveTOUSchedule } from '../../services/api';
 import HeatmapChart from './HeatmapChart';
 import { fmtKwh, fmtEur } from '../../utils/format';
 import { CONFIDENCE_BADGE } from './constants';
+
+const PERIOD_COLORS = {
+  HP: 'bg-red-100 text-red-700',
+  HC: 'bg-blue-100 text-blue-700',
+  HPH: 'bg-red-200 text-red-800',
+  HCH: 'bg-blue-200 text-blue-800',
+  HPB: 'bg-orange-100 text-orange-700',
+  HCB: 'bg-cyan-100 text-cyan-700',
+};
 
 export default function HPHCPanel({
   siteId,
@@ -83,6 +93,7 @@ export default function HPHCPanel({
                   Calendrier : {breakdown.calendar_name || schedule?.name || 'Par défaut'}
                 </span>
                 {schedule?.source && <Badge variant="info">{schedule.source}</Badge>}
+                {schedule?.is_seasonal && <Badge variant="warning">Saisonnalisé</Badge>}
               </div>
               <div className="w-full h-8 rounded-full overflow-hidden flex">
                 <div
@@ -171,41 +182,29 @@ export default function HPHCPanel({
             </Card>
           )}
 
-          {/* Schedule windows */}
+          {/* Schedule windows — hiver + été si saisonnalisé */}
           {schedule?.windows?.length > 0 && (
             <Card>
               <CardBody>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Plages horaires</h4>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-3 py-1.5">Jours</th>
-                      <th className="text-left px-3 py-1.5">Début</th>
-                      <th className="text-left px-3 py-1.5">Fin</th>
-                      <th className="text-left px-3 py-1.5">Période</th>
-                      <th className="text-right px-3 py-1.5">Prix</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {schedule.windows.map((w, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="px-3 py-1.5">{(w.day_types || []).join(', ')}</td>
-                        <td className="px-3 py-1.5">{w.start}</td>
-                        <td className="px-3 py-1.5">{w.end}</td>
-                        <td className="px-3 py-1.5">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium ${w.period === 'HP' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}
-                          >
-                            {w.period}
-                          </span>
-                        </td>
-                        <td className="px-3 py-1.5 text-right">
-                          {w.price_eur_kwh ? `${w.price_eur_kwh} €` : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-sm font-semibold text-gray-700">Plages horaires</h4>
+                  {schedule.is_seasonal && (
+                    <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <Snowflake size={12} /> Hiver (nov-mars)
+                    </span>
+                  )}
+                </div>
+                <ScheduleTable windows={schedule.windows} />
+
+                {schedule.is_seasonal && schedule.windows_ete?.length > 0 && (
+                  <div className="mt-4">
+                    <div className="flex items-center gap-1 mb-2">
+                      <Sun size={12} className="text-orange-500" />
+                      <span className="text-xs font-medium text-gray-500">Été (avr-oct)</span>
+                    </div>
+                    <ScheduleTable windows={schedule.windows_ete} />
+                  </div>
+                )}
               </CardBody>
             </Card>
           )}
@@ -218,5 +217,40 @@ export default function HPHCPanel({
         />
       )}
     </div>
+  );
+}
+
+function ScheduleTable({ windows }) {
+  return (
+    <table className="w-full text-sm">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="text-left px-3 py-1.5">Jours</th>
+          <th className="text-left px-3 py-1.5">Début</th>
+          <th className="text-left px-3 py-1.5">Fin</th>
+          <th className="text-left px-3 py-1.5">Période</th>
+          <th className="text-right px-3 py-1.5">Prix</th>
+        </tr>
+      </thead>
+      <tbody>
+        {windows.map((w, i) => (
+          <tr key={i} className="border-t">
+            <td className="px-3 py-1.5">{(w.day_types || []).join(', ')}</td>
+            <td className="px-3 py-1.5">{w.start}</td>
+            <td className="px-3 py-1.5">{w.end}</td>
+            <td className="px-3 py-1.5">
+              <span
+                className={`px-2 py-0.5 rounded text-xs font-medium ${PERIOD_COLORS[w.period] || 'bg-gray-100 text-gray-700'}`}
+              >
+                {w.period}
+              </span>
+            </td>
+            <td className="px-3 py-1.5 text-right">
+              {w.price_eur_kwh ? `${w.price_eur_kwh} €` : '—'}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
