@@ -110,7 +110,7 @@ class BenchmarkSite(BaseModel):
     surface_m2: float = 0
     conso_kwh_an: float = 0
     ipe_kwh_m2_an: Optional[float] = None
-    benchmark: Optional[dict[str, float]] = None
+    benchmark: Optional[dict[str, Any]] = None
     position: Optional[str] = None
 
 
@@ -135,12 +135,19 @@ class TrajectoryPoint(BaseModel):
 class TrajectoryResponse(BaseModel):
     """GET /api/cockpit/trajectory."""
 
-    org_id: int
+    org_id: Optional[int] = None
     reference_year: Optional[int] = None
     reference_kwh_m2: Optional[float] = None
     trajectory: list[TrajectoryPoint] = Field(default_factory=list)
     surface_m2_total: float = 0
     computed_at: Optional[str] = None
+    # Error case (no targets)
+    error: Optional[str] = None
+    annees: Optional[list] = None
+    reel_mwh: Optional[list] = None
+    objectif_mwh: Optional[list] = None
+    projection_mwh: Optional[list] = None
+    jalons: Optional[list[dict[str, Any]]] = None
 
 
 # ─── Conso Month ───────────────────────────────────────────────────────────
