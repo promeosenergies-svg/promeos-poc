@@ -1,5 +1,5 @@
 """
-PROMEOS — ParameterStore (billing refactor V112)
+PROMEOS — ParameterStore
 
 Source unique de vérité pour tous les paramètres réglementés du moteur
 shadow billing : TURPE, ATRD, ATRT, accises, CTA, CEE, TVA.
@@ -360,17 +360,15 @@ class ParameterStore:
             at_date = at_date.date()
         scope = scope or {}
 
-        # 1. DB
         db_res = self._resolve_from_db(code, at_date, scope)
         if db_res is not None:
             return db_res
 
-        # 2. YAML
         yaml_res = self._resolve_from_yaml(code, at_date, scope)
         if yaml_res is not None:
             return yaml_res
 
-        # 3. Missing — trace explicite, pas de hardcode silencieux
+        # Trace explicite du trou, pas de hardcode silencieux
         logger.warning(
             "ParameterStore: aucune valeur pour code=%s at=%s scope=%s",
             code,
