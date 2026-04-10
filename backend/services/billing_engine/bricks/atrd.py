@@ -82,11 +82,26 @@ class AtrdResult:
         }
 
 
+_VALID_OPTIONS = ("T1", "T2", "T3", "T4", "TP")
+_CAPACITY_OPTIONS = ("T4", "TP")
+
+
 def _prorata_year(period_days: int, basis_days: int = 365) -> float:
     """Fraction annuelle pour proratiser un terme annuel."""
     if period_days <= 0:
         return 0.0
     return period_days / basis_days
+
+
+def _resolved_value(resolution: ParameterResolution) -> float:
+    """Valeur d'une résolution, ou 0.0 si le paramètre est manquant."""
+    return 0.0 if resolution.source == "missing" else resolution.value
+
+
+def _normalize_option(option: Optional[str]) -> str:
+    """Normalise une option ATRD ; fallback T2 si invalide (résidentiel chauffage)."""
+    opt = (option or "").upper()
+    return opt if opt in _VALID_OPTIONS else "T2"
 
 
 def compute_atrd(
@@ -115,32 +130,37 @@ def compute_atrd(
     if at_date is None:
         at_date = date.today()
 
-    opt_upper = option.upper() if option else "T2"
-    if opt_upper not in ("T1", "T2", "T3", "T4", "TP"):
-        opt_upper = "T2"  # fallback prudent sur T2 (résidentiel chauffage)
+    opt_upper = _normalize_option(option)
 
-    code_abo = f"ATRD_GAZ_{opt_upper}_ABO"
-    code_prop = f"ATRD_GAZ_{opt_upper}_PROP"
+    resolution_abo = store.get(f"ATRD_GAZ_{opt_upper}_ABO", at_date=at_date)
+    resolution_prop = store.get(f"ATRD_GAZ_{opt_upper}_PROP", at_date=at_date)
+    abo_eur_an = _resolved_value(resolution_abo)
+    prop_eur_mwh = _resolved_value(resolution_prop)
 
-    resolution_abo = store.get(code_abo, at_date=at_date)
-    resolution_prop = store.get(code_prop, at_date=at_date)
-
-    abo_eur_an = resolution_abo.value if resolution_abo.source != "missing" else 0.0
-    prop_eur_mwh = resolution_prop.value if resolution_prop.source != "missing" else 0.0
-
-    # Calcul terme capacité (T4 / TP uniquement)
-    capa_eur_mwh_j_an = 0.0
+    # Terme capacité journalière : T4 / TP uniquement.
+    # T4 a une grille MARGINALE à deux tranches :
+    #   capa_cost = min(cja, 500) × capa_<500 + max(cja - 500, 0) × capa_>=500
+    # TP a une tranche unique.
     resolution_capa: Optional[ParameterResolution] = None
-    if opt_upper in ("T4", "TP"):
-        code_capa = f"ATRD_GAZ_{opt_upper}_CAPA"
-        resolution_capa = store.get(code_capa, at_date=at_date)
-        if resolution_capa.source != "missing":
-            capa_eur_mwh_j_an = resolution_capa.value
+    capa_eur_mwh_j_an = 0.0
+    capa_eur_mwh_j_an_gte_500 = 0.0
+    if opt_upper in _CAPACITY_OPTIONS:
+        resolution_capa = store.get(f"ATRD_GAZ_{opt_upper}_CAPA", at_date=at_date)
+        capa_eur_mwh_j_an = _resolved_value(resolution_capa)
+        if opt_upper == "T4":
+            capa_eur_mwh_j_an_gte_500 = _resolved_value(store.get("ATRD_GAZ_T4_CAPA_GTE500", at_date=at_date))
 
     prorata = _prorata_year(period_days)
+    cja_pos = max(cja_mwh_per_day, 0.0)
     abonnement_ht = abo_eur_an * prorata
     proportionnel_ht = max(energy_mwh, 0.0) * prop_eur_mwh
-    capacite_ht = max(cja_mwh_per_day, 0.0) * capa_eur_mwh_j_an * prorata
+
+    if opt_upper == "T4" and capa_eur_mwh_j_an_gte_500 > 0 and cja_pos > 500:
+        cja_lt_500 = 500.0
+        cja_gte_500 = cja_pos - 500.0
+        capacite_ht = (cja_lt_500 * capa_eur_mwh_j_an + cja_gte_500 * capa_eur_mwh_j_an_gte_500) * prorata
+    else:
+        capacite_ht = cja_pos * capa_eur_mwh_j_an * prorata
 
     amount_ht = abonnement_ht + proportionnel_ht + capacite_ht
 
