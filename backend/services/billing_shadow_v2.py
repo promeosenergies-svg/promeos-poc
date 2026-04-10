@@ -206,9 +206,9 @@ def _safe_rate(code: str, at_date=None, db=None) -> float:
     """
     # 1. ParameterStore — versioning par date d'effet (V112)
     try:
-        from services.billing_engine.parameter_store import ParameterStore
+        from services.billing_engine.parameter_store import ParameterStore, default_store
 
-        store = ParameterStore(db=db)
+        store = default_store() if db is None else ParameterStore(db=db)
         res = store.get(code, at_date=at_date)
         if res.source in ("db", "yaml"):
             return res.value
@@ -704,7 +704,7 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     """
     from config.tarif_loader import get_tarif_version
     from services.billing_engine.bricks.cta import compute_cta
-    from services.billing_engine.parameter_store import ParameterStore
+    from services.billing_engine.parameter_store import ParameterStore, default_store
 
     # Résoudre contrat si non fourni
     if contract is None and invoice.contract_id:
@@ -754,7 +754,7 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     # Assiette = part fixe annuelle (TURPE gestion mensuel × 12 pour élec).
     # Le prorata sur 365 jours est appliqué dans compute_cta.
     _at_date = p_start or date.today()
-    _cta_store = ParameterStore(db=db)
+    _cta_store = default_store() if db is None else ParameterStore(db=db)
     _cta_annual_fixed = (turpe_gestion * 12.0) if is_elec else 0.0
     _cta_result = compute_cta(
         store=_cta_store,
