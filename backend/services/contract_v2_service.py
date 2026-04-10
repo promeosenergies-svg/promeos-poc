@@ -606,7 +606,7 @@ def compute_cadre_kpis(db: Session, cadre: EnergyContract) -> Dict[str, Any]:
 
     # Fallback: si pas de pricing lines, utiliser annual_consumption_kwh du cadre
     if not total_vol and cadre.annual_consumption_kwh:
-        total_vol = cadre.annual_consumption_kwh
+        total_vol = float(cadre.annual_consumption_kwh)
 
     days_to_expiry = (cadre.end_date - date.today()).days if cadre.end_date else None
 
@@ -1009,7 +1009,9 @@ def _serialize_v2_cadre(c: ContratCadre) -> Dict[str, Any]:
 def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     """Serialize cadre + stats."""
     annexes = [a for a in c.annexes if a.deleted_at is None]
-    total_vol = sum((a.volume_commitment.annual_kwh / 1000 if a.volume_commitment else 0) for a in annexes)
+    total_vol = sum(
+        (float(a.volume_commitment.annual_kwh) / 1000 if a.volume_commitment else 0) for a in annexes
+    )
 
     # Prix moyen pondere (meme formule que compute_cadre_kpis)
     # Cast Decimal → float: unit_price_eur_kwh is Numeric(18,6), PERIOD_WEIGHTS floats
@@ -1025,7 +1027,7 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
 
     # Fallback volume
     if not total_vol and c.annual_consumption_kwh:
-        total_vol = c.annual_consumption_kwh / 1000
+        total_vol = float(c.annual_consumption_kwh) / 1000
 
     days_to_expiry = (c.end_date - date.today()).days if c.end_date else None
     status_val = c.contract_status.value if c.contract_status else compute_status(c).value
