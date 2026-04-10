@@ -3,7 +3,7 @@
  * Arbre hiérarchique Org → Portefeuille → Site → Meter
  * avec badges conformité, conso annuelle et qualité données.
  */
-import { useState, useEffect, _useCallback } from 'react';
+import { useState, useEffect, useCallback as _useCallback } from 'react';
 import {
   ChevronRight,
   ChevronDown,

@@ -53,7 +53,7 @@ import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import {
-  _getPatrimoineAnomalies,
+  getPatrimoineAnomalies as _getPatrimoineAnomalies,
   getPatrimoineAnomaliesBatch,
   getPortfolioReconciliation,
   patrimoineSiteMeters as _patrimoineSiteMeters,
@@ -74,7 +74,11 @@ import {
   fmtDateFR,
   pl,
 } from '../utils/format';
-import { _RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
+import {
+  RISK_THRESHOLDS as _RISK_THRESHOLDS,
+  ANOMALY_THRESHOLDS,
+  getStatusBadgeProps,
+} from '../lib/constants';
 import { RiskBadge, getSiteRisk } from '../lib/risk/normalizeRisk';
 import DataQualityBadge from '../components/DataQualityBadge';
 import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';

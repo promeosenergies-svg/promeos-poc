@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { getBenchmark, getIntensityRatio, _OID_BENCHMARKS } from '../benchmarks';
+import { getBenchmark, getIntensityRatio, OID_BENCHMARKS as _OID_BENCHMARKS } from '../benchmarks';
 
 describe('OID Benchmarks — ADEME 2024', () => {
   test('bureau retourne 210 (ADEME ODP 2024)', () => {

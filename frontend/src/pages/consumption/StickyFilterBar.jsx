@@ -56,7 +56,7 @@ import {
 import {
   computeGranularity,
   colorForSite,
-  _getAvailableGranularities,
+  getAvailableGranularities as _getAvailableGranularities,
   granularityPills,
 } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';

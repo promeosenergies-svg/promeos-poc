@@ -17,7 +17,6 @@ import {
   Zap,
   Search,
   Building2,
-  _Play,
   SkipForward,
   RefreshCw,
   CheckCircle2,

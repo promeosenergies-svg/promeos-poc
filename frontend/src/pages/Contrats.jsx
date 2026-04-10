@@ -4,10 +4,9 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FileText, Download, Plus, Search } from 'lucide-react';
-import { PageShell, _Badge, Button, EmptyState, ErrorState } from '../ui';
+import { PageShell, Badge as _Badge, Button, EmptyState, ErrorState } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
 import { listCadres, getCadreKpis } from '../services/api';
-import { useScope } from '../contexts/ScopeContext';
 
 import ContractKpiStrip from '../components/contracts/ContractKpiStrip';
 import ContractCadrePanel from '../components/contracts/ContractCadrePanel';
@@ -42,7 +41,6 @@ const PRICING_PILLS = {
 };
 
 export default function Contrats() {
-  const { _org } = useScope();
   const [cadres, setCadres] = useState([]);
   const [kpis, setKpis] = useState({});
   const [loading, setLoading] = useState(true);

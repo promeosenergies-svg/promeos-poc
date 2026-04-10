@@ -29,7 +29,7 @@ import {
   ScopeSummary,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { _toActionsList } from '../services/routes';
+import { toActionsList as _toActionsList } from '../services/routes';
 import {
   getComplianceBundle,
   getActionsSummary,
@@ -54,7 +54,6 @@ import _EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
-  _AreaChart,
   Area,
   BarChart,
   Bar,

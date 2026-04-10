@@ -23,7 +23,7 @@ import {
   Calendar,
   Info as InfoIcon,
 } from 'lucide-react';
-import { Button, _Modal, Combobox } from '../../ui';
+import { Button, Modal as _Modal, Combobox } from '../../ui';
 import { getSuppliers, createCadre, importCsv } from '../../services/api';
 import { useScope } from '../../contexts/ScopeContext';
 

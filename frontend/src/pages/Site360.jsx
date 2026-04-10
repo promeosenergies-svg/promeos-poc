@@ -8,16 +8,13 @@ import {
   ArrowLeft,
   ShieldCheck,
   Zap,
-  _BadgeEuro,
   AlertTriangle,
   MapPin,
-  _Ruler,
   BookOpen,
   ChevronDown,
   ChevronUp,
   Clock,
   ExternalLink,
-  _ClipboardCheck,
   CheckCircle,
   XCircle,
   Download,
@@ -80,7 +77,7 @@ import SegmentationQuestionnaireModal from '../components/SegmentationQuestionna
 import TabConsoSite from '../components/TabConsoSite';
 import TabPuissance from '../components/power/TabPuissance';
 import TabActionsSite from '../components/TabActionsSite';
-import { fmtNum, fmtEurFull, _fmtArea } from '../utils/format';
+import { fmtNum, fmtEurFull, fmtArea as _fmtArea } from '../utils/format';
 import { getBenchmark, getIntensityRatio } from '../utils/benchmarks';
 import { setActiveSite } from '../utils/activeSite';
 import DataQualityBadge from '../components/DataQualityBadge';
@@ -1653,7 +1650,7 @@ export default function Site360() {
   // Persist active site for contextual nav
   useEffect(() => {
     if (site?.id && site?.nom) setActiveSite(site);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id, site?.nom, site?.statut_conformite]);
 
   // Unified anomalies (patrimoine + KB) — single fetch, shared by MiniKpi + TabResume
@@ -1752,7 +1749,7 @@ export default function Site360() {
     return () => {
       stale = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 
   // Energy intensity — backend #146 (Yannick)

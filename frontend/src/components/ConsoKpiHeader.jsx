@@ -8,7 +8,7 @@
  * P1.1: confidence tooltip "Comment calcule ?", EUR source tooltip.
  */
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle, Building2 } from 'lucide-react';
-import { _TrustBadge } from '../ui';
+import { TrustBadge as _TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 import { fmtNum, fmtKwh } from '../utils/format';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -85,7 +85,9 @@ function TrendDelta({ deltaPct }) {
 
 /** Inline shimmer bar — matches the size of a KPI value */
 function KpiShimmer({ width = 'w-14' }) {
-  return <span className={`inline-block h-4 ${width} bg-gray-200 rounded animate-pulse align-middle`} />;
+  return (
+    <span className={`inline-block h-4 ${width} bg-gray-200 rounded animate-pulse align-middle`} />
+  );
 }
 
 export default function ConsoKpiHeader({
@@ -125,10 +127,10 @@ export default function ConsoKpiHeader({
 
   // --- EUR/m²/an (#144) ---
   // Annualize observed cost then divide by surface. Guard against null/zero surface.
-  const effectiveDays = (days != null && days > 0) ? days : null;
+  const effectiveDays = days != null && days > 0 ? days : null;
   const eurPerM2Year =
     totalEur != null && surfaceM2 > 0 && effectiveDays != null
-      ? Math.round(((totalEur / effectiveDays) * 365) / surfaceM2 * 100) / 100
+      ? Math.round((((totalEur / effectiveDays) * 365) / surfaceM2) * 100) / 100
       : null;
   const eurPerM2Label = eurPerM2Year != null ? fmtNum(eurPerM2Year, 1, '€/m²/an') : '—';
 
@@ -229,7 +231,9 @@ export default function ConsoKpiHeader({
         <Euro size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">Coût total</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && totalEur == null ? <KpiShimmer /> : eurLabel}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">
+            {loading && totalEur == null ? <KpiShimmer /> : eurLabel}
+          </span>
         </div>
       </div>
       <div
@@ -239,7 +243,9 @@ export default function ConsoKpiHeader({
         <TrendingUp size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">Prix moyen</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && eurMwh == null ? <KpiShimmer /> : eurMwhLabel}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">
+            {loading && eurMwh == null ? <KpiShimmer /> : eurMwhLabel}
+          </span>
         </div>
       </div>
       <div
@@ -249,7 +255,9 @@ export default function ConsoKpiHeader({
         <Building2 size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">EUR/m²/an</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && eurPerM2Year == null ? <KpiShimmer /> : eurPerM2Label}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">
+            {loading && eurPerM2Year == null ? <KpiShimmer /> : eurPerM2Label}
+          </span>
         </div>
       </div>
       <div
@@ -281,7 +289,9 @@ export default function ConsoKpiHeader({
         <Activity size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('p95_kw', isExpert)}</span>
-          <span className="font-semibold text-gray-700 whitespace-nowrap">{loading && p95 == null ? <KpiShimmer /> : p95Label}</span>
+          <span className="font-semibold text-gray-700 whitespace-nowrap">
+            {loading && p95 == null ? <KpiShimmer /> : p95Label}
+          </span>
         </div>
       </div>
       <div
@@ -291,7 +301,9 @@ export default function ConsoKpiHeader({
         <Moon size={14} className="text-gray-400 shrink-0" />
         <div className="flex flex-col">
           <span className="text-gray-400">{getKpiLabel('night_ratio', isExpert)}</span>
-          <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>{loading && basePct == null ? <KpiShimmer /> : basePctLabel}</span>
+          <span className={`font-semibold whitespace-nowrap ${basePctColor}`}>
+            {loading && basePct == null ? <KpiShimmer /> : basePctLabel}
+          </span>
         </div>
       </div>
       {confBadge && (

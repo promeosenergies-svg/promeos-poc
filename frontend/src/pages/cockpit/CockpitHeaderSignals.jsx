@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Zap, _Leaf, Bell } from 'lucide-react';
+import { Zap, Leaf as _Leaf, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCockpitSignals } from '../../hooks/useCockpitSignals';
 import { getFlexPrixSignal } from '../../services/api';

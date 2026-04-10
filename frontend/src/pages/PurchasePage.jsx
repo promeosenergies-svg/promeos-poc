@@ -50,7 +50,7 @@ import {
   seedWowDirty,
   getMarketContext,
 } from '../services/api';
-import { fmtKwh, fmtNum, _fmtEur, kwhUnit } from '../utils/format';
+import { fmtKwh, fmtNum, fmtEur as _fmtEur, kwhUnit } from '../utils/format';
 import MarketContextBanner from '../components/purchase/MarketContextBanner';
 import { TariffWindowsCard } from '../components/flex';
 import {

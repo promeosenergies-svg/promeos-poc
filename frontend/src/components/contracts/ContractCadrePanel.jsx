@@ -3,9 +3,17 @@
  * 6 sections: Shadow billing, Alertes, Info cadre, Grille tarifaire, Annexes, Events.
  */
 import { useState, useEffect } from 'react';
-import { X, AlertTriangle, ChevronRight, Plus, _RefreshCw, Edit2, _Trash2 } from 'lucide-react';
-import { _Badge, Button } from '../../ui';
-import { getCadre, _getCoherence } from '../../services/api';
+import {
+  X,
+  AlertTriangle,
+  ChevronRight,
+  Plus,
+  RefreshCw as _RefreshCw,
+  Edit2,
+  Trash2 as _Trash2,
+} from 'lucide-react';
+import { Badge as _Badge, Button } from '../../ui';
+import { getCadre, getCoherence as _getCoherence } from '../../services/api';
 
 const STATUS_CFG = {
   active: { cls: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500', label: 'Actif' },

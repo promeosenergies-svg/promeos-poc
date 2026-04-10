@@ -7,7 +7,7 @@
  * Tout calcul métier est fait backend (P0).
  */
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, _AlertTriangle } from 'lucide-react';
+import { HelpCircle, AlertTriangle as _AlertTriangle } from 'lucide-react';
 import { Skeleton, ErrorState } from '../../ui';
 import { fmtEur } from '../../utils/format';
 

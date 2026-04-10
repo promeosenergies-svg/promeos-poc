@@ -58,7 +58,7 @@ import {
   PERSONA_PROFILES,
   SCENARIO_PRESETS,
   DEFAULT_MARKET,
-  _BRIQUE3_VERSION,
+  BRIQUE3_VERSION as _BRIQUE3_VERSION,
   createDefaultWizardState,
   runEngine,
   clearEngineCache,
