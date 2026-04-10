@@ -20,14 +20,16 @@ from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import (
-    StagingStatus,
-    ImportSourceType,
-    QualityRuleSeverity,
     ActivationLogStatus,
-    DeliveryPointStatus,
+    AtrdOption,
     DeliveryPointEnergyType,
+    DeliveryPointStatus,
+    GasProfileGrdf,
     HcReprogPhase,
     HcReprogStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    StagingStatus,
     TariffSegmentEnum,
 )
 
@@ -243,6 +245,32 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         index=True,
         comment="Code GRD/GRT: ENEDIS, GRDF, ELD_STRASBOURG, RTE, etc.",
+    )
+    # Vague 2 — données techniques gaz (GRDF)
+    atrd_option = Column(
+        Enum(AtrdOption),
+        nullable=True,
+        comment="Option ATRD gaz (T1-T4 / TP) déterminée par CAR",
+    )
+    car_kwh = Column(
+        Float,
+        nullable=True,
+        comment="Consommation Annuelle de Référence en kWh (GRDF)",
+    )
+    gas_profile = Column(
+        Enum(GasProfileGrdf),
+        nullable=True,
+        comment="Profil GRDF: BASE, B0, B1, B2I, MODULANT",
+    )
+    cjn_mwh_per_day = Column(
+        Float,
+        nullable=True,
+        comment="Capacité Journalière Normalisée (MWh/j) — référence GRDF",
+    )
+    cja_mwh_per_day = Column(
+        Float,
+        nullable=True,
+        comment="Capacité Journalière Acheminement (MWh/j) — contractuelle T4",
     )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
     status = Column(

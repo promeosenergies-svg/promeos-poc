@@ -958,3 +958,37 @@ class NetworkCostModel(str, enum.Enum):
     FULL_PASS_THROUGH = "FULL_PASS_THROUGH"
     FLAT_UNIT_COST = "FLAT_UNIT_COST"
     MARGINATED = "MARGINATED"
+
+
+# ============================================================
+# Vague 2 data model — ATRD options + profil gaz GRDF
+# ============================================================
+
+
+class AtrdOption(str, enum.Enum):
+    """
+    Option tarifaire ATRD7 GRDF (distribution gaz).
+
+    Seuils CAR en MWh/an (grille ATRD7 au 1er juillet 2024) :
+    - T1 : 0 - 6 MWh/an      (petits consommateurs, cuisson)
+    - T2 : 6 - 300 MWh/an    (résidentiel chauffage, petits pros)
+    - T3 : 300 - 5000 MWh/an (tertiaire, PME)
+    - T4 : > 5000 MWh/an     (gros industriels — abonnement + capacité journalière)
+    - TP : tarif de proximité (industriels dédiés)
+    """
+
+    T1 = "T1"
+    T2 = "T2"
+    T3 = "T3"
+    T4 = "T4"
+    TP = "TP"
+
+
+class GasProfileGrdf(str, enum.Enum):
+    """Profil de consommation gaz GRDF (déterminé par usage + CAR)."""
+
+    BASE = "BASE"  # profil plat (usage industriel régulier)
+    B0 = "B0"  # cuisson uniquement (faible saisonnalité)
+    B1 = "B1"  # chauffage individuel résidentiel
+    B2I = "B2I"  # chauffage collectif ou tertiaire
+    MODULANT = "MODULANT"  # gros site avec courbe de charge
