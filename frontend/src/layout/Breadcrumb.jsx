@@ -7,7 +7,8 @@ import { useScope } from '../contexts/ScopeContext';
 // Auto-derive labels from NavRegistry (single source of truth)
 const LABELS = Object.fromEntries(
   ALL_NAV_ITEMS.map((item) => {
-    const segment = item.to.split('/').filter(Boolean).pop();
+    const basePath = item.to.split('?')[0].split('#')[0];
+    const segment = basePath.split('/').filter(Boolean).pop();
     return segment ? [segment, item.label] : null;
   }).filter(Boolean)
 );
