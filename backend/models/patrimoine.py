@@ -236,6 +236,14 @@ class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="elec (PRM) ou gaz (PCE)",
     )
+    # Vague 1 — gestionnaire de réseau (ENEDIS, GRDF, ELD_X, RTE...)
+    # Critique pour router vers la bonne grille TURPE/ATRD et pour l'audit trail.
+    grd_code = Column(
+        String(50),
+        nullable=True,
+        index=True,
+        comment="Code GRD/GRT: ENEDIS, GRDF, ELD_STRASBOURG, RTE, etc.",
+    )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
     status = Column(
         Enum(DeliveryPointStatus),

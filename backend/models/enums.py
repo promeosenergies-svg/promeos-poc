@@ -919,3 +919,42 @@ class ArticleSource(str, enum.Enum):
     RTE = "rte"
     LEGIFRANCE = "legifrance"
     MANUAL = "manual"
+
+
+# ============================================================
+# Vague 1 data model — TaxProfile + pass-through policies
+# ============================================================
+
+
+class AcciseCategoryElec(str, enum.Enum):
+    """Catégorie d'accise électricité par point de livraison (CIBS)."""
+
+    HOUSEHOLD = "HOUSEHOLD"  # ménages & assimilés
+    SME = "SME"  # PME / petites entreprises
+    HIGH_POWER = "HIGH_POWER"  # sites à haute puissance
+    REDUCED = "REDUCED"  # régime réduit (électro-intensif, double usage...)
+    EXEMPT = "EXEMPT"  # exonération totale
+
+
+class AcciseCategoryGaz(str, enum.Enum):
+    """Catégorie d'accise gaz naturel par point de livraison (CIBS)."""
+
+    NORMAL = "NORMAL"  # régime normal (tarif plein)
+    REDUCED = "REDUCED"  # régime réduit
+    EXEMPT = "EXEMPT"  # exonération (procédés industriels, double usage)
+
+
+class NetworkCostModel(str, enum.Enum):
+    """
+    Politique de refacturation des coûts d'acheminement par le fournisseur.
+
+    - INCLUDED : TURPE/ATRD inclus dans le prix de fourniture, non visible sur facture
+    - FULL_PASS_THROUGH : TURPE/ATRD refacturé au réel, ligne séparée
+    - FLAT_UNIT_COST : taux moyen €/MWh appliqué indépendamment de la grille réelle
+    - MARGINATED : passthrough + marge fournisseur
+    """
+
+    INCLUDED = "INCLUDED"
+    FULL_PASS_THROUGH = "FULL_PASS_THROUGH"
+    FLAT_UNIT_COST = "FLAT_UNIT_COST"
+    MARGINATED = "MARGINATED"

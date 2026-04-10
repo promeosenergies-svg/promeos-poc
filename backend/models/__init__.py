@@ -318,6 +318,9 @@ from .contract_v2_models import (
     ContractEvent,
 )
 
+# Vague 1 — TaxProfile
+from .tax_profile import TaxProfile
+
 # Connector Tokens (Sprint F)
 from .connector_token import ConnectorToken
 
@@ -591,6 +594,8 @@ __all__ = [
     "FlexAssetType",
     "ControlMethod",
     "TariffWindow",
+    # Vague 1 — TaxProfile
+    "TaxProfile",
     # Connector Tokens (Sprint F)
     "ConnectorToken",
     # Power Intelligence

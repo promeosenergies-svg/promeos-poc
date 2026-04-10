@@ -32,6 +32,7 @@ from .enums import (
     ContractStatus,
     TariffOptionEnum,
     InvoiceTypeEnum,
+    NetworkCostModel,
 )
 
 
@@ -85,6 +86,24 @@ class EnergyContract(Base, TimestampMixin):
         nullable=False,
         default=False,
         comment="Reconduction tacite",
+    )
+    # Vague 1 — politique de refacturation fournisseur
+    cee_pass_through = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="True: CEE facturée en ligne séparée. False: CEE incluse dans le prix unitaire.",
+    )
+    accise_pass_through = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="True: accise facturée en ligne séparée (cas standard).",
+    )
+    network_cost_model = Column(
+        Enum(NetworkCostModel),
+        nullable=True,
+        comment="Politique acheminement: INCLUDED/FULL_PASS_THROUGH/FLAT_UNIT_COST/MARGINATED",
     )
     # V96 — Contrats achats-ready
     offer_indexation = Column(
