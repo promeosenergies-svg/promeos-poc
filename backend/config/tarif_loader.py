@@ -74,9 +74,9 @@ def get_cta_taux(energy_type: str = "elec", at_date=None) -> float:
     try:
         from datetime import date as _date
 
-        from services.billing_engine.parameter_store import ParameterStore
+        from services.billing_engine.parameter_store import default_store
 
-        store = ParameterStore(db=None)
+        store = default_store()
         code = "CTA_ELEC_DIST_RATE" if energy_type == "elec" else "CTA_GAZ_DIST_RATE"
         ref_date = at_date if at_date else _date.today()
         res = store.get(code, at_date=ref_date)
