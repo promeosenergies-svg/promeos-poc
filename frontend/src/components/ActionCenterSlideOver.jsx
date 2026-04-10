@@ -105,7 +105,6 @@ function useActionCenterData(open, pollingMs = 60_000) {
   return { ...data, refetch: fetchAll };
 }
 
-/** Header badge computed from polling summary — { count: string|null, color: 'red'|'amber'|'gray' } */
 export function computeActionCenterBadge(summary, notifications) {
   const overdue = summary?.overdue_count || 0;
   const open = summary?.open_count || 0;
@@ -148,7 +147,6 @@ function TabButton({ active, onClick, count, icon: Icon, label }) {
   );
 }
 
-/** Unified row used for actions, history and notifications. */
 function SlideOverRow({ accent, title, meta, subtitle, onClick }) {
   return (
     <button
@@ -212,7 +210,10 @@ function NotificationRow({ notification, onClick }) {
 }
 
 export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'actions' }) {
-  const safeDefault = TAB_KEYS.includes(defaultTab) ? defaultTab : 'actions';
+  const safeDefault = useMemo(
+    () => (TAB_KEYS.includes(defaultTab) ? defaultTab : 'actions'),
+    [defaultTab]
+  );
   const [tab, setTab] = useState(safeDefault);
   const navigate = useNavigate();
   const { actionsSummary, actionsList, notifications, history, loading, error } =
@@ -320,8 +321,14 @@ export default function ActionCenterSlideOver({ open, onClose, defaultTab = 'act
   };
 
   return (
-    <Drawer open={open} onClose={onClose} title="Centre d'actions" className="max-w-[400px]">
-      <div className="-mx-6 -my-4 flex flex-col h-full">
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title="Centre d'actions"
+      className="max-w-[400px]"
+      noPadding
+    >
+      <div className="flex flex-col h-full">
         <nav className="flex border-b border-slate-200 bg-white" role="tablist">
           {TAB_KEYS.map((key) => {
             const cfg = TABS[key];

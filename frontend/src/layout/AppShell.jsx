@@ -193,13 +193,10 @@ export default function AppShell() {
     if (params.get('actionCenter') === 'open') {
       setActionCenterOpen(true);
       setActionCenterTab(params.get('tab') || 'actions');
-      // Clean URL
       navigate(location.pathname, { replace: true });
     }
   }, [location.search, location.pathname, navigate]);
 
-  // Poll badge every 60s — paused while slide-over is open (slide-over fetches its own data).
-  // The slide-over only sees its own data; we keep the header badge in sync without double-fetching.
   useEffect(() => {
     if (actionCenterOpen) return undefined;
     let cancelled = false;
@@ -280,7 +277,7 @@ export default function AppShell() {
               className="relative p-2 bg-white/60 border border-slate-200/80 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
             >
               <Bell size={16} />
-              {actionCenterBadge.count && (
+              {actionCenterBadge.count !== null && (
                 <span
                   className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full min-w-[18px] text-center leading-tight ${badgeColorClass}`}
                 >
@@ -297,7 +294,7 @@ export default function AppShell() {
           </div>
         </header>
 
-        {/* Module-tinted header band — subtle depth glow */}
+        {/* Tinted header band */}
         <div
           className={`h-24 bg-gradient-to-b ${headerBandClass} -mb-24 pointer-events-none`}
           aria-hidden="true"
