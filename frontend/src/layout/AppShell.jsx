@@ -193,7 +193,13 @@ export default function AppShell() {
     if (params.get('actionCenter') === 'open') {
       setActionCenterOpen(true);
       setActionCenterTab(params.get('tab') || 'actions');
-      navigate(location.pathname, { replace: true });
+      params.delete('actionCenter');
+      params.delete('tab');
+      const search = params.toString();
+      navigate(
+        { pathname: location.pathname, search: search ? `?${search}` : '' },
+        { replace: true }
+      );
     }
   }, [location.search, location.pathname, navigate]);
 

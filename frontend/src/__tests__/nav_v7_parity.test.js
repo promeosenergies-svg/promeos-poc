@@ -130,4 +130,14 @@ describe('Nav V7 — ActionCenterSlideOver intégré', () => {
   it('AppShell handles backward compat ?actionCenter=open', () => {
     expect(appShellSource).toContain('actionCenter');
   });
+
+  it('AppShell preserves other query params when stripping actionCenter/tab', () => {
+    // Guard against regression: navigate(location.pathname, …) would drop
+    // coexisting params like ?regulation=dt alongside ?actionCenter=open.
+    expect(appShellSource).toMatch(/params\.delete\(['"]actionCenter['"]\)/);
+    expect(appShellSource).toMatch(/params\.delete\(['"]tab['"]\)/);
+    expect(appShellSource).not.toMatch(
+      /navigate\(\s*location\.pathname\s*,\s*\{\s*replace:\s*true\s*\}\s*\)/
+    );
+  });
 });
