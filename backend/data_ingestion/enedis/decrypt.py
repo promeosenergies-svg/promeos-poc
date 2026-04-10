@@ -1,7 +1,9 @@
 """PROMEOS — Enedis SGE flux decryption and classification.
 
 Encryption: AES-128-CBC with PKCS7 padding.
-Post-decrypt: ZIP archive containing one XML file.
+Observed post-decrypt in the current POC dataset: ZIP archive containing one XML
+file. Official Enedis R4x v2.0.3 documentation allows one or more XML files per
+archive; the current implementation still extracts the first ZIP member only.
 Three key/IV pairs (KEY_1/IV_1 .. KEY_3/IV_3) are tried sequentially.
 No deterministic mapping between key and flux type exists
 (e.g. R4Q files may use KEY_2 or KEY_3 depending on the file).

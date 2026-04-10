@@ -112,12 +112,27 @@ Le module reconnaît 10 types de flux à partir du nom de fichier. 6 sont ingér
 
 | Type | Nom complet | Segment | Contenu | Granularité |
 |------|-------------|---------|---------|-------------|
-| **R4H** | CDC horaire agrégée | C1-C4 | Courbe de charge agrégée par heure | Points toutes les 5 ou 10 min |
-| **R4M** | CDC mensuelle agrégée | C1-C4 | Idem, publication mensuelle | Points toutes les 5 ou 10 min |
-| **R4Q** | CDC trimestrielle agrégée | C1-C4 | Idem, publication trimestrielle | Points toutes les 5 ou 10 min |
+| **R4H** | CDC publiée hebdomadairement | C1-C4 | Courbe de charge publiée à la maille hebdomadaire | Points toutes les 5 ou 10 min |
+| **R4M** | CDC publiée mensuellement | C1-C4 | Idem, publication mensuelle | Points toutes les 5 ou 10 min |
+| **R4Q** | CDC publiée quotidiennement | C1-C4 | Idem, publication quotidienne | Points toutes les 5 ou 10 min |
 | **R171** | Index journalier par PRM | C2-C4 | Index de consommation par classe temporelle | 1 valeur par jour et par classe |
 | **R50** | Courbe de charge C5 | C5 | Points de courbe sur abonnement | Points toutes les 30 min |
 | **R151** | Index + puissance max C5 | C5 | Index par classe temporelle et puissance maximale | 1 relevé par période |
+
+### Fenetres officielles de publication R4x
+
+Ces delais ne changent pas le parsing, mais ils sont importants pour l'exploitation et la future couche de completude:
+
+| Flux | Periode couverte | Delai officiel de publication |
+|------|------------------|-------------------------------|
+| **R4Q** | Jour D (`00:00-23:50`) | **J+1 calendaire** |
+| **R4H** | Semaine (`samedi 00:00` -> `vendredi 23:50`) | **Au plus tard le 3eme jour ouvre apres la fin de semaine, avant minuit** |
+| **R4M** | Mois civil (`1er jour 00:00` -> dernier jour `23:50`) | **Au plus tard le 3eme jour ouvre apres la fin du mois, avant minuit** |
+
+Point important pour la suite:
+- avant l'expiration de cette fenetre, une publication absente est **attendue mais non echue**
+- apres l'expiration de cette fenetre, elle devient **potentiellement en retard / manquante**
+- cela doit etre traite separement d'un **trou de donnees a l'interieur d'un fichier effectivement livre**
 
 ### Flux hors périmètre (ignorés)
 
@@ -356,12 +371,21 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 - Préfixe `ERDF_` dans l'émetteur (nom historique d'Enedis)
 - `<Donnees_Courbe>` vide (0 points) : liste vide, pas d'erreur
 
+#### Contraintes officielles utiles (guide R4x v2.0.3)
+
+- Les dates R4x sont vehiculees en "heure legale Paris" avec decalage horaire explicite.
+- Au passage a l'heure d'hiver, la tranche locale `[02:00 ; 03:00[` apparait deux fois avec deux offsets differents.
+- Au passage a l'heure d'ete, la tranche locale `[02:00 ; 03:00[` est absente et ce n'est pas une anomalie de donnees.
+- La `Granularite` officielle R4x est `10` avant la date de bascule Enedis et `5` apres. Le module de staging stocke la valeur brute et ne hardcode pas cette date.
+- La `Valeur_Point` associee a un `Horodatage=H` represente la valeur moyenne sur la periode suivante, de duree egale a la granularite. En pratique, les donnees R4x doivent donc etre interpretees comme couvrant l'intervalle demi-ouvert `[H ; H + granularite[`, pas comme un echantillon instantane pris a `H`.
+- Le guide officiel autorise une archive ZIP contenant un ou plusieurs XML. Les fichiers observes dans le POC etaient mono-XML, et `decrypt_file()` extrait encore uniquement le premier membre de l'archive. Le support multi-XML reste donc un point de durcissement pour SF1-SF4.
+
 #### Données produites
 
 | Champ dataclass | Source XML | Description |
 |-----------------|-----------|-------------|
 | `header.raw` | Tous les enfants de `<Entete>` | Dictionnaire `{tag: texte}` |
-| `header.frequence_publication` | `Frequence_Publication` | H (horaire), M (mensuel), Q (trimestriel) |
+| `header.frequence_publication` | `Frequence_Publication` | H (hebdomadaire), M (mensuel), Q (quotidien) |
 | `header.nature_courbe_demandee` | `Nature_De_Courbe_Demandee` | Brute ou Corrigee |
 | `header.identifiant_destinataire` | `Identifiant_Destinataire` | Code du destinataire |
 | `point_id` | `Identifiant_PRM` | PRM 14 chiffres (1 par fichier) |
@@ -371,7 +395,7 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 | `courbes[].unite_mesure` | `Unite_Mesure` | kW, kWr, V |
 | `courbes[].grandeur_metier` | `Grandeur_Metier` | CONS ou PROD |
 | `courbes[].grandeur_physique` | `Grandeur_Physique` | EA, ERC, ERI, E |
-| `courbes[].points[].horodatage` | attribut `Horodatage` | ISO8601 avec timezone |
+| `courbes[].points[].horodatage` | attribut `Horodatage` | ISO8601 avec timezone, debut de l'intervalle couvert |
 | `courbes[].points[].valeur_point` | attribut `Valeur_Point` | Valeur brute string |
 | `courbes[].points[].statut_point` | attribut `Statut_Point` | R/H/P/S/T/F/G/E/C/K/D |
 

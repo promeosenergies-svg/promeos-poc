@@ -1,6 +1,6 @@
 # SF5 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
-> **Status**: PRD v2.1 — Review decisions integrated
+> **Status**: PRD v2.2 — R4x v2.0.3 review integrated
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — all complete and merged
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 
@@ -17,7 +17,7 @@ Today, `MeterReading` is populated exclusively by synthetic seed data. The raw s
 This is intentional for the prototype: the current seeded/demo metering universe stays live during SF5 so we do not break the platform while the Enedis backbone is being built. SF5 creates a **parallel real-data promotion layer**. The later migration of services and calculations from dummy tables to real Enedis-promoted tables is a **separate feature wave**, not part of SF5 itself.
 
 Furthermore, the existing `MeterReading` model conflates two fundamentally different physical quantities:
-- **Power (kW)** — instantaneous demand at a point in time (what CDC load curves measure)
+- **Power (kW)** — average power over a forward interval (what CDC load curves measure)
 - **Energy (kWh)** — cumulative consumption over a period (what index readings measure)
 
 These require **separate functional tables** with distinct semantics, units, and downstream consumers.
@@ -70,11 +70,13 @@ SF5 does **not** replace the currently live prototype tables during this phase. 
 
 Gap detection remains an important downstream objective of this architecture. SF5 v2 preserves **gap visibility** by keeping missing periods as visible absences in promoted tables and by auditing skipped invalid rows, but a fuller completeness / gap-detection layer is deferred to a later follow-up session.
 
+> **Dependency note from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF5 assumes SF1-SF4 staging has already materialized every XML member found in an archive; otherwise promotion completeness is impossible by construction. The current POC corpus only exposed mono-XML archives, so this remains a hardening dependency rather than SF5 scope.
+
 ### Three Functional Tables
 
 | Table | Physical quantity | Unit | Source flux | Downstream consumers |
 |-------|------------------|------|-------------|---------------------|
-| **`meter_load_curve`** | Power state at each interval (merged CDC interval row) | kW / kVAr / V | R4x, R50 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
+| **`meter_load_curve`** | Interval-valued CDC row: average power over `[timestamp ; timestamp + pas_minutes[` plus related reactive/tension values | kW / kVAr / V | R4x, R50 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
 | **`meter_energy_index`** | Cumulative energy per tariff class | Wh | R171, R151 (CT/CT_DIST) | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
 | **`meter_power_peak`** | Max power demand per period | VA | R151 (PMAX) | Subscribed power optimization, depassement alerts |
 
@@ -92,14 +94,14 @@ Meter.delivery_point_id  (FK → delivery_points.id)
         ▼
 meter_load_curve.meter_id  (FK → meter.id)
         with:
-          timestamp                = parsed datetime (UTC-naive from ISO8601+TZ)
+          timestamp                = start of covered interval (UTC-naive from ISO8601+TZ)
           pas_minutes              = exact Enedis interval size (5 / 10 / 30)
           active_power_kw          = populated when grandeur_physique=EA
           reactive_inductive_kvar  = populated when grandeur_physique=ERI
           reactive_capacitive_kvar = populated when grandeur_physique=ERC
           voltage_v                = populated when grandeur_physique=E and unit=V
           quality_score            = mapped from statut_point / indice_vraisemblance
-          is_estimated             = True if statut_point not in (R, C, K, H)
+          is_estimated             = mapped from the official status semantics / vraisemblance code
 
 Rows with the same `(meter_id, timestamp, pas_minutes)` are merged into one logical promoted interval row before UPSERT.
 ```
@@ -136,7 +138,7 @@ meter_energy_index.meter_id  (FK → meter.id)
 | D5 | Production versioning | **Option A — Current truth + audit trail** | Functional tables always hold the latest best value (UPSERT). Staging keeps full history. `PromotionEvent` table provides full traceability. No `WHERE is_current` tax on all downstream queries |
 | D6 | Quality gate | **Promote all data with correct quality flags** | No minimum threshold blocking promotion. Even poor-quality data is promoted with appropriate `quality_score` and `is_estimated` flags. Downstream services already compute quality scores from these fields |
 | D7 | Gap handling | **Preserve gap visibility now; explicit gap detection later** | Null or unparsable values are never converted to synthetic zeroes. Gaps stay visible as missing promoted rows, with audit events explaining why they were skipped. Completeness scoring and richer gap detection remain planned follow-up work |
-| D8 | Quality score mapping | **Enedis statut_point → 0-1 float** (see Section 5) | Research-based mapping from official Enedis SGE documentation. Refinement planned when official docs are available |
+| D8 | Quality score mapping | **Official R4x status semantics + Promeos heuristic score** (see Section 5) | The Enedis guide defines the meaning of `statut_point`, but not a numeric confidence score. SF5 keeps a product-owned heuristic for republication comparison |
 | D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. Will grow to handle GRDF, GTB, sub-meters, other ELDs. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion |
 | D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + minimal API | Natural break point: ingest → data backlog review → promote. Decoupled failure domains. POC: CLI `promote` command + minimal `/api/enedis/promotion/*` API |
 | D11 | Atomicity | **Per-PRM** | Each PRM is fully promoted or not at all. One bad PRM doesn't block the fleet. Prevents misleading partial data. Aligns with business unit (site managers care about their PRMs) |
@@ -148,6 +150,9 @@ meter_energy_index.meter_id  (FK → meter.id)
 | D17 | Legacy/demo coexistence | **Coexist then migrate** — promoted Enedis tables are canonical for real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe until later migration | Don't break what works. SF5 builds the real backbone first; service migration happens later |
 | D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
 | D19 | PRM matching ambiguity | **Exact-one-meter rule** | A PRM is promotable only when it resolves to exactly one valid active electricity meter. No active meter or multiple candidates both block promotion and create backlog entries |
+| D20 | R4x timezone / DST handling | **Trust the XML offset, convert to UTC, and treat official DST patterns as expected** | The official R4x guide uses Paris legal time with offset. Autumn duplicate local hours must survive as distinct UTC instants; spring missing local hour is not a data gap |
+| D21 | CDC temporal semantics | **Store and expose CDC values as forward interval averages** | A value timestamped `H` applies to `[H ; H + pas_minutes[`. Analytics and UX must not present it as an instantaneous spot reading |
+| D22 | Publication SLA awareness | **Distinguish not-yet-due publication from overdue missing publication** | Enedis publishes R4x on explicit deadlines (`R4Q` J+1 calendaire, `R4H`/`R4M` by 3rd business day). Freshness decisions must respect those windows before surfacing a "missing publication" condition |
 
 ---
 
@@ -163,11 +168,11 @@ The canonical promoted table for real Enedis load curve (courbe de charge) data.
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter (resolved from PRM via DeliveryPoint) |
-| `timestamp` | DateTime | Measurement instant (UTC-naive, converted from ISO8601+TZ) |
+| `timestamp` | DateTime | Start of covered interval (UTC-naive, converted from ISO8601+TZ) |
 | `pas_minutes` | Integer | Exact Enedis interval size (`5`, `10`, `30`) |
-| `active_power_kw` | Float | nullable — active power (`EA`) in kW |
-| `reactive_inductive_kvar` | Float | nullable — inductive reactive power (`ERI`) in kVAr |
-| `reactive_capacitive_kvar` | Float | nullable — capacitive reactive power (`ERC`) in kVAr |
+| `active_power_kw` | Float | nullable — average active power (`EA`) over the covered interval, in kW |
+| `reactive_inductive_kvar` | Float | nullable — interval value for inductive reactive power (`ERI`) in kVAr |
+| `reactive_capacitive_kvar` | Float | nullable — interval value for capacitive reactive power (`ERC`) in kVAr |
 | `voltage_v` | Float | nullable — voltage (`E`) in volts when present |
 | `quality_score` | Float | 0-1 confidence (mapped from statut_point / indice_vraisemblance) |
 | `is_estimated` | Boolean | True if not a real measurement |
@@ -323,22 +328,24 @@ During SF5, there is no product cutover. Existing services stay on the legacy/de
 
 ### 5.1 CDC flux (R4x) — `statut_point` codes
 
-Based on Enedis SGE technical documentation for courbes de charge:
+The official Enedis R4x guide defines the semantics of each status code, but **does not** define a numeric quality score. The scores below are therefore **Promeos heuristics** used for conflict resolution and downstream filtering.
 
-| Code | Meaning (FR) | Meaning (EN) | `quality_score` | `is_estimated` |
-|------|-------------|--------------|-----------------|----------------|
-| **R** | Reel | Measured (real) | 1.00 | False |
-| **C** | Corrige | Corrected by Enedis | 0.95 | False |
-| **K** | Corrige v2 | Corrected by Enedis (variant) | 0.95 | False |
-| **H** | Reel modifie | Adjusted measured value | 0.90 | False |
-| **S** | Substitue | Substituted after validation | 0.85 | True |
-| **G** | Calcule/Agrege | Calculated/aggregated | 0.75 | True |
-| **E** | Estime | Estimated by Enedis | 0.60 | True |
-| **T** | Temporaire | Temporary/provisional | 0.50 | True |
-| **F** | Forfaitaire | Flat-rate estimate | 0.40 | True |
-| **P** | Absence de donnees | No data / interpolated | 0.10 | True |
-| **D** | Donnees manquantes | Data missing/deleted | 0.05 | True |
+| Code | Official meaning (FR) | Promotion interpretation | `quality_score` | `is_estimated` |
+|------|------------------------|--------------------------|-----------------|----------------|
+| **R** | Réel | Measured point | 1.00 | False |
+| **C** | Corrigé | Corrected by Enedis | 0.95 | False |
+| **S** | Coupure secteur | Confirmed outage marker | 0.90 | False |
+| **T** | Coupure secteur courte | Confirmed short-outage marker | 0.90 | False |
+| **F** | Début coupure secteur | Confirmed outage boundary marker | 0.90 | False |
+| **G** | Fin coupure secteur | Confirmed outage boundary marker | 0.90 | False |
+| **D** | Importé manuellement par le métier Enedis | Manual business import / correction | 0.85 | False |
+| **H** | Puissance reconstituée (changements d'heure, conversions de pas) | Deterministic Enedis reconstruction | 0.80 | True |
+| **K** | Calculé, point issu d'un calcul basé sur d'autres courbes de charge | Derived from other curves | 0.75 | True |
+| **P** | Puissance reconstituée et coupure secteur | Derived point during outage context | 0.70 | True |
+| **E** | Estimé | Estimated by Enedis | 0.60 | True |
 | *(null/unknown)* | Code inconnu | Unknown status | 0.50 | True |
+
+> **Important provenance note**: `Nature_De_Courbe_Demandee` (`Brute` / `Corrigee`) should be preserved in audit metadata, but the official guide states that Enedis corrections/completions currently apply only to **active energy**. Reactive energy and voltage are not corrected by Enedis.
 
 ### 5.2 CDC flux (R50) — `indice_vraisemblance`
 
@@ -358,7 +365,7 @@ R171 does not carry a per-value quality indicator. All R171 values are assumed m
 - `quality_score` = 0.90 (slightly below R=1.0 because we cannot confirm)
 - `is_estimated` = False
 
-> **To refine**: These mappings should be validated against official Enedis documentation when available. The hierarchy (R > C/K > H > S > G > E > T > F > P > D) is the key invariant for republication comparison (D4).
+> **To refine**: the official R4x meanings are now validated by Enedis v2.0.3. The remaining work is calibrating the Promeos heuristic ordering on real republications and outage-heavy samples. Current working order: `R > C > S=T=F=G > D > H > K > P > E > unknown`.
 
 ---
 
@@ -378,7 +385,23 @@ Each staging flux type routes to a specific functional table:
 
 > **Important**: R4x publication cadence (`R4H`, `R4M`, `R4Q`) is **not** the same as measurement cadence. The promoted CDC row stores the exact interval size in `pas_minutes`, not a shared `FrequencyType`.
 
-> **Note on CDC units**: Enedis CDC values are instantaneous power states, not consumption deltas. Downstream services that need energy (kWh) compute it from the relevant power column and `pas_minutes`.
+> **Important**: R4x publication cadence also has an official delivery SLA and should inform later freshness/completeness logic:
+>
+> | Flux | Covered period | Official publication deadline |
+> |------|----------------|-------------------------------|
+> | `R4Q` | Day D | `J+1` calendar day |
+> | `R4H` | Week ending Friday 23:50 | no later than the 3rd business day after week end, before midnight |
+> | `R4M` | Calendar month | no later than the 3rd business day after month end, before midnight |
+
+> **Note on CDC units**: Enedis CDC values are interval averages, not consumption deltas and not instantaneous spot readings. For active power, downstream services that need interval energy compute `energy_kwh = active_power_kw * pas_minutes / 60`.
+
+> **UX interpretation note**: charts, tables, and tooltips should describe a CDC point as "average power over `10:00-10:05`" or equivalent, not "power at 10:00". Step charts, bars, and interval labels are safer defaults than point-sample wording.
+
+> **R4x transport rules to honor in SF5**:
+> - parse the explicit XML timezone offset and convert to UTC before enforcing uniqueness
+> - treat autumn DST duplicate local timestamps as valid distinct instants
+> - treat the missing local hour at spring DST transition as an expected absence, not a gap
+> - trust raw `granularite` rather than hardcoding Enedis' 10' → 5' switchover date; unexpected R4x granularities should be flagged
 
 ---
 
@@ -402,6 +425,13 @@ For each staging table (r4x, r50, r171, r151):
 ```
 
 The high-water mark (last promoted staging row ID per table) is stored in `promotion_run.high_water_mark_after` (JSON). First run: high-water mark = 0 (process everything). Incremental runs always combine **new candidates** with **still-pending backlog PRMs** so historical raw data is replayed when a PRM is later resolved.
+
+Publication freshness should be tracked separately from PRM backlog:
+- no file yet, but official publication deadline not reached -> `expected_not_due`
+- no file yet, and official publication deadline exceeded -> `late_publication`
+- file received, but some intervals are missing inside the delivered dataset -> data gap / completeness issue
+
+These states should not be collapsed into a single "missing data" bucket because they drive different operational responses.
 
 ### Stage 2: Match — Resolve PRMs to Meters
 
@@ -445,7 +475,7 @@ For each group:
             → Do NOT overwrite current promoted row
 ```
 
-Quality comparison uses the hierarchy from Section 5: R > C/K > H > S > G > E > T > F > P > D.
+Quality comparison uses the working hierarchy from Section 5: `R > C > S=T=F=G > D > H > K > P > E > unknown`.
 
 ### Stage 4: Convert & Route — Transform and assign target table
 
@@ -453,11 +483,14 @@ For each staging row to promote, determine the target table and convert values:
 
 **CDC rows (R4x, R50) → `meter_load_curve`:**
 ```
-timestamp     = parse_iso8601_to_naive_utc(horodatage)
+timestamp     = parse_iso8601_to_naive_utc(horodatage)  # preserves DST duplicates via source offset
 pas_minutes   = int(granularite) for R4x, 30 for R50
 quality_score = QUALITY_MAP[statut_point or indice_vraisemblance]  # Section 5
-is_estimated  = statut_point not in ('R', 'C', 'K', 'H')
+is_estimated  = ESTIMATED_MAP[statut_point or indice_vraisemblance]  # Section 5
 source_flux_type = flux_type
+
+if flux_type in ('R4H', 'R4M', 'R4Q') and pas_minutes not in (5, 10):
+    skip row, log unexpected official R4x granularite
 
 if grandeur_physique == 'EA':
     active_power_kw = float(raw_value)
@@ -470,6 +503,10 @@ if grandeur_physique == 'E' and unite_mesure == 'V':
 
 Merge all CDC rows sharing (meter_id, timestamp, pas_minutes) into one promoted interval row
 before UPSERT.
+
+# Semantics:
+# a row timestamped H represents the covered interval [H ; H + pas_minutes[
+# any later aggregation to hourly/daily energy must respect this half-open interval model
 ```
 
 **Index rows (R171, R151 CT/CT_DIST) → `meter_energy_index`:**
@@ -497,6 +534,7 @@ source_flux_type = 'R151'
 - Unparseable float → skip row, log in promotion_event (action=skipped, reason="unparseable value: '{raw}'")
 - Unparseable timestamp/date → skip row, log
 - Null value with non-null timestamp → skip row, log (never synthesize `0.0`)
+- Expected spring DST missing intervals in R4x are not promotion errors and must not be turned into synthetic zeroes or backlog gaps
 - Value conversion errors do NOT fail the entire PRM (per-PRM atomicity applies to DB writes, not individual parse errors — but if >50% of readings for a PRM fail to parse, flag the PRM for review)
 
 ### Stage 5: Promote — UPSERT into target tables
@@ -537,6 +575,8 @@ INSERT INTO promotion_event (
 )
 ```
 
+For R4x promotions, the audit payload should also preserve the key source-header provenance already available in staging: `frequence_publication`, `nature_courbe_demandee`, and `reference_demande` (from `header_raw`). This keeps each promoted interval traceable back to the subscribed publication option, not just the raw point row.
+
 ### Stage 7: Finalize — Update promotion run
 
 ```
@@ -552,6 +592,9 @@ UPDATE promotion_run SET
 - invalid values are skipped with audit reasons
 - exact CDC cadence is stored in `pas_minutes`
 - backlog replay prevents historical gaps caused by late PRM resolution from being silently forgotten
+- official publication windows are now documented so a later freshness layer can distinguish `not_due_yet` from `late_publication`
+
+**Publication SLA note:** a missing R4x file before its official publication deadline is not yet evidence of a failed publication. Conversely, once the SLA window has expired, the issue is first an operational publication-lateness signal, and only secondarily a completeness concern for downstream analytics.
 
 ---
 
@@ -744,8 +787,10 @@ This feature is too large for a single implementation session. Proposed phasing:
 | OQ3 | ~~R171 tariff class columns: extend MeterReading or new model?~~ | **Resolved (D16)** | `meter_energy_index` has `tariff_class_code` and `tariff_grid` columns |
 | OQ4 | `promotion_event` table growth at scale (175M+ rows) | Open | May need partitioning, archival, or selective logging strategy |
 | OQ5 | Gap detection, completeness scoring, and interpolation / estimation service | Open | Future feature to detect missing intervals explicitly, score completeness, and optionally fill gaps with statistical estimates |
-| OQ6 | Enedis `statut_point` quality mapping refinement | Open | Needs validation against official SGE documentation |
+| OQ6 | R4x `statut_point` score calibration on real republications/outage cases | Open | Official meanings are now validated by Enedis R4x v2.0.3; the remaining question is whether Promeos' heuristic scores and `is_estimated` buckets need tuning on real data |
 | OQ7 | Auto-resolution of unmatched PRMs when new DeliveryPoints are onboarded | Open | Natural extension of the unmatched PRM workflow |
+| OQ8 | Multi-XML R4x archive support in SF1-SF4 raw ingestion | Open | The official guide allows 1..n XML per ZIP archive. Current POC observations were mono-XML, but staging completeness depends on hardening this assumption |
+| OQ9 | Business-day calendar for R4H/R4M SLA evaluation | Open | "3rd business day" needs an explicit calendar/timezone policy before we operationalize `late_publication` detection |
 
 ---
 
@@ -764,6 +809,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - [ ] CLI provides clear per-table promotion report
 - [ ] API scaffolding endpoints functional for trigger, runs, and stats
 - [ ] Quality scores correctly mapped from Enedis status codes
+- [ ] R4x DST spring/fall behavior handled without false gaps or unique-key collisions
 - [ ] Pipeline handles 175M-row scale (batch processing, chunked inserts)
 - [ ] All promotion runs audited with full counters
 - [ ] Null or unparsable Enedis values never produce synthetic zero rows in promoted tables
@@ -780,14 +826,15 @@ This feature is too large for a single implementation session. Proposed phasing:
 | **CDC** | Courbe De Charge — load curve (time-series power data, kW at each interval) |
 | **Index** | Cumulative meter reading per tariff class (energy in Wh) |
 | **PMAX** | Puissance Maximale Atteinte — peak power demand in VA for a period |
-| **Power (kW)** | Instantaneous demand — what CDC measures. Stored in `meter_load_curve` |
+| **Power (kW)** | Average power over the covered forward interval — what CDC measures. Stored in `meter_load_curve` |
 | **Energy (kWh/Wh)** | Cumulative consumption over a period — what index measures. Stored in `meter_energy_index` |
 | **Staging** | Raw Enedis data stored as-is (strings, no transformation) in `enedis_flux_mesure_*` tables |
 | **Promotion** | Transforming and writing staging data into functional tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`) |
 | **Republication** | When Enedis sends a new version of previously-sent data (corrections) |
 | **High-water mark** | The last staging row ID processed per table for newly discovered data. Pending backlog PRMs are replayed separately during incremental runs |
 | **`pas_minutes`** | Exact CDC interval size stored on promoted `meter_load_curve` rows (`5`, `10`, `30`) |
-| **Statut_point** | Enedis quality code (R/H/P/S/T/F/G/E/C/K/D) indicating measurement reliability |
+| **`[start ; end[`** | Half-open interval semantics used for CDC rows: start included, end excluded |
+| **Statut_point** | Enedis measurement-status / provenance code (R/H/P/S/T/F/G/E/C/K/D) carried by R4x points |
 | **Indice_vraisemblance** | R50/R151 quality indicator (0=measured, 1=estimated) |
 | **Tariff class** | Time-of-use period (HCE=heures creuses ete, HPH=heures pleines hiver, etc.) |
 | **CT / CT_DIST** | Supplier grid (CT) vs distributor grid (CT_DIST) — two parallel tariff classification systems |
