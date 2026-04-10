@@ -267,7 +267,11 @@ cta_2021:
       unit: PCT
       notes: "21.93% de la part fixe TURPE HTA, finance retraites IEG"
   valid_from: "2021-08-01"
-  valid_to: "2025-12-31"
+  # Continuité règlementaire : le taux 21,93% reste en vigueur jusqu'à la
+  # veille de la nouvelle grille CRE 2026-14 (effet 1er février 2026).
+  # Historiquement le YAML s'arrêtait au 31/12/2025, laissant un trou de
+  # janvier 2026 sans tarif — bug corrigé V112.
+  valid_to: "2026-01-31"
 
 cta:
   source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF JORFTEXT000053417026)"
