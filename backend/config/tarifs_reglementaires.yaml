@@ -276,12 +276,45 @@ atrd6_gaz_2024:
       label: "Tarif de proximité"
       abo_eur_an: 48785.28
 
-# ATRD7 — grille au 01/07/2025 (simplifié)
+# ATRD7 — grille au 01/07/2025 (taux flat pour fallback legacy)
 atrd_gaz:
   rate_eur_kwh: 0.025
   source: "CRE ATRD7 GRDF 2025"
   valid_from: "2024-07-01"
   valid_to: null
+
+# ATRD7 — grille détaillée par option (T1-T4 + TP)
+# Source : CRE délibération n°2024-40 + CRCP n°2024-88 (évolution ATRD6→7 +27.5%)
+# Applicable à partir du 01/07/2024 par GRDF.
+atrd7_gaz_tiers:
+  source: "CRE délibérations 2024-40 + 2024-88 — ATRD7 GRDF au 01/07/2024"
+  valid_from: "2024-07-01"
+  valid_to: null
+  tiers:
+    T1:
+      label: "T1 (≤6 MWh/an) — cuisson, petits consommateurs"
+      abo_eur_an: 53.86
+      var_eur_mwh: 42.37
+    T2:
+      label: "T2 (6-300 MWh/an) — chauffage résidentiel & petits pros"
+      abo_eur_an: 177.78
+      var_eur_mwh: 11.39
+    T3:
+      label: "T3 (300-5000 MWh/an) — tertiaire, PME"
+      abo_eur_an: 1253.22
+      var_eur_mwh: 8.19
+    T4:
+      label: "T4 (>5000 MWh/an) — gros industriels"
+      abo_eur_an: 20488.69
+      var_eur_mwh: 1.11
+      # T4 inclut un terme capacité journalière (EUR/MWh/j/an)
+      # à appliquer sur la CJA (Capacité Journalière Acheminement)
+      capa_eur_mwh_j_an: 106.44
+    TP:
+      label: "TP (Tarif de Proximité) — industriels dédiés"
+      abo_eur_an: 48785.28
+      var_eur_mwh: 0.0
+      capa_eur_mwh_j_an: 106.20
 
 atrt_gaz:
   rate_eur_kwh: 0.012
