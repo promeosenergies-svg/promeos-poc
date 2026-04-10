@@ -1653,7 +1653,7 @@ export default function Site360() {
   // Persist active site for contextual nav
   useEffect(() => {
     if (site?.id && site?.nom) setActiveSite(site);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id, site?.nom, site?.statut_conformite]);
 
   // Unified anomalies (patrimoine + KB) — single fetch, shared by MiniKpi + TabResume
@@ -1752,7 +1752,7 @@ export default function Site360() {
     return () => {
       stale = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 
   // Energy intensity — backend #146 (Yannick)

@@ -59,11 +59,16 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
             <div key={site.id}>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-gray-700">{site.nom}</span>
-                <span className={site.isOver ? 'text-red-600 font-medium' : 'text-green-700 font-medium'}>
+                <span
+                  className={
+                    site.isOver ? 'text-red-600 font-medium' : 'text-green-700 font-medium'
+                  }
+                >
                   {site.consoJ1 != null ? `${site.consoJ1} kWh` : '—'}
                   {site.deltaPct != null ? (
                     <span className="ml-1">
-                      · {site.deltaPct > 0 ? '+' : ''}{site.deltaPct}% vs baseline
+                      · {site.deltaPct > 0 ? '+' : ''}
+                      {site.deltaPct}% vs baseline
                     </span>
                   ) : site.estimated ? (
                     <span className="ml-1 text-gray-400"> · estimé</span>
