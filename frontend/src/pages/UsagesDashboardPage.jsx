@@ -14,6 +14,7 @@ import {
   getPowerOptimization,
   getCdcSimulation,
   getFlexNebcoPortfolio,
+  getEnergySignature,
 } from '../services/api';
 
 import ScopeBar from '../components/usages/ScopeBar';
@@ -28,6 +29,7 @@ import FlexNebcoCard from '../components/usages/FlexNebcoCard';
 import CostCard from '../components/usages/CostCard';
 import PowerOptimizationCard from '../components/usages/PowerOptimizationCard';
 import CdcSimulationCard from '../components/usages/CdcSimulationCard';
+import EnergySignatureCard from '../components/usages/EnergySignatureCard';
 import FlexBubbleChart from '../components/usages/FlexBubbleChart';
 import FooterLinks from '../components/usages/FooterLinks';
 
@@ -46,6 +48,7 @@ export default function UsagesDashboardPage() {
   const [flexData, setFlexData] = useState(null);
   const [powerOpt, setPowerOpt] = useState(null);
   const [cdcSim, setCdcSim] = useState(null);
+  const [energySignature, setEnergySignature] = useState(null);
   const [flexPortfolio, setFlexPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -137,11 +140,15 @@ export default function UsagesDashboardPage() {
       getCdcSimulation(siteId)
         .then(setCdcSim)
         .catch(() => setCdcSim(null));
+      getEnergySignature(siteId)
+        .then(setEnergySignature)
+        .catch(() => setEnergySignature(null));
     } else {
       setCostByPeriod(null);
       setFlexData(null);
       setPowerOpt(null);
       setCdcSim(null);
+      setEnergySignature(null);
     }
   }, [siteId, scopeLevel]);
 
@@ -291,10 +298,11 @@ export default function UsagesDashboardPage() {
       </div>
 
       {/* Widgets additionnels site-level */}
-      {(powerOpt || cdcSim) && (
-        <div className="px-7 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      {(powerOpt || cdcSim || energySignature) && (
+        <div className="px-7 pb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           <PowerOptimizationCard data={powerOpt} />
           <CdcSimulationCard data={cdcSim} />
+          <EnergySignatureCard data={energySignature} />
         </div>
       )}
 
