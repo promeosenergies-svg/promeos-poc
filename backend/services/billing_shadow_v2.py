@@ -258,7 +258,32 @@ def _has_db_tariffs(db) -> bool:
         return False
 
 
-def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
+def _accise_code_for_category(energy_type: str, tax_profile=None) -> str:
+    """
+    Sélectionne le code ParameterStore accise selon la catégorie fiscale.
+
+    `tax_profile` (optionnel) est une instance TaxProfile. Sans profil
+    explicite, on retourne le code par défaut (ACCISE_ELEC = T2/PME pour
+    l'élec, ACCISE_GAZ pour le gaz).
+    """
+    if energy_type != "elec":
+        return "ACCISE_GAZ"
+
+    if tax_profile is None:
+        return "ACCISE_ELEC"
+
+    cat = getattr(tax_profile, "accise_category_elec", None)
+    cat_value = getattr(cat, "value", cat) if cat is not None else None
+
+    if cat_value == "HOUSEHOLD":
+        return "ACCISE_ELEC_T1"
+    if cat_value == "HIGH_POWER":
+        return "ACCISE_ELEC_HP"
+    # SME, REDUCED, EXEMPT, None → code par défaut T2
+    return "ACCISE_ELEC"
+
+
+def shadow_billing_v2(invoice, lines: list, contract, db=None, tax_profile=None) -> dict:
     """
     Calcule la facture attendue sur 5 composantes avec TVA per-composante.
 
@@ -269,10 +294,12 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
       abonnement_ht : (TURPE gestion + fixed_fee) x prorata  (TVA 20 % depuis août 2025)
 
     Args:
-        invoice:  EnergyInvoice (energy_kwh, total_eur, period_start, period_end)
-        lines:    liste d'EnergyInvoiceLine (line_type, amount_eur)
-        contract: EnergyContract ou None
-        db:       Session SQLAlchemy (optionnel — active le bridge regulated_tariffs)
+        invoice:     EnergyInvoice (energy_kwh, total_eur, period_start, period_end)
+        lines:       liste d'EnergyInvoiceLine (line_type, amount_eur)
+        contract:    EnergyContract ou None
+        db:          Session SQLAlchemy (optionnel — active le bridge regulated_tariffs)
+        tax_profile: TaxProfile (optionnel — détermine la catégorie accise élec).
+                     Sans profil : fallback sur ACCISE_ELEC par défaut (T2/PME).
 
     Returns:
         dict avec expected_* + actual_* + delta_* + components[] + totals{} + meta
@@ -315,14 +342,15 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
     segment = _resolve_segment(contract)
 
     # ── Component rates (DB versionnée → YAML → hardcodé) ────────────
+    accise_code = _accise_code_for_category("elec" if is_elec else "gaz", tax_profile)
     if is_elec:
         turpe_energie = _safe_rate(f"TURPE_ENERGIE_{segment}", at_date, db)
         turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}", at_date, db)
-        accise = _safe_rate("ACCISE_ELEC", at_date, db)
+        accise = _safe_rate(accise_code, at_date, db)
     else:
         turpe_energie = _safe_rate("ATRD_GAZ", at_date, db) + _safe_rate("ATRT_GAZ", at_date, db)
         turpe_gestion = 0.0
-        accise = _safe_rate("ACCISE_GAZ", at_date, db)
+        accise = _safe_rate(accise_code, at_date, db)
 
     # ── Expected HT components ───────────────────────────────────────
     exp_fourniture = kwh * price_ref
@@ -447,6 +475,14 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
     else:
         assumptions.append("Réseau : ATRD+ATRT (profil simplifié)")
     assumptions.append(f"Source tarifs : {tariff_source}")
+    # Vague 1 : trace de la catégorie fiscale utilisée pour l'accise
+    if tax_profile is not None:
+        cat = tax_profile.accise_category_elec or tax_profile.accise_category_gaz
+        cat_v = getattr(cat, "value", cat)
+        reduit = " (régime réduit)" if tax_profile.regime_reduit else ""
+        assumptions.append(f"Accise : catégorie {cat_v}{reduit} → code {accise_code}")
+    else:
+        assumptions.append(f"Accise : défaut {accise_code} (pas de TaxProfile)")
 
     if has_contract_price and has_lines and len(line_types) >= 2:
         confidence = "medium"
@@ -686,6 +722,42 @@ def _compute_reconstitution_meta(components: list) -> dict:
     }
 
 
+def _resolve_tax_profile_for_invoice(db, site, contract):
+    """
+    Retrouve le TaxProfile du premier PDL du site correspondant à l'énergie
+    du contrat. Retourne None si aucun profil n'est trouvé (comportement
+    legacy : défaut SME/T2).
+
+    Vague 1 : support initial — un profil par PDL, choix du premier
+    candidat dont l'`energy_type` matche. Affiner en vague 2 si un site a
+    plusieurs PDLs multi-énergies.
+    """
+    if db is None or site is None or contract is None:
+        return None
+    try:
+        from models.patrimoine import DeliveryPoint
+        from models.tax_profile import TaxProfile
+    except Exception:
+        return None
+
+    energy_val = getattr(contract.energy_type, "value", contract.energy_type)
+    energy_s = str(energy_val).lower() if energy_val else ""
+
+    try:
+        pdls = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == getattr(site, "id", None)).all()
+        for pdl in pdls:
+            pdl_energy = getattr(pdl.energy_type, "value", pdl.energy_type)
+            pdl_energy_s = str(pdl_energy).lower() if pdl_energy else ""
+            if pdl_energy_s != energy_s:
+                continue
+            tp = db.query(TaxProfile).filter(TaxProfile.delivery_point_id == pdl.id).first()
+            if tp is not None:
+                return tp
+    except Exception as exc:
+        logger.debug("TaxProfile lookup failed: %s", exc)
+    return None
+
+
 def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     """
     Calcul shadow décomposé par composante avec écart et statut.
@@ -731,8 +803,13 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     except Exception:
         lines = []
 
-    # Appeler shadow_billing_v2 pour le calcul de base (avec bridge DB)
-    v2 = shadow_billing_v2(invoice, lines, contract, db=db)
+    # ── Vague 1 : résoudre le TaxProfile du site (catégorie accise) ───
+    # Un site peut avoir N PDLs ; on prend le profil du premier PDL
+    # correspondant à l'énergie du contrat. Sans profil = défaut T2/PME.
+    tax_profile = _resolve_tax_profile_for_invoice(db, site, contract)
+
+    # Appeler shadow_billing_v2 pour le calcul de base (avec bridge DB + profil fiscal)
+    v2 = shadow_billing_v2(invoice, lines, contract, db=db, tax_profile=tax_profile)
 
     # Segment TURPE dynamique
     segment = _resolve_segment(contract, site)
