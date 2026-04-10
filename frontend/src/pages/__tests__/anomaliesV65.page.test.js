@@ -182,12 +182,14 @@ describe('E. App.jsx — routing', () => {
 describe('F. NavRegistry.js — navigation', () => {
   const code = src('src/layout/NavRegistry.js');
 
-  it('/anomalies is mapped to pilotage module', () => {
-    expect(code).toMatch(/\/anomalies.*pilotage/);
+  it('/anomalies is mapped to cockpit module (V7)', () => {
+    expect(code).toMatch(/\/anomalies.*cockpit/);
   });
 
-  it('"Actions & Suivi" label present in nav items', () => {
-    expect(code).toMatch(/Actions & Suivi/);
+  it("V7: Actions moved to Centre d'actions header (no nav item)", () => {
+    // V7: Actions & Suivi and Notifications labels removed from nav
+    // Still routable via backward compat redirect
+    expect(code).not.toMatch(/'Actions & Suivi'/);
   });
 });
 

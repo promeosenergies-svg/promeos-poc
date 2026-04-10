@@ -42,10 +42,10 @@ describe('B. Raccourcis header & harmonized labels', () => {
     expect(navPanel).toMatch(/focus-visible:.*ring.*blue/);
   });
 
-  it('QUICK_ACTIONS "achats" label matches arbo shortLabel', () => {
+  it('QUICK_ACTIONS "achats" label V7 matches arbo shortLabel', () => {
     const qa = QUICK_ACTIONS.find((a) => a.key === 'achats');
     expect(qa.label).toBe('Achats');
-    expect(qa.longLabel).toBe("Achats d'énergie & scénarios");
+    expect(qa.longLabel).toBe("Scénarios d'achat & échéances");
   });
 
   it('QUICK_ACTIONS "factures" label matches arbo shortLabel', () => {

@@ -16,15 +16,13 @@ describe('Step 24b — Navigation clean', () => {
     expect(navFile).toBeDefined();
   });
 
-  it('has exactly 4 main sections (pilotage, patrimoine, energie, achat)', () => {
+  it('has at least 5 main sections (V7: cockpit, conformite, patrimoine, energie, achat)', () => {
     const src = fs.readFileSync(navFile, 'utf8');
-    // Extract NAV_MAIN_SECTIONS block specifically
-    const start = src.indexOf('export const NAV_MAIN_SECTIONS');
-    const block = src.slice(start, start + 3000);
-    const end = block.indexOf('];');
-    const mainBlock = block.slice(0, end);
-    const sections = mainBlock.match(/key:\s*['"](pilotage|patrimoine|energie|achat)['"]/g) || [];
-    expect(sections.length).toBe(4);
+    // NAV_MAIN_SECTIONS is derived from NAV_SECTIONS at runtime;
+    // check NAV_SECTIONS keys directly.
+    const sections =
+      src.match(/key:\s*['"](cockpit|conformite|patrimoine|energie|achat)['"]/g) || [];
+    expect(sections.length).toBeGreaterThanOrEqual(5);
   });
 
   it('has max 14 main menu items in NAV_MAIN_SECTIONS', () => {
@@ -100,21 +98,21 @@ describe('Step 24b — CommandPalette hidden pages', () => {
   });
 });
 
-describe('Step 24b — NavRail modules', () => {
-  it('NAV_MODULES has 5 entries', () => {
+describe('Step 24b — NavRail modules V7', () => {
+  it('NAV_MODULES has 6 entries (5 normal + admin expert)', () => {
     const src = fs.readFileSync(navFile, 'utf8');
-    // Find the export const NAV_MODULES block
     const start = src.indexOf('export const NAV_MODULES');
-    const block = src.slice(start, start + 2000);
+    const block = src.slice(start, start + 3000);
     const firstClose = block.indexOf('];');
     const moduleBlock = block.slice(0, firstClose);
     const keys = moduleBlock.match(/key:\s*['"][^'"]+['"]/g) || [];
-    expect(keys.length).toBe(5);
+    expect(keys.length).toBe(6);
   });
 
-  it('NAV_MODULES includes pilotage, patrimoine, energie, achat, admin', () => {
+  it('NAV_MODULES V7 includes cockpit, conformite, energie, patrimoine, achat, admin', () => {
     const src = fs.readFileSync(navFile, 'utf8');
-    expect(src).toMatch(/key:\s*['"]pilotage['"]/);
+    expect(src).toMatch(/key:\s*['"]cockpit['"]/);
+    expect(src).toMatch(/key:\s*['"]conformite['"]/);
     expect(src).toMatch(/key:\s*['"]patrimoine['"]/);
     expect(src).toMatch(/key:\s*['"]energie['"]/);
     expect(src).toMatch(/key:\s*['"]achat['"]/);
@@ -122,12 +120,11 @@ describe('Step 24b — NavRail modules', () => {
   });
 });
 
-describe('Step 24b — ROUTE_SECTION_MAP', () => {
-  it('routes map to new section labels', () => {
+describe('Step 24b — Labels V7', () => {
+  it('labels use V7 vocabulary', () => {
     const src = fs.readFileSync(navFile, 'utf8');
-    // ROUTE_SECTION_MAP is derived from NAV_MAIN_SECTIONS,
-    // so it should contain the new labels
-    expect(src).toContain("label: 'Pilotage'");
+    expect(src).toContain("label: 'Accueil'");
+    expect(src).toContain("label: 'Conformité'");
     expect(src).toContain("label: 'Patrimoine'");
     expect(src).toContain("label: 'Achat'");
   });

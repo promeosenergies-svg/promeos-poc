@@ -2,14 +2,9 @@ import { describe, test, expect } from 'vitest';
 import fs from 'fs';
 
 describe('Nav patrimoine contextuel', () => {
-  test('NavRegistry ne contient plus "Sites & Bâtiments"', () => {
+  test('NavRegistry V7 contient "Sites & bâtiments"', () => {
     const content = fs.readFileSync('src/layout/NavRegistry.js', 'utf-8');
-    expect(content).not.toMatch(/Sites\s*&?\s*B[âa]timents/i);
-  });
-
-  test('NavRegistry contient "Registre patrimonial"', () => {
-    const content = fs.readFileSync('src/layout/NavRegistry.js', 'utf-8');
-    expect(content).toMatch(/Registre patrimonial/);
+    expect(content).toMatch(/Sites\s*&?\s*b[âa]timents/i);
   });
 
   test('NavRegistry contient un hint pour le registre', () => {
