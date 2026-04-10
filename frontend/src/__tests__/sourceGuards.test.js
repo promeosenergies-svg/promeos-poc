@@ -4,7 +4,7 @@
  * Chaque valeur est vérifiée contre sa source officielle.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync, _statSync } from 'fs';
 import { resolve, join } from 'path';
 
 const glossaryPath = resolve(__dirname, '../ui/glossary.js');

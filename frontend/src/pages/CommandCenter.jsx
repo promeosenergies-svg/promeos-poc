@@ -29,7 +29,7 @@ import {
   ScopeSummary,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { toActionsList } from '../services/routes';
+import { _toActionsList } from '../services/routes';
 import {
   getComplianceBundle,
   getActionsSummary,
@@ -46,15 +46,15 @@ import {
   buildTodayActions,
   computeHealthState,
 } from '../models/dashboardEssentials';
-import HealthSummary from '../components/HealthSummary';
-import BriefingHeroCard from './cockpit/BriefingHeroCard';
+import _HealthSummary from '../components/HealthSummary';
+import _BriefingHeroCard from './cockpit/BriefingHeroCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
-import ModuleLaunchers from './cockpit/ModuleLaunchers';
-import EssentialsRow from './cockpit/EssentialsRow';
+import _ModuleLaunchers from './cockpit/ModuleLaunchers';
+import _EssentialsRow from './cockpit/EssentialsRow';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { useCockpitData } from '../hooks/useCockpitData';
 import {
-  AreaChart,
+  _AreaChart,
   Area,
   BarChart,
   Bar,
@@ -307,7 +307,7 @@ export default function CommandCenter() {
       }));
     return [...fromModel, ...fromActions].slice(0, 5);
   }, [kpis, watchlist, opportunities, rawTopActions]); // eslint-disable-line react-hooks/exhaustive-deps
-  const healthState = useMemo(
+  const _healthState = useMemo(
     () => computeHealthState({ kpis, watchlist, briefing, consistency: { ok: true }, alertsCount }),
     [kpis, watchlist, briefing, alertsCount]
   ); // eslint-disable-line react-hooks/exhaustive-deps

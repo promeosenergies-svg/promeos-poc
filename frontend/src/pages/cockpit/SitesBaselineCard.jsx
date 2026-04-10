@@ -14,7 +14,7 @@ export default function SitesBaselineCard({ consoJ1BySite, consoHierTotal }) {
 
   // TRANSFORMATION DE PRÉSENTATION : conso_kwh_an / 365 = baseline journalière estimée
   const totalConsoAn = scopedSites.reduce((s, site) => s + (site.conso_kwh_an || 0), 0);
-  const hasRealJ1 = consoJ1BySite && Object.keys(consoJ1BySite).length > 0;
+  const _hasRealJ1 = consoJ1BySite && Object.keys(consoJ1BySite).length > 0;
 
   const sites = scopedSites.slice(0, 5).map((site) => {
     const baselineJ = site.conso_kwh_an ? Math.round(site.conso_kwh_an / 365) : null;

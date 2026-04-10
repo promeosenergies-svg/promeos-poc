@@ -372,6 +372,7 @@ export function ScopeProvider({ children }) {
       clearScope,
       applyDemoScope,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       scope,
       effectiveOrgId,

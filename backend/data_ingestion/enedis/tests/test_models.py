@@ -663,11 +663,13 @@ class TestEnedisFluxFileError:
 
         f = self._make_file(db)
         err1 = EnedisFluxFileError(
-            flux_file_id=f.id, error_message="first error",
+            flux_file_id=f.id,
+            error_message="first error",
             created_at=datetime(2026, 3, 1, 10, 0, 0),
         )
         err2 = EnedisFluxFileError(
-            flux_file_id=f.id, error_message="second error",
+            flux_file_id=f.id,
+            error_message="second error",
             created_at=datetime(2026, 3, 1, 10, 0, 1),
         )
         db.add_all([err1, err2])

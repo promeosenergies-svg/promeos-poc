@@ -22,6 +22,7 @@ const revenueColor = (rev) => {
 };
 
 export default function FlexBubbleChart({ data }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sites = data?.sites || [];
 
   const chartData = useMemo(

@@ -72,20 +72,28 @@ def _build_parser() -> argparse.ArgumentParser:
 
     ingest_p = subparsers.add_parser("ingest", help="Run ingestion pipeline")
     ingest_p.add_argument(
-        "--dir", type=str, default=None,
+        "--dir",
+        type=str,
+        default=None,
         help="Override ENEDIS_FLUX_DIR env var (must be an existing directory)",
     )
     ingest_p.add_argument(
-        "--dry-run", action="store_true", default=False,
+        "--dry-run",
+        action="store_true",
+        default=False,
         help="Scan and classify without writing to DB",
     )
     ingest_p.set_defaults(recursive=True)
     ingest_p.add_argument(
-        "--no-recursive", dest="recursive", action="store_false",
+        "--no-recursive",
+        dest="recursive",
+        action="store_false",
         help="Disable recursive directory scan (default: recursive)",
     )
     ingest_p.add_argument(
-        "--verbose", action="store_true", default=False,
+        "--verbose",
+        action="store_true",
+        default=False,
         help="Enable DEBUG logging",
     )
     return parser
@@ -231,8 +239,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                     f"(run #{existing_run.id}, started {existing_run.started_at})"
                 )
             print(
-                f"ERROR: {detail}. "
-                f"If the previous run crashed, update its status manually.",
+                f"ERROR: {detail}. If the previous run crashed, update its status manually.",
                 file=sys.stderr,
             )
             return 1

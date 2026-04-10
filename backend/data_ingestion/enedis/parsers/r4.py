@@ -39,7 +39,11 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
 from data_ingestion.enedis.parsers._helpers import (
-    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+    child_text,
+    find_child,
+    header_to_dict,
+    parse_xml_root,
+    strip_ns,
 )
 
 

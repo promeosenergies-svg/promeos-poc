@@ -84,7 +84,7 @@ function ProofSection({ obligation, files, onUpload }) {
             <div className="space-y-1.5">
               {expectedProofs.map((proof, i) => {
                 // Simple matching: a file is linked to a proof if names roughly match
-                const matched = files.find(
+                const _matched = files.find(
                   (f) =>
                     f.name.toLowerCase().includes(proof.toLowerCase().slice(0, 10)) ||
                     i < files.length

@@ -78,7 +78,7 @@ def main():
 
         files = sorted((FLUX_DIR / subdir).glob(pattern))
         if args.first:
-            files = files[:args.first]
+            files = files[: args.first]
 
         print(f"\n{flux_name}: {len(files)} file(s)")
 
@@ -99,14 +99,14 @@ def main():
                 errors.append((f.name, str(e)))
                 print(f"  ERR  {f.name}: {e}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Decrypted {total_files} files ({total_bytes:,} bytes total)")
     print(f"Output: {OUTPUT_DIR}")
     if errors:
         print(f"\n{len(errors)} error(s):")
         for name, msg in errors:
             print(f"  {name}: {msg}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":
