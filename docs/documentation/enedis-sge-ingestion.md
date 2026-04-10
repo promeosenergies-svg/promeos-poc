@@ -134,6 +134,21 @@ Point important pour la suite:
 - apres l'expiration de cette fenetre, elle devient **potentiellement en retard / manquante**
 - cela doit etre traite separement d'un **trou de donnees a l'interieur d'un fichier effectivement livre**
 
+### Fenetres officielles de publication R50
+
+Le guide officiel R50 distingue bien le **pas de la courbe** (`Pas_Publication=30`) de la **cadence de livraison des fichiers** :
+
+| Flux | Periode couverte | Delai officiel de publication |
+|------|------------------|-------------------------------|
+| **R50 quotidien** | Jour J | **Dans la nuit de J+1 a J+2** |
+| **R50 mensuel** | Abonnement mensuel (jour du mois 1-28, pas forcement mois civil) | **Au plus tard le 3eme jour ouvre apres le dernier jour de collecte** |
+
+Points importants pour la suite:
+- le guide R50 autorise des **rattrapages quotidiens** quand les donnees de J etaient indisponibles a la publication initiale: Enedis les republie au plus pres de leur reception, tant que l'abonnement quotidien est toujours actif et que J' reste a moins de 20 jours de J
+- la **cadence quotidienne vs mensuelle** se lit dans la nomenclature de fichier (`_Q_` / `_M_`), pas dans `Pas_Publication`
+- les fichiers mensuels R50 ne doivent donc **pas** etre supposes alignes sur un mois civil; dans le corpus reel, ils couvrent par exemple `2023-01-04 -> 2023-02-03`, puis `2023-02-04 -> 2023-03-03`
+- les compteurs `XXXXX` / `YYYYY` presents dans le nom du fichier servent a verifier la **completude** d'un envoi multi-fichiers pour un abonnement et un numero de sequence donnes
+
 ### Flux hors périmètre (ignorés)
 
 | Type | Raison |
@@ -488,17 +503,17 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
     <Date_Creation>...</Date_Creation>
     <Identifiant_Contrat>...</Identifiant_Contrat>
     <Numero_Abonnement>...</Numero_Abonnement>
-    <Pas_Publication>30</Pas_Publication>                   <!-- 30 minutes -->
+    <Pas_Publication>30</Pas_Publication>                   <!-- pas de courbe = 30 minutes -->
   </En_Tete_Flux>
   <PRM>                                                     <!-- 1..N -->
     <Id_PRM>30001234567890</Id_PRM>
     <Donnees_Releve>                                        <!-- 1..N par PRM -->
       <Date_Releve>2023-01-02</Date_Releve>
       <Id_Affaire>M041AWXF</Id_Affaire>
-      <PDC>                                                 <!-- 0..48 par relevé -->
-        <H>2023-01-02T16:30:00+01:00</H>                   <!-- horodatage obligatoire -->
-        <V>20710</V>                                        <!-- valeur optionnelle -->
-        <IV>0</IV>                                          <!-- indice vraisemblance optionnel -->
+      <PDC>                                                 <!-- 0..N par releve -->
+        <H>2023-01-02T00:30:00+01:00</H>                   <!-- fin de l'intervalle de 30 min -->
+        <V>20710</V>                                        <!-- puissance moyenne sur les 30 min precedentes, en W -->
+        <IV>0</IV>                                          <!-- indice de vraisemblance optionnel -->
       </PDC>
     </Donnees_Releve>
   </PRM>
@@ -508,8 +523,13 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 **Particularités du R50** :
 - Structure à 3 niveaux d'imbrication : fichier → PRM → relevé → PDC
 - **Multi-PRM** : un fichier contient les courbes de plusieurs PRM
-- Pas de publication de 30 minutes (jusqu'à 48 PDC par relevé pour une journée complète)
+- `Pas_Publication=30` décrit le **pas de la courbe**, pas la cadence quotidienne/mensuelle du fichier
+- La valeur `V` est une **puissance moyenne en watts** sur les **30 minutes precedant** `H`
+- Un releve journalier complet pour `Date_Releve=D` s'etend typiquement de `H=00:30` sur `D` a `H=00:00` sur `D+1`
+- Une journee normale contient souvent 48 PDC, mais le corpus reel montre aussi 46 points au passage DST de printemps et des `PDC` avec `H` seul quand la valeur n'est pas encore disponible
+- `IV=1` signifie officiellement **"valeur sujette a caution"**, pas explicitement "estimee"
 - L'émetteur peut être `ERDF` (nom historique)
+- Le parser est volontairement **plus tolerant que la XSD** sur certains cas de bord (ex: liste PRM vide) pour privilegier l'archivage brut en situation degradee
 
 #### Champs obligatoires
 
@@ -527,9 +547,9 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 | `prms[].point_id` | `Id_PRM` | PRM 14 chiffres |
 | `prms[].releves[].date_releve` | `Date_Releve` | Date du relevé |
 | `prms[].releves[].id_affaire` | `Id_Affaire` | Identifiant d'affaire (optionnel) |
-| `prms[].releves[].points[].horodatage` | `H` | ISO8601 avec timezone |
-| `prms[].releves[].points[].valeur` | `V` | Valeur brute string |
-| `prms[].releves[].points[].indice_vraisemblance` | `IV` | "0" ou "1" |
+| `prms[].releves[].points[].horodatage` | `H` | ISO8601 avec timezone -- **fin** de l'intervalle couvert |
+| `prms[].releves[].points[].valeur` | `V` | Valeur brute string -- puissance moyenne en **W** |
+| `prms[].releves[].points[].indice_vraisemblance` | `IV` | "0" ou "1" (`1` = valeur sujette a caution) |
 
 ---
 
@@ -1203,6 +1223,6 @@ cd promeos-poc/backend
 | **ADR** | Accord de Données de Référence -- standard Enedis pour les formats de flux |
 | **FTP** | Protocole de transfert de fichiers utilisé pour la publication des flux SGE |
 | **Classe temporelle** | Découpage tarifaire de la consommation (HPH, HCH, HPE, HCE, etc.) |
-| **Indice de vraisemblance** | Indicateur de qualité de la mesure (0 = réelle, 1+ = estimée) |
+| **Indice de vraisemblance** | Indicateur de qualité dont la signification depend du flux. Pour R50, le guide officiel definit `0 = valeur OK` et `1 = valeur sujette a caution` |
 | **ERDF** | Ancien nom d'Enedis (Électricité Réseau Distribution France) -- présent dans certains flux |
 | **Dry-run** | Mode d'exécution qui simule le traitement sans écrire en base |

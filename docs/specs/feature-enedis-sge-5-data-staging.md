@@ -1,6 +1,6 @@
 # SF5 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
-> **Status**: PRD v2.2 — R4x v2.0.3 review integrated
+> **Status**: PRD v2.3 — R4x v2.0.3 + R50 v2.2.0 review integrated
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — all complete and merged
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 
@@ -103,6 +103,12 @@ meter_load_curve.meter_id  (FK → meter.id)
           quality_score            = mapped from statut_point / indice_vraisemblance
           is_estimated             = mapped from the official status semantics / vraisemblance code
 
+R50-specific normalization nuance:
+- raw `enedis_flux_mesure_r50.horodatage` (`H`) is the **end** timestamp of the covered half-hour
+- raw `enedis_flux_mesure_r50.valeur` (`V`) is the **average active power in W** during the **30 minutes preceding** `H`
+- therefore the canonical promoted interval start is `H - 30 minutes`, and `active_power_kw = valeur_w / 1000`
+- for `Date_Releve = D`, a complete local day covers `[D 00:00 ; D+1 00:00[` even though the raw `H` values run from `00:30` to `00:00` next day
+
 Rows with the same `(meter_id, timestamp, pas_minutes)` are merged into one logical promoted interval row before UPSERT.
 ```
 
@@ -151,8 +157,10 @@ meter_energy_index.meter_id  (FK → meter.id)
 | D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
 | D19 | PRM matching ambiguity | **Exact-one-meter rule** | A PRM is promotable only when it resolves to exactly one valid active electricity meter. No active meter or multiple candidates both block promotion and create backlog entries |
 | D20 | R4x timezone / DST handling | **Trust the XML offset, convert to UTC, and treat official DST patterns as expected** | The official R4x guide uses Paris legal time with offset. Autumn duplicate local hours must survive as distinct UTC instants; spring missing local hour is not a data gap |
-| D21 | CDC temporal semantics | **Store and expose CDC values as forward interval averages** | A value timestamped `H` applies to `[H ; H + pas_minutes[`. Analytics and UX must not present it as an instantaneous spot reading |
+| D21 | CDC temporal semantics | **Store and expose CDC values as forward interval averages after flux-specific timestamp normalization** | R4x raw `H` is already an interval start; R50 raw `H` is an interval end and must be shifted back by 30 minutes. Analytics and UX must not present CDC as instantaneous spot readings |
 | D22 | Publication SLA awareness | **Distinguish not-yet-due publication from overdue missing publication** | Enedis publishes R4x on explicit deadlines (`R4Q` J+1 calendaire, `R4H`/`R4M` by 3rd business day). Freshness decisions must respect those windows before surfacing a "missing publication" condition |
+| D23 | R50 temporal normalization | **Convert raw R50 interval-end timestamps into canonical interval starts before promotion** | The official R50 guide defines `H` as the end of the covered 30-minute interval and `V` as average power in W over the preceding 30 minutes. Promoted `meter_load_curve.timestamp` must therefore be `H - 30 min`, not raw `H` |
+| D24 | R50 publication cadence modeling | **Use filename cadence (`_Q_` / `_M_`) and file-group counters for freshness/completeness, not `Pas_Publication`** | `Pas_Publication=30` describes the curve step, while the guide defines daily vs monthly delivery cadence and multi-file completeness through filename nomenclature |
 
 ---
 
@@ -351,13 +359,17 @@ The official Enedis R4x guide defines the semantics of each status code, but **d
 
 | Value | Meaning | `quality_score` | `is_estimated` |
 |-------|---------|-----------------|----------------|
-| `"0"` | Reel (measured) | 1.00 | False |
-| `"1"` | Estime/reconstitue | 0.60 | True |
-| *(null/unknown)* | Unknown | 0.50 | True |
+| `"0"` | Valeur OK | 1.00 | False |
+| `"1"` | Valeur sujette a caution | 0.70 | False |
+| *(null/unknown)* | Unknown / absent | 0.50 | False |
+
+> **Confirmed fact from the official R50 guide**: `IV` is a **vraisemblance / quality** flag, not an estimation flag. The guide defines only `0 = valeur OK` and `1 = valeur sujette a caution`.
+
+> **Observed fact from the real corpus**: points with missing `V` are emitted as `<PDC><H>...</H></PDC>` and are skipped at promotion time because there is no numeric value to convert.
 
 ### 5.3 Index flux (R151) — `indice_vraisemblance`
 
-Same mapping as R50.
+Provisional Promeos heuristic for now: keep using the same numeric mapping as R50 until the official R151 guide is re-reviewed, but treat that as a **temporary Promeos choice**, not a confirmed Enedis fact.
 
 ### 5.4 Index flux (R171) — No quality indicator
 
@@ -378,7 +390,7 @@ Each staging flux type routes to a specific functional table:
 | `enedis_flux_mesure_r4x` | R4H | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
 | `enedis_flux_mesure_r4x` | R4M | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
 | `enedis_flux_mesure_r4x` | R4Q | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
-| `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `30` | kW |
+| `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `30` | raw `W` -> promoted `kW` |
 | `enedis_flux_mesure_r171` | R171 | **`meter_energy_index`** | Per `date_fin` (daily) | Wh |
 | `enedis_flux_mesure_r151` | R151 (CT/CT_DIST) | **`meter_energy_index`** | Per `date_releve` | Wh |
 | `enedis_flux_mesure_r151` | R151 (PMAX) | **`meter_power_peak`** | Per `date_releve` | VA |
@@ -393,9 +405,23 @@ Each staging flux type routes to a specific functional table:
 > | `R4H` | Week ending Friday 23:50 | no later than the 3rd business day after week end, before midnight |
 > | `R4M` | Calendar month | no later than the 3rd business day after month end, before midnight |
 
+> **Important**: R50 has its own official publication semantics and they matter for freshness/completeness:
+>
+> | R50 cadence | Covered period | Official publication rule |
+> |-------------|----------------|---------------------------|
+> | Daily (`_Q_`) | Day `J` | published during the night from `J+1` to `J+2` |
+> | Monthly (`_M_`) | Subscription monthly window, not necessarily calendar month | no later than the 3rd business day after the last collection day |
+>
+> Additional official constraints:
+> - if day `J` was unavailable at the initial daily publication, Enedis may republish it later in a daily R50 flow when the data arrives
+> - that delayed daily replay is allowed only while the daily subscription is still active and only if the replay date stays within 20 days of `J`
+> - file-group completeness for one subscription + sequence is checked through the filename counters `XXXXX` / `YYYYY`
+
+> **Observed fact from the real monthly corpus**: the monthly R50 files are not aligned to civil months. They cover windows such as `2023-01-04 -> 2023-02-03`, then `2023-02-04 -> 2023-03-03`, which is consistent with the official "publication day 1-28" subscription model.
+
 > **Note on CDC units**: Enedis CDC values are interval averages, not consumption deltas and not instantaneous spot readings. For active power, downstream services that need interval energy compute `energy_kwh = active_power_kw * pas_minutes / 60`.
 
-> **UX interpretation note**: charts, tables, and tooltips should describe a CDC point as "average power over `10:00-10:05`" or equivalent, not "power at 10:00". Step charts, bars, and interval labels are safer defaults than point-sample wording.
+> **UX interpretation note**: charts, tables, and tooltips should describe a CDC point as "average power over `10:00-10:30`" or equivalent, not "power at 10:30". Step charts, bars, and interval labels are safer defaults than point-sample wording.
 
 > **R4x transport rules to honor in SF5**:
 > - parse the explicit XML timezone offset and convert to UTC before enforcing uniqueness
@@ -432,6 +458,11 @@ Publication freshness should be tracked separately from PRM backlog:
 - file received, but some intervals are missing inside the delivered dataset -> data gap / completeness issue
 
 These states should not be collapsed into a single "missing data" bucket because they drive different operational responses.
+
+For R50 specifically:
+- freshness must distinguish **daily cadence** from **monthly cadence** using filename nomenclature, not `Pas_Publication`
+- monthly completeness must not assume calendar-month boundaries
+- multi-file completeness for one subscription/sequence should use `XXXXX` / `YYYYY`
 
 ### Stage 2: Match — Resolve PRMs to Meters
 
@@ -483,29 +514,40 @@ For each staging row to promote, determine the target table and convert values:
 
 **CDC rows (R4x, R50) → `meter_load_curve`:**
 ```
-timestamp     = parse_iso8601_to_naive_utc(horodatage)  # preserves DST duplicates via source offset
-pas_minutes   = int(granularite) for R4x, 30 for R50
-quality_score = QUALITY_MAP[statut_point or indice_vraisemblance]  # Section 5
-is_estimated  = ESTIMATED_MAP[statut_point or indice_vraisemblance]  # Section 5
+if flux_type in ('R4H', 'R4M', 'R4Q'):
+    timestamp     = parse_iso8601_to_naive_utc(horodatage)  # raw H is already interval start
+    pas_minutes   = int(granularite)
+    quality_score = QUALITY_MAP[statut_point]  # Section 5
+    is_estimated  = ESTIMATED_MAP[statut_point]  # Section 5
+elif flux_type == 'R50':
+    interval_end  = parse_iso8601_to_naive_utc(horodatage)
+    pas_minutes   = 30
+    timestamp     = interval_end - timedelta(minutes=30)  # raw H is interval end in the official guide
+    quality_score = R50_IV_QUALITY_MAP[indice_vraisemblance]  # Section 5.2
+    is_estimated  = False  # IV is a caution flag, not an estimation flag
+    active_power_kw = float(valeur) / 1000  # raw V is average power in W
+
 source_flux_type = flux_type
 
 if flux_type in ('R4H', 'R4M', 'R4Q') and pas_minutes not in (5, 10):
     skip row, log unexpected official R4x granularite
 
-if grandeur_physique == 'EA':
+if flux_type in ('R4H', 'R4M', 'R4Q') and grandeur_physique == 'EA':
     active_power_kw = float(raw_value)
-if grandeur_physique == 'ERI':
+if flux_type in ('R4H', 'R4M', 'R4Q') and grandeur_physique == 'ERI':
     reactive_inductive_kvar = float(raw_value)
-if grandeur_physique == 'ERC':
+if flux_type in ('R4H', 'R4M', 'R4Q') and grandeur_physique == 'ERC':
     reactive_capacitive_kvar = float(raw_value)
-if grandeur_physique == 'E' and unite_mesure == 'V':
+if flux_type in ('R4H', 'R4M', 'R4Q') and grandeur_physique == 'E' and unite_mesure == 'V':
     voltage_v = float(raw_value)
 
 Merge all CDC rows sharing (meter_id, timestamp, pas_minutes) into one promoted interval row
 before UPSERT.
 
 # Semantics:
-# a row timestamped H represents the covered interval [H ; H + pas_minutes[
+# - R4x raw H represents the covered interval start: [H ; H + pas_minutes[
+# - R50 raw H represents the covered interval end: promoted timestamp = H - 30 min,
+#   so the canonical row still represents [timestamp ; timestamp + 30 min[
 # any later aggregation to hourly/daily energy must respect this half-open interval model
 ```
 
@@ -791,6 +833,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 | OQ7 | Auto-resolution of unmatched PRMs when new DeliveryPoints are onboarded | Open | Natural extension of the unmatched PRM workflow |
 | OQ8 | Multi-XML R4x archive support in SF1-SF4 raw ingestion | Open | The official guide allows 1..n XML per ZIP archive. Current POC observations were mono-XML, but staging completeness depends on hardening this assumption |
 | OQ9 | Business-day calendar for R4H/R4M SLA evaluation | Open | "3rd business day" needs an explicit calendar/timezone policy before we operationalize `late_publication` detection |
+| OQ10 | R50 cadence/file-group completeness tracking from filename nomenclature | Open | Daily vs monthly cadence, subscription monthly day, and `XXXXX`/`YYYYY` completeness are official R50 rules but are not yet modeled as first-class staging metadata |
 
 ---
 
@@ -835,6 +878,6 @@ This feature is too large for a single implementation session. Proposed phasing:
 | **`pas_minutes`** | Exact CDC interval size stored on promoted `meter_load_curve` rows (`5`, `10`, `30`) |
 | **`[start ; end[`** | Half-open interval semantics used for CDC rows: start included, end excluded |
 | **Statut_point** | Enedis measurement-status / provenance code (R/H/P/S/T/F/G/E/C/K/D) carried by R4x points |
-| **Indice_vraisemblance** | R50/R151 quality indicator (0=measured, 1=estimated) |
+| **Indice_vraisemblance** | Quality indicator whose meaning depends on the flux. For R50, the official guide defines `0=valeur OK`, `1=valeur sujette a caution` |
 | **Tariff class** | Time-of-use period (HCE=heures creuses ete, HPH=heures pleines hiver, etc.) |
 | **CT / CT_DIST** | Supplier grid (CT) vs distributor grid (CT_DIST) — two parallel tariff classification systems |

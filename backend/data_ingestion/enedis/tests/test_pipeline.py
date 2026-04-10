@@ -684,11 +684,13 @@ R50_XML = b"""\
 <R50>
   <En_Tete_Flux>
     <Identifiant_Flux>R50</Identifiant_Flux>
-    <Libelle_Flux>Courbes de charge C5</Libelle_Flux>
+    <Libelle_Flux>Courbes de charge des PRM du segment C5 sur abonnement</Libelle_Flux>
     <Version_XSD>1.1.0</Version_XSD>
     <Identifiant_Emetteur>ERDF</Identifiant_Emetteur>
-    <Identifiant_Destinataire>GRD-F121</Identifiant_Destinataire>
-    <Date_Creation>2026-03-01</Date_Creation>
+    <Identifiant_Destinataire>23X--TEST</Identifiant_Destinataire>
+    <Date_Creation>2026-03-02T01:00:00+01:00</Date_Creation>
+    <Identifiant_Contrat>GRD-F121</Identifiant_Contrat>
+    <Numero_Abonnement>3363068</Numero_Abonnement>
     <Pas_Publication>30</Pas_Publication>
   </En_Tete_Flux>
   <PRM>
@@ -697,12 +699,12 @@ R50_XML = b"""\
       <Date_Releve>2026-03-01</Date_Releve>
       <Id_Affaire>M041AWXF</Id_Affaire>
       <PDC>
-        <H>2026-03-01T00:00:00+01:00</H>
+        <H>2026-03-01T00:30:00+01:00</H>
         <V>20710</V>
         <IV>0</IV>
       </PDC>
       <PDC>
-        <H>2026-03-01T00:30:00+01:00</H>
+        <H>2026-03-01T01:00:00+01:00</H>
         <V>20750</V>
         <IV>0</IV>
       </PDC>
@@ -720,15 +722,15 @@ R50_MULTI_PRM_XML = b"""\
     <Id_PRM>30001234567890</Id_PRM>
     <Donnees_Releve>
       <Date_Releve>2026-03-01</Date_Releve>
-      <PDC><H>2026-03-01T00:00:00+01:00</H><V>100</V></PDC>
+      <PDC><H>2026-03-01T00:30:00+01:00</H><V>100</V></PDC>
     </Donnees_Releve>
   </PRM>
   <PRM>
     <Id_PRM>30009876543210</Id_PRM>
     <Donnees_Releve>
       <Date_Releve>2026-03-01</Date_Releve>
-      <PDC><H>2026-03-01T00:00:00+01:00</H><V>200</V></PDC>
-      <PDC><H>2026-03-01T00:30:00+01:00</H><V>210</V></PDC>
+      <PDC><H>2026-03-01T00:30:00+01:00</H><V>200</V></PDC>
+      <PDC><H>2026-03-01T01:00:00+01:00</H><V>210</V></PDC>
     </Donnees_Releve>
   </PRM>
 </R50>"""
@@ -743,7 +745,7 @@ R50_XML_V2 = b"""\
     <Id_PRM>30001234567890</Id_PRM>
     <Donnees_Releve>
       <Date_Releve>2026-03-01</Date_Releve>
-      <PDC><H>2026-03-01T00:00:00+01:00</H><V>20715</V><IV>1</IV></PDC>
+      <PDC><H>2026-03-01T00:30:00+01:00</H><V>20715</V><IV>1</IV></PDC>
     </Donnees_Releve>
   </PRM>
 </R50>"""
@@ -780,7 +782,7 @@ class TestIngestR50Pipeline:
         assert m0.flux_type == "R50"
         assert m0.date_releve == "2026-03-01"
         assert m0.id_affaire == "M041AWXF"
-        assert m0.horodatage == "2026-03-01T00:00:00+01:00"
+        assert m0.horodatage == "2026-03-01T00:30:00+01:00"
         assert m0.valeur == "20710"
         assert m0.indice_vraisemblance == "0"
 

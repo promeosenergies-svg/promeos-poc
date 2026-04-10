@@ -1,4 +1,4 @@
-# Feature Spec : Ingestion des flux R171 + Index (C5) — R171, R50 et R151
+# Feature Spec : Ingestion des flux R171 + C5 — R171, R50 et R151
 
 > **Sub-feature 3/3** — Dépend de SF1 (déchiffrement) et SF2 (modèle + pipeline R4x).
 > Chaîne : SF1 (decrypt) ✅ → SF2 (ingestion CDC R4x) ✅ → **SF3 (R171 + Index)**
@@ -97,12 +97,12 @@ git checkout -b feat/enedis-sge-3-ingestion-index
 
 ## Contexte
 
-Les SF1 et SF2 ont livré le module de déchiffrement, le modèle de données staging (2 tables), le parser R4x, et le pipeline d'ingestion. Cette sub-feature étend le pipeline pour supporter les **3 types de flux restants** : R171 (CDC par PRM), R50 (index mensuels C5), et R151 (relevés trimestriels C5).
+Les SF1 et SF2 ont livré le module de déchiffrement, le modèle de données staging (2 tables), le parser R4x, et le pipeline d'ingestion. Cette sub-feature étend le pipeline pour supporter les **3 types de flux restants** : R171 (CDC par PRM), R50 (courbe de charge C5), et R151 (relevés trimestriels C5).
 
 ### Ce que cette sub-feature doit livrer
 
 - **Parser R171** pour les CDC journalières par PRM (C1-C4)
-- **Parsers R50 et R151** pour les index de consommation (C5)
+- **Parser R50** pour la courbe de charge C5 et **parser R151** pour les releves/index C5
 - **Extension du pipeline** `ingest_file()` pour dispatcher vers les 3 nouveaux parsers
 - **Extension du modèle** si la structure XML diverge trop de `EnedisFluxMesure` (voir décision Option A/B ci-dessous)
 - **Fonction `ingest_directory()`** pour traitement batch d'un répertoire complet
@@ -115,7 +115,7 @@ Les SF1 et SF2 ont livré le module de déchiffrement, le modèle de données st
 | **C1-C4** | Segments de comptage haute puissance (télérelevés, CDC disponible) |
 | **C5** | Segment résidentiel/petit tertiaire — comptage par index (pas de CDC native) |
 | **R171** | CDC journalière **par PRM individuel** (C1-C4) — différé de SF2 car XML très différent des R4x |
-| **R50** | Index de consommation mensuels par PRM (C5) |
+| **R50** | Courbe de charge des PRM C5 sur abonnement (pas 30 min, publication quotidienne ou mensuelle) |
 | **R151** | Relevés trimestriels par PRM (C5) |
 | **Index** | Valeur cumulée du compteur à un instant donné (en kWh) — contrairement à la CDC qui donne la puissance/énergie par intervalle |
 | **ERDF** | Ancien nom d'Enedis — les flux C5 utilisent le préfixe historique `ERDF_` dans les noms de fichier |
@@ -125,7 +125,7 @@ Les SF1 et SF2 ont livré le module de déchiffrement, le modèle de données st
 | Flux | Contenu | Granularité | Cadence | Préfixe fichier |
 |------|---------|-------------|---------|-----------------|
 | **R171** | CDC journalière par PRM | Par PRM (14 chiffres) | Quotidien | `ENEDIS_R171_` |
-| **R50** | Index mensuels | Par PRM | Mensuel | `ERDF_R50_` |
+| **R50** | Courbe de charge C5 | Par PRM | Quotidien ou mensuel | `ERDF_R50_` |
 | **R151** | Relevés trimestriels | Par PRM | Trimestriel | `ERDF_R151_` |
 
 ### Particularités des flux
@@ -145,8 +145,8 @@ Le modèle SF2 utilise des **colonnes string dédiées** (pas de `extra_data` JS
 | `point_id` String(14) | PRM du périmètre fournisseur | R171: PRM individuel, R50/R151: PRM individuel |
 | `grandeur_physique` String(10) | EA/ERI/ERC/E | R171: à vérifier dans le XML |
 | `grandeur_metier` String(10) | CONS/PROD | R171: à vérifier |
-| `unite_mesure` String(10) | kW/kWr/V | R50/R151: probablement kWh |
-| `granularite` String(10) | Pas en minutes | R171: oui, R50/R151: à vérifier |
+| `unite_mesure` String(10) | kW/kWr/V | R50: non (la valeur est en W dans `<V>`), R151: n/a |
+| `granularite` String(10) | Pas en minutes | R171: oui, R50: non (pas fixe via `Pas_Publication`), R151: n/a |
 | `horodatage` String(50) | ISO8601 du point | Tous: horodatage de la mesure/index |
 | `valeur_point` String(20) | Valeur brute | Tous: valeur brute |
 | `statut_point` String(2) | R/H/P/S/T/F/G/E/C/K/D | R171: probablement, R50/R151: à vérifier |
@@ -179,7 +179,7 @@ SF2 a explicitement choisi de ne PAS avoir de contrainte unique sur `EnedisFluxM
 | Parser | Fichier | Flux | Particularité |
 |--------|---------|------|---------------|
 | `parse_r171()` | `parsers/r171.py` | R171 | CDC journalière par PRM individuel, namespace `ns2` |
-| `parse_r50()` | `parsers/r50.py` | R50 | Index mensuels par PRM |
+| `parse_r50()` | `parsers/r50.py` | R50 | Courbe de charge C5 (points 30 min) |
 | `parse_r151()` | `parsers/r151.py` | R151 | Relevés trimestriels par PRM |
 
 ### Convention SF2 pour les parsers
@@ -301,7 +301,7 @@ backend/
 
 ### Tests unitaires — Parsers Index (`test_parsers_index.py`)
 
-1. **parse_r50** : fixture synthétique, vérifier PRM, horodatage, valeur index (string brute), unité
+1. **parse_r50** : fixture synthétique, vérifier PRM, horodatage, puissance moyenne brute (string), qualité
 2. **parse_r151** : fixture synthétique, vérifier extraction correcte
 3. **Parser namespace ERDF** : vérifier que les parsers fonctionnent avec les namespaces `ERDF` historiques
 4. **Parser XML vide** : XML valide sans mesures → structure vide, pas d'exception

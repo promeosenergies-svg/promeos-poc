@@ -21,8 +21,8 @@ XML structure (Enedis ADR V70 -- R50 Courbe de charge C5):
       <Donnees_Releve>  (1..N per PRM)
         <Date_Releve>2023-01-02</Date_Releve>
         <Id_Affaire>M041AWXF</Id_Affaire>
-        <PDC>  (0..48 per releve for 30-min steps)
-          <H>2023-01-02T16:30:00+01:00</H>
+        <PDC>  (0..N per releve; usually 48, 46 on spring DST, 50 on autumn DST)
+          <H>2023-01-02T00:30:00+01:00</H>
           <V>20710</V>
           <IV>0</IV>
         </PDC>
@@ -33,8 +33,15 @@ XML structure (Enedis ADR V70 -- R50 Courbe de charge C5):
 Tolerances:
   - xmlns:xsi namespace attribute on root -> stripped transparently
   - PDC with only <H> (no <V> or <IV>) -> valeur=None, indice_vraisemblance=None
-  - Empty PRM list (valid XML, 0 PRMs) -> empty list, no error
+  - Empty PRM list (outside the XSD, but tolerated for resilient ingestion) -> empty list, no error
   - Empty Donnees_Releve (0 PDC) -> empty points list, no error
+
+Official R50 semantics to preserve for downstream normalization:
+  - H is the end timestamp of the covered 30-minute interval
+  - V is the average active power during the 30 minutes preceding H
+  - V is expressed in watts (W)
+  - For Date_Releve D, a complete local day usually runs from H=00:30 on D
+    through H=00:00 on D+1
 """
 
 import xml.etree.ElementTree as ET
@@ -57,8 +64,8 @@ class R50ParseError(Exception):
 class ParsedR50Point:
     """A single PDC (point de courbe) -- raw strings."""
 
-    horodatage: str  # H - ISO8601 with timezone
-    valeur: str | None  # V - raw string, None if absent
+    horodatage: str  # H - interval end timestamp, ISO8601 with timezone
+    valeur: str | None  # V - average active power in W over the preceding 30 min
     indice_vraisemblance: str | None  # IV - "0"/"1", None if absent
 
 

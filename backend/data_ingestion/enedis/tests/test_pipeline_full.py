@@ -77,7 +77,7 @@ R50_XML = b"""\
     <Id_PRM>30001234567890</Id_PRM>
     <Donnees_Releve>
       <Date_Releve>2026-03-01</Date_Releve>
-      <PDC><H>2026-03-01T00:00:00+01:00</H><V>20710</V></PDC>
+      <PDC><H>2026-03-01T00:30:00+01:00</H><V>20710</V></PDC>
     </Donnees_Releve>
   </PRM>
 </R50>"""

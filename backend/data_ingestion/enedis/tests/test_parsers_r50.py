@@ -176,10 +176,10 @@ class TestParseR50Nominal:
         assert result.prms[0].releves[2].date_releve == "2023-01-03"
 
     def test_multiple_pdcs_per_releve_48_points(self):
-        """Typical: 48 half-hour points per day."""
+        """Official full day: 48 half-hour points from 00:30 to 00:00 next day."""
         pdcs = "\n".join(
             _make_pdc_xml(
-                h=f"2023-01-02T{i // 2:02d}:{(i % 2) * 30:02d}:00+01:00",
+                h=f"2023-01-{2 + ((i + 1) // 48):02d}T{((i + 1) % 48) // 2:02d}:{((i + 1) % 2) * 30:02d}:00+01:00",
                 v=str(20000 + i * 10),
                 iv="0",
             )
@@ -191,9 +191,34 @@ class TestParseR50Nominal:
         result = parse_r50(xml)
 
         assert len(result.prms[0].releves[0].points) == 48
-        # Verify first and last
-        assert result.prms[0].releves[0].points[0].horodatage == "2023-01-02T00:00:00+01:00"
-        assert result.prms[0].releves[0].points[47].horodatage == "2023-01-02T23:30:00+01:00"
+        assert result.prms[0].releves[0].points[0].horodatage == "2023-01-02T00:30:00+01:00"
+        assert result.prms[0].releves[0].points[47].horodatage == "2023-01-03T00:00:00+01:00"
+
+    def test_spring_dst_day_can_have_46_points(self):
+        """Observed/official DST-short day: 46 points is valid for R50."""
+        hours = [
+            "2023-03-26T00:30:00+01:00",
+            "2023-03-26T01:00:00+01:00",
+            "2023-03-26T01:30:00+01:00",
+            "2023-03-26T03:00:00+02:00",
+        ]
+        hours.extend(
+            f"2023-03-26T{h:02d}:{m:02d}:00+02:00"
+            for h in range(3, 24)
+            for m in (0, 30)
+            if not (h == 3 and m == 0)
+        )
+        hours.append("2023-03-27T00:00:00+02:00")
+        pdcs = "\n".join(_make_pdc_xml(h=h, v=str(20000 + i * 10), iv="0") for i, h in enumerate(hours))
+        releve = _make_releve_xml(date_releve="2023-03-26", pdcs_xml=pdcs)
+        prm = _make_prm_xml(releves_xml=releve)
+        xml = _make_r50_xml(prms_xml=prm)
+
+        result = parse_r50(xml)
+
+        assert len(result.prms[0].releves[0].points) == 46
+        assert result.prms[0].releves[0].points[0].horodatage == "2023-03-26T00:30:00+01:00"
+        assert result.prms[0].releves[0].points[-1].horodatage == "2023-03-27T00:00:00+02:00"
 
 
 # ---------------------------------------------------------------------------
