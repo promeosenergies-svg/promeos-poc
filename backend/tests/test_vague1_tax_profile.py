@@ -277,3 +277,117 @@ class TestSeedVague1:
         assert isinstance(summary.grd_codes_set, int)
         assert isinstance(summary.tax_profiles_created, int)
         assert isinstance(summary.errors, list)
+
+
+# ── Wiring shadow billing : code accise sélectionné par catégorie ───────
+
+
+class TestShadowBillingWiring:
+    """Vérifie que shadow_billing_v2 route vers le bon code accise."""
+
+    def test_accise_code_default_without_profile(self):
+        """Sans profil : fallback sur code par défaut T2/PME."""
+        from services.billing_shadow_v2 import _accise_code_for_category
+
+        assert _accise_code_for_category("elec", None) == "ACCISE_ELEC"
+        assert _accise_code_for_category("gaz", None) == "ACCISE_GAZ"
+
+    def test_accise_code_household_routes_to_t1(self):
+        """HOUSEHOLD → ACCISE_ELEC_T1 (ménages & assimilés)."""
+        from services.billing_shadow_v2 import _accise_code_for_category
+
+        tp = TaxProfile(accise_category_elec=AcciseCategoryElec.HOUSEHOLD)
+        assert _accise_code_for_category("elec", tp) == "ACCISE_ELEC_T1"
+
+    def test_accise_code_high_power_routes_to_hp(self):
+        """HIGH_POWER → ACCISE_ELEC_HP."""
+        from services.billing_shadow_v2 import _accise_code_for_category
+
+        tp = TaxProfile(accise_category_elec=AcciseCategoryElec.HIGH_POWER)
+        assert _accise_code_for_category("elec", tp) == "ACCISE_ELEC_HP"
+
+    def test_accise_code_sme_routes_to_default_t2(self):
+        """SME → ACCISE_ELEC (= T2 PME, code par défaut)."""
+        from services.billing_shadow_v2 import _accise_code_for_category
+
+        tp = TaxProfile(accise_category_elec=AcciseCategoryElec.SME)
+        assert _accise_code_for_category("elec", tp) == "ACCISE_ELEC"
+
+    def test_accise_code_gaz_ignores_category(self):
+        """Pour le gaz, la catégorie n'affecte pas le code (1 seul code ACCISE_GAZ)."""
+        from services.billing_shadow_v2 import _accise_code_for_category
+
+        tp = TaxProfile(accise_category_gaz=AcciseCategoryGaz.REDUCED)
+        assert _accise_code_for_category("gaz", tp) == "ACCISE_GAZ"
+
+    def test_shadow_billing_v2_accepts_tax_profile_param(self):
+        """shadow_billing_v2 accepte le paramètre tax_profile (rétrocompat)."""
+        from types import SimpleNamespace
+
+        from services.billing_shadow_v2 import shadow_billing_v2
+
+        inv = SimpleNamespace(
+            id=1,
+            energy_kwh=1000,
+            total_eur=200,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 5, 1),
+            raw_json=None,
+        )
+        contract = SimpleNamespace(
+            id=1,
+            price_ref_eur_per_kwh=0.15,
+            fixed_fee_eur_per_month=0,
+            subscribed_power_kva=12,
+            energy_type=SimpleNamespace(value="elec"),
+            supplier_name="TEST",
+        )
+
+        # Sans profil : par défaut (T2/PME)
+        res_default = shadow_billing_v2(inv, [], contract, db=None, tax_profile=None)
+        assert res_default["calc_version"] == "v2_parameter_store"
+
+        # Avec profil HOUSEHOLD : code T1
+        tp = TaxProfile(accise_category_elec=AcciseCategoryElec.HOUSEHOLD)
+        res_house = shadow_billing_v2(inv, [], contract, db=None, tax_profile=tp)
+        assert res_house["calc_version"] == "v2_parameter_store"
+
+        # Les 2 résultats doivent avoir des accise potentiellement différentes
+        # (via le composant taxes)
+        accise_default = res_default["components"][2]["unit_rate"]
+        accise_house = res_house["components"][2]["unit_rate"]
+        # T1 (30.85 EUR/MWh) != T2 (26.58 EUR/MWh) pour fev 2026+
+        # Les 2 codes doivent au moins résoudre à des valeurs non-nulles
+        assert accise_default > 0
+        assert accise_house > 0
+
+    def test_assumptions_trace_tax_profile_category(self):
+        """Les assumptions du résultat incluent la catégorie fiscale utilisée."""
+        from types import SimpleNamespace
+
+        from services.billing_shadow_v2 import shadow_billing_v2
+
+        inv = SimpleNamespace(
+            id=1,
+            energy_kwh=1000,
+            total_eur=200,
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 5, 1),
+            raw_json=None,
+        )
+        contract = SimpleNamespace(
+            id=1,
+            price_ref_eur_per_kwh=0.15,
+            fixed_fee_eur_per_month=0,
+            subscribed_power_kva=12,
+            energy_type=SimpleNamespace(value="elec"),
+            supplier_name="TEST",
+        )
+
+        tp = TaxProfile(accise_category_elec=AcciseCategoryElec.HIGH_POWER)
+        res = shadow_billing_v2(inv, [], contract, db=None, tax_profile=tp)
+        assumptions = res["diagnostics"]["assumptions"]
+        trace_lines = [a for a in assumptions if "Accise" in a]
+        assert len(trace_lines) >= 1
+        assert "HIGH_POWER" in trace_lines[0]
+        assert "ACCISE_ELEC_HP" in trace_lines[0]
