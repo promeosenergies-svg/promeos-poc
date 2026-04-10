@@ -969,12 +969,13 @@ class AtrdOption(str, enum.Enum):
     """
     Option tarifaire ATRD7 GRDF (distribution gaz).
 
-    Seuils CAR en MWh/an (grille ATRD7 au 1er juillet 2024) :
-    - T1 : 0 - 6 MWh/an      (petits consommateurs, cuisson)
-    - T2 : 6 - 300 MWh/an    (résidentiel chauffage, petits pros)
-    - T3 : 300 - 5000 MWh/an (tertiaire, PME)
-    - T4 : > 5000 MWh/an     (gros industriels — abonnement + capacité journalière)
-    - TP : tarif de proximité (industriels dédiés)
+    Seuils CAR en kWh/an — la colonne `DeliveryPoint.car_kwh` et la fonction
+    `derive_atrd_option_from_car(car_kwh)` travaillent en kWh :
+    - T1 : 0 – 6 000 kWh/an           (petits consommateurs, cuisson)
+    - T2 : 6 000 – 300 000 kWh/an     (résidentiel chauffage, petits pros)
+    - T3 : 300 000 – 5 000 000 kWh/an (tertiaire, PME)
+    - T4 : > 5 000 000 kWh/an         (gros industriels — abo + capacité journalière)
+    - TP : tarif de proximité (industriels dédiés, non dérivable — négocié)
     """
 
     T1 = "T1"

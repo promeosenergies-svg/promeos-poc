@@ -284,12 +284,17 @@ class TestCesureTriple1Aout2025:
         assert accise_gaz.valid_from == date(2025, 8, 1)
 
     def test_atrd7_gaz_stable_across_cesure(self, store):
-        """L'ATRD7 gaz (1/07/2024) ne change PAS à la césure du 1/08/2025."""
+        """
+        L'ATRD7 gaz ne change PAS à la césure du 1/08/2025 (TURPE/TVA).
+        Note : la révision annuelle ATRD7 est au 1/07/2025 — une césure
+        distincte (cf. TestAtrdRevision2025).
+        """
         before = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 7, 31))
         at = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 8, 1))
         after = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 8, 15))
-        assert before.value == at.value == after.value == pytest.approx(177.78)
-        assert before.valid_from == date(2024, 7, 1)
+        # Les 3 dates sont post-révision ATRD7 2025 → même valeur 186.12
+        assert before.value == at.value == after.value == pytest.approx(186.12)
+        assert before.valid_from == date(2025, 7, 1)
 
     def test_invoice_spanning_triple_cesure(self, store):
         """
