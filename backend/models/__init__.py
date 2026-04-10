@@ -310,8 +310,9 @@ from .recommendation_outcome import RecommendationOutcome, CalibrationVersion
 from .audit_sme import AuditEnergetique
 
 # Contrats V2 Cadre+Annexe
+# NOTE: ContratCadre is introduced by PR #190 (Phase 1) and not yet on main.
+# Import it lazily in code that actually needs it until PR #190 lands.
 from .contract_v2_models import (
-    ContratCadre,
     ContractAnnexe,
     ContractPricing,
     VolumeCommitment,
@@ -418,7 +419,6 @@ __all__ = [
     "BillingInvoiceStatus",
     "InsightStatus",
     # Contrats V2 Cadre+Annexe
-    "ContratCadre",
     "ContractAnnexe",
     "ContractPricing",
     "VolumeCommitment",
