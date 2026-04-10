@@ -2150,6 +2150,7 @@ def _migrate_phase1_contrats_cadre(engine):
 
     try:
         from migrations.add_contrats_cadre_phase1 import migrate as phase1_migrate
+
         phase1_migrate(str(db_path))
     except Exception as e:
         logger.warning("migration phase1: %s", e)
@@ -2177,6 +2178,7 @@ def _migrate_phase5_invoice_annexe_site(engine):
 
     try:
         from migrations.add_invoice_annexe_site_phase5 import migrate as phase5_migrate
+
         phase5_migrate(str(db_path))
     except Exception as e:
         logger.warning("migration phase5: %s", e)

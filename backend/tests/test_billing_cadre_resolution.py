@@ -266,8 +266,7 @@ class TestV2CadreInheritance:
 
         result = _resolve_cadre_weighted_price(db, annexe)
         assert result is not None, (
-            "V2 cadre inheritance broken: annexe without override should resolve "
-            "from cadre.prix_base_eur_kwh"
+            "V2 cadre inheritance broken: annexe without override should resolve from cadre.prix_base_eur_kwh"
         )
         price, source = result
         assert price == pytest.approx(0.145)
@@ -277,7 +276,9 @@ class TestV2CadreInheritance:
         """Non-override annexe inherits prix_hp/hc from the V2 cadre with weighted avg."""
         org, site = _make_site(db, "OrgHpHcInh", "500000005", "SiteHpHcInh")
         cadre = _make_cadre(
-            db, org.id, 1,
+            db,
+            org.id,
+            1,
             prix_hp_eur_kwh=0.170,
             prix_hc_eur_kwh=0.110,
         )
@@ -309,6 +310,7 @@ class TestGetCadreV2:
     def test_get_cadre_returns_v2_cadre(self, db):
         """get_cadre(id) returns a V2 ContratCadre when it exists."""
         from services.contract_v2_service import get_cadre as svc_get_cadre
+
         org, site = _make_site(db, "OrgGet", "600000006", "SiteGet")
         cadre = _make_cadre(db, org.id, 1, prix_base_eur_kwh=0.15)
         annexe = _make_annexe(db, cadre.id, site.id, with_base_pricing=True)
@@ -322,6 +324,6 @@ class TestGetCadreV2:
     def test_get_cadre_returns_none_for_unknown_id(self, db):
         """get_cadre(unknown) returns None, not an error."""
         from services.contract_v2_service import get_cadre as svc_get_cadre
+
         result = svc_get_cadre(db, 99999)
         assert result is None
-

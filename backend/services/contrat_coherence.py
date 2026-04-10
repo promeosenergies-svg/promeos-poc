@@ -510,26 +510,32 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
     if v2_cadre:
         v2_lines = []
         if v2_cadre.prix_base_eur_kwh is not None:
-            v2_lines.append({
-                "period_code": "BASE",
-                "season": "ANNUEL",
-                "unit_price_eur_kwh": _as_float(v2_cadre.prix_base_eur_kwh),
-                "source": "cadre",
-            })
+            v2_lines.append(
+                {
+                    "period_code": "BASE",
+                    "season": "ANNUEL",
+                    "unit_price_eur_kwh": _as_float(v2_cadre.prix_base_eur_kwh),
+                    "source": "cadre",
+                }
+            )
         if v2_cadre.prix_hp_eur_kwh is not None:
-            v2_lines.append({
-                "period_code": "HP",
-                "season": "ANNUEL",
-                "unit_price_eur_kwh": _as_float(v2_cadre.prix_hp_eur_kwh),
-                "source": "cadre",
-            })
+            v2_lines.append(
+                {
+                    "period_code": "HP",
+                    "season": "ANNUEL",
+                    "unit_price_eur_kwh": _as_float(v2_cadre.prix_hp_eur_kwh),
+                    "source": "cadre",
+                }
+            )
         if v2_cadre.prix_hc_eur_kwh is not None:
-            v2_lines.append({
-                "period_code": "HC",
-                "season": "ANNUEL",
-                "unit_price_eur_kwh": _as_float(v2_cadre.prix_hc_eur_kwh),
-                "source": "cadre",
-            })
+            v2_lines.append(
+                {
+                    "period_code": "HC",
+                    "season": "ANNUEL",
+                    "unit_price_eur_kwh": _as_float(v2_cadre.prix_hc_eur_kwh),
+                    "source": "cadre",
+                }
+            )
         if v2_lines:
             return v2_lines
 

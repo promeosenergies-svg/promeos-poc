@@ -114,12 +114,7 @@ def list_cadres(
         )
         .filter(EnergyContract.is_cadre == True)  # noqa: E712
     )
-    ej_ids = [
-        ej.id
-        for ej in db.query(EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+    ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if ej_ids:
         legacy_q = legacy_q.filter(EnergyContract.entite_juridique_id.in_(ej_ids))
     if status:
@@ -944,8 +939,7 @@ def _serialize_v2_cadre(c: ContratCadre) -> Dict[str, Any]:
     """
     annexes = [a for a in c.annexes if a.deleted_at is None]
     total_vol_kwh = sum(
-        float(a.volume_engage_kwh or 0)
-        + (float(a.volume_commitment.annual_kwh) if a.volume_commitment else 0)
+        float(a.volume_engage_kwh or 0) + (float(a.volume_commitment.annual_kwh) if a.volume_commitment else 0)
         for a in annexes
     )
     total_vol_mwh = round(total_vol_kwh / 1000, 2)
@@ -969,11 +963,17 @@ def _serialize_v2_cadre(c: ContratCadre) -> Dict[str, Any]:
 
     pricing: List[Dict[str, Any]] = []
     if prix_base is not None:
-        pricing.append({"period_code": "BASE", "season": "ANNUEL", "unit_price_eur_kwh": prix_base, "subscription_eur_month": None})
+        pricing.append(
+            {"period_code": "BASE", "season": "ANNUEL", "unit_price_eur_kwh": prix_base, "subscription_eur_month": None}
+        )
     if prix_hp is not None:
-        pricing.append({"period_code": "HP", "season": "ANNUEL", "unit_price_eur_kwh": prix_hp, "subscription_eur_month": None})
+        pricing.append(
+            {"period_code": "HP", "season": "ANNUEL", "unit_price_eur_kwh": prix_hp, "subscription_eur_month": None}
+        )
     if prix_hc is not None:
-        pricing.append({"period_code": "HC", "season": "ANNUEL", "unit_price_eur_kwh": prix_hc, "subscription_eur_month": None})
+        pricing.append(
+            {"period_code": "HC", "season": "ANNUEL", "unit_price_eur_kwh": prix_hc, "subscription_eur_month": None}
+        )
 
     return {
         "id": c.id,

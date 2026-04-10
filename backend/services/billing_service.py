@@ -180,6 +180,7 @@ def get_reference_price(
     # Priority 0: V2 ContratCadre annexe (Phase 5) — scoped by org
     ref_date = period_start or period_end or date.today()
     from services.scope_utils import resolve_org_id_from_site as _resolve_org_id
+
     site_org_id = _resolve_org_id(db, site_id)
     annexe = find_active_annexe(db, site_id, energy_type, ref_date, org_id=site_org_id)
     if annexe:
@@ -357,6 +358,7 @@ def shadow_billing_simple(
         energy_type_str = _energy_type(invoice, contract)
         ref_date = invoice.period_start or invoice.period_end or date.today()
         from services.scope_utils import resolve_org_id_from_site as _resolve_org_id
+
         invoice_org_id = _resolve_org_id(db, invoice.site_id)
         annexe = find_active_annexe(db, invoice.site_id, energy_type_str, ref_date, org_id=invoice_org_id)
         if annexe:
