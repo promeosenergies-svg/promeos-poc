@@ -193,12 +193,30 @@ def _resolve_turpe_from_db(db, segment: str, at_date=None) -> float | None:
 
 def _safe_rate(code: str, at_date=None, db=None) -> float:
     """
-    Résout un tarif : DB versionnée → YAML référentiel → hardcodé.
-    Retourne la valeur en EUR/kWh (ou ratio pour TVA).
+    Résout un tarif : ParameterStore (DB → YAML versionné) → cascade legacy.
+
+    Versioning temporel par `at_date`. Retour en EUR/kWh (ou ratio pour
+    TVA/CTA). V112 : le chemin prioritaire est ParameterStore (source
+    unique de vérité versionnée par date d'effet).
+
+    Ordre de résolution :
+    1. ParameterStore — DB regulated_tariffs → YAML tarifs_reglementaires
+    2. Cascade legacy (rétrocompat) : regulated_tariffs direct → tax_catalog →
+       _FALLBACK module-level
     """
-    # 1. Essayer regulated_tariffs (DB versionnée)
+    # 1. ParameterStore — versioning par date d'effet (V112)
+    try:
+        from services.billing_engine.parameter_store import ParameterStore
+
+        store = ParameterStore(db=db)
+        res = store.get(code, at_date=at_date)
+        if res.source in ("db", "yaml"):
+            return res.value
+    except Exception as exc:
+        logger.debug("ParameterStore lookup failed for %s: %s", code, exc)
+
+    # 2. Legacy cascade (compat ascendante)
     if db is not None:
-        # Cas spécial TURPE énergie : résolution pondérée par segment
         if code.startswith("TURPE_ENERGIE_"):
             segment = code.replace("TURPE_ENERGIE_", "")
             db_val = _resolve_turpe_from_db(db, segment, at_date)
@@ -209,7 +227,6 @@ def _safe_rate(code: str, at_date=None, db=None) -> float:
             if db_val is not None:
                 return db_val
 
-    # 2. Essayer le catalog (app.referential)
     try:
         from app.referential.tax_catalog_service import get_rate
 
@@ -217,7 +234,6 @@ def _safe_rate(code: str, at_date=None, db=None) -> float:
     except Exception:
         pass
 
-    # 3. Fallback YAML / hardcodé
     return _FALLBACK.get(code, 0.0)
 
 
@@ -446,6 +462,9 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
         "confidence": confidence,
     }
 
+    # ── Calc version tag (V112) ──────────────────────────────────────
+    calc_version = "v2_parameter_store"
+
     # ── Backward-compatible flat fields + structured breakdown ───────
     return {
         # Flat fields (backward compat for R13/R14)
@@ -474,6 +493,7 @@ def shadow_billing_v2(invoice, lines: list, contract, db=None) -> dict:
         "segment": segment,
         "price_source": price_source,
         "tariff_source": tariff_source,
+        "calc_version": calc_version,
         # Structured (new)
         "components": components,
         "totals": totals,
@@ -682,7 +702,9 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     Returns:
         dict avec components[], total_*, confidence, tarif_version, segment
     """
-    from config.tarif_loader import get_cta_taux, get_tarif_version
+    from config.tarif_loader import get_tarif_version
+    from services.billing_engine.bricks.cta import compute_cta
+    from services.billing_engine.parameter_store import ParameterStore
 
     # Résoudre contrat si non fourni
     if contract is None and invoice.contract_id:
@@ -728,10 +750,22 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         period_days = 30
     prorata = period_days / 365.0
 
-    cta_type = "elec" if is_elec else "gaz"
-    cta_taux = get_cta_taux(cta_type) / 100.0
-    cta_base = turpe_gestion * (period_days / 30.0)  # TURPE fixe proratisé
-    cta_eur = cta_base * cta_taux
+    # ── CTA : calcul réel via brique dédiée (V112) ────────────────────
+    # Assiette = part fixe annuelle (TURPE gestion mensuel × 12 pour élec).
+    # Le prorata sur 365 jours est appliqué dans compute_cta.
+    _at_date = p_start or date.today()
+    _cta_store = ParameterStore(db=db)
+    _cta_annual_fixed = (turpe_gestion * 12.0) if is_elec else 0.0
+    _cta_result = compute_cta(
+        store=_cta_store,
+        energy="elec" if is_elec else "gaz",
+        network_level="distribution",
+        fixed_component_annual_eur=_cta_annual_fixed,
+        period_days=period_days,
+        at_date=_at_date,
+    )
+    cta_taux = _cta_result.rate
+    cta_eur = _cta_result.amount_ht
 
     # Accise
     accise_rate = v2["components"][2]["unit_rate"]  # taxes component rate

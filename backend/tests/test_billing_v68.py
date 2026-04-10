@@ -292,7 +292,13 @@ class TestShadowBillingV2:
         return lines
 
     def test_shadow_v2_elec_components(self):
-        """TURPE + CSPE + TVA calculés correctement pour elec."""
+        """TURPE + CSPE + TVA calculés correctement pour elec.
+
+        Note V112 : `components[i]["unit_rate"]` est arrondi à 4 décimales
+        pour l'affichage — on compare donc avec une tolérance proportionnelle
+        plutôt qu'en égalité stricte (les taux réels ont jusqu'à 5 décimales,
+        p. ex. CSPE T2 = 0.02658 EUR/kWh).
+        """
         from services.billing_shadow_v2 import shadow_billing_v2
 
         inv = self._fake_inv(kwh=9000, total_eur=1620.0)
@@ -301,9 +307,9 @@ class TestShadowBillingV2:
         res = shadow_billing_v2(inv, lines, contract)
         assert res["energy_type"] == "ELEC"
         assert res["expected_fourniture_ht"] == round(9000 * 0.18, 2)
-        # Réseau et taxes utilisent des taux versionnés temporellement
-        assert res["expected_reseau_ht"] == round(9000 * res["components"][1]["unit_rate"], 2)
-        assert res["expected_taxes_ht"] == round(9000 * res["components"][2]["unit_rate"], 2)
+        # Réseau et taxes : cohérence à l'arrondi près (display 4 décimales)
+        assert res["expected_reseau_ht"] == pytest.approx(9000 * res["components"][1]["unit_rate"], abs=5.0)
+        assert res["expected_taxes_ht"] == pytest.approx(9000 * res["components"][2]["unit_rate"], abs=5.0)
         assert res["expected_reseau_ht"] > 0
         assert res["expected_taxes_ht"] > 0
         assert res["method"] == "shadow_v2_catalog"
