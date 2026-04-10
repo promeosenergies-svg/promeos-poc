@@ -758,7 +758,13 @@ def _resolve_atrd_context(db, site, contract) -> tuple[str, float]:
                 cja = getattr(pdl, "cja_mwh_per_day", None) or 0.0
                 return derive_atrd_option_from_car(car), float(cja)
     except Exception as exc:
-        logger.debug("ATRD context lookup failed: %s", exc)
+        # WARNING (pas DEBUG) : silencier cette erreur a déjà masqué une
+        # dégradation T3/T4 → T2 qui sous-estime l'ATRD d'un facteur 7-115.
+        logger.warning(
+            "ATRD context lookup failed for site %s — fallback T2: %s",
+            getattr(site, "id", "?"),
+            exc,
+        )
     return "T2", 0.0
 
 
@@ -858,7 +864,6 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
 
     # ── Enrichir avec CTA ──────────────────────────────────────────────
     kwh = v2["kwh"]
-    turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}") if is_elec else 0
     p_start = getattr(invoice, "period_start", None)
     p_end = getattr(invoice, "period_end", None)
     if p_start and p_end:
@@ -867,10 +872,18 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         period_days = 30
     prorata = period_days / 365.0
 
+    # Date de résolution des paramètres versionnés (TURPE, accise, CTA, ATRD).
+    # Pour une facture passée, on doit utiliser les taux en vigueur à la date
+    # de début de période, pas les taux courants.
+    _at_date = p_start or date.today()
+
+    # TURPE gestion versionné (régression V112 : sans at_date, une facture
+    # 2024 utiliserait le taux TURPE 7 actuel au lieu du TURPE 6 applicable).
+    turpe_gestion = _safe_rate(f"TURPE_GESTION_{segment}", at_date=_at_date, db=db) if is_elec else 0
+
     # ── ATRD gaz : brique dédiée (Vague 2) ────────────────────────────
     # Pour les contrats gaz, on calcule l'ATRD détaillé par option GRDF.
     # L'assiette fixe annuelle (abonnement) est ensuite utilisée par la CTA.
-    _at_date = p_start or date.today()
     _store = default_store() if db is None else ParameterStore(db=db)
     _atrd_result = None
     _cta_annual_fixed = 0.0

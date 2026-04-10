@@ -2,24 +2,37 @@
 PROMEOS — Brique CTA (Contribution Tarifaire d'Acheminement).
 
 Remplace le stub historique "taux 15% hardcodé" de billing_shadow_v2 par un
-calcul conforme à la doctrine :
+calcul conforme à la doctrine réglementaire.
 
-    CTA = assiette_fixe × taux
+DOCTRINE ÉLEC (simple) :
+
+    CTA_elec = assiette_fixe × taux_dist_ou_transport
+
+où `taux` vient de :
+    * CTA_ELEC_DIST_RATE  (27,04% → 21,93% → 15% depuis 1/02/2026)
+    * CTA_ELEC_TRANS_RATE (10,14% → 10,11% → 5% depuis 1/02/2026)
+
+DOCTRINE GAZ (additive, Arrêté 20/07/2021 + arrêté annuel coef) :
+
+    CTA_gaz_distribution = assiette × (taux_dist + taux_trans × coef_transport)
+                         = assiette × (20,80% + 4,71% × coef)
+                         ≈ assiette × 24,73% (au 1/07/2025, coef = 83,21%)
+
+    CTA_gaz_transport    = assiette × taux_trans      (client raccordé ATRT)
+                         = assiette × 4,71%
 
 où :
-- `assiette_fixe` = part fixe du tarif d'acheminement (TURPE gestion pour
-  l'élec, ATRD fixe pour le gaz), proratisée sur la période de facturation.
-- `taux` = ratio versionné (par date d'effet et scope) via ParameterStore :
-    * CTA_ELEC_DIST_RATE  (ex-27,04% → 21,93% → 15% depuis 1/02/2026)
-    * CTA_ELEC_TRANS_RATE (ex-10,14% → 10,11% → 5% depuis 1/02/2026)
-    * CTA_GAZ_DIST_RATE   (20,80% — stable)
-    * CTA_GAZ_TRANS_RATE  (4,71% — stable, fallback sur DIST si absent)
+- `assiette_fixe` = part fixe annuelle du tarif d'acheminement (TURPE gestion
+  pour élec, abonnement ATRD T1-T4-TP pour gaz), proratisée ici sur la période.
+- `coef_transport` est le coefficient de proportionnalité transport imputé
+  aux clients distribution, révisé chaque 1/07 par arrêté annuel après avis
+  CRE. 83,57% (2024) → 83,21% (2025).
 
-Particularités :
-- La CTA ne dépend PAS des kWh consommés (elle est assise sur l'abonnement).
-- Elle est soumise à TVA 20% (TVA normale) depuis le 1/08/2025 ; avant, elle
-  bénéficiait du taux réduit 5,5% — le versionnement TVA est géré en aval
-  par le pipeline TVA, pas ici.
+Sources : Arrêté 20/07/2021 JORFTEXT000043847483, Délibération CRE 2024-82,
+Arrêté 16/06/2025 JORFTEXT000051760148.
+
+Particularité : la CTA ne dépend PAS des kWh consommés (assise sur l'abonnement).
+La TVA applicable sur la CTA est gérée en aval par le pipeline TVA.
 """
 
 from __future__ import annotations
@@ -66,6 +79,39 @@ def _select_code(energy: EnergyKind, network_level: NetworkLevel) -> str:
     return "CTA_GAZ_DIST_RATE" if network_level == "distribution" else "CTA_GAZ_TRANS_RATE"
 
 
+def _resolve_cta_gaz_effective_rate(
+    store: ParameterStore,
+    network_level: NetworkLevel,
+    at_date: date,
+) -> tuple[float, ParameterResolution]:
+    """
+    Calcule le taux effectif CTA gaz selon la doctrine additive :
+
+    - distribution : taux_dist + taux_trans × coef_transport
+    - transport    : taux_trans seul
+
+    Retourne (taux_effectif, resolution_principale) — la `resolution` retournée
+    est celle du taux distribution (ou transport si niveau transport), avec la
+    source qui pointe vers l'arrêté de base ; les autres paramètres
+    (trans_rate, coef) sont résolus implicitement pour composer le taux.
+    """
+    res_dist = store.get("CTA_GAZ_DIST_RATE", at_date=at_date)
+    res_trans = store.get("CTA_GAZ_TRANS_RATE", at_date=at_date)
+    res_coef = store.get("CTA_GAZ_TRANSPORT_COEF", at_date=at_date)
+
+    dist_rate = res_dist.value if res_dist.source != "missing" else 0.0
+    trans_rate = res_trans.value if res_trans.source != "missing" else 0.0
+    coef = res_coef.value if res_coef.source != "missing" else 0.0
+
+    if network_level == "transport":
+        # Client raccordé direct au réseau transport : seul le taux transport
+        # s'applique, sans coefficient (il paye déjà ses coûts transport réels).
+        return trans_rate, res_trans
+
+    effective = dist_rate + trans_rate * coef
+    return effective, res_dist
+
+
 def _prorata_fraction(period_days: int, basis_days: int = 365) -> float:
     """Fraction de l'année pour proratiser une assiette annuelle."""
     if period_days <= 0:
@@ -104,13 +150,14 @@ def compute_cta(
     if at_date is None:
         at_date = date.today()
 
-    code = _select_code(energy, network_level)
-    resolution = store.get(code, at_date=at_date)
-
-    # Si le code n'est pas résolu, on logge via la resolution.source == "missing"
-    # et on retourne un montant 0 explicite. Le pipeline en amont peut décider
-    # d'un statut "missing_price" sur la composante CTA.
-    taux = resolution.value if resolution.source != "missing" else 0.0
+    if energy == "gaz":
+        # Doctrine additive (Arrêté 20/07/2021 + arrêté annuel coef)
+        taux, resolution = _resolve_cta_gaz_effective_rate(store, network_level, at_date)
+    else:
+        # Élec : taux unique résolu directement
+        code = _select_code(energy, network_level)
+        resolution = store.get(code, at_date=at_date)
+        taux = resolution.value if resolution.source != "missing" else 0.0
 
     prorata = _prorata_fraction(period_days, basis_days=365)
     assiette = fixed_component_annual_eur * prorata

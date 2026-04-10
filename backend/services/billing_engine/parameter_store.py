@@ -15,8 +15,16 @@ Principes :
 Compatibilité :
 - Les helpers historiques de config/tarif_loader.py continuent de fonctionner
   en déléguant à ParameterStore (transparent pour les appelants).
-- Les valeurs retournées restent en EUR/kWh (pas EUR/MWh) pour rester
-  compatibles avec le code existant.
+- Unités par famille de code (non homogènes — voir KNOWN_CODES et
+  `_resolve_from_db` pour les conversions EUR_MWH → EUR/kWh) :
+    * TURPE_ENERGIE_*, ACCISE_*, ATRD_GAZ (flat legacy) : EUR/kWh
+    * TURPE_GESTION_*                                   : EUR/mois
+    * ATRD_GAZ_*_ABO                                    : EUR/an
+    * ATRD_GAZ_*_PROP                                   : EUR/MWh
+    * ATRD_GAZ_*_CAPA, ATRD_GAZ_T4_CAPA_GTE500          : EUR/MWh/j/an
+    * ATRD_GAZ_TP_DISTANCE                              : EUR/mètre/an
+    * CTA_*_RATE, CTA_GAZ_TRANSPORT_COEF, TVA_*         : ratio (ex. 0,208)
+  Les briques consommatrices sont responsables de l'homogénéité des calculs.
 """
 
 from __future__ import annotations
@@ -57,8 +65,11 @@ KNOWN_CODES = frozenset(
         "ATRD_GAZ_T4_PROP",
         "ATRD_GAZ_TP_PROP",
         # Terme capacité journalière (EUR/MWh/j/an) — T4 et TP uniquement
+        # T4 a une grille marginale : _CAPA = tranche CJA<500, _CAPA_GTE500 = tranche CJA≥500
         "ATRD_GAZ_T4_CAPA",
+        "ATRD_GAZ_T4_CAPA_GTE500",
         "ATRD_GAZ_TP_CAPA",
+        "ATRD_GAZ_TP_DISTANCE",  # EUR/mètre/an — TP uniquement
         # Accises (EUR/kWh)
         "ACCISE_ELEC",
         "ACCISE_ELEC_T1",  # ménages/assimilés ≤ 250 MWh
@@ -70,6 +81,9 @@ KNOWN_CODES = frozenset(
         "CTA_ELEC_TRANS_RATE",
         "CTA_GAZ_DIST_RATE",
         "CTA_GAZ_TRANS_RATE",
+        # Coefficient de proportionnalité CTA gaz (part transport imputée aux
+        # clients distribution, révisé chaque 1/07 par arrêté annuel).
+        "CTA_GAZ_TRANSPORT_COEF",
         # CEE (coefficient obligation kWhc/kWh et prix hypothétique EUR/MWhc)
         "CEE_ELEC_COEFF",
         "CEE_GAZ_COEFF",
@@ -228,49 +242,69 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
         return [(tarifs.get("atrt_gaz", {}), "rate_eur_kwh")]
 
     # ATRD7 détaillé par option (Vague 2)
-    # Codes : ATRD_GAZ_{T1,T2,T3,T4,TP}_{ABO,PROP,CAPA}
-    if code.startswith("ATRD_GAZ_") and code not in ("ATRD_GAZ",):
+    # Codes : ATRD_GAZ_{T1,T2,T3,T4,TP}_{ABO,PROP,CAPA,CAPA_GTE500,DISTANCE}
+    # Deux sections chronologiques dans le YAML : atrd7_gaz_tiers (2024) et
+    # atrd7_gaz_tiers_2025 (révision +6,06% au 1/07/2025). _select_best_candidate
+    # choisit la bonne selon at_date.
+    if code.startswith("ATRD_GAZ_") and code != "ATRD_GAZ":
+        # Parse "ATRD_GAZ_T4_CAPA_GTE500" → tier="T4", term="CAPA_GTE500"
         # Parse "ATRD_GAZ_T1_ABO" → tier="T1", term="ABO"
-        parts = code.split("_")
-        if len(parts) != 4:
+        parts = code.split("_", 3)
+        if len(parts) < 4:
             return []
         _, _, tier, term = parts
         term_key_map = {
             "ABO": "abo_eur_an",
             "PROP": "var_eur_mwh",
             "CAPA": "capa_eur_mwh_j_an",
+            "CAPA_GTE500": "capa_eur_mwh_j_an_gte_500",
+            "DISTANCE": "distance_eur_per_metre_an",
         }
         value_key = term_key_map.get(term)
         if value_key is None:
             return []
-        root = tarifs.get("atrd7_gaz_tiers", {})
-        tier_entry = dict(root.get("tiers", {}).get(tier, {}))
-        if not tier_entry or value_key not in tier_entry:
-            return []
-        # Propager la période de validité de la section parente
-        tier_entry["valid_from"] = root.get("valid_from")
-        tier_entry["valid_to"] = root.get("valid_to")
-        tier_entry["source"] = root.get("source")
-        return [(tier_entry, value_key)]
+        out_atrd7: list[tuple[dict, str]] = []
+        for root_key in ("atrd7_gaz_tiers", "atrd7_gaz_tiers_2025"):
+            root = tarifs.get(root_key, {})
+            tier_entry = dict(root.get("tiers", {}).get(tier, {}))
+            if tier_entry and value_key in tier_entry:
+                tier_entry["valid_from"] = root.get("valid_from")
+                tier_entry["valid_to"] = root.get("valid_to")
+                tier_entry["source"] = root.get("source")
+                out_atrd7.append((tier_entry, value_key))
+        return out_atrd7
 
     # CTA — ratio (taux_pct / 100), énumère les historiques + courant
-    if code in ("CTA_ELEC_DIST_RATE", "CTA_ELEC_TRANS_RATE", "CTA_GAZ_DIST_RATE", "CTA_GAZ_TRANS_RATE"):
+    if code in (
+        "CTA_ELEC_DIST_RATE",
+        "CTA_ELEC_TRANS_RATE",
+        "CTA_GAZ_DIST_RATE",
+        "CTA_GAZ_TRANS_RATE",
+    ):
         cta_subkey = {
             "CTA_ELEC_DIST_RATE": "elec",
             "CTA_ELEC_TRANS_RATE": "elec_transport",
             "CTA_GAZ_DIST_RATE": "gaz",
-            "CTA_GAZ_TRANS_RATE": "gaz",
+            "CTA_GAZ_TRANS_RATE": "gaz_transport",
         }[code]
         out: list[tuple[dict, str]] = []
-        # Les racines possibles sont listées dans l'ordre chronologique ; le
-        # candidat dont la période contient at_date sera sélectionné par
-        # _select_best_candidate.
         for root_key in ("cta_2021", "cta"):
             entry = dict(tarifs.get(root_key, {}).get(cta_subkey, {}))
             if "taux_pct" in entry:
                 entry["_ratio"] = entry["taux_pct"] / 100.0
                 out.append((entry, "_ratio"))
         return out
+
+    # Coefficient CTA gaz transport — révisé chaque 1/07 par arrêté annuel
+    if code == "CTA_GAZ_TRANSPORT_COEF":
+        out_coef: list[tuple[dict, str]] = []
+        cta = tarifs.get("cta", {})
+        for subkey in ("gaz_transport_coef", "gaz_transport_coef_2025"):
+            entry = dict(cta.get(subkey, {}))
+            if "valeur_pct" in entry:
+                entry["_ratio"] = entry["valeur_pct"] / 100.0
+                out_coef.append((entry, "_ratio"))
+        return out_coef
 
     # TVA
     if code == "TVA_NORMALE":

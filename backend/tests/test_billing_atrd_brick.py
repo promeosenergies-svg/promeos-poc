@@ -79,16 +79,16 @@ class TestComputeAtrdT1:
             option="T1",
             energy_mwh=10.0,
             period_days=365,
-            at_date=date(2025, 6, 1),
+            at_date=date(2025, 6, 1),  # période ATRD7 2024 (1/07/2024 → 30/06/2025)
         )
         assert r.option == "T1"
-        assert r.abonnement_ht == pytest.approx(53.86)
-        assert r.proportionnel_ht == pytest.approx(423.70)
+        assert r.abonnement_ht == pytest.approx(51.96)
+        assert r.proportionnel_ht == pytest.approx(423.70)  # 10 × 42.37
         assert r.capacite_ht == 0.0
-        assert r.amount_ht == pytest.approx(477.56)
+        assert r.amount_ht == pytest.approx(51.96 + 423.70)
 
     def test_t1_proratisation_30_jours(self, store):
-        """30 jours : abo 53.86 × 30/365 = 4.43 + prop 1 MWh × 42.37 = 46.80."""
+        """T1 sur 30 jours (période ATRD7 2024) : abo 51.96 × 30/365 + 1 MWh × 42.37."""
         r = compute_atrd(
             store=store,
             option="T1",
@@ -96,14 +96,15 @@ class TestComputeAtrdT1:
             period_days=30,
             at_date=date(2025, 6, 1),
         )
-        assert r.abonnement_ht == pytest.approx(53.86 * 30 / 365, rel=1e-4)
+        assert r.abonnement_ht == pytest.approx(51.96 * 30 / 365, rel=1e-4)
         assert r.proportionnel_ht == pytest.approx(42.37)
-        assert r.amount_ht == pytest.approx(46.80, rel=1e-2)
+        expected = 51.96 * 30 / 365 + 42.37
+        assert r.amount_ht == pytest.approx(expected, rel=1e-4)
 
 
 class TestComputeAtrdT2:
     def test_t2_pme_30_jours(self, store):
-        """T2 : cas dominant petits consommateurs."""
+        """T2 : cas dominant petits consommateurs (ATRD7 2024)."""
         r = compute_atrd(
             store=store,
             option="T2",
@@ -112,9 +113,9 @@ class TestComputeAtrdT2:
             at_date=date(2025, 6, 1),
         )
         assert r.option == "T2"
-        assert r.abo_eur_an == pytest.approx(177.78)
+        assert r.abo_eur_an == pytest.approx(175.92)
         assert r.prop_eur_mwh == pytest.approx(11.39)
-        assert r.abonnement_ht == pytest.approx(177.78 * 30 / 365, rel=1e-4)
+        assert r.abonnement_ht == pytest.approx(175.92 * 30 / 365, rel=1e-4)
         assert r.proportionnel_ht == pytest.approx(15.0 * 11.39)
         assert r.capacite_ht == 0.0
 
@@ -129,14 +130,14 @@ class TestComputeAtrdT3:
             at_date=date(2025, 6, 1),
         )
         assert r.option == "T3"
-        assert r.abonnement_ht == pytest.approx(1253.22)
+        assert r.abonnement_ht == pytest.approx(1231.08)
         assert r.proportionnel_ht == pytest.approx(500.0 * 8.19)
         assert r.capacite_ht == 0.0
 
 
 class TestComputeAtrdT4Capacite:
     def test_t4_sans_cja(self, store):
-        """T4 sans CJA souscrite : terme capacité = 0."""
+        """T4 sans CJA souscrite : terme capacité = 0 (ATRD7 2024)."""
         r = compute_atrd(
             store=store,
             option="T4",
@@ -146,10 +147,10 @@ class TestComputeAtrdT4Capacite:
             cja_mwh_per_day=0.0,
         )
         assert r.capacite_ht == 0.0
-        assert r.abonnement_ht == pytest.approx(20488.69)
+        assert r.abonnement_ht == pytest.approx(20469.60)
 
-    def test_t4_avec_cja(self, store):
-        """T4 avec CJA = 50 MWh/j : capa = 50 × 106.44 × 365/365 = 5322."""
+    def test_t4_avec_cja_petite_tranche(self, store):
+        """CJA = 50 MWh/j (<500) : capa = 50 × 271.56 (tranche marginale 2024)."""
         r = compute_atrd(
             store=store,
             option="T4",
@@ -158,11 +159,11 @@ class TestComputeAtrdT4Capacite:
             at_date=date(2025, 6, 1),
             cja_mwh_per_day=50.0,
         )
-        assert r.capacite_ht == pytest.approx(50.0 * 106.44)
-        assert r.amount_ht == pytest.approx(20488.69 + 10_000.0 * 1.11 + 50.0 * 106.44)
+        assert r.capacite_ht == pytest.approx(50.0 * 271.56)
+        assert r.amount_ht == pytest.approx(20469.60 + 10_000.0 * 1.11 + 50.0 * 271.56)
 
     def test_t4_capa_proratisee(self, store):
-        """CJA proratisée sur 90 jours : 50 × 106.44 × 90/365."""
+        """CJA 50 MWh/j sur 90 jours : 50 × 271.56 × 90/365."""
         r = compute_atrd(
             store=store,
             option="T4",
@@ -171,7 +172,20 @@ class TestComputeAtrdT4Capacite:
             at_date=date(2025, 6, 1),
             cja_mwh_per_day=50.0,
         )
-        assert r.capacite_ht == pytest.approx(50.0 * 106.44 * 90 / 365, rel=1e-4)
+        assert r.capacite_ht == pytest.approx(50.0 * 271.56 * 90 / 365, rel=1e-4)
+
+    def test_t4_capa_marginale_deux_tranches(self, store):
+        """CJA = 800 MWh/j : 500 × 271.56 (<500) + 300 × 135.72 (≥500) sur 365 jours."""
+        r = compute_atrd(
+            store=store,
+            option="T4",
+            energy_mwh=100_000.0,
+            period_days=365,
+            at_date=date(2025, 6, 1),
+            cja_mwh_per_day=800.0,
+        )
+        expected_capa = 500.0 * 271.56 + 300.0 * 135.72
+        assert r.capacite_ht == pytest.approx(expected_capa)
 
 
 class TestComputeAtrdFixedComponent:
@@ -184,7 +198,7 @@ class TestComputeAtrdFixedComponent:
             period_days=30,
             at_date=date(2025, 6, 1),
         )
-        assert r.fixed_component_annual_eur == pytest.approx(177.78)
+        assert r.fixed_component_annual_eur == pytest.approx(175.92)
         # CRITIQUE : c'est bien l'annuel pas le proratisé
         assert r.fixed_component_annual_eur != r.abonnement_ht
 
@@ -214,9 +228,36 @@ class TestComputeAtrdAuditTrail:
         assert d["code"] == "atrd"
         assert d["label"] == "ATRD gaz T2"
         assert d["option"] == "T2"
-        assert d["abo_eur_an"] == pytest.approx(177.78)
+        assert d["abo_eur_an"] == pytest.approx(175.92)
         assert "source" in d
         assert "source_ref" in d
+
+
+class TestComputeAtrdRevision2025:
+    """Vérifie la césure ATRD7 au 1/07/2025 (révision +6,06%)."""
+
+    def test_t2_before_revision(self, store):
+        """30/06/2025 → derniers chiffres 2024."""
+        r = compute_atrd(
+            store=store,
+            option="T2",
+            energy_mwh=0.0,
+            period_days=365,
+            at_date=date(2025, 6, 30),
+        )
+        assert r.abo_eur_an == pytest.approx(175.92)
+
+    def test_t2_at_revision(self, store):
+        """1/07/2025 → nouveaux chiffres 2025."""
+        r = compute_atrd(
+            store=store,
+            option="T2",
+            energy_mwh=0.0,
+            period_days=365,
+            at_date=date(2025, 7, 1),
+        )
+        assert r.abo_eur_an == pytest.approx(186.12)
+        assert r.prop_eur_mwh == pytest.approx(12.08)
 
 
 class TestComputeAtrdFallbacks:
@@ -229,7 +270,7 @@ class TestComputeAtrdFallbacks:
             at_date=date(2025, 6, 1),
         )
         assert r.option == "T2"
-        assert r.abo_eur_an == pytest.approx(177.78)
+        assert r.abo_eur_an == pytest.approx(175.92)
 
     def test_none_option_falls_back_to_t2(self, store):
         r = compute_atrd(

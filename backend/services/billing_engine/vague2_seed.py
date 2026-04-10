@@ -16,9 +16,9 @@ Règles de dérivation :
         · > 5 000 000              → T4
     * sinon (ni option ni CAR)     → T2 (résidentiel chauffage, cas le plus courant)
 
-- `DeliveryPoint.car_kwh` :
-    * dérivé depuis l'historique de consommation s'il est disponible
-    * sinon laissé NULL (le calcul ATRD retombera sur T2 fallback)
+- `DeliveryPoint.car_kwh` : non modifié par ce seed (dérivation depuis
+  l'historique prévue en vague ultérieure). Sans CAR, `atrd_option`
+  retombe sur T2 (cas résidentiel chauffage).
 
 N'intervient que sur les PDL dont `energy_type` est gaz.
 """
@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SeedSummaryVague2:
     atrd_option_set: int = 0
-    car_kwh_set: int = 0
     skipped_already_populated: int = 0
     skipped_non_gas: int = 0
     errors: list[str] = field(default_factory=list)
@@ -87,9 +86,8 @@ def seed_vague2(db: Session) -> SeedSummaryVague2:
         logger.exception("seed_vague2 commit failed")
 
     logger.info(
-        "seed_vague2: atrd_option=%d, car=%d, skipped=%d (populated) + %d (non-gas), errors=%d",
+        "seed_vague2: atrd_option=%d, skipped=%d (populated) + %d (non-gas), errors=%d",
         summary.atrd_option_set,
-        summary.car_kwh_set,
         summary.skipped_already_populated,
         summary.skipped_non_gas,
         len(summary.errors),
