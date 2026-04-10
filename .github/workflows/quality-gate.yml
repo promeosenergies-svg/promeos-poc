@@ -53,7 +53,7 @@ jobs:
       # Placeholder values for tests — real prod values live in GitHub Secrets
       # and are injected by the deploy workflows, not this quality gate.
       PROMEOS_JWT_SECRET: test-secret-key-not-for-production-use-only
-      DEMO_MODE: "true"
+      PROMEOS_DEMO_MODE: "true"
     steps:
       - uses: actions/checkout@v4
 
