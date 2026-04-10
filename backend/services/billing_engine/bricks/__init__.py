@@ -16,4 +16,5 @@ Ordre d'appel dans le pipeline (cf. doctrine shadow billing) :
     8. TVA (sur base totale HT)
 """
 
-from .cta import compute_cta, CtaResult  # noqa: F401
+from .atrd import AtrdResult, compute_atrd, derive_atrd_option_from_car  # noqa: F401
+from .cta import CtaResult, compute_cta  # noqa: F401
