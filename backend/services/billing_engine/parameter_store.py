@@ -287,13 +287,13 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
             "CTA_GAZ_DIST_RATE": "gaz",
             "CTA_GAZ_TRANS_RATE": "gaz_transport",
         }[code]
-        out: list[tuple[dict, str]] = []
+        cta_out: list[tuple[dict, str]] = []
         for root_key in ("cta_2021", "cta"):
             entry = dict(tarifs.get(root_key, {}).get(cta_subkey, {}))
             if "taux_pct" in entry:
                 entry["_ratio"] = entry["taux_pct"] / 100.0
-                out.append((entry, "_ratio"))
-        return out
+                cta_out.append((entry, "_ratio"))
+        return cta_out
 
     # Coefficient CTA gaz transport — révisé chaque 1/07 par arrêté annuel
     if code == "CTA_GAZ_TRANSPORT_COEF":
