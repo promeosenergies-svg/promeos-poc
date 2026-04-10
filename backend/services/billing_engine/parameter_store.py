@@ -40,9 +40,25 @@ KNOWN_CODES = frozenset(
         "TURPE_GESTION_C5_BT",
         "TURPE_GESTION_C4_BT",
         "TURPE_GESTION_C3_HTA",
-        # Acheminement gaz (EUR/kWh)
+        # Acheminement gaz (EUR/kWh flat — fallback legacy)
         "ATRD_GAZ",
         "ATRT_GAZ",
+        # ATRD7 détaillé par option (Vague 2)
+        # Abonnement annuel par option (EUR/an) — assiette CTA gaz
+        "ATRD_GAZ_T1_ABO",
+        "ATRD_GAZ_T2_ABO",
+        "ATRD_GAZ_T3_ABO",
+        "ATRD_GAZ_T4_ABO",
+        "ATRD_GAZ_TP_ABO",
+        # Terme proportionnel par option (EUR/MWh)
+        "ATRD_GAZ_T1_PROP",
+        "ATRD_GAZ_T2_PROP",
+        "ATRD_GAZ_T3_PROP",
+        "ATRD_GAZ_T4_PROP",
+        "ATRD_GAZ_TP_PROP",
+        # Terme capacité journalière (EUR/MWh/j/an) — T4 et TP uniquement
+        "ATRD_GAZ_T4_CAPA",
+        "ATRD_GAZ_TP_CAPA",
         # Accises (EUR/kWh)
         "ACCISE_ELEC",
         "ACCISE_ELEC_T1",  # ménages/assimilés ≤ 250 MWh
@@ -205,11 +221,37 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
             (tarifs.get("accise_gaz", {}), "rate_eur_kwh"),
         ]
 
-    # Acheminement gaz
+    # Acheminement gaz — flat rate legacy
     if code == "ATRD_GAZ":
         return [(tarifs.get("atrd_gaz", {}), "rate_eur_kwh")]
     if code == "ATRT_GAZ":
         return [(tarifs.get("atrt_gaz", {}), "rate_eur_kwh")]
+
+    # ATRD7 détaillé par option (Vague 2)
+    # Codes : ATRD_GAZ_{T1,T2,T3,T4,TP}_{ABO,PROP,CAPA}
+    if code.startswith("ATRD_GAZ_") and code not in ("ATRD_GAZ",):
+        # Parse "ATRD_GAZ_T1_ABO" → tier="T1", term="ABO"
+        parts = code.split("_")
+        if len(parts) != 4:
+            return []
+        _, _, tier, term = parts
+        term_key_map = {
+            "ABO": "abo_eur_an",
+            "PROP": "var_eur_mwh",
+            "CAPA": "capa_eur_mwh_j_an",
+        }
+        value_key = term_key_map.get(term)
+        if value_key is None:
+            return []
+        root = tarifs.get("atrd7_gaz_tiers", {})
+        tier_entry = dict(root.get("tiers", {}).get(tier, {}))
+        if not tier_entry or value_key not in tier_entry:
+            return []
+        # Propager la période de validité de la section parente
+        tier_entry["valid_from"] = root.get("valid_from")
+        tier_entry["valid_to"] = root.get("valid_to")
+        tier_entry["source"] = root.get("source")
+        return [(tier_entry, value_key)]
 
     # CTA — ratio (taux_pct / 100), énumère les historiques + courant
     if code in ("CTA_ELEC_DIST_RATE", "CTA_ELEC_TRANS_RATE", "CTA_GAZ_DIST_RATE", "CTA_GAZ_TRANS_RATE"):
