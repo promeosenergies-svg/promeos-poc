@@ -62,8 +62,8 @@ function evalStep(stepId, sitesData, summary, signals) {
     obligations = [],
     actionableFindings = [],
     proofFiles = {},
-    workPackages,
-    mvSummary,
+    _workPackages,
+    _mvSummary,
   } = signals;
 
   switch (stepId) {

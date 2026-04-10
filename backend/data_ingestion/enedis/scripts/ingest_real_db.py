@@ -54,7 +54,10 @@ def main():
 
         print(f"\nIngesting from {FLUX_DIR} (recursive)...")
         counters = ingest_directory(
-            FLUX_DIR, session, keys, recursive=True,
+            FLUX_DIR,
+            session,
+            keys,
+            recursive=True,
         )
 
         # Report
@@ -65,9 +68,9 @@ def main():
         total_files = session.query(EnedisFluxFile).count()
         total_measures = r4x_count + r171_count + r50_count + r151_count
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("REAL DB INGESTION REPORT")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Counters: {counters}")
         print(f"Total flux files:  {total_files}")
         print(f"R4x measures:      {r4x_count:>8,}")
@@ -83,7 +86,7 @@ def main():
             for e in errors:
                 print(f"  {e.filename}: {e.error_message}")
 
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
     finally:
         session.close()

@@ -45,7 +45,7 @@ const CONFIDENCE_STATUS_MAP = {
   low: 'warn',
 };
 
-const RECON_STATUS_COLOR = {
+const _RECON_STATUS_COLOR = {
   complete: 'emerald',
   partial: 'amber',
   minimal: 'red',

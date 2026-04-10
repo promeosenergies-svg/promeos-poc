@@ -154,11 +154,13 @@ class TestParseR171MultipleSeries:
 
     def test_multiple_mesures_per_serie(self):
         """Serie with N mesureDatee entries -> all extracted."""
-        mesures = "\n".join([
-            _make_mesure_xml("2026-03-01T00:00:00", "100"),
-            _make_mesure_xml("2026-03-01T01:00:00", "200"),
-            _make_mesure_xml("2026-03-01T02:00:00", "300"),
-        ])
+        mesures = "\n".join(
+            [
+                _make_mesure_xml("2026-03-01T00:00:00", "100"),
+                _make_mesure_xml("2026-03-01T01:00:00", "200"),
+                _make_mesure_xml("2026-03-01T02:00:00", "300"),
+            ]
+        )
         serie = _make_serie_xml(mesures_xml=mesures)
         xml = _make_r171_xml(series_xml=serie)
         result = parse_r171(xml)
@@ -169,10 +171,12 @@ class TestParseR171MultipleSeries:
         assert result.series[0].mesures[2].valeur == "300"
 
     def test_total_measures_across_series(self):
-        mesure1 = "\n".join([
-            _make_mesure_xml("2026-03-01T00:00:00", "100"),
-            _make_mesure_xml("2026-03-01T01:00:00", "200"),
-        ])
+        mesure1 = "\n".join(
+            [
+                _make_mesure_xml("2026-03-01T00:00:00", "100"),
+                _make_mesure_xml("2026-03-01T01:00:00", "200"),
+            ]
+        )
         mesure2 = _make_mesure_xml("2026-03-01T00:00:00", "300")
         serie1 = _make_serie_xml(prm_id="30000550506121", mesures_xml=mesure1)
         serie2 = _make_serie_xml(prm_id="30000550506999", mesures_xml=mesure2)

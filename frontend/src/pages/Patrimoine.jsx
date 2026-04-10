@@ -53,7 +53,7 @@ import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import MeterSourceBadge from '../components/MeterSourceBadge';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import {
-  getPatrimoineAnomalies,
+  _getPatrimoineAnomalies,
   getPatrimoineAnomaliesBatch,
   getPortfolioReconciliation,
   patrimoineSiteMeters as _patrimoineSiteMeters,
@@ -74,7 +74,7 @@ import {
   fmtDateFR,
   pl,
 } from '../utils/format';
-import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
+import { _RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
 import { RiskBadge, getSiteRisk } from '../lib/risk/normalizeRisk';
 import DataQualityBadge from '../components/DataQualityBadge';
 import { getDataQualityPortfolio, getSiteCompleteness } from '../services/api';
@@ -188,8 +188,8 @@ export default function Patrimoine() {
 
   // V63 — Heatmap enrichie (anomalies par site, Promise.all, guard stale)
   const [hmTiles, setHmTiles] = useState([]);
-  const [hmLoading, setHmLoading] = useState(false);
-  const [hmError, setHmError] = useState(null);
+  const [_hmLoading, setHmLoading] = useState(false);
+  const [_hmError, setHmError] = useState(null);
   const hmFetchIdRef = useRef(0);
 
   const favKey = scope?.orgId ? `promeos_fav_sites_${scope.orgId}` : 'promeos_fav_sites';
@@ -619,14 +619,14 @@ export default function Patrimoine() {
     setSelected(new Set());
   }
 
-  const openDrawer = useCallback((site) => {
+  const _openDrawer = useCallback((site) => {
     setDrawerSite(site);
     setDrawerInitialTab('resume');
     track('row_click', { site_id: site.id });
   }, []);
 
   // V60 — ouvre le drawer sur l'onglet Anomalies (depuis PatrimoinePortfolioHealthBar)
-  const openDrawerOnAnomalies = useCallback(
+  const _openDrawerOnAnomalies = useCallback(
     (site_id) => {
       // Try exact match first, then coerce to string (handles number/string mismatch)
       const site = enrichedSites.find((s) => s.id === site_id || String(s.id) === String(site_id));
@@ -1382,7 +1382,7 @@ export default function Patrimoine() {
                     </Thead>
                     <Tbody>
                       {paginatedSites.map((site, idx) => {
-                        const badge =
+                        const _badge =
                           STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
                         const usageColor =
                           USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';

@@ -69,7 +69,7 @@ export default function ShadowBreakdownCard({ breakdown }) {
     total_invoice_ttc,
     total_gap_eur,
     total_gap_pct,
-    total_gap_status,
+    _total_gap_status,
     total_gap_label,
     status,
     reconstitution_status,

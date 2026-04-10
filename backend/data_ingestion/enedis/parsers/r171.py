@@ -43,7 +43,11 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
 from data_ingestion.enedis.parsers._helpers import (
-    child_text, find_child, header_to_dict, parse_xml_root, strip_ns,
+    child_text,
+    find_child,
+    header_to_dict,
+    parse_xml_root,
+    strip_ns,
 )
 
 
@@ -168,8 +172,6 @@ def _parse_serie(serie_elem: ET.Element) -> ParsedR171Serie:
 
         valeur = child_text(mesure_elem, "valeur")
 
-        serie.mesures.append(
-            ParsedR171Mesure(date_fin=date_fin, valeur=valeur)
-        )
+        serie.mesures.append(ParsedR171Mesure(date_fin=date_fin, valeur=valeur))
 
     return serie

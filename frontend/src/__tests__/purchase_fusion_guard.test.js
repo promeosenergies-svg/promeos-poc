@@ -4,7 +4,7 @@
  * que PurchasePage a les 5 onglets, et que les deep-links sont corrects.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, _existsSync } from 'fs';
 
 describe('Purchase fusion source guard', () => {
   it('PurchaseAssistantPage route redirects to fused tab', () => {

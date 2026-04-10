@@ -17,7 +17,7 @@ import {
   Zap,
   Search,
   Building2,
-  Play,
+  _Play,
   SkipForward,
   RefreshCw,
   CheckCircle2,
@@ -256,7 +256,7 @@ const PatrimoineWizard = ({ onClose }) => {
     }
   };
 
-  const doDemo = async () => {
+  const _doDemo = async () => {
     setLoading(true);
     setError(null);
     try {

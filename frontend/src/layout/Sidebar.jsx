@@ -52,6 +52,7 @@ export default function Sidebar() {
       }
       setOverrideModule((prev) => (prev === key ? null : key));
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeModule, navigate]
   );
 

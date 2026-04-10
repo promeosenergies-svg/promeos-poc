@@ -36,7 +36,7 @@ import ErrorState from '../ui/ErrorState';
 import { buildTopSites, buildOpportunities, checkConsistency } from '../models/dashboardEssentials';
 import CockpitHeaderSignals from './cockpit/CockpitHeaderSignals';
 import BoutonRapportCOMEX from './cockpit/BoutonRapportCOMEX';
-import TopSitesCard from './cockpit/TopSitesCard';
+import _TopSitesCard from './cockpit/TopSitesCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
 import DataQualityWidget from './cockpit/DataQualityWidget';
 import DemoSpotlight from '../components/onboarding/DemoSpotlight';
@@ -98,7 +98,7 @@ const Cockpit = () => {
   const [_totalPenaltyExposure, setTotalPenaltyExposure] = useState(null);
   // A.1: consoSource — now from useCockpitData (I3 FIX: no double fetch)
   // Step 33: Compliance score trend (6 months)
-  const [scoreTrend, setScoreTrend] = useState(null);
+  const [_scoreTrend, setScoreTrend] = useState(null);
   const [auditSme, setAuditSme] = useState(null);
   const [prixSignal, setPrixSignal] = useState(null);
 
@@ -112,7 +112,7 @@ const Cockpit = () => {
   } = useCockpitData();
 
   // ── V1+ Executive data (single backend call) ──
-  const { data: execV2, loading: execV2Loading } = useExecutiveV2();
+  const { data: execV2, loading: _execV2Loading } = useExecutiveV2();
 
   // Fetch real alert count from notifications summary (same source as CommandCenter)
   useEffect(() => {
@@ -153,7 +153,7 @@ const Cockpit = () => {
   }, [org?.id]);
 
   // I3 FIX: consoSource maintenant extrait de useCockpitData (plus de double fetch)
-  const consoSource = cockpitKpis?.consoSource ?? null;
+  const _consoSource = cockpitKpis?.consoSource ?? null;
 
   const kpis = useMemo(() => {
     const sites = scopedSites;
@@ -219,7 +219,7 @@ const Cockpit = () => {
     () => buildOpportunities(kpis, scopedSites, { isExpert }),
     [kpis, scopedSites, isExpert]
   ); // eslint-disable-line react-hooks/exhaustive-deps
-  const topSites = useMemo(() => buildTopSites(scopedSites), [scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
+  const _topSites = useMemo(() => buildTopSites(scopedSites), [scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Societe'} / ${portefeuille.nom}`
@@ -308,7 +308,7 @@ const Cockpit = () => {
   };
 
   // ── V3 final : derive priority #1 for PriorityHero ──
-  const priority1 = useMemo(() => {
+  const _priority1 = useMemo(() => {
     // Find the single most critical issue to display
     if (kpis.nonConformes > 0) {
       return {
