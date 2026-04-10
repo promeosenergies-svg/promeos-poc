@@ -20,11 +20,10 @@ describe('V114b UX 2-clicks guard-rails', () => {
     expect(qa.to).toBe('/bill-intel');
   });
 
-  it('2. Voir anomalies: sidebar /actions in pilotage', () => {
-    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
-    const centre = pilotage.items.find((i) => i.to === '/actions');
-    expect(centre).toBeDefined();
-    expect(centre.label).toBe('Actions & Suivi');
+  it("2. V7: /actions removed from nav (moved to Centre d'actions header)", () => {
+    const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
+    const centre = cockpit.items.find((i) => i.to === '/actions');
+    expect(centre).toBeUndefined();
   });
 
   it('3. Exporter OPERAT: QUICK_ACTIONS operat → /conformite/tertiaire', () => {

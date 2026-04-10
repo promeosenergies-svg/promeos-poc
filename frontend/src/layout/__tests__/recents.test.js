@@ -27,9 +27,9 @@ beforeEach(() => {
 /* ── No duplicate paths ── */
 describe('recents — deduplication', () => {
   it('does not show the same path twice', () => {
-    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' });
+    addRecent('/actions', { label: "Plan d'actions", module: 'cockpit' });
     addRecent('/conformite', { label: 'Conformité', module: 'patrimoine' });
-    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' }); // re-visit
+    addRecent('/actions', { label: "Plan d'actions", module: 'cockpit' }); // re-visit
     const paths = getRecentPaths();
     expect(paths).toEqual(['/actions', '/conformite']);
     expect(new Set(paths).size).toBe(paths.length);
@@ -45,7 +45,7 @@ describe('recents — deduplication', () => {
 /* ── Cross-module detection ── */
 describe('recents — cross-module badge', () => {
   it('marks correct module for cross-module items', () => {
-    addRecent('/actions', { label: "Plan d'actions", module: 'pilotage' });
+    addRecent('/actions', { label: "Plan d'actions", module: 'cockpit' });
     addRecent('/patrimoine', { label: 'Patrimoine', module: 'patrimoine' });
 
     const recents = getRecents();
@@ -58,8 +58,8 @@ describe('recents — cross-module badge', () => {
   });
 
   it('same-module items are not marked as cross-module', () => {
-    addRecent('/conformite', { label: 'Conformité', module: 'patrimoine' });
     addRecent('/patrimoine', { label: 'Patrimoine', module: 'patrimoine' });
+    addRecent('/contrats', { label: 'Contrats', module: 'patrimoine' });
 
     const currentModule = 'patrimoine';
     for (const r of getRecents()) {
@@ -72,9 +72,9 @@ describe('recents — cross-module badge', () => {
 describe('recents — dynamic route module resolution', () => {
   const dynamicPaths = [
     { path: '/sites/42', expectedModule: 'patrimoine' },
-    { path: '/actions/123', expectedModule: 'pilotage' },
-    { path: '/conformite/tertiaire/efa/5', expectedModule: 'patrimoine' },
-    { path: '/compliance/sites/99', expectedModule: 'patrimoine' },
+    { path: '/actions/123', expectedModule: 'cockpit' },
+    { path: '/conformite/tertiaire/efa/5', expectedModule: 'conformite' },
+    { path: '/compliance/sites/99', expectedModule: 'conformite' },
   ];
 
   for (const { path, expectedModule } of dynamicPaths) {

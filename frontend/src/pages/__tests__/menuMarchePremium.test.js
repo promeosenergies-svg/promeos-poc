@@ -30,19 +30,21 @@ describe('A. Energie + Achat modules', () => {
     expect(energieSections[0].label).toBe('Énergie');
   });
 
-  it('Achat module desc is "Stratégies d\'achat énergie"', () => {
+  it('Achat module desc is V7 ("Échéances & arbitrage énergie")', () => {
     const mod = NAV_MODULES.find((m) => m.key === 'achat');
-    expect(mod.desc).toBe("Stratégies d'achat énergie");
+    expect(mod.desc).toContain('Échéances');
+    expect(mod.desc).toContain('énergie');
   });
 });
 
-/* ── B. Labels: items now in energie / achat sections ── */
-describe('B. Labels in new modules', () => {
+/* ── B. Labels: items now in energie / achat / patrimoine sections ── */
+describe('B. Labels in new modules V7', () => {
   const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
+  const patrimoineItems = getSectionsForModule('patrimoine').flatMap((s) => s.items);
 
-  it('Facturation (/bill-intel) is in energie section', () => {
-    const item = energieItems.find((i) => i.to === '/bill-intel');
+  it('Facturation (/bill-intel) is in patrimoine section (V7 migration)', () => {
+    const item = patrimoineItems.find((i) => i.to === '/bill-intel');
     expect(item).toBeDefined();
     expect(item.label).toBe('Facturation');
   });
@@ -53,10 +55,10 @@ describe('B. Labels in new modules', () => {
     expect(item.label).toBe('Consommations');
   });
 
-  it("Stratégies d'achat (/achat-energie) is in achat section", () => {
+  it("V7: label 'Scénarios d'achat' (renamed from Stratégies)", () => {
     const item = achatItems.find((i) => i.to === '/achat-energie');
     expect(item).toBeDefined();
-    expect(item.label).toBe("Stratégies d'achat");
+    expect(item.label).toBe("Scénarios d'achat");
   });
 
   it('/achat-energie?tab=assistant is in main nav (fused)', () => {
@@ -111,13 +113,13 @@ describe('D. Tooltips & aria-label in NavPanel', () => {
   });
 });
 
-/* ── E. Routes in new modules ── */
-describe('E. Routes in new modules', () => {
-  const energieItems = getSectionsForModule('energie').flatMap((s) => s.items);
+/* ── E. Routes in new modules V7 ── */
+describe('E. Routes in new modules V7', () => {
   const achatItems = getSectionsForModule('achat').flatMap((s) => s.items);
+  const patrimoineItems = getSectionsForModule('patrimoine').flatMap((s) => s.items);
 
-  it('billing route is in energie section', () => {
-    const routes = energieItems.map((i) => i.to);
+  it('billing route is in patrimoine section (V7 migration)', () => {
+    const routes = patrimoineItems.map((i) => i.to);
     expect(routes).toContain('/bill-intel');
   });
 

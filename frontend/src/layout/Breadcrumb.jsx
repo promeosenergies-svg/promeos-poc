@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { ALL_NAV_ITEMS, ROUTE_SECTION_MAP, NAV_MAIN_SECTIONS } from './NavRegistry';
@@ -6,7 +7,8 @@ import { useScope } from '../contexts/ScopeContext';
 // Auto-derive labels from NavRegistry (single source of truth)
 const LABELS = Object.fromEntries(
   ALL_NAV_ITEMS.map((item) => {
-    const segment = item.to.split('/').filter(Boolean).pop();
+    const basePath = item.to.split('?')[0].split('#')[0];
+    const segment = basePath.split('/').filter(Boolean).pop();
     return segment ? [segment, item.label] : null;
   }).filter(Boolean)
 );
@@ -15,6 +17,7 @@ const LABELS = Object.fromEntries(
 Object.assign(LABELS, {
   '': 'Tableau de bord',
   sites: 'Site',
+  conformite: 'Conformité',
   compliance: 'Conformité',
   status: 'Statut',
   login: 'Connexion',
@@ -103,12 +106,14 @@ export default function Breadcrumb() {
   const { scopedSites } = useScope();
   const parts = pathname.split('/').filter(Boolean);
 
-  // Build a lookup for dynamic site names
-  const siteNameById =
-    scopedSites?.reduce((acc, s) => {
-      acc[String(s.id)] = s.nom;
-      return acc;
-    }, {}) || {};
+  const siteNameById = useMemo(
+    () =>
+      scopedSites?.reduce((acc, s) => {
+        acc[String(s.id)] = s.nom;
+        return acc;
+      }, {}) || {},
+    [scopedSites]
+  );
 
   const crumbs = [{ label: 'PROMEOS', to: '/' }];
 

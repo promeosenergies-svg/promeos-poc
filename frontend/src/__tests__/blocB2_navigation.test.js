@@ -18,10 +18,11 @@ function readSrc(relDir, file) {
 describe('B.2 — Navigation structure', () => {
   const src = readSrc('layout', 'NavRegistry.js');
 
-  it('NavRegistry has exactly 4 main sections', () => {
-    const sectionCount = (src.match(/label:\s*["'](Pilotage|Patrimoine|Énergie|Achat)["']/gi) || [])
-      .length;
-    expect(sectionCount).toBeGreaterThanOrEqual(4);
+  it('NavRegistry has 5 main modules (V7: Accueil, Conformité, Énergie, Patrimoine, Achat)', () => {
+    const sectionCount = (
+      src.match(/label:\s*["'](Accueil|Conformité|Patrimoine|Énergie|Achat)["']/gi) || []
+    ).length;
+    expect(sectionCount).toBeGreaterThanOrEqual(5);
   });
 
   it('exports NAV_MAIN_SECTIONS', () => {
@@ -48,28 +49,22 @@ describe('B.2 — Navigation structure', () => {
     expect(src).toMatch(/COMMAND_SHORTCUTS\s*=\s*\[/);
   });
 
-  it('All main pages are in navigation', () => {
+  it('All main pages are in navigation (V7)', () => {
     const REQUIRED_ROUTES = [
       '/cockpit',
       '/patrimoine',
       '/conformite',
-      '/billing',
-      '/actions',
+      '/bill-intel',
       '/monitoring',
-      '/performance',
     ];
     REQUIRED_ROUTES.forEach((route) => {
-      // /performance is the label for /monitoring — check both
-      if (route === '/performance') {
-        expect(src.includes('/monitoring') || src.includes('Performance')).toBe(true);
-      } else {
-        expect(src).toContain(route);
-      }
+      expect(src).toContain(route);
     });
   });
 
-  it('Section keys match: pilotage, patrimoine, energie, achat', () => {
-    expect(src).toMatch(/key:\s*'pilotage'/);
+  it('Section keys match V7: cockpit, conformite, patrimoine, energie, achat', () => {
+    expect(src).toMatch(/key:\s*'cockpit'/);
+    expect(src).toMatch(/key:\s*'conformite'/);
     expect(src).toMatch(/key:\s*'patrimoine'/);
     expect(src).toMatch(/key:\s*'energie'/);
     expect(src).toMatch(/key:\s*'achat'/);

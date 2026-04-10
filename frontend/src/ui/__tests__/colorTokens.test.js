@@ -6,29 +6,34 @@ import { describe, it, expect } from 'vitest';
 import { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS, tint } from '../colorTokens';
 import { NAV_MODULES, TINT_PALETTE } from '../../layout/NavRegistry';
 
-/* ── tint.module ── */
-describe('tint.module', () => {
-  it('returns navActive classes for pilotage (blue)', () => {
-    const classes = tint.module('pilotage').navActive();
+/* ── tint.module V7 ── */
+describe('tint.module V7', () => {
+  it('returns navActive classes for cockpit (blue)', () => {
+    const classes = tint.module('cockpit').navActive();
     expect(classes).toContain('bg-blue');
     expect(classes).toContain('text-blue');
     expect(classes).toContain('border-blue');
   });
 
-  it('returns pill classes for achat (amber)', () => {
+  it('returns pill classes for achat (violet)', () => {
     const classes = tint.module('achat').pill();
-    expect(classes).toContain('bg-amber');
-    expect(classes).toContain('text-amber');
+    expect(classes).toContain('bg-violet');
+    expect(classes).toContain('text-violet');
     expect(classes).toContain('ring-1');
   });
 
-  it('returns headerBand gradient', () => {
+  it('returns headerBand gradient for patrimoine (amber)', () => {
     const hb = tint.module('patrimoine').headerBand();
-    expect(hb).toMatch(/^from-emerald/);
+    expect(hb).toMatch(/^from-amber/);
     expect(hb).toContain('to-transparent');
   });
 
-  it('returns icon class', () => {
+  it('returns headerBand gradient for conformite (emerald)', () => {
+    const hb = tint.module('conformite').headerBand();
+    expect(hb).toMatch(/^from-emerald/);
+  });
+
+  it('returns icon class for energie (indigo)', () => {
     expect(tint.module('energie').icon()).toBe('text-indigo-500');
   });
 
@@ -37,12 +42,12 @@ describe('tint.module', () => {
     expect(classes).toContain('slate');
   });
 
-  it('raw() returns full TINT_PALETTE entry', () => {
-    const raw = tint.module('pilotage').raw();
+  it('raw() returns full TINT_PALETTE entry for cockpit', () => {
+    const raw = tint.module('cockpit').raw();
     expect(raw).toBe(TINT_PALETTE.blue);
   });
 
-  it('covers all 5 modules without error', () => {
+  it('covers all 6 modules without error', () => {
     for (const mod of NAV_MODULES) {
       expect(() => tint.module(mod.key).navActive()).not.toThrow();
       expect(() => tint.module(mod.key).pill()).not.toThrow();
@@ -88,17 +93,17 @@ describe('tint.severity', () => {
 
 /* ── tint.module — tab recipe ── */
 describe('tint.module — tab recipe', () => {
-  it('returns tab object with active and ring', () => {
-    const tab = tint.module('pilotage').tab();
+  it('returns tab object with active and ring (cockpit blue)', () => {
+    const tab = tint.module('cockpit').tab();
     expect(tab).toHaveProperty('active');
     expect(tab).toHaveProperty('ring');
     expect(tab.active).toContain('border-b-2');
     expect(tab.active).toContain('text-blue');
   });
 
-  it('achat tab uses amber', () => {
+  it('achat tab uses violet', () => {
     const tab = tint.module('achat').tab();
-    expect(tab.active).toContain('amber');
+    expect(tab.active).toContain('violet');
   });
 
   it('covers all 5 modules without error', () => {
@@ -112,13 +117,13 @@ describe('tint.module — tab recipe', () => {
 
 /* ── Module vs Severity Disambiguation ── */
 describe('module vs severity disambiguation', () => {
-  it('module amber pill differs from severity amber badge', () => {
-    const moduleAmber = tint.module('achat').pill();
+  it('module amber pill (patrimoine) differs from severity amber badge', () => {
+    const moduleAmber = tint.module('patrimoine').pill();
     const severityAmber = tint.severity('high').badge();
     expect(moduleAmber).not.toBe(severityAmber);
   });
 
-  it('module tint keys (pilotage..admin) do not overlap severity keys (critical..neutral)', () => {
+  it('module tint keys (cockpit..admin) do not overlap severity keys (critical..neutral)', () => {
     const moduleKeys = new Set(NAV_MODULES.map((m) => m.key));
     const severityKeys = new Set(Object.keys(SEVERITY_TINT));
     for (const k of moduleKeys) {
