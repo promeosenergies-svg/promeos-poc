@@ -172,7 +172,7 @@ def compute_flex_nebco(db: Session, site_id: int) -> dict:
     return {
         "site_id": site_id,
         "site_name": site.nom,
-        "flex_score": base_assessment.get("flex_potential_score", 0),
+        "flex_score": base_assessment.get("flex_score", 0),
         "flex_summary": {
             "total_pilotable_kw": total_pilotable_kw,
             "nebco_eligible": nebco_eligible,
