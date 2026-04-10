@@ -16,6 +16,7 @@ from models.contract_v2_models import (
     ContractAnnexe,
     ContractEvent,
     ContractPricing,
+    ContratCadre,
     VolumeCommitment,
 )
 from models.enums import BillingEnergyType, ContractStatus
@@ -66,11 +67,45 @@ def list_cadres(
     supplier: Optional[str] = None,
     search: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Liste contrats cadre + annexes avec KPIs. Filtre par org via EJ ou site."""
-    from models import Site, Portefeuille, EntiteJuridique
+    """Liste contrats cadre + annexes avec KPIs, union V2 ContratCadre + legacy EnergyContract."""
+    from models import EntiteJuridique
 
-    # Build base query: cadre contracts
-    q = (
+    results: List[Dict[str, Any]] = []
+
+    # ── V2: ContratCadre (nouveau data model, Phase 1) ──────────────
+    v2_q = (
+        db.query(ContratCadre)
+        .options(
+            joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.site),
+            joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.volume_commitment),
+        )
+        .filter(ContratCadre.org_id == org_id)
+        .filter(ContratCadre.deleted_at.is_(None))
+    )
+    if status:
+        try:
+            v2_q = v2_q.filter(ContratCadre.statut == ContractStatus(status.upper()))
+        except ValueError:
+            pass
+    if energy_type:
+        try:
+            v2_q = v2_q.filter(ContratCadre.energie == BillingEnergyType(energy_type))
+        except ValueError:
+            pass
+    if supplier:
+        v2_q = v2_q.filter(ContratCadre.fournisseur.ilike(f"%{supplier}%"))
+    if search:
+        pattern = f"%{search}%"
+        v2_q = v2_q.filter(
+            ContratCadre.fournisseur.ilike(pattern)
+            | ContratCadre.reference_fournisseur.ilike(pattern)
+            | ContratCadre.reference.ilike(pattern)
+            | ContratCadre.notes.ilike(pattern)
+        )
+    results.extend(_serialize_v2_cadre(c) for c in v2_q.all())
+
+    # ── Legacy: EnergyContract.is_cadre (backward compat) ───────────
+    legacy_q = (
         db.query(EnergyContract)
         .options(
             joinedload(EnergyContract.annexes).joinedload(ContractAnnexe.site),
@@ -79,33 +114,60 @@ def list_cadres(
         )
         .filter(EnergyContract.is_cadre == True)  # noqa: E712
     )
-
-    # Org scoping via entite_juridique_id
     ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()]
     if ej_ids:
-        q = q.filter(EnergyContract.entite_juridique_id.in_(ej_ids))
-
-    # Filters
+        legacy_q = legacy_q.filter(EnergyContract.entite_juridique_id.in_(ej_ids))
     if status:
-        q = q.filter(EnergyContract.contract_status == status)
+        legacy_q = legacy_q.filter(EnergyContract.contract_status == status)
     if energy_type:
-        q = q.filter(EnergyContract.energy_type == energy_type)
+        legacy_q = legacy_q.filter(EnergyContract.energy_type == energy_type)
     if supplier:
-        q = q.filter(EnergyContract.supplier_name.ilike(f"%{supplier}%"))
+        legacy_q = legacy_q.filter(EnergyContract.supplier_name.ilike(f"%{supplier}%"))
     if search:
         pattern = f"%{search}%"
-        q = q.filter(
+        legacy_q = legacy_q.filter(
             EnergyContract.supplier_name.ilike(pattern)
             | EnergyContract.reference_fournisseur.ilike(pattern)
             | EnergyContract.notes.ilike(pattern)
         )
+    results.extend(_serialize_cadre(c) for c in legacy_q.all())
 
-    cadres = q.all()
-    return [_serialize_cadre(c) for c in cadres]
+    return results
 
 
-def get_cadre(db: Session, cadre_id: int) -> Optional[Dict[str, Any]]:
-    """Cadre complet + annexes + pricing + events."""
+def get_cadre(
+    db: Session,
+    cadre_id: int,
+    *,
+    source: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Cadre complet + annexes + pricing + events.
+
+    Tries V2 ContratCadre first (Phase 1), falls back to legacy EnergyContract.
+    Pass source="v2" or source="legacy" to force a specific table when IDs
+    collide between the two tables.
+    """
+    # ── V2 ContratCadre (nouveau data model, Phase 1) ────────────────
+    if source in (None, "v2"):
+        v2 = (
+            db.query(ContratCadre)
+            .options(
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.site),
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.volume_commitment),
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.pricing_overrides),
+            )
+            .filter(ContratCadre.id == cadre_id, ContratCadre.deleted_at.is_(None))
+            .first()
+        )
+        if v2:
+            result = _serialize_v2_cadre(v2)
+            result["events"] = []  # V2 ContratCadre has no events relationship yet
+            result["coherence"] = []  # coherence_check expects legacy EnergyContract
+            return result
+        if source == "v2":
+            return None
+
+    # ── Legacy EnergyContract.is_cadre=True ──────────────────────────
     c = (
         db.query(EnergyContract)
         .options(
@@ -526,15 +588,16 @@ def refresh_all_statuses(db: Session, org_id: int) -> int:
 def compute_cadre_kpis(db: Session, cadre: EnergyContract) -> Dict[str, Any]:
     """KPIs pour un cadre avec prix moyen pondere par volume."""
     annexes = [a for a in cadre.annexes if a.deleted_at is None]
-    total_vol = sum((a.volume_commitment.annual_kwh if a.volume_commitment else 0) for a in annexes)
+    total_vol = sum((float(a.volume_commitment.annual_kwh) if a.volume_commitment else 0) for a in annexes)
 
     # Prix moyen pondere : chaque ligne pricing contribue proportionnellement
+    # Cast Decimal → float for arithmetic with PERIOD_WEIGHTS (floats)
     weighted_sum = 0.0
     weight_total = 0.0
     for p in cadre.pricing_lines:
         if p.unit_price_eur_kwh:
             w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
-            weighted_sum += p.unit_price_eur_kwh * w
+            weighted_sum += float(p.unit_price_eur_kwh) * w
             weight_total += w
     avg_price = (weighted_sum / weight_total) if weight_total else 0
 
@@ -626,7 +689,7 @@ def compute_shadow_gap(db: Session, annexe_id: int) -> Dict[str, Any]:
                     pc = p.get("period_code", "")
                     if line.qty and p.get("unit_price_eur_kwh"):
                         if not pc or pc == (getattr(line, "period_code", None) or ""):
-                            shadow_supply += line.qty * p["unit_price_eur_kwh"]
+                            shadow_supply += float(line.qty) * float(p["unit_price_eur_kwh"])
                             break
             elif lt in NETWORK_TYPES:
                 inv_network += amount
@@ -866,18 +929,96 @@ def get_cadre_for_org(db: Session, cadre_id: int, org_id: int) -> Optional[Dict[
     return result
 
 
+def _serialize_v2_cadre(c: ContratCadre) -> Dict[str, Any]:
+    """Serialize a V2 ContratCadre into the same envelope as legacy _serialize_cadre.
+
+    V2 cadres have flat price columns (prix_hp_eur_kwh, prix_hc_eur_kwh,
+    prix_base_eur_kwh) and a denormalized poids_hp / poids_hc split. The
+    weighted-average price is computed from these flat columns so the UI can
+    display a single EUR/MWh figure consistent with legacy cadres.
+    """
+    annexes = [a for a in c.annexes if a.deleted_at is None]
+    total_vol_kwh = sum(
+        float(a.volume_engage_kwh or 0) + (float(a.volume_commitment.annual_kwh) if a.volume_commitment else 0)
+        for a in annexes
+    )
+    total_vol_mwh = round(total_vol_kwh / 1000, 2)
+
+    # Weighted average from flat V2 columns
+    prix_base = float(c.prix_base_eur_kwh) if c.prix_base_eur_kwh is not None else None
+    prix_hp = float(c.prix_hp_eur_kwh) if c.prix_hp_eur_kwh is not None else None
+    prix_hc = float(c.prix_hc_eur_kwh) if c.prix_hc_eur_kwh is not None else None
+    if prix_base is not None:
+        avg_price = prix_base
+    elif prix_hp is not None and prix_hc is not None:
+        hp_w = float(c.poids_hp or 62.0) / 100.0
+        hc_w = float(c.poids_hc or 38.0) / 100.0
+        avg_price = prix_hp * hp_w + prix_hc * hc_w
+    else:
+        avg_price = 0
+    avg_price_mwh = round(avg_price * 1000, 2)
+
+    days_to_expiry = (c.date_fin - date.today()).days if c.date_fin else None
+    statut_val = c.statut.value if c.statut else None
+
+    pricing: List[Dict[str, Any]] = []
+    if prix_base is not None:
+        pricing.append(
+            {"period_code": "BASE", "season": "ANNUEL", "unit_price_eur_kwh": prix_base, "subscription_eur_month": None}
+        )
+    if prix_hp is not None:
+        pricing.append(
+            {"period_code": "HP", "season": "ANNUEL", "unit_price_eur_kwh": prix_hp, "subscription_eur_month": None}
+        )
+    if prix_hc is not None:
+        pricing.append(
+            {"period_code": "HC", "season": "ANNUEL", "unit_price_eur_kwh": prix_hc, "subscription_eur_month": None}
+        )
+
+    return {
+        "id": c.id,
+        "source": "v2",
+        "supplier_name": c.fournisseur,
+        "contract_ref": c.reference_fournisseur or c.reference,
+        "energy_type": c.energie.value if c.energie else None,
+        "contract_type": "CADRE",
+        "pricing_model": c.type_prix.value if c.type_prix else None,
+        "start_date": str(c.date_debut) if c.date_debut else None,
+        "end_date": str(c.date_fin) if c.date_fin else None,
+        "status": statut_val,
+        "days_to_expiry": days_to_expiry,
+        "tacit_renewal": c.auto_renew,
+        "notice_period_months": c.notice_period_months,
+        "is_green": c.is_green,
+        "green_percentage": c.green_percentage,
+        "segment_enedis": None,
+        "indexation_formula": None,
+        "indexation_reference": c.indexation_reference,
+        "price_revision_clause": None,
+        "notes": c.notes,
+        "entite_juridique_id": c.entite_juridique_id,
+        "nb_annexes": len(annexes),
+        "total_volume_mwh": total_vol_mwh,
+        "avg_price_eur_mwh": avg_price_mwh,
+        "budget_eur": round(avg_price * total_vol_kwh, 0) if avg_price and total_vol_kwh else 0,
+        "pricing": pricing,
+        "annexes": [_serialize_annexe_summary(a) for a in annexes],
+    }
+
+
 def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     """Serialize cadre + stats."""
     annexes = [a for a in c.annexes if a.deleted_at is None]
     total_vol = sum((a.volume_commitment.annual_kwh / 1000 if a.volume_commitment else 0) for a in annexes)
 
     # Prix moyen pondere (meme formule que compute_cadre_kpis)
+    # Cast Decimal → float: unit_price_eur_kwh is Numeric(18,6), PERIOD_WEIGHTS floats
     weighted_sum = 0.0
     weight_total = 0.0
     for p in c.pricing_lines:
         if p.unit_price_eur_kwh:
             w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
-            weighted_sum += p.unit_price_eur_kwh * w
+            weighted_sum += float(p.unit_price_eur_kwh) * w
             weight_total += w
     avg_price = (weighted_sum / weight_total) if weight_total else 0
     avg_price_mwh = round(avg_price * 1000, 2)
@@ -918,8 +1059,10 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
             {
                 "period_code": p.period_code,
                 "season": p.season,
-                "unit_price_eur_kwh": p.unit_price_eur_kwh,
-                "subscription_eur_month": p.subscription_eur_month,
+                "unit_price_eur_kwh": float(p.unit_price_eur_kwh) if p.unit_price_eur_kwh is not None else None,
+                "subscription_eur_month": float(p.subscription_eur_month)
+                if p.subscription_eur_month is not None
+                else None,
             }
             for p in c.pricing_lines
         ],
@@ -942,7 +1085,7 @@ def _serialize_annexe_summary(a: ContractAnnexe) -> Dict[str, Any]:
         "status": a.status.value if a.status else "active",
         "start_date": str(dates["start_date"]) if dates["start_date"] else None,
         "end_date": str(dates["end_date"]) if dates["end_date"] else None,
-        "volume_mwh": round(a.volume_commitment.annual_kwh / 1000, 2) if a.volume_commitment else None,
+        "volume_mwh": round(float(a.volume_commitment.annual_kwh) / 1000, 2) if a.volume_commitment else None,
     }
 
 

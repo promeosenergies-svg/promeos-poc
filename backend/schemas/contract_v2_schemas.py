@@ -368,6 +368,7 @@ class CadreResponse(BaseModel):
     """Reponse cadre serialisee (detail + annexes)."""
 
     id: Optional[int] = None
+    source: Optional[str] = None  # 'v2' or 'legacy' — cadre data source
     supplier_name: Optional[str] = None
     energy_type: Optional[str] = None
     contract_ref: Optional[str] = None
@@ -375,13 +376,22 @@ class CadreResponse(BaseModel):
     pricing_model: Optional[str] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    status: Optional[str] = None
+    days_to_expiry: Optional[int] = None
     tacit_renewal: Optional[bool] = None
     notice_period_months: Optional[int] = None
     is_green: Optional[bool] = None
     green_percentage: Optional[float] = None
     segment_enedis: Optional[str] = None
+    indexation_formula: Optional[str] = None
+    indexation_reference: Optional[str] = None
+    price_revision_clause: Optional[str] = None
     annual_consumption_kwh: Optional[float] = None
+    entite_juridique_id: Optional[int] = None
     nb_annexes: Optional[int] = None
+    total_volume_mwh: Optional[float] = None
+    avg_price_eur_mwh: Optional[float] = None
+    budget_eur: Optional[float] = None
     annexes: Optional[list] = None
     pricing: Optional[list] = None
     kpis: Optional[dict] = None
@@ -389,7 +399,7 @@ class CadreResponse(BaseModel):
     events: Optional[list] = None
     notes: Optional[str] = None
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "extra": "ignore"}
 
 
 class SuppliersResponse(BaseModel):

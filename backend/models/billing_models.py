@@ -343,6 +343,15 @@ class EnergyInvoice(Base, TimestampMixin):
     )
     raw_json = Column(Text, nullable=True, comment="Donnees brutes (JSON)")
 
+    # V2 Phase 5 — Lien annexe cadre
+    annexe_site_id = Column(
+        Integer,
+        ForeignKey("contract_annexes.id"),
+        nullable=True,
+        index=True,
+        comment="Annexe cadre V2 rattachee (nullable, backward-compat)",
+    )
+
     # V2 Engine — champs reconstitution
     invoice_type = Column(
         Enum(InvoiceTypeEnum),
@@ -370,6 +379,7 @@ class EnergyInvoice(Base, TimestampMixin):
     # Relations
     site = relationship("Site", backref="energy_invoices")
     contract = relationship("EnergyContract", back_populates="invoices")
+    annexe_site = relationship("ContractAnnexe", foreign_keys=[annexe_site_id])
     lines = relationship(
         "EnergyInvoiceLine",
         back_populates="invoice",

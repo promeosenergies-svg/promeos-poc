@@ -234,9 +234,22 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
             tva = round((energy_eur + network_eur + tax_eur) * 0.20 + abo_eur * 0.055, 2)
             total = round(ht + tva, 2)
 
+        # V2 Phase 5: resolve annexe_site_id from cadre if available
+        _annexe_site_id = None
+        try:
+            from services.billing_service import find_active_annexe
+
+            energy_str = "gaz" if is_gaz else "elec"
+            _annexe = find_active_annexe(db, site.id, energy_str, period_start)
+            if _annexe:
+                _annexe_site_id = _annexe.id
+        except Exception:
+            pass  # cadre tables may not exist yet
+
         invoice = EnergyInvoice(
             site_id=site.id,
             contract_id=contract.id,
+            annexe_site_id=_annexe_site_id,
             invoice_number=inv_number,
             period_start=period_start,
             period_end=period_end,
@@ -393,10 +406,31 @@ def generate_billing(db, org, sites: list, invoices_count: int, rng: random.Rand
 # ──────────────────────────────────────────────────────────────
 
 
+def _cadre_exists(db, ref_fournisseur: str) -> bool:
+    """Idempotency guard: skip if a ContratCadre with this reference_fournisseur exists."""
+    from models.contract_v2_models import ContratCadre
+
+    return db.query(ContratCadre.id).filter(ContratCadre.reference_fournisseur == ref_fournisseur).first() is not None
+
+
 def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
-    """Generate V2 cadre contracts with annexes, pricing, volumes, events.
-    Additive — does not break existing seed."""
-    from models.contract_v2_models import ContractAnnexe, ContractPricing, VolumeCommitment, ContractEvent
+    """Generate V2 cadre contracts (ContratCadre) with annexes, pricing, volumes.
+
+    4 cadres HELIOS — idempotent via reference_fournisseur:
+      1. EDF FIXE elec — Paris + Lyon (2 sites)
+      2. ENGIE gaz INDEXE PEG — Toulouse (1 site)
+      3. TotalEnergies FIXE elec — Nice + Marseille (2 sites)
+      4. Ekwateur SPOT EPEX elec — Nice (1 site)
+
+    Uses ContratCadre model (contrats_cadre table), NOT legacy EnergyContract.
+    Additive — does not break existing seed.
+    """
+    from models.contract_v2_models import (
+        ContratCadre,
+        ContractAnnexe,
+        ContractPricing,
+        VolumeCommitment,
+    )
     from models import EntiteJuridique, ContractStatus
 
     if len(sites) < 3:
@@ -409,354 +443,286 @@ def generate_cadre_contracts(db, org, sites: list, rng=None) -> dict:
     cadres_created = 0
     annexes_created = 0
 
-    # ── Cadre 1: EDF Elec multi-site (3 annexes) ──
-    cadre1 = EnergyContract(
-        site_id=sites[0].id,
-        energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF Entreprises",
-        start_date=date(2024, 1, 1),
-        end_date=date(2026, 6, 15),
-        reference_fournisseur="CADRE-2024-001",
-        auto_renew=False,
-        notice_period_days=90,
-        offer_indexation=ContractIndexation.FIXE,
-        contract_status=ContractStatus.EXPIRING,
-        is_cadre=True,
-        contract_type="CADRE",
-        entite_juridique_id=ej_id,
-        notice_period_months=3,
-        is_green=False,
-        segment_enedis="C4",
-        annual_consumption_kwh=2_100_000.0,
-        indexation_formula="TRVE-5%",
-        indexation_reference="TRVE",
-        indexation_spread_eur_mwh=-5.0,
-        price_revision_clause="ANNUAL_REVIEW",
-        notes="Contrat cadre EDF 3 sites — demo HELIOS",
-    )
-    db.add(cadre1)
-    db.flush()
-    cadres_created += 1
+    # ── Cadre 1: EDF Entreprises — FIXE elec — Paris + Lyon ──
+    ref1 = "EDF-CADRE-2024-001"
+    if not _cadre_exists(db, ref1):
+        cadre1 = ContratCadre(
+            org_id=org.id,
+            entite_juridique_id=ej_id,
+            reference="CC-2024-001",
+            reference_fournisseur=ref1,
+            fournisseur="EDF Entreprises",
+            energie=BillingEnergyType.ELEC,
+            date_signature=date(2024, 1, 10),
+            date_debut=date(2024, 2, 1),
+            date_fin=date(2026, 12, 31),
+            date_preavis=date(2026, 9, 30),
+            notice_period_months=3,
+            auto_renew=False,
+            type_prix=ContractIndexation.FIXE,
+            prix_hp_eur_kwh=0.1580,
+            prix_hc_eur_kwh=0.1180,
+            prix_base_eur_kwh=0.1420,
+            poids_hp=62.0,
+            poids_hc=38.0,
+            cee_inclus=True,
+            cee_eur_mwh=4.50,
+            capacite_incluse=False,
+            capacite_eur_mwh=12.80,
+            statut=ContractStatus.ACTIVE,
+            is_green=False,
+            notes="Contrat cadre EDF 2 sites bureaux — demo HELIOS",
+        )
+        db.add(cadre1)
+        db.flush()
+        cadres_created += 1
 
-    # Pricing cadre EDF: horosaisonnier
-    for pc, season, price in [
-        ("HP", "HIVER", 0.1680),
-        ("HC", "HIVER", 0.1220),
-        ("HP", "ETE", 0.1425),
-        ("HC", "ETE", 0.0985),
-    ]:
+        # Annexe 1a: Paris — herite prix cadre
+        a1a = ContractAnnexe(
+            cadre_id=cadre1.id,
+            site_id=sites[0].id,
+            annexe_ref="ANX-EDF-Paris-001",
+            tariff_option=TariffOptionEnum.LU,
+            subscribed_power_kva=200,
+            segment_enedis="C4",
+            has_price_override=False,
+            status=ContractStatus.ACTIVE,
+            volume_engage_kwh=595_000,
+        )
+        db.add(a1a)
+        db.flush()
         db.add(
-            ContractPricing(
-                contract_id=cadre1.id,
-                period_code=pc,
-                season=season,
-                unit_price_eur_kwh=price,
+            VolumeCommitment(
+                annexe_id=a1a.id,
+                annual_kwh=595_000,
+                tolerance_pct_up=10,
+                tolerance_pct_down=10,
+                penalty_eur_kwh_above=0.015,
+                penalty_eur_kwh_below=0.010,
             )
         )
-    db.add(
-        ContractPricing(
-            contract_id=cadre1.id,
-            period_code="BASE",
-            season="ANNUEL",
-            subscription_eur_month=145.80,
-        )
-    )
+        annexes_created += 1
 
-    # Annexe 1: Paris (herite)
-    a1 = ContractAnnexe(
-        contrat_cadre_id=cadre1.id,
-        site_id=sites[0].id,
-        annexe_ref="ANX-Paris-001",
-        tariff_option=TariffOptionEnum.LU,
-        subscribed_power_kva=108,
-        segment_enedis="C4",
-        has_price_override=False,
-        status=ContractStatus.ACTIVE,
-    )
-    db.add(a1)
-    db.flush()
-    db.add(
-        VolumeCommitment(
-            annexe_id=a1.id,
-            annual_kwh=850000,
-            tolerance_pct_up=10,
-            tolerance_pct_down=10,
-            penalty_eur_kwh_above=0.015,
-            penalty_eur_kwh_below=0.010,
+        # Annexe 1b: Lyon — override prix (bureau plus petit, prix negocie)
+        a1b = ContractAnnexe(
+            cadre_id=cadre1.id,
+            site_id=sites[1].id,
+            annexe_ref="ANX-EDF-Lyon-002",
+            tariff_option=TariffOptionEnum.HP_HC,
+            subscribed_power_kva=80,
+            segment_enedis="C5",
+            has_price_override=True,
+            override_pricing_model="FIXE",
+            prix_base_override=0.1380,
+            status=ContractStatus.ACTIVE,
+            volume_engage_kwh=204_000,
         )
-    )
-    annexes_created += 1
+        db.add(a1b)
+        db.flush()
+        db.add(
+            ContractPricing(
+                annexe_id=a1b.id,
+                period_code="BASE",
+                season="ANNUEL",
+                unit_price_eur_kwh=0.1380,
+            )
+        )
+        db.add(
+            VolumeCommitment(
+                annexe_id=a1b.id,
+                annual_kwh=204_000,
+                tolerance_pct_up=10,
+                tolerance_pct_down=10,
+            )
+        )
+        annexes_created += 1
 
-    # Annexe 2: Lyon (override prix fixe 138)
-    a2 = ContractAnnexe(
-        contrat_cadre_id=cadre1.id,
-        site_id=sites[1].id,
-        annexe_ref="ANX-Lyon-002",
-        tariff_option=TariffOptionEnum.MU4,
-        subscribed_power_kva=60,
-        segment_enedis="C4",
-        has_price_override=True,
-        override_pricing_model="FIXE",
-        end_date_override=date(2026, 6, 28),
-        status=ContractStatus.EXPIRING,
-    )
-    db.add(a2)
-    db.flush()
-    db.add(
-        ContractPricing(
-            annexe_id=a2.id,
-            period_code="BASE",
-            season="ANNUEL",
-            unit_price_eur_kwh=0.138,
-        )
-    )
-    db.add(
-        VolumeCommitment(
-            annexe_id=a2.id,
-            annual_kwh=420000,
-            tolerance_pct_up=10,
-            tolerance_pct_down=10,
-        )
-    )
-    annexes_created += 1
-
-    # Annexe 3: Toulouse (herite)
-    a3 = ContractAnnexe(
-        contrat_cadre_id=cadre1.id,
-        site_id=sites[2].id if len(sites) > 2 else sites[0].id,
-        annexe_ref="ANX-Toulouse-003",
-        tariff_option=TariffOptionEnum.CU4,
-        subscribed_power_kva=72,
-        segment_enedis="C4",
-        has_price_override=False,
-        status=ContractStatus.ACTIVE,
-    )
-    db.add(a3)
-    db.flush()
-    db.add(
-        VolumeCommitment(
-            annexe_id=a3.id,
-            annual_kwh=380000,
-            tolerance_pct_up=10,
-            tolerance_pct_down=10,
-        )
-    )
-    annexes_created += 1
-
-    # Events cadre 1
-    db.add(
-        ContractEvent(
-            contract_id=cadre1.id,
-            event_type="CREATION",
-            event_date=date(2024, 1, 1),
-            description="Signature cadre 3 sites",
-        )
-    )
-    db.add(
-        ContractEvent(
-            contract_id=cadre1.id,
-            event_type="AVENANT",
-            event_date=date(2024, 6, 15),
-            description="Ajout Toulouse + PS Paris 96→108 kVA",
-        )
-    )
-
-    # ── Cadre 2: ENGIE Gaz mono-site ──
-    if len(sites) > 3:
-        cadre2 = EnergyContract(
-            site_id=sites[3].id,
-            energy_type=BillingEnergyType.GAZ,
-            supplier_name="ENGIE Pro",
-            start_date=date(2025, 9, 1),
-            end_date=date(2027, 12, 31),
-            reference_fournisseur="GP-2025-114",
-            auto_renew=True,
-            notice_period_days=90,
-            offer_indexation=ContractIndexation.INDEXE,
-            contract_status=ContractStatus.ACTIVE,
-            is_cadre=True,
-            contract_type="UNIQUE",
+    # ── Cadre 2: ENGIE Pro — INDEXE PEG gaz — Toulouse ──
+    ref2 = "ENGIE-GP-2025-042"
+    if not _cadre_exists(db, ref2):
+        cadre2 = ContratCadre(
+            org_id=org.id,
             entite_juridique_id=ej_id,
+            reference="CC-2025-002",
+            reference_fournisseur=ref2,
+            fournisseur="ENGIE Pro",
+            energie=BillingEnergyType.GAZ,
+            date_signature=date(2025, 1, 15),
+            date_debut=date(2025, 3, 1),
+            date_fin=date(2027, 2, 28),
+            date_preavis=date(2026, 11, 30),
             notice_period_months=3,
-            annual_consumption_kwh=320_000.0,
-            indexation_formula="PEG_DA+3",
+            auto_renew=True,
+            type_prix=ContractIndexation.INDEXE,
+            prix_base_eur_kwh=0.0528,
             indexation_reference="PEG_DA",
             indexation_spread_eur_mwh=3.0,
-            price_revision_clause="ANNUAL_REVIEW",
+            statut=ContractStatus.ACTIVE,
+            is_green=False,
+            notes="Contrat gaz indexe PEG entrepot Toulouse — demo HELIOS",
         )
         db.add(cadre2)
         db.flush()
         cadres_created += 1
 
-        db.add(
-            ContractPricing(
-                contract_id=cadre2.id,
-                period_code="BASE",
-                season="ANNUEL",
-                unit_price_eur_kwh=0.0528,
-            )
-        )
-        a4 = ContractAnnexe(
-            contrat_cadre_id=cadre2.id,
-            site_id=sites[3].id,
-            annexe_ref="ANX-Marseille-001",
-            subscribed_power_kva=45,
+        # Annexe 2a: Toulouse entrepot (gaz)
+        a2a = ContractAnnexe(
+            cadre_id=cadre2.id,
+            site_id=sites[2].id,
+            annexe_ref="ANX-ENGIE-Toulouse-001",
             segment_enedis=None,
             has_price_override=False,
             status=ContractStatus.ACTIVE,
+            volume_engage_kwh=720_000,
         )
-        db.add(a4)
+        db.add(a2a)
         db.flush()
         db.add(
             VolumeCommitment(
-                annexe_id=a4.id,
-                annual_kwh=320000,
+                annexe_id=a2a.id,
+                annual_kwh=720_000,
+                tolerance_pct_up=15,
+                tolerance_pct_down=10,
             )
         )
         annexes_created += 1
 
-        db.add(
-            ContractEvent(
-                contract_id=cadre2.id,
-                event_type="CREATION",
-                event_date=date(2025, 9, 1),
-                description="Signature ENGIE gaz Marseille",
-            )
-        )
-
-    # ── Cadre 3: TotalEnergies Elec mono-site ──
-    if len(sites) > 4:
-        cadre3 = EnergyContract(
-            site_id=sites[4].id,
-            energy_type=BillingEnergyType.ELEC,
-            supplier_name="TotalEnergies",
-            start_date=date(2025, 1, 1),
-            end_date=date(2027, 9, 30),
-            reference_fournisseur="TE-B2B-2025-087",
-            auto_renew=False,
-            notice_period_days=90,
-            # D.2: pricing SPOT + TUNNEL (cap+floor) pour Nice
-            offer_indexation=ContractIndexation.SPOT,
-            price_granularity="horaire",
-            contract_status=ContractStatus.ACTIVE,
-            is_cadre=True,
-            contract_type="UNIQUE",
+    # ── Cadre 3: TotalEnergies — FIXE elec — Nice + Marseille ──
+    ref3 = "TE-B2B-2025-087"
+    if not _cadre_exists(db, ref3) and len(sites) > 4:
+        cadre3 = ContratCadre(
+            org_id=org.id,
             entite_juridique_id=ej_id,
-            notice_period_months=3,
-            segment_enedis="C3",
-            annual_consumption_kwh=720_000.0,
-            # Clause TUNNEL : cap + floor
-            price_revision_clause="TUNNEL",
-            price_cap_eur_mwh=180.0,
-            price_floor_eur_mwh=80.0,
-            indexation_reference="EPEX_SPOT_FR",
-            indexation_spread_eur_mwh=5.0,
-            indexation_formula="SPOT+5",
+            reference="CC-2025-003",
+            reference_fournisseur=ref3,
+            fournisseur="TotalEnergies",
+            energie=BillingEnergyType.ELEC,
+            date_signature=date(2025, 2, 1),
+            date_debut=date(2025, 4, 1),
+            date_fin=date(2027, 3, 31),
+            date_preavis=date(2027, 1, 31),
+            notice_period_months=2,
+            auto_renew=False,
+            type_prix=ContractIndexation.FIXE,
+            prix_hp_eur_kwh=0.1650,
+            prix_hc_eur_kwh=0.1250,
+            prix_base_eur_kwh=0.1490,
+            poids_hp=62.0,
+            poids_hc=38.0,
+            cee_inclus=False,
+            capacite_incluse=True,
+            capacite_eur_mwh=11.50,
+            statut=ContractStatus.ACTIVE,
+            is_green=True,
+            green_percentage=100.0,
+            notes="Contrat cadre TotalEnergies 2 sites tertiaire — offre verte GO — demo HELIOS",
         )
         db.add(cadre3)
         db.flush()
         cadres_created += 1
 
-        for pc, season, price in [
-            ("HP", "HIVER", 0.1780),
-            ("HC", "HIVER", 0.1340),
-            ("HP", "ETE", 0.1520),
-            ("HC", "ETE", 0.1080),
-        ]:
-            db.add(
-                ContractPricing(
-                    contract_id=cadre3.id,
-                    period_code=pc,
-                    season=season,
-                    unit_price_eur_kwh=price,
-                )
-            )
-        a5 = ContractAnnexe(
-            contrat_cadre_id=cadre3.id,
-            site_id=sites[4].id,
-            annexe_ref="ANX-Nice-001",
+        # Annexe 3a: Nice hotel — herite prix cadre
+        a3a = ContractAnnexe(
+            cadre_id=cadre3.id,
+            site_id=sites[3].id,
+            annexe_ref="ANX-TE-Nice-001",
             tariff_option=TariffOptionEnum.HP_HC,
-            subscribed_power_kva=120,
+            subscribed_power_kva=250,
             segment_enedis="C4",
             has_price_override=False,
             status=ContractStatus.ACTIVE,
+            volume_engage_kwh=1_120_000,
         )
-        db.add(a5)
+        db.add(a3a)
         db.flush()
         db.add(
             VolumeCommitment(
-                annexe_id=a5.id,
-                annual_kwh=720000,
+                annexe_id=a3a.id,
+                annual_kwh=1_120_000,
+                tolerance_pct_up=10,
+                tolerance_pct_down=10,
+                penalty_eur_kwh_above=0.012,
+                penalty_eur_kwh_below=0.008,
             )
         )
         annexes_created += 1
 
+        # Annexe 3b: Marseille ecole — herite prix cadre
+        a3b = ContractAnnexe(
+            cadre_id=cadre3.id,
+            site_id=sites[4].id,
+            annexe_ref="ANX-TE-Marseille-002",
+            tariff_option=TariffOptionEnum.HP_HC,
+            subscribed_power_kva=150,
+            segment_enedis="C4",
+            has_price_override=False,
+            status=ContractStatus.ACTIVE,
+            volume_engage_kwh=308_000,
+        )
+        db.add(a3b)
+        db.flush()
         db.add(
-            ContractEvent(
-                contract_id=cadre3.id,
-                event_type="CREATION",
-                event_date=date(2025, 1, 1),
-                description="Signature TotalEnergies Nice",
+            VolumeCommitment(
+                annexe_id=a3b.id,
+                annual_kwh=308_000,
+                tolerance_pct_up=10,
+                tolerance_pct_down=10,
             )
         )
+        annexes_created += 1
 
-    # ── Cadre 4: ENGIE Gaz expire ──
-    cadre4 = EnergyContract(
-        site_id=sites[0].id,
-        energy_type=BillingEnergyType.GAZ,
-        supplier_name="ENGIE Pro",
-        start_date=date(2023, 1, 1),
-        end_date=date(2025, 12, 31),
-        reference_fournisseur="GP-2023-089",
-        auto_renew=False,
-        notice_period_days=90,
-        offer_indexation=ContractIndexation.FIXE,
-        contract_status=ContractStatus.EXPIRED,
-        is_cadre=True,
-        contract_type="UNIQUE",
-        entite_juridique_id=ej_id,
-        notice_period_months=3,
-        annual_consumption_kwh=150_000.0,
-        indexation_formula="FIXE",
-        price_revision_clause="NONE",
-    )
-    db.add(cadre4)
-    db.flush()
-    cadres_created += 1
+    # ── Cadre 4: Ekwateur — SPOT EPEX elec — Nice ──
+    ref4 = "EKW-SPOT-2025-019"
+    if not _cadre_exists(db, ref4) and len(sites) > 3:
+        cadre4 = ContratCadre(
+            org_id=org.id,
+            entite_juridique_id=ej_id,
+            reference="CC-2025-004",
+            reference_fournisseur=ref4,
+            fournisseur="Ekwateur",
+            energie=BillingEnergyType.ELEC,
+            date_signature=date(2025, 3, 1),
+            date_debut=date(2025, 6, 1),
+            date_fin=date(2026, 5, 31),
+            notice_period_months=2,
+            auto_renew=True,
+            type_prix=ContractIndexation.SPOT,
+            indexation_reference="EPEX_SPOT_FR",
+            indexation_spread_eur_mwh=5.0,
+            prix_plafond_eur_mwh=200.0,
+            prix_plancher_eur_mwh=60.0,
+            statut=ContractStatus.ACTIVE,
+            is_green=True,
+            green_percentage=100.0,
+            notes="Contrat spot EPEX hotel Nice — demo HELIOS",
+        )
+        db.add(cadre4)
+        db.flush()
+        cadres_created += 1
 
-    db.add(
-        ContractPricing(
-            contract_id=cadre4.id,
-            period_code="BASE",
-            season="ANNUEL",
-            unit_price_eur_kwh=0.0486,
+        # Annexe 4a: Nice hotel — spot
+        a4a = ContractAnnexe(
+            cadre_id=cadre4.id,
+            site_id=sites[3].id,
+            annexe_ref="ANX-EKW-Nice-001",
+            tariff_option=TariffOptionEnum.BASE,
+            subscribed_power_kva=250,
+            segment_enedis="C4",
+            has_price_override=False,
+            status=ContractStatus.ACTIVE,
+            volume_engage_kwh=1_120_000,
         )
-    )
-    a6 = ContractAnnexe(
-        contrat_cadre_id=cadre4.id,
-        site_id=sites[0].id,
-        annexe_ref="ANX-Paris-Gaz-001",
-        has_price_override=False,
-        status=ContractStatus.EXPIRED,
-    )
-    db.add(a6)
-    db.flush()
-    db.add(
-        VolumeCommitment(
-            annexe_id=a6.id,
-            annual_kwh=150000,
+        db.add(a4a)
+        db.flush()
+        db.add(
+            VolumeCommitment(
+                annexe_id=a4a.id,
+                annual_kwh=1_120_000,
+                tolerance_pct_up=20,
+                tolerance_pct_down=15,
+            )
         )
-    )
-    annexes_created += 1
-
-    db.add(
-        ContractEvent(
-            contract_id=cadre4.id,
-            event_type="CREATION",
-            event_date=date(2023, 1, 1),
-            description="Signature ENGIE gaz Paris",
-        )
-    )
+        annexes_created += 1
 
     db.flush()
 

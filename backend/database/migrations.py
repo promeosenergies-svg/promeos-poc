@@ -98,6 +98,10 @@ def run_migrations(engine):
     _add_evidence_coverage_pct_column(engine)
     # Sprint F — ConnectorToken (OAuth2 tokens for Enedis/GRDF)
     _create_connector_tokens_table(engine)
+    # Phase 1 V2 — ContratCadre table + NUMERIC columns on contract_annexes
+    _migrate_phase1_contrats_cadre(engine)
+    # Phase 5 V2 — energy_invoices.annexe_site_id for cadre-aware shadow billing
+    _migrate_phase5_invoice_annexe_site(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -2119,3 +2123,62 @@ def _create_connector_tokens_table(engine):
         )
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_connector_tokens_prm ON connector_tokens(prm)"))
     logger.info("migration: created connector_tokens table (Sprint F)")
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 — ContratCadre entity-level model
+# ---------------------------------------------------------------------------
+
+
+def _migrate_phase1_contrats_cadre(engine):
+    """Run the Phase 1 migration script (idempotent). Wire for startup auto-apply."""
+    import sqlite3
+    from pathlib import Path
+    from urllib.parse import urlparse
+
+    # Extract the SQLite path from the engine URL
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        logger.warning("migration phase1: only SQLite is supported, skipping")
+        return
+    db_path = url.split("///", 1)[-1] if "///" in url else None
+    if not db_path or db_path == ":memory:":
+        return
+    db_path = Path(db_path)
+    if not db_path.exists():
+        return
+
+    try:
+        from migrations.add_contrats_cadre_phase1 import migrate as phase1_migrate
+
+        phase1_migrate(str(db_path))
+    except Exception as e:
+        logger.warning("migration phase1: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Invoice annexe_site_id column
+# ---------------------------------------------------------------------------
+
+
+def _migrate_phase5_invoice_annexe_site(engine):
+    """Run the Phase 5 migration script (idempotent). Wire for startup auto-apply."""
+    from pathlib import Path
+
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        logger.warning("migration phase5: only SQLite is supported, skipping")
+        return
+    db_path = url.split("///", 1)[-1] if "///" in url else None
+    if not db_path or db_path == ":memory:":
+        return
+    db_path = Path(db_path)
+    if not db_path.exists():
+        return
+
+    try:
+        from migrations.add_invoice_annexe_site_phase5 import migrate as phase5_migrate
+
+        phase5_migrate(str(db_path))
+    except Exception as e:
+        logger.warning("migration phase5: %s", e)
