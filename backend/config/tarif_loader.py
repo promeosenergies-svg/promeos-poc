@@ -63,8 +63,29 @@ def get_accise_kwh(energy_type: str = "elec") -> float:
 # ── CTA helpers ──────────────────────────────────────────────────────────────
 
 
-def get_cta_taux(energy_type: str = "elec") -> float:
-    """CTA en % (15.0 pour élec distribution fév 2026+, 20.80 pour gaz)."""
+def get_cta_taux(energy_type: str = "elec", at_date=None) -> float:
+    """
+    CTA en pourcentage (ex : 15.0 pour élec dist fév 2026+, 20.80 pour gaz).
+
+    V112 : désormais versionné par `at_date` via ParameterStore — avant le
+    1/02/2026 la CTA élec distribution était à 21,93%. La signature reste
+    rétrocompatible : `at_date=None` utilise la date du jour.
+    """
+    try:
+        from datetime import date as _date
+
+        from services.billing_engine.parameter_store import ParameterStore
+
+        store = ParameterStore(db=None)
+        code = "CTA_ELEC_DIST_RATE" if energy_type == "elec" else "CTA_GAZ_DIST_RATE"
+        ref_date = at_date if at_date else _date.today()
+        res = store.get(code, at_date=ref_date)
+        if res.source in ("db", "yaml"):
+            return res.value * 100.0  # ratio → pourcentage
+    except Exception:
+        pass
+
+    # Dernier recours : lecture directe du YAML (compat)
     tarifs = load_tarifs()
     return tarifs["cta"][energy_type]["taux_pct"]
 
