@@ -722,6 +722,46 @@ def _compute_reconstitution_meta(components: list) -> dict:
     }
 
 
+def _resolve_atrd_context(db, site, contract) -> tuple[str, float]:
+    """
+    Retourne (atrd_option, cja_mwh_per_day) pour un contrat gaz.
+
+    Priorité de résolution :
+    1. `pdl.atrd_option` explicitement renseigné sur le premier PDL gaz du site
+    2. Dérivation via `pdl.car_kwh` (seuils CRE ATRD7) si option absente
+    3. Fallback : T2 (résidentiel chauffage, cas le plus courant)
+
+    `cja_mwh_per_day` vient de `pdl.cja_mwh_per_day` (utile T4/TP), sinon 0.0.
+    """
+    if db is None or site is None or contract is None:
+        return "T2", 0.0
+    try:
+        from services.billing_engine.bricks.atrd import derive_atrd_option_from_car
+        from models.patrimoine import DeliveryPoint
+    except Exception:
+        return "T2", 0.0
+
+    try:
+        pdls = db.query(DeliveryPoint).filter(DeliveryPoint.site_id == getattr(site, "id", None)).all()
+        for pdl in pdls:
+            pdl_energy = getattr(pdl.energy_type, "value", pdl.energy_type)
+            if str(pdl_energy).lower() not in ("gaz", "gas", "natural_gas"):
+                continue
+            # 1. Option explicite
+            option_val = getattr(pdl.atrd_option, "value", pdl.atrd_option)
+            if option_val:
+                cja = getattr(pdl, "cja_mwh_per_day", None) or 0.0
+                return str(option_val), float(cja)
+            # 2. Dérivation via CAR
+            car = getattr(pdl, "car_kwh", None)
+            if car:
+                cja = getattr(pdl, "cja_mwh_per_day", None) or 0.0
+                return derive_atrd_option_from_car(car), float(cja)
+    except Exception as exc:
+        logger.debug("ATRD context lookup failed: %s", exc)
+    return "T2", 0.0
+
+
 def _resolve_tax_profile_for_invoice(db, site, contract):
     """
     Retrouve le TaxProfile du premier PDL du site correspondant à l'énergie
@@ -774,6 +814,7 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         dict avec components[], total_*, confidence, tarif_version, segment
     """
     from config.tarif_loader import get_tarif_version
+    from services.billing_engine.bricks.atrd import compute_atrd
     from services.billing_engine.bricks.cta import compute_cta
     from services.billing_engine.parameter_store import ParameterStore, default_store
 
@@ -826,14 +867,34 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         period_days = 30
     prorata = period_days / 365.0
 
-    # ── CTA : calcul réel via brique dédiée (V112) ────────────────────
-    # Assiette = part fixe annuelle (TURPE gestion mensuel × 12 pour élec).
-    # Le prorata sur 365 jours est appliqué dans compute_cta.
+    # ── ATRD gaz : brique dédiée (Vague 2) ────────────────────────────
+    # Pour les contrats gaz, on calcule l'ATRD détaillé par option GRDF.
+    # L'assiette fixe annuelle (abonnement) est ensuite utilisée par la CTA.
     _at_date = p_start or date.today()
-    _cta_store = default_store() if db is None else ParameterStore(db=db)
-    _cta_annual_fixed = (turpe_gestion * 12.0) if is_elec else 0.0
+    _store = default_store() if db is None else ParameterStore(db=db)
+    _atrd_result = None
+    _cta_annual_fixed = 0.0
+
+    if is_elec:
+        # Élec : assiette CTA = TURPE gestion mensuel × 12
+        _cta_annual_fixed = turpe_gestion * 12.0
+    else:
+        # Gaz : résoudre l'option ATRD depuis le PDL ou la CAR
+        _atrd_option, _cja = _resolve_atrd_context(db, site, contract)
+        _atrd_result = compute_atrd(
+            store=_store,
+            option=_atrd_option,
+            energy_mwh=kwh / 1000.0,
+            period_days=period_days,
+            at_date=_at_date,
+            cja_mwh_per_day=_cja,
+        )
+        # Assiette CTA gaz = abonnement ATRD annuel (doctrine : CTA sur part fixe)
+        _cta_annual_fixed = _atrd_result.fixed_component_annual_eur
+
+    # ── CTA : calcul réel via brique dédiée ───────────────────────────
     _cta_result = compute_cta(
-        store=_cta_store,
+        store=_store,
         energy="elec" if is_elec else "gaz",
         network_level="distribution",
         fixed_component_annual_eur=_cta_annual_fixed,
@@ -879,6 +940,52 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
     abo_expected = v2["expected_abo_ht"]
     abo_formula = f"{abo_monthly:.2f} €/mois × {period_days}/365 jours = {abo_expected:.2f} € HT"
 
+    # ── Reseau : ATRD détaillé pour gaz, TURPE flat pour élec ──────────
+    if is_elec or _atrd_result is None:
+        reseau_expected = v2["expected_reseau_ht"]
+        reseau_label = "Acheminement (TURPE)"
+        reseau_summary = f"Segment {segment} — {v2['components'][1]['unit_rate']:.4f} EUR/kWh"
+        reseau_details = {"segment": segment, "rate_kwh": v2["components"][1]["unit_rate"]}
+        reseau_formula = f"{kwh:,.0f} kWh × {v2['components'][1]['unit_rate']:.4f} €/kWh = {v2['expected_reseau_ht']:,.2f} € HT".replace(
+            ",", " "
+        )
+        reseau_source = f"CRE TURPE 7 {segment}"
+    else:
+        # Gaz : ATRD détaillé (abonnement + proportionnel + capacité)
+        reseau_expected = round(_atrd_result.amount_ht, 2)
+        reseau_label = f"Acheminement gaz (ATRD {_atrd_result.option})"
+        reseau_summary = (
+            f"ATRD {_atrd_result.option} — abo {_atrd_result.abo_eur_an:.2f} €/an"
+            f" + {_atrd_result.prop_eur_mwh:.2f} €/MWh"
+        )
+        reseau_details = {
+            "option": _atrd_result.option,
+            "abonnement_ht": round(_atrd_result.abonnement_ht, 2),
+            "proportionnel_ht": round(_atrd_result.proportionnel_ht, 2),
+            "capacite_ht": round(_atrd_result.capacite_ht, 2),
+            "abo_eur_an": _atrd_result.abo_eur_an,
+            "prop_eur_mwh": _atrd_result.prop_eur_mwh,
+            "capa_eur_mwh_j_an": _atrd_result.capa_eur_mwh_j_an,
+            "cja_mwh_per_day": _atrd_result.cja_mwh_per_day,
+            "period_days": period_days,
+        }
+        _formula_parts = [
+            f"abo {_atrd_result.abo_eur_an:.2f} €/an × {period_days}/365 = {_atrd_result.abonnement_ht:,.2f} €".replace(
+                ",", " "
+            ),
+            f"{kwh / 1000.0:,.2f} MWh × {_atrd_result.prop_eur_mwh:.2f} €/MWh = {_atrd_result.proportionnel_ht:,.2f} €".replace(
+                ",", " "
+            ),
+        ]
+        if _atrd_result.capacite_ht > 0:
+            _formula_parts.append(
+                f"capa {_atrd_result.cja_mwh_per_day:.2f} MWh/j × {_atrd_result.capa_eur_mwh_j_an:.2f} × {period_days}/365 = {_atrd_result.capacite_ht:,.2f} €".replace(
+                    ",", " "
+                )
+            )
+        reseau_formula = " + ".join(_formula_parts) + f" = {reseau_expected:,.2f} € HT".replace(",", " ")
+        reseau_source = f"CRE ATRD7 {_atrd_result.option} — {_atrd_result.resolution_abo.source_ref or 'GRDF'}"
+
     components = [
         _build_breakdown_component(
             "fourniture",
@@ -898,15 +1005,13 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         ),
         _build_breakdown_component(
             "turpe",
-            "Acheminement (TURPE)",
-            v2["expected_reseau_ht"],
+            reseau_label,
+            reseau_expected,
             turpe_invoice,
-            f"Segment {segment} — {v2['components'][1]['unit_rate']:.4f} EUR/kWh",
-            {"segment": segment, "rate_kwh": v2["components"][1]["unit_rate"]},
-            formula=f"{kwh:,.0f} kWh × {v2['components'][1]['unit_rate']:.4f} €/kWh = {v2['expected_reseau_ht']:,.2f} € HT".replace(
-                ",", " "
-            ),
-            source_ref=f"CRE TURPE 7 {segment}",
+            reseau_summary,
+            reseau_details,
+            formula=reseau_formula,
+            source_ref=reseau_source,
         ),
         _build_breakdown_component(
             "taxes",
@@ -983,6 +1088,21 @@ def compute_shadow_breakdown(db, invoice, site=None, contract=None) -> dict:
         tarif_version = "unknown"
 
     tariff_source = v2.get("tariff_source", "fallback")
+
+    # ── Audit trail ATRD (gaz uniquement) ─────────────────────────────
+    if _atrd_result is not None:
+        _atrd_src = _atrd_result.resolution_abo.source_ref or "ATRD7 GRDF"
+        hypotheses.append(
+            f"ATRD gaz option {_atrd_result.option} (CAR) — "
+            f"abo {_atrd_result.abo_eur_an:.2f} €/an, "
+            f"prop {_atrd_result.prop_eur_mwh:.2f} €/MWh "
+            f"— {_atrd_src}"
+        )
+        if _atrd_result.capacite_ht > 0:
+            hypotheses.append(
+                f"ATRD capacité souscrite {_atrd_result.cja_mwh_per_day:.2f} MWh/j "
+                f"× {_atrd_result.capa_eur_mwh_j_an:.2f} €/MWh/j/an"
+            )
 
     return {
         # IDENTIFICATION FACTURE (P0.1)
