@@ -161,6 +161,7 @@ meter_energy_index.meter_id  (FK → meter.id)
 | D22 | Publication SLA awareness | **Distinguish not-yet-due publication from overdue missing publication** | Enedis publishes R4x on explicit deadlines (`R4Q` J+1 calendaire, `R4H`/`R4M` by 3rd business day). Freshness decisions must respect those windows before surfacing a "missing publication" condition |
 | D23 | R50 temporal normalization | **Convert raw R50 interval-end timestamps into canonical interval starts before promotion** | The official R50 guide defines `H` as the end of the covered 30-minute interval and `V` as average power in W over the preceding 30 minutes. Promoted `meter_load_curve.timestamp` must therefore be `H - 30 min`, not raw `H` |
 | D24 | R50 publication cadence modeling | **Use filename cadence (`_Q_` / `_M_`) and file-group counters for freshness/completeness, not `Pas_Publication`** | `Pas_Publication=30` describes the curve step, while the guide defines daily vs monthly delivery cadence and multi-file completeness through filename nomenclature |
+| D25 | Client-facing CDC simplification | **Expose one canonical interval model to product surfaces, regardless of source flux** | Clients should never need to know whether the source timestamp came from an interval start (R4x) or interval end (R50). Product/API wording must consistently present CDC as "average power over `[start ; end[`" |
 
 ---
 
@@ -422,6 +423,32 @@ Each staging flux type routes to a specific functional table:
 > **Note on CDC units**: Enedis CDC values are interval averages, not consumption deltas and not instantaneous spot readings. For active power, downstream services that need interval energy compute `energy_kwh = active_power_kw * pas_minutes / 60`.
 
 > **UX interpretation note**: charts, tables, and tooltips should describe a CDC point as "average power over `10:00-10:30`" or equivalent, not "power at 10:30". Step charts, bars, and interval labels are safer defaults than point-sample wording.
+
+### 6.1 Client-Facing CDC Semantics
+
+The Enedis source formats do **not** share the same raw timestamp convention:
+- **R4x** raw `H` already points to the **start** of the covered interval
+- **R50** raw `H` points to the **end** of the covered interval
+
+That distinction is important for ingestion correctness, but it is **not acceptable as a product-facing complexity**. Clients should see one simple model only.
+
+**Canonical product rule**
+- every promoted CDC row represents one interval `[timestamp ; timestamp + pas_minutes[`
+- `meter_load_curve.timestamp` is always the **canonical interval start**
+- the display interval end is always derived as `timestamp + pas_minutes`
+- client-facing wording must always be interval-based: "average power between `10:00` and `10:30`", never "power at `10:30`"
+
+**Implications for API and UI design**
+- if an API returns only one datetime for a CDC row, it should be the **canonical interval start**, not a source-specific raw timestamp
+- client surfaces should prefer exposing `interval_start`, `interval_end`, or an explicit interval label over a naked timestamp
+- chart points should be rendered as buckets/steps over the covered interval, not as instantaneous samples
+- the same tooltip and legend wording must be reused for R4x and R50 once promoted
+- source-specific timestamp conventions remain audit/debug concerns, not client-facing semantics
+
+**Why this matters**
+- it removes a major interpretation trap for clients
+- it keeps R4x and R50 visually comparable in the same charts and tables
+- it ensures downstream analytics and UX do not drift into contradictory "at time T" wording depending on the source flux
 
 > **R4x transport rules to honor in SF5**:
 > - parse the explicit XML timezone offset and convert to UTC before enforcing uniqueness
