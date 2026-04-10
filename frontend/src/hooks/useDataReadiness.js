@@ -36,7 +36,7 @@ export default function useDataReadiness(
       hasManualImport: (activation?.activatedCount ?? 0) > 1,
       demoEnabled,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activation, billingSummary, efaDashboard, connectors, operatModuleActive, loading]);
 
   return { readinessState, activation, loading };

@@ -67,7 +67,7 @@ def get_power_profile(
     if not readings:
         return {**base_response, "data_available": False, "confidence": 0.0}
 
-    values = [r.P_active_kw for r in readings]
+    values = [float(r.P_active_kw) for r in readings]
     pas_h = readings[0].pas_minutes / 60.0
 
     P_max = max(values)
@@ -102,7 +102,7 @@ def get_power_profile(
     completude = round(len(values) / max(total_theorique, 1) * 100, 1)
 
     # Réactive
-    reactive_values = [r.P_reactive_ind_kvar for r in readings if r.P_reactive_ind_kvar]
+    reactive_values = [float(r.P_reactive_ind_kvar) for r in readings if r.P_reactive_ind_kvar]
     tan_phi_mean = None
     if reactive_values and P_mean > 0:
         tan_phi_mean = round(statistics.mean(reactive_values) / P_mean, 3)
