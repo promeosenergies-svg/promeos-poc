@@ -152,6 +152,31 @@ class TestCta:
         r = store.get("CTA_ELEC_TRANS_RATE", at_date=date(2026, 4, 1))
         assert r.value == pytest.approx(0.05, abs=1e-6)
 
+    def test_cta_elec_distribution_historical_before_2026(self, store):
+        """CTA élec distribution historique = 21,93% entre 1/08/2021 et 31/01/2026."""
+        for d in [date(2021, 8, 1), date(2023, 6, 15), date(2025, 12, 1), date(2026, 1, 31)]:
+            r = store.get("CTA_ELEC_DIST_RATE", at_date=d)
+            assert r.value == pytest.approx(0.2193, abs=1e-6), f"failed at {d}"
+            assert r.source == "yaml"
+            assert r.valid_from == date(2021, 8, 1)
+            assert r.valid_to == date(2026, 1, 31)
+
+    def test_cta_elec_transport_historical_before_2026(self, store):
+        """CTA élec transport ≥50kV historique = 10,11% entre 1/08/2021 et 31/01/2026."""
+        r = store.get("CTA_ELEC_TRANS_RATE", at_date=date(2025, 6, 15))
+        assert r.value == pytest.approx(0.1011, abs=1e-6)
+        assert r.valid_from == date(2021, 8, 1)
+        assert r.valid_to == date(2026, 1, 31)
+
+    def test_cta_elec_cesure_1_fev_2026(self, store):
+        """Césure exacte : 31/01/2026 → 21,93%, 1/02/2026 → 15%."""
+        r_before = store.get("CTA_ELEC_DIST_RATE", at_date=date(2026, 1, 31))
+        r_after = store.get("CTA_ELEC_DIST_RATE", at_date=date(2026, 2, 1))
+        assert r_before.value == pytest.approx(0.2193, abs=1e-6)
+        assert r_after.value == pytest.approx(0.15, abs=1e-6)
+        assert r_before.valid_to == date(2026, 1, 31)
+        assert r_after.valid_from == date(2026, 2, 1)
+
 
 # ── Codes inconnus + missing ──────────────────────────────────────────────
 

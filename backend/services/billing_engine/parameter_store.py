@@ -211,29 +211,24 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
     if code == "ATRT_GAZ":
         return [(tarifs.get("atrt_gaz", {}), "rate_eur_kwh")]
 
-    # CTA — ratio (taux_pct / 100)
-    if code == "CTA_ELEC_DIST_RATE":
-        entry = dict(tarifs.get("cta", {}).get("elec", {}))
-        if "taux_pct" in entry:
-            entry["_ratio"] = entry["taux_pct"] / 100.0
-        return [(entry, "_ratio")]
-    if code == "CTA_ELEC_TRANS_RATE":
-        entry = dict(tarifs.get("cta", {}).get("elec_transport", {}))
-        if "taux_pct" in entry:
-            entry["_ratio"] = entry["taux_pct"] / 100.0
-        return [(entry, "_ratio")]
-    if code == "CTA_GAZ_DIST_RATE":
-        entry = dict(tarifs.get("cta", {}).get("gaz", {}))
-        if "taux_pct" in entry:
-            entry["_ratio"] = entry["taux_pct"] / 100.0
-        return [(entry, "_ratio")]
-    if code == "CTA_GAZ_TRANS_RATE":
-        # Pas de taux distinct dans le YAML actuel ; on retombe sur distribution
-        # avec un log. À affiner si le YAML est enrichi.
-        entry = dict(tarifs.get("cta", {}).get("gaz", {}))
-        if "taux_pct" in entry:
-            entry["_ratio"] = entry["taux_pct"] / 100.0
-        return [(entry, "_ratio")]
+    # CTA — ratio (taux_pct / 100), énumère les historiques + courant
+    if code in ("CTA_ELEC_DIST_RATE", "CTA_ELEC_TRANS_RATE", "CTA_GAZ_DIST_RATE", "CTA_GAZ_TRANS_RATE"):
+        cta_subkey = {
+            "CTA_ELEC_DIST_RATE": "elec",
+            "CTA_ELEC_TRANS_RATE": "elec_transport",
+            "CTA_GAZ_DIST_RATE": "gaz",
+            "CTA_GAZ_TRANS_RATE": "gaz",
+        }[code]
+        out: list[tuple[dict, str]] = []
+        # Les racines possibles sont listées dans l'ordre chronologique ; le
+        # candidat dont la période contient at_date sera sélectionné par
+        # _select_best_candidate.
+        for root_key in ("cta_2021", "cta"):
+            entry = dict(tarifs.get(root_key, {}).get(cta_subkey, {}))
+            if "taux_pct" in entry:
+                entry["_ratio"] = entry["taux_pct"] / 100.0
+                out.append((entry, "_ratio"))
+        return out
 
     # TVA
     if code == "TVA_NORMALE":
