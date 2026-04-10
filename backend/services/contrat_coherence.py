@@ -503,7 +503,37 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
             for p in annexe.pricing_overrides
         ]
 
-    # 2. Heritage cadre (grille structuree)
+    # 2. Heritage V2 ContratCadre (colonnes flat prix_*_eur_kwh).
+    # V2 annexes reference ContratCadre via `annexe.cadre` (cadre_id FK).
+    # V2 ContratCadre has no pricing_lines relationship — only flat columns.
+    v2_cadre = annexe.cadre
+    if v2_cadre:
+        v2_lines = []
+        if v2_cadre.prix_base_eur_kwh is not None:
+            v2_lines.append({
+                "period_code": "BASE",
+                "season": "ANNUEL",
+                "unit_price_eur_kwh": _as_float(v2_cadre.prix_base_eur_kwh),
+                "source": "cadre",
+            })
+        if v2_cadre.prix_hp_eur_kwh is not None:
+            v2_lines.append({
+                "period_code": "HP",
+                "season": "ANNUEL",
+                "unit_price_eur_kwh": _as_float(v2_cadre.prix_hp_eur_kwh),
+                "source": "cadre",
+            })
+        if v2_cadre.prix_hc_eur_kwh is not None:
+            v2_lines.append({
+                "period_code": "HC",
+                "season": "ANNUEL",
+                "unit_price_eur_kwh": _as_float(v2_cadre.prix_hc_eur_kwh),
+                "source": "cadre",
+            })
+        if v2_lines:
+            return v2_lines
+
+    # 3. Legacy EnergyContract cadre (grille structuree pricing_lines)
     cadre = annexe.contrat_cadre
     if cadre and cadre.pricing_lines:
         return [
@@ -517,7 +547,7 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
             for p in cadre.pricing_lines
         ]
 
-    # 3. Fallback: colonnes plates sur EnergyContract
+    # 4. Legacy EnergyContract fallback (colonnes plates)
     if cadre:
         lines = []
         if cadre.price_base_eur_kwh:
@@ -525,7 +555,7 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
                 {
                     "period_code": "BASE",
                     "season": "ANNUEL",
-                    "unit_price_eur_kwh": cadre.price_base_eur_kwh,
+                    "unit_price_eur_kwh": _as_float(cadre.price_base_eur_kwh),
                     "source": "cadre",
                 }
             )
@@ -534,7 +564,7 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
                 {
                     "period_code": "HP",
                     "season": "ANNUEL",
-                    "unit_price_eur_kwh": cadre.price_hp_eur_kwh,
+                    "unit_price_eur_kwh": _as_float(cadre.price_hp_eur_kwh),
                     "source": "cadre",
                 }
             )
@@ -543,7 +573,7 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
                 {
                     "period_code": "HC",
                     "season": "ANNUEL",
-                    "unit_price_eur_kwh": cadre.price_hc_eur_kwh,
+                    "unit_price_eur_kwh": _as_float(cadre.price_hc_eur_kwh),
                     "source": "cadre",
                 }
             )
@@ -552,7 +582,7 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
                 {
                     "period_code": "BASE",
                     "season": "ANNUEL",
-                    "subscription_eur_month": cadre.fixed_fee_eur_per_month,
+                    "subscription_eur_month": _as_float(cadre.fixed_fee_eur_per_month),
                     "source": "cadre",
                 }
             )

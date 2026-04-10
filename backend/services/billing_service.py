@@ -40,6 +40,7 @@ from config.default_prices import (
     DEFAULT_PRICE_GAZ_EUR_KWH,
     get_default_price,
 )
+from services.contrat_coherence import DEFAULT_POIDS_HP, DEFAULT_POIDS_HC
 
 
 # ========================================
@@ -48,22 +49,20 @@ from config.default_prices import (
 # ========================================
 
 
-_DEFAULT_POIDS_HP = 62.0
-_DEFAULT_POIDS_HC = 38.0
-
-
 def _normalized_hp_hc_weights(cadre) -> Tuple[float, float]:
     """Return normalized (poids_hp, poids_hc) as fractions summing to 1.0.
 
-    Guards against operator typos (e.g. 70 + 40 = 110%) that would otherwise
-    inflate the weighted price silently. Falls back to market default (62/38)
-    when either weight is missing.
+    Guards against operator typos (e.g. 70 + 40 = 110%). Uses is-not-None
+    checks so an explicit 0 is honored, not silently replaced by the default.
+    Default constants come from contrat_coherence (single source of truth).
     """
-    hp = float(cadre.poids_hp) if cadre and cadre.poids_hp else _DEFAULT_POIDS_HP
-    hc = float(cadre.poids_hc) if cadre and cadre.poids_hc else _DEFAULT_POIDS_HC
+    if cadre is None or (cadre.poids_hp is None and cadre.poids_hc is None):
+        return (DEFAULT_POIDS_HP / 100.0, DEFAULT_POIDS_HC / 100.0)
+    hp = float(cadre.poids_hp) if cadre.poids_hp is not None else DEFAULT_POIDS_HP
+    hc = float(cadre.poids_hc) if cadre.poids_hc is not None else DEFAULT_POIDS_HC
     total = hp + hc
     if total <= 0:
-        return (_DEFAULT_POIDS_HP / 100.0, _DEFAULT_POIDS_HC / 100.0)
+        return (DEFAULT_POIDS_HP / 100.0, DEFAULT_POIDS_HC / 100.0)
     return (hp / total, hc / total)
 
 
@@ -162,18 +161,6 @@ def _resolve_cadre_weighted_price(
     return None
 
 
-def _site_org_id(db: Session, site_id: int) -> Optional[int]:
-    """Resolve org_id from a site via portefeuille > entite_juridique chain."""
-    row = (
-        db.query(EntiteJuridique.organisation_id)
-        .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .join(Site, Site.portefeuille_id == Portefeuille.id)
-        .filter(Site.id == site_id)
-        .first()
-    )
-    return row[0] if row else None
-
-
 def get_reference_price(
     db: Session,
     site_id: int,
@@ -192,7 +179,8 @@ def get_reference_price(
     """
     # Priority 0: V2 ContratCadre annexe (Phase 5) — scoped by org
     ref_date = period_start or period_end or date.today()
-    site_org_id = _site_org_id(db, site_id)
+    from services.scope_utils import resolve_org_id_from_site as _resolve_org_id
+    site_org_id = _resolve_org_id(db, site_id)
     annexe = find_active_annexe(db, site_id, energy_type, ref_date, org_id=site_org_id)
     if annexe:
         result = _resolve_cadre_weighted_price(db, annexe)
@@ -368,7 +356,8 @@ def shadow_billing_simple(
     if db:
         energy_type_str = _energy_type(invoice, contract)
         ref_date = invoice.period_start or invoice.period_end or date.today()
-        invoice_org_id = _site_org_id(db, invoice.site_id)
+        from services.scope_utils import resolve_org_id_from_site as _resolve_org_id
+        invoice_org_id = _resolve_org_id(db, invoice.site_id)
         annexe = find_active_annexe(db, invoice.site_id, energy_type_str, ref_date, org_id=invoice_org_id)
         if annexe:
             cadre_result = _shadow_billing_cadre_hphc(invoice, annexe, db)

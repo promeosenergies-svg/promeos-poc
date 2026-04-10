@@ -239,3 +239,61 @@ class TestOrgScopeIsolation:
         price, source = get_reference_price(db, site_a.id, "elec", date(2025, 6, 1), date(2025, 6, 30))
         assert price == pytest.approx(0.140)
         assert source.startswith("cadre_annexe:")
+
+
+# ── 4. V2 cadre inheritance path (non-override) ──────────────────
+
+
+class TestV2CadreInheritance:
+    """Guard-rail: resolve_pricing must traverse annexe.cadre (V2) for non-override
+    annexes, not only annexe.contrat_cadre (legacy). Regression: the flat V2 columns
+    prix_base_eur_kwh / prix_hp_eur_kwh / prix_hc_eur_kwh were silently ignored."""
+
+    def test_inheritance_base_from_v2_cadre(self, db):
+        """Non-override annexe inherits prix_base_eur_kwh from the V2 ContratCadre."""
+        org, site = _make_site(db, "OrgBaseInh", "400000004", "SiteBaseInh")
+        cadre = _make_cadre(db, org.id, 1, prix_base_eur_kwh=0.145)
+        # has_price_override=False — falls through to cadre inheritance
+        annexe = ContractAnnexe(
+            cadre_id=cadre.id,
+            site_id=site.id,
+            annexe_ref="ANX-inherit-base",
+            has_price_override=False,
+            status=ContractStatus.ACTIVE,
+        )
+        db.add(annexe)
+        db.commit()
+
+        result = _resolve_cadre_weighted_price(db, annexe)
+        assert result is not None, (
+            "V2 cadre inheritance broken: annexe without override should resolve "
+            "from cadre.prix_base_eur_kwh"
+        )
+        price, source = result
+        assert price == pytest.approx(0.145)
+        assert source == f"cadre_annexe:{annexe.id}"
+
+    def test_inheritance_hp_hc_from_v2_cadre(self, db):
+        """Non-override annexe inherits prix_hp/hc from the V2 cadre with weighted avg."""
+        org, site = _make_site(db, "OrgHpHcInh", "500000005", "SiteHpHcInh")
+        cadre = _make_cadre(
+            db, org.id, 1,
+            prix_hp_eur_kwh=0.170,
+            prix_hc_eur_kwh=0.110,
+        )
+        annexe = ContractAnnexe(
+            cadre_id=cadre.id,
+            site_id=site.id,
+            annexe_ref="ANX-inherit-hphc",
+            has_price_override=False,
+            status=ContractStatus.ACTIVE,
+        )
+        db.add(annexe)
+        db.commit()
+
+        result = _resolve_cadre_weighted_price(db, annexe)
+        assert result is not None
+        price, _ = result
+        expected = 0.170 * 0.62 + 0.110 * 0.38
+        assert price == pytest.approx(expected, abs=1e-5)
+
