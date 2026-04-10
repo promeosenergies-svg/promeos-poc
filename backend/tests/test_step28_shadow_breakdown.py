@@ -263,5 +263,11 @@ class TestSourceGuards:
         assert "shadow-breakdown" in src
 
     def test_cta_taux_used(self):
+        """
+        V112 refactor : le calcul CTA passe désormais par la brique dédiée
+        `compute_cta` (services/billing_engine/bricks/cta.py) au lieu du
+        helper historique `get_cta_taux`. Les deux sont acceptés — le guard
+        vérifie juste que la CTA est explicitement calculée, pas codée en dur.
+        """
         src = self._read("services/billing_shadow_v2.py")
-        assert "get_cta_taux" in src
+        assert ("get_cta_taux" in src) or ("compute_cta" in src)
