@@ -1009,9 +1009,7 @@ def _serialize_v2_cadre(c: ContratCadre) -> Dict[str, Any]:
 def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     """Serialize cadre + stats."""
     annexes = [a for a in c.annexes if a.deleted_at is None]
-    total_vol = sum(
-        (float(a.volume_commitment.annual_kwh) / 1000 if a.volume_commitment else 0) for a in annexes
-    )
+    total_vol = sum((float(a.volume_commitment.annual_kwh) / 1000 if a.volume_commitment else 0) for a in annexes)
 
     # Prix moyen pondere (meme formule que compute_cadre_kpis)
     # Cast Decimal → float: unit_price_eur_kwh is Numeric(18,6), PERIOD_WEIGHTS floats
