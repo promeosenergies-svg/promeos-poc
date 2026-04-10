@@ -161,17 +161,36 @@ accise_gaz:
   valid_to: null
 
 # ── CTA (Contribution Tarifaire d'Acheminement) ─────────────────────────────
+# Historique : taux appliqué entre 1/08/2021 et 31/01/2026 (arrêté 26/07/2021).
+# Le 1/02/2026, la CRE (délibération 2026-14) abaisse les taux élec à 15%
+# (distribution) et 5% (transport ≥50kV). Les entrées cta_2021 et cta
+# sont lues parallèlement par ParameterStore._yaml_candidates : le candidat
+# dont la période contient la date d'effet gagne.
+cta_2021:
+  elec:
+    taux_pct: 21.93
+    assiette: "turpe_fixe_ht"
+    source: "Arrêté CTA 26/07/2021 — distribution élec 21,93% (1/08/2021 → 31/01/2026)"
+    valid_from: "2021-08-01"
+    valid_to: "2026-01-31"
+  elec_transport:
+    taux_pct: 10.11
+    assiette: "turpe_fixe_ht"
+    source: "Arrêté CTA 26/07/2021 — transport élec ≥50kV 10,11% (1/08/2021 → 31/01/2026)"
+    valid_from: "2021-08-01"
+    valid_to: "2026-01-31"
+
 cta:
   elec:
     taux_pct: 15.0
     assiette: "turpe_fixe_ht"
-    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — distribution élec 15% (fév 2026+, était 21.93%)"
+    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — distribution élec 15% (fév 2026+)"
     valid_from: "2026-02-01"
     valid_to: null
   elec_transport:
     taux_pct: 5.0
     assiette: "turpe_fixe_ht"
-    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — transport élec ≥50kV 5% (fév 2026+, était 10.11%)"
+    source: "Arrêté CTA 27/01/2026 (CRE 2026-14, JORF) — transport élec ≥50kV 5% (fév 2026+)"
     valid_from: "2026-02-01"
     valid_to: null
   gaz:
