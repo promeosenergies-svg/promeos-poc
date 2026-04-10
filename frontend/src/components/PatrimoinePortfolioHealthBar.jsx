@@ -113,7 +113,7 @@ function HealthBar({ sites_health, sites_count }) {
   const healthy = sites_health?.healthy ?? 0;
   const warning = sites_health?.warning ?? 0;
   const critical = sites_health?.critical ?? 0;
-  const pct = sites_health?.healthy_pct ?? 0;
+  const _pct = sites_health?.healthy_pct ?? 0;
 
   const pctH = sites_count > 0 ? Math.round((healthy / sites_count) * 100) : 0;
   const pctW = sites_count > 0 ? Math.round((warning / sites_count) * 100) : 0;

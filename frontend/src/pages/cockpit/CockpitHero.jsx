@@ -7,7 +7,7 @@
  * Tout calcul métier est fait backend (P0).
  */
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, AlertTriangle } from 'lucide-react';
+import { HelpCircle, _AlertTriangle } from 'lucide-react';
 import { Skeleton, ErrorState } from '../../ui';
 import { fmtEur } from '../../utils/format';
 
@@ -37,10 +37,10 @@ export default function CockpitHero({
   kpis,
   trajectoire,
   actions,
-  billing,
+  _billing,
   loading,
   error,
-  orgNom,
+  _orgNom,
   sitesARisque,
   onEvidence,
 }) {

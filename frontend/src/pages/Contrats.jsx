@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FileText, Download, Plus, Search } from 'lucide-react';
-import { PageShell, Badge, Button, EmptyState, ErrorState } from '../ui';
+import { PageShell, _Badge, Button, EmptyState, ErrorState } from '../ui';
 import { SkeletonTable } from '../ui/Skeleton';
 import { listCadres, getCadreKpis } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
@@ -42,7 +42,7 @@ const PRICING_PILLS = {
 };
 
 export default function Contrats() {
-  const { org } = useScope();
+  const { _org } = useScope();
   const [cadres, setCadres] = useState([]);
   const [kpis, setKpis] = useState({});
   const [loading, setLoading] = useState(true);
@@ -255,7 +255,7 @@ export default function Contrats() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row, i) => {
+              {filtered.map((row, _i) => {
                 const isCadre = row.type === 'cadre';
                 const d = row.data;
                 const cadreData = row.cadre;

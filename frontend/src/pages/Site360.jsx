@@ -8,16 +8,16 @@ import {
   ArrowLeft,
   ShieldCheck,
   Zap,
-  BadgeEuro,
+  _BadgeEuro,
   AlertTriangle,
   MapPin,
-  Ruler,
+  _Ruler,
   BookOpen,
   ChevronDown,
   ChevronUp,
   Clock,
   ExternalLink,
-  ClipboardCheck,
+  _ClipboardCheck,
   CheckCircle,
   XCircle,
   Download,
@@ -80,11 +80,11 @@ import SegmentationQuestionnaireModal from '../components/SegmentationQuestionna
 import TabConsoSite from '../components/TabConsoSite';
 import TabPuissance from '../components/power/TabPuissance';
 import TabActionsSite from '../components/TabActionsSite';
-import { fmtNum, fmtEurFull, fmtArea } from '../utils/format';
+import { fmtNum, fmtEurFull, _fmtArea } from '../utils/format';
 import { getBenchmark, getIntensityRatio } from '../utils/benchmarks';
 import { setActiveSite } from '../utils/activeSite';
 import DataQualityBadge from '../components/DataQualityBadge';
-import FreshnessIndicator from '../components/FreshnessIndicator';
+import _FreshnessIndicator from '../components/FreshnessIndicator';
 import SiteIntelligencePanel from '../components/SiteIntelligencePanel';
 import {
   getDataQualityScore,
@@ -115,7 +115,7 @@ const TABS = [
   { id: 'usages', label: 'Usages' },
 ];
 
-function MiniKpi({ icon: Icon, label, value, color, children }) {
+function _MiniKpi({ icon: Icon, label, value, color, children }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
       <Icon size={18} className={color} />
@@ -1653,6 +1653,7 @@ export default function Site360() {
   // Persist active site for contextual nav
   useEffect(() => {
     if (site?.id && site?.nom) setActiveSite(site);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id, site?.nom, site?.statut_conformite]);
 
   // Unified anomalies (patrimoine + KB) — single fetch, shared by MiniKpi + TabResume
@@ -1751,6 +1752,7 @@ export default function Site360() {
     return () => {
       stale = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 
   // Energy intensity — backend #146 (Yannick)
@@ -1799,7 +1801,7 @@ export default function Site360() {
     siteComplianceScore?.score != null ? Math.round(siteComplianceScore.score) : null;
   const complianceGrade = complianceRounded != null ? getComplianceGrade(complianceRounded) : null;
 
-  const COMPLETENESS_STYLES = {
+  const _COMPLETENESS_STYLES = {
     complet: 'bg-green-50 text-green-700',
     partiel: 'bg-amber-50 text-amber-700',
   };

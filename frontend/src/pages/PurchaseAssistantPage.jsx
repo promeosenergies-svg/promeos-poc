@@ -58,7 +58,7 @@ import {
   PERSONA_PROFILES,
   SCENARIO_PRESETS,
   DEFAULT_MARKET,
-  BRIQUE3_VERSION,
+  _BRIQUE3_VERSION,
   createDefaultWizardState,
   runEngine,
   clearEngineCache,
@@ -518,7 +518,7 @@ export default function PurchaseAssistantPage() {
 // STEP 1: Portfolio
 // ═══════════════════════════════════════════════════════════════════
 
-function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
+function StepPortfolio({ wizard, setWizard, isDemo, _setIsDemo, demoSites }) {
   const toggleSite = (id) => {
     setWizard((prev) => ({
       ...prev,

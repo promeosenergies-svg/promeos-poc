@@ -150,6 +150,7 @@ def real_keys():
     if not _HAS_REAL_KEYS:
         pytest.skip("Real Enedis keys not available (KEY_1/IV_1 not set)")
     from data_ingestion.enedis.decrypt import load_keys_from_env
+
     return load_keys_from_env()
 
 

@@ -107,7 +107,12 @@ def ingest_file(
 
     existing = session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
     if existing is not None:
-        if existing.status in (FluxStatus.PARSED, FluxStatus.SKIPPED, FluxStatus.NEEDS_REVIEW, FluxStatus.PERMANENTLY_FAILED):
+        if existing.status in (
+            FluxStatus.PARSED,
+            FluxStatus.SKIPPED,
+            FluxStatus.NEEDS_REVIEW,
+            FluxStatus.PERMANENTLY_FAILED,
+        ):
             logger.info(
                 "Already processed %s (hash=%s…, status=%s), skipping", filename, file_hash[:12], existing.status
             )
@@ -165,7 +170,13 @@ def ingest_file(
     except DecryptError as exc:
         logger.error("Decrypt failed for %s: %s", filename, exc)
         _record_file(
-            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=pre_registered,
+            session,
+            filename,
+            file_hash,
+            flux_type.value,
+            FluxStatus.ERROR,
+            str(exc),
+            existing=pre_registered,
         )
         session.commit()
         return FluxStatus.ERROR
@@ -176,7 +187,13 @@ def ingest_file(
     except parse_error_cls as exc:
         logger.error("Parse failed for %s: %s", filename, exc)
         _record_file(
-            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc), existing=pre_registered,
+            session,
+            filename,
+            file_hash,
+            flux_type.value,
+            FluxStatus.ERROR,
+            str(exc),
+            existing=pre_registered,
         )
         session.commit()
         return FluxStatus.ERROR
@@ -200,7 +217,13 @@ def ingest_file(
             supersedes_id = None
 
         flux_file = _create_flux_file(
-            filename, file_hash, flux_type, file_status, file_version, supersedes_id, parsed,
+            filename,
+            file_hash,
+            flux_type,
+            file_status,
+            file_version,
+            supersedes_id,
+            parsed,
             existing=pre_registered,
         )
         if pre_registered is None:
@@ -216,12 +239,15 @@ def ingest_file(
         # After rollback, objects are detached — re-fetch the pre-registered
         # record if it exists so the update actually persists.
         refetched = (
-            session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first()
-            if pre_registered is not None
-            else None
+            session.query(EnedisFluxFile).filter_by(file_hash=file_hash).first() if pre_registered is not None else None
         )
         _record_file(
-            session, filename, file_hash, flux_type.value, FluxStatus.ERROR, str(exc),
+            session,
+            filename,
+            file_hash,
+            flux_type.value,
+            FluxStatus.ERROR,
+            str(exc),
             existing=refetched,
         )
         session.commit()
@@ -319,10 +345,11 @@ def ingest_directory(
                 # Max retries reached — skip, needs manual intervention
                 counters["max_retries_reached"] += 1
             elif existing.status == FluxStatus.ERROR:
-                error_count = session.query(func.count(EnedisFluxFileError.id)).filter_by(flux_file_id=existing.id).scalar()
+                error_count = (
+                    session.query(func.count(EnedisFluxFileError.id)).filter_by(flux_file_id=existing.id).scalar()
+                )
                 if error_count < MAX_RETRIES:
-                    logger.info("Retrying ERROR file %s (attempt %d/%d)",
-                                file_path.name, error_count + 1, MAX_RETRIES)
+                    logger.info("Retrying ERROR file %s (attempt %d/%d)", file_path.name, error_count + 1, MAX_RETRIES)
                     to_process.append((file_path, file_hash, existing))
                     counters["retried"] += 1
                 else:
@@ -332,9 +359,12 @@ def ingest_directory(
                         existing.status = FluxStatus.PERMANENTLY_FAILED
                         existing.error_message = None
                         session.commit()
-                    logger.info("File %s reached MAX_RETRIES (%d) — %s",
-                                file_path.name, MAX_RETRIES,
-                                "marked PERMANENTLY_FAILED" if not dry_run else "would mark PERMANENTLY_FAILED (dry-run)")
+                    logger.info(
+                        "File %s reached MAX_RETRIES (%d) — %s",
+                        file_path.name,
+                        MAX_RETRIES,
+                        "marked PERMANENTLY_FAILED" if not dry_run else "would mark PERMANENTLY_FAILED (dry-run)",
+                    )
                     counters["max_retries_reached"] += 1
                     counters["permanently_failed"] += 1
             else:
@@ -431,10 +461,12 @@ def _archive_error(session: Session, flux_file: EnedisFluxFile) -> None:
     No-op if error_message is empty or None.
     """
     if flux_file.error_message:
-        session.add(EnedisFluxFileError(
-            flux_file_id=flux_file.id,
-            error_message=flux_file.error_message,
-        ))
+        session.add(
+            EnedisFluxFileError(
+                flux_file_id=flux_file.id,
+                error_message=flux_file.error_message,
+            )
+        )
         session.flush()
 
 

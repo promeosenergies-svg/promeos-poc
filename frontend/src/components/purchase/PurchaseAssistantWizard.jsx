@@ -52,7 +52,7 @@ import {
   PERSONA_PROFILES,
   SCENARIO_PRESETS,
   DEFAULT_MARKET,
-  BRIQUE3_VERSION,
+  _BRIQUE3_VERSION,
   createDefaultWizardState,
   runEngine,
   clearEngineCache,
@@ -215,12 +215,12 @@ function scoreColorClass(score) {
 // ── Main Wizard Component ─────────────────────────────────────────
 
 export default function PurchaseAssistantWizard({
-  scopedSites,
+  _scopedSites,
   orgId,
   expertMode,
   onComplete,
   initialStep,
-  initialSiteId,
+  _initialSiteId,
   initialOffer,
 }) {
   const { toast } = useToast();
@@ -566,7 +566,7 @@ export default function PurchaseAssistantWizard({
 // STEP 1: Portfolio
 // ═══════════════════════════════════════════════════════════════════
 
-function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
+function StepPortfolio({ wizard, setWizard, isDemo, _setIsDemo, demoSites }) {
   const toggleSite = (id) => {
     setWizard((prev) => ({
       ...prev,

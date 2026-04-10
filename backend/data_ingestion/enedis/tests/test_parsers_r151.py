@@ -107,7 +107,7 @@ def _make_r151_xml(
   <Unite_Mesure_Puissance>VA</Unite_Mesure_Puissance>
 </En_Tete_Flux>"""
 
-    ns = f' {ns_attr}' if ns_attr else ""
+    ns = f" {ns_attr}" if ns_attr else ""
     return f"""\
 <?xml version="1.0" encoding="UTF-8"?>
 <R151{ns}>
@@ -127,13 +127,15 @@ def _make_prm_xml(prm_id="17745151915440", releves_xml="") -> str:
 
 def _make_full_releve_xml() -> str:
     """Build a releve with all 3 types of donnees."""
-    donnees = "\n".join([
-        _make_ct_dist_xml(id_ct="HCB", valeur="83044953"),
-        _make_ct_dist_xml(id_ct="HPB", valeur="72000000"),
-        _make_ct_xml(id_ct="HC", valeur="18047813"),
-        _make_ct_xml(id_ct="HP", valeur="15000000"),
-        _make_pmax_xml(valeur="7452"),
-    ])
+    donnees = "\n".join(
+        [
+            _make_ct_dist_xml(id_ct="HCB", valeur="83044953"),
+            _make_ct_dist_xml(id_ct="HPB", valeur="72000000"),
+            _make_ct_xml(id_ct="HC", valeur="18047813"),
+            _make_ct_xml(id_ct="HP", valeur="15000000"),
+            _make_pmax_xml(valeur="7452"),
+        ]
+    )
     return _make_releve_xml(donnees_xml=donnees)
 
 
@@ -272,10 +274,12 @@ class TestParseR151Tolerance:
 
     def test_values_are_raw_strings(self):
         """All values remain strings, no numeric conversion."""
-        donnees = "\n".join([
-            _make_ct_dist_xml(valeur="83044953", rang="1", indice="0"),
-            _make_pmax_xml(valeur="7452"),
-        ])
+        donnees = "\n".join(
+            [
+                _make_ct_dist_xml(valeur="83044953", rang="1", indice="0"),
+                _make_pmax_xml(valeur="7452"),
+            ]
+        )
         releve = _make_releve_xml(donnees_xml=donnees)
         prm = _make_prm_xml(releves_xml=releve)
         xml = _make_r151_xml(prm_xml=prm)
@@ -481,12 +485,14 @@ class TestParseR151Whitespace:
 class TestParseR151ClassIDs:
     def test_all_ct_dist_class_ids(self):
         """HCB, HCH, HPB, HPH are all accepted as CT_DIST class IDs."""
-        donnees = "\n".join([
-            _make_ct_dist_xml(id_ct="HCB", valeur="1000"),
-            _make_ct_dist_xml(id_ct="HCH", valeur="2000"),
-            _make_ct_dist_xml(id_ct="HPB", valeur="3000"),
-            _make_ct_dist_xml(id_ct="HPH", valeur="4000"),
-        ])
+        donnees = "\n".join(
+            [
+                _make_ct_dist_xml(id_ct="HCB", valeur="1000"),
+                _make_ct_dist_xml(id_ct="HCH", valeur="2000"),
+                _make_ct_dist_xml(id_ct="HPB", valeur="3000"),
+                _make_ct_dist_xml(id_ct="HPH", valeur="4000"),
+            ]
+        )
         releve = _make_releve_xml(donnees_xml=donnees)
         prm = _make_prm_xml(releves_xml=releve)
         xml = _make_r151_xml(prm_xml=prm)
@@ -497,10 +503,12 @@ class TestParseR151ClassIDs:
 
     def test_ct_class_ids_hc_hp(self):
         """HC and HP are accepted as CT (fournisseur) class IDs."""
-        donnees = "\n".join([
-            _make_ct_xml(id_ct="HC", valeur="5000"),
-            _make_ct_xml(id_ct="HP", valeur="6000"),
-        ])
+        donnees = "\n".join(
+            [
+                _make_ct_xml(id_ct="HC", valeur="5000"),
+                _make_ct_xml(id_ct="HP", valeur="6000"),
+            ]
+        )
         releve = _make_releve_xml(donnees_xml=donnees)
         prm = _make_prm_xml(releves_xml=releve)
         xml = _make_r151_xml(prm_xml=prm)
@@ -519,19 +527,23 @@ class TestParseR151TotalDonnees:
     def test_total_measures_across_prms_and_releves(self):
         """total_measures counts across all PRMs and releves."""
         # PRM 1: 1 releve with 3 donnees
-        donnees1 = "\n".join([
-            _make_ct_dist_xml(id_ct="HCB"),
-            _make_ct_xml(id_ct="HC"),
-            _make_pmax_xml(),
-        ])
+        donnees1 = "\n".join(
+            [
+                _make_ct_dist_xml(id_ct="HCB"),
+                _make_ct_xml(id_ct="HC"),
+                _make_pmax_xml(),
+            ]
+        )
         releve1 = _make_releve_xml(donnees_xml=donnees1)
         prm1 = _make_prm_xml(prm_id="11111111111111", releves_xml=releve1)
 
         # PRM 2: 1 releve with 2 donnees
-        donnees2 = "\n".join([
-            _make_ct_dist_xml(id_ct="HPB"),
-            _make_ct_xml(id_ct="HP"),
-        ])
+        donnees2 = "\n".join(
+            [
+                _make_ct_dist_xml(id_ct="HPB"),
+                _make_ct_xml(id_ct="HP"),
+            ]
+        )
         releve2 = _make_releve_xml(date_releve="2024-11-17", donnees_xml=donnees2)
         prm2 = _make_prm_xml(prm_id="22222222222222", releves_xml=releve2)
 

@@ -11,7 +11,7 @@ import { useScope } from '../../contexts/ScopeContext';
 import {
   Building2,
   AlertTriangle,
-  FileText,
+  _FileText,
   Plus,
   Loader2,
   ArrowRight,

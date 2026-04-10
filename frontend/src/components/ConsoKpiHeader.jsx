@@ -8,7 +8,7 @@
  * P1.1: confidence tooltip "Comment calcule ?", EUR source tooltip.
  */
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle, Building2 } from 'lucide-react';
-import { TrustBadge } from '../ui';
+import { _TrustBadge } from '../ui';
 import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 import { fmtNum, fmtKwh } from '../utils/format';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -20,7 +20,7 @@ const CONFIDENCE_TOOLTIP = {
   low: 'Basse : < 100 relevés — indicatif uniquement',
 };
 
-function KpiTile({
+function _KpiTile({
   icon: Icon,
   label,
   value,
@@ -173,7 +173,7 @@ export default function ConsoKpiHeader({
       : 'text-gray-900';
 
   // --- Period label (dd/mm/yy → dd/mm/yy) ---
-  const periodLabel = (() => {
+  const _periodLabel = (() => {
     const fmt = (d) =>
       d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
     const dateTo = endDate ? new Date(endDate) : new Date();

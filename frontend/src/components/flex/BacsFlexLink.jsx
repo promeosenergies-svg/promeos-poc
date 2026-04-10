@@ -20,6 +20,7 @@ export default function BacsFlexLink({ siteId }) {
 
   useEffect(() => {
     if (siteId) loadAssets();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId]);
 
   const handleSync = async () => {

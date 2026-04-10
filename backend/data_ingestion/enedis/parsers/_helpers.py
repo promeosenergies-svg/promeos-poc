@@ -52,7 +52,4 @@ def parse_xml_root(
 
 def header_to_dict(header_elem: ET.Element) -> dict:
     """Extract all direct children of a header element into {tag: text}."""
-    return {
-        strip_ns(child.tag): (child.text or "").strip()
-        for child in header_elem
-    }
+    return {strip_ns(child.tag): (child.text or "").strip() for child in header_elem}
