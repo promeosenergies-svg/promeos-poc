@@ -140,8 +140,39 @@ def list_cadres(
     return results
 
 
-def get_cadre(db: Session, cadre_id: int) -> Optional[Dict[str, Any]]:
-    """Cadre complet + annexes + pricing + events."""
+def get_cadre(
+    db: Session,
+    cadre_id: int,
+    *,
+    source: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Cadre complet + annexes + pricing + events.
+
+    Tries V2 ContratCadre first (Phase 1), falls back to legacy EnergyContract.
+    Pass source="v2" or source="legacy" to force a specific table when IDs
+    collide between the two tables.
+    """
+    # ── V2 ContratCadre (nouveau data model, Phase 1) ────────────────
+    if source in (None, "v2"):
+        v2 = (
+            db.query(ContratCadre)
+            .options(
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.site),
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.volume_commitment),
+                joinedload(ContratCadre.annexes).joinedload(ContractAnnexe.pricing_overrides),
+            )
+            .filter(ContratCadre.id == cadre_id, ContratCadre.deleted_at.is_(None))
+            .first()
+        )
+        if v2:
+            result = _serialize_v2_cadre(v2)
+            result["events"] = []  # V2 ContratCadre has no events relationship yet
+            result["coherence"] = []  # coherence_check expects legacy EnergyContract
+            return result
+        if source == "v2":
+            return None
+
+    # ── Legacy EnergyContract.is_cadre=True ──────────────────────────
     c = (
         db.query(EnergyContract)
         .options(

@@ -297,3 +297,31 @@ class TestV2CadreInheritance:
         expected = 0.170 * 0.62 + 0.110 * 0.38
         assert price == pytest.approx(expected, abs=1e-5)
 
+
+# ── 5. get_cadre V2 fallback (service-level) ─────────────────────
+
+
+class TestGetCadreV2:
+    """Guard-rail: contract_v2_service.get_cadre must find V2 ContratCadre,
+    not only legacy EnergyContract.is_cadre=True. Regression: PR #190 Playwright
+    audit showed the detail endpoint returned None for V2 cadres."""
+
+    def test_get_cadre_returns_v2_cadre(self, db):
+        """get_cadre(id) returns a V2 ContratCadre when it exists."""
+        from services.contract_v2_service import get_cadre as svc_get_cadre
+        org, site = _make_site(db, "OrgGet", "600000006", "SiteGet")
+        cadre = _make_cadre(db, org.id, 1, prix_base_eur_kwh=0.15)
+        annexe = _make_annexe(db, cadre.id, site.id, with_base_pricing=True)
+
+        result = svc_get_cadre(db, cadre.id)
+        assert result is not None, "V2 cadre not found by get_cadre"
+        assert result["source"] == "v2"
+        assert result["supplier_name"] == "EDF Entreprises"
+        assert result["status"] == "active"
+
+    def test_get_cadre_returns_none_for_unknown_id(self, db):
+        """get_cadre(unknown) returns None, not an error."""
+        from services.contract_v2_service import get_cadre as svc_get_cadre
+        result = svc_get_cadre(db, 99999)
+        assert result is None
+
