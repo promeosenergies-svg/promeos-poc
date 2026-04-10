@@ -67,9 +67,9 @@ def get_cta_taux(energy_type: str = "elec", at_date=None) -> float:
     """
     CTA en pourcentage (ex : 15.0 pour élec dist fév 2026+, 20.80 pour gaz).
 
-    V112 : désormais versionné par `at_date` via ParameterStore — avant le
-    1/02/2026 la CTA élec distribution était à 21,93%. La signature reste
-    rétrocompatible : `at_date=None` utilise la date du jour.
+    Versionné par `at_date` via ParameterStore — avant le 1/02/2026 la CTA
+    élec distribution était à 21,93%. Signature rétrocompatible :
+    `at_date=None` utilise la date du jour.
     """
     try:
         from datetime import date as _date

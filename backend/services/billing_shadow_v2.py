@@ -204,7 +204,6 @@ def _safe_rate(code: str, at_date=None, db=None) -> float:
     2. Cascade legacy (rétrocompat) : regulated_tariffs direct → tax_catalog →
        _FALLBACK module-level
     """
-    # 1. ParameterStore — versioning par date d'effet (V112)
     try:
         from services.billing_engine.parameter_store import ParameterStore, default_store
 
@@ -215,7 +214,7 @@ def _safe_rate(code: str, at_date=None, db=None) -> float:
     except Exception as exc:
         logger.debug("ParameterStore lookup failed for %s: %s", code, exc)
 
-    # 2. Legacy cascade (compat ascendante)
+    # Legacy cascade — rétrocompat pour les codes non couverts par ParameterStore
     if db is not None:
         if code.startswith("TURPE_ENERGIE_"):
             segment = code.replace("TURPE_ENERGIE_", "")
