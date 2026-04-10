@@ -235,3 +235,78 @@ class TestAuditTrail:
         assert mid_jul.value != mid_aug.value
         assert mid_jul.valid_from == date(2021, 8, 1)
         assert mid_aug.valid_from == date(2025, 8, 1)
+
+
+# ── Césure triple 1/08/2025 — Vague 2 ────────────────────────────────────
+# Vérifie qu'une seule date (1/08/2025) déclenche simultanément :
+#   1. TURPE 6 → TURPE 7
+#   2. TVA réduite 5,5% → TVA normale 20% sur abonnement/CTA
+#   3. Accise gaz 2025_jan → accise gaz 2025_aout (suppression bouclier)
+# Sans oublier que l'ATRD7 gaz reste stable (valid_from 2024-07-01).
+
+
+class TestCesureTriple1Aout2025:
+    def test_triple_cesure_before(self, store):
+        """31/07/2025 : dernier jour du régime ancien (TURPE 6 + TVA 5,5% + accise gaz jan 2025)."""
+        d = date(2025, 7, 31)
+        turpe = store.get("TURPE_ENERGIE_C5_BT", at_date=d)
+        tva_red = store.get("TVA_REDUITE", at_date=d)
+        accise_gaz = store.get("ACCISE_GAZ", at_date=d)
+
+        assert turpe.source == "yaml"
+        assert turpe.valid_from == date(2021, 8, 1)  # TURPE 6
+        assert tva_red.value == pytest.approx(0.055)  # TVA réduite encore en vigueur
+        assert accise_gaz.valid_from == date(2025, 1, 1)  # accise gaz "2025_jan"
+
+    def test_triple_cesure_at(self, store):
+        """1/08/2025 : jour de bascule — les 3 nouveaux régimes prennent effet."""
+        d = date(2025, 8, 1)
+        turpe = store.get("TURPE_ENERGIE_C5_BT", at_date=d)
+        tva_red = store.get("TVA_REDUITE", at_date=d)
+        accise_gaz = store.get("ACCISE_GAZ", at_date=d)
+
+        assert turpe.valid_from == date(2025, 8, 1)  # TURPE 7
+        # TVA réduite supprimée → pointe désormais sur le taux normal 20%
+        assert tva_red.value == pytest.approx(0.20)
+        assert tva_red.valid_from == date(2025, 8, 1)
+        # Accise gaz nouvelle période
+        assert accise_gaz.valid_from == date(2025, 8, 1)
+
+    def test_triple_cesure_after(self, store):
+        """15/08/2025 : régime nouveau confirmé mi-mois."""
+        d = date(2025, 8, 15)
+        turpe = store.get("TURPE_ENERGIE_C5_BT", at_date=d)
+        tva_red = store.get("TVA_REDUITE", at_date=d)
+        accise_gaz = store.get("ACCISE_GAZ", at_date=d)
+
+        assert turpe.valid_from == date(2025, 8, 1)
+        assert tva_red.value == pytest.approx(0.20)
+        assert accise_gaz.valid_from == date(2025, 8, 1)
+
+    def test_atrd7_gaz_stable_across_cesure(self, store):
+        """L'ATRD7 gaz (1/07/2024) ne change PAS à la césure du 1/08/2025."""
+        before = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 7, 31))
+        at = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 8, 1))
+        after = store.get("ATRD_GAZ_T2_ABO", at_date=date(2025, 8, 15))
+        assert before.value == at.value == after.value == pytest.approx(177.78)
+        assert before.valid_from == date(2024, 7, 1)
+
+    def test_invoice_spanning_triple_cesure(self, store):
+        """
+        Facture 15/07/2025 → 15/08/2025 : l'appelant doit obtenir 2 valeurs
+        distinctes pour chacun des 3 mécanismes simultanément.
+        """
+        d_jul = date(2025, 7, 15)
+        d_aug = date(2025, 8, 15)
+
+        # TURPE
+        assert (
+            store.get("TURPE_ENERGIE_C5_BT", at_date=d_jul).value
+            != store.get("TURPE_ENERGIE_C5_BT", at_date=d_aug).value
+        )
+        # TVA réduite
+        assert store.get("TVA_REDUITE", at_date=d_jul).value == pytest.approx(0.055)
+        assert store.get("TVA_REDUITE", at_date=d_aug).value == pytest.approx(0.20)
+        # Accise gaz
+        assert store.get("ACCISE_GAZ", at_date=d_jul).valid_from == date(2025, 1, 1)
+        assert store.get("ACCISE_GAZ", at_date=d_aug).valid_from == date(2025, 8, 1)
