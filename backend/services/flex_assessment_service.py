@@ -72,8 +72,6 @@ def _asset_based_assessment(db: Session, site_id: int, assets: list) -> dict:
             }
         )
 
-    score = min(100, int(total_kw / max(total_kw + 10, 1) * 100))
-
     # 4 dimensions
     controllable_count = sum(1 for a in assets if a.is_controllable)
     verified_count = sum(1 for a in assets if a.confidence in ("high", "medium"))
@@ -81,6 +79,14 @@ def _asset_based_assessment(db: Session, site_id: int, assets: list) -> dict:
     technical_readiness = min(100, int(controllable_count / max(len(assets), 1) * 100))
     data_confidence = min(100, int(verified_count / max(len(assets), 1) * 100))
     economic_relevance = min(100, int(total_kw * 0.5))  # simplified: more kW = more relevant
+
+    # Score composite : 50% seuil NEBCO (100 kW = 50 pts) + 50% qualité inventaire
+    # (controllable et verified pondérés à 25 pts chacun).
+    nebco_component = min(50.0, total_kw / 100.0 * 50.0)
+    inventory_component = (controllable_count / max(len(assets), 1)) * 25.0 + (
+        verified_count / max(len(assets), 1)
+    ) * 25.0
+    score = int(round(nebco_component + inventory_component))
 
     # Regulatory alignment
     has_bacs = any(a.bacs_cvc_system_id for a in assets)
