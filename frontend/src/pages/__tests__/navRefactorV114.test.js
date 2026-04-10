@@ -1,11 +1,10 @@
 /**
- * V114 Navigation Refactor — Guard-rail tests
- * Ensures the sidebar restructure is correct:
- * - Cockpit: 2 items (no Alertes)
- * - Operations: 3 items (Centre d'actions replaces Anomalies + Plan d'actions)
- * - Marche: includes payment-rules + reconciliation (moved from Admin)
- * - Referentiels: slimmed, /import visible
- * - QUICK_ACTIONS: 8 entries
+ * V7 Navigation Refactor — Guard-rail tests
+ * Remplace V114 obsolète. Vérifie la structure V7 :
+ *  - Cockpit: 2 items (Tableau de bord + Vue exécutive)
+ *  - Conformité: module autonome 4-5 items
+ *  - Achat visible en normal
+ *  - /actions et /notifications retirés de la nav (déplacés vers Centre d'actions)
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -15,44 +14,34 @@ import {
   ROUTE_MODULE_MAP,
 } from '../../layout/NavRegistry';
 
-describe('V114 Nav Refactor guard-rails', () => {
-  it('Pilotage has exactly 4 items (Tableau de bord + Synthèse exécutive + Actions & Suivi + Notifications)', () => {
-    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
-    expect(pilotage.items).toHaveLength(4);
-    expect(pilotage.items.map((i) => i.to)).toEqual([
-      '/',
-      '/cockpit',
-      '/actions',
-      '/notifications',
-    ]);
+describe('V7 Nav Refactor guard-rails', () => {
+  it('Cockpit has exactly 2 items (Tableau de bord + Vue exécutive)', () => {
+    const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
+    expect(cockpit.items).toHaveLength(2);
+    expect(cockpit.items.map((i) => i.to)).toEqual(['/', '/cockpit']);
   });
 
-  it('Patrimoine has exactly 3 items (Registre + Contrats + Conformité)', () => {
+  it('Patrimoine has 3 items (Sites + Contrats + Facturation expert)', () => {
     const patrimoine = NAV_SECTIONS.find((s) => s.key === 'patrimoine');
     expect(patrimoine.items).toHaveLength(3);
-    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/contrats', '/conformite']);
+    expect(patrimoine.items.map((i) => i.to)).toEqual(['/patrimoine', '/contrats', '/bill-intel']);
   });
 
-  it('Actions & Suivi at /actions has alerts badge', () => {
-    const pilotage = NAV_SECTIONS.find((s) => s.key === 'pilotage');
-    const centre = pilotage.items.find((i) => i.to === '/actions');
-    expect(centre.label).toBe('Actions & Suivi');
-    expect(centre.badgeKey).toBe('alerts');
+  it("/actions and /notifications are NOT in nav items (moved to Centre d'actions)", () => {
+    const paths = ALL_NAV_ITEMS.map((i) => i.to.split('?')[0].split('#')[0]);
+    expect(paths).not.toContain('/actions');
+    expect(paths).not.toContain('/notifications');
   });
 
-  it('/notifications IS in sidebar and in ROUTE_MODULE_MAP', () => {
-    const inNav = ALL_NAV_ITEMS.find((i) => i.to === '/notifications');
-    expect(inNav).toBeDefined();
-    expect(ROUTE_MODULE_MAP['/notifications']).toBe('pilotage');
+  it('/notifications is still mapped in ROUTE_MODULE_MAP (backward compat redirect)', () => {
+    expect(ROUTE_MODULE_MAP['/notifications']).toBe('cockpit');
   });
 
-  it('/actions IS in sidebar and in ROUTE_MODULE_MAP', () => {
-    const inNav = ALL_NAV_ITEMS.find((i) => i.to === '/actions');
-    expect(inNav).toBeDefined();
-    expect(ROUTE_MODULE_MAP['/actions']).toBe('pilotage');
+  it('/actions is still mapped in ROUTE_MODULE_MAP (backward compat redirect)', () => {
+    expect(ROUTE_MODULE_MAP['/actions']).toBe('cockpit');
   });
 
-  it('Energie section does NOT contain payment-rules and portfolio-reconciliation in nav items', () => {
+  it('Energie section does NOT contain payment-rules and portfolio-reconciliation', () => {
     const energie = NAV_SECTIONS.find((s) => s.key === 'energie');
     const routes = energie.items.map((i) => i.to);
     expect(routes).not.toContain('/payment-rules');
@@ -71,7 +60,7 @@ describe('V114 Nav Refactor guard-rails', () => {
     expect(QUICK_ACTIONS).toHaveLength(14);
   });
 
-  it('/import is visible (not hidden)', () => {
+  it('/import is visible in admin-data', () => {
     const adminData = NAV_SECTIONS.find((s) => s.key === 'admin-data');
     const importItem = adminData.items.find((i) => i.to === '/import');
     expect(importItem).toBeDefined();

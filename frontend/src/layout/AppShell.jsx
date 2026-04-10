@@ -4,14 +4,17 @@
  */
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Search, LogOut, ChevronDown, Building2, Command, Bell } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
 import DataReadinessBadge from '../components/DataReadinessBadge';
 import DevPanel from './DevPanel';
 import CommandPalette from '../ui/CommandPalette';
+import ActionCenterSlideOver, {
+  computeActionCenterBadge,
+} from '../components/ActionCenterSlideOver';
 import { ToastProvider } from '../ui/ToastProvider';
 import { ActionDrawerProvider } from '../contexts/ActionDrawerContext';
 import { Toggle } from '../ui';
@@ -19,6 +22,16 @@ import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { resolveModule, MODULE_TINTS } from './NavRegistry';
+import {
+  getActionCenterActionsSummary,
+  getActionCenterNotifications,
+} from '../services/api/actions';
+
+const BADGE_COLOR_CLASS = {
+  red: 'bg-red-500 text-white',
+  amber: 'bg-amber-500 text-white',
+  gray: 'bg-slate-400 text-white',
+};
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Propriétaire',
@@ -164,13 +177,55 @@ function UserMenu() {
 
 export default function AppShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [actionCenterOpen, setActionCenterOpen] = useState(false);
+  const [actionCenterTab, setActionCenterTab] = useState('actions');
+  const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
   const { isExpert, toggleExpert } = useExpertMode();
+
   useEffect(() => {
     trackRouteChange(location.pathname);
   }, [location.pathname]);
 
-  // Global Ctrl+K shortcut
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('actionCenter') === 'open') {
+      setActionCenterOpen(true);
+      setActionCenterTab(params.get('tab') || 'actions');
+      // Clean URL
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search, location.pathname, navigate]);
+
+  // Poll badge every 60s — paused while slide-over is open (slide-over fetches its own data).
+  // The slide-over only sees its own data; we keep the header badge in sync without double-fetching.
+  useEffect(() => {
+    if (actionCenterOpen) return undefined;
+    let cancelled = false;
+    const fetchBadge = async () => {
+      try {
+        const [summary, notif] = await Promise.all([
+          getActionCenterActionsSummary().catch(() => null),
+          getActionCenterNotifications({ unread_only: true }).catch(() => ({ notifications: [] })),
+        ]);
+        if (cancelled) return;
+        const next = computeActionCenterBadge(summary, notif?.notifications || []);
+        setActionCenterBadge((prev) =>
+          prev.count === next.count && prev.color === next.color ? prev : next
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+    fetchBadge();
+    const interval = setInterval(fetchBadge, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [actionCenterOpen]);
+
   useEffect(() => {
     function onKey(e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -182,9 +237,9 @@ export default function AppShell() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // Module-tinted header band
   const currentModule = useMemo(() => resolveModule(location.pathname), [location.pathname]);
   const headerBandClass = MODULE_TINTS[currentModule] || MODULE_TINTS.cockpit;
+  const badgeColorClass = BADGE_COLOR_CLASS[actionCenterBadge.color];
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
@@ -212,6 +267,26 @@ export default function AppShell() {
               <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-slate-50 border border-slate-200/80 rounded ml-2">
                 <Command size={10} className="mr-0.5" />K
               </kbd>
+            </button>
+
+            {/* Centre d'actions — cloche (V7) */}
+            <button
+              onClick={() => {
+                setActionCenterTab('actions');
+                setActionCenterOpen(true);
+              }}
+              aria-label="Centre d'actions"
+              title="Centre d'actions"
+              className="relative p-2 bg-white/60 border border-slate-200/80 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-white hover:border-slate-300 transition-all shadow-sm"
+            >
+              <Bell size={16} />
+              {actionCenterBadge.count && (
+                <span
+                  className={`absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full min-w-[18px] text-center leading-tight ${badgeColorClass}`}
+                >
+                  {actionCenterBadge.count}
+                </span>
+              )}
             </button>
 
             {/* Expert Mode toggle */}
@@ -243,6 +318,13 @@ export default function AppShell() {
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         onToggleExpert={toggleExpert}
+      />
+
+      {/* Centre d'actions slide-over (V7) */}
+      <ActionCenterSlideOver
+        open={actionCenterOpen}
+        onClose={() => setActionCenterOpen(false)}
+        defaultTab={actionCenterTab}
       />
 
       {/* Dev Panel — dev-only, visible when ?debug */}

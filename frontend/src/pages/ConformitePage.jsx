@@ -48,6 +48,15 @@ import {
   getAuditSmeAssessment,
 } from '../services/api';
 
+// V7 — regulation filter map (URL ?regulation=) → list of obligation codes to match
+const REGULATION_FILTER_MAP = {
+  dt: ['decret_tertiaire_operat', 'decret_tertiaire', 'dt'],
+  bacs: ['bacs'],
+  aper: ['aper'],
+  'audit-sme': ['audit_sme', 'audit_energetique'],
+};
+const ALLOWED_REGULATION_FILTERS = Object.keys(REGULATION_FILTER_MAP);
+
 // Extracted sub-components
 import { DevApiBadge, DevScopeBadge } from '../components/conformite/DevBadges';
 import FindingAuditDrawer from '../components/conformite/FindingAuditDrawer';
@@ -96,6 +105,10 @@ export default function ConformitePage() {
   const [auditFindingId, setAuditFindingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'obligations');
+  const rawRegulationFilter = searchParams.get('regulation');
+  const regulationFilter = ALLOWED_REGULATION_FILTERS.includes(rawRegulationFilter)
+    ? rawRegulationFilter
+    : null;
   const tabsRef = useRef(null);
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
@@ -290,6 +303,12 @@ export default function ConformitePage() {
 
   const sortedObligations = useMemo(() => {
     let list = [...obligations];
+    if (regulationFilter) {
+      const allowedCodes = REGULATION_FILTER_MAP[regulationFilter] || [];
+      list = list.filter((o) =>
+        allowedCodes.some((code) => (o.code || '').toLowerCase().includes(code.toLowerCase()))
+      );
+    }
     if (statusFilter) {
       list = list.filter((o) => o.statut === statusFilter);
     }
@@ -320,7 +339,7 @@ export default function ConformitePage() {
       return (a.code || '').localeCompare(b.code || '');
     });
     return list;
-  }, [obligations, statusFilter, searchQuery, profileTags]);
+  }, [obligations, statusFilter, searchQuery, profileTags, regulationFilter]);
 
   const actionableFindings = useMemo(() => {
     return obligations
