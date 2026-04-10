@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     Float,
+    Numeric,
     Text,
     Boolean,
     ForeignKey,
@@ -97,9 +98,10 @@ class ContratCadre(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     # Prix de reference (EUR HT/kWh) — defaut cadre, overridable par annexe
-    prix_hp_eur_kwh = Column(Float, nullable=True, comment="Prix HP EUR HT/kWh")
-    prix_hc_eur_kwh = Column(Float, nullable=True, comment="Prix HC EUR HT/kWh")
-    prix_base_eur_kwh = Column(Float, nullable=True, comment="Prix Base EUR HT/kWh (tarif unique)")
+    # Numeric pour precision billing (eviter erreurs flottantes cumulees sur milliers kWh)
+    prix_hp_eur_kwh = Column(Numeric(18, 6), nullable=True, comment="Prix HP EUR HT/kWh")
+    prix_hc_eur_kwh = Column(Numeric(18, 6), nullable=True, comment="Prix HC EUR HT/kWh")
+    prix_base_eur_kwh = Column(Numeric(18, 6), nullable=True, comment="Prix Base EUR HT/kWh (tarif unique)")
 
     # Poids HP/HC (repartition forfaitaire)
     poids_hp = Column(
@@ -122,7 +124,7 @@ class ContratCadre(Base, TimestampMixin, SoftDeleteMixin):
         comment="True si CEE inclus dans le prix fourniture",
     )
     cee_eur_mwh = Column(
-        Float,
+        Numeric(18, 6),
         nullable=True,
         comment="Prix CEE EUR/MWh (si facture separement)",
     )
@@ -134,7 +136,7 @@ class ContratCadre(Base, TimestampMixin, SoftDeleteMixin):
         comment="True si capacite incluse dans le prix fourniture",
     )
     capacite_eur_mwh = Column(
-        Float,
+        Numeric(18, 6),
         nullable=True,
         comment="Prix capacite EUR/MWh (si facture separement)",
     )
@@ -146,17 +148,17 @@ class ContratCadre(Base, TimestampMixin, SoftDeleteMixin):
         comment="Index de reference (TRVE, EPEX_SPOT_FR, PEG_DA)",
     )
     indexation_spread_eur_mwh = Column(
-        Float,
+        Numeric(18, 6),
         nullable=True,
         comment="Spread EUR/MWh par rapport a l'index",
     )
     prix_plancher_eur_mwh = Column(
-        Float,
+        Numeric(18, 6),
         nullable=True,
         comment="Plancher prix EUR/MWh (tunnel)",
     )
     prix_plafond_eur_mwh = Column(
-        Float,
+        Numeric(18, 6),
         nullable=True,
         comment="Plafond prix EUR/MWh (tunnel/cap)",
     )
@@ -260,23 +262,23 @@ class ContractAnnexe(Base, TimestampMixin, SoftDeleteMixin):
     has_price_override = Column(Boolean, default=False, comment="True si prix differents du cadre")
     override_pricing_model = Column(String(30), nullable=True, comment="Modele prix override (null = herite)")
 
-    # Prix override (si has_price_override=True)
-    prix_hp_override = Column(Float, nullable=True, comment="Prix HP override EUR HT/kWh")
-    prix_hc_override = Column(Float, nullable=True, comment="Prix HC override EUR HT/kWh")
-    prix_base_override = Column(Float, nullable=True, comment="Prix Base override EUR HT/kWh")
+    # Prix override (si has_price_override=True) — Numeric pour precision billing
+    prix_hp_override = Column(Numeric(18, 6), nullable=True, comment="Prix HP override EUR HT/kWh")
+    prix_hc_override = Column(Numeric(18, 6), nullable=True, comment="Prix HC override EUR HT/kWh")
+    prix_base_override = Column(Numeric(18, 6), nullable=True, comment="Prix Base override EUR HT/kWh")
 
     # Dates specifiques (null = herite du cadre)
     start_date_override = Column(Date, nullable=True, comment="Date debut override")
     end_date_override = Column(Date, nullable=True, comment="Date fin override")
 
     # Volume engage (au niveau annexe)
-    volume_engage_kwh = Column(Float, nullable=True, comment="Volume annuel engage kWh")
+    volume_engage_kwh = Column(Numeric(20, 3), nullable=True, comment="Volume annuel engage kWh")
 
     # Status annexe
     status = Column(
         Enum(ContractStatus),
         nullable=True,
-        default="active",
+        default=ContractStatus.ACTIVE,
         comment="Statut lifecycle annexe",
     )
 
@@ -345,8 +347,8 @@ class ContractPricing(Base, TimestampMixin):
         comment="BASE/HP/HC/HPH/HCH/HPB/HCB/POINTE",
     )
     season = Column(String(10), default="ANNUEL", comment="ANNUEL/HIVER/ETE")
-    unit_price_eur_kwh = Column(Float, nullable=True, comment="Prix unitaire EUR HT/kWh")
-    subscription_eur_month = Column(Float, nullable=True, comment="Abonnement EUR HT/mois")
+    unit_price_eur_kwh = Column(Numeric(18, 6), nullable=True, comment="Prix unitaire EUR HT/kWh")
+    subscription_eur_month = Column(Numeric(14, 2), nullable=True, comment="Abonnement EUR HT/mois")
     effective_from = Column(Date, nullable=True, comment="Date debut validite")
     effective_to = Column(Date, nullable=True, comment="Date fin validite")
 
@@ -383,11 +385,11 @@ class VolumeCommitment(Base, TimestampMixin):
         comment="Annexe concernee",
     )
 
-    annual_kwh = Column(Float, nullable=False, comment="Volume engage MWh/an (en kWh)")
+    annual_kwh = Column(Numeric(20, 3), nullable=False, comment="Volume engage MWh/an (en kWh)")
     tolerance_pct_up = Column(Float, default=10.0, comment="Tolerance haute %")
     tolerance_pct_down = Column(Float, default=10.0, comment="Tolerance basse %")
-    penalty_eur_kwh_above = Column(Float, nullable=True, comment="Penalite depassement EUR/kWh")
-    penalty_eur_kwh_below = Column(Float, nullable=True, comment="Penalite sous-conso EUR/kWh")
+    penalty_eur_kwh_above = Column(Numeric(18, 6), nullable=True, comment="Penalite depassement EUR/kWh")
+    penalty_eur_kwh_below = Column(Numeric(18, 6), nullable=True, comment="Penalite sous-conso EUR/kWh")
 
     # Relations
     annexe = relationship("ContractAnnexe", back_populates="volume_commitment")

@@ -526,15 +526,16 @@ def refresh_all_statuses(db: Session, org_id: int) -> int:
 def compute_cadre_kpis(db: Session, cadre: EnergyContract) -> Dict[str, Any]:
     """KPIs pour un cadre avec prix moyen pondere par volume."""
     annexes = [a for a in cadre.annexes if a.deleted_at is None]
-    total_vol = sum((a.volume_commitment.annual_kwh if a.volume_commitment else 0) for a in annexes)
+    total_vol = sum((float(a.volume_commitment.annual_kwh) if a.volume_commitment else 0) for a in annexes)
 
     # Prix moyen pondere : chaque ligne pricing contribue proportionnellement
+    # Cast Decimal → float for arithmetic with PERIOD_WEIGHTS (floats)
     weighted_sum = 0.0
     weight_total = 0.0
     for p in cadre.pricing_lines:
         if p.unit_price_eur_kwh:
             w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
-            weighted_sum += p.unit_price_eur_kwh * w
+            weighted_sum += float(p.unit_price_eur_kwh) * w
             weight_total += w
     avg_price = (weighted_sum / weight_total) if weight_total else 0
 
@@ -626,7 +627,7 @@ def compute_shadow_gap(db: Session, annexe_id: int) -> Dict[str, Any]:
                     pc = p.get("period_code", "")
                     if line.qty and p.get("unit_price_eur_kwh"):
                         if not pc or pc == (getattr(line, "period_code", None) or ""):
-                            shadow_supply += line.qty * p["unit_price_eur_kwh"]
+                            shadow_supply += float(line.qty) * float(p["unit_price_eur_kwh"])
                             break
             elif lt in NETWORK_TYPES:
                 inv_network += amount
@@ -872,12 +873,13 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
     total_vol = sum((a.volume_commitment.annual_kwh / 1000 if a.volume_commitment else 0) for a in annexes)
 
     # Prix moyen pondere (meme formule que compute_cadre_kpis)
+    # Cast Decimal → float: unit_price_eur_kwh is Numeric(18,6), PERIOD_WEIGHTS floats
     weighted_sum = 0.0
     weight_total = 0.0
     for p in c.pricing_lines:
         if p.unit_price_eur_kwh:
             w = PERIOD_WEIGHTS.get(p.period_code, 0.25)
-            weighted_sum += p.unit_price_eur_kwh * w
+            weighted_sum += float(p.unit_price_eur_kwh) * w
             weight_total += w
     avg_price = (weighted_sum / weight_total) if weight_total else 0
     avg_price_mwh = round(avg_price * 1000, 2)
@@ -918,8 +920,10 @@ def _serialize_cadre(c: EnergyContract) -> Dict[str, Any]:
             {
                 "period_code": p.period_code,
                 "season": p.season,
-                "unit_price_eur_kwh": p.unit_price_eur_kwh,
-                "subscription_eur_month": p.subscription_eur_month,
+                "unit_price_eur_kwh": float(p.unit_price_eur_kwh) if p.unit_price_eur_kwh is not None else None,
+                "subscription_eur_month": float(p.subscription_eur_month)
+                if p.subscription_eur_month is not None
+                else None,
             }
             for p in c.pricing_lines
         ],
@@ -942,7 +946,7 @@ def _serialize_annexe_summary(a: ContractAnnexe) -> Dict[str, Any]:
         "status": a.status.value if a.status else "active",
         "start_date": str(dates["start_date"]) if dates["start_date"] else None,
         "end_date": str(dates["end_date"]) if dates["end_date"] else None,
-        "volume_mwh": round(a.volume_commitment.annual_kwh / 1000, 2) if a.volume_commitment else None,
+        "volume_mwh": round(float(a.volume_commitment.annual_kwh) / 1000, 2) if a.volume_commitment else None,
     }
 
 

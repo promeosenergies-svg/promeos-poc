@@ -51,19 +51,19 @@ CREATE TABLE IF NOT EXISTS contrats_cadre (
     notice_period_months INTEGER,
     auto_renew BOOLEAN DEFAULT 0,
     type_prix VARCHAR(30) NOT NULL,
-    prix_hp_eur_kwh REAL,
-    prix_hc_eur_kwh REAL,
-    prix_base_eur_kwh REAL,
+    prix_hp_eur_kwh NUMERIC(18,6),
+    prix_hc_eur_kwh NUMERIC(18,6),
+    prix_base_eur_kwh NUMERIC(18,6),
     poids_hp REAL DEFAULT 62.0,
     poids_hc REAL DEFAULT 38.0,
     cee_inclus BOOLEAN DEFAULT 0,
-    cee_eur_mwh REAL,
+    cee_eur_mwh NUMERIC(18,6),
     capacite_incluse BOOLEAN DEFAULT 0,
-    capacite_eur_mwh REAL,
+    capacite_eur_mwh NUMERIC(18,6),
     indexation_reference VARCHAR(100),
-    indexation_spread_eur_mwh REAL,
-    prix_plancher_eur_mwh REAL,
-    prix_plafond_eur_mwh REAL,
+    indexation_spread_eur_mwh NUMERIC(18,6),
+    prix_plancher_eur_mwh NUMERIC(18,6),
+    prix_plafond_eur_mwh NUMERIC(18,6),
     statut VARCHAR(20) NOT NULL DEFAULT 'draft',
     is_green BOOLEAN DEFAULT 0,
     green_percentage REAL,
@@ -90,36 +90,45 @@ def migrate(db_path: str = None):
     cursor = conn.cursor()
     actions = []
 
-    # ── Create contrats_cadre table ──────────────────────────────────────
-    if not table_exists(cursor, "contrats_cadre"):
-        cursor.execute(CREATE_CONTRATS_CADRE)
-        cursor.execute(CREATE_IDX_CADRE_ORG)
-        cursor.execute(CREATE_IDX_CADRE_EJ)
-        actions.append("CREATE TABLE contrats_cadre")
+    try:
+        # ── Create contrats_cadre table ──────────────────────────────────
+        if not table_exists(cursor, "contrats_cadre"):
+            cursor.execute(CREATE_CONTRATS_CADRE)
+            cursor.execute(CREATE_IDX_CADRE_ORG)
+            cursor.execute(CREATE_IDX_CADRE_EJ)
+            actions.append("CREATE TABLE contrats_cadre")
 
-    # ── Add new columns to contract_annexes ──────────────────────────────
-    if table_exists(cursor, "contract_annexes"):
-        annexe_cols = [
-            ("cadre_id", "INTEGER REFERENCES contrats_cadre(id)", None),
-            ("prm", "VARCHAR(14)", None),
-            ("pce", "VARCHAR(14)", None),
-            ("prix_hp_override", "REAL", None),
-            ("prix_hc_override", "REAL", None),
-            ("prix_base_override", "REAL", None),
-            ("volume_engage_kwh", "REAL", None),
-        ]
-        for col, ctype, default in annexe_cols:
-            if add_column_if_missing(cursor, "contract_annexes", col, ctype, default):
-                actions.append(f"contract_annexes.{col}")
+        # ── Add new columns to contract_annexes ──────────────────────────
+        # NUMERIC column affinity: SQLite stores Decimal-like values faithfully;
+        # the SQLAlchemy model declares Numeric(18,6) for the same columns.
+        if table_exists(cursor, "contract_annexes"):
+            annexe_cols = [
+                ("cadre_id", "INTEGER REFERENCES contrats_cadre(id)", None),
+                ("prm", "VARCHAR(14)", None),
+                ("pce", "VARCHAR(14)", None),
+                ("prix_hp_override", "NUMERIC(18,6)", None),
+                ("prix_hc_override", "NUMERIC(18,6)", None),
+                ("prix_base_override", "NUMERIC(18,6)", None),
+                ("volume_engage_kwh", "NUMERIC(20,3)", None),
+            ]
+            for col, ctype, default in annexe_cols:
+                if add_column_if_missing(cursor, "contract_annexes", col, ctype, default):
+                    actions.append(f"contract_annexes.{col}")
 
-        # Index on cadre_id
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='ix_contract_annexes_cadre_id'")
-        if not cursor.fetchone() and column_exists(cursor, "contract_annexes", "cadre_id"):
-            cursor.execute("CREATE INDEX ix_contract_annexes_cadre_id ON contract_annexes(cadre_id);")
-            actions.append("INDEX ix_contract_annexes_cadre_id")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='ix_contract_annexes_cadre_id'")
+            if not cursor.fetchone() and column_exists(cursor, "contract_annexes", "cadre_id"):
+                cursor.execute("CREATE INDEX ix_contract_annexes_cadre_id ON contract_annexes(cadre_id);")
+                actions.append("INDEX ix_contract_annexes_cadre_id")
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    except Exception as e:
+        # Keep the DB consistent if any step fails: rollback uncommitted DDL
+        # and surface the error so the next run can't silently skip.
+        conn.rollback()
+        print(f"Migration Phase 1 FAILED after {len(actions)} actions: {actions}. Rolled back. Error: {e}")
+        raise
+    finally:
+        conn.close()
 
     if actions:
         print(f"Migration Phase 1 OK — {len(actions)} actions: {', '.join(actions)}")

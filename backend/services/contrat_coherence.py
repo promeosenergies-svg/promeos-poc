@@ -480,6 +480,11 @@ def validate_contrat(db: Session, cadre_id: int) -> List[Dict[str, str]]:
     return results
 
 
+def _as_float(v):
+    """Cast Decimal (from Numeric columns) to float for API output. Passes None through."""
+    return float(v) if v is not None else None
+
+
 def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[str, Any]]:
     """Retourne pricing effectif avec cascade: override annexe > cadre > fallback colonnes plates.
 
@@ -491,8 +496,8 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
             {
                 "period_code": p.period_code,
                 "season": p.season,
-                "unit_price_eur_kwh": p.unit_price_eur_kwh,
-                "subscription_eur_month": p.subscription_eur_month,
+                "unit_price_eur_kwh": _as_float(p.unit_price_eur_kwh),
+                "subscription_eur_month": _as_float(p.subscription_eur_month),
                 "source": "override",
             }
             for p in annexe.pricing_overrides
@@ -505,8 +510,8 @@ def resolve_pricing(db: Optional[Session], annexe: ContractAnnexe) -> List[Dict[
             {
                 "period_code": p.period_code,
                 "season": p.season,
-                "unit_price_eur_kwh": p.unit_price_eur_kwh,
-                "subscription_eur_month": p.subscription_eur_month,
+                "unit_price_eur_kwh": _as_float(p.unit_price_eur_kwh),
+                "subscription_eur_month": _as_float(p.subscription_eur_month),
                 "source": "cadre",
             }
             for p in cadre.pricing_lines

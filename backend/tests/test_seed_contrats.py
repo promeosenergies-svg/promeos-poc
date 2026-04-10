@@ -168,8 +168,8 @@ class TestHeliosCadres:
         assert cadre is not None
         assert cadre.fournisseur == "EDF Entreprises"
         assert cadre.energie == BillingEnergyType.ELEC
-        assert cadre.prix_hp_eur_kwh == 0.1580
-        assert cadre.prix_hc_eur_kwh == 0.1180
+        assert float(cadre.prix_hp_eur_kwh) == 0.1580
+        assert float(cadre.prix_hc_eur_kwh) == 0.1180
         assert cadre.poids_hp == 62.0
         assert cadre.poids_hc == 38.0
         assert cadre.cee_inclus is True
@@ -187,7 +187,7 @@ class TestHeliosCadres:
         assert cadre.fournisseur == "ENGIE Pro"
         assert cadre.energie == BillingEnergyType.GAZ
         assert cadre.indexation_reference == "PEG_DA"
-        assert cadre.indexation_spread_eur_mwh == 3.0
+        assert float(cadre.indexation_spread_eur_mwh) == 3.0
 
         annexes = db.query(ContractAnnexe).filter(ContractAnnexe.cadre_id == cadre.id).all()
         assert len(annexes) == 1
@@ -215,9 +215,9 @@ class TestHeliosCadres:
         assert cadre is not None
         assert cadre.fournisseur == "Ekwateur"
         assert cadre.indexation_reference == "EPEX_SPOT_FR"
-        assert cadre.indexation_spread_eur_mwh == 5.0
-        assert cadre.prix_plafond_eur_mwh == 200.0
-        assert cadre.prix_plancher_eur_mwh == 60.0
+        assert float(cadre.indexation_spread_eur_mwh) == 5.0
+        assert float(cadre.prix_plafond_eur_mwh) == 200.0
+        assert float(cadre.prix_plancher_eur_mwh) == 60.0
 
         annexes = db.query(ContractAnnexe).filter(ContractAnnexe.cadre_id == cadre.id).all()
         assert len(annexes) == 1
@@ -251,7 +251,7 @@ class TestVolumeCommitments:
 
         pricing = db.query(ContractPricing).filter(ContractPricing.annexe_id == lyon_annexe.id).all()
         assert len(pricing) >= 1
-        assert pricing[0].unit_price_eur_kwh == 0.1380
+        assert float(pricing[0].unit_price_eur_kwh) == 0.1380
 
 
 # ============================================================

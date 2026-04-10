@@ -48,11 +48,31 @@ from config.default_prices import (
 # ========================================
 
 
+_DEFAULT_POIDS_HP = 62.0
+_DEFAULT_POIDS_HC = 38.0
+
+
+def _normalized_hp_hc_weights(cadre) -> Tuple[float, float]:
+    """Return normalized (poids_hp, poids_hc) as fractions summing to 1.0.
+
+    Guards against operator typos (e.g. 70 + 40 = 110%) that would otherwise
+    inflate the weighted price silently. Falls back to market default (62/38)
+    when either weight is missing.
+    """
+    hp = float(cadre.poids_hp) if cadre and cadre.poids_hp else _DEFAULT_POIDS_HP
+    hc = float(cadre.poids_hc) if cadre and cadre.poids_hc else _DEFAULT_POIDS_HC
+    total = hp + hc
+    if total <= 0:
+        return (_DEFAULT_POIDS_HP / 100.0, _DEFAULT_POIDS_HC / 100.0)
+    return (hp / total, hc / total)
+
+
 def find_active_annexe(
     db: Session,
     site_id: int,
     energy_type: str = "elec",
     ref_date: Optional[date] = None,
+    org_id: Optional[int] = None,
 ) -> Optional[ContractAnnexe]:
     """Find the active ContractAnnexe for a site+energy+date via ContratCadre.
 
@@ -63,8 +83,9 @@ def find_active_annexe(
       4. ContratCadre.statut is active
       5. ref_date within [date_debut, date_fin] (if provided)
       6. Soft-deleted annexes excluded
-
-    Returns the first matching annexe or None.
+      7. Multi-tenant: if org_id is provided, ContratCadre.org_id must match.
+         Callers that resolve org_id from the site itself (preferred) get
+         defense-in-depth against site_id collisions across tenants.
     """
     try:
         energy_enum = BillingEnergyType(energy_type)
@@ -84,6 +105,9 @@ def find_active_annexe(
         )
     )
 
+    if org_id is not None:
+        q = q.filter(ContratCadre.org_id == org_id)
+
     if ref_date:
         q = q.filter(
             ContratCadre.date_debut <= ref_date,
@@ -100,10 +124,13 @@ def _resolve_cadre_weighted_price(
     """Resolve a single weighted price from a V2 cadre annexe using resolve_pricing().
 
     Cascade: override annexe > cadre structured > cadre flat columns.
-    For HP/HC contracts: prix_moyen = poids_hp * prix_hp + poids_hc * prix_hc.
+    For HP/HC contracts: prix_moyen = poids_hp_norm * prix_hp + poids_hc_norm * prix_hc,
+    where poids_hp_norm + poids_hc_norm == 1.0 (normalized to guard operator typos).
     For BASE contracts: prix_base directly.
 
-    Returns (price_eur_per_kwh, source_label) or None if no pricing found.
+    Incomplete grids (only HP or only HC, or exotic period codes like pointe)
+    return None so that get_reference_price() can fall through to a lower
+    priority source rather than silently reporting a wrong average.
     """
     from services.contrat_coherence import resolve_pricing
 
@@ -111,7 +138,6 @@ def _resolve_cadre_weighted_price(
     if not pricing_lines:
         return None
 
-    # Build price map: period_code → unit_price_eur_kwh
     price_map = {}
     for line in pricing_lines:
         pc = line.get("period_code", "")
@@ -119,28 +145,33 @@ def _resolve_cadre_weighted_price(
         if price is not None and pc:
             price_map[pc] = price
 
-    # Case 1: BASE price available → direct
-    if "BASE" in price_map:
-        source = f"cadre_annexe:{annexe.id}"
-        return (price_map["BASE"], source)
+    source = f"cadre_annexe:{annexe.id}"
 
-    # Case 2: HP/HC → weighted average
+    if "BASE" in price_map:
+        return (float(price_map["BASE"]), source)
+
     hp_price = price_map.get("HP")
     hc_price = price_map.get("HC")
     if hp_price is not None and hc_price is not None:
-        cadre = annexe.cadre
-        poids_hp = (cadre.poids_hp if cadre and cadre.poids_hp else 62.0) / 100.0
-        poids_hc = (cadre.poids_hc if cadre and cadre.poids_hc else 38.0) / 100.0
-        weighted = round(hp_price * poids_hp + hc_price * poids_hc, 6)
-        source = f"cadre_annexe:{annexe.id}"
+        poids_hp, poids_hc = _normalized_hp_hc_weights(annexe.cadre)
+        weighted = round(float(hp_price) * poids_hp + float(hc_price) * poids_hc, 6)
         return (weighted, source)
 
-    # Case 3: any single price available
-    if price_map:
-        first_price = next(iter(price_map.values()))
-        return (first_price, f"cadre_annexe:{annexe.id}")
-
+    # Incomplete grid: let caller fall through to next priority instead of
+    # returning an arbitrary price (e.g. pointe) as if it were a flat reference.
     return None
+
+
+def _site_org_id(db: Session, site_id: int) -> Optional[int]:
+    """Resolve org_id from a site via portefeuille > entite_juridique chain."""
+    row = (
+        db.query(EntiteJuridique.organisation_id)
+        .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .join(Site, Site.portefeuille_id == Portefeuille.id)
+        .filter(Site.id == site_id)
+        .first()
+    )
+    return row[0] if row else None
 
 
 def get_reference_price(
@@ -159,9 +190,10 @@ def get_reference_price(
       4. Config fallback (0.068 elec, 0.045 gaz)
     Returns: (price_eur_per_kwh, source_label)
     """
-    # Priority 0: V2 ContratCadre annexe (Phase 5)
+    # Priority 0: V2 ContratCadre annexe (Phase 5) — scoped by org
     ref_date = period_start or period_end or date.today()
-    annexe = find_active_annexe(db, site_id, energy_type, ref_date)
+    site_org_id = _site_org_id(db, site_id)
+    annexe = find_active_annexe(db, site_id, energy_type, ref_date, org_id=site_org_id)
     if annexe:
         result = _resolve_cadre_weighted_price(db, annexe)
         if result:
@@ -260,17 +292,15 @@ def _shadow_billing_cadre_hphc(
     if hp_price is None or hc_price is None:
         return None
 
-    # Get HP/HC weights from cadre or defaults
-    cadre = annexe.cadre
-    poids_hp = (cadre.poids_hp if cadre and cadre.poids_hp else 62.0) / 100.0
-    poids_hc = (cadre.poids_hc if cadre and cadre.poids_hc else 38.0) / 100.0
+    # Normalized HP/HC weights — guards against operator typos (e.g. 70+40)
+    poids_hp, poids_hc = _normalized_hp_hc_weights(annexe.cadre)
 
-    kwh = invoice.energy_kwh
+    kwh = invoice.energy_kwh or 0
     kwh_hp = round(kwh * poids_hp, 1)
     kwh_hc = round(kwh * poids_hc, 1)
 
-    shadow_hp = round(kwh_hp * hp_price, 2)
-    shadow_hc = round(kwh_hc * hc_price, 2)
+    shadow_hp = round(kwh_hp * float(hp_price), 2)
+    shadow_hc = round(kwh_hc * float(hc_price), 2)
     shadow_total = round(shadow_hp + shadow_hc, 2)
 
     # Compare against energy line total when available
@@ -289,7 +319,7 @@ def _shadow_billing_cadre_hphc(
     delta = round(actual_total - shadow_total, 2)
     delta_pct = round(delta / shadow_total * 100, 2) if shadow_total > 0 else None
 
-    weighted_price = round(hp_price * poids_hp + hc_price * poids_hc, 6)
+    weighted_price = round(float(hp_price) * poids_hp + float(hc_price) * poids_hc, 6)
 
     return {
         "shadow_total_eur": shadow_total,
@@ -303,8 +333,8 @@ def _shadow_billing_cadre_hphc(
         "cadre_detail": {
             "annexe_id": annexe.id,
             "cadre_id": annexe.cadre_id,
-            "hp_price": hp_price,
-            "hc_price": hc_price,
+            "hp_price": float(hp_price),
+            "hc_price": float(hc_price),
             "poids_hp_pct": round(poids_hp * 100, 1),
             "poids_hc_pct": round(poids_hc * 100, 1),
             "kwh_hp": kwh_hp,
@@ -334,11 +364,12 @@ def shadow_billing_simple(
             "reason": "energy_kwh manquant ou <= 0",
         }
 
-    # Phase 5: Try cadre HP/HC shadow billing first
+    # Phase 5: Try cadre HP/HC shadow billing first (scoped by org)
     if db:
         energy_type_str = _energy_type(invoice, contract)
         ref_date = invoice.period_start or invoice.period_end or date.today()
-        annexe = find_active_annexe(db, invoice.site_id, energy_type_str, ref_date)
+        invoice_org_id = _site_org_id(db, invoice.site_id)
+        annexe = find_active_annexe(db, invoice.site_id, energy_type_str, ref_date, org_id=invoice_org_id)
         if annexe:
             cadre_result = _shadow_billing_cadre_hphc(invoice, annexe, db)
             if cadre_result:
