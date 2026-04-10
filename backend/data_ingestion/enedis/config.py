@@ -31,9 +31,7 @@ def get_flux_dir(override: str | None = None) -> Path:
     else:
         env_value = os.environ.get("ENEDIS_FLUX_DIR")
         if not env_value:
-            raise ValueError(
-                "ENEDIS_FLUX_DIR environment variable is required — set it in .env"
-            )
+            raise ValueError("ENEDIS_FLUX_DIR environment variable is required — set it in .env")
         path = Path(env_value)
 
     if not path.is_dir():

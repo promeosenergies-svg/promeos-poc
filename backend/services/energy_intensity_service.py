@@ -91,9 +91,7 @@ def get_site_intensity(
     confidence_order = {"high": 3, "medium": 2, "low": 1, "none": 0}
 
     for vector in [EnergyVector.ELECTRICITY, EnergyVector.GAS, EnergyVector.HEAT]:
-        summary = get_consumption_summary(
-            db, site_id, period_start, period_end, energy_vector=vector
-        )
+        summary = get_consumption_summary(db, site_id, period_start, period_end, energy_vector=vector)
         kwh = summary.get("value_kwh", 0) or 0
         if kwh <= 0:
             continue
@@ -135,10 +133,7 @@ def get_site_intensity(
             total_kwh_ep = kwh * coeff
             best_source = summary.get("source_used", "estimated")
             best_confidence = summary.get("confidence", "low")
-            warnings.append(
-                "ventilation par vecteur indisponible — "
-                "coefficient EP électricité appliqué par défaut"
-            )
+            warnings.append("ventilation par vecteur indisponible — coefficient EP électricité appliqué par défaut")
 
     # Compute intensities
     kwh_m2_final = round(total_kwh_final / surface, 2) if total_kwh_final > 0 else 0.0
@@ -188,11 +183,7 @@ def get_portfolio_intensity(
     if not portfolio:
         raise HTTPException(status_code=404, detail=f"Portfolio {portfolio_id} not found")
 
-    sites = (
-        db.query(Site)
-        .filter(Site.portefeuille_id == portfolio_id, Site.actif == True)
-        .all()
-    )
+    sites = db.query(Site).filter(Site.portefeuille_id == portfolio_id, Site.actif == True).all()
 
     if not sites:
         return {
@@ -248,9 +239,7 @@ def get_portfolio_intensity(
 
     if sites_with_surface < sites_total:
         n_missing = sites_total - sites_with_surface
-        warnings.append(
-            f"{n_missing} site(s) exclu(s) du calcul — surface manquante"
-        )
+        warnings.append(f"{n_missing} site(s) exclu(s) du calcul — surface manquante")
 
     return {
         "portfolio_id": portfolio_id,

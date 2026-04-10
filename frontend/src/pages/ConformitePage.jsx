@@ -280,6 +280,7 @@ export default function ConformitePage() {
       conformes: summary.sites_ok || 0,
       total_impact_eur: 0,
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summary, obligations, complianceScore, scopedSites]);
 
   const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);

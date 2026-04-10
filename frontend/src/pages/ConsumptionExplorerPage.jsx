@@ -13,7 +13,7 @@ import {
   Flame,
   BarChart3,
   AlertTriangle,
-  X,
+  _X,
   Zap,
   Database,
   Wifi,

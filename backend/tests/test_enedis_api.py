@@ -46,7 +46,9 @@ from data_ingestion.enedis.enums import FluxStatus, IngestionRunStatus
 def client():
     """TestClient + session tuple with isolated in-memory DB."""
     engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool,
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
@@ -69,9 +71,16 @@ def client():
 # ---------------------------------------------------------------------------
 
 
-def _seed_flux_file(session, filename="ENEDIS_R4H_TEST.zip", flux_type="R4H",
-                    status=FluxStatus.PARSED, measures_count=10,
-                    file_hash=None, header_raw=None, error_message=None):
+def _seed_flux_file(
+    session,
+    filename="ENEDIS_R4H_TEST.zip",
+    flux_type="R4H",
+    status=FluxStatus.PARSED,
+    measures_count=10,
+    file_hash=None,
+    header_raw=None,
+    error_message=None,
+):
     """Seed an EnedisFluxFile and return it."""
     if file_hash is None:
         file_hash = f"hash_{filename}_{id(session)}"
@@ -91,9 +100,16 @@ def _seed_flux_file(session, filename="ENEDIS_R4H_TEST.zip", flux_type="R4H",
     return f
 
 
-def _seed_run(session, status=IngestionRunStatus.COMPLETED, triggered_by="cli",
-              dry_run=False, files_parsed=0, files_error=0, files_skipped=0,
-              files_needs_review=0):
+def _seed_run(
+    session,
+    status=IngestionRunStatus.COMPLETED,
+    triggered_by="cli",
+    dry_run=False,
+    files_parsed=0,
+    files_error=0,
+    files_skipped=0,
+    files_needs_review=0,
+):
     """Seed an IngestionRun and return it."""
     run = IngestionRun(
         started_at=datetime(2026, 3, 1, 10, 0, 0),
@@ -197,8 +213,7 @@ _FAKE_COUNTERS = {
 }
 
 
-def _mock_ingest_directory_success(directory, session, keys, *, recursive=True,
-                                   dry_run=False, run=None, **kwargs):
+def _mock_ingest_directory_success(directory, session, keys, *, recursive=True, dry_run=False, run=None, **kwargs):
     """Mock ingest_directory that updates run and returns fake counters."""
     if run:
         run.files_received = _FAKE_COUNTERS["received"]
@@ -258,8 +273,7 @@ class TestIngestEndpoint:
     def test_ingest_with_errors_in_response(self, client, tmp_path):
         c, session = client
 
-        def _mock_with_error(directory, session, keys, *, recursive=True,
-                             dry_run=False, run=None, **kwargs):
+        def _mock_with_error(directory, session, keys, *, recursive=True, dry_run=False, run=None, **kwargs):
             """Mock that creates an error file during pipeline run."""
             # Simulate an error file created during this run
             err_file = EnedisFluxFile(
@@ -281,9 +295,15 @@ class TestIngestEndpoint:
                 run.finished_at = datetime.now(timezone.utc)
                 session.commit()
             return {
-                "received": 1, "parsed": 0, "needs_review": 0,
-                "skipped": 0, "error": 1, "permanently_failed": 0,
-                "already_processed": 0, "retried": 0, "max_retries_reached": 0,
+                "received": 1,
+                "parsed": 0,
+                "needs_review": 0,
+                "skipped": 0,
+                "error": 1,
+                "permanently_failed": 0,
+                "already_processed": 0,
+                "retried": 0,
+                "max_retries_reached": 0,
             }
 
         with (
@@ -395,8 +415,9 @@ class TestFluxFilesEndpoint:
         c, session = client
         _seed_flux_file(session, "ok1.zip", file_hash="h1", status=FluxStatus.PARSED)
         _seed_flux_file(session, "ok2.zip", file_hash="h2", status=FluxStatus.PARSED)
-        _seed_flux_file(session, "err.zip", file_hash="h3", status=FluxStatus.ERROR,
-                        measures_count=0, error_message="fail")
+        _seed_flux_file(
+            session, "err.zip", file_hash="h3", status=FluxStatus.ERROR, measures_count=0, error_message="fail"
+        )
 
         r = c.get("/api/enedis/flux-files?status=parsed")
         data = r.json()
@@ -436,9 +457,12 @@ class TestFluxFilesEndpoint:
     def test_measures_count_null_becomes_zero(self, client):
         c, session = client
         f = EnedisFluxFile(
-            filename="null_mc.zip", file_hash="h_null",
-            flux_type="R4H", status=FluxStatus.RECEIVED,
-            measures_count=None, version=1,
+            filename="null_mc.zip",
+            file_hash="h_null",
+            flux_type="R4H",
+            status=FluxStatus.RECEIVED,
+            measures_count=None,
+            version=1,
         )
         session.add(f)
         session.flush()
@@ -459,7 +483,9 @@ class TestFluxFileDetailEndpoint:
     def test_detail_found(self, client):
         c, session = client
         f = _seed_flux_file(
-            session, "detail.zip", file_hash="h_detail",
+            session,
+            "detail.zip",
+            file_hash="h_detail",
             header_raw={"Version": "2.0", "Flux": "R4H"},
         )
         _seed_error_history(session, f, "first error")
@@ -519,18 +545,19 @@ class TestStatsEndpoint:
 
         # Seed 2 PARSED + 1 ERROR files (measures_count must match seeded rows)
         f1 = _seed_flux_file(session, "f1.zip", file_hash="h1", status=FluxStatus.PARSED, measures_count=1)
-        f2 = _seed_flux_file(session, "f2.zip", file_hash="h2", status=FluxStatus.PARSED,
-                             flux_type="R171", measures_count=1)
-        _seed_flux_file(session, "f3.zip", file_hash="h3", status=FluxStatus.ERROR,
-                        measures_count=0, error_message="fail")
+        f2 = _seed_flux_file(
+            session, "f2.zip", file_hash="h2", status=FluxStatus.PARSED, flux_type="R171", measures_count=1
+        )
+        _seed_flux_file(
+            session, "f3.zip", file_hash="h3", status=FluxStatus.ERROR, measures_count=0, error_message="fail"
+        )
 
         # Seed measures
         _seed_measure_r4x(session, f1, "30001234567890")
         _seed_measure_r171(session, f2, "30009876543210")
 
         # Seed a completed run
-        _seed_run(session, status=IngestionRunStatus.COMPLETED,
-                  triggered_by="api", files_parsed=2, files_error=1)
+        _seed_run(session, status=IngestionRunStatus.COMPLETED, triggered_by="api", files_parsed=2, files_error=1)
 
         r = c.get("/api/enedis/stats")
         assert r.status_code == 200
@@ -566,7 +593,8 @@ class TestStatsEndpoint:
         data = r.json()
         assert data["prms"]["count"] == 2
         assert sorted(data["prms"]["identifiers"]) == [
-            "30001234567890", "30009876543210",
+            "30001234567890",
+            "30009876543210",
         ]
 
     def test_stats_last_ingestion_excludes_dry_run(self, client):
@@ -581,8 +609,15 @@ class TestStatsEndpoint:
 
     def test_stats_last_ingestion_fields(self, client):
         c, session = client
-        _seed_run(session, status=IngestionRunStatus.COMPLETED, triggered_by="cli",
-                  files_parsed=5, files_skipped=2, files_error=1, files_needs_review=1)
+        _seed_run(
+            session,
+            status=IngestionRunStatus.COMPLETED,
+            triggered_by="cli",
+            files_parsed=5,
+            files_skipped=2,
+            files_error=1,
+            files_needs_review=1,
+        )
 
         r = c.get("/api/enedis/stats")
         data = r.json()

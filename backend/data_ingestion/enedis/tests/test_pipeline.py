@@ -290,6 +290,7 @@ class TestIngestErrors:
 
         def execute_that_fails_on_insert(stmt, *args, **kwargs):
             from sqlalchemy import Insert
+
             if isinstance(stmt, Insert):
                 raise Exception("disk full")
             return original_execute(stmt, *args, **kwargs)
@@ -1176,6 +1177,7 @@ class TestErrorHistoryPreserved:
 
         def execute_that_fails_on_insert(stmt, *args, **kwargs):
             from sqlalchemy import Insert
+
             if isinstance(stmt, Insert):
                 raise Exception("disk full")
             return original_execute(stmt, *args, **kwargs)
@@ -1259,10 +1261,12 @@ class TestErrorHistoryPreserved:
         db.flush()
 
         for i in range(MAX_RETRIES):
-            db.add(EnedisFluxFileError(
-                flux_file_id=error_record.id,
-                error_message=f"error attempt {i+1}",
-            ))
+            db.add(
+                EnedisFluxFileError(
+                    flux_file_id=error_record.id,
+                    error_message=f"error attempt {i + 1}",
+                )
+            )
         db.commit()
 
         status = ingest_file(path, db, test_keys)
@@ -1324,10 +1328,12 @@ class TestDryRun:
         db.add(error_record)
         db.flush()
         for i in range(MAX_RETRIES):
-            db.add(EnedisFluxFileError(
-                flux_file_id=error_record.id,
-                error_message=f"error {i}",
-            ))
+            db.add(
+                EnedisFluxFileError(
+                    flux_file_id=error_record.id,
+                    error_message=f"error {i}",
+                )
+            )
         db.commit()
 
         counters = ingest_directory(tmp_path, db, test_keys, dry_run=True)

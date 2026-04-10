@@ -284,9 +284,7 @@ class EnedisFluxFileError(Base, TimestampMixin):
     """
 
     __tablename__ = "enedis_flux_file_error"
-    __table_args__ = (
-        Index("ix_enedis_flux_file_error_flux_file", "flux_file_id"),
-    )
+    __table_args__ = (Index("ix_enedis_flux_file_error_flux_file", "flux_file_id"),)
 
     id = Column(Integer, primary_key=True, index=True)
     flux_file_id = Column(
@@ -328,7 +326,9 @@ class IngestionRun(Base, TimestampMixin):
     recursive = Column(Boolean, nullable=False, default=True, comment="Scan recursif")
     dry_run = Column(Boolean, nullable=False, default=False, comment="Mode dry-run (pas de mutation)")
     status = Column(
-        String(20), nullable=False, default=IngestionRunStatus.RUNNING,
+        String(20),
+        nullable=False,
+        default=IngestionRunStatus.RUNNING,
         comment="running / completed / failed",
     )
     triggered_by = Column(String(10), nullable=False, comment="cli / api")

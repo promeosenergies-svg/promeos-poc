@@ -2,7 +2,7 @@
  * PROMEOS — Tests Contrats V2 Page
  * 10 tests: KPI strip, table, filtres, panels, wizard.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, _beforeEach } from 'vitest';
 
 // Mock API
 vi.mock('../../services/api', () => ({

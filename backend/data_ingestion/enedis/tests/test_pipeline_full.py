@@ -204,10 +204,15 @@ class TestEmptyDirectory:
         counters = ingest_directory(tmp_path, db, test_keys)
 
         assert counters == {
-            "received": 0, "parsed": 0, "needs_review": 0,
-            "skipped": 0, "error": 0, "permanently_failed": 0,
+            "received": 0,
+            "parsed": 0,
+            "needs_review": 0,
+            "skipped": 0,
+            "error": 0,
+            "permanently_failed": 0,
             "already_processed": 0,
-            "retried": 0, "max_retries_reached": 0,
+            "retried": 0,
+            "max_retries_reached": 0,
         }
         assert db.query(EnedisFluxFile).count() == 0
 
@@ -419,6 +424,7 @@ class TestDbStorageErrorInBatch:
 
         def fail_first_insert(stmt, *args, **kwargs):
             from sqlalchemy import Insert
+
             nonlocal call_count
             if isinstance(stmt, Insert):
                 call_count += 1
@@ -561,10 +567,12 @@ class TestErrorRetryInBatch:
         db.add(error_record)
         db.flush()
         for i in range(MAX_RETRIES):
-            db.add(EnedisFluxFileError(
-                flux_file_id=error_record.id,
-                error_message=f"error attempt {i+1}",
-            ))
+            db.add(
+                EnedisFluxFileError(
+                    flux_file_id=error_record.id,
+                    error_message=f"error attempt {i + 1}",
+                )
+            )
         db.commit()
 
         counters = ingest_directory(tmp_path, db, test_keys)
@@ -625,10 +633,12 @@ class TestPermanentlyFailedInPhase2:
         )
         db.add(error_record)
         db.flush()
-        db.add(EnedisFluxFileError(
-            flux_file_id=error_record.id,
-            error_message="past error",
-        ))
+        db.add(
+            EnedisFluxFileError(
+                flux_file_id=error_record.id,
+                error_message="past error",
+            )
+        )
         db.commit()
 
         # Mock ingest_file to return PERMANENTLY_FAILED (simulates concurrency)

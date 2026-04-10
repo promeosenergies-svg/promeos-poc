@@ -7,7 +7,7 @@ import { ArrowRight, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-reac
 import { Card, CardBody, Badge } from '../ui';
 import { fmtKwh, fmtEur } from '../utils/format';
 
-const PERIOD_LABELS = {
+const _PERIOD_LABELS = {
   HPH: 'HP Hiver',
   HCH: 'HC Hiver',
   HPB: 'HP Été',
@@ -16,7 +16,7 @@ const PERIOD_LABELS = {
   HC: 'HC',
 };
 
-const PERIOD_COLORS = {
+const _PERIOD_COLORS = {
   HPH: 'text-red-700',
   HCH: 'text-blue-700',
   HPB: 'text-orange-600',

@@ -57,18 +57,12 @@ def _find_first(real_flux_dir: Path, subdir: str, pattern: str) -> Path:
 # ---------------------------------------------------------------------------
 
 FLUX_SPECS = [
-    ("R4H", "C1-C4", "*_R4H_CDC_*.zip", EnedisFluxMesureR4x,
-     ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R4M", "C1-C4", "*_R4M_CDC_*.zip", EnedisFluxMesureR4x,
-     ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R4Q", "C1-C4", "*_R4Q_CDC_*.zip", EnedisFluxMesureR4x,
-     ["point_id", "horodatage", "valeur_point", "flux_type"]),
-    ("R171", "C1-C4", "*R171*.zip", EnedisFluxMesureR171,
-     ["point_id", "type_mesure", "date_fin", "valeur"]),
-    ("R50", "C5", "*R50*.zip", EnedisFluxMesureR50,
-     ["point_id", "date_releve", "horodatage"]),
-    ("R151", "C5", "*R151*.zip", EnedisFluxMesureR151,
-     ["point_id", "date_releve", "type_donnee"]),
+    ("R4H", "C1-C4", "*_R4H_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R4M", "C1-C4", "*_R4M_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R4Q", "C1-C4", "*_R4Q_CDC_*.zip", EnedisFluxMesureR4x, ["point_id", "horodatage", "valeur_point", "flux_type"]),
+    ("R171", "C1-C4", "*R171*.zip", EnedisFluxMesureR171, ["point_id", "type_mesure", "date_fin", "valeur"]),
+    ("R50", "C5", "*R50*.zip", EnedisFluxMesureR50, ["point_id", "date_releve", "horodatage"]),
+    ("R151", "C5", "*R151*.zip", EnedisFluxMesureR151, ["point_id", "date_releve", "type_donnee"]),
 ]
 
 
@@ -86,16 +80,22 @@ class TestSingleFileE2E:
         ids=[s[0] for s in FLUX_SPECS],
     )
     def test_single_file_e2e(
-        self, db, real_keys, real_flux_dir,
-        flux_name, subdir, pattern, model_cls, required_cols,
+        self,
+        db,
+        real_keys,
+        real_flux_dir,
+        flux_name,
+        subdir,
+        pattern,
+        model_cls,
+        required_cols,
     ):
         first_file = _find_first(real_flux_dir, subdir, pattern)
 
         status = ingest_file(first_file, db, real_keys)
 
         assert status == FluxStatus.PARSED, (
-            f"Expected PARSED for {first_file.name}, got {status}. "
-            f"Errors: {_get_error_details(db)}"
+            f"Expected PARSED for {first_file.name}, got {status}. Errors: {_get_error_details(db)}"
         )
 
         # Verify FluxFile record
@@ -118,9 +118,7 @@ class TestSingleFileE2E:
         # Required columns non-null
         for m in measures:
             for col in required_cols:
-                assert getattr(m, col) is not None, (
-                    f"{col} is None on measure id={m.id} in {first_file.name}"
-                )
+                assert getattr(m, col) is not None, f"{col} is None on measure id={m.id} in {first_file.name}"
 
         # PRM format
         for m in measures:
@@ -136,8 +134,14 @@ class TestSingleFileE2E:
         ids=["R4H", "R4M", "R4Q"],
     )
     def test_r4x_specific_fields(
-        self, db, real_keys, real_flux_dir,
-        flux_name, subdir, pattern, expected_freq,
+        self,
+        db,
+        real_keys,
+        real_flux_dir,
+        flux_name,
+        subdir,
+        pattern,
+        expected_freq,
     ):
         """R4x files: verify frequence_publication and field formats."""
         first_file = _find_first(real_flux_dir, subdir, pattern)
@@ -155,9 +159,7 @@ class TestSingleFileE2E:
             assert m.unite_mesure is not None
             # valeur_point should be a numeric string (may be negative)
             if m.valeur_point is not None:
-                assert m.valeur_point.lstrip("-").isdigit(), (
-                    f"Non-numeric valeur_point: {m.valeur_point}"
-                )
+                assert m.valeur_point.lstrip("-").isdigit(), f"Non-numeric valeur_point: {m.valeur_point}"
 
 
 # ===========================================================================
@@ -171,13 +173,14 @@ class TestFullDirectoryIngestion:
     def test_ingest_all_files(self, db, real_keys, real_flux_dir):
         """Ingest ALL real Enedis files — zero errors expected."""
         counters = ingest_directory(
-            real_flux_dir, db, real_keys, recursive=True,
+            real_flux_dir,
+            db,
+            real_keys,
+            recursive=True,
         )
 
         # Zero errors
-        assert counters["error"] == 0, (
-            f"Ingestion errors: {_get_error_details(db)}"
-        )
+        assert counters["error"] == 0, f"Ingestion errors: {_get_error_details(db)}"
 
         # Dynamically compute expected parsed count
         in_scope_patterns = [
@@ -188,13 +191,8 @@ class TestFullDirectoryIngestion:
             ("C5", "*R50*.zip"),
             ("C5", "*R151*.zip"),
         ]
-        expected_parsed = sum(
-            len(list((real_flux_dir / sub).glob(pat)))
-            for sub, pat in in_scope_patterns
-        )
-        assert counters["parsed"] == expected_parsed, (
-            f"Expected {expected_parsed} parsed, got {counters['parsed']}"
-        )
+        expected_parsed = sum(len(list((real_flux_dir / sub).glob(pat))) for sub, pat in in_scope_patterns)
+        assert counters["parsed"] == expected_parsed, f"Expected {expected_parsed} parsed, got {counters['parsed']}"
 
         # All 4 measure tables have rows
         r4x_count = db.query(EnedisFluxMesureR4x).count()
@@ -209,24 +207,30 @@ class TestFullDirectoryIngestion:
 
         total_measures = r4x_count + r171_count + r50_count + r151_count
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("FULL DIRECTORY INGESTION REPORT")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Counters: {counters}")
         print(f"R4x measures:  {r4x_count:>8,}")
         print(f"R171 measures: {r171_count:>8,}")
         print(f"R50 measures:  {r50_count:>8,}")
         print(f"R151 measures: {r151_count:>8,}")
         print(f"TOTAL measures:{total_measures:>8,}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
     def test_idempotence_on_real_files(self, db, real_keys, real_flux_dir):
         """Second ingest_directory run produces zero new ingestions."""
         counters1 = ingest_directory(
-            real_flux_dir, db, real_keys, recursive=True,
+            real_flux_dir,
+            db,
+            real_keys,
+            recursive=True,
         )
         counters2 = ingest_directory(
-            real_flux_dir, db, real_keys, recursive=True,
+            real_flux_dir,
+            db,
+            real_keys,
+            recursive=True,
         )
 
         assert counters2["received"] == 0

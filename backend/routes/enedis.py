@@ -184,10 +184,7 @@ def trigger_ingest(body: IngestRequest, db: Session = Depends(get_db)):
         existing_run = db.query(IngestionRun).filter_by(status=IngestionRunStatus.RUNNING).first()
         detail = "An ingestion run is already in progress"
         if existing_run:
-            detail = (
-                f"Run #{existing_run.id} is already in progress "
-                f"(started {existing_run.started_at})"
-            )
+            detail = f"Run #{existing_run.id} is already in progress (started {existing_run.started_at})"
         raise HTTPException(status_code=409, detail=detail)
     db.commit()
 
@@ -311,20 +308,12 @@ def get_flux_file_detail(file_id: int, db: Session = Depends(get_db)):
 def get_stats(db: Session = Depends(get_db)):
     """Aggregated ingestion stats: files, measures, PRMs, last ingestion."""
     # --- Files by status ---
-    status_rows = (
-        db.query(EnedisFluxFile.status, func.count())
-        .group_by(EnedisFluxFile.status)
-        .all()
-    )
+    status_rows = db.query(EnedisFluxFile.status, func.count()).group_by(EnedisFluxFile.status).all()
     by_status = {row[0]: row[1] for row in status_rows}
     files_total = sum(by_status.values())
 
     # --- Files by flux type ---
-    type_rows = (
-        db.query(EnedisFluxFile.flux_type, func.count())
-        .group_by(EnedisFluxFile.flux_type)
-        .all()
-    )
+    type_rows = db.query(EnedisFluxFile.flux_type, func.count()).group_by(EnedisFluxFile.flux_type).all()
     by_flux_type = {row[0]: row[1] for row in type_rows}
 
     # --- Measures: use denormalized measures_count from flux file registry ---

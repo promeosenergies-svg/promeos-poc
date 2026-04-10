@@ -13,7 +13,7 @@ describe('Phase 2 — KB crédibilité', () => {
     // "Déclarer vos consommations sur OPERAT" ne doit plus être dans du JSX direct
     // Il peut rester dans un fallback .catch()
     const lines = SITE360.split('\n');
-    const operatInJsx = lines.filter(
+    const _operatInJsx = lines.filter(
       (l) =>
         l.includes('OPERAT') &&
         !l.includes('catch') &&

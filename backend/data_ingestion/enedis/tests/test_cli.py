@@ -92,8 +92,9 @@ def _write_corrupt(directory: Path, filename: str) -> Path:
     return path
 
 
-def _make_args(dir_path: str | None = None, dry_run: bool = False,
-               recursive: bool = True, verbose: bool = False) -> argparse.Namespace:
+def _make_args(
+    dir_path: str | None = None, dry_run: bool = False, recursive: bool = True, verbose: bool = False
+) -> argparse.Namespace:
     """Build an argparse.Namespace matching the CLI parser output."""
     return argparse.Namespace(
         command="ingest",
@@ -118,9 +119,7 @@ def _patch_cli_deps(db_session, tmp_path):
         "data_ingestion.enedis.cli.SessionLocal": MagicMock(return_value=db_session),
         "data_ingestion.enedis.cli.engine": MagicMock(),
         "data_ingestion.enedis.cli._ensure_tables": MagicMock(),
-        "data_ingestion.enedis.cli.load_keys_from_env": MagicMock(
-            return_value=[(TEST_KEY, TEST_IV)]
-        ),
+        "data_ingestion.enedis.cli.load_keys_from_env": MagicMock(return_value=[(TEST_KEY, TEST_IV)]),
         "data_ingestion.enedis.cli.get_flux_dir": MagicMock(return_value=tmp_path),
     }
 
@@ -138,9 +137,7 @@ class TestCliIngest:
         args = _make_args()
 
         patches = _patch_cli_deps(db, tmp_path)
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 0
@@ -177,9 +174,7 @@ class TestCliIngest:
 
         args = _make_args()
         patches = _patch_cli_deps(db, tmp_path)
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 0
@@ -201,9 +196,7 @@ class TestCliNonRecursive:
 
         args = _make_args(recursive=False)
         patches = _patch_cli_deps(db, tmp_path)
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 0
@@ -224,9 +217,7 @@ class TestCliDryRun:
         args = _make_args(dry_run=True)
 
         patches = _patch_cli_deps(db, tmp_path)
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 0
@@ -254,9 +245,15 @@ class TestCliVerbose:
         args = _make_args(verbose=True)
 
         _zero_counters = {
-            "received": 0, "parsed": 0, "skipped": 0, "error": 0,
-            "needs_review": 0, "already_processed": 0, "retried": 0,
-            "max_retries_reached": 0, "permanently_failed": 0,
+            "received": 0,
+            "parsed": 0,
+            "skipped": 0,
+            "error": 0,
+            "needs_review": 0,
+            "already_processed": 0,
+            "retried": 0,
+            "max_retries_reached": 0,
+            "permanently_failed": 0,
         }
 
         def mock_ingest(directory, session, keys, **kwargs):
@@ -268,12 +265,8 @@ class TestCliVerbose:
             return _zero_counters
 
         patches = _patch_cli_deps(db, tmp_path)
-        patches["data_ingestion.enedis.cli.ingest_directory"] = MagicMock(
-            side_effect=mock_ingest
-        )
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        patches["data_ingestion.enedis.cli.ingest_directory"] = MagicMock(side_effect=mock_ingest)
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 0
@@ -294,9 +287,7 @@ class TestCliMissingDir:
             side_effect=ValueError("ENEDIS_FLUX_DIR environment variable is required — set it in .env")
         )
 
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 1
@@ -312,15 +303,14 @@ class TestCliMissingKeys:
         args = _make_args()
 
         from data_ingestion.enedis.decrypt import MissingKeyError
+
         patches = _patch_cli_deps(db, tmp_path)
         # Override load_keys_from_env to raise MissingKeyError
         patches["data_ingestion.enedis.cli.load_keys_from_env"] = MagicMock(
             side_effect=MissingKeyError("No decryption keys found in environment variables (KEY_1/IV_1 not set)")
         )
 
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 1
@@ -348,9 +338,7 @@ class TestCliConcurrentRun:
         args = _make_args()
         patches = _patch_cli_deps(db, tmp_path)
 
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 1
@@ -378,13 +366,9 @@ class TestCliCrashRun:
                 session.commit()
             raise RuntimeError("simulated pipeline crash")
 
-        patches["data_ingestion.enedis.cli.ingest_directory"] = MagicMock(
-            side_effect=crashing_ingest
-        )
+        patches["data_ingestion.enedis.cli.ingest_directory"] = MagicMock(side_effect=crashing_ingest)
 
-        with patch.multiple("data_ingestion.enedis.cli", **{
-            k.split(".")[-1]: v for k, v in patches.items()
-        }):
+        with patch.multiple("data_ingestion.enedis.cli", **{k.split(".")[-1]: v for k, v in patches.items()}):
             exit_code = cmd_ingest(args)
 
         assert exit_code == 1

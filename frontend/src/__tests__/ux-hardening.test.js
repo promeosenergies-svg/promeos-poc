@@ -33,7 +33,7 @@ describe('normalizeRisk', () => {
   });
 
   test('all levels have label and color', () => {
-    for (const [key, level] of Object.entries(RISK_LEVELS)) {
+    for (const [_key, level] of Object.entries(RISK_LEVELS)) {
       expect(level.label).toBeTruthy();
       expect(level.color).toBeTruthy();
       expect(level.bg).toBeTruthy();

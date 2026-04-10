@@ -1,7 +1,7 @@
 /**
  * PROMEOS — Contrats V2 KPI Strip (5 cartes)
  */
-import { KpiCardCompact } from '../../ui';
+import { _KpiCardCompact } from '../../ui';
 import { FileText, AlertTriangle, Zap, DollarSign, TrendingUp } from 'lucide-react';
 
 const KPI_DEFS = [
