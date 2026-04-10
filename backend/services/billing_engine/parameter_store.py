@@ -23,12 +23,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
-from functools import lru_cache
-from pathlib import Path
+from datetime import date, datetime, timedelta
 from typing import Any, Optional
-
-import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -97,20 +93,29 @@ class ParameterResolution:
 
 
 # ── YAML loader ────────────────────────────────────────────────────────────
-_YAML_PATH = Path(__file__).resolve().parents[2] / "config" / "tarifs_reglementaires.yaml"
+# Cache unique partagé avec `config.tarif_loader.load_tarifs` — même fichier,
+# mêmes sémantiques, une seule source de vérité. Évite que `reload_tarifs()`
+# côté legacy laisse un ParameterStore stale en tests.
 
 
-@lru_cache(maxsize=1)
 def _load_yaml() -> dict:
-    if not _YAML_PATH.exists():
-        logger.warning("ParameterStore: YAML référentiel introuvable à %s", _YAML_PATH)
+    try:
+        from config.tarif_loader import load_tarifs
+
+        return load_tarifs() or {}
+    except Exception as exc:
+        logger.warning("ParameterStore: YAML loader indisponible (%s)", exc)
         return {}
-    return yaml.safe_load(_YAML_PATH.read_text(encoding="utf-8")) or {}
 
 
 def reload_yaml_cache() -> None:
     """Force un rechargement du YAML (tests, hot-patch)."""
-    _load_yaml.cache_clear()
+    try:
+        from config.tarif_loader import reload_tarifs
+
+        reload_tarifs()
+    except Exception as exc:
+        logger.debug("ParameterStore.reload_yaml_cache: %s", exc)
 
 
 # ── Helpers de normalisation ──────────────────────────────────────────────
@@ -251,8 +256,6 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
                 # inclusive en retranchant 1 jour.
                 sup_d = _coerce_date(supprime_au)
                 if sup_d:
-                    from datetime import timedelta
-
                     ancien["valid_to"] = (sup_d - timedelta(days=1)).isoformat()
                     ancien["valid_from"] = ancien.get("valid_from") or "2000-01-01"
             candidates.append((ancien, "taux"))
