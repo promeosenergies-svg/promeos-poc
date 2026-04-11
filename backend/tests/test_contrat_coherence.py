@@ -582,6 +582,65 @@ class TestR12PostArenh:
         ]
         assert len(r12d) == 0
 
+    # ── Edge cases bordure + cumul ──
+
+    def test_r12b_exactly_24_months_no_flag(self, db, setup):
+        """Borne exacte 24 mois pile ne doit pas declencher R12b (seuil strict >24)."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 1, 1),
+            end_date=date(2028, 1, 1),  # 24 mois pile
+            indexation_reference="EPEX_SPOT_FR",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12b = [r for r in results if r["rule_id"] == "R12" and r["level"] == "warning"]
+        assert len(r12b) == 0
+
+    def test_r12d_reference_with_spaces_normalized(self, db, setup):
+        """'PEG_M +1' avec espace parasite doit etre reconnu apres normalisation."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 2, 1),
+            end_date=date(2027, 2, 1),
+            indexation_reference="PEG_M +1",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12d = [
+            r
+            for r in results
+            if r["rule_id"] == "R12" and r["level"] == "info" and "reference explicite" in r["message"]
+        ]
+        assert len(r12d) == 0
+
+    def test_r12b_r12d_cumulable_on_same_contract(self, db, setup):
+        """Contrat indexe long + sans cap + sans reference : R12b (warning) ET R12d (info)."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 1, 1),
+            end_date=date(2029, 1, 1),  # 36 mois
+            indexation_reference=None,  # declenche R12d
+            price_revision_clause="NONE",  # declenche R12b
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12 = [r for r in results if r["rule_id"] == "R12"]
+        levels = sorted(r["level"] for r in r12)
+        # R12b (warning) + R12d (info) — intentionnellement cumulables
+        assert "warning" in levels
+        assert "info" in levels
+        assert len(r12) == 2
+
     # ── Non-regression : contrat sain ──
 
     def test_no_arenh_fixe_post_2026_clean(self, db, setup):

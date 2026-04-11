@@ -436,12 +436,18 @@ def validate_contrat(db: Session, cadre_id: int) -> List[Dict[str, str]]:
     # TRVE, EPEX_SPOT_FR, PEG_DA, PEG_M+1, TTF_DA. Si indexation_reference vide ou
     # hors liste, c'est une ambiguite contractuelle (le fournisseur peut ajuster
     # unilateralement).
+    #
+    # Note : R12b et R12d sont intentionnellement cumulables. Un contrat indexe
+    # long + sans cap + sans reference explicite releve des DEUX risques distincts
+    # (exposition volatilite ET ambiguite contractuelle) — les deux messages
+    # sont complementaires, pas redondants.
     _valid_refs = {"TRVE", "EPEX_SPOT_FR", "PEG_DA", "PEG_M+1", "TTF_DA"}
+    _normalized_ref = _indexation_ref.upper().replace(" ", "")
     if (
         _is_indexed
         and contract.start_date
         and contract.start_date >= date(2026, 1, 1)
-        and _indexation_ref.upper() not in _valid_refs
+        and _normalized_ref not in _valid_refs
         and not _mentions_arenh  # R12a a deja flagge le cas ARENH
     ):
         results.append(
