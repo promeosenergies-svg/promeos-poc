@@ -147,7 +147,9 @@ Points importants pour la suite:
 - le guide R50 autorise des **rattrapages quotidiens** quand les donnees de J etaient indisponibles a la publication initiale: Enedis les republie au plus pres de leur reception, tant que l'abonnement quotidien est toujours actif et que J' reste a moins de 20 jours de J
 - la **cadence quotidienne vs mensuelle** se lit dans la nomenclature de fichier (`_Q_` / `_M_`), pas dans `Pas_Publication`
 - les fichiers mensuels R50 ne doivent donc **pas** etre supposes alignes sur un mois civil; dans le corpus reel, ils couvrent par exemple `2023-01-04 -> 2023-02-03`, puis `2023-02-04 -> 2023-03-03`
+- le guide fixe aussi une **taille maximale par ZIP/XML** au demarrage du service: `3000 PRM` pour un R50 quotidien, `100 PRM` pour un R50 mensuel
 - les compteurs `XXXXX` / `YYYYY` presents dans le nom du fichier servent a verifier la **completude** d'un envoi multi-fichiers pour un abonnement et un numero de sequence donnes
+- `num_seq` identifie la sequence d'envoi pour un abonnement, mais ce sont bien `XXXXX` / `YYYYY` qui permettent de savoir si tous les fichiers attendus de cette sequence ont ete recus
 
 ### Flux hors périmètre (ignorés)
 

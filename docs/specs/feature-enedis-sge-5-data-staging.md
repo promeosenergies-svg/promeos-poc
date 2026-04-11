@@ -162,6 +162,7 @@ meter_energy_index.meter_id  (FK → meter.id)
 | D23 | R50 temporal normalization | **Convert raw R50 interval-end timestamps into canonical interval starts before promotion** | The official R50 guide defines `H` as the end of the covered 30-minute interval and `V` as average power in W over the preceding 30 minutes. Promoted `meter_load_curve.timestamp` must therefore be `H - 30 min`, not raw `H` |
 | D24 | R50 publication cadence modeling | **Use filename cadence (`_Q_` / `_M_`) and file-group counters for freshness/completeness, not `Pas_Publication`** | `Pas_Publication=30` describes the curve step, while the guide defines daily vs monthly delivery cadence and multi-file completeness through filename nomenclature |
 | D25 | Client-facing CDC simplification | **Expose one canonical interval model to product surfaces, regardless of source flux** | Clients should never need to know whether the source timestamp came from an interval start (R4x) or interval end (R50). Product/API wording must consistently present CDC as "average power over `[start ; end[`" |
+| D26 | R50 delivery-completeness signals | **Model both per-file capacity and per-sequence file counters for gap detection** | The official guide confirms startup caps of `3000 PRM` per daily R50 ZIP and `100 PRM` per monthly R50 ZIP, and states that completeness of a given delivery sequence is checked via filename counters `XXXXX` / `YYYYY` within one subscription + `num_seq` |
 
 ---
 
@@ -416,7 +417,9 @@ Each staging flux type routes to a specific functional table:
 > Additional official constraints:
 > - if day `J` was unavailable at the initial daily publication, Enedis may republish it later in a daily R50 flow when the data arrives
 > - that delayed daily replay is allowed only while the daily subscription is still active and only if the replay date stays within 20 days of `J`
+> - startup file-capacity parameters were `3000 PRM` per daily R50 ZIP and `100 PRM` per monthly R50 ZIP
 > - file-group completeness for one subscription + sequence is checked through the filename counters `XXXXX` / `YYYYY`
+> - `num_seq` identifies the delivery sequence for one subscription, but it is **not sufficient by itself** to prove completeness; completeness requires checking the presence of every `XXXXX` from `00001` to `YYYYY` for that subscription + `num_seq`
 
 > **Observed fact from the real monthly corpus**: the monthly R50 files are not aligned to civil months. They cover windows such as `2023-01-04 -> 2023-02-03`, then `2023-02-04 -> 2023-03-03`, which is consistent with the official "publication day 1-28" subscription model.
 
@@ -490,6 +493,8 @@ For R50 specifically:
 - freshness must distinguish **daily cadence** from **monthly cadence** using filename nomenclature, not `Pas_Publication`
 - monthly completeness must not assume calendar-month boundaries
 - multi-file completeness for one subscription/sequence should use `XXXXX` / `YYYYY`
+- `num_seq` groups the delivery sequence to evaluate, but the actual "did we receive all files?" check is: exactly one file for each `XXXXX` from `00001` to `YYYYY`
+- the official per-ZIP PRM caps (`3000` daily, `100` monthly) are useful sanity bounds when diagnosing suspiciously fragmented or oversized deliveries
 
 ### Stage 2: Match — Resolve PRMs to Meters
 
@@ -662,6 +667,7 @@ UPDATE promotion_run SET
 - exact CDC cadence is stored in `pas_minutes`
 - backlog replay prevents historical gaps caused by late PRM resolution from being silently forgotten
 - official publication windows are now documented so a later freshness layer can distinguish `not_due_yet` from `late_publication`
+- official R50 file-group signals are now documented so a later completeness layer can distinguish "sequence incomplete" from "all ZIPs received but some intervals missing inside the XML"
 
 **Publication SLA note:** a missing R4x file before its official publication deadline is not yet evidence of a failed publication. Conversely, once the SLA window has expired, the issue is first an operational publication-lateness signal, and only secondarily a completeness concern for downstream analytics.
 
