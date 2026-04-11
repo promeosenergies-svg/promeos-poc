@@ -350,19 +350,111 @@ def validate_contrat(db: Session, cadre_id: int) -> List[Dict[str, str]]:
                     }
                 )
 
-    # ── R12 — ARENH post-VNU (fin 2025) ──
-    indexation_val = (contract.offer_indexation.value if contract.offer_indexation else "") or ""
-    indexation_ref = (getattr(contract, "indexation_reference", None) or "").lower()
-    indexation_formula = (getattr(contract, "indexation_formula", None) or "").lower()
-    if "arenh" in indexation_val.lower() or "arenh" in indexation_ref or "arenh" in indexation_formula:
-        if contract.start_date and contract.start_date.year > 2025:
-            results.append(
-                {
-                    "rule_id": "R12",
-                    "level": "info",
-                    "message": "ARENH supprime fin 2025 — verifier indexation post-ARENH (VNU/CAPN)",
-                }
-            )
+    # ── R12 — Post-ARENH / VNU (structure 4 sous-regles) ──
+    # Contexte reglementaire :
+    #   - ARENH supprime au 31/12/2025 (LF 2025 art. 17)
+    #   - VNU (Versement Nucleaire Universel) effectif 01/01/2026
+    #     seuils 78/110 EUR/MWh, taux 50% (decrets 2025-909/910, CRE 2025-268)
+    #   - Tarif unitaire VNU = 0 EUR/MWh en 2026 (revenus nucleaires ~66 < seuil bas 78)
+    #   - References indexation post-ARENH valides : TRVE, EPEX_SPOT_FR, PEG_DA,
+    #     PEG_M+1, TTF_DA (schemas.contract_v2_schemas.INDEXATION_REFERENCES)
+    _indexation_val = (contract.offer_indexation.value if contract.offer_indexation else "") or ""
+    _indexation_ref = (getattr(contract, "indexation_reference", None) or "").strip()
+    _indexation_formula = (getattr(contract, "indexation_formula", None) or "").lower()
+    _mentions_arenh = (
+        "arenh" in _indexation_val.lower() or "arenh" in _indexation_ref.lower() or "arenh" in _indexation_formula
+    )
+    _is_indexed = _indexation_val in ("indexe", "indexe_trve", "indexe_peg", "indexe_spot", "spot", "hybride")
+    _months = None
+    if contract.start_date and contract.end_date and contract.end_date > contract.start_date:
+        _months = (contract.end_date.year - contract.start_date.year) * 12 + (
+            contract.end_date.month - contract.start_date.month
+        )
+
+    # R12a (ERROR) : contrat debutant apres 2025-12-31 qui mentionne encore ARENH
+    if _mentions_arenh and contract.start_date and contract.start_date >= date(2026, 1, 1):
+        results.append(
+            {
+                "rule_id": "R12",
+                "level": "error",
+                "message": (
+                    "ARENH supprime au 31/12/2025 (LF 2025 art. 17) mais contrat debutant "
+                    f"le {contract.start_date.isoformat()} y fait encore reference. "
+                    "Remplacer par VNU, TRVE ou indexation EPEX/PEG explicite."
+                ),
+            }
+        )
+
+    # R12b (WARNING) : contrat indexe long (>24 mois) sans cap/floor/tunnel defini
+    # Exposition volatilite non bornee. Clause revision = NONE ou null + pas de prix cap/floor.
+    _revision = (getattr(contract, "price_revision_clause", None) or "NONE").upper()
+    _has_cap = getattr(contract, "price_cap_eur_mwh", None) is not None
+    _has_floor = getattr(contract, "price_floor_eur_mwh", None) is not None
+    if (
+        _is_indexed
+        and _months is not None
+        and _months > 24
+        and _revision in ("NONE", "")
+        and not _has_cap
+        and not _has_floor
+    ):
+        results.append(
+            {
+                "rule_id": "R12",
+                "level": "warning",
+                "message": (
+                    f"Contrat indexe ({_indexation_val}) sur {_months} mois sans cap/floor/tunnel. "
+                    "Exposition volatilite non bornee post-ARENH — negocier une clause de revision."
+                ),
+            }
+        )
+
+    # R12c (INFO) : contrat fixe signe avant 2025-01-01 expirant en 2026-2027
+    # Opportunite de renegociation avec clause post-ARENH explicite (VNU/EPEX/PEG/TRVE)
+    _signature = getattr(contract, "date_signature", None)
+    if (
+        _indexation_val == "fixe"
+        and _signature
+        and _signature < date(2025, 1, 1)
+        and contract.end_date
+        and date(2026, 1, 1) <= contract.end_date <= date(2027, 12, 31)
+    ):
+        results.append(
+            {
+                "rule_id": "R12",
+                "level": "info",
+                "message": (
+                    f"Contrat fixe signe le {_signature.isoformat()} expirant le "
+                    f"{contract.end_date.isoformat()} — renegocier avec clause post-ARENH "
+                    "explicite (VNU, EPEX_SPOT_FR, PEG_DA, TRVE)."
+                ),
+            }
+        )
+
+    # R12d (INFO) : contrat indexe debutant apres 2026-01-01 sans reference explicite
+    # Les 5 references valides (schemas.contract_v2_schemas.INDEXATION_REFERENCES) sont
+    # TRVE, EPEX_SPOT_FR, PEG_DA, PEG_M+1, TTF_DA. Si indexation_reference vide ou
+    # hors liste, c'est une ambiguite contractuelle (le fournisseur peut ajuster
+    # unilateralement).
+    _valid_refs = {"TRVE", "EPEX_SPOT_FR", "PEG_DA", "PEG_M+1", "TTF_DA"}
+    if (
+        _is_indexed
+        and contract.start_date
+        and contract.start_date >= date(2026, 1, 1)
+        and _indexation_ref.upper() not in _valid_refs
+        and not _mentions_arenh  # R12a a deja flagge le cas ARENH
+    ):
+        results.append(
+            {
+                "rule_id": "R12",
+                "level": "info",
+                "message": (
+                    "Contrat indexe post-ARENH sans reference explicite parmi "
+                    "(TRVE, EPEX_SPOT_FR, PEG_DA, PEG_M+1, TTF_DA). "
+                    "Preciser l'index pour eviter une revision unilaterale."
+                ),
+            }
+        )
 
     # ── R13 — Accise / tier coherent ──
     # Accise electricite depend du volume annuel (tiers)
