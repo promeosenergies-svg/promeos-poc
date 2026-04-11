@@ -195,77 +195,101 @@ R171-specific guardrails:
 
 #### `meter_load_curve` — CDC time-series power data
 
-The canonical promoted table for real Enedis load curve (courbe de charge) data. It is built in parallel to the current seeded/demo tables and will become the future real-data source for downstream migration. Each row represents **one logical interval** for one meter.
+The canonical promoted table for real Enedis load curve (courbe de charge) data. It is built in parallel to the current seeded/demo tables and will become the future real-data source for downstream migration.
+
+Each row represents **one canonical half-open interval** `[timestamp ; timestamp + pas_minutes[` for one meter:
+- `timestamp` is always the **canonical UTC interval start** after source-specific normalization
+- every populated measurement column refers to that same covered interval
+- the table stores **interval-average power-like quantities**, not instantaneous spot readings and not energy deltas
+- `source_flux_type` is provenance only; downstream consumers must interpret the row through this canonical interval contract, not reapply source-specific timestamp rules
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter (resolved from PRM via DeliveryPoint) |
-| `timestamp` | DateTime | Start of covered interval (UTC-naive, converted from ISO8601+TZ) |
-| `pas_minutes` | Integer | Exact Enedis interval size (`5`, `10`, `30`) |
-| `active_power_kw` | Float | nullable — average active power (`EA`) over the covered interval, in kW |
-| `reactive_inductive_kvar` | Float | nullable — interval value for inductive reactive power (`ERI`) in kVAr |
-| `reactive_capacitive_kvar` | Float | nullable — interval value for capacitive reactive power (`ERC`) in kVAr |
-| `voltage_v` | Float | nullable — voltage (`E`) in volts when present |
-| `quality_score` | Float | 0-1 confidence (mapped from statut_point / indice_vraisemblance) |
-| `is_estimated` | Boolean | True if not a real measurement |
-| `source_flux_type` | String(10) | `R4H`/`R4M`/`R4Q`/`R50` — provenance |
-| `promotion_run_id` | FK → `promotion_run.id` | nullable — which run promoted this row |
+| `timestamp` | DateTime | Canonical UTC interval start of the covered half-open interval |
+| `pas_minutes` | Integer | Exact interval duration in minutes; part of row identity; allowed values are `5`, `10`, `30` |
+| `active_power_kw` | Float | nullable — canonical winning average active power (`EA`) over the covered interval, in kW |
+| `reactive_inductive_kvar` | Float | nullable — canonical winning interval-average inductive reactive power (`ERI`) over the same interval, in kVAr |
+| `reactive_capacitive_kvar` | Float | nullable — canonical winning interval-average capacitive reactive power (`ERC`) over the same interval, in kVAr |
+| `voltage_v` | Float | nullable — canonical winning promoted voltage (`E`, unit `V`) over the same interval |
+| `quality_score` | Float | Promeos ordinal quality heuristic in `[0,1]`, used for conflict resolution and filtering; not a calibrated probability/confidence value |
+| `is_estimated` | Boolean | True when the promoted value is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
+| `source_flux_type` | String(10) | `R4H`/`R4M`/`R4Q`/`R50` — provenance of the winning promoted row, not business identity |
+| `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created or overwrote the current row state |
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
 
-**Unique constraint**: `(meter_id, timestamp, pas_minutes)` — one promoted CDC interval per meter and cadence.
+**Unique constraint**: `(meter_id, timestamp, pas_minutes)` — one canonical promoted CDC interval per meter and cadence.
 
 **Indexes**: `(meter_id, timestamp)`, `(meter_id, pas_minutes)`, `promotion_run_id`.
 
-**Merge rule**: when the raw staging layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)` with different `grandeur_physique` values, SF5 merges them into one promoted row before UPSERT. Staging remains the place where the original row-per-grandeur fidelity is preserved.
+**Invariants / semantics**:
+- at least one of `active_power_kw`, `reactive_inductive_kvar`, `reactive_capacitive_kvar`, `voltage_v` must be non-null
+- null in a measurement column means that quantity was not promoted for that interval; it never means synthetic zero
+- R50 rows only populate `active_power_kw`; R4x rows may populate one or more CDC quantity columns depending on `grandeur_physique`
+- different source rows may contribute different quantities to the same interval row, but **each quantity column has at most one canonical winning value**
+- absence of a row means no promotable canonical CDC row exists for that interval under SF5 rules; it does not by itself prove zero load or source non-delivery
+
+**Merge rule**: when the raw staging layer carries multiple CDC rows for the same `(meter_id, timestamp, pas_minutes)`, SF5 merges different promotable `grandeur_physique` values into one canonical interval row before UPSERT. Competing candidates for the same promoted quantity are resolved to one winning value before the row is considered final. Staging remains the place where the original row-per-grandeur fidelity is preserved.
 
 #### `meter_energy_index` — Cumulative energy index per tariff class
 
-The canonical table for index readings (cumulative counters per tariff class).
+The canonical table for promoted **active-energy cumulative counters**. Each row represents one canonical cumulative counter reading for one meter, one tariff grid, one tariff class, on one local reading date.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter |
-| `date_releve` | Date | Reading date |
-| `tariff_class_code` | String(10) | `HCE`/`HCH`/`HPE`/`HPH`/`P`/`HC`/`HP`/`HCB`/`HPB` etc. |
-| `tariff_class_label` | String(100) | nullable — human-readable label from Enedis |
-| `tariff_grid` | String(10) | `CT` (supplier) / `CT_DIST` (distributor) |
-| `value_wh` | Float | Cumulative index in Wh |
-| `quality_score` | Float | 0-1 confidence |
-| `is_estimated` | Boolean | |
-| `source_flux_type` | String(10) | `R171`/`R151` — provenance |
-| `promotion_run_id` | FK → `promotion_run.id` | nullable |
+| `date_releve` | Date | Canonical local reading-date label for the counter reading; not the covered consumption day and not a timestamp-granular identity |
+| `tariff_class_code` | String(10) | Authoritative tariff-class identifier (`HCE`/`HCH`/`HPE`/`HPH`/`P`/`HC`/`HP`/`HCB`/`HPB` etc.); part of series identity |
+| `tariff_class_label` | String(100) | nullable — human-readable source label for display/debug only; not authoritative identity |
+| `tariff_grid` | String(10) | Required tariff-grid identifier; allowed values `CT` (supplier) or `CT_DIST` (distributor); part of series identity |
+| `value_wh` | Float | Canonical winning cumulative active-energy counter in Wh; not a period-consumption delta |
+| `quality_score` | Float | Promeos ordinal quality heuristic in `[0,1]`, used for conflict resolution and filtering; not a calibrated probability/confidence value |
+| `is_estimated` | Boolean | True when the promoted value is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
+| `source_flux_type` | String(10) | `R171`/`R151` — provenance of the winning promoted row, not business identity |
+| `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created or overwrote the current row state |
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
 
-**Unique constraint**: `(meter_id, date_releve, tariff_class_code, tariff_grid)` — one index value per meter per date per class per grid.
+**Unique constraint**: `(meter_id, date_releve, tariff_class_code, tariff_grid)` — one canonical counter reading per meter, reading date, tariff class, and tariff grid.
 
 **Indexes**: `(meter_id, date_releve)`, `promotion_run_id`.
 
-> **Note on consumption computation**: Energy consumed between two readings = `index[t] - index[t-1]` for the same tariff class. This delta computation is a downstream service responsibility, not a promotion concern. The promotion pipeline stores the raw index faithfully.
+**Invariants / semantics**:
+- only promoted **active energy** belongs in this table; reactive energy, durations, PMA, and other non-`EA`/`Wh` quantities stay outside this contract
+- the promoted model is intentionally **day-labeled**, not timestamp-granular; source time-of-day is not part of canonical row identity
+- if multiple promotable source rows map to the same canonical slot, they compete to produce **one** canonical promoted row; provenance does not create a second business fact
+- absence of a row means no promotable canonical counter reading exists for that series/date under SF5 rules; it does not by itself prove zero consumption or source non-delivery
+
+> **Note on consumption computation**: Energy consumed between two readings = `index[t] - index[t-1]` only within the same `(meter_id, tariff_grid, tariff_class_code)` series. This delta computation is a downstream service responsibility, not a promotion concern. The promotion pipeline stores the raw counter faithfully.
 
 #### `meter_power_peak` — Maximum power demand per period
 
-The canonical table for peak power demand (puissance maximale atteinte).
+The canonical table for promoted PMAX readings (puissance maximale atteinte). Each row represents the canonical maximum **apparent power** reached by one meter over one source-defined PMAX period.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `meter_id` | FK → `meter.id` | Linked meter |
-| `date_releve` | Date | Measurement period date |
-| `value_va` | Float | Peak demand in VA (volt-amperes) |
-| `quality_score` | Float | 0-1 confidence |
-| `is_estimated` | Boolean | |
-| `source_flux_type` | String(10) | `R151` |
-| `promotion_run_id` | FK → `promotion_run.id` | nullable |
+| `date_releve` | Date | Source-provided reading date / period label for the promoted PMAX period; not proof that the period is exactly one calendar day |
+| `value_va` | Float | Canonical winning maximum apparent power for the PMAX period, in VA; not active power and not a CDC interval-average |
+| `quality_score` | Float | Promeos ordinal quality heuristic in `[0,1]`, used for conflict resolution and filtering; not a calibrated probability/confidence value |
+| `is_estimated` | Boolean | True when the promoted value is treated as estimated/reconstructed from source-status semantics; not a synonym for low quality |
+| `source_flux_type` | String(10) | `R151` — provenance of the winning promoted row, not business identity |
+| `promotion_run_id` | FK → `promotion_run.id` | nullable — last promotion run that created or overwrote the current row state |
 | `created_at` | DateTime | |
 | `updated_at` | DateTime | |
 
-**Unique constraint**: `(meter_id, date_releve)` — one peak per meter per reading date.
+**Unique constraint**: `(meter_id, date_releve)` — one canonical PMAX row per meter per source-defined PMAX period as currently represented by `date_releve`.
 
 **Indexes**: `(meter_id, date_releve)`, `promotion_run_id`.
+
+**Invariants / semantics**:
+- `value_va` is a PMAX quantity in `VA`; it must not be interpreted as active power in `kW`
+- `source_flux_type` is provenance only and does not create a second business identity for the same PMAX period
+- absence of a row means no promotable canonical PMAX reading exists for that meter/period under SF5 rules
 
 ### 4.2 New Operational Tables
 
@@ -281,37 +305,41 @@ Mirrors `IngestionRun` pattern from SF4.
 | `status` | String | `running` / `completed` / `failed` |
 | `triggered_by` | String | `cli` / `api` |
 | `mode` | String | `incremental` / `full` |
-| `scope_flux_types` | String | Comma-separated flux types processed (e.g. "R4H,R4M,R50") |
-| `high_water_mark_before` | JSON | Per-table high-water marks at start of run |
-| `high_water_mark_after` | JSON | Per-table high-water marks at end of run |
+| `scope_flux_types` | String | Comma-separated flux types in execution scope for this run (e.g. "R4H,R4M,R50"); execution scope only, not a completeness or provenance guarantee |
+| `high_water_mark_before` | JSON | Per-table discovery/progress markers at start of run; not a guarantee that all earlier staging rows are already canonicalized |
+| `high_water_mark_after` | JSON | Per-table discovery/progress markers at end of run; not a guarantee that all earlier staging rows are already canonicalized |
 | `prms_total` | Integer | Distinct PRMs found in staging data to process |
 | `prms_matched` | Integer | PRMs successfully matched to a Meter |
-| `prms_unmatched` | Integer | PRMs blocked for unresolved matching reasons (`no_delivery_point`, `no_active_meter`, `multiple_active_meters`) |
+| `prms_unmatched` | Integer | PRMs blocked from promotion for unresolved matching reasons (`no_delivery_point`, `no_active_meter`, `multiple_active_meters`); not a source-completeness counter |
 | `prms_promoted` | Integer | PRMs whose readings were successfully promoted |
 | `prms_failed` | Integer | PRMs that failed during promotion |
-| `rows_load_curve` | Integer | Total `meter_load_curve` rows upserted |
-| `rows_energy_index` | Integer | Total `meter_energy_index` rows upserted |
-| `rows_power_peak` | Integer | Total `meter_power_peak` rows upserted |
-| `rows_skipped` | Integer | Rows skipped (e.g. superseded by better republication) |
-| `rows_flagged` | Integer | Rows flagged for review (quality degradation) |
+| `rows_load_curve` | Integer | Canonical `meter_load_curve` rows upserted by this run |
+| `rows_energy_index` | Integer | Canonical `meter_energy_index` rows upserted by this run |
+| `rows_power_peak` | Integer | Canonical `meter_power_peak` rows upserted by this run |
+| `rows_skipped` | Integer | Source rows/candidates examined by this run but not promoted under SF5 rules |
+| `rows_flagged` | Integer | Source rows/candidates examined by this run and retained as flagged audit outcomes (e.g. non-winning quality degradation) |
 | `error_message` | Text | nullable — run-level error if failed |
 
 Concurrency guard: same partial unique index pattern as `IngestionRun` (`WHERE status = 'running'`).
 
 #### `promotion_event` — Per-row audit trail
 
-One row per functional table row that was created, updated, or flagged during a promotion run.
+The audit log for promotion processing. One row records either:
+- a write-affecting event for one canonical target row (`created`, `updated`)
+- or a source-side processing outcome for a candidate that did not produce a new canonical row (`skipped`, `flagged`)
+
+For merged promoted rows, audit must preserve lineage to **all contributing staging rows**. A single source-row reference is therefore not semantically sufficient on its own for composite CDC promotions.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | Integer PK | |
 | `promotion_run_id` | FK → `promotion_run.id` | Which run produced this event |
 | `target_table` | String | `meter_load_curve` / `meter_energy_index` / `meter_power_peak` |
-| `target_row_id` | Integer | PK of the row in the target table |
+| `target_row_id` | Integer | nullable in semantics — PK of the canonical target row when one exists; absent/undefined for pure source-side skipped or rejected outcomes |
 | `action` | String | `created` / `updated` / `skipped` / `flagged` |
 | `source_table` | String | `enedis_flux_mesure_r4x` / `r50` / `r171` / `r151` |
-| `source_row_id` | Integer | PK of the staging row that produced this |
-| `source_flux_file_id` | FK → `enedis_flux_file.id` | The originating flux file |
+| `source_row_id` | Integer | PK of one originating staging row when the event concerns a single source row; merged CDC promotions require additional lineage to all contributing rows |
+| `source_flux_file_id` | FK → `enedis_flux_file.id` | One originating flux file reference when applicable; merged promotions may require more than one source reference to preserve total audit |
 | `previous_payload_json` | JSON | nullable — prior promoted payload for the target row before update |
 | `previous_quality_score` | Float | nullable — old quality if action=updated |
 | `new_payload_json` | JSON | Snapshot of the promoted payload written to the target row |
@@ -324,6 +352,8 @@ One row per functional table row that was created, updated, or flagged during a 
 #### `unmatched_prm` — Backlog of PRMs that cannot yet be safely promoted
 
 Historical name kept for the POC. In practice this table covers both truly unmatched PRMs and PRMs blocked by ambiguous meter linkage.
+
+Semantically, one row means: staging data exists for this PRM, but SF5 could not safely map it to exactly one promotable meter at the time of the run. It is a promotion-blocking backlog, not evidence of zero usage, source non-delivery, or a confirmed canonical data gap.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -887,7 +917,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - Tests: republication scenarios
 
 ### Phase E: Index Promotion — R171 + R151 (2-3 sessions)
-- R171 promotion (→ `meter_energy_index`, daily index per tariff class)
+- R171 promotion (→ `meter_energy_index`, day-labeled cumulative index per tariff class)
 - R151 CT/CT_DIST promotion (→ `meter_energy_index`, with `tariff_grid` column)
 - R151 PMAX promotion (→ `meter_power_peak`)
 - Tests: index promotion, PMAX routing, tariff class handling
@@ -938,7 +968,7 @@ This feature is too large for a single implementation session. Proposed phasing:
 - [ ] PMAX data (R151) promoted to `meter_power_peak`
 - [ ] Unmatched PRMs are flagged, zero unidentified data in production
 - [ ] Ambiguous PRM mappings are blocked and replayed from backlog once resolved
-- [ ] Every promoted row is traceable to its source staging row via `promotion_event`
+- [ ] Every promoted row is traceable to its source staging row(s) via `promotion_event`
 - [ ] Republications with better quality auto-replace, equal-quality ties use latest version, worse quality is flagged without overwrite
 - [ ] Incremental mode processes both new data and pending backlog
 - [ ] Full backfill mode can rebuild from scratch
@@ -960,11 +990,11 @@ This feature is too large for a single implementation session. Proposed phasing:
 | Term | Definition |
 |------|-----------|
 | **PRM** | Point de Reference Mesure — 14-digit Enedis delivery point identifier |
-| **CDC** | Courbe De Charge — load curve (time-series power data, kW at each interval) |
+| **CDC** | Courbe De Charge — load curve (time-series interval-average power data) |
 | **Index** | Cumulative meter reading per tariff class (energy in Wh) |
 | **PMAX** | Puissance Maximale Atteinte — peak power demand in VA for a period |
 | **Power (kW)** | Average power over the covered forward interval — what CDC measures. Stored in `meter_load_curve` |
-| **Energy (kWh/Wh)** | Cumulative consumption over a period — what index measures. Stored in `meter_energy_index` |
+| **Energy (kWh/Wh)** | Cumulative active-energy counter value — what index measures. Stored in `meter_energy_index` |
 | **Staging** | Raw Enedis data stored as-is (strings, no transformation) in `enedis_flux_mesure_*` tables |
 | **Promotion** | Transforming and writing staging data into functional tables (`meter_load_curve`, `meter_energy_index`, `meter_power_peak`) |
 | **Republication** | When Enedis sends a new version of previously-sent data (corrections) |
