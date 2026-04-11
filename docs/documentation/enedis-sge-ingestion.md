@@ -115,7 +115,7 @@ Le module reconnaît 10 types de flux à partir du nom de fichier. 6 sont ingér
 | **R4H** | CDC publiée hebdomadairement | C1-C4 | Courbe de charge publiée à la maille hebdomadaire | Points toutes les 5 ou 10 min |
 | **R4M** | CDC publiée mensuellement | C1-C4 | Idem, publication mensuelle | Points toutes les 5 ou 10 min |
 | **R4Q** | CDC publiée quotidiennement | C1-C4 | Idem, publication quotidienne | Points toutes les 5 ou 10 min |
-| **R171** | Index journalier par PRM | C2-C4 | Index de consommation par classe temporelle | 1 valeur par jour et par classe |
+| **R171** | Mesures datees quotidiennes par PRM | C2-C4 | Grandeurs journalieres par classe temporelle et type de grille | 1 valeur par jour, par classe, par grandeur |
 | **R50** | Courbe de charge C5 | C5 | Points de courbe sur abonnement | Points toutes les 30 min |
 | **R151** | Index + puissance max C5 | C5 | Index par classe temporelle et puissance maximale | 1 relevé par période |
 
@@ -181,7 +181,7 @@ Exemples de noms de fichiers réels :
 ```
 ENEDIS_23X--130624--EE1_R4H_CDC_20260302.zip
 ERDF_R50_23X--130624--EE1_GRD-F121.zip
-ENEDIS_23X--130624--EE1_R171_20260301.zip
+ENEDIS_R171_C_00000099895595_GRDF_23X--130624--EE1_20260301024107.zip
 ```
 
 ---
@@ -460,13 +460,24 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 - Noms de balises en camelCase (schéma ADR V70), contrairement aux R4x/R50/R151 en underscore
 - Namespace `ns2:` sur la racine (optionnel, géré par `strip_ns`)
 - **Multi-PRM** : un fichier peut contenir des séries pour plusieurs PRM différents
+- **Multi-guichet** : la documentation officielle prévoit un ou plusieurs fichiers par jour, à partir de 02:00 locale, et le corpus réel montre souvent 2 à 4 fichiers pour un même `id_demande_publication`
+- **Nomenclature officielle** : `ENEDIS_R171_<grandeur_metier>_<id_demande_publication>_<type_destinataire>_<id_destinataire>_<horodatage>.zip`
+- **Temporalité officielle** : les index du jour `J` sont lus, datés et transmis en `J+1`; `dateFin` est donc une date/heure de lecture, pas un libellé métier "consommation du jour"
 
 #### Champs obligatoires
 
+**Côté Enedis / XSD officielle** :
+- Balise racine `<R171>` avec `<entete>` puis `<serieMesuresDateesListe>`
+- Dans chaque `<serieMesuresDatees>` : `prmId`, `type`, `grandeurMetier`, `grandeurPhysique`, `typeCalendrier`, `codeClasseTemporelle`, `libelleClasseTemporelle`, `unite`, `mesuresDateesListe`
+- Dans chaque `<mesureDatee>` : `dateFin` et `valeur`
+
+**Côté parser Promeos actuel** :
 - Balise racine `<R171>` (avec ou sans namespace)
 - `<entete>` et `<serieMesuresDateesListe>` présents
 - Chaque `<serieMesuresDatees>` : `<prmId>` et `<type>` non vides
 - Chaque `<mesureDatee>` : `<dateFin>` non vide
+
+Le parser est donc volontairement plus tolérant que la XSD officielle sur certains champs, afin de préserver l'archivage brut même si un flux réel est partiellement incomplet.
 
 #### Données produites
 
@@ -474,15 +485,20 @@ Trois fonctions utilisées par tous les parsers pour gérer les variations de na
 |-----------------|-----------|-------------|
 | `header.raw` | Enfants de `<entete>` | Dictionnaire `{tag: texte}` |
 | `series[].point_id` | `prmId` | PRM 14 chiffres |
-| `series[].type_mesure` | `type` | INDEX |
+| `series[].type_mesure` | `type` | Valeur brute du XML. Observé : `INDEX`. L'annexe officielle mentionne `IDX` |
 | `series[].grandeur_metier` | `grandeurMetier` | CONS, PROD |
-| `series[].grandeur_physique` | `grandeurPhysique` | DD, DQ, EA, ERC, ERI, PMA, TF |
-| `series[].type_calendrier` | `typeCalendrier` | D |
+| `series[].grandeur_physique` | `grandeurPhysique` | Officiel : EA, PMA, ERC, ERI, ER, TF, DD, DE, DQ. Observé : DD, DQ, EA, ERC, ERI, PMA, TF |
+| `series[].type_calendrier` | `typeCalendrier` | D (distributeur) ou F (fournisseur) |
 | `series[].code_classe_temporelle` | `codeClasseTemporelle` | HPH, HCH, HPE, HCE, P |
 | `series[].libelle_classe_temporelle` | `libelleClasseTemporelle` | Texte humain |
-| `series[].unite` | `unite` | Wh, VArh, VA, s |
-| `series[].mesures[].date_fin` | `dateFin` | ISO8601 sans timezone |
+| `series[].unite` | `unite` | Officiel : Wh, W, s, VA, VARh. Observé : Wh, W, s, VA, VArh |
+| `series[].mesures[].date_fin` | `dateFin` | ISO8601 sans timezone, date/heure de lecture |
 | `series[].mesures[].valeur` | `valeur` | Valeur brute string |
+
+**Observations du corpus réel** :
+- Les fichiers réels contiennent actuellement 1 `mesureDatee` par `serieMesuresDatees`, mais la XSD autorise `1..*`
+- Le corpus réel ne contient pour l'instant que `typeCalendrier=D`, mais la documentation officielle autorise aussi `F`
+- Le corpus réel contient `CONS` et `PROD`
 
 ---
 
@@ -850,7 +866,7 @@ Mesures CDC haute fréquence (C1-C4). Entièrement dénormalisé : chaque ligne 
 
 ### 10.3 `enedis_flux_mesure_r171`
 
-Index journalier (C2-C4). 1 ligne par `mesureDatee`.
+Mesure datee quotidienne R171 (C2-C4). 1 ligne par `mesureDatee`.
 
 | Colonne | Type | Null | Description |
 |---------|------|------|-------------|
@@ -858,14 +874,14 @@ Index journalier (C2-C4). 1 ligne par `mesureDatee`.
 | `flux_file_id` | Integer FK | non | FK vers `enedis_flux_file` (CASCADE) |
 | `flux_type` | String(10) | non | R171 |
 | `point_id` | String(14) | non | PRM 14 chiffres |
-| `type_mesure` | String(10) | non | INDEX |
+| `type_mesure` | String(10) | non | Valeur brute (`INDEX` observe, `IDX` mentionne dans l'annexe officielle) |
 | `grandeur_metier` | String(10) | oui | CONS |
-| `grandeur_physique` | String(10) | oui | DD/DQ/EA/ERC/ERI/PMA/TF |
-| `type_calendrier` | String(5) | oui | D |
+| `grandeur_physique` | String(10) | oui | Officiel : EA/PMA/ERC/ERI/ER/TF/DD/DE/DQ |
+| `type_calendrier` | String(5) | oui | D ou F |
 | `code_classe_temporelle` | String(10) | oui | HCE/HCH/HPE/HPH/P |
 | `libelle_classe_temporelle` | String(100) | oui | Texte humain |
-| `unite` | String(10) | oui | Wh/VArh/VA/s |
-| `date_fin` | String(50) | non | dateFin (ISO8601) |
+| `unite` | String(10) | oui | Wh/W/s/VA/VARh |
+| `date_fin` | String(50) | non | dateFin (ISO8601) = timestamp de lecture |
 | `valeur` | String(20) | oui | Valeur brute |
 
 **Index** : `(point_id, date_fin)`, `flux_file_id`, `flux_type`

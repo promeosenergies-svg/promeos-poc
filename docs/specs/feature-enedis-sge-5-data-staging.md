@@ -1,6 +1,6 @@
 # SF5 — Enedis Data Staging: Raw → Functional Promotion Pipeline
 
-> **Status**: PRD v2.3 — R4x v2.0.3 + R50 v2.2.0 review integrated
+> **Status**: PRD v2.4 — R4x v2.0.3 + R50 v2.2.0 + R171 v1.3.0 review integrated
 > **Depends on**: SF1 (decrypt), SF2 (CDC ingestion), SF3 (index ingestion), SF4 (operationalization) — all complete and merged
 > **Module**: `backend/data_staging/` (new, separate from `data_ingestion/`)
 
@@ -59,11 +59,11 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  
                                                    │ load_  │ │energy│ │power_peak │
                                                    │ curve  │ │index │ │           │
                                                    └────────┘ └──────┘ └───────────┘
-                                                   R4x, R50   R171     R151 PMAX
-                                                   CDC power   R151     peak demand
-                                                   (kW)       CT/CT_D   (VA)
-                                                              energy
-                                                              (Wh)
+                                                   R4x, R50   R171 EA   R151 PMAX
+                                                   CDC power   R151      peak demand
+                                                   (kW)        CT/CT_D   (VA)
+                                                               energy
+                                                               (Wh)
 ```
 
 SF5 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for future real-data migration.
@@ -77,7 +77,7 @@ Gap detection remains an important downstream objective of this architecture. SF
 | Table | Physical quantity | Unit | Source flux | Downstream consumers |
 |-------|------------------|------|-------------|---------------------|
 | **`meter_load_curve`** | Interval-valued CDC row: average power over `[timestamp ; timestamp + pas_minutes[` plus related reactive/tension values | kW / kVAr / V | R4x, R50 | Future real-data monitoring, anomaly detection, peak analysis, off-hours, load profile |
-| **`meter_energy_index`** | Cumulative energy per tariff class | Wh | R171, R151 (CT/CT_DIST) | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
+| **`meter_energy_index`** | Cumulative energy per tariff class | Wh | R171 (`EA` only), R151 (CT/CT_DIST) | Billing reconciliation, regulatory compliance, annual kWh, OPERAT |
 | **`meter_power_peak`** | Max power demand per period | VA | R151 (PMAX) | Subscribed power optimization, depassement alerts |
 
 ### Data flow per CDC reading (R4x / R50 → `meter_load_curve`)
@@ -112,7 +112,7 @@ R50-specific normalization nuance:
 Rows with the same `(meter_id, timestamp, pas_minutes)` are merged into one logical promoted interval row before UPSERT.
 ```
 
-### Data flow per index reading (R171 / R151 → `meter_energy_index`)
+### Data flow per energy-index reading (R171 `EA` / R151 CT/CT_DIST → `meter_energy_index`)
 
 ```
 enedis_flux_mesure_r171.point_id  (string "14-digit PRM")
@@ -123,12 +123,19 @@ DeliveryPoint.code → Meter.delivery_point_id → meter.id
         ▼
 meter_energy_index.meter_id  (FK → meter.id)
         with:
-          date_releve       = parsed date
+          date_releve       = parsed local reading date
           tariff_class_code = code_classe_temporelle (HCE/HCH/HPE/HPH/P)
           tariff_class_label = libelle humain
-          value_wh          = parsed float (cumulative index)
+          tariff_grid       = mapped from the source tariff grid
+          value_wh          = parsed float (cumulative energy index)
           quality_score     = mapped quality
           is_estimated      = mapped from quality indicator
+
+R171-specific guardrails:
+- only rows with `grandeur_physique='EA'` and `unite='Wh'` are promotable to `meter_energy_index`
+- `typeCalendrier='D'` maps to `tariff_grid='CT_DIST'`; `typeCalendrier='F'` maps to `tariff_grid='CT'`
+- `dateFin` is the **reading timestamp / J+1 dated index**, not the covered day label for downstream daily-consumption UX
+- non-energy R171 rows (`DD`, `DQ`, `TF`, `PMA`, `ERC`, `ERI`, and any future `ER` / `DE`) stay in raw staging in SF5
 ```
 
 ---
@@ -375,7 +382,7 @@ Provisional Promeos heuristic for now: keep using the same numeric mapping as R5
 
 ### 5.4 Index flux (R171) — No quality indicator
 
-R171 does not carry a per-value quality indicator. All R171 values are assumed measured:
+R171 does not carry a per-value quality indicator. All promotable R171 values are assumed measured:
 - `quality_score` = 0.90 (slightly below R=1.0 because we cannot confirm)
 - `is_estimated` = False
 
@@ -393,7 +400,8 @@ Each staging flux type routes to a specific functional table:
 | `enedis_flux_mesure_r4x` | R4M | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
 | `enedis_flux_mesure_r4x` | R4Q | **`meter_load_curve`** | parsed from raw `granularite` (`5` or `10`) | kW / kVAr / V |
 | `enedis_flux_mesure_r50` | R50 | **`meter_load_curve`** | `30` | raw `W` -> promoted `kW` |
-| `enedis_flux_mesure_r171` | R171 | **`meter_energy_index`** | Per `date_fin` (daily) | Wh |
+| `enedis_flux_mesure_r171` | R171 (`EA`, `Wh` only) | **`meter_energy_index`** | Per `date_fin` reading date (daily J+1 index) | Wh |
+| `enedis_flux_mesure_r171` | R171 (other grandeurs) | **Raw staging only in SF5** | No safe promoted target yet | `s` / `VA` / `VArh` / `W` |
 | `enedis_flux_mesure_r151` | R151 (CT/CT_DIST) | **`meter_energy_index`** | Per `date_releve` | Wh |
 | `enedis_flux_mesure_r151` | R151 (PMAX) | **`meter_power_peak`** | Per `date_releve` | VA |
 
@@ -422,6 +430,19 @@ Each staging flux type routes to a specific functional table:
 > - `num_seq` identifies the delivery sequence for one subscription, but it is **not sufficient by itself** to prove completeness; completeness requires checking the presence of every `XXXXX` from `00001` to `YYYYY` for that subscription + `num_seq`
 
 > **Observed fact from the real monthly corpus**: the monthly R50 files are not aligned to civil months. They cover windows such as `2023-01-04 -> 2023-02-03`, then `2023-02-04 -> 2023-03-03`, which is consistent with the official "publication day 1-28" subscription model.
+
+> **Important**: R171 also has official publication semantics that must inform freshness/completeness:
+>
+> | R171 cadence | Covered data | Official publication rule |
+> |--------------|--------------|---------------------------|
+> | Daily | day `J` indexes, read and dated on `J+1` | one or more files may be published throughout `J+1`, starting around `02:00` local time |
+>
+> Additional official / observed constraints:
+> - Enedis publishes separate files for injection and withdrawal subscriptions
+> - the flux is explicitly **multi-guichet**: a day may yield multiple R171 files for the same subscription perimeter
+> - the filename segment `id_demande_publication` is an Enedis internal publication identifier and may be shared by several files in the same multi-guichet delivery
+> - the real corpus confirms this pattern: the same `id_demande_publication` commonly appears across 2 to 4 files on the same day
+> - future completeness logic must therefore reason at the file-group/day level and not mark an R171 day complete after the first file arrives
 
 > **Note on CDC units**: Enedis CDC values are interval averages, not consumption deltas and not instantaneous spot readings. For active power, downstream services that need interval energy compute `energy_kwh = active_power_kw * pas_minutes / 60`.
 
@@ -583,16 +604,23 @@ before UPSERT.
 # any later aggregation to hourly/daily energy must respect this half-open interval model
 ```
 
-**Index rows (R171, R151 CT/CT_DIST) → `meter_energy_index`:**
+**Energy-index rows (R171 `EA` only, R151 CT/CT_DIST) → `meter_energy_index`:**
 ```
 date_releve         = parse_date(date_fin or date_releve)
 tariff_class_code   = code_classe_temporelle or id_classe_temporelle
 tariff_class_label  = libelle_classe_temporelle
-tariff_grid         = 'CT' or 'CT_DIST' (from R151 type_donnee) or 'CT' (R171 default)
+tariff_grid         = (
+                        'CT_DIST' if source is R171 and type_calendrier == 'D'
+                        else 'CT' if source is R171 and type_calendrier == 'F'
+                        else 'CT' / 'CT_DIST' from R151 type_donnee
+                      )
 value_wh            = float(valeur)
-quality_score       = QUALITY_MAP[indice_vraisemblance]  # Section 5
-is_estimated        = mapped from quality indicator
+quality_score       = 0.90 for R171 (no quality indicator) or R50/R151 mapping from Section 5
+is_estimated        = False for R171 or mapped from the source quality indicator
 source_flux_type    = flux_type
+
+if source is R171 and (grandeur_physique != 'EA' or unite != 'Wh'):
+    skip row, log "R171 non-energy quantity not promoted in SF5"
 ```
 
 **PMAX rows (R151 PMAX) → `meter_power_peak`:**
@@ -677,19 +705,36 @@ UPDATE promotion_run SET
 
 ### 8.1 R171 — Daily index per tariff class (C2-C4)
 
-R171 provides cumulative index values per `code_classe_temporelle` (HCE, HCH, HPE, HPH, P, etc.). These are running totals, not consumption deltas.
+R171 is broader than a pure "energy index" feed. Officially, it publishes daily dated measurements for each PRM by:
+- tariff grid (`typeCalendrier = D` distributeur or `F` fournisseur)
+- tariff class (`code_classe_temporelle`)
+- physical quantity (`grandeur_physique`)
 
-**Decision**: Store raw index values in `meter_energy_index`. The `tariff_class_code` column preserves the per-class granularity. Downstream services compute consumption as `index[t] - index[t-1]` for each class separately, or sum all classes for total consumption.
+Confirmed official `grandeur_physique` scope includes `EA`, `PMA`, `ERC`, `ERI`, `ER`, `TF`, `DD`, `DE`, `DQ`.
+
+Observed real-corpus scope includes both `CONS` and `PROD`, with `EA`, `ERC`, `ERI`, `DD`, `DQ`, `TF`, and `PMA`. Units observed are `Wh`, `VArh`, `s`, `VA`, and `W`.
+
+Only the `EA` + `Wh` subset is safely promotable to `meter_energy_index` in SF5. Those rows are cumulative energy indexes per tariff class and are not consumption deltas.
+
+`dateFin` must be interpreted as the local reading timestamp. Per the official guide, indexes for day `J` are read, dated, and sent on `J+1`, so downstream daily-consumption services must attribute deltas to the interval between two readings, not blindly label `dateFin` as "consumption for that date".
+
+**Decision**: Store only raw `EA`/`Wh` R171 rows in `meter_energy_index`. The `tariff_class_code` column preserves the per-class granularity and `tariff_grid` is derived from `typeCalendrier` (`D -> CT_DIST`, `F -> CT`). Downstream services compute consumption as `index[t] - index[t-1]` for each class separately, or sum all classes for total consumption.
 
 Example promotion of one R171 row:
 ```
-Staging:  point_id=30001234567890, code_classe_temporelle=HPE,
-          date_fin=2024-06-15, valeur=12345678
+Staging:  point_id=30001234567890, grandeur_physique=EA, type_calendrier=D,
+          code_classe_temporelle=HPE, date_fin=2024-06-15T00:41:20, valeur=12345678
     ↓
 meter_energy_index:  meter_id=42, date_releve=2024-06-15,
-                     tariff_class_code=HPE, tariff_grid=CT,
+                     tariff_class_code=HPE, tariff_grid=CT_DIST,
                      value_wh=12345678.0, quality_score=0.90
 ```
+
+R171 rows with other physical quantities are **not** promoted in SF5:
+- `DD` / `TF` are duration-like daily quantities (`s`)
+- `DQ` is not an energy index (`VA`)
+- `ERC` / `ERI` are reactive-energy counters (`VArh`) and need dedicated downstream semantics
+- `PMA` behaves like a daily peak-style quantity and is observed with both `VA` and `W`, so it does not fit the current `meter_power_peak` contract safely
 
 ### 8.2 R151 — Index + Puissance max per tariff class (C5)
 

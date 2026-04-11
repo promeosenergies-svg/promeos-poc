@@ -34,9 +34,20 @@ XML structure (ADR V70 R171):
 
 Tolerances:
   - Namespace (ns2) is optional — works with or without
-  - Missing optional fields (grandeurMetier, etc.) → stored as None
+  - Official XSD marks most serie fields and <valeur> as required, but the
+    parser intentionally preserves partially incomplete rows instead of failing
+    hard on every off-schema omission.
+  - Missing tolerated fields (grandeurMetier, etc.) → stored as None
   - Empty mesuresDateesListe (valid XML, 0 mesures) → empty list, no error
   - Empty serieMesuresDateesListe → empty list, no error
+
+Notes from the official guide and the real corpus:
+  - Official filename publication is multi-guichet: one or more R171 files may
+    arrive throughout J+1 for the same daily publication.
+  - Official annex says the type code is IDX, but observed real XML uses INDEX.
+  - Official typeCalendrier values are D (distributeur) and F (fournisseur).
+  - dateFin is the reading timestamp; for daily subscriptions the guide states
+    the indexes of day J are read, dated, and published on J+1.
 """
 
 import xml.etree.ElementTree as ET

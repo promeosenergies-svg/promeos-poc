@@ -150,7 +150,8 @@ class EnedisFluxMesureR4x(Base, TimestampMixin):
 class EnedisFluxMesureR171(Base, TimestampMixin):
     """Raw measurement row from an Enedis R171 index flux (C2-C4).
 
-    Granularity: 1 row per mesureDatee (= 1 row per serie in observed data).
+    Granularity: 1 row per mesureDatee (= 1 row per serie in observed data, but
+    the official XSD allows 1..* mesures per serie).
     No unique constraint — raw archive, deduplication deferred.
     """
 
@@ -172,16 +173,24 @@ class EnedisFluxMesureR171(Base, TimestampMixin):
 
     # Serie context
     point_id = Column(String(14), nullable=False, comment="prmId (14 chiffres)")
-    type_mesure = Column(String(10), nullable=False, comment="INDEX — brut XML")
+    type_mesure = Column(
+        String(10),
+        nullable=False,
+        comment="Type brut XML (observe: INDEX, annexe officielle: IDX)",
+    )
     grandeur_metier = Column(String(10), nullable=True, comment="CONS — brut XML")
-    grandeur_physique = Column(String(10), nullable=True, comment="DD/DQ/EA/ERC/ERI/PMA/TF — brut XML")
-    type_calendrier = Column(String(5), nullable=True, comment="D — brut XML")
+    grandeur_physique = Column(
+        String(10),
+        nullable=True,
+        comment="EA/PMA/ERC/ERI/ER/TF/DD/DE/DQ — brut XML",
+    )
+    type_calendrier = Column(String(5), nullable=True, comment="D/F — brut XML")
     code_classe_temporelle = Column(String(10), nullable=True, comment="HCE/HCH/HPE/HPH/P — brut XML")
     libelle_classe_temporelle = Column(String(100), nullable=True, comment="Libellé humain — brut XML")
-    unite = Column(String(10), nullable=True, comment="Wh/VArh/VA/s — brut XML")
+    unite = Column(String(10), nullable=True, comment="Wh/W/VArh/VA/s — brut XML")
 
     # Mesure
-    date_fin = Column(String(50), nullable=False, comment="dateFin — brut ISO8601")
+    date_fin = Column(String(50), nullable=False, comment="dateFin — brut ISO8601, horodatage de releve")
     valeur = Column(String(20), nullable=True, comment="Valeur brute — string, pas float")
 
     flux_file = relationship("EnedisFluxFile", back_populates="mesures_r171")
