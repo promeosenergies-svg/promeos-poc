@@ -10,11 +10,11 @@
 
 SF1-SF4 delivered a complete raw ingestion pipeline: 6 flux types parsed, 5 staging tables, 91 real files ingested, 123,846 measures — all stored as raw strings with zero transformation. This raw archive is the **source of truth** for everything Enedis sends us.
 
-However, **no bridge exists** between the raw staging tables and the functional layer that powers every downstream service: consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation.
+However, **no bridge exists** between the raw staging tables and a real-data functional layer that downstream services can later consume safely. Today, consumption dashboards, anomaly detection, monitoring alerts, regulatory compliance, and billing reconciliation still depend on seeded/demo structures rather than promoted Enedis data.
 
 Today, `MeterReading` is populated exclusively by synthetic seed data. The raw staging data — real Enedis measurements — is invisible to the application.
 
-This is intentional for the prototype: the current seeded/demo metering universe stays live during SF5 so we do not break the platform while the Enedis backbone is being built. SF5 creates a **parallel real-data promotion layer**. The later migration of services and calculations from dummy tables to real Enedis-promoted tables is a **separate feature wave**, not part of SF5 itself.
+This is intentional for the prototype: the current seeded/demo metering universe stays live during SF5 so we do not break the platform while the Enedis backbone is being built. SF5 creates and populates a **parallel real-data promotion layer**. It does **not** migrate existing services, dashboards, calculations, or client-facing product surfaces to those new tables; that cutover is a **separate feature wave**, not part of SF5 itself.
 
 Furthermore, the existing `MeterReading` model conflates two fundamentally different physical quantities:
 - **Power (kW)** — average power over a forward interval (what CDC load curves measure)
@@ -30,7 +30,7 @@ Correctly and reliably handling Enedis data is one of Promeos's core MOATs. Comp
 - **Safe**: no unidentified data leaks to production — unknown PRMs are flagged, not silently promoted
 - **Auditable**: full trail of what was promoted, when, why, and what it replaced
 - **Incremental**: designed for scale (10,000 PRMs, 175M readings at 2 years hourly)
-- **Extensible**: the `data_staging/` module will grow to handle GRDF, GTB, sub-meters, other ELDs
+- **Modular**: the `data_staging/` module should stay extensible for later waves (GRDF, GTB, sub-meters, other ELDs) without making those extensions part of SF5
 
 ---
 
@@ -66,11 +66,11 @@ Encrypted ──→ Decrypt ──→ Parse ──→ Raw Staging    ──→  
                                                                (Wh)
 ```
 
-SF5 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for future real-data migration.
+SF5 does **not** replace the currently live prototype tables during this phase. `meter_reading` and `power_readings` remain part of the seeded/demo universe, while `meter_load_curve`, `meter_energy_index`, and `meter_power_peak` become the canonical promoted targets for a later real-data migration wave.
 
-Gap detection remains an important downstream objective of this architecture. SF5 v2 preserves **gap visibility** by keeping missing periods as visible absences in promoted tables and by auditing skipped invalid rows, but a fuller completeness / gap-detection layer is deferred to a later follow-up session.
+SF5 includes **operational observability of the promotion pipeline itself**: run status, counters, blocked PRMs, skipped rows, replacements, and failures. SF5 preserves data absences as absences and records promotion outcomes, but it does **not** implement publication-SLA monitoring, file-delivery completeness monitoring, or explicit missing-data / gap alerting. Those remain deferred to a later wave.
 
-> **Dependency note from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF5 assumes SF1-SF4 staging has already materialized every XML member found in an archive; otherwise promotion completeness is impossible by construction. The current POC corpus only exposed mono-XML archives, so this remains a hardening dependency rather than SF5 scope.
+> **Precondition from the official R4x guide**: an R4x ZIP archive may legally contain one or more XML files, one curve per XML. SF5 promotes only what SF1-SF4 have already materialized in staging. If upstream extraction misses XML members, those measurements cannot be promoted. Archive-extraction completeness is outside SF5 scope.
 
 ### Three Functional Tables
 
@@ -149,29 +149,45 @@ R171-specific guardrails:
 | D3 | Pipeline mode | **Incremental + backlog replay** | Each run processes new staging rows beyond the high-water mark **and** previously blocked PRMs still pending resolution. This avoids missing historical data after a PRM is fixed |
 | D4 | Republication strategy | **Quality-first overwrite policy** | Better quality auto-promotes. Equal quality uses the latest republication. Worse quality is flagged and does not overwrite the current promoted row |
 | D5 | Production versioning | **Option A — Current truth + audit trail** | Functional tables always hold the latest best value (UPSERT). Staging keeps full history. `PromotionEvent` table provides full traceability. No `WHERE is_current` tax on all downstream queries |
-| D6 | Quality gate | **Promote all data with correct quality flags** | No minimum threshold blocking promotion. Even poor-quality data is promoted with appropriate `quality_score` and `is_estimated` flags. Downstream services already compute quality scores from these fields |
-| D7 | Gap handling | **Preserve gap visibility now; explicit gap detection later** | Null or unparsable values are never converted to synthetic zeroes. Gaps stay visible as missing promoted rows, with audit events explaining why they were skipped. Completeness scoring and richer gap detection remain planned follow-up work |
+| D6 | Quality gate | **Promote all readings that satisfy the defined promotion rules, regardless of quality score** | Promotability is determined by the matching, routing, and validation rules in this spec. Low-quality-but-valid readings are still promoted with `quality_score` and `is_estimated` flags; unmatched, unsupported, invalid, or unparsable rows are not promoted |
+| D7 | Gap handling | **Preserve absence and promotion observability now; explicit completeness monitoring later** | Null or unparsable values are never converted to synthetic zeroes. Missing promoted rows remain visible as absences, and skipped/blocked outcomes are audited. Publication-SLA monitoring, file-delivery completeness tracking, and explicit gap alerting remain later-wave work |
 | D8 | Quality score mapping | **Official R4x status semantics + Promeos heuristic score** (see Section 5) | The Enedis guide defines the meaning of `statut_point`, but not a numeric confidence score. SF5 keeps a product-owned heuristic for republication comparison |
-| D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. Will grow to handle GRDF, GTB, sub-meters, other ELDs. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion |
+| D9 | Module location | **`backend/data_staging/`** (new, separate module) | Separation of concerns. `data_ingestion/` = raw archive, `data_staging/` = normalization + promotion. The module should remain modular for later extensions, but non-Enedis expansion is not part of SF5 |
 | D10 | Trigger model | **Separate from ingestion** — dedicated CLI command + minimal API | Natural break point: ingest → data backlog review → promote. Decoupled failure domains. POC: CLI `promote` command + minimal `/api/enedis/promotion/*` API |
 | D11 | Atomicity | **Per-PRM** | Each PRM is fully promoted or not at all. One bad PRM doesn't block the fleet. Prevents misleading partial data. Aligns with business unit (site managers care about their PRMs) |
 | D12 | Audit trail | **Yes — `PromotionRun` + `PromotionEvent` tables** | Core MOAT. Every promoted reading traceable to source staging row, flux file, and promotion run. Every replacement logged |
-| D13 | API surface | **CLI + minimal API scaffolding** (no review UX yet) | POST `/api/enedis/promotion/promote`, GET `/api/enedis/promotion/runs`, GET `/api/enedis/promotion/stats` |
+| D13 | API surface | **CLI + minimal promotion-operations API** (no review UX yet) | POST `/api/enedis/promotion/promote`, GET `/api/enedis/promotion/runs`, GET `/api/enedis/promotion/stats` support promotion execution and operational observability only |
 | D14 | Scale target | **175M rows** (10,000 PRMs x 2 years hourly) | Code must handle this volume even if POC runs on SQLite. Batch processing, chunked inserts, indexed lookups |
-| D15 | Initial run | **Full backfill** — promote all historical staging data | First run processes everything. Subsequent runs are incremental |
+| D15 | Initial run | **Full backfill of staged data** | First run processes all promotable historical data already present in staging. Subsequent runs are incremental |
 | D16 | Functional data model | **Three separate promoted tables**: `meter_load_curve`, `meter_energy_index`, `meter_power_peak` | Power and energy are different physical quantities with different units, granularities, and consumers. Mixing them in one table creates semantic confusion |
 | D17 | Legacy/demo coexistence | **Coexist then migrate** — promoted Enedis tables are canonical for real data, while `meter_reading` and `power_readings` remain part of the prototype/demo universe until later migration | Don't break what works. SF5 builds the real backbone first; service migration happens later |
 | D18 | `meter_load_curve` schema | **One row per interval with separate columns** | `meter_load_curve` stores one row per `(meter_id, timestamp, pas_minutes)` and merges multiple CDC grandeurs into separate columns (`active_power_kw`, reactive columns, `voltage_v`) |
 | D19 | PRM matching ambiguity | **Exact-one-meter rule** | A PRM is promotable only when it resolves to exactly one valid active electricity meter. No active meter or multiple candidates both block promotion and create backlog entries |
 | D20 | R4x timezone / DST handling | **Trust the XML offset, convert to UTC, and treat official DST patterns as expected** | The official R4x guide uses Paris legal time with offset. Autumn duplicate local hours must survive as distinct UTC instants; spring missing local hour is not a data gap |
 | D21 | CDC temporal semantics | **Store and expose CDC values as forward interval averages after flux-specific timestamp normalization** | R4x raw `H` is already an interval start; R50 raw `H` is an interval end and must be shifted back by 30 minutes. Analytics and UX must not present CDC as instantaneous spot readings |
-| D22 | Publication SLA awareness | **Distinguish not-yet-due publication from overdue missing publication** | Enedis publishes R4x on explicit deadlines (`R4Q` J+1 calendaire, `R4H`/`R4M` by 3rd business day). Freshness decisions must respect those windows before surfacing a "missing publication" condition |
+| D22 | Publication / completeness monitoring | **Deferred to a later wave** | SF5 may retain the information needed for future freshness/completeness logic, but it does not implement publication-SLA monitoring or missing-publication decisions |
 | D23 | R50 temporal normalization | **Convert raw R50 interval-end timestamps into canonical interval starts before promotion** | The official R50 guide defines `H` as the end of the covered 30-minute interval and `V` as average power in W over the preceding 30 minutes. Promoted `meter_load_curve.timestamp` must therefore be `H - 30 min`, not raw `H` |
-| D24 | R50 publication cadence modeling | **Use filename cadence (`_Q_` / `_M_`) and file-group counters for freshness/completeness, not `Pas_Publication`** | `Pas_Publication=30` describes the curve step, while the guide defines daily vs monthly delivery cadence and multi-file completeness through filename nomenclature |
-| D25 | Client-facing CDC simplification | **Expose one canonical interval model to product surfaces, regardless of source flux** | Clients should never need to know whether the source timestamp came from an interval start (R4x) or interval end (R50). Product/API wording must consistently present CDC as "average power over `[start ; end[`" |
-| D26 | R50 delivery-completeness signals | **Model both per-file capacity and per-sequence file counters for gap detection** | The official guide confirms startup caps of `3000 PRM` per daily R50 ZIP and `100 PRM` per monthly R50 ZIP, and states that completeness of a given delivery sequence is checked via filename counters `XXXXX` / `YYYYY` within one subscription + `num_seq` |
+| D24 | R50 publication cadence modeling | **Deferred to a later wave** | Filename cadence and file-group counters matter for future completeness monitoring, but they are not part of the SF5 promotion contract |
+| D25 | Canonical CDC contract | **Store one canonical interval model in promoted data, regardless of source flux** | `meter_load_curve` must normalize R4x and R50 into one source-independent interval model so future consumers do not need source-specific interpretation rules. SF5 defines that contract; it does not update client-facing surfaces yet |
+| D26 | R50 delivery-completeness signals | **Deferred to a later wave** | Per-file capacity and per-sequence completeness signals are relevant to later completeness monitoring, not to the core SF5 promotion boundary |
 
 ---
+
+### SF5 In / SF5 Out
+
+**SF5 in**
+- Promote supported Enedis staging data already materialized by SF1-SF4 into `meter_load_curve`, `meter_energy_index`, and `meter_power_peak`
+- Apply the promotability, PRM matching, normalization, routing, republication, and audit rules defined in this spec
+- Maintain backlog handling for unresolved PRMs and replay them in later runs
+- Provide operational observability for promotion runs: status, counters, blocked PRMs, skipped rows, replacements, and failures
+- Define one canonical CDC interval contract in promoted data so downstream consumers do not need source-specific timestamp interpretation rules
+
+**SF5 out**
+- Migrate existing services, dashboards, calculations, or client-facing product surfaces to the new promoted tables
+- Implement publication-SLA monitoring, delivery-completeness monitoring, or explicit missing-data / gap alerting
+- Provide manual review UX or auto-resolution workflows for blocked PRMs
+- Promote readings that fail the defined promotability rules
+- Fix upstream extraction/staging completeness issues in SF1-SF4; SF5 can only promote what is present in staging
 
 ## 4. Data Model Changes
 
