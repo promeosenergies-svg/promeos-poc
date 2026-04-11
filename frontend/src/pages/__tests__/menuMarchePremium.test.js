@@ -66,9 +66,10 @@ describe('B. Labels in new modules V7', () => {
     expect(item).toBeDefined();
   });
 
-  it('/achat-energie?tab=echeances is in main nav (fused from /renouvellements)', () => {
-    const item = ALL_NAV_ITEMS.find((i) => i.to === '/achat-energie?tab=echeances');
+  it('/renouvellements is in main nav (canonical Échéances page)', () => {
+    const item = ALL_NAV_ITEMS.find((i) => i.to === '/renouvellements');
     expect(item).toBeDefined();
+    expect(item.label).toBe('Échéances');
   });
 });
 
