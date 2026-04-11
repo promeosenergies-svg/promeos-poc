@@ -394,25 +394,198 @@ class TestR11PlageDates:
 # ============================================================
 
 
-class TestR12Arenh:
-    def test_arenh_post_2025_via_reference_info(self, db, setup):
-        """ARENH detected via indexation_reference field."""
+class TestR12PostArenh:
+    """R12 dynamique : 4 sous-regles post-ARENH / VNU.
+
+    Contexte : ARENH supprime au 31/12/2025 (LF 2025 art. 17), VNU effectif
+    au 01/01/2026 (decrets 2025-909/910, CRE 2025-268, seuils 78/110 EUR/MWh).
+    """
+
+    # ── R12a (ERROR) : contrat post-2026 mentionnant encore ARENH ──
+
+    def test_r12a_arenh_in_reference_post_2026_is_error(self, db, setup):
+        """Un contrat debutant 2026-01-01 avec 'ARENH' dans la reference = erreur."""
         c = _make_cadre(
             db,
             setup,
             offer_indexation=ContractIndexation.INDEXE,
             start_date=date(2026, 1, 1),
-            end_date=date(2028, 1, 1),
+            end_date=date(2027, 1, 1),
             indexation_reference="ARENH + spread",
         )
         _make_annexe(db, c.id, setup["sites"][0].id)
         db.commit()
         results = validate_contrat(db, c.id)
-        r12 = [r for r in results if r["rule_id"] == "R12"]
-        assert len(r12) == 1
-        assert r12[0]["level"] == "info"
+        r12a = [r for r in results if r["rule_id"] == "R12" and r["level"] == "error"]
+        assert len(r12a) == 1
+        assert "ARENH" in r12a[0]["message"]
 
-    def test_no_arenh_ok(self, db, setup):
+    def test_r12a_arenh_in_formula_post_2026_is_error(self, db, setup):
+        """Meme regle via indexation_formula."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 3, 1),
+            end_date=date(2027, 3, 1),
+            indexation_formula="0.85 * ARENH + 0.15 * EPEX_SPOT_FR",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12a = [r for r in results if r["rule_id"] == "R12" and r["level"] == "error"]
+        assert len(r12a) == 1
+
+    def test_r12a_arenh_pre_2026_no_flag(self, db, setup):
+        """Un contrat ARENH debutant avant 2026 reste valide (pas de flag R12a)."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2025, 6, 1),
+            end_date=date(2026, 6, 1),
+            indexation_reference="ARENH + spread",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12a = [r for r in results if r["rule_id"] == "R12" and r["level"] == "error"]
+        assert len(r12a) == 0
+
+    # ── R12b (WARNING) : indexe long sans cap/floor ──
+
+    def test_r12b_long_indexed_without_cap_is_warning(self, db, setup):
+        """Contrat indexe sur 36 mois sans clause cap/floor = exposition non bornee."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 1, 1),
+            end_date=date(2029, 1, 1),
+            indexation_reference="EPEX_SPOT_FR",
+            price_revision_clause="NONE",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12b = [r for r in results if r["rule_id"] == "R12" and r["level"] == "warning"]
+        assert len(r12b) == 1
+        assert "cap/floor/tunnel" in r12b[0]["message"]
+
+    def test_r12b_long_indexed_with_cap_no_flag(self, db, setup):
+        """Meme contrat 36 mois avec cap defini = pas de warning."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 1, 1),
+            end_date=date(2029, 1, 1),
+            indexation_reference="EPEX_SPOT_FR",
+            price_revision_clause="CAP",
+            price_cap_eur_mwh=150.0,
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12b = [r for r in results if r["rule_id"] == "R12" and r["level"] == "warning"]
+        assert len(r12b) == 0
+
+    def test_r12b_short_indexed_no_flag(self, db, setup):
+        """Contrat indexe court (<24 mois) = pas de warning meme sans cap."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 1, 1),
+            end_date=date(2027, 6, 1),
+            indexation_reference="EPEX_SPOT_FR",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12b = [r for r in results if r["rule_id"] == "R12" and r["level"] == "warning"]
+        assert len(r12b) == 0
+
+    # ── R12c (INFO) : contrat fixe pre-2025 expirant 2026-2027 ──
+
+    def test_r12c_fixed_pre2025_expiring_2026_is_info(self, db, setup):
+        """Opportunite renegociation avec clause post-ARENH explicite."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.FIXE,
+            date_signature=date(2024, 6, 1),
+            start_date=date(2024, 7, 1),
+            end_date=date(2026, 6, 30),
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12c = [r for r in results if r["rule_id"] == "R12" and r["level"] == "info" and "renegocier" in r["message"]]
+        assert len(r12c) == 1
+
+    def test_r12c_fixed_pre2025_expiring_2028_no_flag(self, db, setup):
+        """Expiration hors fenetre 2026-2027 = pas de flag."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.FIXE,
+            date_signature=date(2024, 6, 1),
+            start_date=date(2024, 7, 1),
+            end_date=date(2028, 6, 30),
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12c = [r for r in results if r["rule_id"] == "R12" and r["level"] == "info" and "renegocier" in r["message"]]
+        assert len(r12c) == 0
+
+    # ── R12d (INFO) : indexe post-2026 sans reference explicite ──
+
+    def test_r12d_indexed_post2026_without_reference_is_info(self, db, setup):
+        """Contrat indexe sans reference valide = ambiguite contractuelle."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 2, 1),
+            end_date=date(2027, 2, 1),
+            indexation_reference=None,
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12d = [
+            r
+            for r in results
+            if r["rule_id"] == "R12" and r["level"] == "info" and "reference explicite" in r["message"]
+        ]
+        assert len(r12d) == 1
+
+    def test_r12d_indexed_post2026_with_valid_reference_no_flag(self, db, setup):
+        """Meme contrat avec TRVE comme reference = pas de flag."""
+        c = _make_cadre(
+            db,
+            setup,
+            offer_indexation=ContractIndexation.INDEXE,
+            start_date=date(2026, 2, 1),
+            end_date=date(2027, 2, 1),
+            indexation_reference="TRVE",
+        )
+        _make_annexe(db, c.id, setup["sites"][0].id)
+        db.commit()
+        results = validate_contrat(db, c.id)
+        r12d = [
+            r
+            for r in results
+            if r["rule_id"] == "R12" and r["level"] == "info" and "reference explicite" in r["message"]
+        ]
+        assert len(r12d) == 0
+
+    # ── Non-regression : contrat sain ──
+
+    def test_no_arenh_fixe_post_2026_clean(self, db, setup):
+        """Contrat fixe propre post-2026 : aucun flag R12."""
         c = _make_cadre(
             db,
             setup,
