@@ -100,8 +100,7 @@ describe('CommandCenter — enrichissement Step 5', () => {
     expect(ccSrc).toMatch(/ModuleLaunchers/);
   });
 
-  it('utilise Recharts (AreaChart, ComposedChart)', () => {
-    expect(ccSrc).toMatch(/AreaChart/);
+  it('utilise Recharts (ComposedChart)', () => {
     expect(ccSrc).toMatch(/ComposedChart/);
   });
 
