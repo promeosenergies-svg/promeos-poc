@@ -61,9 +61,7 @@ def org_with_site(db):
     db.flush()
 
     # Compteur principal
-    meter = Meter(
-        site_id=site.id, meter_id="PDL-POWER-001", name="PDL-POWER-001", type_compteur="elec"
-    )
+    meter = Meter(site_id=site.id, meter_id="PDL-POWER-001", name="PDL-POWER-001", type_compteur="elec")
     db.add(meter)
     db.flush()
 
