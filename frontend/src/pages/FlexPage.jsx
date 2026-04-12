@@ -10,7 +10,7 @@ import FlexPotentialCard from '../components/flex/FlexPotentialCard';
 import FlexScoreCard from '../components/flex/FlexScoreCard';
 import TariffWindowsCard from '../components/flex/TariffWindowsCard';
 import FlexNebcoCard from '../components/usages/FlexNebcoCard';
-import ScopeSummary from '../components/ScopeSummary';
+import { ScopeSummary } from '../ui';
 
 export default function FlexPage() {
   return (
