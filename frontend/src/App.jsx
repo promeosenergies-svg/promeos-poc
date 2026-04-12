@@ -67,6 +67,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const SireneOnboardingPage = lazy(() => import('./pages/SireneOnboardingPage'));
 const AperPage = lazy(() => import('./pages/AperPage'));
 const UsagesDashboardPage = lazy(() => import('./pages/UsagesDashboardPage'));
+const FlexPage = lazy(() => import('./pages/FlexPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -472,6 +473,14 @@ function App() {
                       element={
                         <PageSuspense>
                           <ContractRadarPage />
+                        </PageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/flex"
+                      element={
+                        <PageSuspense>
+                          <FlexPage />
                         </PageSuspense>
                       }
                     />

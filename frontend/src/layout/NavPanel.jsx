@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Star, X, Search, Clock } from 'lucide-react';
+import { Star, X, Search, Clock, Sparkles } from 'lucide-react';
 import {
   getActiveSite,
   clearActiveSite,
@@ -336,6 +336,25 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           <h2 className="text-sm font-semibold text-slate-800">{mod.label}</h2>
         </div>
         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{mod.desc}</p>
+      </div>
+
+      {/* Demander à PROMEOS — entrée sémantique (ouvre CommandPalette via Ctrl+K) */}
+      <div className="px-2 pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
+            document.dispatchEvent(event);
+          }}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-[11px] text-slate-400 hover:text-slate-700 bg-slate-50/70 hover:bg-white border border-slate-200/60 rounded-md transition-all group"
+          aria-label="Demander à PROMEOS (Ctrl+K)"
+        >
+          <Sparkles size={11} className="text-violet-400 group-hover:text-violet-600 shrink-0" />
+          <span className="flex-1 truncate">Demander à PROMEOS&hellip;</span>
+          <kbd className="text-[9px] text-slate-400 bg-slate-100 rounded px-1 py-px font-mono">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* Quick actions — Raccourcis (expert only) */}
