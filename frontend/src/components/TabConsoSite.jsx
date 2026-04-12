@@ -24,6 +24,8 @@ import ForecastCard from './analytics/ForecastCard';
 import UsageBreakdownCard from './analytics/UsageBreakdownCard';
 import UsageAnomaliesCard from './analytics/UsageAnomaliesCard';
 import OptimizationPlanCard from './analytics/OptimizationPlanCard';
+import BillingVentilationCard from './analytics/BillingVentilationCard';
+import PurchaseStrategyCard from './analytics/PurchaseStrategyCard';
 
 function formatDateLabel(isoStr) {
   if (!isoStr) return '';
@@ -272,6 +274,10 @@ export default function TabConsoSite({ siteId }) {
       <UsageBreakdownCard siteId={siteId} preloadedData={analyticsReport?.breakdown} />
       <UsageAnomaliesCard siteId={siteId} preloadedData={analyticsReport?.anomalies} />
       <OptimizationPlanCard siteId={siteId} preloadedData={analyticsReport?.optimization} />
+
+      {/* Ventilation facture + Strategie achat */}
+      <BillingVentilationCard siteId={siteId} />
+      <PurchaseStrategyCard siteId={siteId} />
 
       {/* CTA Explorer */}
       <div className="flex justify-end">

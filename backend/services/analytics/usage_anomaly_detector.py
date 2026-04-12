@@ -638,6 +638,179 @@ def detect_usage_anomalies(
                 )
             )
 
+    # === Detecteur 21 : Ascenseur consommation elevee ===
+    # Heuristique via le ratio baseload sur archetype immeuble
+    if archetype in ("COPROPRIETE", "SANTE", "HOTEL_HEBERGEMENT", "BUREAU_STANDARD"):
+        it_bureautique = usage_by_code.get("IT_BUREAUTIQUE")
+        securite = usage_by_code.get("SECURITE_VEILLE")
+        # Proxy : si securite_veille + IT > 15% et archetype immeuble, possible ascenseur surdimensionne
+        sec_pct = (securite.pct if securite else 0) + (it_bureautique.pct if it_bureautique else 0)
+        if sec_pct > 20 and archetype == "COPROPRIETE":
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="SECURITE_VEILLE",
+                    usage_label="Ascenseurs / equipements communs",
+                    anomaly_type="ASCENSEUR_CONSO_ELEVEE",
+                    severity="low",
+                    message=f"Equipements parties communes {sec_pct:.0f}% (ascenseurs, VMC, securite)",
+                    detail="La part des equipements parties communes depasse le seuil attendu. "
+                    "Verifier consommation ascenseurs (programmation arret nuit 0h-6h = -12%).",
+                    gain_kwh_an=round(total_kwh * 0.02, 0),
+                    gain_eur_an=round(total_kwh * 0.02 * PRIX_MOY_EUR_KWH, 0),
+                    action="Programmer arret ascenseur 0h-6h. Verifier moteur et roulements.",
+                    confidence="low",
+                    metric_observed=sec_pct,
+                    metric_threshold=20.0,
+                )
+            )
+
+    # === Detecteur 22 : Froid nuit anormal (hotel/restaurant) ===
+    if archetype in ("HOTEL_HEBERGEMENT", "RESTAURANT") and froid and froid.pct > 15:
+        night_base_ratio = _compute_night_base_ratio(temporal)
+        froid_night_threshold = 0.50 if archetype == "RESTAURANT" else 0.60
+        if night_base_ratio > froid_night_threshold:
+            froid_excess = round(froid.kwh * (night_base_ratio - froid_night_threshold) * 0.3, 0)
+            if froid_excess > 300:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code=froid.code,
+                        usage_label=froid.label,
+                        anomaly_type="FROID_NUIT_ANORMAL",
+                        severity="medium",
+                        message=f"Froid nuit eleve ({night_base_ratio:.0%}) — porte mal fermee ou thermostat",
+                        detail="Le baseload nuit est eleve pour le froid. Verifier joints portes "
+                        "refrigerateurs/congelateurs et thermostat.",
+                        gain_kwh_an=froid_excess,
+                        gain_eur_an=round(froid_excess * PRIX_MOY_EUR_KWH, 0),
+                        action="Inspection joints portes + nettoyage condenseur + calibrage thermostat.",
+                        confidence="medium",
+                        metric_observed=round(night_base_ratio, 3),
+                        metric_threshold=froid_night_threshold,
+                    )
+                )
+
+    # === Detecteur 23 : Restaurant absence pic service ===
+    if archetype == "RESTAURANT":
+        biz_mean = temporal.get("biz_mean_kw", 0)
+        baseload = temporal.get("baseload_kw", 0)
+        if biz_mean > 0 and baseload > 0:
+            service_ratio = (biz_mean - baseload) / biz_mean
+            if service_ratio < 0.30:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="GLOBAL",
+                        usage_label="Profil service restaurant",
+                        anomaly_type="RESTAURANT_PIC_SERVICE_ABSENT",
+                        severity="low",
+                        message=f"Profil plat pour restaurant (increment service {service_ratio:.0%})",
+                        detail="Le profil ne montre pas de pic net aux heures de service. "
+                        "Possible : fermeture non detectee, activite reduite, ou equipements 24/7.",
+                        gain_kwh_an=0,
+                        gain_eur_an=0,
+                        action="Verifier horaires d'ouverture et programmer arret equipements hors service.",
+                        confidence="low",
+                        metric_observed=round(service_ratio, 3),
+                        metric_threshold=0.30,
+                    )
+                )
+
+    # === Detecteur 24 : Hopital chute brutale (alerte securite) ===
+    if archetype == "SANTE":
+        biz_mean = temporal.get("biz_mean_kw", 0)
+        baseload = temporal.get("baseload_kw", 0)
+        if biz_mean > 0 and baseload > 0:
+            stability = baseload / biz_mean
+            if stability < 0.30:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="GLOBAL",
+                        usage_label="Continuite service sante",
+                        anomaly_type="HOPITAL_INSTABILITE",
+                        severity="high",
+                        message=f"Profil instable pour site sante (ratio base/jour {stability:.0%})",
+                        detail="Un site sante devrait avoir un profil stable (base > 50% du jour). "
+                        "Un ratio bas peut indiquer des coupures ou equipements defaillants.",
+                        gain_kwh_an=0,
+                        gain_eur_an=0,
+                        action="Verifier alimentation secours, UPS, et continuite equipements critiques.",
+                        confidence="medium",
+                        metric_observed=round(stability, 3),
+                        metric_threshold=0.30,
+                    )
+                )
+
+    # === Detecteur 25 : Chauffage ete anormal (inverse saisonnier) ===
+    if cvc and cvc.pct > 20 and thermal:
+        a_heating = thermal.get("a_heating", 0) or 0
+        b_cooling = thermal.get("b_cooling", 0) or 0
+        # Si a_heating >> b_cooling mais qu'on est en ete, le chauffage tourne en ete
+        if a_heating > 10 and b_cooling < 2:
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="CVC_HVAC",
+                    usage_label=cvc.label,
+                    anomaly_type="CHAUFFAGE_ETE_ANORMAL",
+                    severity="low",
+                    message=f"Forte sensibilite chauffage ({a_heating:.0f} kWh/DJU) sans composante clim",
+                    detail="La signature montre un chauffage dominant sans climatisation significative. "
+                    "Verifier que le chauffage s'arrete bien en ete (possible sonde defaillante).",
+                    gain_kwh_an=round(a_heating * 30 * 0.2, 0),
+                    gain_eur_an=round(a_heating * 30 * 0.2 * PRIX_MOY_EUR_KWH, 0),
+                    action="Verifier sonde exterieure et consigne d'arret chauffage ete.",
+                    confidence="low",
+                    metric_observed=round(a_heating, 1),
+                    metric_threshold=10.0,
+                )
+            )
+
+    # === Detecteur 26 : Eclairage parties communes 24/7 (bailleurs) ===
+    ecl = usage_by_code.get("ECLAIRAGE")
+    if ecl and ecl.pct > 8 and archetype in ("COPROPRIETE", "COLLECTIVITE"):
+        if temporal.get("baseload_kw", 0) > 0 and temporal.get("biz_mean_kw", 0) > 0:
+            ecl_night_ratio = temporal["baseload_kw"] / temporal["biz_mean_kw"]
+            if ecl_night_ratio > 0.60:
+                ecl_save = round(ecl.kwh * 0.40, 0)
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="ECLAIRAGE",
+                        usage_label="Eclairage parties communes",
+                        anomaly_type="ECLAIRAGE_PC_24_7",
+                        severity="medium",
+                        message=f"Eclairage parties communes probablement 24/7 (ratio nuit/jour {ecl_night_ratio:.0%})",
+                        detail="L'eclairage des parties communes semble actif en permanence. "
+                        "Installer des detecteurs de presence + minuterie = -40% eclairage.",
+                        gain_kwh_an=ecl_save,
+                        gain_eur_an=round(ecl_save * PRIX_MOY_EUR_KWH, 0),
+                        action="Installer detecteurs de presence halls + minuterie escaliers (150 EUR/point).",
+                        confidence="medium",
+                        metric_observed=round(ecl_night_ratio, 3),
+                        metric_threshold=0.60,
+                    )
+                )
+
+    # === Detecteur 27 : Vapeur/chaleur perdue (industrie) ===
+    if archetype in ("INDUSTRIE_LOURDE", "INDUSTRIE_LEGERE") and thermal:
+        a_heating = thermal.get("a_heating", 0) or 0
+        if a_heating > 20:
+            recup_kwh = round(a_heating * 100 * 0.3, 0)  # 30% recuperable sur 100 DJU
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="CVC_HVAC",
+                    usage_label="Chaleur process",
+                    anomaly_type="CHALEUR_PERDUE_INDUSTRIE",
+                    severity="medium",
+                    message=f"Forte thermosensibilite industrielle ({a_heating:.0f} kWh/DJU) — recuperation chaleur",
+                    detail="La forte sensibilite au chauffage sur un site industriel suggere un potentiel "
+                    "de recuperation de chaleur process (echangeurs, PAC sur effluents).",
+                    gain_kwh_an=recup_kwh,
+                    gain_eur_an=round(recup_kwh * PRIX_MOY_EUR_KWH, 0),
+                    action="Etude recuperation chaleur process (echangeurs, PAC). CEE IND-UT-117.",
+                    confidence="low",
+                    metric_observed=round(a_heating, 1),
+                    metric_threshold=20.0,
+                )
+            )
+
     # Trier par gain EUR decroissant
     anomalies.sort(key=lambda a: -a.gain_eur_an)
 

@@ -165,6 +165,55 @@ ACTION_CATALOG: dict[tuple[str, str], dict] = {
         "complexity": "moderate",
         "priority": 2,
     },
+    ("SECURITE_VEILLE", "ASCENSEUR_CONSO_ELEVEE"): {
+        "action_code": "ASCENSEUR_PROGRAMMATION",
+        "title": "Programmer arret ascenseur la nuit",
+        "detail": "Arreter 1 ascenseur sur 2 (ou tous) entre 0h et 6h. Gain 10-15%.",
+        "gain_pct": 0.12,
+        "investment_per_kw": 50,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("FROID_COMMERCIAL", "FROID_NUIT_ANORMAL"): {
+        "action_code": "FROID_JOINTS_PORTES",
+        "title": "Verifier joints portes + condenseur froid",
+        "detail": "Joints portes refrigerateurs/congelateurs uses = +15-20% conso froid. "
+        "Nettoyage condenseur = +10%. Intervention rapide, faible cout.",
+        "gain_pct": 0.15,
+        "investment_per_kw": 20,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("CVC_HVAC", "CHAUFFAGE_ETE_ANORMAL"): {
+        "action_code": "CVC_SONDE_EXTERIEURE",
+        "title": "Verifier sonde exterieure et consigne arret ete",
+        "detail": "Sonde defaillante = chauffage tourne en ete. Remplacement sonde (200 EUR) "
+        "ou reprogrammation automate = arret immediat.",
+        "gain_pct": 0.20,
+        "investment_per_kw": 10,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("ECLAIRAGE", "ECLAIRAGE_PC_24_7"): {
+        "action_code": "ECLAIRAGE_DETECTEUR_PRESENCE_PC",
+        "title": "Detecteurs de presence parties communes",
+        "detail": "Detecteurs PIR + minuterie dans halls, escaliers, parkings. "
+        "Gain 40% eclairage parties communes. Payback < 2 ans.",
+        "gain_pct": 0.40,
+        "investment_per_kw": 200,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("CVC_HVAC", "CHALEUR_PERDUE_INDUSTRIE"): {
+        "action_code": "RECUPERATION_CHALEUR_PROCESS",
+        "title": "Etude recuperation chaleur process",
+        "detail": "Echangeurs thermiques ou PAC sur effluents industriels. "
+        "CEE IND-UT-117 eligible. TRI 3-5 ans selon process.",
+        "gain_pct": 0.20,
+        "investment_per_kw": 300,
+        "complexity": "complex",
+        "priority": 3,
+    },
     ("GLOBAL", "INTENSITE_ENERGETIQUE_ELEVEE"): {
         "action_code": "AUDIT_ENERGETIQUE_GLOBAL",
         "title": "Realiser un audit energetique",
