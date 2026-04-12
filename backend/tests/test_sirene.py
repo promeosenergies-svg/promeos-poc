@@ -868,15 +868,18 @@ class TestNaf25Resolver:
 class TestSchemaValidation:
     def test_path_traversal_rejected(self):
         """Les chemins avec .. sont rejetes par le schema."""
+        from pydantic import ValidationError
         from schemas.sirene import SireneImportRequest
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError) as exc_info:
             SireneImportRequest(ul_path="../../etc/passwd")
+        assert "traversee" in str(exc_info.value).lower() or "invalide" in str(exc_info.value).lower()
 
     def test_absolute_path_rejected(self):
+        from pydantic import ValidationError
         from schemas.sirene import SireneImportRequest
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             SireneImportRequest(ul_path="/etc/passwd")
 
     def test_relative_path_accepted(self):
@@ -887,19 +890,22 @@ class TestSchemaValidation:
 
     def test_siret_max_50(self):
         """Plus de 50 SIRETs rejetes."""
+        from pydantic import ValidationError
         from schemas.sirene import OnboardingFromSireneRequest
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError) as exc_info:
             OnboardingFromSireneRequest(
                 siren="552032534",
                 etablissement_sirets=[f"5520325340{i:04d}" for i in range(51)],
             )
+        assert "at most 50" in str(exc_info.value).lower() or "too_long" in str(exc_info.value).lower()
 
     def test_type_client_invalid(self):
         """Type client hors liste rejete."""
+        from pydantic import ValidationError
         from schemas.sirene import OnboardingFromSireneRequest
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             OnboardingFromSireneRequest(
                 siren="552032534",
                 etablissement_sirets=["55203253400017"],
