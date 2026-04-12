@@ -136,6 +136,25 @@ def _apply_audit_sme_to_compliance_score(
     )
 
 
+def _check_usage_disagg_coverage(db: Session, site_id: int) -> dict:
+    """Verifie si la decomposition CDC est disponible et fiable pour le site."""
+    try:
+        from services.analytics.usage_disaggregation import disaggregate_site
+        from datetime import date, timedelta
+
+        result = disaggregate_site(db, site_id, date.today() - timedelta(days=365), date.today())
+        return {
+            "available": len(result.usages) > 0,
+            "n_usages": len(result.usages),
+            "confidence": result.confidence_global,
+            "method": result.method,
+            "total_kwh": result.total_kwh,
+        }
+    except Exception as exc:
+        _logger.debug("usage disagg check failed for site %d: %s", site_id, exc)
+        return {"available": False, "n_usages": 0, "confidence": "none"}
+
+
 def evaluate_site(db: Session, site_id: int, *, org_id: int | None = None) -> SiteSummary:
     """
     Evaluate un site avec les 4 reglementations.

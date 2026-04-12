@@ -9,38 +9,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from models import Base
-
-
-@pytest.fixture
-def app_client():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        echo=False,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(bind=engine)
-    from main import app
-    from database import get_db
-
-    def override():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override
-    os.environ["DEMO_MODE"] = "true"
-    client = TestClient(app, raise_server_exceptions=False)
-    yield client, SessionLocal
-    app.dependency_overrides.clear()
 
 
 class TestFlexScoreRouterMount:
@@ -149,3 +117,118 @@ class TestFlexScoreUsagesReferentiel:
         usages_grand = {u["code"]: u for u in resp_grand.json()["usages"]}
         # CVC_HVAC avec P_max petit devrait avoir un score NEBCO plus bas
         assert usages_petit["CVC_HVAC"]["nebco_score"] <= usages_grand["CVC_HVAC"]["nebco_score"]
+
+
+class TestResolveArchetypeNoDefault:
+    """
+    Non-regression : tous les archetypes canoniques doivent etre resolvables
+    depuis un NAF reel. Detecte les fallbacks DEFAULT silencieux.
+    """
+
+    # 1 NAF representatif par archetype canonique du moteur flex
+    NAF_BY_ARCHETYPE = {
+        "BUREAU_STANDARD": "6820A",
+        "HOTEL_HEBERGEMENT": "5510Z",
+        "ENSEIGNEMENT": "8520Z",
+        "ENSEIGNEMENT_SUP": "8542Z",
+        "SANTE": "8610Z",
+        "RESTAURANT": "5610A",
+        "COMMERCE_ALIMENTAIRE": "4711D",
+        "LOGISTIQUE_SEC": "5210B",
+        "LOGISTIQUE_FRIGO": "1013A",
+        "DATA_CENTER": "6311Z",
+        "INDUSTRIE_LEGERE": "2511Z",
+        "SPORT_LOISIR": "9311Z",
+        "COLLECTIVITE": "8411Z",
+        "COPROPRIETE": "6832A",
+    }
+
+    def test_chaque_archetype_resolu_depuis_naf(self, app_client):
+        """Aucun NAF de la table ne doit tomber en DEFAULT."""
+        client, SessionLocal = app_client
+        from models.site import Site
+        from models.enums import TypeSite
+        from routes.flex_score import _resolve_archetype
+
+        db = SessionLocal()
+        try:
+            for expected, naf in self.NAF_BY_ARCHETYPE.items():
+                site = Site(nom=f"Test {expected}", type=TypeSite.BUREAU, naf_code=naf, actif=True)
+                db.add(site)
+                db.commit()
+                db.refresh(site)
+
+                archetype = _resolve_archetype(db, site)
+                assert archetype != "DEFAULT", f"NAF {naf} tombe en DEFAULT alors que {expected} etait attendu"
+                # Verifier que l'archetype retourne est bien dans le referentiel flex
+                from services.flex.flexibility_scoring_engine import ARCHETYPE_TO_USAGES
+
+                assert archetype in ARCHETYPE_TO_USAGES, (
+                    f"NAF {naf} -> archetype {archetype!r} absent de ARCHETYPE_TO_USAGES"
+                )
+        finally:
+            db.close()
+
+    def test_naf_format_dotted_resolu(self, app_client):
+        """Les NAF au format DD.DDC (ex: '70.10Z') doivent etre resolus (strip dots avant slice)."""
+        client, SessionLocal = app_client
+        from models.site import Site
+        from models.enums import TypeSite
+        from routes.flex_score import _resolve_archetype
+
+        db = SessionLocal()
+        try:
+            # 70.10Z (sieges sociaux) -> prefix 7010 -> BUREAU_STANDARD
+            site = Site(nom="Dotted NAF", type=TypeSite.BUREAU, naf_code="70.10Z", actif=True)
+            db.add(site)
+            db.commit()
+            db.refresh(site)
+
+            archetype = _resolve_archetype(db, site)
+            assert archetype == "BUREAU_STANDARD", f"NAF dotted '70.10Z' -> {archetype!r}, attendu 'BUREAU_STANDARD'"
+        finally:
+            db.close()
+
+    def test_naf_inconnu_tombe_en_default(self, app_client):
+        """Un NAF completement inconnu doit tomber en DEFAULT (comportement attendu)."""
+        client, SessionLocal = app_client
+        from models.site import Site
+        from models.enums import TypeSite
+        from routes.flex_score import _resolve_archetype
+
+        db = SessionLocal()
+        try:
+            site = Site(nom="Site NAF bizarre", type=TypeSite.BUREAU, naf_code="0000Z", actif=True)
+            db.add(site)
+            db.commit()
+            db.refresh(site)
+
+            archetype = _resolve_archetype(db, site)
+            assert archetype == "DEFAULT"
+        finally:
+            db.close()
+
+    def test_kb_normalization_sante_hopital(self, app_client):
+        """Normalisation KB : SANTE_HOPITAL (code KB) -> SANTE (code flex)."""
+        from routes.flex_score import _normalize_archetype
+
+        assert _normalize_archetype("SANTE_HOPITAL") == "SANTE"
+        assert _normalize_archetype("DATACENTER") == "DATA_CENTER"
+        assert _normalize_archetype("HOTEL_STANDARD") == "HOTEL_HEBERGEMENT"
+        assert _normalize_archetype("RESTAURATION_SERVICE") == "RESTAURANT"
+        assert _normalize_archetype("LOGISTIQUE_ENTREPOT") == "LOGISTIQUE_SEC"
+
+    def test_kb_normalization_deja_canonique(self, app_client):
+        """Un code deja canonique passe sans transformation."""
+        from routes.flex_score import _normalize_archetype
+
+        assert _normalize_archetype("BUREAU_STANDARD") == "BUREAU_STANDARD"
+        assert _normalize_archetype("COLLECTIVITE") == "COLLECTIVITE"
+
+    def test_kb_normalization_inconnu(self, app_client):
+        """Un code totalement inconnu -> DEFAULT."""
+        from routes.flex_score import _normalize_archetype
+
+        assert _normalize_archetype("TOTALLY_UNKNOWN_CODE") == "DEFAULT"
+        assert _normalize_archetype("") == "DEFAULT"
+        assert _normalize_archetype(None) == "DEFAULT"

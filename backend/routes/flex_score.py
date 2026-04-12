@@ -6,7 +6,8 @@ GET  /api/flex/score/prix-signal               — interprete un prix spot en si
 GET  /api/flex/score/portfolios/{portfolio_id}  — score flex agrege portefeuille
 """
 
-from datetime import date, datetime, timedelta
+import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,84 +15,16 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from services.flex.archetype_resolver import (
+    resolve_archetype as _resolve_archetype,
+    normalize_archetype as _normalize_archetype,
+    batch_resolve_archetypes,
+)
+from services.power.power_profile_service import resolve_p_max_kw as _get_p_max_kw
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/flex/score", tags=["Flex Score Engine"])
-
-
-# --- Helpers ---
-
-COS_PHI_TERTIAIRE = 0.8  # kVA -> kW, facteur de puissance typique tertiaire
-TAUX_UTILISATION_HEURISTIQUE = 0.25  # pour estimation P_max depuis conso annuelle
-
-
-def _get_p_max_kw(db: Session, meter, site=None) -> float:
-    """
-    P_max du site. Ordre de priorite :
-    1. PowerProfile CDC reelle (P_max_kw sur 365j)
-    2. PowerContract PS par poste (somme kVA x 0.8)
-    3. Estimation depuis conso annuelle (heuristique)
-    4. 0.0 (fail-safe)
-    """
-    # 1. PowerProfile (donnees CDC reelles)
-    if meter:
-        try:
-            from services.power.power_profile_service import get_power_profile
-
-            today = date.today()
-            profile = get_power_profile(db, meter.id, today - timedelta(days=365), today)
-            p_max = profile.get("kpis", {}).get("P_max_kw", 0.0) or 0.0
-            if p_max > 0:
-                return float(p_max)
-        except Exception:
-            pass
-
-    # 2. PowerContract (PS souscrite x cos phi)
-    if meter:
-        try:
-            from services.power.power_profile_service import get_active_contract
-
-            contract = get_active_contract(db, meter.id, date.today())
-            if contract and contract.ps_par_poste_kva:
-                total_kva = sum(v for v in contract.ps_par_poste_kva.values() if isinstance(v, (int, float)))
-                if total_kva > 0:
-                    return round(total_kva * COS_PHI_TERTIAIRE, 1)
-        except Exception:
-            pass
-
-    # 3. Estimation depuis conso annuelle
-    if site:
-        conso = getattr(site, "annual_kwh_total", None) or 0
-        if conso > 0:
-            return round(conso / (8760 * TAUX_UTILISATION_HEURISTIQUE), 1)
-
-    return 0.0
-
-
-def _resolve_archetype(db, site, meter=None) -> str:
-    """Resolve archetype from UsageProfile or NAF code."""
-    try:
-        from models.energy_models import Meter, UsageProfile
-
-        if meter is None:
-            meter = db.query(Meter).filter(Meter.site_id == site.id, Meter.is_active == True).first()
-        if meter:
-            profile = db.query(UsageProfile).filter(UsageProfile.meter_id == meter.id).first()
-            if profile and profile.archetype_code:
-                return profile.archetype_code
-    except Exception:
-        pass
-
-    NAF_TO_ARCHETYPE = {
-        "6820": "BUREAU_STANDARD",
-        "5510": "HOTEL_HEBERGEMENT",
-        "8520": "ENSEIGNEMENT",
-        "5210": "LOGISTIQUE_SEC",
-        "4711": "COMMERCE_ALIMENTAIRE",
-    }
-    if site.naf_code and site.naf_code in NAF_TO_ARCHETYPE:
-        return NAF_TO_ARCHETYPE[site.naf_code]
-
-    return "DEFAULT"
 
 
 # --- Endpoints ---
@@ -217,6 +150,8 @@ def get_portfolio_flex_score(
     profiles = db.query(UsageProfile).filter(UsageProfile.meter_id.in_(meter_ids)).all() if meter_ids else []
     profile_by_meter = {p.meter_id: p for p in profiles}
 
+    archetypes_by_site = batch_resolve_archetypes(db, sites, meter_by_site, profile_by_meter)
+
     total_surface = sum(s.surface_m2 or 0 for s in sites)
     use_equal_weight = total_surface == 0
     score_pondere = 0.0
@@ -224,16 +159,7 @@ def get_portfolio_flex_score(
 
     for site in sites:
         meter = meter_by_site.get(site.id)
-
-        # Archetype from pre-loaded data
-        archetype = "DEFAULT"
-        if meter:
-            up = profile_by_meter.get(meter.id)
-            if up and up.archetype_code:
-                archetype = up.archetype_code
-        if archetype == "DEFAULT" and site.naf_code:
-            archetype = _resolve_archetype(db, site, meter)
-
+        archetype = archetypes_by_site[site.id]
         P_max_kw = _get_p_max_kw(db, meter, site)
 
         usages = get_usages_par_archetype(archetype)

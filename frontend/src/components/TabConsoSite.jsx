@@ -20,6 +20,9 @@ import { SkeletonCard } from '../ui/Skeleton';
 import { getEmsTimeseries } from '../services/api';
 import { fmtNum } from '../utils/format';
 import CarpetPlot from './CarpetPlot';
+import UsageBreakdownCard from './analytics/UsageBreakdownCard';
+import UsageAnomaliesCard from './analytics/UsageAnomaliesCard';
+import OptimizationPlanCard from './analytics/OptimizationPlanCard';
 
 function formatDateLabel(isoStr) {
   if (!isoStr) return '';
@@ -243,6 +246,15 @@ export default function TabConsoSite({ siteId }) {
           )}
         </CardBody>
       </Card>
+
+      {/* Repartition par usage (CDC -> usages via 3 couches) */}
+      <UsageBreakdownCard siteId={siteId} />
+
+      {/* Anomalies par usage (croisement decomposition x seuils archetype) */}
+      <UsageAnomaliesCard siteId={siteId} />
+
+      {/* Plan d'optimisation ROI chiffre (etage 3) */}
+      <OptimizationPlanCard siteId={siteId} />
 
       {/* CTA Explorer */}
       <div className="flex justify-end">

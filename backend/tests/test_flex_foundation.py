@@ -5,35 +5,6 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from models import Base
-
-
-@pytest.fixture
-def app_client():
-    engine = create_engine(
-        "sqlite:///:memory:", echo=False, connect_args={"check_same_thread": False}, poolclass=StaticPool
-    )
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(bind=engine)
-    from main import app
-    from database import get_db
-
-    def override():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override
-    os.environ["DEMO_MODE"] = "true"
-    client = TestClient(app, raise_server_exceptions=False)
-    yield client, SessionLocal
-    app.dependency_overrides.clear()
 
 
 class TestFlexAssetCRUD:
