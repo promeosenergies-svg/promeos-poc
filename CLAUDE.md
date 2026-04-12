@@ -21,6 +21,30 @@ Skills detailles dans `.claude/skills/` (11 skills domaine).
 
 Le frontend est affichage uniquement. Voir SKILL.md section "Regle absolue".
 
+## Regle d'or — NE PAS POLLUER LE TRAVAIL DE YANNICK
+
+**Perimetre Yannick : `backend/data_ingestion/enedis/` et specs SGE associees.**
+
+- **INTERDIT** : tout commit qui modifie, refactore, reformate ou "nettoie" les
+  fichiers du perimetre Yannick sans demande explicite de l'utilisateur.
+- **INTERDIT** : tout commit Claude qui viendrait mettre le bazar dans la chaine
+  d'ingestion Enedis SGE (parsers R4x/R50/R151/R171, models Enedis, decrypt,
+  enums, tests Enedis, docs specs SGE).
+- **AUTORISE** : surveillance read-only via agent Yannick
+  (`.agent/reports/github-yannick-*.md`), lecture pour comprendre.
+- **AUTORISE** : modification UNIQUEMENT si demande explicite de l'utilisateur
+  ET coordination confirmee.
+
+Fichiers/dossiers a considerer comme perimetre Yannick :
+- `backend/data_ingestion/enedis/**`
+- `docs/specs/feature-enedis-sge-*.md`
+- `docs/documentation/enedis-sge-ingestion.md`
+- `docs/sources/**` (bundles PDF/XSD/XLSX Enedis officiels)
+
+Meme une "amelioration evidente" (lint, format, typo) est INTERDITE sur ce
+perimetre sans autorisation explicite. Le cout d'un conflit avec la branche
+de Yannick est toujours superieur au gain d'une micro-correction.
+
 ## Workflow obligatoire
 
 1. Phase 0 read-only : grep/find/cat uniquement — bilan avant toute modif
