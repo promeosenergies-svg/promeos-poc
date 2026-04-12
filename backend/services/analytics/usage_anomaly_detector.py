@@ -285,6 +285,189 @@ def detect_usage_anomalies(
                 )
             )
 
+    # === Detecteur 7 : Simultaneite chaud/froid (conflit thermostat) ===
+    if cvc and cvc.pct > 20:
+        # Heuristique : si baseload nuit ET biz_mean sont tous deux eleves
+        # et que la signature DJU montre a_heating ET b_cooling significatifs
+        a_heating = thermal.get("a_heating", 0) or 0
+        b_cooling = thermal.get("b_cooling", 0) or 0
+        if a_heating > 5 and b_cooling > 5:
+            waste_kwh = round(min(a_heating, b_cooling) * 30 * 0.3, 0)  # ~30 jours x 0.3 kWh/degre
+            if waste_kwh > 500:
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="CVC_HVAC",
+                        usage_label=cvc.label,
+                        anomaly_type="SIMULTANEITE_CHAUD_FROID",
+                        severity="medium",
+                        message=f"Conflit chaud/froid detecte (chauffage {a_heating:.0f} + clim {b_cooling:.0f} kWh/DJU)",
+                        detail="La signature DJU montre des composantes chauffage ET climatisation significatives. "
+                        "Possible conflit de consignes entre zones ou thermostat antagoniste.",
+                        gain_kwh_an=waste_kwh,
+                        gain_eur_an=round(waste_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Verifier les consignes par zone, separer les circuits chaud/froid, calibrer la bande morte.",
+                        confidence="medium",
+                        metric_observed=round(b_cooling, 1),
+                        metric_threshold=5.0,
+                    )
+                )
+
+    # === Detecteur 8 : Depassement puissance souscrite ===
+    ps_kva = _get_site_ps_kva(db, site_id)
+    if ps_kva and ps_kva > 0 and temporal.get("biz_mean_kw", 0) > 0:
+        peak_kw = temporal.get("biz_mean_kw", 0) * 1.5  # estimation pic = 1.5x moyen
+        ratio_ps = peak_kw / (ps_kva * 0.8)  # cos phi 0.8
+        if ratio_ps > 0.90:
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code="GLOBAL",
+                    usage_label="Puissance souscrite",
+                    anomaly_type="DEPASSEMENT_PS_RISQUE",
+                    severity="high" if ratio_ps > 0.95 else "medium",
+                    message=f"Pic estime {peak_kw:.0f} kW vs PS {ps_kva:.0f} kVA ({ratio_ps:.0%} utilisation)",
+                    detail="Le pic de puissance estime approche la puissance souscrite. "
+                    "Risque de depassement (penalites TURPE) ou disjonction.",
+                    gain_kwh_an=0,
+                    gain_eur_an=round(ps_kva * 12.65 * 0.1, 0),  # CMDPS ~12.65 EUR/kW
+                    action="Decaler les demarrages d'equipements lourds. Evaluer un ecretage ou une augmentation de PS.",
+                    confidence="medium",
+                    metric_observed=round(ratio_ps, 3),
+                    metric_threshold=0.90,
+                )
+            )
+
+    # === Detecteur 9 : Air comprime fuites (baseload nuit process) ===
+    air = usage_by_code.get("AIR_COMPRIME")
+    if air and air.pct > 5:
+        # Air comprime nuit devrait etre ~0 si process arrete
+        if temporal.get("baseload_kw", 0) > 0 and temporal.get("biz_mean_kw", 0) > 0:
+            air_night_ratio = temporal["baseload_kw"] / temporal["biz_mean_kw"]
+            if air_night_ratio > 0.40 and archetype in ("INDUSTRIE_LEGERE", "INDUSTRIE_LOURDE", "LOGISTIQUE_SEC"):
+                fuite_kwh = round(air.kwh * 0.25, 0)  # 25% fuites typique ADEME
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="AIR_COMPRIME",
+                        usage_label=air.label,
+                        anomaly_type="AIR_COMPRIME_FUITES",
+                        severity="medium",
+                        message=f"Fuites air comprime probables ({air.pct:.0f}% conso, baseload nuit {air_night_ratio:.0%})",
+                        detail="Le baseload nuit eleve suggere que le compresseur tourne pour compenser des fuites. "
+                        "Les fuites representent 20-30% de la conso air comprime (ADEME).",
+                        gain_kwh_an=fuite_kwh,
+                        gain_eur_an=round(fuite_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Detection ultrasonore des fuites + reparation. CEE IND-UT-114 eligible.",
+                        confidence="medium",
+                        metric_observed=round(air_night_ratio, 3),
+                        metric_threshold=0.40,
+                    )
+                )
+
+    # === Detecteur 10 : Derive long terme (+5%/an sans raison) ===
+    if thermal and thermal.get("r2", 0) > 0.3:
+        # Si la signature montre une base qui augmente d'annee en annee
+        # On utilise la base comme proxy de derive (hors DJU)
+        base_daily = thermal.get("base_kwh", 0)
+        if base_daily > 0 and total_kwh > 0:
+            base_annual = base_daily * 365
+            base_pct = base_annual / total_kwh
+            # Si la base represente > 70% du total, le site est "flat" = derive probable
+            if base_pct > 0.70:
+                derive_kwh = round(total_kwh * 0.05, 0)  # 5% derive estimee
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="GLOBAL",
+                        usage_label="Tendance long terme",
+                        anomaly_type="DERIVE_LONG_TERME",
+                        severity="low",
+                        message=f"Consommation de base {base_pct:.0%} du total — faible sensibilite DJU",
+                        detail="La consommation est dominee par la base (non thermosensible). "
+                        "Une derive de +5%/an est courante (vieillissement equipements, ajout de charges).",
+                        gain_kwh_an=derive_kwh,
+                        gain_eur_an=round(derive_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Planifier un audit preventif pour identifier les postes en derive.",
+                        confidence="low",
+                        metric_observed=round(base_pct, 3),
+                        metric_threshold=0.70,
+                    )
+                )
+
+    # === Detecteur 11 : Ventilation parking 24/7 (bailleurs, collectivites) ===
+    pompes = usage_by_code.get("POMPES")
+    if pompes and pompes.pct > 5 and archetype in ("COPROPRIETE", "COLLECTIVITE", "COMMERCE_ALIMENTAIRE"):
+        if temporal.get("baseload_kw", 0) > 0 and temporal.get("biz_mean_kw", 0) > 0:
+            vent_ratio = temporal["baseload_kw"] / temporal["biz_mean_kw"]
+            if vent_ratio > 0.80:  # ventilation tourne quasi 100% nuit comme jour
+                vent_kwh = round(pompes.kwh * 0.65, 0)  # 65% recuperable avec hygrostat CO
+                anomalies.append(
+                    UsageAnomaly(
+                        usage_code="POMPES",
+                        usage_label="Ventilation parking / VMC",
+                        anomaly_type="VENTILATION_24_7",
+                        severity="medium",
+                        message=f"Ventilation probablement 24/7 sans regulation CO (ratio nuit/jour {vent_ratio:.0%})",
+                        detail="La ventilation fonctionne a debit constant jour et nuit. "
+                        "Installation d'un hygrostat CO = reduction 65-75% (payback 1-2 ans).",
+                        gain_kwh_an=vent_kwh,
+                        gain_eur_an=round(vent_kwh * PRIX_MOY_EUR_KWH, 0),
+                        action="Installer detecteur CO + variateur sur extracteur parking.",
+                        confidence="medium",
+                        metric_observed=round(vent_ratio, 3),
+                        metric_threshold=0.80,
+                    )
+                )
+
+    # === Detecteur 12 : Process nuit = jour (industrie) ===
+    process = usage_by_code.get("PROCESS_BATCH") or usage_by_code.get("PROCESS_CONTINU")
+    if process and process.pct > 15 and archetype in ("INDUSTRIE_LEGERE", "INDUSTRIE_LOURDE"):
+        if temporal.get("baseload_kw", 0) > 0 and temporal.get("biz_mean_kw", 0) > 0:
+            process_night_ratio = temporal["baseload_kw"] / temporal["biz_mean_kw"]
+            if process_night_ratio > 0.80 and archetype == "INDUSTRIE_LEGERE":
+                waste_kwh = round(process.kwh * (process_night_ratio - 0.3) * 0.5, 0)
+                if waste_kwh > 1000:
+                    anomalies.append(
+                        UsageAnomaly(
+                            usage_code=process.code,
+                            usage_label=process.label,
+                            anomaly_type="PROCESS_NUIT_EGAL_JOUR",
+                            severity="high",
+                            message=f"Process nuit = jour ({process_night_ratio:.0%}) sur industrie legere",
+                            detail="Le ratio nuit/jour suggere que des equipements de production restent en marche "
+                            "la nuit alors que l'activite est reduite. Compresseurs, pompes ou convoyeurs oublies.",
+                            gain_kwh_an=waste_kwh,
+                            gain_eur_an=round(waste_kwh * PRIX_MOY_EUR_KWH, 0),
+                            action="Audit production : programmer arret equipements non critiques quart 3 et weekend.",
+                            confidence="medium",
+                            metric_observed=round(process_night_ratio, 3),
+                            metric_threshold=0.80,
+                        )
+                    )
+
+    # === Detecteur 13 : Froid degradation progressive (maintenance) ===
+    froid = usage_by_code.get("FROID_COMMERCIAL") or usage_by_code.get("FROID_INDUSTRIEL")
+    if froid and froid.pct > 10:
+        # Froid qui represente > seuil archetype = possible encrassement condenseurs
+        froid_threshold_pct = {"COMMERCE_ALIMENTAIRE": 55, "RESTAURANT": 45, "LOGISTIQUE_FRIGO": 70}.get(archetype, 30)
+        if froid.pct > froid_threshold_pct:
+            excess_pct = froid.pct - froid_threshold_pct
+            excess_kwh = round(total_kwh * excess_pct / 100, 0)
+            anomalies.append(
+                UsageAnomaly(
+                    usage_code=froid.code,
+                    usage_label=froid.label,
+                    anomaly_type="FROID_SURCONSOMMATION",
+                    severity="medium",
+                    message=f"Froid {froid.pct:.0f}% de la conso vs {froid_threshold_pct}% attendu archetype",
+                    detail="La part du froid depasse le seuil typique de l'archetype. "
+                    "Causes possibles : condenseurs encrasses, joints de portes defaillants, thermostat mal regle.",
+                    gain_kwh_an=excess_kwh,
+                    gain_eur_an=round(excess_kwh * PRIX_MOY_EUR_KWH, 0),
+                    action="Nettoyage condenseurs + verification joints portes + calibrage thermostat.",
+                    confidence="medium",
+                    metric_observed=froid.pct,
+                    metric_threshold=float(froid_threshold_pct),
+                )
+            )
+
     # Trier par gain EUR decroissant
     anomalies.sort(key=lambda a: -a.gain_eur_an)
 
@@ -314,6 +497,23 @@ def _compute_weekend_ratio(temporal: dict) -> float:
     off_mean = temporal.get("off_mean_kw", 0)
     biz_mean = temporal.get("biz_mean_kw", 1)
     return off_mean / biz_mean if biz_mean > 0 else 0
+
+
+def _get_site_ps_kva(db: Session, site_id: int) -> Optional[float]:
+    """Puissance souscrite max du site (kVA)."""
+    try:
+        from models.energy_models import Meter
+        from services.power.power_profile_service import get_active_contract
+        from datetime import date as _date
+
+        meter = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).first()
+        if meter:
+            contract = get_active_contract(db, meter.id, _date.today())
+            if contract and contract.ps_par_poste_kva:
+                return max(contract.ps_par_poste_kva.values())
+    except Exception:
+        pass
+    return None
 
 
 def _get_site_surface(db: Session, site_id: int) -> Optional[float]:

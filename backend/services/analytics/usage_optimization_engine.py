@@ -104,6 +104,67 @@ ACTION_CATALOG: dict[tuple[str, str], dict] = {
         "priority": 1,
         "gain_eur_override_per_kwh": 0.05,  # delta prix HP-HC ~0.05 EUR/kWh
     },
+    ("CVC_HVAC", "SIMULTANEITE_CHAUD_FROID"): {
+        "action_code": "CVC_BANDE_MORTE",
+        "title": "Calibrer la bande morte chaud/froid",
+        "detail": "Separer les consignes chauffage (ex: 20 degres C) et climatisation (ex: 24 degres C) "
+        "avec une bande morte de 3-4 degres C pour eviter les conflits.",
+        "gain_pct": 0.10,
+        "investment_per_kw": 0,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("GLOBAL", "DEPASSEMENT_PS_RISQUE"): {
+        "action_code": "ECRETAGE_POINTE",
+        "title": "Decaler les demarrages pour ecreter la pointe",
+        "detail": "Programmer les demarrages d'equipements lourds (CVC, compresseurs) en cascade "
+        "avec 5-10 min de decalage. Reduit le pic sans investissement.",
+        "gain_pct": 0.0,
+        "investment_per_kw": 0,
+        "complexity": "simple",
+        "priority": 1,
+        "gain_eur_override_per_kwh": 0.01,
+    },
+    ("AIR_COMPRIME", "AIR_COMPRIME_FUITES"): {
+        "action_code": "AIR_DETECTION_FUITES",
+        "title": "Detecter et colmater les fuites d'air comprime",
+        "detail": "Detection ultrasonore + reparation joints. 20-30% de la conso air comprime est due "
+        "aux fuites (ADEME). CEE IND-UT-114 eligible.",
+        "gain_pct": 0.25,
+        "investment_per_kw": 20,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("POMPES", "VENTILATION_24_7"): {
+        "action_code": "VENTILATION_HYGROSTAT_CO",
+        "title": "Installer detecteur CO + variateur ventilation parking",
+        "detail": "Regulation sur demande (detection CO monoxyde) au lieu de fonctionnement 24/7. "
+        "Reduction 65-75%. Payback 1-2 ans.",
+        "gain_pct": 0.65,
+        "investment_per_kw": 80,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("FROID_COMMERCIAL", "FROID_SURCONSOMMATION"): {
+        "action_code": "FROID_MAINTENANCE",
+        "title": "Maintenance froid : condenseurs + joints + thermostat",
+        "detail": "Nettoyage condenseurs (gain 10-15%), verification joints portes vitrines, "
+        "calibrage thermostat. CEE BAT-EQ-130 eligible.",
+        "gain_pct": 0.12,
+        "investment_per_kw": 30,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    ("FROID_INDUSTRIEL", "FROID_SURCONSOMMATION"): {
+        "action_code": "FROID_INDUS_MAINTENANCE",
+        "title": "Maintenance froid industriel + variateurs compresseurs",
+        "detail": "Nettoyage evaporateurs, verification charge frigorique, variateurs sur compresseurs. "
+        "CEE IND-UT-102 eligible. TRI 2-4 ans.",
+        "gain_pct": 0.15,
+        "investment_per_kw": 150,
+        "complexity": "moderate",
+        "priority": 2,
+    },
     ("GLOBAL", "INTENSITE_ENERGETIQUE_ELEVEE"): {
         "action_code": "AUDIT_ENERGETIQUE_GLOBAL",
         "title": "Realiser un audit energetique",
