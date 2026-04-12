@@ -15,7 +15,16 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from main import app
-from models import Base, Site, TypeSite, Meter, MeterReading
+from models import (
+    Base,
+    Site,
+    TypeSite,
+    Meter,
+    MeterReading,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+)
 from models.ems_models import EmsWeatherCache
 from database import get_db
 
@@ -27,9 +36,25 @@ def env():
     Session = sessionmaker(bind=engine)
     session = Session()
 
+    # Pre-seed org chain (Org→EJ→PF) so scope guards resolve
+    org = Organisation(nom="Demo Org")
+    session.add(org)
+    session.flush()
+    ej = EntiteJuridique(organisation_id=org.id, nom="Demo EJ", siren="123456789")
+    session.add(ej)
+    session.flush()
+    pf = Portefeuille(entite_juridique_id=ej.id, nom="Demo PF")
+    session.add(pf)
+    session.flush()
+
     # Pre-seed 12 sites (demo needs existing sites)
     for i in range(12):
-        site = Site(nom=f"Site Demo {i}", type=TypeSite.BUREAU, ville=f"Ville {i}")
+        site = Site(
+            nom=f"Site Demo {i}",
+            type=TypeSite.BUREAU,
+            ville=f"Ville {i}",
+            portefeuille_id=pf.id,
+        )
         session.add(site)
     session.flush()
 

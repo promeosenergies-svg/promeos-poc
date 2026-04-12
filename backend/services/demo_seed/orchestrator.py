@@ -453,9 +453,16 @@ class SeedOrchestrator:
         # 15. Onboarding auto-detect — mark completed steps from seeded data
         try:
             from models.onboarding_progress import OnboardingProgress
-            from models import Organisation, EntiteJuridique, Portefeuille, Site, Compteur, ActionItem
+            from models import (
+                Organisation,
+                EntiteJuridique,
+                Portefeuille,
+                Site,
+                Compteur,
+                ActionItem,
+                EnergyInvoice,
+            )
             from models.user import UserOrgRole
-            from models.billing import EnergyInvoice
 
             org_id = master["org"].id
             progress = self.db.query(OnboardingProgress).filter_by(org_id=org_id).first()

@@ -114,6 +114,41 @@ describe('Nav V7 — Structure', () => {
   });
 });
 
+describe('Nav V7 — Cibles de redirects résolues par le rail', () => {
+  // Capture chaque <Route path="X" element={<Navigate to="Y" replace />} />.
+  // On veut s'assurer que la cible Y est résolue par matchRouteToModule, sinon
+  // un lien externe vers un ancien slug (/achats, /purchase, /contracts-radar…)
+  // mène à une page valide MAIS le rail tombe sur le module par défaut (cockpit)
+  // — ce qui crée un mismatch UX silencieux.
+  const navigateRe =
+    /path=["']([^"']+)["']\s*element=\{\s*<Navigate\s+to=["']([^"'?#]+)(?:[?#][^"']*)?["']\s+replace\s*\/?>/g;
+
+  const redirects = [];
+  let m;
+  while ((m = navigateRe.exec(appSource)) !== null) {
+    redirects.push({ from: m[1], to: m[2] });
+  }
+
+  it('au moins 10 redirects détectés (sanity check du parser)', () => {
+    expect(redirects.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('chaque cible de redirect est mappée à un module dans ROUTE_MODULE_MAP', () => {
+    // Le matcher fait du préfixe-fallback, donc une cible nested type
+    // /consommations/portfolio est résolue si /consommations est dans la map.
+    const isResolved = (target) => {
+      if (ROUTE_MODULE_MAP[target]) return true;
+      // Préfixe-fallback : on cherche le plus long préfixe sans `:`
+      const candidates = Object.keys(ROUTE_MODULE_MAP)
+        .filter((k) => !k.includes(':'))
+        .sort((a, b) => b.length - a.length);
+      return candidates.some((p) => target === p || target.startsWith(p + '/'));
+    };
+    const orphans = redirects.filter((r) => !isResolved(r.to));
+    expect(orphans).toEqual([]);
+  });
+});
+
 describe('Nav V7 — ActionCenterSlideOver intégré', () => {
   const appShellPath = resolve(__dirname, '../layout/AppShell.jsx');
   const appShellSource = readFileSync(appShellPath, 'utf-8');

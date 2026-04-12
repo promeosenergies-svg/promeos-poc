@@ -89,7 +89,7 @@ export default function CommandPalette({ open, onClose, onToggleExpert }) {
       }));
 
     return [...siteResults, ...pages, ...legacyPages, ...actions, ...shortcuts];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   useEffect(() => {

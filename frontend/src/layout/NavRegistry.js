@@ -88,6 +88,7 @@ export const ROUTE_MODULE_MAP = {
   '/compliance': 'conformite',
   '/compliance/pipeline': 'conformite',
   '/compliance/sites/:siteId': 'conformite',
+  '/regops/:id': 'conformite',
 
   // Énergie
   '/consommations': 'energie',
@@ -101,6 +102,7 @@ export const ROUTE_MODULE_MAP = {
 
   // Patrimoine (Facturation migrée ici)
   '/patrimoine': 'patrimoine',
+  '/patrimoine/nouveau': 'patrimoine',
   '/sites/:id': 'patrimoine',
   '/contrats': 'patrimoine',
   '/billing': 'patrimoine',
@@ -610,7 +612,7 @@ export const NAV_SECTIONS = [
     order: 5,
     items: [
       {
-        to: '/achat-energie?tab=echeances',
+        to: '/renouvellements',
         icon: CalendarRange,
         label: 'Échéances',
         keywords: ['renouvellements', 'contrats', 'echeances', 'radar', 'expiration'],

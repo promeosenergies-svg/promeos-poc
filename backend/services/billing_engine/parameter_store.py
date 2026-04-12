@@ -31,10 +31,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
+
+# Codes déjà signalés comme inconnus — évite de spammer les logs à chaque lookup.
+_unknown_codes_seen: set[str] = set()
 
 # Codes connus du référentiel — documentés pour éviter les fautes de frappe.
 # Tout code qui n'est pas dans cette liste déclenche un warning au premier lookup.
@@ -175,6 +178,20 @@ def _period_contains(valid_from: Optional[date], valid_to: Optional[date], at: d
     return True
 
 
+def _turpe_candidates(tarifs: dict, seg: str, value_key: str) -> list[tuple[dict, str]]:
+    """Collecte les candidats TURPE 6 et TURPE 7 pour un segment/terme donné."""
+    out: list[tuple[dict, str]] = []
+    for root_key in ("turpe_6", "turpe"):
+        root = tarifs.get(root_key)
+        if root and "segments" in root and seg in root["segments"]:
+            entry = dict(root["segments"][seg])
+            entry["valid_from"] = root.get("valid_from")
+            entry["valid_to"] = root.get("valid_to")
+            entry["source"] = root.get("source")
+            out.append((entry, value_key))
+    return out
+
+
 # ── Table de résolution YAML → code ───────────────────────────────────────
 # Chaque entrée retourne une liste de candidats (dict YAML) et la clé à lire.
 # On parcourt les candidats, on garde ceux dont la période contient `at_date`,
@@ -184,30 +201,10 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
     """Retourne une liste (entry_dict, value_key) pour un code donné."""
     # TURPE (gère TURPE 6 et TURPE 7 simultanément)
     if code.startswith("TURPE_ENERGIE_"):
-        seg = code.replace("TURPE_ENERGIE_", "")
-        out = []
-        for root_key in ("turpe_6", "turpe"):
-            root = tarifs.get(root_key)
-            if root and "segments" in root and seg in root["segments"]:
-                entry = dict(root["segments"][seg])
-                entry["valid_from"] = root.get("valid_from")
-                entry["valid_to"] = root.get("valid_to")
-                entry["source"] = root.get("source")
-                out.append((entry, "energie_eur_kwh"))
-        return out
+        return _turpe_candidates(tarifs, code.replace("TURPE_ENERGIE_", ""), "energie_eur_kwh")
 
     if code.startswith("TURPE_GESTION_"):
-        seg = code.replace("TURPE_GESTION_", "")
-        out = []
-        for root_key in ("turpe_6", "turpe"):
-            root = tarifs.get(root_key)
-            if root and "segments" in root and seg in root["segments"]:
-                entry = dict(root["segments"][seg])
-                entry["valid_from"] = root.get("valid_from")
-                entry["valid_to"] = root.get("valid_to")
-                entry["source"] = root.get("source")
-                out.append((entry, "gestion_eur_mois"))
-        return out
+        return _turpe_candidates(tarifs, code.replace("TURPE_GESTION_", ""), "gestion_eur_mois")
 
     # Accises élec (gère 2024, 2026_t1, 2026_t2, accise_elec "courant")
     if code == "ACCISE_ELEC" or code == "ACCISE_ELEC_T2":
@@ -287,13 +284,13 @@ def _yaml_candidates(code: str, tarifs: dict) -> list[tuple[dict, str]]:
             "CTA_GAZ_DIST_RATE": "gaz",
             "CTA_GAZ_TRANS_RATE": "gaz_transport",
         }[code]
-        out: list[tuple[dict, str]] = []
+        cta_out: list[tuple[dict, str]] = []
         for root_key in ("cta_2021", "cta"):
             entry = dict(tarifs.get(root_key, {}).get(cta_subkey, {}))
             if "taux_pct" in entry:
                 entry["_ratio"] = entry["taux_pct"] / 100.0
-                out.append((entry, "_ratio"))
-        return out
+                cta_out.append((entry, "_ratio"))
+        return cta_out
 
     # Coefficient CTA gaz transport — révisé chaque 1/07 par arrêté annuel
     if code == "CTA_GAZ_TRANSPORT_COEF":
@@ -422,7 +419,8 @@ class ParameterStore:
         Retourne toujours une ParameterResolution (jamais None).
         Pour une valeur manquante, source="missing" et value=0.0.
         """
-        if code not in KNOWN_CODES:
+        if code not in KNOWN_CODES and code not in _unknown_codes_seen:
+            _unknown_codes_seen.add(code)
             logger.warning("ParameterStore: code inconnu '%s'", code)
 
         if at_date is None:
@@ -485,9 +483,6 @@ class ParameterStore:
             return None
 
         try:
-            # Conversion date → datetime aware pour compat get_current_tariff
-            from datetime import timezone
-
             at_dt = datetime(at_date.year, at_date.month, at_date.day, tzinfo=timezone.utc)
             tt = TariffType(mapping[0])
             tc = TariffComponent(mapping[1])

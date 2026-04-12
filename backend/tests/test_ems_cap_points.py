@@ -16,7 +16,16 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from main import app
-from models import Base, Site, TypeSite, Meter, MeterReading
+from models import (
+    Base,
+    Site,
+    TypeSite,
+    Meter,
+    MeterReading,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+)
 from models.energy_models import EnergyVector, FrequencyType
 from database import get_db
 
@@ -42,7 +51,16 @@ def env():
 
 
 def _seed_site(db):
-    site = Site(nom="Cap Test", type=TypeSite.BUREAU)
+    org = Organisation(nom="Cap Test Org")
+    db.add(org)
+    db.flush()
+    ej = EntiteJuridique(organisation_id=org.id, nom="Cap Test EJ", siren="123456789")
+    db.add(ej)
+    db.flush()
+    pf = Portefeuille(entite_juridique_id=ej.id, nom="Cap Test PF")
+    db.add(pf)
+    db.flush()
+    site = Site(nom="Cap Test", type=TypeSite.BUREAU, portefeuille_id=pf.id)
     db.add(site)
     db.flush()
     m = Meter(meter_id="PRM-CAP-1", name="M1", site_id=site.id, energy_vector=EnergyVector.ELECTRICITY)
