@@ -13,16 +13,16 @@ function src(relPath) {
   return readFileSync(resolve(root, relPath), 'utf-8');
 }
 
-/* ── A. Récents supprimé — panneau contextuel par module ── */
-describe('A. Récents supprimé du panneau', () => {
+/* ── A. Récents légers dans le panneau (3 max, localStorage) ── */
+describe('A. Récents dans le panneau', () => {
   const navPanel = src('src/layout/NavPanel.jsx');
 
-  it('no recentItems rendering in NavPanel', () => {
-    expect(navPanel).not.toMatch(/recentItems\.map/);
+  it('Clock icon imported for recents section', () => {
+    expect(navPanel).toMatch(/Clock/);
   });
 
-  it('no Clock icon import (recents removed)', () => {
-    expect(navPanel).not.toMatch(/Clock/);
+  it('recents capped at MAX_RECENTS', () => {
+    expect(navPanel).toMatch(/MAX_RECENTS/);
   });
 
   it('uses moduleSections for contextual display', () => {
