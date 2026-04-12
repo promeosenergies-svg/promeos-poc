@@ -31,11 +31,16 @@ const SEVERITY_STYLE = {
   },
 };
 
-export default function UsageAnomaliesCard({ siteId }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function UsageAnomaliesCard({ siteId, preloadedData }) {
+  const [data, setData] = useState(preloadedData || null);
+  const [loading, setLoading] = useState(!preloadedData);
 
   useEffect(() => {
+    if (preloadedData) {
+      setData(preloadedData);
+      setLoading(false);
+      return;
+    }
     if (!siteId) return;
     setLoading(true);
     setData(null);
@@ -53,7 +58,7 @@ export default function UsageAnomaliesCard({ siteId }) {
     return () => {
       stale = true;
     };
-  }, [siteId]);
+  }, [siteId, preloadedData]);
 
   if (loading) {
     return (

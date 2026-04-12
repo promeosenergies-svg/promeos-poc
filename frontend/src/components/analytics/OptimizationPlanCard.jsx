@@ -13,11 +13,16 @@ const COMPLEXITY_BADGE = {
   complex: { label: 'Structurant', bg: 'bg-purple-100', text: 'text-purple-700' },
 };
 
-export default function OptimizationPlanCard({ siteId }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function OptimizationPlanCard({ siteId, preloadedData }) {
+  const [data, setData] = useState(preloadedData || null);
+  const [loading, setLoading] = useState(!preloadedData);
 
   useEffect(() => {
+    if (preloadedData) {
+      setData(preloadedData);
+      setLoading(false);
+      return;
+    }
     if (!siteId) return;
     setLoading(true);
     setData(null);
@@ -35,7 +40,7 @@ export default function OptimizationPlanCard({ siteId }) {
     return () => {
       stale = true;
     };
-  }, [siteId]);
+  }, [siteId, preloadedData]);
 
   if (loading) {
     return (

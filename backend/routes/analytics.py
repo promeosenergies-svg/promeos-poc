@@ -3,6 +3,7 @@ PROMEOS - Analytics Routes
 GET /api/analytics/sites/{site_id}/usage-breakdown    — decomposition CDC en usages (3 couches)
 GET /api/analytics/sites/{site_id}/usage-anomalies    — anomalies par usage (contextualisees)
 GET /api/analytics/sites/{site_id}/optimization-plan  — plan d'optimisation ROI chiffre (etage 3)
+GET /api/analytics/sites/{site_id}/full-report        — 3 etages en 1 appel (1 seule decomposition CDC)
 """
 
 from dataclasses import asdict
@@ -134,3 +135,41 @@ def get_site_optimization_plan(
         raise HTTPException(status_code=404, detail=str(exc))
 
     return asdict(result)
+
+
+@router.get("/sites/{site_id}/full-report")
+def get_site_full_report(
+    site_id: int,
+    days: int = Query(365, ge=30, le=730),
+    db: Session = Depends(get_db),
+):
+    """
+    Rapport analytique complet en 1 appel (1 seule decomposition CDC).
+
+    Combine breakdown + anomalies + plan d'optimisation en reutilisant
+    le meme resultat de disaggregation (evite 3x la lecture CDC).
+    """
+    from datetime import date, timedelta
+    from services.analytics.usage_disaggregation import disaggregate_site
+    from services.analytics.usage_anomaly_detector import detect_usage_anomalies
+    from services.analytics.usage_optimization_engine import generate_optimization_plan
+
+    date_fin = date.today()
+    date_debut = date_fin - timedelta(days=days)
+
+    try:
+        # 1 seule decomposition CDC pour les 3 etages
+        disagg = disaggregate_site(db, site_id, date_debut, date_fin)
+        anomalies = detect_usage_anomalies(db, site_id, date_debut, date_fin, disagg_result=disagg)
+        plan = generate_optimization_plan(
+            db, site_id, date_debut, date_fin, disagg_result=disagg, anomalies_result=anomalies
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    return {
+        "site_id": site_id,
+        "breakdown": asdict(disagg),
+        "anomalies": asdict(anomalies),
+        "optimization": asdict(plan),
+    }

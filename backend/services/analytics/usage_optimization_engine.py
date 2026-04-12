@@ -154,6 +154,61 @@ GENERIC_ACTIONS: dict[str, dict] = {
         "priority": 2,
         "gain_eur_override_per_kwh": 0.04,
     },
+    "ECS": {
+        "action_code": "ECS_PROGRAMMATION_HC",
+        "title": "Programmer le ballon ECS en heures creuses",
+        "detail": "Decaler la production ECS en heures creuses (22h-6h) ou heures solaires 11h-14h (CRE delib. 2026-33). Contacteur HC ou horloge simple. Gain sur le delta prix HP/HC.",
+        "gain_pct": 0.0,
+        "investment_per_kw": 20,
+        "complexity": "simple",
+        "priority": 1,
+        "gain_eur_override_per_kwh": 0.05,
+    },
+    "FROID_COMMERCIAL": {
+        "action_code": "FROID_MAINTENANCE_PREVENTIVE",
+        "title": "Optimiser la maintenance du froid commercial",
+        "detail": "Nettoyage condenseurs (gain 10-15%), verification joints de portes vitrines, consignes temperature (gain 3%/degre). CEE BAT-EQ-130 eligible.",
+        "gain_pct": 0.12,
+        "investment_per_kw": 30,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    "FROID_INDUSTRIEL": {
+        "action_code": "FROID_INDUS_VARIATEUR",
+        "title": "Installer des variateurs sur les compresseurs froid",
+        "detail": "Variateurs de vitesse sur compresseurs frigorifiques : gain 15-25% sur le poste froid. CEE IND-UT-102 eligible. TRI typique 2-4 ans.",
+        "gain_pct": 0.20,
+        "investment_per_kw": 150,
+        "complexity": "moderate",
+        "priority": 2,
+    },
+    "AIR_COMPRIME": {
+        "action_code": "AIR_COMPRIME_FUITES",
+        "title": "Detecter et reparer les fuites d'air comprime",
+        "detail": "Les fuites representent 20-30% de la conso air comprime (ADEME). Detection ultrasonore + reparation : gain immediat, investissement faible. CEE IND-UT-114.",
+        "gain_pct": 0.25,
+        "investment_per_kw": 20,
+        "complexity": "simple",
+        "priority": 1,
+    },
+    "POMPES": {
+        "action_code": "POMPES_VARIATEUR_VITESSE",
+        "title": "Installer des variateurs de vitesse sur les pompes",
+        "detail": "Variateurs de vitesse sur pompes de circulation : gain 20-40% (loi d'affinite P proportionnel a N^3). CEE IND-UT-102 eligible.",
+        "gain_pct": 0.30,
+        "investment_per_kw": 120,
+        "complexity": "moderate",
+        "priority": 2,
+    },
+    "DATA_CENTER": {
+        "action_code": "DATA_CENTER_FREE_COOLING",
+        "title": "Deployer le free-cooling sur les salles IT",
+        "detail": "Free-cooling air exterieur quand T_ext < 18 degres C (300-400h/an en IDF). Gain 15-25% sur la climatisation IT. PUE cible < 1.4.",
+        "gain_pct": 0.15,
+        "investment_per_kw": 200,
+        "complexity": "moderate",
+        "priority": 2,
+    },
 }
 
 
@@ -162,6 +217,8 @@ def generate_optimization_plan(
     site_id: int,
     date_debut: Optional[date] = None,
     date_fin: Optional[date] = None,
+    disagg_result=None,
+    anomalies_result=None,
 ) -> OptimizationPlan:
     """
     Genere un plan d'optimisation pour un site en croisant :
@@ -169,8 +226,9 @@ def generate_optimization_plan(
     2. Les anomalies detectees (etage 2)
     3. Le catalogue d'actions (etage 3)
 
-    Returns:
-        OptimizationPlan trie par payback croissant (quick wins en premier).
+    Args:
+        disagg_result: optionnel — reutilise une decomposition deja calculee.
+        anomalies_result: optionnel — reutilise des anomalies deja detectees.
     """
     from services.analytics.usage_disaggregation import disaggregate_site
     from services.analytics.usage_anomaly_detector import detect_usage_anomalies
@@ -185,12 +243,12 @@ def generate_optimization_plan(
     if not site:
         raise ValueError(f"Site {site_id} non trouve")
 
-    # Etage 1 : decomposition (une seule fois)
-    disagg = disaggregate_site(db, site_id, date_debut, date_fin)
+    # Etage 1 : decomposition (reutilise si fourni)
+    disagg = disagg_result or disaggregate_site(db, site_id, date_debut, date_fin)
     usage_by_code = {u.code: u for u in disagg.usages}
 
-    # Etage 2 : anomalies (reutilise la decomposition pour eviter double lecture CDC)
-    anomalies = detect_usage_anomalies(db, site_id, date_debut, date_fin, disagg_result=disagg)
+    # Etage 2 : anomalies (reutilise si fourni, sinon calcule avec disagg)
+    anomalies = anomalies_result or detect_usage_anomalies(db, site_id, date_debut, date_fin, disagg_result=disagg)
 
     actions: list[OptimizationAction] = []
 

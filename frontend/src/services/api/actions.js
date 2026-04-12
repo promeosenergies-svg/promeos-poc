@@ -222,6 +222,10 @@ export const getOptimizationPlan = (siteId, days = 365) =>
   cachedGet(`/analytics/sites/${siteId}/optimization-plan`, { params: { days } }, 60000).then(
     (r) => r.data
   );
+export const getAnalyticsFullReport = (siteId, days = 365) =>
+  cachedGet(`/analytics/sites/${siteId}/full-report`, { params: { days } }, 60000).then(
+    (r) => r.data
+  );
 
 // ── Billing Usage Ventilation ──
 export const getBillingUsageVentilation = (siteId) =>
