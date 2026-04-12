@@ -76,15 +76,16 @@ describe('Nav V7 — Source guard (labels interdits)', () => {
 });
 
 describe('Nav V7 — Structure', () => {
-  it('5 modules visible in normal mode (rail stable)', () => {
+  it('6 modules visible in normal mode (+Flex strategic)', () => {
     const normalModules = NAV_MODULES.filter((m) => !m.expertOnly);
-    expect(normalModules).toHaveLength(5);
+    expect(normalModules).toHaveLength(6);
     expect(normalModules.map((m) => m.key)).toEqual([
       'cockpit',
       'conformite',
       'energie',
       'patrimoine',
       'achat',
+      'flex',
     ]);
   });
 
@@ -94,16 +95,16 @@ describe('Nav V7 — Structure', () => {
     expect(expertModules[0].key).toBe('admin');
   });
 
-  it('13 items visible in normal mode (1 page per concept, no tab duplicates)', () => {
+  it('14 items visible in normal mode (+Flex)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, false));
-    expect(items).toHaveLength(13);
+    expect(items).toHaveLength(14);
   });
 
   it('same count in expert mode (no expertOnly items left)', () => {
     const mainSections = NAV_SECTIONS.filter((s) => !s.expertOnly);
     const items = mainSections.flatMap((s) => getVisibleItems(s.items, true));
-    expect(items).toHaveLength(13);
+    expect(items).toHaveLength(14);
   });
 
   it('zero expertOnly items in main modules (tabs merged into parent pages)', () => {
