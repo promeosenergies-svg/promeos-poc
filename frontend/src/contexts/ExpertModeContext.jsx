@@ -6,6 +6,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 
 const STORAGE_KEY = 'promeos_expert';
+const ONBOARDING_KEY = 'promeos_expert_seen';
 
 function loadExpert() {
   try {
@@ -20,16 +21,23 @@ const ExpertModeContext = createContext(null);
 export function ExpertModeProvider({ children }) {
   const [isExpert, setIsExpert] = useState(loadExpert);
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   const toggleExpert = useCallback(() => {
     setIsExpert((prev) => {
       const next = !prev;
       localStorage.setItem(STORAGE_KEY, String(next));
+      if (next && !localStorage.getItem(ONBOARDING_KEY)) {
+        localStorage.setItem(ONBOARDING_KEY, 'true');
+        setShowOnboarding(true);
+        setTimeout(() => setShowOnboarding(false), 5000);
+      }
       return next;
     });
   }, []);
 
   return (
-    <ExpertModeContext.Provider value={{ isExpert, toggleExpert }}>
+    <ExpertModeContext.Provider value={{ isExpert, toggleExpert, showOnboarding }}>
       {children}
     </ExpertModeContext.Provider>
   );

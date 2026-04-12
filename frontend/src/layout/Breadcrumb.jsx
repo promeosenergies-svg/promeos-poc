@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { ALL_NAV_ITEMS, ROUTE_SECTION_MAP, NAV_MAIN_SECTIONS } from './NavRegistry';
+import { ALL_NAV_ITEMS, ROUTE_SECTION_MAP, NAV_MAIN_SECTIONS, getModuleTint } from './NavRegistry';
 import { useScope } from '../contexts/ScopeContext';
 
 // Auto-derive labels from NavRegistry (single source of truth)
@@ -104,6 +104,7 @@ function getSectionRoute(sectionLabel) {
 export default function Breadcrumb() {
   const { pathname } = useLocation();
   const { scopedSites } = useScope();
+  const tint = getModuleTint(pathname);
   const parts = pathname.split('/').filter(Boolean);
 
   const siteNameById = useMemo(
@@ -120,7 +121,7 @@ export default function Breadcrumb() {
   // Root path → simple breadcrumb
   if (parts.length === 0) {
     crumbs.push({ label: 'Tableau de bord', to: '/' });
-    return <BreadcrumbNav crumbs={crumbs} />;
+    return <BreadcrumbNav crumbs={crumbs} tintText={tint?.activeText} />;
   }
 
   // Add section crumb if the page belongs to a known section
@@ -157,10 +158,10 @@ export default function Breadcrumb() {
     return true;
   });
 
-  return <BreadcrumbNav crumbs={deduped} />;
+  return <BreadcrumbNav crumbs={deduped} tintText={tint?.activeText} />;
 }
 
-function BreadcrumbNav({ crumbs }) {
+function BreadcrumbNav({ crumbs, tintText }) {
   return (
     <nav className="flex items-center gap-1 text-sm text-gray-500">
       {crumbs.map((c, i) => (
@@ -174,7 +175,7 @@ function BreadcrumbNav({ crumbs }) {
               {c.label}
             </Link>
           ) : (
-            <span className="text-gray-800 font-medium">{c.label}</span>
+            <span className={`font-medium ${tintText || 'text-gray-800'}`}>{c.label}</span>
           )}
         </span>
       ))}

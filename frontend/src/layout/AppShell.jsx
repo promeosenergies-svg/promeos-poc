@@ -184,7 +184,7 @@ export default function AppShell() {
   const [actionCenterOpen, setActionCenterOpen] = useState(false);
   const [actionCenterTab, setActionCenterTab] = useState('actions');
   const [actionCenterBadge, setActionCenterBadge] = useState({ count: null, color: 'gray' });
-  const { isExpert, toggleExpert } = useExpertMode();
+  const { isExpert, toggleExpert, showOnboarding } = useExpertMode();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -325,9 +325,19 @@ export default function AppShell() {
               )}
             </button>
 
-            {/* Expert Mode toggle */}
-            <div title="Affiche source, confiance et détails techniques">
+            {/* Expert Mode toggle + onboarding */}
+            <div className="relative" title="Affiche source, confiance et détails techniques">
               <Toggle checked={isExpert} onChange={toggleExpert} label="Expert" size="sm" />
+              {showOnboarding && (
+                <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-indigo-600 text-white text-xs rounded-lg shadow-lg z-50 animate-[fadeIn_0.3s_ease-out]">
+                  <p className="font-semibold mb-1">Mode Expert activé</p>
+                  <p className="opacity-90">
+                    4 fonctions avancées débloquées : Audit SMÉ, Diagnostics, Facturation,
+                    Simulateur d'achat.
+                  </p>
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-indigo-600 rotate-45" />
+                </div>
+              )}
             </div>
             <UserMenu />
           </div>
