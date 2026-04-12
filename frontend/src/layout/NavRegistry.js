@@ -569,7 +569,6 @@ export const NAV_SECTIONS = [
         icon: SearchCheck,
         label: 'Diagnostics',
         desc: 'Détection anomalies & gisements',
-        expertOnly: true,
         keywords: ['diagnostic', 'anomalies', 'analyse'],
       },
     ],
@@ -603,7 +602,6 @@ export const NAV_SECTIONS = [
         icon: Receipt,
         label: 'Facturation',
         desc: 'Anomalies factures, shadow billing',
-        expertOnly: true,
         keywords: [
           'factures',
           'billing',

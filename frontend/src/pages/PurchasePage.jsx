@@ -548,7 +548,7 @@ export default function PurchasePage() {
     <PurchaseErrorBoundary>
       <PageShell
         icon={ShoppingCart}
-        title="Achats énergie"
+        title="Scénarios d'achat"
         subtitle={
           <span className="flex items-center gap-2">
             Simuler &amp; arbitrer vos stratégies d'achat

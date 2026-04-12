@@ -705,7 +705,7 @@ export default function Patrimoine() {
   return (
     <PageShell
       icon={Building2}
-      title="Registre patrimonial & contractuel"
+      title="Sites & bâtiments"
       subtitle={subtitle}
       actions={
         <>

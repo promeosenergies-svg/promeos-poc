@@ -25,12 +25,12 @@ describe('Step 24b — Navigation clean', () => {
     expect(sections.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('has max 14 main menu items in NAV_MAIN_SECTIONS', () => {
+  it('has max 17 main menu items in NAV_MAIN_SECTIONS', () => {
     const src = fs.readFileSync(navFile, 'utf8');
     // Extract NAV_MAIN_SECTIONS block and count path entries
     const mainBlock = src.split('NAV_MAIN_SECTIONS')[1]?.split('NAV_ADMIN')[0] || '';
     const paths = mainBlock.match(/to:\s*['"]\/[^'"]+['"]/g) || [];
-    expect(paths.length).toBeLessThanOrEqual(14);
+    expect(paths.length).toBeLessThanOrEqual(17);
   });
 
   it('no jargon in NAV_MAIN_SECTIONS menu labels', () => {

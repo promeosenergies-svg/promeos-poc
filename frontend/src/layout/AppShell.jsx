@@ -13,6 +13,7 @@ import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
 import DataReadinessBadge from '../components/DataReadinessBadge';
 import DevPanel from './DevPanel';
+import OnboardingOverlay from '../components/OnboardingOverlay';
 import CommandPalette from '../ui/CommandPalette';
 import ActionCenterSlideOver, {
   computeActionCenterBadge,
@@ -255,6 +256,14 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
+      {/* Skip link (a11y) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[300] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
+      >
+        Aller au contenu
+      </a>
+
       {/* Sidebar: persistent on desktop, in drawer on mobile */}
       {isDesktop ? (
         <Sidebar />
@@ -350,7 +359,7 @@ export default function AppShell() {
         />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" className="flex-1 overflow-y-auto">
           <ToastProvider>
             <ActionDrawerProvider>
               <Outlet />
@@ -375,6 +384,9 @@ export default function AppShell() {
 
       {/* Dev Panel — dev-only, visible when ?debug */}
       <DevPanel />
+
+      {/* Onboarding tour (first login only) */}
+      <OnboardingOverlay />
     </div>
   );
 }

@@ -40,7 +40,7 @@ import { track } from '../services/tracker';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtCo2, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
-import { toConsoExplorer, toMonitoring, toUsages } from '../services/routes';
+import { toConsoExplorer, toMonitoring, toUsages, toBillIntel } from '../services/routes';
 import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
@@ -1173,6 +1173,16 @@ export default function ConsumptionDiagPage() {
         onOpenExplorer={handleOpenExplorer}
         onViewInvoice={handleViewInvoice}
       />
+
+      {/* Cross-module exit: facturation */}
+      <div className="flex items-center gap-4 pt-4 mt-4 border-t border-gray-100">
+        <Link
+          to={toBillIntel()}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 hover:underline transition"
+        >
+          Voir la facturation & anomalies
+        </Link>
+      </div>
 
       {/* Action creation handled by ActionDrawerContext */}
     </PageShell>

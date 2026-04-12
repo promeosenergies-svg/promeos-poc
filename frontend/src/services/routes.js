@@ -275,3 +275,16 @@ export function toMonitoring(opts = {}) {
   const qs = p.toString();
   return `/monitoring${qs ? '?' + qs : ''}`;
 }
+
+/**
+ * Site 360 — fiche site avec tab deep-linkable.
+ * @param {number|string} siteId
+ * @param {object} [opts]
+ * @param {string} [opts.tab] — resume, conso, factures, conformite, actions, puissance, usages
+ */
+export function toSite360(siteId, opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.tab) p.set('tab', opts.tab);
+  const qs = p.toString();
+  return `/sites/${siteId}${qs ? '?' + qs : ''}`;
+}
