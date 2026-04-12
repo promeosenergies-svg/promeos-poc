@@ -1620,14 +1620,20 @@ export default function Site360() {
   const [activeTab, setActiveTab] = useState(() => {
     return searchParams.get('tab') || window.location.hash.replace('#', '') || 'resume';
   });
-  const handleSetTab = useCallback((tab) => {
-    setActiveTab(tab);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('tab', tab);
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
+  const handleSetTab = useCallback(
+    (tab) => {
+      setActiveTab(tab);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('tab', tab);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);

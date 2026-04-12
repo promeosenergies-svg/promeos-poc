@@ -259,7 +259,13 @@ export default function AppShell() {
       {isDesktop ? (
         <Sidebar />
       ) : (
-        <Drawer open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} side="left" title="Navigation" noPadding>
+        <Drawer
+          open={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          side="left"
+          title="Navigation"
+          noPadding
+        >
           <Sidebar />
         </Drawer>
       )}
