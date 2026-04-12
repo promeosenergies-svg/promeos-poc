@@ -29,6 +29,7 @@ import {
   TINT_PALETTE,
   NAV_ADMIN_ITEMS,
   NAV_ADMIN_ICON,
+  ALL_NAV_ITEMS,
   getSectionsForModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -404,21 +405,27 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           </div>
         )}
 
-        {/* Recents — last visited pages (across all modules) */}
-        {recents.length > 0 && pinnedItems.length === 0 && (
-          <div className="pb-2 mb-1 border-b border-slate-200/40">
-            <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Clock size={8} className="text-slate-400" /> Récents
-            </p>
-            {recents
-              .map((path) => allModuleItems.find((item) => item.to.split('?')[0] === path))
-              .filter(Boolean)
-              .slice(0, 3)
-              .map((item) => (
+        {/* Recents — cross-module pages (excludes items already in current module) */}
+        {(() => {
+          if (pinnedItems.length > 0) return null;
+          const currentPaths = new Set(allModuleItems.map((i) => i.to.split('?')[0]));
+          const crossModuleRecents = recents
+            .filter((path) => !currentPaths.has(path))
+            .map((path) => ALL_NAV_ITEMS.find((item) => item.to.split('?')[0] === path))
+            .filter(Boolean)
+            .slice(0, 3);
+          if (crossModuleRecents.length === 0) return null;
+          return (
+            <div className="pb-2 mb-1 border-b border-slate-200/40">
+              <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Clock size={8} className="text-slate-400" /> Récents
+              </p>
+              {crossModuleRecents.map((item) => (
                 <PanelLink key={`recent-${item.to}`} {...item} badge={0} tint={tint} />
               ))}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* Main sections — only for active module */}
         {moduleSections.map((section) => {
